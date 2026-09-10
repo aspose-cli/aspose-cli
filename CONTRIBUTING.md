@@ -8,7 +8,7 @@ No FOSS source, gitlinks or Git LFS are required.
 
 1. Update the owning Product with its contracts, schemas, Skills and tests.
 2. Run scripts/sync.ps1 after catalog, identity or dependency changes.
-3. Run scripts/test.ps1 -Configuration Release.
+3. Run scripts/test.ps1 -Configuration Release and inspect the per-project TRX files under artifacts/TestResults/.
 4. Verify portable and win-x64 publication and applicable installation tests.
 5. Use a standalone checkout when changing project or build boundaries.
 

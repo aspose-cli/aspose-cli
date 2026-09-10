@@ -36,11 +36,11 @@ internal sealed class SlidesReadService
 
     /// <inheritdoc />
     internal PresentationInfoResult GetInfo(string filePath, PresentationInfoRequest request) =>
-        SlidesErrorTranslator.Execute("info", () => GetInfoCore(filePath, request));
+        SlidesErrorTranslator.Execute("inspect", () => GetInfoCore(filePath, request));
 
     /// <inheritdoc />
     internal PresentationReadResult Read(string filePath, PresentationReadRequest request) =>
-        SlidesErrorTranslator.Execute("read", () => ReadCore(filePath, request));
+        SlidesErrorTranslator.Execute("query slides", () => ReadCore(filePath, request));
 
     private PresentationInfoResult GetInfoCore(string filePath, PresentationInfoRequest request)
     {

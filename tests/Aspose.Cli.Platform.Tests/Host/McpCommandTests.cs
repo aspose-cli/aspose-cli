@@ -15,12 +15,25 @@ public sealed class McpCommandTests
         Assert.Equal(["capabilities", "execute"], McpServerHost.ToolNames);
     }
 
+    [Fact]
+    public void Server_ReportsReadOnlyDiscoveryAndMutatingExecution()
+    {
+        var tools = McpServerHost.CreateTools(new McpTools(ProductRoots));
+        var discovery = tools.Single(tool => tool.ProtocolTool.Name == "capabilities").ProtocolTool;
+        var execution = tools.Single(tool => tool.ProtocolTool.Name == "execute").ProtocolTool;
+
+        Assert.True(discovery.Annotations!.ReadOnlyHint);
+        Assert.False(discovery.Annotations.DestructiveHint);
+        Assert.False(execution.Annotations!.ReadOnlyHint);
+        Assert.True(execution.Annotations.DestructiveHint);
+    }
+
     [Theory]
-    [InlineData("cells", "read")]
+    [InlineData("cells", "query", "range")]
     [InlineData("pdf", "edit")]
-    [InlineData("schema", "v2/pdf/info")]
+    [InlineData("schema", "v2/pdf/pdf-info")]
     [InlineData("doctor")]
-    [InlineData("docs", "pdf/security")]
+    [InlineData("docs", "pdf/forms-security")]
     [InlineData("fonts", "list")]
     [InlineData("fonts", "check")]
     [InlineData("preview", "status")]
@@ -64,7 +77,7 @@ public sealed class McpCommandTests
             null,
             120));
         Assert.Throws<McpCommandException>(() => runner.Validate(
-            ["cells", "read"],
+            ["cells", "query", "range"],
             new string('x', McpCommandRunner.MaximumInputBytes + 1),
             120));
         Assert.Throws<McpCommandException>(() => runner.Validate(["cells"], null, 0));
@@ -78,7 +91,7 @@ public sealed class McpCommandTests
             ["DOC_PASSWORD", "OUTPUT_PASSWORD"],
             McpCommandRunner.ReferencedEnvironmentVariables(
             [
-                "words", "read", "file.docx",
+                "words", "query", "blocks", "file.docx",
                 "--password-env", "DOC_PASSWORD",
                 "--encrypt-env=OUTPUT_PASSWORD",
                 "--owner-password-env", "bad-name!",

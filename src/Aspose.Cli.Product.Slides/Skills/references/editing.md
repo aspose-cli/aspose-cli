@@ -26,5 +26,5 @@ aspose-cli schema v2/slides/ops
 aspose-cli docs slides/ops
 ```
 
-Video and audio insertion or MP4 rendering are outside v1. Existing embedded
+Video and audio insertion or MP4 rendering are not supported by this build. Existing embedded
 media can be inventoried and extracted, but must not be silently synthesized.

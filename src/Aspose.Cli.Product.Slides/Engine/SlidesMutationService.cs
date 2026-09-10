@@ -51,7 +51,7 @@ internal sealed class SlidesMutationService
 
     /// <inheritdoc />
     public SlidesSearchResult Search(string filePath, PresentationSearchRequest request) =>
-        SlidesErrorTranslator.Execute("search", () => SearchCore(filePath, request));
+        SlidesErrorTranslator.Execute("query search", () => SearchCore(filePath, request));
 
     private SlidesEditResult ApplyOpsCore(
         string filePath,

@@ -2,7 +2,7 @@
 
 - `PASSWORD_REQUIRED` / `PASSWORD_INVALID`: use `--password-env` or
   `--password-stdin`; never inline a password.
-- `FORM_XFA_UNSUPPORTED`: XFA is read-only in v1; do not treat it as AcroForm.
+- `FORM_XFA_UNSUPPORTED`: XFA is read-only in this build; do not treat it as AcroForm.
 - `PAGE_RANGE_INVALID`: use 1-based ranges such as `1-3,7,9-`.
 - `RENDER_TOO_LARGE`: lower DPI or render fewer pages.
 - `REMOTE_RESOURCES_BLOCKED`: external HTML assets are denied; copy required
@@ -13,5 +13,5 @@
   conformance from conversion success alone.
 
 Use `aspose-cli doctor`, `aspose-cli license status --output json`,
-`aspose-cli fonts check --product pdf`, and
+`aspose-cli fonts check report.pdf`, and
 `aspose-cli capabilities --output json` for environment diagnosis.

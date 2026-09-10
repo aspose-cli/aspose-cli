@@ -30,6 +30,10 @@ produced files carry an Aspose evaluation watermark (section 9).
 Routing: if the task involves an EXISTING workbook the user cares about,
 follow the safe-editing protocol in section 5 before the first mutation.
 
+HTML resource limitation: loading an HTML workbook can request linked resources,
+including network URLs, even for inspection. Use trusted HTML inputs; the
+current Cells loader does not enforce fully offline resource loading.
+
 ## 2. Golden rules
 
 1. NEVER dump a whole sheet. Climb the projection ladder (section 4).
@@ -79,8 +83,8 @@ Habits from weaker spreadsheet stacks cost time here. Already handled:
   to re-touch formulas to force an update.
 - Ops batches are atomic. Any op fails → the file is untouched; there are
   no half-applied cascades to detect or clean up.
-- There is no resident daemon: no open/save/close lifecycle, no flush
-  discipline, no lock contention between your own sequential commands.
+- Document commands do not require a resident daemon or an open/save/close
+  lifecycle. App and Preview explicitly start managed background services.
 - Inline JSON via `--ops`, `--set` and stdin `-` avoids shell-escaping
   traps by design (one Windows PowerShell caveat: section 11).
 - Charts and pivot tables are first-class ops: `update_chart` edits an
@@ -288,7 +292,7 @@ exiting 0 is not "done" — the first build is almost never right. The tiers:
 - **values** — `read` back every range you changed (golden rule 3);
 - **visual** — `render` + LOOK whenever anything visual changed or a human
   will open the file;
-- **semantic** — `info --detail errors` reports zero formula errors;
+- **semantic** — `cells inspect --detail errors` reports zero formula errors;
 - **session** — the backup diff (section 5) contains only intended changes.
 
 The full protocol with per-tier checklists: `aspose-cli docs verification`.

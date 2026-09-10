@@ -344,5 +344,5 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 A standards pass is only done when verified: `render` each changed sheet
 and look at the image, `read` back computed cells, and run
-`info --detail errors` for formula errors — the full loop is
+`cells inspect --detail errors` for formula errors — the full loop is
 `aspose-cli docs verification`.

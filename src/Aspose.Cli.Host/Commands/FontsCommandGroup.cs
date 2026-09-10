@@ -12,7 +12,7 @@ namespace Aspose.Cli.Host.Commands;
 /// drives rendering fidelity. <c>list</c> reports what the engine can see;
 /// <c>check &lt;file&gt;</c> routes by product and reports whether its fonts are available here and
 /// what they will be substituted with — the P-5 "renders wrong on the server"
-/// diagnostic that <c>info --detail fonts</c> cannot give.
+/// diagnostic that <c>cells inspect --detail fonts</c> cannot give.
 /// </summary>
 internal static class FontsCommandGroup
 {

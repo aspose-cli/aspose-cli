@@ -49,7 +49,7 @@ internal sealed class PdfProductionService
 
     /// <inheritdoc />
     internal PdfWriteResult Create(NewPdfRequest request) =>
-        PdfErrorTranslator.Execute("new", () => CreateCore(request));
+        PdfErrorTranslator.Execute("create", () => CreateCore(request));
 
     /// <inheritdoc />
     internal PdfWriteResult Merge(PdfMergeRequest request) =>

@@ -13,6 +13,6 @@
 
 ```powershell
 aspose-cli doctor --output json
-aspose-cli fonts check deck.pptx --product slides --output json
+aspose-cli fonts check deck.pptx --output json
 aspose-cli license status --output json
 ```

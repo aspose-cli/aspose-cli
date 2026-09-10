@@ -69,14 +69,25 @@ if (-not (Test-Path -LiteralPath $builtExecutable -PathType Leaf)) {
 }
 
 $failures = @()
+$runId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N')
+$resultsRoot = Join-Path $repoRoot "artifacts/TestResults/$runId"
 foreach ($project in $testProjects) {
+    $projectName = [IO.Path]::GetFileNameWithoutExtension($project)
+    $resultsDirectory = Join-Path $resultsRoot $projectName
+    $resultsFile = Join-Path $resultsDirectory 'results.trx'
     Write-Host "TEST $project"
     & dotnet test $project `
         --configuration $Configuration `
         --no-build `
         --no-restore `
-        --nologo
-    if ($LASTEXITCODE -ne 0) {
+        --nologo `
+        --logger 'trx;LogFileName=results.trx' `
+        --results-directory $resultsDirectory
+    $testExitCode = $LASTEXITCODE
+    if (-not (Test-Path -LiteralPath $resultsFile -PathType Leaf)) {
+        Write-Warning "Test project did not produce its TRX result: $resultsFile"
+    }
+    if ($testExitCode -ne 0 -or -not (Test-Path -LiteralPath $resultsFile -PathType Leaf)) {
         $failures += $project
     }
 }
@@ -86,3 +97,4 @@ if ($failures.Count -ne 0) {
 }
 
 Write-Host "PASS $($testProjects.Count) $($layout.Edition) test projects after one solution build."
+Write-Host "Test results: $resultsRoot"

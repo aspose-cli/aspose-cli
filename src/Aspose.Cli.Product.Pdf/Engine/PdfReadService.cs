@@ -34,11 +34,11 @@ internal sealed class PdfReadService
 
     /// <inheritdoc />
     internal PdfInfoResult GetInfo(string filePath, PdfInfoRequest request) =>
-        PdfErrorTranslator.Execute("info", () => GetInfoCore(filePath, request));
+        PdfErrorTranslator.Execute("inspect", () => GetInfoCore(filePath, request));
 
     /// <inheritdoc />
     internal PdfReadResult Read(string filePath, PdfReadRequest request) =>
-        PdfErrorTranslator.Execute("read", () => ReadCore(filePath, request));
+        PdfErrorTranslator.Execute("query pages", () => ReadCore(filePath, request));
 
     /// <inheritdoc />
     internal PdfConvertResult Convert(string filePath, PdfConvertRequest request) =>

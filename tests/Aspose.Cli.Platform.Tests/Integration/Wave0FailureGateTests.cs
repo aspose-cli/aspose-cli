@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json;
 using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.TestKit;
@@ -69,7 +68,7 @@ public sealed class Wave0FailureGateTests
             "aspose-unsigned-installer-" + Guid.NewGuid().ToString("N"));
         try
         {
-            ProcessResult result = RunPowerShell(
+            CliResult result = RunPowerShell(
                 [
                     "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                     "-File", Path.Combine(RepositoryPaths.Root, "install.ps1"),
@@ -101,40 +100,37 @@ public sealed class Wave0FailureGateTests
             RepositoryPaths.Root,
             "artifacts",
             "publish",
-            "free",
             "wave0-unowned-" + Guid.NewGuid().ToString("N"));
         string output = Path.Combine(parent, "win-x64");
         string sentinel = Path.Combine(output, "customer-owned.txt");
-        string shimRoot = Directory.CreateTempSubdirectory("aspose-dotnet-shim-").FullName;
-        string shim = Path.Combine(shimRoot, "dotnet.cmd");
         Directory.CreateDirectory(output);
         File.WriteAllText(sentinel, "must survive", System.Text.Encoding.UTF8);
-        File.WriteAllText(shim, "@echo off\r\nexit /b 0\r\n", System.Text.Encoding.ASCII);
+        string[] before = Directory.GetFileSystemEntries(parent, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal).ToArray();
 
         try
         {
-            ProcessResult result = RunPowerShell(
+            CliResult result = RunPowerShell(
                 [
                     "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                     "-File", Path.Combine(RepositoryPaths.Root, "scripts", "publish.ps1"),
-                    "-Edition", "Free",
                     "-Configuration", "Release",
                     "-RuntimeIdentifier", "win-x64",
                     "-OutputRoot", output,
                 ],
-                new Dictionary<string, string?>
-                {
-                    ["Path"] = shimRoot + ";" + Environment.GetEnvironmentVariable("Path"),
-                });
+                new Dictionary<string, string?>(),
+                developmentShell: true);
 
             Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains("exists without its ownership marker", result.StdErr, StringComparison.Ordinal);
+            Assert.DoesNotContain("NamedParameterNotFound", result.StdErr, StringComparison.Ordinal);
+            Assert.False(File.Exists(output + ".aspose-owner.json"));
+            Assert.Equal(before, Directory.GetFileSystemEntries(parent, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal));
             Assert.True(File.Exists(sentinel), result.StdOut + result.StdErr);
             Assert.Equal("must survive", File.ReadAllText(sentinel));
         }
         finally
         {
             DeleteDirectory(parent);
-            DeleteDirectory(shimRoot);
         }
     }
 
@@ -158,33 +154,22 @@ public sealed class Wave0FailureGateTests
         }
     }
 
-    private static ProcessResult RunPowerShell(
+    private static CliResult RunPowerShell(
         IReadOnlyList<string> arguments,
-        IReadOnlyDictionary<string, string?> environment)
+        IReadOnlyDictionary<string, string?> environment,
+        bool developmentShell = false)
     {
-        var start = new ProcessStartInfo("powershell.exe")
-        {
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-            ErrorDialog = false,
-        };
-        foreach (string argument in arguments)
-        {
-            start.ArgumentList.Add(argument);
-        }
-        foreach ((string name, string? value) in environment)
-        {
-            start.Environment[name] = value;
-        }
-
-        using Process process = Process.Start(start)
-            ?? throw new InvalidOperationException("Could not start PowerShell.");
-        string stdout = process.StandardOutput.ReadToEnd();
-        string stderr = process.StandardError.ReadToEnd();
-        Assert.True(process.WaitForExit(120_000), "PowerShell release gate timed out.");
-        return new(process.ExitCode, stdout, stderr);
+        string executable = developmentShell
+            ? (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)
+                .Where(static directory => !string.IsNullOrWhiteSpace(directory))
+                .Select(static directory => Path.Combine(directory, "pwsh.exe"))
+                .First(File.Exists)
+            : Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
+        using var workspace = new TempWorkspace();
+        return new CliProcess(
+            executable,
+            CliEnvironment.Evaluation(workspace.Path, environment),
+            TimeSpan.FromSeconds(120)).Run(workspace.Path, [.. arguments]);
     }
 
     private static void DeleteDirectory(string path)
@@ -194,6 +179,4 @@ public sealed class Wave0FailureGateTests
             Directory.Delete(path, recursive: true);
         }
     }
-
-    private sealed record ProcessResult(int ExitCode, string StdOut, string StdErr);
 }

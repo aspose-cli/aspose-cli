@@ -500,5 +500,5 @@ Self-grade against this checklist while looking at the PNGs:
 The render mechanics — DPI floors, the strict `--range` view that exposes
 truncation a full-sheet render hides, `--all-sheets` — are Tier 2 of
 `aspose-cli docs verification`; this checklist is the design bar layered on top
-of those tiers, not a replacement. `info --detail errors` must report zero
+of those tiers, not a replacement. `cells inspect --detail errors` must report zero
 formula errors before anything ships.

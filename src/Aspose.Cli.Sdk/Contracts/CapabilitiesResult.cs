@@ -71,7 +71,7 @@ public sealed record ProductCapabilities
     /// <summary>Product id as used on the command line, e.g. <c>cells</c>.</summary>
     public required string Id { get; init; }
 
-    /// <summary>Available verbs, e.g. <c>info</c>, <c>convert</c>.</summary>
+    /// <summary>Available verbs, e.g. <c>inspect</c>, <c>convert</c>.</summary>
     public IReadOnlyList<string> Verbs { get; init; } = [];
 
     /// <summary>Format ids accepted by <c>convert --to</c>.</summary>

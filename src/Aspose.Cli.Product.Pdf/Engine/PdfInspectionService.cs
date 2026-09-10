@@ -37,7 +37,7 @@ internal sealed class PdfInspectionService
     }
 
     public PdfSearchResult Search(string filePath, PdfSearchRequest request) =>
-        PdfErrorTranslator.Execute("search", () => SearchCore(filePath, request));
+        PdfErrorTranslator.Execute("query search", () => SearchCore(filePath, request));
 
     /// <inheritdoc />
     public PdfValidateResult Validate(string filePath, PdfValidateRequest request) =>

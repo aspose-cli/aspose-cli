@@ -18,7 +18,7 @@ internal static class FontOps
     };
 
     /// <summary>The distinct font names a workbook uses, sorted — the input to
-    /// both <c>info --detail fonts</c> and the <c>fonts check</c> diagnostic.</summary>
+    /// both <c>cells inspect --detail fonts</c> and the <c>fonts check</c> diagnostic.</summary>
     public static IReadOnlyList<string> UsedFonts(Workbook workbook) =>
         workbook.GetFonts()
             .Select(font => font.Name)

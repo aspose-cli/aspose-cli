@@ -1,8 +1,10 @@
 # Aspose CLI
 
 Open-source, local-first automation for spreadsheets, PDFs, presentations and Word documents.
-`aspose-cli` provides a CLI, a loopback browser workspace and a read-only MCP endpoint.
-Document content stays local.
+`aspose-cli` provides a CLI, a loopback browser workspace and a local MCP endpoint.
+Document processing runs on your machine. Cells HTML input can currently cause the SDK to
+request linked resources, including network URLs, even during inspection. Use trusted
+HTML inputs; fully offline resource loading is not yet enforced.
 
 The CLI source is Apache-2.0. Commercial Aspose SDK dependencies have their own licensing terms. Licensed and SDK evaluation behavior are supported; evaluation output is disclosed.
 
@@ -15,7 +17,7 @@ It has no source, project or package dependency on another CLI project.
 aspose-cli capabilities --output json
 aspose-cli doctor --output json
 aspose-cli skill list
-aspose-cli docs cells/commands
+aspose-cli docs cells/editing
 aspose-cli skill install aspose-cli-cells --host codex --scope project
 ```
 
@@ -39,6 +41,8 @@ eng/products.json is the only product roster. eng/distribution.json owns the fix
 sync.ps1 regenerates projections and the solution and refreshes lock files. Normal tests and publishes use locked restore.
 All source and build inputs must remain inside this project; it also builds from a standalone checkout.
 Outputs are ignored under artifacts/ and project-local bin/obj directories.
+Each test run writes per-project TRX results to `artifacts/TestResults/<run-id>/<project>/results.trx`;
+CI retains these results even when tests fail.
 
 ## Install a released build
 
@@ -76,6 +80,9 @@ aspose-cli mcp serve
 App and Preview use loopback URLs reusable during their lifetime. Host, same-origin, CSRF,
 current-user lifecycle controls and bounded uploads remain enforced.
 The MCP registration is named `aspose-cli` and points to the matching installed executable.
+Its `capabilities` tool is read-only. Its `execute` tool runs bounded, allowlisted
+product commands, including document writes; host installation, update, licensing and
+service lifecycle mutations are unavailable through it.
 Two CLI processes still coordinate document publication through neutral operating-system locks.
 
 ## File and output contracts

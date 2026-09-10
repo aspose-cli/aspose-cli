@@ -211,7 +211,7 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output json
 [ ] Visual: rendered to PNG and actually looked, if anything visual
     changed or a human will open the file — no clipping, no overlap,
     charts plausible, layout intact
-[ ] Semantic: info --detail errors -> workbook.formulaErrors is empty
+[ ] Semantic: cells inspect --detail errors -> workbook.formulaErrors is empty
 [ ] Placeholders: search finds no TBD / TODO / {{...}} / xxx
 [ ] Session diff: only intended changes; summary reported to the user
 [ ] Evaluation mode: watermark disclosed to the user (EVAL_MODE warning)

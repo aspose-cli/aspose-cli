@@ -157,7 +157,7 @@ The summary NPV moved 301.27 → 320.98, and back when B10 returned to
 `Base` — full precision against independent calculation. Caveat: validation constrains
 humans in Excel, not programmatic writes; a typo'd scenario value lands
 silently and turns MATCH into `#N/A` across every dependent cell — the
-`info --detail errors` gate catches it.
+`cells inspect --detail errors` gate catches it.
 
 ### Restore the base scenario after a sweep
 

@@ -75,7 +75,7 @@ public sealed record DecryptPdfOp : PdfOp { public override string OpName => "de
 public sealed record OptimizePdfOp : PdfOp { public override string OpName => "optimize"; public int? DownsampleImagesDpi { get; init; } public int? ImageQuality { get; init; } public bool UnembedFonts { get; init; } public bool RemoveUnusedObjects { get; init; } = true; public bool CompressStreams { get; init; } = true; }
 public sealed record LinearizePdfOp : PdfOp { public override string OpName => "linearize"; }
 
-/// <summary>Frozen PDF v1 operation registry.</summary>
+/// <summary>Current PDF operation registry.</summary>
 public static class PdfOps
 {
     public static IReadOnlyDictionary<string, Type> Registry { get; } =

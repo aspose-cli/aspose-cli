@@ -146,8 +146,6 @@ internal static class CommandGrammar
             {
                 "--to" when verb == "render" => product.RenderFormats,
                 "--to" => product.ConvertFormats,
-                "--format" when verb is "new" or "generate" or "recognize" =>
-                    product.ConvertFormats,
                 "--view" when verb == "preview" => product.Preview?.Views,
                 _ => null,
             };

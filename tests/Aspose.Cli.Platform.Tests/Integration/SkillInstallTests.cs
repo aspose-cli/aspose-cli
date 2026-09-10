@@ -34,15 +34,7 @@ public sealed class SkillInstallTests : IDisposable
     [Fact]
     public void BundledSkillResources_AreCompleteLinkedDocumentedAndUseKnownCommands()
     {
-        CliResult capabilitiesResult = _workspace.Run(
-            "capabilities", "--output", "json");
-        Assert.Equal(0, capabilitiesResult.ExitCode);
-        string[] commandPaths = Parse(capabilitiesResult.StdOut)["commands"]!
-            .AsArray()
-            .Select(static command => command!["path"]!.GetValue<string>())
-            .Where(static path => path.Contains(' '))
-            .OrderByDescending(static path => path.Length)
-            .ToArray();
+        DocumentationCommandValidator commands = DocumentationCommandValidator.Read(_workspace);
 
         CliResult listed = _workspace.Run("skill", "list", "--output", "json");
         Assert.Equal(0, listed.ExitCode);
@@ -75,7 +67,7 @@ public sealed class SkillInstallTests : IDisposable
             {
                 string content = File.ReadAllText(markdown);
                 AssertLocalLinksResolve(root, markdown, content);
-                AssertDocumentedCommandsExist(markdown, content, commandPaths);
+                commands.AssertMarkdown(markdown, content);
 
                 string? topic = DocsTopic(skill, root, markdown);
                 if (topic is null)
@@ -322,27 +314,6 @@ public sealed class SkillInstallTests : IDisposable
             Assert.True(
                 File.Exists(resolved) || Directory.Exists(resolved),
                 $"Broken Skill link: {markdown} -> {target}");
-        }
-    }
-
-    private static void AssertDocumentedCommandsExist(
-        string markdown,
-        string content,
-        IReadOnlyList<string> commandPaths)
-    {
-        foreach (string line in NormalizeNewLines(content).Split('\n'))
-        {
-            string command = line.Trim();
-            if (!command.StartsWith("aspose-cli ", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            Assert.True(
-                commandPaths.Any(path =>
-                    string.Equals(command, path, StringComparison.Ordinal)
-                    || command.StartsWith(path + " ", StringComparison.Ordinal)),
-                $"Skill documents a command path absent from capabilities: {markdown}: {command}");
         }
     }
 

@@ -15,7 +15,6 @@ internal static class ProductInputAdmission
         new(StringComparer.Ordinal)
         {
             "--out",
-            "-o",
             "--out-dir",
             "--output-dir",
             "--backup",
@@ -35,27 +34,12 @@ internal static class ProductInputAdmission
         string workDirectory = globals.WorkDir is null
             ? Directory.GetCurrentDirectory()
             : Path.GetFullPath(globals.WorkDir);
-        IReadOnlyList<Token> tokens = parseResult.Tokens;
-        bool firstPositionalIsOutput = string.Equals(
-            parseResult.CommandResult.Command.Name,
-            "new",
-            StringComparison.Ordinal);
-        int positionalIndex = 0;
-        for (int index = 0; index < tokens.Count; index++)
+        foreach (Token token in InputTokens(parseResult.RootCommandResult))
         {
-            Token token = tokens[index];
             if (token.Type != TokenType.Argument
                 || string.IsNullOrWhiteSpace(token.Value)
                 || token.Value == "-"
-                || IsInlineDocument(token.Value)
-                || IsOutputValue(tokens, index))
-            {
-                continue;
-            }
-
-            if (firstPositionalIsOutput
-                && !IsOutputValue(tokens, index)
-                && positionalIndex++ == 0)
+                || IsInlineDocument(token.Value))
             {
                 continue;
             }
@@ -80,15 +64,41 @@ internal static class ProductInputAdmission
         }
     }
 
-    private static bool IsOutputValue(
-        IReadOnlyList<Token> tokens,
-        int index) =>
-        index > 0
-        && tokens[index - 1].Type == TokenType.Option
-        && OutputOptions.Contains(tokens[index - 1].Value);
+    private static IEnumerable<Token> InputTokens(CommandResult command)
+    {
+        foreach (SymbolResult child in command.Children)
+        {
+            if (child is CommandResult nested)
+            {
+                foreach (Token token in InputTokens(nested))
+                {
+                    yield return token;
+                }
+                continue;
+            }
+
+            if (child is OptionResult option && OutputOptions.Contains(option.Option.Name)
+                || child is ArgumentResult argument
+                    && command.Command.Name == "create"
+                    && ReferenceEquals(command.Command.Arguments.FirstOrDefault(), argument.Argument))
+            {
+                continue;
+            }
+
+            foreach (Token token in child.Tokens)
+            {
+                yield return token;
+            }
+        }
+    }
 
     private static bool IsInlineDocument(string value)
     {
+        // A Windows drive-qualified path is also a valid absolute URI.
+        if (Path.IsPathRooted(value))
+        {
+            return false;
+        }
         string trimmed = value.TrimStart();
         return trimmed.StartsWith('{')
             || trimmed.StartsWith('[')

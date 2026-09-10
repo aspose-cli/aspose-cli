@@ -34,7 +34,7 @@ internal sealed class WordsInspectionService
 
     /// <summary>Searches selected document scopes within the configured hit budget.</summary>
     internal WordsSearchResult Search(string filePath, WordsSearchRequest request) =>
-        WordsErrorTranslator.Execute("search", () => SearchCore(filePath, request));
+        WordsErrorTranslator.Execute("query search", () => SearchCore(filePath, request));
 
     private WordsCompareResult CompareCore(string leftPath, string rightPath, WordsCompareRequest request)
     {

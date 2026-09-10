@@ -6,7 +6,7 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// Result of <c>aspose-cli fonts check &lt;file&gt;</c>: whether the fonts a document uses
 /// are available on this machine and, if not, what they will be substituted
 /// with. This is the rendering-fidelity diagnostic (P-5) that
-/// <c>info --detail fonts</c> — which only lists the used fonts — cannot give.
+/// <c>cells inspect --detail fonts</c> — which only lists the used fonts — cannot give.
 /// </summary>
 public sealed record FontCheckResult() : ResultEnvelope(CommonSchemaIds.FontCheck, 2)
 {

@@ -206,7 +206,7 @@ internal static class PdfMutationSupport
         {
             throw new CliException(
                 PdfDiagnostics.FormXfaUnsupported,
-                "XFA forms are read-only in the PDF v1 command surface.",
+                "XFA forms are read-only in the current PDF command surface.",
                 hint: "Convert the XFA form to AcroForm before filling, flattening or exporting it.");
         }
     }
