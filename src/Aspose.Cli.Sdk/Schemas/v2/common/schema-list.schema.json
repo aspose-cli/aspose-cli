@@ -1,0 +1,45 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/schema-list.schema.json",
+  "title": "Aspose CLI schema list",
+  "description": "Result of `aspose-cli schema` without a schema id.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schema", "schemaVersion", "schemas"],
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/schema-list.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "schemas": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 },
+      "uniqueItems": true
+    },
+    "license": { "$ref": "#/$defs/licenseInfo" },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "minLength": 1 },
+          "message": { "type": "string", "minLength": 1 },
+          "hint": { "type": "string", "minLength": 1 },
+          "docs": { "type": "string", "minLength": 1 },
+          "location": { "type": "string", "minLength": 1 },
+          "affectsCompleteness": { "type": "boolean" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "licenseInfo": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["evaluation", "licensed", "not-applicable"] }
+      }
+    }
+  }
+}

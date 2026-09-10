@@ -1,0 +1,36 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <Import Project="..\..\eng\generated\ProductComposition.props" />
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <AssemblyName>$(AsposeCliCommandName)</AssemblyName>
+    <RootNamespace>Aspose.Cli</RootNamespace>
+    <Description>Commercial Aspose CLI composition executable.</Description>
+    <IsPackable>false</IsPackable>
+    <!-- Customer releases are RID-specific, self-contained artifacts. Keep this
+         list limited to platforms verified by every compiled product engine. -->
+    <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Aspose.Cli.Host\Aspose.Cli.Host.csproj" />
+    <ProjectReference Include="..\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
+    <ProjectReference
+      Include="..\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false"
+      GlobalPropertiesToRemove="$(AsposeCliAnalyzerGlobalPropertiesToRemove)" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <RuntimeHostConfigurationOption
+      Include="System.Drawing.EnableUnixSupport"
+      Value="true" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Aspose.Cli.Tests" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <Import Project="..\Aspose.Cli.Sdk\build\Aspose.Cli.Sdk.props" />
+  <PropertyGroup>
+    <Description>Autonomous Slides product module with contracts, commands, preview, resources and Aspose.Slides adapter.</Description>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspose.Slides.NET6.CrossPlatform" />
+  </ItemGroup>
+  <ItemGroup>
+    <InternalsVisibleTo Include="Aspose.Cli.Product.Slides.Tests" />
+  </ItemGroup>
+</Project>

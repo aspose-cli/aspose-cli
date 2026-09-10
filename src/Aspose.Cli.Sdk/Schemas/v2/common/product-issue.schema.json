@@ -1,0 +1,15 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/product-issue.schema.json",
+  "title": "Product issue",
+  "description": "Product-neutral issue details; owning products add their own addresses beside this object.",
+  "type": "object",
+  "required": ["code", "severity", "message"],
+  "properties": {
+    "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+    "severity": { "enum": ["error", "warning", "info"] },
+    "message": { "type": "string", "minLength": 1 },
+    "hint": { "type": "string", "minLength": 1 }
+  },
+  "additionalProperties": false
+}

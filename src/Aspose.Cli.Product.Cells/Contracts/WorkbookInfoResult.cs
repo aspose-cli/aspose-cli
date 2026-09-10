@@ -1,0 +1,215 @@
+using System.Text.Json.Serialization;
+
+namespace Aspose.Cli.Product.Cells.Contracts;
+
+/// <summary>
+/// Result of <c>aspose-cli cells inspect</c>: a compact structural summary designed
+/// as the first step of the projection ladder (metadata before structure,
+/// structure before values). Never contains full cell data.
+/// </summary>
+public sealed record WorkbookInfoResult() : ResultEnvelope(CellsSchemaIds.WorkbookInfo, 2)
+{
+    /// <summary>Document kind discriminator; always <c>workbook</c> for cells.</summary>
+    [JsonPropertyOrder(-50)]
+    public string Kind { get; } = DocumentKinds.Workbook;
+
+    /// <summary>The inspected file.</summary>
+    [JsonPropertyOrder(-49)]
+    public required SourceInfo Source { get; init; }
+
+    /// <summary>Workbook-level summary.</summary>
+    public required WorkbookSummary Workbook { get; init; }
+}
+
+/// <summary>Well-known values of the <c>kind</c> discriminator.</summary>
+public static class DocumentKinds
+{
+    public const string Workbook = "workbook";
+}
+
+/// <summary>Structural summary of a workbook.</summary>
+public sealed record WorkbookSummary
+{
+    /// <summary>File name without directory, e.g. <c>report.xlsx</c>.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>Total number of worksheets, including hidden ones.</summary>
+    public required int SheetCount { get; init; }
+
+    /// <summary>Per-sheet summaries, in workbook order.</summary>
+    public required IReadOnlyList<SheetInfo> Sheets { get; init; }
+
+    /// <summary><c>true</c> when the workbook contains VBA macros.</summary>
+    public required bool HasVba { get; init; }
+
+    /// <summary>Number of defined names in the workbook.</summary>
+    public required int DefinedNameCount { get; init; }
+
+    /// <summary>Document author from built-in properties; omitted when empty.</summary>
+    public string? Author { get; init; }
+
+    /// <summary>Document title from built-in properties; omitted when empty.</summary>
+    public string? Title { get; init; }
+
+    /// <summary>Defined names; present only with <c>--detail names</c>.</summary>
+    public IReadOnlyList<DefinedNameInfo>? DefinedNames { get; init; }
+
+    /// <summary>Cells whose formula evaluates to an error; present only with <c>--detail errors</c>.</summary>
+    public IReadOnlyList<CellError>? FormulaErrors { get; init; }
+
+    /// <summary>Distinct font names used in the workbook; present only with <c>--detail fonts</c>.</summary>
+    public IReadOnlyList<string>? Fonts { get; init; }
+
+    /// <summary>Tables (list objects); present only with <c>--detail tables</c>.</summary>
+    public IReadOnlyList<TableInfo>? Tables { get; init; }
+
+    /// <summary>Charts; present only with <c>--detail charts</c>.</summary>
+    public IReadOnlyList<ChartInfo>? Charts { get; init; }
+
+    /// <summary>Pivot tables; present only with <c>--detail pivots</c>.</summary>
+    public IReadOnlyList<PivotInfo>? Pivots { get; init; }
+
+    /// <summary>Data validations; present only with <c>--detail validation</c>.</summary>
+    public IReadOnlyList<ValidationInfo>? Validations { get; init; }
+}
+
+/// <summary>A workbook-scoped defined name.</summary>
+public sealed record DefinedNameInfo
+{
+    /// <summary>The name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>What it refers to (a range or formula).</summary>
+    public required string RefersTo { get; init; }
+}
+
+/// <summary>A cell whose formula evaluates to an error — a delivery-time QA signal.</summary>
+public sealed record CellError
+{
+    /// <summary>Sheet the cell is on.</summary>
+    public required string Sheet { get; init; }
+
+    /// <summary>Cell address, e.g. <c>C7</c>.</summary>
+    public required string Cell { get; init; }
+
+    /// <summary>The error value, e.g. <c>#REF!</c>, <c>#DIV/0!</c>, <c>#VALUE!</c>.</summary>
+    public required string Error { get; init; }
+}
+
+/// <summary>A table (list object) in a workbook.</summary>
+public sealed record TableInfo
+{
+    /// <summary>Sheet the table is on.</summary>
+    public required string Sheet { get; init; }
+
+    /// <summary>The table's display name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>A1 range the table covers, e.g. <c>A1:D20</c>.</summary>
+    public required string Range { get; init; }
+}
+
+/// <summary>A chart in a workbook.</summary>
+public sealed record ChartInfo
+{
+    /// <summary>Sheet the chart is on.</summary>
+    public required string Sheet { get; init; }
+
+    /// <summary>The chart's name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>The chart type; omitted when unknown.</summary>
+    public string? Type { get; init; }
+}
+
+/// <summary>A pivot table in a workbook.</summary>
+public sealed record PivotInfo
+{
+    /// <summary>Sheet the pivot table is on.</summary>
+    public required string Sheet { get; init; }
+
+    /// <summary>The pivot table's name.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>A1 range the pivot report covers.</summary>
+    public required string Range { get; init; }
+}
+
+/// <summary>A data validation in a workbook.</summary>
+public sealed record ValidationInfo
+{
+    /// <summary>Sheet the validation is on.</summary>
+    public required string Sheet { get; init; }
+
+    /// <summary>A1 range the validation applies to.</summary>
+    public required string Range { get; init; }
+
+    /// <summary>The validation type, e.g. <c>List</c>, <c>WholeNumber</c>.</summary>
+    public required string Type { get; init; }
+}
+
+/// <summary>Accepted values of <c>cells inspect --detail</c>.</summary>
+public static class InfoDetails
+{
+    /// <summary>Defined names.</summary>
+    public const string Names = "names";
+
+    /// <summary>A formula-error scan (cells evaluating to #REF!, #DIV/0!, etc.).</summary>
+    public const string Errors = "errors";
+
+    /// <summary>The distinct fonts the workbook uses (a rendering-fidelity check).</summary>
+    public const string Fonts = "fonts";
+
+    /// <summary>Tables (list objects) in the workbook.</summary>
+    public const string Tables = "tables";
+
+    /// <summary>Charts in the workbook.</summary>
+    public const string Charts = "charts";
+
+    /// <summary>Pivot tables in the workbook.</summary>
+    public const string Pivots = "pivots";
+
+    /// <summary>Data validations in the workbook.</summary>
+    public const string Validation = "validation";
+
+    /// <summary>Every detail id, in documentation order.</summary>
+    public static IReadOnlyList<string> All { get; } = [Names, Errors, Fonts, Tables, Charts, Pivots, Validation];
+}
+
+/// <summary>Structural summary of one worksheet.</summary>
+public sealed record SheetInfo
+{
+    /// <summary>Sheet name, exactly as shown in Excel.</summary>
+    public required string Name { get; init; }
+
+    /// <summary>Zero-based position in the workbook.</summary>
+    public required int Index { get; init; }
+
+    /// <summary>
+    /// A1 range covering all cells that hold data (e.g. <c>A1:G120</c>);
+    /// omitted for empty sheets.
+    /// </summary>
+    public string? UsedRange { get; init; }
+
+    /// <summary>Number of data rows inside <see cref="UsedRange"/>.</summary>
+    public required int RowCount { get; init; }
+
+    /// <summary>Number of data columns inside <see cref="UsedRange"/>.</summary>
+    public required int ColumnCount { get; init; }
+
+    /// <summary><c>true</c> when the sheet is hidden.</summary>
+    public required bool Hidden { get; init; }
+
+    /// <summary>Number of charts on the sheet.</summary>
+    public required int ChartCount { get; init; }
+
+    /// <summary>Number of pivot tables on the sheet.</summary>
+    public required int PivotTableCount { get; init; }
+
+    /// <summary>
+    /// Optional sample of display values (first rows of the used range),
+    /// present only when <c>--preview</c> was requested. Row-major; a null
+    /// entry is an empty cell.
+    /// </summary>
+    public IReadOnlyList<IReadOnlyList<string?>>? Preview { get; init; }
+}

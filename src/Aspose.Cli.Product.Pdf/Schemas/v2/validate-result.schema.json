@@ -1,0 +1,18 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/validate-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "input", "profile", "valid", "issues", "truncated"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/validate-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "input": {
+      "type": "object", "required": ["path", "format", "sizeBytes"], "additionalProperties": false,
+      "properties": { "path": { "type": "string" }, "format": { "const": "pdf" }, "sizeBytes": { "type": "integer", "minimum": 0 } }
+    },
+    "profile": { "enum": ["pdfa-1b", "pdfa-2b", "pdfa-3b"] },
+    "valid": { "type": "boolean" }, "issues": { "type": "array", "items": { "type": "string" } },
+    "truncated": { "type": "boolean" }, "license": { "type": "object" }, "warnings": { "type": "array" }
+  }
+}

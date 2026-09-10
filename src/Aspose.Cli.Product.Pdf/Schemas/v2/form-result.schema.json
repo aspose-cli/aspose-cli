@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/form-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "input", "type", "readOnly", "fields"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/form-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "input": { "$ref": "#/$defs/source" },
+    "type": { "enum": ["none", "acro", "xfa"] },
+    "readOnly": { "type": "boolean" },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "type", "readOnly", "required"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" }, "type": { "type": "string" }, "value": { "type": "string" },
+          "options": { "type": "array", "items": { "type": "string" } },
+          "readOnly": { "type": "boolean" }, "required": { "type": "boolean" },
+          "page": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "license": { "type": "object" }, "warnings": { "type": "array" }
+  },
+  "$defs": {
+    "source": {
+      "type": "object", "required": ["path", "format", "sizeBytes"], "additionalProperties": false,
+      "properties": { "path": { "type": "string" }, "format": { "const": "pdf" }, "sizeBytes": { "type": "integer", "minimum": 0 } }
+    }
+  }
+}

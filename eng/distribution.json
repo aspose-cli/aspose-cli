@@ -1,0 +1,13 @@
+{
+  "schemaVersion": 1,
+  "id": "aspose-cli",
+  "commandName": "aspose-cli",
+  "displayName": "Aspose CLI",
+  "edition": "commercial",
+  "environmentVariablePrefix": "ASPOSE_CLI_",
+  "skillPrefix": "aspose-cli-",
+  "schemaBaseUri": "https://schemas.aspose.dev/aspose-cli/v2/",
+  "configurationDirectoryName": "aspose-cli",
+  "installDirectory": "Aspose/CLI",
+  "solutionName": "Aspose.CLI.slnx"
+}

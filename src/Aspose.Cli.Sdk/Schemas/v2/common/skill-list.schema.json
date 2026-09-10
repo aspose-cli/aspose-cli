@@ -1,0 +1,49 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/skill-list.schema.json",
+  "title": "Skill list",
+  "description": "Skills bundled with Aspose CLI.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "skills"],
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/skill-list.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "skills": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "description", "hosts"],
+        "properties": {
+          "name": { "type": "string" },
+          "description": { "type": "string" },
+          "hosts": { "type": "array", "items": { "type": "string" } }
+        }
+      }
+    },
+    "license": { "$ref": "#/$defs/licenseInfo" },
+    "warnings": { "$ref": "#/$defs/warnings" }
+  },
+  "$defs": {
+    "licenseInfo": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": { "mode": { "enum": ["evaluation", "licensed", "not-applicable"] } }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" },
+          "docs": { "type": "string" },
+          "location": { "type": "string", "minLength": 1 },
+          "affectsCompleteness": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

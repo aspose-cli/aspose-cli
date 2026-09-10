@@ -1,0 +1,459 @@
+using System.Globalization;
+using System.Net;
+using System.Text;
+using System.Text.Json.Nodes;
+using Aspose.Cli.Product.Slides.Contracts;
+using Aspose.Cli.Product.Slides.Engine.Mapping;
+using Aspose.Cli.Sdk.Addressing;
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Rendering;
+using Aspose.Cli.Sdk.Results;
+using Aspose.Slides;
+using Aspose.Slides.Charts;
+using Aspose.Slides.Export;
+using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
+
+namespace Aspose.Cli.Product.Slides.Engine;
+
+/// <summary>Owns conversion, rendering, creation, extraction, and preview output.</summary>
+internal sealed class SlidesProductionService
+{
+    private readonly ILicenseGate _licenseGate;
+    private readonly ResourceBudgetLedger _resourceBudgets;
+    private readonly SafeFileWriter _writer;
+    private readonly SlidesPresentationLoader _loader;
+
+    internal SlidesProductionService(
+        ILicenseGate licenseGate,
+        ResourceBudgetLedger resourceBudgets,
+        SafeFileWriter writer,
+        SlidesPresentationLoader loader)
+    {
+        _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
+        _resourceBudgets = resourceBudgets;
+        _writer = writer ?? throw new ArgumentNullException(nameof(writer));
+        _loader = loader;
+        SlidesFontCatalog.EnsureInitialized();
+    }
+
+    /// <inheritdoc />
+    internal SlidesConvertResult Convert(string filePath, PresentationConvertRequest request) =>
+        SlidesErrorTranslator.Execute("convert", () => ConvertCore(filePath, request));
+
+    /// <inheritdoc />
+    internal SlidesRenderResult Render(string filePath, PresentationRenderRequest request) =>
+        SlidesErrorTranslator.Execute("render", () => RenderCore(filePath, request));
+
+    /// <inheritdoc />
+    internal SlidesCreateResult Create(NewPresentationRequest request) =>
+        SlidesErrorTranslator.Execute("create", () => CreateCore(request));
+
+    /// <inheritdoc />
+    internal SlidesExtractResult Extract(string filePath, PresentationExtractRequest request) =>
+        SlidesErrorTranslator.Execute("extract", () => ExtractCore(filePath, request));
+
+    /// <inheritdoc />
+    internal PreviewRenderOutcome RenderPreview(
+        string filePath,
+        PresentationPreviewRequest request,
+        IPreviewArtifactSink artifacts) =>
+        SlidesErrorTranslator.Execute(
+            "preview",
+            () => RenderPreviewCore(filePath, request, artifacts));
+
+    private PreviewRenderOutcome RenderPreviewCore(
+        string filePath,
+        PresentationPreviewRequest request,
+        IPreviewArtifactSink artifacts)
+    {
+        ArgumentNullException.ThrowIfNull(artifacts);
+        _ = _licenseGate.EnsureApplied();
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        Presentation presentation = loaded.Presentation;
+
+        const int width = 960;
+        double ratio = presentation.SlideSize.Size.Height / presentation.SlideSize.Size.Width;
+        int height = Math.Max(1, (int)Math.Round(width * ratio, MidpointRounding.AwayFromZero));
+        float scale = (float)(width / presentation.SlideSize.Size.Width);
+        EnsureRasterBudget(
+            _resourceBudgets,
+            width,
+            height,
+            presentation.Slides.Count,
+            dpi: 96);
+        var thumbnails = new StringBuilder();
+        var stages = new StringBuilder();
+        for (int index = 0; index < presentation.Slides.Count; index++)
+        {
+            ISlide slide = presentation.Slides[index];
+            int number = index + 1;
+            string imageName = string.Create(CultureInfo.InvariantCulture, $"slide-{number:0000}.png");
+            using (IImage image = slide.GetImage(scale, scale))
+            {
+                artifacts.Write(
+                    imageName,
+                    stream => image.Save(stream, ImageFormat.Png));
+            }
+
+            string title = WebUtility.HtmlEncode(Title(slide) ?? $"Slide {number}");
+            string hidden = slide.Hidden ? " data-hidden=\"true\"" : string.Empty;
+            string selected = number == 1 ? " aria-current=\"true\"" : string.Empty;
+            thumbnails.Append("<button class=\"slides-thumb\" type=\"button\" data-slide=\"")
+                .Append(number.ToString(CultureInfo.InvariantCulture))
+                .Append('"').Append(selected).Append(hidden)
+                .Append("><span class=\"slides-thumb-number\">")
+                .Append(number.ToString(CultureInfo.InvariantCulture))
+                .Append("</span><img src=\"/asset/").Append(imageName)
+                .Append("\" alt=\"Thumbnail for ").Append(title)
+                .Append("\" width=\"240\" height=\"")
+                .Append((height / 4).ToString(CultureInfo.InvariantCulture))
+                .Append("\"><span class=\"slides-thumb-title\">").Append(title)
+                .Append("</span></button>");
+            stages.Append("<figure class=\"slides-snapshot-slide\" data-slide=\"")
+                .Append(number.ToString(CultureInfo.InvariantCulture)).Append('"')
+                .Append(number == 1 ? string.Empty : " hidden").Append(hidden)
+                .Append("><div class=\"slides-canvas\"><img src=\"/asset/")
+                .Append(imageName).Append("\" alt=\"").Append(title)
+                .Append("\" width=\"").Append(width.ToString(CultureInfo.InvariantCulture))
+                .Append("\" height=\"").Append(height.ToString(CultureInfo.InvariantCulture))
+                .Append("\"></div><figcaption>").Append(title)
+                .Append(slide.Hidden ? " · Hidden slide" : string.Empty)
+                .Append("</figcaption></figure>");
+        }
+
+        const string entry = "presentation.html";
+        string fileName = WebUtility.HtmlEncode(Path.GetFileName(filePath));
+        string count = presentation.Slides.Count.ToString(CultureInfo.InvariantCulture);
+        string html = "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\""
+            + " content=\"width=device-width,initial-scale=1\"><title>" + fileName + "</title></head>"
+            + "<body><main class=\"slides-snapshot\" data-slide-count=\"" + count + "\">"
+            + "<aside class=\"slides-snapshot-thumbnails\" aria-label=\"Slide thumbnails\">"
+            + thumbnails + "</aside><section class=\"slides-snapshot-stage\" aria-label=\"Presentation slides\">"
+            + stages + "</section></main></body></html>";
+        artifacts.WriteText(entry, html);
+        return new PreviewRenderOutcome(entry, loaded.FormatId, new FileInfo(filePath).Length);
+    }
+
+    private SlidesConvertResult ConvertCore(string filePath, PresentationConvertRequest request)
+    {
+        LicenseState state = _licenseGate.EnsureApplied();
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        EnsureEncryptionSupported(request.EncryptPassword, request.TargetFormatId);
+        IReadOnlyList<int>? slides = request.Slides is null
+            ? null
+            : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
+        IReadOnlyList<OutputInfo> outputs = ConvertOutputs(loaded.Presentation, request, slides);
+        List<Warning> warnings = BuildConvertWarnings(state, loaded.Presentation, request.TargetFormatId);
+        return new SlidesConvertResult
+        {
+            Input = Source(filePath, loaded.FormatId),
+            Outputs = outputs,
+            Slides = request.Slides?.Text,
+            License = EnvelopeParts.License(state),
+            Warnings = warnings.Count == 0 ? null : warnings,
+        };
+    }
+
+    private IReadOnlyList<OutputInfo> ConvertOutputs(
+        Presentation presentation,
+        PresentationConvertRequest request,
+        IReadOnlyList<int>? slides)
+    {
+        if (request.TargetFormatId is "png" or "jpeg" or "svg")
+        {
+            IReadOnlyList<int> selected = slides
+                ?? Enumerable.Range(1, presentation.Slides.Count).ToArray();
+            string directory = Path.GetDirectoryName(request.OutputPath)!;
+            using var transaction = new AtomicOutputSetWriter(_writer, directory, "slides-convert");
+            var paths = new List<string>(selected.Count);
+            foreach (int number in selected)
+            {
+                string path = selected.Count == 1
+                    ? request.OutputPath
+                    : SlidePath(request.OutputPath, number);
+                paths.Add(path);
+                ISlide slide = presentation.Slides[number - 1];
+                transaction.Stage(path, request.Overwrite, temp =>
+                {
+                    if (request.TargetFormatId == "svg")
+                    {
+                        using FileStream stream = File.Create(temp);
+                        slide.WriteAsSvg(stream);
+                        return;
+                    }
+
+                    using IImage image = slide.GetImage();
+                    image.Save(
+                        temp,
+                        request.TargetFormatId == "png" ? ImageFormat.Png : ImageFormat.Jpeg,
+                        quality: 90);
+                });
+            }
+
+            IReadOnlyList<long> sizes = transaction.Commit();
+            return paths.Select((path, index) => new OutputInfo
+            {
+                Path = path,
+                Format = request.TargetFormatId,
+                SizeBytes = sizes[index],
+            }).ToArray();
+        }
+        else
+        {
+            SaveFormat format = SaveFormatFor(request.TargetFormatId);
+            long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+            {
+                if (slides is null)
+                {
+                    Encrypt(presentation, request.EncryptPassword);
+                    presentation.Save(temp, format);
+                    return;
+                }
+
+                if (format is SaveFormat.Pdf or SaveFormat.Xps or SaveFormat.Html
+                    or SaveFormat.Html5 or SaveFormat.Tiff or SaveFormat.Gif)
+                {
+                    presentation.Save(temp, slides.ToArray(), format);
+                    return;
+                }
+
+                using Presentation selected = SelectSlides(presentation, slides);
+                Encrypt(selected, request.EncryptPassword);
+                selected.Save(temp, format);
+            });
+            return
+            [
+                new OutputInfo
+                {
+                    Path = request.OutputPath,
+                    Format = request.TargetFormatId,
+                    SizeBytes = size,
+                },
+            ];
+        }
+    }
+
+    private static List<Warning> BuildConvertWarnings(
+        LicenseState state,
+        Presentation presentation,
+        string targetFormatId)
+    {
+        var warnings = new List<Warning>();
+        if (state == LicenseState.Evaluation)
+        {
+            warnings.Add(EnvelopeParts.EvaluationWatermark);
+        }
+
+        if (state == LicenseState.Evaluation && EvaluationInputTruncated(presentation))
+        {
+            warnings.Add(EvaluationInputWarning);
+        }
+
+        if (targetFormatId is "html" or "html5" or "md")
+        {
+            warnings.Add(new Warning
+            {
+                Code = WarningCodes.LossyConversion,
+                Message = $"Slides conversion to {targetFormatId} may not preserve every presentation feature.",
+                Hint = "Keep the source deck and inspect the produced file for layout, animation and interactive-media changes.",
+            });
+        }
+
+        return warnings;
+    }
+
+    private SlidesRenderResult RenderCore(string filePath, PresentationRenderRequest request)
+    {
+        LicenseState state = _licenseGate.EnsureApplied();
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        IReadOnlyList<int> slides = request.AllSlides
+            ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
+            : request.Slides is null
+                ? [1]
+                : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
+        float scale = RenderScale(loaded.Presentation, request);
+        if (request.TargetFormatId != "svg")
+        {
+            long width = (long)Math.Ceiling(loaded.Presentation.SlideSize.Size.Width * scale);
+            long height = (long)Math.Ceiling(loaded.Presentation.SlideSize.Size.Height * scale);
+            EnsureRasterBudget(
+                _resourceBudgets,
+                width,
+                height,
+                slides.Count,
+                request.Width is null ? request.Dpi ?? 192 : null);
+        }
+
+        string directory = Path.GetDirectoryName(request.OutputPath)!;
+        using var transaction = new AtomicOutputSetWriter(_writer, directory, "slides-render");
+        var targets = new List<(int Number, uint SlideId, string Path)>(slides.Count);
+        foreach (int number in slides)
+        {
+            ISlide slide = loaded.Presentation.Slides[number - 1];
+            string path = slides.Count == 1
+                ? request.OutputPath
+                : SlidePath(request.OutputPath, number);
+            targets.Add((number, slide.SlideId, path));
+            transaction.Stage(path, request.Overwrite, temp =>
+            {
+                if (request.TargetFormatId == "svg")
+                {
+                    using FileStream stream = File.Create(temp);
+                    slide.WriteAsSvg(stream);
+                    return;
+                }
+
+                using IImage image = slide.GetImage(scale, scale);
+                image.Save(
+                    temp,
+                    request.TargetFormatId == "png" ? ImageFormat.Png : ImageFormat.Jpeg,
+                    quality: 92);
+            });
+        }
+
+        IReadOnlyList<long> sizes = transaction.Commit();
+        return new SlidesRenderResult
+        {
+            Input = Source(filePath, loaded.FormatId),
+            Outputs = targets.Select((target, index) => new SlideRenderOutput
+            {
+                Slide = target.Number,
+                SlideId = target.SlideId,
+                Output = new OutputInfo
+                {
+                    Path = target.Path,
+                    Format = request.TargetFormatId,
+                    SizeBytes = sizes[index],
+                },
+            }).ToArray(),
+            Dpi = request.TargetFormatId == "svg" || request.Width is not null
+                ? null
+                : request.Dpi ?? 192,
+            Width = request.TargetFormatId == "svg" ? null : request.Width,
+            License = EnvelopeParts.License(state),
+            Warnings = OutputWarnings(state, loaded.Presentation),
+        };
+    }
+
+    private SlidesCreateResult CreateCore(NewPresentationRequest request)
+    {
+        LicenseState state = _licenseGate.EnsureApplied();
+        string format = Path.GetExtension(request.OutputPath).TrimStart('.').ToLowerInvariant();
+        if (!SlidesFormats.WriteIds.Contains(format, StringComparer.Ordinal))
+        {
+            throw Sdk.Errors.CliErrors.FormatUnsupported(format, SlidesFormats.WriteIds);
+        }
+
+        using LoadedPresentation? template = request.TemplatePath is null
+            ? null
+            : _loader.Open(request.TemplatePath, password: null);
+        using Presentation? blank = template is null ? new Presentation() : null;
+        Presentation presentation = template?.Presentation ?? blank!;
+        ApplySlideSize(presentation, request.Size);
+        if (request.MarkdownPath is not null)
+        {
+            SlidesMarkdownBuilder.Build(
+                _resourceBudgets,
+                presentation,
+                request.MarkdownPath);
+        }
+        else if (template is null)
+        {
+            presentation.Slides[0].Shapes.Clear();
+        }
+
+        Encrypt(presentation, request.EncryptPassword);
+        long size = _writer.Write(
+            request.OutputPath,
+            request.Overwrite,
+            temp => presentation.Save(temp, SaveFormatFor(format)));
+        return new SlidesCreateResult
+        {
+            Output = new OutputInfo
+            {
+                Path = request.OutputPath,
+                Format = format,
+                SizeBytes = size,
+            },
+            Slides = presentation.Slides.Count,
+            Template = request.TemplatePath is null
+                ? null
+                : Source(request.TemplatePath, template!.FormatId),
+            Markdown = request.MarkdownPath is null
+                ? null
+                : new SourceInfo
+                {
+                    Path = request.MarkdownPath,
+                    Format = "md",
+                    SizeBytes = new FileInfo(request.MarkdownPath).Length,
+                },
+            License = EnvelopeParts.License(state),
+            Warnings = OutputWarnings(state, template?.Presentation),
+        };
+    }
+
+    private SlidesExtractResult ExtractCore(string filePath, PresentationExtractRequest request)
+    {
+        LicenseState state = _licenseGate.EnsureApplied();
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        IReadOnlyList<int> slides = request.Slides is null
+            ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
+            : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
+        using var transaction = new AtomicOutputSetWriter(_writer, request.OutputDirectory, "slides-extract");
+        var items = new List<(string Path, string Kind, int? Slide, uint? SlideId, int? Index, string? Name, string? ContentType)>();
+
+        if (request.What == PresentationExtractKinds.Media)
+        {
+            StageMedia(loaded.Presentation, request, transaction, items);
+        }
+        else
+        {
+            foreach (int number in slides)
+            {
+                ISlide slide = loaded.Presentation.Slides[number - 1];
+                string? text = request.What == PresentationExtractKinds.Notes
+                    ? Notes(slide)
+                    : string.Join(
+                        Environment.NewLine,
+                        slide.Shapes.Select(ShapeText).Where(static value => value is not null));
+                if (string.IsNullOrWhiteSpace(text))
+                {
+                    continue;
+                }
+
+                string suffix = request.What == PresentationExtractKinds.Notes ? "notes" : "text";
+                string path = Path.Combine(request.OutputDirectory, $"slide.s{number}.{suffix}.txt");
+                transaction.Stage(
+                    path,
+                    request.Overwrite,
+                    temp => File.WriteAllText(temp, text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)));
+                items.Add((path, suffix, number, slide.SlideId, null, slide.Name, "text/plain"));
+            }
+        }
+
+        IReadOnlyList<long> sizes = transaction.Commit();
+        return new SlidesExtractResult
+        {
+            Input = Source(filePath, loaded.FormatId),
+            What = request.What,
+            Items = items.Select((item, index) => new SlidesExtractedItem
+            {
+                Path = item.Path,
+                Kind = item.Kind,
+                SizeBytes = sizes[index],
+                Slide = item.Slide,
+                SlideId = item.SlideId,
+                Index = item.Index,
+                Name = EmptyToNull(item.Name),
+                ContentType = item.ContentType,
+            }).ToArray(),
+            License = EnvelopeParts.License(state),
+            Warnings = OutputWarnings(state, loaded.Presentation),
+        };
+    }
+
+}

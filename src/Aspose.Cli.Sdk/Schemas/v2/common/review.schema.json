@@ -1,0 +1,140 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/review.schema.json",
+  "title": "Static product review evidence",
+  "description": "Result of `aspose-cli review <file>` and the review.json manifest written into the new evidence directory.",
+  "type": "object",
+  "required": [
+    "schema",
+    "schemaVersion",
+    "product",
+    "input",
+    "outputDirectory",
+    "index",
+    "manifest",
+    "view",
+    "sourceFormat",
+    "sourceSizeBytes",
+    "visualInspectionRequired",
+    "coverage",
+    "artifacts",
+    "findings"
+  ],
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/review.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "product": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+    "input": { "type": "string" },
+    "outputDirectory": { "type": "string" },
+    "index": { "type": "string" },
+    "manifest": { "type": "string" },
+    "view": { "type": "string", "minLength": 1 },
+    "sourceFormat": { "type": "string", "minLength": 1 },
+    "sourceSizeBytes": { "type": "integer", "minimum": 0 },
+    "visualInspectionRequired": { "type": "boolean" },
+    "coverage": {
+      "type": "object",
+      "required": [
+        "maxItems",
+        "discoveredItems",
+        "reportedItems",
+        "truncated",
+        "expectedItems",
+        "renderedItems",
+        "omittedItems",
+        "complete",
+        "metrics"
+      ],
+      "properties": {
+        "maxItems": { "type": "integer", "minimum": 1 },
+        "discoveredItems": { "type": "integer", "minimum": 0 },
+        "reportedItems": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" },
+        "expectedItems": { "type": "integer", "minimum": 0 },
+        "renderedItems": { "type": "integer", "minimum": 0 },
+        "omittedItems": { "type": "integer", "minimum": 0 },
+        "complete": { "type": "boolean" },
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["name", "value"],
+            "properties": {
+              "name": { "type": "string", "pattern": "^[a-z][A-Za-z0-9.-]*$" },
+              "value": { "type": "integer", "minimum": 0 },
+              "unit": { "type": "string", "minLength": 1 }
+            },
+            "additionalProperties": false
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "findings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "severity", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "severity": { "enum": ["info", "warning", "error"] },
+          "message": { "type": "string", "minLength": 1 },
+          "location": { "type": "string", "minLength": 1 },
+          "hint": { "type": "string", "minLength": 1 },
+          "evidence": {
+            "type": "array",
+            "minItems": 1,
+            "uniqueItems": true,
+            "items": { "type": "string", "pattern": "^artifacts/.+" }
+          }
+        },
+        "additionalProperties": false
+      }
+    },
+    "artifacts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sequence", "path", "role", "mediaType"],
+        "properties": {
+          "sequence": { "type": "integer", "minimum": 0 },
+          "path": { "type": "string", "pattern": "^(index\\.html|review\\.json|artifacts/.+)$" },
+          "role": { "enum": ["index", "manifest", "evidence", "entry"] },
+          "mediaType": { "type": "string", "minLength": 1 },
+          "scope": { "type": "string", "minLength": 1 },
+          "label": { "type": "string", "minLength": 1 },
+          "width": { "type": "integer", "minimum": 1 },
+          "height": { "type": "integer", "minimum": 1 }
+        },
+        "additionalProperties": false
+      }
+    },
+    "license": { "$ref": "#/$defs/licenseInfo" },
+    "warnings": { "$ref": "#/$defs/warnings" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "licenseInfo": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": { "mode": { "enum": ["evaluation", "licensed", "not-applicable"] } },
+      "additionalProperties": false
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" },
+          "docs": { "type": "string" },
+          "location": { "type": "string", "minLength": 1 },
+          "affectsCompleteness": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

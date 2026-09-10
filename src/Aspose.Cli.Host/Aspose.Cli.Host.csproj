@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <AssemblyName>Aspose.Cli.Host</AssemblyName>
+    <RootNamespace>Aspose.Cli.Host</RootNamespace>
+    <Description>
+      Shared Aspose CLI host: command-line surface, output
+      rendering, App and Preview lifecycle, and explicit composition root.
+    </Description>
+    <IsPackable>false</IsPackable>
+    <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="ModelContextProtocol" />
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- The renderer-coverage drift test constructs the internal TableOutputWriter. -->
+    <InternalsVisibleTo Include="Aspose.Cli.Platform.Tests" />
+  </ItemGroup>
+
+  <ItemGroup Label="Embedded local Web App">
+    <EmbeddedResource Include="App\assets\app.html" LogicalName="app/app.html" />
+    <EmbeddedResource Include="App\assets\app.css" LogicalName="app/app.css" />
+    <EmbeddedResource Include="App\assets\app.js" LogicalName="app/app.js" />
+    <EmbeddedResource
+      Include="Preview\live-runtime.js"
+      LogicalName="preview/live-runtime.js" />
+  </ItemGroup>
+
+</Project>

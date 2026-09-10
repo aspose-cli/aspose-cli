@@ -1,0 +1,261 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/app-status.schema.json",
+  "title": "Aspose CLI App status",
+  "description": "Deterministic, edition-aware state consumed by the loopback-only browser workspace.",
+  "type": "object",
+  "required": [
+    "schema",
+    "schemaVersion",
+    "version",
+    "edition",
+    "editionName",
+    "experience",
+    "route",
+    "onboardingCompleted",
+    "product",
+    "defaultView",
+    "availableViews",
+    "previewViews",
+    "supportedExtensions",
+    "skills",
+    "rememberRecentFiles",
+    "license",
+    "uploadedCopy",
+    "recentFiles",
+    "diagnostics",
+    "products"
+  ],
+  "properties": {
+    "schema": {
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/common/app-status.schema.json"
+    },
+    "schemaVersion": { "const": 2 },
+    "version": { "type": "string" },
+    "edition": { "type": "string", "minLength": 1 },
+    "editionName": { "type": "string", "minLength": 1 },
+    "experience": {
+      "enum": ["license-free", "licensed"]
+    },
+    "route": { "type": "string", "minLength": 1 },
+    "onboardingCompleted": { "type": "boolean" },
+    "product": { "type": "string", "minLength": 1 },
+    "defaultView": { "type": "string", "minLength": 1 },
+    "availableViews": {
+      "type": "array",
+      "items": { "type": "string", "minLength": 1 }
+    },
+    "previewViews": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/view" }
+    },
+    "supportedExtensions": {
+      "type": "array",
+      "items": { "type": "string", "pattern": "^\\.[a-z0-9]+$" }
+    },
+    "skills": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/skill" }
+    },
+    "rememberRecentFiles": { "type": "boolean" },
+    "license": { "$ref": "#/$defs/license" },
+    "file": { "type": "string", "minLength": 1 },
+    "uploadedCopy": { "type": "boolean" },
+    "previewUrl": { "type": "string", "format": "uri" },
+    "recentFiles": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/recentFile" },
+      "maxItems": 8
+    },
+    "diagnostics": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/diagnostic" }
+    },
+    "products": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/product" },
+      "minItems": 1
+    }
+  },
+  "$defs": {
+    "view": {
+      "type": "object",
+      "required": ["id", "displayName"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "displayName": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "skill": {
+      "type": "object",
+      "required": ["product", "name", "description"],
+      "properties": {
+        "product": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "skillSummary": {
+      "type": "object",
+      "required": ["name", "description"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "description": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "productLicense": {
+      "type": "object",
+      "required": [
+        "product",
+        "name",
+        "applicable",
+        "mode",
+        "userLicenseInstalled"
+      ],
+      "properties": {
+        "product": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "applicable": { "type": "boolean" },
+        "mode": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "problem": { "type": "string", "minLength": 1 },
+        "hint": { "type": "string", "minLength": 1 },
+        "userLicenseInstalled": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "license": {
+      "type": "object",
+      "required": [
+        "applicable",
+        "mode",
+        "userLicenseInstalled",
+        "sharedUserLicenseInstalled",
+        "products"
+      ],
+      "properties": {
+        "applicable": { "type": "boolean" },
+        "mode": { "type": "string", "minLength": 1 },
+        "source": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "problem": { "type": "string", "minLength": 1 },
+        "hint": { "type": "string", "minLength": 1 },
+        "userLicenseInstalled": { "type": "boolean" },
+        "sharedUserLicenseInstalled": { "type": "boolean" },
+        "products": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/productLicense" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "recentFile": {
+      "type": "object",
+      "required": ["id", "name"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+        "name": { "type": "string", "minLength": 1 },
+        "productId": { "type": "string", "minLength": 1 },
+        "productName": { "type": "string", "minLength": 1 },
+        "view": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "diagnostic": {
+      "type": "object",
+      "required": ["name", "status", "detail"],
+      "properties": {
+        "name": { "type": "string", "minLength": 1 },
+        "status": { "enum": ["ok", "warn", "fail"] },
+        "detail": { "type": "string", "minLength": 1 },
+        "hint": { "type": "string", "minLength": 1 }
+      },
+      "additionalProperties": false
+    },
+    "format": {
+      "type": "object",
+      "required": ["id", "extensions", "uses"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "extensions": {
+          "type": "array",
+          "items": { "type": "string", "pattern": "^\\.[a-z0-9]+$" }
+        },
+        "uses": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 }
+        }
+      },
+      "additionalProperties": false
+    },
+    "previewCapability": {
+      "type": "object",
+      "required": ["fidelity", "defaultView", "views"],
+      "properties": {
+        "fidelity": { "enum": ["rendered", "semantic"] },
+        "defaultView": { "type": "string", "minLength": 1 },
+        "views": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/view" },
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "reviewCapability": {
+      "type": "object",
+      "required": [
+        "fidelity",
+        "defaultView",
+        "views",
+        "visualInspectionRequired"
+      ],
+      "properties": {
+        "fidelity": { "enum": ["rendered", "semantic"] },
+        "defaultView": { "type": "string", "minLength": 1 },
+        "views": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/view" },
+          "minItems": 1
+        },
+        "visualInspectionRequired": { "type": "boolean" }
+      },
+      "additionalProperties": false
+    },
+    "product": {
+      "type": "object",
+      "required": [
+        "id",
+        "name",
+        "formats",
+        "verbs",
+        "preview",
+        "review"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "formats": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/format" },
+          "minItems": 1
+        },
+        "verbs": {
+          "type": "array",
+          "items": { "type": "string", "minLength": 1 },
+          "minItems": 1
+        },
+        "preview": { "$ref": "#/$defs/previewCapability" },
+        "review": { "$ref": "#/$defs/reviewCapability" },
+        "skill": { "$ref": "#/$defs/skillSummary" }
+      },
+      "additionalProperties": false
+    }
+  },
+  "additionalProperties": false
+}

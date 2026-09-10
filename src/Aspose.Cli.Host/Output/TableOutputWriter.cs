@@ -1,0 +1,124 @@
+using System.Text.Json.Nodes;
+using Aspose.Cli.Host.Output.Rendering;
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Serialization;
+
+namespace Aspose.Cli.Host.Output;
+
+/// <summary>
+/// Human-readable rendering of results. This class dispatches to a renderer per
+/// result family. Product-owned results are dispatched through the frozen
+/// build-time catalog before the remaining common Host cases. Anything unmapped
+/// falls back to JSON rather than hiding
+/// data—which the compiler cannot catch, so the <c>TableRendererCoverageTests</c>
+/// drift test (in the architecture tests) fails the build if any
+/// <see cref="ResultEnvelope"/> subtype has no real renderer case.
+/// </summary>
+internal sealed class TableOutputWriter : IOutputWriter
+{
+    private readonly bool _quiet;
+    private readonly TableFormat _tableFormat;
+    private readonly TextWriter? _output;
+    private readonly TextWriter? _error;
+    private readonly ProductCatalog _catalog;
+    private readonly ContractJsonSerializer _serializer;
+
+    public TableOutputWriter(
+        ProductCatalog catalog,
+        ContractJsonSerializer serializer,
+        bool quiet,
+        bool markdown = false,
+        TextWriter? output = null,
+        TextWriter? error = null)
+    {
+        _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+        _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
+        _quiet = quiet;
+        _tableFormat = markdown ? TableFormat.Markdown : TableFormat.Plain;
+        _output = output;
+        _error = error;
+    }
+
+    public void WriteResult(ResultEnvelope result)
+    {
+        ArgumentNullException.ThrowIfNull(result);
+
+        // Resolve the effective writer at write time so an uninjected writer keeps
+        // reading the current Console.Out (its redirection is honored on every call).
+        TextWriter output = _output ?? Console.Out;
+        var surface = new TableSurface(output, _tableFormat);
+        bool rendered = _catalog.TryRender(result, surface);
+        if (!rendered)
+        {
+            switch (result)
+            {
+                case AppResult app: CommonRenderers.Render(app, surface); break;
+                case ProductPreviewStartResult preview: CommonRenderers.Render(preview, surface); break;
+                case ProductPreviewStatusResult preview: CommonRenderers.Render(preview, surface); break;
+                case ProductPreviewStopResult preview: CommonRenderers.Render(preview, surface); break;
+                case ReviewResult review: CommonRenderers.Render(review, surface); break;
+                case LicenseStatusResult status: CommonRenderers.Render(status, surface); break;
+                case CapabilitiesResult capabilities: CommonRenderers.Render(capabilities, surface); break;
+                case DoctorResult doctor: CommonRenderers.Render(doctor, surface); break;
+                case SchemaListResult schemas: CommonRenderers.Render(schemas, surface); break;
+                case FontListResult fonts: CommonRenderers.Render(fonts, surface); break;
+                case FontCheckResult fonts: CommonRenderers.Render(fonts, surface); break;
+                case SkillInstallResult skill: CommonRenderers.Render(skill, surface); break;
+                case SkillListResult skills: CommonRenderers.Render(skills, surface); break;
+                default:
+                    // Never hide data: unknown result families render as JSON.
+                    output.WriteLine(_serializer.Serialize(result));
+                    break;
+            }
+        }
+
+        WriteWarnings(result.Warnings);
+    }
+
+    public void WriteError(ErrorEnvelope error)
+    {
+        ArgumentNullException.ThrowIfNull(error);
+
+        TextWriter output = _error ?? Console.Error;
+        output.WriteLine($"error {error.Error.Code}: {error.Error.Message}");
+        if (error.Error.Hint is { } hint)
+        {
+            output.WriteLine($"  hint: {hint}");
+        }
+
+        if (error.Error.Code is "OUTPUT_PUBLICATION_FAILED" or "OUTPUT_PUBLICATION_PARTIAL"
+            && error.Error.Details?["targets"] is JsonArray targets)
+        {
+            output.WriteLine("  recovery:");
+            foreach (JsonNode? node in targets)
+            {
+                if (node is not JsonObject item)
+                {
+                    continue;
+                }
+
+                string target = item["target"]?.GetValue<string>() ?? "(unknown)";
+                string status = item["status"]?.GetValue<string>() ?? "unknown";
+                bool content = item["contentVerified"]?.GetValue<bool>() ?? false;
+                bool metadata = item["metadataVerified"]?.GetValue<bool>() ?? false;
+                output.WriteLine(
+                    $"    {status}: {target} (content={content.ToString().ToLowerInvariant()}, metadata={metadata.ToString().ToLowerInvariant()})");
+            }
+        }
+    }
+
+    private void WriteWarnings(IReadOnlyList<Warning>? warnings)
+    {
+        if (_quiet || warnings is not { Count: > 0 })
+        {
+            return;
+        }
+
+        foreach (Warning warning in warnings)
+        {
+            (_error ?? Console.Error).WriteLine(
+                $"warning {warning.Code}: {warning.Message}");
+        }
+    }
+}

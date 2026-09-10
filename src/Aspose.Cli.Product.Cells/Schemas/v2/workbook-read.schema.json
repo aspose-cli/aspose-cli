@@ -1,0 +1,128 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-read.schema.json",
+  "title": "Workbook read projection",
+  "description": "Result of `aspose-cli cells query range`: a windowed projection of one sheet's cell data. The file on disk is the primary artifact; this JSON is a view, never a round-trip format.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "kind", "source", "scope", "sheet"],
+  "properties": {
+    "schema": {
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-read.schema.json"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "kind": {
+      "const": "workbook"
+    },
+    "source": {
+      "$ref": "#/$defs/sourceInfo"
+    },
+    "scope": {
+      "enum": ["values", "formulas", "styles", "full"]
+    },
+    "sheet": {
+      "type": "object",
+      "required": ["name", "index", "truncated"],
+      "properties": {
+        "name": { "type": "string" },
+        "index": { "type": "integer", "minimum": 0 },
+        "usedRange": { "type": "string" },
+        "window": { "type": "string" },
+        "truncated": { "type": "boolean" },
+        "cells": {
+          "type": "array",
+          "description": "Row-major matrix covering exactly `window`.",
+          "items": {
+            "type": "array",
+            "items": { "$ref": "#/$defs/cell" }
+          }
+        }
+      }
+    },
+    "styles": {
+      "type": "object",
+      "description": "Style pool referenced by cell styleId; present only for style-bearing scopes.",
+      "additionalProperties": { "$ref": "#/$defs/style" }
+    },
+    "next": {
+      "type": "string",
+      "description": "Ready-to-run command for the next window when truncated."
+    },
+    "license": {
+      "$ref": "#/$defs/licenseInfo"
+    },
+    "warnings": {
+      "$ref": "#/$defs/warnings"
+    }
+  },
+  "$defs": {
+    "cell": {
+      "type": "object",
+      "required": ["t"],
+      "properties": {
+        "v": {
+          "type": ["string", "number", "boolean"],
+          "description": "Cell value; ISO 8601 string for datetime, error literal for error cells, omitted for empty cells."
+        },
+        "t": {
+          "enum": ["string", "number", "boolean", "datetime", "error", "empty"]
+        },
+        "f": {
+          "type": "string",
+          "description": "Formula in A1 notation with leading '='."
+        },
+        "styleId": {
+          "type": "string"
+        }
+      }
+    },
+    "style": {
+      "type": "object",
+      "properties": {
+        "font": { "type": "string" },
+        "size": { "type": "number" },
+        "bold": { "type": "boolean" },
+        "italic": { "type": "boolean" },
+        "color": { "type": "string", "pattern": "^#[0-9A-F]{6}$" },
+        "bg": { "type": "string", "pattern": "^#[0-9A-F]{6}$" },
+        "numberFormat": { "type": "string" },
+        "hAlign": { "enum": ["left", "center", "right"] },
+        "vAlign": { "enum": ["top", "middle", "bottom"] },
+        "wrap": { "type": "boolean" }
+      }
+    },
+    "sourceInfo": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes", "fingerprint"],
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "type": "string" },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+      }
+    },
+    "licenseInfo": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["evaluation", "licensed", "not-applicable"] }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" },
+          "docs": { "type": "string" },
+          "location": { "type": "string", "minLength": 1 },
+          "affectsCompleteness": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

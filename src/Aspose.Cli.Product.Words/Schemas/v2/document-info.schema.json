@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/words/document-info.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "kind", "source", "document"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/words/document-info.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "kind": { "const": "document" },
+    "source": { "type": "object" },
+    "document": {
+      "type": "object",
+      "required": ["sections", "blocks", "paragraphs", "tables", "pages", "words", "revisionsPresent", "revisionCount", "revisionAuthors", "protection", "signed"],
+      "additionalProperties": false,
+      "properties": {
+        "sections": { "type": "integer", "minimum": 0 },
+        "blocks": { "type": "integer", "minimum": 0 },
+        "paragraphs": { "type": "integer", "minimum": 0 },
+        "tables": { "type": "integer", "minimum": 0 },
+        "pages": { "type": "integer", "minimum": 0 },
+        "words": { "type": "integer", "minimum": 0 },
+        "revisionsPresent": { "type": "boolean" },
+        "revisionCount": { "type": "integer", "minimum": 0 },
+        "revisionAuthors": { "type": "array", "items": { "type": "string" } },
+        "protection": { "type": "string" },
+        "signed": { "type": "boolean" }
+      }
+    },
+    "sections": { "type": "array", "items": { "type": "object" } },
+    "outline": { "type": "array", "items": { "type": "object" } },
+    "styles": { "type": "array", "items": { "type": "string" } },
+    "fields": { "type": "array", "items": { "type": "object" } },
+    "bookmarks": { "type": "array", "items": { "type": "string" } },
+    "comments": { "type": "array", "items": { "type": "object" } },
+    "images": { "type": "array", "items": { "type": "object" } },
+    "tables": { "type": "array", "items": { "type": "object" } },
+    "properties": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
+    "fonts": { "type": "array", "items": { "type": "string" } },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  }
+}

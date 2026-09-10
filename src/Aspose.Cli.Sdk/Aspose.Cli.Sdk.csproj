@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>
+      Shared host and product SDK for the Aspose CLI. The SDK owns
+      shared contracts, safe runtime primitives, and compile-time product
+      extension points without referencing any Aspose product engine.
+    </Description>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="System.CommandLine" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <InternalsVisibleTo Include="Aspose.Cli.Platform.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="Schemas\v2\common\*.schema.json">
+      <LogicalName>schemas/v2/common/%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Compile Include="..\..\eng\generated\DistributionInfo.g.cs" Link="DistributionInfo.g.cs" />
+  </ItemGroup>
+</Project>

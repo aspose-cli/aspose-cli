@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 2,
+  "ops": [
+    {
+      "op": "add_page_numbers",
+      "format": "Page {n} of {N}",
+      "position": "bottom-center",
+      "start": 1
+    },
+    {
+      "op": "add_watermark_text",
+      "pages": "1-",
+      "text": "DRAFT",
+      "size": 48,
+      "color": "#9b2c2c",
+      "opacity": 0.22,
+      "rotation": 45,
+      "layer": "over"
+    }
+  ]
+}

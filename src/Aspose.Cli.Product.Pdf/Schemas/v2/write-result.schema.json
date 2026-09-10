@@ -1,0 +1,38 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/write-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "action", "output"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/write-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "action": { "enum": ["create", "merge"] },
+    "output": { "$ref": "#/$defs/output" },
+    "inputs": { "type": "array", "items": { "$ref": "#/$defs/source" } },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "type": "string" },
+        "sizeBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "output": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "const": "pdf" },
+        "sizeBytes": { "type": "integer", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,41 @@
+{
+  "version": 2,
+  "dependencies": {
+    "net10.0": {
+      "Aspose.Slides.NET6.CrossPlatform": {
+        "type": "Direct",
+        "requested": "[26.7.0, )",
+        "resolved": "26.7.0",
+        "contentHash": "8ykmstVmCNpfcxNe+DN2t1LJWbjKNgYXSvYPE4/995U6IHAftsvl3uAZLUSbho7ZSkJuG8m9vVgOWHtpwm/x8Q==",
+        "dependencies": {
+          "System.Security.Cryptography.Xml": "6.0.2"
+        }
+      },
+      "System.Security.Cryptography.Pkcs": {
+        "type": "Transitive",
+        "resolved": "6.0.5",
+        "contentHash": "eWlSq9kImkq+nDaFH/NnxVtzvZB6gRyFW/SLSMrqsR34hyoBx9++NuBrZbBqeE1UXNkl42EyGhuOxuboZCMByg=="
+      },
+      "System.Security.Cryptography.Xml": {
+        "type": "Transitive",
+        "resolved": "6.0.2",
+        "contentHash": "8K1hhUWBhVIq0RJxa2M3pUpgcRIDhqwFUq0v44D9vnAsW0yRVLeJiSmDXtsPZOMyqo9uxnzLKWwhsux0NW0thQ==",
+        "dependencies": {
+          "System.Security.Cryptography.Pkcs": "6.0.5"
+        }
+      },
+      "aspose.cli.sdk": {
+        "type": "Project",
+        "dependencies": {
+          "System.CommandLine": "[2.0.9, )"
+        }
+      },
+      "System.CommandLine": {
+        "type": "CentralTransitive",
+        "requested": "[2.0.9, )",
+        "resolved": "2.0.9",
+        "contentHash": "SW0WhEk4NFVZ4lOnsLrHQOV/7s0eTidezNybHQWXfqhuXWB17X3RXbrifeWBbUx1iu+NcYchVSufmW7svjUEnA=="
+      }
+    }
+  }
+}

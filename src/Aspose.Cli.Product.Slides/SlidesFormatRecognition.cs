@@ -1,0 +1,56 @@
+using Aspose.Cli.Sdk.Extensibility;
+
+namespace Aspose.Cli.Product.Slides;
+
+/// <summary>Product-owned bounded signatures for presentation routing.</summary>
+internal static class SlidesFormatRecognition
+{
+    private static readonly FileFormatRecognition CompoundPresentation =
+        FileFormatRecognition.Match(
+            FileProbePattern.BytesAt(
+                0,
+                0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1),
+            "OLE compound-file signature with extension-qualified format",
+            70);
+
+    private static readonly FileFormatRecognition OpenXmlPresentation =
+        FileFormatRecognition.Match(
+            FileProbePattern.ZipContainsAny(
+                "ppt/",
+                "application/vnd.openxmlformats-officedocument.presentationml"),
+            "presentation package marker");
+
+    private static readonly FileFormatRecognition OpenDocumentPresentation =
+        FileFormatRecognition.Match(
+            FileProbePattern.ZipContainsAny(
+                "application/vnd.oasis.opendocument.presentation"),
+            "OpenDocument presentation mimetype");
+
+    internal static IReadOnlyDictionary<string, FileFormatRecognition>
+        Rules
+    { get; } = new Dictionary<string, FileFormatRecognition>(
+        StringComparer.Ordinal)
+    {
+        ["ppt"] = CompoundPresentation,
+        ["pptx"] = OpenXmlPresentation,
+        ["pptm"] = OpenXmlPresentation,
+        ["pps"] = CompoundPresentation,
+        ["ppsx"] = OpenXmlPresentation,
+        ["ppsm"] = OpenXmlPresentation,
+        ["pot"] = CompoundPresentation,
+        ["potx"] = OpenXmlPresentation,
+        ["potm"] = OpenXmlPresentation,
+        ["odp"] = OpenDocumentPresentation,
+        ["otp"] = OpenDocumentPresentation,
+        ["fodp"] = FileFormatRecognition.Match(
+            FileProbePattern.All(
+                XmlPrefix(),
+                FileProbePattern.TextContains("office:presentation")),
+            "flat OpenDocument presentation root"),
+    };
+
+    private static FileProbePattern XmlPrefix() =>
+        FileProbePattern.Any(
+            FileProbePattern.TextStartsIgnoringBomAndWhitespace("<?xml"),
+            FileProbePattern.TextStartsIgnoringBomAndWhitespace("<"));
+}

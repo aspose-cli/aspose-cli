@@ -1,0 +1,113 @@
+using System.Diagnostics;
+using System.Security.Cryptography;
+using System.Text;
+using Aspose.Cli.Sdk.IO;
+
+namespace Aspose.Cli.Host.LocalServices;
+
+/// <summary>
+/// Serializes one local service's cross-process start and stop decisions.
+/// </summary>
+internal sealed class LocalServiceOperationLock : IDisposable
+{
+    private readonly FileStream _stream;
+    private int _disposed;
+
+    private LocalServiceOperationLock(FileStream stream) =>
+        _stream = stream;
+
+    public static LocalServiceOperationLock Acquire(
+        string service,
+        string key,
+        TimeSpan timeout)
+    {
+        ValidateSegment(service, nameof(service));
+        ArgumentException.ThrowIfNullOrWhiteSpace(key);
+        if (timeout <= TimeSpan.Zero)
+        {
+            throw new ArgumentOutOfRangeException(nameof(timeout));
+        }
+
+        string digest = Convert.ToHexString(
+                SHA256.HashData(
+                    Encoding.UTF8.GetBytes(key))
+                .AsSpan(0, 16))
+            .ToLowerInvariant();
+        string directory = PrivateUserStorage.EnsureDirectory(
+            Path.Combine(
+                PrivateUserStorage.TemporaryRoot(),
+                "services",
+                service,
+                "locks"));
+        string path = Path.Combine(directory, digest + ".lock");
+        EnsureFile(path);
+
+        Stopwatch watch = Stopwatch.StartNew();
+        while (true)
+        {
+            try
+            {
+                PrivateUserStorage.ValidateFile(path);
+                return new LocalServiceOperationLock(
+                    new FileStream(
+                        path,
+                        FileMode.Open,
+                        FileAccess.ReadWrite,
+                        FileShare.None,
+                        bufferSize: 1,
+                        FileOptions.WriteThrough));
+            }
+            catch (IOException) when (watch.Elapsed < timeout)
+            {
+                Thread.Sleep(25);
+            }
+
+            if (watch.Elapsed >= timeout)
+            {
+                throw new TimeoutException(
+                    $"Timed out acquiring the {service} service operation lock.");
+            }
+        }
+    }
+
+    public void Dispose()
+    {
+        if (Interlocked.Exchange(ref _disposed, 1) == 0)
+        {
+            _stream.Dispose();
+        }
+    }
+
+    private static void EnsureFile(string path)
+    {
+        if (File.Exists(path))
+        {
+            return;
+        }
+
+        try
+        {
+            using FileStream _ =
+                PrivateUserStorage.CreateFile(path);
+        }
+        catch (IOException) when (File.Exists(path))
+        {
+            PrivateUserStorage.ValidateFile(path);
+        }
+    }
+
+    private static void ValidateSegment(
+        string value,
+        string parameter)
+    {
+        if (string.IsNullOrWhiteSpace(value)
+            || value.Any(static character =>
+                !char.IsAsciiLetterOrDigit(character)
+                && character is not '-' and not '_'))
+        {
+            throw new ArgumentException(
+                "Service names use letters, digits, '-' or '_'.",
+                parameter);
+        }
+    }
+}

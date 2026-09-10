@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Aspose File Workspace</title>
+  <link rel="stylesheet" href="/app.css">
+</head>
+<body>
+  <a class="skip-link" href="#main-content">Skip to workspace</a>
+  <header class="topbar">
+    <a class="brand" href="/home" data-route="/home" aria-label="Aspose File Workspace home">
+      <span class="brand-mark" aria-hidden="true">AF</span>
+      <span class="brand-copy">
+        <strong>Aspose File Workspace</strong>
+        <small>Local file automation</small>
+      </span>
+    </a>
+    <nav aria-label="Primary navigation">
+      <a href="/home" data-route="/home">Workspace</a>
+      <a href="/preview" data-route="/preview">Preview</a>
+      <a href="/settings" data-route="/settings">Settings</a>
+    </nav>
+    <div class="top-status" role="status" aria-live="polite" aria-atomic="true">
+      <span id="live-chip" class="chip muted"><span class="status-dot" aria-hidden="true"></span>Ready</span>
+      <span id="edition-chip" class="chip">Loading build</span>
+    </div>
+  </header>
+
+  <main id="main-content">
+    <section id="home-view" class="view workspace-view" hidden>
+      <div id="getting-started" class="getting-started" hidden>
+        <div>
+          <span class="eyebrow">GETTING STARTED</span>
+          <strong>Your local workspace is ready.</strong>
+          <p>Open a file below. The compiled product engine and its Agent Skill are already discoverable.</p>
+        </div>
+        <button class="icon-button" type="button" data-dismiss-start aria-label="Dismiss getting started">Close</button>
+      </div>
+
+      <div id="edition-banner-mount"></div>
+
+      <div class="workspace-hero">
+        <div class="hero-copy">
+          <span class="eyebrow">LOCAL-FIRST WORKSPACE</span>
+          <h1 tabindex="-1">Work with files on this device.</h1>
+          <p>Inspect, edit, check, and preview through the capabilities compiled into this CLI.</p>
+          <div class="trust-row" aria-label="Local workspace guarantees">
+            <span>Loopback only</span>
+            <span>Files stay local</span>
+            <span>Capability driven</span>
+          </div>
+        </div>
+        <button id="open-file" class="open-card" type="button">
+          <span class="open-symbol" aria-hidden="true">+</span>
+          <span>
+            <strong>Open a file</strong>
+            <small>Choose a format supported by this build</small>
+          </span>
+          <span class="arrow" aria-hidden="true">Open</span>
+        </button>
+      </div>
+
+      <button id="drop-zone" class="drop-zone" type="button" aria-describedby="drop-help">
+        <strong>Drop a supported file here</strong>
+        <span id="drop-help">Or press Enter to choose a temporary preview copy.</span>
+      </button>
+
+      <section class="content-section" aria-labelledby="recent-heading">
+        <div class="section-heading">
+          <div><span class="section-kicker">CONTINUE</span><h2 id="recent-heading">Recent files</h2></div>
+          <button id="clear-recents" class="text-button" type="button">Clear all</button>
+        </div>
+        <div id="recent-list" class="recent-list"></div>
+      </section>
+
+      <section class="content-section" aria-labelledby="products-heading">
+        <div class="section-heading">
+          <div><span class="section-kicker">THIS BUILD</span><h2 id="products-heading">Product capabilities</h2></div>
+          <span id="product-count" class="quiet-label"></span>
+        </div>
+        <div id="product-grid" class="product-grid"></div>
+      </section>
+    </section>
+
+    <section id="preview-view" class="view preview-page" hidden>
+      <div class="preview-toolbar">
+        <button class="icon-button" type="button" data-route="/home" aria-label="Back to workspace">Back</button>
+        <div class="file-title">
+          <strong id="preview-file">No file open</strong>
+          <small id="preview-kind">Local preview</small>
+        </div>
+        <span class="toolbar-spacer"></span>
+        <button id="preview-open" class="button secondary compact" type="button">Open another</button>
+        <button class="icon-button" type="button" data-route="/settings" aria-label="Open settings">Settings</button>
+      </div>
+      <div id="preview-edition-mount"></div>
+      <div id="preview-empty" class="empty-state">
+        <h1 tabindex="-1">No file is open</h1>
+        <p>Choose a supported file to start its local preview.</p>
+        <button class="button primary" type="button" data-route="/home">Go to workspace</button>
+      </div>
+      <iframe id="preview-frame" title="File preview" sandbox="allow-scripts allow-same-origin" referrerpolicy="no-referrer" hidden></iframe>
+    </section>
+
+    <section id="settings-view" class="view" hidden>
+      <div class="page-heading">
+        <span class="eyebrow">WORKSPACE SETTINGS</span>
+        <h1 tabindex="-1">Keep the local workflow predictable.</h1>
+        <p>Configure preview defaults, install Agent Skills, and inspect the current runtime.</p>
+      </div>
+      <div id="edition-settings-mount" class="settings-grid"></div>
+      <div class="settings-grid">
+        <article class="settings-card">
+          <div class="card-heading"><div><h2>Preview defaults</h2><p>Applied to the current product in this browser workspace.</p></div></div>
+          <label class="field"><span>Default view</span><select id="default-view"></select></label>
+          <label class="toggle"><input id="remember-recents" type="checkbox"><span>Remember recently opened file names</span></label>
+          <button id="save-preferences" class="button secondary" type="button">Save preferences</button>
+        </article>
+
+        <article class="settings-card">
+          <div class="card-heading"><div><h2>Local trust</h2><p>The App binds to loopback and does not send document content to a cloud service.</p></div></div>
+          <dl class="trust-list">
+            <div><dt>Listener</dt><dd>One App listener</dd></div>
+            <div><dt>Document path</dt><dd>Mounted on the same origin</dd></div>
+            <div><dt>Storage</dt><dd>Private current-user data</dd></div>
+          </dl>
+        </article>
+
+        <article class="settings-card wide">
+          <div class="card-heading"><div><h2>Agent Skills</h2><p>Install a product-owned workflow package for the coding agent you use.</p></div></div>
+          <div id="agent-commands" class="agent-commands"></div>
+        </article>
+
+        <article class="settings-card wide">
+          <div class="card-heading"><div><h2>System diagnostics</h2><p>Runtime, fonts, storage, and compiled product state.</p></div><button id="copy-diagnostics" class="text-button" type="button">Copy report</button></div>
+          <div id="diagnostics" class="diagnostics"></div>
+        </article>
+
+        <article class="settings-card wide">
+          <div class="card-heading"><div><h2>Local data</h2><p>Remove App history and temporary files without touching source documents.</p></div></div>
+          <div class="button-row">
+            <button id="clear-local-data" class="button secondary" type="button">Clear local App data</button>
+            <button id="quit-app" class="button danger" type="button">Quit workspace</button>
+          </div>
+        </article>
+      </div>
+    </section>
+  </main>
+
+  <input id="file-input" type="file" hidden>
+  <div id="workspace-live" class="sr-only" role="status" aria-live="polite" aria-atomic="true"></div>
+  <div id="toast" class="toast" role="status" aria-live="polite" aria-atomic="true" hidden></div>
+  __ASPOSE_CLI_BOOTSTRAP__
+  <script src="/app.js"></script>
+</body>
+</html>

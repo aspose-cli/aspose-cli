@@ -1,0 +1,342 @@
+using System.CommandLine;
+using System.Text.Json;
+using System.Text.Json.Nodes;
+using Aspose.Cli.Architecture.Tests.TestSupport;
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Serialization;
+using Aspose.Cli.Sdk.Resources;
+using Aspose.Cli.Host.Serialization;
+using Json.Schema;
+using Xunit;
+using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
+
+namespace Aspose.Cli.Architecture.Tests;
+
+/// <summary>Real JSON Schema validation for Host/SDK result envelopes.</summary>
+public sealed class CommonSchemaContractTests
+{
+    private static readonly string RepositoryRoot = RepositoryPaths.Root;
+    private static readonly ProductCatalog CommonCatalog = CreateCatalog();
+
+    [Fact]
+    public void EveryCommonCanonicalResult_ConformsToItsDeclaredSchema()
+    {
+        IReadOnlyList<CommonSchemaSample> samples = CommonSchemaSamples.All;
+        Assert.NotEmpty(samples);
+
+        foreach (CommonSchemaSample sample in samples)
+        {
+            string schemaPath = SchemaPath(sample.Schema);
+            JsonSchema schema = ParseSchema(File.ReadAllText(schemaPath));
+            string json = new HostContractJson(CommonCatalog)
+                .Serializer.Serialize(sample.Value);
+            using JsonDocument instance = JsonDocument.Parse(json);
+            EvaluationResults evaluation = schema.Evaluate(instance.RootElement);
+            Assert.True(
+                evaluation.IsValid,
+                $"{sample.Value.GetType().FullName} does not conform to "
+                    + $"{sample.Schema}: {JsonSerializer.Serialize(evaluation)}");
+
+            JsonObject missing = JsonNode.Parse(json)!.AsObject();
+            Assert.True(missing.Remove("schema"));
+            Assert.False(
+                schema.Evaluate(
+                    JsonDocument.Parse(missing.ToJsonString()).RootElement)
+                    .IsValid);
+            JsonObject wrongType = JsonNode.Parse(json)!.AsObject();
+            wrongType["schemaVersion"] = "invalid";
+            Assert.False(
+                schema.Evaluate(
+                    JsonDocument.Parse(wrongType.ToJsonString()).RootElement)
+                    .IsValid);
+        }
+    }
+
+    [Fact]
+    public void EveryCommonSchema_ParsesAndHasCanonicalIdentity()
+    {
+        string directory = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Aspose.Cli.Sdk",
+            "Schemas");
+        string[] schemas = Directory.GetFiles(
+            directory,
+            "*.schema.json",
+            SearchOption.AllDirectories)
+            .Where(path => string.Equals(
+                new FileInfo(path).Directory?.Name,
+                "common",
+                StringComparison.Ordinal))
+            .ToArray();
+        Assert.NotEmpty(schemas);
+        foreach (string path in schemas)
+        {
+            string text = File.ReadAllText(path);
+            _ = ParseSchema(text);
+            JsonObject document = JsonNode.Parse(text)!.AsObject();
+            Assert.Equal(
+                "https://json-schema.org/draft/2020-12/schema",
+                document["$schema"]?.GetValue<string>());
+            string relative = Path.GetRelativePath(
+                    Path.Combine(
+                        RepositoryRoot,
+                        "src",
+                        "Aspose.Cli.Sdk",
+                        "Schemas"),
+                    path)
+                .Replace(Path.DirectorySeparatorChar, '/');
+            Assert.Equal(
+                "https://schemas.aspose.dev/aspose-cli/" + relative,
+                document["$id"]?.GetValue<string>());
+        }
+    }
+
+    [Theory]
+    [InlineData("http://127.0.0.1:54322/", true)]
+    [InlineData("http://127.0.0.1:54322/extra", false)]
+    [InlineData("http://127.0.0.1:54322/?token=value", false)]
+    [InlineData("http://example.com:54322/", false)]
+    [InlineData("https://127.0.0.1:54322/", false)]
+    public void PreviewSessionUrl_RequiresTheLoopbackRoot(string url, bool valid)
+    {
+        ProductPreviewStartResult sample = CommonSchemaSamples.ProductPreviewStart with { Url = url };
+        string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);
+        using JsonDocument instance = JsonDocument.Parse(json);
+        JsonSchema schema = ParseSchema(SdkSchemaCatalog.Read("v2/common/preview-session"));
+        Assert.Equal(valid, schema.Evaluate(instance.RootElement).IsValid);
+    }
+
+    [Fact]
+    public void OperationDescriptor_SerializesInDeterministicContractOrder()
+    {
+        string json = new HostContractJson(CommonCatalog)
+            .Serializer.Serialize(CommonSchemaSamples.Capabilities);
+        JsonObject operation = JsonNode.Parse(json)!["products"]![0]![
+            "operations"]![0]!.AsObject();
+
+        Assert.Equal(
+            [
+                "id",
+                "command",
+                "inputSchema",
+                "atomicByDefault",
+                "supportsDryRun",
+            ],
+            operation.Select(static property => property.Key));
+        Assert.Equal(
+            """{"id":"replace_text","command":"edit","inputSchema":"v2/test/ops","atomicByDefault":true,"supportsDryRun":false}""",
+            operation.ToJsonString());
+    }
+
+    [Fact]
+    public void BoundedEditFoundation_IsCataloguedAndValidatesCanonicalValues()
+    {
+        (string Id, string Json)[] contracts =
+        [
+            (
+                "v2/common/bounded-edit",
+                """{"schemaVersion":2,"ifMatch":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","ops":[{"id":"change-1"}]}"""),
+            (
+                "v2/common/file-fingerprint",
+                """{"sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}"""),
+            (
+                "v2/common/product-issue",
+                """{"code":"SHEET_NOT_FOUND","severity":"error","message":"Worksheet was not found.","hint":"Use an existing worksheet name."}"""),
+            (
+                "v2/common/mutation-receipt",
+                """{"verification":"reopened","package":{"changedParts":[{"path":"word/document.xml","change":"modified"}],"preservedParts":37}}"""),
+        ];
+
+        foreach ((string id, string json) in contracts)
+        {
+            Assert.Contains(id, SdkSchemaCatalog.Ids);
+            JsonSchema schema = JsonSchema.FromText(SdkSchemaCatalog.Read(id));
+            using JsonDocument instance = JsonDocument.Parse(json);
+            Assert.True(schema.Evaluate(instance.RootElement).IsValid, id);
+        }
+    }
+
+    [Fact]
+    public void CommonWarningShapes_AllowStructuredVisualEvidence()
+    {
+        string directory = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Aspose.Cli.Sdk",
+            "Schemas",
+            "v2",
+            "common");
+        string[] files =
+        [
+            "app-result.schema.json",
+            "doctor.schema.json",
+            "font-check.schema.json",
+            "font-list.schema.json",
+            "license-status.schema.json",
+            "preview-session.schema.json",
+            "preview-status.schema.json",
+            "review.schema.json",
+            "schema-list.schema.json",
+            "skill-install.schema.json",
+            "skill-list.schema.json",
+        ];
+
+        foreach (string file in files)
+        {
+            JsonObject document = JsonNode.Parse(
+                File.ReadAllText(Path.Combine(directory, file)))!.AsObject();
+            JsonObject warning = Assert.Single(
+                DescendantObjects(document),
+                static item => item["required"] is JsonArray required
+                    && required.Any(static value => value?.GetValue<string>() == "code")
+                    && required.Any(static value => value?.GetValue<string>() == "message")
+                    && item["properties"]?["docs"] is not null);
+            JsonObject properties = warning["properties"]!.AsObject();
+            Assert.False(warning["additionalProperties"]!.GetValue<bool>());
+            Assert.Equal(1, properties["location"]!["minLength"]!.GetValue<int>());
+            Assert.Equal(
+                "boolean",
+                properties["affectsCompleteness"]!["type"]!.GetValue<string>());
+
+            JsonSchema schema = JsonSchema.FromText(warning.ToJsonString());
+            using JsonDocument valid = JsonDocument.Parse(
+                """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","location":"page:2","affectsCompleteness":true}""");
+            using JsonDocument invalid = JsonDocument.Parse(
+                """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","location":""}""");
+            using JsonDocument unknown = JsonDocument.Parse(
+                """{"code":"VISUAL_LIMITED","message":"Evidence is incomplete.","unexpected":true}""");
+            Assert.True(schema.Evaluate(valid.RootElement).IsValid, file);
+            Assert.False(schema.Evaluate(invalid.RootElement).IsValid, file);
+            Assert.False(schema.Evaluate(unknown.RootElement).IsValid, file);
+        }
+    }
+
+    [Theory]
+    [InlineData("", "has no input schema")]
+    [InlineData("v2/test/missing", "references unowned schema")]
+    public void ProductCatalog_RejectsIncompleteOperationDescriptors(
+        string inputSchema,
+        string expectedMessage)
+    {
+        var operations = new[]
+        {
+            new ProductOperationDescriptor
+            {
+                Id = "replace_text",
+                Command = "edit",
+                InputSchema = inputSchema,
+                AtomicByDefault = true,
+                SupportsDryRun = false,
+            },
+        };
+
+        InvalidOperationException error = Assert.Throws<InvalidOperationException>(
+            () => CreateCatalog(operations));
+
+        Assert.Contains(expectedMessage, error.Message, StringComparison.Ordinal);
+    }
+
+    private static string SchemaPath(string schema)
+    {
+        const string prefix = "https://schemas.aspose.dev/aspose-cli/";
+        Assert.StartsWith(prefix, schema, StringComparison.Ordinal);
+        string relative = schema[prefix.Length..]
+            .Replace('/', Path.DirectorySeparatorChar);
+        string path = Path.Combine(
+            RepositoryRoot,
+            "src",
+            "Aspose.Cli.Sdk",
+            "Schemas",
+            relative);
+        Assert.True(File.Exists(path), $"Schema does not exist: {path}");
+        return path;
+    }
+
+    private static JsonSchema ParseSchema(string document) =>
+        JsonSchema.FromText(
+            document,
+            new BuildOptions
+            {
+                SchemaRegistry = new SchemaRegistry(),
+            });
+
+    private static IEnumerable<JsonObject> DescendantObjects(JsonNode node)
+    {
+        if (node is JsonObject item)
+        {
+            yield return item;
+            foreach (JsonNode child in item.Select(static pair => pair.Value)
+                         .Where(static child => child is not null).Cast<JsonNode>())
+            {
+                foreach (JsonObject descendant in DescendantObjects(child))
+                {
+                    yield return descendant;
+                }
+            }
+        }
+        else if (node is JsonArray items)
+        {
+            foreach (JsonNode child in items.Where(static child => child is not null)
+                         .Cast<JsonNode>())
+            {
+                foreach (JsonObject descendant in DescendantObjects(child))
+                {
+                    yield return descendant;
+                }
+            }
+        }
+    }
+
+    private static ProductCatalog CreateCatalog(
+        IReadOnlyList<ProductOperationDescriptor>? operations = null)
+    {
+        ProductDefinition definition = ExtProduct.Define<ITestPort>(
+                new ProductManifest
+                {
+                    Id = "test",
+                    DisplayName = "Test",
+                    Operations = operations ?? [],
+                    Engine = new ProductEngineCapabilities
+                    {
+                        Id = "test",
+                        Sdk = "Aspose.Test",
+                        SdkVersion = "1.0.0",
+                        LicenseApplicable = true,
+                        LicenseRequired = false,
+                        SupportsFontDiagnostics = true,
+                    },
+                    AvailableEngines = ["test"],
+                })
+            .Formats(
+            [
+                FormatDescriptor.Input(
+                    "test",
+                    0,
+                    RouteOwnership.Explicit,
+                    ".test"),
+            ])
+            .Diagnostics([])
+            .Json(new ProductJsonDefinition("test", SdkJsonContext.Default))
+            .Preview(new TestProductPreviewAdapter<ITestPort>())
+            .Review(new TestProductReviewAdapter<ITestPort>())
+            .Output<TestResult>(static (_, _) => { })
+            .Commands(_ => new Command("test"))
+            .Activator(static _ =>
+                throw new InvalidOperationException(
+                    "Common schema tests must not activate product ports."))
+            .Build();
+        return ProductCatalog.Build([new StaticModule(definition)]);
+    }
+
+    private interface ITestPort;
+
+    private sealed record TestResult() : ResultEnvelope("test/result", 1);
+
+    private sealed class StaticModule(ProductDefinition definition) : IProductModule
+    {
+        public ProductDefinition Define() => definition;
+    }
+
+}

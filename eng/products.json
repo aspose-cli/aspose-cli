@@ -1,0 +1,44 @@
+{
+  "schemaVersion": 1,
+  "products": [
+    {
+      "id": "cells",
+      "productName": "Cells",
+      "engine": "Aspose.Cells",
+      "sdkPackageId": "Aspose.Cells",
+      "sdkVersion": "26.6.0",
+      "supplementalPackages": {
+        "SkiaSharp.NativeAssets.Linux": "3.119.0"
+      }
+    },
+    {
+      "id": "pdf",
+      "productName": "Pdf",
+      "displayName": "PDF",
+      "engine": "Aspose.PDF.Drawing",
+      "sdkPackageId": "Aspose.PDF.Drawing",
+      "sdkVersion": "26.5.0",
+      "supplementalPackages": {
+        "Microsoft.Bcl.Memory": "9.0.18"
+      }
+    },
+    {
+      "id": "slides",
+      "productName": "Slides",
+      "engine": "Aspose.Slides.NET6.CrossPlatform",
+      "sdkPackageId": "Aspose.Slides.NET6.CrossPlatform",
+      "sdkVersion": "26.7.0",
+      "supplementalPackages": {}
+    },
+    {
+      "id": "words",
+      "productName": "Words",
+      "engine": "Aspose.Words",
+      "sdkPackageId": "Aspose.Words",
+      "sdkVersion": "26.7.0",
+      "supplementalPackages": {
+        "SkiaSharp.NativeAssets.Linux": "3.119.0"
+      }
+    }
+  ]
+}

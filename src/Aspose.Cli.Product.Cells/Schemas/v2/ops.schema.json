@@ -1,0 +1,780 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/ops.schema.json",
+  "title": "Cells edit ops",
+  "description": "Input document of `aspose-cli cells edit --ops`. Ops apply in order and atomically: either all succeed or the file is untouched. An op's `sheet` defaults to the active sheet. Rows are 1-based numbers, columns are letters, ranges use unqualified A1 notation (the sheet comes from the `sheet` field).",
+  "allOf": [
+    { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/bounded-edit.schema.json" }
+  ],
+  "type": "object",
+  "required": ["ops"],
+  "properties": {
+    "schema": {
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/ops.schema.json",
+      "description": "Optional on input; validated when present."
+    },
+    "ifMatch": {
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$",
+      "description": "Optional source fingerprint precondition."
+    },
+    "ops": {
+      "type": "array",
+      "minItems": 1,
+      "maxItems": 10000,
+      "items": { "$ref": "#/$defs/op" }
+    }
+  },
+  "$defs": {
+    "op": {
+      "type": "object",
+      "required": ["op"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$",
+          "description": "Optional on input; assigned deterministically when omitted."
+        },
+        "op": {
+          "enum": [
+            "set_values", "set_formula", "clear_range", "copy_range",
+            "format_range", "merge_cells", "unmerge_cells",
+            "insert_rows", "delete_rows", "insert_columns", "delete_columns",
+            "resize_rows", "resize_columns",
+            "add_sheet", "rename_sheet", "delete_sheet",
+            "set_sheet_visibility", "move_sheet", "freeze_panes",
+            "create_chart", "create_pivot",
+            "set_page_setup", "set_print_area",
+            "insert_image", "refresh_pivot", "create_table",
+            "set_autofilter", "sort_range", "set_validation",
+            "define_name", "delete_name",
+            "add_comment", "edit_comment", "delete_comment",
+            "protect_sheet", "unprotect_sheet",
+            "group_rows", "ungroup_rows", "group_columns", "ungroup_columns",
+            "clear_validation", "remove_duplicates",
+            "protect_workbook", "unprotect_workbook",
+            "set_hyperlink", "remove_hyperlink",
+            "update_chart",
+            "add_conditional_format", "clear_conditional_formats",
+            "set_borders",
+            "set_default_font", "set_tab_color", "set_sheet_view",
+            "delete_chart",
+            "add_sparkline",
+            "set_active_sheet", "recalculate"
+          ]
+        },
+        "sheet": {
+          "type": "string",
+          "description": "Target sheet; the active sheet when omitted."
+        }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "op": { "const": "set_values" } } },
+          "then": {
+            "required": ["range", "values"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "values": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "array",
+                  "minItems": 1,
+                  "items": { "type": ["string", "number", "boolean", "null"] }
+                },
+                "description": "Row-major matrix. A single-cell range is the top-left anchor; a multi-cell range must match the matrix dimensions. Null clears the cell."
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_formula" } } },
+          "then": {
+            "required": ["range", "formula"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "formula": {
+                "type": "string",
+                "pattern": "^=",
+                "description": "Formula for the range's top-left cell; relative references shift per cell (Excel fill semantics)."
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "recalculate" } } },
+          "then": {
+            "not": { "required": ["sheet"] },
+            "description": "Recalculate the workbook; this operation has no sheet target."
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "clear_range" } } },
+          "then": {
+            "required": ["range"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "what": { "enum": ["contents", "formats", "all"], "default": "contents" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "copy_range" } } },
+          "then": {
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "type": "string", "description": "Source range; may be sheet-qualified, e.g. Data!A1:C10." },
+              "to": { "type": "string", "description": "Destination anchor cell; may be sheet-qualified, e.g. Summary!A1." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "format_range" } } },
+          "then": {
+            "required": ["range", "style"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "style": { "$ref": "#/$defs/style" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "merge_cells" } } },
+          "then": {
+            "required": ["range"],
+            "properties": { "range": { "$ref": "#/$defs/range" } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "unmerge_cells" } } },
+          "then": {
+            "required": ["range"],
+            "properties": { "range": { "$ref": "#/$defs/range" } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "insert_rows" } } },
+          "then": {
+            "required": ["at"],
+            "properties": {
+              "at": { "type": "integer", "minimum": 1, "description": "1-based row number." },
+              "count": { "type": "integer", "minimum": 1, "default": 1 }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "delete_rows" } } },
+          "then": {
+            "required": ["at"],
+            "properties": {
+              "at": { "type": "integer", "minimum": 1, "description": "1-based row number." },
+              "count": { "type": "integer", "minimum": 1, "default": 1 }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "insert_columns" } } },
+          "then": {
+            "required": ["at"],
+            "properties": {
+              "at": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Column letters, e.g. C." },
+              "count": { "type": "integer", "minimum": 1, "default": 1 }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "delete_columns" } } },
+          "then": {
+            "required": ["at"],
+            "properties": {
+              "at": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Column letters, e.g. C." },
+              "count": { "type": "integer", "minimum": 1, "default": 1 }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "resize_rows" } } },
+          "then": {
+            "required": ["from"],
+            "properties": {
+              "from": { "type": "integer", "minimum": 1 },
+              "to": { "type": "integer", "minimum": 1 },
+              "height": { "type": "number", "minimum": 0, "description": "Points; omit to auto-fit." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "resize_columns" } } },
+          "then": {
+            "required": ["from"],
+            "properties": {
+              "from": { "type": "string", "pattern": "^[A-Za-z]{1,3}$" },
+              "to": { "type": "string", "pattern": "^[A-Za-z]{1,3}$" },
+              "width": { "type": "number", "minimum": 0, "description": "Characters; omit to auto-fit." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "add_sheet" } } },
+          "then": {
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "position": { "type": "integer", "minimum": 0, "description": "Zero-based; appended when omitted." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "rename_sheet" } } },
+          "then": {
+            "required": ["sheet", "to"],
+            "properties": { "to": { "type": "string", "minLength": 1 } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "delete_sheet" } } },
+          "then": { "required": ["sheet"] }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_sheet_visibility" } } },
+          "then": {
+            "required": ["sheet", "hidden"],
+            "properties": { "hidden": { "type": "boolean" } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "move_sheet" } } },
+          "then": {
+            "required": ["sheet", "position"],
+            "properties": {
+              "position": { "type": "integer", "minimum": 0, "description": "Zero-based destination index in the tab order; a value past the last sheet moves it to the end." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "freeze_panes" } } },
+          "then": {
+            "required": ["cell"],
+            "properties": {
+              "cell": { "type": "string", "description": "Anchor cell; B2 freezes row 1 and column A, A1 unfreezes." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "create_chart" } } },
+          "then": {
+            "required": ["type", "dataRange", "at"],
+            "properties": {
+              "type": { "enum": ["column", "bar", "line", "pie", "scatter", "area"] },
+              "dataRange": { "type": "string", "description": "Data to plot, including headers; may be sheet-qualified to plot another sheet, e.g. Data!A1:C10." },
+              "at": { "$ref": "#/$defs/range", "description": "Cell range the chart is placed over, on the op's sheet, e.g. E2:L18." },
+              "title": { "type": "string" },
+              "seriesInRows": { "type": "boolean", "default": false },
+              "legend": { "$ref": "#/$defs/chartLegend" },
+              "axisTitles": { "$ref": "#/$defs/chartAxisTitles" },
+              "seriesColors": { "$ref": "#/$defs/seriesColors" },
+              "dataLabels": { "$ref": "#/$defs/chartDataLabels" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "create_pivot" } } },
+          "then": {
+            "required": ["sourceRange", "at", "values"],
+            "properties": {
+              "sourceRange": { "type": "string", "description": "Source data including headers; may be sheet-qualified." },
+              "at": { "type": "string", "description": "Top-left anchor cell on the op's sheet." },
+              "name": { "type": "string" },
+              "rows": { "type": "array", "minItems": 1, "items": { "type": "string" }, "description": "Header names of row fields." },
+              "columns": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "values": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["field"],
+                  "properties": {
+                    "field": { "type": "string", "description": "Header name of the source column." },
+                    "function": { "enum": ["sum", "count", "average", "max", "min"], "default": "sum" },
+                    "numberFormat": { "type": "string", "minLength": 1, "description": "Number format code applied to this value field, e.g. #,##0." }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_page_setup" } } },
+          "then": {
+            "properties": {
+              "orientation": { "enum": ["portrait", "landscape"] },
+              "paperSize": { "enum": ["letter", "legal", "a3", "a4", "a5", "tabloid"] },
+              "fitToWidth": { "type": "integer", "minimum": 0 },
+              "fitToHeight": { "type": "integer", "minimum": 0 },
+              "scale": { "type": "integer", "minimum": 10, "maximum": 400 },
+              "margins": { "$ref": "#/$defs/margins" },
+              "header": { "type": "string" },
+              "footer": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_print_area" } } },
+          "then": {
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "titleRows": { "type": "string", "description": "Rows repeated on each page, e.g. \"1:1\"." },
+              "titleColumns": { "type": "string", "description": "Columns repeated on each page, e.g. \"A:A\"." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "insert_image" } } },
+          "then": {
+            "required": ["path", "at"],
+            "properties": {
+              "path": { "type": "string", "minLength": 1 },
+              "at": { "$ref": "#/$defs/range", "description": "Top-left anchor cell." },
+              "width": { "type": "integer", "minimum": 1, "description": "Pixels." },
+              "height": { "type": "integer", "minimum": 1, "description": "Pixels." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "refresh_pivot" } } },
+          "then": {
+            "properties": {
+              "name": { "type": "string", "description": "Pivot name; all pivots on the sheet when omitted." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "create_table" } } },
+          "then": {
+            "required": ["range"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "name": { "type": "string" },
+              "style": { "type": "string", "description": "Built-in table style, e.g. TableStyleMedium2." },
+              "totalsRow": { "type": "boolean" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_autofilter" } } },
+          "then": {
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "off": { "type": "boolean", "description": "Remove the AutoFilter instead of adding one." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "sort_range" } } },
+          "then": {
+            "required": ["range", "by"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "hasHeader": { "type": "boolean" },
+              "by": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "object",
+                  "required": ["column"],
+                  "properties": {
+                    "column": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Column letters, e.g. B." },
+                    "order": { "enum": ["asc", "desc"], "default": "asc" }
+                  }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_validation" } } },
+          "then": {
+            "required": ["range", "type"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "type": { "enum": ["list", "wholeNumber", "decimal", "date", "textLength", "custom"] },
+              "operator": { "enum": ["between", "notBetween", "equal", "notEqual", "greaterThan", "lessThan", "greaterOrEqual", "lessOrEqual"] },
+              "value1": { "type": "string" },
+              "value2": { "type": "string" },
+              "listItems": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "listSource": { "type": "string" },
+              "inputMessage": { "type": "string" },
+              "errorMessage": { "type": "string" },
+              "allowBlank": { "type": "boolean" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "define_name" } } },
+          "then": {
+            "required": ["name", "refersTo"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1 },
+              "refersTo": { "type": "string", "minLength": 1, "description": "Sheet-qualified range, e.g. Config!$B$2." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "delete_name" } } },
+          "then": {
+            "required": ["name"],
+            "properties": { "name": { "type": "string", "minLength": 1 } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "add_comment" } } },
+          "then": {
+            "required": ["cell", "text"],
+            "properties": {
+              "cell": { "$ref": "#/$defs/range" },
+              "text": { "type": "string" },
+              "author": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "edit_comment" } } },
+          "then": {
+            "required": ["cell", "text"],
+            "properties": {
+              "cell": { "$ref": "#/$defs/range" },
+              "text": { "type": "string" },
+              "author": { "type": "string" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "delete_comment" } } },
+          "then": {
+            "required": ["cell"],
+            "properties": { "cell": { "$ref": "#/$defs/range" } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "protect_sheet" } } },
+          "then": {
+            "properties": {
+              "passwordEnv": { "type": "string", "description": "Name of an environment variable holding the password; never the password itself." },
+              "allow": {
+                "type": "array",
+                "items": { "enum": ["formatCells", "insertRows", "insertColumns", "deleteRows", "deleteColumns", "sort", "autoFilter"] }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "unprotect_sheet" } } },
+          "then": {
+            "properties": {
+              "passwordEnv": { "type": "string", "description": "Name of an environment variable holding the current password." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "group_rows" } } },
+          "then": {
+            "required": ["from"],
+            "properties": {
+              "from": { "type": "integer", "minimum": 1, "description": "First row of the span (1-based)." },
+              "to": { "type": "integer", "minimum": 1, "description": "Last row (1-based); defaults to `from`." },
+              "collapse": { "type": "boolean", "description": "Collapse the new group (ignored by ungroup_rows)." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "ungroup_rows" } } },
+          "then": {
+            "required": ["from"],
+            "properties": {
+              "from": { "type": "integer", "minimum": 1, "description": "First row of the span (1-based)." },
+              "to": { "type": "integer", "minimum": 1, "description": "Last row (1-based); defaults to `from`." },
+              "collapse": { "type": "boolean", "description": "Collapse the new group (ignored by ungroup_rows)." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "group_columns" } } },
+          "then": {
+            "required": ["from"],
+            "properties": {
+              "from": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "First column of the span, as letters." },
+              "to": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Last column; defaults to `from`." },
+              "collapse": { "type": "boolean", "description": "Collapse the new group (ignored by ungroup_columns)." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "ungroup_columns" } } },
+          "then": {
+            "required": ["from"],
+            "properties": {
+              "from": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "First column of the span, as letters." },
+              "to": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Last column; defaults to `from`." },
+              "collapse": { "type": "boolean", "description": "Collapse the new group (ignored by ungroup_columns)." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "clear_validation" } } },
+          "then": {
+            "required": ["range"],
+            "properties": { "range": { "$ref": "#/$defs/range" } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "remove_duplicates" } } },
+          "then": {
+            "required": ["range"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "columns": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "type": "string", "pattern": "^[A-Za-z]{1,3}$" },
+                "description": "Columns (letters) that define a duplicate; all columns when omitted."
+              },
+              "hasHeader": { "type": "boolean" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "protect_workbook" } } },
+          "then": {
+            "properties": {
+              "passwordEnv": { "type": "string", "description": "Name of an environment variable holding the password; never the password itself." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "unprotect_workbook" } } },
+          "then": {
+            "properties": {
+              "passwordEnv": { "type": "string", "description": "Name of an environment variable holding the password; never the password itself." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_hyperlink" } } },
+          "then": {
+            "required": ["cell"],
+            "properties": {
+              "cell": { "$ref": "#/$defs/range" },
+              "url": { "type": "string", "description": "External URL; give this or 'target'." },
+              "target": { "type": "string", "description": "Internal target, e.g. Summary!A1; give this or 'url'." },
+              "display": { "type": "string", "description": "Text shown in the cell; the URL or target when omitted." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "remove_hyperlink" } } },
+          "then": {
+            "required": ["cell"],
+            "properties": { "cell": { "$ref": "#/$defs/range" } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "update_chart" } } },
+          "then": {
+            "properties": {
+              "index": { "type": "integer", "minimum": 0, "description": "Zero-based chart index; give this or 'name'." },
+              "name": { "type": "string", "description": "Chart name; give this or 'index'." },
+              "title": { "type": "string" },
+              "dataRange": { "type": "string", "description": "New data to plot, including headers; may be sheet-qualified, e.g. Data!A1:C10." },
+              "type": { "enum": ["column", "bar", "line", "pie", "scatter", "area"] },
+              "seriesInRows": { "type": "boolean" },
+              "legend": { "$ref": "#/$defs/chartLegend" },
+              "axisTitles": { "$ref": "#/$defs/chartAxisTitles" },
+              "seriesColors": { "$ref": "#/$defs/seriesColors" },
+              "dataLabels": { "$ref": "#/$defs/chartDataLabels" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "delete_chart" } } },
+          "then": {
+            "properties": {
+              "index": { "type": "integer", "minimum": 0, "description": "Zero-based chart index; give this or 'name'." },
+              "name": { "type": "string", "description": "Chart name; give this or 'index'." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "add_conditional_format" } } },
+          "then": {
+            "required": ["range", "rule"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "rule": {
+                "type": "object",
+                "required": ["kind"],
+                "properties": {
+                  "kind": { "enum": ["cellValue", "colorScale", "dataBar", "duplicates", "formula", "topBottom", "iconSet"] },
+                  "operator": { "enum": ["between", "notBetween", "equal", "notEqual", "greaterThan", "lessThan", "greaterOrEqual", "lessOrEqual"] },
+                  "value1": { "type": "string", "description": "cellValue comparison value, or the formula rule's =-led formula; anchors at the range's top-left cell and shifts per cell ($ parts stay fixed)." },
+                  "value2": { "type": "string" },
+                  "minColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+                  "midColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+                  "maxColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+                  "barColor": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+                  "rank": { "type": "integer", "minimum": 1, "maximum": 1000, "description": "For topBottom: top/bottom N, or N percent (1-100 with percent)." },
+                  "percent": { "type": "boolean", "description": "For topBottom: interpret rank as a percentage of the range." },
+                  "bottom": { "type": "boolean", "description": "For topBottom: highlight the bottom rather than the top." },
+                  "iconSet": { "enum": ["arrows3", "trafficLights3", "symbols3", "rating4", "rating5"], "description": "For iconSet: which icons to draw (thresholds are automatic); omit style." }
+                }
+              },
+              "style": { "$ref": "#/$defs/style" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "clear_conditional_formats" } } },
+          "then": {
+            "required": ["range"],
+            "properties": { "range": { "$ref": "#/$defs/range" } }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_borders" } } },
+          "then": {
+            "required": ["range", "edges"],
+            "properties": {
+              "range": { "$ref": "#/$defs/range" },
+              "edges": {
+                "type": "array",
+                "minItems": 1,
+                "items": { "enum": ["outline", "inside", "top", "bottom", "left", "right", "horizontal", "vertical", "all"] },
+                "description": "Boundaries to draw: outline (4 outer edges), inside (inner grid lines), single edges, or all (the full grid)."
+              },
+              "style": { "enum": ["hair", "thin", "medium", "thick", "double", "dashed", "dotted"], "default": "thin" },
+              "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "default": "#000000" }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_default_font" } } },
+          "then": {
+            "required": ["name"],
+            "properties": {
+              "name": { "type": "string", "minLength": 1, "description": "Font family name, e.g. Calibri. Workbook-scoped: changes the Normal style every unstyled cell derives from and the unit column widths are measured in — set it FIRST, before content and widths. The op's `sheet` is ignored." },
+              "size": { "type": "number", "minimum": 1, "maximum": 409, "description": "Font size in points; unchanged when omitted." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_tab_color" } } },
+          "then": {
+            "properties": {
+              "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "Tab color; omit to remove the tab color." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_sheet_view" } } },
+          "then": {
+            "properties": {
+              "gridlines": { "type": "boolean", "description": "Show the on-screen gridlines. Affects Excel and the live preview, not the printed page or PNG renders — draw borders (set_borders) when a grid must appear in render output." },
+              "zoom": { "type": "integer", "minimum": 10, "maximum": 400, "description": "Zoom percentage." },
+              "headings": { "type": "boolean", "description": "Show the row numbers and column letters." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "add_sparkline" } } },
+          "then": {
+            "required": ["dataRange", "location"],
+            "properties": {
+              "dataRange": { "type": "string", "description": "Data to plot; may be sheet-qualified, e.g. Data!B2:E10." },
+              "location": { "type": "string", "pattern": "^[^!]+$", "description": "A single cell or a one-row/one-column strip on the op's sheet, e.g. F2 or F2:F10. One sparkline per data row (or column) lands in each location cell, so the cell count must match the data's row count (one per row) or column count (one per column)." },
+              "type": { "enum": ["line", "column", "winloss"], "default": "line", "description": "winloss draws equal-height win/loss columns by sign." },
+              "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "description": "Series color." }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "op": { "const": "set_active_sheet" } } },
+          "then": {
+            "required": ["sheet"],
+            "description": "Makes the named visible sheet active. The selection survives save/reopen and is the initial HTML preview tab."
+          }
+        }
+      ]
+    },
+    "range": {
+      "type": "string",
+      "description": "Unqualified A1 range, e.g. B2 or B2:D10 (the sheet comes from the op's `sheet` field).",
+      "pattern": "^[^!]+$"
+    },
+    "chartLegend": {
+      "type": "object",
+      "description": "Legend settings; only the fields present are applied. There is no 'none' position — hide the legend with visible: false.",
+      "minProperties": 1,
+      "properties": {
+        "visible": { "type": "boolean", "description": "Show or hide the legend." },
+        "position": { "enum": ["right", "bottom", "top", "left"] }
+      }
+    },
+    "chartAxisTitles": {
+      "type": "object",
+      "description": "Axis titles; only the fields present are applied. Pie charts have no axes and reject these.",
+      "minProperties": 1,
+      "properties": {
+        "category": { "type": "string", "description": "Title of the category (X) axis." },
+        "value": { "type": "string", "description": "Title of the value (Y) axis." }
+      }
+    },
+    "seriesColors": {
+      "type": "array",
+      "minItems": 1,
+      "items": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+      "description": "Series colors applied in series order; a pie's slices count as the series. Extra colors beyond the count are ignored."
+    },
+    "chartDataLabels": {
+      "type": "object",
+      "description": "Data label settings; only the fields present are applied.",
+      "minProperties": 1,
+      "properties": {
+        "visible": { "type": "boolean", "description": "Show each point's value next to it." },
+        "format": { "type": "string", "description": "Number format code for the labels, e.g. #,##0." }
+      }
+    },
+    "style": {
+      "type": "object",
+      "description": "Only the fields present are applied; existing formatting is preserved.",
+      "minProperties": 1,
+      "properties": {
+        "font": { "type": "string" },
+        "size": { "type": "number", "exclusiveMinimum": 0 },
+        "bold": { "type": "boolean" },
+        "italic": { "type": "boolean" },
+        "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "bg": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "numberFormat": { "type": "string" },
+        "hAlign": { "enum": ["left", "center", "right"] },
+        "vAlign": { "enum": ["top", "middle", "bottom"] },
+        "wrap": { "type": "boolean" },
+        "underline": { "type": "boolean" },
+        "strikethrough": { "type": "boolean" },
+        "indent": { "type": "integer", "minimum": 0, "maximum": 250 }
+      }
+    },
+    "margins": {
+      "type": "object",
+      "description": "Page margins in inches; only the sides present are applied.",
+      "minProperties": 1,
+      "properties": {
+        "top": { "type": "number", "minimum": 0 },
+        "bottom": { "type": "number", "minimum": 0 },
+        "left": { "type": "number", "minimum": 0 },
+        "right": { "type": "number", "minimum": 0 },
+        "header": { "type": "number", "minimum": 0 },
+        "footer": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

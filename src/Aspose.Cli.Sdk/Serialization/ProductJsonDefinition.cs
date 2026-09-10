@@ -1,0 +1,121 @@
+using System.Text.Encodings.Web;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
+
+namespace Aspose.Cli.Sdk.Serialization;
+
+/// <summary>Source-generated JSON metadata contributed by one product.</summary>
+public sealed class ProductJsonDefinition
+{
+    private readonly JsonSerializerOptions _localOptions;
+
+    /// <summary>Creates a product JSON contribution.</summary>
+    public ProductJsonDefinition(
+        string productId,
+        IJsonTypeInfoResolver resolver,
+        IEnumerable<JsonConverter>? converters = null)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(productId);
+        ArgumentNullException.ThrowIfNull(resolver);
+        ProductId = productId;
+        Resolver = resolver;
+        Converters = Array.AsReadOnly(
+            converters?.ToArray() ?? []);
+        _localOptions = ContractJsonSerializer.CreateOptions(
+            [SdkJsonContext.Default, resolver],
+            Converters);
+    }
+
+    /// <summary>Stable identifier of the contributing product.</summary>
+    public string ProductId { get; }
+
+    /// <summary>Source-generated resolver owned by the product assembly.</summary>
+    public IJsonTypeInfoResolver Resolver { get; }
+
+    /// <summary>Product-local converters required by abstract contract roots.</summary>
+    public IReadOnlyList<JsonConverter> Converters { get; }
+
+    /// <summary>Frozen options for product-local contract tests and parsers.</summary>
+    public JsonSerializerOptions LocalOptions => _localOptions;
+
+    /// <summary>Serializes a product-local contract value using its runtime type.</summary>
+    public string Serialize(object value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return JsonSerializer.Serialize(value, value.GetType(), _localOptions);
+    }
+
+    /// <summary>Deserializes one product-local contract root.</summary>
+    public T Deserialize<T>(string json)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(json);
+        return JsonSerializer.Deserialize<T>(json, _localOptions)
+            ?? throw new JsonException(
+                $"JSON deserialized to null for {typeof(T).Name}.");
+    }
+}
+
+/// <summary>
+/// Immutable serializer composed once from SDK and registered product metadata.
+/// </summary>
+public sealed class ContractJsonSerializer
+{
+    private readonly JsonSerializerOptions _options;
+
+    /// <summary>Creates a serializer for the supplied product contributions.</summary>
+    public ContractJsonSerializer(
+        IEnumerable<ProductJsonDefinition> products)
+    {
+        ArgumentNullException.ThrowIfNull(products);
+        ProductJsonDefinition[] definitions = products.ToArray();
+        var resolvers = new List<IJsonTypeInfoResolver> { SdkJsonContext.Default };
+        resolvers.AddRange(definitions.Select(static definition => definition.Resolver));
+
+        JsonConverter[] converters = definitions
+            .SelectMany(static definition => definition.Converters)
+            .ToArray();
+        _options = CreateOptions(resolvers, converters);
+    }
+
+    /// <summary>Frozen options used by this serializer.</summary>
+    public JsonSerializerOptions Options => _options;
+
+    /// <summary>Serializes a contract value using its runtime type.</summary>
+    public string Serialize(object value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return JsonSerializer.Serialize(value, value.GetType(), _options);
+    }
+
+    /// <summary>Deserializes one contract root.</summary>
+    public T Deserialize<T>(string json)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(json);
+        return JsonSerializer.Deserialize<T>(json, _options)
+            ?? throw new JsonException(
+                $"JSON deserialized to null for {typeof(T).Name}.");
+    }
+
+    internal static JsonSerializerOptions CreateOptions(
+        IEnumerable<IJsonTypeInfoResolver> resolvers,
+        IEnumerable<JsonConverter> converters)
+    {
+        IJsonTypeInfoResolver[] resolverArray = resolvers.ToArray();
+        var options = new JsonSerializerOptions
+        {
+            TypeInfoResolver = JsonTypeInfoResolver.Combine(resolverArray),
+            PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+            DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
+            AllowOutOfOrderMetadataProperties = true,
+            Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+            WriteIndented = true,
+        };
+        foreach (JsonConverter converter in converters)
+        {
+            options.Converters.Add(converter);
+        }
+        options.MakeReadOnly();
+        return options;
+    }
+}

@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/slides/create-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "output", "slides"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/create-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "output": { "type": "object" },
+    "slides": { "type": "integer", "minimum": 1 },
+    "template": { "type": "object" },
+    "markdown": { "type": "object" },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  }
+}

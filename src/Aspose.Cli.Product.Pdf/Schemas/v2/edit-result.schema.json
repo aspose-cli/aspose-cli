@@ -1,0 +1,95 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/edit-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "input", "dryRun", "applied"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/edit-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "input": { "$ref": "#/$defs/source" },
+    "output": { "$ref": "#/$defs/output" },
+    "dryRun": { "type": "boolean" },
+    "applied": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "index", "op", "status", "itemsAffected", "targets"],
+        "additionalProperties": false,
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$" },
+          "index": { "type": "integer", "minimum": 0 },
+          "op": { "type": "string" },
+          "status": { "enum": ["ok", "failed"] },
+          "itemsAffected": { "type": "integer", "minimum": 0 },
+          "targets": { "type": "array", "maxItems": 100, "items": { "type": "string" } },
+          "error": {
+            "type": "object",
+            "required": ["code", "message", "hint"],
+            "additionalProperties": false,
+            "properties": {
+              "code": { "type": "string" },
+              "message": { "type": "string" },
+              "hint": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "backup": { "type": "object" },
+    "mutation": {
+      "allOf": [
+        { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/mutation-receipt.schema.json" },
+        { "not": { "required": ["package"] } }
+      ]
+    },
+    "pagesTouched": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+    "verification": {
+      "type": "object",
+      "required": ["ok", "visualReviewRequired", "pages", "readBackPages", "renders", "issues"],
+      "additionalProperties": false,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "visualReviewRequired": { "type": "boolean" },
+        "pages": { "type": "integer", "minimum": 0 },
+        "readBackPages": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+        "renders": { "type": "array" },
+        "issues": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  },
+  "$defs": {
+    "source": {
+      "type": "object", "required": ["path", "format", "sizeBytes", "fingerprint"], "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "const": "pdf" },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "fingerprint": {
+          "type": "object",
+          "required": ["sha256"],
+          "additionalProperties": false,
+          "properties": { "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" } }
+        }
+      }
+    },
+    "output": {
+      "type": "object", "required": ["path", "format", "sizeBytes", "fingerprint"], "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "const": "pdf" },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": { "properties": { "dryRun": { "const": true } }, "required": ["dryRun"] },
+      "then": { "not": { "anyOf": [{ "required": ["output"] }, { "required": ["mutation"] }] } },
+      "else": { "required": ["output", "mutation"] }
+    }
+  ]
+}

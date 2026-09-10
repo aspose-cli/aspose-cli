@@ -1,0 +1,9 @@
+{"ops":[
+  {"op":"set_default_font","name":"Calibri","size":11},
+  {"op":"rename_sheet","sheet":"sales","to":"Data"},
+  {"op":"add_sheet","name":"Dashboard","position":0},
+  {"op":"set_values","sheet":"Data","range":"A1","values":[["Order id","Date","Category","Region","Owner","Qty","Unit price","Amount","Month"]]},
+  {"op":"sort_range","sheet":"Data","range":"A2:G37","by":[{"column":"B","order":"asc"}]},
+  {"op":"set_formula","sheet":"Data","range":"H2:H37","formula":"=F2*G2"},
+  {"op":"set_formula","sheet":"Data","range":"I2:I37","formula":"=TEXT(B2,\"yyyy-mm\")"}
+]}

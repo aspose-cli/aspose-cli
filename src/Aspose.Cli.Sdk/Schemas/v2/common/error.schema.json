@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json",
+  "title": "Aspose CLI error envelope",
+  "description": "The single error shape of the CLI, written to stderr when a command fails. Error codes are stable identifiers designed for agent self-correction.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "error"],
+  "properties": {
+    "schema": {
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "error": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$",
+          "description": "SCREAMING_SNAKE_CASE error code for the current CLI surface, e.g. SHEET_NOT_FOUND."
+        },
+        "message": {
+          "type": "string",
+          "description": "Human-readable description of what went wrong, including valid alternatives where applicable."
+        },
+        "details": {
+          "type": "object",
+          "description": "Structured context, e.g. {\"requested\": \"Salez\", \"available\": [\"Sales\"]}."
+        },
+        "hint": {
+          "type": "string",
+          "description": "Recommended next action for the caller."
+        },
+        "docs": {
+          "type": "string",
+          "description": "Topic name for `aspose-cli docs <topic>` with background details."
+        }
+      }
+    }
+  }
+}

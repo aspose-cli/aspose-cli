@@ -1,0 +1,27 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/words/split-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "input", "outputs"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/words/split-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "input": { "type": "object" },
+    "outputs": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["index", "output"],
+        "additionalProperties": false,
+        "properties": {
+          "index": { "type": "integer", "minimum": 1 },
+          "output": { "type": "object" },
+          "source": { "type": "string" }
+        }
+      }
+    },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  }
+}

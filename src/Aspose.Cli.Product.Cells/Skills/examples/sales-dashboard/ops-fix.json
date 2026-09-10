@@ -1,0 +1,8 @@
+{"ops":[
+  {"op":"resize_columns","sheet":"Dashboard","from":"B","width":16},
+  {"op":"resize_columns","sheet":"Dashboard","from":"E","width":16},
+  {"op":"resize_columns","sheet":"Dashboard","from":"H","width":16},
+  {"op":"resize_columns","sheet":"Dashboard","from":"K","width":16},
+  {"op":"resize_rows","sheet":"Dashboard","from":1},
+  {"op":"set_active_sheet","sheet":"Dashboard"}
+]}

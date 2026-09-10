@@ -1,0 +1,13 @@
+{"ops":[
+  {"op":"create_table","sheet":"Data","range":"A1:I37","name":"Orders","style":"TableStyleMedium2"},
+  {"op":"format_range","sheet":"Data","range":"B2:B37","style":{"numberFormat":"yyyy-mm-dd"}},
+  {"op":"format_range","sheet":"Data","range":"G2:H37","style":{"numberFormat":"#,##0;(#,##0);\"-\""}},
+  {"op":"add_conditional_format","sheet":"Data","range":"H2:H37","rule":{"kind":"dataBar","barColor":"#4472C4"}},
+  {"op":"resize_columns","sheet":"Data","from":"A","to":"I","width":12},
+  {"op":"resize_columns","sheet":"Data","from":"A","width":13},
+  {"op":"resize_columns","sheet":"Data","from":"F","to":"G","width":10},
+  {"op":"freeze_panes","sheet":"Data","cell":"A2"},
+  {"op":"set_tab_color","sheet":"Data","color":"#808080"},
+  {"op":"set_page_setup","sheet":"Data","orientation":"landscape","paperSize":"a4","fitToWidth":1,"fitToHeight":0},
+  {"op":"set_print_area","sheet":"Data","range":"A1:I37","titleRows":"1:1"}
+]}

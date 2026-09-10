@@ -1,0 +1,263 @@
+using System.Diagnostics;
+using System.Globalization;
+using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Sdk.IO;
+
+namespace Aspose.Cli.Host.Preview;
+
+/// <summary>
+/// Owns one preview session root. Version and interactive-view stores own only
+/// their children; this component performs final cleanup and retries stale
+/// roots during the next preview startup after a process interruption.
+/// </summary>
+internal sealed class PreviewSessionStorage : IDisposable
+{
+    private const int DeleteAttempts = 4;
+    private static readonly object Gate = new();
+    private static readonly HashSet<string> ActiveRoots = new(
+        OperatingSystem.IsWindows()
+            ? StringComparer.OrdinalIgnoreCase
+            : StringComparer.Ordinal);
+    private static readonly long CurrentProcessStart = ReadCurrentProcessStart();
+
+    private readonly Func<string, bool> _deleteDirectory;
+    private readonly string _categoryRoot;
+    private bool _disposed;
+
+    private PreviewSessionStorage(
+        string categoryRoot,
+        string root,
+        Func<string, bool> deleteDirectory)
+    {
+        _categoryRoot = categoryRoot;
+        Root = root;
+        _deleteDirectory = deleteDirectory;
+    }
+
+    public string Root { get; }
+
+    public static PreviewSessionStorage Create()
+    {
+        string categoryRoot = PrivateUserStorage.EnsureDirectory(
+            Path.Combine(
+                PrivateUserStorage.TemporaryRoot(),
+                "preview"));
+        return Create(
+            categoryRoot,
+            IsOwnerAlive,
+            static path => LocalFileCleanup.DeleteDirectory(path));
+    }
+
+    internal static PreviewSessionStorage Create(
+        string categoryRoot,
+        Func<int, long, bool> isOwnerAlive,
+        Func<string, bool> deleteDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(categoryRoot);
+        ArgumentNullException.ThrowIfNull(isOwnerAlive);
+        ArgumentNullException.ThrowIfNull(deleteDirectory);
+        string category = PrivateUserStorage.EnsureDirectory(categoryRoot);
+        lock (Gate)
+        {
+            SweepStaleRoots(category, isOwnerAlive, deleteDirectory);
+            string name = string.Create(
+                CultureInfo.InvariantCulture,
+                $"{Environment.ProcessId}-{CurrentProcessStart}-{Guid.NewGuid():N}");
+            string root = PrivateUserStorage.EnsureDirectory(
+                Path.Combine(category, name));
+            ActiveRoots.Add(root);
+            return new PreviewSessionStorage(
+                category,
+                root,
+                deleteDirectory);
+        }
+    }
+
+    public void Dispose()
+    {
+        lock (Gate)
+        {
+            if (_disposed)
+            {
+                return;
+            }
+
+            _disposed = true;
+            ActiveRoots.Remove(Root);
+        }
+
+        TimeSpan delay = TimeSpan.FromMilliseconds(25);
+        for (int attempt = 1; attempt <= DeleteAttempts; attempt++)
+        {
+            if (!IsOwnedRoot(_categoryRoot, Root)
+                || !PreviewOwnedDirectory.CanDelete(
+                    _categoryRoot,
+                    Root,
+                    static name => TryParseOwner(name, out _, out _))
+                || !PreviewOwnedDirectory.HasExpectedSessionChildren(Root)
+                || _deleteDirectory(Root))
+            {
+                return;
+            }
+            if (attempt < DeleteAttempts)
+            {
+                Thread.Sleep(delay);
+                delay += delay;
+            }
+        }
+        // A later Create call recognizes this exact inactive owned root and
+        // retries it. Unknown names and roots owned by live processes are
+        // always preserved.
+    }
+
+    private static void SweepStaleRoots(
+        string categoryRoot,
+        Func<int, long, bool> isOwnerAlive,
+        Func<string, bool> deleteDirectory)
+    {
+        string[] directories;
+        try
+        {
+            directories = Directory.EnumerateDirectories(categoryRoot).ToArray();
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            return;
+        }
+
+        foreach (string directory in directories)
+        {
+            string full = Path.GetFullPath(directory);
+            if (ActiveRoots.Contains(full)
+                || IsReparsePoint(full)
+                || !IsOwnedRoot(categoryRoot, full)
+                || !TryParseOwner(
+                    Path.GetFileName(full),
+                    out int processId,
+                    out long processStart)
+                || isOwnerAlive(processId, processStart)
+                || !PreviewOwnedDirectory.CanDelete(
+                    categoryRoot,
+                    full,
+                    static name => TryParseOwner(name, out _, out _))
+                || !PreviewOwnedDirectory.HasExpectedSessionChildren(full))
+            {
+                continue;
+            }
+
+            deleteDirectory(full);
+        }
+    }
+
+    private static bool TryParseOwner(
+        string name,
+        out int processId,
+        out long processStart)
+    {
+        processId = 0;
+        processStart = 0;
+        string[] parts = name.Split('-', 3);
+        return parts.Length == 3
+            && parts[2].Length == 32
+            && parts[2].All(Uri.IsHexDigit)
+            && int.TryParse(
+                parts[0],
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out processId)
+            && processId > 0
+            && long.TryParse(
+                parts[1],
+                NumberStyles.None,
+                CultureInfo.InvariantCulture,
+                out processStart)
+            && processStart > 0;
+    }
+
+    private static bool IsOwnerAlive(
+        int processId,
+        long processStart)
+    {
+        if (processId == Environment.ProcessId)
+        {
+            // Roots of this process that are still live are already present
+            // in ActiveRoots. An unregistered root belongs to a failed or
+            // disposed session and is safe to retry.
+            return false;
+        }
+
+        try
+        {
+            using Process process = Process.GetProcessById(processId);
+            return !process.HasExited
+                && process.StartTime.ToUniversalTime().Ticks == processStart;
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
+        catch (Exception exception) when (
+            exception is InvalidOperationException
+                or System.ComponentModel.Win32Exception
+                or NotSupportedException)
+        {
+            // An inaccessible process is treated as live. Cleanup must fail
+            // safe and may leave a stale private directory rather than delete
+            // another process's active session.
+            return true;
+        }
+    }
+
+    private static long ReadCurrentProcessStart()
+    {
+        using Process process = Process.GetCurrentProcess();
+        return process.StartTime.ToUniversalTime().Ticks;
+    }
+
+    private static bool IsReparsePoint(string path)
+    {
+        try
+        {
+            return Directory.Exists(path)
+                && (File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0;
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException)
+        {
+            return true;
+        }
+    }
+
+    private static bool IsOwnedRoot(
+        string categoryRoot,
+        string candidate)
+    {
+        try
+        {
+            string full = Path.GetFullPath(candidate);
+            string? parent = Path.GetDirectoryName(full);
+            StringComparison comparison = OperatingSystem.IsWindows()
+                ? StringComparison.OrdinalIgnoreCase
+                : StringComparison.Ordinal;
+            return parent is not null
+                && string.Equals(
+                    Path.TrimEndingDirectorySeparator(parent),
+                    Path.TrimEndingDirectorySeparator(categoryRoot),
+                    comparison)
+                && TryParseOwner(
+                    Path.GetFileName(full),
+                    out _,
+                    out _)
+                && !IsReparsePoint(full);
+        }
+        catch (Exception exception) when (
+            exception is IOException
+                or UnauthorizedAccessException
+                or ArgumentException
+                or NotSupportedException)
+        {
+            return false;
+        }
+    }
+}

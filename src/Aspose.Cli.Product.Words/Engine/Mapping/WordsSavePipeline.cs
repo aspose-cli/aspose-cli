@@ -1,0 +1,44 @@
+using Aspose.Cli.Product.Words.Contracts;
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Words;
+using Aspose.Words.Saving;
+
+namespace Aspose.Cli.Product.Words.Engine.Mapping;
+
+internal static class WordsSavePipeline
+{
+    public static SaveOptions Options(string formatId, string? password = null, IReadOnlyList<int>? pages = null, int? dpi = null)
+    {
+        SaveFormat format = WordsFormatMapper.ToSaveFormat(formatId);
+        SaveOptions options = SaveOptions.CreateSaveOptions(format);
+        options.UpdateLastSavedTimeProperty = false;
+
+        if (pages is not null)
+        {
+            if (options is not FixedPageSaveOptions fixedOptions)
+            {
+                throw CliErrors.OptionInvalid("--pages", $"format '{formatId}' is not fixed-page", $"Use --pages only with {string.Join(", ", WordsFormats.FixedPageConvertIds)}.");
+            }
+
+            fixedOptions.PageSet = new PageSet(pages.Select(static page => page - 1).ToArray());
+        }
+
+        if (dpi is not null && options is ImageSaveOptions image)
+        {
+            image.Resolution = dpi.Value;
+        }
+
+        if (password is not null)
+        {
+            switch (options)
+            {
+                case OoxmlSaveOptions ooxml: ooxml.Password = password; break;
+                case DocSaveOptions doc: doc.Password = password; break;
+                case OdtSaveOptions odt: odt.Password = password; break;
+                default: throw CliErrors.FormatUnsupported(formatId, WordsFormats.EncryptIds);
+            }
+        }
+
+        return options;
+    }
+}

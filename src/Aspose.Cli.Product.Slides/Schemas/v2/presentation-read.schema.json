@@ -1,0 +1,28 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/slides/presentation-read.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "kind", "source", "scope", "window", "slides"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/presentation-read.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "kind": { "const": "presentation" },
+    "source": { "type": "object" },
+    "scope": { "enum": ["text", "shapes", "full"] },
+    "window": {
+      "type": "object",
+      "required": ["slides", "of", "truncated"],
+      "additionalProperties": false,
+      "properties": {
+        "slides": { "type": "string" },
+        "of": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" }
+      }
+    },
+    "slides": { "type": "array", "items": { "type": "object" } },
+    "next": { "type": "string" },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  }
+}

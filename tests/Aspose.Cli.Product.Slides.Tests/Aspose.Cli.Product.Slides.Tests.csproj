@@ -1,0 +1,13 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Aspose.Cli.Product.Slides\Aspose.Cli.Product.Slides.csproj" />
+    <ProjectReference Include="..\..\src\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
+    <ProjectReference Include="..\Aspose.Cli.TestKit\Aspose.Cli.TestKit.csproj" />
+  </ItemGroup>
+  <ItemGroup>
+    <Using Include="Aspose.Cli.TestKit" />
+  </ItemGroup>
+  <ItemGroup>
+    <PackageReference Include="Aspose.Slides.NET6.CrossPlatform" />
+  </ItemGroup>
+</Project>

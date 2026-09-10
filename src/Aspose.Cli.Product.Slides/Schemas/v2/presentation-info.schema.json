@@ -1,0 +1,41 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/slides/presentation-info.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "kind", "source", "presentation", "slides"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/presentation-info.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "kind": { "const": "presentation" },
+    "source": { "type": "object" },
+    "presentation": {
+      "type": "object",
+      "required": ["slides", "widthPoints", "heightPoints", "orientation", "masters", "layouts", "sections", "comments", "media", "hasMacros"],
+      "additionalProperties": false,
+      "properties": {
+        "slides": { "type": "integer", "minimum": 0 },
+        "widthPoints": { "type": "number", "minimum": 0 },
+        "heightPoints": { "type": "number", "minimum": 0 },
+        "orientation": { "enum": ["landscape", "portrait", "square"] },
+        "masters": { "type": "integer", "minimum": 0 },
+        "layouts": { "type": "integer", "minimum": 0 },
+        "sections": { "type": "integer", "minimum": 0 },
+        "comments": { "type": "integer", "minimum": 0 },
+        "media": { "type": "integer", "minimum": 0 },
+        "hasMacros": { "type": "boolean" }
+      }
+    },
+    "slides": { "type": "array", "items": { "type": "object" } },
+    "sections": { "type": "array", "items": { "type": "object" } },
+    "masters": { "type": "array", "items": { "type": "object" } },
+    "layouts": { "type": "array", "items": { "type": "object" } },
+    "media": { "type": "array", "items": { "type": "object" } },
+    "notes": { "type": "array", "items": { "type": "object" } },
+    "comments": { "type": "array", "items": { "type": "object" } },
+    "fonts": { "type": "array", "items": { "type": "string" } },
+    "properties": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  }
+}

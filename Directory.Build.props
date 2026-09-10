@@ -1,0 +1,41 @@
+<Project>
+  <Import Project="eng\generated\DistributionBuild.props" />
+
+  <!--
+    Repository-wide build defaults. Individual projects should stay minimal and
+    only declare what makes them different (references, output type, resources).
+  -->
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <LangVersion>14.0</LangVersion>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <Deterministic>true</Deterministic>
+    <ContinuousIntegrationBuild Condition="'$(CI)' == 'true'">true</ContinuousIntegrationBuild>
+    <SourceRevision Condition="'$(SourceRevision)' == ''">unknown</SourceRevision>
+    <BuildDirty Condition="'$(BuildDirty)' == ''">true</BuildDirty>
+    <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
+    <!-- Removed nested projects can leave ignored generated sources behind. -->
+    <DefaultExcludesInProjectFolder>$(DefaultExcludesInProjectFolder);**/bin/**;**/obj/**</DefaultExcludesInProjectFolder>
+    <!-- Excel number/date formatting requires full ICU globalization data. -->
+    <InvariantGlobalization>false</InvariantGlobalization>
+    <!-- Repository-only analyzer input for the portable SDK build props. -->
+    <AsposeCliRepositoryAnalyzerProject>$(MSBuildThisFileDirectory)src\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj</AsposeCliRepositoryAnalyzerProject>
+    <!-- Roslyn analyzers execute in the build host and must never inherit target-runtime publish properties. -->
+    <AsposeCliAnalyzerGlobalPropertiesToRemove>RuntimeIdentifier;RuntimeIdentifiers;SelfContained;PublishReadyToRun;PublishSingleFile;PublishTrimmed;PublishAot</AsposeCliAnalyzerGlobalPropertiesToRemove>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <Product>Aspose CLI</Product>
+    <Authors>Aspose</Authors>
+    <Copyright>Copyright (c) Aspose Pty Ltd</Copyright>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AssemblyMetadata Include="SourceRevision" Value="$(SourceRevision)" />
+    <AssemblyMetadata Include="BuildDirty" Value="$(BuildDirty)" />
+  </ItemGroup>
+
+</Project>

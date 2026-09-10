@@ -1,0 +1,26 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/bounded-edit.schema.json",
+  "title": "Bounded edit envelope",
+  "description": "Product-neutral fields of an ordered bounded mutation document. Product schemas define each operation payload and address.",
+  "type": "object",
+  "required": ["ops"],
+  "properties": {
+    "schemaVersion": { "const": 2, "default": 2 },
+    "ifMatch": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+    "ops": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$",
+            "description": "Optional on input; a deterministic id is assigned when omitted."
+          }
+        }
+      }
+    }
+  }
+}

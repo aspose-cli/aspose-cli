@@ -1,0 +1,36 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/search-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "input", "pattern", "hits", "truncated"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/search-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "input": { "$ref": "#/$defs/source" }, "pattern": { "type": "string" },
+    "hits": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["page", "snippet", "rect", "occurrence"], "additionalProperties": false,
+        "properties": {
+          "page": { "type": "integer", "minimum": 1 }, "snippet": { "type": "string" },
+          "rect": { "$ref": "#/$defs/rect" }, "occurrence": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "truncated": { "type": "boolean" }, "license": { "type": "object" }, "warnings": { "type": "array" }
+  },
+  "$defs": {
+    "source": {
+      "type": "object", "required": ["path", "format", "sizeBytes"], "additionalProperties": false,
+      "properties": { "path": { "type": "string" }, "format": { "const": "pdf" }, "sizeBytes": { "type": "integer", "minimum": 0 } }
+    },
+    "rect": {
+      "type": "object", "required": ["x", "y", "width", "height"], "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" }, "y": { "type": "number" },
+        "width": { "type": "number", "minimum": 0 }, "height": { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/pdf-read.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "kind", "source", "mode", "window", "pages"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/pdf-read.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "kind": { "const": "pdf" },
+    "source": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "const": "pdf" },
+        "sizeBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "mode": { "enum": ["plain", "layout"] },
+    "window": {
+      "type": "object",
+      "required": ["pages", "of", "truncated"],
+      "additionalProperties": false,
+      "properties": {
+        "pages": { "type": "string" },
+        "of": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["number", "text", "truncated"],
+        "additionalProperties": false,
+        "properties": {
+          "number": { "type": "integer", "minimum": 1 },
+          "text": { "type": "string" },
+          "truncated": { "type": "boolean" }
+        }
+      }
+    },
+    "scannedPagesSuspected": {
+      "type": "array",
+      "items": { "type": "integer", "minimum": 1 },
+      "uniqueItems": true
+    },
+    "next": { "type": "string" },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  }
+}

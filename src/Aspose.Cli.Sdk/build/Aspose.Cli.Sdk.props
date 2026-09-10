@@ -1,0 +1,48 @@
+<Project>
+
+  <ItemGroup Condition="'$(AsposeProductId)' != ''">
+    <!-- Product identity is passed to the analyzer without generating or
+         tracking product-local source files. -->
+    <CompilerVisibleProperty Include="AsposeProductId" />
+    <CompilerVisibleProperty Include="AsposeProductNamespace" />
+    <CompilerVisibleProperty Include="AsposeProductDisplayName" />
+    <CompilerVisibleProperty Include="AsposeProductEngineName" />
+    <CompilerVisibleProperty Include="AsposeProductSdkPackageId" />
+    <CompilerVisibleProperty Include="AsposeProductSdkVersion" />
+
+    <ProjectReference
+      Include="$(AsposeCliRepositoryAnalyzerProject)"
+      Condition="'$(AsposeCliRepositoryAnalyzerProject)' != '' and Exists('$(AsposeCliRepositoryAnalyzerProject)')"
+      OutputItemType="Analyzer"
+      ReferenceOutputAssembly="false"
+      GlobalPropertiesToRemove="$(AsposeCliAnalyzerGlobalPropertiesToRemove)"
+      PrivateAssets="all" />
+    <Analyzer
+      Include="$(MSBuildThisFileDirectory)..\analyzers\dotnet\cs\Aspose.Cli.Sdk.Analyzers.dll"
+      Condition="Exists('$(MSBuildThisFileDirectory)..\analyzers\dotnet\cs\Aspose.Cli.Sdk.Analyzers.dll')" />
+
+    <EmbeddedResource Include="$(MSBuildProjectDirectory)\Schemas\v2\*.schema.json">
+      <LogicalName>Schemas/v2/$(AsposeProductId)/%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildProjectDirectory)\Preview\*.*">
+      <LogicalName>Preview/%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+    <EmbeddedResource Include="$(MSBuildProjectDirectory)\Skills\**\*.*">
+      <LogicalName>skill/$(AsposeCliSkillPrefix)$(AsposeProductId)/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <Target
+    Name="GenerateAsposeProductModuleAttribute"
+    BeforeTargets="GetAssemblyAttributes"
+    Condition="'$(AsposeProductId)' != '' and '$(AsposeProductModuleType)' != ''">
+    <ItemGroup>
+      <AssemblyAttribute Include="Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute">
+        <_Parameter1>$(AsposeProductId)</_Parameter1>
+        <_Parameter2>typeof(global::$(AsposeProductModuleType))</_Parameter2>
+        <_Parameter2_IsLiteral>true</_Parameter2_IsLiteral>
+      </AssemblyAttribute>
+    </ItemGroup>
+  </Target>
+
+</Project>

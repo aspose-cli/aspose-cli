@@ -1,0 +1,187 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/pdf-info.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "kind", "source", "pdf"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/pdf-info.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "kind": { "const": "pdf" },
+    "source": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes", "fingerprint"],
+      "additionalProperties": false,
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "const": "pdf" },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "fingerprint": {
+          "type": "object",
+          "required": ["sha256"],
+          "additionalProperties": false,
+          "properties": { "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" } }
+        }
+      }
+    },
+    "pdf": {
+      "type": "object",
+      "required": ["pages", "distinctPageSizes", "version", "encrypted", "linearized", "tagged", "pdfaCompliant", "formType", "attachments", "signed", "passwordType"],
+      "additionalProperties": false,
+      "properties": {
+        "pages": { "type": "integer", "minimum": 0 },
+        "distinctPageSizes": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["widthPoints", "heightPoints", "count"],
+            "additionalProperties": false,
+            "properties": {
+              "widthPoints": { "type": "number", "exclusiveMinimum": 0 },
+              "heightPoints": { "type": "number", "exclusiveMinimum": 0 },
+              "count": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "version": { "type": "string" },
+        "encrypted": { "type": "boolean" },
+        "linearized": { "type": "boolean" },
+        "tagged": { "type": "boolean" },
+        "pdfaCompliant": { "type": "boolean" },
+        "formType": { "enum": ["none", "acro", "xfa"] },
+        "attachments": { "type": "integer", "minimum": 0 },
+        "signed": { "type": "boolean" },
+        "passwordType": { "enum": ["none", "user", "owner"] }
+      }
+    },
+    "pages": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["number", "widthPoints", "heightPoints", "rotation", "mediaBox", "cropBox"],
+        "additionalProperties": false,
+        "properties": {
+          "number": { "type": "integer", "minimum": 1 },
+          "widthPoints": { "type": "number", "exclusiveMinimum": 0 },
+          "heightPoints": { "type": "number", "exclusiveMinimum": 0 },
+          "rotation": { "type": "integer" },
+          "mediaBox": { "$ref": "#/$defs/box" },
+          "cropBox": { "$ref": "#/$defs/box" }
+        }
+      }
+    },
+    "pageLabels": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["startPage", "numberingStyle", "startingValue"],
+        "additionalProperties": false,
+        "properties": {
+          "startPage": { "type": "integer", "minimum": 1 },
+          "numberingStyle": {
+            "enum": ["arabic", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none", "unknown"]
+          },
+          "prefix": { "type": "string" },
+          "startingValue": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "outline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["title", "level"],
+        "additionalProperties": false,
+        "properties": {
+          "title": { "type": "string" },
+          "level": { "type": "integer", "minimum": 1 },
+          "destination": { "type": "string" }
+        }
+      }
+    },
+    "forms": {
+      "type": "object",
+      "required": ["type", "fields", "readOnly"],
+      "additionalProperties": false,
+      "properties": {
+        "type": { "enum": ["none", "acro", "xfa"] },
+        "fields": { "type": "integer", "minimum": 0 },
+        "readOnly": { "type": "boolean" }
+      }
+    },
+    "attachments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "mimeType": { "type": "string" },
+          "sizeBytes": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
+    "fonts": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "embedded", "subset"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "embedded": { "type": "boolean" },
+          "subset": { "type": "boolean" }
+        }
+      }
+    },
+    "permissions": {
+      "type": "object",
+      "required": ["hasOpenPassword", "hasOwnerPassword", "ownerAccess", "print", "copy", "modify", "annotate", "fillForms", "extractAccessibility", "assemble", "printHighResolution"],
+      "additionalProperties": false,
+      "properties": {
+        "hasOpenPassword": { "type": "boolean" },
+        "hasOwnerPassword": { "type": "boolean" },
+        "ownerAccess": { "type": "boolean" },
+        "print": { "type": "boolean" },
+        "copy": { "type": "boolean" },
+        "modify": { "type": "boolean" },
+        "annotate": { "type": "boolean" },
+        "fillForms": { "type": "boolean" },
+        "extractAccessibility": { "type": "boolean" },
+        "assemble": { "type": "boolean" },
+        "printHighResolution": { "type": "boolean" }
+      }
+    },
+    "signatures": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "signed"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "signed": { "type": "boolean" },
+          "valid": { "type": "boolean" }
+        }
+      }
+    },
+    "layers": { "type": "array", "items": { "type": "string" } },
+    "metadata": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  },
+  "$defs": {
+    "box": {
+      "type": "object",
+      "required": ["left", "bottom", "right", "top"],
+      "additionalProperties": false,
+      "properties": {
+        "left": { "type": "number" },
+        "bottom": { "type": "number" },
+        "right": { "type": "number" },
+        "top": { "type": "number" }
+      }
+    }
+  }
+}

@@ -1,0 +1,40 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/words/compare-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "left", "right", "identical", "revisions", "samples"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/words/compare-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "left": { "type": "object" },
+    "right": { "type": "object" },
+    "identical": { "type": "boolean" },
+    "revisions": {
+      "type": "object",
+      "required": ["insertions", "deletions", "formatChanges", "moves"],
+      "additionalProperties": false,
+      "properties": {
+        "insertions": { "type": "integer", "minimum": 0 },
+        "deletions": { "type": "integer", "minimum": 0 },
+        "formatChanges": { "type": "integer", "minimum": 0 },
+        "moves": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "samples": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "type": "string" },
+          "text": { "type": "string" }
+        }
+      }
+    },
+    "output": { "type": "object" },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  }
+}

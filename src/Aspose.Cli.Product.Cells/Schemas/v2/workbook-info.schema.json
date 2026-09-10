@@ -1,0 +1,180 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-info.schema.json",
+  "title": "Workbook info",
+  "description": "Result of `aspose-cli cells inspect`: structural summary of a workbook. First step of the projection ladder; never contains full cell data.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "kind", "source", "workbook"],
+  "properties": {
+    "schema": {
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-info.schema.json"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "kind": {
+      "const": "workbook"
+    },
+    "source": {
+      "$ref": "#/$defs/sourceInfo"
+    },
+    "workbook": {
+      "type": "object",
+      "required": ["name", "sheetCount", "sheets", "hasVba", "definedNameCount"],
+      "properties": {
+        "name": { "type": "string" },
+        "sheetCount": { "type": "integer", "minimum": 0 },
+        "sheets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sheetInfo" }
+        },
+        "hasVba": { "type": "boolean" },
+        "definedNameCount": { "type": "integer", "minimum": 0 },
+        "author": { "type": "string" },
+        "title": { "type": "string" },
+        "definedNames": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/definedNameInfo" }
+        },
+        "formulaErrors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/cellError" }
+        },
+        "fonts": {
+          "type": "array",
+          "items": { "type": "string" }
+        },
+        "tables": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/tableInfo" }
+        },
+        "charts": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/chartInfo" }
+        },
+        "pivots": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/pivotInfo" }
+        },
+        "validations": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/validationInfo" }
+        }
+      }
+    },
+    "license": {
+      "$ref": "#/$defs/licenseInfo"
+    },
+    "warnings": {
+      "$ref": "#/$defs/warnings"
+    }
+  },
+  "$defs": {
+    "sourceInfo": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes", "fingerprint"],
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "type": "string" },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+      }
+    },
+    "sheetInfo": {
+      "type": "object",
+      "required": ["name", "index", "rowCount", "columnCount", "hidden", "chartCount", "pivotTableCount"],
+      "properties": {
+        "name": { "type": "string" },
+        "index": { "type": "integer", "minimum": 0 },
+        "usedRange": { "type": "string" },
+        "rowCount": { "type": "integer", "minimum": 0 },
+        "columnCount": { "type": "integer", "minimum": 0 },
+        "hidden": { "type": "boolean" },
+        "chartCount": { "type": "integer", "minimum": 0 },
+        "pivotTableCount": { "type": "integer", "minimum": 0 },
+        "preview": {
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": { "type": ["string", "null"] }
+          }
+        }
+      }
+    },
+    "definedNameInfo": {
+      "type": "object",
+      "required": ["name", "refersTo"],
+      "properties": {
+        "name": { "type": "string" },
+        "refersTo": { "type": "string" }
+      }
+    },
+    "cellError": {
+      "type": "object",
+      "required": ["sheet", "cell", "error"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "cell": { "type": "string" },
+        "error": { "type": "string" }
+      }
+    },
+    "tableInfo": {
+      "type": "object",
+      "required": ["sheet", "name", "range"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "name": { "type": "string" },
+        "range": { "type": "string" }
+      }
+    },
+    "chartInfo": {
+      "type": "object",
+      "required": ["sheet", "name"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string" }
+      }
+    },
+    "pivotInfo": {
+      "type": "object",
+      "required": ["sheet", "name", "range"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "name": { "type": "string" },
+        "range": { "type": "string" }
+      }
+    },
+    "validationInfo": {
+      "type": "object",
+      "required": ["sheet", "range", "type"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "range": { "type": "string" },
+        "type": { "type": "string" }
+      }
+    },
+    "licenseInfo": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["evaluation", "licensed", "not-applicable"] }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" },
+          "docs": { "type": "string" },
+          "location": { "type": "string", "minLength": 1 },
+          "affectsCompleteness": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,16 @@
+<Project>
+
+  <!-- Inherit repository-wide defaults, then add test-only conventions. -->
+  <Import Project="$([MSBuild]::GetPathOfFileAbove('Directory.Build.props', '$(MSBuildThisFileDirectory)..'))" />
+
+  <PropertyGroup>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Condition="'$(IsTestKit)' != 'true'" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" Condition="'$(IsTestKit)' != 'true'" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,35 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/slides/search-result.schema.json",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "input", "pattern", "scope", "hits", "truncated"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/search-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "input": { "type": "object" },
+    "pattern": { "type": "string" },
+    "scope": { "enum": ["shapes", "notes", "all"] },
+    "hits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["slide", "slideId", "scope", "text", "start", "length"],
+        "additionalProperties": false,
+        "properties": {
+          "slide": { "type": "integer", "minimum": 1 },
+          "slideId": { "type": "integer", "minimum": 1 },
+          "scope": { "enum": ["shapes", "notes"] },
+          "shapeId": { "type": "integer", "minimum": 0 },
+          "shapeName": { "type": "string" },
+          "text": { "type": "string" },
+          "start": { "type": "integer", "minimum": 0 },
+          "length": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "truncated": { "type": "boolean" },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  }
+}

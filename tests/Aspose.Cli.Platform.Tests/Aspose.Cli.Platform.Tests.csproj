@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Description>Focused SDK, Host, analyzer, architecture, and real CLI tests.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
+    <ProjectReference Include="..\..\src\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj" />
+    <ProjectReference Include="..\..\src\Aspose.Cli.Host\Aspose.Cli.Host.csproj" />
+    <ProjectReference Include="..\Aspose.Cli.TestKit\Aspose.Cli.TestKit.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="JsonSchema.Net" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+  </ItemGroup>
+
+</Project>

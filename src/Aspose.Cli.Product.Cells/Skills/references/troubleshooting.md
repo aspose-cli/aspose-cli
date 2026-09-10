@@ -1,0 +1,78 @@
+# Troubleshooting
+
+The error envelope is designed for self-correction: `error.code` is
+stable, `error.details` carries the valid alternatives, `error.hint` the
+most likely fix. Read the hint first; this page adds background.
+
+## Input problems (exit 3)
+
+- **FILE_NOT_FOUND** — relative paths resolve against `--workdir` (or the
+  process working directory). Print the resolved path from
+  `error.details.path` and list that directory.
+- **FILE_LOCKED** — Excel holds files exclusively. Ask the user to close
+  the file, then retry the identical command; nothing was written.
+- **FILE_CORRUPT** — the content matches no supported spreadsheet
+  signature. Check the real file type; renaming a `.docx` to `.xlsx` does
+  not make it a workbook. Plain-text data must use a text extension
+  (.csv, .tsv, .txt, .json) to be imported as text.
+- **PASSWORD_REQUIRED / PASSWORD_INVALID** — ask the user for the
+  password (never guess); retry with `--password`. The distinction is
+  reliable: `_REQUIRED` means none was given, `_INVALID` means the given
+  one failed.
+
+## Validation problems (exit 4)
+
+- **SHEET_NOT_FOUND** — `error.details.available` lists every sheet,
+  exactly spelled. Sheet names are case-sensitive here.
+- **RANGE_INVALID** — supported forms: `C5`, `B2:D10`, `Sales!A1:C10`,
+  `'My Sheet'!A1:C10`. Whole-row/column specs (`A:A`, `1:3`) are rejected
+  by design: give explicit bounds so output stays budgetable.
+- **RANGE_TOO_LARGE** — you asked for more cells than `--max-cells`.
+  Follow the hint's suggested first window and then the `next` commands,
+  or raise `--max-cells` when you truly need everything.
+- **OPS_INVALID** — `error.details.index` is the zero-based position of
+  the failing op; `details.cause` (when present) is the underlying code,
+  e.g. SHEET_NOT_FOUND. The batch was atomic: fix that one op and re-run
+  the whole document.
+
+## Output problems (exit 5)
+
+- **OUTPUT_EXISTS** — deliberate safety default. `--overwrite` replaces;
+  `--in-place` (on mutating commands) edits the input atomically.
+- **OUTPUT_UNWRITABLE** — check directory existence and permissions;
+  the CLI creates missing parent directories itself, so this usually
+  means an OS-level denial.
+- **Workbook open in Excel** — reads usually still work (Excel allows
+  shared reads), but `--in-place` fails at the final atomic replace with
+  OUTPUT_UNWRITABLE; when the open itself hits the sharing violation you
+  get FILE_LOCKED (exit 3) instead. Recovery for both: have the user
+  close the file and retry — your backup copy from the safe-editing
+  protocol is untouched either way.
+
+## License problems (exit 7)
+
+- **LICENSE_FILE_NOT_FOUND / LICENSE_INVALID** — an explicitly configured
+  license is broken; this never silently degrades to evaluation mode.
+  Fix the path/file or remove the configuration. Do not retry in a loop.
+- Resolution order: `--license` → product-specific environment variables →
+  shared `ASPOSE_LICENSE_B64` / `ASPOSE_LICENSE_PATH` → product-specific and
+  shared `.aspose` project files → user config directory. `aspose-cli license
+  status` shows which source won.
+
+## Evaluation-mode expectations
+
+Without a license: reads and structure inspection are unrestricted;
+produced files gain an "Evaluation Warning" worksheet and a watermark.
+That extra worksheet WILL show up in `info` output of files you created
+in evaluation mode — it is not a bug, and you should not try to delete it.
+Always tell the user their output is watermarked and that a license
+removes it.
+
+## General moves
+
+- `aspose-cli capabilities --output json` — every verb, format, op and schema
+  id this build supports.
+- `aspose-cli schema <id>` — the exact JSON Schema of any input or output.
+- `--verbose` — adds stack traces on stderr for bug reports.
+- Deterministic output means a repeated command is diff-safe: when in
+  doubt, run the read again and compare.

@@ -1,0 +1,15 @@
+{
+  "schema": "https://schemas.aspose.dev/aspose-cli/v2/cells/ops.schema.json",
+  "ops": [
+    { "op": "set_values", "range": "E1", "values": [["Total"]] },
+    { "op": "set_formula", "range": "E2:E5", "formula": "=SUM(B2:D2)" },
+    { "op": "set_values", "range": "A6", "values": [["Total"]] },
+    { "op": "set_formula", "range": "B6:E6", "formula": "=SUM(B2:B5)" },
+    { "op": "format_range", "range": "A1:E1", "style": { "bold": true, "bg": "#1F4E79", "color": "#FFFFFF" } },
+    { "op": "format_range", "range": "A6:E6", "style": { "bold": true } },
+    { "op": "format_range", "range": "B2:E6", "style": { "numberFormat": "#,##0" } },
+    { "op": "resize_columns", "from": "A", "to": "E" },
+    { "op": "freeze_panes", "cell": "A2" },
+    { "op": "create_chart", "type": "column", "dataRange": "A1:D5", "at": "G2:L18", "title": "Quarterly Sales" }
+  ]
+}

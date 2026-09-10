@@ -1,0 +1,215 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/edit-result.schema.json",
+  "title": "Edit result",
+  "description": "Result of `aspose-cli cells edit`. Batches are atomic by default; with --best-effort, failing ops are recorded with status 'failed' and the command exits 8.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "input", "dryRun", "recalculated", "applied"],
+  "properties": {
+    "schema": {
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/edit-result.schema.json"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "input": {
+      "$ref": "#/$defs/sourceInfo"
+    },
+    "output": {
+      "$ref": "#/$defs/outputInfo",
+      "description": "Omitted for dry runs."
+    },
+    "dryRun": {
+      "type": "boolean"
+    },
+    "recalculated": {
+      "type": "boolean"
+    },
+    "applied": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "index", "op", "status", "itemsAffected", "targets"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$" },
+          "index": { "type": "integer", "minimum": 0 },
+          "op": { "type": "string" },
+          "status": { "enum": ["ok", "failed"] },
+          "itemsAffected": { "type": "integer", "minimum": 0 },
+          "targets": {
+            "type": "array",
+            "maxItems": 100,
+            "items": { "type": "string" }
+          },
+          "error": {
+            "type": "object", "required": ["code", "message", "hint"], "additionalProperties": false,
+            "properties": { "code": { "type": "string" }, "message": { "type": "string" }, "hint": { "type": "string" } }
+          }
+        }
+      }
+    },
+    "backup": {
+      "$ref": "#/$defs/backupInfo"
+    },
+    "verification": {
+      "$ref": "#/$defs/editVerification"
+    },
+    "license": {
+      "$ref": "#/$defs/licenseInfo"
+    },
+    "warnings": {
+      "$ref": "#/$defs/warnings"
+    }
+  },
+  "$defs": {
+    "sourceInfo": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes", "fingerprint"],
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "type": "string" },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+      }
+    },
+    "outputInfo": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes", "fingerprint"],
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "type": "string" },
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+      }
+    },
+    "backupInfo": {
+      "type": "object",
+      "required": ["path", "created", "sizeBytes"],
+      "properties": {
+        "path": { "type": "string" },
+        "created": { "type": "boolean" },
+        "sizeBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "editVerification": {
+      "type": "object",
+      "required": ["ok", "requestedTargets", "directChanges", "formulaResultChanges", "otherChanges", "formulaErrors", "renders", "visualReviewRequired", "truncated"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "requestedTargets": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verificationTarget" }
+        },
+        "directChanges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verifiedCellChange" }
+        },
+        "formulaResultChanges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verifiedCellChange" }
+        },
+        "otherChanges": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verificationOtherChange" }
+        },
+        "formulaErrors": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/cellError" }
+        },
+        "renders": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/sheetRenderOutput" }
+        },
+        "visualReviewRequired": { "type": "boolean" },
+        "truncated": { "type": "boolean" },
+        "issues": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/verificationIssue" }
+        }
+      }
+    },
+    "verificationTarget": {
+      "type": "object",
+      "properties": {
+        "sheet": { "type": "string" },
+        "range": { "type": "string" }
+      }
+    },
+    "verifiedCellChange": {
+      "type": "object",
+      "required": ["sheet", "cell"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "cell": { "type": "string" },
+        "left": { "$ref": "#/$defs/cellSide" },
+        "right": { "$ref": "#/$defs/cellSide" }
+      }
+    },
+    "verificationOtherChange": {
+      "type": "object",
+      "required": ["sheet", "status"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "status": { "enum": ["added", "removed", "modified"] },
+        "cell": { "type": "string" },
+        "left": { "$ref": "#/$defs/cellSide" },
+        "right": { "$ref": "#/$defs/cellSide" }
+      }
+    },
+    "cellSide": {
+      "type": "object",
+      "properties": {
+        "v": { "type": ["string", "number", "boolean", "null"] },
+        "f": { "type": "string" }
+      }
+    },
+    "cellError": {
+      "type": "object",
+      "required": ["sheet", "cell", "error"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "cell": { "type": "string" },
+        "error": { "type": "string" }
+      }
+    },
+    "sheetRenderOutput": {
+      "type": "object",
+      "required": ["sheet", "path", "sizeBytes"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "path": { "type": "string" },
+        "sizeBytes": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "verificationIssue": {
+      "type": "object",
+      "required": ["code", "message"],
+      "properties": {
+        "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+        "message": { "type": "string" }
+      }
+    },
+    "licenseInfo": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["evaluation", "licensed", "not-applicable"] }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" },
+          "docs": { "type": "string" },
+          "location": { "type": "string", "minLength": 1 },
+          "affectsCompleteness": { "type": "boolean" }
+        }
+      }
+    }
+  }
+}

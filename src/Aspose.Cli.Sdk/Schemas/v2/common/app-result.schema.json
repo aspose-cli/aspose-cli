@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/app-result.schema.json",
+  "title": "Aspose CLI local app result",
+  "description": "Result of `aspose-cli app` lifecycle commands.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "running", "reused", "route"],
+  "properties": {
+    "schema": {
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/common/app-result.schema.json"
+    },
+    "schemaVersion": { "const": 2 },
+    "running": { "type": "boolean" },
+    "url": { "type": "string", "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/" },
+    "port": { "type": "integer", "minimum": 1, "maximum": 65535 },
+    "pid": { "type": "integer", "minimum": 1 },
+    "reused": { "type": "boolean" },
+    "route": { "enum": ["welcome", "home", "preview", "settings"] },
+    "file": { "type": "string" },
+    "license": {
+      "type": "object",
+      "required": ["mode"],
+      "properties": {
+        "mode": { "enum": ["evaluation", "licensed", "not-applicable"] }
+      }
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" },
+          "docs": { "type": "string" },
+          "location": { "type": "string", "minLength": 1 },
+          "affectsCompleteness": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

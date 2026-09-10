@@ -1,0 +1,35 @@
+# Normalize line endings for text files
+* text=auto
+
+*.cs text
+*.csproj text
+*.props text
+*.targets text
+*.sln text
+*.json text
+*.md text
+*.yml text
+*.yaml text
+*.editorconfig text
+*.gitignore text
+*.gitattributes text
+*.ps1 text
+*.sh text eol=lf
+
+# Managed template hashes must be identical on every checkout.
+src/**/Skills/assets/design/templates/**/*.json text eol=lf
+src/**/Skills/assets/design/templates/**/*.md text eol=lf
+src/**/Skills/assets/design/templates/**/LICENSE text eol=lf
+
+# Retain the exact notice bytes, including whitespace, from the pinned packages.
+eng/notices/SkiaSharp-HarfBuzzSharp-NATIVE.txt -text -whitespace
+
+# Binary fixtures
+*.xlsx binary
+*.xlsb binary
+*.xls binary
+*.ods binary
+*.pdf binary
+*.png binary
+*.jpg binary
+*.jpeg binary

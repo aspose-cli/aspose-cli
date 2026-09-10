@@ -1,0 +1,43 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/search-result.schema.json",
+  "title": "Cells search result",
+  "description": "Result of `aspose-cli cells query search`: budgeted cell hits for a pattern, ordered by sheet then row-major. When `truncated` is true, `hint` says how to narrow the search.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "source", "pattern", "hits"],
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/search-result.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "source": { "$ref": "#/$defs/source" },
+    "pattern": { "type": "string" },
+    "hits": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["sheet", "cell", "value"],
+        "properties": {
+          "sheet": { "type": "string" },
+          "cell": { "type": "string" },
+          "value": { "type": "string" },
+          "formula": { "type": "string" }
+        }
+      }
+    },
+    "truncated": { "type": "boolean" },
+    "hint": { "type": "string" },
+    "license": { "type": "object" },
+    "warnings": { "type": "array" }
+  },
+  "$defs": {
+    "source": {
+      "type": "object",
+      "required": ["path", "format", "sizeBytes", "fingerprint"],
+      "properties": {
+        "path": { "type": "string" },
+        "format": { "type": "string" },
+        "sizeBytes": { "type": "integer" },
+        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+      }
+    }
+  }
+}
