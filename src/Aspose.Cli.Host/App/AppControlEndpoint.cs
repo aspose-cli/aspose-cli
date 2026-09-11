@@ -1,5 +1,7 @@
 using System.Text.Json;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.App;
@@ -31,7 +33,8 @@ internal sealed class AppControlEndpoint : IDisposable
             nonce,
             token,
             Dispatch,
-            afterResponse: AfterResponse);
+            afterResponse: AfterResponse,
+            describeFailure: DescribeFailure);
     }
 
     public void Start() => _server.Start();
@@ -85,6 +88,13 @@ internal sealed class AppControlEndpoint : IDisposable
                     ok: false,
                     message: "Unknown local App control command.");
         }
+    }
+
+    private static string DescribeFailure(Exception exception)
+    {
+        ProcessFailureLog.Write("app-control", exception);
+        return exception is CliException error ? DiagnosticRedactor.Redact(error.Message)
+            : "The App could not complete the request. Check its private diagnostics.";
     }
 
     private void AfterResponse(LocalServiceControlRequest request)

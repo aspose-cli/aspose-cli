@@ -4,8 +4,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Host.Invocation;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -69,6 +67,7 @@ internal sealed class LocalServiceControlServer : IDisposable
         LocalServiceControlRequest,
         LocalServiceControlResponse> _handler;
     private readonly Action<LocalServiceControlRequest>? _afterResponse;
+    private readonly Func<Exception, string>? _describeFailure;
     private readonly TimeSpan _stageTimeout;
     private readonly CancellationTokenSource _shutdown = new();
     private Socket? _unixListener;
@@ -83,7 +82,8 @@ internal sealed class LocalServiceControlServer : IDisposable
             LocalServiceControlRequest,
             LocalServiceControlResponse> handler,
         TimeSpan? stageTimeout = null,
-        Action<LocalServiceControlRequest>? afterResponse = null)
+        Action<LocalServiceControlRequest>? afterResponse = null,
+        Func<Exception, string>? describeFailure = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentException.ThrowIfNullOrWhiteSpace(nonce);
@@ -103,6 +103,7 @@ internal sealed class LocalServiceControlServer : IDisposable
             token);
         _handler = handler;
         _afterResponse = afterResponse;
+        _describeFailure = describeFailure;
     }
 
     public void Start()
@@ -352,10 +353,10 @@ internal sealed class LocalServiceControlServer : IDisposable
         }
         catch (Exception exception)
         {
-            ProcessFailureLog.Write("local-service-control", exception);
-            return _identity.Response(request, ok: false,
-                exception is CliException error ? DiagnosticRedactor.Redact(error.Message)
-                    : "The local service could not complete the request. Check its private diagnostics.");
+            string message = "The local service could not complete the request.";
+            try { message = _describeFailure?.Invoke(exception) ?? message; }
+            catch { /* Failure reporting must not terminate the control endpoint. */ }
+            return _identity.Response(request, ok: false, message);
         }
     }
 

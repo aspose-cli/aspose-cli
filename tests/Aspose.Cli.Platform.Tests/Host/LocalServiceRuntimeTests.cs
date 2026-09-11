@@ -15,6 +15,22 @@ namespace Aspose.Cli.Host.Tests;
 public sealed class LocalServiceRuntimeTests
 {
     [Fact]
+    public void ControlProtocol_ContainsHandlerAndDiagnosticFailures()
+    {
+        LocalServiceControlEndpoint endpoint = Endpoint();
+        string nonce = Guid.NewGuid().ToString("N");
+        string token = Guid.NewGuid().ToString("N");
+        using var server = new LocalServiceControlServer(endpoint, nonce, token,
+            _ => throw new InvalidOperationException("Private operation detail."),
+            describeFailure: _ => throw new InvalidOperationException("Private diagnostic detail."));
+        server.Start();
+        LocalServiceControlResponse failure = LocalServiceControlServer.Send(endpoint, nonce, token, "open");
+        Assert.False(failure.Ok);
+        Assert.DoesNotContain("Private", failure.Message!, StringComparison.Ordinal);
+        Assert.True(LocalServiceControlServer.Send(endpoint, nonce, token, "ping").Ok);
+    }
+
+    [Fact]
     public void ChildError_RestoresTheStructuredEnvelopeAndExitCategory()
     {
         string json = JsonSerializer.Serialize(
