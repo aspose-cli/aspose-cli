@@ -117,3 +117,7 @@ The independent GitHub workflows run from this directory once it becomes a repos
 The release workflow requires a configured signing runner and produces artifacts without automatically creating a GitHub release.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [AGENTS.md](AGENTS.md) and [LICENSE](LICENSE).
+
+App preferences commit atomically before changing the active preview. If the saved view
+cannot be rendered, the App keeps the previous preview and reports that settings were
+saved but refresh failed. Saving the same settings retries the refresh.

@@ -364,10 +364,9 @@ internal sealed class AppHttpServer : IDisposable
                     .ConfigureAwait(false);
                 break;
             case ("POST", "/api/preferences"):
-                _host.Workspace.UpdatePreferences(
-                    await ReadJson<AppPreferenceRequest>(
-                        request).ConfigureAwait(false));
-                await WriteOk(response).ConfigureAwait(false);
+                AppApiResult preferences = _host.Workspace.UpdatePreferences(
+                    await ReadJson<AppPreferenceRequest>(request).ConfigureAwait(false));
+                await WriteJson(response, HttpStatusCode.OK, preferences).ConfigureAwait(false);
                 break;
             case ("POST", "/api/recent/open"):
                 _host.Workspace.OpenRecent(

@@ -674,7 +674,7 @@
 
   $('save-preferences').addEventListener('click', async function () {
     try {
-      await api('/api/preferences', {
+      var saved = await api('/api/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -683,7 +683,7 @@
           rememberRecentFiles: $('remember-recents').checked
         })
       });
-      toast('Preferences saved.');
+      toast(saved.message || 'Preferences saved.', saved.code === 'PREVIEW_REFRESH_FAILED');
       await loadStatus();
     } catch (error) {
       toast(error.message, true);

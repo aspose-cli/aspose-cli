@@ -186,10 +186,10 @@ public static class PrivateUserStorage
                 stream.Flush(flushToDisk: true);
             }
 
+            // Creation established the private ACL. Verify it before the sole commit point.
+            ValidateFile(temporary);
             RejectLinkedComponents(full, includeLeaf: true);
             File.Move(temporary, full, overwrite);
-            Harden(full, isDirectory: false);
-            ValidateFile(full);
         }
         finally
         {
@@ -669,6 +669,8 @@ public static class PrivateUserStorage
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)
         {
+            System.Diagnostics.Trace.TraceWarning(
+                "Private temporary file cleanup failed: {0}.", exception.GetType().Name);
         }
     }
 }

@@ -538,7 +538,7 @@ public sealed class CliContractTests : IDisposable
                 "stop",
                 "--output",
                 "json");
-            Assert.Equal(0, stopped.ExitCode);
+            Assert.True(stopped.ExitCode == 0, stopped.StdErr);
             Assert.False(Parse(stopped.StdOut)["running"]!.GetValue<bool>());
         }
     }

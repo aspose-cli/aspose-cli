@@ -14,6 +14,7 @@ namespace Aspose.Cli.Host.App;
 internal sealed class AppWorkspace
 {
     private readonly SemaphoreSlim _uploadGate = new(1, 1);
+    private readonly object _preferencesGate = new();
     private readonly ProductCatalog _catalog;
     private readonly AppPreferencesStore _preferences;
     private readonly AppDocumentSession _sessions;
@@ -70,8 +71,8 @@ internal sealed class AppWorkspace
     internal void OpenPath(string path, bool uploadedCopy)
     {
         _touch();
-        _sessions.Open(path, uploadedCopy);
         _preferences.CompleteOnboarding();
+        _sessions.Open(path, uploadedCopy);
         _setRoute(AppRoutes.Preview);
     }
 
@@ -93,11 +94,11 @@ internal sealed class AppWorkspace
                 cancellationToken).ConfigureAwait(false);
             try
             {
+                _preferences.CompleteOnboarding();
                 _sessions.Open(
                     path,
                     uploadedCopy: true,
                     Path.GetFileName(fileName));
-                _preferences.CompleteOnboarding();
                 _setRoute(AppRoutes.Preview);
             }
             catch
@@ -128,33 +129,25 @@ internal sealed class AppWorkspace
     internal void ClearRecent() =>
         _preferences.ClearRecent();
 
-    internal void UpdatePreferences(AppPreferenceRequest request)
+    internal AppApiResult UpdatePreferences(AppPreferenceRequest request)
     {
-        ProductDefinition product = _catalog.ResolveById(
-            request.Product
-            ?? _sessions.ProductId
-            ?? _catalog.DefaultProductId());
-        ProductPreviewDefinition preview = product.Preview;
-        PreviewErrors.EnsureViewSupported(
-            product.Manifest.Id,
-            request.DefaultView,
-            preview.Views);
-        AppPreferences before = _preferences.Current;
-        string previousView = before.PreviewView(product);
-        _preferences.Update(
-            product.Manifest.Id,
-            request.DefaultView,
-            request.RememberRecentFiles);
-        if (string.Equals(
-                _sessions.ProductId,
-                product.Manifest.Id,
-                StringComparison.Ordinal)
-            && !string.Equals(
-                previousView,
-                request.DefaultView,
-                StringComparison.Ordinal))
+        lock (_preferencesGate)
         {
-            _sessions.ReopenForLicenseOrPreferences();
+            ProductDefinition product = _catalog.ResolveById(
+                request.Product ?? _sessions.ProductId ?? _catalog.DefaultProductId());
+            PreviewErrors.EnsureViewSupported(product.Manifest.Id, request.DefaultView, product.Preview.Views);
+            _preferences.Update(product.Manifest.Id, request.DefaultView, request.RememberRecentFiles);
+            try
+            {
+                _sessions.RefreshPreferences(product.Manifest.Id, request.DefaultView);
+                return new AppApiResult(true);
+            }
+            catch (Exception exception)
+            {
+                _log.Write($"preferences saved; preview refresh failed: {exception.GetType().Name}");
+                return new AppApiResult(true, Code: "PREVIEW_REFRESH_FAILED",
+                    Message: "Preferences were saved, but the preview could not refresh. The previous preview is retained. Save the same settings to retry.");
+            }
         }
     }
 

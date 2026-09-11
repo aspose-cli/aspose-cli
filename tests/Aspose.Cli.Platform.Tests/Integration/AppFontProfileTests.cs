@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
 
+[Collection("Local service lifecycle")]
 public sealed class AppFontProfileTests
 {
     [Fact]

@@ -14,6 +14,9 @@ namespace Aspose.Cli.Host.App;
 internal sealed class AppDocumentSession : IDisposable
 {
     private readonly object _gate = new();
+    // Workspace mutation gate -> session operation gate -> short state/preferences locks.
+    private readonly object _operationGate = new();
+    private bool _disposed;
     private readonly ProductCatalog _catalog;
     private readonly AppLicenseState _licenses;
     private readonly AppPreferencesStore _preferences;
@@ -49,6 +52,8 @@ internal sealed class AppDocumentSession : IDisposable
     public string? PreviewUrl => Read(static lease => lease.Url);
 
     public string? ProductId => Read(static lease => lease.ProductId);
+
+    public string? ActiveView => Read(static lease => lease.View);
 
     public bool UploadedCopy
     {
@@ -110,6 +115,12 @@ internal sealed class AppDocumentSession : IDisposable
 
     public void Open(string filePath, bool uploadedCopy, string? displayFileName = null)
     {
+        lock (_operationGate) { OpenCore(filePath, uploadedCopy, displayFileName); }
+    }
+
+    private void OpenCore(string filePath, bool uploadedCopy, string? displayFileName)
+    {
+        ObjectDisposedException.ThrowIf(_disposed, this);
         string full = Path.GetFullPath(filePath);
         if (!File.Exists(full))
         {
@@ -132,6 +143,18 @@ internal sealed class AppDocumentSession : IDisposable
             displayName,
             uploadedCopy,
             product);
+        try
+        {
+            if (!uploadedCopy)
+            {
+                _preferences.RecordRecent(full, next.ProductId, next.View);
+            }
+        }
+        catch
+        {
+            DisposePrevious(next);
+            throw;
+        }
         PreviewLease? previous;
         lock (_gate)
         {
@@ -139,7 +162,7 @@ internal sealed class AppDocumentSession : IDisposable
             _current = next;
         }
 
-        previous?.Dispose();
+        DisposePrevious(previous);
         if (previous?.UploadedCopy is true
             && !string.Equals(
                 previous.Path,
@@ -151,14 +174,6 @@ internal sealed class AppDocumentSession : IDisposable
         {
             _log.Write(
                 "superseded upload cleanup failed");
-        }
-
-        if (!uploadedCopy)
-        {
-            _preferences.RecordRecent(
-                full,
-                next.ProductId,
-                next.View);
         }
 
         _log.Write(
@@ -305,50 +320,74 @@ internal sealed class AppDocumentSession : IDisposable
 
     public void ReopenForLicenseOrPreferences()
     {
-        string? path;
-        string? displayName;
-        bool uploaded;
-        lock (_gate)
+        lock (_operationGate)
         {
-            path = _current?.Path;
-            displayName = _current?.FileName;
-            uploaded = _current?.UploadedCopy ?? false;
+            PreviewLease? current;
+            lock (_gate) { current = _current; }
+            if (current is not null)
+            {
+                OpenCore(current.Path, current.UploadedCopy, current.FileName);
+            }
         }
+    }
 
-        if (path is not null)
+    public void RefreshPreferences(string productId, string desiredView)
+    {
+        lock (_operationGate)
         {
-            Open(path, uploaded, displayName);
+            PreviewLease? current;
+            lock (_gate) { current = _current; }
+            if (current is not null
+                && string.Equals(current.ProductId, productId, StringComparison.Ordinal)
+                && !string.Equals(current.View, desiredView, StringComparison.Ordinal))
+            {
+                OpenCore(current.Path, current.UploadedCopy, current.FileName);
+            }
         }
     }
 
     public void ClearUploads()
     {
-        PreviewLease? closing = null;
-        lock (_gate)
+        lock (_operationGate)
         {
-            if (_current?.UploadedCopy is true)
+            PreviewLease? closing = null;
+            lock (_gate)
             {
-                closing = _current;
-                _current = null;
+                if (_current?.UploadedCopy is true)
+                {
+                    closing = _current;
+                    _current = null;
+                }
             }
+            DisposePrevious(closing);
+            LocalFileCleanup.DeleteDirectory(Path.Combine(_root, "uploads"));
         }
-
-        closing?.Dispose();
-        LocalFileCleanup.DeleteDirectory(
-            Path.Combine(_root, "uploads"));
     }
 
     public void Dispose()
     {
-        PreviewLease? lease;
-        lock (_gate)
+        lock (_operationGate)
         {
-            lease = _current;
-            _current = null;
+            if (_disposed) { return; }
+            _disposed = true;
+            PreviewLease? lease;
+            lock (_gate)
+            {
+                lease = _current;
+                _current = null;
+            }
+            DisposePrevious(lease);
+            LocalFileCleanup.DeleteDirectory(_root);
         }
+    }
 
-        lease?.Dispose();
-        LocalFileCleanup.DeleteDirectory(_root);
+    private void DisposePrevious(PreviewLease? previous)
+    {
+        try { previous?.Dispose(); }
+        catch (Exception exception)
+        {
+            _log.Write($"previous preview cleanup failed: {exception.GetType().Name}");
+        }
     }
 
     private PreviewLease CreateLease(

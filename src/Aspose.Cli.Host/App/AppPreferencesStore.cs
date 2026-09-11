@@ -1,4 +1,5 @@
 using System.Security.Cryptography;
+using System.Collections.Frozen;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -58,7 +59,7 @@ internal sealed class AppPreferencesStore
         ArgumentNullException.ThrowIfNull(catalog);
         _path = Path.GetFullPath(path);
         PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(_path)!);
-        _current = Load(_path, catalog);
+        _current = Freeze(Load(_path, catalog));
     }
 
     public AppPreferences Current
@@ -76,9 +77,7 @@ internal sealed class AppPreferencesStore
     {
         lock (_gate)
         {
-            _current = _current with { OnboardingCompleted = true };
-            Save();
-            return _current;
+            return Commit(_current with { OnboardingCompleted = true });
         }
     }
 
@@ -93,14 +92,12 @@ internal sealed class AppPreferencesStore
             {
                 [productId] = previewView,
             };
-            _current = _current with
+            return Commit(_current with
             {
                 PreviewViews = views,
                 RememberRecentFiles = rememberRecentFiles,
                 RecentFiles = rememberRecentFiles ? _current.RecentFiles : [],
-            };
-            Save();
-            return _current;
+            });
         }
     }
 
@@ -131,8 +128,7 @@ internal sealed class AppPreferencesStore
             };
             next.AddRange(_current.RecentFiles.Where(item =>
                 !string.Equals(item.Id, id, StringComparison.Ordinal)));
-            _current = _current with { RecentFiles = next.Take(MaxRecentFiles).ToArray() };
-            Save();
+            Commit(_current with { RecentFiles = next.Take(MaxRecentFiles).ToArray() });
         }
     }
 
@@ -149,13 +145,12 @@ internal sealed class AppPreferencesStore
     {
         lock (_gate)
         {
-            _current = _current with
+            Commit(_current with
             {
                 RecentFiles = _current.RecentFiles
                     .Where(item => !string.Equals(item.Id, id, StringComparison.Ordinal))
                     .ToArray(),
-            };
-            Save();
+            });
         }
     }
 
@@ -163,8 +158,7 @@ internal sealed class AppPreferencesStore
     {
         lock (_gate)
         {
-            _current = _current with { RecentFiles = [] };
-            Save();
+            Commit(_current with { RecentFiles = [] });
         }
     }
 
@@ -212,12 +206,19 @@ internal sealed class AppPreferencesStore
         };
     }
 
-    private void Save()
+    private AppPreferences Commit(AppPreferences candidate)
     {
-        PrivateUserStorage.WriteAllText(
-            _path,
-            JsonSerializer.Serialize(_current, JsonOptions));
+        AppPreferences snapshot = Freeze(candidate);
+        PrivateUserStorage.WriteAllText(_path, JsonSerializer.Serialize(snapshot, JsonOptions));
+        _current = snapshot;
+        return snapshot;
     }
+
+    private static AppPreferences Freeze(AppPreferences value) => value with
+    {
+        PreviewViews = value.PreviewViews.ToFrozenDictionary(StringComparer.Ordinal),
+        RecentFiles = Array.AsReadOnly(value.RecentFiles.ToArray()),
+    };
 
     private static string IdForPath(string path)
     {
