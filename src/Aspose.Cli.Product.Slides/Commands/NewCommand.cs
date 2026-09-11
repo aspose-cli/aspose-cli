@@ -34,7 +34,7 @@ internal static class NewCommand
                 MarkdownPath = markdownValue is null ? null : context.Paths.ResolveInput(markdownValue),
                 TemplatePath = templateValue is null ? null : context.Paths.ResolveInput(templateValue),
                 Size = parse.GetValue(size),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs),
+                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
         }));
         return command;

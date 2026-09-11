@@ -44,8 +44,8 @@ internal static class EditCommand
                 BackupPath = target.BackupPath,
                 Options = editOptions.Read(parse, batch.IfMatch),
                 Verify = parse.GetValue(verify),
-                Password = password.Resolve(parse, context.Inputs, stdinAvailable: source != "-"),
-                OpSecrets = ResolveSecrets(batch),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: source != "-"),
+                OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
             });
         }));
         return command;
@@ -66,7 +66,7 @@ internal static class EditCommand
             }).ToArray(),
         };
 
-    private static IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>>? ResolveSecrets(PdfOpsBatch batch)
+    private static IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>>? ResolveSecrets(PdfOpsBatch batch, Func<string, string?> readEnvironment)
     {
         var resolved = new Dictionary<int, IReadOnlyDictionary<string, string>>();
         for (int index = 0; index < batch.Ops.Count; index++)
@@ -75,13 +75,13 @@ internal static class EditCommand
             switch (batch.Ops[index])
             {
                 case InsertPagesFromOp { PasswordEnv: not null } insert:
-                    names["password"] = ResolveEnvironment(insert.PasswordEnv);
+                    names["password"] = ResolveEnvironment(insert.PasswordEnv, readEnvironment);
                     break;
                 case EncryptPdfOp encrypt:
-                    names["ownerPassword"] = ResolveEnvironment(encrypt.OwnerPasswordEnv);
+                    names["ownerPassword"] = ResolveEnvironment(encrypt.OwnerPasswordEnv, readEnvironment);
                     if (encrypt.UserPasswordEnv is not null)
                     {
-                        names["userPassword"] = ResolveEnvironment(encrypt.UserPasswordEnv);
+                        names["userPassword"] = ResolveEnvironment(encrypt.UserPasswordEnv, readEnvironment);
                     }
 
                     break;
@@ -96,9 +96,9 @@ internal static class EditCommand
         return resolved.Count == 0 ? null : resolved;
     }
 
-    private static string ResolveEnvironment(string variable)
+    private static string ResolveEnvironment(string variable, Func<string, string?> readEnvironment)
     {
-        string? value = Environment.GetEnvironmentVariable(variable);
+        string? value = readEnvironment(variable);
         if (string.IsNullOrEmpty(value))
         {
             throw CliErrors.OptionInvalid(

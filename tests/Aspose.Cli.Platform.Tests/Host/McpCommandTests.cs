@@ -86,16 +86,21 @@ public sealed class McpCommandTests
     }
 
     [Fact]
-    public void Execute_ForwardsOnlyExplicitSafeEnvironmentReferences()
+    public void Execute_LeavesReferencedAndUnrelatedSecretsOutOfTheChildEnvironment()
     {
-        Assert.Equal(
-            ["DOC_PASSWORD", "OUTPUT_PASSWORD"],
-            InvocationEnvironment.ReferencedVariables(ActualCommandTree.Parser.Parse(
-            [
-                "words", "convert", "file.docx", "--to", "docx", "--out", "out.docx",
-                "--password-env", "DOC_PASSWORD",
-                "--encrypt-env=OUTPUT_PASSWORD",
-            ])));
+        string name = "ASPOSE_TEST_SECRET_" + Guid.NewGuid().ToString("N");
+        Environment.SetEnvironmentVariable(name, "synthetic-secret");
+        try
+        {
+            var start = new ProcessStartInfo();
+            InvocationEnvironment.Configure(start, ActualCommandTree.Parser.Parse(
+                ["cells", "inspect", "input.xlsx", "--password-env", name]), []);
+            Assert.False(start.Environment.ContainsKey(name));
+            InvocationEnvironment.Configure(start, ActualCommandTree.Parser.Parse(
+                ["cells", "inspect", "input.xlsx"]), []);
+            Assert.False(start.Environment.ContainsKey(name));
+        }
+        finally { Environment.SetEnvironmentVariable(name, null); }
     }
 
     [Fact]

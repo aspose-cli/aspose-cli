@@ -92,7 +92,7 @@ internal static class SearchCommand
                 SheetName = parseResult.GetValue(sheetOption),
                 MaxHits = maxHits,
                 CaseSensitive = parseResult.GetValue(caseOption),
-                Password = password.Resolve(parseResult, context.Inputs),
+                Password = password.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
             });
         }));
 

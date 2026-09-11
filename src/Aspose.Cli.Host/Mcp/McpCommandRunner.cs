@@ -158,7 +158,7 @@ internal sealed class McpCommandRunner
             using Process process = Process.Start(start)
                 ?? throw new McpCommandException("The CLI child process could not be started.");
             using IDisposable? job = WindowsProcessJob.TryAttach(process);
-            Task startup = channel.SendAsync(_inherited, linked.Token);
+            Task startup = channel.ServeAsync(_inherited, linked.Token);
             Task input = WriteInputAsync(process, stdin, linked.Token);
             Task<string> stdout = ReadBoundedAsync(
                 process.StandardOutput.BaseStream,

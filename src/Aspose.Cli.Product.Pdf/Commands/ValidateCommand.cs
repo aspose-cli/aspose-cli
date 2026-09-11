@@ -22,7 +22,7 @@ internal static class ValidateCommand
                 new PdfValidateRequest
                 {
                     Profile = parse.GetRequiredValue(profile),
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 })));
         return command;
     }

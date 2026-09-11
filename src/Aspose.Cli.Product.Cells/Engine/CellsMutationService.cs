@@ -53,7 +53,8 @@ internal sealed class CellsMutationService
         IReadOnlyList<BoundedOperationOutcome> applied = OpsExecutor.Execute(
             workbook,
             batch,
-            options.Options.BestEffort);
+            options.Options.BestEffort,
+            options.OpSecrets);
         bool explicitlyRecalculated = batch.Ops.Any(static op => op is RecalculateOp);
         if (options.Recalculate && !explicitlyRecalculated)
         {

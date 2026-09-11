@@ -16,7 +16,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
     public CellsOperationsTests(CellsFixture fixture) => _fixture = fixture;
 
-    private EditResult Apply(string path, string operations, string output) =>
+    private EditResult Apply(string path, string operations, string output,
+        IReadOnlyDictionary<string, string?>? secrets = null) =>
         _fixture.Engine.ApplyOps(
             path,
             OpsParser.Parse(operations),
@@ -24,6 +25,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             {
                 OutputPath = _fixture.Temp.File(output),
                 Overwrite = true,
+                OpSecrets = secrets,
             });
 
     [Theory]
@@ -143,31 +145,21 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void SheetProtection_UsesAnEnvironmentSecretWithoutSerializingIt()
+    public void SheetProtection_UsesAResolvedSecretWithoutSerializingIt()
     {
         const string secret = "test-sheet-secret";
-        Environment.SetEnvironmentVariable("ASPOSE_CLI_TEST_SHEET_PASSWORD", secret);
-        try
-        {
-            string source = _fixture.CreateSalesWorkbook("protected.xlsx");
-            EditResult result = Apply(
-                source,
-                """{ "ops": [ { "op": "protect_sheet", "sheet": "Data", "passwordEnv": "ASPOSE_CLI_TEST_SHEET_PASSWORD", "allow": ["sort"] } ] }""",
-                "protected.out.xlsx");
+        string source = _fixture.CreateSalesWorkbook("protected.xlsx");
+        EditResult result = Apply(
+            source,
+            """{ "ops": [ { "op": "protect_sheet", "sheet": "Data", "passwordEnv": "ASPOSE_CLI_TEST_SHEET_PASSWORD", "allow": ["sort"] } ] }""",
+            "protected.out.xlsx",
+            new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_SHEET_PASSWORD"] = secret });
 
-            using var workbook = new Workbook(result.Output!.Path);
-            Assert.True(workbook.Worksheets["Data"].Protection.AllowSorting);
-            Assert.DoesNotContain(
-                secret,
-                ProductJsonContext.Definition.Serialize(result),
-                StringComparison.Ordinal);
-        }
-        finally
-        {
-            Environment.SetEnvironmentVariable("ASPOSE_CLI_TEST_SHEET_PASSWORD", null);
-        }
+        using var workbook = new Workbook(result.Output!.Path);
+        Assert.True(workbook.Worksheets["Data"].Protection.AllowSorting);
+        Assert.True(workbook.Worksheets["Data"].IsProtected);
+        Assert.DoesNotContain(secret, ProductJsonContext.Definition.Serialize(result), StringComparison.Ordinal);
     }
-
     [Fact]
     public void ChartCosmetics_PersistThroughSaveAndReopen()
     {

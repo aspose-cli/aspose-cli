@@ -35,7 +35,7 @@ internal static class ExtractCommand
                     OutputDirectory = context.Paths.ResolveOutput(parse.GetRequiredValue(outDirectory)),
                     Overwrite = parse.GetValue(overwrite),
                     Slides = range is null ? null : PageRange.Parse(range),
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
         }));
         return command;

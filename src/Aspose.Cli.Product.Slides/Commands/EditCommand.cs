@@ -49,8 +49,8 @@ internal static class EditCommand
                 BackupPath = target.BackupPath,
                 Options = editOptions.Read(parse, batch.IfMatch),
                 Verify = parse.GetValue(verify),
-                Password = password.Resolve(parse, context.Inputs, stdinAvailable: source != "-"),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: source != "-"),
+                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
         }));
         return command;

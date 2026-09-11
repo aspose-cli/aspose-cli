@@ -26,7 +26,7 @@ internal static class QueryCommand
         command.SetAction(parse => host.Run(parse, context =>
             context.Port.ReadForm(
                 context.Paths.ResolveInput(parse.GetRequiredValue(file)),
-                new PdfFormReadRequest { Password = password.Resolve(parse, context.Inputs) })));
+                new PdfFormReadRequest { Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment) })));
         return command;
     }
 }

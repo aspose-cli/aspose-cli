@@ -14,12 +14,12 @@ internal static class ProcessPipeMessages
         DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
     };
 
-    internal static async Task WriteAsync<T>(Stream stream, T value, CancellationToken cancellationToken)
+    internal static async Task WriteAsync<T>(Stream stream, T value, CancellationToken cancellationToken, int maximumBytes = MaximumBytes)
     {
         byte[] payload = JsonSerializer.SerializeToUtf8Bytes(value, JsonOptions);
         try
         {
-            if (payload.Length is <= 0 or > MaximumBytes)
+            if (payload.Length <= 0 || payload.Length > maximumBytes)
             {
                 throw new InvalidDataException("The private process message is too large.");
             }
@@ -32,15 +32,23 @@ internal static class ProcessPipeMessages
         finally { CryptographicOperations.ZeroMemory(payload); }
     }
 
-    internal static async Task<T> ReadAsync<T>(Stream stream, CancellationToken cancellationToken)
+    internal static async Task<T> ReadAsync<T>(Stream stream, CancellationToken cancellationToken,
+        int maximumBytes = MaximumBytes, Action<int>? reserve = null) where T : class =>
+        await ReadOrEndAsync<T>(stream, cancellationToken, maximumBytes, reserve).ConfigureAwait(false)
+            ?? throw new EndOfStreamException("The private process channel ended before its next message.");
+
+    internal static async Task<T?> ReadOrEndAsync<T>(Stream stream, CancellationToken cancellationToken,
+        int maximumBytes = MaximumBytes, Action<int>? reserve = null) where T : class
     {
         byte[] header = new byte[sizeof(int)];
-        await stream.ReadExactlyAsync(header, cancellationToken).ConfigureAwait(false);
+        if (await stream.ReadAsync(header.AsMemory(0, 1), cancellationToken).ConfigureAwait(false) == 0) { return null; }
+        await stream.ReadExactlyAsync(header.AsMemory(1), cancellationToken).ConfigureAwait(false);
         int length = BinaryPrimitives.ReadInt32LittleEndian(header);
-        if (length is <= 0 or > MaximumBytes)
+        if (length <= 0 || length > maximumBytes)
         {
             throw new InvalidDataException("The private process message length is invalid.");
         }
+        reserve?.Invoke(length);
         byte[] payload = new byte[length];
         try
         {

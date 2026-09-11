@@ -33,8 +33,8 @@ internal static class EditCommand
             ValidateVerificationOptions(verify, verifyDirValue, dryRun, noRecalc);
 
             MutationTarget target = options.Output.Resolve(parseResult, context.Paths, inputPath, requireBackup: verify);
-            string? inputPassword = options.Password.Resolve(parseResult, context.Inputs, stdinAvailable: opsSource != "-");
-            string? encryptPassword = options.Encrypt.Resolve(parseResult, context.Inputs);
+            string? inputPassword = options.Password.Resolve(parseResult, context.Inputs, context.ReadEnvironment, stdinAvailable: opsSource != "-");
+            string? encryptPassword = options.Encrypt.Resolve(parseResult, context.Inputs, context.ReadEnvironment);
             string? baseline = verify ? EditVerificationRunner.CaptureBaseline(inputPath) : null;
             EditResult result;
             try
@@ -46,6 +46,7 @@ internal static class EditCommand
                     BackupPath = target.BackupPath,
                     Options = options.Edit.Read(parseResult, batch.IfMatch),
                     Recalculate = !noRecalc,
+                    OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
                     Password = inputPassword,
                     EncryptPassword = encryptPassword,
                 });
@@ -88,6 +89,17 @@ internal static class EditCommand
         return edit;
     }
 
+    private static IReadOnlyDictionary<string, string?> ResolveSecrets(
+        OpsBatch batch, Func<string, string?> readEnvironment) =>
+        batch.Ops.Select(static op => op switch
+        {
+            ProtectSheetOp value => value.PasswordEnv,
+            UnprotectSheetOp value => value.PasswordEnv,
+            ProtectWorkbookOp value => value.PasswordEnv,
+            UnprotectWorkbookOp value => value.PasswordEnv,
+            _ => null,
+        }).OfType<string>().Distinct(StringComparer.Ordinal)
+            .ToDictionary(static name => name, readEnvironment, StringComparer.Ordinal);
     private static EditCommandBindings CreateOptions()
     {
         var file = new Argument<string>("file") { Description = "Workbook to edit." }.WithInput(InputKind.File);

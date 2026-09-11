@@ -33,8 +33,8 @@ internal static class CompareCommand
                     IgnoreFormatting = parse.GetValue(ignoreFormatting),
                     OutputPath = parse.GetValue(outOption) is { } output ? context.Paths.ResolveOutput(output) : null,
                     Overwrite = parse.GetValue(overwrite),
-                    LeftPassword = leftPassword.Resolve(parse, context.Inputs),
-                    RightPassword = rightPassword.Resolve(parse, context.Inputs),
+                    LeftPassword = leftPassword.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                    RightPassword = rightPassword.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 })));
         return command;
     }

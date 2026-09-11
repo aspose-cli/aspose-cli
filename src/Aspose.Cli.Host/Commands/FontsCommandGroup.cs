@@ -121,7 +121,7 @@ internal static class FontsCommandGroup
                 {
                     Password = password.Resolve(
                         parseResult,
-                        context.ResourceBudgets.Inputs),
+                        context.ResourceBudgets.Inputs, context.ReadEnvironment),
                     FontProfile = profile,
                 });
         }));

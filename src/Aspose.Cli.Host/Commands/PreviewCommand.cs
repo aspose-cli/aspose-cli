@@ -138,7 +138,7 @@ internal static class PreviewCommand
                     Password: secrets?.Password
                         ?? password.Resolve(
                             parse,
-                            context.ResourceBudgets.Inputs),
+                            context.ResourceBudgets.Inputs, context.ReadEnvironment),
                     Selector: selectedSelector,
                     FontProfile: secrets?.FontProfile),
                 parse.GetValue(effect)));
@@ -226,7 +226,7 @@ internal static class PreviewCommand
             new ProductPreviewRequest(
                 view,
                 Password: symbols.Password.Resolve(
-                    parse, context.ResourceBudgets.Inputs),
+                    parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
                 FontProfile: fontProfile.IsAmbient ? null : fontProfile),
             presentationEffect: null,
             openBrowser: parse.GetValue(symbols.Open));

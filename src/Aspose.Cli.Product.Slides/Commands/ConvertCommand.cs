@@ -36,8 +36,8 @@ internal static class ConvertCommand
                 OutputPath = output.ResolvePath(parse, context.Paths, input, SlidesModule.Formats.ExtensionFor(format)),
                 Overwrite = output.Overwrite(parse),
                 Slides = range is null ? null : PageRange.Parse(range),
-                Password = password.Resolve(parse, context.Inputs),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
         }));
         return command;

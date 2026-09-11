@@ -109,7 +109,7 @@ internal static class ReviewCommand
             var request = new ProductReviewRequest(
                 selectedView,
                 maximum,
-                password.Resolve(parse, context.ResourceBudgets.Inputs),
+                password.Resolve(parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
                 fontProfile.IsAmbient ? null : fontProfile);
             return ReviewEvidenceWriter.Write(
                 input,

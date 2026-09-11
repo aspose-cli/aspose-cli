@@ -59,7 +59,7 @@ internal static class InfoCommand
                 IncludePreview = parseResult.GetValue(previewOption),
                 PreviewRows = previewRows,
                 Details = parseResult.GetValue(detailOption),
-                Password = password.Resolve(parseResult, context.Inputs),
+                Password = password.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
             });
         }));
 

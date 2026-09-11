@@ -39,7 +39,7 @@ internal static class NewCommand
                 OutputPath = outputPath,
                 Overwrite = parseResult.GetValue(overwriteOption),
                 SheetNames = sheetNames,
-                EncryptPassword = encrypt.Resolve(parseResult, context.Inputs),
+                EncryptPassword = encrypt.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
             });
         }));
 

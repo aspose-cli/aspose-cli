@@ -81,7 +81,7 @@ internal static class RenderCommand
                 AllSlides = every,
                 Dpi = resolution,
                 Width = pixelWidth,
-                Password = password.Resolve(parse, context.Inputs),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
         }));
         return command;

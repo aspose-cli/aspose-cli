@@ -82,7 +82,7 @@ internal static class TimeoutWorkerSupervisor
             channel);
         Task<string> standardOutput = worker.StandardOutput.ReadToEndAsync();
         Task<string> standardError = worker.StandardError.ReadToEndAsync();
-        Task startup = channel.SendAsync(InvocationInputs.Current?.Inherited, completion.Token);
+        Task startup = channel.ServeAsync(InvocationInputs.Current?.Inherited, completion.Token);
         bool timedOut = false;
         bool cancelled = false;
         try

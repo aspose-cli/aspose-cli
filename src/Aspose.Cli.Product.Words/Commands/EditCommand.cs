@@ -55,9 +55,9 @@ internal static class EditCommand
                 Verify = parse.GetValue(verify),
                 TrackChanges = parse.GetValue(trackChanges),
                 Author = parse.GetValue(author),
-                Password = password.Resolve(parse, context.Inputs, stdinAvailable: opsSource != "-"),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs),
-                OpSecrets = ResolveSecrets(batch),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: opsSource != "-"),
+                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
             });
             WordsPreviewHintPublisher.Publish(result, target.OutputPath);
             return result;
@@ -115,7 +115,7 @@ internal static class EditCommand
             }).ToArray(),
         };
 
-    private static IReadOnlyDictionary<int, string>? ResolveSecrets(WordsOpsBatch batch)
+    private static IReadOnlyDictionary<int, string>? ResolveSecrets(WordsOpsBatch batch, Func<string, string?> readEnvironment)
     {
         var values = new Dictionary<int, string>();
         for (int index = 0; index < batch.Ops.Count; index++)
@@ -131,7 +131,7 @@ internal static class EditCommand
                 continue;
             }
 
-            string? secret = Environment.GetEnvironmentVariable(variable);
+            string? secret = readEnvironment(variable);
             if (string.IsNullOrEmpty(secret))
             {
                 throw CliErrors.OptionInvalid("passwordEnv", $"environment variable '{variable}' is missing or empty", "Set it before running the edit.");

@@ -7,7 +7,7 @@ using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
 
-public sealed class McpProtocolTests
+public sealed partial class McpProtocolTests
 {
     [Fact]
     public async Task Execute_UsesActualSyntaxPreservesHostDefaultsAndRejectsUnauthorizedCommands()

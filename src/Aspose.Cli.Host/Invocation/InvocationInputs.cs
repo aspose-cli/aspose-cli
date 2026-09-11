@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.IO.Pipes;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Output;
@@ -6,16 +5,22 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.Invocation;
 
-/// <summary>Inherited options for this invocation; command arguments retain their own precedence.</summary>
+/// <summary>Inherited options and named environment access for one owned child invocation.</summary>
 internal sealed class InvocationInputs : IDisposable
 {
     internal const string HandleVariable = "ASPOSE_CLI_INVOCATION_INPUT_HANDLE";
+    internal const string RequestHandleVariable = "ASPOSE_CLI_INVOCATION_REQUEST_HANDLE";
+    internal const int MaximumMessageBytes = 256 * 1024;
     private static readonly AsyncLocal<InvocationInputs?> Ambient = new();
     private readonly InvocationInputs? _previous;
+    private readonly AnonymousPipeClientStream _replies;
+    private readonly AnonymousPipeClientStream _requests;
+    private readonly SemaphoreSlim _gate = new(1, 1);
     internal static InvocationInputs? Current => Ambient.Value;
     internal GlobalValues? Inherited { get; }
 
-    private InvocationInputs(InvocationStartMessage message)
+    private InvocationInputs(InvocationStartMessage message,
+        AnonymousPipeClientStream replies, AnonymousPipeClientStream requests)
     {
         if (message.Version != 1
             || (message.WorkDirectory is not null && !Path.IsPathFullyQualified(message.WorkDirectory))
@@ -28,6 +33,8 @@ internal sealed class InvocationInputs : IDisposable
         Inherited = message.WorkDirectory is null ? null : new GlobalValues(
             OutputMode.Json, false, false, message.LicensePath, message.WorkDirectory, null,
             message.MaxInputBytes ?? InputSizeGuard.DefaultMaxBytes);
+        _replies = replies;
+        _requests = requests;
         _previous = Ambient.Value;
         Ambient.Value = this;
     }
@@ -35,34 +42,59 @@ internal sealed class InvocationInputs : IDisposable
     internal static InvocationInputs? Receive()
     {
         string? handle = Environment.GetEnvironmentVariable(HandleVariable);
-        if (string.IsNullOrEmpty(handle)) { return null; }
+        string? requestHandle = Environment.GetEnvironmentVariable(RequestHandleVariable);
+        if (string.IsNullOrEmpty(handle) && string.IsNullOrEmpty(requestHandle)) { return null; }
         Environment.SetEnvironmentVariable(HandleVariable, null);
-        using var pipe = new AnonymousPipeClientStream(PipeDirection.In, handle);
-        return new InvocationInputs(ProcessPipeMessages.ReadAsync<InvocationStartMessage>(
-            pipe, CancellationToken.None).GetAwaiter().GetResult());
+        Environment.SetEnvironmentVariable(RequestHandleVariable, null);
+        if (string.IsNullOrEmpty(handle) || string.IsNullOrEmpty(requestHandle))
+        {
+            throw new InvalidDataException("The invocation input channel is incomplete.");
+        }
+        var replies = new AnonymousPipeClientStream(PipeDirection.In, handle);
+        AnonymousPipeClientStream? requests = null;
+        try
+        {
+            requests = new AnonymousPipeClientStream(PipeDirection.Out, requestHandle);
+            ProcessPipeHandles.PreventInheritance(replies);
+            ProcessPipeHandles.PreventInheritance(requests);
+            InvocationStartMessage message = ProcessPipeMessages.ReadAsync<InvocationStartMessage>(
+                replies, CancellationToken.None, MaximumMessageBytes).GetAwaiter().GetResult();
+            return new InvocationInputs(message, replies, requests);
+        }
+        catch
+        {
+            replies.Dispose();
+            requests?.Dispose();
+            throw;
+        }
     }
 
-    public void Dispose() => Ambient.Value = _previous;
-}
-
-/// <summary>Owns a startup pipe until its child has received the inherited options.</summary>
-internal sealed class InvocationInputServer : IDisposable
-{
-    private readonly AnonymousPipeServerStream _pipe = new(
-        PipeDirection.Out, HandleInheritability.Inheritable);
-
-    internal void Configure(ProcessStartInfo start) =>
-        start.Environment[InvocationInputs.HandleVariable] = _pipe.GetClientHandleAsString();
-
-    internal Task SendAsync(GlobalValues? inherited, CancellationToken cancellationToken)
+    internal EnvironmentValueReply ReadEnvironment(
+        string name, long maximumCharacters, CancellationToken cancellationToken, Action<int>? reserve = null)
     {
-        _pipe.DisposeLocalCopyOfClientHandle();
-        return ProcessPipeMessages.WriteAsync(_pipe, new InvocationStartMessage(
-            1, inherited?.WorkDir, inherited?.LicensePath, inherited?.MaxInputBytes), cancellationToken);
+        _gate.Wait(cancellationToken);
+        try
+        {
+            ProcessPipeMessages.WriteAsync(_requests,
+                new EnvironmentValueRequest(name, maximumCharacters), cancellationToken, MaximumMessageBytes)
+                .WaitAsync(cancellationToken).GetAwaiter().GetResult();
+            return ProcessPipeMessages.ReadAsync<EnvironmentValueReply>(
+                _replies, cancellationToken, MaximumMessageBytes, reserve)
+                .WaitAsync(cancellationToken).GetAwaiter().GetResult();
+        }
+        finally { _gate.Release(); }
     }
 
-    public void Dispose() => _pipe.Dispose();
+    public void Dispose()
+    {
+        Ambient.Value = _previous;
+        _requests.Dispose();
+        _replies.Dispose();
+        _gate.Dispose();
+    }
 }
 
 internal sealed record InvocationStartMessage(
     int Version, string? WorkDirectory, string? LicensePath, long? MaxInputBytes);
+internal sealed record EnvironmentValueRequest(string Name, long MaximumCharacters);
+internal sealed record EnvironmentValueReply(string? Value, long? OversizedCharacters = null);

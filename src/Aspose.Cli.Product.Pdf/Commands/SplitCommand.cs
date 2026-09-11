@@ -47,7 +47,7 @@ internal static class SplitCommand
                     OutputDirectory = PdfOptions.ResolveDirectory(parse, context, outDirectory),
                     NameTemplate = parse.GetValue(name) ?? "{stem}.{n}.pdf",
                     Overwrite = parse.GetValue(overwrite),
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
         }));
         return command;

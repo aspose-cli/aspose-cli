@@ -47,7 +47,7 @@ internal static class NewCommand
                 TextPath = textValue is null ? null : context.Paths.ResolveInput(textValue),
                 TemplatePath = templateValue is null ? null : context.Paths.ResolveInput(templateValue),
                 Title = parse.GetValue(title),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs),
+                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
         }));
         return command;

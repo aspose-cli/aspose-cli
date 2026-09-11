@@ -42,7 +42,7 @@ internal static class SplitCommand
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
                     OutputDirectory = WordsOptions.ResolveDirectory(parse, context, outDirectory),
                     Overwrite = parse.GetValue(overwrite),
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
         }));
         return command;

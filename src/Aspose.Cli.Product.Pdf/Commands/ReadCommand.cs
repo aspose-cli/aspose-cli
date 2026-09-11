@@ -43,7 +43,7 @@ internal static class ReadCommand
                     Pages = range is null ? null : PageRange.Parse(range),
                     Mode = parse.GetValue(mode) ?? PdfReadModes.Plain,
                     MaxCharacters = characters,
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
         }));
         return command;

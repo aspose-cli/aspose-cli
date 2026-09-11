@@ -55,7 +55,7 @@ internal static class ExtractCommand
                         ? Path.ChangeExtension(input, "." + format)
                         : context.Paths.ResolveOutput(outPath),
                     Overwrite = parse.GetValue(overwrite),
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
             }
 
@@ -75,7 +75,7 @@ internal static class ExtractCommand
                     What = kind,
                     OutputDirectory = PdfOptions.ResolveDirectory(directory, context),
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
         }));
         return command;

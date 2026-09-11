@@ -50,6 +50,7 @@ internal static class CompositionRoot
             Paths = new PathResolver(workDir),
             Globals = new ProductCommandGlobals
             {
+                ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),
                 Quiet = globals.Quiet,
                 Deadline = effectiveDeadline,
                 ResourceBudgets = effectiveBudgets,
@@ -75,6 +76,7 @@ internal static class CompositionRoot
 
         return new CommandContext
         {
+            ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),
             Globals = globals,
             Deadline = effectiveDeadline,
             ResourceBudgets = effectiveBudgets,

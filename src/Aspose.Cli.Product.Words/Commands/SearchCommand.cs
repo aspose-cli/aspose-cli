@@ -38,7 +38,7 @@ internal static class SearchCommand
                     CaseSensitive = parse.GetValue(caseSensitive),
                     Scope = parse.GetValue(scope) ?? "body",
                     MaxHits = limit,
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
         }));
         return command;

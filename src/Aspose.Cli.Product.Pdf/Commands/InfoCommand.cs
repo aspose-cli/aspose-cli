@@ -32,7 +32,7 @@ internal static class InfoCommand
                 {
                     IncludePreview = parse.GetValue(preview),
                     Details = parse.GetValue(detail),
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 })));
         return command;
     }

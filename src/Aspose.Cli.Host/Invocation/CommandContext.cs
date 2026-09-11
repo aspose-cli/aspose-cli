@@ -7,6 +7,8 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>Everything a command handler needs for one invocation.</summary>
 internal sealed class CommandContext
 {
+    public required Func<string, string?> ReadEnvironment { get; init; }
+
     public required GlobalValues Globals { get; init; }
 
     public required OperationDeadline Deadline { get; init; }

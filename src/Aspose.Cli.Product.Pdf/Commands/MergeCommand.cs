@@ -35,7 +35,7 @@ internal static class MergeCommand
                 OutputPath = context.Paths.ResolveOutput(parse.GetRequiredValue(output)),
                 Overwrite = parse.GetValue(overwrite),
                 PreserveBookmarks = (parse.GetValue(bookmarks) ?? "preserve") == "preserve",
-                Password = password.Resolve(parse, context.Inputs),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
             })));
         return command;
     }

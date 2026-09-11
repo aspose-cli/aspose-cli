@@ -68,7 +68,7 @@ internal static class SignCommand
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             string certificatePath = context.Paths.ResolveInput(parse.GetRequiredValue(certificate));
             string variable = parse.GetRequiredValue(certificatePasswordEnv);
-            string? certificatePassword = Environment.GetEnvironmentVariable(variable);
+            string? certificatePassword = context.ReadEnvironment(variable);
             if (string.IsNullOrEmpty(certificatePassword))
             {
                 throw CliErrors.OptionInvalid(
@@ -83,7 +83,7 @@ internal static class SignCommand
                 CertificatePassword = certificatePassword,
                 OutputPath = output.ResolvePath(parse, context.Paths, input, ".signed.pdf"),
                 Overwrite = output.Overwrite(parse),
-                Password = password.Resolve(parse, context.Inputs),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 Page = pageNumber,
                 Visible = isVisible,
                 Rect = rectangleText is null ? null : PdfOptions.ParseSignatureRect(rectangleText),

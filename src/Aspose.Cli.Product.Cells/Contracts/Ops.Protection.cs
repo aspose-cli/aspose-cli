@@ -1,8 +1,8 @@
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Ops for sheet protection. The password is never carried literally: an op
-// names an environment variable (passwordEnv) that the engine reads at apply
-// time, so a secret can never be written into an ops document on disk.
+// names an environment variable (passwordEnv) resolved by the command and
+// supplied separately to the engine; secret values never enter ops JSON.
 
 /// <summary>
 /// Protects a sheet against edits. By default every action is locked; list the

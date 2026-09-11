@@ -5,15 +5,14 @@ using Aspose.Cli.Sdk.Errors;
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
-/// Sheet protection. Passwords are resolved from a named environment variable
-/// here, at the deepest layer, and handed straight to the engine — the secret
-/// value never enters a result, a log or an error message.
+/// Sheet protection using command-resolved secret values. Missing values are
+/// reported when their operation runs, preserving indexed best-effort outcomes.
 /// </summary>
 internal static class ProtectOps
 {
-    public static long? ProtectSheet(Worksheet sheet, ProtectSheetOp op)
+    public static long? ProtectSheet(Worksheet sheet, ProtectSheetOp op, IReadOnlyDictionary<string, string?>? secrets)
     {
-        string? password = ResolvePasswordEnv(op.PasswordEnv);
+        string? password = ResolvePassword(op.PasswordEnv, secrets);
         if (password is null)
         {
             sheet.Protect(ProtectionType.All);
@@ -32,9 +31,9 @@ internal static class ProtectOps
         return null;
     }
 
-    public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op)
+    public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, string?>? secrets)
     {
-        string? password = ResolvePasswordEnv(op.PasswordEnv);
+        string? password = ResolvePassword(op.PasswordEnv, secrets);
         if (password is null)
         {
             sheet.Unprotect();
@@ -47,15 +46,15 @@ internal static class ProtectOps
         return null;
     }
 
-    public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op)
+    public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, string?>? secrets)
     {
-        workbook.Protect(ProtectionType.Structure, ResolvePasswordEnv(op.PasswordEnv));
+        workbook.Protect(ProtectionType.Structure, ResolvePassword(op.PasswordEnv, secrets));
         return null;
     }
 
-    public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op)
+    public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, string?>? secrets)
     {
-        workbook.Unprotect(ResolvePasswordEnv(op.PasswordEnv) ?? string.Empty);
+        workbook.Unprotect(ResolvePassword(op.PasswordEnv, secrets) ?? string.Empty);
         return null;
     }
 
@@ -89,14 +88,14 @@ internal static class ProtectOps
         }
     }
 
-    private static string? ResolvePasswordEnv(string? envVar)
+    private static string? ResolvePassword(string? envVar, IReadOnlyDictionary<string, string?>? secrets)
     {
         if (envVar is null)
         {
             return null;
         }
 
-        string? value = Environment.GetEnvironmentVariable(envVar);
+        string? value = secrets?.GetValueOrDefault(envVar);
         if (string.IsNullOrEmpty(value))
         {
             // Names the variable, never a value. The executor attaches the op index.

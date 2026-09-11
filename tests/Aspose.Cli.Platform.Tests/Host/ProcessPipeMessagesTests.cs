@@ -53,5 +53,25 @@ public sealed class ProcessPipeMessagesTests
         Assert.Equal(pipe.Length, pipe.Position);
     }
 
+    [Fact]
+    public async Task Read_ReservesMemoryBeforeReadingAPayload()
+    {
+        using var input = new MemoryStream([12, 0, 0, 0]);
+        await Assert.ThrowsAsync<OutOfMemoryException>(() =>
+            ProcessPipeMessages.ReadAsync<Message>(input, CancellationToken.None,
+                reserve: _ => throw new OutOfMemoryException("Synthetic budget refusal.")));
+        Assert.Equal(4, input.Position);
+    }
+
+    [Fact]
+    public async Task EndOfStream_IsAllowedOnlyBetweenFrames()
+    {
+        using var empty = new MemoryStream();
+        Assert.Null(await ProcessPipeMessages.ReadOrEndAsync<Message>(empty, CancellationToken.None));
+        using var truncated = new MemoryStream([10, 0]);
+        await Assert.ThrowsAsync<EndOfStreamException>(() =>
+            ProcessPipeMessages.ReadOrEndAsync<Message>(truncated, CancellationToken.None));
+    }
+
     private sealed record Message(string? Value);
 }

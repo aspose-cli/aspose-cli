@@ -35,6 +35,8 @@ Network, data, UNC, device, filesystem-link and escaping references are omitted.
 256 resources, 32 MiB each and 128 MiB total, plus shared input, memory and time budgets.
 Cached linked-picture data is preserved as embedded content in every workbook format;
 external image sources are consulted only when stored data is absent.
+Environment-backed passwords, including operation passwordEnv references, work with
+both --timeout and MCP execute; define them before starting the CLI or MCP server.
 Resource omissions carry completeness warnings through queries, writes, preview and review.
 The SDK resolves embedded MHTML content without reporting missing references;
 MHTML_RESOURCE_COVERAGE_UNVERIFIED therefore requires visual confirmation.

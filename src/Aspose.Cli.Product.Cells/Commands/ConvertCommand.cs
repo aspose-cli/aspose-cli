@@ -61,7 +61,7 @@ internal static class ConvertCommand
                 OutputPath = outputPath,
                 Overwrite = output.Overwrite(parseResult),
                 SheetName = sheetName,
-                Password = password.Resolve(parseResult, context.Inputs),
+                Password = password.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
             });
         }));
 

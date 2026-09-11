@@ -362,12 +362,13 @@ public sealed class PasswordOptions
     public string? Resolve(
         ParseResult parseResult,
         InputSource inputs,
+        Func<string, string?> readEnvironment,
         bool stdinAvailable = true) =>
         Resolve(
             parseResult,
             inputs,
             stdinAvailable,
-            Environment.GetEnvironmentVariable,
+            readEnvironment,
             Console.In);
 
     /// <summary>Injected resolution core used by host and product tests.</summary>

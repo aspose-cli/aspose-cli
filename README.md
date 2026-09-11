@@ -91,6 +91,9 @@ input budget; an execute request cannot raise the server input limit.
 An explicit server license remains an explicit source in child processes, anchored to
 its original work directory. An explicit execute license overrides it and is resolved
 against that execution's work directory.
+Environment-backed command passwords and operation passwords retain their meaning through
+MCP and timeout supervision. Set these variables in the process starting the CLI or MCP
+server. Repeated references share one invocation-scoped secret value and budget.
 Two CLI processes still coordinate document publication through neutral operating-system locks.
 
 ## File and output contracts

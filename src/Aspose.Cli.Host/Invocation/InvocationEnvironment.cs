@@ -1,6 +1,6 @@
 using System.Diagnostics;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 
@@ -27,19 +27,28 @@ internal static class InvocationEnvironment
                 .OfType<string>()))
             .Distinct(StringComparer.OrdinalIgnoreCase).ToArray();
 
-    internal static IReadOnlyList<string> ReferencedVariables(ParsedInvocation invocation) =>
-        invocation.ParseResult.DeclaredParameters()
-            .Where(static parameter => parameter.Metadata.ValueSource == ParameterValueSource.EnvironmentVariableName)
-            .SelectMany(static parameter => parameter.TextValues())
-            .Where(IsSafeName)
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .Order(StringComparer.Ordinal).ToArray();
-
+    internal static Func<string, string?> CreateSecretReader(ResourceBudgetLedger budgets)
+    {
+        InvocationInputs? inputs = InvocationInputs.Current;
+        return new EnvironmentSecrets(name =>
+        {
+            if (inputs is null) { return Environment.GetEnvironmentVariable(name); }
+            EnvironmentValueReply reply = inputs.ReadEnvironment(name,
+                budgets.Limit(ResourceBudgetKinds.SecretCharacters), budgets.Deadline.Token,
+                bytes => budgets.Consume(ResourceBudgetKinds.MemoryBufferBytes, bytes, "bytes", "process-input"));
+            if (reply.OversizedCharacters is { } oversized)
+            {
+                budgets.Consume(ResourceBudgetKinds.SecretCharacters, oversized, "characters", "environment-secret");
+                throw new InvalidDataException("The environment reply has an invalid size.");
+            }
+            return reply.Value;
+        }, budgets).Read;
+    }
     internal static void Configure(
         ProcessStartInfo start, ParsedInvocation invocation, IReadOnlyList<string> productVariables)
     {
         start.Environment.Clear();
-        foreach (string name in Baseline.Concat(productVariables).Concat(ReferencedVariables(invocation)))
+        foreach (string name in Baseline.Concat(productVariables))
         {
             if (Environment.GetEnvironmentVariable(name) is { } value)
             {
@@ -53,9 +62,4 @@ internal static class InvocationEnvironment
         }
     }
 
-    private static bool IsSafeName(string name) =>
-        name.Length is > 0 and <= 128
-        && (char.IsAsciiLetter(name[0]) || name[0] == '_')
-        && name.AsSpan(1).IndexOfAnyExcept(
-            "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_") < 0;
 }

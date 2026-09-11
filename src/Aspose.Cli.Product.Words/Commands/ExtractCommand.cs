@@ -26,7 +26,7 @@ internal static class ExtractCommand
                 {
                     What = parse.GetRequiredValue(what),
                     OutputDirectory = WordsOptions.ResolveDirectory(parse, context, outDirectory),
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 })));
         return command;
     }

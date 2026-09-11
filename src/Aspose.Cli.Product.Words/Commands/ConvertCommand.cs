@@ -41,8 +41,8 @@ internal static class ConvertCommand
                 OutputPath = output.ResolvePath(parse, context.Paths, input, WordsModule.Formats.ExtensionFor(format)),
                 Overwrite = output.Overwrite(parse),
                 Pages = pageText is null ? null : PageRange.Parse(pageText),
-                Password = password.Resolve(parse, context.Inputs),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
         }));
         return command;

@@ -32,7 +32,7 @@ internal static class ConvertCommand
                 OutputPath = output.ResolvePath(parse, context.Paths, input, PdfModule.Formats.ExtensionFor(format)),
                 Overwrite = output.Overwrite(parse),
                 Pages = range is null ? null : PageRange.Parse(range),
-                Password = password.Resolve(parse, context.Inputs),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
         }));
         return command;

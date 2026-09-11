@@ -82,7 +82,7 @@ internal static class ReadCommand
                 Range = range,
                 Scope = scope,
                 MaxCells = maxCells,
-                Password = password.Resolve(parseResult, context.Inputs),
+                Password = password.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
             });
 
             // The engine returns the projection; the CLI advertises the follow-up

@@ -47,7 +47,7 @@ internal static class ReadCommand
                     Scope = parse.GetValue(scope) ?? PresentationReadScopes.Shapes,
                     IncludeNotes = parse.GetValue(notes),
                     MaxCharacters = characters,
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
         }));
         return command;

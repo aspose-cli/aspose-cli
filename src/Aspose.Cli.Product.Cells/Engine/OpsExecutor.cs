@@ -15,19 +15,20 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// </summary>
 internal static class OpsExecutor
 {
-    public static IReadOnlyList<BoundedOperationOutcome> Execute(Workbook workbook, OpsBatch batch, bool continueOnError) =>
-        OpsBatchRunner.Run(batch, op => Apply(workbook, op), continueOnError);
+    public static IReadOnlyList<BoundedOperationOutcome> Execute(Workbook workbook, OpsBatch batch, bool continueOnError,
+        IReadOnlyDictionary<string, string?>? secrets) =>
+        OpsBatchRunner.Run(batch, op => Apply(workbook, op, secrets), continueOnError);
 
     /// <summary>
     /// Applies one op, laundering the SDK's <see cref="CellsException"/> into the
     /// Core-visible <see cref="EngineOpException"/>; a mapper's own
     /// <c>CliException</c> propagates untouched for the runner to normalize.
     /// </summary>
-    private static long? Apply(Workbook workbook, Op op)
+    private static long? Apply(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets)
     {
         try
         {
-            return Dispatch(workbook, op);
+            return Dispatch(workbook, op, secrets);
         }
         catch (CellsException ex)
         {
@@ -36,7 +37,7 @@ internal static class OpsExecutor
     }
 
     /// <summary>Routes one op to its mapper; returns the touched cell count where meaningful.</summary>
-    private static long? Dispatch(Workbook workbook, Op op) => op switch
+    private static long? Dispatch(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets) => op switch
     {
         RecalculateOp => Recalculate(workbook),
         SetValuesOp or SetFormulaOp or ClearRangeOp or CopyRangeOp or FormatRangeOp
@@ -54,7 +55,7 @@ internal static class OpsExecutor
         AddCommentOp or EditCommentOp or DeleteCommentOp or ProtectSheetOp or UnprotectSheetOp
             or GroupRowsOp or UngroupRowsOp or GroupColumnsOp or UngroupColumnsOp or RemoveDuplicatesOp
             or ProtectWorkbookOp or UnprotectWorkbookOp or SetHyperlinkOp or RemoveHyperlinkOp
-            => DispatchReview(workbook, op),
+            => DispatchReview(workbook, op, secrets),
         SetDefaultFontOp or SetTabColorOp or SetSheetViewOp => DispatchLook(workbook, op),
         _ => throw new InvalidOperationException($"Unhandled op type {op.GetType().Name}."),
     };
@@ -129,20 +130,20 @@ internal static class OpsExecutor
         _ => throw new InvalidOperationException(),
     };
 
-    private static long? DispatchReview(Workbook workbook, Op op) => op switch
+    private static long? DispatchReview(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets) => op switch
     {
         AddCommentOp addComment => CommentOps.AddComment(Sheets.Resolve(workbook, op), addComment),
         EditCommentOp editComment => CommentOps.EditComment(Sheets.Resolve(workbook, op), editComment),
         DeleteCommentOp deleteComment => CommentOps.DeleteComment(Sheets.Resolve(workbook, op), deleteComment),
-        ProtectSheetOp protect => ProtectOps.ProtectSheet(Sheets.Resolve(workbook, op), protect),
-        UnprotectSheetOp unprotect => ProtectOps.UnprotectSheet(Sheets.Resolve(workbook, op), unprotect),
+        ProtectSheetOp protect => ProtectOps.ProtectSheet(Sheets.Resolve(workbook, op), protect, secrets),
+        UnprotectSheetOp unprotect => ProtectOps.UnprotectSheet(Sheets.Resolve(workbook, op), unprotect, secrets),
         GroupRowsOp groupRows => OutlineOps.GroupRows(Sheets.Resolve(workbook, op), groupRows),
         UngroupRowsOp ungroupRows => OutlineOps.UngroupRows(Sheets.Resolve(workbook, op), ungroupRows),
         GroupColumnsOp groupColumns => OutlineOps.GroupColumns(Sheets.Resolve(workbook, op), groupColumns),
         UngroupColumnsOp ungroupColumns => OutlineOps.UngroupColumns(Sheets.Resolve(workbook, op), ungroupColumns),
         RemoveDuplicatesOp removeDuplicates => DedupeOps.RemoveDuplicates(Sheets.Resolve(workbook, op), removeDuplicates),
-        ProtectWorkbookOp protectWorkbook => ProtectOps.ProtectWorkbook(workbook, protectWorkbook),
-        UnprotectWorkbookOp unprotectWorkbook => ProtectOps.UnprotectWorkbook(workbook, unprotectWorkbook),
+        ProtectWorkbookOp protectWorkbook => ProtectOps.ProtectWorkbook(workbook, protectWorkbook, secrets),
+        UnprotectWorkbookOp unprotectWorkbook => ProtectOps.UnprotectWorkbook(workbook, unprotectWorkbook, secrets),
         SetHyperlinkOp setHyperlink => HyperlinkOps.SetHyperlink(Sheets.Resolve(workbook, op), setHyperlink),
         RemoveHyperlinkOp removeHyperlink => HyperlinkOps.RemoveHyperlink(Sheets.Resolve(workbook, op), removeHyperlink),
         _ => throw new InvalidOperationException(),

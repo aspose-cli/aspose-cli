@@ -47,7 +47,7 @@ internal static class RenderCommand
                 Pages = pageText is null ? null : PageRange.Parse(pageText),
                 AllPages = everyPage,
                 Dpi = resolution,
-                Password = password.Resolve(parse, context.Inputs),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
         }));
         return command;

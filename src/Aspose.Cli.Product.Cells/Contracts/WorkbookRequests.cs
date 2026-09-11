@@ -110,6 +110,9 @@ public sealed record PreviewRenderRequest
 /// <summary>Options of <c>cells edit</c>.</summary>
 public sealed record EditRequest
 {
+    /// <summary>Transient environment secret values; never part of ops JSON or result envelopes.</summary>
+    public IReadOnlyDictionary<string, string?>? OpSecrets { get; init; }
+
     /// <summary>Absolute output path.</summary>
     public required string OutputPath { get; init; }
 

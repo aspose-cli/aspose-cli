@@ -104,7 +104,7 @@ internal static class RenderCommand
                 Range = range,
                 AllSheets = allSheets,
                 Dpi = dpi,
-                Password = password.Resolve(parseResult, context.Inputs),
+                Password = password.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
             });
         }));
 

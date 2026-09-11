@@ -64,8 +64,8 @@ internal static class DiffCommand
             {
                 Scope = scope,
                 MaxDiffs = maxDiffs,
-                LeftPassword = leftPassword.Resolve(parseResult, context.Inputs),
-                RightPassword = rightPassword.Resolve(parseResult, context.Inputs),
+                LeftPassword = leftPassword.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
+                RightPassword = rightPassword.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
             });
         }));
 

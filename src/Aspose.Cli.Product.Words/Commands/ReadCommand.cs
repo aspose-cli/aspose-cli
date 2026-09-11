@@ -53,7 +53,7 @@ internal static class ReadCommand
                     Scope = parse.GetValue(scope) ?? "text",
                     MaxCharacters = characters,
                     MaxBlocks = count,
-                    Password = password.Resolve(parse, context.Inputs),
+                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
         }));
         return command;

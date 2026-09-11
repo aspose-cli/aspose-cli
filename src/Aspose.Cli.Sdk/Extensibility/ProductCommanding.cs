@@ -8,6 +8,9 @@ namespace Aspose.Cli.Sdk.Extensibility;
 /// <summary>Resolved host values exposed to a product command invocation.</summary>
 public sealed record ProductCommandGlobals
 {
+    /// <summary>Invocation-scoped lookup for explicitly referenced environment secrets.</summary>
+    public required Func<string, string?> ReadEnvironment { get; init; }
+
     /// <summary>Whether diagnostics and notices are suppressed.</summary>
     public required bool Quiet { get; init; }
 
@@ -39,6 +42,9 @@ public sealed record ProductCommandContext<TPort>
 
     /// <summary>Single bounded reader for user-controlled file and stdin input.</summary>
     public InputSource Inputs => Globals.ResourceBudgets.Inputs;
+
+    /// <summary>Resolves a named environment secret through this invocation's input source.</summary>
+    public Func<string, string?> ReadEnvironment => Globals.ReadEnvironment;
 
     /// <summary>Returns one predeclared optional cross-product capability.</summary>
     public TCapability? Optional<TCapability>(
