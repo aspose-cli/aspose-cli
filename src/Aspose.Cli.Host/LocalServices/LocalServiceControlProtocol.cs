@@ -4,6 +4,8 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Host.Invocation;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -344,9 +346,17 @@ internal sealed class LocalServiceControlServer : IDisposable
             return _identity.Response(request, ok: true);
         }
 
-        return _identity.Normalize(
-            request,
-            _handler(request));
+        try
+        {
+            return _identity.Normalize(request, _handler(request));
+        }
+        catch (Exception exception)
+        {
+            ProcessFailureLog.Write("local-service-control", exception);
+            return _identity.Response(request, ok: false,
+                exception is CliException error ? DiagnosticRedactor.Redact(error.Message)
+                    : "The local service could not complete the request. Check its private diagnostics.");
+        }
     }
 
     private static async Task<LocalServiceControlRequest?> ReadRequestAsync(

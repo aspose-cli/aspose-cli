@@ -13,6 +13,7 @@ internal sealed class AppTestSession : IAsyncDisposable
     internal HttpClient Client { get; private set; } = null!;
     internal Uri Url { get; private set; } = null!;
     private bool _started;
+    private readonly List<System.Diagnostics.Process> _processes = [];
 
     internal static async Task<AppTestSession> Start()
     {
@@ -47,6 +48,13 @@ internal sealed class AppTestSession : IAsyncDisposable
     {
         CliResult result = Workspace.Run("app", Workspace.File(file), "--no-open", "--output", "json");
         Assert.True(result.ExitCode == 0, result.StdErr);
+        int pid = JsonNode.Parse(result.StdOut)!["pid"]!.GetValue<int>();
+        if (!_processes.Any(process => process.Id == pid))
+        {
+            var process = System.Diagnostics.Process.GetProcessById(pid);
+            _ = process.Handle;
+            _processes.Add(process);
+        }
         return result;
     }
 
@@ -65,17 +73,33 @@ internal sealed class AppTestSession : IAsyncDisposable
         return JsonNode.Parse(await response.Content.ReadAsStringAsync())!;
     }
 
-    public ValueTask DisposeAsync()
+    public async ValueTask DisposeAsync()
     {
         try
         {
-            if (_started) { _ = Workspace.Run("app", "stop", "--output", "json"); }
+            if (_started && Client is not null)
+            {
+                try { using var response = await Client.PostAsync("/api/stop", null).WaitAsync(TimeSpan.FromSeconds(5)); }
+                catch (Exception exception) when (exception is HttpRequestException or TimeoutException or TaskCanceledException) { }
+            }
+            foreach (System.Diagnostics.Process process in _processes)
+            {
+                try
+                {
+                    try { await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5)); }
+                    catch (TimeoutException)
+                    {
+                        process.Kill(entireProcessTree: true);
+                        await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5));
+                    }
+                }
+                finally { process.Dispose(); }
+            }
         }
         finally
         {
             Client?.Dispose();
             Workspace.Dispose();
         }
-        return ValueTask.CompletedTask;
     }
 }

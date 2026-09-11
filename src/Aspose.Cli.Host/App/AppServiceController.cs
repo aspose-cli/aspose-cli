@@ -444,7 +444,7 @@ internal sealed class AppServiceController
             AppControlResponse response = AppControlEndpoint.Send(marker, "open", Path.GetFullPath(filePath));
             if (!response.Ok)
             {
-                throw CliErrors.OptionInvalid("app file", "the file could not be opened by the running App", "Check the file and open it from the App's Files page.");
+                throw CliErrors.OptionInvalid("app file", response.Message ?? "the file could not be opened by the running App", "Check the file and open it from the App's Files page.");
             }
         }
         catch (Exception ex) when (ex is IOException or TimeoutException)

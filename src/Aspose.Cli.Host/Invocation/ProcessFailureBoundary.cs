@@ -178,7 +178,7 @@ internal static class ProcessFailureBoundary
 
 }
 
-/// <summary>Best-effort bounded diagnostics for failures that terminate a process.</summary>
+/// <summary>Best-effort bounded diagnostics for process and control-request failures.</summary>
 internal static class ProcessFailureLog
 {
     private const long MaximumBytes = 512 * 1024;
