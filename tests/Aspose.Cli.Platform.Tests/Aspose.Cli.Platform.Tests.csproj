@@ -12,6 +12,7 @@
   </ItemGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.Playwright" />
     <PackageReference Include="JsonSchema.Net" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>

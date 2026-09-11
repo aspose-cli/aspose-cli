@@ -61,7 +61,7 @@
     "license": { "$ref": "#/$defs/license" },
     "file": { "type": "string", "minLength": 1 },
     "uploadedCopy": { "type": "boolean" },
-    "previewUrl": { "type": "string", "format": "uri" },
+    "previewUrl": { "type": "string", "format": "uri", "description": "Opaque URL for the committed App document session; stable until that session is replaced." },
     "recentFiles": {
       "type": "array",
       "items": { "$ref": "#/$defs/recentFile" },

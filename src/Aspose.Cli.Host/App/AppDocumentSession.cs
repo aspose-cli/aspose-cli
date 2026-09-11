@@ -47,6 +47,11 @@ internal sealed class AppDocumentSession : IDisposable
         Directory.CreateDirectory(_root);
     }
 
+    public AppDocumentSnapshot? Snapshot
+    {
+        get { lock (_gate) { return _current?.State; } }
+    }
+
     public string? FileName => Read(static lease => lease.FileName);
 
     public string? PreviewUrl => Read(static lease => lease.Url);
@@ -416,13 +421,9 @@ internal sealed class AppDocumentSession : IDisposable
                 },
                 DisplayName: displayName),
             mount.Options);
-        return new PreviewLease(
-            path,
-            displayName,
-            uploadedCopy,
-            product.Manifest.Id,
-            view,
-            mount.Url,
+        return new PreviewLease(path,
+            new AppDocumentSnapshot(displayName, uploadedCopy, product.Manifest.Id, view,
+                $"{mount.Url}?session={Guid.NewGuid():N}"),
             runtime);
     }
 
@@ -440,16 +441,20 @@ internal sealed class AppDocumentSession : IDisposable
 
     private sealed record PreviewLease(
         string Path,
-        string FileName,
-        bool UploadedCopy,
-        string ProductId,
-        string View,
-        string Url,
+        AppDocumentSnapshot State,
         MountedPreview Runtime) : IDisposable
     {
+        public string FileName => State.FileName;
+        public bool UploadedCopy => State.UploadedCopy;
+        public string ProductId => State.ProductId;
+        public string View => State.View;
+        public string Url => State.PreviewUrl;
         public void Dispose() => Runtime.Dispose();
     }
 }
+
+internal sealed record AppDocumentSnapshot(
+    string FileName, bool UploadedCopy, string ProductId, string View, string PreviewUrl);
 
 internal sealed record AppPreviewMount(
     int Port,

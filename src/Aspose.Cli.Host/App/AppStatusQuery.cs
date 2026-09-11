@@ -85,9 +85,10 @@ internal sealed class AppStatusQuery
     internal AppStatusView Build(string route)
     {
         AppPreferences settings = _preferences.Current;
+        AppDocumentSnapshot? session = _sessions.Snapshot;
         ProductDefinition product =
             _catalog.ResolveById(
-                _sessions.ProductId
+                session?.ProductId
                 ?? _catalog.DefaultProductId());
         ProductPreviewDefinition preview = product.Preview;
         AppLicenseView license = _licenses.Status(product.Manifest.Id);
@@ -106,9 +107,9 @@ internal sealed class AppStatusQuery
             _skills,
             settings.RememberRecentFiles,
             license,
-            _sessions.FileName,
-            _sessions.UploadedCopy,
-            _sessions.PreviewUrl,
+            session?.FileName,
+            session?.UploadedCopy ?? false,
+            session?.PreviewUrl,
             settings.RecentFiles.Select(RecentView).ToArray(),
             Diagnostics(license),
             _products);

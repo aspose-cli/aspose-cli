@@ -5,6 +5,8 @@
   var csrf = csrfMeta ? csrfMeta.content : '';
   var status = null;
   var polling = null;
+  var statusRequest = null;
+  var statusEpoch = 0;
   var licenseTarget = null;
   var $ = function (id) { return document.getElementById(id); };
 
@@ -79,6 +81,7 @@
     if (!response.ok || data.ok === false) {
       throw new Error(data.message || ('Request failed (' + response.status + ')'));
     }
+    if (options.method && options.method !== 'GET') { statusEpoch++; }
     return data;
   }
 
@@ -116,13 +119,32 @@
     }
   }
 
-  async function loadStatus() {
+  function loadStatus() {
+    if (!statusRequest) {
+      var request = { epoch: statusEpoch, promise: null };
+      statusRequest = request;
+      request.promise = readStatus(request.epoch).finally(function () {
+        if (statusRequest === request) { statusRequest = null; }
+      });
+    }
+    var pending = statusRequest;
+    return pending.promise.then(function () {
+      if (pending.epoch !== statusEpoch) { return loadStatus(); }
+    });
+  }
+
+  async function readStatus(epoch) {
     try {
-      status = await api('/api/status', { method: 'GET' });
-      renderStatus();
+      var next = await api('/api/status', { method: 'GET' });
+      if (epoch === statusEpoch) {
+        status = next;
+        renderStatus();
+      }
     } catch (error) {
-      setActivity('Disconnected');
-      toast(error.message, true);
+      if (epoch === statusEpoch) {
+        setActivity('Disconnected');
+        toast(error.message, true);
+      }
     }
   }
 

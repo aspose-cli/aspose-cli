@@ -79,7 +79,8 @@ aspose-cli preview document.pdf --open
 aspose-cli mcp serve
 ```
 
-App and Preview use loopback URLs reusable during their lifetime. Host, same-origin, CSRF,
+App and Preview use loopback URLs. Treat previewUrl as opaque: App replaces it only
+when a new document session is committed; ordinary live updates keep the same URL. Host, same-origin, CSRF,
 current-user lifecycle controls and bounded uploads remain enforced.
 The MCP registration is named `aspose-cli` and points to the matching installed executable.
 Its `capabilities` tool is read-only. Its `execute` tool runs bounded, allowlisted

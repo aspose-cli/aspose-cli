@@ -27,5 +27,7 @@ jobs:
         if: always()
         with:
           name: verification-evidence
-          path: 'artifacts/TestResults/**/*.trx'
+          path: |
+            artifacts/TestResults/**/*.trx
+            artifacts/TestResults/**/browser/**
           if-no-files-found: warn

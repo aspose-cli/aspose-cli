@@ -68,6 +68,15 @@ if (-not (Test-Path -LiteralPath $builtExecutable -PathType Leaf)) {
     throw "$($layout.Edition) CLI executable does not exist: $builtExecutable"
 }
 
+$browserInstaller = Join-Path $repoRoot "tests/Aspose.Cli.Platform.Tests/bin/$Configuration/net10.0/playwright.ps1"
+if (-not (Test-Path -LiteralPath $browserInstaller -PathType Leaf)) {
+    throw "The built browser test installer is missing: $browserInstaller"
+}
+& $browserInstaller install chromium
+if ($LASTEXITCODE -ne 0) {
+    throw "Chromium test setup failed with exit code $LASTEXITCODE."
+}
+
 $failures = @()
 $runId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N')
 $resultsRoot = Join-Path $repoRoot "artifacts/TestResults/$runId"
@@ -75,6 +84,7 @@ foreach ($project in $testProjects) {
     $projectName = [IO.Path]::GetFileNameWithoutExtension($project)
     $resultsDirectory = Join-Path $resultsRoot $projectName
     $resultsFile = Join-Path $resultsDirectory 'results.trx'
+    $env:ASPOSE_CLI_TEST_ARTIFACTS = $resultsDirectory
     Write-Host "TEST $project"
     & dotnet test $project `
         --configuration $Configuration `

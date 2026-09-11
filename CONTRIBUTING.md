@@ -18,7 +18,10 @@ SDK types from a document engine stay inside its matching implementation boundar
 
 ## Quality
 
-Use real engines and CLI child processes. Preserve atomic publication, budgets, rollback and service controls.
+Use real engines and CLI child processes. The standard test script provisions the pinned
+Chromium runtime for App browser tests. Browser prerequisites are required; failures retain
+screenshots and traces beside the project's TRX under artifacts/TestResults/.
+Preserve atomic publication, budgets, rollback and service controls.
 Do not weaken checks or remove a supported operation to obtain passing tests.
 Code comments, diagnostics and public documentation are English.
 Do not introduce old command aliases, historical trust allowlists or migration frameworks for unpublished builds.
