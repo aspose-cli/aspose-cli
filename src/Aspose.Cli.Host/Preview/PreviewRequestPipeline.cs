@@ -97,6 +97,8 @@ internal sealed class PreviewRequestPipeline
     /// preview still applies its own response policy and independently checks
     /// Origin and CSRF for refresh mutations.
     /// </summary>
+    /// <returns>True transfers response completion to Preview, including any live stream;
+    /// false leaves the response untouched and owned by the caller.</returns>
     public bool RouteAuthorized(
         HttpListenerContext context,
         int boundPort,
@@ -107,12 +109,12 @@ internal sealed class PreviewRequestPipeline
             return false;
         }
 
-        _responses.ApplySecurityHeaders(
-            context.Response,
-            _options.ScriptNonce,
-            _options.SameOriginMount);
         try
         {
+            _responses.ApplySecurityHeaders(
+                context.Response,
+                _options.ScriptNonce,
+                _options.SameOriginMount);
             Dispatch(context, path, boundPort);
         }
         catch (Exception)

@@ -210,6 +210,7 @@ internal sealed class AppHttpServer : IDisposable
     {
         HttpListenerRequest request = context.Request;
         HttpListenerResponse response = context.Response;
+        bool previewOwnsResponse = false;
         try
         {
             if (!LocalHttpRequestSecurity.IsRequestAllowed(request, Port))
@@ -225,7 +226,8 @@ internal sealed class AppHttpServer : IDisposable
             }
 
             string path = request.Url?.AbsolutePath ?? "/";
-            if (_host.RoutePreview(context, path))
+            previewOwnsResponse = _host.RoutePreview(context, path);
+            if (previewOwnsResponse)
             {
                 return;
             }
@@ -267,7 +269,7 @@ internal sealed class AppHttpServer : IDisposable
         }
         finally
         {
-            response.Close();
+            if (!previewOwnsResponse) { response.Close(); }
         }
     }
 

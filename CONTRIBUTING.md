@@ -33,3 +33,9 @@ Assess relevant shared defect reports independently; entire platform trees do no
 Every string argument and string option, including arrays, must declare its input role at construction with `WithInput`: `InputKind.File` for document files, `InputKind.JsonSource` for file/inline/stdin JSON, or `InputKind.None` for ordinary values, output paths, directories and separately owned configuration or credentials. Numeric and boolean values default to `None`. Shared option factories own their declarations.
 
 Value sources and secret handling are also declared on the symbol. The Host consumes the actual parser result and these declarations; it must not infer roles from token order, option spelling or the existence of a same-named file. Command-tree construction rejects missing string declarations, conflicting declarations and invalid type/source combinations.
+
+## Preview response ownership
+
+An accepted Preview route owns response completion. Embedded hosts must leave that response
+to Preview, including SSE streams owned by the live event hub. A declined route leaves the
+response untouched. Keep finite request admission separate from live-stream limits.
