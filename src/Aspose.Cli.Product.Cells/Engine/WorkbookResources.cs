@@ -57,11 +57,14 @@ internal sealed class WorkbookResources(string path, ResourceBudgetLedger budget
                     continue;
                 }
                 string reference = picture.SourceFullName;
-                // Detach before reading cached bytes: rendering must never fetch a deferred link.
+                // Changing the link clears Data. Retain stored document content before
+                // preventing deferred external acquisition.
+                byte[]? cached = picture.Data;
                 picture.SourceFullName = string.Empty;
                 picture.IsLink = false;
-                if (embeddedContainer && picture.Data is { Length: > 0 })
+                if (cached is { Length: > 0 })
                 {
+                    picture.Data = cached;
                     continue;
                 }
                 if (_loader.TryRead(reference, out byte[] data))

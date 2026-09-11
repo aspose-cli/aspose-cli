@@ -31,8 +31,10 @@ Routing: if the task involves an EXISTING workbook the user cares about,
 follow the safe-editing protocol in section 5 before the first mutation.
 
 HTML resources are limited to verified ordinary local files beneath the input directory.
-Network, data, UNC, device, linked and escaping references are omitted. Limits are
+Network, data, UNC, device, filesystem-link and escaping references are omitted. Limits are
 256 resources, 32 MiB each and 128 MiB total, plus shared input, memory and time budgets.
+Cached linked-picture data is preserved as embedded content in every workbook format;
+external image sources are consulted only when stored data is absent.
 Resource omissions carry completeness warnings through queries, writes, preview and review.
 The SDK resolves embedded MHTML content without reporting missing references;
 MHTML_RESOURCE_COVERAGE_UNVERIFIED therefore requires visual confirmation.
