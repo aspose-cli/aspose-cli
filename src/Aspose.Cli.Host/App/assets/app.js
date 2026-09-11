@@ -7,6 +7,9 @@
   var polling = null;
   var statusRequest = null;
   var statusEpoch = 0;
+  var preferenceDrafts = new Map();
+  var rememberPreference = null;
+  var preferencesSave = null;
   var licenseTarget = null;
   var $ = function (id) { return document.getElementById(id); };
 
@@ -188,7 +191,7 @@
     $('edition-chip').textContent = status.editionName;
     setActivity(status.file ? 'Preview live' : 'Ready');
     $('file-input').accept = (status.supportedExtensions || []).join(',');
-    $('remember-recents').checked = status.rememberRecentFiles;
+    syncPreferences();
     renderEditionComposition();
     renderProducts();
     renderRecents();
@@ -438,16 +441,45 @@
     });
   }
 
+  function mergePreference(field, value, saving) {
+    if (!field) { return { saved: value, value: value }; }
+    if (!saving) {
+      if (field.value === field.saved) { field.value = value; }
+      field.saved = value;
+    }
+    return field;
+  }
+
+  function syncPreferences() {
+    var product = status.product;
+    preferenceDrafts.set(product, mergePreference(preferenceDrafts.get(product),
+      status.defaultView, preferencesSave && preferencesSave.product === product));
+    rememberPreference = mergePreference(rememberPreference,
+      status.rememberRecentFiles, Boolean(preferencesSave));
+  }
+
   function renderPreviewOptions() {
+    var draft = preferenceDrafts.get(status.product);
+    if (!draft || !rememberPreference) { return; }
     var select = $('default-view');
-    select.replaceChildren();
-    var views = status.previewViews || [];
-    views.forEach(function (view) {
-      var option = node('option', '', view.displayName);
-      option.value = view.id;
-      select.append(option);
-    });
-    select.value = status.defaultView;
+    if (select.dataset.product !== status.product) {
+      select.replaceChildren();
+      (status.previewViews || []).forEach(function (view) {
+        var option = node('option', '', view.displayName);
+        option.value = view.id;
+        select.append(option);
+      });
+      select.dataset.product = status.product;
+    }
+    select.value = draft.value;
+    $('remember-recents').checked = rememberPreference.value;
+    var button = $('save-preferences');
+    button.disabled = Boolean(preferencesSave);
+    button.textContent = preferencesSave ? 'Saving preferences…' : 'Save preferences';
+    var feedback = $('preferences-feedback');
+    feedback.textContent = draft.message || '';
+    feedback.hidden = !draft.message;
+    feedback.classList.toggle('warning', Boolean(draft.warning));
   }
 
   function renderAgentCommands() {
@@ -694,22 +726,47 @@
     }
   });
 
+  $('default-view').addEventListener('change', function () {
+    var draft = preferenceDrafts.get(this.dataset.product);
+    if (draft) { draft.value = this.value; }
+  });
+
+  $('remember-recents').addEventListener('change', function () {
+    if (rememberPreference) { rememberPreference.value = this.checked; }
+  });
+
   $('save-preferences').addEventListener('click', async function () {
+    if (preferencesSave || !status || !rememberPreference) { return; }
+    var product = $('default-view').dataset.product;
+    var draft = preferenceDrafts.get(product);
+    var submission = Object.freeze({
+      product: product,
+      defaultView: draft.value,
+      rememberRecentFiles: rememberPreference.value
+    });
+    preferencesSave = submission;
+    renderPreviewOptions();
     try {
       var saved = await api('/api/preferences', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          product: status.product,
-          defaultView: $('default-view').value,
-          rememberRecentFiles: $('remember-recents').checked
-        })
+        body: JSON.stringify(submission)
       });
-      toast(saved.message || 'Preferences saved.', saved.code === 'PREVIEW_REFRESH_FAILED');
-      await loadStatus();
+      // Acknowledge only the submitted values; newer edits remain in the draft.
+      draft.saved = submission.defaultView;
+      rememberPreference.saved = submission.rememberRecentFiles;
+      draft.message = saved.message || 'Preferences saved.';
+      draft.warning = saved.code === 'PREVIEW_REFRESH_FAILED';
+      toast(draft.message, draft.warning);
     } catch (error) {
+      draft.message = error.message;
+      draft.warning = true;
       toast(error.message, true);
+    } finally {
+      preferencesSave = null;
+      renderPreviewOptions();
     }
+    await loadStatus();
   });
 
   $('copy-diagnostics').addEventListener('click', async function () {

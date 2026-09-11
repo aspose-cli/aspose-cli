@@ -82,6 +82,9 @@ aspose-cli mcp serve
 App and Preview use loopback URLs. Treat previewUrl as opaque: App replaces it only
 when a new document session is committed; ordinary live updates keep the same URL. Host, same-origin, CSRF,
 current-user lifecycle controls and bounded uploads remain enforced.
+Settings retain unsaved edits across polling and product navigation. Saving commits the
+preferences first; if preview refresh fails, the previous preview stays available and the
+Settings page keeps an explicit message. Save the same values to retry the refresh.
 The MCP registration is named `aspose-cli` and points to the matching installed executable.
 Its `capabilities` tool is read-only. Its `execute` tool runs bounded, allowlisted
 product commands, including document writes; host installation, update, licensing and

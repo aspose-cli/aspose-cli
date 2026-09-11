@@ -1024,3 +1024,13 @@ body.preview-active .empty-state {
     border: 1px solid CanvasText;
   }
 }
+
+.preferences-feedback {
+  margin: 12px 0 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
+
+.preferences-feedback.warning {
+  color: var(--warning);
+}

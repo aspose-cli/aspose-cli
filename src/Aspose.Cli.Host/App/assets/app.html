@@ -116,7 +116,8 @@
           <div class="card-heading"><div><h2>Preview defaults</h2><p>Applied to the current product in this browser workspace.</p></div></div>
           <label class="field"><span>Default view</span><select id="default-view"></select></label>
           <label class="toggle"><input id="remember-recents" type="checkbox"><span>Remember recently opened file names</span></label>
-          <button id="save-preferences" class="button secondary" type="button">Save preferences</button>
+          <button id="save-preferences" class="button secondary" type="button" disabled>Save preferences</button>
+          <p id="preferences-feedback" class="preferences-feedback" role="status" aria-live="polite" hidden></p>
         </article>
 
         <article class="settings-card">
