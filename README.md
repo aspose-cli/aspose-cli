@@ -88,6 +88,9 @@ service lifecycle mutations are unavailable through it. Command parameters expos
 `inputKind`, `valueSource` and `secret` from their declarations. MCP uses the same
 command parser as the CLI and retains the server work directory, license source and
 input budget; an execute request cannot raise the server input limit.
+An explicit server license remains an explicit source in child processes, anchored to
+its original work directory. An explicit execute license overrides it and is resolved
+against that execution's work directory.
 Two CLI processes still coordinate document publication through neutral operating-system locks.
 
 ## File and output contracts

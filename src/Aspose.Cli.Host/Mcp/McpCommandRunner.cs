@@ -35,7 +35,11 @@ internal sealed class McpCommandRunner
         _startInfoFactory = startInfoFactory ?? throw new ArgumentNullException(nameof(startInfoFactory));
         _productVariables = productVariables ?? [];
         _workingDirectory = Path.GetFullPath(inherited?.WorkDir ?? Directory.GetCurrentDirectory());
-        _inherited = inherited is null ? null : inherited with { WorkDir = _workingDirectory };
+        _inherited = inherited is null ? null : inherited with
+        {
+            WorkDir = _workingDirectory,
+            LicensePath = inherited.LicensePath is null ? null : Path.GetFullPath(inherited.LicensePath, _workingDirectory),
+        };
     }
 
     public Task<McpExecutionResult> RunCapabilitiesAsync(
@@ -135,6 +139,9 @@ internal sealed class McpCommandRunner
         await _gate.WaitAsync(cancellationToken).ConfigureAwait(false);
         try
         {
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(timeoutSeconds));
+            using var linked = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeout.Token);
+            using var channel = new InvocationInputServer();
             ProcessStartInfo start = _startInfoFactory();
             start.RedirectStandardInput = true;
             start.StandardInputEncoding = new UTF8Encoding(false);
@@ -147,14 +154,11 @@ internal sealed class McpCommandRunner
                 start.ArgumentList.Add(argument);
             }
 
+            channel.Configure(start);
             using Process process = Process.Start(start)
                 ?? throw new McpCommandException("The CLI child process could not be started.");
             using IDisposable? job = WindowsProcessJob.TryAttach(process);
-            using var timeout = new CancellationTokenSource(
-                TimeSpan.FromSeconds(timeoutSeconds));
-            using var linked = CancellationTokenSource.CreateLinkedTokenSource(
-                cancellationToken,
-                timeout.Token);
+            Task startup = channel.SendAsync(_inherited, linked.Token);
             Task input = WriteInputAsync(process, stdin, linked.Token);
             Task<string> stdout = ReadBoundedAsync(
                 process.StandardOutput.BaseStream,
@@ -168,6 +172,7 @@ internal sealed class McpCommandRunner
                 linked.Token);
             try
             {
+                await startup.WaitAsync(linked.Token).ConfigureAwait(false);
                 await process.WaitForExitAsync(linked.Token).ConfigureAwait(false);
                 await IgnoreClosedInputAsync(input, process).ConfigureAwait(false);
                 string[] output = await Task.WhenAll(stdout, stderr)
@@ -186,6 +191,7 @@ internal sealed class McpCommandRunner
                     process,
                     job,
                     input,
+                    startup,
                     stdout,
                     stderr).ConfigureAwait(false);
                 throw new McpCommandException(
@@ -198,8 +204,15 @@ internal sealed class McpCommandRunner
                     process,
                     job,
                     input,
+                    startup,
                     stdout,
                     stderr).ConfigureAwait(false);
+                throw;
+            }
+            catch
+            {
+                TryKill(process);
+                await ObserveShutdownAsync(process, job, input, startup, stdout, stderr).ConfigureAwait(false);
                 throw;
             }
             finally

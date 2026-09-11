@@ -67,6 +67,9 @@ internal static class TimeoutWorkerSupervisor
         string manifest = Path.Combine(root, "output-manifest.v1.json");
         long expiresAt = checked(
             Environment.TickCount64 + (long)Math.Ceiling(budget.TotalMilliseconds));
+        using var deadline = new CancellationTokenSource(budget);
+        using var completion = CancellationTokenSource.CreateLinkedTokenSource(deadline.Token, cancellationToken);
+        using var channel = new InvocationInputServer();
         using Process worker = StartWorker(
             args,
             root,
@@ -75,17 +78,16 @@ internal static class TimeoutWorkerSupervisor
             expiresAt,
             executablePath,
             environment,
-            host);
+            host,
+            channel);
         Task<string> standardOutput = worker.StandardOutput.ReadToEndAsync();
         Task<string> standardError = worker.StandardError.ReadToEndAsync();
-        using var deadline = new CancellationTokenSource(budget);
-        using var completion = CancellationTokenSource.CreateLinkedTokenSource(
-            deadline.Token,
-            cancellationToken);
+        Task startup = channel.SendAsync(InvocationInputs.Current?.Inherited, completion.Token);
         bool timedOut = false;
         bool cancelled = false;
         try
         {
+            await startup.WaitAsync(completion.Token).ConfigureAwait(false);
             await worker.WaitForExitAsync(completion.Token).ConfigureAwait(false);
         }
         catch (OperationCanceledException) when (completion.IsCancellationRequested)
@@ -93,18 +95,24 @@ internal static class TimeoutWorkerSupervisor
             timedOut = deadline.IsCancellationRequested;
             cancelled = cancellationToken.IsCancellationRequested && !timedOut;
         }
+        catch (Exception exception)
+        {
+            return await CompleteFailedWorkerAsync(worker, standardOutput, standardError,
+                manifest, root, args, CliErrors.Internal(exception, "HOST-WORKER-INPUT-0001"), host)
+                .ConfigureAwait(false);
+        }
 
         if (timedOut || cancelled)
         {
-            return await CompleteInterruptedWorkerAsync(
+            return await CompleteFailedWorkerAsync(
                 worker,
                 standardOutput,
                 standardError,
                 manifest,
                 root,
                 args,
-                budget,
-                timedOut,
+                timedOut ? CliErrors.OperationTimeout(
+                    (int)Math.Ceiling(budget.TotalSeconds), "worker-terminated") : null,
                 host).ConfigureAwait(false);
         }
 
@@ -128,31 +136,25 @@ internal static class TimeoutWorkerSupervisor
         return exitCode;
     }
 
-    private static async Task<int> CompleteInterruptedWorkerAsync(
+    private static async Task<int> CompleteFailedWorkerAsync(
         Process worker,
         Task<string> standardOutput,
         Task<string> standardError,
         string manifest,
         string root,
         string[] args,
-        TimeSpan budget,
-        bool timedOut,
+        CliException? error,
         HostContext host)
     {
         bool stopped = await TerminateAndConfirmAsync(worker)
             .ConfigureAwait(false);
         await DrainOrCloseAsync(worker, standardOutput, standardError)
             .ConfigureAwait(false);
-        CliException timeout = CliErrors.OperationTimeout(
-            (int)Math.Ceiling(budget.TotalSeconds),
-            "worker-terminated");
         int? recoveryError = stopped
             ? RestoreInterruptedOutputs(
                 manifest,
-                root,
                 args,
-                timedOut,
-                timeout,
+                error ?? (Exception)new OperationCanceledException("The parent cancelled the supervised worker."),
                 host)
             : null;
         if (recoveryError is not null)
@@ -168,15 +170,13 @@ internal static class TimeoutWorkerSupervisor
                 host);
         }
         DeleteOrPreserve(root);
-        return timedOut ? RenderError(args, timeout, host) : 130;
+        return error is null ? 130 : RenderError(args, error, host);
     }
 
     private static int? RestoreInterruptedOutputs(
         string manifest,
-        string root,
         string[] args,
-        bool timedOut,
-        CliException timeout,
+        Exception reason,
         HostContext host)
     {
         if (!File.Exists(manifest))
@@ -188,10 +188,7 @@ internal static class TimeoutWorkerSupervisor
         {
             WorkerOutputSession.RestoreOrThrow(
                 manifest,
-                timedOut
-                    ? timeout
-                    : new OperationCanceledException(
-                        "The parent cancelled the supervised worker."));
+                reason);
             return null;
         }
         catch (CliException recoveryFailure)
@@ -248,7 +245,8 @@ internal static class TimeoutWorkerSupervisor
         long expiresAt,
         string? executablePath,
         IReadOnlyDictionary<string, string?>? environment,
-        HostContext host)
+        HostContext host,
+        InvocationInputServer channel)
     {
         string processPath = executablePath
             ?? Environment.ProcessPath
@@ -291,8 +289,17 @@ internal static class TimeoutWorkerSupervisor
             Math.Ceiling(budget.TotalMilliseconds)
                 .ToString(System.Globalization.CultureInfo.InvariantCulture);
 
-        return Process.Start(start)
-            ?? throw new InvalidOperationException("The timeout worker could not be started.");
+        channel.Configure(start);
+        try
+        {
+            return Process.Start(start)
+                ?? throw new InvalidOperationException("The timeout worker could not be started.");
+        }
+        catch
+        {
+            DeleteOrPreserve(root);
+            throw;
+        }
     }
 
     private static async Task<bool> TerminateAndConfirmAsync(Process process)

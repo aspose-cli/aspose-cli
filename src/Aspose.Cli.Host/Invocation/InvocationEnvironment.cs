@@ -48,10 +48,6 @@ internal static class InvocationEnvironment
         }
         if (invocation.GlobalValues is { } globals)
         {
-            if (globals.LicensePath is { } licensePath)
-            {
-                start.Environment[LicenseResolver.EnvPathName] = licensePath;
-            }
             start.Environment[InputSizeGuard.BudgetVariable] =
                 globals.MaxInputBytes.ToString(System.Globalization.CultureInfo.InvariantCulture);
         }

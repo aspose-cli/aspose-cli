@@ -1,8 +1,6 @@
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
-using System.Text.Json;
-using System.Text.Json.Serialization;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -16,13 +14,6 @@ internal static class ServiceStartSecretChannel
 {
     private const string HandleVariable =
         "ASPOSE_CLI_SERVICE_START_HANDLE";
-    private const int MaximumPayloadBytes = 64 * 1024;
-    private static readonly JsonSerializerOptions JsonOptions =
-        new(JsonSerializerDefaults.Web)
-        {
-            DefaultIgnoreCondition =
-                JsonIgnoreCondition.WhenWritingNull,
-        };
     private static readonly AsyncLocal<ServiceStartSecrets?> CurrentValue =
         new();
 
@@ -48,30 +39,8 @@ internal static class ServiceStartSecretChannel
                 ?? throw new InvalidOperationException(
                     "The service process could not be started.");
             server.DisposeLocalCopyOfClientHandle();
-            byte[] payload = JsonSerializer.SerializeToUtf8Bytes(
-                secrets,
-                JsonOptions);
-            try
-            {
-                if (payload.Length > MaximumPayloadBytes)
-                {
-                    throw new InvalidOperationException(
-                        "The service-start secret payload is too large.");
-                }
-
-                Span<byte> length = stackalloc byte[sizeof(int)];
-                System.Buffers.Binary.BinaryPrimitives.WriteInt32LittleEndian(
-                    length,
-                    payload.Length);
-                server.Write(length);
-                server.Write(payload);
-                server.Flush();
-            }
-            finally
-            {
-                System.Security.Cryptography.CryptographicOperations.ZeroMemory(
-                    payload);
-            }
+            ProcessPipeMessages.WriteAsync(server, secrets, CancellationToken.None)
+                .GetAwaiter().GetResult();
 
             return process;
         }
@@ -104,40 +73,13 @@ internal static class ServiceStartSecretChannel
         using var client = new AnonymousPipeClientStream(
             PipeDirection.In,
             handle);
-        Span<byte> lengthBytes = stackalloc byte[sizeof(int)];
-        ReadExactly(client, lengthBytes);
-        int length =
-            System.Buffers.Binary.BinaryPrimitives.ReadInt32LittleEndian(
-                lengthBytes);
-        if (length is <= 0 or > MaximumPayloadBytes)
+        ServiceStartSecrets secrets = ProcessPipeMessages.ReadAsync<ServiceStartSecrets>(
+            client, CancellationToken.None).GetAwaiter().GetResult();
+        if (secrets.Version != 1)
         {
-            throw new InvalidDataException(
-                "The service-start secret payload length is invalid.");
+            throw new InvalidDataException($"Unsupported service-start contract version {secrets.Version}.");
         }
-
-        byte[] payload = new byte[length];
-        try
-        {
-            ReadExactly(client, payload);
-            ServiceStartSecrets secrets =
-                JsonSerializer.Deserialize<ServiceStartSecrets>(
-                    payload,
-                    JsonOptions)
-                ?? throw new InvalidDataException(
-                    "The service-start secret payload is empty.");
-            if (secrets.Version != 1)
-            {
-                throw new InvalidDataException(
-                    $"Unsupported service-start contract version {secrets.Version}.");
-            }
-
-            return secrets;
-        }
-        finally
-        {
-            System.Security.Cryptography.CryptographicOperations.ZeroMemory(
-                payload);
-        }
+        return secrets;
     }
 
     public static IDisposable Push(ServiceStartSecrets secrets)
@@ -146,22 +88,6 @@ internal static class ServiceStartSecretChannel
         ServiceStartSecrets? prior = CurrentValue.Value;
         CurrentValue.Value = secrets;
         return new RestoreScope(prior);
-    }
-
-    private static void ReadExactly(Stream stream, Span<byte> buffer)
-    {
-        int total = 0;
-        while (total < buffer.Length)
-        {
-            int read = stream.Read(buffer[total..]);
-            if (read == 0)
-            {
-                throw new EndOfStreamException(
-                    "The service-start secret channel ended early.");
-            }
-
-            total += read;
-        }
     }
 
     private static void PreventStandardHandleInheritance()

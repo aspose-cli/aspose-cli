@@ -65,6 +65,49 @@ public sealed class McpProtocolTests
         Assert.Equal(2 * 1024 * 1024, new FileInfo(Path.Combine(work, "Data")).Length);
     }
 
+    [Theory]
+    [InlineData("ASPOSE_CELLS_LICENSE_PATH")]
+    [InlineData("ASPOSE_CELLS_LICENSE_B64")]
+    [InlineData("ASPOSE_LICENSE_PATH")]
+    [InlineData("ASPOSE_LICENSE_B64")]
+    public async Task Execute_InheritedExplicitLicenseKeepsItsSourceAndAnchoredPath(string variable)
+    {
+        using var temp = new TempDirectory();
+        string work = temp.File("work");
+        string other = temp.File("other");
+        Directory.CreateDirectory(work);
+        Directory.CreateDirectory(other);
+        File.WriteAllText(Path.Combine(other, "input.csv"), "Name,Value\nA,42\n");
+        File.WriteAllText(Path.Combine(work, "selected.lic"), "<License>synthetic invalid fixture</License>");
+        var variables = new Dictionary<string, string?>
+        {
+            [variable] = variable.EndsWith("_B64", StringComparison.Ordinal)
+                ? Convert.ToBase64String(Encoding.UTF8.GetBytes("synthetic environment fixture"))
+                : temp.File("missing-environment.lic"),
+        };
+        await using var server = await Server.Start(temp.Path, work, variables, ["--license", "selected.lic"]);
+        foreach (bool supervised in new[] { false, true })
+        {
+            string[] args = ["cells", "inspect", "input.csv", "--workdir", other, "--output=json"];
+            if (supervised) { args = ["--timeout=10", .. args]; }
+            JsonNode inherited = Error(await server.Execute(args));
+            Assert.Equal("LICENSE_INVALID", inherited["code"]!.GetValue<string>());
+            Assert.Equal("flag", inherited["details"]!["source"]!.GetValue<string>());
+
+            JsonNode replaced = Error(await server.Execute([.. args, "--license=missing-execution.lic"]));
+            Assert.Equal("LICENSE_FILE_NOT_FOUND", replaced["code"]!.GetValue<string>());
+            Assert.Equal("--license", replaced["details"]!["source"]!.GetValue<string>());
+            Assert.Equal(Path.Combine(other, "missing-execution.lic"), replaced["details"]!["path"]!.GetValue<string>());
+        }
+    }
+
+    private static JsonNode Error(JsonNode reply)
+    {
+        JsonNode execution = reply["result"]!["structuredContent"]!;
+        Assert.Equal(7, execution["exitCode"]!.GetValue<int>());
+        return JsonNode.Parse(execution["stderr"]!.GetValue<string>())!["error"]!;
+    }
+
     private static void AssertSuccess(JsonNode reply)
     {
         Assert.Null(reply["error"]);
@@ -84,7 +127,8 @@ public sealed class McpProtocolTests
             _stderr = process.StandardError.ReadToEndAsync();
         }
 
-        internal static async Task<Server> Start(string directory, string work)
+        internal static async Task<Server> Start(string directory, string work,
+            IReadOnlyDictionary<string, string?>? variables = null, string[]? options = null)
         {
             var start = new ProcessStartInfo(CliRunner.ExecutablePath)
             {
@@ -97,6 +141,11 @@ public sealed class McpProtocolTests
             {
                 start.ArgumentList.Add(argument);
             }
+            foreach (var (name, value) in variables ?? new Dictionary<string, string?>())
+            {
+                start.Environment[name] = value;
+            }
+            foreach (string argument in options ?? []) { start.ArgumentList.Add(argument); }
             var server = new Server(Process.Start(start)!);
             try
             {

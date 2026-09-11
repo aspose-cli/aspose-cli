@@ -44,6 +44,7 @@ public static class CliHost
     {
         ArgumentNullException.ThrowIfNull(args);
         Invocation.WindowsProcessErrorMode.SuppressNativeErrorUi();
+        using InvocationInputs? inputs = InvocationInputs.Receive();
         var host = new HostContext(catalog, edition);
         ConfigureConsole();
         ConfigureUiCulture();

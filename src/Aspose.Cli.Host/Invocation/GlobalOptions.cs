@@ -97,6 +97,12 @@ internal sealed class GlobalOptions
     {
         ArgumentNullException.ThrowIfNull(parseResult);
 
+        inherited ??= InvocationInputs.Current?.Inherited;
+        string baseDirectory = inherited?.WorkDir ?? Directory.GetCurrentDirectory();
+        string workDirectory = Path.GetFullPath(parseResult.GetValue(WorkDir) ?? baseDirectory, baseDirectory);
+        string? explicitLicense = License is null ? null : parseResult.GetValue(License);
+        string? licensePath = explicitLicense is null ? inherited?.LicensePath
+            : Path.GetFullPath(explicitLicense, workDirectory);
         long? requestedInputBytes = parseResult.GetValue(MaxInputBytes);
         if (inherited is not null && requestedInputBytes > inherited.MaxInputBytes)
         {
@@ -109,8 +115,8 @@ internal sealed class GlobalOptions
             MapOutput(parseResult.GetValue(Output)),
             parseResult.GetValue(Quiet),
             parseResult.GetValue(Verbose),
-            (License is null ? null : parseResult.GetValue(License)) ?? inherited?.LicensePath,
-            parseResult.GetValue(WorkDir) ?? inherited?.WorkDir,
+            licensePath,
+            workDirectory,
             parseResult.GetValue(Timeout),
             maxInputBytes);
         ServiceStartSecrets? service =
