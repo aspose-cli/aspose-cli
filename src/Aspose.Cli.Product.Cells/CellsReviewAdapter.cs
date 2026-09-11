@@ -71,6 +71,8 @@ internal sealed class CellsReviewAdapter : IProductReviewAdapter<IWorkbookEngine
             .ToArray();
         SheetInfo[] reported = visible.Take(request.MaxItems).ToArray();
         var rendered = new List<(SheetInfo Sheet, string FileName)>();
+        var warnings = new List<Warning>(info.Warnings ?? []);
+        warnings.AddRange(layout.Warnings ?? []);
 
         foreach (SheetInfo sheet in reported)
         {
@@ -83,7 +85,7 @@ internal sealed class CellsReviewAdapter : IProductReviewAdapter<IWorkbookEngine
             }
             else
             {
-                port.Render(filePath, new RenderRequest
+                RenderResult render = port.Render(filePath, new RenderRequest
                 {
                     TargetFormatId = "png",
                     OutputPath = output,
@@ -91,6 +93,7 @@ internal sealed class CellsReviewAdapter : IProductReviewAdapter<IWorkbookEngine
                     SheetName = sheet.Name,
                     Password = request.Password,
                 });
+                warnings.AddRange(render.Warnings ?? []);
             }
             rendered.Add((sheet, fileName));
         }
@@ -135,10 +138,12 @@ internal sealed class CellsReviewAdapter : IProductReviewAdapter<IWorkbookEngine
         {
             VisualInspectionRequired = true,
             Findings = findings,
+            Warnings = warnings.DistinctBy(static warning => warning.Code).ToArray(),
             Coverage = coverage,
             ExpectedItems = visible.Length,
             RenderedItems = reported.Length,
-            Complete = findings.All(static finding => finding.Severity != "error"),
+            Complete = findings.All(static finding => finding.Severity != "error")
+                && !warnings.Any(static warning => warning.AffectsCompleteness),
         };
     }
 

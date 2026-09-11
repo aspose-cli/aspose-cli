@@ -2,9 +2,11 @@
 
 Open-source, local-first automation for spreadsheets, PDFs, presentations and Word documents.
 `aspose-cli` provides a CLI, a loopback browser workspace and a local MCP endpoint.
-Document processing runs on your machine. Cells HTML input can currently cause the SDK to
-request linked resources, including network URLs, even during inspection. Use trusted
-HTML inputs; fully offline resource loading is not yet enforced.
+Document processing runs on your machine. Cells and Words external resources are limited
+to verified ordinary local files beneath the input directory, with shared resource budgets.
+Omitted resources are reported; MHTML resource completeness requires visual confirmation.
+The pinned PDF HTML importer can fetch linked resources outside its callback, so PDF HTML
+creation does not yet provide the same isolation guarantee.
 
 The CLI source is Apache-2.0. Commercial Aspose SDK dependencies have their own licensing terms. Licensed and SDK evaluation behavior are supported; evaluation output is disclosed.
 

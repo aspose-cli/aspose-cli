@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// Owns atomic workbook persistence, text-export normalization and warnings
 /// caused by target-format limits.
 /// </summary>
-internal sealed class WorkbookSaveService(SafeFileWriter writer)
+internal sealed class WorkbookSaveService(SafeFileWriter writer, WorkbookLoadService loader)
 {
     private static readonly HashSet<string> EncryptableFormats =
         new(StringComparer.Ordinal)
@@ -69,10 +69,8 @@ internal sealed class WorkbookSaveService(SafeFileWriter writer)
                 workbook.Save(temporaryPath, saveFormat);
                 if (verifyReopen)
                 {
-                    using var reopened = new Workbook(
-                        temporaryPath,
-                        new LoadOptions { Password = encryptPassword });
-                    _ = reopened.Worksheets.Count;
+                    using LoadedWorkbook reopened = loader.OpenPublishedCandidate(temporaryPath, encryptPassword);
+                    _ = reopened.Workbook.Worksheets.Count;
                 }
             });
         Warning? formulasBroken = BuildBrokenFormulaWarning(

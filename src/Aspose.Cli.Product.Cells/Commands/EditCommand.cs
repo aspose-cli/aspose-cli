@@ -65,7 +65,8 @@ internal static class EditCommand
                             batch,
                             verificationDirectory,
                             inputPassword,
-                            encryptPassword ?? inputPassword),
+                            encryptPassword ?? inputPassword,
+                            result.Warnings),
                     };
                 }
             }

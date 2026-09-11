@@ -29,7 +29,7 @@ internal sealed class CellsWorkbookEngine
         ArgumentNullException.ThrowIfNull(fileWriter);
 
         var loader = new WorkbookLoadService(resourceBudgets);
-        var saver = new WorkbookSaveService(fileWriter);
+        var saver = new WorkbookSaveService(fileWriter, loader);
         _queries = new CellsQueryService(licenseGate, resourceBudgets, loader);
         _output = new CellsOutputService(licenseGate, fileWriter, loader, saver);
         _mutations = new CellsMutationService(licenseGate, loader, saver);

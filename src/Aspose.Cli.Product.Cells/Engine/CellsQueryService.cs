@@ -37,7 +37,8 @@ internal sealed class CellsQueryService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using var workbook = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        Workbook workbook = loaded.Workbook;
 
         (WorkbookSummary summary, Warning? errorsTruncated) =
             InfoProjection.Summarize(workbook, filePath, request);
@@ -49,7 +50,7 @@ internal sealed class CellsQueryService
             License = EnvelopeParts.License(licenseState),
             // Info is read-only, so no evaluation watermark — but an honest count
             // that outran its capped list is a condition the caller must see.
-            Warnings = errorsTruncated is null ? null : [errorsTruncated],
+            Warnings = loaded.Warnings(errorsTruncated),
         };
     }
 
@@ -59,8 +60,9 @@ internal sealed class CellsQueryService
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         _ = _licenseGate.EnsureApplied();
-        using var workbook = _loader.Open(filePath, password);
-        return ReviewLayoutProjection.Inspect(workbook);
+        using LoadedWorkbook loaded = _loader.Open(filePath, password);
+        Workbook workbook = loaded.Workbook;
+        return ReviewLayoutProjection.Inspect(workbook) with { Warnings = loaded.Warnings() };
     }
 
     /// <inheritdoc />
@@ -70,7 +72,8 @@ internal sealed class CellsQueryService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using var workbook = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        Workbook workbook = loaded.Workbook;
         (SheetProjection sheet, IReadOnlyDictionary<string, StyleData>? styles) =
             ReadProjection.Project(_resourceBudgets, workbook, request);
 
@@ -84,6 +87,7 @@ internal sealed class CellsQueryService
             // this projection (its own spelling), keeping the engine free of any
             // CLI syntax. See Commands/Cells/NextReadCommand.
             License = EnvelopeParts.License(licenseState),
+            Warnings = loaded.Warnings(),
         };
     }
 
@@ -95,8 +99,10 @@ internal sealed class CellsQueryService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using Workbook left = _loader.Open(leftPath, request.LeftPassword);
-        using Workbook right = _loader.Open(rightPath, request.RightPassword);
+        using LoadedWorkbook loaded = _loader.Open(leftPath, request.LeftPassword);
+        using LoadedWorkbook other = _loader.Open(rightPath, request.RightPassword);
+        Workbook left = loaded.Workbook;
+        Workbook right = other.Workbook;
 
         DiffComparer.Result diff = DiffComparer.Compare(
             left, right, includeFormulas: request.Scope == DiffScope.Formulas, request.MaxDiffs);
@@ -110,6 +116,7 @@ internal sealed class CellsQueryService
             Sheets = diff.Sheets.Count > 0 ? diff.Sheets : null,
             Truncated = diff.Truncated,
             License = EnvelopeParts.License(licenseState),
+            Warnings = loaded.Warnings(other.Resources.CoverageWarning),
         };
     }
 
@@ -120,7 +127,8 @@ internal sealed class CellsQueryService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using var workbook = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        Workbook workbook = loaded.Workbook;
         SourceInfo source = BuildSource(filePath, workbook);
 
         if (request.SheetName is { } name && workbook.Worksheets[name] is null)
@@ -140,6 +148,7 @@ internal sealed class CellsQueryService
                 ? $"showing the first {request.MaxHits} hits; narrow with --sheet, tighten the pattern, or raise --max-hits"
                 : null,
             License = EnvelopeParts.License(licenseState),
+            Warnings = loaded.Warnings(),
         };
     }
 
@@ -155,7 +164,8 @@ internal sealed class CellsQueryService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using var workbook = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        Workbook workbook = loaded.Workbook;
 
         IReadOnlyList<FontAvailability> fonts = FontOps.CheckAvailability(FontOps.UsedFonts(workbook));
         return new FontCheckResult
@@ -164,6 +174,7 @@ internal sealed class CellsQueryService
             AllAvailable = fonts.All(static font => font.Available),
             Fonts = fonts,
             License = EnvelopeParts.License(licenseState),
+            Warnings = loaded.Warnings(),
         };
     }
 

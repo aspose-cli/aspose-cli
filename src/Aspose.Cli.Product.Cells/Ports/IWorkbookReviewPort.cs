@@ -7,7 +7,10 @@ internal interface IWorkbookReviewPort
 }
 
 internal sealed record WorkbookReviewLayout(
-    IReadOnlyList<WorksheetReviewLayout> Sheets);
+    IReadOnlyList<WorksheetReviewLayout> Sheets)
+{
+    public IReadOnlyList<Aspose.Cli.Sdk.Contracts.Warning>? Warnings { get; init; }
+}
 
 internal sealed record WorksheetReviewLayout
 {

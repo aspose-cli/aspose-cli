@@ -57,7 +57,8 @@ internal static class EditVerificationRunner
         OpsBatch successfulBatch,
         string verificationDirectory,
         string? leftPassword,
-        string? rightPassword)
+        string? rightPassword,
+        IReadOnlyList<Warning>? sourceWarnings)
     {
         IReadOnlyList<CellsPreviewHint> footprint = OpsFootprint.Collect(successfulBatch);
         IReadOnlyList<VerificationTarget> targets = footprint
@@ -69,6 +70,7 @@ internal static class EditVerificationRunner
         var formulaErrors = new List<CellError>();
         var renders = new List<SheetRenderOutput>();
         var issues = new List<VerificationIssue>();
+        AddCompletenessIssues(sourceWarnings, issues);
         bool truncated = RunDiff(
             context, baselinePath, outputPath, leftPassword, rightPassword,
             footprint, direct, formulaResults, other, issues);
@@ -111,6 +113,7 @@ internal static class EditVerificationRunner
                 LeftPassword = leftPassword,
                 RightPassword = rightPassword,
             });
+            AddCompletenessIssues(diff.Warnings, issues);
             Classify(diff, footprint, direct, formulaResults, other);
             if (diff.Truncated)
             {
@@ -143,6 +146,7 @@ internal static class EditVerificationRunner
                 Details = [InfoDetails.Errors],
                 Password = password,
             });
+            AddCompletenessIssues(info.Warnings, issues);
             foreach (CellError error in info.Workbook.FormulaErrors ?? [])
             {
                 errors.Add(error);
@@ -186,6 +190,7 @@ internal static class EditVerificationRunner
                 Password = password,
             });
             AddRenderOutputs(render, renders);
+            AddCompletenessIssues(render.Warnings, issues);
             foreach (Warning warning in render.Warnings ?? [])
             {
                 if (warning.Code == CellsDiagnostics.SheetsSkipped)
@@ -197,6 +202,18 @@ internal static class EditVerificationRunner
         catch (Exception ex)
         {
             issues.Add(Issue("VERIFY_RENDER_FAILED", "Visible-sheet rendering failed", ex));
+        }
+    }
+
+    private static void AddCompletenessIssues(
+        IReadOnlyList<Warning>? warnings, ICollection<VerificationIssue> issues)
+    {
+        foreach (Warning warning in warnings ?? [])
+        {
+            if (warning.AffectsCompleteness)
+            {
+                issues.Add(new VerificationIssue { Code = warning.Code, Message = warning.Message });
+            }
         }
     }
 

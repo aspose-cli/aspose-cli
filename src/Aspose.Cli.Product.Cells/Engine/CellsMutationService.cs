@@ -41,7 +41,8 @@ internal sealed class CellsMutationService
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        using var workbook = _loader.Open(filePath, options.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, options.Password);
+        Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(filePath, workbook);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(
@@ -84,7 +85,8 @@ internal sealed class CellsMutationService
             Applied = applied,
             Backup = backup,
             License = EnvelopeParts.License(licenseState),
-            Warnings = options.Options.DryRun ? null : CombineWarnings(licenseState, truncated, formulasBroken),
+            Warnings = options.Options.DryRun ? loaded.Warnings()
+                : CombineWarnings(licenseState, loaded.Resources.CoverageWarning, truncated, formulasBroken),
         };
     }
 

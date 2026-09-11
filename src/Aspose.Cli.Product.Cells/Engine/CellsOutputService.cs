@@ -55,7 +55,8 @@ internal sealed class CellsOutputService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using var workbook = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        Workbook workbook = loaded.Workbook;
 
         // Capture before saving: Workbook.FileFormat mutates to the target
         // format once the workbook is saved.
@@ -184,7 +185,7 @@ internal sealed class CellsOutputService
             },
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, sheetsDropped, dataTruncated, formulasBroken),
+            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, sheetsDropped, dataTruncated, formulasBroken),
         };
     }
 
@@ -195,12 +196,13 @@ internal sealed class CellsOutputService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using var workbook = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(filePath, workbook);
 
         if (request.AllSheets)
         {
-            return RenderAllSheets(workbook, input, request, licenseState);
+            return RenderAllSheets(workbook, input, request, licenseState, loaded.Resources.CoverageWarning);
         }
 
         Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
@@ -238,7 +240,7 @@ internal sealed class CellsOutputService
             Range = renderedRange,
             Dpi = isRaster ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = EnvelopeParts.OutputWarnings(licenseState),
+            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning),
         };
     }
 
@@ -320,7 +322,7 @@ internal sealed class CellsOutputService
     /// rethrown so an all-empty workbook still surfaces <c>RENDER_EMPTY</c>.
     /// </summary>
     private RenderResult RenderAllSheets(
-        Workbook workbook, SourceInfo input, RenderRequest request, LicenseState licenseState)
+        Workbook workbook, SourceInfo input, RenderRequest request, LicenseState licenseState, Warning? resourceOmission)
     {
         var candidates = new List<Worksheet>();
         foreach (Worksheet sheet in workbook.Worksheets)
@@ -386,7 +388,7 @@ internal sealed class CellsOutputService
             Dpi = FormatMapper.IsRaster(request.TargetFormatId) ? request.Dpi : null,
             Outputs = rendered,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, sheetsSkipped),
+            Warnings = CombineWarnings(licenseState, resourceOmission, sheetsSkipped),
         };
     }
 
@@ -482,7 +484,8 @@ internal sealed class CellsOutputService
         ArgumentNullException.ThrowIfNull(artifacts);
 
         _licenseGate.EnsureApplied();
-        using var workbook = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        Workbook workbook = loaded.Workbook;
         SourceInfo source = BuildSource(filePath, workbook);
 
         if (request.View == CellsPreviewViews.Sheet)
@@ -492,7 +495,7 @@ internal sealed class CellsOutputService
                 workbook,
                 sheet,
                 artifacts);
-            return new PreviewRenderOutcome(sheetEntryFileName, source.Format, source.SizeBytes);
+            return new PreviewRenderOutcome(sheetEntryFileName, source.Format, source.SizeBytes, loaded.Warnings());
         }
 
         // The whole-workbook representation is the default view. The command
@@ -501,7 +504,7 @@ internal sealed class CellsOutputService
         // this point today; if drift ever produces one, falling back to the
         // workbook export keeps the live session serving instead of failing it.
         string entryFileName = PreviewExporter.Export(workbook, artifacts);
-        return new PreviewRenderOutcome(entryFileName, source.Format, source.SizeBytes);
+        return new PreviewRenderOutcome(entryFileName, source.Format, source.SizeBytes, loaded.Warnings());
     }
 
     /// <summary>Rejects raster output whose bitmap would exceed the allocation budget.</summary>

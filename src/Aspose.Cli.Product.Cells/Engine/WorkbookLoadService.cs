@@ -43,54 +43,59 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
             ".json",
         };
 
-    internal Workbook Open(string path, string? password)
+    internal LoadedWorkbook Open(string path, string? password)
     {
-        InputSizeGuard.Ensure(
-            resourceBudgets,
-            path,
+        InputSizeGuard.Ensure(resourceBudgets, path,
             InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        return OpenCore(path, password);
+    }
+
+    // Derived output is already bounded by publication; it is not a new user input.
+    internal LoadedWorkbook OpenPublishedCandidate(string path, string? password) =>
+        OpenCore(path, password);
+
+    private LoadedWorkbook OpenCore(string path, string? password)
+    {
         LoadPlan plan = ResolveLoadPlan(path);
+        var resources = new WorkbookResources(path, resourceBudgets, plan.Format == LoadFormat.MHtml);
+        Workbook? workbook = null;
+        bool transferred = false;
         try
         {
-            LoadOptions loadOptions = plan.ToLoadOptions();
-            loadOptions.Password = password;
-            var workbook = new Workbook(path, loadOptions);
-            try
-            {
-                resourceBudgets.EnsureWithin(
-                    CellsBudgetDomains.Sheets,
-                    workbook.Worksheets.Count,
-                    "items",
-                    "post-load");
-                resourceBudgets.EnsureWithin(
-                    CellsBudgetDomains.Objects,
-                    workbook.Worksheets.Cast<Worksheet>()
-                        .Sum(static sheet => (long)sheet.Shapes.Count),
-                    "items",
-                    "post-load");
-            }
-            catch
-            {
-                workbook.Dispose();
-                throw;
-            }
-
+            LoadOptions options = plan.ToLoadOptions(resources);
+            options.Password = password;
+            workbook = new Workbook(path, options);
+            resources.MaterializeLinkedPictures(workbook);
+            resources.ThrowIfFailed();
+            resourceBudgets.EnsureWithin(CellsBudgetDomains.Sheets,
+                workbook.Worksheets.Count, "items", "post-load");
+            resourceBudgets.EnsureWithin(CellsBudgetDomains.Objects,
+                workbook.Worksheets.Cast<Worksheet>().Sum(static sheet => (long)sheet.Shapes.Count),
+                "items", "post-load");
             if (workbook.FileFormat is FileFormatType.Html or FileFormatType.MHtml)
             {
                 foreach (Worksheet sheet in workbook.Worksheets)
                 {
+                    resourceBudgets.Deadline.ThrowIfExpired("post-load");
                     sheet.AutoFitColumns();
                 }
             }
-
-            return workbook;
+            resources.ThrowIfFailed();
+            transferred = true;
+            return new LoadedWorkbook(workbook, resources);
         }
-        catch (Exception exception) when (exception is not CliException)
+        catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
-            throw ErrorTranslator.TranslateLoad(
-                exception,
-                path,
-                passwordProvided: password is not null);
+            resources.ThrowIfFailed();
+            throw ErrorTranslator.TranslateLoad(exception, path, passwordProvided: password is not null);
+        }
+        finally
+        {
+            if (!transferred)
+            {
+                try { workbook?.Dispose(); }
+                finally { resources.Dispose(); }
+            }
         }
     }
 
@@ -126,7 +131,12 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
                 return new LoadPlan(null, separator);
             }
 
-            return LoadPlan.Auto;
+            return detected.FileFormatType switch
+            {
+                FileFormatType.Html => new LoadPlan(LoadFormat.Html, null),
+                FileFormatType.MHtml => new LoadPlan(LoadFormat.MHtml, null),
+                _ => LoadPlan.Auto,
+            };
         }
 
         if (detected.FileFormatType == FileFormatType.Unknown)
@@ -287,7 +297,7 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
     {
         internal static LoadPlan Auto => default;
 
-        internal LoadOptions ToLoadOptions()
+        internal LoadOptions ToLoadOptions(IStreamProvider resources)
         {
             if (Separator is { } separator)
             {
@@ -296,9 +306,15 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
                     Separator = separator,
                 };
             }
-            return Format is { } format
-                ? new LoadOptions(format)
-                : new LoadOptions();
+            return Format switch
+            {
+                LoadFormat.Html or LoadFormat.MHtml => new HtmlLoadOptions(Format.Value)
+                {
+                    StreamProvider = resources,
+                },
+                { } format => new LoadOptions(format),
+                _ => new LoadOptions(),
+            };
         }
     }
 }
