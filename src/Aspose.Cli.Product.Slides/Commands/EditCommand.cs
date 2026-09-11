@@ -11,7 +11,7 @@ internal static class EditCommand
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
         Argument<string> file = SlidesOptions.File();
-        var ops = new Option<string>("--ops") { Required = true, Description = "Ops JSON path, inline JSON, or '-' for stdin." };
+        var ops = new Option<string>("--ops") { Required = true, Description = "Ops JSON path, inline JSON, or '-' for stdin." }.WithInput(InputKind.JsonSource);
         var output = new MutationFileOptions();
         var editOptions = new BoundedEditOptions();
         var verify = new Option<bool>("--verify") { Description = "Reopen and render touched slides after save." };

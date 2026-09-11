@@ -11,9 +11,9 @@ internal static class ConvertCommand
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
         Argument<string> file = SlidesOptions.File();
-        var to = new Option<string>("--to") { Required = true, Description = "Target presentation export format." };
+        var to = new Option<string>("--to") { Required = true, Description = "Target presentation export format." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong([.. SlidesModule.Formats.IdsFor(FormatUse.Convert)]);
-        var slides = new Option<string?>("--slides") { Description = "Optional 1-based slide range." };
+        var slides = new Option<string?>("--slides") { Description = "Optional 1-based slide range." }.WithInput(InputKind.None);
         var output = new OutputFileOptions(
             "Output path; defaults to a sibling using the target extension.");
         var password = new PasswordOptions("--password", "the presentation");

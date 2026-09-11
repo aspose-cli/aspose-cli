@@ -9,10 +9,10 @@ internal static class NewCommand
 {
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
-        var file = new Argument<string>("file") { Description = "PPTX or PPTM path to create." };
-        var markdown = new Option<string?>("--from-markdown", "--markdown") { Description = "Markdown outline to author." };
-        var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." };
-        var size = new Option<string?>("--size") { Description = "16x9 or 4x3; template size is preserved when omitted." };
+        var file = new Argument<string>("file") { Description = "PPTX or PPTM path to create." }.WithInput(InputKind.None);
+        var markdown = new Option<string?>("--from-markdown", "--markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
+        var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." }.WithInput(InputKind.File);
+        var size = new Option<string?>("--size") { Description = "16x9 or 4x3; template size is preserved when omitted." }.WithInput(InputKind.None);
         size.AcceptOnlyFromAmong("16x9", "4x3");
         Option<bool> overwrite = OutputOptions.Overwrite();
         var encrypt = new PasswordOptions("--encrypt", "the output presentation", allowStdin: false);

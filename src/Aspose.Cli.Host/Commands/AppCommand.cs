@@ -23,7 +23,7 @@ internal static class AppCommand
         {
             Description = "File to open directly in the local App.",
             Arity = ArgumentArity.ZeroOrOne,
-        };
+        }.WithInput(InputKind.File);
         var welcomeOption = new Option<bool>("--welcome")
         {
             Description = "Open the first-run workspace guide.",
@@ -42,7 +42,7 @@ internal static class AppCommand
             Description = "Start or activate the App without opening a browser.",
         };
         var serveOption = new Option<bool>("--serve") { Hidden = true };
-        var routeOption = new Option<string?>("--route") { Hidden = true };
+        var routeOption = new Option<string?>("--route") { Hidden = true }.WithInput(InputKind.None);
         var fonts = new FontDirectoryOptions();
 
         var app = new Command("app", "Open the local file workspace in a browser.");

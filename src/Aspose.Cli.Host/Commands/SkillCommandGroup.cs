@@ -51,26 +51,26 @@ internal static class SkillCommandGroup
         {
             Description = $"Bundled skill to install: {string.Join(", ", catalog.All.Select(static package => package.Name))}.",
             Arity = ArgumentArity.ExactlyOne,
-        };
+        }.WithInput(InputKind.None);
         var hostOption = new Option<string?>("--host")
         {
             Description = "Agent host whose standard skills directory should be used.",
-        };
+        }.WithInput(InputKind.None);
         hostOption.AcceptOnlyFromAmong(Codex, ClaudeCode, OpenCode);
         var scopeOption = new Option<string>("--scope")
         {
             Description = "Install for the current project or the current user.",
             DefaultValueFactory = _ => "project",
-        };
+        }.WithInput(InputKind.None);
         scopeOption.AcceptOnlyFromAmong("project", "user");
         var dirOption = new Option<string?>("--dir")
         {
             Description = "Project root used with --scope project. Default: current working directory.",
-        };
+        }.WithInput(InputKind.None);
         var targetOption = new Option<string?>("--target")
         {
             Description = "Advanced: explicit parent directory; the selected Skill folder is created there.",
-        };
+        }.WithInput(InputKind.None);
 
         var install = new Command("install", "Install a bundled Agent Skill for Codex, Claude Code, or OpenCode.");
         install.Arguments.Add(skillArgument);

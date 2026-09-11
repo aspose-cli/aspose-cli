@@ -12,10 +12,10 @@ internal static class RenderCommand
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
         Argument<string> file = SlidesOptions.File();
-        var to = new Option<string>("--to") { DefaultValueFactory = _ => "png", Description = "png, jpeg or svg." };
+        var to = new Option<string>("--to") { DefaultValueFactory = _ => "png", Description = "png, jpeg or svg." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong([.. SlidesModule.Formats.IdsFor(FormatUse.Render)]);
         var slide = new Option<int?>("--slide") { Description = "One 1-based slide number." };
-        var slides = new Option<string?>("--slides") { Description = "A 1-based slide range." };
+        var slides = new Option<string?>("--slides") { Description = "A 1-based slide range." }.WithInput(InputKind.None);
         var allSlides = new Option<bool>("--all-slides") { Description = "Render every slide." };
         var dpi = new Option<int?>("--dpi") { Description = "Raster resolution; defaults to 192." };
         var width = new Option<int?>("--width") { Description = "Exact raster width in pixels." };

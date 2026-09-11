@@ -8,9 +8,9 @@ internal static class CompareCommand
 {
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
-        var left = new Argument<string>("left") { Description = "Original document." };
-        var right = new Argument<string>("right") { Description = "Changed document." };
-        var outOption = new Option<string?>("--out", "-o") { Description = "Optional DOCX redline output." };
+        var left = new Argument<string>("left") { Description = "Original document." }.WithInput(InputKind.File);
+        var right = new Argument<string>("right") { Description = "Changed document." }.WithInput(InputKind.File);
+        var outOption = new Option<string?>("--out", "-o") { Description = "Optional DOCX redline output." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var ignoreFormatting = new Option<bool>("--ignore-formatting") { Description = "Ignore formatting-only changes." };
         var leftPassword = new PasswordOptions("--left-password", "the original document", allowStdin: false);

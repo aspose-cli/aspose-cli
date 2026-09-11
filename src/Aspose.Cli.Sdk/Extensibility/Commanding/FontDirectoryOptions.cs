@@ -9,12 +9,12 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 public sealed class FontDirectoryOptions
 {
     private const int MaximumDirectories = 16;
-    private readonly Option<string[]> _directories = new("--font-dir")
+    private readonly Option<string[]> _directories = new Option<string[]>("--font-dir")
     {
         Description = "Local font directory; repeat to define an explicit-only deterministic font profile.",
         Arity = new ArgumentArity(1, MaximumDirectories),
         AllowMultipleArgumentsPerToken = false,
-    };
+    }.WithInput(InputKind.None);
 
     public void AddTo(Command command)
     {

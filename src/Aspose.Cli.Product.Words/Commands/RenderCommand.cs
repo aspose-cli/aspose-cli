@@ -11,9 +11,9 @@ internal static class RenderCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File();
-        var to = new Option<string>("--to") { DefaultValueFactory = _ => "png", Description = "png, jpeg or svg." };
+        var to = new Option<string>("--to") { DefaultValueFactory = _ => "png", Description = "png, jpeg or svg." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong([.. WordsModule.Formats.IdsFor(FormatUse.Render)]);
-        var pages = new Option<string?>("--pages") { Description = "1-based page range." };
+        var pages = new Option<string?>("--pages") { Description = "1-based page range." }.WithInput(InputKind.None);
         var allPages = new Option<bool>("--all-pages") { Description = "Render every page." };
         var dpi = new Option<int>("--dpi") { DefaultValueFactory = _ => 192, Description = "Raster resolution." };
         var output = new OutputFileOptions("Output path; multi-page output adds .pN before the extension.");

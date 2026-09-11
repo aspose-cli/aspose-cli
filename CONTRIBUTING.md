@@ -27,3 +27,9 @@ Report sensitive defects through SECURITY.md.
 Commercial SDK tests must remain valid in licensed and evaluation modes. Preserve evaluation disclosures.
 
 Assess relevant shared defect reports independently; entire platform trees do not require synchronization.
+
+## Command parameter semantics
+
+Every string argument and string option, including arrays, must declare its input role at construction with `WithInput`: `InputKind.File` for document files, `InputKind.JsonSource` for file/inline/stdin JSON, or `InputKind.None` for ordinary values, output paths, directories and separately owned configuration or credentials. Numeric and boolean values default to `None`. Shared option factories own their declarations.
+
+Value sources and secret handling are also declared on the symbol. The Host consumes the actual parser result and these declarations; it must not infer roles from token order, option spelling or the existence of a same-named file. Command-tree construction rejects missing string declarations, conflicting declarations and invalid type/source combinations.

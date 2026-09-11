@@ -10,9 +10,9 @@ internal static class ConvertCommand
     public static Command Create(IProductCommandHost<IPdfEngine> host)
     {
         Argument<string> file = PdfOptions.File();
-        var to = new Option<string>("--to") { Required = true, Description = "Target PDF export format." };
+        var to = new Option<string>("--to") { Required = true, Description = "Target PDF export format." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong([.. PdfModule.Formats.IdsFor(FormatUse.Convert)]);
-        var pages = new Option<string?>("--pages") { Description = "Optional 1-based page range." };
+        var pages = new Option<string?>("--pages") { Description = "Optional 1-based page range." }.WithInput(InputKind.None);
         var output = new OutputFileOptions("Output path; defaults to a sibling using the target extension.");
         var password = new PasswordOptions("--password", "the PDF");
         var command = new Command("convert", "Convert selected PDF pages to a supported format.");

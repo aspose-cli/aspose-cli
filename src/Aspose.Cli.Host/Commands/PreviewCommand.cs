@@ -27,7 +27,7 @@ internal static class PreviewCommand
         {
             Description = "File to preview; its extension selects the product unless --product is supplied.",
             Arity = ArgumentArity.ZeroOrOne,
-        };
+        }.WithInput(InputKind.File);
         StartSymbols shortcutSymbols = StartSymbols.Create(catalog, "the file");
         var preview = new Command("preview", "Start, inspect, and stop background previews for any file product.");
         preview.Arguments.Add(file);
@@ -45,15 +45,15 @@ internal static class PreviewCommand
         ProductCatalog catalog,
         GlobalOptions globals)
     {
-        var file = new Argument<string>("file") { Description = "Preview source file." };
-        var product = new Option<string>("--product") { Description = "Owning product id." };
+        var file = new Argument<string>("file") { Description = "Preview source file." }.WithInput(InputKind.File);
+        var product = new Option<string>("--product") { Description = "Owning product id." }.WithInput(InputKind.None);
         var port = new Option<int>("--port") { Description = "Loopback preview port." };
-        var view = new Option<string>("--view") { Description = "Product preview view." };
+        var view = new Option<string>("--view") { Description = "Product preview view." }.WithInput(InputKind.None);
         var effect = new Option<string?>("--presentation-effect")
         {
             Description = "Optional product presentation effect.",
-        };
-        var serviceId = new Option<string?>("--preview-service-id") { Hidden = true };
+        }.WithInput(InputKind.None);
+        var serviceId = new Option<string?>("--preview-service-id") { Hidden = true }.WithInput(InputKind.None);
         var password = new PasswordOptions("--password", "the preview source", allowStdin: false);
         var host = new Command("__host", "Internal product-neutral preview host.")
         {
@@ -241,7 +241,7 @@ internal static class PreviewCommand
         {
             Description = "Optional session id.",
             Arity = ArgumentArity.ZeroOrOne,
-        };
+        }.WithInput(InputKind.None);
         var status = new Command("status", "List one or all current-user preview sessions.");
         status.Arguments.Add(id);
         status.SetAction(parse => executor.RunLightweight(parse, globals, (_, _) =>
@@ -264,7 +264,7 @@ internal static class PreviewCommand
         {
             Description = "Session id to stop.",
             Arity = ArgumentArity.ZeroOrOne,
-        };
+        }.WithInput(InputKind.None);
         var all = new Option<bool>("--all") { Description = "Stop every current-user preview session." };
         var stop = new Command("stop", "Gracefully stop one or all background previews.");
         stop.Arguments.Add(id);
@@ -329,7 +329,7 @@ internal static class PreviewCommand
             var product = new Option<string?>("--product")
             {
                 Description = "Explicit product override; normally inferred from the file extension.",
-            };
+            }.WithInput(InputKind.None);
             product.AcceptOnlyFromAmong(
                 catalog.Products
                     .Select(static item => item.Manifest.Id)
@@ -338,7 +338,7 @@ internal static class PreviewCommand
             {
                 Description = "Preview view; auto uses the product default.",
                 DefaultValueFactory = _ => AutoView,
-            };
+            }.WithInput(InputKind.None);
             view.AcceptOnlyFromAmong(
                 catalog.Products
                     .SelectMany(static item => item.Preview.Views)

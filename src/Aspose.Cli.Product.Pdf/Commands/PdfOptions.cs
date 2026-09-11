@@ -8,10 +8,10 @@ namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class PdfOptions
 {
-    public static Argument<string> File() => new("file")
+    public static Argument<string> File() => new Argument<string>("file")
     {
         Description = "PDF document to open.",
-    };
+    }.WithInput(InputKind.File);
 
     public static string ResolveDirectory(
         ParseResult parse,

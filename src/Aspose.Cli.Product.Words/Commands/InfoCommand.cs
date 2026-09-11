@@ -17,7 +17,7 @@ internal static class InfoCommand
         {
             Description = "Extra structural projections; repeatable.",
             AllowMultipleArgumentsPerToken = true,
-        };
+        }.WithInput(InputKind.None);
         detail.AcceptOnlyFromAmong(Details);
         var password = new PasswordOptions("--password", "the document");
 

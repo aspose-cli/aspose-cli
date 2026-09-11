@@ -42,7 +42,7 @@ internal static class FontsCommandGroup
             Description = defaultProduct is null
                 ? "Product font engine to inspect. Required because this distribution has no declared default."
                 : $"Product font engine to inspect. Default: {defaultProduct}.",
-        };
+        }.WithInput(InputKind.None);
         if (defaultProduct is not null)
         {
             product.DefaultValueFactory = _ => defaultProduct;
@@ -73,7 +73,7 @@ internal static class FontsCommandGroup
         var fileArgument = new Argument<string>("file")
         {
             Description = "Supported document whose fonts to check.",
-        };
+        }.WithInput(InputKind.File);
 
         var password = new PasswordOptions("--password", "the document");
         var fontDirectories = new FontDirectoryOptions();

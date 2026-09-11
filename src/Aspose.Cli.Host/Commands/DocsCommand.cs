@@ -23,7 +23,7 @@ internal static class DocsCommand
         {
             Description = "Doc topic to print; omit to list the available topics.",
             Arity = ArgumentArity.ZeroOrOne,
-        };
+        }.WithInput(InputKind.None);
 
         var docs = new Command("docs", "Print an offline reference document bundled with this binary.");
         docs.Arguments.Add(topicArgument);

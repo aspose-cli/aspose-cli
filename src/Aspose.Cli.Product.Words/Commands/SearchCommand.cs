@@ -9,10 +9,10 @@ internal static class SearchCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File();
-        var pattern = new Option<string>("--pattern") { Required = true, Description = "Literal or regex pattern." };
+        var pattern = new Option<string>("--pattern") { Required = true, Description = "Literal or regex pattern." }.WithInput(InputKind.None);
         var regex = new Option<bool>("--regex") { Description = "Treat the pattern as a regular expression." };
         var caseSensitive = new Option<bool>("--case-sensitive") { Description = "Use ordinal case-sensitive matching." };
-        var scope = new Option<string>("--scope") { DefaultValueFactory = _ => "body", Description = "body, headers, footnotes, comments or all." };
+        var scope = new Option<string>("--scope") { DefaultValueFactory = _ => "body", Description = "body, headers, footnotes, comments or all." }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong("body", "headers", "footnotes", "comments", "all");
         var maxHits = new Option<int>("--max-hits") { DefaultValueFactory = _ => 100, Description = "Maximum returned hits." };
         var password = new PasswordOptions("--password", "the document");

@@ -21,20 +21,20 @@ internal static class SearchCommand
 
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
-        var fileArgument = new Argument<string>("file") { Description = "Workbook to search." };
+        var fileArgument = new Argument<string>("file") { Description = "Workbook to search." }.WithInput(InputKind.File);
         var patternArgument = new Argument<string>("pattern")
         {
             Description = "Text to find, or a regular expression with --regex.",
-        };
+        }.WithInput(InputKind.None);
 
         var regexOption = new Option<bool>("--regex") { Description = "Treat the pattern as a regular expression." };
         var inOption = new Option<string>("--in")
         {
             Description = "Where to search: values (default), formulas or both.",
             DefaultValueFactory = _ => InValues,
-        };
+        }.WithInput(InputKind.None);
         inOption.AcceptOnlyFromAmong(InValues, InFormulas, InBoth);
-        var sheetOption = new Option<string?>("--sheet") { Description = "Restrict to one sheet. Default: all sheets." };
+        var sheetOption = new Option<string?>("--sheet") { Description = "Restrict to one sheet. Default: all sheets." }.WithInput(InputKind.None);
         var maxHitsOption = new Option<int>("--max-hits")
         {
             Description = $"Maximum hits ({MinMaxHits}-{MaxMaxHits}).",

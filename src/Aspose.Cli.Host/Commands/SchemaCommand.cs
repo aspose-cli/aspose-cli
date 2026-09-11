@@ -21,11 +21,11 @@ internal static class SchemaCommand
         {
             Description = "Schema id to print; omit it to return the available ids.",
             Arity = ArgumentArity.ZeroOrOne,
-        };
+        }.WithInput(InputKind.None);
         var operation = new Option<string?>("--operation")
         {
             Description = "Narrow an ops schema to one exact operation id.",
-        };
+        }.WithInput(InputKind.None);
 
         var schema = new Command(
             "schema",

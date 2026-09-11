@@ -80,6 +80,7 @@ internal static class RootCommandFactory
         root.Subcommands.Add(McpCommand.Create(catalog));
         root.Subcommands.Add(UpdateCommand.Create(executor, globals, host.Edition));
 
+        root.ValidateParameters();
         HostHelpMetadata.Attach(root);
         CommandHelpRenderer.Attach(root);
 

@@ -20,7 +20,7 @@ internal sealed class GlobalOptions
             Description = "Output format: json (contract envelopes), table (human text) or markdown. " +
                           "Default: table on a terminal, json when redirected.",
             Recursive = true,
-        };
+        }.WithInput(InputKind.None);
         Output.AcceptOnlyFromAmong("json", "table", "markdown");
 
         Quiet = new Option<bool>("--quiet", "-q")
@@ -41,14 +41,14 @@ internal sealed class GlobalOptions
             {
                 Description = "Path to an Aspose license file; overrides every other license source.",
                 Recursive = true,
-            };
+            }.WithInput(InputKind.None);
         }
 
         WorkDir = new Option<string?>("--workdir")
         {
             Description = "Base directory for relative paths. Default: the current directory.",
             Recursive = true,
-        };
+        }.WithInput(InputKind.None);
 
         Timeout = new Option<int?>("--timeout")
         {

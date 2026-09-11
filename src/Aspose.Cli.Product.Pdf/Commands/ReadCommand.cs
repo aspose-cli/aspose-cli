@@ -10,12 +10,12 @@ internal static class ReadCommand
     public static Command Create(IProductCommandHost<IPdfEngine> host)
     {
         Argument<string> file = PdfOptions.File();
-        var pages = new Option<string?>("--pages") { Description = "1-based page range, e.g. 1-3,7,9-." };
+        var pages = new Option<string?>("--pages") { Description = "1-based page range, e.g. 1-3,7,9-." }.WithInput(InputKind.None);
         var mode = new Option<string>("--mode")
         {
             Description = "Text projection: plain or layout.",
             DefaultValueFactory = _ => PdfReadModes.Plain,
-        };
+        }.WithInput(InputKind.None);
         mode.AcceptOnlyFromAmong([.. PdfReadModes.All]);
         var maxChars = new Option<int>("--max-chars")
         {

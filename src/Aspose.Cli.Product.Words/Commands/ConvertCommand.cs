@@ -11,9 +11,9 @@ internal static class ConvertCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File();
-        var to = new Option<string>("--to") { Required = true, Description = "Target document format." };
+        var to = new Option<string>("--to") { Required = true, Description = "Target document format." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong([.. WordsModule.Formats.IdsFor(FormatUse.Convert)]);
-        var pages = new Option<string?>("--pages") { Description = "1-based pages for fixed-page targets only." };
+        var pages = new Option<string?>("--pages") { Description = "1-based pages for fixed-page targets only." }.WithInput(InputKind.None);
         var output = new OutputFileOptions("Output path; defaults to a sibling using the target extension.");
         var password = new PasswordOptions("--password", "the document");
         var encrypt = new PasswordOptions("--encrypt", "the output document", allowStdin: false);

@@ -13,13 +13,13 @@ internal static class ConvertCommand
         var fileArgument = new Argument<string>("file")
         {
             Description = "Workbook to convert.",
-        };
+        }.WithInput(InputKind.File);
 
         var toOption = new Option<string>("--to")
         {
             Description = $"Target format: {string.Join(", ", CellsModule.Formats.IdsFor(FormatUse.Convert))}.",
             Required = true,
-        };
+        }.WithInput(InputKind.None);
 
         var output = new OutputFileOptions(
             "Output path. Default: the input path with the target extension " +
@@ -28,7 +28,7 @@ internal static class ConvertCommand
         var sheetOption = new Option<string?>("--sheet")
         {
             Description = $"Convert only this sheet (supported for {string.Join(", ", CellsFormats.SheetScopedConvertIds)}).",
-        };
+        }.WithInput(InputKind.None);
 
         var password = new PasswordOptions("--password", "the workbook");
 

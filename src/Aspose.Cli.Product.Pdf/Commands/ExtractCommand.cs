@@ -11,13 +11,13 @@ internal static class ExtractCommand
     public static Command Create(IProductCommandHost<IPdfEngine> host)
     {
         Argument<string> file = PdfOptions.File();
-        var what = new Option<string>("--what") { Required = true, Description = "images, attachments, text, tables or forms." };
+        var what = new Option<string>("--what") { Required = true, Description = "images, attachments, text, tables or forms." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PdfExtractKinds.All, "forms"]);
-        var pages = new Option<string?>("--pages") { Description = "Optional page range for images, text or tables." };
-        var outDirectory = new Option<string?>("--out-dir") { Description = "Safe extraction directory; required unless --what forms." };
-        var to = new Option<string?>("--to") { Description = "Form export format: json, fdf or xfdf; only with --what forms." };
+        var pages = new Option<string?>("--pages") { Description = "Optional page range for images, text or tables." }.WithInput(InputKind.None);
+        var outDirectory = new Option<string?>("--out-dir") { Description = "Safe extraction directory; required unless --what forms." }.WithInput(InputKind.None);
+        var to = new Option<string?>("--to") { Description = "Form export format: json, fdf or xfdf; only with --what forms." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong("json", "fdf", "xfdf");
-        var outFile = new Option<string?>("--out", "-o") { Description = "Form-data output file; only with --what forms. Default extension follows --to." };
+        var outFile = new Option<string?>("--out", "-o") { Description = "Form-data output file; only with --what forms. Default extension follows --to." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var password = new PasswordOptions("--password", "the PDF");
         var command = new Command("extract", "Extract bounded PDF assets, text, tables or form data.");

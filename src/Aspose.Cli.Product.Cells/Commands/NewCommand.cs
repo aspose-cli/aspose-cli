@@ -13,12 +13,12 @@ internal static class NewCommand
         var fileArgument = new Argument<string>("file")
         {
             Description = "Path of the workbook to create, e.g. report.xlsx.",
-        };
+        }.WithInput(InputKind.None);
 
         var sheetsOption = new Option<string?>("--sheets")
         {
             Description = "Comma-separated sheet names, e.g. \"Data,Summary\". Default: one sheet named Sheet1.",
-        };
+        }.WithInput(InputKind.None);
 
         var overwriteOption = OutputOptions.Overwrite();
         var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);

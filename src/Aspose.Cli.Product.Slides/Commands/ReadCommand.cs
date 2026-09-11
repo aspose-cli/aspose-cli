@@ -11,12 +11,12 @@ internal static class ReadCommand
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
         Argument<string> file = SlidesOptions.File();
-        var slides = new Option<string?>("--slides") { Description = "1-based slide range, e.g. 1-3,7,9-." };
+        var slides = new Option<string?>("--slides") { Description = "1-based slide range, e.g. 1-3,7,9-." }.WithInput(InputKind.None);
         var scope = new Option<string>("--scope")
         {
             Description = "Projection scope: text, shapes or full.",
             DefaultValueFactory = _ => PresentationReadScopes.Shapes,
-        };
+        }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. PresentationReadScopes.All]);
         var maxChars = new Option<int>("--max-chars")
         {

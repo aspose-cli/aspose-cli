@@ -20,13 +20,13 @@ internal static class RenderCommand
         var fileArgument = new Argument<string>("file")
         {
             Description = "Workbook to render.",
-        };
+        }.WithInput(InputKind.File);
 
         var toOption = new Option<string>("--to")
         {
             Description = $"Image format: {string.Join(", ", CellsModule.Formats.IdsFor(FormatUse.Render))}.",
             DefaultValueFactory = _ => "png",
-        };
+        }.WithInput(InputKind.None);
 
         var output = new OutputFileOptions("Output path. Default: the input path with the image extension. "
             + "With --all-sheets it is the naming template: <base>.<Sheet><ext>.");
@@ -34,12 +34,12 @@ internal static class RenderCommand
         var sheetOption = new Option<string?>("--sheet")
         {
             Description = "Sheet to render. Default: the active sheet.",
-        };
+        }.WithInput(InputKind.None);
 
         var rangeOption = new Option<string?>("--range")
         {
             Description = "Render only this range, e.g. A1:G20 or Sales!A1:G20.",
-        };
+        }.WithInput(InputKind.None);
 
         var allSheetsOption = new Option<bool>("--all-sheets")
         {

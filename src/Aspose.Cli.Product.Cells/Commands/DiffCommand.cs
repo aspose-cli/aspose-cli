@@ -18,17 +18,17 @@ internal static class DiffCommand
 
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
-        var leftArgument = new Argument<string>("left") { Description = "Baseline workbook." };
+        var leftArgument = new Argument<string>("left") { Description = "Baseline workbook." }.WithInput(InputKind.File);
         var rightArgument = new Argument<string>("right")
         {
             Description = "Candidate workbook to compare against the baseline.",
-        };
+        }.WithInput(InputKind.File);
 
         var compareOption = new Option<string>("--compare")
         {
             Description = "What to compare: values, or formulas (values + formulas, the default).",
             DefaultValueFactory = _ => CompareFormulas,
-        };
+        }.WithInput(InputKind.None);
         compareOption.AcceptOnlyFromAmong(CompareValues, CompareFormulas);
 
         var maxDiffsOption = new Option<int>("--max-diffs")

@@ -115,7 +115,7 @@ public sealed class OutputFileOptions
         _out = new Option<string?>("--out", "-o")
         {
             Description = description,
-        };
+        }.WithInput(InputKind.None);
         _overwrite = OutputOptions.Overwrite();
     }
 
@@ -230,7 +230,7 @@ public sealed class MutationFileOptions
         _out = new Option<string?>("--out", "-o")
         {
             Description = outputDescription,
-        };
+        }.WithInput(InputKind.None);
         _inPlace = new Option<bool>("--in-place")
         {
             Description = inPlaceDescription,
@@ -325,18 +325,18 @@ public sealed class PasswordOptions
         {
             Description =
                 $"Password for {subject}. Discouraged: visible in the process list; prefer {prefix}-env.",
-        };
+        }.WithInput(InputKind.None, secret: true);
         _fromEnvironment = new Option<string?>($"{prefix}-env")
         {
             Description =
                 $"Name of an environment variable holding the password for {subject}.",
-        };
+        }.WithInput(InputKind.None, ParameterValueSource.EnvironmentVariableName, secret: true);
         _fromStandardInput = allowStdin
             ? new Option<bool>($"{prefix}-stdin")
             {
                 Description =
                     $"Read the password for {subject} from the first line of stdin.",
-            }
+            }.WithInput(InputKind.None, ParameterValueSource.StandardInput, secret: true)
             : null;
     }
 

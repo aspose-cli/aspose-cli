@@ -13,7 +13,7 @@ public sealed class BoundedEditOptions
         IfMatch = new Option<string?>("--if-match")
         {
             Description = "Require the current input SHA-256 fingerprint before editing.",
-        };
+        }.WithInput(InputKind.None);
         DryRun = new Option<bool>("--dry-run")
         {
             Description = "Resolve and apply operations in memory without writing.",

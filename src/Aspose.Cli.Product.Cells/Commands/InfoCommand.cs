@@ -17,7 +17,7 @@ internal static class InfoCommand
         var fileArgument = new Argument<string>("file")
         {
             Description = "Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).",
-        };
+        }.WithInput(InputKind.File);
 
         var previewOption = new Option<bool>("--preview")
         {
@@ -37,7 +37,7 @@ internal static class InfoCommand
             Description = "Extra sections: names (defined names), errors (formula-error scan), "
                 + "fonts (fonts used), tables, charts, pivots, validation. Repeatable.",
             AllowMultipleArgumentsPerToken = true,
-        };
+        }.WithInput(InputKind.None);
         detailOption.AcceptOnlyFromAmong([.. InfoDetails.All]);
 
         var info = new Command("inspect", "Show structure and metadata of a workbook.");

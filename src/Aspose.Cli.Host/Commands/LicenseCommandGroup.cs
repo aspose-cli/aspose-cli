@@ -45,7 +45,7 @@ internal static class LicenseCommandGroup
         var file = new Argument<string>("file")
         {
             Description = "Path to an Aspose license file (.lic) to install as this user's default.",
-        };
+        }.WithInput(InputKind.None);
         var install = new Command(
             "install", "Validate a license file and install it for every compatible product.");
         Option<string?> product = ProductOption(catalog,
@@ -131,7 +131,7 @@ internal static class LicenseCommandGroup
         ProductCatalog catalog,
         string description)
     {
-        var option = new Option<string?>("--product") { Description = description };
+        var option = new Option<string?>("--product") { Description = description }.WithInput(InputKind.None);
         option.AcceptOnlyFromAmong(
             catalog.Products
                 .Select(static item => item.Manifest.Id)

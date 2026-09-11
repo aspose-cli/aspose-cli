@@ -11,13 +11,13 @@ internal static class EditCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File("Document to edit.");
-        var ops = new Option<string?>("--ops") { Description = "Ops JSON path, inline JSON, or '-' for stdin." };
-        var set = new Option<string[]>("--set") { Description = "Bookmark sugar: bookmark:Name=text; repeatable." };
+        var ops = new Option<string?>("--ops") { Description = "Ops JSON path, inline JSON, or '-' for stdin." }.WithInput(InputKind.JsonSource);
+        var set = new Option<string[]>("--set") { Description = "Bookmark sugar: bookmark:Name=text; repeatable." }.WithInput(InputKind.None);
         var output = new MutationFileOptions();
         var editOptions = new BoundedEditOptions();
         var verify = new Option<bool>("--verify") { Description = "Reopen and render verification pages after save." };
         var trackChanges = new Option<bool>("--track-changes") { Description = "Track this batch as revisions." };
-        var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." };
+        var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
         var password = new PasswordOptions("--password", "the document");
         var encrypt = new PasswordOptions("--encrypt", "the output document", allowStdin: false);
 

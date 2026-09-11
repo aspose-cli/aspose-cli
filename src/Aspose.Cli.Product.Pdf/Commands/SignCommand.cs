@@ -14,12 +14,12 @@ internal static class SignCommand
         {
             Required = true,
             Description = "PKCS#12 certificate path (.pfx or .p12).",
-        };
+        }.WithInput(InputKind.None);
         var certificatePasswordEnv = new Option<string>("--certificate-password-env")
         {
             Required = true,
             Description = "Environment variable containing the certificate password.",
-        };
+        }.WithInput(InputKind.None, ParameterValueSource.EnvironmentVariableName, secret: true);
         var visible = new Option<bool>("--visible")
         {
             Description = "Place a visible signature appearance on the selected page.",
@@ -32,10 +32,10 @@ internal static class SignCommand
         var rect = new Option<string?>("--rect")
         {
             Description = "Visible rectangle x,y,width,height in PDF points; default 36,36,180,60.",
-        };
-        var reason = new Option<string?>("--reason") { Description = "Signing reason stored in the signature." };
-        var location = new Option<string?>("--location") { Description = "Signing location stored in the signature." };
-        var contact = new Option<string?>("--contact") { Description = "Signer contact stored in the signature." };
+        }.WithInput(InputKind.None);
+        var reason = new Option<string?>("--reason") { Description = "Signing reason stored in the signature." }.WithInput(InputKind.None);
+        var location = new Option<string?>("--location") { Description = "Signing location stored in the signature." }.WithInput(InputKind.None);
+        var contact = new Option<string?>("--contact") { Description = "Signer contact stored in the signature." }.WithInput(InputKind.None);
         var output = new OutputFileOptions("Signed PDF path. Default: <input>.signed.pdf.");
         var password = new PasswordOptions("--password", "the input PDF");
 

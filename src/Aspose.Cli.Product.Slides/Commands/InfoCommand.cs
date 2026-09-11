@@ -18,7 +18,7 @@ internal static class InfoCommand
         {
             Description = "Extra structural projections; repeatable.",
             AllowMultipleArgumentsPerToken = true,
-        };
+        }.WithInput(InputKind.None);
         detail.AcceptOnlyFromAmong(Details);
         var password = new PasswordOptions("--password", "the presentation");
         var command = new Command("inspect", "Show presentation structure, stable slide ids and metadata.");

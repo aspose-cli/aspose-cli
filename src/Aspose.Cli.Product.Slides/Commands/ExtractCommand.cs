@@ -11,10 +11,10 @@ internal static class ExtractCommand
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
         Argument<string> file = SlidesOptions.File();
-        var what = new Option<string>("--what") { Required = true, Description = "media, notes or text." };
+        var what = new Option<string>("--what") { Required = true, Description = "media, notes or text." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PresentationExtractKinds.All]);
-        var slides = new Option<string?>("--slides") { Description = "Optional slide range for notes or text." };
-        var outDirectory = new Option<string>("--out-dir", "--out") { Required = true, Description = "Safe extraction directory." };
+        var slides = new Option<string?>("--slides") { Description = "Optional slide range for notes or text." }.WithInput(InputKind.None);
+        var outDirectory = new Option<string>("--out-dir", "--out") { Required = true, Description = "Safe extraction directory." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var password = new PasswordOptions("--password", "the presentation");
         var command = new Command("extract", "Extract bounded presentation media, notes or text.");

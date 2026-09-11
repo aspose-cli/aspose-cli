@@ -12,14 +12,14 @@ internal static class MergeCommand
         {
             Description = "Two or more PDF inputs in merge order.",
             Arity = ArgumentArity.OneOrMore,
-        };
-        var output = new Option<string>("--out", "-o") { Required = true, Description = "Merged PDF output path." };
+        }.WithInput(InputKind.File);
+        var output = new Option<string>("--out", "-o") { Required = true, Description = "Merged PDF output path." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var bookmarks = new Option<string>("--bookmarks")
         {
             DefaultValueFactory = _ => "preserve",
             Description = "preserve or drop input bookmarks.",
-        };
+        }.WithInput(InputKind.None);
         bookmarks.AcceptOnlyFromAmong("preserve", "drop");
         var password = new PasswordOptions("--password", "all input PDFs");
         var command = new Command("merge", "Merge PDF inputs in order.");

@@ -9,12 +9,12 @@ internal static class NewCommand
 {
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
-        var output = new Argument<string>("file") { Description = "Document path to create." };
+        var output = new Argument<string>("file") { Description = "Document path to create." }.WithInput(InputKind.None);
         var blank = new Option<bool>("--blank") { Description = "Create a blank document." };
-        var markdown = new Option<string?>("--markdown") { Description = "Create from a Markdown file." };
-        var text = new Option<string?>("--text") { Description = "Create from a UTF-8 text file." };
-        var template = new Option<string?>("--template") { Description = "Create from a document template." };
-        var title = new Option<string?>("--title") { Description = "Set the built-in title property." };
+        var markdown = new Option<string?>("--markdown") { Description = "Create from a Markdown file." }.WithInput(InputKind.File);
+        var text = new Option<string?>("--text") { Description = "Create from a UTF-8 text file." }.WithInput(InputKind.File);
+        var template = new Option<string?>("--template") { Description = "Create from a document template." }.WithInput(InputKind.File);
+        var title = new Option<string?>("--title") { Description = "Set the built-in title property." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var encrypt = new PasswordOptions("--encrypt", "the output document", allowStdin: false);
 

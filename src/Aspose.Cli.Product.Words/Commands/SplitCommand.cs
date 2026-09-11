@@ -11,10 +11,10 @@ internal static class SplitCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File();
-        var by = new Option<string>("--by") { Required = true, Description = "section, heading1 or pages." };
+        var by = new Option<string>("--by") { Required = true, Description = "section, heading1 or pages." }.WithInput(InputKind.None);
         by.AcceptOnlyFromAmong("section", "heading1", "pages");
-        var pages = new Option<string?>("--pages") { Description = "Page range when --by pages." };
-        var outDirectory = new Option<string>("--out-dir", "--out") { Required = true, Description = "Output directory." };
+        var pages = new Option<string?>("--pages") { Description = "Page range when --by pages." }.WithInput(InputKind.None);
+        var outDirectory = new Option<string>("--out-dir", "--out") { Required = true, Description = "Output directory." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var password = new PasswordOptions("--password", "the document");
 

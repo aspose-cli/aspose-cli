@@ -23,12 +23,12 @@ internal static class CapabilitiesCommand
         {
             Description = "Optional product id to select.",
             Arity = ArgumentArity.ZeroOrOne,
-        };
+        }.WithInput(InputKind.None);
         var command = new Argument<string?>("command")
         {
             Description = "Optional product-relative command path to select.",
             Arity = ArgumentArity.ZeroOrOne,
-        };
+        }.WithInput(InputKind.None);
         capabilities.Arguments.Add(product);
         capabilities.Arguments.Add(command);
 

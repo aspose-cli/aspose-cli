@@ -14,15 +14,15 @@ internal static class SplitCommand
         {
             Description = "One or more page groups, for example --pages 1-3 4-6.",
             AllowMultipleArgumentsPerToken = true,
-        };
+        }.WithInput(InputKind.None);
         var every = new Option<int?>("--every") { Description = "Pages per output part." };
         var bookmarks = new Option<bool>("--by-bookmarks") { Description = "Split at top-level bookmark destinations." };
-        var outDirectory = new Option<string>("--out-dir") { Required = true, Description = "Output directory." };
+        var outDirectory = new Option<string>("--out-dir") { Required = true, Description = "Output directory." }.WithInput(InputKind.None);
         var name = new Option<string>("--name-template")
         {
             DefaultValueFactory = _ => "{stem}.{n}.pdf",
             Description = "File name using {stem}, {n}, {pages} or {bookmark}.",
-        };
+        }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var password = new PasswordOptions("--password", "the PDF");
         var command = new Command("split", "Split a PDF into an atomic output set.");

@@ -90,25 +90,25 @@ internal static class EditCommand
 
     private static EditCommandBindings CreateOptions()
     {
-        var file = new Argument<string>("file") { Description = "Workbook to edit." };
+        var file = new Argument<string>("file") { Description = "Workbook to edit." }.WithInput(InputKind.File);
         var ops = new Option<string>("--ops")
         {
             Description = "The ops JSON: a path to the document, '-' to read it from stdin, or the "
                 + "document itself when the value starts with { or [ (inline). To name a file "
                 + "whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/cells/ops.",
-        };
+        }.WithInput(InputKind.JsonSource);
         var set = new Option<string[]>("--set")
         {
             Description = "Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. "
                 + "A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and "
                 + "anything else is text. Quote sheet names that need it: --set \"'My Sheet'!A1=5\". "
                 + "Example: --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\".",
-        };
+        }.WithInput(InputKind.None);
         var output = new MutationFileOptions();
         var editOptions = new BoundedEditOptions();
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
         var verify = new Option<bool>("--verify") { Description = "After editing, diff this invocation, scan formula errors, and render every visible sheet at 192 DPI." };
-        var verifyDirectory = new Option<string?>("--verify-dir") { Description = "Directory for --verify images. Default: .aspose-verify/<output-name> beside the output." };
+        var verifyDirectory = new Option<string?>("--verify-dir") { Description = "Directory for --verify images. Default: .aspose-verify/<output-name> beside the output." }.WithInput(InputKind.None);
         var password = new PasswordOptions("--password", "the workbook");
         var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);
         var command = new Command("edit", "Apply a batch of edit ops to a workbook, atomically.");

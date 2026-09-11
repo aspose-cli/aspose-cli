@@ -9,9 +9,9 @@ internal static class ExtractCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File();
-        var what = new Option<string>("--what") { Required = true, Description = "images, comments or text." };
+        var what = new Option<string>("--what") { Required = true, Description = "images, comments or text." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong("images", "comments", "text");
-        var outDirectory = new Option<string>("--out-dir", "--out") { Required = true, Description = "Safe extraction directory." };
+        var outDirectory = new Option<string>("--out-dir", "--out") { Required = true, Description = "Safe extraction directory." }.WithInput(InputKind.None);
         var password = new PasswordOptions("--password", "the document");
 
         var command = new Command("extract", "Extract bounded document assets.");

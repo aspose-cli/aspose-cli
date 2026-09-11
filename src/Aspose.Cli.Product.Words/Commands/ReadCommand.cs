@@ -11,13 +11,13 @@ internal static class ReadCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File();
-        var blocks = new Option<string?>("--blocks") { Description = "1-based block range, e.g. 1-20,25." };
+        var blocks = new Option<string?>("--blocks") { Description = "1-based block range, e.g. 1-20,25." }.WithInput(InputKind.None);
         var section = new Option<int?>("--section") { Description = "Read one 1-based section." };
         var scope = new Option<string>("--scope")
         {
             Description = "Projection: text, full or outline.",
             DefaultValueFactory = _ => "text",
-        };
+        }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. DocumentReadScopes.All]);
         var maxChars = new Option<int>("--max-chars") { DefaultValueFactory = _ => 20_000, Description = "Maximum projected characters." };
         var maxBlocks = new Option<int>("--max-blocks") { DefaultValueFactory = _ => 200, Description = "Maximum projected blocks." };

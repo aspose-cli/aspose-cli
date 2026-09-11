@@ -21,17 +21,17 @@ internal static class ReadCommand
         var fileArgument = new Argument<string>("file")
         {
             Description = "Workbook to read.",
-        };
+        }.WithInput(InputKind.File);
 
         var sheetOption = new Option<string?>("--sheet")
         {
             Description = "Sheet to read. Default: the active sheet.",
-        };
+        }.WithInput(InputKind.None);
 
         var rangeOption = new Option<string?>("--range")
         {
             Description = "Window to read, e.g. A1:F50 or Sales!A1:F50. Default: the used range, subject to --max-cells.",
-        };
+        }.WithInput(InputKind.None);
 
         // Set only by a generated `next` command: it marks --range as one page
         // of a planned scan of the whole used range, so the chain keeps
@@ -44,7 +44,7 @@ internal static class ReadCommand
         {
             Description = "Projection scope: values (default), formulas (adds f), styles (adds styleId + pool), full.",
             DefaultValueFactory = _ => ReadScopes.Values,
-        };
+        }.WithInput(InputKind.None);
         scopeOption.AcceptOnlyFromAmong(ReadScopes.Values, ReadScopes.Formulas, ReadScopes.Styles, ReadScopes.Full);
 
         var maxCellsOption = new Option<int>("--max-cells")

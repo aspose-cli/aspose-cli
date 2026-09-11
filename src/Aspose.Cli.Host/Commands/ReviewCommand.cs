@@ -25,11 +25,11 @@ internal static class ReviewCommand
         var file = new Argument<string>("file")
         {
             Description = "Source file to review; bounded content evidence selects the product.",
-        };
+        }.WithInput(InputKind.File);
         var output = new Option<string?>("--out", "-o")
         {
             Description = "New evidence directory; defaults to <filename>.review beside the source.",
-        };
+        }.WithInput(InputKind.None);
         var maxItems = new Option<int>("--max-items")
         {
             Description = "Maximum visual units rendered and listed in review.json.",
@@ -38,7 +38,7 @@ internal static class ReviewCommand
         var product = new Option<string?>("--product")
         {
             Description = "Explicit product override; normally inferred from bounded content evidence.",
-        };
+        }.WithInput(InputKind.None);
         product.AcceptOnlyFromAmong(
             catalog.Products
                 .Select(static item => item.Manifest.Id)
@@ -47,7 +47,7 @@ internal static class ReviewCommand
         {
             Description = "Review view; auto uses the product default.",
             DefaultValueFactory = _ => AutoView,
-        };
+        }.WithInput(InputKind.None);
         view.AcceptOnlyFromAmong(
             catalog.Products
                 .SelectMany(static item => item.Review.Views)
