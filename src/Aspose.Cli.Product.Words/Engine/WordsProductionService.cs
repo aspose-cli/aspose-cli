@@ -65,7 +65,11 @@ internal sealed class WordsProductionService
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int>? pages = request.Pages?.Resolve(loaded.Document.PageCount);
         SaveOptions options = WordsSavePipeline.Options(request.TargetFormatId, request.EncryptPassword, pages);
-        long size = _writer.Write(request.OutputPath, request.Overwrite, temp => loaded.Document.Save(temp, options));
+        long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+        {
+            try { loaded.Document.Save(temp, options); }
+            finally { loaded.Resources.ThrowIfFailed(); }
+        });
         var warnings = OutputWarnings(state, loaded, request.TargetFormatId);
         return new WordsConvertResult
         {
@@ -121,7 +125,7 @@ internal sealed class WordsProductionService
             loaded.Document,
             artifacts);
         artifacts.WriteText(entry, PreviewHtml(pages));
-        return new PreviewRenderOutcome(entry, loaded.FormatId, new FileInfo(filePath).Length);
+        return new PreviewRenderOutcome(entry, loaded.FormatId, new FileInfo(filePath).Length, InputWarnings(loaded));
     }
 
     private static IReadOnlyList<PreviewPage> RenderPreviewPages(
@@ -173,18 +177,10 @@ internal sealed class WordsProductionService
     private WordsCreateResult CreateDocumentCore(NewDocumentRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        CreatedDocument created = Create(request);
+        using CreatedDocument created = Create(request);
         string formatId = FormatIdFromOutput(request.OutputPath);
         SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
-        long size;
-        try
-        {
-            size = _writer.Write(request.OutputPath, request.Overwrite, temp => created.Document.Save(temp, options));
-        }
-        finally
-        {
-            created.Document.Cleanup();
-        }
+        long size = _writer.Write(request.OutputPath, request.Overwrite, temp => created.Save(temp, options));
 
         return new WordsCreateResult
         {
@@ -196,17 +192,21 @@ internal sealed class WordsProductionService
 
     private CreatedDocument Create(NewDocumentRequest request)
     {
-        if (request.MarkdownPath is not null)
+        string? source = request.MarkdownPath ?? request.TemplatePath;
+        if (source is not null)
         {
-            using LoadedDocument loaded = _loader.Open(request.MarkdownPath, null);
-            Document document = loaded.Document.Clone();
-            ApplyMarkdownDocumentDesign(document);
-            ApplyTitle(document, request.Title);
-            return new CreatedDocument(
-                document,
-                loaded.RemoteResourcesBlocked,
-                loaded.Format.HasMacros,
-                loaded.Format.HasDigitalSignature);
+            LoadedDocument loaded = _loader.Open(source, null);
+            try
+            {
+                if (request.MarkdownPath is not null) { ApplyMarkdownDocumentDesign(loaded.Document); }
+                ApplyTitle(loaded.Document, request.Title);
+                return new CreatedDocument(loaded.Document, loaded);
+            }
+            catch
+            {
+                loaded.Dispose();
+                throw;
+            }
         }
 
         if (request.TextPath is not null)
@@ -215,24 +215,12 @@ internal sealed class WordsProductionService
             var builder = new DocumentBuilder(document);
             builder.Write(_inputs.ReadTextFile(request.TextPath));
             ApplyTitle(document, request.Title);
-            return new CreatedDocument(document, 0, false, false);
-        }
-
-        if (request.TemplatePath is not null)
-        {
-            using LoadedDocument loaded = _loader.Open(request.TemplatePath, null);
-            Document document = loaded.Document.Clone();
-            ApplyTitle(document, request.Title);
-            return new CreatedDocument(
-                document,
-                loaded.RemoteResourcesBlocked,
-                loaded.Format.HasMacros,
-                loaded.Format.HasDigitalSignature);
+            return new CreatedDocument(document, null);
         }
 
         var blank = new Document();
         ApplyTitle(blank, request.Title);
-        return new CreatedDocument(blank, 0, false, false);
+        return new CreatedDocument(blank, null);
     }
 
     /// <summary>
@@ -340,11 +328,24 @@ internal sealed class WordsProductionService
         return extension switch { "xml" => "flatopc", "htm" => "html", _ => extension };
     }
 
-    private sealed record CreatedDocument(
-        Document Document,
-        int RemoteResourcesBlocked,
-        bool HasMacros,
-        bool WasSigned);
+    private sealed record CreatedDocument(Document Document, LoadedDocument? Source) : IDisposable
+    {
+        internal int RemoteResourcesBlocked => Source?.RemoteResourcesBlocked ?? 0;
+        internal bool HasMacros => Source?.Format.HasMacros ?? false;
+        internal bool WasSigned => Source?.Format.HasDigitalSignature ?? false;
+
+        internal void Save(string path, SaveOptions options)
+        {
+            try { Document.Save(path, options); }
+            finally { Source?.Resources.ThrowIfFailed(); }
+        }
+
+        public void Dispose()
+        {
+            if (Source is not null) { Source.Dispose(); }
+            else { Document.Cleanup(); }
+        }
+    }
 
     private sealed record PreviewPage(
         int Number,

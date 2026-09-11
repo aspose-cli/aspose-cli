@@ -4,10 +4,6 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Aspose.Cli.Sdk.IO;
 
-internal readonly record struct FilePhysicalIdentity(
-    uint VolumeSerialNumber,
-    ulong FileIndex);
-
 /// <summary>Deletes only the physical file admitted by a verified snapshot.</summary>
 internal static class FilePublicationOwnedDelete
 {
@@ -153,16 +149,7 @@ internal static class FilePublicationOwnedDelete
 
     public static FilePhysicalIdentity? TryGetIdentity(SafeFileHandle handle)
     {
-        if (!OperatingSystem.IsWindows()
-            || handle.IsInvalid
-            || !GetFileInformationByHandle(handle, out ByHandleFileInformation info))
-        {
-            return null;
-        }
-
-        return new FilePhysicalIdentity(
-            info.VolumeSerialNumber,
-            ((ulong)info.FileIndexHigh << 32) | info.FileIndexLow);
+        return OpenedFileBoundary.GetInformation(handle)?.Identity;
     }
 
     public static FilePhysicalIdentity? TryGetDirectoryIdentity(string path)
@@ -201,12 +188,7 @@ internal static class FilePublicationOwnedDelete
             OpenExisting,
             FileFlagOpenReparsePoint | FileFlagBackupSemantics,
             IntPtr.Zero);
-        return !handle.IsInvalid
-            && GetFileInformationByHandle(
-                handle,
-                out ByHandleFileInformation information)
-                    ? (FileAttributes)information.FileAttributes
-                    : null;
+        return OpenedFileBoundary.GetInformation(handle)?.Attributes;
     }
 
     private static bool TryDeleteWindows(
@@ -322,12 +304,6 @@ internal static class FilePublicationOwnedDelete
 
     [DllImport("kernel32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandle(
-        SafeFileHandle file,
-        out ByHandleFileInformation information);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool SetFileInformationByHandle(
         SafeFileHandle file,
         int informationClass,
@@ -341,18 +317,4 @@ internal static class FilePublicationOwnedDelete
         public bool DeleteFile;
     }
 
-    [StructLayout(LayoutKind.Sequential)]
-    private struct ByHandleFileInformation
-    {
-        public uint FileAttributes;
-        public System.Runtime.InteropServices.ComTypes.FILETIME CreationTime;
-        public System.Runtime.InteropServices.ComTypes.FILETIME LastAccessTime;
-        public System.Runtime.InteropServices.ComTypes.FILETIME LastWriteTime;
-        public uint VolumeSerialNumber;
-        public uint FileSizeHigh;
-        public uint FileSizeLow;
-        public uint NumberOfLinks;
-        public uint FileIndexHigh;
-        public uint FileIndexLow;
-    }
 }

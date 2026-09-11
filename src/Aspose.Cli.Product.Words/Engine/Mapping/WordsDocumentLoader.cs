@@ -51,7 +51,8 @@ internal sealed class WordsDocumentLoader
             throw CliErrors.PasswordRequired(path);
         }
 
-        var blocked = new BlockingResourceCallback(path);
+        var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
+        var blocked = new BlockingResourceCallback(resources);
         var options = new LoadOptions
         {
             Password = password,
@@ -60,44 +61,47 @@ internal sealed class WordsDocumentLoader
             PreserveIncludePictureField = true,
         };
 
+        Document? document = null;
+        bool transferred = false;
         try
         {
-            var document = new Document(path, options);
-            try
-            {
-                _resourceBudgets.EnsureWithin(
-                    WordsBudgetDomains.Pages,
-                    document.PageCount,
-                    "items",
-                    "post-load");
-                _resourceBudgets.EnsureWithin(
-                    WordsBudgetDomains.Nodes,
-                    document.GetChildNodes(NodeType.Any, true).Count,
-                    "items",
-                    "projection");
-            }
-            catch
-            {
-                throw;
-            }
-            return new LoadedDocument(
-                document,
-                detected,
-                id,
-                blocked.Blocked,
+            document = new Document(path, options);
+            _resourceBudgets.EnsureWithin(
+                WordsBudgetDomains.Pages, document.PageCount, "items", "post-load");
+            _resourceBudgets.EnsureWithin(
+                WordsBudgetDomains.Nodes, document.GetChildNodes(NodeType.Any, true).Count,
+                "items", "projection");
+            resources.ThrowIfFailed();
+            var loaded = new LoadedDocument(document, detected, id, resources,
                 HasEvaluationTruncationMarker(document));
+            transferred = true;
+            return loaded;
         }
-        catch (IncorrectPasswordException)
+        catch (Exception exception)
         {
-            throw string.IsNullOrEmpty(password) ? CliErrors.PasswordRequired(path) : CliErrors.PasswordInvalid(path);
+            resources.ThrowIfFailed();
+            if (exception is IncorrectPasswordException)
+            {
+                throw string.IsNullOrEmpty(password)
+                    ? CliErrors.PasswordRequired(path) : CliErrors.PasswordInvalid(path);
+            }
+            if (exception is FileCorruptedException or UnsupportedFileFormatException)
+            {
+                throw InvalidDocument(path, exception.Message, exception);
+            }
+            if (exception is IOException or UnauthorizedAccessException)
+            {
+                throw TranslateIo(path, exception);
+            }
+            throw;
         }
-        catch (Exception ex) when (ex is FileCorruptedException or UnsupportedFileFormatException)
+        finally
         {
-            throw InvalidDocument(path, ex.Message, ex);
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            throw TranslateIo(path, ex);
+            if (!transferred)
+            {
+                try { document?.Cleanup(); }
+                finally { resources.Dispose(); }
+            }
         }
     }
 
@@ -136,12 +140,10 @@ internal sealed class WordsDocumentLoader
     {
         private readonly LocalDocumentResourceLoader _resources;
 
-        public BlockingResourceCallback(string documentPath)
+        public BlockingResourceCallback(LocalDocumentResourceLoader resources)
         {
-            _resources = new LocalDocumentResourceLoader(documentPath);
+            _resources = resources;
         }
-
-        public int Blocked { get; private set; }
 
         public ResourceLoadingAction ResourceLoading(ResourceLoadingArgs args)
         {
@@ -151,7 +153,6 @@ internal sealed class WordsDocumentLoader
                 return ResourceLoadingAction.UserProvided;
             }
 
-            Blocked++;
             return ResourceLoadingAction.Skip;
         }
     }
@@ -161,8 +162,21 @@ internal sealed record LoadedDocument(
     Document Document,
     FileFormatInfo Format,
     string FormatId,
-    int RemoteResourcesBlocked,
+    LocalDocumentResourceLoader Resources,
     bool EvaluationInputTruncated) : IDisposable
 {
-    public void Dispose() => Document.Cleanup();
+    public int RemoteResourcesBlocked
+    {
+        get
+        {
+            Resources.ThrowIfFailed();
+            return Resources.OmittedCount;
+        }
+    }
+
+    public void Dispose()
+    {
+        try { Document.Cleanup(); }
+        finally { Resources.Dispose(); }
+    }
 }

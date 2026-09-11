@@ -628,7 +628,7 @@ internal sealed class PreviewSession : IDisposable
         }
 
         string html;
-        using (FileStream entry =
+        using (Stream entry =
                manifest.TryOpenRead(entryFileName)
                ?? throw new InvalidDataException(
                    "The validated preview entry disappeared before publication."))

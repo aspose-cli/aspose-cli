@@ -43,7 +43,7 @@ internal sealed class PreviewResponseWriter
         HttpListenerResponse response,
         int status,
         string contentType,
-        FileStream body)
+        Stream body)
     {
         response.StatusCode = status;
         response.ContentType = contentType;

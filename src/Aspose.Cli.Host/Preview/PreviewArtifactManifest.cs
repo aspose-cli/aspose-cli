@@ -1,9 +1,7 @@
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
-using Microsoft.Win32.SafeHandles;
+using Aspose.Cli.Sdk.IO;
 using System.Security.Cryptography;
-using System.Runtime.InteropServices;
-using System.Text;
 using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Host.Preview;
@@ -17,14 +15,17 @@ internal sealed class PreviewArtifactManifest
     internal const int MaximumPathSegments = 16;
 
     private readonly IReadOnlyDictionary<string, ArtifactRecord> _files;
+    private readonly VerifiedFileBoundary _boundary;
 
     private PreviewArtifactManifest(
         string root,
+        VerifiedFileBoundary boundary,
         string entryFileName,
         IReadOnlyDictionary<string, ArtifactRecord> files,
         long totalBytes)
     {
         Root = root;
+        _boundary = boundary;
         EntryFileName = entryFileName;
         _files = files;
         TotalBytes = totalBytes;
@@ -59,6 +60,7 @@ internal sealed class PreviewArtifactManifest
             throw new InvalidDataException(
                 "The preview artifact root must be a real directory.");
         }
+        var boundary = new VerifiedFileBoundary(root);
         string entry = NormalizeRelative(entryFileName);
         var files = new Dictionary<string, ArtifactRecord>(
             StringComparer.OrdinalIgnoreCase);
@@ -119,7 +121,7 @@ internal sealed class PreviewArtifactManifest
                 }
 
                 ArtifactRecord record = ReadRecord(
-                    root,
+                    boundary,
                     file,
                     relative,
                     limits,
@@ -137,6 +139,7 @@ internal sealed class PreviewArtifactManifest
 
         return new PreviewArtifactManifest(
             root,
+            boundary,
             entry,
             files,
             total);
@@ -157,7 +160,7 @@ internal sealed class PreviewArtifactManifest
         }
     }
 
-    public FileStream? TryOpenRead(string relative)
+    public VerifiedReadLease? TryOpenRead(string relative)
     {
         string normalized;
         try
@@ -196,41 +199,31 @@ internal sealed class PreviewArtifactManifest
 
         try
         {
-            if (HasLinkedComponent(full))
+            VerifiedReadLease? stream = _boundary.TryOpenRead(full);
+            if (stream is null)
             {
                 return null;
             }
-
-            var stream = new FileStream(
-                full,
-                new FileStreamOptions
+            try
+            {
+                if (stream.Length != expected.Length)
                 {
-                    Mode = FileMode.Open,
-                    Access = FileAccess.Read,
-                    Share = FileShare.Read,
-                    Options = FileOptions.Asynchronous
-                        | FileOptions.SequentialScan,
-                });
-            if (stream.Length != expected.Length
-                || !OpenedFileBoundary.IsRegularSingleLinkFile(
-                    stream.SafeFileHandle)
-                || !OpenedFileBoundary.IsInside(
-                    Root,
-                    stream.SafeFileHandle))
-            {
-                stream.Dispose();
-                return null;
+                    return null;
+                }
+                byte[] actualHash = SHA256.HashData(stream);
+                if (!actualHash.AsSpan().SequenceEqual(expected.Sha256))
+                {
+                    return null;
+                }
+                stream.Position = 0;
+                VerifiedReadLease result = stream;
+                stream = null;
+                return result;
             }
-
-            byte[] actualHash = SHA256.HashData(stream);
-            if (!actualHash.AsSpan().SequenceEqual(expected.Sha256))
+            finally
             {
-                stream.Dispose();
-                return null;
+                stream?.Dispose();
             }
-            stream.Position = 0;
-
-            return stream;
         }
         catch (Exception exception) when (
             exception is IOException
@@ -277,27 +270,15 @@ internal sealed class PreviewArtifactManifest
     }
 
     private static ArtifactRecord ReadRecord(
-        string root,
+        VerifiedFileBoundary boundary,
         FileInfo file,
         string relative,
         LocalServiceResourceLimits limits,
         long acceptedBytes)
     {
-        using var stream = new FileStream(
-            file.FullName,
-            new FileStreamOptions
-            {
-                Mode = FileMode.Open,
-                Access = FileAccess.Read,
-                Share = FileShare.Read,
-                Options = FileOptions.SequentialScan,
-            });
-        if (!OpenedFileBoundary.IsRegularSingleLinkFile(stream.SafeFileHandle)
-            || !OpenedFileBoundary.IsInside(root, stream.SafeFileHandle))
-        {
-            throw new UnauthorizedAccessException(
+        using VerifiedReadLease stream = boundary.TryOpenRead(file.FullName)
+            ?? throw new UnauthorizedAccessException(
                 $"Preview artifact '{relative}' is not an owned regular file.");
-        }
 
         long length = stream.Length;
         if (length > limits.MaximumSnapshotFileBytes)
@@ -325,32 +306,6 @@ internal sealed class PreviewArtifactManifest
         return new ArtifactRecord(length, hash);
     }
 
-    private bool HasLinkedComponent(string full)
-    {
-        if ((File.GetAttributes(Root)
-                & FileAttributes.ReparsePoint) != 0
-            || new DirectoryInfo(Root).LinkTarget is not null)
-        {
-            return true;
-        }
-
-        string relative = Path.GetRelativePath(Root, full);
-        string current = Root;
-        foreach (string segment in relative.Split(
-            Path.DirectorySeparatorChar,
-            Path.AltDirectorySeparatorChar))
-        {
-            current = Path.Combine(current, segment);
-            if ((File.GetAttributes(current)
-                    & FileAttributes.ReparsePoint) != 0)
-            {
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     private static bool IsReservedWindowsName(string segment)
     {
         string stem = segment.Split('.')[0];
@@ -369,182 +324,4 @@ internal sealed class PreviewArtifactManifest
     }
 
     private sealed record ArtifactRecord(long Length, byte[] Sha256);
-}
-
-/// <summary>
-/// Verifies the object behind an already-open handle. This closes the
-/// check/open race: path components may be inspected before open for a useful
-/// diagnostic, but the authorization decision is made from the opened handle.
-/// </summary>
-internal static class OpenedFileBoundary
-{
-    private const int FinalPathNameNormalized = 0;
-    private const int AtEmptyPath = 0x1000;
-    private const uint StatxType = 0x0000_0001;
-    private const uint StatxNlink = 0x0000_0004;
-    private const ushort UnixRegularFile = 0x8000;
-
-    public static bool IsInside(
-        string root,
-        SafeFileHandle handle)
-    {
-        string? opened = ResolvePath(handle);
-        if (opened is null)
-        {
-            return false;
-        }
-
-        string canonicalRoot = Path.GetFullPath(root)
-            .TrimEnd(Path.DirectorySeparatorChar);
-        string canonicalOpened = Path.GetFullPath(opened);
-        StringComparison comparison = OperatingSystem.IsWindows()
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
-        return canonicalOpened.StartsWith(
-            canonicalRoot + Path.DirectorySeparatorChar,
-            comparison);
-    }
-
-    public static bool IsRegularSingleLinkFile(
-        SafeFileHandle handle)
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            return GetFileInformationByHandle(
-                    handle,
-                    out ByHandleFileInformation info)
-                && (info.FileAttributes
-                    & (uint)FileAttributes.Directory) == 0
-                && info.NumberOfLinks == 1;
-        }
-
-        if (OperatingSystem.IsLinux())
-        {
-            int descriptor = checked((int)handle.DangerousGetHandle());
-            int result = LinuxStatx(
-                descriptor,
-                string.Empty,
-                AtEmptyPath,
-                StatxType | StatxNlink,
-                out LinuxStatxBuffer info);
-            return result == 0
-                && (info.Mask & (StatxType | StatxNlink))
-                    == (StatxType | StatxNlink)
-                && (info.Mode & 0xF000) == UnixRegularFile
-                && info.LinkCount == 1;
-        }
-
-        // Platforms without a reliable no-follow, link-count adapter fail
-        // closed instead of serving an object that was only path-checked.
-        return false;
-    }
-
-    private static string? ResolvePath(SafeFileHandle handle)
-    {
-        if (OperatingSystem.IsWindows())
-        {
-            var buffer = new StringBuilder(1024);
-            uint length = GetFinalPathNameByHandle(
-                handle,
-                buffer,
-                (uint)buffer.Capacity,
-                FinalPathNameNormalized);
-            if (length == 0 || length >= buffer.Capacity)
-            {
-                return null;
-            }
-
-            string value = buffer.ToString();
-            if (value.StartsWith(
-                    @"\\?\UNC\",
-                    StringComparison.OrdinalIgnoreCase))
-            {
-                return @"\\" + value[8..];
-            }
-
-            return value.StartsWith(
-                    @"\\?\",
-                    StringComparison.OrdinalIgnoreCase)
-                ? value[4..]
-                : value;
-        }
-
-        if (OperatingSystem.IsLinux())
-        {
-            string link = $"/proc/self/fd/{handle.DangerousGetHandle()}";
-            try
-            {
-                return new FileInfo(link)
-                    .ResolveLinkTarget(returnFinalTarget: true)
-                    ?.FullName;
-            }
-            catch (Exception exception) when (
-                exception is IOException
-                    or UnauthorizedAccessException)
-            {
-                return null;
-            }
-        }
-
-        return null;
-    }
-
-    [DllImport(
-        "kernel32.dll",
-        CharSet = CharSet.Unicode,
-        SetLastError = true)]
-    private static extern uint GetFinalPathNameByHandle(
-        SafeFileHandle file,
-        StringBuilder path,
-        uint pathLength,
-        int flags);
-
-    [DllImport("kernel32.dll", SetLastError = true)]
-    [return: MarshalAs(UnmanagedType.Bool)]
-    private static extern bool GetFileInformationByHandle(
-        SafeFileHandle file,
-        out ByHandleFileInformation information);
-
-    [DllImport("libc", EntryPoint = "statx", SetLastError = true)]
-    private static extern int LinuxStatx(
-        int directoryFileDescriptor,
-        [MarshalAs(UnmanagedType.LPUTF8Str)] string path,
-        int flags,
-        uint mask,
-        out LinuxStatxBuffer buffer);
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct FileTime
-    {
-        public uint Low;
-        public uint High;
-    }
-
-    [StructLayout(LayoutKind.Sequential)]
-    private struct ByHandleFileInformation
-    {
-        public uint FileAttributes;
-        public FileTime CreationTime;
-        public FileTime LastAccessTime;
-        public FileTime LastWriteTime;
-        public uint VolumeSerialNumber;
-        public uint FileSizeHigh;
-        public uint FileSizeLow;
-        public uint NumberOfLinks;
-        public uint FileIndexHigh;
-        public uint FileIndexLow;
-    }
-
-    [StructLayout(LayoutKind.Explicit, Size = 256)]
-    private struct LinuxStatxBuffer
-    {
-        [FieldOffset(0)]
-        public uint Mask;
-
-        [FieldOffset(16)]
-        public uint LinkCount;
-
-        [FieldOffset(28)]
-        public ushort Mode;
-    }
 }

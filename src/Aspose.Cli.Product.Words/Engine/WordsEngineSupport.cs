@@ -12,7 +12,7 @@ internal static class WordsEngineSupport
 {
     internal static IReadOnlyList<Warning>? RemoteWarning(int blocked) =>
         blocked == 0 ? null :
-        [new Warning { Code = WarningCodes.RemoteResourcesBlocked, Message = $"{blocked} external resource(s) were blocked.", Hint = "Use guarded local resources beside the document, or a separately verified local cache." }];
+        [new Warning { Code = WarningCodes.RemoteResourcesBlocked, AffectsCompleteness = true, Message = $"{blocked} external resource(s) were blocked.", Hint = "Use guarded local resources beside the document, or a separately verified local cache." }];
 
     internal static IReadOnlyList<Warning>? InputWarnings(LoadedDocument loaded)
     {

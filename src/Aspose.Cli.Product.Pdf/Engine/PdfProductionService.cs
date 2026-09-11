@@ -220,20 +220,28 @@ internal sealed class PdfProductionService
 
         EnsureCreationInputs(_resourceBudgets, request);
         LicenseState state = _licenseGate.EnsureApplied();
-        int blocked = 0;
+        using LocalDocumentResourceLoader? resources = request.HtmlPath is { } htmlPath
+            ? new LocalDocumentResourceLoader(htmlPath, _resourceBudgets) : null;
         using Document document = request.ImagePaths is { Count: > 0 } images
             ? CreateFromImages(images, request)
             : request.HtmlPath is not null
-                ? CreateFromHtml(request.HtmlPath, request, out blocked)
+                ? CreateFromHtml(request.HtmlPath, request, resources!)
                 : CreateFromText(request.TextPath!, request.Markdown, request);
-        long size = _writer.Write(request.OutputPath, request.Overwrite, document.Save);
+        resources?.ThrowIfFailed();
+        long size = _writer.Write(request.OutputPath, request.Overwrite, path =>
+        {
+            try { document.Save(path); }
+            finally { resources?.ThrowIfFailed(); }
+        });
+        int blocked = resources?.OmittedCount ?? 0;
         var warnings = OutputWarnings(state)?.ToList() ?? [];
         if (blocked > 0)
         {
             warnings.Add(new Warning
             {
                 Code = WarningCodes.RemoteResourcesBlocked,
-                Message = $"{blocked} remote HTML resource(s) were blocked.",
+                AffectsCompleteness = true,
+                Message = $"{blocked} external HTML resource(s) were omitted.",
                 Hint = "Copy the resource beside the HTML input, or use a separately verified local cache.",
             });
         }
@@ -282,7 +290,8 @@ internal sealed class PdfProductionService
         }
     }
 
-    private static Document CreateFromHtml(string path, NewPdfRequest request, out int blocked)
+    private static Document CreateFromHtml(
+        string path, NewPdfRequest request, LocalDocumentResourceLoader resources)
     {
         string fullPath = Path.GetFullPath(path);
         if (!File.Exists(fullPath))
@@ -290,7 +299,7 @@ internal sealed class PdfProductionService
             throw CliErrors.FileNotFound(fullPath);
         }
 
-        var loader = new PdfArtifactSupport.HtmlResourceLoader(fullPath);
+        var loader = new PdfArtifactSupport.HtmlResourceLoader(resources);
         (double width, double height) = PageDimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
         var options = new HtmlLoadOptions(Path.GetDirectoryName(fullPath))
@@ -303,9 +312,19 @@ internal sealed class PdfProductionService
             },
             CustomLoaderOfExternalResources = loader.Load,
         };
-        Document document = new(fullPath, options);
-        blocked = loader.Blocked;
-        return document;
+        Document? document = null;
+        try
+        {
+            document = new Document(fullPath, options);
+            resources.ThrowIfFailed();
+            return document;
+        }
+        catch
+        {
+            document?.Dispose();
+            resources.ThrowIfFailed();
+            throw;
+        }
     }
 
     private static Document CreateFromText(string path, bool markdown, NewPdfRequest request)

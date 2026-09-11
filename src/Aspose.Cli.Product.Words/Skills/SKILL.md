@@ -52,3 +52,7 @@ Worked examples:
 5. Fix defects, reopen, render, and run review again. Stop after at most three visual correction rounds and report any remaining issue.
 6. Do not claim a visual pass when page inspection is unavailable, any required page/artifact was not opened, or coverage is incomplete. State exact page coverage and mark the remainder partial or skipped.
 7. Report evaluation results separately from licensed results. Disclose `EVAL_MODE`, watermarks or evaluation text, truncation, font substitution, macro or format loss, and signature/revision state for each affected artifact.
+
+## External resources
+
+External document resources are limited to verified ordinary local files beneath the input directory. Network, data, UNC, device, linked and escaping references are omitted. Reads are capped at 256 resources, 32 MiB each and 128 MiB total, and also consume the invocation input, memory and time budgets. Shared budget failures abort the operation. Omitted resources produce a completeness warning. Platforms without a verified file-handle boundary omit all external resources.

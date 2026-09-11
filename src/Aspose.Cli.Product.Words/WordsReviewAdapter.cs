@@ -75,6 +75,8 @@ internal sealed class WordsReviewAdapter : IProductReviewAdapter<IDocumentEngine
                 "document"));
         }
 
+        IReadOnlyList<Warning>? warnings = Aspose.Cli.Sdk.Results.EnvelopeParts.CombineWarnings(
+            info.Warnings, rendered.Warnings);
         return new ProductReviewRenderOutcome(
             entry,
             rendered.Input.Format,
@@ -82,6 +84,7 @@ internal sealed class WordsReviewAdapter : IProductReviewAdapter<IDocumentEngine
         {
             VisualInspectionRequired = VisualInspectionRequired,
             Findings = findings,
+            Warnings = warnings,
             Coverage =
             [
                 Metric("pages", info.Document.Pages, "pages"),
@@ -94,7 +97,8 @@ internal sealed class WordsReviewAdapter : IProductReviewAdapter<IDocumentEngine
             ],
             ExpectedItems = expectedPages,
             RenderedItems = rendered.Outputs.Count,
-            Complete = findings.All(static finding => finding.Severity != "error"),
+            Complete = findings.All(static finding => finding.Severity != "error")
+                && !(warnings?.Any(static warning => warning.AffectsCompleteness) ?? false),
         };
     };
 

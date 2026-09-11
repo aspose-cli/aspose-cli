@@ -1,113 +1,164 @@
+using Aspose.Cli.Sdk.Errors;
+using System.Runtime.ExceptionServices;
+
 namespace Aspose.Cli.Sdk.IO;
 
-/// <summary>
-/// Resolves bounded local document resources without delegating URI fetching
-/// to a product engine.
-/// </summary>
-public sealed class LocalDocumentResourceLoader
+/// <summary>Owns one document's external resource policy, budgets and callback lifetime.</summary>
+public sealed class LocalDocumentResourceLoader : IDisposable
 {
-    private const int DefaultMaximumItems = 256;
-    private const long DefaultMaximumItemBytes = 32L * 1024 * 1024;
-    private const long DefaultMaximumTotalBytes = 128L * 1024 * 1024;
-
     private readonly Uri _baseUri;
-    private readonly ResourcePathBoundary _boundary;
+    private readonly VerifiedFileBoundary _boundary;
+    private readonly ResourceBudgetLedger _budgets;
     private readonly int _maximumItems;
     private readonly long _maximumItemBytes;
     private readonly long _maximumTotalBytes;
     private readonly object _gate = new();
     private int _items;
     private long _totalBytes;
+    private int _omitted;
+    private bool _disposed;
+    private ExceptionDispatchInfo? _failure;
 
-    /// <summary>Creates a loader rooted beside the owning document.</summary>
     public LocalDocumentResourceLoader(
         string documentPath,
-        int maximumItems = DefaultMaximumItems,
-        long maximumItemBytes = DefaultMaximumItemBytes,
-        long maximumTotalBytes = DefaultMaximumTotalBytes)
+        ResourceBudgetLedger budgets,
+        int maximumItems = 256,
+        long maximumItemBytes = 32L * 1024 * 1024,
+        long maximumTotalBytes = 128L * 1024 * 1024)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(documentPath);
+        _budgets = budgets ?? throw new ArgumentNullException(nameof(budgets));
         if (maximumItems < 1 || maximumItemBytes < 1 || maximumTotalBytes < 1)
         {
-            throw new ArgumentOutOfRangeException(
-                nameof(maximumItems),
+            throw new ArgumentOutOfRangeException(nameof(maximumItems),
                 "Local resource limits must be positive.");
         }
-
-        string fullDocumentPath = Path.GetFullPath(documentPath);
-        string root = Path.GetDirectoryName(fullDocumentPath)
-            ?? throw new ArgumentException("The document path has no parent directory.", nameof(documentPath));
-        _baseUri = new Uri(Path.EndsInDirectorySeparator(root) ? root : root + Path.DirectorySeparatorChar);
-        _boundary = new ResourcePathBoundary(root);
+        string root = Path.GetDirectoryName(Path.GetFullPath(documentPath))!;
+        _baseUri = new Uri(new Uri(Path.EndsInDirectorySeparator(root)
+            ? root : root + Path.DirectorySeparatorChar).AbsoluteUri);
+        _boundary = new VerifiedFileBoundary(root);
         _maximumItems = maximumItems;
         _maximumItemBytes = maximumItemBytes;
         _maximumTotalBytes = maximumTotalBytes;
     }
 
+    public int OmittedCount { get { lock (_gate) { return _omitted; } } }
+
+    /// <summary>Propagates a fatal callback failure even if an engine caught it internally.</summary>
+    public void ThrowIfFailed()
+    {
+        lock (_gate)
+        {
+            _failure?.Throw();
+            _budgets.Deadline.ThrowIfExpired("document-resource");
+        }
+    }
+
     /// <summary>
-    /// Reads one existing file below the document root. Network, protocol-relative,
-    /// data, UNC, escaping, linked and over-budget resources return <see langword="false"/>.
+    /// Reads a verified local resource in full. Rejected resources return an empty result;
+    /// shared budget, cancellation and deadline failures abort the operation.
     /// </summary>
     public bool TryRead(string? reference, out byte[] data)
     {
         data = [];
-        if (string.IsNullOrWhiteSpace(reference)
-            || reference.StartsWith("//", StringComparison.Ordinal)
-            || reference.StartsWith("\\\\", StringComparison.Ordinal)
-            || !Uri.TryCreate(_baseUri, reference, out Uri? resolved)
-            || !resolved.IsFile
-            || resolved.IsUnc)
-        {
-            return false;
-        }
-
-        string path;
-        try
-        {
-            path = Path.GetFullPath(resolved.LocalPath);
-            if (!_boundary.Contains(path) || !File.Exists(path))
-            {
-                return false;
-            }
-        }
-        catch (Exception exception) when (
-            exception is ArgumentException or NotSupportedException
-            or PathTooLongException or IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
-
-        long length;
-        try
-        {
-            length = new FileInfo(path).Length;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-        {
-            return false;
-        }
-
         lock (_gate)
         {
-            if (length > _maximumItemBytes
-                || _items >= _maximumItems
-                || length > _maximumTotalBytes - _totalBytes)
+            ObjectDisposedException.ThrowIf(_disposed, this);
+            try
+            {
+                ThrowIfFailed();
+                if (_items >= _maximumItems) { return Omit(); }
+                _items++;
+                if (!TryResolve(reference, out string? path))
+                {
+                    return Omit();
+                }
+                using VerifiedReadLease? stream = _boundary.TryOpenRead(path!);
+                if (stream is null)
+                {
+                    return Omit();
+                }
+                long length = stream.Length;
+                if (length > _maximumItemBytes || length > Array.MaxLength
+                    || length > _maximumTotalBytes - _totalBytes)
+                {
+                    return Omit();
+                }
+                _totalBytes += length;
+                // Reserve before allocating or reading; failed attempts cannot reclaim a budget.
+                _budgets.Consume(ResourceBudgetKinds.InputBytes, length, "bytes", "document-resource");
+                _budgets.Consume(ResourceBudgetKinds.MemoryBufferBytes, length, "bytes", "document-resource");
+                byte[] buffer = new byte[(int)length];
+                int offset = 0;
+                while (offset < buffer.Length)
+                {
+                    _budgets.Deadline.ThrowIfExpired("document-resource");
+                    int read = stream.Read(buffer, offset, Math.Min(64 * 1024, buffer.Length - offset));
+                    if (read == 0)
+                    {
+                        return Omit();
+                    }
+                    offset += read;
+                }
+                _budgets.Deadline.ThrowIfExpired("document-resource");
+                if (stream.ReadByte() != -1 || stream.Length != length)
+                {
+                    return Omit();
+                }
+                data = buffer;
+                return true;
+            }
+            catch (Exception exception) when (exception is CliException or OperationCanceledException)
+            {
+                _failure ??= ExceptionDispatchInfo.Capture(exception);
+                throw;
+            }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+            {
+                return Omit();
+            }
+        }
+    }
+
+    private bool TryResolve(string? reference, out string? path)
+    {
+        path = null;
+        if (string.IsNullOrWhiteSpace(reference)
+            || reference.StartsWith("//", StringComparison.Ordinal)
+            || reference.StartsWith(@"\\", StringComparison.Ordinal))
+        {
+            return false;
+        }
+        try
+        {
+            if (!Uri.TryCreate(_baseUri, reference, out Uri? resolved)
+                || !resolved.IsFile || resolved.IsUnc
+                || !string.IsNullOrEmpty(resolved.Query)
+                || !string.IsNullOrEmpty(resolved.Fragment))
             {
                 return false;
             }
-
-            _items++;
-            _totalBytes += length;
+            // The boundary validates decoded segments, including ADS and Win32 aliases.
+            path = resolved.LocalPath;
+            return true;
         }
-
-        try
-        {
-            data = File.ReadAllBytes(path);
-            return data.LongLength == length;
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        catch (Exception exception) when (exception is ArgumentException or NotSupportedException)
         {
             return false;
+        }
+    }
+
+    private bool Omit()
+    {
+        _omitted++;
+        return false;
+    }
+
+    public void Dispose()
+    {
+        lock (_gate)
+        {
+            _disposed = true;
         }
     }
 }

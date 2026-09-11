@@ -22,6 +22,8 @@ public sealed record ProductReviewRenderOutcome(
 
     public IReadOnlyList<Contracts.ReviewFinding>? Findings { get; init; }
 
+    public IReadOnlyList<Warning>? Warnings { get; init; }
+
     public IReadOnlyList<Contracts.ReviewCoverageMetric>? Coverage { get; init; }
 
     public required int ExpectedItems { get; init; }

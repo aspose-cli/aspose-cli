@@ -181,13 +181,14 @@ internal static class ReviewEvidenceWriter
                 ExpectedItems = expectedItems,
                 RenderedItems = renderedItems,
                 OmittedItems = omittedItems,
-                Complete = omittedItems == 0 && outcome.Complete,
+                Complete = omittedItems == 0 && outcome.Complete
+                    && !(outcome.Warnings?.Any(static warning => warning.AffectsCompleteness) ?? false),
                 Metrics = outcome.Coverage ?? [],
             },
             Artifacts = artifacts,
             Findings = findings,
             License = EnvelopeParts.License(license),
-            Warnings = EnvelopeParts.OutputWarnings(license),
+            Warnings = EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(license), outcome.Warnings),
         };
     }
 

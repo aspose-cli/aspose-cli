@@ -264,7 +264,7 @@ internal sealed class PreviewRequestPipeline
             return (snapshot.InlineHtml, snapshot.Revision);
         }
 
-        using FileStream entry =
+        using Stream entry =
             TryManifest(snapshot)?.TryOpenRead(
                 snapshot.EntryFileName)
             ?? throw new FileNotFoundException(
@@ -320,7 +320,7 @@ internal sealed class PreviewRequestPipeline
         PreviewSnapshot snapshot,
         string relative)
     {
-        FileStream? asset = TryManifest(snapshot)?.TryOpenRead(relative);
+        Stream? asset = TryManifest(snapshot)?.TryOpenRead(relative);
         if (asset is null)
         {
             NotFound(response);
@@ -346,7 +346,7 @@ internal sealed class PreviewRequestPipeline
             return;
         }
 
-        FileStream? frame = TryManifest(snapshot)?.TryOpenRead(
+        Stream? frame = TryManifest(snapshot)?.TryOpenRead(
             snapshot.EntryFileName);
         if (frame is null)
         {

@@ -64,3 +64,7 @@ Worked example: `examples/assemble-review-report`.
 5. Fix defects, reopen, render, validate, and run review again. Stop after at most three visual correction rounds and report any unresolved defect.
 6. Do not claim a visual pass when page inspection is unavailable, any required page/artifact was not opened, or coverage is incomplete. State exact page coverage and mark the remainder partial or skipped.
 7. Report evaluation results separately from licensed results. Disclose `EVAL_MODE`, evaluation watermarks, page limits, signature state, and standards-validation results for each affected artifact.
+
+## External resources
+
+The custom HTML resource callback uses verified local reads and shared budgets. However, the pinned Aspose.PDF.Drawing 26.5.0 importer can fetch linked images and CSS outside that callback. PDF HTML creation therefore cannot currently guarantee network or filesystem resource isolation. Use trusted HTML inputs only; the callback warning is not proof that external access was prevented.

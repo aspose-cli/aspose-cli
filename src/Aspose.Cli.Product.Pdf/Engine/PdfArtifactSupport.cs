@@ -381,28 +381,19 @@ internal static class PdfArtifactSupport
 
     internal sealed record SplitPart(int Index, IReadOnlyList<int> Pages, string? Bookmark);
 
-    internal sealed class HtmlResourceLoader
+    internal sealed class HtmlResourceLoader(LocalDocumentResourceLoader resources)
     {
-        private readonly LocalDocumentResourceLoader _resources;
-
-        public HtmlResourceLoader(string documentPath)
-        {
-            _resources = new LocalDocumentResourceLoader(documentPath);
-        }
-
-        public int Blocked { get; private set; }
-
         public LoadOptions.ResourceLoadingResult Load(string resourceUri)
         {
-            if (_resources.TryRead(resourceUri, out byte[] data))
+            if (resources.TryRead(resourceUri, out byte[] data))
             {
                 return new LoadOptions.ResourceLoadingResult(data);
             }
 
-            Blocked++;
             return new LoadOptions.ResourceLoadingResult(Array.Empty<byte>())
             {
-                LoadingCancelled = true,
+                // Cancelling the custom loader would enable the SDK default loader.
+                LoadingCancelled = false,
             };
         }
     }
