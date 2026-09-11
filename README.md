@@ -84,7 +84,10 @@ current-user lifecycle controls and bounded uploads remain enforced.
 The MCP registration is named `aspose-cli` and points to the matching installed executable.
 Its `capabilities` tool is read-only. Its `execute` tool runs bounded, allowlisted
 product commands, including document writes; host installation, update, licensing and
-service lifecycle mutations are unavailable through it.
+service lifecycle mutations are unavailable through it. Command parameters expose
+`inputKind`, `valueSource` and `secret` from their declarations. MCP uses the same
+command parser as the CLI and retains the server work directory, license source and
+input budget; an execute request cannot raise the server input limit.
 Two CLI processes still coordinate document publication through neutral operating-system locks.
 
 ## File and output contracts

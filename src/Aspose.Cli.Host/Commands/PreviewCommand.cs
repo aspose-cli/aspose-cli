@@ -37,7 +37,7 @@ internal static class PreviewCommand
         preview.Subcommands.Add(CreateHost(executor, catalog, globals));
         preview.SetAction(parse => executor.Run(parse, globals, context =>
             Start(catalog, parse, context, file, shortcutSymbols)));
-        return preview;
+        return preview.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
     }
 
     private static Command CreateHost(
@@ -253,7 +253,7 @@ internal static class PreviewCommand
                 Warnings = state.Warnings.Count == 0 ? null : state.Warnings,
             };
         }));
-        return status;
+        return status.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
     }
 
     private static Command CreateStop(

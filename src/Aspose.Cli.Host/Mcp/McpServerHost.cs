@@ -1,4 +1,5 @@
 using System.ComponentModel;
+using Aspose.Cli.Host.Invocation;
 using ModelContextProtocol.Protocol;
 using ModelContextProtocol.Server;
 using ModelContextProtocol;
@@ -12,14 +13,14 @@ internal static class McpServerHost
     internal static IReadOnlyList<string> ToolNames { get; } =
         [CapabilitiesToolName, ExecuteToolName];
 
-    public static int Run(IReadOnlyCollection<string> productRoots)
-        => RunAsync(productRoots).GetAwaiter().GetResult();
+    public static int Run(HostContext host, GlobalValues globals)
+        => RunAsync(host, globals).GetAwaiter().GetResult();
 
     private static async Task<int> RunAsync(
-        IReadOnlyCollection<string> productRoots)
+        HostContext host, GlobalValues globals)
     {
-        ArgumentNullException.ThrowIfNull(productRoots);
-        var tools = new McpTools(productRoots);
+        ArgumentNullException.ThrowIfNull(host);
+        var tools = new McpTools(new McpCommandRunner(host, globals));
         var options = new McpServerOptions
         {
             ServerInfo = new Implementation
@@ -78,9 +79,9 @@ internal sealed class McpTools
 {
     private readonly McpCommandRunner _runner;
 
-    public McpTools(IReadOnlyCollection<string> productRoots)
+    public McpTools(McpCommandRunner runner)
     {
-        _runner = new McpCommandRunner(productRoots);
+        _runner = runner;
     }
 
     [Description("Return the compiled CLI capability snapshot as JSON.")]

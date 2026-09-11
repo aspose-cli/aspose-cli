@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
@@ -20,7 +21,7 @@ public sealed class ProductInputAdmissionTests
         File.WriteAllBytes(input, new byte[128]);
         var root = new RootCommand();
         var inspect = new Command("inspect");
-        inspect.Arguments.Add(new Argument<string>("file"));
+        inspect.Arguments.Add(new Argument<string>("file").WithInput(InputKind.File));
         root.Subcommands.Add(inspect);
         var globals = new GlobalOptions(licensingApplicable: false);
         globals.AddTo(root);
@@ -47,7 +48,7 @@ public sealed class ProductInputAdmissionTests
         File.WriteAllBytes(output, new byte[128]);
         var root = new RootCommand();
         var command = new Command("convert");
-        command.Options.Add(new Option<string>("--out", "--target"));
+        command.Options.Add(new Option<string>("--out", "--target").WithInput(InputKind.None));
         root.Subcommands.Add(command);
         var globals = new GlobalOptions(licensingApplicable: false);
         globals.AddTo(root);

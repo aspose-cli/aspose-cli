@@ -26,6 +26,17 @@ internal static class ProcessFailureBoundary
         """;
     private static int _unhandledHandlerInstalled;
 
+    private static (OutputMode Output, bool Quiet) ResolveErrorOutput(
+        HostContext host, IReadOnlyList<string> args)
+    {
+        try { return host.Parser.ResolveErrorOutput(args); }
+        catch
+        {
+            // Only bootstrap error presentation may use the emergency formatter.
+            return GlobalOptions.ResolveForProcessFailure(args);
+        }
+    }
+
     public static int Run(
         HostContext host,
         string[] args,
@@ -108,7 +119,7 @@ internal static class ProcessFailureBoundary
         try
         {
             (OutputMode output, bool quiet) =
-                GlobalOptions.ResolveForProcessFailure(args);
+                ResolveErrorOutput(host, args);
             IOutputWriter writer = OutputWriterFactory.Create(
                 output,
                 quiet,

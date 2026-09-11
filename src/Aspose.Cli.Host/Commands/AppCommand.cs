@@ -118,7 +118,7 @@ internal static class AppCommand
                         fontProfile));
         });
 
-        return app;
+        return app.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
     }
 
     private static Command CreateStatus(
@@ -136,7 +136,7 @@ internal static class AppCommand
                 catalog,
                 edition,
                 capabilities).Status()));
-        return status;
+        return status.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
     }
 
     private static Command CreateStop(

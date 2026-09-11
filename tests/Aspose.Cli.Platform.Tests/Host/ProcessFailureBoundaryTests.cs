@@ -227,14 +227,14 @@ public sealed class ProcessFailureBoundaryTests
 
     [Theory]
     [InlineData("--timeout 30 doctor", "doctor")]
-    [InlineData("cells --timeout=30 inspect", "cells inspect")]
+    [InlineData("cells --timeout=30 inspect input.xlsx", "cells inspect")]
     [InlineData("--output json app status", "app status")]
     public void TimeoutSupervisor_ResolvesCommandPathAroundGlobalOptions(
         string commandLine,
         string expected)
     {
-        IReadOnlyList<string> path = TimeoutWorkerSupervisor.ResolveCommandPath(
-            commandLine.Split(' ', StringSplitOptions.RemoveEmptyEntries));
+        IEnumerable<string> path = ActualCommandTree.Parser.Parse(
+            commandLine.Split(' ', StringSplitOptions.RemoveEmptyEntries)).CommandPath.Select(command => command.Name);
 
         Assert.Equal(expected, string.Join(' ', path));
     }

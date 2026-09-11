@@ -18,17 +18,18 @@ internal static class TimeoutWorkerSupervisor
     public static int Run(
         HostContext host,
         string[] args,
-        Func<string[], int> inProcess)
+        ParsedInvocation invocation,
+        Func<int> inProcess)
     {
         ArgumentNullException.ThrowIfNull(host);
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(inProcess);
-        if (!TryResolveBudget(args, out TimeSpan budget)
-            || IsWorker()
-            || IsLongLivedService(args))
+        if (invocation.GlobalValues?.TimeoutSeconds is not > 0
+            || IsWorker() || invocation.ServiceLifetime)
         {
-            return inProcess(args);
+            return inProcess();
         }
+        TimeSpan budget = TimeSpan.FromSeconds(invocation.GlobalValues.TimeoutSeconds.Value);
 
         using var userCancellation = new CancellationTokenSource();
         ConsoleCancelEventHandler onCancel = (_, eventArgs) =>
@@ -53,40 +54,6 @@ internal static class TimeoutWorkerSupervisor
         }
     }
 
-    internal static bool TryResolveBudget(
-        IReadOnlyList<string> args,
-        out TimeSpan budget)
-    {
-        budget = default;
-        for (int index = 0; index < args.Count; index++)
-        {
-            string argument = args[index];
-            string? value = null;
-            if (argument == "--timeout" && index + 1 < args.Count)
-            {
-                value = args[index + 1];
-            }
-            else if (argument.StartsWith("--timeout=", StringComparison.Ordinal))
-            {
-                value = argument["--timeout=".Length..];
-            }
-
-            if (value is not null
-                && int.TryParse(
-                    value,
-                    System.Globalization.NumberStyles.None,
-                    System.Globalization.CultureInfo.InvariantCulture,
-                    out int seconds)
-                && seconds > 0)
-            {
-                budget = TimeSpan.FromSeconds(seconds);
-                return true;
-            }
-        }
-
-        return false;
-    }
-
     internal static async Task<int> RunWorkerAsync(
         string[] args,
         TimeSpan budget,
@@ -107,7 +74,8 @@ internal static class TimeoutWorkerSupervisor
             budget,
             expiresAt,
             executablePath,
-            environment);
+            environment,
+            host);
         Task<string> standardOutput = worker.StandardOutput.ReadToEndAsync();
         Task<string> standardError = worker.StandardError.ReadToEndAsync();
         using var deadline = new CancellationTokenSource(budget);
@@ -279,7 +247,8 @@ internal static class TimeoutWorkerSupervisor
         TimeSpan budget,
         long expiresAt,
         string? executablePath,
-        IReadOnlyDictionary<string, string?>? environment)
+        IReadOnlyDictionary<string, string?>? environment,
+        HostContext host)
     {
         string processPath = executablePath
             ?? Environment.ProcessPath
@@ -304,6 +273,8 @@ internal static class TimeoutWorkerSupervisor
             start.ArgumentList.Add(argument);
         }
 
+        InvocationEnvironment.Configure(start, host.Parser.Parse(args.ToArray()),
+            InvocationEnvironment.ProductVariables(host.Catalog));
         if (environment is not null)
         {
             foreach ((string name, string? value) in environment)
@@ -361,7 +332,7 @@ internal static class TimeoutWorkerSupervisor
         HostContext host)
     {
         (OutputMode output, bool quiet) =
-            GlobalOptions.ResolveForProcessFailure(args);
+            host.Parser.ResolveErrorOutput(args);
         IOutputWriter writer = OutputWriterFactory.Create(
             output,
             quiet,
@@ -377,52 +348,6 @@ internal static class TimeoutWorkerSupervisor
                 WorkerOutputSession.WorkerEnvironmentVariable),
             "1",
             StringComparison.Ordinal);
-
-    internal static bool IsLongLivedService(IReadOnlyList<string> args)
-    {
-        IReadOnlyList<string> commandPath = ResolveCommandPath(args);
-        return commandPath.Count > 0
-            && commandPath[0] is "preview" or "app" or "mcp";
-    }
-
-    internal static IReadOnlyList<string> ResolveCommandPath(
-        IReadOnlyList<string> args)
-    {
-        var words = new List<string>(capacity: 2);
-        for (int index = 0; index < args.Count && words.Count < 2; index++)
-        {
-            string argument = args[index];
-            if (argument == "--")
-            {
-                continue;
-            }
-
-            if (argument is "--quiet" or "-q" or "--verbose" or "-v")
-            {
-                continue;
-            }
-
-            if (argument is "--output" or "-f" or "--license"
-                or "--workdir" or "--timeout")
-            {
-                index++;
-                continue;
-            }
-
-            if (argument.StartsWith("--output=", StringComparison.Ordinal)
-                || argument.StartsWith("-f=", StringComparison.Ordinal)
-                || argument.StartsWith("--license=", StringComparison.Ordinal)
-                || argument.StartsWith("--workdir=", StringComparison.Ordinal)
-                || argument.StartsWith("--timeout=", StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            words.Add(argument);
-        }
-
-        return words;
-    }
 
     private static void DeleteOrPreserve(string root)
     {

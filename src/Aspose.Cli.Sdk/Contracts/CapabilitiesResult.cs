@@ -328,6 +328,7 @@ public sealed record CommandOptionCapabilities
     public required IReadOnlyList<string> AllowedValues { get; init; }
     public required bool Secret { get; init; }
     public required string ValueSource { get; init; }
+    public required string InputKind { get; init; }
     public string? Description { get; init; }
 }
 
@@ -336,6 +337,9 @@ public sealed record CommandArgumentCapabilities
 {
     public required string Name { get; init; }
     public required string Type { get; init; }
+    public required string InputKind { get; init; }
+    public required string ValueSource { get; init; }
+    public required bool Secret { get; init; }
     public required int MinimumArity { get; init; }
     public required int MaximumArity { get; init; }
     public required bool Required { get; init; }

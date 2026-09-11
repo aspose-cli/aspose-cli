@@ -311,7 +311,8 @@
         "hasDefault",
         "allowedValues",
         "secret",
-        "valueSource"
+        "valueSource",
+        "inputKind"
       ],
       "properties": {
         "name": { "type": "string" },
@@ -325,7 +326,8 @@
         "default": { "type": "string" },
         "allowedValues": { "type": "array", "items": { "type": "string" } },
         "secret": { "type": "boolean" },
-        "valueSource": { "type": "string" },
+        "valueSource": { "enum": ["command-line", "environment-variable-name", "stdin"] },
+        "inputKind": { "enum": ["none", "file", "json-source"] },
         "description": { "type": "string" }
       },
       "additionalProperties": false
@@ -339,7 +341,10 @@
         "maximumArity",
         "required",
         "hasDefault",
-        "allowedValues"
+        "allowedValues",
+        "inputKind",
+        "valueSource",
+        "secret"
       ],
       "properties": {
         "name": { "type": "string" },
@@ -350,6 +355,9 @@
         "hasDefault": { "type": "boolean" },
         "default": { "type": "string" },
         "allowedValues": { "type": "array", "items": { "type": "string" } },
+        "inputKind": { "enum": ["none", "file", "json-source"] },
+        "valueSource": { "enum": ["command-line", "environment-variable-name", "stdin"] },
+        "secret": { "type": "boolean" },
         "description": { "type": "string" }
       },
       "additionalProperties": false

@@ -15,35 +15,34 @@ internal sealed class McpCommandRunner
     internal const int MaximumInputBytes = 1024 * 1024;
     internal const int MaximumOutputBytes = 4 * 1024 * 1024;
     internal static readonly TimeSpan ShutdownGracePeriod = TimeSpan.FromSeconds(2);
-    private static readonly string[] BaselineEnvironmentVariables =
-    [
-        "SystemRoot", "WINDIR", "TEMP", "TMP", "PATH", "PATHEXT",
-        "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "HOME",
-        "LOCALAPPDATA", "APPDATA", "PROGRAMDATA", "LANG", "LC_ALL", "LC_CTYPE",
-    ];
     private readonly SemaphoreSlim _gate = new(1, 1);
-    private readonly HashSet<string> _productRoots;
+    private readonly InvocationParser _parser;
+    private readonly GlobalValues? _inherited;
+    private readonly string _workingDirectory;
+    private readonly IReadOnlyList<string> _productVariables;
     private readonly Func<ProcessStartInfo> _startInfoFactory;
 
-    public McpCommandRunner(IReadOnlyCollection<string> productRoots)
-        : this(productRoots, CreateStartInfo)
+    public McpCommandRunner(HostContext host, GlobalValues? inherited = null)
+        : this(host.Parser, CreateStartInfo, InvocationEnvironment.ProductVariables(host.Catalog), inherited)
     {
     }
 
     internal McpCommandRunner(
-        IReadOnlyCollection<string> productRoots,
-        Func<ProcessStartInfo> startInfoFactory)
+        InvocationParser parser, Func<ProcessStartInfo> startInfoFactory,
+        IReadOnlyList<string>? productVariables = null, GlobalValues? inherited = null)
     {
-        ArgumentNullException.ThrowIfNull(productRoots);
-        ArgumentNullException.ThrowIfNull(startInfoFactory);
-        _productRoots = new HashSet<string>(productRoots, StringComparer.Ordinal);
-        _startInfoFactory = startInfoFactory;
+        _parser = parser ?? throw new ArgumentNullException(nameof(parser));
+        _startInfoFactory = startInfoFactory ?? throw new ArgumentNullException(nameof(startInfoFactory));
+        _productVariables = productVariables ?? [];
+        _workingDirectory = Path.GetFullPath(inherited?.WorkDir ?? Directory.GetCurrentDirectory());
+        _inherited = inherited is null ? null : inherited with { WorkDir = _workingDirectory };
     }
 
     public Task<McpExecutionResult> RunCapabilitiesAsync(
         CancellationToken cancellationToken) =>
         RunCoreAsync(
             ["capabilities", "--output", "json"],
+            _parser.Parse(["capabilities", "--output", "json"], _inherited),
             stdin: null,
             DefaultTimeoutSeconds,
             cancellationToken);
@@ -54,9 +53,10 @@ internal sealed class McpCommandRunner
         int timeoutSeconds,
         CancellationToken cancellationToken)
     {
+        args = args.ToArray();
         Validate(args, stdin, timeoutSeconds);
-        EnsureAllowed(args);
-        return RunCoreAsync(args, stdin, timeoutSeconds, cancellationToken);
+        ParsedInvocation invocation = EnsureAllowed(args);
+        return RunCoreAsync(args, invocation, stdin, timeoutSeconds, cancellationToken);
     }
 
     internal void Validate(
@@ -108,25 +108,26 @@ internal sealed class McpCommandRunner
         }
     }
 
-    internal void EnsureAllowed(IReadOnlyList<string> args)
+    internal ParsedInvocation EnsureAllowed(IReadOnlyList<string> args)
     {
-        IReadOnlyList<string> path = TimeoutWorkerSupervisor.ResolveCommandPath(args);
-        bool allowed = path.Count > 0 && (
-            _productRoots.Contains(path[0])
-            || path[0] is "schema" or "doctor" or "docs"
-            || path.Count == 2 && path[0] == "fonts" && path[1] is "list" or "check"
-            || path.Count == 2 && path[0] == "preview" && path[1] == "status"
-            || path.Count == 2 && path[0] == "app" && path[1] == "status");
-        if (!allowed)
+        ParsedInvocation invocation;
+        try { invocation = _parser.Parse(args.ToArray(), _inherited); }
+        catch (Aspose.Cli.Sdk.Errors.CliException exception)
+        {
+            throw new McpCommandException(exception.Message);
+        }
+        if (invocation.ParseResult.Errors.Count > 0 || !invocation.McpAllowed)
         {
             throw new McpCommandException(
-                "The requested command is not available through MCP. " +
-                "Use a compiled product command or an allowlisted read-only host command.");
+                "The requested command or arguments are not available through MCP. "
+                + "Use a compiled product command or an allowlisted read-only host command.");
         }
+        return invocation;
     }
 
     private async Task<McpExecutionResult> RunCoreAsync(
         string[] args,
+        ParsedInvocation invocation,
         string? stdin,
         int timeoutSeconds,
         CancellationToken cancellationToken)
@@ -139,8 +140,8 @@ internal sealed class McpCommandRunner
             start.StandardInputEncoding = new UTF8Encoding(false);
             start.StandardOutputEncoding = Encoding.UTF8;
             start.StandardErrorEncoding = Encoding.UTF8;
-            start.WorkingDirectory = Directory.GetCurrentDirectory();
-            ConfigureEnvironment(start, args);
+            start.WorkingDirectory = _workingDirectory;
+            InvocationEnvironment.Configure(start, invocation, _productVariables);
             foreach (string argument in args)
             {
                 start.ArgumentList.Add(argument);
@@ -231,76 +232,6 @@ internal sealed class McpCommandRunner
         SelfProcessLauncher.CreateBackground(
             "mcp",
             "Run MCP from the installed aspose-cli executable.");
-
-    private static void ConfigureEnvironment(
-        ProcessStartInfo start,
-        IReadOnlyList<string> args)
-    {
-        var forwarded = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
-        foreach (string name in BaselineEnvironmentVariables.Concat(
-                     ReferencedEnvironmentVariables(args)))
-        {
-            string? value = Environment.GetEnvironmentVariable(name);
-            if (value is not null)
-            {
-                forwarded[name] = value;
-            }
-        }
-
-        start.Environment.Clear();
-        foreach ((string name, string value) in forwarded)
-        {
-            start.Environment[name] = value;
-        }
-    }
-
-    internal static IReadOnlyList<string> ReferencedEnvironmentVariables(
-        IReadOnlyList<string> args)
-    {
-        var names = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-        for (int index = 0; index < args.Count; index++)
-        {
-            string argument = args[index];
-            string? name = null;
-            int equals = argument.IndexOf('=');
-            if (equals > 0
-                && argument[..equals].EndsWith("-env", StringComparison.Ordinal))
-            {
-                name = argument[(equals + 1)..];
-            }
-            else if (argument.EndsWith("-env", StringComparison.Ordinal)
-                && index + 1 < args.Count)
-            {
-                name = args[++index];
-            }
-
-            if (name is not null && IsSafeEnvironmentName(name))
-            {
-                names.Add(name);
-            }
-        }
-
-        return names.Order(StringComparer.Ordinal).ToArray();
-    }
-
-    private static bool IsSafeEnvironmentName(string name)
-    {
-        if (name.Length is 0 or > 128
-            || !(char.IsAsciiLetter(name[0]) || name[0] == '_'))
-        {
-            return false;
-        }
-
-        foreach (char character in name.AsSpan(1))
-        {
-            if (!(char.IsAsciiLetterOrDigit(character) || character == '_'))
-            {
-                return false;
-            }
-        }
-
-        return true;
-    }
 
     private static async Task WriteInputAsync(
         Process process,

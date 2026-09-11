@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Mcp;
 using Xunit;
@@ -7,7 +8,7 @@ namespace Aspose.Cli.Host.Tests;
 
 public sealed class McpCommandTests
 {
-    private static readonly string[] ProductRoots = ["cells", "pdf", "slides", "words"];
+
 
     [Fact]
     public void Server_ExposesExactlyTwoTools()
@@ -18,7 +19,7 @@ public sealed class McpCommandTests
     [Fact]
     public void Server_ReportsReadOnlyDiscoveryAndMutatingExecution()
     {
-        var tools = McpServerHost.CreateTools(new McpTools(ProductRoots));
+        var tools = McpServerHost.CreateTools(new McpTools(new McpCommandRunner(ActualCommandTree.Host)));
         var discovery = tools.Single(tool => tool.ProtocolTool.Name == "capabilities").ProtocolTool;
         var execution = tools.Single(tool => tool.ProtocolTool.Name == "execute").ProtocolTool;
 
@@ -29,19 +30,19 @@ public sealed class McpCommandTests
     }
 
     [Theory]
-    [InlineData("cells", "query", "range")]
-    [InlineData("pdf", "edit")]
+    [InlineData("cells", "query", "range", "input.xlsx")]
+    [InlineData("pdf", "edit", "input.pdf", "--ops", "{\"ops\":[]}", "--out", "out.pdf")]
     [InlineData("schema", "v2/pdf/pdf-info")]
     [InlineData("doctor")]
     [InlineData("docs", "pdf/forms-security")]
     [InlineData("fonts", "list")]
-    [InlineData("fonts", "check")]
+    [InlineData("fonts", "check", "input.xlsx")]
     [InlineData("preview", "status")]
     [InlineData("app", "status")]
     public void Execute_AllowsOnlyDocumentAndReadOnlyHostCommands(
         params string[] args)
     {
-        var runner = new McpCommandRunner(ProductRoots);
+        var runner = new McpCommandRunner(ActualCommandTree.Host);
         runner.EnsureAllowed(args);
     }
 
@@ -58,14 +59,14 @@ public sealed class McpCommandTests
     public void Execute_RejectsPrivilegedAndLifecycleCommands(
         params string[] args)
     {
-        var runner = new McpCommandRunner(ProductRoots);
+        var runner = new McpCommandRunner(ActualCommandTree.Host);
         Assert.Throws<McpCommandException>(() => runner.EnsureAllowed(args));
     }
 
     [Fact]
     public void Execute_EnforcesArgumentInputAndTimeoutBudgets()
     {
-        var runner = new McpCommandRunner(ProductRoots);
+        var runner = new McpCommandRunner(ActualCommandTree.Host);
 
         Assert.Throws<McpCommandException>(() => runner.Validate([], null, 120));
         Assert.Throws<McpCommandException>(() => runner.Validate(
@@ -89,20 +90,19 @@ public sealed class McpCommandTests
     {
         Assert.Equal(
             ["DOC_PASSWORD", "OUTPUT_PASSWORD"],
-            McpCommandRunner.ReferencedEnvironmentVariables(
+            InvocationEnvironment.ReferencedVariables(ActualCommandTree.Parser.Parse(
             [
-                "words", "query", "blocks", "file.docx",
+                "words", "convert", "file.docx", "--to", "docx", "--out", "out.docx",
                 "--password-env", "DOC_PASSWORD",
                 "--encrypt-env=OUTPUT_PASSWORD",
-                "--owner-password-env", "bad-name!",
-            ]));
+            ])));
     }
 
     [Fact]
     public void McpServer_IsNeverWrappedByTheTimeoutWorker()
     {
-        Assert.True(TimeoutWorkerSupervisor.IsLongLivedService(
-            ["--timeout", "30", "mcp", "serve"]));
+        Assert.True(ActualCommandTree.Parser.Parse(
+            ["--timeout", "30", "mcp", "serve"]).ServiceLifetime);
     }
 
     [Theory]
@@ -144,7 +144,7 @@ public sealed class McpCommandTests
                 + "while ($true) { Start-Sleep -Milliseconds 100 }");
 
             var runner = new McpCommandRunner(
-                ["timeout-probe"],
+                ProbeParser(),
                 () => CreatePowerShellStartInfo(parentScript));
             var stopwatch = Stopwatch.StartNew();
             execution = runner.RunAsync(
@@ -217,7 +217,7 @@ public sealed class McpCommandTests
         try
         {
             await File.WriteAllTextAsync(script, "while ($true) { Start-Sleep -Milliseconds 100 }");
-            var runner = new McpCommandRunner(["timeout-probe"], () => CreatePowerShellStartInfo(script));
+            var runner = new McpCommandRunner(ProbeParser(), () => CreatePowerShellStartInfo(script));
             var stopwatch = Stopwatch.StartNew();
             execution = runner.RunAsync(["timeout-probe"], null, 1, cancellation.Token);
             McpCommandException error = await Assert.ThrowsAsync<McpCommandException>(() => execution);
@@ -231,6 +231,16 @@ public sealed class McpCommandTests
             try { await ObserveCanceledExecutionAsync(execution); }
             finally { Directory.Delete(root, recursive: true); }
         }
+    }
+
+    private static InvocationParser ProbeParser()
+    {
+        var root = new RootCommand();
+        var globals = new GlobalOptions(licensingApplicable: false);
+        globals.AddTo(root);
+        root.Subcommands.Add(new Command("timeout-probe").WithInvocationPolicy(
+            new CommandInvocationPolicy(ProductId: "timeout-probe")));
+        return new InvocationParser(root, globals);
     }
 
     private static ProcessStartInfo CreatePowerShellStartInfo(string script)

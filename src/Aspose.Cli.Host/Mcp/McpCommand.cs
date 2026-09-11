@@ -1,21 +1,18 @@
 using System.CommandLine;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Host.Invocation;
 
 namespace Aspose.Cli.Host.Mcp;
 
 /// <summary>Hosts the bounded local MCP stdio bridge.</summary>
 internal static class McpCommand
 {
-    public static Command Create(ProductCatalog catalog)
+    public static Command Create(HostContext host, GlobalOptions globals)
     {
-        ArgumentNullException.ThrowIfNull(catalog);
+        ArgumentNullException.ThrowIfNull(host);
         var mcp = new Command("mcp", "Expose this CLI to a local MCP client over stdio.");
         var serve = new Command("serve", "Run the single-session MCP stdio server.");
-        string[] productRoots = catalog.Products
-            .Select(static product => product.Manifest.Id)
-            .ToArray();
-        serve.SetAction(_ => McpServerHost.Run(productRoots));
+        serve.SetAction(parse => McpServerHost.Run(host, globals.Resolve(parse)));
         mcp.Subcommands.Add(serve);
-        return mcp;
+        return mcp.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
     }
 }

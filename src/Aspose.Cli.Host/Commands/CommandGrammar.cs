@@ -3,6 +3,7 @@ using System.CommandLine.Completions;
 using System.Globalization;
 using System.Reflection;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -55,7 +56,8 @@ internal static class CommandGrammar
         string commandPath,
         IReadOnlyDictionary<string, ProductCapabilities>? products)
     {
-        bool secret = IsSecret(option.Name);
+        ParameterMetadata metadata = option.GetParameterMetadata();
+        bool secret = metadata.Secret;
         return new CommandOptionCapabilities
         {
             Name = option.Name,
@@ -74,7 +76,8 @@ internal static class CommandGrammar
                 commandPath,
                 products),
             Secret = secret,
-            ValueSource = ValueSource(option.Name),
+            ValueSource = metadata.ValueSource.ToContractName(),
+            InputKind = metadata.InputKind.ToContractName(),
             Description = option.Description,
         };
     }
@@ -88,10 +91,13 @@ internal static class CommandGrammar
             MaximumArity = argument.Arity.MaximumNumberOfValues,
             Required = argument.Arity.MinimumNumberOfValues > 0,
             HasDefault = argument.HasDefaultValue,
-            Default = argument.HasDefaultValue
+            Default = argument.HasDefaultValue && !argument.GetParameterMetadata().Secret
                 ? ReadDefault(argument)
                 : null,
             AllowedValues = ReadAllowedValues(argument),
+            InputKind = argument.GetParameterMetadata().InputKind.ToContractName(),
+            ValueSource = argument.GetParameterMetadata().ValueSource.ToContractName(),
+            Secret = argument.GetParameterMetadata().Secret,
             Description = argument.Description,
         };
 
@@ -237,24 +243,6 @@ internal static class CommandGrammar
         {
             return "<context-dependent>";
         }
-    }
-
-    private static bool IsSecret(string name) =>
-        name.Contains("password", StringComparison.OrdinalIgnoreCase)
-        || name.Contains("encrypt", StringComparison.OrdinalIgnoreCase)
-        || name.Contains("token", StringComparison.OrdinalIgnoreCase);
-
-    private static string ValueSource(string name)
-    {
-        if (name.EndsWith("-env", StringComparison.Ordinal))
-        {
-            return "environment-variable-name";
-        }
-        if (name.EndsWith("-stdin", StringComparison.Ordinal))
-        {
-            return "stdin";
-        }
-        return "command-line";
     }
 
     private static string TypeName(Type type)

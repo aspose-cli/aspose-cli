@@ -45,46 +45,23 @@ public static class CliHost
         ArgumentNullException.ThrowIfNull(args);
         Invocation.WindowsProcessErrorMode.SuppressNativeErrorUi();
         var host = new HostContext(catalog, edition);
-        return ProcessFailureBoundary.Run(
-            host,
-            args,
-            invocation => TimeoutWorkerSupervisor.Run(
-                host,
-                invocation,
-                inProcess => RunInProcess(host, inProcess)));
-    }
-
-    private static int RunInProcess(HostContext host, string[] args)
-    {
         ConfigureConsole();
         ConfigureUiCulture();
-
         args = NormalizeInteractiveArguments(args, IsInteractiveDesktop());
-
-        RootCommand root = Aspose.Cli.Host.Commands.RootCommandFactory.Create(
-            host,
-            out GlobalOptions globals);
-        ParseResult parseResult = root.Parse(args);
-        if (parseResult.Errors.Count > 0)
+        return ProcessFailureBoundary.Run(host, args, arguments =>
         {
-            (OutputMode output, bool quiet) = globals.ResolveForErrorReporting(parseResult);
-            IOutputWriter writer = OutputWriterFactory.Create(
-                output,
-                quiet,
-                host.Catalog,
-                host.ContractJson.Serializer);
-            string[] problems = parseResult.Errors
-                .Select(static error => error.Message)
-                .ToArray();
-            writer.WriteError(CliErrors.Usage(problems).ToEnvelope());
-            return (int)ExitCode.Usage;
-        }
+            ParsedInvocation invocation = host.Parser.Parse(arguments);
+            invocation.EnsureValid();
+            return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
+                () => RunInProcess(invocation));
+        });
+    }
 
-        return parseResult.Invoke(new InvocationConfiguration
+    private static int RunInProcess(ParsedInvocation invocation) =>
+        invocation.ParseResult.Invoke(new InvocationConfiguration
         {
             EnableDefaultExceptionHandler = false,
         });
-    }
 
     private static bool IsInteractiveDesktop() =>
         !Console.IsInputRedirected

@@ -93,18 +93,24 @@ internal sealed class GlobalOptions
     }
 
     /// <summary>Reads the global option values from a parse result.</summary>
-    public GlobalValues Resolve(ParseResult parseResult)
+    public GlobalValues Resolve(ParseResult parseResult, GlobalValues? inherited = null)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
 
-        long maxInputBytes = ResolveMaxInputBytes(
-            parseResult.GetValue(MaxInputBytes));
+        long? requestedInputBytes = parseResult.GetValue(MaxInputBytes);
+        if (inherited is not null && requestedInputBytes > inherited.MaxInputBytes)
+        {
+            throw CliErrors.OptionInvalid("--max-input-bytes",
+                "the value exceeds the MCP host input budget",
+                "Choose a limit within the budget selected when the MCP server was started.");
+        }
+        long maxInputBytes = ResolveMaxInputBytes(requestedInputBytes ?? inherited?.MaxInputBytes);
         var values = new GlobalValues(
             MapOutput(parseResult.GetValue(Output)),
             parseResult.GetValue(Quiet),
             parseResult.GetValue(Verbose),
-            License is null ? null : parseResult.GetValue(License),
-            parseResult.GetValue(WorkDir),
+            (License is null ? null : parseResult.GetValue(License)) ?? inherited?.LicensePath,
+            parseResult.GetValue(WorkDir) ?? inherited?.WorkDir,
             parseResult.GetValue(Timeout),
             maxInputBytes);
         ServiceStartSecrets? service =

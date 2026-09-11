@@ -52,7 +52,8 @@ internal static class RootCommandFactory
             globals);
         foreach (ProductDefinition product in catalog.Products)
         {
-            root.Subcommands.Add(product.CreateCommand(productHostFactory));
+            root.Subcommands.Add(product.CreateCommand(productHostFactory).WithInvocationPolicy(
+                new CommandInvocationPolicy(ProductId: product.Manifest.Id)));
         }
         if (licensingApplicable)
         {
@@ -68,16 +69,19 @@ internal static class RootCommandFactory
             executor,
             globals,
             capabilitySnapshot));
-        root.Subcommands.Add(DoctorCommand.Create(executor, catalog, globals));
+        root.Subcommands.Add(DoctorCommand.Create(executor, catalog, globals)
+            .WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true)));
         root.Subcommands.Add(SkillCommandGroup.Create(executor, host.Skills, globals));
-        root.Subcommands.Add(SchemaCommand.Create(executor, host.Schemas, globals));
-        root.Subcommands.Add(DocsCommand.Create(executor, host.Docs, globals));
+        root.Subcommands.Add(SchemaCommand.Create(executor, host.Schemas, globals)
+            .WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true)));
+        root.Subcommands.Add(DocsCommand.Create(executor, host.Docs, globals)
+            .WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true)));
         if (catalog.Products.Any(
                 static product => product.Manifest.Engine.SupportsFontDiagnostics))
         {
             root.Subcommands.Add(FontsCommandGroup.Create(executor, catalog, globals));
         }
-        root.Subcommands.Add(McpCommand.Create(catalog));
+        root.Subcommands.Add(McpCommand.Create(host, globals));
         root.Subcommands.Add(UpdateCommand.Create(executor, globals, host.Edition));
 
         root.ValidateParameters();

@@ -52,6 +52,9 @@ public static class OutputOptions
     };
 }
 
+/// <summary>The transport selected by a JSON source value.</summary>
+public enum JsonSourceKind { File, Inline, StandardInput }
+
 /// <summary>Reads JSON from inline text, a file, or standard input.</summary>
 public static class JsonInputSource
 {
@@ -64,22 +67,12 @@ public static class JsonInputSource
     {
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(inputs);
-        if (string.IsNullOrWhiteSpace(source))
+        JsonSourceKind kind = Classify(source, option);
+        if (kind == JsonSourceKind.StandardInput)
         {
-            throw CliErrors.OptionInvalid(
-                option,
-                "the value is empty",
-                "Pass a path to the document, inline JSON starting with { or [, or '-' for stdin.");
+            return inputs.ReadStandardInputText(Console.OpenStandardInput());
         }
-
-        if (source == "-")
-        {
-            return inputs.ReadStandardInputText(
-                Console.OpenStandardInput());
-        }
-
-        string trimmed = source.TrimStart();
-        if (trimmed.StartsWith('{') || trimmed.StartsWith('['))
+        if (kind == JsonSourceKind.Inline)
         {
             return inputs.ReadInlineText(source, "inline-text");
         }
@@ -99,6 +92,20 @@ public static class JsonInputSource
                 details: exception.Details,
                 docs: exception.Docs);
         }
+    }
+
+    /// <summary>Classifies JSON input using the same rules as the actual reader.</summary>
+    public static JsonSourceKind Classify(string source, string option)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            throw CliErrors.OptionInvalid(option, "the value is empty",
+                "Pass a path to the document, inline JSON starting with { or [, or '-' for stdin.");
+        }
+        if (source == "-") { return JsonSourceKind.StandardInput; }
+        string trimmed = source.TrimStart();
+        return trimmed.StartsWith('{') || trimmed.StartsWith('[')
+            ? JsonSourceKind.Inline : JsonSourceKind.File;
     }
 
 }
