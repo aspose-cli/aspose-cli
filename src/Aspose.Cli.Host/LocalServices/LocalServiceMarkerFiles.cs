@@ -6,13 +6,14 @@ namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
 /// Stores public discovery metadata and its secret companion as separate,
-/// current-user-only atomic files.
+/// current-user-only atomic files. One resource lock keeps paired reads and writes coherent.
 /// </summary>
 internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
     where TMarker : class
     where TSecrets : class
 {
     private readonly string _markerPath;
+    private readonly string _lockKey;
     private readonly string _secretPath;
     private readonly JsonTypeInfo<TMarker> _markerType;
     private readonly JsonTypeInfo<TSecrets> _secretsType;
@@ -25,6 +26,9 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
     {
         _markerPath = Path.GetFullPath(markerPath);
         _secretPath = Path.GetFullPath(secretPath);
+        string[] paths = [_markerPath, _secretPath];
+        if (OperatingSystem.IsWindows()) { paths = paths.Select(static path => path.ToUpperInvariant()).ToArray(); }
+        _lockKey = string.Join("\n", paths.Order(StringComparer.Ordinal));
         _markerType = markerType
             ?? throw new ArgumentNullException(nameof(markerType));
         _secretsType = secretsType
@@ -46,6 +50,7 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
     {
         try
         {
+            using LocalServiceOperationLock lease = Acquire();
             if (!File.Exists(_markerPath)
                 || !File.Exists(_secretPath))
             {
@@ -68,7 +73,8 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
             exception is IOException
                 or UnauthorizedAccessException
                 or JsonException
-                or ArgumentException)
+                or ArgumentException
+                or TimeoutException)
         {
             return null;
         }
@@ -78,6 +84,7 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
     {
         ArgumentNullException.ThrowIfNull(marker);
         ArgumentNullException.ThrowIfNull(secrets);
+        using LocalServiceOperationLock lease = Acquire();
         PrivateUserStorage.ValidateDirectory(
             Path.GetDirectoryName(_markerPath)!);
         PrivateUserStorage.WriteAllText(
@@ -92,8 +99,12 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
                 _markerType));
     }
 
+    private LocalServiceOperationLock Acquire() =>
+        LocalServiceOperationLock.Acquire("marker-files", _lockKey, LocalServiceControlCodec.DefaultStageTimeout);
+
     public void Delete()
     {
+        using LocalServiceOperationLock lease = Acquire();
         LocalFileCleanup.DeleteFile(_markerPath);
         LocalFileCleanup.DeleteFile(_secretPath);
     }

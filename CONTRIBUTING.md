@@ -42,3 +42,7 @@ Value sources and secret handling are also declared on the symbol. The Host cons
 An accepted Preview route owns response completion. Embedded hosts must leave that response
 to Preview, including SSE streams owned by the live event hub. A declined route leaves the
 response untouched. Keep finite request admission separate from live-stream limits.
+
+Local-service discovery reads, writes and deletes each marker/secret pair under one
+resource lock. Keep this coordination in the marker store so readers cannot observe a
+mixed pair or block the private writer's atomic replacement on Windows.
