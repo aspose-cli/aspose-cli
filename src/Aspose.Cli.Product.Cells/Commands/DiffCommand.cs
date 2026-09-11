@@ -33,14 +33,14 @@ internal static class DiffCommand
 
         var maxDiffsOption = new Option<int>("--max-diffs")
         {
-            Description = $"Maximum differing cells to list ({MinMaxDiffs}-{MaxMaxDiffs}).",
+            Description = $"Maximum differing cells to list across the entire workbook ({MinMaxDiffs}-{MaxMaxDiffs}).",
             DefaultValueFactory = _ => 1000,
         };
 
         var leftPassword = new PasswordOptions("--left-password", "the baseline file", allowStdin: false);
         var rightPassword = new PasswordOptions("--right-password", "the candidate file", allowStdin: false);
 
-        var diff = new Command("compare", "Compare two workbooks (values and, optionally, formulas).");
+        var diff = new Command("compare", "Compare stored workbook values and optional formula text; dates use raw serial numbers.");
         diff.Arguments.Add(leftArgument);
         diff.Arguments.Add(rightArgument);
         diff.Options.Add(compareOption);

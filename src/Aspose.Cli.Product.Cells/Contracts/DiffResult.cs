@@ -4,7 +4,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>
 /// Result of <c>aspose-cli cells compare</c>: a structural comparison of two workbooks.
-/// A comparison always succeeds (exit 0) — a difference is a successful result
+/// A completed comparison succeeds (exit 0) — a difference is a successful result
 /// reported in <see cref="Identical"/>, not a failure — which lets a caller (or
 /// the eval harness) use diff as a verifier.
 /// </summary>
@@ -78,7 +78,10 @@ public sealed record CellDiff
 /// <summary>One side of a <see cref="CellDiff"/>.</summary>
 public sealed record CellSide
 {
-    /// <summary>Cell value (string, number, boolean or null).</summary>
+    /// <summary>Stored type: empty, number, string, boolean or error. Dates are numbers.</summary>
+    public required string T { get; init; }
+
+    /// <summary>Canonical stored value; numbers use raw Excel serials regardless of date formatting.</summary>
     public object? V { get; init; }
 
     /// <summary>Formula, when present and in scope.</summary>

@@ -282,8 +282,8 @@ internal static class CellsContractSamples
                 {
                     Sheet = "Sales",
                     Cell = "B2",
-                    Left = new CellSide { V = 10d },
-                    Right = new CellSide { V = 12d },
+                    Left = new CellSide { T = CellValueTypes.Number, V = 10d },
+                    Right = new CellSide { T = CellValueTypes.Number, V = 12d },
                 },
             ],
             FormulaResultChanges =
@@ -292,8 +292,8 @@ internal static class CellsContractSamples
                 {
                     Sheet = "Sales",
                     Cell = "C2",
-                    Left = new CellSide { V = 20d, F = "=B2*2" },
-                    Right = new CellSide { V = 24d, F = "=B2*2" },
+                    Left = new CellSide { T = CellValueTypes.Number, V = 20d, F = "=B2*2" },
+                    Right = new CellSide { T = CellValueTypes.Number, V = 24d, F = "=B2*2" },
                 },
             ],
             OtherChanges = [],
@@ -375,8 +375,8 @@ internal static class CellsContractSamples
                 Status = "modified",
                 Cells =
                 [
-                    new CellDiff { Cell = "B2", Left = new CellSide { V = 1200d }, Right = new CellSide { V = 1500d } },
-                    new CellDiff { Cell = "C2", Left = null, Right = new CellSide { V = 42d, F = "=A2*2" } },
+                    new CellDiff { Cell = "B2", Left = new CellSide { T = CellValueTypes.Number, V = 1200d }, Right = new CellSide { T = CellValueTypes.Number, V = 1500d } },
+                    new CellDiff { Cell = "C2", Left = null, Right = new CellSide { T = CellValueTypes.Number, V = 42d, F = "=A2*2" } },
                 ],
             },
         ],

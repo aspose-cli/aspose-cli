@@ -247,3 +247,9 @@ aspose-cli fonts check book.xlsx
 
 When a check fails and the fix is not obvious:
 `aspose-cli docs troubleshooting` maps every error code to its recovery.
+
+### Stored-value comparison
+
+Comparison uses exact stored values, independently of display formatting. Dates compare as raw Excel serial numbers, including across 1900/1904 date systems. Strings use ordinal equality; empty cells, empty strings, numbers, booleans and errors are distinct. Each nonempty comparison side carries required `t` and canonical `v`; a formula with an empty cache retains `t: "empty"` and `f`.
+
+The default `--compare formulas` compares stored values and formula text without recalculation. `--compare values` ignores formula text. `--max-diffs` limits listed cells across the whole workbook; the summary still counts every difference and `truncated` reports omitted entries. Enumeration is sparse and bounded across both files and all shared sheets. Budget exhaustion or cancellation fails the comparison instead of returning a partial total.

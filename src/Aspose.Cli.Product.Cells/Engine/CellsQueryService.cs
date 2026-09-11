@@ -105,7 +105,7 @@ internal sealed class CellsQueryService
         Workbook right = other.Workbook;
 
         DiffComparer.Result diff = DiffComparer.Compare(
-            left, right, includeFormulas: request.Scope == DiffScope.Formulas, request.MaxDiffs);
+            _resourceBudgets, left, right, includeFormulas: request.Scope == DiffScope.Formulas, request.MaxDiffs);
 
         return new DiffResult
         {

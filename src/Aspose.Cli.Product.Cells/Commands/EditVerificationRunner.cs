@@ -314,8 +314,7 @@ internal static class EditVerificationRunner
 
     private static bool HasUnchangedFormulaWithChangedResult(CellDiff cell) =>
         cell.Left?.F is { } formula &&
-        string.Equals(formula, cell.Right?.F, StringComparison.Ordinal) &&
-        !Equals(cell.Left?.V, cell.Right?.V);
+        string.Equals(formula, cell.Right?.F, StringComparison.Ordinal);
 
     private static VerificationIssue Issue(string fallbackCode, string stage, Exception ex) => ex switch
     {

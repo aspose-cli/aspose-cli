@@ -69,11 +69,19 @@
     },
     "side": {
       "type": "object",
-      "description": "A cell value and, in scope, its formula. Absent when the cell is empty on that side.",
+      "description": "Canonical stored value and optional formula. Dates are raw numeric serials; an absent empty side is omitted.",
+      "required": ["t"],
       "properties": {
+        "t": { "enum": ["empty", "number", "string", "boolean", "error"] },
         "v": { "type": ["string", "number", "boolean", "null"] },
         "f": { "type": "string" }
-      }
+      },
+      "oneOf": [
+        { "properties": { "t": { "const": "empty" }, "v": { "type": "null" } } },
+        { "required": ["v"], "properties": { "t": { "const": "number" }, "v": { "type": "number" } } },
+        { "required": ["v"], "properties": { "t": { "enum": ["string", "error"] }, "v": { "type": "string" } } },
+        { "required": ["v"], "properties": { "t": { "const": "boolean" }, "v": { "type": "boolean" } } }
+      ]
     }
   }
 }
