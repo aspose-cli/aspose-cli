@@ -31,6 +31,14 @@ Commercial SDK tests must remain valid in licensed and evaluation modes. Preserv
 
 Assess relevant shared defect reports independently; entire platform trees do not require synchronization.
 
+## JSON input defaults
+
+Verify optional input defaults through the production source-generated serializer, including omitted
+fields and explicit `false`, `0` and `null`. CLR construction alone does not test the wire contract.
+For new immutable input records, use optional constructor parameters for scalar defaults:
+the current .NET generator [does not preserve init-only property initializers](https://github.com/dotnet/runtime/issues/84484).
+Keep required-field and semantic validation in the owning product.
+
 ## Command parameter semantics
 
 Every string argument and string option, including arrays, must declare its input role at construction with `WithInput`: `InputKind.File` for document files, `InputKind.JsonSource` for file/inline/stdin JSON, or `InputKind.None` for ordinary values, output paths, directories and separately owned configuration or credentials. Numeric and boolean values default to `None`. Shared option factories own their declarations.

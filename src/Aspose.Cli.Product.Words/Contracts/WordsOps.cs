@@ -42,7 +42,7 @@ public sealed record WordsTarget
 }
 
 /// <summary>Replace literal or regex text within a bounded document scope.</summary>
-public sealed record ReplaceTextOp : WordsOp
+public sealed record ReplaceTextOp(string Scope = "body") : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "replace_text";
@@ -51,7 +51,6 @@ public sealed record ReplaceTextOp : WordsOp
     public bool Regex { get; init; }
     public bool MatchCase { get; init; }
     public bool WholeWord { get; init; }
-    public string Scope { get; init; } = "body";
     public int? MaxReplacements { get; init; }
 }
 
@@ -111,7 +110,7 @@ public sealed record InsertBreakOp : WordsOp
 }
 
 /// <summary>Insert a local image.</summary>
-public sealed record InsertImageOp : WordsOp
+public sealed record InsertImageOp(bool Inline = true) : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "insert_image";
@@ -120,7 +119,6 @@ public sealed record InsertImageOp : WordsOp
     public required string Path { get; init; }
     public double? Width { get; init; }
     public double? Height { get; init; }
-    public bool Inline { get; init; } = true;
 }
 
 /// <summary>Insert a table at a block boundary.</summary>
@@ -148,13 +146,12 @@ public sealed record SetTableCellOp : WordsOp
 }
 
 /// <summary>Insert and update a table of contents.</summary>
-public sealed record InsertTocOp : WordsOp
+public sealed record InsertTocOp(int MaxLevel = 3) : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "insert_toc";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
-    public int MaxLevel { get; init; } = 3;
 }
 
 /// <summary>Bookmark a paragraph's visible text.</summary>
@@ -188,11 +185,10 @@ public sealed record InsertFieldOp : WordsOp
 }
 
 /// <summary>Add a document section.</summary>
-public sealed record AddSectionOp : WordsOp
+public sealed record AddSectionOp(string Position = "end") : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "add_section";
-    public string Position { get; init; } = "end";
     public int? After { get; init; }
     public PageSetupInput? PageSetup { get; init; }
 }
@@ -233,35 +229,31 @@ public sealed record MarginInput
 }
 
 /// <summary>Replace a section header.</summary>
-public sealed record SetHeaderOp : WordsOp
+public sealed record SetHeaderOp(string Kind = "primary") : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "set_header";
     public int? Section { get; init; }
-    public string Kind { get; init; } = "primary";
     public IReadOnlyList<string>? Paragraphs { get; init; }
     public string? Markdown { get; init; }
 }
 
 /// <summary>Replace a section footer.</summary>
-public sealed record SetFooterOp : WordsOp
+public sealed record SetFooterOp(string Kind = "primary") : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "set_footer";
     public int? Section { get; init; }
-    public string Kind { get; init; } = "primary";
     public IReadOnlyList<string>? Paragraphs { get; init; }
     public string? Markdown { get; init; }
 }
 
 /// <summary>Configure page-number fields.</summary>
-public sealed record SetPageNumbersOp : WordsOp
+public sealed record SetPageNumbersOp(string Location = "footer", string Alignment = "center") : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "set_page_numbers";
     public int? Section { get; init; }
-    public string Location { get; init; } = "footer";
-    public string Alignment { get; init; } = "center";
     public string? Format { get; init; }
     public int? Start { get; init; }
 }
@@ -406,12 +398,11 @@ public sealed record RemoveCommentsOp : WordsOp
 }
 
 /// <summary>Append a local document.</summary>
-public sealed record AppendDocumentOp : WordsOp
+public sealed record AppendDocumentOp(string ImportFormatMode = "keepSource") : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "append_document";
     public required string Path { get; init; }
-    public string ImportFormatMode { get; init; } = "keepSource";
 }
 
 /// <summary>Run a simple or region mail merge.</summary>
@@ -425,11 +416,10 @@ public sealed record MailMergeOp : WordsOp
 }
 
 /// <summary>Update TOC or all document fields and page layout.</summary>
-public sealed record UpdateFieldsOp : WordsOp
+public sealed record UpdateFieldsOp(string What = "all") : WordsOp
 {
     /// <inheritdoc />
     public override string OpName => "update_fields";
-    public string What { get; init; } = "all";
 }
 
 /// <summary>Registry of the v2 Words operation vocabulary.</summary>

@@ -324,6 +324,20 @@ public abstract class ProductContractTests<TModule>
         }
     }
 
+
+    /// <summary>Checks omitted and explicit operation fields through the production JSON metadata.</summary>
+    protected static void AssertOperationDefaults<TOperation>(string input, string expected)
+    {
+        JsonSerializerOptions options = new TModule().Define().Json!.LocalOptions;
+        TOperation operation = JsonSerializer.Deserialize<TOperation>(input, options)!;
+        JsonObject actual = JsonSerializer.SerializeToNode(operation, options)!.AsObject();
+        foreach ((string name, JsonNode? value) in JsonNode.Parse(expected)!.AsObject())
+        {
+            Assert.True(JsonNode.DeepEquals(value, actual[name]),
+                $"Field '{name}' in {input}: expected {value}, actual {actual[name]}.");
+        }
+    }
+
     /// <summary>Ensures all embedded product schemas parse and identify their current resources.</summary>
     [Fact]
     public void EveryCurrentSchema_ParsesAndHasCanonicalIdentity()

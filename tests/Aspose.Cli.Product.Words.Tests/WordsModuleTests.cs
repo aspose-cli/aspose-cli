@@ -85,4 +85,20 @@ public sealed class WordsModuleTests
 
     private static byte[] OpenDocument() => ProductRoutingContract.ZipMarker(
         "application/vnd.oasis.opendocument.text");
+
+    [Theory]
+    [InlineData("""{"op":"replace_text","find":"a","replace":"b"}""", """{"scope":"body"}""")]
+    [InlineData("""{"op":"insert_image","at":{"block":1},"position":"after","path":"image.png"}""", """{"inline":true}""")]
+    [InlineData("""{"op":"insert_toc","at":{"block":1},"position":"after"}""", """{"maxLevel":3}""")]
+    [InlineData("""{"op":"add_section"}""", """{"position":"end"}""")]
+    [InlineData("""{"op":"set_header","paragraphs":["Header"]}""", """{"kind":"primary"}""")]
+    [InlineData("""{"op":"set_footer","paragraphs":["Footer"]}""", """{"kind":"primary"}""")]
+    [InlineData("""{"op":"set_page_numbers"}""", """{"location":"footer","alignment":"center"}""")]
+    [InlineData("""{"op":"append_document","path":"other.docx"}""", """{"importFormatMode":"keepSource"}""")]
+    [InlineData("""{"op":"update_fields"}""", """{"what":"all"}""")]
+    [InlineData("""{"op":"insert_image","at":{"block":1},"position":"after","path":"image.png","inline":false}""", """{"inline":false}""")]
+    [InlineData("""{"op":"insert_toc","at":{"block":1},"position":"after","maxLevel":0}""", """{"maxLevel":0}""")]
+    [InlineData("""{"op":"replace_text","find":"a","replace":"b","scope":null}""", """{"scope":null}""")]
+    public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>
+        AssertOperationDefaults<WordsOp>(input, expected);
 }

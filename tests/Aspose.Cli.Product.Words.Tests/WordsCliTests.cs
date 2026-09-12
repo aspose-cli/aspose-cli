@@ -30,7 +30,9 @@ public sealed class WordsCliTests : IDisposable
             """
             {
               "ops": [
-                { "op": "set_text", "at": { "block": 2 }, "text": "Updated clause." }
+                { "op": "set_text", "at": { "block": 2 }, "text": "Updated clause." },
+                { "op": "insert_toc", "at": { "block": 2 }, "position": "after" },
+                { "op": "set_header", "paragraphs": ["Document header"] }
               ]
             }
             """;
@@ -47,6 +49,14 @@ public sealed class WordsCliTests : IDisposable
         Assert.Equal(
             "Updated clause.",
             JsonNode.Parse(read.StdOut)!["blocks"]![0]!["text"]!.GetValue<string>());
+        var reopened = new Document(_workspace.File("contract.docx"));
+        Assert.Contains(reopened.Range.Fields.Cast<Aspose.Words.Fields.Field>(),
+            field => field.Type == Aspose.Words.Fields.FieldType.FieldTOC
+                && field.GetFieldCode().Contains("1-3", StringComparison.Ordinal));
+        Assert.Contains("Document header",
+            reopened.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary].GetText(),
+            StringComparison.Ordinal);
+
     }
 
     [Fact]
