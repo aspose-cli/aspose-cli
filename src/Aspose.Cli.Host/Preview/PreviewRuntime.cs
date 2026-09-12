@@ -410,25 +410,6 @@ internal static class PreviewRuntime
         }
     }
 
-    public static void OpenIfRequested(bool open, bool once, string url, bool quiet)
-    {
-        if (!open)
-        {
-            return;
-        }
-
-        if (once)
-        {
-            if (!quiet)
-            {
-                Console.Error.WriteLine("preview: --open is ignored with --once (the server exits immediately).");
-            }
-
-            return;
-        }
-
-        OpenBrowser(url, quiet);
-    }
     public static void OpenBrowser(string url, bool quiet)
     {
         try

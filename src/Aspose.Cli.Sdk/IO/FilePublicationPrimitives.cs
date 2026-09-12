@@ -282,13 +282,6 @@ internal sealed record FilePublicationSnapshot(
                     || other.PhysicalIdentity is null
                     || PhysicalIdentity.Value == other.PhysicalIdentity.Value));
 
-    public bool FullyMatches(string path)
-    {
-        FilePublicationSnapshot current = Capture(path);
-        return ContentEquals(current)
-            && (!Exists || Metadata is null || Metadata.Matches(path));
-    }
-
     public bool IsStructurallyValid() =>
         Exists
             ? Length >= 0

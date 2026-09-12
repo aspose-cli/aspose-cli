@@ -54,22 +54,7 @@ internal sealed class AppDocumentSession : IDisposable
 
     public string? FileName => Read(static lease => lease.FileName);
 
-    public string? PreviewUrl => Read(static lease => lease.Url);
-
     public string? ProductId => Read(static lease => lease.ProductId);
-
-    public string? ActiveView => Read(static lease => lease.View);
-
-    public bool UploadedCopy
-    {
-        get
-        {
-            lock (_gate)
-            {
-                return _current?.UploadedCopy ?? false;
-            }
-        }
-    }
 
     public string? OriginalFilePath
     {
@@ -448,7 +433,6 @@ internal sealed class AppDocumentSession : IDisposable
         public bool UploadedCopy => State.UploadedCopy;
         public string ProductId => State.ProductId;
         public string View => State.View;
-        public string Url => State.PreviewUrl;
         public void Dispose() => Runtime.Dispose();
     }
 }

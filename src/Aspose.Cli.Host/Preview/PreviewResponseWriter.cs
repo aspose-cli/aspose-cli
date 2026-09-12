@@ -18,16 +18,6 @@ internal sealed class PreviewResponseWriter
             scriptNonce,
             sameOriginMount);
 
-    public void Redirect(
-        HttpListenerResponse response,
-        string location)
-    {
-        response.StatusCode = 302;
-        response.RedirectLocation = location;
-        response.Headers["Cache-Control"] = "no-store";
-        response.Close();
-    }
-
     public void Text(
         HttpListenerResponse response,
         int status,
