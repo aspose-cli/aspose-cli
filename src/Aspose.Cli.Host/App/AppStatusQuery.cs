@@ -22,6 +22,7 @@ internal sealed class AppStatusQuery
     private readonly IReadOnlyDictionary<
         string,
         IReadOnlyList<AppPreviewView>> _previewViews;
+    private readonly object _fontDiagnosticGate = new();
     private AppDiagnosticView? _fontDiagnostic;
     private string? _fontDiagnosticProduct;
     private AppDiagnosticView? _storageDiagnostic;
@@ -111,18 +112,21 @@ internal sealed class AppStatusQuery
             session?.UploadedCopy ?? false,
             session?.PreviewUrl,
             settings.RecentFiles.Select(RecentView).ToArray(),
-            Diagnostics(license),
+            Diagnostics(product, license),
             _products);
     }
 
     internal void InvalidateFontDiagnostic()
     {
-        _fontDiagnostic = null;
-        _fontDiagnosticProduct = null;
+        lock (_fontDiagnosticGate)
+        {
+            _fontDiagnostic = null;
+            _fontDiagnosticProduct = null;
+        }
     }
 
     private IReadOnlyList<AppDiagnosticView> Diagnostics(
-        AppLicenseView license)
+        ProductDefinition product, AppLicenseView license)
     {
         string platform =
             $"{RuntimeInformation.OSDescription}; {RuntimeInformation.ProcessArchitecture}";
@@ -154,58 +158,57 @@ internal sealed class AppStatusQuery
                     ? $"licensed ({product.Source})"
                     : "evaluation mode",
                 product.Hint)));
-        diagnostics.Add(FontDiagnostic());
+        diagnostics.Add(FontDiagnostic(product));
         diagnostics.Add(
             _storageDiagnostic ??= WritableConfigCheck());
         return diagnostics;
     }
 
-    private AppDiagnosticView FontDiagnostic()
+    private AppDiagnosticView FontDiagnostic(ProductDefinition product)
     {
-        ProductDefinition product =
-            _catalog.ResolveById(
-                _sessions.ProductId
-                ?? _catalog.DefaultProductId());
-        if (!product.Manifest.Engine.SupportsFontDiagnostics)
+        lock (_fontDiagnosticGate)
         {
-            return new AppDiagnosticView(
-                "Fonts",
-                "warn",
-                $"{product.Manifest.Id}: font diagnostics are not available",
-                "Verify font availability and substitution on the target system when visual fidelity matters.");
-        }
-        if (_fontDiagnostic is not null
-            && string.Equals(
-                _fontDiagnosticProduct,
-                product.Manifest.Id,
-                StringComparison.Ordinal))
-        {
+            if (!product.Manifest.Engine.SupportsFontDiagnostics)
+            {
+                return new AppDiagnosticView(
+                    "Fonts",
+                    "warn",
+                    $"{product.Manifest.Id}: font diagnostics are not available",
+                    "Verify font availability and substitution on the target system when visual fidelity matters.");
+            }
+            if (_fontDiagnostic is not null
+                && string.Equals(
+                    _fontDiagnosticProduct,
+                    product.Manifest.Id,
+                    StringComparison.Ordinal))
+            {
+                return _fontDiagnostic;
+            }
+
+            try
+            {
+                CommandContext context = _licenses.CreatePreviewContext();
+                FontListResult fonts =
+                    context.Activate(product).FontEnvironment!.ListFonts();
+                string fallback =
+                    fonts.DefaultFont ?? "engine default";
+                _fontDiagnostic = new AppDiagnosticView(
+                    "Fonts",
+                    "ok",
+                    $"{product.Manifest.Id}: {fonts.Sources.Count} source(s); fallback {fallback}");
+            }
+            catch (Exception)
+            {
+                _fontDiagnostic = new AppDiagnosticView(
+                    "Fonts",
+                    "warn",
+                    $"{product.Manifest.Id}: font discovery is unavailable",
+                    "Repair the license configuration, then reopen Settings.");
+            }
+
+            _fontDiagnosticProduct = product.Manifest.Id;
             return _fontDiagnostic;
         }
-
-        try
-        {
-            CommandContext context = _licenses.CreatePreviewContext();
-            FontListResult fonts =
-                context.Activate(product).FontEnvironment!.ListFonts();
-            string fallback =
-                fonts.DefaultFont ?? "engine default";
-            _fontDiagnostic = new AppDiagnosticView(
-                "Fonts",
-                "ok",
-                $"{product.Manifest.Id}: {fonts.Sources.Count} source(s); fallback {fallback}");
-        }
-        catch (Exception)
-        {
-            _fontDiagnostic = new AppDiagnosticView(
-                "Fonts",
-                "warn",
-                $"{product.Manifest.Id}: font discovery is unavailable",
-                "Repair the license configuration, then reopen Settings.");
-        }
-
-        _fontDiagnosticProduct = product.Manifest.Id;
-        return _fontDiagnostic;
     }
 
     private static AppDiagnosticView WritableConfigCheck()
