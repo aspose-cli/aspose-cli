@@ -83,7 +83,9 @@ internal static class WordsTableOpHandlers
 
         Run? firstRun = paragraph.GetChildNodes(NodeType.Run, true).Cast<Run>()
             .FirstOrDefault(static run => !run.IsDeleteRevision);
-        Run? replacement = firstRun is null ? null : (Run)firstRun.Clone(true);
+        var builder = new DocumentBuilder((Document)table.Document);
+        builder.MoveTo(firstRun is null ? paragraph : firstRun);
+        builder.PushFont();
         foreach (Node child in cell.GetChildNodes(NodeType.Any, false).Cast<Node>().ToArray())
         {
             if (child != paragraph)
@@ -93,18 +95,9 @@ internal static class WordsTableOpHandlers
         }
 
         paragraph.RemoveAllChildren();
-        if (replacement is not null)
-        {
-            paragraph.AppendChild(replacement);
-            replacement.Text = op.Text;
-        }
-        else
-        {
-            var builder = new DocumentBuilder((Document)table.Document);
-            builder.MoveTo(paragraph);
-            builder.Write(op.Text);
-        }
-
+        builder.MoveTo(paragraph);
+        builder.PopFont();
+        builder.Write(op.Text);
         return 1;
     }
 

@@ -301,8 +301,9 @@ internal sealed class SlidesProductionService
                 }
 
                 using IImage image = slide.GetImage(scale, scale);
+                using FileStream outputStream = File.Create(temp);
                 image.Save(
-                    temp,
+                    outputStream,
                     request.TargetFormatId == "png" ? ImageFormat.Png : ImageFormat.Jpeg,
                     quality: 92);
             });

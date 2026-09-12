@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Export;
@@ -66,6 +67,87 @@ public sealed class SlidesRasterConversionTests
         Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "oversized.s*"));
     }
 
+    [Theory]
+    [InlineData("png", false)]
+    [InlineData("jpeg", false)]
+    [InlineData("png", true)]
+    [InlineData("jpeg", true)]
+    public void RasterOutput_UsesManagedStreamsForLongPublicationPaths(string format, bool convert)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 1);
+        string directory = fixture.File(Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90)));
+        Directory.CreateDirectory(directory);
+        string output = Path.Combine(directory, "slide" + SlidesFormats.Extension(format));
+        Assert.True(output.Length > 260);
+
+        if (convert)
+        {
+            fixture.Engine.Convert(input, new PresentationConvertRequest
+            {
+                TargetFormatId = format,
+                OutputPath = output,
+            });
+        }
+        else
+        {
+            fixture.Engine.Render(input, new PresentationRenderRequest
+            {
+                TargetFormatId = format,
+                OutputPath = output,
+            });
+        }
+
+        using FileStream stream = File.OpenRead(output);
+        using IImage image = Images.FromStream(stream);
+        Assert.Equal(1920, image.Width);
+        Assert.Equal(1440, image.Height);
+        Assert.Empty(Directory.GetFiles(directory, "*.stage"));
+    }
+    [Fact]
+    public void VerifiedEdit_WritesLongPublicationPathsThroughRealCli()
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
+        CliResult create = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--size", "16x9", "--output", "json");
+        Assert.True(create.ExitCode == 0, create.StdErr);
+        File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"set_notes","slide":1,"text":"Review note"}]}""");
+        string directory = workspace.File(Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90)));
+        Directory.CreateDirectory(directory);
+        string output = Path.Combine(directory, "verified.pptx");
+        Assert.True(output.Length > 260);
+        CliResult edited = workspace.Run("slides", "edit", "deck.pptx", "--ops", "ops.json", "--out", output, "--verify", "--output", "json");
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;
+        Assert.True(verification["ok"]!.GetValue<bool>(), verification.ToJsonString());
+        JsonNode rendered = Assert.Single(verification["renders"]!.AsArray())!;
+        using FileStream stream = File.OpenRead(rendered["output"]!["path"]!.GetValue<string>());
+        using IImage image = Images.FromStream(stream);
+        Assert.Equal(1440, image.Width);
+        Assert.Equal(810, image.Height);
+    }
+    [Fact]
+    public void Review_RendersLongPublicationPathsThroughRealCli()
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
+        CliResult create = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--size", "16x9", "--output", "json");
+        Assert.True(create.ExitCode == 0, create.StdErr);
+        string directory = workspace.File(Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90)));
+        Directory.CreateDirectory(directory);
+        string output = Path.Combine(directory, "review");
+        Assert.True(output.Length > 260);
+        CliResult reviewed = workspace.Run("review", "deck.pptx", "--out", output, "--max-items", "1", "--output", "json");
+        Assert.True(reviewed.ExitCode == 0, reviewed.StdErr);
+        JsonNode manifest = JsonNode.Parse(reviewed.StdOut)!;
+        string relativeImage = Assert.Single(manifest["artifacts"]!.AsArray(),
+            static artifact => artifact!["mediaType"]!.GetValue<string>() == "image/png")!["path"]!.GetValue<string>();
+        string imagePath = Path.Combine(output, relativeImage);
+        using FileStream stream = File.OpenRead(imagePath);
+        using IImage image = Images.FromStream(stream);
+        Assert.Equal(1600, image.Width);
+        Assert.Equal(900, image.Height);
+    }
     [Theory]
     [InlineData("png")]
     [InlineData("jpeg")]

@@ -1,3 +1,4 @@
+using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
@@ -6,11 +7,17 @@ using Xunit;
 namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>Text export must never substitute another worksheet silently.</summary>
-public sealed class CellsTextSelectionTests : IClassFixture<CellsFixture>
+public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFixture>
 {
     private readonly CellsFixture _fixture;
 
-    public CellsTextSelectionTests(CellsFixture fixture) => _fixture = fixture;
+    private readonly CellsTextSelectionFixture _sources;
+
+    public CellsTextSelectionTests(CellsTextSelectionFixture fixture)
+    {
+        _sources = fixture;
+        _fixture = fixture.Runtime;
+    }
 
     [Theory]
     [InlineData("csv")]
@@ -18,7 +25,7 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsFixture>
     [InlineData("md")]
     public void Convert_SelectedNonFirstSheet_ExportsItOrRefusesEvaluationBeforePublication(string format)
     {
-        string source = SourceWorkbook($"text-selection-{format}.xlsx");
+        string source = _sources.DashboardActive;
         string output = _fixture.Temp.File($"text-selection.{format}");
         byte[] sentinel = "existing report must remain intact"u8.ToArray();
         File.WriteAllBytes(output, sentinel);
@@ -61,7 +68,7 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsFixture>
     [InlineData("md")]
     public void Convert_FirstSheet_RemainsAvailableWithTruthfulContent(string format)
     {
-        string source = SourceWorkbook($"text-first-{format}.xlsx");
+        string source = _sources.DashboardActive;
         string output = _fixture.Temp.File($"text-first.{format}");
         ConvertResult result = _fixture.Engine.Convert(source, new ConvertRequest
         {
@@ -83,13 +90,7 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsFixture>
     [InlineData("md")]
     public void Convert_DefaultSelection_ReportsTheSheetActuallyExported(string format)
     {
-        string source = SourceWorkbook($"text-default-{format}.xlsx");
-        source = _fixture.Engine.ApplyOps(source, OpsParser.Parse(
-            """{ "ops": [{ "op": "set_active_sheet", "sheet": "Detail" }] }"""), new EditRequest
-            {
-                OutputPath = _fixture.Temp.File($"text-default-active-{format}.xlsx"),
-                Overwrite = true,
-            }).Output!.Path;
+        string source = _sources.DetailActive;
         string output = _fixture.Temp.File($"text-default.{format}");
         ConvertResult result = _fixture.Engine.Convert(source, new ConvertRequest
         {
@@ -106,26 +107,37 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsFixture>
         Assert.Contains(result.Warnings!, warning => warning.Code == "SHEETS_DROPPED"
             && warning.Message.Contains($"'{expectedSheet}'", StringComparison.Ordinal));
     }
-    private string SourceWorkbook(string output)
+}
+
+/// <summary>Immutable inputs shared by the text-export cases; outputs remain per test.</summary>
+public sealed class CellsTextSelectionFixture : IDisposable
+{
+    internal CellsFixture Runtime { get; } = new();
+    internal string DashboardActive { get; }
+    internal string DetailActive { get; }
+
+    public CellsTextSelectionFixture()
     {
-        string source = _fixture.Engine.CreateWorkbook(new NewWorkbookRequest
-        {
-            OutputPath = _fixture.Temp.File(output),
-            SheetNames = ["Dashboard", "Detail"],
-            Overwrite = true,
-        }).Output.Path;
-        return _fixture.Engine.ApplyOps(source, OpsParser.Parse(
-            """
-            { "ops": [
-              { "op": "set_values", "sheet": "Dashboard", "range": "A1", "values": [["Executive overview",1276.5]] },
-              { "op": "set_values", "sheet": "Detail", "range": "A1",
-                "values": [["Order","Net revenue"],["SO-001",1234.5],["SO-002",42]] },
-              { "op": "set_active_sheet", "sheet": "Dashboard" }
-            ] }
-            """), new EditRequest
-            {
-                OutputPath = _fixture.Temp.File($"seeded-{output}"),
-                Overwrite = true,
-            }).Output!.Path;
+        Runtime.Gate.EnsureApplied();
+        using var workbook = new Workbook();
+        Worksheet dashboard = workbook.Worksheets[0];
+        dashboard.Name = "Dashboard";
+        dashboard.Cells["A1"].PutValue("Executive overview");
+        dashboard.Cells["B1"].PutValue(1276.5);
+        Worksheet detail = workbook.Worksheets.Add("Detail");
+        detail.Cells["A1"].PutValue("Order");
+        detail.Cells["B1"].PutValue("Net revenue");
+        detail.Cells["A2"].PutValue("SO-001");
+        detail.Cells["B2"].PutValue(1234.5);
+        detail.Cells["A3"].PutValue("SO-002");
+        detail.Cells["B3"].PutValue(42);
+        DashboardActive = Runtime.Temp.File("text-source-dashboard.xlsx");
+        DetailActive = Runtime.Temp.File("text-source-detail.xlsx");
+        workbook.Worksheets.ActiveSheetIndex = dashboard.Index;
+        workbook.Save(DashboardActive, SaveFormat.Xlsx);
+        workbook.Worksheets.ActiveSheetIndex = detail.Index;
+        workbook.Save(DetailActive, SaveFormat.Xlsx);
     }
+
+    public void Dispose() => Runtime.Dispose();
 }

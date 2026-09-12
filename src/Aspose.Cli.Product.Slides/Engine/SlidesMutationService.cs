@@ -349,7 +349,8 @@ internal sealed class SlidesMutationService
                 long size = _writer.Write(path, overwrite: true, temp =>
                 {
                     using IImage image = slide.GetImage(2f, 2f);
-                    image.Save(temp, ImageFormat.Png);
+                    using FileStream outputStream = File.Create(temp);
+                    image.Save(outputStream, ImageFormat.Png);
                 });
                 renders.Add(new SlideRenderOutput
                 {

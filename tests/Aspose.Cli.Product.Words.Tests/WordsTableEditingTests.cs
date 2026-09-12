@@ -78,6 +78,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         var original = new Document(input);
         Cell originalCell = FirstTable(original).FirstRow.FirstCell;
         string originalText = originalCell.GetText();
+        string originalRunText = string.Concat(originalCell.GetChildNodes(NodeType.Run, true).Cast<Run>().Select(static run => run.Text));
         Paragraph retainedParagraph = originalCell.LastParagraph;
         Font expectedFont = retainedParagraph.Runs.Count == 0
             ? retainedParagraph.ParagraphBreakFont
@@ -106,6 +107,12 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         if (trackChanges)
         {
             Assert.NotEmpty(changed.Revisions);
+            Assert.Equal(originalRunText, string.Concat(
+                FirstTable(changed).FirstRow.FirstCell.GetChildNodes(NodeType.Run, true)
+                    .Cast<Run>().Where(static run => run.IsDeleteRevision).Select(static run => run.Text)));
+            Assert.Equal("30 Oct 2026", string.Concat(
+                FirstTable(changed).FirstRow.FirstCell.GetChildNodes(NodeType.Run, true)
+                    .Cast<Run>().Where(static run => run.IsInsertRevision && !run.IsDeleteRevision).Select(static run => run.Text)));
             Assert.Equal("30 Oct 2026", string.Concat(
                 FirstTable(changed).FirstRow.FirstCell.GetChildNodes(NodeType.Run, true)
                     .Cast<Run>().Where(static run => !run.IsDeleteRevision).Select(static run => run.Text)));
