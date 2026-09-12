@@ -168,7 +168,10 @@ internal static class PdfOpsParser
                 break;
             case SetFormFieldOp value: Require(value.Name.Length > 0, index, op, "name is required"); break;
             case FlattenFormsOp value: Require(value.All != (value.Fields is { Count: > 0 }), index, op, "choose all or a non-empty fields list"); break;
-            case EncryptPdfOp value: Require(value.OwnerPasswordEnv.Length > 0, index, op, "ownerPasswordEnv is required"); break;
+            case EncryptPdfOp value:
+                Require(value.OwnerPasswordEnv.Length > 0, index, op, "ownerPasswordEnv is required");
+                Require(value.Permissions is not null, index, op, "permissions must be an object");
+                break;
             case OptimizePdfOp value:
                 Require(value.DownsampleImagesDpi is null or >= 36 and <= 1200, index, op, "downsampleImagesDpi must be 36-1200");
                 Require(value.ImageQuality is null or >= 1 and <= 100, index, op, "imageQuality must be 1-100");

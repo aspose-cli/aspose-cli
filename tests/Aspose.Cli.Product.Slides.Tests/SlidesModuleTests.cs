@@ -43,4 +43,22 @@ public sealed class SlidesModuleTests
 
     private static byte[] OpenDocument() => ProductRoutingContract.ZipMarker(
         "application/vnd.oasis.opendocument.presentation");
+
+    [Theory]
+    [InlineData("""{"op":"append_presentation","path":"other.pptx"}""", """{"masterPolicy":"keep-source"}""")]
+    [InlineData("""{"op":"replace_text","find":"a","replace":"b"}""", """{"scope":"all"}""")]
+    [InlineData("""{"op":"set_slide_size","size":"800x600pt"}""", """{"scaleContent":true}""")]
+    [InlineData("""{"op":"set_slide_size","size":"800x600pt","scaleContent":false}""", """{"scaleContent":false}""")]
+    [InlineData("""{"op":"replace_text","find":"a","replace":"b","scope":null}""", """{"scope":null}""")]
+    public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>
+        AssertOperationDefaults<SlidesOp>(input, expected);
+
+    [Theory]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shape":1}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shape":1,"style":null}""")]
+    public void ShapeStyle_RequiresTheStyleObject(string input)
+    {
+        Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            SlidesOpsParser.Parse("{\"ops\":[" + input + "]}"));
+    }
 }

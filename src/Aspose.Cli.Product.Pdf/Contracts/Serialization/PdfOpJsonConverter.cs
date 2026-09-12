@@ -48,28 +48,8 @@ internal sealed class PdfOpJsonConverter : JsonConverter<PdfOp>
 
     private static PdfOp ApplyWireDefaults(PdfOp value, JsonElement root) => value switch
     {
-        InsertBlankPageOp or CropPagesOp => ApplyPageDefaults(value, root),
-        AddWatermarkTextOp or AddWatermarkImageOp or AddPageNumbersOp
-            or AddHeaderTextOp or AddFooterTextOp or RedactTextOp or RedactAreaOp
-            => ApplyContentDefaults(value, root),
-        _ => ApplyDocumentDefaults(value, root),
-    };
-
-    private static PdfOp ApplyPageDefaults(PdfOp value, JsonElement root) => value switch
-    {
         InsertBlankPageOp op when Missing(root, "size") => op with { Size = "A4" },
         CropPagesOp op when Missing(root, "box") => op with { Box = "crop" },
-        _ => value,
-    };
-
-    private static PdfOp ApplyContentDefaults(PdfOp value, JsonElement root) => value switch
-    {
-        AddWatermarkTextOp or AddWatermarkImageOp => ApplyWatermarkDefaults(value, root),
-        _ => ApplyTextAndRedactionDefaults(value, root),
-    };
-
-    private static PdfOp ApplyWatermarkDefaults(PdfOp value, JsonElement root) => value switch
-    {
         AddWatermarkTextOp op => op with
         {
             Size = Missing(root, "size") ? 48 : op.Size,
@@ -84,11 +64,6 @@ internal sealed class PdfOpJsonConverter : JsonConverter<PdfOp>
             Scale = Missing(root, "scale") ? 0.5 : op.Scale,
             Layer = Missing(root, "layer") ? "over" : op.Layer,
         },
-        _ => value,
-    };
-
-    private static PdfOp ApplyTextAndRedactionDefaults(PdfOp value, JsonElement root) => value switch
-    {
         AddPageNumbersOp op => op with
         {
             Format = Missing(root, "format") ? "Page {n} of {N}" : op.Format,
@@ -99,11 +74,6 @@ internal sealed class PdfOpJsonConverter : JsonConverter<PdfOp>
         AddFooterTextOp op when Missing(root, "position") => op with { Position = "bottom-center" },
         RedactTextOp op when Missing(root, "fillColor") => op with { FillColor = "#000000" },
         RedactAreaOp op when Missing(root, "fillColor") => op with { FillColor = "#000000" },
-        _ => value,
-    };
-
-    private static PdfOp ApplyDocumentDefaults(PdfOp value, JsonElement root) => value switch
-    {
         RemoveMetadataOp op => op with
         {
             Xmp = Missing(root, "xmp") || op.Xmp,

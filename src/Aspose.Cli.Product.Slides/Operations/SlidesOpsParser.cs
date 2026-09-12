@@ -184,7 +184,7 @@ internal static class SlidesOpsParser
             case SetShapeStyleOp value:
                 ShapeTarget(value, index);
                 Style(value.Style, index, op);
-                Require(HasStyle(value.Style), index, op, "style must set at least one property");
+                Require(value.Style is not null && HasStyle(value.Style), index, op, "style must set at least one property");
                 break;
         }
     }
