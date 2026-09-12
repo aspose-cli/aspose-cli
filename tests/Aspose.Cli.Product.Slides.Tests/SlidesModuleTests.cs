@@ -14,6 +14,19 @@ public sealed class SlidesModuleTests
         SlidesContractSamples.Inputs;
 
     [Fact]
+    public void OperationBatch_RejectsNullOperations()
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            SlidesOpsParser.Parse("""{"ops":null}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    [Fact]
+    public void OperationObjects_RejectUnknownNestedFields() =>
+        AssertOperationObjectIsStrict<SlidesOp>(
+            """{"op":"set_shape_style","slide":1,"shape":1,"style":{"bold":true}}""", "style");
+
+    [Fact]
     public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
         ProductRoutingContract.AssertPositiveRoutesAsync<SlidesModule>(
             new Dictionary<string, byte[]>(StringComparer.Ordinal)

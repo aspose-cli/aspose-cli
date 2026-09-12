@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
 
-/// <summary>Product-neutral black-box coverage for the executable contract.</summary>
+/// <summary>Black-box coverage for the commercial executable contract.</summary>
 [Collection("Local service lifecycle")]
 public sealed class CliContractTests : IDisposable
 {
@@ -38,23 +38,17 @@ public sealed class CliContractTests : IDisposable
             string,
             (string DefaultView, string[] Views)>(StringComparer.Ordinal)
         {
-            ["cells"] = IsFree
-                ? ("workbook", ["workbook"])
-                : ("workbook", ["workbook", "sheet"]),
+            ["cells"] = ("workbook", ["workbook", "sheet"]),
             ["pdf"] = ("pages", ["pages"]),
-            ["slides"] = IsFree
-                ? ("rendered", ["rendered", "timeline"])
-                : ("slides", ["slides"]),
-            ["words"] = IsFree
-                ? ("pages", ["pages"])
-                : ("document", ["document"]),
+            ["slides"] = ("slides", ["slides"]),
+            ["words"] = ("document", ["document"]),
         };
         CliResult result = _workspace.Run("capabilities", "--output", "json");
 
         Assert.Equal(0, result.ExitCode);
         JsonNode capabilities = Parse(result.StdOut);
         Assert.Equal(
-            IsFree ? "free" : "commercial",
+            "commercial",
             capabilities["edition"]!.GetValue<string>());
         JsonArray products = capabilities["products"]!.AsArray();
         string[] schemas = capabilities["schemas"]!.AsArray()
@@ -99,22 +93,8 @@ public sealed class CliContractTests : IDisposable
                     schemas);
                 Assert.True(
                     operation["atomicByDefault"]!.GetValue<bool>());
-                Assert.Equal(
-                    !IsFree || id is "cells" or "words" or "slides" or "pdf",
+                Assert.True(
                     operation["supportsDryRun"]!.GetValue<bool>());
-            }
-            if (IsFree)
-            {
-                JsonNode engine = product["engine"]!;
-                Assert.Equal("foss", engine["id"]!.GetValue<string>());
-                Assert.False(engine["licenseApplicable"]!.GetValue<bool>());
-                Assert.False(engine["licenseRequired"]!.GetValue<bool>());
-                Assert.Equal(
-                    id == "words",
-                    engine["supportsFontDiagnostics"]!.GetValue<bool>());
-                Assert.Equal(
-                    id == "words",
-                    engine["supportsExplicitFontProfiles"]!.GetValue<bool>());
             }
 
             (string defaultView, string[] views) = expectedPreviewViews[id];
@@ -135,33 +115,15 @@ public sealed class CliContractTests : IDisposable
             commands,
             static command => command!["path"]!.GetValue<string>() ==
                 "aspose-cli preview start");
-        if (IsFree)
-        {
-            Assert.DoesNotContain(
-                commands,
-                static command => command!["path"]!.GetValue<string>() ==
-                    "aspose-cli license");
-            Assert.DoesNotContain(
-                capabilities["diagnostics"]!.AsArray(),
-                diagnostic =>
-                    diagnostic!["code"]!.GetValue<string>().StartsWith(
-                        "LICENSE_",
-                        StringComparison.Ordinal)
-                    || diagnostic["code"]!.GetValue<string>() is
-                        "EVALUATION_LIMIT" or "EVAL_MODE");
-        }
-        else
-        {
-            Assert.Contains(
-                commands,
-                static command => command!["path"]!.GetValue<string>() ==
-                    "aspose-cli license");
-            JsonNode rootCommand = commands.Single(command =>
-                command!["path"]!.GetValue<string>() == "aspose-cli")!;
-            Assert.Contains(
-                rootCommand["options"]!.AsArray(),
-                option => option!["name"]!.GetValue<string>() == "--license");
-        }
+        Assert.Contains(
+            commands,
+            static command => command!["path"]!.GetValue<string>() ==
+                "aspose-cli license");
+        JsonNode rootCommand = commands.Single(command =>
+            command!["path"]!.GetValue<string>() == "aspose-cli")!;
+        Assert.Contains(
+            rootCommand["options"]!.AsArray(),
+            option => option!["name"]!.GetValue<string>() == "--license");
     }
 
     [Theory]
@@ -324,22 +286,11 @@ public sealed class CliContractTests : IDisposable
     {
         CliResult result = _workspace.Run("license", "status", "--output", "json");
 
-        if (IsFree)
-        {
-            Assert.Equal(2, result.ExitCode);
-            Assert.Equal(string.Empty, result.StdOut);
-            Assert.Contains(
-                "Unrecognized command or argument 'license'",
-                result.StdErr,
-                StringComparison.Ordinal);
-            return;
-        }
-
         Assert.Equal(0, result.ExitCode);
         JsonNode json = Parse(result.StdOut);
-        Assert.Equal(!IsFree, json["applicable"]!.GetValue<bool>());
+        Assert.True(json["applicable"]!.GetValue<bool>());
         Assert.Equal(
-            IsFree ? "not-applicable" : "evaluation",
+            "evaluation",
             json["mode"]!.GetValue<string>());
         Assert.Null(json["source"]);
     }
@@ -458,10 +409,9 @@ public sealed class CliContractTests : IDisposable
             Assert.False(string.IsNullOrWhiteSpace(
                 statusJson["editionName"]!.GetValue<string>()));
             Assert.Equal(
-                IsFree ? "license-free" : "licensed",
+                "licensed",
                 statusJson["experience"]!.GetValue<string>());
-            Assert.Equal(
-                !IsFree,
+            Assert.True(
                 statusJson["license"]!["applicable"]!
                     .GetValue<bool>());
             AssertAppProductsMatchCapabilities(
@@ -471,20 +421,6 @@ public sealed class CliContractTests : IDisposable
                 statusJson["recentFiles"]!.AsArray())!;
             Assert.Equal("cells", recent["productId"]!.GetValue<string>());
             Assert.Equal("workbook", recent["view"]!.GetValue<string>());
-
-            if (IsFree)
-            {
-                var fidelity = statusJson["products"]!.AsArray()
-                    .ToDictionary(
-                        static product => product!["id"]!.GetValue<string>(),
-                        static product => product!["preview"]!["fidelity"]!
-                            .GetValue<string>(),
-                        StringComparer.Ordinal);
-                Assert.Equal("rendered", fidelity["pdf"]);
-                Assert.Equal("rendered", fidelity["cells"]);
-                Assert.Equal("rendered", fidelity["slides"]);
-                Assert.Equal("rendered", fidelity["words"]);
-            }
 
             var previewUri = new Uri(
                 statusJson["previewUrl"]!.GetValue<string>());
@@ -621,14 +557,7 @@ public sealed class CliContractTests : IDisposable
         Assert.Contains("cli", names);
         Assert.Contains("runtime", names);
         Assert.Contains("resource-budgets", names);
-        if (IsFree)
-        {
-            Assert.DoesNotContain("license", names);
-        }
-        else
-        {
-            Assert.Contains("license", names);
-        }
+        Assert.Contains("license", names);
         Assert.Contains("output", names);
     }
 
@@ -644,9 +573,9 @@ public sealed class CliContractTests : IDisposable
             invalid,
             "--output",
             "json");
-        Assert.Equal(IsFree ? 2 : 7, install.ExitCode);
+        Assert.Equal(7, install.ExitCode);
         Assert.Equal(
-            IsFree ? "USAGE_ERROR" : "LICENSE_INVALID",
+            "LICENSE_INVALID",
             Parse(install.StdErr)["error"]!["code"]!.GetValue<string>());
 
         CliResult remove = _workspace.Run(
@@ -654,19 +583,10 @@ public sealed class CliContractTests : IDisposable
             "remove",
             "--output",
             "json");
-        Assert.Equal(IsFree ? 2 : 0, remove.ExitCode);
-        if (IsFree)
-        {
-            Assert.Equal(
-                "USAGE_ERROR",
-                Parse(remove.StdErr)["error"]!["code"]!.GetValue<string>());
-        }
-        else
-        {
-            Assert.Equal(
-                "evaluation",
-                Parse(remove.StdOut)["mode"]!.GetValue<string>());
-        }
+        Assert.Equal(0, remove.ExitCode);
+        Assert.Equal(
+            "evaluation",
+            Parse(remove.StdOut)["mode"]!.GetValue<string>());
     }
 
     [Fact]
@@ -950,7 +870,5 @@ public sealed class CliContractTests : IDisposable
             error["hint"]!.GetValue<string>(),
             StringComparison.Ordinal);
     }
-
-    private static bool IsFree => Aspose.Cli.Sdk.DistributionInfo.Edition == "foss";
 
 }

@@ -16,6 +16,19 @@ public sealed class WordsModuleTests
         WordsContractSamples.Inputs;
 
     [Fact]
+    public void OperationBatch_RejectsNullOperations()
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            WordsOpsParser.Parse("""{"ops":null}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    [Fact]
+    public void OperationObjects_RejectUnknownNestedFields() =>
+        AssertOperationObjectIsStrict<WordsOp>(
+            """{"op":"set_text","at":{"block":1},"text":"hello"}""", "at");
+
+    [Fact]
     public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
         ProductRoutingContract.AssertPositiveRoutesAsync<WordsModule>(
             new Dictionary<string, byte[]>(StringComparer.Ordinal)

@@ -553,7 +553,7 @@ foreach ($project in @(
     [void] $solution.AppendLine("    <Project Path=`"$project`" />")
 }
 [void] $solution.AppendLine('  </Folder>')
-[void] $solution.AppendLine("  <Folder Name=`"/$($layout.Slug)/`">")
+[void] $solution.AppendLine("  <Folder Name=`"/$($layout.Edition)/`">")
 [void] $solution.AppendLine("    <Project Path=`"src/Aspose.Cli/Aspose.Cli.csproj`" />")
 [void] $solution.AppendLine('  </Folder>')
 [void] $solution.AppendLine('  <Folder Name="/products/">')

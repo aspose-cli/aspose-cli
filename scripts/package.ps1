@@ -94,23 +94,6 @@ function Invoke-VersionDiscovery {
     finally { $process.Dispose() }
 }
 
-function Get-PayloadRelativePath {
-    param(
-        [Parameter(Mandatory)][string] $Root,
-        [Parameter(Mandatory)][string] $Path
-    )
-
-    $fullRoot = [IO.Path]::GetFullPath($Root)
-    $rootPrefix = $fullRoot.TrimEnd(
-        [IO.Path]::DirectorySeparatorChar,
-        [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-    $fullPath = [IO.Path]::GetFullPath($Path)
-    if (-not $fullPath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Payload file must stay inside the publish directory: $fullPath"
-    }
-    return $fullPath.Substring($rootPrefix.Length).Replace('\', '/')
-}
-
 $layout = & (Join-Path $PSScriptRoot 'resolve-project-layout.ps1') `
     -RepositoryRoot $repoRoot
 $publishRoot = Join-Path $repoRoot "artifacts/publish/$RuntimeIdentifier"
@@ -121,7 +104,7 @@ $publishRoot = Join-Path $repoRoot "artifacts/publish/$RuntimeIdentifier"
 
 $buildManifestPath = Join-Path $publishRoot $script:BuildManifestName
 $buildManifest = Read-BuildManifest $buildManifestPath
-if ($buildManifest.edition -cne $layout.Slug -or
+if ($buildManifest.edition -cne $layout.Edition -or
     $buildManifest.runtimeIdentifier -cne $RuntimeIdentifier -or
     [bool]([bool]$buildManifest.buildDirty -and -not $PrepareOnly)) {
     throw 'Published build manifest does not describe this clean package build.'
@@ -301,21 +284,21 @@ if (-not $PrepareOnly) {
 $verifiedFiles = @(
     Get-ChildItem -LiteralPath $publishRoot -File -Recurse |
         Where-Object {
-            (Get-PayloadRelativePath -Root $publishRoot -Path $_.FullName) -cne 'SHA256SUMS'
+            (Get-ArtifactRelativePath -Root $publishRoot -Path $_.FullName) -cne 'SHA256SUMS'
         } |
         Sort-Object FullName
 )
 $payloadFiles = @(
     $verifiedFiles |
         Where-Object {
-            (Get-PayloadRelativePath -Root $publishRoot -Path $_.FullName) `
+            (Get-ArtifactRelativePath -Root $publishRoot -Path $_.FullName) `
                 -notin @('install.cmd', 'install.ps1')
         }
 )
 $checksumLines = @(
     foreach ($file in $verifiedFiles) {
         $hash = (Get-FileHash -LiteralPath $file.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
-        $relativePath = Get-PayloadRelativePath -Root $publishRoot -Path $file.FullName
+        $relativePath = Get-ArtifactRelativePath -Root $publishRoot -Path $file.FullName
         "$hash  $relativePath"
     }
 )
@@ -371,7 +354,7 @@ try {
         }
     }
     foreach ($file in $payloadFiles) {
-        $relativePath = Get-PayloadRelativePath -Root $publishRoot -Path $file.FullName
+        $relativePath = Get-ArtifactRelativePath -Root $publishRoot -Path $file.FullName
         $installedFile = Join-Path $smokeInstall $relativePath
         if (-not (Test-Path -LiteralPath $installedFile -PathType Leaf)) {
             throw "Customer installer omitted payload file '$relativePath'."
@@ -445,7 +428,7 @@ if ($null -ne $signingKey) {
         $signedPayload = @(
             'aspose-cli-release-v1',
             'productId=aspose-cli',
-            "edition=$($layout.Slug)",
+            "edition=$($layout.Edition)",
             "runtimeIdentifier=$RuntimeIdentifier",
             "artifactVersion=$artifactVersion",
             "sourceRevision=$($buildManifest.sourceRevision)",
@@ -485,7 +468,7 @@ if ($null -ne $signingKey) {
 $releaseManifest = [ordered]@{
     schemaVersion = 1
     productId = 'aspose-cli'
-    edition = $layout.Slug
+    edition = $layout.Edition
     runtimeIdentifier = $RuntimeIdentifier
     artifactVersion = $artifactVersion
     sourceRevision = [string]$buildManifest.sourceRevision

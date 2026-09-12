@@ -16,7 +16,6 @@ $generator = Join-Path $PSScriptRoot 'generate-product-catalog.ps1'
 $layoutResolver = Join-Path $PSScriptRoot 'resolve-project-layout.ps1'
 $layout = & $layoutResolver  -RepositoryRoot $repoRoot
 $solution = $layout.SolutionPath
-$buildArguments = @($layout.BuildArguments)
 $executableName = if ($env:OS -eq 'Windows_NT') {
     'aspose-cli.exe'
 }
@@ -33,14 +32,9 @@ $env:ASPOSE_CLI_TEST_EXECUTABLE = $builtExecutable
     -OutputRoot $repoRoot
 
 $testProjects = @(
-    foreach ($testRoot in @($layout.TestRoot)) {
-        if (-not (Test-Path -LiteralPath $testRoot -PathType Container)) {
-            throw "Edition test root does not exist: $testRoot"
-        }
-        Get-ChildItem -LiteralPath $testRoot -Recurse -Filter '*.csproj' -File |
-            Where-Object { $_.BaseName -ne 'Aspose.Cli.TestKit' -and $_.FullName -notmatch '[/\\]acceptance[/\\]' } |
-            ForEach-Object FullName
-    }
+    Get-ChildItem -LiteralPath $layout.TestRoot -Recurse -Filter '*.csproj' -File |
+        Where-Object { $_.BaseName -ne 'Aspose.Cli.TestKit' -and $_.FullName -notmatch '[/\\]acceptance[/\\]' } |
+        ForEach-Object FullName
 ) | Sort-Object
 if ($testProjects.Count -eq 0) {
     throw "No test projects were found for $($layout.Edition)."
@@ -48,14 +42,12 @@ if ($testProjects.Count -eq 0) {
 
 if (-not $NoBuild) {
     & dotnet restore $solution `
-        @buildArguments `
         --locked-mode `
         --nologo
     if ($LASTEXITCODE -ne 0) {
         throw "Locked restore failed with exit code $LASTEXITCODE. Run scripts/sync.ps1 after dependency changes."
     }
     & dotnet build $solution `
-        @buildArguments `
         --configuration $Configuration `
         --no-restore `
         --nologo

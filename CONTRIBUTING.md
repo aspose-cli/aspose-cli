@@ -37,7 +37,9 @@ Verify optional input defaults through the production source-generated serialize
 fields and explicit `false`, `0` and `null`. CLR construction alone does not test the wire contract.
 For new immutable input records, use optional constructor parameters for scalar defaults:
 the current .NET generator [does not preserve init-only property initializers](https://github.com/dotnet/runtime/issues/84484).
-Keep required-field and semantic validation in the owning product.
+Keep required-field and semantic validation in the owning product. The SDK's
+`OperationJsonConverter` owns discriminator ordering, strict fields and duplicate rejection;
+product converters supply only the operation registry and wire defaults.
 
 ## Command parameter semantics
 

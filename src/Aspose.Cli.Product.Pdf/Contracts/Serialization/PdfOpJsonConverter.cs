@@ -1,52 +1,13 @@
 using System.Text.Json;
-using System.Text.Json.Serialization;
-using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Product.Pdf.Contracts.Serialization;
 
-/// <summary>Strict discriminator converter for the PDF op vocabulary.</summary>
-internal sealed class PdfOpJsonConverter : JsonConverter<PdfOp>
+/// <summary>Connects the Pdf operation vocabulary to the shared wire protocol.</summary>
+internal sealed class PdfOpJsonConverter()
+    : OperationJsonConverter<PdfOp>(PdfOps.Registry, static operation => operation.OpName)
 {
-    public override PdfOp Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
-    {
-        using JsonDocument document = JsonDocument.ParseValue(ref reader);
-        JsonElement root = document.RootElement;
-        if (root.ValueKind != JsonValueKind.Object || !root.TryGetProperty("op", out JsonElement discriminator))
-        {
-            throw new JsonException($"Every PDF op needs an 'op' field. Valid ops: {string.Join(", ", PdfOps.Names)}");
-        }
-
-        string? name = discriminator.GetString();
-        if (name is null || !PdfOps.Registry.TryGetValue(name, out Type? type))
-        {
-            throw new JsonException($"Unknown PDF op '{name}'. Valid ops: {string.Join(", ", PdfOps.Names)}");
-        }
-
-        StrictJsonObjectValidator.Validate(root, type, options, "$", allowDiscriminator: true);
-        PdfOp value = (PdfOp)(root.Deserialize(type, options) ?? throw new JsonException($"Op '{name}' deserialized to null."));
-        return ApplyWireDefaults(value, root);
-    }
-
-    public override void Write(Utf8JsonWriter writer, PdfOp value, JsonSerializerOptions options)
-    {
-        writer.WriteStartObject();
-        writer.WriteString("op", value.OpName);
-        using JsonDocument document = JsonDocument.Parse(JsonSerializer.Serialize(value, value.GetType(), options));
-        foreach (JsonProperty property in document.RootElement.EnumerateObject())
-        {
-            if (property.NameEquals("opName"))
-            {
-                continue;
-            }
-
-            property.WriteTo(writer);
-        }
-
-        writer.WriteEndObject();
-    }
-
-    private static PdfOp ApplyWireDefaults(PdfOp value, JsonElement root) => value switch
+    protected override PdfOp ApplyDefaults(PdfOp value, JsonElement root) => value switch
     {
         InsertBlankPageOp op when Missing(root, "size") => op with { Size = "A4" },
         CropPagesOp op when Missing(root, "box") => op with { Box = "crop" },

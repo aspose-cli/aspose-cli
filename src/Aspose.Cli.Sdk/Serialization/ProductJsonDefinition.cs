@@ -108,6 +108,7 @@ public sealed class ContractJsonSerializer
             PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             AllowOutOfOrderMetadataProperties = true,
+            AllowDuplicateProperties = false,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             WriteIndented = true,
         };

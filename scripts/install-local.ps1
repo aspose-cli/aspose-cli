@@ -8,7 +8,7 @@ param(
     [switch] $SkipPath,
     [switch] $SkipSkills,
     [string] $SkillsRoot,
-[string] $LicensePath,
+    [string] $LicensePath,
     [ValidateSet('cells','pdf','slides','words')]
     [string] $LicenseProduct,
     [switch] $SkipLicensePrompt,

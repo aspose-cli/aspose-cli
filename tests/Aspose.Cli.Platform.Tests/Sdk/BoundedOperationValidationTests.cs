@@ -6,35 +6,12 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 
 public sealed class BoundedOperationValidationTests
 {
-    private static readonly IReadOnlyDictionary<string, IReadOnlySet<string>> Operations =
-        new Dictionary<string, IReadOnlySet<string>>(StringComparer.Ordinal)
-        {
-            ["set"] = new HashSet<string>(["id", "op", "value"], StringComparer.Ordinal),
-        };
-
-    [Fact]
-    public void ValidateJsonShape_EnforcesSharedAndProductOwnedFields()
-    {
-        Validate("""{"schemaVersion":2,"ifMatch":"abc","ops":[{"id":"one","op":"set","value":1}]}""");
-
-        InvalidOperationException root = Assert.Throws<InvalidOperationException>(
-            () => Validate("""{"unexpected":true,"ops":[{"op":"set","value":1}]}"""));
-        InvalidOperationException operation = Assert.Throws<InvalidOperationException>(
-            () => Validate("""{"ops":[{"op":"set","unexpected":1}]}"""));
-        InvalidOperationException count = Assert.Throws<InvalidOperationException>(
-            () => Validate("""{"ops":[{"op":"set"},{"op":"set"}]}"""));
-
-        Assert.Contains("root property 'unexpected'", root.Message, StringComparison.Ordinal);
-        Assert.Contains("property 'unexpected'", operation.Message, StringComparison.Ordinal);
-        Assert.Contains("ops must contain 1-1", count.Message, StringComparison.Ordinal);
-    }
-
     [Theory]
-    [InlineData("{\"ops\":[{\"op\":\"set\"}],\"ops\":[{\"op\":\"set\"}]}", "root property 'ops' is duplicated")]
-    [InlineData("{\"ops\":[{\"op\":\"set\",\"value\":1,\"value\":2}]}", "ops[0] property 'value' is duplicated")]
-    [InlineData("{\"ops\":[{\"op\":\"set\",\"op\":\"set\"}]}", "ops[0] property 'op' is duplicated")]
-    [InlineData("{\"ops\":[{\"op\":\"set\",\"value\":{\"style\":{\"bold\":true,\"bold\":false}}}]}", "ops[0].value.style property 'bold' is duplicated")]
-    public void ValidateJsonShape_RejectsDuplicateProperties(string json, string expected)
+    [InlineData("{\"ops\":[{\"op\":\"set\"}],\"ops\":[{\"op\":\"set\"}]}", "$ property 'ops' is duplicated")]
+    [InlineData("{\"ops\":[{\"op\":\"set\",\"value\":1,\"value\":2}]}", "$.ops[0] property 'value' is duplicated")]
+    [InlineData("{\"ops\":[{\"op\":\"set\",\"op\":\"set\"}]}", "$.ops[0] property 'op' is duplicated")]
+    [InlineData("{\"ops\":[{\"op\":\"set\",\"value\":{\"style\":{\"bold\":true,\"bold\":false}}}]}", "$.ops[0].value.style property 'bold' is duplicated")]
+    public void ValidateNoDuplicateProperties_RejectsDuplicateProperties(string json, string expected)
     {
         InvalidOperationException error = Assert.Throws<InvalidOperationException>(
             () => Validate(json));
@@ -113,10 +90,8 @@ public sealed class BoundedOperationValidationTests
     private static void Validate(string json)
     {
         using JsonDocument document = JsonDocument.Parse(json);
-        BoundedOperationValidation.ValidateJsonShape(
+        BoundedJsonValidation.ValidateNoDuplicateProperties(
             document.RootElement,
-            Operations,
-            maximumOperations: 1,
             static reason => new InvalidOperationException(reason));
     }
 

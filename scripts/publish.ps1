@@ -18,35 +18,14 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'release-common.ps1')
 
-function Get-PublishRelativePath {
-    param(
-        [Parameter(Mandatory)][string] $Root,
-        [Parameter(Mandatory)][string] $Path
-    )
-
-    $fullRoot = [IO.Path]::GetFullPath($Root)
-    $rootPrefix = $fullRoot.TrimEnd(
-        [IO.Path]::DirectorySeparatorChar,
-        [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-    $fullPath = [IO.Path]::GetFullPath($Path)
-    if (-not $fullPath.StartsWith($rootPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Publish file escaped its output directory: $fullPath"
-    }
-
-    return $fullPath.Substring($rootPrefix.Length).Replace('\', '/')
-}
-
 $layoutResolver = Join-Path $PSScriptRoot 'resolve-project-layout.ps1'
 $generator = Join-Path $PSScriptRoot 'generate-product-catalog.ps1'
-$layout = & $layoutResolver  -RepositoryRoot $repoRoot
+$layout = & $layoutResolver -RepositoryRoot $repoRoot
 $provenance = Get-RepositoryProvenance `
     -RepositoryRoot $repoRoot
 if ($RequireClean -and $provenance.BuildDirty) {
-    $details = @($provenance.DirtyDetails)
-    if ($provenance.GitlinkOffset) { $details += 'one or more external engine HEADs differ from their recorded gitlinks' }
-    throw "Release packaging requires a clean tracked tree and exact engine gitlinks: $($details -join '; ')"
+    throw "Release packaging requires a clean project tree: $($provenance.DirtyDetails -join '; ')"
 }
-$buildArguments = @($layout.BuildArguments)
 $productCatalog = Get-Content -LiteralPath $layout.CatalogPath -Raw | ConvertFrom-Json
 $productCount = @($productCatalog.products).Count
 $customerPublish = -not [string]::IsNullOrWhiteSpace($RuntimeIdentifier)
@@ -75,12 +54,7 @@ $publishRoot = [IO.Path]::GetFullPath(
     $(if ([string]::IsNullOrWhiteSpace($OutputRoot)) { $defaultOutput } else { $OutputRoot }))
 $allowedRoot = [IO.Path]::GetFullPath(
     (Join-Path $repoRoot "artifacts/publish"))
-$allowedPrefix = $allowedRoot.TrimEnd(
-    [IO.Path]::DirectorySeparatorChar,
-    [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
-if (-not $publishRoot.StartsWith($allowedPrefix, [StringComparison]::OrdinalIgnoreCase)) {
-    throw "Publish output must be inside the edition artifact root: $allowedRoot"
-}
+[void](Get-ArtifactRelativePath -Root $allowedRoot -Path $publishRoot)
 
 & $generator `
     -Check `
@@ -90,17 +64,13 @@ if (-not $publishRoot.StartsWith($allowedPrefix, [StringComparison]::OrdinalIgno
 $restoreArguments = @(
     'restore'
     $layout.LauncherProject
-    $buildArguments
     '--locked-mode'
     '--nologo'
 )
 & dotnet @restoreArguments
 if ($LASTEXITCODE -ne 0) {
-    throw "Locked restore failed with exit code $LASTEXITCODE. Run scripts/sync.ps1  after dependency changes."
+    throw "Locked restore failed with exit code $LASTEXITCODE. Run scripts/sync.ps1 after dependency changes."
 }
-
-$freePackageNotices = @()
-$null
 
 # Existing output is deleted only after its sibling ownership marker proves this build owns it.
 Initialize-OwnedArtifactDirectory $publishRoot $allowedRoot 'publish'
@@ -108,7 +78,6 @@ Initialize-OwnedArtifactDirectory $publishRoot $allowedRoot 'publish'
 $publishArguments = @(
     'publish'
     $layout.LauncherProject
-    $buildArguments
     '--configuration'
     $Configuration
     '--no-restore'
@@ -170,7 +139,7 @@ if ($customerPublish) {
 $buildManifest = [ordered]@{
     schemaVersion = 1
     productId = 'aspose-cli'
-    edition = $layout.Slug
+    edition = $layout.Edition
     runtimeIdentifier = $publishFlavor
     sourceRevision = $provenance.SourceRevision
     buildDirty = [bool]$provenance.BuildDirty
@@ -179,53 +148,23 @@ $buildManifest = [ordered]@{
 Write-StableJson (Join-Path $publishRoot $script:BuildManifestName) $buildManifest
 
 $publishedFiles = @(Get-ChildItem -LiteralPath $publishRoot -File -Recurse)
-$fileNames = @($publishedFiles | ForEach-Object Name)
 $relativeFileNames = @(
     $publishedFiles |
         ForEach-Object {
-            Get-PublishRelativePath -Root $publishRoot -Path $_.FullName
+            Get-ArtifactRelativePath -Root $publishRoot -Path $_.FullName
         }
 )
-$commercialAssemblies = @(
-    'Aspose.Cells.dll'
-    'Aspose.PDF.dll'
-    'Aspose.PDF.Drawing.dll'
-    'Aspose.Slides.dll'
-    'Aspose.Words.dll'
-)
-$fossAssemblies = @(
-    'Aspose.Cells.FOSS.dll'
-    'Aspose.Pdf.Foss.dll'
-    'Aspose.Slides.Foss.dll'
-    'Aspose.Words.FOSS.dll'
-    'Aspose.Foundation.dll'
-)
-$forbidden = $(
-    $fossAssemblies
-)
 $contamination = @(
-    $fileNames |
-        Where-Object { $_ -in $forbidden } |
-        Sort-Object -Unique
+    $publishedFiles |
+        Where-Object {
+            $_.Name.IndexOf('.foss', [StringComparison]::OrdinalIgnoreCase) -ge 0 -or
+            $_.Name -ieq 'Aspose.Foundation.dll'
+        } |
+        ForEach-Object FullName
 )
 if ($contamination.Count -ne 0) {
-    throw "$($layout.Edition) publish contains assemblies from the other edition: $($contamination -join ', ')."
+    throw "Commercial publish contains FOSS artifacts: $($contamination -join ', ')."
 }
-
-$(
-    $fossFiles = @(
-        Get-ChildItem -LiteralPath $publishRoot -File -Recurse |
-            Where-Object {
-                $_.Name.IndexOf(
-                    '.foss',
-                    [StringComparison]::OrdinalIgnoreCase) -ge 0
-            } |
-            ForEach-Object FullName
-    )
-    if ($fossFiles.Count -ne 0) {
-        throw "Commercial publish contains FOSS artifacts: $($fossFiles -join ', ')."
-    }
-)
 
 if ($customerPublish) {
     $executableName = if ($RuntimeIdentifier.StartsWith('win-', [StringComparison]::Ordinal)) {
@@ -235,7 +174,6 @@ if ($customerPublish) {
         'aspose-cli'
     }
     $requiredCustomerFiles = @($executableName, $script:BuildManifestName)
-    $null
     $missingCustomerFiles = @(
         $requiredCustomerFiles |
             Where-Object { $_ -cnotin $relativeFileNames }
@@ -251,8 +189,6 @@ if ($customerPublish) {
         throw "Customer publish contains unexpected loose files: $($unexpectedCustomerFiles -join ', ')."
     }
 
-    $null
-
     $executable = Join-Path $publishRoot $executableName
     & $executable --version | Out-Host
     if ($LASTEXITCODE -ne 0) {
@@ -263,8 +199,8 @@ if ($customerPublish) {
         throw "Published executable failed capabilities with exit code $LASTEXITCODE."
     }
     $capabilities = ($capabilitiesText -join [Environment]::NewLine) | ConvertFrom-Json
-    if ($capabilities.edition -cne $layout.Slug) {
-        throw "Published executable reports edition '$($capabilities.edition)', expected '$($layout.Slug)'."
+    if ($capabilities.edition -cne $layout.Edition) {
+        throw "Published executable reports edition '$($capabilities.edition)', expected '$($layout.Edition)'."
     }
     if ($capabilities.sourceRevision -cne $provenance.SourceRevision -or
         [bool]$capabilities.buildDirty -ne [bool]$provenance.BuildDirty) {

@@ -21,7 +21,6 @@ if (-not (Test-Path -LiteralPath $layoutResolver -PathType Leaf)) {
 }
 $layout = & $layoutResolver  -RepositoryRoot $repoRoot
 $solution = $layout.SolutionPath
-$buildArguments = @($layout.BuildArguments)
 
 if (-not (Test-Path -LiteralPath $generator -PathType Leaf)) {
     throw "Internal product reconciler does not exist: $generator"
@@ -30,7 +29,7 @@ if (-not (Test-Path -LiteralPath $generator -PathType Leaf)) {
 function Invoke-DotNetRestore {
     param([string[]] $Arguments)
 
-    & dotnet restore $solution @buildArguments @Arguments --nologo
+    & dotnet restore $solution @Arguments --nologo
     if ($LASTEXITCODE -ne 0) {
         throw "dotnet restore failed with exit code $LASTEXITCODE."
     }

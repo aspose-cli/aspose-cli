@@ -1,38 +1,14 @@
 using System.Diagnostics;
-using System.Reflection.Metadata;
-using System.Reflection.PortableExecutable;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
-using System.Text.RegularExpressions;
-using System.Xml.Linq;
 using Aspose.Cli.TestKit;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;
 
 public sealed class ProductLifecycleTests
 {
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
     [Fact]
     public void CatalogRowAndProductSlice_AreTheCompleteProductLifecycle()
@@ -331,90 +307,6 @@ public sealed class ProductLifecycleTests
         return new GeneratorResult(
             process.ExitCode,
             stdout + Environment.NewLine + stderr);
-    }
-
-    private static string[] ResolveBuildArguments(string edition)
-    {
-        string executable = OperatingSystem.IsWindows()
-            ? "powershell.exe"
-            : "pwsh";
-        string resolver = Path.Combine(
-            RepositoryPaths.Root,
-            "scripts",
-            "resolve-project-layout.ps1");
-        string command = $"& {PowerShellLiteral(resolver)} "
-            + $"-RepositoryRoot {PowerShellLiteral(RepositoryPaths.Root)} "
-            + "| ConvertTo-Json -Compress -Depth 4";
-        var start = new ProcessStartInfo(executable)
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-        start.ArgumentList.Add("-NoProfile");
-        start.ArgumentList.Add("-NonInteractive");
-        if (OperatingSystem.IsWindows())
-        {
-            start.ArgumentList.Add("-ExecutionPolicy");
-            start.ArgumentList.Add("Bypass");
-        }
-
-        start.ArgumentList.Add("-Command");
-        start.ArgumentList.Add(command);
-
-        using Process process = Process.Start(start)
-            ?? throw new InvalidOperationException(
-                "Could not start the edition layout resolver.");
-        string stdout = process.StandardOutput.ReadToEnd();
-        string stderr = process.StandardError.ReadToEnd();
-        Assert.True(
-            process.WaitForExit(30_000),
-            "Edition layout resolver timed out.");
-        Assert.True(
-            process.ExitCode == 0,
-            stdout + Environment.NewLine + stderr);
-
-        using JsonDocument document = JsonDocument.Parse(stdout);
-        return document.RootElement
-            .GetProperty("BuildArguments")
-            .EnumerateArray()
-            .Select(static argument => argument.GetString() ?? string.Empty)
-            .ToArray();
-    }
-
-    private static string PowerShellLiteral(string value) =>
-        "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
-
-    private static string RunGit(string repository, params string[] arguments)
-    {
-        var start = new ProcessStartInfo("git")
-        {
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            UseShellExecute = false,
-            CreateNoWindow = true,
-        };
-        start.ArgumentList.Add("-c");
-        start.ArgumentList.Add($"safe.directory={repository.Replace('\\', '/')}");
-        start.ArgumentList.Add("-C");
-        start.ArgumentList.Add(repository);
-        foreach (string argument in arguments)
-        {
-            start.ArgumentList.Add(argument);
-        }
-
-        using Process process = Process.Start(start)
-            ?? throw new InvalidOperationException("Could not start Git.");
-        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
-        Task<string> stderr = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(30_000))
-        {
-            process.Kill(entireProcessTree: true);
-            Assert.Fail($"Git timed out in {repository}.");
-        }
-        Assert.True(process.ExitCode == 0, stderr.GetAwaiter().GetResult());
-        return stdout.GetAwaiter().GetResult().Trim();
     }
 
     private static void AssertSuccess(GeneratorResult result) =>

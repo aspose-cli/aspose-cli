@@ -17,6 +17,19 @@ public sealed class CellsModuleTests
         CellsContractSamples.Inputs;
 
     [Fact]
+    public void OperationBatch_RejectsNullOperations()
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            OpsParser.Parse("""{"ops":null}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    [Fact]
+    public void OperationObjects_RejectUnknownNestedFields() =>
+        AssertOperationObjectIsStrict<Op>(
+            """{"op":"format_range","range":"A1","style":{"bold":true}}""", "style");
+
+    [Fact]
     public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
         ProductRoutingContract.AssertPositiveRoutesAsync<CellsModule>(
             new Dictionary<string, byte[]>(StringComparer.Ordinal)

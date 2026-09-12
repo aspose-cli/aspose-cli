@@ -29,37 +29,19 @@ public sealed class RepositoryProjectGraphTests
     [Fact]
     public void ProductsUseTheirMatchingEngineAndLocalSdk()
     {
-        using JsonDocument identity = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "eng", "distribution.json")));
-        bool foss = identity.RootElement.GetProperty("edition").GetString() == "foss";
         using JsonDocument catalog = JsonDocument.Parse(File.ReadAllText(Path.Combine(Root, "eng", "products.json")));
         foreach (JsonElement product in catalog.RootElement.GetProperty("products").EnumerateArray())
         {
             string name = product.GetProperty("productName").GetString()!;
-            string id = product.GetProperty("id").GetString()!;
             string project = Path.Combine(Root, "src", $"Aspose.Cli.Product.{name}", $"Aspose.Cli.Product.{name}.csproj");
             string sdk = Path.Combine(Root, "src", "Aspose.Cli.Sdk", "Aspose.Cli.Sdk.csproj");
             string[] references = ProjectReferences(project).ToArray();
-            Assert.Contains(sdk, references);
-            if (foss)
-            {
-                string engine = Path.Combine(Root, "src", $"Aspose.{name}.Foss.Engine", $"Aspose.{name}.Foss.Engine.csproj");
-                Assert.Equal(new[] { sdk, engine }.Order(StringComparer.Ordinal), references.Order(StringComparer.Ordinal));
-                string[] upstream = ProjectReferences(engine).ToArray();
-                Assert.NotEmpty(upstream);
-                Assert.All(upstream, path => Assert.True(IsUnder(path, Path.Combine(Root, "external", id))));
-            }
-            else
-            {
-                Assert.Equal(new[] { sdk }, references);
-                string packageId = product.GetProperty("sdkPackageId").GetString()!;
-                Assert.Contains(XDocument.Load(project).Descendants("PackageReference"), item => (string?)item.Attribute("Include") == packageId);
-            }
+            Assert.Equal(new[] { sdk }, references);
+            string packageId = product.GetProperty("sdkPackageId").GetString()!;
+            Assert.Contains(XDocument.Load(project).Descendants("PackageReference"), item => (string?)item.Attribute("Include") == packageId);
         }
-        if (!foss)
-        {
-            Assert.False(Directory.Exists(Path.Combine(Root, "external")));
-            Assert.False(File.Exists(Path.Combine(Root, ".gitmodules")));
-        }
+        Assert.False(Directory.Exists(Path.Combine(Root, "external")));
+        Assert.False(File.Exists(Path.Combine(Root, ".gitmodules")));
     }
 
     [Fact]

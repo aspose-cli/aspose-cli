@@ -14,6 +14,19 @@ public sealed class PdfModuleTests
         PdfContractSamples.Inputs;
 
     [Fact]
+    public void OperationBatch_RejectsNullOperations()
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            PdfOpsParser.Parse("""{"ops":null}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    [Fact]
+    public void OperationObjects_RejectUnknownNestedFields() =>
+        AssertOperationObjectIsStrict<PdfOp>(
+            """{"op":"crop_pages","pages":"1","rect":{"x":0,"y":0,"width":10,"height":10}}""", "rect");
+
+    [Fact]
     public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
         ProductRoutingContract.AssertPositiveRoutesAsync<PdfModule>(
             new Dictionary<string, byte[]>(StringComparer.Ordinal)

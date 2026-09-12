@@ -7,12 +7,6 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// one list — so the wire name, the CLR record type and the documented order
 /// can never drift apart as the vocabulary grows.
 /// </summary>
-/// <remarks>
-/// Deliberately not a generic <c>OpRegistry&lt;TOp&gt;</c>: that shared
-/// machinery is only justified once a second product needs it. A completeness
-/// test in the contract tests fails the build if an <see cref="Op"/> record is
-/// added without a row here.
-/// </remarks>
 public static class CellsOps
 {
     // The ordered source of truth for both membership and documentation order.

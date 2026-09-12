@@ -36,7 +36,6 @@ function Get-RepositoryProvenance {
     $scope = if ($context.Prefix) { $context.Prefix.TrimEnd('/') } else { '.' }
     $dirty = @((Invoke-RepositoryGit $context.GitRoot @('status','--porcelain=v1','--untracked-files=all','--ignore-submodules=all','--',$scope)) -split "`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
     $catalog = Get-Content -LiteralPath (Join-Path $root 'eng/products.json') -Raw | ConvertFrom-Json
-    $gitlinkOffset = $false
 
     $lockPath = Join-Path $root 'src/Aspose.Cli/packages.lock.json'
     $locked = Get-Content -LiteralPath $lockPath -Raw | ConvertFrom-Json
@@ -52,11 +51,31 @@ function Get-RepositoryProvenance {
 
     return [pscustomobject]@{
         SourceRevision = $revision
-        BuildDirty = ($dirty.Count -ne 0 -or $gitlinkOffset)
-        GitlinkOffset = $gitlinkOffset
+        BuildDirty = ($dirty.Count -ne 0)
         EnginePackages = $engines
         DirtyDetails = $dirty
     }
+}
+
+function Get-ArtifactRelativePath {
+    param(
+        [Parameter(Mandatory)][string] $Root,
+        [Parameter(Mandatory)][string] $Path
+    )
+
+    $rootPrefix = [IO.Path]::GetFullPath($Root).TrimEnd(
+        [IO.Path]::DirectorySeparatorChar,
+        [IO.Path]::AltDirectorySeparatorChar) + [IO.Path]::DirectorySeparatorChar
+    $fullPath = [IO.Path]::GetFullPath($Path)
+    $comparison = if ([IO.Path]::DirectorySeparatorChar -eq '\') {
+        [StringComparison]::OrdinalIgnoreCase
+    } else {
+        [StringComparison]::Ordinal
+    }
+    if (-not $fullPath.StartsWith($rootPrefix, $comparison)) {
+        throw "Artifact path escaped its allowed root: $fullPath"
+    }
+    return $fullPath.Substring($rootPrefix.Length).Replace('\', '/')
 }
 
 function Assert-SafeArtifactTree {
@@ -66,10 +85,7 @@ function Assert-SafeArtifactTree {
     )
 
     $full = [IO.Path]::GetFullPath($Path)
-    $allowed = [IO.Path]::GetFullPath($AllowedRoot).TrimEnd('\')
-    if (-not $full.StartsWith($allowed + '\', [StringComparison]::OrdinalIgnoreCase)) {
-        throw "Artifact path escaped its allowed root: $full"
-    }
+    [void](Get-ArtifactRelativePath -Root $AllowedRoot -Path $full)
     $cursor = $full
     while (-not [string]::IsNullOrEmpty($cursor)) {
         if (Test-Path -LiteralPath $cursor) {

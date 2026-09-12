@@ -36,10 +36,6 @@ internal static class OpsParser
         OpsBatch batch;
         try
         {
-            using JsonDocument document = JsonDocument.Parse(json);
-            BoundedJsonValidation.ValidateNoDuplicateProperties(
-                document.RootElement,
-                static reason => new JsonException(reason));
             batch = ProductJsonContext.Definition.Deserialize<OpsBatch>(json);
         }
         catch (Exception ex) when (

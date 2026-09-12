@@ -325,6 +325,76 @@ public abstract class ProductContractTests<TModule>
     }
 
 
+    /// <summary>Every product rejects malformed operation discriminators through its own metadata.</summary>
+    [Theory]
+    [InlineData("null")]
+    [InlineData("[]")]
+    [InlineData("{}")]
+    [InlineData("{\"op\":null}")]
+    [InlineData("{\"op\":1}")]
+    [InlineData("{\"op\":false}")]
+    [InlineData("{\"op\":[]}")]
+    [InlineData("{\"op\":{}}")]
+    [InlineData("{\"op\":\"__unknown_operation__\"}")]
+    public void OperationDiscriminators_RejectMalformedInput(string operation)
+    {
+        JsonSerializerOptions options = new TModule().Define().Json.LocalOptions;
+        foreach (ProductSchemaSample sample in OperationInputs())
+        {
+            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(
+                "{\"ops\":[" + operation + "]}", sample.Value.GetType(), options));
+        }
+    }
+
+    /// <summary>Discriminator order is flexible; unknown and duplicate members are never accepted.</summary>
+    [Fact]
+    public void Operations_RoundTripWithStrictMembersAndDiscriminatorLast()
+    {
+        JsonSerializerOptions options = new TModule().Define().Json.LocalOptions;
+        foreach (ProductSchemaSample sample in OperationInputs())
+        {
+            Type batchType = sample.Value.GetType();
+            JsonObject batch = JsonSerializer.SerializeToNode(sample.Value, batchType, options)!.AsObject();
+            foreach (JsonNode? node in batch["ops"]!.AsArray())
+            {
+                JsonObject operation = node!.AsObject();
+                JsonNode discriminator = operation["op"]!.DeepClone();
+                operation.Remove("op");
+                operation.Add("op", discriminator);
+            }
+
+            string json = batch.ToJsonString();
+            object restored = JsonSerializer.Deserialize(json, batchType, options)!;
+            Assert.True(JsonNode.DeepEquals(batch, JsonSerializer.SerializeToNode(restored, batchType, options)));
+
+            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(
+                "{\"ops\":[]," + json[1..], batchType, options));
+
+            string first = batch["ops"]![0]!.ToJsonString();
+            foreach (string member in new[] { "\"__unexpected\":true", "\"opName\":\"ignored\"", "\"op\":\"__unknown_operation__\"" })
+            {
+                Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(
+                    "{\"ops\":[{" + member + "," + first[1..] + "]}", batchType, options));
+            }
+        }
+    }
+
+    private IEnumerable<ProductSchemaSample> OperationInputs() => CanonicalInputs.Where(static sample =>
+        sample.Value.GetType().BaseType is { IsGenericType: true } type
+        && type.GetGenericTypeDefinition() == typeof(BoundedOperationEnvelope<>));
+
+    /// <summary>Checks nested unknown fields using a valid product-owned operation.</summary>
+    protected static void AssertOperationObjectIsStrict<TOperation>(string input, string member)
+    {
+        JsonSerializerOptions options = new TModule().Define().Json.LocalOptions;
+        Assert.NotNull(JsonSerializer.Deserialize<TOperation>(input, options));
+        JsonObject operation = JsonNode.Parse(input)!.AsObject();
+        operation[member]!["__unexpected"] = true;
+        JsonException error = Assert.Throws<JsonException>(() =>
+            JsonSerializer.Deserialize<TOperation>(operation.ToJsonString(), options));
+        Assert.Contains("__unexpected", error.Message, StringComparison.Ordinal);
+    }
+
     /// <summary>Checks omitted and explicit operation fields through the production JSON metadata.</summary>
     protected static void AssertOperationDefaults<TOperation>(string input, string expected)
     {
