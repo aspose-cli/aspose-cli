@@ -142,6 +142,7 @@ public sealed record SlideData
 /// <summary>One bounded, SDK-neutral slide shape.</summary>
 public sealed record SlideShapeData
 {
+    /// <summary>A positive shape identifier persisted within its slide.</summary>
     public required long ShapeId { get; init; }
     public string? Name { get; init; }
     public required string Type { get; init; }

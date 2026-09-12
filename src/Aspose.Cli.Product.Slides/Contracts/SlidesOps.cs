@@ -22,7 +22,7 @@ public abstract record SlideTargetOp : SlidesOp
     public uint? SlideId { get; init; }
 }
 
-/// <summary>A slide shape addressed by id, name, or placeholder role.</summary>
+/// <summary>A slide shape addressed by persistent slide-scoped id, name, or placeholder role.</summary>
 public abstract record ShapeTargetOp : SlideTargetOp
 {
     public long? Shape { get; init; }

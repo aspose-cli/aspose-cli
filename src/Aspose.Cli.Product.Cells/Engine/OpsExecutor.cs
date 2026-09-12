@@ -104,9 +104,8 @@ internal static class OpsExecutor
     private static long? DispatchObject(Workbook workbook, Op op) => op switch
     {
         CreateChartOp chart => ChartPivotOps.CreateChart(Sheets.Resolve(workbook, op), chart),
-        CreatePivotOp pivot => ChartPivotOps.CreatePivot(Sheets.Resolve(workbook, op), pivot),
+        CreatePivotOp or RefreshPivotOp => ChartPivotOps.ApplyPivot(Sheets.Resolve(workbook, op), op),
         InsertImageOp insertImage => ImageOps.InsertImage(Sheets.Resolve(workbook, op), insertImage),
-        RefreshPivotOp refreshPivot => ChartPivotOps.RefreshPivot(Sheets.Resolve(workbook, op), refreshPivot),
         CreateTableOp createTable => TableOps.CreateTable(Sheets.Resolve(workbook, op), createTable),
         UpdateChartOp updateChart => ChartPivotOps.UpdateChart(Sheets.Resolve(workbook, op), updateChart),
         DeleteChartOp deleteChart => ChartPivotOps.DeleteChart(Sheets.Resolve(workbook, op), deleteChart),

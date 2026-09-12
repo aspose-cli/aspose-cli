@@ -360,7 +360,7 @@ limited. Every affected result contains
 `warnings: [{ "code": "EVAL_MODE", ... }]`.
 
 You MUST mention the watermark to the user when delivering evaluation-mode
-output. Reads are unaffected. A license removes all limits: install it with
+output. Reads are unaffected. Evaluation CSV, TSV, and Markdown exports are limited to the first worksheet; an explicit `--sheet` selecting another worksheet fails with `EVALUATION_LIMIT` before writing. A license removes all limits: install it with
 `aspose-cli license install Aspose.Cells.lic --product cells`, set
 `ASPOSE_CELLS_LICENSE_PATH`, use a shared `ASPOSE_LICENSE_PATH`, or pass
 `--license <path>`. `license status` reports Cells and Words independently.

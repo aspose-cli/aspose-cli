@@ -75,6 +75,29 @@ public sealed class PdfMutateTests
             StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(1)]
+    [InlineData(2)]
+    [InlineData(3)]
+    public void PageLabels_UseTheRequestedOneBasedStartPage(int startPage)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("labels.pdf", pages: 3);
+        string output = fixture.File("labels.out.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new SetPageLabelsOp
+            {
+                Ranges = [new PdfPageLabelRange { StartPage = startPage, Prefix = "R-", StartingValue = 7 }],
+            }],
+        }, new PdfEditRequest { OutputPath = output });
+
+        PdfInfoResult info = fixture.Engine.GetInfo(output, new PdfInfoRequest());
+        PdfPageLabelInfo label = Assert.Single(info.PageLabels!, item => item.Prefix == "R-");
+        Assert.Equal(startPage, label.StartPage);
+        Assert.Equal(7, label.StartingValue);
+    }
+
     [Fact]
     public void Edit_DocumentOperationsAndRemovalRoundTrip()
     {
@@ -122,7 +145,7 @@ public sealed class PdfMutateTests
                 reopened.EmbeddedFiles.FindByName(Path.GetFileName(defaultNamedAttachment)));
             Assert.Equal(Path.GetFileName(defaultNamedAttachment), defaultNamedSpecification.Name);
             Assert.Equal(Path.GetFileName(defaultNamedAttachment), defaultNamedSpecification.UnicodeName);
-            Assert.Equal("A-", reopened.PageLabels.GetLabel(1).Prefix);
+            Assert.Equal("A-", reopened.PageLabels.GetLabel(0).Prefix);
             Assert.True(reopened.IsLinearized);
             Assert.Equal(OpStatuses.Ok, firstEdit.Applied[^1].Status);
         }

@@ -49,7 +49,7 @@
     "slide": { "type": "integer", "minimum": 1 },
     "slideId": { "type": "integer", "minimum": 1 },
     "slides": { "type": "string", "minLength": 1 },
-    "shape": { "type": "integer", "minimum": 1 },
+    "shape": { "type": "integer", "minimum": 1, "description": "Persistent slide-scoped shapeId returned by query slides; not a shape position." },
     "placeholder": { "enum": ["title", "body", "subtitle", "footer"] },
     "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
     "rect": {

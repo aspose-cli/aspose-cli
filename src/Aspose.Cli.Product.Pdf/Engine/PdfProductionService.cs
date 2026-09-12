@@ -338,7 +338,15 @@ internal sealed class PdfProductionService
         (double width, double height) = PageDimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
         Document document = markdown
-            ? new Document(fullPath, new MdLoadOptions())
+            ? new Document(fullPath, new MdLoadOptions
+            {
+                PageInfo = new PageInfo
+                {
+                    Width = width,
+                    Height = height,
+                    Margin = Margin(request.Margins),
+                },
+            })
             : new Document(fullPath, new TxtLoadOptions());
         foreach (Page page in document.Pages)
         {

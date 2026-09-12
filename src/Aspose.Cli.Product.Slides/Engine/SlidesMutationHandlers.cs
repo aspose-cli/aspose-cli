@@ -58,7 +58,9 @@ internal static class SlidesMutationHandlers
                 ApplyLayoutOp value => ResolveLayout(presentation, value.Layout),
                 _ => null,
             };
-            resolved.Add(new ResolvedSlidesOp(op, slide, shape, slides, layout));
+            // Detached shapes may no longer expose their SDK identity. Keep the receipt target
+            // aligned with the original presentation used to resolve every operation.
+            resolved.Add(new ResolvedSlidesOp(op, slide, shape, slides, layout, shape?.OfficeInteropShapeId));
         }
 
         return resolved;
@@ -193,5 +195,6 @@ internal static class SlidesMutationHandlers
         ISlide? Slide,
         IShape? Shape,
         IReadOnlyList<ISlide>? Slides,
-        ILayoutSlide? Layout);
+        ILayoutSlide? Layout,
+        long? ShapeId);
 }

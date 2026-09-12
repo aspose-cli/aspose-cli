@@ -64,9 +64,13 @@ Then handle these traps (each verified against the real CLI):
   aspose-cli cells render book.xlsx --sheet Data --out check.png --overwrite --output json
   ```
 
-- **`convert --to csv` exports sheet index 0**, not the active sheet — so it
-  dodges the hijack but silently exports the *wrong* sheet when your data is
-  not first, and still appends a watermark row. Pass `--sheet` here too.
+- **Text export is limited to the first worksheet in evaluation mode.**
+  `convert --to csv`, `--to tsv`, and `--to md` can export only sheet index 0.
+  An explicit `--sheet` naming another worksheet fails with `EVALUATION_LIMIT`
+  (exit 7) before writing or replacing any output. Apply an Aspose.Cells license
+  to export that worksheet, or explicitly choose the first worksheet. Without
+  `--sheet`, the first worksheet is exported and named in `SHEETS_DROPPED`.
+  Text outputs still include the evaluation notice.
 
 - **Every save stacks another eval sheet** ("Evaluation Warning",
   "Evaluation Warning (1)", …). `info` lists them all; the count climbs with

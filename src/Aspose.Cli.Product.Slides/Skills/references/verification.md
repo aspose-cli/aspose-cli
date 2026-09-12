@@ -17,3 +17,8 @@ causes no further code or content changes.
 Evaluation output must disclose `EVAL_MODE`; input text may also be replaced or
 truncated. Licensed results may be claimed only when the CLI reports the Slides
 product as licensed.
+
+PNG and JPEG conversion use the same 192 DPI default as `slides render` (a
+720-by-405-point slide becomes 1920 by 1080 pixels). Use `slides render` with
+`--width` or `--dpi` when a different raster size is required. Both paths check
+single-image and total-batch pixel budgets before publishing any output files.

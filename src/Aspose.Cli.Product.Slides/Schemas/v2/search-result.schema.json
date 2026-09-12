@@ -20,7 +20,7 @@
           "slide": { "type": "integer", "minimum": 1 },
           "slideId": { "type": "integer", "minimum": 1 },
           "scope": { "enum": ["shapes", "notes"] },
-          "shapeId": { "type": "integer", "minimum": 0 },
+          "shapeId": { "type": "integer", "minimum": 1, "description": "Positive persistent identifier within the hit slide." },
           "shapeName": { "type": "string" },
           "text": { "type": "string" },
           "start": { "type": "integer", "minimum": 0 },

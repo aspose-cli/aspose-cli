@@ -130,6 +130,20 @@ internal sealed class CellsOutputService
             // lines up with sheet column N, and the extract disagrees with read's
             // A1-anchored used range. Turn it off to keep positions faithful.
             Worksheet active = workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex];
+            if (licenseState == LicenseState.Evaluation)
+            {
+                // The evaluation SDK always writes the first sheet for text
+                // formats, regardless of ActiveSheetIndex. Refuse a conflicting
+                // explicit selection before publishing a misleading report.
+                Worksheet first = workbook.Worksheets[0];
+                if (request.SheetName is not null && active.Index != 0)
+                {
+                    throw CellsErrors.TextExportEvaluationLimit(
+                        request.TargetFormatId, active.Name, first.Name);
+                }
+
+                active = first;
+            }
             _saver.NormalizeDatesForTextExport(active);
             saveOptions = request.TargetFormatId is "md"
                 ? new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.None }

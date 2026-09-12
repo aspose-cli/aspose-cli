@@ -28,6 +28,33 @@ public sealed class PdfArtifactWorkflowTests
     }
 
     [Fact]
+    public void Create_MarkdownAppliesPageGeometryBeforeLayout()
+    {
+        using var fixture = new PdfEngineFixture();
+        string markdown = fixture.File("appendix.md");
+        File.WriteAllText(markdown, "# Delivery appendix\n\nReadiness evidence.");
+        string output = fixture.File("appendix.pdf");
+        fixture.Engine.Create(new NewPdfRequest
+        {
+            TextPath = markdown,
+            Markdown = true,
+            OutputPath = output,
+            PageSize = "Letter",
+            Margins = new PdfMargins(72, 54, 60, 90),
+        });
+
+        using var reopened = new Document(output);
+        Page page = Assert.Single(reopened.Pages);
+        Assert.Equal(612, page.Rect.Width, precision: 1);
+        Assert.Equal(792, page.Rect.Height, precision: 1);
+        var absorber = new TextFragmentAbsorber("Delivery appendix");
+        page.Accept(absorber);
+        TextFragment title = Assert.Single(absorber.TextFragments);
+        Assert.True(title.Rectangle.LLX >= 89, $"Heading starts at {title.Rectangle.LLX}, outside the requested left margin.");
+        Assert.True(title.Rectangle.URY <= 721, $"Heading ends at {title.Rectangle.URY}, outside the requested top margin.");
+    }
+
+    [Fact]
     public void CreateMergeAndSplit_PreserveTheArtifactSequence()
     {
         using var fixture = new PdfEngineFixture();

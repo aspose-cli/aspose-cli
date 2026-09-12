@@ -20,7 +20,7 @@
         "truncated": { "type": "boolean" }
       }
     },
-    "slides": { "type": "array", "items": { "type": "object" } },
+    "slides": { "type": "array", "items": { "type": "object", "properties": { "shapes": { "type": "array", "items": { "type": "object", "properties": { "shapeId": { "type": "integer", "minimum": 1, "description": "Positive persistent identifier within this slide; pass as an edit operation shape selector." } } } } } } },
     "next": { "type": "string" },
     "license": { "type": "object" },
     "warnings": { "type": "array" }

@@ -47,7 +47,20 @@ internal static class ChartPivotOps
         return null;
     }
 
-    public static long? CreatePivot(Worksheet sheet, CreatePivotOp op)
+    public static long? ApplyPivot(Worksheet sheet, Op op)
+    {
+        // Pivot caches capture stored cell results. Calculate dependencies before
+        // adding or refreshing the cache so preceding edits in this batch are visible.
+        sheet.Workbook.CalculateFormula();
+        return op switch
+        {
+            CreatePivotOp create => CreatePivot(sheet, create),
+            RefreshPivotOp refresh => RefreshPivot(sheet, refresh),
+            _ => throw new InvalidOperationException($"Unhandled pivot operation {op.GetType().Name}."),
+        };
+    }
+
+    private static long? CreatePivot(Worksheet sheet, CreatePivotOp op)
     {
         // An unqualified source refers to the op's sheet; the engine API
         // requires the qualified form.
@@ -110,15 +123,49 @@ internal static class ChartPivotOps
         return index;
     }
 
-    public static long? RefreshPivot(Worksheet sheet, RefreshPivotOp op)
+    private static long? RefreshPivot(Worksheet sheet, RefreshPivotOp op)
     {
         bool refreshedAny = false;
         foreach (PivotTable pivot in sheet.PivotTables)
         {
             if (op.Name is null || string.Equals(pivot.Name, op.Name, StringComparison.Ordinal))
             {
-                pivot.RefreshData();
-                pivot.CalculateData();
+                bool autoFit = pivot.AutofitColumnWidthOnUpdate;
+                bool autoFormat = pivot.IsAutoFormat;
+                bool preserveFormatting = pivot.PreserveFormatting;
+                try
+                {
+                    // Refresh values without resizing columns used by unrelated
+                    // report content or replacing the user's cell formatting.
+                    CellArea area = pivot.TableRange1;
+                    var formats = new List<(int Row, int Column, Style Style)>();
+                    foreach (Cell cell in sheet.Cells.CreateRange(
+                        area.StartRow, area.StartColumn,
+                        area.EndRow - area.StartRow + 1, area.EndColumn - area.StartColumn + 1))
+                    {
+                        if (cell.IsStyleSet)
+                        {
+                            formats.Add((cell.Row, cell.Column, cell.GetStyle()));
+                        }
+                    }
+
+                    foreach ((int row, int column, Style style) in formats)
+                    {
+                        pivot.Format(row, column, style);
+                    }
+
+                    pivot.AutofitColumnWidthOnUpdate = false;
+                    pivot.IsAutoFormat = false;
+                    pivot.PreserveFormatting = true;
+                    pivot.RefreshData();
+                    pivot.CalculateData();
+                }
+                finally
+                {
+                    pivot.AutofitColumnWidthOnUpdate = autoFit;
+                    pivot.IsAutoFormat = autoFormat;
+                    pivot.PreserveFormatting = preserveFormatting;
+                }
                 refreshedAny = true;
             }
         }

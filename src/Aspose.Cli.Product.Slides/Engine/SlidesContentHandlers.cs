@@ -24,7 +24,7 @@ internal static class SlidesContentHandlers
     {
         if (shape is not IAutoShape { TextFrame: not null } auto)
         {
-            throw new InvalidOperationException($"Shape {shape.UniqueId} has no editable text frame.");
+            throw new InvalidOperationException($"Shape {shape.OfficeInteropShapeId} has no editable text frame.");
         }
 
         auto.TextFrame.Text = text;

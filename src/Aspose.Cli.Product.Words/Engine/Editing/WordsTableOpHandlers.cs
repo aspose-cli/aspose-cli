@@ -73,10 +73,38 @@ internal static class WordsTableOpHandlers
         }
 
         Cell cell = table.Rows[op.Row - 1].Cells[op.Col - 1];
-        cell.RemoveAllChildren();
-        var paragraph = new Paragraph(table.Document);
-        paragraph.AppendChild(new Run(table.Document, op.Text));
-        cell.AppendChild(paragraph);
+        // The terminal paragraph owns the cell marker and must survive tracked replacement.
+        Paragraph paragraph = cell.LastParagraph;
+        if (paragraph is null)
+        {
+            paragraph = new Paragraph(table.Document);
+            cell.AppendChild(paragraph);
+        }
+
+        Run? firstRun = paragraph.GetChildNodes(NodeType.Run, true).Cast<Run>()
+            .FirstOrDefault(static run => !run.IsDeleteRevision);
+        Run? replacement = firstRun is null ? null : (Run)firstRun.Clone(true);
+        foreach (Node child in cell.GetChildNodes(NodeType.Any, false).Cast<Node>().ToArray())
+        {
+            if (child != paragraph)
+            {
+                child.Remove();
+            }
+        }
+
+        paragraph.RemoveAllChildren();
+        if (replacement is not null)
+        {
+            paragraph.AppendChild(replacement);
+            replacement.Text = op.Text;
+        }
+        else
+        {
+            var builder = new DocumentBuilder((Document)table.Document);
+            builder.MoveTo(paragraph);
+            builder.Write(op.Text);
+        }
+
         return 1;
     }
 

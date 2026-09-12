@@ -19,6 +19,7 @@ namespace Aspose.Cli.Product.Slides.Engine;
 internal static class SlidesEngineSupport
 {
     internal const string EvaluationTruncationMarker = "truncated due to evaluation version limitation";
+    internal const int DefaultRasterDpi = 192;
     internal const long TotalRasterPixelLimit = 768L * 1024 * 1024;
 
     internal static Warning EvaluationInputWarning { get; } = new()
@@ -98,7 +99,7 @@ internal static class SlidesEngineSupport
                 string? shapeText = Take(ShapeText(shape), ref remaining, ref contentTruncated);
                 shapes.Add(new SlideShapeData
                 {
-                    ShapeId = shape.UniqueId,
+                    ShapeId = shape.OfficeInteropShapeId,
                     Name = EmptyToNull(shape.Name),
                     Type = ShapeTypeName(shape),
                     Role = PlaceholderRole(shape.Placeholder?.Type),
@@ -408,7 +409,7 @@ internal static class SlidesEngineSupport
             return (float)(width / presentation.SlideSize.Size.Width);
         }
 
-        return (request.Dpi ?? 192) / 72f;
+        return (request.Dpi ?? DefaultRasterDpi) / 72f;
     }
 
     internal static void EnsureRasterBudget(

@@ -5,6 +5,11 @@ operation is applied. Content inserted earlier in a batch cannot be addressed
 by later operations in that same batch. Prefer stable `slideId` and `shapeId`
 values obtained from `slides inspect` or `slides query slides` when slide order may change.
 
+A `shapeId` is a positive, persistent identifier within its slide, not a shape
+position or a presentation-wide counter. Pass it as the operation's `shape` value
+and pair it with that slide's `slide` or `slideId`. Reading a different slide
+window does not change these ids. Read new ids after duplicating or importing shapes.
+
 Apply one atomic batch:
 
 ```powershell

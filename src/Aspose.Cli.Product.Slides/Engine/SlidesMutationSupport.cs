@@ -47,7 +47,7 @@ internal static class SlidesMutationSupport
     internal static IShape ResolveShape(ISlide slide, ShapeTargetOp op)
     {
         IShape? shape = op.Shape is long shapeId
-            ? slide.Shapes.FirstOrDefault(item => item.UniqueId == shapeId)
+            ? slide.Shapes.FirstOrDefault(item => item.OfficeInteropShapeId == shapeId)
             : op.ShapeName is not null
                 ? slide.Shapes.FirstOrDefault(item => string.Equals(item.Name, op.ShapeName, StringComparison.Ordinal))
                 : slide.Shapes.FirstOrDefault(item =>
@@ -58,7 +58,7 @@ internal static class SlidesMutationSupport
         }
 
         string[] available = slide.Shapes.Take(30)
-            .Select(item => $"{item.UniqueId}:{item.Name}")
+            .Select(item => $"{item.OfficeInteropShapeId}:{item.Name}")
             .ToArray();
         ErrorCode code = op.Placeholder is null ? ErrorCodes.ShapeNotFound : SlidesDiagnostics.PlaceholderNotFound;
         throw new CliException(

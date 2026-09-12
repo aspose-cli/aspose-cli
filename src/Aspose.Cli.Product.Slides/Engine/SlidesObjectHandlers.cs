@@ -105,7 +105,7 @@ internal static class SlidesObjectHandlers
     {
         if (shape is not ITable table)
         {
-            throw new InvalidOperationException($"Shape {shape.UniqueId} is not a table.");
+            throw new InvalidOperationException($"Shape {shape.OfficeInteropShapeId} is not a table.");
         }
 
         if (op.Row > table.Rows.Count || op.Col > table.Columns.Count)
@@ -162,7 +162,7 @@ internal static class SlidesObjectHandlers
     {
         if (shape is not IChart chart)
         {
-            throw new InvalidOperationException($"Shape {shape.UniqueId} is not a chart.");
+            throw new InvalidOperationException($"Shape {shape.OfficeInteropShapeId} is not a chart.");
         }
 
         string[] categories = op.Categories?.ToArray()

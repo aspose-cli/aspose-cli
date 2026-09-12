@@ -12,6 +12,20 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// </summary>
 public static class CellsErrors
 {
+    internal static CliException TextExportEvaluationLimit(
+        string format,
+        string requestedSheet,
+        string firstSheet) => new(
+        ErrorCodes.EvaluationLimit,
+        $"Evaluation mode can export only the first worksheet '{firstSheet}' to {format}; requested worksheet '{requestedSheet}' was not exported.",
+        hint: "Apply an Aspose.Cells license to export the requested worksheet, or explicitly choose the first worksheet with --sheet. No output was written.",
+        details: new JsonObject
+        {
+            ["format"] = format,
+            ["requestedSheet"] = requestedSheet,
+            ["firstSheet"] = firstSheet,
+        },
+        docs: "licensing");
     internal static CliException RangeInvalid(string spec, string reason) => new(
         CellsDiagnostics.RangeInvalid,
         $"Invalid range '{spec}': {reason}",

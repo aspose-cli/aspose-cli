@@ -161,9 +161,9 @@ internal sealed class SlidesMutationService
         SlidesMutationHandlers.ResolvedSlidesOp item,
         IReadOnlyCollection<uint> touched)
     {
-        if (item.Shape is not null && item.Slide is not null)
+        if (item.ShapeId is long shapeId && item.Slide is not null)
         {
-            return [$"slide/{item.Slide.SlideId}/shape/{item.Shape.UniqueId}"];
+            return [$"slide/{item.Slide.SlideId}/shape/{shapeId}"];
         }
 
         var slideIds = new SortedSet<uint>(touched);
@@ -268,7 +268,7 @@ internal sealed class SlidesMutationService
                         continue;
                     }
 
-                    AddHits(text, "shapes", shape.UniqueId, shape.Name);
+                    AddHits(text, "shapes", shape.OfficeInteropShapeId, shape.Name);
                     if (truncated)
                     {
                         break;

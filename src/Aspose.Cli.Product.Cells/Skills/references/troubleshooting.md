@@ -76,3 +76,13 @@ removes it.
 - `--verbose` — adds stack traces on stderr for bug reports.
 - Deterministic output means a repeated command is diff-safe: when in
   doubt, run the read again and compare.
+
+## EVALUATION_LIMIT: text export selected another worksheet
+
+In evaluation mode, CSV, TSV, and Markdown export can write only the first
+worksheet. Selecting another sheet with `--sheet` returns `EVALUATION_LIMIT`
+(exit 7) before any output is written or replaced. The error details name the
+requested sheet and the first sheet. Apply an Aspose.Cells license to export
+the requested sheet, or explicitly select the first sheet if that is the data
+you intend to export. Do not report a successful export of the requested sheet
+when the evaluation SDK would substitute another sheet.

@@ -153,7 +153,7 @@ internal static class PdfDocumentMutationHandlers
         foreach (PdfPageLabelRange range in op.Ranges)
         {
             _ = PageAt(document, range.StartPage);
-            document.PageLabels.UpdateLabel(range.StartPage, new PageLabel
+            document.PageLabels.UpdateLabel(range.StartPage - 1, new PageLabel
             {
                 Prefix = range.Prefix,
                 StartingValue = range.StartingValue,

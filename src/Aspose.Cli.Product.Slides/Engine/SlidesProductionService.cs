@@ -167,40 +167,12 @@ internal sealed class SlidesProductionService
         {
             IReadOnlyList<int> selected = slides
                 ?? Enumerable.Range(1, presentation.Slides.Count).ToArray();
-            string directory = Path.GetDirectoryName(request.OutputPath)!;
-            using var transaction = new AtomicOutputSetWriter(_writer, directory, "slides-convert");
-            var paths = new List<string>(selected.Count);
-            foreach (int number in selected)
+            return RenderImages(presentation, new PresentationRenderRequest
             {
-                string path = selected.Count == 1
-                    ? request.OutputPath
-                    : SlidePath(request.OutputPath, number);
-                paths.Add(path);
-                ISlide slide = presentation.Slides[number - 1];
-                transaction.Stage(path, request.Overwrite, temp =>
-                {
-                    if (request.TargetFormatId == "svg")
-                    {
-                        using FileStream stream = File.Create(temp);
-                        slide.WriteAsSvg(stream);
-                        return;
-                    }
-
-                    using IImage image = slide.GetImage();
-                    image.Save(
-                        temp,
-                        request.TargetFormatId == "png" ? ImageFormat.Png : ImageFormat.Jpeg,
-                        quality: 90);
-                });
-            }
-
-            IReadOnlyList<long> sizes = transaction.Commit();
-            return paths.Select((path, index) => new OutputInfo
-            {
-                Path = path,
-                Format = request.TargetFormatId,
-                SizeBytes = sizes[index],
-            }).ToArray();
+                TargetFormatId = request.TargetFormatId,
+                OutputPath = request.OutputPath,
+                Overwrite = request.Overwrite,
+            }, selected, "slides-convert").Select(static item => item.Output).ToArray();
         }
         else
         {
@@ -275,25 +247,46 @@ internal sealed class SlidesProductionService
             : request.Slides is null
                 ? [1]
                 : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        float scale = RenderScale(loaded.Presentation, request);
+        IReadOnlyList<SlideRenderOutput> outputs = RenderImages(
+            loaded.Presentation, request, slides, "slides-render");
+        return new SlidesRenderResult
+        {
+            Input = Source(filePath, loaded.FormatId),
+            Outputs = outputs,
+            Dpi = request.TargetFormatId == "svg" || request.Width is not null
+                ? null
+                : request.Dpi ?? DefaultRasterDpi,
+            Width = request.TargetFormatId == "svg" ? null : request.Width,
+            License = EnvelopeParts.License(state),
+            Warnings = OutputWarnings(state, loaded.Presentation),
+        };
+    }
+
+    private IReadOnlyList<SlideRenderOutput> RenderImages(
+        Presentation presentation,
+        PresentationRenderRequest request,
+        IReadOnlyList<int> slides,
+        string transactionName)
+    {
+        float scale = RenderScale(presentation, request);
         if (request.TargetFormatId != "svg")
         {
-            long width = (long)Math.Ceiling(loaded.Presentation.SlideSize.Size.Width * scale);
-            long height = (long)Math.Ceiling(loaded.Presentation.SlideSize.Size.Height * scale);
+            long width = (long)Math.Ceiling(presentation.SlideSize.Size.Width * scale);
+            long height = (long)Math.Ceiling(presentation.SlideSize.Size.Height * scale);
             EnsureRasterBudget(
                 _resourceBudgets,
                 width,
                 height,
                 slides.Count,
-                request.Width is null ? request.Dpi ?? 192 : null);
+                request.Width is null ? request.Dpi ?? DefaultRasterDpi : null);
         }
 
         string directory = Path.GetDirectoryName(request.OutputPath)!;
-        using var transaction = new AtomicOutputSetWriter(_writer, directory, "slides-render");
+        using var transaction = new AtomicOutputSetWriter(_writer, directory, transactionName);
         var targets = new List<(int Number, uint SlideId, string Path)>(slides.Count);
         foreach (int number in slides)
         {
-            ISlide slide = loaded.Presentation.Slides[number - 1];
+            ISlide slide = presentation.Slides[number - 1];
             string path = slides.Count == 1
                 ? request.OutputPath
                 : SlidePath(request.OutputPath, number);
@@ -316,29 +309,18 @@ internal sealed class SlidesProductionService
         }
 
         IReadOnlyList<long> sizes = transaction.Commit();
-        return new SlidesRenderResult
+        return targets.Select((target, index) => new SlideRenderOutput
         {
-            Input = Source(filePath, loaded.FormatId),
-            Outputs = targets.Select((target, index) => new SlideRenderOutput
+            Slide = target.Number,
+            SlideId = target.SlideId,
+            Output = new OutputInfo
             {
-                Slide = target.Number,
-                SlideId = target.SlideId,
-                Output = new OutputInfo
-                {
-                    Path = target.Path,
-                    Format = request.TargetFormatId,
-                    SizeBytes = sizes[index],
-                },
-            }).ToArray(),
-            Dpi = request.TargetFormatId == "svg" || request.Width is not null
-                ? null
-                : request.Dpi ?? 192,
-            Width = request.TargetFormatId == "svg" ? null : request.Width,
-            License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded.Presentation),
-        };
+                Path = target.Path,
+                Format = request.TargetFormatId,
+                SizeBytes = sizes[index],
+            },
+        }).ToArray();
     }
-
     private SlidesCreateResult CreateCore(NewPresentationRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
