@@ -126,13 +126,23 @@ internal static class WordsStructureOpHandlers
                 section.HeadersFooters.Add(container);
             }
 
-            container.RemoveAllChildren();
-            var paragraph = new Paragraph(document);
+            Field? existingPage = container.Range.Fields.Cast<Field>()
+                .FirstOrDefault(static field => field.Type == FieldType.FieldPage);
+            Paragraph paragraph;
+            if (existingPage is null)
+            {
+                paragraph = new Paragraph(document);
+                container.AppendChild(paragraph);
+                var builder = new DocumentBuilder(document);
+                builder.MoveTo(paragraph);
+                builder.InsertField("PAGE");
+            }
+            else
+            {
+                paragraph = (Paragraph)existingPage.Start.GetAncestor(NodeType.Paragraph);
+            }
+
             paragraph.ParagraphFormat.Alignment = AlignmentOf(op.Alignment);
-            container.AppendChild(paragraph);
-            var builder = new DocumentBuilder(document);
-            builder.MoveTo(paragraph);
-            builder.InsertField("PAGE");
             if (op.Start is int start)
             {
                 section.PageSetup.RestartPageNumbering = true;

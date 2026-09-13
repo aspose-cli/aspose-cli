@@ -80,6 +80,14 @@ public sealed class PreviewSessionLifecycleTests
             hub,
             TimeSpan.FromMilliseconds(25));
 
+        int failedRevision = 0;
+        session.Diagnostic += message =>
+        {
+            if (message.StartsWith("render failed:", StringComparison.Ordinal))
+            {
+                Interlocked.CompareExchange(ref failedRevision, session.Revision, 0);
+            }
+        };
         session.RenderInitial();
         Assert.Contains("one", session.Current!.InlineHtml, StringComparison.Ordinal);
 
@@ -90,16 +98,16 @@ public sealed class PreviewSessionLifecycleTests
         PreviewSnapshot lastGood = session.Current!;
 
         ReplaceAtomically(input, "broken");
-        WaitUntil(() => session.Revision > lastGood.Revision);
+        // A revision is assigned before rendering; wait for the failed round to finish.
+        WaitUntil(() => Volatile.Read(ref failedRevision) > lastGood.Revision);
         Assert.Same(lastGood, session.Current);
         Assert.Contains("two", session.Current!.InlineHtml, StringComparison.Ordinal);
 
-        int failedRevision = session.Revision;
         ReplaceAtomically(input, "three");
         WaitUntil(() => session.Current?.InlineHtml?.Contains(
             "three",
             StringComparison.Ordinal) == true);
-        Assert.True(session.Current!.Revision > failedRevision);
+        Assert.True(session.Current!.Revision > Volatile.Read(ref failedRevision));
     }
 
     [Fact]
