@@ -94,7 +94,7 @@ public static class LicenseInstaller
                 overwrite: true,
                 staged =>
                 {
-                    File.Copy(fullSource, staged, overwrite: false);
+                    File.Copy(fullSource, staged, overwrite: true);
                     HardenStagedPermissions(staged);
                 });
         }
