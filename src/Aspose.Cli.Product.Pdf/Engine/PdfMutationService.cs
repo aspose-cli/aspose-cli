@@ -188,7 +188,8 @@ internal sealed class PdfMutationService
         MutationReceipt? mutation = null;
         if (!request.Options.DryRun)
         {
-            SafeWriteResult write = _writer.Write(
+            using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "pdf-edit");
+            StagedOutput write = transaction.Stage(
                 request.OutputPath,
                 request.Overwrite,
                 request.BackupPath,
@@ -196,11 +197,11 @@ internal sealed class PdfMutationService
                 temp =>
                 {
                     document.Save(temp);
-                    using LoadedPdf reopened = _loader.Open(temp, outputPassword);
+                    using LoadedPdf reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
                 });
             output = BuildOutput(request.OutputPath, "pdf", write.SizeBytes) with
             {
-                Fingerprint = FileFingerprints.Capture(request.OutputPath),
+                Fingerprint = write.Fingerprint,
             };
             mutation = new MutationReceipt { Verification = "reopened" };
             if (write.Backup is not null)
@@ -215,12 +216,16 @@ internal sealed class PdfMutationService
 
             if (request.Verify)
             {
-                verification = VerifyEdit(
+                verification = write.Read(candidate => VerifyEdit(
                     _loader,
+                    candidate,
                     request.OutputPath,
                     outputPassword,
-                    touched);
+                    touched,
+                    transaction,
+                    request.OverwriteArtifacts));
             }
+            transaction.Commit();
         }
 
         return new Publication(output, backup, verification, mutation);

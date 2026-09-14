@@ -192,7 +192,8 @@ internal sealed class SlidesMutationService
         if (!request.Options.DryRun)
         {
             Encrypt(presentation, request.EncryptPassword);
-            SafeWriteResult write = _writer.Write(
+            using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "slides-edit");
+            StagedOutput write = transaction.Stage(
                 request.OutputPath,
                 request.Overwrite,
                 request.BackupPath,
@@ -216,11 +217,15 @@ internal sealed class SlidesMutationService
 
             if (request.Verify)
             {
-                verification = VerifyEdit(
+                verification = write.Read(candidate => VerifyEdit(
+                    candidate,
                     request.OutputPath,
                     request.EncryptPassword ?? request.Password,
-                    touched);
+                    touched,
+                    transaction,
+                    request.OverwriteArtifacts));
             }
+            transaction.Commit();
         }
 
         return new EditPublication(output, backup, verification);
@@ -232,43 +237,40 @@ internal sealed class SlidesMutationService
         SlidesEditVerification? Verification);
 
     private SlidesEditVerification VerifyEdit(
+        string candidatePath,
         string outputPath,
         string? password,
-        IReadOnlyCollection<uint> touched)
+        IReadOnlyCollection<uint> touched,
+        AtomicOutputSetWriter transaction,
+        bool overwriteArtifacts)
     {
-        using LoadedPresentation reopened = _loader.Open(outputPath, password);
+        using LoadedPresentation reopened = _loader.OpenPublishedCandidate(candidatePath, password);
         ISlide[] selected = (touched.Count == 0
                 ? reopened.Presentation.Slides.Take(1)
                 : reopened.Presentation.Slides.Where(slide => touched.Contains(slide.SlideId)))
             .Take(12)
             .ToArray();
+        EnsureRasterBudget(_resourceBudgets,
+            (long)Math.Ceiling(reopened.Presentation.SlideSize.Size.Width * 2d),
+            (long)Math.Ceiling(reopened.Presentation.SlideSize.Size.Height * 2d), selected.Length, 144);
         var renders = new List<SlideRenderOutput>();
         var issues = new List<string>();
         foreach (ISlide slide in selected)
         {
             int number = FindSlideNumber(reopened.Presentation, slide);
             string path = $"{outputPath}.verify.s{number}.png";
-            try
+            long size = transaction.Stage(path, overwriteArtifacts, temp =>
             {
-                long size = _writer.Write(path, overwrite: true, temp =>
-                {
-                    using IImage image = slide.GetImage(2f, 2f);
-                    using FileStream outputStream = File.Create(temp);
-                    image.Save(outputStream, ImageFormat.Png);
-                });
-                renders.Add(new SlideRenderOutput
-                {
-                    Slide = number,
-                    SlideId = slide.SlideId,
-                    Output = new OutputInfo { Path = path, Format = "png", SizeBytes = size },
-                });
-            }
-            catch (Exception exception) when (
-                exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true
-                || exception is IOException or UnauthorizedAccessException)
+                using IImage image = slide.GetImage(2f, 2f);
+                using FileStream outputStream = File.Create(temp);
+                image.Save(outputStream, ImageFormat.Png);
+            }).SizeBytes;
+            renders.Add(new SlideRenderOutput
             {
-                issues.Add($"Slide {number} verification render failed: {exception.Message}");
-            }
+                Slide = number,
+                SlideId = slide.SlideId,
+                Output = new OutputInfo { Path = path, Format = "png", SizeBytes = size },
+            });
         }
 
         return new SlidesEditVerification

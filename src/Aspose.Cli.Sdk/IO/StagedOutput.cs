@@ -15,7 +15,7 @@ public sealed class StagedOutput
     public FileFingerprint Fingerprint => new() { Sha256 = _entry.StagedSnapshot.Sha256!.ToLowerInvariant() };
 
     internal FilePublicationSnapshot Snapshot => _entry.StagedSnapshot;
-    internal SafeBackupResult? Backup => _entry.RequestedBackup is { } path && _entry.Original.Exists
+    public SafeBackupResult? Backup => _entry.RequestedBackup is { } path && _entry.Original.Exists
         ? new SafeBackupResult(path, !_entry.RequestedBackupOriginal!.Exists,
             _entry.RequestedBackupOriginal.Exists ? _entry.RequestedBackupOriginal.Length : _entry.Original.Length)
         : null;

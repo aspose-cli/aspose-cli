@@ -54,3 +54,7 @@ The exact operation contract is available offline:
 aspose-cli schema v2/pdf/ops
 aspose-cli docs pdf/ops
 ```
+
+Verification reopens the exact staged document. Verification images and the
+main output commit together; existing evidence files require explicit
+`--overwrite`. `--in-place` only authorizes replacing the main document.

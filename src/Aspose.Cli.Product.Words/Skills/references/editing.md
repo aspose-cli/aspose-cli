@@ -88,5 +88,7 @@ selected section; specify `section` when only one section should restart.
 `--verify` is opt-in and cannot be combined with `--dry-run`. It reopens the
 saved file, checks field/revision/protection state, compares private document
 copies and renders bounded page evidence. See `verification.md` for coverage
-and result fields. Verification happens after save; a failed verification does
-not mean the saved document was rolled back.
+and result fields. Verification reads the staged document before publication. Failed content
+checks remain a partial-success report; execution failures prevent publication.
+Existing verification images require explicit `--overwrite`, including with
+`--in-place`.

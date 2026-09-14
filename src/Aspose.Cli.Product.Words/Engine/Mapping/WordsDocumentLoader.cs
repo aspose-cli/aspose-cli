@@ -22,6 +22,14 @@ internal sealed class WordsDocumentLoader
             _resourceBudgets,
             path,
             InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        return OpenCore(path, password);
+    }
+
+    // Generated candidates are bounded by publication, not a second user-input admission.
+    internal LoadedDocument OpenPublishedCandidate(string path, string? password) => OpenCore(path, password);
+
+    private LoadedDocument OpenCore(string path, string? password)
+    {
         FileFormatInfo detected;
         try
         {

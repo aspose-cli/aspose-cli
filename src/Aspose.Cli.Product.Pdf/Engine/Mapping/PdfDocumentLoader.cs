@@ -14,6 +14,14 @@ internal sealed class PdfDocumentLoader(
             resourceBudgets,
             path,
             InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        return OpenCore(path, password);
+    }
+
+    // Generated candidates are bounded by publication, not a second user-input admission.
+    internal LoadedPdf OpenPublishedCandidate(string path, string? password) => OpenCore(path, password);
+
+    private LoadedPdf OpenCore(string path, string? password)
+    {
         EnsurePdfHeader(path);
 
         try

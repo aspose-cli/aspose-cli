@@ -239,7 +239,9 @@ internal sealed class CellsOutputService
             renderedRange = A1.FormatRange(range);
         }
 
-        long sizeBytes = RenderSheetToFile(sheet, request, renderedRange, request.OutputPath);
+        using var transaction = new AtomicOutputSetWriter(_fileWriter, Path.GetDirectoryName(request.OutputPath)!, "cells-render");
+        long sizeBytes = StageSheet(transaction, sheet, request, renderedRange, request.OutputPath).SizeBytes;
+        transaction.Commit();
 
         return new RenderResult
         {
@@ -265,7 +267,7 @@ internal sealed class CellsOutputService
     /// an engine rasterization crash into <c>RENDER_FAILED</c>. Both the
     /// single-sheet path and <c>--all-sheets</c> run through it.
     /// </summary>
-    private long RenderSheetToFile(Worksheet sheet, RenderRequest request, string? printArea, string outputPath)
+    private StagedOutput StageSheet(AtomicOutputSetWriter transaction, Worksheet sheet, RenderRequest request, string? printArea, string outputPath)
     {
         bool isRaster = FormatMapper.IsRaster(request.TargetFormatId);
 
@@ -307,7 +309,7 @@ internal sealed class CellsOutputService
                 EnsureRenderable(render, request.Dpi);
             }
 
-            return _fileWriter.Write(
+            return transaction.Stage(
                 outputPath,
                 request.Overwrite,
                 tempPath => render.ToImage(0, tempPath));
@@ -349,6 +351,7 @@ internal sealed class CellsOutputService
 
         IReadOnlyList<string> outputPaths = DerivePerSheetPaths(request.OutputPath, candidates);
 
+        using var transaction = new AtomicOutputSetWriter(_fileWriter, Path.GetDirectoryName(request.OutputPath)!, "cells-render");
         var rendered = new List<SheetRenderOutput>();
         var skipped = new List<string>();
         CliException? firstSkip = null;
@@ -358,7 +361,7 @@ internal sealed class CellsOutputService
             Worksheet sheet = candidates[i];
             try
             {
-                long sizeBytes = RenderSheetToFile(sheet, request, printArea: null, outputPaths[i]);
+                long sizeBytes = StageSheet(transaction, sheet, request, printArea: null, outputPaths[i]).SizeBytes;
                 rendered.Add(new SheetRenderOutput
                 {
                     Sheet = sheet.Name,
@@ -382,6 +385,7 @@ internal sealed class CellsOutputService
                 ?? CellsErrors.RenderEmpty(Sheets.Resolve(workbook, sheetName: null).Name);
         }
 
+        transaction.Commit();
         Warning? sheetsSkipped = skipped.Count == 0 ? null : new Warning
         {
             Code = CellsDiagnostics.SheetsSkipped,

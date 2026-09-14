@@ -44,3 +44,7 @@ aspose-cli docs slides/ops
 
 Video and audio insertion or MP4 rendering are not supported by this build. Existing embedded
 media can be inventoried and extracted, but must not be silently synthesized.
+
+Verification reopens the exact staged document. Verification images and the
+main output commit together; existing evidence files require explicit
+`--overwrite`. `--in-place` only authorizes replacing the main document.

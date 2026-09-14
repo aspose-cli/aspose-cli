@@ -89,6 +89,7 @@ internal sealed class WordsProductionService
         IReadOnlyList<int> pages = request.AllPages
             ? Enumerable.Range(1, loaded.Document.PageCount).ToArray()
             : request.Pages?.Resolve(loaded.Document.PageCount) ?? [1];
+        using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "words-render");
         var outputs = new List<PageOutput>(pages.Count);
         foreach (int page in pages)
         {
@@ -98,10 +99,12 @@ internal sealed class WordsProductionService
             RenderPixelGuard.EnsureFits(width, height, request.Dpi);
             string path = pages.Count == 1 ? request.OutputPath : PagePath(request.OutputPath, page);
             SaveOptions options = WordsSavePipeline.Options(request.TargetFormatId, pages: [page], dpi: request.Dpi);
-            long size = _writer.Write(path, request.Overwrite, temp => loaded.Document.Save(temp, options));
+            long size = transaction.Stage(path, request.Overwrite, temp => loaded.Document.Save(temp, options)).SizeBytes;
             outputs.Add(new PageOutput { Page = page, Output = BuildOutput(path, request.TargetFormatId, size) });
         }
 
+        loaded.Resources.ThrowIfFailed();
+        transaction.Commit();
         return new WordsRenderResult
         {
             Input = InfoProjection.Source(filePath, loaded),

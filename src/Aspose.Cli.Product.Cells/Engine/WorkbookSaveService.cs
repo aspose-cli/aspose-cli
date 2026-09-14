@@ -91,7 +91,7 @@ internal sealed class WorkbookSaveService(SafeFileWriter writer, WorkbookLoadSer
                 Path = outputPath,
                 Format = formatId,
                 SizeBytes = write.SizeBytes,
-                Fingerprint = FileFingerprints.Capture(outputPath),
+                Fingerprint = write.Fingerprint,
             },
             backup,
             truncated,

@@ -169,7 +169,8 @@ internal static class WordsOpsExecutor
         {
             string format = FormatId(request.OutputPath);
             SaveOptions options = WordsSavePipeline.Options(format, request.EncryptPassword);
-            SafeWriteResult write = writer.Write(
+            using var transaction = new AtomicOutputSetWriter(writer, Path.GetDirectoryName(request.OutputPath)!, "words-edit");
+            StagedOutput write = transaction.Stage(
                 request.OutputPath,
                 request.Overwrite,
                 request.BackupPath,
@@ -196,15 +197,18 @@ internal static class WordsOpsExecutor
                     document.Range.Fields.Count,
                     document.Revisions.Count,
                     document.ProtectionType.ToString());
-                verification = Verify(
+                verification = write.Read(candidate => Verify(
+                    candidate,
                     request,
                     originalPages,
                     baseline!,
                     expected,
                     outcomes.Any(static outcome =>
                         outcome.Status == OpStatuses.Ok && outcome.ItemsAffected > 0),
-                    loader);
+                    loader,
+                    transaction));
             }
+            transaction.Commit();
         }
         return (output, backup, verification);
     }
@@ -223,102 +227,90 @@ internal static class WordsOpsExecutor
     }
 
     private static WordsVerification Verify(
+        string candidatePath,
         WordsEditRequest request,
         IReadOnlyList<int> originalPages,
         Document baseline,
         ExpectedDocumentState expected,
         bool expectedChange,
-        WordsDocumentLoader loader)
+        WordsDocumentLoader loader,
+        AtomicOutputSetWriter transaction)
     {
         var issues = new List<string>();
         var renders = new List<PageOutput>();
-        try
+        using LoadedDocument reopened = loader.OpenPublishedCandidate(
+            candidatePath,
+            request.EncryptPassword);
+        var index = new DocumentBlockIndex(reopened.Document);
+        int fieldCount = reopened.Document.Range.Fields.Count;
+        int revisionCount = reopened.Document.Revisions.Count;
+        string protection = reopened.Document.ProtectionType.ToString();
+        if (fieldCount != expected.FieldCount)
         {
-            using LoadedDocument reopened = loader.Open(
-                request.OutputPath,
-                request.EncryptPassword);
-            var index = new DocumentBlockIndex(reopened.Document);
-            int fieldCount = reopened.Document.Range.Fields.Count;
-            int revisionCount = reopened.Document.Revisions.Count;
-            string protection = reopened.Document.ProtectionType.ToString();
-            if (fieldCount != expected.FieldCount)
-            {
-                issues.Add($"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.");
-            }
+            issues.Add($"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.");
+        }
 
-            if (revisionCount != expected.RevisionCount)
-            {
-                issues.Add($"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.");
-            }
+        if (revisionCount != expected.RevisionCount)
+        {
+            issues.Add($"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.");
+        }
 
-            if (!string.Equals(protection, expected.Protection, StringComparison.Ordinal))
-            {
-                issues.Add($"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.");
-            }
+        if (!string.Equals(protection, expected.Protection, StringComparison.Ordinal))
+        {
+            issues.Add($"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.");
+        }
 
-            Document comparisonBaseline = baseline.Clone();
-            Document comparisonOutput = reopened.Document.Clone();
-            comparisonBaseline.AcceptAllRevisions();
-            comparisonOutput.AcceptAllRevisions();
-            comparisonBaseline.Compare(
-                comparisonOutput,
-                "Aspose CLI",
-                new DateTime(2000, 1, 1));
-            bool semanticChanges = comparisonBaseline.Revisions.Count > 0;
-            comparisonBaseline.Cleanup();
-            comparisonOutput.Cleanup();
-            if (expectedChange && !semanticChanges)
-            {
-                issues.Add("The batch reported affected items, but semantic comparison found no persisted change.");
-            }
+        Document comparisonBaseline = baseline.Clone();
+        Document comparisonOutput = reopened.Document.Clone();
+        comparisonBaseline.AcceptAllRevisions();
+        comparisonOutput.AcceptAllRevisions();
+        comparisonBaseline.Compare(
+            comparisonOutput,
+            "Aspose CLI",
+            new DateTime(2000, 1, 1));
+        bool semanticChanges = comparisonBaseline.Revisions.Count > 0;
+        comparisonBaseline.Cleanup();
+        comparisonOutput.Cleanup();
+        if (expectedChange && !semanticChanges)
+        {
+            issues.Add("The batch reported affected items, but semantic comparison found no persisted change.");
+        }
 
-            IReadOnlyList<int> pages = VerificationPages(reopened.Document.PageCount, originalPages);
-            foreach (int page in pages)
+        IReadOnlyList<int> pages = VerificationPages(reopened.Document.PageCount, originalPages);
+        foreach (int page in pages)
+        {
+            string renderPath = $"{request.OutputPath}.verify.p{page}.png";
+            PageInfo info = reopened.Document.GetPageInfo(page - 1);
+            long width = (long)Math.Ceiling(info.WidthInPoints / 72d * 150);
+            long height = (long)Math.Ceiling(info.HeightInPoints / 72d * 150);
+            RenderPixelGuard.EnsureFits(width, height, 150);
+            var options = (ImageSaveOptions)WordsSavePipeline.Options("png", pages: [page], dpi: 150);
+            StagedOutput rendered = transaction.Stage(renderPath, request.OverwriteArtifacts,
+                path => reopened.Document.Save(path, options));
+            renders.Add(new PageOutput
             {
-                string renderPath = $"{request.OutputPath}.verify.p{page}.png";
-                PageInfo info = reopened.Document.GetPageInfo(page - 1);
-                long width = (long)Math.Ceiling(info.WidthInPoints / 72d * 150);
-                long height = (long)Math.Ceiling(info.HeightInPoints / 72d * 150);
-                RenderPixelGuard.EnsureFits(width, height, 150);
-                var options = (ImageSaveOptions)WordsSavePipeline.Options("png", pages: [page], dpi: 150);
-                reopened.Document.Save(renderPath, options);
-                renders.Add(new PageOutput
+                Page = page,
+                Output = new OutputInfo
                 {
-                    Page = page,
-                    Output = new OutputInfo
-                    {
-                        Path = renderPath,
-                        Format = "png",
-                        SizeBytes = new FileInfo(renderPath).Length,
-                    },
-                });
-            }
+                    Path = renderPath,
+                    Format = "png",
+                    SizeBytes = rendered.SizeBytes,
+                },
+            });
+        }
 
-            return new WordsVerification
-            {
-                Ok = issues.Count == 0,
-                VisualReviewRequired = reopened.Document.PageCount > 20,
-                ReadBackBlocks = Enumerable.Range(1, Math.Min(index.Count, 20)).ToArray(),
-                Renders = renders,
-                Issues = issues,
-                SemanticChangesDetected = semanticChanges,
-                FieldCount = fieldCount,
-                RevisionCount = revisionCount,
-                Protection = protection,
-            };
-        }
-        catch (Exception exception)
+        return new WordsVerification
         {
-            issues.Add(exception.Message);
-            return new WordsVerification
-            {
-                Ok = false,
-                VisualReviewRequired = true,
-                ReadBackBlocks = [],
-                Renders = renders,
-                Issues = issues,
-            };
-        }
+            Ok = issues.Count == 0,
+            VisualReviewRequired = reopened.Document.PageCount > 20,
+            ReadBackBlocks = Enumerable.Range(1, Math.Min(index.Count, 20)).ToArray(),
+            Renders = renders,
+            Issues = issues,
+            SemanticChangesDetected = semanticChanges,
+            FieldCount = fieldCount,
+            RevisionCount = revisionCount,
+            Protection = protection,
+        };
     }
 
     private static IReadOnlyList<int> VerificationPages(int pageCount, IReadOnlyList<int> touched)

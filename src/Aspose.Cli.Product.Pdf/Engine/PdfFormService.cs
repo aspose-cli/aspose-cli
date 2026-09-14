@@ -128,7 +128,7 @@ internal sealed class PdfFormService
             });
         }
 
-        long size = _writer.Write(
+        SafeWriteResult write = _writer.Write(
             request.OutputPath,
             request.Overwrite,
             backupPath: null,
@@ -136,14 +136,14 @@ internal sealed class PdfFormService
             temp =>
             {
                 loaded.Document.Save(temp);
-                using LoadedPdf reopened = _loader.Open(temp, request.Password);
-            }).SizeBytes;
+                using LoadedPdf reopened = _loader.OpenPublishedCandidate(temp, request.Password);
+            });
         return new PdfEditResult
         {
             Input = input,
-            Output = BuildOutput(request.OutputPath, "pdf", size) with
+            Output = BuildOutput(request.OutputPath, "pdf", write.SizeBytes) with
             {
-                Fingerprint = FileFingerprints.Capture(request.OutputPath),
+                Fingerprint = write.Fingerprint,
             },
             DryRun = false,
             Applied = outcomes,

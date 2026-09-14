@@ -14,6 +14,14 @@ internal sealed class SlidesPresentationLoader(
             resourceBudgets,
             path,
             InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        return OpenCore(path, password);
+    }
+
+    // Generated candidates are bounded by publication, not a second user-input admission.
+    internal LoadedPresentation OpenPublishedCandidate(string path, string? password) => OpenCore(path, password);
+
+    private LoadedPresentation OpenCore(string path, string? password)
+    {
 
         try
         {

@@ -63,11 +63,14 @@ internal static class PdfMutationSupport
 
     internal static PdfVerification VerifyEdit(
         PdfDocumentLoader loader,
+        string candidatePath,
         string outputPath,
         string? password,
-        IReadOnlyCollection<int> touched)
+        IReadOnlyCollection<int> touched,
+        AtomicOutputSetWriter transaction,
+        bool overwriteArtifacts)
     {
-        using LoadedPdf reopened = loader.Open(outputPath, password);
+        using LoadedPdf reopened = loader.OpenPublishedCandidate(candidatePath, password);
         int[] pages = (touched.Count == 0 ? [1] : touched)
             .Where(page => page <= reopened.Document.Pages.Count)
             .Take(3)
@@ -77,22 +80,16 @@ internal static class PdfMutationSupport
         foreach (int page in pages)
         {
             string path = $"{outputPath}.verify.p{page}.png";
-            try
+            Page selected = reopened.Document.Pages[page];
+            Aspose.Cli.Sdk.Rendering.RenderPixelGuard.EnsureFits(
+                (long)Math.Ceiling(selected.Rect.Width / 72d * 150),
+                (long)Math.Ceiling(selected.Rect.Height / 72d * 150), 150);
+            StagedOutput rendered = transaction.Stage(path, overwriteArtifacts, candidate =>
             {
-                using FileStream stream = File.Create(path);
-                new PngDevice(new Resolution(150)).Process(reopened.Document.Pages[page], stream);
-                renders.Add(new PdfPageOutput
-                {
-                    Page = page,
-                    Output = BuildOutput(path, "png", new FileInfo(path).Length),
-                });
-            }
-            catch (Exception exception) when (
-                exception.GetType().Assembly.GetName().Name == "Aspose.PDF"
-                || exception is IOException or UnauthorizedAccessException)
-            {
-                issues.Add($"Page {page} verification render failed: {exception.Message}");
-            }
+                using FileStream stream = File.Create(candidate);
+                new PngDevice(new Resolution(150)).Process(selected, stream);
+            });
+            renders.Add(new PdfPageOutput { Page = page, Output = BuildOutput(path, "png", rendered.SizeBytes) });
         }
 
         return new PdfVerification
