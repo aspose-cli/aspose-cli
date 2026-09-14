@@ -12,7 +12,7 @@ internal static class ConvertCommand
     {
         Argument<string> file = SlidesOptions.File();
         var to = new Option<string>("--to") { Required = true, Description = "Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions." }.WithInput(InputKind.None);
-        to.AcceptOnlyFromAmong([.. SlidesModule.Formats.IdsFor(FormatUse.Convert)]);
+        to.AcceptOnlyFromAmong([.. SlidesFormats.Definitions.IdsFor(FormatUse.Convert)]);
         var slides = new Option<string?>("--slides") { Description = "Optional 1-based slide range." }.WithInput(InputKind.None);
         var output = new OutputFileOptions(
             "Output path; defaults to a sibling using the target extension.");
@@ -33,7 +33,7 @@ internal static class ConvertCommand
             return context.Port.Convert(input, new PresentationConvertRequest
             {
                 TargetFormatId = format,
-                OutputPath = output.ResolvePath(parse, context.Paths, input, SlidesModule.Formats.ExtensionFor(format)),
+                OutputPath = output.ResolvePath(parse, context.Paths, input, SlidesFormats.Definitions.ExtensionFor(format)),
                 Overwrite = output.Overwrite(parse),
                 Slides = range is null ? null : PageRange.Parse(range),
                 Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),

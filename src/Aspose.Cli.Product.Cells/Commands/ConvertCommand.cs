@@ -17,7 +17,7 @@ internal static class ConvertCommand
 
         var toOption = new Option<string>("--to")
         {
-            Description = $"Target format: {string.Join(", ", CellsModule.Formats.IdsFor(FormatUse.Convert))}.",
+            Description = $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",
             Required = true,
         }.WithInput(InputKind.None);
 

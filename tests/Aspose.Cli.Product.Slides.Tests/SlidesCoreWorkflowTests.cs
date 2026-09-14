@@ -107,7 +107,7 @@ public sealed class SlidesCoreWorkflowTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("convert.pptx", slides: 2);
-        string output = fixture.File("converted" + SlidesModule.Formats.ExtensionFor(format));
+        string output = fixture.File("converted" + SlidesFormats.Definitions.ExtensionFor(format));
 
         SlidesConvertResult result = fixture.Engine.Convert(
             input,

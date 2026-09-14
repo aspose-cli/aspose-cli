@@ -31,7 +31,7 @@ internal sealed class PdfDocumentEngine : IPdfEngine, IPdfReviewLayoutPort
         ArgumentNullException.ThrowIfNull(writer);
 
         var loader = new Engine.Mapping.PdfDocumentLoader(resourceBudgets);
-        _reading = new PdfReadService(licenseGate, writer, loader);
+        _reading = new PdfReadService(licenseGate, loader);
         _production = new PdfProductionService(
             licenseGate,
             resourceBudgets,
@@ -60,7 +60,7 @@ internal sealed class PdfDocumentEngine : IPdfEngine, IPdfReviewLayoutPort
         _reading.Read(filePath, request);
 
     public PdfConvertResult Convert(string filePath, PdfConvertRequest request) =>
-        _reading.Convert(filePath, request);
+        _production.Convert(filePath, request);
 
     public PdfRenderResult Render(string filePath, PdfRenderRequest request) =>
         _production.Render(filePath, request);

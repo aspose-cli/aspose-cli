@@ -298,6 +298,8 @@ internal sealed class DefinitionPurityWalker : OperationWalker
                 member is ".ctor" or "Declare" or "Input" or "Output" or "Render"
                     or "Routed"
                     || IsDataMember(symbol),
+            "Aspose.Cli.Sdk.Extensibility.FormatDescriptorExtensions" =>
+                member is "IdsFor" or "ExtensionFor",
             "Aspose.Cli.Sdk.Extensibility.FileFormatRecognition" =>
                 member is "AttachTo" or "Match" or "FirstOf",
             "Aspose.Cli.Sdk.Extensibility.FileProbePattern" => true,

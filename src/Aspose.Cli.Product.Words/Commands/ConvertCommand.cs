@@ -12,7 +12,7 @@ internal static class ConvertCommand
     {
         Argument<string> file = WordsOptions.File();
         var to = new Option<string>("--to") { Required = true, Description = "Target document format." }.WithInput(InputKind.None);
-        to.AcceptOnlyFromAmong([.. WordsModule.Formats.IdsFor(FormatUse.Convert)]);
+        to.AcceptOnlyFromAmong([.. WordsFormats.Definitions.IdsFor(FormatUse.Convert)]);
         var pages = new Option<string?>("--pages") { Description = "1-based pages for fixed-page targets only." }.WithInput(InputKind.None);
         var output = new OutputFileOptions("Output path; defaults to a sibling using the target extension.");
         var password = new PasswordOptions("--password", "the document");
@@ -38,7 +38,7 @@ internal static class ConvertCommand
             return context.Port.Convert(input, new WordsConvertRequest
             {
                 TargetFormatId = format,
-                OutputPath = output.ResolvePath(parse, context.Paths, input, WordsModule.Formats.ExtensionFor(format)),
+                OutputPath = output.ResolvePath(parse, context.Paths, input, WordsFormats.Definitions.ExtensionFor(format)),
                 Overwrite = output.Overwrite(parse),
                 Pages = pageText is null ? null : PageRange.Parse(pageText),
                 Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),

@@ -227,6 +227,25 @@ public sealed class ProductContractAnalyzerTests
     }
 
     [Fact]
+    public async Task Apcli007_AllowsDeterministicFormatProjection()
+    {
+        string source = ProductSource(
+            """
+            public sealed class ExtraModule : IProductModule
+            {
+                public ProductDefinition Define()
+                {
+                    _ = FormatDescriptorExtensions.IdsFor(
+                        System.Array.Empty<FormatDescriptor>(), FormatUse.Input);
+                    throw new System.NotSupportedException();
+                }
+            }
+            """);
+        ImmutableArray<Diagnostic> diagnostics = await Analyze(source);
+        Assert.DoesNotContain(diagnostics, static item => item.Id == "APCLI007");
+    }
+
+    [Fact]
     public async Task Apcli007_DoesNotTrustAnUnknownSdkHelper()
     {
         MetadataReference helper = CompileReference(

@@ -125,17 +125,6 @@ internal static class ProductCapabilityDeriver
     private static IReadOnlyList<string> SelectFormatIds(
         IEnumerable<FormatDescriptor> formats,
         FormatUse use) =>
-        Array.AsReadOnly(formats
-            .Where(format => format.Uses.HasFlag(use))
-            .OrderBy(format => use switch
-            {
-                FormatUse.Input => format.InputOrder,
-                FormatUse.Convert => format.ConvertOrder,
-                FormatUse.Render => format.RenderOrder,
-                _ => int.MaxValue,
-            })
-            .Select(static format => format.Id)
-            .Distinct(StringComparer.Ordinal)
-            .ToArray());
+        formats.IdsFor(use);
 
 }

@@ -12,7 +12,7 @@ internal static class RenderCommand
     {
         Argument<string> file = WordsOptions.File();
         var to = new Option<string>("--to") { DefaultValueFactory = _ => "png", Description = "png, jpeg or svg." }.WithInput(InputKind.None);
-        to.AcceptOnlyFromAmong([.. WordsModule.Formats.IdsFor(FormatUse.Render)]);
+        to.AcceptOnlyFromAmong([.. WordsFormats.Definitions.IdsFor(FormatUse.Render)]);
         var pages = new Option<string?>("--pages") { Description = "1-based page range." }.WithInput(InputKind.None);
         var allPages = new Option<bool>("--all-pages") { Description = "Render every page." };
         var dpi = new Option<int>("--dpi") { DefaultValueFactory = _ => 192, Description = "Raster resolution." };
@@ -43,7 +43,7 @@ internal static class RenderCommand
             return context.Port.Render(input, new WordsRenderRequest
             {
                 TargetFormatId = format,
-                OutputPath = output.ResolvePath(parse, context.Paths, input, WordsModule.Formats.ExtensionFor(format)),
+                OutputPath = output.ResolvePath(parse, context.Paths, input, WordsFormats.Definitions.ExtensionFor(format)),
                 Overwrite = output.Overwrite(parse),
                 Pages = pageText is null ? null : PageRange.Parse(pageText),
                 AllPages = everyPage,

@@ -11,7 +11,7 @@ internal static class ConvertCommand
     {
         Argument<string> file = PdfOptions.File();
         var to = new Option<string>("--to") { Required = true, Description = "Target PDF export format." }.WithInput(InputKind.None);
-        to.AcceptOnlyFromAmong([.. PdfModule.Formats.IdsFor(FormatUse.Convert)]);
+        to.AcceptOnlyFromAmong([.. PdfFormats.Definitions.IdsFor(FormatUse.Convert)]);
         var pages = new Option<string?>("--pages") { Description = "Optional 1-based page range." }.WithInput(InputKind.None);
         var output = new OutputFileOptions("Output path; defaults to a sibling using the target extension.");
         var password = new PasswordOptions("--password", "the PDF");
@@ -29,7 +29,7 @@ internal static class ConvertCommand
             return context.Port.Convert(input, new PdfConvertRequest
             {
                 TargetFormatId = format,
-                OutputPath = output.ResolvePath(parse, context.Paths, input, PdfModule.Formats.ExtensionFor(format)),
+                OutputPath = output.ResolvePath(parse, context.Paths, input, PdfFormats.Definitions.ExtensionFor(format)),
                 Overwrite = output.Overwrite(parse),
                 Pages = range is null ? null : PageRange.Parse(range),
                 Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),

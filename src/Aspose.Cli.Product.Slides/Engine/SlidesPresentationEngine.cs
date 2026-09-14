@@ -65,7 +65,7 @@ internal sealed class SlidesPresentationEngine : IPresentationEngine
         _mutations.ApplyOps(filePath, batch, request);
 
     public SlidesSearchResult Search(string filePath, PresentationSearchRequest request) =>
-        _mutations.Search(filePath, request);
+        _reads.Search(filePath, request);
 
     public PreviewRenderOutcome RenderPreview(
         string filePath,

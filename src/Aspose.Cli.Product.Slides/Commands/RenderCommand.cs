@@ -13,7 +13,7 @@ internal static class RenderCommand
     {
         Argument<string> file = SlidesOptions.File();
         var to = new Option<string>("--to") { DefaultValueFactory = _ => "png", Description = "png, jpeg or svg." }.WithInput(InputKind.None);
-        to.AcceptOnlyFromAmong([.. SlidesModule.Formats.IdsFor(FormatUse.Render)]);
+        to.AcceptOnlyFromAmong([.. SlidesFormats.Definitions.IdsFor(FormatUse.Render)]);
         var slide = new Option<int?>("--slide") { Description = "One 1-based slide number." };
         var slides = new Option<string?>("--slides") { Description = "A 1-based slide range." }.WithInput(InputKind.None);
         var allSlides = new Option<bool>("--all-slides") { Description = "Render every slide." };
@@ -75,7 +75,7 @@ internal static class RenderCommand
             return context.Port.Render(input, new PresentationRenderRequest
             {
                 TargetFormatId = format,
-                OutputPath = output.ResolvePath(parse, context.Paths, input, SlidesModule.Formats.ExtensionFor(format)),
+                OutputPath = output.ResolvePath(parse, context.Paths, input, SlidesFormats.Definitions.ExtensionFor(format)),
                 Overwrite = output.Overwrite(parse),
                 Slides = selection is null ? null : PageRange.Parse(selection),
                 AllSlides = every,

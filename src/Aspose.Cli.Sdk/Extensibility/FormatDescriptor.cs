@@ -218,12 +218,12 @@ public static class FormatDescriptorExtensions
                 "Select exactly one format use.");
         }
 
-        return descriptors
+        return Array.AsReadOnly(descriptors
             .Where(format => format.Uses.HasFlag(use))
             .OrderBy(format => Order(format, use))
             .ThenBy(static format => format.Id, StringComparer.Ordinal)
             .Select(static format => format.Id)
-            .ToArray();
+            .ToArray());
     }
 
     /// <summary>Returns the preferred output extension for one format id.</summary>

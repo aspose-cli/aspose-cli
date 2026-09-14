@@ -1,3 +1,5 @@
+using System.Text.RegularExpressions;
+using Aspose.Cli.Sdk.Text;
 using System.Globalization;
 using System.Net;
 using System.Text;
@@ -41,6 +43,10 @@ internal sealed class SlidesReadService
     /// <inheritdoc />
     internal PresentationReadResult Read(string filePath, PresentationReadRequest request) =>
         SlidesErrorTranslator.Execute("query slides", () => ReadCore(filePath, request));
+
+    /// <inheritdoc />
+    public SlidesSearchResult Search(string filePath, PresentationSearchRequest request) =>
+        SlidesErrorTranslator.Execute("query search", () => SearchCore(filePath, request));
 
     private PresentationInfoResult GetInfoCore(string filePath, PresentationInfoRequest request)
     {
@@ -182,5 +188,112 @@ internal sealed class SlidesReadService
         };
     }
 
-}
+    private SlidesSearchResult SearchCore(string filePath, PresentationSearchRequest request)
+    {
+        if (!PresentationSearchScopes.Values.Contains(request.Scope, StringComparer.Ordinal))
+        {
+            throw CliErrors.OptionInvalid("--scope", $"unknown scope '{request.Scope}'", "Use shapes, notes or all.");
+        }
 
+        if (request.MaxHits is < 1 or > 10_000)
+        {
+            throw CliErrors.OptionInvalid("--max-hits", "must be from 1 through 10000", "Choose a bounded positive hit count.");
+        }
+
+        Regex? regex = TextSearch.CreateRegex(
+            request.Regex,
+            request.Pattern,
+            request.CaseSensitive);
+
+        LicenseState state = _licenseGate.EnsureApplied();
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        var hits = new List<SlidesSearchHit>();
+        bool truncated = false;
+        foreach ((ISlide slide, int index) in loaded.Presentation.Slides.Select((slide, index) => (slide, index)))
+        {
+            if (request.Scope is PresentationSearchScopes.Shapes or PresentationSearchScopes.All)
+            {
+                foreach (IShape shape in slide.Shapes)
+                {
+                    string? text = ShapeText(shape);
+                    if (text is null)
+                    {
+                        continue;
+                    }
+
+                    AddHits(text, "shapes", shape.OfficeInteropShapeId, shape.Name);
+                    if (truncated)
+                    {
+                        break;
+                    }
+                }
+            }
+
+            if (!truncated && request.Scope is PresentationSearchScopes.Notes or PresentationSearchScopes.All)
+            {
+                string? notes = Notes(slide);
+                if (notes is not null)
+                {
+                    AddHits(notes, "notes", null, null);
+                }
+            }
+
+            if (truncated)
+            {
+                break;
+            }
+
+            void AddHits(string text, string scope, long? shapeId, string? shapeName)
+            {
+                foreach ((int start, int length) in Matches(text, request, regex))
+                {
+                    if (hits.Count == request.MaxHits)
+                    {
+                        truncated = true;
+                        break;
+                    }
+
+                    hits.Add(new SlidesSearchHit
+                    {
+                        Slide = index + 1,
+                        SlideId = slide.SlideId,
+                        Scope = scope,
+                        ShapeId = shapeId,
+                        ShapeName = EmptyToNull(shapeName),
+                        Text = MatchPreview(text, start, length),
+                        Start = start,
+                        Length = length,
+                    });
+                }
+            }
+        }
+
+        return new SlidesSearchResult
+        {
+            Input = Source(filePath, loaded.FormatId),
+            Pattern = request.Pattern,
+            Scope = request.Scope,
+            Hits = hits,
+            Truncated = truncated,
+            License = EnvelopeParts.License(state),
+            Warnings = EvaluationInputWarnings(state, loaded.Presentation),
+        };
+    }
+
+    private static IReadOnlyList<(int Start, int Length)> Matches(
+        string text,
+        PresentationSearchRequest request,
+        Regex? regex) =>
+        TextSearch.Find(
+            text,
+            request.Pattern,
+            request.CaseSensitive,
+            regex,
+            "The Slides regular expression exceeded its one-second execution budget.",
+            "Simplify the expression or search a smaller presentation.");
+
+    private static string MatchPreview(string text, int start, int length) =>
+        TextSearch.Preview(text, start, length, radius: 100);
+
+
+}

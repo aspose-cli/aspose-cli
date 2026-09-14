@@ -24,7 +24,7 @@ internal static class RenderCommand
 
         var toOption = new Option<string>("--to")
         {
-            Description = $"Image format: {string.Join(", ", CellsModule.Formats.IdsFor(FormatUse.Render))}.",
+            Description = $"Image format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Render))}.",
             DefaultValueFactory = _ => "png",
         }.WithInput(InputKind.None);
 
