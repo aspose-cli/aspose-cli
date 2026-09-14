@@ -13,20 +13,29 @@ public static class CliHost
 {
     /// <summary>
     /// Runs one CLI invocation while also containing failures raised during
-    /// edition catalog or host construction.
+    /// product catalog or host construction.
     /// </summary>
-    public static int Run(
-        string[] args,
-        Func<ProductCatalog> catalogFactory,
-        CliEditionInfo edition)
+    public static int Run(string[] args, Func<ProductCatalog> catalogFactory)
     {
         ArgumentNullException.ThrowIfNull(args);
         ArgumentNullException.ThrowIfNull(catalogFactory);
-        ArgumentNullException.ThrowIfNull(edition);
         Invocation.WindowsProcessErrorMode.SuppressNativeErrorUi();
         try
         {
-            return Run(args, catalogFactory(), edition);
+            ProductCatalog catalog = catalogFactory();
+            using InvocationInputs? inputs = InvocationInputs.Receive();
+            var host = new HostContext(catalog);
+            ConfigureConsole();
+            ConfigureUiCulture();
+            args = NormalizeInteractiveArguments(args, IsInteractiveDesktop());
+            return ProcessFailureBoundary.Run(host, args, arguments =>
+            {
+                ParsedInvocation invocation = host.Parser.Parse(arguments);
+                invocation.EnsureValid();
+                StartupLicenseNotice.Write(host, invocation, Console.Error);
+                return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
+                    () => RunInProcess(invocation));
+            });
         }
         catch (Exception exception)
         {
@@ -34,29 +43,6 @@ public static class CliHost
                 exception,
                 Console.Error);
         }
-    }
-
-    /// <summary>Runs one CLI invocation.</summary>
-    public static int Run(
-        string[] args,
-        ProductCatalog catalog,
-        CliEditionInfo edition)
-    {
-        ArgumentNullException.ThrowIfNull(args);
-        Invocation.WindowsProcessErrorMode.SuppressNativeErrorUi();
-        using InvocationInputs? inputs = InvocationInputs.Receive();
-        var host = new HostContext(catalog, edition);
-        ConfigureConsole();
-        ConfigureUiCulture();
-        args = NormalizeInteractiveArguments(args, IsInteractiveDesktop());
-        return ProcessFailureBoundary.Run(host, args, arguments =>
-        {
-            ParsedInvocation invocation = host.Parser.Parse(arguments);
-            invocation.EnsureValid();
-            StartupLicenseNotice.Write(host, invocation, Console.Error);
-            return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
-                () => RunInProcess(invocation));
-        });
     }
 
     private static int RunInProcess(ParsedInvocation invocation) =>

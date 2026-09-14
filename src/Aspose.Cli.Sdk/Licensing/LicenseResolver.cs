@@ -115,20 +115,9 @@ public static class LicenseResolver
         return LicenseResolution.None;
     }
 
-    /// <summary>Default user configuration directory of the CLI.</summary>
-    public static string DefaultUserConfigDirectory() =>
-        Configuration.ConfigurationPaths.UserDirectory();
-
-    /// <summary>Full path of the shared user-level fallback; installation writes compatible product-specific files.</summary>
-    public static string UserLicensePath() => SharedUserLicensePath(DefaultUserConfigDirectory());
-
     /// <summary>Full path of the shared user license in the selected configuration directory.</summary>
     public static string SharedUserLicensePath(string userConfigDirectory) =>
         Path.Combine(userConfigDirectory, UserFileName);
-
-    /// <summary>Full path of one product's installed user license.</summary>
-    public static string UserLicensePath(string productId) =>
-        UserLicensePath(DefaultUserConfigDirectory(), productId);
 
     /// <summary>Full path of one product's installed user license in a selected configuration directory.</summary>
     public static string UserLicensePath(string userConfigDirectory, string productId) =>

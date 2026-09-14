@@ -21,9 +21,7 @@ public sealed class LicenseFreePlatformContractTests
     public void LicenseFreeCatalog_IsHonestAndRejectsProvisioningBeforeFileAccess()
     {
         ProductCatalog catalog = Catalog();
-        var host = new HostContext(
-            catalog,
-            new CliEditionInfo("test", "Test"));
+        var host = new HostContext(catalog);
         RootCommand root = RootCommandFactory.Create(host, out _);
 
         Assert.DoesNotContain(
@@ -73,6 +71,8 @@ public sealed class LicenseFreePlatformContractTests
         using (JsonDocument capabilityJson = JsonDocument.Parse(capabilities.StandardOutput))
         {
             JsonElement capabilityRoot = capabilityJson.RootElement;
+            Assert.Equal(Aspose.Cli.Sdk.DistributionInfo.Edition,
+                capabilityRoot.GetProperty("edition").GetString());
             JsonElement engine = capabilityRoot.GetProperty("products")[0]
                 .GetProperty("engine");
             Assert.False(engine.GetProperty("licenseApplicable").GetBoolean());
@@ -126,9 +126,7 @@ public sealed class LicenseFreePlatformContractTests
     public void LicenseAwareCatalog_RegistersLicenseSurface()
     {
         ProductCatalog catalog = Catalog(licensingApplicable: true);
-        var host = new HostContext(
-            catalog,
-            new CliEditionInfo("test", "Test"));
+        var host = new HostContext(catalog);
         RootCommand root = RootCommandFactory.Create(host, out _);
 
         Assert.Contains(

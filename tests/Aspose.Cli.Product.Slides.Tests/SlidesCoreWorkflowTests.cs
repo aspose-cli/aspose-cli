@@ -1,6 +1,7 @@
 using System.Text;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Preview;
 using Xunit;
 
@@ -106,7 +107,7 @@ public sealed class SlidesCoreWorkflowTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("convert.pptx", slides: 2);
-        string output = fixture.File("converted" + SlidesFormats.Extension(format));
+        string output = fixture.File("converted" + SlidesModule.Formats.ExtensionFor(format));
 
         SlidesConvertResult result = fixture.Engine.Convert(
             input,

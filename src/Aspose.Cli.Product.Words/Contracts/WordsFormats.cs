@@ -18,16 +18,4 @@ public static class WordsFormats
         ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "odt", "ott"];
 
     public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
-    public static bool IsConvert(string id) => ConvertIds.Contains(id, StringComparer.Ordinal);
-    public static bool IsRender(string id) => RenderIds.Contains(id, StringComparer.Ordinal);
-
-    /// <summary>Returns the conventional file extension for a public format id.</summary>
-    public static string Extension(string id) => id switch
-    {
-        "flatopc" or "wordml" => ".xml",
-        "html-fixed" or "html" => ".html",
-        "openxps" => ".oxps",
-        "jpeg" => ".jpg",
-        _ => $".{id}",
-    };
 }

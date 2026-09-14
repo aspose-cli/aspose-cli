@@ -1,7 +1,8 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Slides;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Slides.Export;
+using Aspose.Slides;
 using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
@@ -24,7 +25,7 @@ public sealed class SlidesRasterConversionTests
         SlidesConvertResult result = fixture.Engine.Convert(input, new PresentationConvertRequest
         {
             TargetFormatId = format,
-            OutputPath = fixture.File("converted" + SlidesFormats.Extension(format)),
+            OutputPath = fixture.File("converted" + SlidesModule.Formats.ExtensionFor(format)),
             Slides = PageRange.Parse("1,3"),
         });
 
@@ -54,7 +55,7 @@ public sealed class SlidesRasterConversionTests
             source.SlideSize.SetSize(4000, 4000, SlideSizeScaleType.DoNotScale);
             source.Save(input, SaveFormat.Pptx);
         }
-        string output = fixture.File("oversized" + SlidesFormats.Extension(format));
+        string output = fixture.File("oversized" + SlidesModule.Formats.ExtensionFor(format));
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(input, new PresentationConvertRequest
         {
@@ -78,7 +79,7 @@ public sealed class SlidesRasterConversionTests
         string input = fixture.CreatePresentation(slides: 1);
         string directory = fixture.File(Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90)));
         Directory.CreateDirectory(directory);
-        string output = Path.Combine(directory, "slide" + SlidesFormats.Extension(format));
+        string output = Path.Combine(directory, "slide" + SlidesModule.Formats.ExtensionFor(format));
         Assert.True(output.Length > 260);
 
         if (convert)
@@ -157,7 +158,7 @@ public sealed class SlidesRasterConversionTests
         File.WriteAllText(workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
         CliResult create = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--size", "16x9", "--output", "json");
         Assert.True(create.ExitCode == 0, create.StdErr);
-        string output = "slide" + SlidesFormats.Extension(format);
+        string output = "slide" + SlidesModule.Formats.ExtensionFor(format);
         CliResult converted = workspace.Run("slides", "convert", "deck.pptx", "--to", format, "--out", output, "--output", "json");
         Assert.True(converted.ExitCode == 0, converted.StdErr);
         using IImage image = Images.FromFile(workspace.File(output));

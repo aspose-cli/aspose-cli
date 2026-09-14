@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Configuration;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Words;
 using Aspose.Words.Saving;
@@ -15,7 +16,7 @@ public sealed class WordsFixture : IDisposable
             productId: "words",
             Environment.GetEnvironmentVariable,
             Directory.GetCurrentDirectory(),
-            LicenseResolver.DefaultUserConfigDirectory());
+            ConfigurationPaths.UserDirectory());
         Gate = new WordsLicenseGate(resolution, Environment.GetEnvironmentVariable);
     }
 

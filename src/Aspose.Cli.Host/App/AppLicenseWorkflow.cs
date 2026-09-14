@@ -15,7 +15,6 @@ internal sealed class AppLicenseWorkflow
     internal const string RestartFailedMessage =
         "The license configuration was saved, but the App could not restart. The current App is still running.";
     private readonly ProductCatalog _catalog;
-    private readonly CliEditionInfo _edition;
     private readonly Func<CapabilitiesResult> _capabilities;
     private readonly LicenseManager _licenses;
     private readonly AppPreferencesStore _preferences;
@@ -28,7 +27,6 @@ internal sealed class AppLicenseWorkflow
 
     internal AppLicenseWorkflow(
         ProductCatalog catalog,
-        CliEditionInfo edition,
         Func<CapabilitiesResult> capabilities,
         LicenseManager licenses,
         AppPreferencesStore preferences,
@@ -40,7 +38,6 @@ internal sealed class AppLicenseWorkflow
         FontSearchProfile fontProfile)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        _edition = edition ?? throw new ArgumentNullException(nameof(edition));
         _capabilities = capabilities
             ?? throw new ArgumentNullException(nameof(capabilities));
         _licenses = licenses;
@@ -87,7 +84,6 @@ internal sealed class AppLicenseWorkflow
             replacement =
                 new AppServiceController(
                     _catalog,
-                    _edition,
                     _capabilities).StartReplacement(
                     _licenses.Globals,
                     AppRoutes.Settings,

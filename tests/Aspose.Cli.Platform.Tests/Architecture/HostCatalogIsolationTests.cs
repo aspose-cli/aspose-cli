@@ -19,10 +19,10 @@ public sealed class HostCatalogIsolationTests
         ProductCatalog beta = Catalog("beta", ".beta");
 
         RootCommand alphaRoot = RootCommandFactory.Create(
-            new HostContext(alpha, new CliEditionInfo("alpha", "Alpha")),
+            new HostContext(alpha),
             out _);
         RootCommand betaRoot = RootCommandFactory.Create(
-            new HostContext(beta, new CliEditionInfo("beta", "Beta")),
+            new HostContext(beta),
             out _);
 
         Assert.Contains(alphaRoot.Subcommands, static command => command.Name == "alpha");

@@ -17,11 +17,7 @@ internal static class PdfHelpMetadata
             [
                 new("aspose-cli docs pdf/editing", "fixed-layout operations and safe mutation"),
                 new("aspose-cli docs pdf/verification", "read-back, rendering and PDF/A evidence"),
-                new("aspose-cli schema v2/pdf/ops", "the 29-operation JSON vocabulary"),
+                new("aspose-cli schema v2/pdf/ops", "the operation JSON schema"),
             ]);
     }
-
-    private static Command Find(Command root, string name) =>
-        root.Subcommands.Single(command =>
-            string.Equals(command.Name, name, StringComparison.Ordinal));
 }

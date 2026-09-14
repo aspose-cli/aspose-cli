@@ -1,4 +1,5 @@
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Configuration;
 using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -16,7 +17,7 @@ public sealed class CellsFixture : IDisposable
             productId: "cells",
             Environment.GetEnvironmentVariable,
             Directory.GetCurrentDirectory(),
-            LicenseResolver.DefaultUserConfigDirectory());
+            ConfigurationPaths.UserDirectory());
         Gate = new CellsLicenseGate(resolution, Environment.GetEnvironmentVariable);
     }
 

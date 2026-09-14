@@ -37,7 +37,6 @@ internal sealed class AppHost : IDisposable
 
     public AppHost(
         ProductCatalog catalog,
-        CliEditionInfo edition,
         Func<CapabilitiesResult> capabilities,
         GlobalValues globals,
         FontSearchProfile fontProfile)
@@ -69,7 +68,6 @@ internal sealed class AppHost : IDisposable
             _fontProfile);
         _status = new AppStatusQuery(
             catalog,
-            edition,
             capabilities,
             _preferences,
             _licenseState,
@@ -84,7 +82,6 @@ internal sealed class AppHost : IDisposable
             WriteMarker);
         _licenses = new AppLicenseWorkflow(
             catalog,
-            edition,
             capabilities,
             _licenseState,
             _preferences,

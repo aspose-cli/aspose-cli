@@ -15,7 +15,7 @@ internal static class WordsHelpMetadata
             [
                 new("aspose-cli docs words/editing", "the document block model and edit operations"),
                 new("aspose-cli docs words/verification", "read-back, semantic and visual verification"),
-                new("aspose-cli schema v2/words/ops", "the 36-operation JSON vocabulary"),
+                new("aspose-cli schema v2/words/ops", "the operation JSON schema"),
             ]);
         Find(root, "inspect").WithExamples(
             [

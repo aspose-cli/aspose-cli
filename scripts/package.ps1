@@ -194,11 +194,9 @@ function Invoke-ExecutableAuthenticodeHook {
 
 function Invoke-PowerShellAuthenticodeHook {
     param(
-        [Parameter(Mandatory)][string] $Script,
-        [switch] $Required
+        [Parameter(Mandatory)][string] $Script
     )
-    $inputs = Get-AuthenticodeInputs -Required:$Required
-    if ($null -eq $inputs) { return }
+    $inputs = Get-AuthenticodeInputs -Required
     Import-Module `
         (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1') `
         -ErrorAction Stop
@@ -279,7 +277,7 @@ foreach ($installerName in $installerNames) {
         -Destination (Join-Path $publishRoot $installerName)
 }
 if (-not $PrepareOnly) {
-    Invoke-PowerShellAuthenticodeHook (Join-Path $publishRoot 'install.ps1') -Required
+    Invoke-PowerShellAuthenticodeHook (Join-Path $publishRoot 'install.ps1')
 }
 $verifiedFiles = @(
     Get-ChildItem -LiteralPath $publishRoot -File -Recurse |
@@ -412,57 +410,54 @@ Compress-Archive `
 $archiveHash = (Get-FileHash -LiteralPath $archivePath -Algorithm SHA256).Hash.ToLowerInvariant()
 $releaseManifestPath = Join-Path $releaseRoot 'RELEASE-MANIFEST.json'
 $signaturePath = 'RELEASE-MANIFEST.sig'
-$signature = $null
-if ($null -ne $signingKey) {
-    $payloadPath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().ToString('N') + '.txt')
-    $publicKeyPath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().ToString('N') + '.der')
-    $rawSignaturePath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().ToString('N') + '.bin')
-    try {
-        Invoke-SigningTool $openSsl @('pkey','-in',$signingKey,'-pubout','-outform','DER','-out',$publicKeyPath) 'Release public-key extraction'
-        $keyId = (Get-FileHash -LiteralPath $publicKeyPath -Algorithm SHA256).Hash.ToLowerInvariant()
-        $engineLines = @($buildManifest.enginePackages | Sort-Object product | ForEach-Object {
-            "enginePackages.$($_.product).packageId=$($_.packageId)"
-            "enginePackages.$($_.product).version=$($_.version)"
-            "enginePackages.$($_.product).contentHash=$($_.contentHash)"
-        })
-        $signedPayload = @(
-            'aspose-cli-release-v1',
-            'productId=aspose-cli',
-            "edition=$($layout.Edition)",
-            "runtimeIdentifier=$RuntimeIdentifier",
-            "artifactVersion=$artifactVersion",
-            "sourceRevision=$($buildManifest.sourceRevision)",
-            'buildDirty=false',
-            $engineLines,
-            "archive.path=$archiveName",
-            "archive.size=$((Get-Item -LiteralPath $archivePath).Length)",
-            "archive.sha256=$archiveHash",
-            'signature.status=signed',
-            'signature.algorithm=ECDSA-P256-SHA256',
-            'signature.format=rfc3279-der',
-            "signature.keyId=$keyId",
-            "signature.path=$signaturePath",
-            ''
-        ) -join "`n"
-        [IO.File]::WriteAllText($payloadPath, $signedPayload, [Text.UTF8Encoding]::new($false))
-        Invoke-SigningTool $openSsl @('dgst','-sha256','-sign',$signingKey,'-out',$rawSignaturePath,$payloadPath) 'Release manifest signing'
-        Invoke-SigningTool $openSsl @('dgst','-sha256','-verify',$publicKeyPath,'-signature',$rawSignaturePath,$payloadPath) 'Release signature verification'
-        [IO.File]::WriteAllText(
-            (Join-Path $releaseRoot $signaturePath),
-            [Convert]::ToBase64String([IO.File]::ReadAllBytes($rawSignaturePath)) + [Environment]::NewLine,
-            [Text.UTF8Encoding]::new($false))
-        $signature = [ordered]@{
-            status = 'signed'
-            algorithm = 'ECDSA-P256-SHA256'
-            format = 'rfc3279-der'
-            keyId = $keyId
-            path = $signaturePath
-        }
+$payloadPath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().ToString('N') + '.txt')
+$publicKeyPath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().ToString('N') + '.der')
+$rawSignaturePath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().ToString('N') + '.bin')
+try {
+    Invoke-SigningTool $openSsl @('pkey','-in',$signingKey,'-pubout','-outform','DER','-out',$publicKeyPath) 'Release public-key extraction'
+    $keyId = (Get-FileHash -LiteralPath $publicKeyPath -Algorithm SHA256).Hash.ToLowerInvariant()
+    $engineLines = @($buildManifest.enginePackages | Sort-Object product | ForEach-Object {
+        "enginePackages.$($_.product).packageId=$($_.packageId)"
+        "enginePackages.$($_.product).version=$($_.version)"
+        "enginePackages.$($_.product).contentHash=$($_.contentHash)"
+    })
+    $signedPayload = @(
+        'aspose-cli-release-v1',
+        'productId=aspose-cli',
+        "edition=$($layout.Edition)",
+        "runtimeIdentifier=$RuntimeIdentifier",
+        "artifactVersion=$artifactVersion",
+        "sourceRevision=$($buildManifest.sourceRevision)",
+        'buildDirty=false',
+        $engineLines,
+        "archive.path=$archiveName",
+        "archive.size=$((Get-Item -LiteralPath $archivePath).Length)",
+        "archive.sha256=$archiveHash",
+        'signature.status=signed',
+        'signature.algorithm=ECDSA-P256-SHA256',
+        'signature.format=rfc3279-der',
+        "signature.keyId=$keyId",
+        "signature.path=$signaturePath",
+        ''
+    ) -join "`n"
+    [IO.File]::WriteAllText($payloadPath, $signedPayload, [Text.UTF8Encoding]::new($false))
+    Invoke-SigningTool $openSsl @('dgst','-sha256','-sign',$signingKey,'-out',$rawSignaturePath,$payloadPath) 'Release manifest signing'
+    Invoke-SigningTool $openSsl @('dgst','-sha256','-verify',$publicKeyPath,'-signature',$rawSignaturePath,$payloadPath) 'Release signature verification'
+    [IO.File]::WriteAllText(
+        (Join-Path $releaseRoot $signaturePath),
+        [Convert]::ToBase64String([IO.File]::ReadAllBytes($rawSignaturePath)) + [Environment]::NewLine,
+        [Text.UTF8Encoding]::new($false))
+    $signature = [ordered]@{
+        status = 'signed'
+        algorithm = 'ECDSA-P256-SHA256'
+        format = 'rfc3279-der'
+        keyId = $keyId
+        path = $signaturePath
     }
-    finally {
-        foreach ($temporary in @($payloadPath, $publicKeyPath, $rawSignaturePath)) {
-            Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
-        }
+}
+finally {
+    foreach ($temporary in @($payloadPath, $publicKeyPath, $rawSignaturePath)) {
+        Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
     }
 }
 $releaseManifest = [ordered]@{

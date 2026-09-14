@@ -3,6 +3,7 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.Sdk.Configuration;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
 using Aspose.Pdf.Facades;
@@ -19,7 +20,7 @@ public sealed class PdfEngineFixture : IDisposable
             productId: "pdf",
             Environment.GetEnvironmentVariable,
             Directory.GetCurrentDirectory(),
-            LicenseResolver.DefaultUserConfigDirectory());
+            ConfigurationPaths.UserDirectory());
         Gate = new PdfLicenseGate(resolution, Environment.GetEnvironmentVariable);
     }
 

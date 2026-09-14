@@ -299,7 +299,7 @@ internal sealed class WordsProductionService
         var extra = new List<Warning>();
         if (created.RemoteResourcesBlocked > 0)
         {
-            extra.Add(RemoteWarning(created.RemoteResourcesBlocked)![0]);
+            extra.Add(RemoteWarning(created.RemoteResourcesBlocked));
         }
 
         if (created.HasMacros && format is not "docm" and not "dotm")

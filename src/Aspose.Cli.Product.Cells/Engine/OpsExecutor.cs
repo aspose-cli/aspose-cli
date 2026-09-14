@@ -123,7 +123,7 @@ internal static class OpsExecutor
         DefineNameOp defineName => NameOps.DefineName(workbook, defineName),
         DeleteNameOp deleteName => NameOps.DeleteName(workbook, deleteName),
         ClearValidationOp clearValidation => ValidationOps.ClearValidation(Sheets.Resolve(workbook, op), clearValidation),
-        AddConditionalFormatOp addConditional => ConditionalFormatOps.AddConditionalFormat(workbook, Sheets.Resolve(workbook, op), addConditional),
+        AddConditionalFormatOp addConditional => ConditionalFormatOps.AddConditionalFormat(Sheets.Resolve(workbook, op), addConditional),
         ClearConditionalFormatsOp clearConditional => ConditionalFormatOps.ClearConditionalFormats(Sheets.Resolve(workbook, op), clearConditional),
         SetBordersOp setBorders => BorderOps.SetBorders(workbook, Sheets.Resolve(workbook, op), setBorders),
         _ => throw new InvalidOperationException(),

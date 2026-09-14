@@ -28,8 +28,7 @@ $env:ASPOSE_CLI_TEST_EXECUTABLE = $builtExecutable
 
 & $generator `
     -Check `
-    -RepositoryRoot $repoRoot `
-    -OutputRoot $repoRoot
+    -RepositoryRoot $repoRoot
 
 $testProjects = @(
     Get-ChildItem -LiteralPath $layout.TestRoot -Recurse -Filter '*.csproj' -File |

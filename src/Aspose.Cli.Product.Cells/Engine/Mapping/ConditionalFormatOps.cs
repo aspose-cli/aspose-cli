@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class ConditionalFormatOps
 {
-    public static long? AddConditionalFormat(Workbook workbook, Worksheet sheet, AddConditionalFormatOp op)
+    public static long? AddConditionalFormat(Worksheet sheet, AddConditionalFormatOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
         int cfIndex = sheet.ConditionalFormattings.Add();

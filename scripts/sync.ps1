@@ -36,16 +36,14 @@ function Invoke-DotNetRestore {
 }
 
 & $generator `
-    -RepositoryRoot $repoRoot `
-    -OutputRoot $repoRoot
+    -RepositoryRoot $repoRoot
 if (-not (Test-Path -LiteralPath $solution -PathType Leaf)) {
     throw "Generated solution does not exist: $solution"
 }
 Invoke-DotNetRestore -Arguments @('--force-evaluate')
 & $generator `
     -Check `
-    -RepositoryRoot $repoRoot `
-    -OutputRoot $repoRoot
+    -RepositoryRoot $repoRoot
 Invoke-DotNetRestore -Arguments @('--locked-mode')
 
 Write-Host "$($layout.Edition) product catalog projections and lock files are synchronized."

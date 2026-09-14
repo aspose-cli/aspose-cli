@@ -17,7 +17,7 @@
     <SourceRevision Condition="'$(SourceRevision)' == ''">unknown</SourceRevision>
     <BuildDirty Condition="'$(BuildDirty)' == ''">true</BuildDirty>
     <RestorePackagesWithLockFile>true</RestorePackagesWithLockFile>
-    <!-- Removed nested projects can leave ignored generated sources behind. -->
+    <!-- Keep generated build outputs out of source compilation. -->
     <DefaultExcludesInProjectFolder>$(DefaultExcludesInProjectFolder);**/bin/**;**/obj/**</DefaultExcludesInProjectFolder>
     <!-- Excel number/date formatting requires full ICU globalization data. -->
     <InvariantGlobalization>false</InvariantGlobalization>

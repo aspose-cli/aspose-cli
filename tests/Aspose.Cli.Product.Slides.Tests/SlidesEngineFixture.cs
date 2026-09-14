@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.TestKit;
+using Aspose.Cli.Sdk.Configuration;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Slides;
 using Aspose.Slides.Export;
@@ -18,7 +19,7 @@ public sealed class SlidesEngineFixture : IDisposable
             productId: "slides",
             Environment.GetEnvironmentVariable,
             Directory.GetCurrentDirectory(),
-            LicenseResolver.DefaultUserConfigDirectory());
+            ConfigurationPaths.UserDirectory());
         Gate = new SlidesLicenseGate(resolution, Environment.GetEnvironmentVariable);
     }
 

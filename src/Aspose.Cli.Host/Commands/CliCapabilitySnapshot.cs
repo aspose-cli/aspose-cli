@@ -5,6 +5,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -116,12 +117,10 @@ internal sealed class CliCapabilitySnapshot
     public static CliCapabilitySnapshot Create(
         Command root,
         ProductCatalog catalog,
-        CliEditionInfo edition,
         HostSchemaCatalog schemas)
     {
         ArgumentNullException.ThrowIfNull(root);
         ArgumentNullException.ThrowIfNull(catalog);
-        ArgumentNullException.ThrowIfNull(edition);
         ArgumentNullException.ThrowIfNull(schemas);
 
         IReadOnlyDictionary<string, Command> productCommands =
@@ -167,7 +166,7 @@ internal sealed class CliCapabilitySnapshot
 
         return new CliCapabilitySnapshot(new CapabilitiesResult
         {
-            Edition = edition.Id,
+            Edition = DistributionInfo.Edition,
             CliVersion = VersionInfo.CliVersion,
             SourceRevision = VersionInfo.SourceRevision,
             BuildDirty = VersionInfo.BuildDirty,

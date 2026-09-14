@@ -1,10 +1,11 @@
-using Aspose.Cli.Host.Licensing;
 using System.Runtime.InteropServices;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.App;
 
@@ -15,7 +16,6 @@ internal sealed class AppStatusQuery
     private readonly ProductCatalog _catalog;
     private readonly LicenseManager _licenses;
     private readonly AppDocumentSession _sessions;
-    private readonly CliEditionInfo _edition;
     private readonly string _experience;
     private readonly IReadOnlyList<AppProductView> _products;
     private readonly IReadOnlyList<AppSkillView> _skills;
@@ -30,7 +30,6 @@ internal sealed class AppStatusQuery
 
     internal AppStatusQuery(
         ProductCatalog catalog,
-        CliEditionInfo edition,
         Func<CapabilitiesResult> capabilities,
         AppPreferencesStore preferences,
         LicenseManager licenses,
@@ -40,18 +39,8 @@ internal sealed class AppStatusQuery
         _preferences = preferences;
         _licenses = licenses;
         _sessions = sessions;
-        _edition = edition ?? throw new ArgumentNullException(nameof(edition));
         ArgumentNullException.ThrowIfNull(capabilities);
         CapabilitiesResult snapshot = capabilities();
-        if (!string.Equals(
-                snapshot.Edition,
-                edition.Id,
-                StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"App edition '{edition.Id}' does not match capability edition '{snapshot.Edition}'.");
-        }
-
         _experience = snapshot.Products.All(
             static product => product.Engine?.LicenseApplicable is false)
             ? "license-free"
@@ -96,8 +85,8 @@ internal sealed class AppStatusQuery
         LicenseStatusResult license = _licenses.Status();
         return new AppStatusView(
             VersionInfo.CliVersion,
-            _edition.Id,
-            _edition.DisplayName,
+            DistributionInfo.Edition,
+            DistributionInfo.DisplayName,
             _experience,
             route,
             settings.OnboardingCompleted,

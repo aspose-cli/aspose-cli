@@ -86,7 +86,7 @@ internal sealed class WordsMutationService
 
         if (remoteResourcesBlocked > 0)
         {
-            extra.Add(RemoteWarning(remoteResourcesBlocked)![0]);
+            extra.Add(RemoteWarning(remoteResourcesBlocked));
         }
 
         if (evaluationInputTruncated)

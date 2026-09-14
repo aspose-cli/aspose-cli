@@ -16,16 +16,13 @@ internal sealed class AppServiceController
         TimeSpan.FromSeconds(60);
     private readonly AppInstanceStore _instances;
     private readonly ProductCatalog _catalog;
-    private readonly CliEditionInfo _edition;
     private readonly Func<CapabilitiesResult> _capabilities;
 
     public AppServiceController(
         ProductCatalog catalog,
-        CliEditionInfo edition,
         Func<CapabilitiesResult> capabilities)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        _edition = edition ?? throw new ArgumentNullException(nameof(edition));
         _capabilities = capabilities
             ?? throw new ArgumentNullException(nameof(capabilities));
         try
@@ -329,7 +326,6 @@ internal sealed class AppServiceController
         {
             return new AppHost(
                 _catalog,
-                _edition,
                 _capabilities,
                 globals,
                 fontProfile);

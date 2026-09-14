@@ -17,7 +17,7 @@ internal static class SlidesHelpMetadata
             [
                 new("aspose-cli docs slides/editing", "atomic presentation operations"),
                 new("aspose-cli docs slides/verification", "slide read-back and visual evidence"),
-                new("aspose-cli schema v2/slides/ops", "the 26-operation JSON vocabulary"),
+                new("aspose-cli schema v2/slides/ops", "the operation JSON schema"),
             ]);
     }
 

@@ -285,8 +285,6 @@ public sealed class ProductLifecycleTests
             Path.Combine(root, "scripts", "generate-product-catalog.ps1"));
         start.ArgumentList.Add("-RepositoryRoot");
         start.ArgumentList.Add(root);
-        start.ArgumentList.Add("-OutputRoot");
-        start.ArgumentList.Add(root);
         if (check)
         {
             start.ArgumentList.Add("-Check");

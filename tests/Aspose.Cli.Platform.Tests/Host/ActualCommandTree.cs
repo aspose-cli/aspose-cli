@@ -16,7 +16,7 @@ internal static class ActualCommandTree
         Type type = launcher.GetType("Aspose.Cli.Generated.CompiledProductCatalog", throwOnError: true)!;
         var catalog = (ProductCatalog)type.GetProperty("Instance",
             BindingFlags.NonPublic | BindingFlags.Static)!.GetValue(null)!;
-        return new HostContext(catalog, new CliEditionInfo(DistributionInfo.Edition, DistributionInfo.DisplayName));
+        return new HostContext(catalog);
     });
 
     internal static HostContext Host => Context.Value;

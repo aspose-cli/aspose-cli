@@ -6,8 +6,5 @@ namespace Aspose.Cli;
 public static class Program
 {
     public static int Main(string[] args) =>
-        CliHost.Run(
-            args,
-            static () => CompiledProductCatalog.Instance,
-            new CliEditionInfo(Aspose.Cli.Sdk.DistributionInfo.Edition, Aspose.Cli.Sdk.DistributionInfo.DisplayName));
+        CliHost.Run(args, static () => CompiledProductCatalog.Instance);
 }

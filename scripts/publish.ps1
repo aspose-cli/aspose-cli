@@ -58,8 +58,7 @@ $allowedRoot = [IO.Path]::GetFullPath(
 
 & $generator `
     -Check `
-    -RepositoryRoot $repoRoot `
-    -OutputRoot $repoRoot
+    -RepositoryRoot $repoRoot
 
 $restoreArguments = @(
     'restore'

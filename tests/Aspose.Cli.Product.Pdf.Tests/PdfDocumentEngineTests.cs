@@ -2,13 +2,14 @@ using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Pdf;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Facades;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Text;
-using Xunit;
+using Aspose.Pdf;
 using CliPageRange = Aspose.Cli.Sdk.Addressing.PageRange;
+using Xunit;
 
 namespace Aspose.Cli.Product.Pdf.Tests;
 
@@ -278,7 +279,7 @@ public sealed class PdfDocumentEngineTests
     {
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument(pages: 1);
-        string output = fixture.File("output" + PdfFormats.Extension(format));
+        string output = fixture.File("output" + PdfModule.Formats.ExtensionFor(format));
 
         var result = fixture.Engine.Convert(input, new PdfConvertRequest
         {

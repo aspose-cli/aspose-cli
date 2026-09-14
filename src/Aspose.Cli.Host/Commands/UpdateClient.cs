@@ -7,6 +7,7 @@ using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Release;
+using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -17,16 +18,16 @@ internal static class UpdateClient
     private const long MaximumArchiveBytes = 1L * 1024 * 1024 * 1024;
     private const int MaximumZipEntries = 4096;
 
-    public static UpdateResult Check(CommandContext context, string edition, string feed)
+    public static UpdateResult Check(CommandContext context, string feed)
     {
         using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory);
-        var manifest = Verify(files, edition);
+        var manifest = Verify(files);
         int comparison = CompareVersions(manifest);
 
         return new UpdateResult
         {
             Status = comparison == 0 ? "up-to-date" : "available",
-            Edition = edition,
+            Edition = DistributionInfo.Edition,
             CurrentVersion = VersionInfo.ArtifactVersion,
             AvailableVersion = comparison == 0 ? null : manifest.ArtifactVersion,
             SourceRevision = manifest.SourceRevision,
@@ -35,7 +36,7 @@ internal static class UpdateClient
         };
     }
 
-    public static UpdateResult Install(CommandContext context, string edition, string feed)
+    public static UpdateResult Install(CommandContext context, string feed)
     {
         if (!OperatingSystem.IsWindows() || !string.Equals(RuntimeInformation.RuntimeIdentifier, "win-x64", StringComparison.OrdinalIgnoreCase))
         {
@@ -43,13 +44,13 @@ internal static class UpdateClient
         }
 
         using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory);
-        var manifest = Verify(files, edition);
+        var manifest = Verify(files);
         if (CompareVersions(manifest) == 0)
         {
             return new UpdateResult
             {
                 Status = "up-to-date",
-                Edition = edition,
+                Edition = DistributionInfo.Edition,
                 CurrentVersion = VersionInfo.ArtifactVersion,
                 SourceRevision = manifest.SourceRevision,
                 Feed = feed,
@@ -73,7 +74,7 @@ internal static class UpdateClient
             return new UpdateResult
             {
                 Status = "pending",
-                Edition = edition,
+                Edition = DistributionInfo.Edition,
                 CurrentVersion = VersionInfo.ArtifactVersion,
                 AvailableVersion = manifest.ArtifactVersion,
                 SourceRevision = manifest.SourceRevision,
@@ -92,7 +93,7 @@ internal static class UpdateClient
         }
     }
 
-    private static ReleaseManifestInfo Verify(FeedFiles files, string edition)
+    private static ReleaseManifestInfo Verify(FeedFiles files)
     {
         try
         {
@@ -102,7 +103,7 @@ internal static class UpdateClient
                 throw CliErrors.ReleaseTrustUnavailable("the trusted public-key ring is empty");
             }
 
-            return ReleaseManifestVerifier.Verify(files.ManifestPath, keys, files.SignaturePath, expectedEdition: edition, expectedRuntimeIdentifier: "win-x64");
+            return ReleaseManifestVerifier.Verify(files.ManifestPath, keys, files.SignaturePath, expectedEdition: DistributionInfo.Edition, expectedRuntimeIdentifier: "win-x64");
         }
         catch (CliException) { throw; }
         catch (ReleaseVerificationException exception) when (!exception.TrustedKeysConfigured)

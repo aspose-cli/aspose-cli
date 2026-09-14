@@ -15,7 +15,6 @@ internal static class AppCommand
     public static Command Create(
         CommandExecutor executor,
         ProductCatalog catalog,
-        CliEditionInfo edition,
         Func<CapabilitiesResult> capabilities,
         GlobalOptions globals)
     {
@@ -58,13 +57,11 @@ internal static class AppCommand
         app.Subcommands.Add(CreateStatus(
             executor,
             catalog,
-            edition,
             capabilities,
             globals));
         app.Subcommands.Add(CreateStop(
             executor,
             catalog,
-            edition,
             capabilities,
             globals));
 
@@ -72,7 +69,6 @@ internal static class AppCommand
         {
             var coordinator = new AppServiceController(
                 catalog,
-                edition,
                 capabilities);
             int port = parseResult.GetValue(portOption);
             OptionGuards.EnsureInRange("--port", port, 0, 65535,
@@ -124,7 +120,6 @@ internal static class AppCommand
     private static Command CreateStatus(
         CommandExecutor executor,
         ProductCatalog catalog,
-        CliEditionInfo edition,
         Func<CapabilitiesResult> capabilities,
         GlobalOptions globals)
     {
@@ -134,7 +129,6 @@ internal static class AppCommand
             globals,
             (_, _) => new AppServiceController(
                 catalog,
-                edition,
                 capabilities).Status()));
         return status.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
     }
@@ -142,7 +136,6 @@ internal static class AppCommand
     private static Command CreateStop(
         CommandExecutor executor,
         ProductCatalog catalog,
-        CliEditionInfo edition,
         Func<CapabilitiesResult> capabilities,
         GlobalOptions globals)
     {
@@ -152,7 +145,6 @@ internal static class AppCommand
             globals,
             (_, _) => new AppServiceController(
                 catalog,
-                edition,
                 capabilities).Stop()));
         return stop;
     }

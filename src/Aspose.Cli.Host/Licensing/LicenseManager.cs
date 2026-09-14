@@ -97,18 +97,11 @@ internal sealed class LicenseManager(ProductCatalog catalog, GlobalValues global
     internal static string RequireIdentity(CommandContext context, ProductDefinition product) =>
         context.Activate(product).LicenseGate.Identity;
 
-    internal static IReadOnlyList<string> Install(CommandContext context, string sourcePath, string? productId) =>
-        Install(context, productId, validate => LicenseInstaller.InstallMany(context.ResourceBudgets, sourcePath, validate));
-
-    internal static IReadOnlyList<string> Install(CommandContext context, Stream input, string? productId) =>
-        Install(context, productId, validate => LicenseInstaller.InstallMany(context.ResourceBudgets, input, validate));
-
-    private static IReadOnlyList<string> Install(CommandContext context, string? productId,
-        Func<Func<string, IEnumerable<string>>, IReadOnlyList<string>> publish)
+    internal static IReadOnlyList<string> Install(CommandContext context, string sourcePath, string? productId)
     {
         ProductDefinition[] products = RequireApplicable(context.Catalog, productId, "installation");
         var compatible = new List<string>();
-        publish(snapshot =>
+        LicenseInstaller.InstallMany(context.ResourceBudgets, sourcePath, snapshot =>
         {
             CommandContext validation = CompositionRoot.Create(
                 context.Catalog, context.Globals with { LicensePath = snapshot },

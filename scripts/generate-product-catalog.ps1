@@ -10,9 +10,7 @@ kept separate so lifecycle tests can exercise generation without restoring.
 param(
     [switch] $Check,
 
-    [string] $RepositoryRoot,
-
-    [string] $OutputRoot
+    [string] $RepositoryRoot
 )
 
 $ErrorActionPreference = 'Stop'
@@ -27,11 +25,7 @@ if (-not (Test-Path -LiteralPath $layoutResolver -PathType Leaf)) {
     throw "Edition layout resolver does not exist: $layoutResolver"
 }
 $layout = & $layoutResolver  -RepositoryRoot $repoRoot
-if ([string]::IsNullOrWhiteSpace($OutputRoot)) {
-    $OutputRoot = $repoRoot
-}
 $catalogPath = [IO.Path]::GetFullPath($layout.CatalogPath)
-$OutputRoot = [IO.Path]::GetFullPath($OutputRoot)
 
 function Normalize-RelativePath {
     param([string] $Path)
@@ -126,7 +120,7 @@ function Write-Generated {
         [string] $Content
     )
     $normalized = $Content.Replace("`r`n", "`n").TrimEnd() + "`n"
-    $path = Join-Path $OutputRoot $RelativePath
+    $path = Join-Path $repoRoot $RelativePath
     if ($Check) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
             throw "Generated catalog artifact is missing: $RelativePath"
@@ -202,7 +196,7 @@ function Get-NormalizedTextHashes {
 function Reconcile-GeneratedDirectory {
     param([string[]] $ExpectedNames)
     $relativeDirectory = "eng/generated"
-    $directory = Join-Path $OutputRoot $relativeDirectory
+    $directory = Join-Path $repoRoot $relativeDirectory
     if (-not (Test-Path -LiteralPath $directory -PathType Container)) {
         if ($Check) {
             throw "Generated catalog directory is missing: $relativeDirectory"
@@ -470,10 +464,8 @@ if (Test-Path -LiteralPath $installerPath -PathType Leaf) {
     $settings.Add('$script:AllowedEditions = @(' + "'" + $identity.edition + "'" + ')')
     $skillNames = @($products | ForEach-Object { "'" + $identity.skillPrefix + $_.id + "'" })
     $settings.Add('$script:AllowedSkills = @(' + ($skillNames -join ', ') + ')')
-    if ($identity.edition -ceq 'commercial') {
-        $productIds = @($products | ForEach-Object { "'" + $_.id + "'" })
-        $settings.Add('$script:AllowedLicenseProducts = @(' + ($productIds -join ', ') + ')')
-    }
+    $productIds = @($products | ForEach-Object { "'" + $_.id + "'" })
+    $settings.Add('$script:AllowedLicenseProducts = @(' + ($productIds -join ', ') + ')')
     $settings.Add('# </generated-distribution-identity>')
     $installerText = [IO.File]::ReadAllText($installerPath).Replace("`r`n","`n")
     $pattern = '(?s)# <generated-distribution-identity>.*?# </generated-distribution-identity>'

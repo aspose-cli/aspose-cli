@@ -7,7 +7,7 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>Immutable resources owned by one statically composed CLI host.</summary>
 internal sealed class HostContext
 {
-    public HostContext(ProductCatalog catalog, CliEditionInfo edition)
+    public HostContext(ProductCatalog catalog)
     {
         Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _parser = new Lazy<InvocationParser>(() =>
@@ -15,7 +15,6 @@ internal sealed class HostContext
             var root = Commands.RootCommandFactory.Create(this, out GlobalOptions globals);
             return new InvocationParser(root, globals);
         });
-        Edition = edition ?? throw new ArgumentNullException(nameof(edition));
         ContractJson = new HostContractJson(catalog);
         Schemas = new Aspose.Cli.Host.Commands.HostSchemaCatalog(catalog);
         Docs = new DocsCatalog(catalog);
@@ -27,8 +26,6 @@ internal sealed class HostContext
     internal InvocationParser Parser => _parser.Value;
 
     public ProductCatalog Catalog { get; }
-
-    public CliEditionInfo Edition { get; }
 
     public HostContractJson ContractJson { get; }
 

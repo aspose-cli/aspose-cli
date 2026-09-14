@@ -37,7 +37,6 @@ internal static class RootCommandFactory
         root.Subcommands.Add(AppCommand.Create(
             executor,
             catalog,
-            host.Edition,
             capabilities,
             globals));
         root.Subcommands.Add(PreviewCommand.Create(executor, catalog, globals));
@@ -63,7 +62,6 @@ internal static class RootCommandFactory
             () => CliCapabilitySnapshot.Create(
                 root,
                 catalog,
-                host.Edition,
                 host.Schemas));
         root.Subcommands.Add(CapabilitiesCommand.Create(
             executor,
@@ -82,7 +80,7 @@ internal static class RootCommandFactory
             root.Subcommands.Add(FontsCommandGroup.Create(executor, catalog, globals));
         }
         root.Subcommands.Add(McpCommand.Create(host, globals));
-        root.Subcommands.Add(UpdateCommand.Create(executor, globals, host.Edition));
+        root.Subcommands.Add(UpdateCommand.Create(executor, globals));
 
         root.ValidateParameters();
         HostHelpMetadata.Attach(root);
