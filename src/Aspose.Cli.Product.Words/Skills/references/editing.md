@@ -6,6 +6,8 @@ Use one `words edit --ops` batch. The batch is validated and applied in memory b
 aspose-cli words edit contract.docx --ops update.json --out contract.review.docx --verify --output json
 ```
 
+Inline Markdown uses the same guarded local-resource policy as file loading. Relative resources resolve beneath the edited document's directory; remote and escaping resources are omitted and reported. Shared resource-budget or cancellation failures stop the operation.
+
 Targets accept one of `block`, `blocks`, `bookmark`, `heading`, or `find`, with optional 1-based `nth`. Prefer bookmarks and headings for durable automation; inspect current block numbers immediately before using numeric targets.
 
 `set_text` accepts paragraphs only and preserves the paragraph style while replacing inline runs. Use `set_table_cell` for tables. Insertion ops require `position: before|after`; v2 deliberately has no character-offset addressing.

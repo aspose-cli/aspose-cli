@@ -16,6 +16,8 @@ Use `aspose-cli words` for DOC/DOCX, RTF, ODT, HTML, Markdown, PDF and related d
 5. Run `words compare` when semantic evidence against a baseline matters.
 6. Disclose `EVAL_MODE`, tracked changes, signatures, lossy conversion, macro loss, font substitution and layout warnings.
 
+HTML, fixed-layout HTML, SVG and Markdown outputs embed their image resources. HTML output also embeds any exported fonts and styles; the result does not depend on temporary sidecar files.
+
 ## Live preview
 
 Use `aspose-cli preview input.docx --open` for the managed product-routed

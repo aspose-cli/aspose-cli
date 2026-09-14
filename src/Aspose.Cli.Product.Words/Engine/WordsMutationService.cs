@@ -43,8 +43,6 @@ internal sealed class WordsMutationService
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         bool inputHadRevisions = loaded.Document.Revisions.Count > 0;
         bool inputWasSigned = loaded.Format.HasDigitalSignature;
-        int remoteResourcesBlocked = loaded.RemoteResourcesBlocked;
-        bool evaluationInputTruncated = loaded.EvaluationInputTruncated;
         WordsEditResult result = WordsOpsExecutor.Apply(
             loaded,
             filePath,
@@ -61,8 +59,8 @@ internal sealed class WordsMutationService
                 state,
                 inputHadRevisions,
                 inputWasSigned,
-                remoteResourcesBlocked,
-                evaluationInputTruncated),
+                loaded.RemoteResourcesBlocked,
+                loaded.EvaluationInputTruncated || loaded.ImportedInputTruncated),
         };
     }
 

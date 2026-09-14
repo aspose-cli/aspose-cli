@@ -1,3 +1,4 @@
+using System.Text;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -52,56 +53,83 @@ internal sealed class WordsDocumentLoader
         }
 
         var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
-        var blocked = new BlockingResourceCallback(resources);
-        var options = new LoadOptions
-        {
-            Password = password,
-            LoadFormat = detected.LoadFormat,
-            ResourceLoadingCallback = blocked,
-            PreserveIncludePictureField = true,
-        };
-
-        Document? document = null;
-        bool transferred = false;
         try
         {
-            document = new Document(path, options);
-            _resourceBudgets.EnsureWithin(
-                WordsBudgetDomains.Pages, document.PageCount, "items", "post-load");
-            _resourceBudgets.EnsureWithin(
-                WordsBudgetDomains.Nodes, document.GetChildNodes(NodeType.Any, true).Count,
-                "items", "projection");
-            resources.ThrowIfFailed();
-            var loaded = new LoadedDocument(document, detected, id, resources,
+            Document document = Load(options => new Document(path, options),
+                detected.LoadFormat, resources, path, password);
+            return new LoadedDocument(document, detected, id, resources,
                 HasEvaluationTruncationMarker(document));
-            transferred = true;
-            return loaded;
+        }
+        catch
+        {
+            resources.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>Imports inline Markdown using the owning document's resource boundary and lifetime.</summary>
+    internal Document OpenMarkdown(string markdown, LoadedDocument owner)
+    {
+        ArgumentNullException.ThrowIfNull(markdown);
+        ArgumentNullException.ThrowIfNull(owner);
+        _resourceBudgets.Consume(ResourceBudgetKinds.MemoryBufferBytes,
+            Encoding.UTF8.GetByteCount(markdown), "bytes", "markdown-buffer");
+        using var input = new MemoryStream(Encoding.UTF8.GetBytes(markdown), writable: false);
+        Document document = Load(options => new Document(input, options),
+            LoadFormat.Markdown, owner.Resources, "inline Markdown", password: null);
+        owner.Retain(document, HasEvaluationTruncationMarker(document));
+        return document;
+    }
+
+    internal void EnsureWithinBudgets(Document document, LocalDocumentResourceLoader resources)
+    {
+        resources.ThrowIfFailed();
+        _resourceBudgets.EnsureWithin(
+            WordsBudgetDomains.Pages, document.PageCount, "items", "post-load");
+        _resourceBudgets.EnsureWithin(
+            WordsBudgetDomains.Nodes, document.GetChildNodes(NodeType.Any, true).Count,
+            "items", "projection");
+        resources.ThrowIfFailed();
+    }
+
+    private Document Load(Func<LoadOptions, Document> open, LoadFormat format,
+        LocalDocumentResourceLoader resources, string path, string? password)
+    {
+        Document? document = null;
+        try
+        {
+            document = open(new LoadOptions
+            {
+                Password = password,
+                LoadFormat = format,
+                BaseUri = resources.BaseUri,
+                ResourceLoadingCallback = new BlockingResourceCallback(resources),
+                PreserveIncludePictureField = true,
+            });
+            EnsureWithinBudgets(document, resources);
+            return document;
         }
         catch (Exception exception)
         {
-            resources.ThrowIfFailed();
-            if (exception is IncorrectPasswordException)
+            try
             {
-                throw string.IsNullOrEmpty(password)
-                    ? CliErrors.PasswordRequired(path) : CliErrors.PasswordInvalid(path);
+                resources.ThrowIfFailed();
+                if (exception is IncorrectPasswordException)
+                {
+                    throw string.IsNullOrEmpty(password)
+                        ? CliErrors.PasswordRequired(path) : CliErrors.PasswordInvalid(path);
+                }
+                if (exception is FileCorruptedException or UnsupportedFileFormatException)
+                {
+                    throw InvalidDocument(path, exception.Message, exception);
+                }
+                if (exception is IOException or UnauthorizedAccessException)
+                {
+                    throw TranslateIo(path, exception);
+                }
+                throw;
             }
-            if (exception is FileCorruptedException or UnsupportedFileFormatException)
-            {
-                throw InvalidDocument(path, exception.Message, exception);
-            }
-            if (exception is IOException or UnauthorizedAccessException)
-            {
-                throw TranslateIo(path, exception);
-            }
-            throw;
-        }
-        finally
-        {
-            if (!transferred)
-            {
-                try { document?.Cleanup(); }
-                finally { resources.Dispose(); }
-            }
+            finally { document?.Cleanup(); }
         }
     }
 
@@ -165,6 +193,15 @@ internal sealed record LoadedDocument(
     LocalDocumentResourceLoader Resources,
     bool EvaluationInputTruncated) : IDisposable
 {
+    private readonly List<Document> _imports = [];
+    public bool ImportedInputTruncated { get; private set; }
+
+    internal void Retain(Document document, bool truncated)
+    {
+        _imports.Add(document);
+        ImportedInputTruncated |= truncated;
+    }
+
     public int RemoteResourcesBlocked
     {
         get
@@ -176,7 +213,11 @@ internal sealed record LoadedDocument(
 
     public void Dispose()
     {
-        try { Document.Cleanup(); }
+        try
+        {
+            Document.Cleanup();
+            foreach (Document document in _imports) { document.Cleanup(); }
+        }
         finally { Resources.Dispose(); }
     }
 }

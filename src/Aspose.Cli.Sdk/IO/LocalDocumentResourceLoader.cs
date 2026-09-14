@@ -42,6 +42,9 @@ public sealed class LocalDocumentResourceLoader : IDisposable
         _maximumTotalBytes = maximumTotalBytes;
     }
 
+    /// <summary>Canonical base used by native importers for relative resource references.</summary>
+    public string BaseUri => _baseUri.AbsoluteUri;
+
     public int OmittedCount { get { lock (_gate) { return _omitted; } } }
 
     /// <summary>Propagates a fatal callback failure even if an engine caught it internally.</summary>

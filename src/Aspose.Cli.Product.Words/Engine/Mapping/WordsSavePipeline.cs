@@ -12,6 +12,26 @@ internal static class WordsSavePipeline
         SaveFormat format = WordsFormatMapper.ToSaveFormat(formatId);
         SaveOptions options = SaveOptions.CreateSaveOptions(format);
         options.UpdateLastSavedTimeProperty = false;
+        switch (options)
+        {
+            case HtmlSaveOptions html when format == SaveFormat.Html:
+                html.ExportImagesAsBase64 = true;
+                html.ExportFontsAsBase64 = true;
+                html.CssStyleSheetType = CssStyleSheetType.Embedded;
+                break;
+            case HtmlFixedSaveOptions html:
+                html.ExportEmbeddedImages = true;
+                html.ExportEmbeddedFonts = true;
+                html.ExportEmbeddedCss = true;
+                html.ExportEmbeddedSvg = true;
+                break;
+            case SvgSaveOptions svg:
+                svg.ExportEmbeddedImages = true;
+                break;
+            case MarkdownSaveOptions markdown:
+                markdown.ExportImagesAsBase64 = true;
+                break;
+        }
 
         if (pages is not null)
         {

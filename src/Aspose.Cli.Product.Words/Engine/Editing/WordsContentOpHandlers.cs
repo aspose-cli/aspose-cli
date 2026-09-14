@@ -131,10 +131,8 @@ internal static class WordsContentOpHandlers
         return op.Paragraphs.Count;
     }
 
-    internal static long InsertMarkdown(Document document, Node anchor, InsertMarkdownOp op)
+    internal static long InsertMarkdown(Document document, Node anchor, InsertMarkdownOp op, Document markdown)
     {
-        using var stream = new MemoryStream(Encoding.UTF8.GetBytes(op.Markdown));
-        var markdown = new Document(stream, new Aspose.Words.Loading.LoadOptions { LoadFormat = LoadFormat.Markdown });
         Node cursor = anchor;
         int count = 0;
         foreach (Node child in markdown.FirstSection.Body.GetChildNodes(NodeType.Any, false))

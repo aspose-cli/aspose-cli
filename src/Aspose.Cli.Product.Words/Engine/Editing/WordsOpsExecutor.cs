@@ -37,11 +37,13 @@ internal static class WordsOpsExecutor
         }
 
         IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(loaded.Document, resolved, request, loader, inputs);
+            ApplyOperations(loaded, resolved, request, loader, inputs);
         if (request.TrackChanges)
         {
             loaded.Document.StopTrackRevisions();
         }
+
+        loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
 
         (OutputInfo? output, BackupInfo? backup, WordsVerification? verification) =
             Persist(
@@ -52,7 +54,8 @@ internal static class WordsOpsExecutor
                 baseline,
                 outcomes,
                 loader,
-                precondition);
+                precondition,
+                loaded.Resources);
         baseline?.Cleanup();
         return new WordsEditResult
         {
@@ -78,12 +81,13 @@ internal static class WordsOpsExecutor
     }
 
     private static IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
-        Document document,
+        LoadedDocument loaded,
         IReadOnlyList<ResolvedWordsOp> resolved,
         WordsEditRequest request,
         WordsDocumentLoader loader,
         InputSource inputs)
     {
+        Document document = loaded.Document;
         var outcomes = new List<BoundedOperationOutcome>(resolved.Count);
         for (int index = 0; index < resolved.Count; index++)
         {
@@ -94,6 +98,9 @@ internal static class WordsOpsExecutor
                 _ = request.OpSecrets?.TryGetValue(index, out secret);
                 long affected = item.Op switch
                 {
+                    InsertMarkdownOp markdown =>
+                        WordsContentOpHandlers.InsertMarkdown(document, item.Nodes[0], markdown,
+                            loader.OpenMarkdown(markdown.Markdown, loaded)),
                     AppendDocumentOp append =>
                         WordsStructureOpHandlers.AppendDocument(document, append, loader),
                     MailMergeOp merge =>
@@ -110,7 +117,10 @@ internal static class WordsOpsExecutor
                     Targets = item.Targets,
                 });
             }
-            catch (Exception exception) when (exception is CliException or InvalidOperationException or ArgumentException)
+            catch (Exception exception) when (
+                exception is CliException or InvalidOperationException or ArgumentException
+                && exception is not CliException { ExitCode: ExitCode.OperationTimeout }
+                && (exception is not CliException failure || failure.Code != ErrorCodes.InputBudgetExceeded))
             {
                 CliException translated = exception as CliException ?? InvalidAt(index, item.Op.OpName, exception.Message);
                 if (!request.Options.BestEffort)
@@ -149,7 +159,8 @@ internal static class WordsOpsExecutor
         Document? baseline,
         IReadOnlyList<BoundedOperationOutcome> outcomes,
         WordsDocumentLoader loader,
-        FileWritePrecondition precondition)
+        FileWritePrecondition precondition,
+        LocalDocumentResourceLoader resources)
     {
         OutputInfo? output = null;
         BackupInfo? backup = null;
@@ -163,7 +174,11 @@ internal static class WordsOpsExecutor
                 request.Overwrite,
                 request.BackupPath,
                 precondition,
-                temp => document.Save(temp, options));
+                temp =>
+                {
+                    try { document.Save(temp, options); }
+                    finally { resources.ThrowIfFailed(); }
+                });
             output = new OutputInfo { Path = request.OutputPath, Format = format, SizeBytes = write.SizeBytes };
             if (write.Backup is not null)
             {
