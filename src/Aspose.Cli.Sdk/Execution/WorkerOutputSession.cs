@@ -105,54 +105,6 @@ public static class WorkerOutputSession
         return directory;
     }
 
-    internal static SafeWriteResult StageSingle(
-        SafeFileWriter writer,
-        string targetPath,
-        bool overwrite,
-        string? backupPath,
-        FileWritePrecondition? inputPrecondition,
-        Action<string> write,
-        Action<string, Stream>? inspectProducedFile = null,
-        Action<string>? verifyProducedFile = null)
-    {
-        string target = Path.GetFullPath(targetPath);
-        FilePublicationSnapshot original = inputPrecondition is not null
-            && inputPrecondition.Targets(target)
-                ? inputPrecondition.Snapshot
-                : FilePublicationSnapshot.Capture(target);
-        if (!overwrite && original.Exists)
-        {
-            throw CliErrors.OutputExists(target);
-        }
-
-        string directory = CreatePrivateDirectory("single");
-        string staged = Path.Combine(directory, "output.stage");
-        using var temporary = OwnedTemporaryFile.Create(staged);
-        write(staged);
-        temporary.BindInspectAndVerify(
-            inspectProducedFile,
-            verifyProducedFile);
-
-        temporary.FlushBound();
-        FilePublicationSnapshot verifiedStage =
-            temporary.CaptureBoundSnapshot();
-        original.Metadata?.ApplyContentAttributes(staged);
-        inputPrecondition?.EnsureUnchanged();
-        RegisterFile(
-            target,
-            staged,
-            overwrite,
-            backupPath,
-            original,
-            verifiedStage);
-        temporary.MarkPublished();
-        long size = new FileInfo(staged).Length;
-        writer.ConsumeOutput(size, "worker-output-stage");
-        return new SafeWriteResult(
-            size,
-            PlannedBackup(backupPath, original));
-    }
-
     internal static void RegisterFile(
         string targetPath,
         string sourcePath,

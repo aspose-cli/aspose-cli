@@ -61,7 +61,18 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         string backups = CreateBackupDirectory();
         foreach (PublicationJournalEntry entry in plan.Journal.Entries)
         {
+            if (entry.InputPath is { } input && entry.InputSnapshot is { } expectedInput)
+            {
+                FileFingerprints.EnsureUnchanged(input,
+                    new Aspose.Cli.Sdk.Contracts.FileFingerprint { Sha256 = expectedInput.Sha256!.ToLowerInvariant() },
+                    FileFingerprints.Capture(input));
+            }
             EnsureTargetUnchanged(entry);
+            if (entry.RequestedBackup is { } backup && entry.RequestedBackupOriginal is { } expectedBackup)
+            {
+                FilePublicationSnapshot current = FilePublicationSnapshot.Capture(backup);
+                if (!expectedBackup.VersionEquals(current)) { throw CliErrors.OutputConflict(backup, expectedBackup, current); }
+            }
             if (entry.Original.Exists)
             {
                 PrepareBackup(entry, backups);
@@ -164,6 +175,12 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             entry.Original,
             entry.Displaced,
             entry.StagedSnapshot);
+        if (OperatingSystem.IsWindows() && !entry.Original.Exists)
+        {
+            FilePublicationMetadata.ResetAccessToInherited(entry.Target);
+            entry.PublishedSnapshot = FilePublicationSnapshot.Capture(entry.Target);
+        }
+        plan.ResourceBudgets?.RefreshAdmissionAfterPublication(entry.Target);
         CaptureDisplaced(entry);
         if (!entry.StagedSnapshot.ContentMatches(entry.Target))
         {

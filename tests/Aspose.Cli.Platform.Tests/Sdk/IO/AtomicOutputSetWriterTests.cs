@@ -45,6 +45,7 @@ public sealed class AtomicOutputSetWriterTests
             transaction,
             target,
             index: 0);
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         File.Delete(staged);
         File.WriteAllText(staged, "replacement");
 
@@ -440,6 +441,7 @@ public sealed class AtomicOutputSetWriterTests
             transaction,
             target,
             index: 0);
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, "original");
@@ -502,6 +504,7 @@ public sealed class AtomicOutputSetWriterTests
             transaction,
             target,
             index: 0);
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, "original");
@@ -594,6 +597,7 @@ public sealed class AtomicOutputSetWriterTests
             transaction,
             target,
             index: 0);
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         File.WriteAllText(staged, "created");
         FilePublicationSnapshot stagedSnapshot =
             FilePublicationSnapshot.Capture(staged);
@@ -800,7 +804,7 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
-    public void CleanupPreservesUnknownTransactionArtifacts()
+    public void SealingRejectsAndPreservesUnknownTransactionArtifacts()
     {
         using var temp = new TempDirectory();
         string target = temp.File("target.txt");
@@ -815,11 +819,11 @@ public sealed class AtomicOutputSetWriterTests
             Directory.EnumerateDirectories(temp.Path, ".aspose-*"));
         unknown = Path.Combine(transaction, "external-sentinel.txt");
         File.WriteAllText(unknown, "external");
-        set.Commit();
+        Assert.Throws<CliException>(() => set.Commit());
 
         set.Dispose();
 
-        Assert.Equal("content", File.ReadAllText(target));
+        Assert.False(File.Exists(target));
         Assert.Equal("external", File.ReadAllText(unknown));
         Assert.True(File.Exists(Path.Combine(
             transaction,
@@ -1219,6 +1223,7 @@ public sealed class AtomicOutputSetWriterTests
             transaction,
             target,
             index: 0);
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, "original");
@@ -1277,6 +1282,7 @@ public sealed class AtomicOutputSetWriterTests
             transaction,
             target,
             index: 0);
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         string backup = Path.Combine(backups, "000001.backup");
         string displaced = Path.Combine(backups, "000001.displaced");
         File.WriteAllText(target, original);

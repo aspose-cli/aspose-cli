@@ -10,6 +10,7 @@ internal sealed class AtomicPublicationPlan
 
     private readonly IPublicationFaultInjector _faults;
     private PublicationDirectoryLease? _lease;
+    internal HashSet<string> CreatedStagingDirectories { get; } = [];
 
     private AtomicPublicationPlan(
         string stagingDirectory,
@@ -38,12 +39,9 @@ internal sealed class AtomicPublicationPlan
 
     public PublicationDirectoryLease? Lease => _lease;
 
-    public string StagedPath(string target, int index) =>
-        WorkerStagingOnly
-            ? Path.Combine(
-                StagingDirectory,
-                $"{index + 1:000000}.stage")
-            : StagedPath(StagingDirectory, target, index);
+    internal ResourceBudgetLedger? ResourceBudgets { get; set; }
+
+    public string StagedPath(string target, int index) => StagedPath(StagingDirectory, target, index);
 
     public string DisplacedPath(int index) =>
         Path.Combine(
@@ -119,13 +117,7 @@ internal sealed class AtomicPublicationPlan
         string target,
         int index)
     {
-        string transaction = Path.GetFileName(
-            Path.GetFullPath(transactionDirectory)).TrimStart('.');
-        return Path.Combine(
-            Path.GetDirectoryName(Path.GetFullPath(target))
-                ?? throw new IOException(
-                    $"Publication target '{target}' has no parent directory."),
-            $".{transaction}.{index + 1:000000}.stage");
+        return Path.Combine(transactionDirectory, $"output-{index + 1:000000}", Path.GetFileName(target));
     }
 
     public void ReleaseLease()
@@ -189,6 +181,10 @@ internal sealed class AtomicPublicationPlan
                 }
             }
 
+            foreach (string directory in Journal.Entries.Select(entry => Path.GetDirectoryName(entry.Staged)!).Concat(CreatedStagingDirectories).Distinct())
+            {
+                DeleteEmptyDirectory(directory);
+            }
             string backups = Path.Combine(StagingDirectory, "backups");
             DeleteEmptyDirectory(backups);
             if (File.Exists(JournalPath))
@@ -216,78 +212,42 @@ internal sealed class AtomicPublicationPlan
         }
     }
 
-    private void EnsureNoUnknownArtifacts()
+    internal void EnsureNoUnknownArtifacts()
     {
-        DeleteJournalTemporaries();
-        StringComparer comparer = OperatingSystem.IsWindows()
-            ? StringComparer.OrdinalIgnoreCase
-            : StringComparer.Ordinal;
-        var allowedFiles = new HashSet<string>(comparer)
-        {
-            Path.GetFullPath(JournalPath),
-        };
+        StringComparer comparer = OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+        var allowedFiles = new HashSet<string>(comparer) { Path.GetFullPath(JournalPath) };
+        var allowedDirectories = new HashSet<string>(comparer) { Path.Combine(StagingDirectory, "backups") };
         foreach (PublicationJournalEntry entry in Journal.Entries)
         {
-            allowedFiles.Add(Path.GetFullPath(entry.Staged));
-            if (entry.Backup is not null)
+            allowedDirectories.Add(Path.GetDirectoryName(entry.Staged)!);
+            foreach (string? file in new[] { entry.Staged, entry.Backup, entry.Displaced })
             {
-                allowedFiles.Add(Path.GetFullPath(entry.Backup));
-            }
-            if (entry.Displaced is not null)
-            {
-                allowedFiles.Add(Path.GetFullPath(entry.Displaced));
+                if (file is not null) { allowedFiles.Add(Path.GetFullPath(file)); }
             }
         }
-
-        string backups = Path.GetFullPath(
-            Path.Combine(StagingDirectory, "backups"));
-        foreach (string file in Directory.EnumerateFiles(
-                     StagingDirectory,
-                     "*",
-                     SearchOption.TopDirectoryOnly))
+        allowedDirectories.UnionWith(CreatedStagingDirectories);
+        var pending = new Stack<string>();
+        pending.Push(StagingDirectory);
+        while (pending.TryPop(out string? directory))
         {
-            string full = Path.GetFullPath(file);
-            if (!allowedFiles.Contains(full))
+            foreach (FileSystemInfo item in new DirectoryInfo(directory).EnumerateFileSystemInfos())
             {
-                throw new IOException(
-                    $"Publication cleanup preserved unknown file '{full}'.");
-            }
-        }
-        foreach (string directory in Directory.EnumerateDirectories(
-                     StagingDirectory,
-                     "*",
-                     SearchOption.TopDirectoryOnly))
-        {
-            string full = Path.GetFullPath(directory);
-            if (!comparer.Equals(full, backups)
-                || File.GetAttributes(full).HasFlag(FileAttributes.ReparsePoint))
-            {
-                throw new IOException(
-                    $"Publication cleanup preserved unknown directory '{full}'.");
-            }
-        }
-        if (!Directory.Exists(backups))
-        {
-            return;
-        }
-        if (Directory.EnumerateDirectories(
-                backups,
-                "*",
-                SearchOption.TopDirectoryOnly).Any())
-        {
-            throw new IOException(
-                $"Publication cleanup preserved an unknown backup directory below '{backups}'.");
-        }
-        foreach (string file in Directory.EnumerateFiles(
-                     backups,
-                     "*",
-                     SearchOption.TopDirectoryOnly))
-        {
-            string full = Path.GetFullPath(file);
-            if (!allowedFiles.Contains(full))
-            {
-                throw new IOException(
-                    $"Publication cleanup preserved unknown backup file '{full}'.");
+                if ((item.Attributes & FileAttributes.ReparsePoint) != 0)
+                {
+                    throw new IOException($"Publication preserved linked artifact '{item.FullName}'.");
+                }
+                if (item is DirectoryInfo)
+                {
+                    if (!allowedDirectories.Contains(item.FullName))
+                    {
+                        throw new IOException($"Publication preserved unknown directory '{item.FullName}'.");
+                    }
+                    pending.Push(item.FullName);
+                }
+                else if (!allowedFiles.Contains(item.FullName))
+                {
+                    throw new IOException($"Publication preserved unknown file '{item.FullName}'.");
+                }
             }
         }
     }

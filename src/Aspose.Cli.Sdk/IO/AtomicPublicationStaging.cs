@@ -8,7 +8,7 @@ internal sealed class AtomicPublicationStaging(
     AtomicPublicationPlan plan,
     SafeFileWriter writer)
 {
-    public void Stage(
+    public StagedOutput Stage(
         string targetPath,
         bool overwrite,
         Action<string> write)
@@ -23,22 +23,28 @@ internal sealed class AtomicPublicationStaging(
 
         string target = Path.GetFullPath(targetPath);
         FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-        StagePrepared(target, overwrite, requestedBackup: null, original, write);
+        return StagePrepared(target, overwrite, requestedBackup: null, original, write);
     }
 
-    public void StagePrepared(
+    public StagedOutput StagePrepared(
         string target,
         bool overwrite,
         string? requestedBackup,
         FilePublicationSnapshot original,
-        Action<string> write)
+        Action<string> write,
+        FileWritePrecondition? inputPrecondition = null,
+        Action<string, Stream>? inspect = null,
+        Action<string>? verify = null)
     {
+        ArgumentNullException.ThrowIfNull(write);
+        if (plan.Journal.State != PublicationTransactionState.Staging) { throw new InvalidOperationException("The output set is sealed."); }
         plan.Lease?.EnsureCovers(target);
         target = OutputPathValidator.NormalizeFile(target);
         requestedBackup = requestedBackup is null
             ? null
-            : OutputPathValidator.NormalizeFile(requestedBackup);
-        EnsureUnique(target);
+            : OutputPathValidator.NormalizeFile(requestedBackup, phase: "backup");
+        EnsureUnique(target, requestedBackup);
+        FilePublicationSnapshot? backupOriginal = requestedBackup is null ? null : FilePublicationSnapshot.Capture(requestedBackup);
         if (!overwrite && original.Exists)
         {
             throw CliErrors.OutputExists(target);
@@ -53,25 +59,24 @@ internal sealed class AtomicPublicationStaging(
 
         int index = plan.Journal.Entries.Count;
         string staged = plan.StagedPath(target, index);
+        plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);
+        if (plan.WorkerStagingOnly) { PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(staged)!); }
+        else { FilePublicationMetadata.PrepareOutputDirectory(Path.GetDirectoryName(staged)!, Path.GetDirectoryName(target)!); }
         FilePublicationSnapshot stagedSnapshot;
         using (var temporary = OwnedTemporaryFile.Create(staged))
         {
             write(staged);
-            temporary.BindInspectAndVerify(inspect: null, verify: null);
-            if (OperatingSystem.IsWindows() && !plan.WorkerStagingOnly)
-            {
-                FilePublicationMetadata.ResetAccessToInherited(staged);
-                temporary.BindProducedFile();
-            }
+            temporary.BindInspectAndVerify(inspect, verify);
+            original.Metadata?.ApplyAccess(staged);
             original.Metadata?.ApplyContentAttributes(staged);
             temporary.BindProducedFile();
             temporary.FlushBound();
             stagedSnapshot = temporary.CaptureBoundSnapshot();
+            writer.ConsumeOutput(stagedSnapshot.Length, "output-set-stage");
             temporary.MarkPublished();
         }
 
         long size = stagedSnapshot.Length;
-        writer.ConsumeOutput(size, "output-set-stage");
         // Staging files are private content carriers. Replaying a Windows
         // owner here would require WRITE_OWNER even though the caller has all
         // permissions needed to edit the target contents.
@@ -94,6 +99,9 @@ internal sealed class AtomicPublicationStaging(
             Staged = staged,
             Overwrite = overwrite,
             RequestedBackup = requestedBackup,
+            RequestedBackupOriginal = backupOriginal,
+            InputPath = inputPrecondition?.Path,
+            InputSnapshot = inputPrecondition?.Snapshot,
             Original = original,
             StagedSnapshot = stagedSnapshot,
             TargetParentIdentity = targetParentIdentity,
@@ -104,6 +112,7 @@ internal sealed class AtomicPublicationStaging(
             Size = size,
         });
         plan.Persist();
+        return new StagedOutput(plan.Journal.Entries[^1]);
     }
 
     public void StageDeletionPrepared(
@@ -129,6 +138,9 @@ internal sealed class AtomicPublicationStaging(
             : OutputPathValidator.CaptureParentIdentity(target);
         int index = plan.Journal.Entries.Count;
         string staged = plan.StagedPath(target, index);
+        plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);
+        if (plan.WorkerStagingOnly) { PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(staged)!); }
+        else { FilePublicationMetadata.PrepareOutputDirectory(Path.GetDirectoryName(staged)!, Path.GetDirectoryName(target)!); }
         FilePublicationSnapshot stagedSnapshot;
         using (var temporary = OwnedTemporaryFile.Create(staged))
         {
@@ -160,13 +172,17 @@ internal sealed class AtomicPublicationStaging(
         plan.Persist();
     }
 
-    private void EnsureUnique(string target)
+    private void EnsureUnique(string target, string? backup = null)
     {
         StringComparer comparer = OperatingSystem.IsWindows()
             ? StringComparer.OrdinalIgnoreCase
             : StringComparer.Ordinal;
         if (plan.Journal.Entries.Any(
-                item => comparer.Equals(item.Target, target)))
+                item => comparer.Equals(item.Target, target)
+                    || item.RequestedBackup is not null && comparer.Equals(item.RequestedBackup, target)
+                    || backup is not null && (comparer.Equals(item.Target, backup)
+                        || item.RequestedBackup is not null && comparer.Equals(item.RequestedBackup, backup)))
+            || backup is not null && comparer.Equals(target, backup))
         {
             throw CliErrors.OptionInvalid(
                 "--name-template",

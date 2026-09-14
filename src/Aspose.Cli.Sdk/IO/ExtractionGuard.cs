@@ -3,331 +3,97 @@ using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Sdk.IO;
 
-/// <summary>Bounds, plans, and transactionally publishes extracted files.</summary>
+/// <summary>Bounds and names extracted files, then publishes through the shared transaction.</summary>
 public sealed class ExtractionGuard : IDisposable
 {
-    private readonly string _workingRoot;
-    private readonly bool _workerStagingOnly;
-    private readonly ResourceBudgetLedger _resourceBudgets;
     private readonly ExtractionBudgetLedger _budget;
     private readonly ExtractionPlan _plan;
-    private readonly ExtractionTransaction _transaction;
+    private readonly AtomicOutputSetWriter _transaction;
+    private bool _committed;
+    private bool _disposed;
 
-    public ExtractionGuard(
-        ResourceBudgetLedger resourceBudgets,
-        string root,
-        int maxItems = 1000,
-        long maxBytes = 512L * 1024 * 1024)
-        : this(
-            resourceBudgets,
-            root,
-            maxItems,
-            maxBytes,
-            NoPublicationFaultInjector.Instance)
-    {
-    }
+    public ExtractionGuard(ResourceBudgetLedger resourceBudgets, string root,
+        int maxItems = 1000, long maxBytes = 512L * 1024 * 1024)
+        : this(resourceBudgets, root, maxItems, maxBytes, NoPublicationFaultInjector.Instance) { }
 
-    internal ExtractionGuard(
-        ResourceBudgetLedger resourceBudgets,
-        string root,
-        int maxItems,
-        long maxBytes,
-        IPublicationFaultInjector faults)
+    internal ExtractionGuard(ResourceBudgetLedger resourceBudgets, string root,
+        int maxItems, long maxBytes, IPublicationFaultInjector faults)
     {
-        _resourceBudgets = resourceBudgets
-            ?? throw new ArgumentNullException(nameof(resourceBudgets));
-        ArgumentException.ThrowIfNullOrEmpty(root);
-        ArgumentNullException.ThrowIfNull(faults);
-        string fullRoot = Path.GetFullPath(root);
-        _workerStagingOnly = WorkerOutputSession.IsActive;
-        _workingRoot = _workerStagingOnly
-            ? WorkerOutputSession.CreatePrivateDirectory("extraction")
-            : fullRoot;
+        ArgumentNullException.ThrowIfNull(resourceBudgets);
         _budget = new ExtractionBudgetLedger(maxItems, maxBytes);
-        _plan = new ExtractionPlan(fullRoot, _workingRoot, _workerStagingOnly);
-        _transaction = new ExtractionTransaction(
-            _workerStagingOnly,
-            _workingRoot,
-            faults,
-            _plan.CreatedDirectories);
+        _plan = new ExtractionPlan(Path.GetFullPath(root), WorkerOutputSession.IsActive);
+        _plan.EnsureRoot();
+        try { _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), Path.GetFullPath(root), "extraction", faults); }
+        catch { _plan.RemoveCreatedDirectories(); throw; }
     }
 
-    public string Reserve(string suggestedName, long sizeBytes) =>
-        ReserveRelativePath(
-            suggestedName,
-            sizeBytes,
-            flatten: true,
-            overwrite: false);
+    public string Reserve(string suggestedName, long sizeBytes) => ReserveRelativePath(suggestedName, sizeBytes, flatten: true);
 
-    public string ReserveRelativePath(
-        string suggestedPath,
-        long sizeBytes,
-        bool flatten = false,
-        bool overwrite = false)
+    public string ReserveRelativePath(string suggestedPath, long sizeBytes, bool flatten = false, bool overwrite = false)
     {
-        string relativePath = ExtractionPathValidator.NormalizeRelativePath(
-            suggestedPath,
-            flatten);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        string relative = ExtractionPathValidator.NormalizeRelativePath(suggestedPath, flatten);
         _budget.ReserveFile(sizeBytes);
-        return _plan.ReserveFile(relativePath, suggestedPath, overwrite);
+        return _plan.ReserveFile(relative, suggestedPath, overwrite);
     }
 
     public string CreateDirectory(string suggestedPath)
     {
-        ArgumentException.ThrowIfNullOrEmpty(suggestedPath);
-        string relativePath = ExtractionPathValidator.NormalizeRelativePath(
-            suggestedPath.TrimEnd('/', '\\'),
-            flatten: false);
+        ObjectDisposedException.ThrowIf(_disposed, this);
         _budget.ReserveDirectory();
-        string target = _plan.CreateDirectory(relativePath, suggestedPath);
-        if (_workerStagingOnly)
+        return _plan.CreateDirectory(ExtractionPathValidator.NormalizeRelativePath(suggestedPath.TrimEnd('/', '\\'), false), suggestedPath);
+    }
+
+    public string WriteAllBytes(string suggestedName, byte[] bytes) =>
+        Write(suggestedName, bytes.LongLength, stream => stream.Write(bytes), flatten: true);
+
+    public string CopyFile(string suggestedName, string sourcePath) =>
+        Write(suggestedName, new FileInfo(sourcePath).Length, output =>
         {
-            _transaction.EnrollWorkerDirectory(target);
-        }
-        return target;
-    }
+            using var input = File.OpenRead(sourcePath);
+            input.CopyTo(output);
+        }, flatten: true);
 
-    public string WriteAllBytes(string suggestedName, byte[] bytes)
-    {
-        ArgumentNullException.ThrowIfNull(bytes);
-        return Write(
-            suggestedName,
-            bytes.LongLength,
-            stream => stream.Write(bytes),
-            flatten: true,
-            overwrite: false);
-    }
-
-    public string CopyFile(string suggestedName, string sourcePath)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(sourcePath);
-        long size = new FileInfo(sourcePath).Length;
-        return Write(
-            suggestedName,
-            size,
-            output =>
-            {
-                using FileStream input = File.OpenRead(sourcePath);
-                input.CopyTo(output);
-            },
-            flatten: true,
-            overwrite: false);
-    }
-
-    public string Write(
-        string suggestedPath,
-        long sizeBytes,
-        Action<Stream> write,
-        bool flatten = false,
-        bool overwrite = false)
+    public string Write(string suggestedPath, long sizeBytes, Action<Stream> write, bool flatten = false, bool overwrite = false)
     {
         ArgumentNullException.ThrowIfNull(write);
-        string target = ReserveRelativePath(
-            suggestedPath,
-            sizeBytes,
-            flatten,
-            overwrite);
-        long reservedBytes = Math.Max(0, sizeBytes);
-        long writeLimit = _budget.WriteLimit(reservedBytes);
-        string workingTarget = _workerStagingOnly
-            ? _plan.ToWorkingPath(target)
-            : target;
-        string parent = Path.GetDirectoryName(workingTarget) ?? _workingRoot;
-        _plan.EnsureWorkingDirectory(parent);
-        ExtractionPathValidator.EnsureNoLinks(parent);
-        string temp = Path.Combine(
-            parent,
-            $".{Path.GetFileName(target)}.{Guid.NewGuid():N}.extracting");
-        FilePublicationSnapshot original =
-            FilePublicationSnapshot.Capture(target);
-        bool replacing = original.Exists;
-        ExtractionBackup? backup = null;
-        OwnedTemporaryFile? temporary = null;
         try
         {
-            if (replacing && !_workerStagingOnly)
+            string target = ReserveRelativePath(suggestedPath, sizeBytes, flatten, overwrite);
+            long reserved = Math.Max(0, sizeBytes);
+            long limit = _budget.WriteLimit(reserved);
+            FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
+            _transaction.StagePrepared(target, overwrite, requestedBackup: null, original, staged =>
             {
-                backup = CreateBackup(target, parent, original);
-            }
-
-            temporary = OwnedTemporaryFile.Create(temp);
-            long actualBytes = WriteStaged(
-                temp,
-                writeLimit,
-                suggestedPath,
-                write);
-            temporary.BindProducedFile();
-            _budget.Reconcile(reservedBytes, actualBytes);
-            _resourceBudgets.Consume(
-                ResourceBudgetKinds.OutputBytes,
-                actualBytes,
-                "bytes",
-                "extraction-output");
-            FilePublicationDurabilityAdapter.FlushFile(temp);
-            original.Metadata?.ApplyContentAttributes(temp);
-            FilePublicationSnapshot staged =
-                FilePublicationSnapshot.Capture(temp);
-            EnsureTargetUnchanged(target, original);
-            Publish(
-                target,
-                workingTarget,
-                temp,
-                backup,
-                overwrite,
-                original,
-                staged);
-            temporary.MarkPublished();
+                using var file = new FileStream(staged, FileMode.Truncate, FileAccess.Write, FileShare.None);
+                using Stream bounded = _budget.Bound(file, limit, suggestedPath);
+                write(bounded);
+                bounded.Flush();
+                _budget.Reconcile(reserved, bounded.Length);
+                FilePublicationSnapshot current = FilePublicationSnapshot.Capture(target);
+                if (!original.VersionEquals(current)) { throw CliErrors.OutputConflict(target, original, current); }
+            });
             return target;
         }
-        catch (Exception failure)
-        {
-            if (backup is not null)
-            {
-                ExtractionTransaction.DeleteForCleanup(
-                    backup.Path,
-                    backup.Snapshot);
-            }
-            if (!_transaction.HasPublishedOutputs)
-            {
-                throw;
-            }
-            PublicationRecoveryReport recovery = _transaction.RollBack();
-            throw CliErrors.OutputPublicationFailure(failure, recovery);
-        }
-        finally
-        {
-            temporary?.Dispose();
-        }
+        catch { Dispose(); throw; }
     }
 
-    public void Commit() => _transaction.Commit();
-
-    public void Dispose() => _transaction.DisposeIncomplete();
-
-    private static ExtractionBackup CreateBackup(
-        string target,
-        string parent,
-        FilePublicationSnapshot original)
+    public void Commit()
     {
-        string backup = Path.Combine(
-            parent,
-            $".{Path.GetFileName(target)}.{Guid.NewGuid():N}.rollback");
-        using var temporary = OwnedTemporaryFile.Create(backup);
-        File.Copy(target, backup, overwrite: true);
-        temporary.BindProducedFile();
-        FilePublicationDurabilityAdapter.FlushFile(backup);
-        original.Metadata?.ApplyContentAttributes(backup);
-        FilePublicationSnapshot snapshot =
-            FilePublicationSnapshot.Capture(backup);
-        temporary.MarkPublished();
-        return new ExtractionBackup(backup, snapshot);
+        ObjectDisposedException.ThrowIf(_disposed, this);
+        if (WorkerOutputSession.IsActive)
+        {
+            foreach (string directory in _plan.Directories) { WorkerOutputSession.RegisterDirectory(directory); }
+        }
+        _transaction.Commit();
+        _committed = true;
     }
 
-    private long WriteStaged(
-        string temp,
-        long writeLimit,
-        string suggestedPath,
-        Action<Stream> write)
+    public void Dispose()
     {
-        using var output = new FileStream(
-            temp,
-            FileMode.Truncate,
-            FileAccess.Write,
-            FileShare.None);
-        using Stream bounded = _budget.Bound(
-            output,
-            writeLimit,
-            suggestedPath);
-        write(bounded);
-        bounded.Flush();
-        return bounded.Length;
+        if (_disposed) { return; }
+        _disposed = true;
+        try { _transaction.Dispose(); }
+        finally { if (!_committed) { _plan.RemoveCreatedDirectories(); } }
     }
-
-    private static void EnsureTargetUnchanged(
-        string target,
-        FilePublicationSnapshot original)
-    {
-        FilePublicationSnapshot beforePublish =
-            FilePublicationSnapshot.Capture(target);
-        if (!original.VersionEquals(beforePublish))
-        {
-            throw CliErrors.OutputConflict(target, original, beforePublish);
-        }
-    }
-
-    private void Publish(
-        string target,
-        string workingTarget,
-        string temp,
-        ExtractionBackup? backup,
-        bool overwrite,
-        FilePublicationSnapshot original,
-        FilePublicationSnapshot staged)
-    {
-        ExtractionPathValidator.EnsureNoLinks(
-            Path.GetDirectoryName(workingTarget) ?? _workingRoot);
-        if (_workerStagingOnly)
-        {
-            File.Move(temp, workingTarget, overwrite: true);
-        }
-        else
-        {
-            FilePublicationAtomicSwap.Publish(
-                temp,
-                workingTarget,
-                overwrite,
-                original,
-                original,
-                expectedStage: staged);
-        }
-        ExtractionPathValidator.EnsureNoLinks(workingTarget);
-        if (_workerStagingOnly)
-        {
-            PublishWorker(
-                target,
-                workingTarget,
-                overwrite,
-                original,
-                staged);
-        }
-        else if (original.Exists)
-        {
-            _transaction.EnrollReplaced(
-                target,
-                backup!.Path,
-                backup.Snapshot,
-                original,
-                staged);
-        }
-        else
-        {
-            _transaction.EnrollCreated(target, staged);
-        }
-    }
-
-    private void PublishWorker(
-        string target,
-        string workingTarget,
-        bool overwrite,
-        FilePublicationSnapshot original,
-        FilePublicationSnapshot staged)
-    {
-        WorkerOutputSession.RegisterFile(
-            target,
-            workingTarget,
-            overwrite,
-            backupPath: null,
-            original,
-            staged);
-        _transaction.EnrollWorkerFile(
-            target,
-            workingTarget,
-            overwrite,
-            original,
-            staged);
-    }
-
-    private sealed record ExtractionBackup(
-        string Path,
-        FilePublicationSnapshot Snapshot);
 }

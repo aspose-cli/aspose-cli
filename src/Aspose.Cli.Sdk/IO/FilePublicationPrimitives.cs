@@ -121,6 +121,29 @@ internal sealed record FilePublicationMetadata(
         File.SetAttributes(path, portable);
     }
 
+    /// <summary>Uses destination inheritance beneath a still-private transaction root.</summary>
+    internal static void PrepareOutputDirectory(string directory, string targetDirectory)
+    {
+        Directory.CreateDirectory(directory);
+        if (OperatingSystem.IsWindows())
+        {
+            DirectorySecurity access = new DirectoryInfo(targetDirectory).GetAccessControl(AccessControlSections.Access);
+            access.SetAccessRuleProtection(isProtected: true, preserveInheritance: true);
+            new DirectoryInfo(directory).SetAccessControl(access);
+        }
+    }
+
+    /// <summary>Copies access rules without requesting ownership changes.</summary>
+    public void ApplyAccess(string path)
+    {
+        if (OperatingSystem.IsWindows() && WindowsSecurityDescriptor is { Length: > 0 } descriptor)
+        {
+            var security = new FileSecurity();
+            security.SetSecurityDescriptorBinaryForm(descriptor, AccessControlSections.Access);
+            FileSystemAclExtensions.SetAccessControl(new FileInfo(path), security);
+        }
+    }
+
     public void ApplyContentAttributes(string path)
     {
         if (!OperatingSystem.IsWindows() && UnixMode is { } unixMode)
@@ -489,6 +512,12 @@ internal sealed class PublicationJournalEntry
     public FilePublicationSnapshot? PublishedSnapshot { get; set; }
 
     public string? RequestedBackup { get; init; }
+
+    public FilePublicationSnapshot? RequestedBackupOriginal { get; init; }
+
+    public string? InputPath { get; init; }
+
+    public FilePublicationSnapshot? InputSnapshot { get; init; }
 
     public required FilePublicationSnapshot Original { get; init; }
 

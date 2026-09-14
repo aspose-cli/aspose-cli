@@ -1,126 +1,71 @@
 namespace Aspose.Cli.Sdk.IO;
 
-/// <summary>Plans collision-free targets below one validated extraction root.</summary>
-internal sealed class ExtractionPlan
+/// <summary>Plans collision-free names and tracks newly created extraction directories.</summary>
+internal sealed class ExtractionPlan(string root, bool workerStagingOnly)
 {
-    private readonly string _root;
-    private readonly string _workingRoot;
-    private readonly bool _workerStagingOnly;
-    private readonly HashSet<string> _reserved =
-        new(StringComparer.OrdinalIgnoreCase);
-    private readonly List<string> _createdDirectories = [];
+    private readonly HashSet<string> _reserved = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, FilePhysicalIdentity?> _created = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _directories = new(StringComparer.OrdinalIgnoreCase);
+    public IEnumerable<string> Directories => _directories;
+    public void EnsureRoot() => EnsureDirectory(root);
 
-    public ExtractionPlan(
-        string root,
-        string workingRoot,
-        bool workerStagingOnly)
+    public string ReserveFile(string relativePath, string suggestedPath, bool overwrite)
     {
-        _root = root;
-        _workingRoot = workingRoot;
-        _workerStagingOnly = workerStagingOnly;
-        EnsureDirectory(_workingRoot);
-        ExtractionPathValidator.EnsureNoLinks(_workingRoot);
-    }
-
-    public IReadOnlyList<string> CreatedDirectories => _createdDirectories;
-
-    public string ReserveFile(
-        string relativePath,
-        string suggestedPath,
-        bool overwrite)
-    {
-        string candidate = Path.Combine(_root, relativePath);
+        string candidate = Path.Combine(root, relativePath);
         string stem = Path.GetFileNameWithoutExtension(candidate);
         string extension = Path.GetExtension(candidate);
         int suffix = 2;
-        while (_reserved.Contains(candidate)
-               || (!overwrite && File.Exists(candidate)))
+        while (_reserved.Contains(candidate) || (!overwrite && File.Exists(candidate)))
         {
-            candidate = Path.Combine(
-                Path.GetDirectoryName(candidate) ?? _root,
-                $"{stem}-{suffix++}{extension}");
+            candidate = Path.Combine(Path.GetDirectoryName(candidate)!, $"{stem}-{suffix++}{extension}");
         }
-
         string full = Path.GetFullPath(candidate);
         EnsureBelowRoot(full, suggestedPath);
-        string directory = Path.GetDirectoryName(full) ?? _root;
-        EnsureDirectory(_workerStagingOnly ? ToWorkingPath(directory) : directory);
-        ExtractionPathValidator.EnsureNoLinks(
-            _workerStagingOnly ? ToWorkingPath(directory) : directory);
+        EnsureDirectory(Path.GetDirectoryName(full)!);
         _reserved.Add(full);
         return full;
     }
 
-    public string CreateDirectory(
-        string relativePath,
-        string suggestedPath)
+    public string CreateDirectory(string relativePath, string suggestedPath)
     {
-        string target = Path.GetFullPath(Path.Combine(_root, relativePath));
+        string target = Path.GetFullPath(Path.Combine(root, relativePath));
         EnsureBelowRoot(target, suggestedPath);
-        if (File.Exists(target))
-        {
-            throw ExtractionPathValidator.Refused(
-                $"directory entry '{suggestedPath}' collides with an existing file");
-        }
-
-        if (_workerStagingOnly)
-        {
-            EnsureDirectory(ToWorkingPath(target));
-            Directory.CreateDirectory(target);
-        }
-        else
-        {
-            EnsureDirectory(target);
-        }
+        EnsureDirectory(target);
         _reserved.Add(target);
         return target;
     }
 
-    public string ToWorkingPath(string targetPath)
-    {
-        string relative = Path.GetRelativePath(_root, targetPath);
-        return Path.GetFullPath(Path.Combine(_workingRoot, relative));
-    }
-
-    public void EnsureWorkingDirectory(string path) => EnsureDirectory(path);
-
     private void EnsureBelowRoot(string full, string suggestedPath)
     {
-        if (!full.StartsWith(
-                _root + Path.DirectorySeparatorChar,
-                StringComparison.OrdinalIgnoreCase))
+        if (!full.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase))
         {
-            throw ExtractionPathValidator.Refused(
-                $"unsafe extraction name '{suggestedPath}'");
+            throw ExtractionPathValidator.Refused($"unsafe extraction name '{suggestedPath}'");
         }
+        ExtractionPathValidator.EnsureNoLinks(full);
     }
 
     private void EnsureDirectory(string path)
     {
-        if (Directory.Exists(path))
+        OutputPathValidator.EnsureSafeDirectory(path);
+        _directories.Add(path);
+        if (workerStagingOnly || Directory.Exists(path)) { return; }
+        var missing = new Stack<string>();
+        for (string? current = path; current is not null && !Directory.Exists(current); current = Path.GetDirectoryName(current))
         {
-            ExtractionPathValidator.EnsureNoLinks(path);
-            return;
+            missing.Push(current);
         }
-
-        var missing = new List<string>();
-        string? current = path;
-        while (current is not null
-               && !Directory.Exists(current)
-               && (string.Equals(
-                       current,
-                       _workingRoot,
-                       StringComparison.OrdinalIgnoreCase)
-                   || current.StartsWith(
-                       _workingRoot + Path.DirectorySeparatorChar,
-                       StringComparison.OrdinalIgnoreCase)))
+        while (missing.TryPop(out string? current))
         {
-            missing.Add(current);
-            current = Path.GetDirectoryName(current);
+            Directory.CreateDirectory(current);
+            _created.Add(current, FilePublicationOwnedDelete.TryGetDirectoryIdentity(current));
         }
+    }
 
-        Directory.CreateDirectory(path);
-        ExtractionPathValidator.EnsureNoLinks(path);
-        _createdDirectories.AddRange(missing.AsEnumerable().Reverse());
+    public void RemoveCreatedDirectories()
+    {
+        foreach ((string path, FilePhysicalIdentity? identity) in _created.OrderByDescending(item => item.Key.Length))
+        {
+            if (Directory.Exists(path)) { _ = FilePublicationOwnedDelete.TryDeleteDirectory(path, identity); }
+        }
     }
 }

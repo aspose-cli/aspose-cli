@@ -147,7 +147,7 @@ public sealed class SafeFileWriterTests : IDisposable
             }));
 
         Assert.False(File.Exists(target));
-        Assert.Empty(Directory.GetFiles(_temp.Path));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(_temp.Path));
     }
 
     [Fact]
