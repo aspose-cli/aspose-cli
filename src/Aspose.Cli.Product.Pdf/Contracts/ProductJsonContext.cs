@@ -47,7 +47,6 @@ namespace Aspose.Cli.Generated;
 [JsonSerializable(typeof(Product.Pdf.Contracts.EncryptPdfOp))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.DecryptPdfOp))]
 [JsonSerializable(typeof(Product.Pdf.Contracts.OptimizePdfOp))]
-[JsonSerializable(typeof(Product.Pdf.Contracts.LinearizePdfOp))]
 internal sealed partial class ProductJsonContext : JsonSerializerContext
 {
     internal static ProductJsonDefinition Definition => DefinitionHolder.Value;

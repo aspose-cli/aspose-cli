@@ -13,7 +13,7 @@ aspose-cli pdf validate report.archive.pdf --profile pdfa-2b --output json
 PDF/A conversion uses the engine's delete-on-conversion-error policy, so
 unsupported content can be removed. Compare the candidate with the original
 before delivery. `pdf validate` checks only the selected PDF/A profile; it is
-not a signature, redaction, permission or linearization validator.
+not a signature, redaction or permission validator.
 
 The exact `--to` ids for `pdf convert` are `docx`, `xlsx`, `pptx`, `html`,
 `epub`, `txt`, `md`, `svg`, `xps`, `pdfa-1b`, `pdfa-2b`, `pdfa-3b`, `png`,
@@ -32,12 +32,5 @@ Table extraction is best effort. Extracted tables include page and rectangle
 context, but the current `confidence` value is a fixed 0.5, not a calibrated
 accuracy score. Verify extracted values against the source.
 
-## Linearization limitation
-
-The pinned Aspose.PDF.Drawing 26.5.0 SDK has a confirmed licensed-save defect:
-linearized output can declare a `/L` length different from the actual file
-length, and reopening can report `IsLinearized == false`. The `linearize`
-operation remains exposed, but a successful edit, render or PDF/A validation
-does not prove Fast Web View conformance. Check the saved structure separately
-when linearization is a delivery requirement. This SDK limitation is separate
-from the CLI documentation and the supported conversion-format list.
+The CLI does not provide PDF linearization, and ordinary PDF delivery does
+not require it. `pdf inspect` reports an existing file's `pdf.linearized` state.

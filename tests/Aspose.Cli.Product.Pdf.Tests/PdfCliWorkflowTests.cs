@@ -40,7 +40,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
                 "add_link", "add_page_numbers", "add_stamp_image", "add_watermark_image",
                 "add_watermark_text", "crop_pages", "decrypt", "delete_bookmarks",
                 "delete_pages", "encrypt", "flatten_forms", "insert_blank_page",
-                "insert_pages_from", "linearize", "move_pages", "optimize", "redact_area",
+                "insert_pages_from", "move_pages", "optimize", "redact_area",
                 "redact_text", "remove_attachment", "remove_metadata", "rotate_pages",
                 "set_form_field", "set_metadata", "set_page_labels", "set_page_size",
             ],
@@ -83,6 +83,38 @@ public sealed class PdfCliWorkflowTests : IDisposable
             "--out", "forms.json", "--output", "json");
         Assert.True(exported.ExitCode == 0, exported.StdErr);
         Assert.True(File.Exists(_workspace.File("forms.json")));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Edit_UnsupportedOperationPreservesTheEntireInput(bool bestEffort)
+    {
+        string input = _workspace.File("source.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add().Paragraphs.Add(new TextFragment("Quarterly report"));
+            document.Save(input);
+        }
+        byte[] original = File.ReadAllBytes(input);
+        const string operations =
+            """{"ops":[{"op":"set_metadata","title":"Changed"},{"op":"linearize"}]}""";
+        List<string> arguments =
+        [
+            "pdf", "edit", "source.pdf", "--ops", operations,
+            "--in-place", "--backup", "--output", "json",
+        ];
+        if (bestEffort)
+        {
+            arguments.Add("--best-effort");
+        }
+
+        CliResult result = _workspace.Run(arguments.ToArray());
+
+        Assert.Equal(4, result.ExitCode);
+        Assert.Empty(result.StdOut);
+        Assert.Equal("OPS_INVALID", JsonNode.Parse(result.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(original, File.ReadAllBytes(input));
     }
 
     public void Dispose() => _workspace.Dispose();

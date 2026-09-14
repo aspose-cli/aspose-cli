@@ -217,7 +217,6 @@ internal static class PdfContractSamples
             new EncryptPdfOp { OwnerPasswordEnv = "PDF_OWNER_PASSWORD" },
             new DecryptPdfOp(),
             new OptimizePdfOp { DownsampleImagesDpi = 150, ImageQuality = 75 },
-            new LinearizePdfOp(),
         ],
     };
 

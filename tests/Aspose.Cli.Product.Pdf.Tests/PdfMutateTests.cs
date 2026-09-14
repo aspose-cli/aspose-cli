@@ -128,7 +128,6 @@ public sealed class PdfMutateTests
                 {
                     Ranges = [new PdfPageLabelRange { StartPage = 1, Style = "roman-lower", Prefix = "A-" }],
                 },
-                new LinearizePdfOp(),
             ],
         }, new PdfEditRequest { OutputPath = first });
 
@@ -146,8 +145,7 @@ public sealed class PdfMutateTests
             Assert.Equal(Path.GetFileName(defaultNamedAttachment), defaultNamedSpecification.Name);
             Assert.Equal(Path.GetFileName(defaultNamedAttachment), defaultNamedSpecification.UnicodeName);
             Assert.Equal("A-", reopened.PageLabels.GetLabel(0).Prefix);
-            Assert.True(reopened.IsLinearized);
-            Assert.Equal(OpStatuses.Ok, firstEdit.Applied[^1].Status);
+            Assert.All(firstEdit.Applied, outcome => Assert.Equal(OpStatuses.Ok, outcome.Status));
         }
 
         PdfInfoResult info = fixture.Engine.GetInfo(first, new PdfInfoRequest { Details = ["attachments"] });

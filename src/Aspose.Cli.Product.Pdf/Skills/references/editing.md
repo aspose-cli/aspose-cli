@@ -43,9 +43,7 @@ be encoded or compressed. A black rectangle or zero search hits alone is
 not proof that all sensitive content was removed.
 
 `optimize` can change image quality and font embedding. Compare file sizes and
-visually inspect affected pages. `linearize` requests Fast Web View delivery
-structure; the pinned SDK has a known save defect, so do not claim successful
-linearization from command success. See `pdf-standards.md`.
+visually inspect affected pages.
 
 For `add_attachment`, `name` is the stable embedded-file name; when omitted,
 the CLI uses only the source file name and never stores its local path in attachment metadata.

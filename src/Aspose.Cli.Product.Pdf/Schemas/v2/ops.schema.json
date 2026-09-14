@@ -153,10 +153,6 @@
               "unembedFonts": { "type": "boolean", "default": false }, "removeUnusedObjects": { "type": "boolean", "default": true },
               "compressStreams": { "type": "boolean", "default": true }
             }
-          },
-          {
-            "type": "object", "required": ["op"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "linearize" } }
           }
         ]
       }

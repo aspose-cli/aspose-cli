@@ -118,7 +118,6 @@ internal static class PdfMutationHandlers
                 EncryptPdfOp value => PdfDocumentMutationHandlers.Encrypt(document, value, secrets),
                 DecryptPdfOp => PdfDocumentMutationHandlers.Decrypt(document),
                 OptimizePdfOp value => PdfDocumentMutationHandlers.Optimize(document, value),
-                LinearizePdfOp => PdfDocumentMutationHandlers.Linearize(document),
                 _ => throw new InvalidOperationException($"Unsupported PDF op '{op.OpName}'."),
         };
 }

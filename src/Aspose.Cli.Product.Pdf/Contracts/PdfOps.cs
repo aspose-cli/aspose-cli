@@ -73,7 +73,6 @@ public sealed record FlattenFormsOp : PdfOp { public override string OpName => "
 public sealed record EncryptPdfOp : PdfOp { public override string OpName => "encrypt"; public string? UserPasswordEnv { get; init; } public required string OwnerPasswordEnv { get; init; } public PdfPermissionsInput Permissions { get; init; } = new(); }
 public sealed record DecryptPdfOp : PdfOp { public override string OpName => "decrypt"; }
 public sealed record OptimizePdfOp : PdfOp { public override string OpName => "optimize"; public int? DownsampleImagesDpi { get; init; } public int? ImageQuality { get; init; } public bool UnembedFonts { get; init; } public bool RemoveUnusedObjects { get; init; } = true; public bool CompressStreams { get; init; } = true; }
-public sealed record LinearizePdfOp : PdfOp { public override string OpName => "linearize"; }
 
 /// <summary>Current PDF operation registry.</summary>
 public static class PdfOps
@@ -98,7 +97,6 @@ public static class PdfOps
             ["flatten_forms"] = typeof(FlattenFormsOp),
             ["insert_blank_page"] = typeof(InsertBlankPageOp),
             ["insert_pages_from"] = typeof(InsertPagesFromOp),
-            ["linearize"] = typeof(LinearizePdfOp),
             ["move_pages"] = typeof(MovePagesOp),
             ["optimize"] = typeof(OptimizePdfOp),
             ["redact_area"] = typeof(RedactAreaOp),

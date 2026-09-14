@@ -290,11 +290,4 @@ internal static class PdfDocumentMutationHandlers
         document.OptimizeResources(options);
         return 1;
     }
-
-    internal static long Linearize(Document document)
-    {
-        document.Optimize();
-        document.IsLinearized = true;
-        return 1;
-    }
 }

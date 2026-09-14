@@ -15,9 +15,6 @@
   license change, start the matching preview again to select the new license.
 - PDF/A validation issues: inspect `valid`, `issues` and `truncated`; command
   success and conversion success alone do not establish conformance.
-- Linearization: a known Aspose.PDF.Drawing 26.5.0 save defect can leave an
-  incorrect `/L` length. See `pdf-standards.md`; do not classify a successful
-  render as proof that Fast Web View was saved correctly.
 
 Use `aspose-cli doctor`, `aspose-cli license status --output json`,
 `aspose-cli fonts check report.pdf`, and
