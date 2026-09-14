@@ -14,7 +14,7 @@ internal static class InvocationEnvironment
         "SystemRoot", "WINDIR", "TEMP", "TMP", "PATH", "PATHEXT",
         "USERPROFILE", "HOMEDRIVE", "HOMEPATH", "HOME",
         "LOCALAPPDATA", "APPDATA", "PROGRAMDATA", "LANG", "LC_ALL", "LC_CTYPE",
-        LicenseResolver.ConfigDirectoryEnvName, LicenseResolver.EnvPathName, LicenseResolver.EnvBase64Name,
+        Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnvironmentVariableName, LicenseResolver.EnvPathName, LicenseResolver.EnvBase64Name,
     ];
 
     internal static IReadOnlyList<string> ProductVariables(ProductCatalog catalog) =>

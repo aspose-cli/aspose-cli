@@ -21,12 +21,15 @@ internal sealed class PreviewServiceController
         ProductDefinition product,
         string workDirectory,
         string? licensePath,
+        string licenseIdentity,
         string file,
         int port,
         ProductPreviewRequest request,
         string? presentationEffect,
         bool openBrowser)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(licenseIdentity);
+        product.Preview.ValidateRequest(request, presentationEffect);
         using LocalServiceOperationLock operationLock =
             LocalServiceOperationLock.Acquire(
                 "preview",
@@ -44,7 +47,9 @@ internal sealed class PreviewServiceController
                 marker.FontProfileFingerprint,
                 request.FontProfile?.Fingerprint,
                 StringComparison.Ordinal));
-        if (existing is not null)
+        if (existing is not null
+            && string.Equals(existing.LicenseIdentity, licenseIdentity, StringComparison.Ordinal)
+            && (port == 0 || port == existing.Port))
         {
             LocalServiceControlResponse status =
                 PreviewControlEndpoint.Status(existing);
@@ -65,6 +70,14 @@ internal sealed class PreviewServiceController
             return ToStart(existing, reused: true);
         }
 
+        if (existing is not null)
+        {
+            // Validate the desired license before this method, then replace only the
+            // exact owned session. Reusing its assigned port keeps the existing URL.
+            port = port == 0 ? existing.Port : port;
+            StopOwned(existing);
+        }
+
         string id = Guid.NewGuid().ToString("N");
         string token = Convert.ToHexString(
             System.Security.Cryptography.RandomNumberGenerator.GetBytes(32)).ToLowerInvariant();
@@ -76,6 +89,7 @@ internal sealed class PreviewServiceController
             product,
             workDirectory,
             licensePath,
+            licenseIdentity,
             file,
             port,
             request,
@@ -86,7 +100,8 @@ internal sealed class PreviewServiceController
         PreviewSessionMarker marker = WaitForMarker(
             child,
             id,
-            port);
+            port,
+            licenseIdentity);
         if (openBrowser)
         {
             PreviewRuntime.OpenBrowser(marker.Url, quiet: false);
@@ -141,36 +156,7 @@ internal sealed class PreviewServiceController
         var stopped = new List<string>();
         foreach (PreviewSessionMarker marker in selected)
         {
-            LocalServiceProcessIdentity identity =
-                Identity(marker);
-            bool confirmed = LocalServiceStopper.TryStop(
-                identity,
-                StopTimeout,
-                "local-service-stop",
-                () =>
-                {
-                    LocalServiceControlResponse response =
-                        PreviewControlEndpoint.Stop(marker);
-                    if (!response.Ok)
-                    {
-                        throw CliErrors.OptionInvalid(
-                            "preview stop",
-                            response.Message
-                                ?? "the preview rejected the authenticated stop request",
-                            "Run 'aspose-cli preview status' and retry.");
-                    }
-                });
-            if (!confirmed)
-            {
-                throw CliErrors.OptionInvalid(
-                    "preview stop",
-                    "the preview process could not be confirmed stopped",
-                    "Retry the stop command; the protected marker remains available for recovery.");
-            }
-
-            _store.DeleteIfOwned(
-                marker.Id,
-                marker.Token);
+            StopOwned(marker);
             stopped.Add(marker.Id);
         }
 
@@ -180,6 +166,40 @@ internal sealed class PreviewServiceController
         return new PreviewStopState(stopped, remaining);
     }
 
+    private void StopOwned(PreviewSessionMarker marker)
+    {
+        LocalServiceProcessIdentity identity =
+            Identity(marker);
+        bool confirmed = LocalServiceStopper.TryStop(
+            identity,
+            StopTimeout,
+            "local-service-stop",
+            () =>
+            {
+                LocalServiceControlResponse response =
+                    PreviewControlEndpoint.Stop(marker);
+                if (!response.Ok)
+                {
+                    throw CliErrors.OptionInvalid(
+                        "preview stop",
+                        response.Message
+                            ?? "the preview rejected the authenticated stop request",
+                        "Run 'aspose-cli preview status' and retry.");
+                }
+            });
+        if (!confirmed)
+        {
+            throw CliErrors.OptionInvalid(
+                "preview stop",
+                "the preview process could not be confirmed stopped",
+                "Retry the stop command; the protected marker remains available for recovery.");
+        }
+
+        _store.DeleteIfOwned(
+            marker.Id,
+            marker.Token);
+    }
+
     private IReadOnlyList<PreviewSessionMarker> LiveMarkers() =>
         _store.ReadLive();
 
@@ -187,6 +207,7 @@ internal sealed class PreviewServiceController
         ProductDefinition product,
         string workDirectory,
         string? licensePath,
+        string licenseIdentity,
         string file,
         int port,
         ProductPreviewRequest request,
@@ -195,7 +216,6 @@ internal sealed class PreviewServiceController
         string token,
         string nonce)
     {
-        product.Preview.ValidateRequest(request, presentationEffect);
         ProcessStartInfo start =
             SelfProcessLauncher.CreateBackground(
                 "preview",
@@ -232,6 +252,7 @@ internal sealed class PreviewServiceController
                         : Path.GetFullPath(
                             licensePath,
                             workDirectory),
+                    ExpectedLicenseIdentity = licenseIdentity,
                     Password = request.Password,
                     ServiceToken = token,
                     ServiceNonce = nonce,
@@ -254,7 +275,8 @@ internal sealed class PreviewServiceController
     private PreviewSessionMarker WaitForMarker(
         LocalServiceChild child,
         string id,
-        int requestedPort)
+        int requestedPort,
+        string licenseIdentity)
     {
         return LocalServiceStartHandshake.WaitForReady(
             child,
@@ -265,6 +287,7 @@ internal sealed class PreviewServiceController
                 PreviewSessionMarker? marker =
                     _store.ReadReadyCandidate(id);
                 return marker is not null
+                    && string.Equals(marker.LicenseIdentity, licenseIdentity, StringComparison.Ordinal)
                     && LocalServiceStartHandshake.Matches(
                         marker.Version,
                         marker.Pid,

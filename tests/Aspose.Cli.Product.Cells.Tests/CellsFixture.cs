@@ -13,6 +13,7 @@ public sealed class CellsFixture : IDisposable
     {
         LicenseResolution resolution = LicenseResolver.Resolve(
             flagPath: null,
+            productId: "cells",
             Environment.GetEnvironmentVariable,
             Directory.GetCurrentDirectory(),
             LicenseResolver.DefaultUserConfigDirectory());

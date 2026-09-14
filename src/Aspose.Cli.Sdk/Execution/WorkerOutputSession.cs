@@ -56,12 +56,32 @@ public static class WorkerOutputSession
         {
             WorkerOutputEntry? entry = Entries.LastOrDefault(
                 candidate => PathComparer.Equals(candidate.Target, full));
-            return entry is { DeleteTarget: false }
-                ? entry.Staged
-                : full;
+            if (entry is { DeleteTarget: true })
+            {
+                throw new FileNotFoundException(
+                    "The file is scheduled for deletion by this worker.", full);
+            }
+            return entry?.Staged ?? full;
         }
     }
 
+    /// <summary>Checks file existence against the active worker publication plan.</summary>
+    public static bool FileExists(string path)
+    {
+        if (!IsActive)
+        {
+            return File.Exists(path);
+        }
+        string full = Path.GetFullPath(path);
+        lock (Sync)
+        {
+            WorkerOutputEntry? entry = Entries.LastOrDefault(
+                candidate => PathComparer.Equals(candidate.Target, full));
+            return entry is null
+                ? File.Exists(full)
+                : !entry.DeleteTarget && File.Exists(entry.Staged);
+        }
+    }
     private static string? Root =>
         Environment.GetEnvironmentVariable(RootEnvironmentVariable);
 

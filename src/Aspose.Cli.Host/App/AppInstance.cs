@@ -11,10 +11,10 @@ internal sealed record AppInstance(
     string Token,
     string Route,
     string? File,
-    string LicenseMode,
     string Nonce,
     string? FontProfileFingerprint = null,
-    int Version = 1);
+    int Version = 1,
+    string? LicenseIdentity = null);
 
 internal sealed record AppInstanceSecrets(
     string Token);
@@ -103,8 +103,6 @@ internal sealed class AppInstanceStore
         if (stored is null
             || string.IsNullOrWhiteSpace(
                 stored.Value.Secrets.Token)
-            || string.IsNullOrWhiteSpace(
-                stored.Value.Marker.LicenseMode)
             || string.IsNullOrWhiteSpace(
                 stored.Value.Marker.Nonce))
         {

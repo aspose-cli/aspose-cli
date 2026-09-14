@@ -109,8 +109,23 @@ No deprecated command aliases or legacy installer/Skill readers are provided.
 
 ## Commercial SDK licensing
 
-Use aspose-cli license status, license install and license remove for commercial SDK licensing.
-Existing documented SDK license environment variables retain their meaning.
+Install a license once with `aspose-cli license install Aspose.Total.lic`; the SDKs validate
+one bounded private snapshot before compatible product files are published atomically.
+`license remove` removes saved user licenses atomically; explicit, environment and project
+sources keep their documented precedence. CLI and App use the same resolution policy.
+
+`aspose-cli license status --output json` returns `products[]`, with each product's effective
+source and `licensed`, `evaluation`, `invalid`, or `not-applicable` mode. There is no
+first-product summary that can hide a different product's failure. A configured invalid
+license is a hard error for document operations, never a fallback to evaluation.
+
+Human-readable Table/Markdown invocations print a compact, SDK-verified license status to
+stderr at startup. `--quiet` suppresses it; JSON, verbose JSONL, MCP and internal worker/service
+protocols stay unchanged. Product commands inspect only their own license; general help
+reports every product. Preview/App reuse validates the current license snapshot; a change
+restarts the owned process. App license installation/removal also restarts its SDK process
+and preserves the current uploaded preview through a bounded file transfer.
+
 The source license does not grant SDK rights or remove evaluation restrictions.
 See [Aspose EULA](https://about.aspose.com/legal/eula/).
 

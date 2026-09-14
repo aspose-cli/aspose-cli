@@ -8,9 +8,6 @@ internal sealed class SlidesLicenseGate(
     Func<string, string?> environmentVariable)
     : LicenseGate(resolution, environmentVariable)
 {
-    protected override void ApplyLicense(string path) =>
-        new Aspose.Slides.License().SetLicense(path);
-
     protected override void ApplyLicense(Stream stream) =>
         new Aspose.Slides.License().SetLicense(stream);
 }

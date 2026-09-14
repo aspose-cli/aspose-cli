@@ -2,69 +2,26 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/license-status.schema.json",
   "title": "Aspose CLI license status",
-  "description": "Result of `aspose-cli license status`.",
+  "description": "Effective independently verified license status for every selected product.",
   "type": "object",
-  "required": ["schema", "schemaVersion", "applicable", "mode"],
+  "required": ["schema", "schemaVersion", "applicable", "products", "sharedUserLicenseInstalled"],
   "properties": {
-    "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/common/license-status.schema.json"
-    },
-    "schemaVersion": {
-      "const": 2
-    },
-    "applicable": {
-      "type": "boolean"
-    },
-    "mode": {
-      "enum": ["evaluation", "licensed", "not-applicable"]
-    },
-    "source": {
-      "anyOf": [
-        {
-          "enum": ["flag", "env:ASPOSE_LICENSE_B64", "env:ASPOSE_LICENSE_PATH", "project", "user"]
-        },
-        {
-          "pattern": "^(project|user):[a-z0-9_-]+$"
-        },
-        {
-          "pattern": "^env:ASPOSE_[A-Z0-9_]+_LICENSE_(B64|PATH)$"
-        }
-      ]
-    },
-    "path": {
-      "type": "string"
-    },
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/license-status.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "applicable": { "type": "boolean" },
+    "warnings": { "$ref": "#/$defs/warnings" },
     "products": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["product", "applicable", "mode"],
-        "properties": {
-          "product": { "type": "string" },
-          "applicable": { "type": "boolean" },
-          "mode": { "enum": ["evaluation", "licensed", "not-applicable"] },
-          "source": { "type": "string" },
-          "path": { "type": "string" },
-          "problem": { "type": "string" },
-          "hint": { "type": "string" }
-        }
-      }
+      "minItems": 1,
+      "items": { "$ref": "#/$defs/productLicense" }
     },
-    "license": {
-      "$ref": "#/$defs/licenseInfo"
-    },
-    "warnings": {
-      "$ref": "#/$defs/warnings"
+    "sharedUserLicenseInstalled": { "type": "boolean" },
+    "identity": {
+      "type": "string",
+      "pattern": "^[0-9a-f]{64}$"
     }
   },
   "$defs": {
-    "licenseInfo": {
-      "type": "object",
-      "required": ["mode"],
-      "properties": {
-        "mode": { "enum": ["evaluation", "licensed", "not-applicable"] }
-      }
-    },
     "warnings": {
       "type": "array",
       "items": {
@@ -80,6 +37,23 @@
         },
         "additionalProperties": false
       }
+    },
+    "productLicense": {
+      "type": "object",
+      "required": ["product", "name", "applicable", "mode", "userLicenseInstalled"],
+      "properties": {
+        "product": { "type": "string", "minLength": 1 },
+        "name": { "type": "string", "minLength": 1 },
+        "applicable": { "type": "boolean" },
+        "mode": { "enum": ["evaluation", "licensed", "invalid", "not-applicable"] },
+        "source": { "type": "string", "minLength": 1 },
+        "path": { "type": "string", "minLength": 1 },
+        "problem": { "type": "string", "minLength": 1 },
+        "hint": { "type": "string", "minLength": 1 },
+        "userLicenseInstalled": { "type": "boolean" }
+      },
+      "additionalProperties": false
     }
-  }
+  },
+  "additionalProperties": false
 }

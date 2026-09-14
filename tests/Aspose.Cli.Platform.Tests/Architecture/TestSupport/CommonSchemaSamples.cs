@@ -111,9 +111,10 @@ internal static class CommonSchemaSamples
     public static LicenseStatusResult LicenseStatus { get; } = new()
     {
         Applicable = true,
-        Mode = LicenseModes.Evaluation,
-        Products = [],
-        License = Evaluation,
+        Products = [new ProductLicenseStatus
+        {
+            Product = "cells", Name = "Cells", Applicable = true, Mode = LicenseModes.Evaluation,
+        }],
     };
 
     public static DoctorResult Doctor { get; } = new()

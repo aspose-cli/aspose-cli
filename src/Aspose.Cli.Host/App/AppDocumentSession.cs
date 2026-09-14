@@ -1,3 +1,4 @@
+using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
@@ -18,7 +19,7 @@ internal sealed class AppDocumentSession : IDisposable
     private readonly object _operationGate = new();
     private bool _disposed;
     private readonly ProductCatalog _catalog;
-    private readonly AppLicenseState _licenses;
+    private readonly LicenseManager _licenses;
     private readonly AppPreferencesStore _preferences;
     private readonly AppLog _log;
     private readonly string _root;
@@ -32,7 +33,7 @@ internal sealed class AppDocumentSession : IDisposable
 
     public AppDocumentSession(
         ProductCatalog catalog,
-        AppLicenseState licenses,
+        LicenseManager licenses,
         AppPreferencesStore preferences,
         AppLog log,
         string rootDirectory,
@@ -65,6 +66,11 @@ internal sealed class AppDocumentSession : IDisposable
                 return _current?.UploadedCopy is false ? _current.Path : null;
             }
         }
+    }
+
+    public string? UploadedFilePath
+    {
+        get { lock (_gate) { return _current?.UploadedCopy is true ? _current.Path : null; } }
     }
 
     public void ConfigureMount(AppPreviewMount mount)
@@ -117,7 +123,7 @@ internal sealed class AppDocumentSession : IDisposable
             throw CliErrors.FileNotFound(full);
         }
 
-        CommandContext context = _licenses.CreatePreviewContext();
+        CommandContext context = _licenses.CreateContext();
         InputSizeGuard.Ensure(
             context.ResourceBudgets,
             full,
@@ -306,19 +312,6 @@ internal sealed class AppDocumentSession : IDisposable
                     _limits.MaximumUploadSessionBytes),
             cancellationToken).ConfigureAwait(false);
         output.Flush(flushToDisk: true);
-    }
-
-    public void ReopenForLicenseOrPreferences()
-    {
-        lock (_operationGate)
-        {
-            PreviewLease? current;
-            lock (_gate) { current = _current; }
-            if (current is not null)
-            {
-                OpenCore(current.Path, current.UploadedCopy, current.FileName);
-            }
-        }
     }
 
     public void RefreshPreferences(string productId, string desiredView)

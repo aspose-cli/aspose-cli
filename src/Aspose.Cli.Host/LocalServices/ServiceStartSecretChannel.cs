@@ -133,6 +133,14 @@ internal sealed record ServiceStartSecrets
 
     public string? LicensePath { get; init; }
 
+    public string? ExpectedLicenseIdentity { get; init; }
+
+    public string? ExpectedAppLicenseIdentity { get; init; }
+
+    public string? AppUploadedFilePath { get; init; }
+
+    public string? AppUploadedFileName { get; init; }
+
     public string? Password { get; init; }
 
     public required string ServiceToken { get; init; }

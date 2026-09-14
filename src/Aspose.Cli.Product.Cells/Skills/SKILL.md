@@ -20,7 +20,7 @@ Then check the environment once per session:
 
 ```
 aspose-cli doctor --output json          # license, runtime, output writability
-aspose-cli license status --output json  # license source + mode only
+aspose-cli license status --output json  # independently verified source and mode per product
 ```
 
 `aspose-cli doctor` returns a `checks` array (each `ok`/`warn`/`fail`) and a
@@ -363,7 +363,7 @@ You MUST mention the watermark to the user when delivering evaluation-mode
 output. Reads are unaffected. Evaluation CSV, TSV, and Markdown exports are limited to the first worksheet; an explicit `--sheet` selecting another worksheet fails with `EVALUATION_LIMIT` before writing. A license removes all limits: install it with
 `aspose-cli license install Aspose.Cells.lic --product cells`, set
 `ASPOSE_CELLS_LICENSE_PATH`, use a shared `ASPOSE_LICENSE_PATH`, or pass
-`--license <path>`. `license status` reports Cells and Words independently.
+`--license <path>`. `license status` reports every product independently in `products[]`; a rejected source has `mode: "invalid"`.
 
 ## 10. Errors: exit codes and recovery
 

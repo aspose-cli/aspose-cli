@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Sdk.Contracts;
@@ -126,6 +127,15 @@ internal static class PreviewCommand
                 "Start background previews with 'aspose-cli preview <file>'.");
         }
 
+        string licenseIdentity = LicenseManager.RequireIdentity(context, definition);
+        if (id is not null
+            && !string.Equals(secrets?.ExpectedLicenseIdentity, licenseIdentity, StringComparison.Ordinal))
+        {
+            throw CliErrors.OptionInvalid(
+                "--license",
+                "the resolved license changed while the background preview was starting",
+                "Retry preview after the selected license source is stable.");
+        }
         using RunningPreview runtime = PreviewRuntime.Start(
             new PreviewStartOptions(
                 context.Activate(definition),
@@ -164,7 +174,8 @@ internal static class PreviewCommand
             selectedSelector,
             id,
             token,
-            ResultEnvelopeMetadata.From(result));
+            ResultEnvelopeMetadata.From(result),
+            licenseIdentity);
         TimeSpan idle = service is null
             ? PreviewRuntime.ResolveIdleWindow()
             : Timeout.InfiniteTimeSpan;
@@ -213,6 +224,7 @@ internal static class PreviewCommand
             product.Manifest.Id,
             view,
             adapter.Views);
+        string licenseIdentity = LicenseManager.RequireIdentity(context, product);
         PreviewStartState state = new PreviewServiceController().Start(
             product,
             context.Paths.BaseDirectory,
@@ -221,6 +233,7 @@ internal static class PreviewCommand
                 : Path.GetFullPath(
                     context.Globals.LicensePath,
                     context.Paths.BaseDirectory),
+            licenseIdentity,
             input,
             port,
             new ProductPreviewRequest(

@@ -12,6 +12,7 @@ public sealed class WordsFixture : IDisposable
     {
         LicenseResolution resolution = LicenseResolver.Resolve(
             flagPath: null,
+            productId: "words",
             Environment.GetEnvironmentVariable,
             Directory.GetCurrentDirectory(),
             LicenseResolver.DefaultUserConfigDirectory());

@@ -121,6 +121,8 @@ public sealed partial class McpProtocolTests
         private readonly Task<string> _stderr;
         private int _id;
 
+        internal Task<string> StandardError => _stderr;
+
         private Server(Process process)
         {
             _process = process;

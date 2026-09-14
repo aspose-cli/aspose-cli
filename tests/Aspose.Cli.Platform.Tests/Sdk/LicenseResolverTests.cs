@@ -15,7 +15,7 @@ public sealed class LicenseResolverTests : IDisposable
     private string? GetEnv(string name) => _environment.GetValueOrDefault(name);
 
     private LicenseResolution Resolve(string? flagPath = null) =>
-        LicenseResolver.Resolve(flagPath, GetEnv, _temp.File("work"), _temp.File("user-config"));
+        LicenseResolver.Resolve(flagPath, "cells", GetEnv, _temp.File("work"), _temp.File("user-config"));
 
     private LicenseResolution ResolveProduct(string productId, string? flagPath = null) =>
         LicenseResolver.Resolve(

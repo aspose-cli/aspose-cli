@@ -10,17 +10,23 @@ watermarked. Reads are never restricted.
 aspose-cli license status --output json
 ```
 
-`mode` is `licensed` or `evaluation`; when licensed, `source` names the winning
-license source (e.g. `env:ASPOSE_LICENSE_PATH`). `aspose-cli doctor --output json` reports
-the same as a health check — its `license` check is `ok` (licensed) or `warn`
-(evaluation).
+Inspect the `cells` entry in `products[]`. Its `mode` is `licensed`, `evaluation`,
+`invalid` (a configured source was rejected), or `not-applicable`. `source`
+names the effective configuration, for example `env:ASPOSE_LICENSE_PATH`.
+No top-level mode represents another product's status.
+
+Table/Markdown startup prints an SDK-verified status line to stderr. `--quiet`
+suppresses it; JSON, verbose JSONL, MCP and internal service protocols remain
+machine-readable. Use the result envelope and `license status` for automation.
 
 ## Providing a license
 
 For an interactive local setup, run `aspose-cli app --welcome`, choose the `.lic`
 file in the browser, and manage it later under Settings. The file is validated
-before an atomic user-level install; license content is never displayed or
-logged. The CLI workflow below remains available for agents and CI.
+from a bounded private snapshot before an atomic user-level install; license content is never displayed or
+logged. CLI and App use the same source precedence; installing a user file does not
+override an explicit or environment source. The App restarts after a change so
+SDK state matches saved configuration. The CLI workflow remains available for agents and CI.
 
 Resolution order — the first that resolves wins:
 
@@ -33,11 +39,13 @@ licenses in the user config directory.
 A broken *explicit* license is a hard error (exit 7), never a silent fall back
 to evaluation — see the error section. `aspose-cli license install <file>`
 validates a file and installs it as this user's default; `aspose-cli license
-remove` deletes that default (env and project sources are left untouched).
+remove` atomically removes saved user files (env and project sources are left untouched).
+An unchanged validated license can reuse a preview; a changed source or content
+restarts its process. A rejected license leaves an existing preview untouched.
 
 ## Evaluation mode — what you must handle
 
-Every output-producing command (`new`, `write`, `edit`, `convert`, `render`)
+Every output-producing command (`create`, `edit`, `convert`, `render`)
 returns a warning and stamps the file:
 
 ```
@@ -51,7 +59,7 @@ aspose-cli cells create book.xlsx --sheets "Data,Summary" --overwrite --output j
 
 The engine also inserts an "Evaluation Warning" worksheet and a cell watermark
 into the saved file. **Disclose the watermark to the user** — it is in the file
-you deliver, not just on your screen. Reads (`read`, `info`) carry no
+you deliver, not just on your screen. Reads (`query`, `inspect`) carry no
 `EVAL_MODE` warning and are unaffected.
 
 Then handle these traps (each verified against the real CLI):
@@ -73,7 +81,7 @@ Then handle these traps (each verified against the real CLI):
   Text outputs still include the evaluation notice.
 
 - **Every save stacks another eval sheet** ("Evaluation Warning",
-  "Evaluation Warning (1)", …). `info` lists them all; the count climbs with
+  "Evaluation Warning (1)", …). `inspect` lists them all; the count climbs with
   each edit.
 
 - **Data projections are contaminated too**, not only renders: a `csv` gains a

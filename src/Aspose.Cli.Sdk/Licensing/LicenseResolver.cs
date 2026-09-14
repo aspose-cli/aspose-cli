@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Licensing;
@@ -14,28 +15,12 @@ namespace Aspose.Cli.Sdk.Licensing;
 /// </remarks>
 public static class LicenseResolver
 {
-    /// <summary>Optional absolute configuration-directory override, primarily for portable and test installs.</summary>
-    public const string ConfigDirectoryEnvName = "ASPOSE_CLI_CONFIG_DIR";
-
     public const string EnvBase64Name = "ASPOSE_LICENSE_B64";
     public const string EnvPathName = "ASPOSE_LICENSE_PATH";
 
     private const string ProjectRelativePath = ".aspose/license.lic";
     private const string UserFileName = "license.lic";
     private const string ProductLicenseDirectoryName = "licenses";
-
-    /// <summary>Runs the resolution chain.</summary>
-    /// <param name="flagPath">Value of the <c>--license</c> option, if given.</param>
-    /// <param name="getEnvironmentVariable">Environment lookup (injected for testability).</param>
-    /// <param name="workingDirectory">Base directory for the project-level file.</param>
-    /// <param name="userConfigDirectory">Directory of the user-level file.</param>
-    /// <exception cref="CliException"><c>LICENSE_FILE_NOT_FOUND</c> when an explicit source is broken.</exception>
-    public static LicenseResolution Resolve(
-        string? flagPath,
-        Func<string, string?> getEnvironmentVariable,
-        string workingDirectory,
-        string userConfigDirectory)
-        => Resolve(flagPath, productId: null, getEnvironmentVariable, workingDirectory, userConfigDirectory);
 
     /// <summary>Runs the resolution chain for one product.</summary>
     /// <param name="flagPath">Value of the <c>--license</c> option, if given.</param>
@@ -46,7 +31,7 @@ public static class LicenseResolver
     /// <exception cref="CliException"><c>LICENSE_FILE_NOT_FOUND</c> when an explicit source is broken.</exception>
     public static LicenseResolution Resolve(
         string? flagPath,
-        string? productId,
+        string productId,
         Func<string, string?> getEnvironmentVariable,
         string workingDirectory,
         string userConfigDirectory)
@@ -54,35 +39,32 @@ public static class LicenseResolver
         ArgumentNullException.ThrowIfNull(getEnvironmentVariable);
         ArgumentException.ThrowIfNullOrEmpty(workingDirectory);
         ArgumentException.ThrowIfNullOrEmpty(userConfigDirectory);
-        string? product = productId is null ? null : NormalizeProductId(productId);
+        string product = NormalizeProductId(productId);
 
         if (!string.IsNullOrWhiteSpace(flagPath))
         {
             string full = Path.GetFullPath(flagPath, workingDirectory);
-            return File.Exists(full)
+            return WorkerOutputSession.FileExists(full)
                 ? new LicenseResolution(LicenseSourceKind.Flag, full)
                 : throw CliErrors.LicenseFileNotFound(full, "--license");
         }
 
-        if (product is not null)
+        string base64Name = ProductEnvBase64Name(product);
+        if (!string.IsNullOrWhiteSpace(getEnvironmentVariable(base64Name)))
         {
-            string base64Name = ProductEnvBase64Name(product);
-            if (!string.IsNullOrWhiteSpace(getEnvironmentVariable(base64Name)))
-            {
-                return ProductResolution(LicenseSourceKind.ProductEnvBase64, product);
-            }
+            return ProductResolution(LicenseSourceKind.ProductEnvBase64, product);
+        }
 
-            string pathName = ProductEnvPathName(product);
-            LicenseResolution? productEnvironment = ResolveEnvPath(
-                getEnvironmentVariable,
-                pathName,
-                LicenseSourceKind.ProductEnvPath,
-                workingDirectory,
-                product);
-            if (productEnvironment is not null)
-            {
-                return productEnvironment;
-            }
+        string pathName = ProductEnvPathName(product);
+        LicenseResolution? productEnvironment = ResolveEnvPath(
+            getEnvironmentVariable,
+            pathName,
+            LicenseSourceKind.ProductEnvPath,
+            workingDirectory,
+            product);
+        if (productEnvironment is not null)
+        {
+            return productEnvironment;
         }
 
         if (!string.IsNullOrWhiteSpace(getEnvironmentVariable(EnvBase64Name)))
@@ -100,38 +82,32 @@ public static class LicenseResolver
             return fromEnvPath;
         }
 
-        if (product is not null)
+        string productProjectPath = ProductProjectLicensePath(workingDirectory, product);
+        if (WorkerOutputSession.FileExists(productProjectPath))
         {
-            string productProjectPath = ProductProjectLicensePath(workingDirectory, product);
-            if (File.Exists(productProjectPath))
-            {
-                return ProductResolution(
-                    LicenseSourceKind.ProductProjectFile,
-                    product,
-                    productProjectPath);
-            }
+            return ProductResolution(
+                LicenseSourceKind.ProductProjectFile,
+                product,
+                productProjectPath);
         }
 
         string projectPath = Path.GetFullPath(ProjectRelativePath, workingDirectory);
-        if (File.Exists(projectPath))
+        if (WorkerOutputSession.FileExists(projectPath))
         {
             return new LicenseResolution(LicenseSourceKind.ProjectFile, projectPath);
         }
 
-        if (product is not null)
+        string productUserPath = UserLicensePath(userConfigDirectory, product);
+        if (WorkerOutputSession.FileExists(productUserPath))
         {
-            string productUserPath = UserLicensePath(userConfigDirectory, product);
-            if (File.Exists(productUserPath))
-            {
-                return ProductResolution(
-                    LicenseSourceKind.ProductUserFile,
-                    product,
-                    productUserPath);
-            }
+            return ProductResolution(
+                LicenseSourceKind.ProductUserFile,
+                product,
+                productUserPath);
         }
 
-        string userPath = Path.Combine(userConfigDirectory, UserFileName);
-        if (File.Exists(userPath))
+        string userPath = SharedUserLicensePath(userConfigDirectory);
+        if (WorkerOutputSession.FileExists(userPath))
         {
             return new LicenseResolution(LicenseSourceKind.UserFile, userPath);
         }
@@ -144,7 +120,11 @@ public static class LicenseResolver
         Configuration.ConfigurationPaths.UserDirectory();
 
     /// <summary>Full path of the user-level license file that <c>license install</c> writes.</summary>
-    public static string UserLicensePath() => Path.Combine(DefaultUserConfigDirectory(), UserFileName);
+    public static string UserLicensePath() => SharedUserLicensePath(DefaultUserConfigDirectory());
+
+    /// <summary>Full path of the shared user license in the selected configuration directory.</summary>
+    public static string SharedUserLicensePath(string userConfigDirectory) =>
+        Path.Combine(userConfigDirectory, UserFileName);
 
     /// <summary>Full path of one product's installed user license.</summary>
     public static string UserLicensePath(string productId) =>
@@ -179,7 +159,7 @@ public static class LicenseResolver
         }
 
         string full = Path.GetFullPath(value, workingDirectory);
-        return File.Exists(full)
+        return WorkerOutputSession.FileExists(full)
             ? productId is null
                 ? new LicenseResolution(kind, full)
                 : ProductResolution(kind, productId, full)

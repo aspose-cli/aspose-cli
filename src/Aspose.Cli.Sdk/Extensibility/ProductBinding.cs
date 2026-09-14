@@ -17,6 +17,9 @@ public sealed class ProductActivationContext
     /// <summary>Resolves the explicit license path selected for a product.</summary>
     public required Func<string, string?> LicensePathForProduct { get; init; }
 
+    /// <summary>Already validated process-lifetime licenses, when a long-lived host pins its SDK state.</summary>
+    public Func<string, ILicenseGate>? RuntimeLicenseForProduct { get; init; }
+
     /// <summary>Per-user CLI configuration directory.</summary>
     public required string ConfigDirectory { get; init; }
 
@@ -46,62 +49,6 @@ public sealed class ProductActivationContext
 
     internal void AddCapability(object slot, object capability) =>
         _capabilities.Add(slot, capability);
-}
-
-/// <summary>Creates a resolved product license gate with uniform failure behavior.</summary>
-internal static class ProductLicenseGateFactory
-{
-    public static ILicenseGate Create(
-        ProductActivationContext context,
-        string productId,
-        Func<LicenseResolution, ILicenseGate> factory)
-    {
-        ArgumentNullException.ThrowIfNull(context);
-        ArgumentException.ThrowIfNullOrWhiteSpace(productId);
-        ArgumentNullException.ThrowIfNull(factory);
-        try
-        {
-            LicenseResolution resolution = LicenseResolver.Resolve(
-                context.LicensePathForProduct(productId),
-                productId,
-                context.EnvironmentVariable,
-                context.WorkDirectory,
-                context.ConfigDirectory);
-            return factory(resolution)
-                ?? throw new InvalidOperationException(
-                    $"Product '{productId}' returned no license gate.");
-        }
-        catch (Errors.CliException exception)
-        {
-            return new UnavailableLicenseGate(exception);
-        }
-    }
-
-    private sealed class UnavailableLicenseGate(
-        Errors.CliException exception) : ILicenseGate
-    {
-        public bool IsApplicable => true;
-
-        public LicenseResolution Resolution => LicenseResolution.None;
-
-        public LicenseState EnsureApplied() => throw exception;
-    }
-}
-
-/// <summary>A license gate for engines to which Aspose licensing does not apply.</summary>
-internal sealed class LicenseNotApplicableGate : ILicenseGate
-{
-    public static LicenseNotApplicableGate Instance { get; } = new();
-
-    private LicenseNotApplicableGate()
-    {
-    }
-
-    public bool IsApplicable => false;
-
-    public LicenseResolution Resolution => LicenseResolution.None;
-
-    public LicenseState EnsureApplied() => LicenseState.NotApplicable;
 }
 
 /// <summary>

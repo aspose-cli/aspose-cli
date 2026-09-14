@@ -30,10 +30,12 @@ internal static class LicenseCommandGroup
         var status = new Command(
             "status",
             "Show whether licensing applies and which license source and mode are in effect.");
+        Option<string?> product = ProductOption(catalog, "Inspect only this product.");
+        status.Options.Add(product);
         status.SetAction(parse => executor.Run(
             parse,
             globals,
-            Result));
+            context => LicenseManager.Inspect(context, parse.GetValue(product))));
         return status;
     }
 
@@ -55,16 +57,12 @@ internal static class LicenseCommandGroup
         install.SetAction(parse => executor.Run(parse, globals, context =>
         {
             string? requestedProduct = parse.GetValue(product);
-            ProductLicenseProvisioning.EnsureApplicable(
+            LicenseManager.EnsureApplicable(
                 catalog,
                 requestedProduct,
                 "installation");
             string source = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            ProductLicenseProvisioning.Install(
-                catalog,
-                source,
-                context.Globals,
-                requestedProduct);
+            LicenseManager.Install(context, source, requestedProduct);
             return Result(CompositionRoot.Create(catalog, context.Globals));
         }));
         return install;
@@ -83,49 +81,14 @@ internal static class LicenseCommandGroup
         remove.SetAction(parse => executor.Run(parse, globals, context =>
         {
             string? selected = parse.GetValue(product);
-            if (selected is null)
-            {
-                ProductLicenseProvisioning.RemoveAll(catalog);
-            }
-            else
-            {
-                ProductLicenseProvisioning.RemoveProduct(catalog, selected);
-            }
+            LicenseManager.Remove(context, selected);
 
             return Result(CompositionRoot.Create(catalog, context.Globals));
         }));
         return remove;
     }
 
-    private static LicenseStatusResult Result(CommandContext context)
-    {
-        IReadOnlyList<ProductLicenseInspection> inspections =
-            ProductLicenseInspector.Inspect(context);
-        bool applicable = inspections.Any(static inspection => inspection.Applicable);
-        ProductLicenseInspection primary = inspections.FirstOrDefault(
-            static inspection => inspection.Applicable) ?? inspections[0];
-        return new LicenseStatusResult
-        {
-            Applicable = applicable,
-            Mode = primary.State.ToContractName(),
-            Source = primary.Resolution.SourceLabel,
-            Path = primary.Resolution.Path,
-            License = EnvelopeParts.License(primary.State),
-            Products = inspections.Select(ToContract).ToArray(),
-        };
-    }
-
-    private static ProductLicenseStatus ToContract(ProductLicenseInspection inspection) =>
-        new()
-        {
-            Product = inspection.Product.Manifest.Id,
-            Applicable = inspection.Applicable,
-            Mode = inspection.State.ToContractName(),
-            Source = inspection.Resolution.SourceLabel,
-            Path = inspection.Resolution.Path,
-            Problem = inspection.Error?.Message,
-            Hint = inspection.Error?.Hint,
-        };
+    private static LicenseStatusResult Result(CommandContext context) => LicenseManager.Inspect(context);
 
     private static Option<string?> ProductOption(
         ProductCatalog catalog,

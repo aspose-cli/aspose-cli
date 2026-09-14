@@ -348,13 +348,11 @@ internal sealed class AppHttpServer : IDisposable
                 await WriteOk(response).ConfigureAwait(false);
                 break;
             case ("POST", "/api/license"):
-                string licenseName = DecodeFileName(request.Headers["X-File-Name"]);
-                _host.Licenses.Install(
-                    licenseName,
+                string installedUrl = _host.Licenses.InstallAndRestart(
                     request.InputStream,
                     request.ContentLength64,
                     NormalizeProduct(request.Headers["X-Product"]));
-                await WriteOk(response).ConfigureAwait(false);
+                await WriteJson(response, HttpStatusCode.OK, new AppRestartResult(true, installedUrl)).ConfigureAwait(false);
                 break;
             case ("DELETE", "/api/license"):
                 string restartUrl = _host.Licenses.RemoveAndRestart(
@@ -465,6 +463,7 @@ internal sealed class AppHttpServer : IDisposable
 
     private static string FriendlyMessage(CliException exception) => exception.Code.Name switch
     {
+        "APP_STARTUP_FAILED" when exception.Details?["licenseSaved"]?.GetValue<bool>() is true => AppLicenseWorkflow.RestartFailedMessage,
         "FILE_NOT_FOUND" => "That file is no longer available. Choose it again from the Files page.",
         "FILE_ACCESS_DENIED" => "Aspose CLI does not have permission to read that file.",
         "FILE_LOCKED" => "That file is temporarily locked by another program. Wait for its save to finish and try again.",

@@ -22,7 +22,8 @@ internal sealed record PreviewSessionMarker(
     string Nonce,
     int Version = 1,
     ProductPreviewPayload? Selector = null,
-    string? FontProfileFingerprint = null);
+    string? FontProfileFingerprint = null,
+    string? LicenseIdentity = null);
 
 internal sealed record PreviewSessionSecrets(
     string Token);

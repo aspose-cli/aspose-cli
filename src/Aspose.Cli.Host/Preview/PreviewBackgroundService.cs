@@ -27,7 +27,8 @@ internal static class PreviewBackgroundService
         ProductPreviewPayload? selector,
         string? id,
         string? token,
-        ResultEnvelopeMetadata metadata)
+        ResultEnvelopeMetadata metadata,
+        string licenseIdentity)
     {
         ValidateIdentity(id, token);
         if (id is null || token is null)
@@ -57,7 +58,8 @@ internal static class PreviewBackgroundService
             Version: 1,
             Selector: selector,
             FontProfileFingerprint:
-                ServiceStartSecretChannel.Current?.FontProfile?.Fingerprint);
+                ServiceStartSecretChannel.Current?.FontProfile?.Fingerprint,
+            LicenseIdentity: licenseIdentity);
         return new PreviewServiceLifetime(
             new PreviewSessionStore(),
             marker,

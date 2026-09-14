@@ -53,6 +53,7 @@ public static class CliHost
         {
             ParsedInvocation invocation = host.Parser.Parse(arguments);
             invocation.EnsureValid();
+            StartupLicenseNotice.Write(host, invocation, Console.Error);
             return TimeoutWorkerSupervisor.Run(host, arguments, invocation,
                 () => RunInProcess(invocation));
         });

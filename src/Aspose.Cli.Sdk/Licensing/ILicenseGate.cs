@@ -31,7 +31,7 @@ public static class LicenseStateExtensions
 
 /// <summary>
 /// Applies the resolved license to the engine, lazily and exactly once per
-/// process. Implemented by engine adapters because license validation is an
+/// gate. Implemented by engine adapters because license validation is an
 /// engine concern; commands that never touch the engine never trigger it.
 /// </summary>
 public interface ILicenseGate
@@ -42,9 +42,12 @@ public interface ILicenseGate
     /// <summary>How the license was (or was not) resolved.</summary>
     LicenseResolution Resolution { get; }
 
+    /// <summary>Opaque identity of the source and exact bytes validated by this gate.</summary>
+    string Identity { get; }
+
     /// <summary>
     /// Ensures the license is applied and returns the resulting state.
-    /// Idempotent and cached for the process lifetime.
+    /// Idempotent and cached for this gate.
     /// </summary>
     /// <exception cref="Errors.CliException"><c>LICENSE_INVALID</c> when the engine rejects the license.</exception>
     LicenseState EnsureApplied();

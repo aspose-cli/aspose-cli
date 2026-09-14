@@ -8,9 +8,6 @@ internal sealed class WordsLicenseGate(
     Func<string, string?> environmentVariable)
     : LicenseGate(resolution, environmentVariable)
 {
-    protected override void ApplyLicense(string path) =>
-        new Aspose.Words.License().SetLicense(path);
-
     protected override void ApplyLicense(Stream stream) =>
         new Aspose.Words.License().SetLicense(stream);
 }

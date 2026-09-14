@@ -10,28 +10,6 @@ internal sealed record AppRecentView(
     string? ProductName,
     string? View);
 
-internal sealed record AppProductLicenseView(
-    string Product,
-    string Name,
-    bool Applicable,
-    string Mode,
-    string? Source,
-    string? Path,
-    string? Problem,
-    string? Hint,
-    bool UserLicenseInstalled);
-
-internal sealed record AppLicenseView(
-    bool Applicable,
-    string Mode,
-    string? Source,
-    string? Path,
-    string? Problem,
-    string? Hint,
-    bool UserLicenseInstalled,
-    bool SharedUserLicenseInstalled,
-    IReadOnlyList<AppProductLicenseView> Products);
-
 internal sealed record AppDiagnosticView(
     string Name,
     string Status,
@@ -88,7 +66,7 @@ internal sealed record AppStatusView(
     IReadOnlyList<string> SupportedExtensions,
     IReadOnlyList<AppSkillView> Skills,
     bool RememberRecentFiles,
-    AppLicenseView License,
+    LicenseStatusResult License,
     string? File,
     bool UploadedCopy,
     string? PreviewUrl,

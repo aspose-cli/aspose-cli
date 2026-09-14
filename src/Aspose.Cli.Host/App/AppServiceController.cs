@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -62,6 +63,15 @@ internal sealed class AppServiceController
                 "the running App uses a different font profile",
                 "Run 'aspose-cli app stop', then start the App with the required --font-dir options.");
         }
+        string? licenseIdentity = LicenseManager.InstanceIdentity(
+            CompositionRoot.Create(_catalog, globals));
+        if (marker is not null
+            && (licenseIdentity is null
+                || !string.Equals(marker.LicenseIdentity, licenseIdentity, StringComparison.Ordinal)))
+        {
+            StopOwned(marker);
+            marker = null;
+        }
         bool reused = marker is not null;
         if (marker is null)
         {
@@ -69,8 +79,9 @@ internal sealed class AppServiceController
                 globals,
                 normalizedRoute,
                 filePath,
-                fontProfile);
-            marker = WaitForMarker(child);
+                fontProfile,
+                licenseIdentity);
+            marker = WaitForMarker(child, licenseIdentity);
         }
         else
         {
@@ -124,7 +135,6 @@ internal sealed class AppServiceController
             Reused = reused,
             Route = normalizedRoute,
             File = marker.File,
-            License = License(marker),
         };
     }
 
@@ -147,7 +157,6 @@ internal sealed class AppServiceController
                 Reused = true,
                 Route = marker.Route,
                 File = marker.File,
-                License = License(marker),
             };
     }
 
@@ -161,35 +170,7 @@ internal sealed class AppServiceController
         AppInstance? marker = LiveMarker();
         if (marker is not null)
         {
-            LocalServiceProcessIdentity identity =
-                Identity(marker);
-            bool stopped = LocalServiceStopper.TryStop(
-                identity,
-                TimeSpan.FromSeconds(10),
-                "local-service-stop",
-                () =>
-                {
-                    AppControlResponse response =
-                        AppControlEndpoint.Send(
-                            marker,
-                            "stop");
-                    if (!response.Ok)
-                    {
-                        throw CliErrors.OptionInvalid(
-                            "app stop",
-                            "the running instance rejected the stop request",
-                            "Run 'aspose-cli app status' and retry.");
-                    }
-                });
-            if (!stopped)
-            {
-                throw CliErrors.OptionInvalid(
-                    "app stop",
-                    "the running App could not be confirmed stopped",
-                    "Retry 'aspose-cli app stop'; the protected marker remains available for recovery.");
-            }
-
-            _instances.DeleteIfOwned(marker.Token);
+            StopOwned(marker);
         }
 
         return new AppResult
@@ -201,23 +182,64 @@ internal sealed class AppServiceController
         };
     }
 
+    private void StopOwned(AppInstance marker)
+    {
+        LocalServiceProcessIdentity identity =
+            Identity(marker);
+        bool stopped = LocalServiceStopper.TryStop(
+            identity,
+            TimeSpan.FromSeconds(10),
+            "local-service-stop",
+            () =>
+            {
+                AppControlResponse response =
+                    AppControlEndpoint.Send(
+                        marker,
+                        "stop");
+                if (!response.Ok)
+                {
+                    throw CliErrors.OptionInvalid(
+                        "app stop",
+                        "the running instance rejected the stop request",
+                        "Run 'aspose-cli app status' and retry.");
+                }
+            });
+        if (!stopped)
+        {
+            throw CliErrors.OptionInvalid(
+                "app stop",
+                "the running App could not be confirmed stopped",
+                "Retry 'aspose-cli app stop'; the protected marker remains available for recovery.");
+        }
+
+        _instances.DeleteIfOwned(marker.Token);
+    }
+
     public AppInstance StartReplacement(
         GlobalValues globals,
         string route,
         string? filePath,
-        FontSearchProfile fontProfile)
+        FontSearchProfile fontProfile,
+        string? uploadedFilePath = null,
+        string? uploadedFileName = null)
     {
         using LocalServiceOperationLock operationLock =
             LocalServiceOperationLock.Acquire(
                 "app",
                 "singleton",
                 StartupTimeout + StartupTimeout);
+        string? licenseIdentity = LicenseManager.IsolatedInstanceIdentity(
+            CompositionRoot.Create(_catalog, globals));
         return WaitForMarker(
             StartBackground(
                 globals,
                 route,
                 filePath,
-                fontProfile));
+                fontProfile,
+                licenseIdentity,
+                uploadedFilePath,
+                uploadedFileName),
+            licenseIdentity);
     }
 
     public HostedCommandLifecycle StartForeground(
@@ -325,7 +347,10 @@ internal sealed class AppServiceController
         GlobalValues globals,
         string route,
         string? filePath,
-        FontSearchProfile fontProfile)
+        FontSearchProfile fontProfile,
+        string? licenseIdentity,
+        string? uploadedFilePath = null,
+        string? uploadedFileName = null)
     {
         ProcessStartInfo start =
             SelfProcessLauncher.CreateBackground(
@@ -364,6 +389,9 @@ internal sealed class AppServiceController
                         : Path.GetFullPath(
                             globals.LicensePath,
                             workDirectory),
+                    ExpectedAppLicenseIdentity = licenseIdentity,
+                    AppUploadedFilePath = uploadedFilePath,
+                    AppUploadedFileName = uploadedFileName,
                     ServiceToken = token,
                     ServiceNonce = nonce,
                     FontProfile = fontProfile.IsAmbient ? null : fontProfile,
@@ -391,7 +419,8 @@ internal sealed class AppServiceController
             StringComparison.Ordinal);
 
     private AppInstance WaitForMarker(
-        LocalServiceChild child)
+        LocalServiceChild child,
+        string? licenseIdentity)
     {
         return LocalServiceStartHandshake.WaitForReady(
             child,
@@ -408,6 +437,7 @@ internal sealed class AppServiceController
                         marker.StartTicksUtc,
                         marker.Nonce,
                         child)
+                    && string.Equals(marker.LicenseIdentity, licenseIdentity, StringComparison.Ordinal)
                     ? marker
                     : null;
             },
@@ -452,12 +482,6 @@ internal sealed class AppServiceController
             throw CliErrors.OptionInvalid("app", $"the running instance could not be reached ({ex.Message})", "Run 'aspose-cli app stop', then start it again.");
         }
     }
-
-    private static LicenseInfo License(
-        AppInstance marker) => new()
-        {
-            Mode = marker.LicenseMode,
-        };
 
     private static LocalServiceProcessIdentity Identity(
         AppInstance marker) => new(

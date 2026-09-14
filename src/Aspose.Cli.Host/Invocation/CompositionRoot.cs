@@ -61,9 +61,9 @@ internal static class CompositionRoot
     public static CommandContext Create(
         ProductCatalog catalog,
         GlobalValues globals,
-        IReadOnlyDictionary<string, string>? productLicenseOverrides = null,
         OperationDeadline? deadline = null,
-        ResourceBudgetLedger? resourceBudgets = null)
+        ResourceBudgetLedger? resourceBudgets = null,
+        Func<string, ILicenseGate>? runtimeLicenses = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(globals);
@@ -85,7 +85,7 @@ internal static class CompositionRoot
                 globals,
                 workDir,
                 effectiveBudgets,
-                productLicenseOverrides),
+                runtimeLicenses),
             Catalog = catalog,
         };
     }
@@ -94,22 +94,14 @@ internal static class CompositionRoot
         GlobalValues globals,
         string workDirectory,
         ResourceBudgetLedger resourceBudgets,
-        IReadOnlyDictionary<string, string>? productLicenseOverrides = null)
+        Func<string, ILicenseGate>? runtimeLicenses = null)
     {
         var writer = new SafeFileWriter(resourceBudgets);
         return new ProductActivationContext
         {
             WorkDirectory = workDirectory,
-            LicensePathForProduct = productId =>
-            {
-                string? path = productLicenseOverrides is not null
-                    && productLicenseOverrides.TryGetValue(
-                        productId,
-                        out string? productOverride)
-                        ? productOverride
-                        : globals.LicensePath;
-                return ResolveLicensePath(path, workDirectory);
-            },
+            LicensePathForProduct = _ => ResolveLicensePath(globals.LicensePath, workDirectory),
+            RuntimeLicenseForProduct = runtimeLicenses,
             ConfigDirectory = Aspose.Cli.Sdk.Configuration.ConfigurationPaths.UserDirectory(),
             EnvironmentVariable = name =>
                 ReadEnvironment(resourceBudgets, name),

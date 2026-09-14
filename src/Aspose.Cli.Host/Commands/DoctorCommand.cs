@@ -23,8 +23,8 @@ internal static class DoctorCommand
             "doctor", "Diagnose the environment: runtime, resource budgets and output writability.");
         doctor.SetAction(parse => executor.Run(parse, globals, context =>
         {
-            IReadOnlyList<ProductLicenseInspection> licenses =
-                ProductLicenseInspector.Inspect(context);
+            IReadOnlyList<ProductLicenseStatus> licenses =
+                LicenseManager.Inspect(context).Products;
             var checks = new List<DoctorCheck>
             {
                 CliCheck(),
@@ -46,11 +46,11 @@ internal static class DoctorCommand
                 Products = licenses
                     .Select(license => new DoctorProductStatus
                     {
-                        Product = license.Product.Manifest.Id,
+                        Product = license.Product,
                         Engine = catalog
-                            .GetCapabilities(license.Product)
+                            .GetCapabilities(catalog.Get(license.Product))
                             .Engine?.Id ?? "aspose",
-                        LicenseMode = license.State.ToContractName(),
+                        LicenseMode = license.Mode,
                     })
                     .ToArray(),
             };
@@ -102,9 +102,9 @@ internal static class DoctorCommand
     }
 
     private static DoctorCheck LicenseCheck(
-        IReadOnlyList<ProductLicenseInspection> licenses)
+        IReadOnlyList<ProductLicenseStatus> licenses)
     {
-        ProductLicenseInspection[] applicable = licenses
+        ProductLicenseStatus[] applicable = licenses
             .Where(static license => license.Applicable)
             .ToArray();
         if (applicable.Length == 0)
@@ -117,8 +117,8 @@ internal static class DoctorCommand
             };
         }
 
-        ProductLicenseInspection[] broken = applicable
-            .Where(static license => license.Error is not null)
+        ProductLicenseStatus[] broken = applicable
+            .Where(static license => license.Problem is not null)
             .ToArray();
         if (broken.Length > 0)
         {
@@ -129,13 +129,13 @@ internal static class DoctorCommand
                 Detail = string.Join(
                     "; ",
                     broken.Select(license =>
-                        $"{license.Product.Manifest.Id}: {license.Error!.Message}")),
-                Hint = broken[0].Error!.Hint,
+                        $"{license.Product}: {license.Problem!}")),
+                Hint = broken[0].Hint,
             };
         }
 
         int licensed = applicable.Count(static license =>
-            license.State == LicenseState.Licensed);
+            license.Mode == LicenseModes.Licensed);
         return licensed == applicable.Length
             ? new DoctorCheck
             {

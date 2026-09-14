@@ -31,17 +31,6 @@ internal static class CommonRenderers
     public static void Render(LicenseStatusResult status, TableSurface surface)
     {
         surface.Out.WriteLine($"applicable: {TableText.YesNo(status.Applicable)}");
-        surface.Out.WriteLine($"mode:    {status.Mode}");
-        if (status.Source is { } source)
-        {
-            surface.Out.WriteLine($"source:  {source}");
-        }
-
-        if (status.Path is { } path)
-        {
-            surface.Out.WriteLine($"path:    {path}");
-        }
-
         if (status.Products is { Count: > 0 } products)
         {
             surface.Out.WriteLine();

@@ -47,6 +47,10 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                 entry.RequestedBackup,
                 entry.Original,
                 entry.StagedSnapshot);
+            if (entry.DeleteTarget)
+            {
+                WorkerOutputSession.MarkDeleted(entry.Target);
+            }
             entry.State = PublicationEntryState.Published;
             plan.Persist();
         }

@@ -13,6 +13,9 @@ public sealed record LicenseInfo
 /// </summary>
 public static class LicenseModes
 {
+    /// <summary>A configured license was rejected; used only by license diagnostics.</summary>
+    public const string Invalid = "invalid";
+
     /// <summary>The product engine does not use Aspose licensing.</summary>
     public const string NotApplicable = "not-applicable";
 

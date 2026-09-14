@@ -289,10 +289,11 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal(0, result.ExitCode);
         JsonNode json = Parse(result.StdOut);
         Assert.True(json["applicable"]!.GetValue<bool>());
-        Assert.Equal(
-            "evaluation",
-            json["mode"]!.GetValue<string>());
+        Assert.Null(json["mode"]);
         Assert.Null(json["source"]);
+        Assert.Null(json["license"]);
+        Assert.All(json["products"]!.AsArray(), product =>
+            Assert.Equal("evaluation", product!["mode"]!.GetValue<string>()));
     }
 
     [Fact]
@@ -584,9 +585,8 @@ public sealed class CliContractTests : IDisposable
             "--output",
             "json");
         Assert.Equal(0, remove.ExitCode);
-        Assert.Equal(
-            "evaluation",
-            Parse(remove.StdOut)["mode"]!.GetValue<string>());
+        Assert.All(Parse(remove.StdOut)["products"]!.AsArray(), product =>
+            Assert.Equal("evaluation", product!["mode"]!.GetValue<string>()));
     }
 
     [Fact]

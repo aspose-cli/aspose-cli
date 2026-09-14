@@ -1,3 +1,4 @@
+using Aspose.Cli.Host.Licensing;
 using System.Runtime.InteropServices;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
@@ -12,7 +13,7 @@ internal sealed class AppStatusQuery
 {
     private readonly AppPreferencesStore _preferences;
     private readonly ProductCatalog _catalog;
-    private readonly AppLicenseState _licenses;
+    private readonly LicenseManager _licenses;
     private readonly AppDocumentSession _sessions;
     private readonly CliEditionInfo _edition;
     private readonly string _experience;
@@ -32,7 +33,7 @@ internal sealed class AppStatusQuery
         CliEditionInfo edition,
         Func<CapabilitiesResult> capabilities,
         AppPreferencesStore preferences,
-        AppLicenseState licenses,
+        LicenseManager licenses,
         AppDocumentSession sessions)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
@@ -92,7 +93,7 @@ internal sealed class AppStatusQuery
                 session?.ProductId
                 ?? _catalog.DefaultProductId());
         ProductPreviewDefinition preview = product.Preview;
-        AppLicenseView license = _licenses.Status(product.Manifest.Id);
+        LicenseStatusResult license = _licenses.Status();
         return new AppStatusView(
             VersionInfo.CliVersion,
             _edition.Id,
@@ -126,7 +127,7 @@ internal sealed class AppStatusQuery
     }
 
     private IReadOnlyList<AppDiagnosticView> Diagnostics(
-        ProductDefinition product, AppLicenseView license)
+        ProductDefinition product, LicenseStatusResult license)
     {
         string platform =
             $"{RuntimeInformation.OSDescription}; {RuntimeInformation.ProcessArchitecture}";
@@ -187,7 +188,7 @@ internal sealed class AppStatusQuery
 
             try
             {
-                CommandContext context = _licenses.CreatePreviewContext();
+                CommandContext context = _licenses.CreateContext();
                 FontListResult fonts =
                     context.Activate(product).FontEnvironment!.ListFonts();
                 string fallback =

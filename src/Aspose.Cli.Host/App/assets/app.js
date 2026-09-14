@@ -601,13 +601,13 @@
       if (target) {
         headers['X-Product'] = target;
       }
-      await api('/api/license', {
+      var result = await api('/api/license', {
         method: 'POST',
         headers: headers,
         body: file
       });
-      toast('License installed and the local preview refreshed.');
-      await loadStatus();
+      toast('License saved. Restarting the local App.');
+      location.replace(result.restartUrl);
     } catch (error) {
       toast(error.message, true);
     } finally {

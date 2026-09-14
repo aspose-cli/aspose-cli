@@ -1,3 +1,4 @@
+using Aspose.Cli.Host.Licensing;
 using System.Diagnostics;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
@@ -16,7 +17,7 @@ internal sealed class AppHost : IDisposable
     private readonly ProductCatalog _catalog;
     private readonly AppInstanceStore _instances;
     private readonly AppPreferencesStore _preferences;
-    private readonly AppLicenseState _licenseState;
+    private readonly LicenseManager _licenseState;
     private readonly AppLog _log;
     private readonly AppDocumentSession _sessions;
     private readonly AppWorkspace _workspace;
@@ -57,7 +58,7 @@ internal sealed class AppHost : IDisposable
                 .ToLowerInvariant();
         _instances = new AppInstanceStore(AppPaths.Marker);
         _preferences = new AppPreferencesStore(catalog, AppPaths.Preferences);
-        _licenseState = new AppLicenseState(catalog, globals);
+        _licenseState = new LicenseManager(catalog, globals);
         _log = new AppLog(AppPaths.Log);
         _sessions = new AppDocumentSession(
             catalog,
@@ -90,9 +91,8 @@ internal sealed class AppHost : IDisposable
             _sessions,
             _log,
             ReleaseControl,
+            StartControl,
             RequestStop,
-            WriteMarker,
-            _status.InvalidateFontDiagnostic,
             _fontProfile);
         _sessions.Activity += Touch;
         using Process current = Process.GetCurrentProcess();
@@ -117,6 +117,11 @@ internal sealed class AppHost : IDisposable
     public AppResult Start(int requestedPort, string route, string? filePath)
     {
         _log.Write("app startup entered");
+        if (ServiceStartSecretChannel.Current is { } start
+            && !string.Equals(start.ExpectedAppLicenseIdentity, _licenseState.Identity, StringComparison.Ordinal))
+        {
+            throw CliErrors.LicenseInvalid("app", "the license configuration changed while the App was starting");
+        }
         _route = NormalizeRoute(route);
         _server = new AppHttpServer(
             this,
@@ -157,13 +162,9 @@ internal sealed class AppHost : IDisposable
             _sessions.ConfigureMount(
                 _server.CreatePreviewMount());
             _log.Write("app preview router mounted");
-            _control = new AppControlEndpoint(
-                this,
-                _nonce,
-                _token);
             try
             {
-                _control.Start();
+                StartControl();
             }
             catch (Exception exception) when (
                 AppStartupDiagnostics.IsExpected(exception))
@@ -173,7 +174,15 @@ internal sealed class AppHost : IDisposable
                     exception);
             }
             _log.Write("app control endpoint bound");
-            if (filePath is not null)
+            ServiceStartSecrets? opening = ServiceStartSecretChannel.Current;
+            if (opening?.AppUploadedFilePath is { } uploaded)
+            {
+                using FileStream input = File.OpenRead(uploaded);
+                _workspace.UploadFileAsync(opening.AppUploadedFileName ?? Path.GetFileName(uploaded),
+                    input, input.Length, CancellationToken.None).GetAwaiter().GetResult();
+                _route = route;
+            }
+            else if (filePath is not null)
             {
                 _workspace.OpenPath(
                     filePath,
@@ -250,11 +259,6 @@ internal sealed class AppHost : IDisposable
         Reused = reused,
         Route = _route,
         File = _sessions.FileName,
-        License = new LicenseInfo
-        {
-            Mode = _licenseState.Status(
-                _sessions.ProductId ?? _catalog.DefaultProductId()).Mode,
-        },
     };
 
     public AppResult Activate(string route)
@@ -337,6 +341,12 @@ internal sealed class AppHost : IDisposable
         WriteMarker();
     }
 
+    private void StartControl()
+    {
+        _control = new AppControlEndpoint(this, _nonce, _token);
+        _control.Start();
+    }
+
     private void ReleaseControl()
     {
         _control?.Dispose();
@@ -357,11 +367,9 @@ internal sealed class AppHost : IDisposable
             _token,
             _route,
             _sessions.FileName,
-            _licenseState.Status(
-                _sessions.ProductId
-                    ?? _catalog.DefaultProductId()).Mode,
             Nonce: _nonce,
-            FontProfileFingerprint: _fontProfile.Fingerprint));
+            FontProfileFingerprint: _fontProfile.Fingerprint,
+            LicenseIdentity: _licenseState.Identity));
     }
 
     private string UrlForRoute(string route) => Url + (route == AppRoutes.Welcome ? string.Empty : route);

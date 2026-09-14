@@ -27,16 +27,12 @@
     "products"
   ],
   "properties": {
-    "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/common/app-status.schema.json"
-    },
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/app-status.schema.json" },
     "schemaVersion": { "const": 2 },
     "version": { "type": "string" },
     "edition": { "type": "string", "minLength": 1 },
     "editionName": { "type": "string", "minLength": 1 },
-    "experience": {
-      "enum": ["license-free", "licensed"]
-    },
+    "experience": { "enum": ["license-free", "licensed"] },
     "route": { "type": "string", "minLength": 1 },
     "onboardingCompleted": { "type": "boolean" },
     "product": { "type": "string", "minLength": 1 },
@@ -61,7 +57,11 @@
     "license": { "$ref": "#/$defs/license" },
     "file": { "type": "string", "minLength": 1 },
     "uploadedCopy": { "type": "boolean" },
-    "previewUrl": { "type": "string", "format": "uri", "description": "Opaque URL for the committed App document session; stable until that session is replaced." },
+    "previewUrl": {
+      "type": "string",
+      "format": "uri",
+      "description": "Opaque URL for the committed App document session; stable until that session is replaced."
+    },
     "recentFiles": {
       "type": "array",
       "items": { "$ref": "#/$defs/recentFile" },
@@ -108,18 +108,12 @@
     },
     "productLicense": {
       "type": "object",
-      "required": [
-        "product",
-        "name",
-        "applicable",
-        "mode",
-        "userLicenseInstalled"
-      ],
+      "required": ["product", "name", "applicable", "mode", "userLicenseInstalled"],
       "properties": {
         "product": { "type": "string", "minLength": 1 },
         "name": { "type": "string", "minLength": 1 },
         "applicable": { "type": "boolean" },
-        "mode": { "type": "string", "minLength": 1 },
+        "mode": { "enum": ["evaluation", "licensed", "invalid", "not-applicable"] },
         "source": { "type": "string", "minLength": 1 },
         "path": { "type": "string", "minLength": 1 },
         "problem": { "type": "string", "minLength": 1 },
@@ -130,26 +124,20 @@
     },
     "license": {
       "type": "object",
-      "required": [
-        "applicable",
-        "mode",
-        "userLicenseInstalled",
-        "sharedUserLicenseInstalled",
-        "products"
-      ],
+      "required": ["schema", "schemaVersion", "applicable", "products", "sharedUserLicenseInstalled"],
       "properties": {
+        "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/license-status.schema.json" },
+        "schemaVersion": { "const": 2 },
         "applicable": { "type": "boolean" },
-        "mode": { "type": "string", "minLength": 1 },
-        "source": { "type": "string", "minLength": 1 },
-        "path": { "type": "string", "minLength": 1 },
-        "problem": { "type": "string", "minLength": 1 },
-        "hint": { "type": "string", "minLength": 1 },
-        "userLicenseInstalled": { "type": "boolean" },
-        "sharedUserLicenseInstalled": { "type": "boolean" },
         "products": {
           "type": "array",
-          "items": { "$ref": "#/$defs/productLicense" },
-          "minItems": 1
+          "minItems": 1,
+          "items": { "$ref": "#/$defs/productLicense" }
+        },
+        "sharedUserLicenseInstalled": { "type": "boolean" },
+        "identity": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{64}$"
         }
       },
       "additionalProperties": false
@@ -158,7 +146,10 @@
       "type": "object",
       "required": ["id", "name"],
       "properties": {
-        "id": { "type": "string", "pattern": "^[0-9a-f]{16}$" },
+        "id": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{16}$"
+        },
         "name": { "type": "string", "minLength": 1 },
         "productId": { "type": "string", "minLength": 1 },
         "productName": { "type": "string", "minLength": 1 },
@@ -209,12 +200,7 @@
     },
     "reviewCapability": {
       "type": "object",
-      "required": [
-        "fidelity",
-        "defaultView",
-        "views",
-        "visualInspectionRequired"
-      ],
+      "required": ["fidelity", "defaultView", "views", "visualInspectionRequired"],
       "properties": {
         "fidelity": { "enum": ["rendered", "semantic"] },
         "defaultView": { "type": "string", "minLength": 1 },
@@ -229,14 +215,7 @@
     },
     "product": {
       "type": "object",
-      "required": [
-        "id",
-        "name",
-        "formats",
-        "verbs",
-        "preview",
-        "review"
-      ],
+      "required": ["id", "name", "formats", "verbs", "preview", "review"],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
         "name": { "type": "string", "minLength": 1 },

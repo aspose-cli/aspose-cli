@@ -14,13 +14,14 @@ and the Preview page follows external saves through the same product-routed
 `PreviewRuntime` as the global `preview` command. Browser uploads are explicitly
 labelled as temporary preview copies.
 
-Settings shows independent Cells and Words license state, effective source and
+Settings shows each product's independent license state, effective source and
 priority, preview defaults, fonts/runtime diagnostics, and local-data controls.
 A Total license is detected once and installed for every compatible product;
-product-only licenses can be installed and removed independently. Installing
-refreshes the current preview. Removing a saved license performs a controlled
-App restart because an Aspose engine applies a license for the lifetime of its
-process.
+product-only licenses can be installed and removed independently. Installing or
+removing a saved license performs a controlled App restart because SDK license
+state belongs to a process. Uploaded preview copies are transferred before the
+old process exits. The App uses the same source precedence as new CLI commands;
+a higher-priority explicit or environment source remains effective.
 
 Useful lifecycle commands:
 

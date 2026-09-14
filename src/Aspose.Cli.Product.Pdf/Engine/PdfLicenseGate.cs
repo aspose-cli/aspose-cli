@@ -8,9 +8,6 @@ internal sealed class PdfLicenseGate(
     Func<string, string?> environmentVariable)
     : LicenseGate(resolution, environmentVariable)
 {
-    protected override void ApplyLicense(string path) =>
-        new Aspose.Pdf.License().SetLicense(path);
-
     protected override void ApplyLicense(Stream stream) =>
         new Aspose.Pdf.License().SetLicense(stream);
 }
