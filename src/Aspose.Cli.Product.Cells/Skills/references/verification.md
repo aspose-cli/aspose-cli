@@ -19,18 +19,19 @@ in order; stop and fix at the first finding, then re-run the tier.
 
 ## Tier 1 — values
 
-Windowed `read` of every range you changed, in the right scope:
+Windowed `query range` of every range you changed, in the right scope:
 
 ```
 aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope values --output json
 aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formulas --output json
 ```
 
-- Numbers you report to the user come from a `read` after the `calc` or
-  `edit` — never from your own arithmetic.
+- Read reported values with `query range` after a recalculating `edit` —
+  never infer the saved result from arithmetic alone.
 - For formulas, check both faces: `--scope formulas` shows the formula
   text (`f`), `--scope values` its computed result. Both are real engine
-  state — recalculation already happened, there is no cache caveat.
+  state. Queries do not recalculate: for imported workbooks or edits using
+  `--no-recalc`, recalculate before treating formula caches as current.
 - A cell of type `error` (`#DIV/0!`, `#REF!`, ...) in the window is a
   finding: fix it now, don't wait for Tier 3 to catch it.
 - After structural edits (insert/delete rows or columns, sorts), re-read
@@ -45,7 +46,7 @@ Mandatory when the change touched anything visual — column widths,
 styles, charts, merges, number formats, conditional formats, print
 setup — or when you are delivering a workbook a human will open.
 
-Why this tier exists: `read` returns full cell values, so it structurally
+Why this tier exists: `query range` returns full cell values, so it structurally
 cannot see truncation, overlap, or a chart plotting nonsense. Only a
 render can.
 
@@ -100,9 +101,9 @@ cell stays crisp at the same DPI.
 
 Why this bites the agent and not the file: the render looks like a font or
 encoding fault, so a LOOK at 120 DPI invents corruption that is not in the
-workbook — or misses real truncation while you chase it. `read` the cell
-back; if the value is right, the file is right and the DPI is wrong.
-Re-render at 192 before reporting anything about non-Latin text.
+workbook — or misses real truncation while you chase it. Query the cell
+back first. If its value is correct, check DPI, font availability and layout
+before diagnosing corruption. Re-render at 192 and inspect the result.
 
 ### `--range` is the strict view; trust it over a full-sheet render
 
@@ -164,7 +165,7 @@ aspose-cli cells query search book.xlsx "TBD|TODO|xxx|\{\{" --regex --output jso
 ```
 
 `hits` must be empty — anything found is either unfinished work or an
-intentional token to explain in your report. `search` covers all sheets
+intentional token to explain in your report. `query search` covers all sheets
 by default (`--sheet` narrows it) and matches values; add `--in both` to
 sweep formula text too.
 
@@ -238,7 +239,7 @@ aspose-cli fonts check book.xlsx
   its own — Tier 2's render-and-LOOK is the only real check.
 
 - In evaluation mode, produced files gain an "Evaluation Warning" sheet
-  and a watermark: expect the extra sheet in `info` output and in renders
+  and a watermark: expect the extra sheet in `inspect` output and in renders
   of files you created. Do not try to delete it; disclose it instead.
 - `--detail errors` catches formula errors, not wrong-but-valid numbers.
   A `=SUM` over the wrong range returns a plausible value — spot-check

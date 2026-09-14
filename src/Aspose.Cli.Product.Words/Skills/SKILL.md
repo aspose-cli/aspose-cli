@@ -20,7 +20,7 @@ Use `aspose-cli words` for DOC/DOCX, RTF, ODT, HTML, Markdown, PDF and related d
 
 Use `aspose-cli preview input.docx --open` for the managed product-routed
 lifecycle. It selects Words and the `document` view from the file, returns
-immediately, and is managed with `preview status|stop`. See
+after the session is ready, and is managed with `preview status|stop`. See
 `references/preview.md`.
 
 Blocks are only top-level body paragraphs and tables. Block addresses are resolved against the original document once per batch, so inserted content cannot be targeted later in that batch.

@@ -28,6 +28,23 @@ Do not introduce old command aliases, historical trust allowlists or migration f
 Report sensitive defects through SECURITY.md.
 
 Commercial SDK tests must remain valid in licensed and evaluation modes. Preserve evaluation disclosures.
+`LicensedFact` cases are skipped only when `ASPOSE_CLI_TEST_LICENSE_PATH` is unset
+or blank. A supplied missing or invalid license causes test failures instead.
+To exercise these cases and licensed engine fixtures together:
+
+```powershell
+$env:ASPOSE_CLI_TEST_LICENSE_PATH = 'C:\private\Aspose.Total.lic'
+$env:ASPOSE_LICENSE_PATH = $env:ASPOSE_CLI_TEST_LICENSE_PATH
+.\scripts\test.ps1 -Configuration Release
+```
+
+Evaluation-contract subprocesses deliberately strip license environment variables and
+use isolated configuration; they must remain evaluation tests. Report skipped licensed
+cases explicitly. Keep license contents out of logs and repository fixtures.
+
+App lifecycle tests must run serially: separate configuration directories do not create
+separate App singleton control endpoints. Do not run an App smoke script alongside
+another App test suite.
 
 Assess relevant shared defect reports independently; entire platform trees do not require synchronization.
 

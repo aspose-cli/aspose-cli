@@ -1,10 +1,10 @@
 {
   "ops": [
-    { "op": "set_values", "range": "A1", "values": [["Revenue", 100000], ["Growth", 0.1], ["Projection", null]] },
-    { "op": "set_formula", "range": "B3", "formula": "=B1*(1+B2)" },
-    { "op": "format_range", "range": "B2", "style": { "numberFormat": "0.0%" } },
-    { "op": "format_range", "range": "A1:A3", "style": { "bold": true } },
-    { "op": "resize_columns", "from": "A", "to": "B" },
+    { "op": "set_values", "sheet": "Model", "range": "A1", "values": [["Revenue", 100000], ["Growth", 0.1], ["Projection", null]] },
+    { "op": "set_formula", "sheet": "Model", "range": "B3", "formula": "=B1*(1+B2)" },
+    { "op": "format_range", "sheet": "Model", "range": "B2", "style": { "numberFormat": "0.0%" } },
+    { "op": "format_range", "sheet": "Model", "range": "A1:A3", "style": { "bold": true } },
+    { "op": "resize_columns", "sheet": "Model", "from": "A", "to": "B" },
     { "op": "recalculate" }
   ]
 }

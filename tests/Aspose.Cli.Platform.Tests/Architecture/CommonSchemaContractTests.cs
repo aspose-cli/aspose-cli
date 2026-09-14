@@ -108,6 +108,28 @@ public sealed class CommonSchemaContractTests
         Assert.Equal(valid, schema.Evaluate(instance.RootElement).IsValid);
     }
 
+    [Theory]
+    [InlineData("licensed", true)]
+    [InlineData("evaluation", true)]
+    [InlineData("invalid", true)]
+    [InlineData("not-applicable", true)]
+    [InlineData("unknown", false)]
+    public void DoctorProducts_ValidateTheReportedLicenseMode(string mode, bool valid)
+    {
+        DoctorResult sample = CommonSchemaSamples.Doctor with
+        {
+            Products = [new DoctorProductStatus { Product = "cells", Engine = "aspose", LicenseMode = mode }],
+        };
+        string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);
+        JsonObject instance = JsonNode.Parse(json)!.AsObject();
+        JsonSchema schema = ParseSchema(SdkSchemaCatalog.Read("v2/common/doctor"));
+        using JsonDocument complete = JsonDocument.Parse(json);
+        Assert.Equal(valid, schema.Evaluate(complete.RootElement).IsValid);
+        instance["products"]![0]!.AsObject().Remove("engine");
+        using JsonDocument missingEngine = JsonDocument.Parse(instance.ToJsonString());
+        Assert.False(schema.Evaluate(missingEngine.RootElement).IsValid);
+    }
+
     [Fact]
     public void OperationDescriptor_SerializesInDeterministicContractOrder()
     {

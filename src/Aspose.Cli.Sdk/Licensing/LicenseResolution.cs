@@ -36,7 +36,7 @@ public enum LicenseSourceKind
 
 /// <summary>Outcome of the license resolution chain.</summary>
 /// <param name="Kind">Which source produced the license.</param>
-/// <param name="Path">License file path; null for <see cref="LicenseSourceKind.None"/> and <see cref="LicenseSourceKind.EnvBase64"/>.</param>
+/// <param name="Path">License file path; null for no source and for either shared or product-specific base64 sources.</param>
 public sealed record LicenseResolution(LicenseSourceKind Kind, string? Path)
 {
     /// <summary>Normalized product identifier for a product-specific source.</summary>

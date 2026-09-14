@@ -102,7 +102,10 @@ Two CLI processes still coordinate document publication through neutral operatin
 
 ## File and output contracts
 
-JSON commands return one result on stdout and diagnostics or errors on stderr.
+In JSON mode, structured commands write one result to stdout on success or partial success.
+Failures leave stdout empty and write one error envelope to stderr; `--verbose` adds
+structured diagnostic lines. Help, version and raw documentation commands retain their
+text output contracts.
 Mutations use safe publication, backups and fingerprints where advertised; extraction is bounded.
 Schema URIs identify this application and are available offline through its schema command.
 No deprecated command aliases or legacy installer/Skill readers are provided.
@@ -116,15 +119,20 @@ sources keep their documented precedence. CLI and App use the same resolution po
 
 `aspose-cli license status --output json` returns `products[]`, with each product's effective
 source and `licensed`, `evaluation`, `invalid`, or `not-applicable` mode. There is no
-first-product summary that can hide a different product's failure. A configured invalid
-license is a hard error for document operations, never a fallback to evaluation.
+first-product summary that can hide a different product's failure. Use `--product cells`
+to inspect only Cells. A successful status query may report `invalid`; inspect the selected
+product's `mode`, `problem` and `hint`. Document operations reject an invalid configured
+license instead of falling back to evaluation.
 
 Human-readable Table/Markdown invocations print a compact, SDK-verified license status to
 stderr at startup. `--quiet` suppresses it; JSON, verbose JSONL, MCP and internal worker/service
 protocols stay unchanged. Product commands inspect only their own license; general help
-reports every product. Preview/App reuse validates the current license snapshot; a change
-restarts the owned process. App license installation/removal also restarts its SDK process
-and preserves the current uploaded preview through a bounded file transfer.
+reports every product. A new Preview/App launch validates the current license snapshot
+before reuse; a changed license replaces the owned process. A running App keeps its
+startup license snapshot until restart. App license installation/removal restarts its SDK
+process and transfers the current uploaded preview through a bounded file copy. If that
+restart fails, the saved configuration remains in place and the old App control is restored;
+repair the document and restart to apply the saved license.
 
 The source license does not grant SDK rights or remove evaluation restrictions.
 See [Aspose EULA](https://about.aspose.com/legal/eula/).
@@ -136,13 +144,10 @@ OpenSSL, an ECDSA P-256 signing key and a valid Authenticode tool/certificate.
 Use `ASPOSE_CLI_RELEASE_SIGNING_KEY`, `ASPOSE_CLI_OPENSSL_PATH`,
 `ASPOSE_CLI_AUTHENTICODE_TOOL` and `ASPOSE_CLI_AUTHENTICODE_CERTIFICATE` or their script parameters.
 No production signing credentials are generated automatically.
-The signed manifest binds the actual SDK package or upstream source provenance.
+The signed manifest binds the CLI source revision and locked commercial SDK package
+identifiers, versions and content hashes.
 
 The independent GitHub workflows run from this directory once it becomes a repository root.
 The release workflow requires a configured signing runner and produces artifacts without automatically creating a GitHub release.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [AGENTS.md](AGENTS.md) and [LICENSE](LICENSE).
-
-App preferences commit atomically before changing the active preview. If the saved view
-cannot be rendered, the App keeps the previous preview and reports that settings were
-saved but refresh failed. Saving the same settings retries the refresh.

@@ -16,11 +16,14 @@ General rules:
   compiled into the same batch after the `--ops` document). Windows
   PowerShell strips inner quotes from inline JSON — escape them as `\"`,
   pipe via `--ops -`, or use `--set`.
-- Ops apply **in order** and **atomically** — one failure leaves the file
-  untouched and reports the op's `index`.
+- Ops apply **in order** and **atomically** by default — one failure leaves
+  the file untouched. Operation failures report `index`; malformed JSON or
+  envelope errors may have no operation index. Unknown fields, duplicate JSON
+  members and duplicate operation IDs are rejected before publication.
 - `--dry-run` applies and validates in memory without publishing output.
-  `--best-effort` publishes successful operations,
-  returns structured product issues for failures, and exits 8.
+  `--best-effort` continues after engine operation failures and exits 8 when
+  any fail. A mid-operation failure may retain partial effects; it does not
+  roll back each failed operation.
 - `sheet` on any op defaults to the active sheet. Range fields are
   **unqualified** A1 (`B2:D10`); the sheet comes from `sheet`. Only
   `copy_range.from/to`, `create_pivot.sourceRange`, the chart ops'
@@ -34,7 +37,7 @@ General rules:
 
 ## Op index
 
-Every op in this build, in registration order. The authoritative field list
+Operations in this build, grouped for reference. The authoritative field list
 for each op is `aspose-cli schema v2/cells/ops`; the recipes live in the sections
 named below.
 
@@ -96,6 +99,7 @@ named below.
 | `set_sheet_view` | Sheet view: gridlines on/off, zoom, headings | Workbook look |
 | `delete_chart` | Remove a chart from a sheet | Charts |
 | `add_sparkline` | Draw tiny in-cell charts, one per data row or column | Sparklines |
+| `recalculate` | Recalculate workbook formulas at this point in the batch | Data |
 
 ## Data
 
@@ -105,6 +109,11 @@ named below.
 | `set_formula` | `range`, `formula` | Formula is written for the range's **top-left** cell; relative references shift per cell (fill semantics), `$` references stay fixed. |
 | `clear_range` | `range`, `what?` | `contents` (default), `formats`, `all`. |
 | `copy_range` | `from`, `to` | Copies values, formulas and formatting. `to` is a single anchor cell. Both may be sheet-qualified: `{"from": "Data!A1:C10", "to": "Summary!B2"}`. |
+
+`recalculate` has no additional fields. It calculates the whole workbook at
+its position in the batch and replaces the automatic final calculation;
+place it after the last formula or input change. Without it, edits calculate
+at the end unless `--no-recalc` is set. Queries read stored results.
 
 ## Formatting
 
@@ -210,7 +219,8 @@ A column chart with the full set:
 
 Update an existing chart with `update_chart` — identify it by `index`
 (zero-based) or `name`, then set any of `title`, `dataRange`, `type`,
-`seriesInRows` or the cosmetic fields above:
+`seriesInRows` or the cosmetic fields above. Include `dataRange` when changing
+`seriesInRows`; orientation is applied when the chart's data range is reset:
 
     { "op": "update_chart", "sheet": "Data", "index": 0,
       "title": "Revised", "type": "bar" }
@@ -232,11 +242,13 @@ Remove a chart with `delete_chart`, addressed the same way (exactly one of
 - `values[].numberFormat` formats the aggregated numbers, e.g.
   `{ "field": "Sales", "function": "sum", "numberFormat": "#,##0" }` —
   without it pivot values render as naked unformatted numbers.
-- The pivot is calculated on creation; `read` the target area to see the
+- The pivot is calculated on creation; `query range` the target area to see the
   aggregated numbers.
 - Put pivots on their own sheet (`add_sheet` first) to avoid collisions.
 - After changing source data, `{ "op": "refresh_pivot", "sheet": "Pivot" }`
   recalculates it (omit `name` to refresh every pivot on the sheet).
+  Creation and refresh calculate source formulas before refreshing the pivot
+  cache; an existing pivot retains its formatting and worksheet column widths.
 
 ## Page layout (print & PDF)
 

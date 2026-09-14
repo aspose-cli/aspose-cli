@@ -16,7 +16,7 @@ most likely fix. Read the hint first; this page adds background.
   not make it a workbook. Plain-text data must use a text extension
   (.csv, .tsv, .txt, .json) to be imported as text.
 - **PASSWORD_REQUIRED / PASSWORD_INVALID** — ask the user for the
-  password (never guess); retry with `--password`. The distinction is
+  password (never guess); prefer `--password-env VAR` when retrying. The distinction is
   reliable: `_REQUIRED` means none was given, `_INVALID` means the given
   one failed.
 
@@ -52,8 +52,10 @@ most likely fix. Read the hint first; this page adds background.
 ## License problems (exit 7)
 
 - **LICENSE_FILE_NOT_FOUND / LICENSE_INVALID** — an explicitly configured
-  license is broken; this never silently degrades to evaluation mode.
-  Fix the path/file or remove the configuration. Do not retry in a loop.
+  license is broken; document operations never silently degrade to evaluation.
+  Fix the path/file or remove the configuration. `license status` is diagnostic:
+  it exits 0 with `products[].mode: "invalid"` and `problem` for a rejected
+  source. Do not retry unchanged input in a loop.
 - Resolution order: `--license` → product-specific environment variables →
   shared `ASPOSE_LICENSE_B64` / `ASPOSE_LICENSE_PATH` → product-specific and
   shared `.aspose` project files → user config directory. `aspose-cli license
@@ -61,19 +63,22 @@ most likely fix. Read the hint first; this page adds background.
 
 ## Evaluation-mode expectations
 
-Without a license: reads and structure inspection are unrestricted;
-produced files gain an "Evaluation Warning" worksheet and a watermark.
-That extra worksheet WILL show up in `info` output of files you created
+Without a license, read-only queries and inspection do not add watermarks;
+input, resource and SDK limits still apply. Saved workbooks can gain an
+"Evaluation Warning" worksheet; rendered and exported files can be watermarked.
+That extra worksheet WILL show up in `inspect` output of files you created
 in evaluation mode — it is not a bug, and you should not try to delete it.
 Always tell the user their output is watermarked and that a license
-removes it.
+removes SDK evaluation restrictions for newly generated output; it does not
+clean marks already saved in an existing artifact.
 
 ## General moves
 
 - `aspose-cli capabilities --output json` — every verb, format, op and schema
   id this build supports.
 - `aspose-cli schema <id>` — the exact JSON Schema of any input or output.
-- `--verbose` — adds stack traces on stderr for bug reports.
+- `--verbose` — emits structured JSONL diagnostics (including timings and
+  error codes) on stderr; it does not promise raw stack traces.
 - Deterministic output means a repeated command is diff-safe: when in
   doubt, run the read again and compare.
 

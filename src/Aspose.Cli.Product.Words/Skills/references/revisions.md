@@ -1,8 +1,11 @@
 # Revisions and comparison
 
-Always inspect `revisionsPresent`, revision authors, protection and signature state before editing.
+Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
+`document.protection` and `document.signed` in the `words inspect` result.
 
-Use `--track-changes --author "Name"` when the requested edit must remain reviewable. Do not accept or reject existing revisions unless explicitly requested.
+Use `--track-changes --author "Name"` when the requested edit must remain reviewable.
+`set_table_cell` supports tracked replacement while retaining the cell's structure;
+accept or reject revisions only when that review decision is explicitly requested.
 
 `words compare` refuses inputs that already contain revisions. Make reviewed copies first, explicitly accept or reject revisions there, then compare:
 

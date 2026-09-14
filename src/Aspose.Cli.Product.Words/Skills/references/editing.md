@@ -26,8 +26,8 @@ aspose-cli schema v2/words/ops
   runs. Inserted content cannot be targeted later in the same batch.
 - Overlapping deletes, delete-then-reference and other invalid dependencies
   fail before a file is written.
-- `--best-effort` is explicitly partial: successful operations are saved
-  and the command exits 8. Without it, the complete batch is atomic.
+- `--best-effort` saves successful operations even when others fail; those
+  partial results exit 8. Without it, an operation failure aborts the batch.
 - `--track-changes` requires `--author`. Comparison and tracking metadata use a
   fixed internal timestamp so JSON summaries remain deterministic.
 
@@ -53,7 +53,7 @@ aspose-cli schema v2/words/ops
 | `set_page_setup` | Set size (`a3`, `a4`, `a5`, `letter`, or `legal`, lowercase only), orientation, margins and columns on one or all sections. |
 | `set_header` | Replace primary, first-page or even-page header content. |
 | `set_footer` | Replace primary, first-page or even-page footer content. |
-| `set_page_numbers` | Add PAGE fields and configure start/number style. |
+| `set_page_numbers` | Reuse or append a PAGE field in the primary header/footer, preserving its other content; configure start/number style. |
 | `format_text` | Apply font, size, emphasis, colour and highlight to target runs. |
 | `set_style` | Apply an existing paragraph style to target paragraphs. |
 | `define_style` | Create or update a named paragraph style. |
@@ -72,10 +72,19 @@ aspose-cli schema v2/words/ops
 | `mail_merge` | Merge JSON-object-array or headered CSV data, including regions. |
 | `update_fields` | Update TOC or all fields, then refresh page layout. |
 
+## Headers, footers and page numbers
+
+`set_header` and `set_footer` replace the selected kind, including its fields,
+in one section or all sections when `section` is omitted. Apply footer text
+before `set_page_numbers`. Page numbering targets only the primary header or
+footer, reuses its first PAGE field or appends one in a new paragraph, and
+preserves the other content. A supplied `start` restarts numbering in each
+selected section; specify `section` when only one section should restart.
+
 ## Verification
 
-`--verify` reopens the saved file, checks field/revision/protection state,
-performs a semantic comparison against the private in-memory baseline and
-renders bounded page evidence. Documents up to 20 pages render every page;
-longer documents render the first, last, touched and adjacent pages, capped at
-12, and set `visualReviewRequired`.
+`--verify` is opt-in and cannot be combined with `--dry-run`. It reopens the
+saved file, checks field/revision/protection state, compares private document
+copies and renders bounded page evidence. See `verification.md` for coverage
+and result fields. Verification happens after save; a failed verification does
+not mean the saved document was rolled back.

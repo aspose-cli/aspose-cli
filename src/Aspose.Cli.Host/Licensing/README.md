@@ -22,8 +22,11 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
   new document cannot silently read a newer license than the App's status/identity.
 - App-side validation uses `LicenseValidationProcess`, a bounded short-lived CLI
   process. Management and replacement planning cannot mutate the running SDK state.
-- A changed App or preview identity requires a fresh owned process. Failed App
-  restart restores the old control endpoint and reports that configuration was saved.
+- A new launch compares the validated identity before reusing an App or preview.
+  A changed valid preview license replaces the owned process; an invalid selected
+  license rejects the launch and leaves the existing preview untouched. App Settings
+  remain available with invalid configuration, and such App snapshots are not reused.
+  Failed App restart restores the old control endpoint and reports saved configuration.
   Uploaded preview files are copied through the existing bounded upload path before
   the old App exits.
 - Human startup messages are emitted once at the outer CLI boundary. JSON, MCP,

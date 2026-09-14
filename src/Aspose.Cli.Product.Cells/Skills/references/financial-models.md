@@ -54,9 +54,10 @@ aspose-cli cells query search model.xlsx "0.25" --in formulas --output json
 ## Build order
 
 Assumptions first, then statements along the dependency chain, Summary
-last. Recalculation is real and automatic after every edit — there are no
-stale-cache traps — so the only constraint is that a formula's precedents
-must exist by the time you want to READ a meaningful value from it.
+last. Edits recalculate at the end by default. Queries read stored formula
+results, so do not treat an imported cache or an edit made with `--no-recalc`
+as freshly calculated. If you include `recalculate`, put it after the final
+input/formula change; it replaces the automatic final calculation.
 
 In fact the whole model fits in ONE atomic batch: ops apply in order and
 recalculation runs once at the end, so a `define_name` mid-batch resolves
@@ -241,7 +242,7 @@ aspose-cli cells render model.xlsx --sheet Summary --range A1:G20 --out summary-
 1. `workbook.formulaErrors` is empty — no `#N/A`, `#DIV/0!`, `#REF!`.
 2. The check-token search returns zero hits.
 3. Every summary and valuation cell read back — report these engine
-   results, no cache caveats, never your own arithmetic.
+   results after recalculation, not an assumed or stale cached value.
 4. Swept the scenarios? The selector reads back on the base case, and the
    summary reads back at its base number (Scenario switching).
 5. LOOK at the render with your image tool (truncation, layout, checks

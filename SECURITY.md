@@ -9,7 +9,9 @@ Do not attach customer documents, passwords, tokens or license contents.
 App and Preview bind only to loopback. Exact Host, same-origin, CSRF, bounded bodies and authenticated
 current-user lifecycle controls remain enforced. File routing is content-driven.
 Publication, extraction, ownership and resource budgets are checked.
-Product configuration and services are isolated; shared OS publication/PATH resources use interprocess locks.
+Product license files are separate, and configuration files use the selected CLI configuration directory.
+The App control endpoint is a per-user singleton; selecting another configuration directory does not
+create an independently runnable App endpoint. Shared OS publication/PATH resources use interprocess locks.
 
 Customer installation and updates require applicable Authenticode and detached package signatures.
 The explicit development-package path does not establish customer release trust.

@@ -9,6 +9,10 @@ aspose-cli preview book.xlsx --view workbook --output json
 The result contains `id`, `url`, `pid`, `file`, `view`, and `reused`. The
 session binds only to loopback, refreshes after safe saves, preserves the last
 good snapshot after a render failure, and never modifies the workbook.
+Reuse requires matching product, file, view, selector, font profile and
+validated license identity, with the same requested port or `--port 0`.
+For a matching session, a changed license identity or explicit port causes
+replacement; a rejected requested license leaves it untouched.
 
 Inspect or stop sessions through the same root lifecycle:
 

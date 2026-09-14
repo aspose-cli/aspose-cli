@@ -29,7 +29,7 @@ public abstract record ResultEnvelope
     [JsonPropertyOrder(-100)]
     public string Schema { get; }
 
-    /// <summary>Version of the schema; additive-only within a version.</summary>
+    /// <summary>Version of this result contract.</summary>
     [JsonPropertyOrder(-99)]
     public int SchemaVersion { get; }
 

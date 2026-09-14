@@ -22,6 +22,10 @@ removing a saved license performs a controlled App restart because SDK license
 state belongs to a process. Uploaded preview copies are transferred before the
 old process exits. The App uses the same source precedence as new CLI commands;
 a higher-priority explicit or environment source remains effective.
+The running App keeps its validated license snapshot until restart; external
+CLI installs/removals do not silently change its open SDK session. If a saved
+license change cannot restart the App, it reports the failure and restores
+control of the old session; repair the document and retry the restart.
 
 Useful lifecycle commands:
 

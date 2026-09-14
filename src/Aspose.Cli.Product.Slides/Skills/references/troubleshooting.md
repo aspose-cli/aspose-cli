@@ -1,7 +1,8 @@
 # Slides troubleshooting
 
-- If a slide, shape or layout is not found, rerun `slides inspect` or
-  `slides query slides` and use the returned stable ids or advertised layout names.
+- If a slide or layout is not found, rerun `slides inspect` and use a current
+  slide id or advertised layout name. For shape ids and names, use
+  `slides query slides --scope shapes`.
 - If rendering fails, run `fonts check` for the Slides product, reduce the
   selected slide set and inspect the source for malformed embedded media.
 - If a template-based deck looks wrong, confirm which masters and layouts were

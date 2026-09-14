@@ -119,7 +119,7 @@ public static class LicenseResolver
     public static string DefaultUserConfigDirectory() =>
         Configuration.ConfigurationPaths.UserDirectory();
 
-    /// <summary>Full path of the user-level license file that <c>license install</c> writes.</summary>
+    /// <summary>Full path of the shared user-level fallback; installation writes compatible product-specific files.</summary>
     public static string UserLicensePath() => SharedUserLicensePath(DefaultUserConfigDirectory());
 
     /// <summary>Full path of the shared user license in the selected configuration directory.</summary>

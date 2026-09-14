@@ -7,10 +7,11 @@ license: Apache-2.0
 # Aspose Cells CLI
 
 Process spreadsheets with engine-grade fidelity using the local `aspose-cli`
-CLI, with no Python or Office dependency. Every command supports
-`--output json` and returns a versioned envelope with a `schema` field —
-pass it explicitly whenever you parse the result (the default format
-depends on whether stdout is a terminal).
+CLI, with no Python or Office dependency. Document commands support
+`--output json` and return a versioned envelope with a `schema` field.
+Pass it explicitly when parsing results; the default format depends on
+whether stdout is a terminal. Help, docs, schema and version commands print
+their own output rather than a document-result envelope.
 
 ## 1. Session start
 
@@ -24,8 +25,9 @@ aspose-cli license status --output json  # independently verified source and mod
 ```
 
 `aspose-cli doctor` returns a `checks` array (each `ok`/`warn`/`fail`) and a
-top-level `ok`; a `license` check of `warn` means evaluation mode —
-produced files carry an Aspose evaluation watermark (section 9).
+top-level `ok`. A `license` check of `warn` means at least one product is
+in evaluation mode; inspect `products[].licenseMode` for Cells specifically.
+A broken configured source makes the license check `fail`.
 
 Routing: if the task involves an EXISTING workbook the user cares about,
 follow the safe-editing protocol in section 5 before the first mutation.
@@ -47,7 +49,7 @@ Platforms without a verified file-handle boundary omit external resources.
 1. NEVER dump a whole sheet. Climb the projection ladder (section 4).
 2. Batch all edits into ONE ops document; never run one command per cell.
 3. Verify in tiers after ANY write:
-   - `read` the changed ranges back — numbers you report come from the
+   - `query range` the changed ranges back — numbers you report come from the
      engine, never from your own arithmetic;
    - if the change touched anything visual (column widths, styles, charts,
      merges, number formats, conditional formats, print setup) OR you are
@@ -59,14 +61,10 @@ Platforms without a verified file-handle boundary omit external resources.
      report zero formula errors.
 4. Before the FIRST in-place edit of a file you did not create this
    session, make the one-time backup (section 5).
-5. Results are deterministic; produced FILES are not all byte-reproducible.
-   stdout JSON, text projections (csv, tsv, json, md) and renders (png,
-   jpeg, svg) come back identical run to run. Every document container —
-   xlsx, xlsm, xlsb, xls, ods, html, mhtml, pdf, xps — embeds run-varying
-   bytes (a PDF carries both a random document id and a wall-clock
-   timestamp), so two identical `convert --to pdf` runs differ by SHA256.
-   Never hash one to detect change: use `cells compare`, or compare the source
-   workbook.
+5. Do not assume byte-identical exports or renders across runs: document
+   metadata, fonts and rendering settings can vary. Use source fingerprints
+   with `--if-match` for exact stale-file detection; use `cells compare`
+   for stored value/formula differences and inspect visual changes separately.
 6. On any error, read `error.hint` first — it states the most likely fix,
    and `error.details` usually lists the valid alternatives.
 7. In evaluation mode, tell the user about the watermark (section 9).
@@ -74,8 +72,9 @@ Platforms without a verified file-handle boundary omit external resources.
 9. Unsure about a verb, op or field? Ask the CLI (`--help`, `aspose-cli
    capabilities cells edit`, `aspose-cli schema v2/cells/ops`, `aspose-cli docs`) instead
    of guessing from memory.
-10. stdout carries exactly one result; diagnostics and warnings go to
-    stderr. Parse stdout only.
+10. In JSON mode, a successful document result goes to stdout and carries
+    its `warnings` array. Errors and verbose JSONL diagnostics go to stderr.
+    Check the exit code and both channels; do not discard result warnings.
 11. An open-ended or vague request ("make me a sales sheet", "show me what
     you can do") gets the FULL deliverable — designed synthetic data, a
     Detail sheet AND a designed Dashboard sheet — never a minimal grid
@@ -86,15 +85,16 @@ Platforms without a verified file-handle boundary omit external resources.
 
 Habits from weaker spreadsheet stacks cost time here. Already handled:
 
-- Recalculation is real and automatic after every edit. What `read`
-  returns IS the computed value — no stale caches to "refresh", no need
-  to re-touch formulas to force an update.
-- Ops batches are atomic. Any op fails → the file is untouched; there are
-  no half-applied cascades to detect or clean up.
+- Edits recalculate by default unless `--no-recalc` is used. Queries read
+  stored formula results; they do not recalculate an existing workbook.
+  If a batch includes `recalculate`, place it after the last dependent edit:
+  that explicit operation replaces the automatic end-of-batch calculation.
+- Ops batches are atomic by default: an operation failure preserves the file.
+  `--best-effort` explicitly permits partial changes (section 5).
 - Document commands do not require a resident daemon or an open/save/close
   lifecycle. App and Preview explicitly start managed background services.
-- Inline JSON via `--ops`, `--set` and stdin `-` avoids shell-escaping
-  traps by design (one Windows PowerShell caveat: section 11).
+- Ops files and stdin `--ops -` avoid inline JSON quoting. Inline `--ops`
+  and `--set` still follow shell quoting rules (section 11).
 - Charts and pivot tables are first-class ops: `update_chart` edits an
   existing chart in place — no delete-and-rebuild, and `delete_chart`
   removes one. `create_chart` applies a modern look by itself (no chart
@@ -129,7 +129,7 @@ aspose-cli cells inspect book.xlsx --detail names errors --output json
 - `--preview` samples the first rows of every sheet (`--preview-rows`,
   default 5) — for COLUMN LAYOUT only. It prints display values, so a real
   datetime and the text `"2026-03-02"` both appear as `"2026-03-02"`. Never
-  infer a type from a preview: `read` and its `t` are the only type
+  infer a type from a preview: `query range` and its `t` are the only type
   authority.
 - Before rendering on an unfamiliar machine, `aspose-cli fonts check book.xlsx`
   reports whether each used font is available here and what a render would
@@ -202,25 +202,27 @@ aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==
   sheet names that need it: `--set "'My Sheet'!A1=5"`. Ranges and styling
   stay in ops.
 - Inside an ops document, `sheet` defaults to the active sheet and range
-  fields are unqualified A1 (`B2:D10`); only `copy_range.from/to` and
-  `create_pivot.sourceRange` take sheet-qualified references.
+  fields are unqualified A1 (`B2:D10`). Cross-sheet fields include
+  `copy_range.from/to`, `create_pivot.sourceRange`, chart `dataRange`, and
+  `add_sparkline.dataRange`.
 - Batches are atomic: if any op fails, the file is untouched and the error
   names the failing op's `index`. Fix that op and retry.
 - Each op may carry a unique stable `id`; omitted ids are assigned
   deterministically as `op-0001`, `op-0002`, and so on.
-- `info`, `read`, `search`, and `diff` expose SHA-256 source fingerprints.
+- `inspect`, `query range`, `query search`, and `compare` expose SHA-256 source fingerprints.
   Put the current value in `--if-match` or the envelope's `ifMatch` to reject
   an edit when another process changed the workbook.
 - The result's op-by-op record is the `applied` array (not `ops`): one entry
-  per op in order, each with `id`, `index`, `op`, `status`, product-owned
-  `address` when available, and `cellsAffected`; successful writes also expose
+  per op in order, each with `id`, `index`, `op`, `status`, `itemsAffected`,
+  and product-owned `targets`; successful writes also expose
   `output.fingerprint.sha256` after real-engine reopen verification.
 - `--best-effort` makes the batch partial instead: failing ops stay
   in `applied` with `status: "failed"` and an `error` object, the rest still
-  apply, and the command exits 8 (a partial-success signal, not a hard
-  error).
+  apply. If any operation fails, the command exits 8. A mid-operation
+  failure may leave partial effects; best-effort is not per-operation rollback.
 - `--dry-run` validates and applies in memory, writing nothing.
-- Formulas recalculate automatically after every edit (`--no-recalc` opts out).
+- Formulas recalculate after the batch by default (`--no-recalc` opts out).
+  An explicit `recalculate` runs at its position instead; put it last.
 - `set_formula` over a range uses Excel fill semantics: relative references
   shift per cell, `$` absolute references stay.
 - Formatting only touches the style fields you set; everything else is
@@ -234,7 +236,7 @@ aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==
   say, `A7:F9` and chart that. Beyond `title`, both chart ops take `legend`,
   `axisTitles`, `seriesColors` and `dataLabels`, and `create_chart` defaults
   to a modern look on its own (`aspose-cli docs editing`).
-- The complete vocabulary — 55 ops, every field — is
+- The complete operation vocabulary and every field are in
   `aspose-cli schema v2/cells/ops`. Semantics and recipes:
   [references/editing.md](references/editing.md), which
   `aspose-cli docs editing` also prints offline (`aspose-cli docs ops` is an alias).
@@ -247,11 +249,11 @@ aspose-cli cells edit report.xlsx --ops data.json --in-place
 aspose-cli cells edit model.xlsx --ops '{"ops":[{"op":"recalculate"}]}' --in-place
 ```
 
-Data files for `write` are JSON arrays of arrays; null clears a cell;
-`--start-cell` (default A1) anchors the matrix. Mutating commands write a
-sibling `.out` file by default (`book.xlsx` → `book.out.xlsx`); use
-`--in-place` to modify the input (atomic: temp file, then move), or
-`--out` for an explicit path.
+`set_values.values` is a JSON array of arrays; `null` clears a cell and
+`range` supplies the matrix anchor. `cells edit` writes a sibling `.out`
+file by default (`book.xlsx` → `book.out.xlsx`); use `--in-place` to modify
+the input atomically, or `--out` for an explicit path. `cells create`
+writes the path supplied as its argument.
 
 ### Safe editing of existing files
 
@@ -297,7 +299,7 @@ One stable backup per file is enough; repeated `--backup` runs are a no-op.
 Assume there are problems; your job is to find them. Your last command
 exiting 0 is not "done" — the first build is almost never right. The tiers:
 
-- **values** — `read` back every range you changed (golden rule 3);
+- **values** — `query range` back every range you changed (golden rule 3);
 - **visual** — `render` + LOOK whenever anything visual changed or a human
   will open the file;
 - **semantic** — `cells inspect --detail errors` reports zero formula errors;
@@ -309,7 +311,7 @@ The full protocol with per-tier checklists: `aspose-cli docs verification`.
 
 ```
 aspose-cli cells convert book.xlsx --to pdf                  # print-accurate
-aspose-cli cells convert book.xlsx --to csv --sheet Sales    # csv/tsv/pdf take --sheet
+aspose-cli cells convert book.xlsx --to csv --sheet Sales    # csv/tsv/md/pdf take --sheet
 aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out check.png
 aspose-cli cells render book.xlsx --all-sheets --out check.png   # one PNG per visible sheet
 ```
@@ -325,7 +327,8 @@ sheet is skipped and named in a `SHEETS_SKIPPED` warning — read it.
 Hidden sheets never render here; name one explicitly with `--sheet` to
 reveal it.
 
-Defaults: `convert` writes the input path with the target extension;
+Defaults: `convert` writes the input path with the target extension,
+adding `.out` when the extension would target the input itself;
 `render` writes the input path with the image extension. For verification
 renders, write to a scratch path instead and delete the image after
 looking — don't litter the user's directory. `OUTPUT_EXISTS` protects
@@ -338,8 +341,11 @@ aspose-cli preview book.xlsx --output json
 ```
 
 starts a managed background preview and returns immediately with
-`id/url/pid/file/view/reused`. It refreshes on every save; the same
-product/file/view reuses the existing session.
+`id/url/pid/file/view/reused`. It refreshes after safe saves. Reuse requires
+matching product, file, view, selector, font profile and validated license
+identity, plus a compatible requested port (`0` accepts the existing port).
+A changed license identity or requested port replaces that matching session;
+an invalid requested license leaves the running session untouched.
 
 ```
 aspose-cli preview status
@@ -348,7 +354,7 @@ aspose-cli preview stop --all
 ```
 
 Division of labor: preview is for the HUMAN to look at while you work;
-your own checks stay `render` + look, `read`, and `diff`. Session management,
+your own checks stay `render` + look, `query range`, and `compare`. Session management,
 port control, and the change spotlight are documented in
 [references/preview.md](references/preview.md), also `aspose-cli docs preview`.
 
@@ -360,7 +366,11 @@ limited. Every affected result contains
 `warnings: [{ "code": "EVAL_MODE", ... }]`.
 
 You MUST mention the watermark to the user when delivering evaluation-mode
-output. Reads are unaffected. Evaluation CSV, TSV, and Markdown exports are limited to the first worksheet; an explicit `--sheet` selecting another worksheet fails with `EVALUATION_LIMIT` before writing. A license removes all limits: install it with
+output. Read-only commands do not add watermarks; input, resource and SDK
+limits still apply. Evaluation CSV, TSV, and Markdown exports are limited
+to the first worksheet; an explicit `--sheet` selecting another worksheet
+fails with `EVALUATION_LIMIT` before writing. A license removes SDK evaluation
+restrictions for new outputs; CLI resource budgets remain. Install it with
 `aspose-cli license install Aspose.Cells.lic --product cells`, set
 `ASPOSE_CELLS_LICENSE_PATH`, use a shared `ASPOSE_LICENSE_PATH`, or pass
 `--license <path>`. `license status` reports every product independently in `products[]`; a rejected source has `mode: "invalid"`.
@@ -397,10 +407,10 @@ sources, at most one at a time: `--password <value>` (discouraged — visible in
 the process list and shell history), `--password-env <VAR>` (the password is
 the value of that environment variable) and `--password-stdin` (the first line
 of stdin, where stdin is not already the document). Prefer `--password-env`.
-`diff` uses `--left-password[-env]` / `--right-password[-env]`.
+`compare` uses `--left-password[-env]` / `--right-password[-env]`.
 
-To **protect a produced file**, the writing verbs (`new`, `write`, `edit`,
-`calc`) accept `--encrypt <value>` / `--encrypt-env <VAR>` — prefer the env form.
+To **protect a produced file**, `cells create` and `cells edit` accept
+`--encrypt <value>` / `--encrypt-env <VAR>` — prefer the env form.
 Only spreadsheet outputs (xlsx, xlsm, xlsb, xls, ods) can be encrypted.
 
 More recovery detail: [references/troubleshooting.md](references/troubleshooting.md).
@@ -414,7 +424,7 @@ More recovery detail: [references/troubleshooting.md](references/troubleshooting
 | Windows PowerShell `>` re-encodes redirected stdout as UTF-16 | Parse stdout directly from the command instead of round-tripping through a file; if you must redirect there, read the file back as UTF-16. |
 | Evaluation mode inserts an "Evaluation Warning" sheet | Always name sheets explicitly; never rely on sheet order or index. |
 | Sheet names are case-sensitive | Copy the exact spelling from `error.details.available`. |
-| Mutating verbs default to writing `book.out.xlsx` | Pass `--in-place` deliberately — with the backup protocol (section 5) for user files. |
+| `cells edit` defaults to writing `book.out.xlsx` | Pass `--in-place` deliberately — with the backup protocol (section 5) for user files. |
 | Writing the same file from parallel commands | Never. Serialize writes; only parallel reads are safe. |
 
 ## 12. Task routing

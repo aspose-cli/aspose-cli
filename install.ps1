@@ -1573,7 +1573,7 @@ try {
     if ($LicenseProduct -and [string]::IsNullOrWhiteSpace($LicensePath)) { throw '-LicenseProduct requires -LicensePath.' }
     if ($capabilities.edition -ceq 'free' -and (-not [string]::IsNullOrWhiteSpace($LicensePath) -or $LicenseProduct)) { throw 'Free edition does not accept license installation options.' }
     if ($capabilities.edition -ceq 'commercial' -and [string]::IsNullOrWhiteSpace($LicensePath) -and -not $SkipLicensePrompt) {
-        $LicensePath = Read-Host 'Optional Commercial .lic path (press Enter to continue in evaluation mode)'
+        $LicensePath = Read-Host 'Optional Commercial .lic path (press Enter to keep the current license configuration)'
     }
     $stagedLicenses = @()
     if (-not [string]::IsNullOrWhiteSpace($LicensePath)) {
@@ -1807,7 +1807,7 @@ try {
     Write-Host "Aspose CLI $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
     if (-not $SkipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
     if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }
-    if ($capabilities.edition -ceq 'commercial' -and $stagedLicenses.Count -eq 0) { Write-Host 'Commercial evaluation mode is active. Install a license later with: aspose-cli license install <path-to-license.lic>' }
+    if ($capabilities.edition -ceq 'commercial' -and $stagedLicenses.Count -eq 0) { Write-Host 'No license was supplied for this installation. Check effective product licenses with: aspose-cli license status' }
 }
 catch {
     $failure = $_

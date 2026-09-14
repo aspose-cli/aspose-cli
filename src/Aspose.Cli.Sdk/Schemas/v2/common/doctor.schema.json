@@ -26,6 +26,20 @@
         }
       }
     },
+    "products": {
+      "type": "array",
+      "description": "License readiness for each compiled product.",
+      "items": {
+        "type": "object",
+        "required": ["product", "engine", "licenseMode"],
+        "properties": {
+          "product": { "type": "string" },
+          "engine": { "type": "string" },
+          "licenseMode": { "enum": ["evaluation", "licensed", "invalid", "not-applicable"] }
+        },
+        "additionalProperties": false
+      }
+    },
     "license": {
       "$ref": "#/$defs/licenseInfo"
     },

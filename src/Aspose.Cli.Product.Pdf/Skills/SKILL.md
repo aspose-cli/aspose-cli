@@ -36,8 +36,8 @@ password through `--certificate-password-env`, then confirm it with
 
 ## Preview and licensing
 
-`aspose-cli preview input.pdf --open --output json` routes `.pdf` to the PDF
-`pages` view. It provides page navigation, zoom, live edit activity and
+`aspose-cli preview input.pdf --open --output json` resolves valid PDF content
+to the PDF product and its default `pages` view. It provides page navigation, zoom, live edit activity and
 last-good recovery without Words or spreadsheet controls. Agents must use
 static `pdf query pages`, `pdf render`, `pdf query search`, and `pdf validate` results for
 delivery evidence. See `references/preview.md`.
@@ -45,9 +45,10 @@ delivery evidence. See `references/preview.md`.
 Install a PDF-only license with
 `aspose-cli license install Aspose.PDF.lic --product pdf`, set
 `ASPOSE_PDF_LICENSE_PATH`, or use a shared Aspose.Total license through
-`ASPOSE_LICENSE_PATH`. Inspect the `pdf` entry from
+`ASPOSE_LICENSE_PATH`. Inspect the `pdf` entry in the `products` array from
 `aspose-cli license status --output json`; sibling product status is not PDF
-status.
+status. Re-run the preview command after a license change; see
+`references/preview.md` for session reuse and evaluation-output limits.
 
 See `references/editing.md`, `references/forms-security.md`,
 `references/pdf-standards.md`, `references/verification.md`, and

@@ -24,7 +24,8 @@ aspose-cli cells query range quarterly.xlsx --range Q3!A1:B4 --scope formulas --
 
 # 6. The session's exact change inventory: diff against the backup.
 aspose-cli cells compare quarterly.backup.xlsx quarterly.xlsx --output json
-#    -> cellsDiffering: 4 (B1, B2, B3, recalculated B4 49900 -> 54680)
+#    -> summary.cellsDiffering: 4 (B1, B2, B3, recalculated B4 49900 -> 54680)
+#    Evaluation saves may also add warning sheets; report those separately.
 ```
 
 Report from the diff, not from memory: each changed cell with old and

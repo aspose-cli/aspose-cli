@@ -64,7 +64,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 A format only bites on a real value: `set_values` types exactly what you
 send, so `"2026-04-03"` stays text and ignores a date format. Write dates
-as `=DATE(2026,4,3)` formulas or date serials — `read` shows
+as `=DATE(2026,4,3)` formulas or date serials — `query range` shows
 `"t": "datetime"` when you got it right.
 
 The CSV import is the exception, and the contrast decides how much work you
@@ -80,7 +80,7 @@ aspose-cli cells query range tickets.xlsx --sheet tickets --range B2 --scope ful
 
 The identical string through `set_values` stays `"t": "string"` forever. Only
 ISO-8601 input is verified here; ambiguous forms like `03/04/2026` are not —
-`read` the column back and check `t` rather than assuming either way.
+`query range` the column back and check `t` rather than assuming either way.
 
 ## Fonts and headers
 
@@ -107,7 +107,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 **A bigger font does not re-fit its row.** `format_range {"size":16}` on a
 title leaves the row at its old height and the render comes back with the
-glyph tops shaved off — on every sheet you did it to. `read` cannot catch
+glyph tops shaved off — on every sheet you did it to. `query range` cannot catch
 this: the value is perfectly intact. Auto-fit the row by OMITTING `height`:
 
 ```sh
@@ -310,9 +310,8 @@ What the v2 ops cannot express — say so rather than faking it:
   palette), and `delete_chart` removes a chart — see `aspose-cli docs editing`.
   Still not expressible: fonts inside charts (title/axis/label typefaces
   and sizes), axis scale and bounds, and label content beyond the value
-  (no category/percentage labels). Unknown op fields are still silently
-  ignored — an invented field reports `status: "ok"` while changing
-  nothing, so stick to the schema's field names.
+  (no category/percentage labels). Unknown operation or style fields are
+  rejected with `OPS_INVALID`; use the schema's field names.
 - `create_chart` plots ONE contiguous `dataRange`. A multi-area reference
   fails `OPS_INVALID` ("a range has at most one ':' separator"), so
   "header + two non-adjacent rows" (`A1:F1,A3:F4`) is not directly
@@ -343,6 +342,6 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ## Verify, then deliver
 
 A standards pass is only done when verified: `render` each changed sheet
-and look at the image, `read` back computed cells, and run
+and look at the image, `query range` back computed cells, and run
 `cells inspect --detail errors` for formula errors — the full loop is
 `aspose-cli docs verification`.

@@ -1,4 +1,15 @@
 {
-  "ReportTitle": "Quarterly Review",
-  "PreparedFor": "Executive Committee"
+  "schemaVersion": 2,
+  "ops": [
+    {
+      "op": "set_form_field",
+      "name": "ReportTitle",
+      "value": "Quarterly Review"
+    },
+    {
+      "op": "set_form_field",
+      "name": "PreparedFor",
+      "value": "Executive Committee"
+    }
+  ]
 }

@@ -31,8 +31,8 @@ preview session state.
 
 ## Preview and licensing
 
-`aspose-cli preview deck.pptx --open --output json` routes presentation
-extensions to the Slides `slides` view. It provides thumbnails, slide
+`aspose-cli preview deck.pptx --open --output json` resolves supported
+presentation content to Slides and its default `slides` view. It provides thumbnails, slide
 navigation, live edit activity and last-good recovery without spreadsheet,
 word-processing or PDF controls. Agents use static `slides query slides`,
 `slides render`, `slides query search` and verification results as delivery evidence.

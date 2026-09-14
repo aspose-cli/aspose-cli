@@ -26,7 +26,7 @@ internal static class PreviewCommand
     {
         var file = new Argument<string?>("file")
         {
-            Description = "File to preview; its extension selects the product unless --product is supplied.",
+            Description = "File to preview; content detection selects the product unless --product is supplied.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.File);
         StartSymbols shortcutSymbols = StartSymbols.Create(catalog, "the file");
@@ -341,7 +341,7 @@ internal static class PreviewCommand
             };
             var product = new Option<string?>("--product")
             {
-                Description = "Explicit product override; normally inferred from the file extension.",
+                Description = "Explicit product selection; normally determined by bounded content detection.",
             }.WithInput(InputKind.None);
             product.AcceptOnlyFromAmong(
                 catalog.Products
