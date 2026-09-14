@@ -21,13 +21,10 @@ public sealed class ProductDefinition
         ProductReviewDefinition review,
         IReadOnlyList<ProductOutputDefinition> outputs,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
-        IReadOnlyList<ProductCapabilityDeclaration> capabilities,
-        IReadOnlyList<ProductCapabilityProviderDefinition> capabilityProviders,
         Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>? doctorChecks,
         Func<IProductCommandHostFactory, Command> commandFactory,
         Func<
             ProductActivationContext,
-            IReadOnlyDictionary<object, object>,
             ProductBinding> bindingFactory)
     {
         Manifest = manifest;
@@ -39,8 +36,6 @@ public sealed class ProductDefinition
         Review = review ?? throw new ArgumentNullException(nameof(review));
         Outputs = outputs;
         Diagnostics = diagnostics;
-        Capabilities = capabilities;
-        CapabilityProviders = capabilityProviders;
         DoctorChecks = doctorChecks;
         CommandFactory = commandFactory
             ?? throw new ArgumentNullException(nameof(commandFactory));
@@ -75,9 +70,6 @@ public sealed class ProductDefinition
     /// <summary>Immutable error and warning descriptors owned by this product.</summary>
     public IReadOnlyList<DiagnosticDescriptor> Diagnostics { get; }
 
-    /// <summary>Predeclared typed cross-product capability relations.</summary>
-    public IReadOnlyList<ProductCapabilityDeclaration> Capabilities { get; }
-
     /// <summary>Creates the product-owned command tree through a typed host.</summary>
     public Command CreateCommand(IProductCommandHostFactory hostFactory)
     {
@@ -88,12 +80,10 @@ public sealed class ProductDefinition
     }
 
     internal ProductBinding Activate(
-        ProductActivationContext context,
-        IReadOnlyDictionary<object, object> capabilities)
+        ProductActivationContext context)
     {
         ArgumentNullException.ThrowIfNull(context);
-        ArgumentNullException.ThrowIfNull(capabilities);
-        ProductBinding binding = BindingFactory(context, capabilities)
+        ProductBinding binding = BindingFactory(context)
             ?? throw new InvalidOperationException(
                 $"Product '{Manifest.Id}' returned no binding.");
         if (!string.Equals(
@@ -133,20 +123,6 @@ public sealed class ProductDefinition
         return DoctorChecks?.Invoke(binding.UntypedPort) ?? [];
     }
 
-    internal IReadOnlyList<ProductCapabilityProviderDefinition>
-        CapabilityProviders
-    { get; }
-
-    internal object CreateCapability(object slot, object binding)
-    {
-        ProductCapabilityProviderDefinition provider =
-            CapabilityProviders.SingleOrDefault(candidate =>
-                ReferenceEquals(candidate.Slot, slot))
-            ?? throw new InvalidOperationException(
-                $"Product '{Manifest.Id}' declared a capability provider without a value factory.");
-        return provider.Create(binding);
-    }
-
     private Func<IProductCommandHostFactory, Command> CommandFactory { get; }
 
     private Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>?
@@ -155,7 +131,6 @@ public sealed class ProductDefinition
 
     private Func<
         ProductActivationContext,
-        IReadOnlyDictionary<object, object>,
         ProductBinding> BindingFactory
     { get; }
 }
@@ -181,14 +156,10 @@ public sealed class ProductDefinitionBuilder<TPort>
     private ProductReviewDefinition? _review;
     private readonly List<ProductOutputDefinition> _outputs = [];
     private readonly List<DiagnosticDescriptor> _diagnostics = [];
-    private readonly List<ProductCapabilityDeclaration> _capabilities = [];
-    private readonly List<ProductCapabilityProviderDefinition>
-        _capabilityProviders = [];
     private Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>? _doctorChecks;
     private Func<IProductCommandHostFactory, Command>? _commandFactory;
     private Func<
         ProductActivationContext,
-        IReadOnlyDictionary<object, object>,
         ProductBinding>? _bindingFactory;
     private bool _formatsDeclared;
     private bool _diagnosticsDeclared;
@@ -217,12 +188,12 @@ public sealed class ProductDefinitionBuilder<TPort>
     {
         EnsureMutable();
         ArgumentNullException.ThrowIfNull(activator);
-        _bindingFactory = (context, capabilities) =>
+        _bindingFactory = context =>
         {
             ProductBinding<TPort> binding = activator(context)
                 ?? throw new InvalidOperationException(
                     $"Product '{_manifest.Id}' returned no binding.");
-            return binding.WithCapabilities(capabilities);
+            return binding;
         };
         return this;
     }
@@ -295,36 +266,6 @@ public sealed class ProductDefinitionBuilder<TPort>
         return this;
     }
 
-    /// <summary>
-    /// Declares and constructs one typed capability from this product's own
-    /// binding. The factory cannot access the global catalog.
-    /// </summary>
-    public ProductDefinitionBuilder<TPort> Provides<TCapability>(
-        ProductCapability<TCapability> slot,
-        Func<ProductBinding<TPort>, TCapability> factory)
-        where TCapability : class
-    {
-        EnsureMutable();
-        _capabilities.Add(ProductCapabilityDeclaration.Create(
-            slot,
-            ProductCapabilityRelation.Provides));
-        _capabilityProviders.Add(
-            ProductCapabilityProviderDefinition.CreateTyped(slot, factory));
-        return this;
-    }
-
-    /// <summary>Declares an optional typed capability slot.</summary>
-    public ProductDefinitionBuilder<TPort> Optional<TCapability>(
-        ProductCapability<TCapability> slot)
-        where TCapability : class
-    {
-        EnsureMutable();
-        _capabilities.Add(ProductCapabilityDeclaration.Create(
-            slot,
-            ProductCapabilityRelation.Optional));
-        return this;
-    }
-
     /// <summary>Freezes and returns the immutable product definition.</summary>
     public ProductDefinition Build()
     {
@@ -369,8 +310,6 @@ public sealed class ProductDefinitionBuilder<TPort>
             _review,
             Array.AsReadOnly(_outputs.ToArray()),
             Array.AsReadOnly(_diagnostics.ToArray()),
-            Array.AsReadOnly(_capabilities.ToArray()),
-            Array.AsReadOnly(_capabilityProviders.ToArray()),
             _doctorChecks,
             _commandFactory,
             _bindingFactory);

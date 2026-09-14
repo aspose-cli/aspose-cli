@@ -7,13 +7,12 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>Creates host execution adapters for statically registered products.</summary>
 internal sealed class ProductCommandHostFactory(
     CommandExecutor executor,
-    ProductCatalog catalog,
     GlobalOptions globals)
     : IProductCommandHostFactory
 {
     public IProductCommandHost<TPort> Create<TPort>(string productId)
         where TPort : class =>
-        new ProductCommandHost<TPort>(executor, catalog, productId, globals);
+        new ProductCommandHost<TPort>(executor, productId, globals);
 }
 
 /// <summary>
@@ -22,17 +21,11 @@ internal sealed class ProductCommandHostFactory(
 /// </summary>
 internal sealed class ProductCommandHost<TPort>(
     CommandExecutor executor,
-    ProductCatalog catalog,
     string productId,
     GlobalOptions globals)
     : IProductCommandHost<TPort>
     where TPort : class
 {
-    public bool HasCapability<TCapability>(
-        ProductCapability<TCapability> slot)
-        where TCapability : class =>
-        catalog.HasProvider(slot);
-
     public int Run(
         ParseResult parseResult,
         Func<ProductCommandContext<TPort>, ResultEnvelope> handler) =>

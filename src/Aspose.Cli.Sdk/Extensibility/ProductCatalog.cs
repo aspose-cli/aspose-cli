@@ -11,8 +11,6 @@ public sealed class ProductCatalog
     private readonly IReadOnlyDictionary<string, ProductDefinition> _byId;
     private readonly IReadOnlyDictionary<string, ProductDefinition> _defaultOwners;
     private readonly IReadOnlyDictionary<Type, ProductOutputDefinition> _outputs;
-    private readonly IReadOnlyDictionary<object, ProductDefinition>
-        _capabilityProviders;
     private readonly IReadOnlyDictionary<ProductDefinition, ProductCapabilities>
         _derivedCapabilities;
     private readonly IReadOnlyDictionary<string, string> _resolvedOwners;
@@ -46,22 +44,8 @@ public sealed class ProductCatalog
         _outputs = Products
             .SelectMany(static product => product.Outputs)
             .ToFrozenDictionary(static output => output.ResultType);
-        _capabilityProviders = Products
-            .SelectMany(product => product.Capabilities
-                .Where(static capability =>
-                    capability.Relation == ProductCapabilityRelation.Provides)
-                .Select(capability => new
-                {
-                    capability.Slot,
-                    Product = product,
-                }))
-            .ToFrozenDictionary(
-                static item => item.Slot,
-                static item => item.Product,
-                ReferenceEqualityComparer.Instance);
         _derivedCapabilities = ProductCapabilityDeriver.Derive(
                 Products,
-                _capabilityProviders.Keys,
                 _resolvedOwners)
             .ToFrozenDictionary(
                 static item => item.Key,
@@ -121,16 +105,7 @@ public sealed class ProductCatalog
             ? product!
             : throw new KeyNotFoundException($"Product '{productId}' is not registered.");
 
-    /// <summary>Whether exactly one provider for a typed slot is compiled.</summary>
-    public bool HasProvider<TCapability>(
-        ProductCapability<TCapability> slot)
-        where TCapability : class
-    {
-        ArgumentNullException.ThrowIfNull(slot);
-        return _capabilityProviders.ContainsKey(slot);
-    }
-
-    /// <summary>Returns the public surface after typed optional enrichments.</summary>
+    /// <summary>Returns the public surface derived from the product definition.</summary>
     public Aspose.Cli.Sdk.Contracts.ProductCapabilities GetCapabilities(
         ProductDefinition product)
     {
@@ -139,9 +114,7 @@ public sealed class ProductCatalog
     }
 
     /// <summary>
-    /// Activates one product and only the providers of its predeclared optional
-    /// capability slots. Bindings and provider values are cached by the
-    /// invocation-scoped activation context.
+    /// Activates one product and caches its binding in the invocation context.
     /// </summary>
     public ProductBinding<TPort> Activate<TPort>(
         string productId,
@@ -158,7 +131,7 @@ public sealed class ProductCatalog
 
         lock (context.SyncRoot)
         {
-            return (ProductBinding<TPort>)ActivateUntyped(target, context, []);
+            return (ProductBinding<TPort>)ActivateUntyped(target, context);
         }
     }
 
@@ -171,61 +144,21 @@ public sealed class ProductCatalog
         ProductDefinition product = Get(productId);
         lock (context.SyncRoot)
         {
-            return ActivateUntyped(product, context, []);
+            return ActivateUntyped(product, context);
         }
     }
 
-    private ProductBinding ActivateUntyped(
+    private static ProductBinding ActivateUntyped(
         ProductDefinition definition,
-        ProductActivationContext context,
-        HashSet<ProductDefinition> active)
+        ProductActivationContext context)
     {
         if (context.TryGetBinding(definition, out ProductBinding? existing))
         {
             return existing!;
         }
-        if (!active.Add(definition))
-        {
-            throw new InvalidOperationException(
-                $"Capability dependency cycle reaches product '{definition.Manifest.Id}'.");
-        }
-
-        try
-        {
-            var values = new Dictionary<object, object>(
-                ReferenceEqualityComparer.Instance);
-            foreach (ProductCapabilityDeclaration declaration
-                in definition.Capabilities.Where(static capability =>
-                    capability.Relation == ProductCapabilityRelation.Optional))
-            {
-                if (!_capabilityProviders.TryGetValue(
-                        declaration.Slot,
-                        out ProductDefinition? provider))
-                {
-                    continue;
-                }
-                if (!context.TryGetCapability(
-                        declaration.Slot,
-                        out object? capability))
-                {
-                    ProductBinding providerBinding =
-                        ActivateUntyped(provider, context, active);
-                    capability = provider.CreateCapability(
-                        declaration.Slot,
-                        providerBinding);
-                    context.AddCapability(declaration.Slot, capability);
-                }
-                values.Add(declaration.Slot, capability!);
-            }
-
-            ProductBinding binding = definition.Activate(context, values);
-            context.AddBinding(definition, binding);
-            return binding;
-        }
-        finally
-        {
-            active.Remove(definition);
-        }
+        ProductBinding binding = definition.Activate(context);
+        context.AddBinding(definition, binding);
+        return binding;
     }
 
     /// <summary>Finds the unique generic-routing owner for an extension.</summary>

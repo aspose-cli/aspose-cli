@@ -45,10 +45,7 @@ internal static class RootCommandFactory
             catalog,
             host.ContractJson.Serializer,
             globals));
-        var productHostFactory = new ProductCommandHostFactory(
-            executor,
-            catalog,
-            globals);
+        var productHostFactory = new ProductCommandHostFactory(executor, globals);
         foreach (ProductDefinition product in catalog.Products)
         {
             root.Subcommands.Add(product.CreateCommand(productHostFactory).WithInvocationPolicy(

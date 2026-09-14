@@ -190,19 +190,6 @@ public sealed record FormatDescriptor
     /// </summary>
     public FileFormatRecognition? Recognition { get; init; }
 
-    /// <summary>
-    /// Makes the format visible only when the typed capability provider is
-    /// included in the current build.
-    /// </summary>
-    public FormatDescriptor WhenAvailable<TCapability>(
-        ProductCapability<TCapability> capability)
-        where TCapability : class
-    {
-        ArgumentNullException.ThrowIfNull(capability);
-        return this with { CapabilitySlot = capability };
-    }
-
-    internal object? CapabilitySlot { get; init; }
 }
 
 internal static class StandardFileRouteOperations

@@ -288,21 +288,19 @@ internal sealed class DefinitionPurityWalker : OperationWalker
         {
             return member is
                 "Activator" or "Build" or "Commands" or "Diagnostics"
-                or "Doctor" or "Formats" or "Json" or "Optional"
-                or "Output" or "Preview" or "Provides" or "Review";
+                or "Doctor" or "Formats" or "Json"
+                or "Output" or "Preview" or "Review";
         }
         return typeName switch
         {
             "Aspose.Cli.Sdk.Extensibility.Product" => member == "Define",
             "Aspose.Cli.Sdk.Extensibility.FormatDescriptor" =>
                 member is ".ctor" or "Declare" or "Input" or "Output" or "Render"
-                    or "Routed" or "WhenAvailable"
+                    or "Routed"
                     || IsDataMember(symbol),
             "Aspose.Cli.Sdk.Extensibility.FileFormatRecognition" =>
                 member is "AttachTo" or "Match" or "FirstOf",
             "Aspose.Cli.Sdk.Extensibility.FileProbePattern" => true,
-            "Aspose.Cli.Sdk.Extensibility.StandardProductCapabilities" =>
-                symbol is IFieldSymbol or IPropertySymbol,
             "Aspose.Cli.Sdk.Contracts.ResourceBudgetCapabilities" =>
                 member == "Domain",
             "Aspose.Cli.Sdk.Errors.ErrorCode" =>
@@ -360,13 +358,11 @@ internal sealed class DefinitionPurityWalker : OperationWalker
         => method.ContainingType.OriginalDefinition.ToDisplayString()
             == DefinitionBuilder
         && (argument.Parameter?.Ordinal, method.Name) is
-            (0, "Activator" or "Commands" or "Doctor" or "Output")
-            or (1, "Provides");
+            (0, "Activator" or "Commands" or "Doctor" or "Output");
 
     private static bool IsDefinitionValue(string typeName) =>
         typeName is
             "Aspose.Cli.Sdk.Extensibility.ProductManifest"
-            or "Aspose.Cli.Sdk.Extensibility.ProductCapability<TCapability>"
             or "Aspose.Cli.Sdk.Extensibility.ProductPreviewView"
             or "Aspose.Cli.Sdk.Extensibility.RouteOwnership"
             or "Aspose.Cli.Sdk.Preview.ProductPreviewPayloadContract"

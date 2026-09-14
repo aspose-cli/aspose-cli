@@ -11,7 +11,7 @@ internal sealed class CommandContext
 
     public required GlobalValues Globals { get; init; }
 
-    public required OperationDeadline Deadline { get; init; }
+    public OperationDeadline Deadline => ResourceBudgets.Deadline;
 
     public required ResourceBudgetLedger ResourceBudgets { get; init; }
 

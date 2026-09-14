@@ -7,23 +7,17 @@ internal static class ProductCapabilityDeriver
     public static IReadOnlyDictionary<ProductDefinition, ProductCapabilities>
         Derive(
             IReadOnlyList<ProductDefinition> products,
-            IEnumerable<object> capabilityProviders,
             IReadOnlyDictionary<string, string> resolvedOwners)
     {
-        var providers = new HashSet<object>(
-            capabilityProviders,
-            ReferenceEqualityComparer.Instance);
         return products.ToDictionary(
             static product => product,
             product => DeriveProduct(
                 product,
-                providers,
                 resolvedOwners));
     }
 
     private static ProductCapabilities DeriveProduct(
         ProductDefinition product,
-        IReadOnlySet<object> providers,
         IReadOnlyDictionary<string, string> resolvedOwners)
     {
         ProductManifest manifest = product.Manifest;
@@ -35,11 +29,7 @@ internal static class ProductCapabilityDeriver
             AvailableEngines = manifest.AvailableEngines,
             ResourceBudgets = manifest.ResourceBudgets,
         };
-        FormatDescriptor[] activeFormats = product.Formats
-            .Where(format =>
-                format.CapabilitySlot is null
-                || providers.Contains(format.CapabilitySlot))
-            .ToArray();
+        FormatDescriptor[] activeFormats = product.Formats.ToArray();
         if (activeFormats.Length > 0)
         {
             capabilities = capabilities with

@@ -68,12 +68,6 @@ public sealed class WordsModule : IProductModule
         Aspose.Cli.Sdk.Extensibility.Product.Define<IDocumentEngine>(Manifest)
             .Formats(Formats)
             .Diagnostics(WordsDiagnostics.All)
-            .Provides(
-                StandardProductCapabilities.DocumentToPdf,
-                static binding => new WordsDocumentCapabilities(binding))
-            .Provides(
-                StandardProductCapabilities.DocumentPageRenderer,
-                static binding => new WordsDocumentCapabilities(binding))
             .Json(ProductJsonContext.Definition)
             .Preview(new WordsPreviewAdapter())
             .Review(new WordsReviewAdapter())

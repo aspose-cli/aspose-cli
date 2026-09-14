@@ -48,13 +48,8 @@ internal static class CompositionRoot
         {
             Binding = binding,
             Paths = new PathResolver(workDir),
-            Globals = new ProductCommandGlobals
-            {
-                ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),
-                Quiet = globals.Quiet,
-                Deadline = effectiveDeadline,
-                ResourceBudgets = effectiveBudgets,
-            },
+            Inputs = effectiveBudgets.Inputs,
+            ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),
         };
     }
 
@@ -78,7 +73,6 @@ internal static class CompositionRoot
         {
             ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),
             Globals = globals,
-            Deadline = effectiveDeadline,
             ResourceBudgets = effectiveBudgets,
             Paths = new PathResolver(workDir),
             ProductActivation = CreateActivation(
@@ -100,7 +94,7 @@ internal static class CompositionRoot
         return new ProductActivationContext
         {
             WorkDirectory = workDirectory,
-            LicensePathForProduct = _ => ResolveLicensePath(globals.LicensePath, workDirectory),
+            LicensePath = ResolveLicensePath(globals.LicensePath, workDirectory),
             RuntimeLicenseForProduct = runtimeLicenses,
             ConfigDirectory = Aspose.Cli.Sdk.Configuration.ConfigurationPaths.UserDirectory(),
             EnvironmentVariable = name =>

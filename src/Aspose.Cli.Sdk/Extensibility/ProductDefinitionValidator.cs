@@ -9,8 +9,6 @@ internal sealed class ProductDefinitionValidator
     private readonly IReadOnlyDictionary<IProductModule, ProductModuleRegistration>?
         _descriptors;
     private readonly Dictionary<Type, string> _outputs = [];
-    private readonly Dictionary<object, string> _capabilityProviders =
-        new(ReferenceEqualityComparer.Instance);
 
     public ProductDefinitionValidator(
         IReadOnlyDictionary<IProductModule, ProductModuleRegistration>? descriptors) =>
@@ -109,17 +107,6 @@ internal sealed class ProductDefinitionValidator
                     + $"'{owner}' and '{productId}'.");
             }
             _outputs.Add(output.ResultType, productId);
-        }
-        foreach (ProductCapabilityDeclaration capability in
-            definition.Capabilities.Where(static capability =>
-                capability.Relation == ProductCapabilityRelation.Provides))
-        {
-            if (!_capabilityProviders.TryAdd(capability.Slot, productId))
-            {
-                throw new InvalidOperationException(
-                    $"Capability '{capability.DisplayName}' has multiple providers: "
-                    + $"'{_capabilityProviders[capability.Slot]}' and '{productId}'.");
-            }
         }
     }
 

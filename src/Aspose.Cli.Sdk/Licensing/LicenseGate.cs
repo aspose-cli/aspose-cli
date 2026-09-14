@@ -110,7 +110,7 @@ internal static class ProductLicenseGateFactory
         try
         {
             LicenseResolution resolution = LicenseResolver.Resolve(
-                context.LicensePathForProduct(productId), productId, context.EnvironmentVariable,
+                context.LicensePath, productId, context.EnvironmentVariable,
                 context.WorkDirectory, context.ConfigDirectory);
             return factory(resolution)
                 ?? throw new InvalidOperationException($"Product '{productId}' returned no license gate.");

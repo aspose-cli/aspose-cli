@@ -8,14 +8,12 @@ namespace Aspose.Cli.Sdk.Extensibility;
 public sealed class ProductActivationContext
 {
     private readonly Dictionary<ProductDefinition, ProductBinding> _bindings = [];
-    private readonly Dictionary<object, object> _capabilities =
-        new(ReferenceEqualityComparer.Instance);
 
     /// <summary>Resolved working directory.</summary>
     public required string WorkDirectory { get; init; }
 
-    /// <summary>Resolves the explicit license path selected for a product.</summary>
-    public required Func<string, string?> LicensePathForProduct { get; init; }
+    /// <summary>Resolved explicit license path selected for this invocation.</summary>
+    public required string? LicensePath { get; init; }
 
     /// <summary>Already validated process-lifetime licenses, when a long-lived host pins its SDK state.</summary>
     public Func<string, ILicenseGate>? RuntimeLicenseForProduct { get; init; }
@@ -44,11 +42,6 @@ public sealed class ProductActivationContext
         ProductBinding binding) =>
         _bindings.Add(product, binding);
 
-    internal bool TryGetCapability(object slot, out object? capability) =>
-        _capabilities.TryGetValue(slot, out capability);
-
-    internal void AddCapability(object slot, object capability) =>
-        _capabilities.Add(slot, capability);
 }
 
 /// <summary>
@@ -206,43 +199,20 @@ public sealed class ProductBinding<TPort> : ProductBinding
     where TPort : class
 {
     private readonly Lazy<TPort> _port;
-    private readonly IReadOnlyDictionary<object, object> _capabilities;
 
     internal ProductBinding(
         string productId,
         Lazy<TPort> port,
         ILicenseGate licenseGate,
-        Lazy<IFontEnvironment>? fontEnvironment,
-        IReadOnlyDictionary<object, object>? capabilities = null)
+        Lazy<IFontEnvironment>? fontEnvironment)
         : base(productId, typeof(TPort), () => port.Value, licenseGate, fontEnvironment)
     {
         _port = port ?? throw new ArgumentNullException(nameof(port));
-        _capabilities = capabilities
-            ?? new Dictionary<object, object>(ReferenceEqualityComparer.Instance);
     }
 
     /// <summary>Product engine, constructed on first use.</summary>
     public TPort Port => _port.Value;
 
-    /// <summary>Returns a predeclared optional capability when its provider is compiled.</summary>
-    public TCapability? Optional<TCapability>(
-        ProductCapability<TCapability> slot)
-        where TCapability : class
-    {
-        ArgumentNullException.ThrowIfNull(slot);
-        return _capabilities.TryGetValue(slot, out object? capability)
-            ? (TCapability)capability
-            : null;
-    }
-
-    internal ProductBinding<TPort> WithCapabilities(
-        IReadOnlyDictionary<object, object> capabilities) =>
-        new(
-            ProductId,
-            _port,
-            LicenseGate,
-            FontEnvironmentFactory,
-            capabilities);
 }
 
 /// <summary>Activates one strongly typed product binding for an invocation.</summary>

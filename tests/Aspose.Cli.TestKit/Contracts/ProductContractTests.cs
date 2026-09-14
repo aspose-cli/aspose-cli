@@ -60,7 +60,7 @@ public abstract class ProductContractTests<TModule>
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
         ProductDefinition product = Assert.Single(catalog.Products);
-        var host = new ContractCommandHostFactory(catalog);
+        var host = new ContractCommandHostFactory();
 
         Command first = product.CreateCommand(host);
         Command second = product.CreateCommand(host);
@@ -512,13 +512,6 @@ public abstract class ProductContractTests<TModule>
                 .Select(static type => type.AssemblyQualifiedName)),
             string.Join(
                 "\n",
-                definition.Capabilities
-                .Select(static capability =>
-                    $"{capability.Relation}:{capability.DisplayName}:"
-                    + capability.CapabilityType.AssemblyQualifiedName)
-                .Order(StringComparer.Ordinal)),
-            string.Join(
-                "\n",
                 definition.Formats
                     .Select(static format =>
                         string.Join(
@@ -694,7 +687,6 @@ public abstract class ProductContractTests<TModule>
         string AcceptedInputExtensions,
         string? FileRecognizer,
         string OutputTypes,
-        string Capabilities,
         string Formats,
         string Diagnostics,
         string? Json,
@@ -702,23 +694,18 @@ public abstract class ProductContractTests<TModule>
         string? CommandFactory,
         string? BindingFactory);
 
-    private sealed class ContractCommandHostFactory(ProductCatalog catalog)
+    private sealed class ContractCommandHostFactory
         : IProductCommandHostFactory
     {
         public IProductCommandHost<TPort> Create<TPort>(string productId)
             where TPort : class =>
-            new ContractCommandHost<TPort>(catalog);
+            new ContractCommandHost<TPort>();
     }
 
-    private sealed class ContractCommandHost<TPort>(ProductCatalog catalog)
+    private sealed class ContractCommandHost<TPort>
         : IProductCommandHost<TPort>
         where TPort : class
     {
-        public bool HasCapability<TCapability>(
-            ProductCapability<TCapability> slot)
-            where TCapability : class =>
-            catalog.HasProvider(slot);
-
         public int Run(
             ParseResult parseResult,
             Func<ProductCommandContext<TPort>, ResultEnvelope> handler) =>
