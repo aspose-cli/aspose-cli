@@ -45,11 +45,7 @@ internal sealed class AppServiceController
         bool openBrowser,
         FontSearchProfile fontProfile)
     {
-        using LocalServiceOperationLock operationLock =
-            LocalServiceOperationLock.Acquire(
-                "app",
-                "singleton",
-                StartupTimeout + StartupTimeout);
+        using LocalServiceOperationLock operationLock = AcquireOperationLock();
         string normalizedRoute = filePath is null ? route : AppRoutes.Preview;
         AppInstance? marker = LiveMarker();
         if (marker is not null
@@ -159,11 +155,7 @@ internal sealed class AppServiceController
 
     public AppResult Stop()
     {
-        using LocalServiceOperationLock operationLock =
-            LocalServiceOperationLock.Acquire(
-                "app",
-                "singleton",
-                StartupTimeout + StartupTimeout);
+        using LocalServiceOperationLock operationLock = AcquireOperationLock();
         AppInstance? marker = LiveMarker();
         if (marker is not null)
         {
@@ -212,7 +204,11 @@ internal sealed class AppServiceController
         _instances.DeleteIfOwned(marker.Token);
     }
 
-    public AppInstance StartReplacement(
+    internal static LocalServiceOperationLock AcquireOperationLock() =>
+        LocalServiceOperationLock.Acquire("app", "singleton", StartupTimeout + StartupTimeout);
+
+    /// <summary>The calling App already holds the singleton lock and its mutation gate.</summary>
+    internal AppInstance StartReplacementUnderLock(
         GlobalValues globals,
         string route,
         string? filePath,
@@ -220,11 +216,6 @@ internal sealed class AppServiceController
         string? uploadedFilePath = null,
         string? uploadedFileName = null)
     {
-        using LocalServiceOperationLock operationLock =
-            LocalServiceOperationLock.Acquire(
-                "app",
-                "singleton",
-                StartupTimeout + StartupTimeout);
         string? licenseIdentity = LicenseManager.IsolatedInstanceIdentity(
             CompositionRoot.Create(_catalog, globals));
         return WaitForMarker(

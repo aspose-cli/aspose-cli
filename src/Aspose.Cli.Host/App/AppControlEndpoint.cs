@@ -69,9 +69,7 @@ internal sealed class AppControlEndpoint : IDisposable
         switch (request.Command)
         {
             case "open" when request.Path is not null:
-                _host.Workspace.OpenPath(
-                    request.Path,
-                    uploadedCopy: false);
+                _host.OpenPath(request.Path);
                 return Response(
                     ok: true,
                     _host.Result(reused: true));
@@ -80,6 +78,7 @@ internal sealed class AppControlEndpoint : IDisposable
                     ok: true,
                     _host.Activate(request.Path ?? AppRoutes.Home));
             case "stop":
+                _host.PrepareStop();
                 return Response(
                     ok: true,
                     _host.Result(reused: true));

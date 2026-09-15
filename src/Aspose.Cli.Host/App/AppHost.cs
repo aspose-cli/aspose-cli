@@ -10,7 +10,7 @@ using Aspose.Cli.Sdk.Rendering;
 namespace Aspose.Cli.Host.App;
 
 /// <summary>Owns one local Web App instance and its current preview session.</summary>
-internal sealed class AppHost : IDisposable
+internal sealed partial class AppHost : IDisposable
 {
     private static readonly TimeSpan DefaultIdleWindow = TimeSpan.FromMinutes(30);
     private readonly object _gate = new();
@@ -21,7 +21,7 @@ internal sealed class AppHost : IDisposable
     private readonly AppLog _log;
     private readonly AppDocumentSession _sessions;
     private readonly AppWorkspace _workspace;
-    private readonly AppLicenseWorkflow _licenses;
+    private readonly Func<CapabilitiesResult> _capabilities;
     private readonly AppStatusQuery _status;
     private readonly string _token;
     private readonly string _nonce;
@@ -42,6 +42,7 @@ internal sealed class AppHost : IDisposable
         FontSearchProfile fontProfile)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
+        _capabilities = capabilities;
         _fontProfile = fontProfile ?? throw new ArgumentNullException(nameof(fontProfile));
         ServiceStartSecrets? service =
             ServiceStartSecretChannel.Current;
@@ -80,17 +81,6 @@ internal sealed class AppHost : IDisposable
             Touch,
             SetRoute,
             WriteMarker);
-        _licenses = new AppLicenseWorkflow(
-            catalog,
-            capabilities,
-            _licenseState,
-            _preferences,
-            _sessions,
-            _log,
-            ReleaseControl,
-            StartControl,
-            RequestStop,
-            _fontProfile);
         _sessions.Activity += Touch;
         using Process current = Process.GetCurrentProcess();
         _processStartTicks = current.StartTime.ToUniversalTime().Ticks;
@@ -109,10 +99,6 @@ internal sealed class AppHost : IDisposable
 
     internal bool LicenseManagementApplicable => _catalog.Products.Any(
         static product => product.Manifest.Engine.LicenseApplicable);
-
-    internal AppWorkspace Workspace => _workspace;
-
-    internal AppLicenseWorkflow Licenses => _licenses;
 
     public AppResult Start(int requestedPort, string route, string? filePath)
     {
@@ -261,15 +247,11 @@ internal sealed class AppHost : IDisposable
         File = _sessions.FileName,
     };
 
-    public AppResult Activate(string route)
+    public AppResult Activate(string route) => Mutate(() =>
     {
-        lock (_gate)
-        {
-            SetRoute(route);
-            Touch();
-            return Result(reused: true);
-        }
-    }
+        SetRoute(route);
+        return Result(reused: true);
+    });
 
     public void Dispose()
     {
@@ -319,7 +301,9 @@ internal sealed class AppHost : IDisposable
         {
             try
             {
-                _sessions.Dispose();
+                _mutationGate.Wait();
+                try { _sessions.Dispose(); }
+                finally { _mutationGate.Release(); _mutationGate.Dispose(); }
             }
             finally
             {

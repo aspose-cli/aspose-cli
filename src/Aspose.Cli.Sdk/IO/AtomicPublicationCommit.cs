@@ -162,6 +162,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         OutputPathValidator.EnsureParentUnchanged(
             entry.Target,
             entry.TargetParentIdentity);
+        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-replace");
         entry.PublishedSnapshot = FilePublicationAtomicSwap.Publish(
             entry.Staged,
             entry.Target,
@@ -207,6 +208,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                 entry.Original,
                 current);
         }
+        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-delete");
         File.Move(entry.Target, entry.Displaced, overwrite: false);
         FilePublicationSnapshot displaced =
             FilePublicationSnapshot.Capture(entry.Displaced);

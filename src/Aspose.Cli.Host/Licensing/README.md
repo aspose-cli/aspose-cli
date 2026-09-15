@@ -28,9 +28,14 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
   A changed valid preview license replaces the owned process; an invalid selected
   license rejects the launch and leaves the existing preview untouched. App Settings
   remain available with invalid configuration, and such App snapshots are not reused.
+  AppHost serializes mutations and owns restart coordination. Lock order is the App
+  singleton lock, App mutation gate, then the short session state lock. State reads
+  use immutable snapshots. Replacement startup receives the singleton lease's scope
+  without acquiring it again. New mutations are rejected during restart.
   Failed App restart restores the old control endpoint and reports saved configuration.
   Uploaded preview files are copied through the existing bounded upload path before
-  the old App exits.
+  the old App exits. The restart response is closed before the old process is stopped;
+  no fixed delay is used. Cleanup deletes only files owned by the session.
 - Human startup messages are emitted once at the outer CLI boundary. JSON, MCP,
   verbose JSONL and internal protocols remain parseable.
 

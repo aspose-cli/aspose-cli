@@ -8,7 +8,7 @@ namespace Aspose.Cli.Sdk.IO;
 /// The Windows identity handle requests no data access and shares read, write,
 /// and delete, so product engines can use their normal path-based save APIs.
 /// </summary>
-internal sealed class OwnedTemporaryFile : IDisposable
+public sealed class OwnedTemporaryFile : IDisposable
 {
     private FilePhysicalIdentity? _identity;
     private SafeFileHandle? _identityHandle;
@@ -26,7 +26,7 @@ internal sealed class OwnedTemporaryFile : IDisposable
         _identityHandle = identityHandle;
     }
 
-    public string Path { get; }
+    public string Path { get; private set; }
 
     public static OwnedTemporaryFile Create(string path)
     {
@@ -110,7 +110,8 @@ internal sealed class OwnedTemporaryFile : IDisposable
         FileAccess.ReadWrite,
         FileShare.Read);
 
-    internal FileStream OpenBoundRead() => OpenBound(
+    /// <summary>Reads only the physical file whose ownership was previously bound.</summary>
+    public FileStream OpenBoundRead() => OpenBound(
         FileAccess.Read,
         FileShare.Read);
 
@@ -196,6 +197,16 @@ internal sealed class OwnedTemporaryFile : IDisposable
                 $"Temporary file '{Path}' changed before staged inspection.");
         }
         return stream;
+    }
+
+    /// <summary>Moves the bound file into another private location while retaining cleanup ownership.</summary>
+    public void MoveTo(string destination)
+    {
+        BindProducedFile();
+        string full = System.IO.Path.GetFullPath(destination);
+        File.Move(Path, full);
+        Path = full;
+        BindProducedFile();
     }
 
     public void MarkPublished() => _published = true;

@@ -134,6 +134,9 @@ public static partial class ErrorCodes
     /// <summary>An expected local App startup stage could not be completed.</summary>
     public static readonly ErrorCode AppStartupFailed = new("APP_STARTUP_FAILED", ExitCode.OutputError);
 
+    /// <summary>The App is transitioning and cannot accept mutations.</summary>
+    public static readonly ErrorCode AppBusy = new("APP_BUSY", ExitCode.OutputError);
+
     // -- Format problems (exit 6) --------------------------------------------
 
     /// <summary>The requested format id is unknown or not supported here.</summary>
@@ -225,6 +228,7 @@ public static partial class ErrorCodes
         LoopbackPortInUse,
         LoopbackListenerUnavailable,
         AppStartupFailed,
+        AppBusy,
         FormatUnsupported,
         FormatMismatch,
         FormatAmbiguous,

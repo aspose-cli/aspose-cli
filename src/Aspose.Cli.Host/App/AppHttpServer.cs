@@ -211,6 +211,7 @@ internal sealed class AppHttpServer : IDisposable
         HttpListenerRequest request = context.Request;
         HttpListenerResponse response = context.Response;
         bool previewOwnsResponse = false;
+        bool stopAfterResponse = false;
         try
         {
             if (!LocalHttpRequestSecurity.IsRequestAllowed(request, Port))
@@ -246,11 +247,10 @@ internal sealed class AppHttpServer : IDisposable
             }
 
             _host.Touch();
-            await HandleMutation(
-                path,
-                request,
-                response,
-                cancellationToken).ConfigureAwait(false);
+            (HttpStatusCode status, object body, bool stop) = await HandleMutation(
+                path, request, cancellationToken).ConfigureAwait(false);
+            stopAfterResponse = stop;
+            await WriteJson(response, status, body).ConfigureAwait(false);
         }
         catch (CliException ex)
         {
@@ -269,7 +269,8 @@ internal sealed class AppHttpServer : IDisposable
         }
         finally
         {
-            if (!previewOwnsResponse) { response.Close(); }
+            try { if (!previewOwnsResponse) { response.Close(); } }
+            finally { if (stopAfterResponse) { _host.RequestStop(); } }
         }
     }
 
@@ -308,98 +309,54 @@ internal sealed class AppHttpServer : IDisposable
         }
     }
 
-    private async Task HandleMutation(
-        string path,
-        HttpListenerRequest request,
-        HttpListenerResponse response,
-        CancellationToken cancellationToken)
+    private async Task<(HttpStatusCode Status, object Body, bool Stop)> HandleMutation(
+        string path, HttpListenerRequest request, CancellationToken cancellationToken)
     {
-        if (!_host.LicenseManagementApplicable
-            && string.Equals(path, "/api/license", StringComparison.Ordinal))
+        if (!_host.LicenseManagementApplicable && path == "/api/license")
         {
-            await WriteError(
-                response,
-                HttpStatusCode.NotFound,
-                "NOT_FOUND",
-                "That local App operation does not exist in this build.").ConfigureAwait(false);
-            return;
+            return (HttpStatusCode.NotFound, new AppApiResult(false, "NOT_FOUND",
+                "That local App operation does not exist in this build."), false);
         }
-
         switch ((request.HttpMethod, path))
         {
             case ("POST", "/api/onboarding/continue"):
-                _host.Workspace.CompleteOnboarding();
-                await WriteOk(response).ConfigureAwait(false);
+                _host.CompleteOnboarding();
                 break;
             case ("POST", "/api/files/pick"):
-                await WriteJson(
-                    response,
-                    HttpStatusCode.OK,
-                    _host.Workspace.PickAndOpen())
-                    .ConfigureAwait(false);
-                break;
+                return (HttpStatusCode.OK, _host.PickAndOpen(), false);
             case ("POST", "/api/files/upload"):
-                string uploadName = DecodeFileName(request.Headers["X-File-Name"]);
-                await _host.Workspace.UploadFileAsync(
-                    uploadName,
-                    request.InputStream,
-                    request.ContentLength64,
-                    cancellationToken).ConfigureAwait(false);
-                await WriteOk(response).ConfigureAwait(false);
+                await _host.UploadFileAsync(DecodeFileName(request.Headers["X-File-Name"]),
+                    request.InputStream, request.ContentLength64, cancellationToken).ConfigureAwait(false);
                 break;
             case ("POST", "/api/license"):
-                string installedUrl = _host.Licenses.InstallAndRestart(
-                    request.InputStream,
-                    request.ContentLength64,
+                string installedUrl = _host.InstallLicenseAndRestart(request.InputStream, request.ContentLength64,
                     NormalizeProduct(request.Headers["X-Product"]));
-                await WriteJson(response, HttpStatusCode.OK, new AppRestartResult(true, installedUrl)).ConfigureAwait(false);
-                break;
+                return (HttpStatusCode.OK, new AppRestartResult(true, installedUrl), true);
             case ("DELETE", "/api/license"):
-                string restartUrl = _host.Licenses.RemoveAndRestart(
-                    NormalizeProduct(request.Headers["X-Product"]));
-                await WriteJson(
-                    response,
-                    HttpStatusCode.OK,
-                    new AppRestartResult(true, restartUrl))
-                    .ConfigureAwait(false);
-                break;
+                string restartUrl = _host.RemoveLicenseAndRestart(NormalizeProduct(request.Headers["X-Product"]));
+                return (HttpStatusCode.OK, new AppRestartResult(true, restartUrl), true);
             case ("POST", "/api/preferences"):
-                AppApiResult preferences = _host.Workspace.UpdatePreferences(
-                    await ReadJson<AppPreferenceRequest>(request).ConfigureAwait(false));
-                await WriteJson(response, HttpStatusCode.OK, preferences).ConfigureAwait(false);
-                break;
+                AppApiResult preferences = _host.UpdatePreferences(await ReadJson<AppPreferenceRequest>(request).ConfigureAwait(false));
+                return (HttpStatusCode.OK, preferences, false);
             case ("POST", "/api/recent/open"):
-                _host.Workspace.OpenRecent(
-                    (await ReadJson<AppIdRequest>(
-                        request).ConfigureAwait(false)).Id);
-                await WriteOk(response).ConfigureAwait(false);
+                _host.OpenRecent((await ReadJson<AppIdRequest>(request).ConfigureAwait(false)).Id);
                 break;
             case ("POST", "/api/recent/remove"):
-                _host.Workspace.RemoveRecent(
-                    (await ReadJson<AppIdRequest>(
-                        request).ConfigureAwait(false)).Id);
-                await WriteOk(response).ConfigureAwait(false);
+                _host.RemoveRecent((await ReadJson<AppIdRequest>(request).ConfigureAwait(false)).Id);
                 break;
             case ("POST", "/api/recent/clear"):
-                _host.Workspace.ClearRecent();
-                await WriteOk(response).ConfigureAwait(false);
+                _host.ClearRecent();
                 break;
             case ("POST", "/api/local-data/clear"):
-                _host.Workspace.ClearLocalData();
-                await WriteOk(response).ConfigureAwait(false);
+                await _host.ClearLocalDataAsync(cancellationToken).ConfigureAwait(false);
                 break;
             case ("POST", "/api/stop"):
-                await WriteOk(response).ConfigureAwait(false);
-                _ = Task.Run(async () =>
-                {
-                    await Task.Delay(100).ConfigureAwait(false);
-                    _host.RequestStop();
-                });
-                break;
+                _host.PrepareStop();
+                return (HttpStatusCode.OK, new AppApiResult(true), true);
             default:
-                await WriteError(response, HttpStatusCode.NotFound, "NOT_FOUND", "That local App action does not exist.").ConfigureAwait(false);
-                break;
+                return (HttpStatusCode.NotFound, new AppApiResult(false, "NOT_FOUND", "That local App action does not exist."), false);
         }
+        return (HttpStatusCode.OK, new AppApiResult(true), false);
     }
 
     private async Task<T> ReadJson<T>(HttpListenerRequest request)
@@ -431,9 +388,6 @@ internal sealed class AppHttpServer : IDisposable
     private static string? NormalizeProduct(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    private Task WriteOk(HttpListenerResponse response) =>
-        WriteJson(response, HttpStatusCode.OK, new AppApiResult(true));
-
     private async Task WriteJson(HttpListenerResponse response, HttpStatusCode status, object value)
     {
         byte[] bytes = JsonSerializer.SerializeToUtf8Bytes(value, value.GetType(), _json);
@@ -454,7 +408,8 @@ internal sealed class AppHttpServer : IDisposable
         await response.OutputStream.WriteAsync(bytes).ConfigureAwait(false);
     }
 
-    private static HttpStatusCode StatusFor(CliException exception) => exception.ExitCode switch
+    private static HttpStatusCode StatusFor(CliException exception) => exception.Code == ErrorCodes.AppBusy
+        ? HttpStatusCode.Conflict : exception.ExitCode switch
     {
         ExitCode.Usage or ExitCode.InputError or ExitCode.ValidationError or ExitCode.FormatError => HttpStatusCode.BadRequest,
         ExitCode.LicenseError => HttpStatusCode.UnprocessableEntity,
@@ -463,7 +418,8 @@ internal sealed class AppHttpServer : IDisposable
 
     private static string FriendlyMessage(CliException exception) => exception.Code.Name switch
     {
-        "APP_STARTUP_FAILED" when exception.Details?["licenseSaved"]?.GetValue<bool>() is true => AppLicenseWorkflow.RestartFailedMessage,
+        "APP_BUSY" => "The App is restarting or stopping. Continue at the new App address or start it again.",
+        "APP_STARTUP_FAILED" when exception.Details?["licenseSaved"]?.GetValue<bool>() is true => AppHost.RestartFailedMessage,
         "FILE_NOT_FOUND" => "That file is no longer available. Choose it again from the Files page.",
         "FILE_ACCESS_DENIED" => "Aspose CLI does not have permission to read that file.",
         "FILE_LOCKED" => "That file is temporarily locked by another program. Wait for its save to finish and try again.",

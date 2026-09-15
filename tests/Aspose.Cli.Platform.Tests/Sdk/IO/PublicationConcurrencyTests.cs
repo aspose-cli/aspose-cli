@@ -65,7 +65,7 @@ public sealed class PublicationConcurrencyTests
     {
         using var temp = new TempDirectory();
         using PublicationDirectoryLease held = PublicationDirectoryLease.Acquire(temp.Path);
-        using var deadline = OperationDeadline.Start(TimeSpan.FromMilliseconds(150));
+        using var deadline = OperationDeadline.Start(TimeSpan.FromSeconds(2));
         var writer = new SafeFileWriter(new ResourceBudgetLedger(deadline));
         string target = temp.File("late.txt");
         using var transaction = new AtomicOutputSetWriter(writer, temp.Path, "deadline");
@@ -73,6 +73,29 @@ public sealed class PublicationConcurrencyTests
         CliException error = Assert.Throws<CliException>(() => transaction.Commit());
         Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
         Assert.False(File.Exists(target));
+    }
+
+    [Fact]
+    public void ExpirationBeforeTheDurableCommitRecordRestoresPublishedData()
+    {
+        using var temp = new TempDirectory();
+        using var deadline = OperationDeadline.Start(TimeSpan.FromSeconds(2));
+        var budgets = new ResourceBudgetLedger(deadline);
+        string target = temp.File("report.txt");
+        File.WriteAllText(target, "original");
+        using var transaction = new AtomicOutputSetWriter(new SafeFileWriter(budgets), temp.Path, "commit-deadline");
+        transaction.Stage(target, true, path => File.WriteAllText(path, "replacement"));
+        bool reachedCommitRecord = false;
+        CliException error = Assert.Throws<CliException>(() => transaction.Commit(() =>
+        {
+            reachedCommitRecord = true;
+            Assert.Equal("replacement", File.ReadAllText(target));
+            Assert.True(deadline.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(5)));
+        }));
+        Assert.True(reachedCommitRecord);
+        Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
+        Assert.False(budgets.HasCommittedOutputs);
+        Assert.Equal("original", File.ReadAllText(target));
     }
 
     private sealed class Callback(Action<PublicationFaultPoint> action) : IPublicationFaultInjector

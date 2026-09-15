@@ -1,4 +1,3 @@
-using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
@@ -15,8 +14,9 @@ namespace Aspose.Cli.Host.App;
 internal sealed class AppDocumentSession : IDisposable
 {
     private readonly object _gate = new();
-    // Workspace mutation gate -> session operation gate -> short state/preferences locks.
-    private readonly object _operationGate = new();
+    // AppHost serializes mutations; this gate protects short immutable-state reads only.
+    private readonly Dictionary<string, OwnedTemporaryFile> _uploads = new(
+        OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
     private bool _disposed;
     private readonly ProductCatalog _catalog;
     private readonly Func<CommandContext> _createContext;
@@ -57,20 +57,15 @@ internal sealed class AppDocumentSession : IDisposable
 
     public string? ProductId => Read(static lease => lease.ProductId);
 
-    public string? OriginalFilePath
+    internal AppDocumentHandoff CaptureForRestart()
     {
-        get
+        lock (_gate)
         {
-            lock (_gate)
-            {
-                return _current?.UploadedCopy is false ? _current.Path : null;
-            }
+            if (_current is not { } current) { return new(null, null, null, null); }
+            FileStream? held = current.UploadedCopy ? _uploads[current.Path].OpenBoundRead() : null;
+            return new(current.UploadedCopy ? null : current.Path,
+                current.UploadedCopy ? current.Path : null, current.FileName, held);
         }
-    }
-
-    public string? UploadedFilePath
-    {
-        get { lock (_gate) { return _current?.UploadedCopy is true ? _current.Path : null; } }
     }
 
     public void ConfigureMount(AppPreviewMount mount)
@@ -110,11 +105,6 @@ internal sealed class AppDocumentSession : IDisposable
     }
 
     public void Open(string filePath, bool uploadedCopy, string? displayFileName = null)
-    {
-        lock (_operationGate) { OpenCore(filePath, uploadedCopy, displayFileName); }
-    }
-
-    private void OpenCore(string filePath, bool uploadedCopy, string? displayFileName)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         string full = Path.GetFullPath(filePath);
@@ -159,18 +149,9 @@ internal sealed class AppDocumentSession : IDisposable
         }
 
         DisposePrevious(previous);
-        if (previous?.UploadedCopy is true
-            && !string.Equals(
-                previous.Path,
-                full,
-                OperatingSystem.IsWindows()
-                    ? StringComparison.OrdinalIgnoreCase
-                    : StringComparison.Ordinal)
-            && !LocalFileCleanup.DeleteFile(previous.Path))
-        {
-            _log.Write(
-                "superseded upload cleanup failed");
-        }
+        if (previous?.UploadedCopy is true && !string.Equals(previous.Path, full,
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+        { DiscardUpload(previous.Path); }
 
         _log.Write(
             $"opened {product.Manifest.Id} file '{Path.GetFileName(full)}' ({next.View})");
@@ -265,25 +246,17 @@ internal sealed class AppDocumentSession : IDisposable
         string destination = Path.Combine(
             paths.Files,
             $"{id}-{safeName}");
+        var owned = OwnedTemporaryFile.Create(staged);
         try
         {
-            await WriteStagedUploadAsync(
-                staged,
-                input,
-                fileLimit,
-                existingBytes,
-                cancellationToken).ConfigureAwait(false);
-            File.Move(staged, destination);
+            PrivateUserStorage.ProtectFile(staged);
+            owned.BindProducedFile();
+            await WriteStagedUploadAsync(staged, input, fileLimit, existingBytes, cancellationToken).ConfigureAwait(false);
+            owned.MoveTo(destination);
+            _uploads.Add(destination, owned);
             return destination;
         }
-        catch
-        {
-            if (!LocalFileCleanup.DeleteFile(staged))
-            {
-                _log.Write("upload staging cleanup failed");
-            }
-            throw;
-        }
+        catch { owned.Dispose(); throw; }
     }
 
     private async Task WriteStagedUploadAsync(
@@ -293,7 +266,7 @@ internal sealed class AppDocumentSession : IDisposable
         long existingBytes,
         CancellationToken cancellationToken)
     {
-        using FileStream output = PrivateUserStorage.CreateFile(staged);
+        using var output = new FileStream(staged, FileMode.Open, FileAccess.Write, FileShare.Read);
         long sessionRemaining = Math.Max(
             0,
             _limits.MaximumUploadSessionBytes - existingBytes);
@@ -316,52 +289,46 @@ internal sealed class AppDocumentSession : IDisposable
 
     public void RefreshPreferences(string productId, string desiredView)
     {
-        lock (_operationGate)
-        {
-            PreviewLease? current;
-            lock (_gate) { current = _current; }
-            if (current is not null
-                && string.Equals(current.ProductId, productId, StringComparison.Ordinal)
-                && !string.Equals(current.View, desiredView, StringComparison.Ordinal))
-            {
-                OpenCore(current.Path, current.UploadedCopy, current.FileName);
-            }
-        }
+        PreviewLease? current;
+        lock (_gate) { current = _current; }
+        if (current is not null && current.ProductId == productId && current.View != desiredView)
+        { Open(current.Path, current.UploadedCopy, current.FileName); }
+    }
+
+    internal void DiscardUpload(string path)
+    {
+        if (_uploads.Remove(path, out OwnedTemporaryFile? file)) { file.Dispose(); }
     }
 
     public void ClearUploads()
     {
-        lock (_operationGate)
+        PreviewLease? closing = null;
+        lock (_gate)
         {
-            PreviewLease? closing = null;
-            lock (_gate)
-            {
-                if (_current?.UploadedCopy is true)
-                {
-                    closing = _current;
-                    _current = null;
-                }
-            }
-            DisposePrevious(closing);
-            LocalFileCleanup.DeleteDirectory(Path.Combine(_root, "uploads"));
+            if (_current?.UploadedCopy is true) { closing = _current; _current = null; }
         }
+        DisposePrevious(closing);
+        DeleteOwnedUploads();
+    }
+
+    private void DeleteOwnedUploads()
+    {
+        foreach (OwnedTemporaryFile file in _uploads.Values) { file.Dispose(); }
+        _uploads.Clear();
+        string uploads = Path.Combine(_root, "uploads");
+        foreach (string directory in new[] { Path.Combine(uploads, "files"), Path.Combine(uploads, "staging"), uploads })
+        { LocalFileCleanup.DeleteDirectory(directory, recursive: false); }
     }
 
     public void Dispose()
     {
-        lock (_operationGate)
-        {
-            if (_disposed) { return; }
-            _disposed = true;
-            PreviewLease? lease;
-            lock (_gate)
-            {
-                lease = _current;
-                _current = null;
-            }
-            DisposePrevious(lease);
-            LocalFileCleanup.DeleteDirectory(_root);
-        }
+        if (_disposed) { return; }
+        _disposed = true;
+        PreviewLease? lease;
+        lock (_gate) { lease = _current; _current = null; }
+        DisposePrevious(lease);
+        DeleteOwnedUploads();
+        LocalFileCleanup.DeleteDirectory(_root, recursive: false);
     }
 
     private void DisposePrevious(PreviewLease? previous)
@@ -439,4 +406,11 @@ internal sealed record AppPreviewMount(
 {
     public string Url =>
         $"http://127.0.0.1:{Port}{Options.DocumentPath}";
+}
+
+/// <summary>One consistent restart document selection and the held upload identity.</summary>
+internal sealed record AppDocumentHandoff(string? OriginalFilePath, string? UploadedFilePath,
+    string? FileName, FileStream? UploadLease) : IDisposable
+{
+    public void Dispose() => UploadLease?.Dispose();
 }
