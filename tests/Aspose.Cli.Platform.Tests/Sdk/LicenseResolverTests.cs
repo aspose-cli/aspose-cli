@@ -40,6 +40,47 @@ public sealed class LicenseResolverTests : IDisposable
     }
 
     [Fact]
+    public void PendingInstallUsesValidatedContentAndReportsTheFinalConfigurationPath()
+    {
+        string snapshot = CreateFile("validated.lic");
+        string config = _temp.File("user-config");
+        string final = LicenseResolver.UserLicensePath(config, "cells");
+        var changes = new UserLicenseChanges([KeyValuePair.Create<string, string?>("cells", snapshot)]);
+        LicenseResolution result = LicenseResolver.Resolve(null, "cells", GetEnv, _temp.File("work"), config, changes);
+        Assert.Equal(LicenseSourceKind.ProductUserFile, result.Kind);
+        Assert.Equal(final, result.Path);
+        Assert.Equal(snapshot, result.ContentPath);
+        Assert.True(changes.IsProductInstalled(config, "cells"));
+        Assert.False(File.Exists(final));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void PendingRemovalSkipsOnlyTheSelectedUserSources(bool shared)
+    {
+        CreateFile("user-config/licenses/cells.lic");
+        string sharedPath = CreateFile("user-config/license.lic");
+        var changes = new UserLicenseChanges([KeyValuePair.Create<string, string?>("cells", null)], shared);
+        string config = _temp.File("user-config");
+        LicenseResolution result = LicenseResolver.Resolve(null, "cells", GetEnv, _temp.File("work"), config, changes);
+        Assert.Equal(shared ? LicenseSourceKind.None : LicenseSourceKind.UserFile, result.Kind);
+        Assert.False(changes.IsProductInstalled(config, "cells"));
+        Assert.Equal(!shared, changes.IsSharedInstalled(config));
+        Assert.True(File.Exists(sharedPath));
+    }
+
+    [Fact]
+    public void PendingUserInstallCannotHideAnInvalidExplicitSource()
+    {
+        string snapshot = CreateFile("validated.lic");
+        var changes = new UserLicenseChanges([KeyValuePair.Create<string, string?>("cells", snapshot)]);
+        CliException error = Assert.Throws<CliException>(() => LicenseResolver.Resolve(_temp.File("missing.lic"),
+            "cells", GetEnv, _temp.File("work"), _temp.File("user-config"), changes));
+        Assert.Equal(ErrorCodes.LicenseFileNotFound, error.Code);
+    }
+
+    [Fact]
     public void Resolve_NothingConfigured_ReturnsNone()
     {
         LicenseResolution resolution = Resolve();

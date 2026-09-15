@@ -19,7 +19,7 @@ internal sealed class AppDocumentSession : IDisposable
     private readonly object _operationGate = new();
     private bool _disposed;
     private readonly ProductCatalog _catalog;
-    private readonly LicenseManager _licenses;
+    private readonly Func<CommandContext> _createContext;
     private readonly AppPreferencesStore _preferences;
     private readonly AppLog _log;
     private readonly string _root;
@@ -33,14 +33,14 @@ internal sealed class AppDocumentSession : IDisposable
 
     public AppDocumentSession(
         ProductCatalog catalog,
-        LicenseManager licenses,
+        Func<CommandContext> createContext,
         AppPreferencesStore preferences,
         AppLog log,
         string rootDirectory,
         FontSearchProfile fontProfile)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
-        _licenses = licenses;
+        _createContext = createContext;
         _preferences = preferences;
         _log = log;
         _root = Path.GetFullPath(rootDirectory);
@@ -123,7 +123,7 @@ internal sealed class AppDocumentSession : IDisposable
             throw CliErrors.FileNotFound(full);
         }
 
-        CommandContext context = _licenses.CreateContext();
+        CommandContext context = _createContext();
         InputSizeGuard.Ensure(
             context.ResourceBudgets,
             full,

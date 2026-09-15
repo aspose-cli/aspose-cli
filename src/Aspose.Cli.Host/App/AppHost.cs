@@ -61,7 +61,7 @@ internal sealed class AppHost : IDisposable
         _log = new AppLog(AppPaths.Log);
         _sessions = new AppDocumentSession(
             catalog,
-            _licenseState,
+            CreateCommandContext,
             _preferences,
             _log,
             AppPaths.SessionRoot(Environment.ProcessId),
@@ -71,7 +71,7 @@ internal sealed class AppHost : IDisposable
             capabilities,
             _preferences,
             _licenseState,
-            _sessions);
+            _sessions, CreateCommandContext);
         _workspace = new AppWorkspace(
             catalog,
             _preferences,
@@ -96,6 +96,9 @@ internal sealed class AppHost : IDisposable
         _processStartTicks = current.StartTime.ToUniversalTime().Ticks;
         _idleWindow = ResolveIdleWindow();
     }
+
+    private CommandContext CreateCommandContext() => CompositionRoot.Create(_catalog, _licenseState.Globals,
+        runtimeLicenses: _licenseState.RuntimeLicense);
 
     public int Port => _server?.Port ?? 0;
 

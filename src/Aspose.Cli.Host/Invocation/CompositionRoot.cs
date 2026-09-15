@@ -34,7 +34,7 @@ internal static class CompositionRoot
 
         string workDir = ResolveWorkDir(globals.WorkDir);
         OperationDeadline effectiveDeadline =
-            deadline ?? OperationDeadline.Start(null);
+            resourceBudgets?.Deadline ?? deadline ?? OperationDeadline.Start(null);
         ResourceBudgetLedger effectiveBudgets =
             resourceBudgets ?? CreateBudgets(catalog, globals, effectiveDeadline);
         ProductActivationContext activation = CreateActivation(
@@ -69,7 +69,7 @@ internal static class CompositionRoot
 
         string workDir = ResolveWorkDir(globals.WorkDir);
         OperationDeadline effectiveDeadline =
-            deadline ?? OperationDeadline.Start(null);
+            resourceBudgets?.Deadline ?? deadline ?? OperationDeadline.Start(null);
         ResourceBudgetLedger effectiveBudgets =
             resourceBudgets ?? CreateBudgets(catalog, globals, effectiveDeadline);
 

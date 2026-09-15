@@ -19,7 +19,8 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
 - Installation/removal results come from explicit validated configuration changes. Only
   the supervisor publishes worker outputs; ordinary file reads always address physical files.
   Existing license targets must already be private.
-- A long-lived App pins its validated gates for its entire SDK process. Opening a
+- A long-lived App pins immutable gate outcomes, status and identity without retaining
+  activation contexts or invocation resources. AppHost creates each command context. Opening a
   new document cannot silently read a newer license than the App's status/identity.
 - App-side validation uses `LicenseValidationProcess`, a bounded short-lived CLI
   process. Management and replacement planning cannot mutate the running SDK state.

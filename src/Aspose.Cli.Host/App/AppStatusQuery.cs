@@ -15,6 +15,7 @@ internal sealed class AppStatusQuery
     private readonly AppPreferencesStore _preferences;
     private readonly ProductCatalog _catalog;
     private readonly LicenseManager _licenses;
+    private readonly Func<CommandContext> _createContext;
     private readonly AppDocumentSession _sessions;
     private readonly string _experience;
     private readonly IReadOnlyList<AppProductView> _products;
@@ -33,11 +34,12 @@ internal sealed class AppStatusQuery
         Func<CapabilitiesResult> capabilities,
         AppPreferencesStore preferences,
         LicenseManager licenses,
-        AppDocumentSession sessions)
+        AppDocumentSession sessions, Func<CommandContext> createContext)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _preferences = preferences;
         _licenses = licenses;
+        _createContext = createContext;
         _sessions = sessions;
         ArgumentNullException.ThrowIfNull(capabilities);
         CapabilitiesResult snapshot = capabilities();
@@ -177,7 +179,7 @@ internal sealed class AppStatusQuery
 
             try
             {
-                CommandContext context = _licenses.CreateContext();
+                CommandContext context = _createContext();
                 FontListResult fonts =
                     context.Activate(product).FontEnvironment!.ListFonts();
                 string fallback =
