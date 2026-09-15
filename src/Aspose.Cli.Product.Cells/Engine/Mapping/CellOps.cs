@@ -107,7 +107,7 @@ internal static class CellOps
         // Range.ApplyStyle over them merges the requested fields onto the
         // PIVOT's style rather than onto what the cell currently shows: styling
         // a pivot header, then setting one unrelated field, silently drops the
-        // fill and resets the font colour (probed on 26.6.0; pinned by
+        // fill and resets the font colour (probed on 26.9.0; pinned by
         // PivotFormattingTests). Merging cell by cell keeps the documented
         // promise — only the fields the caller set change. It costs a
         // GetStyle/SetStyle per cell, so it stays scoped to pivot ranges, which

@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// Renders the representations served by the managed Cells preview: the
 /// self-contained HTML document of the whole workbook (the workbook view) and
 /// the pixel-accurate PNG frame of one worksheet (the sheet view). The HTML option
-/// combination below was probed against Aspose.Cells 26.6.0 (see
+/// combination below was probed against Aspose.Cells 26.9.0 (see
 /// <c>PreviewExporterTests</c>, which keep the findings enforced):
 /// <list type="bullet">
 /// <item><description>
@@ -29,7 +29,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </description></item>
 /// <item><description>
 /// <see cref="HtmlSaveOptions.ExportImagesAsBase64"/> made no observable
-/// difference on 26.6.0 (single-file mode inlines images regardless); it is
+/// difference on 26.9.0 (single-file mode inlines images regardless); it is
 /// still set explicitly so an engine upgrade that decouples the two keeps
 /// picture-bearing workbooks single-file rather than silently spilling an
 /// image directory next to the entry.

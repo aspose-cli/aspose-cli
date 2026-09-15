@@ -4,9 +4,9 @@
     "net10.0": {
       "Aspose.Slides.NET6.CrossPlatform": {
         "type": "Direct",
-        "requested": "[26.7.0, )",
-        "resolved": "26.7.0",
-        "contentHash": "8ykmstVmCNpfcxNe+DN2t1LJWbjKNgYXSvYPE4/995U6IHAftsvl3uAZLUSbho7ZSkJuG8m9vVgOWHtpwm/x8Q==",
+        "requested": "[26.9.0, )",
+        "resolved": "26.9.0",
+        "contentHash": "oDHEp7gXPfms7bJJ773vAOeZh2UVeDbozF9Dc3A97p0Iu0g3FIHz+kTqFhQlh4/1AP9jTFKJbE++TkCRhBWI6Q==",
         "dependencies": {
           "System.Security.Cryptography.Xml": "6.0.2"
         }
@@ -138,7 +138,7 @@
         "type": "Project",
         "dependencies": {
           "Aspose.Cli.Sdk": "[1.0.0, )",
-          "Aspose.Slides.NET6.CrossPlatform": "[26.7.0, )"
+          "Aspose.Slides.NET6.CrossPlatform": "[26.9.0, )"
         }
       },
       "aspose.cli.sdk": {

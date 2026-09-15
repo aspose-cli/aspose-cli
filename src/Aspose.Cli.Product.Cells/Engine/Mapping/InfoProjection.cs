@@ -116,7 +116,7 @@ internal static class InfoProjection
         foreach (Name name in workbook.Worksheets.Names)
         {
             // Once a name's target sheet is deleted the SDK returns a null
-            // RefersTo (26.6.0; the SDK is not nullable-annotated so the compiler
+            // RefersTo (26.9.0; the SDK is not nullable-annotated so the compiler
             // misses it). RefersTo is a `required` contract field, so a null would
             // be dropped by the null-ignoring serializer and vanish from the
             // payload — a strict agent parser then sees a required key missing.

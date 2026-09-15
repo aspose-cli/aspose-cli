@@ -4,9 +4,9 @@
     "net10.0": {
       "Aspose.Cells": {
         "type": "Direct",
-        "requested": "[26.6.0, )",
-        "resolved": "26.6.0",
-        "contentHash": "/wFfRasYzlAmIHbiPplJfJ+RNN5Ezw1lKwP9doHDdNgCuV9ptmcvhPbtY3aUBhkQwtbDlGC6sGveT8OGPrxTIA==",
+        "requested": "[26.9.0, )",
+        "resolved": "26.9.0",
+        "contentHash": "a+qGbpDqcKFTZ+/aJtAdJOVQhKM/YJlandut80KreqGysHbJQygDqS0OohaZ8Rpwl9SC6LHNbbqjucHsXqMTGw==",
         "dependencies": {
           "SkiaSharp": "3.119.0",
           "System.Security.Cryptography.Pkcs": "9.0.0"
@@ -149,7 +149,7 @@
       "aspose.cli.product.cells": {
         "type": "Project",
         "dependencies": {
-          "Aspose.Cells": "[26.6.0, )",
+          "Aspose.Cells": "[26.9.0, )",
           "Aspose.Cli.Sdk": "[1.0.0, )",
           "SkiaSharp.NativeAssets.Linux": "[3.119.0, )"
         }

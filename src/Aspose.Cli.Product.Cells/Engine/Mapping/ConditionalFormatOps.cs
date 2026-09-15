@@ -125,7 +125,7 @@ internal static class ConditionalFormatOps
     /// A conditional format is a DIFFERENTIAL format: its dxf must carry only
     /// the fields the caller asked for, because every field it does carry
     /// overrides that field on matching cells — in Excel as much as in a
-    /// render. Two probed 26.6.0 behaviours shape this (pinned by
+    /// render. Two probed 26.9.0 behaviours shape this (pinned by
     /// ConditionalFormatRenderTests):
     /// <list type="bullet">
     /// <item>The style must come from the condition itself. On a workbook

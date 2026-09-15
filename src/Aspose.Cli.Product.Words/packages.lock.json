@@ -4,9 +4,9 @@
     "net10.0": {
       "Aspose.Words": {
         "type": "Direct",
-        "requested": "[26.7.0, )",
-        "resolved": "26.7.0",
-        "contentHash": "fRSuQ+T2RMdSzRH0S1drJQKSUEF9Zv3RTBPIAkYkaQOTOsdTsGI4NzxlCo7lwkqZc/sXnA9IiIYRnc09WYCp+g==",
+        "requested": "[26.9.0, )",
+        "resolved": "26.9.0",
+        "contentHash": "bVPr3+ydv1dBHWbjYnYfFYMMz/vipSkAkLcAm6p2dou2kvb9xbB61B3bQ5Jnt49LGl4jZeLrIIXTTKs+Uw8+SQ==",
         "dependencies": {
           "Microsoft.Extensions.DependencyInjection": "10.0.2",
           "SkiaSharp": "3.119.0"

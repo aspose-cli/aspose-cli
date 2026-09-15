@@ -67,13 +67,13 @@ internal static class SparklineOps
 
     /// <summary>
     /// Wire name to the engine's <see cref="SparklineType"/>. Excel calls the
-    /// third type "win/loss"; the engine's name for it is <c>Stacked</c>.
+    /// third type "win/loss"; the engine exposes it as <c>WinLoss</c>.
     /// </summary>
     private static SparklineType ToType(string? type) => type switch
     {
         null or SparklineTypes.Line => SparklineType.Line,
         SparklineTypes.Column => SparklineType.Column,
-        SparklineTypes.WinLoss => SparklineType.Stacked,
+        SparklineTypes.WinLoss => SparklineType.WinLoss,
         _ => throw new ArgumentOutOfRangeException(
             nameof(type), type, "Sparkline type is missing from the engine mapper."),
     };

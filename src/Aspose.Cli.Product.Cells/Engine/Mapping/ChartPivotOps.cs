@@ -132,7 +132,7 @@ internal static class ChartPivotOps
             {
                 bool autoFit = pivot.AutofitColumnWidthOnUpdate;
                 bool autoFormat = pivot.IsAutoFormat;
-                bool preserveFormatting = pivot.PreserveFormatting;
+                bool preserveFormatting = pivot.PreserveCellFormattingOnUpdate;
                 try
                 {
                     // Refresh values without resizing columns used by unrelated
@@ -156,15 +156,14 @@ internal static class ChartPivotOps
 
                     pivot.AutofitColumnWidthOnUpdate = false;
                     pivot.IsAutoFormat = false;
-                    pivot.PreserveFormatting = true;
-                    pivot.RefreshData();
-                    pivot.CalculateData();
+                    pivot.PreserveCellFormattingOnUpdate = true;
+                    pivot.PivotCache.Refresh();
                 }
                 finally
                 {
                     pivot.AutofitColumnWidthOnUpdate = autoFit;
                     pivot.IsAutoFormat = autoFormat;
-                    pivot.PreserveFormatting = preserveFormatting;
+                    pivot.PreserveCellFormattingOnUpdate = preserveFormatting;
                 }
                 refreshedAny = true;
             }

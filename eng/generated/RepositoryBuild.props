@@ -6,7 +6,7 @@
     <AsposeProductDisplayName>Cells</AsposeProductDisplayName>
     <AsposeProductEngineName>Aspose.Cells</AsposeProductEngineName>
     <AsposeProductSdkPackageId>Aspose.Cells</AsposeProductSdkPackageId>
-    <AsposeProductSdkVersion>26.6.0</AsposeProductSdkVersion>
+    <AsposeProductSdkVersion>26.9.0</AsposeProductSdkVersion>
     <AsposeProductModuleType>Aspose.Cli.Product.Cells.CellsModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Cells</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/cells</AsposeProductResourceNamespace>
@@ -17,7 +17,7 @@
     <AsposeProductDisplayName>PDF</AsposeProductDisplayName>
     <AsposeProductEngineName>Aspose.PDF.Drawing</AsposeProductEngineName>
     <AsposeProductSdkPackageId>Aspose.PDF.Drawing</AsposeProductSdkPackageId>
-    <AsposeProductSdkVersion>26.5.0</AsposeProductSdkVersion>
+    <AsposeProductSdkVersion>26.8.0</AsposeProductSdkVersion>
     <AsposeProductModuleType>Aspose.Cli.Product.Pdf.PdfModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Pdf</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/pdf</AsposeProductResourceNamespace>
@@ -28,7 +28,7 @@
     <AsposeProductDisplayName>Slides</AsposeProductDisplayName>
     <AsposeProductEngineName>Aspose.Slides.NET6.CrossPlatform</AsposeProductEngineName>
     <AsposeProductSdkPackageId>Aspose.Slides.NET6.CrossPlatform</AsposeProductSdkPackageId>
-    <AsposeProductSdkVersion>26.7.0</AsposeProductSdkVersion>
+    <AsposeProductSdkVersion>26.9.0</AsposeProductSdkVersion>
     <AsposeProductModuleType>Aspose.Cli.Product.Slides.SlidesModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Slides</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/slides</AsposeProductResourceNamespace>
@@ -39,14 +39,14 @@
     <AsposeProductDisplayName>Words</AsposeProductDisplayName>
     <AsposeProductEngineName>Aspose.Words</AsposeProductEngineName>
     <AsposeProductSdkPackageId>Aspose.Words</AsposeProductSdkPackageId>
-    <AsposeProductSdkVersion>26.7.0</AsposeProductSdkVersion>
+    <AsposeProductSdkVersion>26.9.0</AsposeProductSdkVersion>
     <AsposeProductModuleType>Aspose.Cli.Product.Words.WordsModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Words</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/words</AsposeProductResourceNamespace>
   </PropertyGroup>
   <PropertyGroup>
-    <GeneratedProductsLfSha256>9CDD8044D8A4F548510A2A754BE9FEF75B9DAABF03676B60E64836E667A90E61</GeneratedProductsLfSha256>
-    <GeneratedProductsCrLfSha256>E6BD1AD642AD83F1843F40E6458B650948461092E7E002EC00E00E68DCDF07A8</GeneratedProductsCrLfSha256>
+    <GeneratedProductsLfSha256>C916A39B06F80243C30E13054F3AF874B0FBDEADD26137FED15157919660DCAE</GeneratedProductsLfSha256>
+    <GeneratedProductsCrLfSha256>3BF4A7100AB19F2F68C68B17541EBCB3A763B5E7C1EDB8E39A4B0C2016FD4080</GeneratedProductsCrLfSha256>
   </PropertyGroup>
   <Target Name="ValidateRepositoryProjectionSources" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(GeneratedProductsLfSha256)' == '' Or '$(GeneratedProductsCrLfSha256)' == ''" Text="Generated repository projections are missing. Run scripts/sync.ps1 ." />

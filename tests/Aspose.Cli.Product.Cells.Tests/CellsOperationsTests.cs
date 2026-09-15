@@ -245,7 +245,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
 
         using var workbook = new Workbook(output);
         SparklineGroup group = workbook.Worksheets["Second"].SparklineGroups[0];
-        Assert.Equal(SparklineType.Stacked, group.Type);
+        Assert.Equal(SparklineType.WinLoss, group.Type);
         Assert.Equal(3, group.Sparklines.Count);
         Assert.Equal("Second!B2:E2", group.Sparklines[0].DataRange);
         Assert.Equal("Second!B4:E4", group.Sparklines[2].DataRange);

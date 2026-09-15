@@ -80,7 +80,7 @@ internal sealed class CellsOutputService
             // directory and links to it by the name it saw at save time — which
             // here is the atomic writer's temp file, so the deliverable ends up
             // pointing at a hidden, GUID-named directory that any copy or zip
-            // drops (probed on 26.6.0). One self-contained file has no
+            // drops (probed on 26.9.0). One self-contained file has no
             // companion to lose, survives the temp-then-move, and is what a
             // deliverable should be; mhtml remains the archive form.
             saveOptions = new HtmlSaveOptions
