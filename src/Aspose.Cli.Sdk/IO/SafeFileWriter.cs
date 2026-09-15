@@ -6,14 +6,12 @@ namespace Aspose.Cli.Sdk.IO;
 /// <summary>Single-file convenience entry point over the shared output transaction.</summary>
 public sealed class SafeFileWriter
 {
-    private readonly ResourceBudgetLedger? _resourceBudgets;
+    private readonly ResourceBudgetLedger _resourceBudgets;
 
     public SafeFileWriter(ResourceBudgetLedger resourceBudgets) =>
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
 
-    private SafeFileWriter() { }
-    internal static SafeFileWriter Recovery { get; } = new();
-    internal ResourceBudgetLedger? ResourceBudgets => _resourceBudgets;
+    internal ResourceBudgetLedger ResourceBudgets => _resourceBudgets;
 
     public long Write(string targetPath, bool overwrite, Action<string> writeToTemp) =>
         Write(targetPath, overwrite, backupPath: null, writeToTemp).SizeBytes;

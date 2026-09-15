@@ -107,6 +107,11 @@ Failures leave stdout empty and write one error envelope to stderr; `--verbose` 
 structured diagnostic lines. Help, version and raw documentation commands retain their
 text output contracts.
 Mutations use safe publication, backups and fingerprints where advertised; extraction is bounded.
+Generation and validation precede publication locks. CLI timeout and MCP share one supervisor;
+its worker stages files and the supervising process commits the complete output set.
+The same absolute deadline covers generation, lock waits and commit. Expiration before the
+durable commit record triggers recovery; expiration after that record cannot undo success.
+Semantic verification issues remain reportable partial outcomes, while execution failures abort publication.
 Schema URIs identify this application and are available offline through its schema command.
 No deprecated command aliases or legacy installer/Skill readers are provided.
 

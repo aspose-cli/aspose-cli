@@ -159,20 +159,12 @@ internal static class DoctorCommand
         string probe = Path.Combine(baseDir, "." + Path.GetRandomFileName() + ".aspose-doctor");
         try
         {
-            if (WorkerOutputSession.IsActive)
+            using (var file = new FileStream(probe, FileMode.CreateNew, FileAccess.Write,
+                FileShare.None, 1, FileOptions.DeleteOnClose))
             {
-                context.ProductActivation.SafeFileWriter.Write(
-                    probe,
-                    overwrite: false,
-                    temporary => File.WriteAllText(temporary, "ok"));
-                WorkerOutputSession.MarkDeleted(probe);
+                file.Write("ok"u8);
+                file.Flush(flushToDisk: true);
             }
-            else
-            {
-                File.WriteAllText(probe, "ok");
-            }
-
-            File.Delete(probe);
             return new DoctorCheck { Name = "output", Status = DoctorStatuses.Ok, Detail = $"writable: {baseDir}" };
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)

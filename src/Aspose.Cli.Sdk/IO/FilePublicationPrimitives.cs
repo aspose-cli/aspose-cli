@@ -401,10 +401,14 @@ internal sealed class PublicationJournal
 
     public int OwnerProcessId { get; init; } = Environment.ProcessId;
 
-    public long OwnerProcessStartUtcTicks { get; init; } =
-        Environment.ProcessPath is null
-            ? 0
-            : System.Diagnostics.Process.GetCurrentProcess().StartTime.ToUniversalTime().Ticks;
+    internal static long CurrentProcessStartUtcTicks { get; } = ProcessStartTicks();
+    public long OwnerProcessStartUtcTicks { get; init; } = CurrentProcessStartUtcTicks;
+
+    private static long ProcessStartTicks()
+    {
+        using var process = System.Diagnostics.Process.GetCurrentProcess();
+        return process.StartTime.ToUniversalTime().Ticks;
+    }
 
     public PublicationTransactionState State { get; set; }
 
@@ -416,7 +420,7 @@ internal sealed class PublicationJournal
             path,
             FileMode.Open,
             FileAccess.Read,
-            FileShare.Read,
+            FileShare.Read | FileShare.Delete,
             bufferSize: 4096,
             FileOptions.SequentialScan);
         if (stream.Length < 1 || stream.Length > MaximumBytes)

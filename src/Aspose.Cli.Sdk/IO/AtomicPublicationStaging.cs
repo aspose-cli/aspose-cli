@@ -38,7 +38,7 @@ internal sealed class AtomicPublicationStaging(
     {
         ArgumentNullException.ThrowIfNull(write);
         if (plan.Journal.State != PublicationTransactionState.Staging) { throw new InvalidOperationException("The output set is sealed."); }
-        plan.Lease?.EnsureCovers(target);
+        plan.EnsureTarget(target);
         target = OutputPathValidator.NormalizeFile(target);
         requestedBackup = requestedBackup is null
             ? null
@@ -49,11 +49,10 @@ internal sealed class AtomicPublicationStaging(
         {
             throw CliErrors.OutputExists(target);
         }
-        FilePhysicalIdentity? targetParentIdentity = plan.WorkerStagingOnly
-            ? null
-            : OutputPathValidator.CaptureParentIdentity(target);
+        FilePhysicalIdentity? targetParentIdentity = Directory.Exists(Path.GetDirectoryName(target))
+            ? OutputPathValidator.CaptureParentIdentity(target) : null;
         FilePhysicalIdentity? requestedBackupParentIdentity =
-            plan.WorkerStagingOnly || requestedBackup is null
+            requestedBackup is null || !Directory.Exists(Path.GetDirectoryName(requestedBackup))
                 ? null
                 : OutputPathValidator.CaptureParentIdentity(requestedBackup);
 
@@ -130,12 +129,11 @@ internal sealed class AtomicPublicationStaging(
                 $"Cannot stage deletion of missing target '{target}'.");
         }
 
-        plan.Lease?.EnsureCovers(target);
+        plan.EnsureTarget(target);
         target = OutputPathValidator.NormalizeFile(target);
         EnsureUnique(target);
-        FilePhysicalIdentity? targetParentIdentity = plan.WorkerStagingOnly
-            ? null
-            : OutputPathValidator.CaptureParentIdentity(target);
+        FilePhysicalIdentity? targetParentIdentity = Directory.Exists(Path.GetDirectoryName(target))
+            ? OutputPathValidator.CaptureParentIdentity(target) : null;
         int index = plan.Journal.Entries.Count;
         string staged = plan.StagedPath(target, index);
         plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);

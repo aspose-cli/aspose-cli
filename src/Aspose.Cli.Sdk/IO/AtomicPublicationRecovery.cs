@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Sdk.IO;
 
@@ -42,18 +43,15 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             return 0;
         }
 
-        using PublicationDirectoryLease lease =
-            PublicationDirectoryLease.Acquire(root);
-        return RecoverPendingUnderLease(root, lease);
+        return RecoverPendingUnderLease(root, lease: null);
     }
 
     internal static int RecoverPendingUnderLease(
         string targetDirectory,
-        PublicationDirectoryLease lease)
+        PublicationDirectoryLease? lease, OperationDeadline? invocationDeadline = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
-        ArgumentNullException.ThrowIfNull(lease);
-        lease.EnsureDirectoryUnchanged();
+        lease?.EnsureDirectoryUnchanged();
         string root = Path.GetFullPath(targetDirectory);
         if (!Directory.Exists(root))
         {
@@ -83,10 +81,22 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             }
             try
             {
-                if (TryRecover(root, directory))
+                invocationDeadline?.ThrowIfExpired("publication-recovery");
+                for (int attempt = 0; ; attempt++)
                 {
-                    recovered++;
+                    try
+                    {
+                        if (TryRecover(root, directory, lease, invocationDeadline)) { recovered++; }
+                        break;
+                    }
+                    catch (PublicationLeaseExpansionException) when (lease is null && attempt < 2) { }
                 }
+            }
+            catch (Exception exception) when (
+                exception is DirectoryNotFoundException or FileNotFoundException
+                && !Directory.Exists(directory))
+            {
+                // A concurrent owner or recovery completed after directory discovery.
             }
             catch (InvalidDataException exception)
             {
@@ -107,6 +117,16 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                     exception,
                     phase: "recovery");
             }
+        }
+        return recovered;
+    }
+
+    internal static int RecoverPendingHierarchy(string targetDirectory, OperationDeadline? deadline)
+    {
+        int recovered = 0;
+        for (string? current = Path.GetFullPath(targetDirectory); current is not null; current = Path.GetDirectoryName(current))
+        {
+            if (Directory.Exists(current)) { recovered += RecoverPendingUnderLease(current, null, deadline); }
         }
         return recovered;
     }
@@ -316,7 +336,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             expectedStage: entry.Original);
     }
 
-    private static bool TryRecover(string root, string directory)
+    private static bool TryRecover(string root, string directory, PublicationDirectoryLease? suppliedLease, OperationDeadline? deadline)
     {
         ValidateTransactionDirectory(root, directory);
         string journalPath = Path.Combine(
@@ -324,6 +344,11 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             AtomicPublicationPlan.JournalName);
         if (!File.Exists(journalPath))
         {
+            if (IsLiveCreation(directory)) { return false; }
+            using PublicationDirectoryLease? orphanLease = suppliedLease is null
+                ? PublicationDirectoryLease.Acquire(root, [root], deadline) : null;
+            if (!(suppliedLease ?? orphanLease!).CoversDirectories([root])) { throw new PublicationLeaseExpansionException(); }
+            if (!Directory.Exists(directory) || File.Exists(journalPath) || IsLiveCreation(directory)) { return false; }
             CleanOrphanJournalTemporaries(directory);
             return true;
         }
@@ -333,6 +358,15 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             return false;
         }
 
+        if (IsOwnerAlive(journal) && journal.State is not (PublicationTransactionState.Committed or PublicationTransactionState.RolledBack)) { return false; }
+        ValidateJournal(root, AtomicPublicationPlan.Open(directory, journal));
+        using PublicationDirectoryLease? ownedLease = suppliedLease is null
+            ? PublicationDirectoryLease.Acquire(root, AtomicPublicationPlan.ResourceDirectories(journal), deadline) : null;
+        PublicationDirectoryLease lease = suppliedLease ?? ownedLease!;
+        if (!File.Exists(journalPath)) { return false; }
+        journal = PublicationJournal.Read(journalPath);
+        if (!lease.CoversDirectories(AtomicPublicationPlan.ResourceDirectories(journal))) { throw new PublicationLeaseExpansionException(); }
+        if (IsOwnerAlive(journal) && journal.State is not (PublicationTransactionState.Committed or PublicationTransactionState.RolledBack)) { return false; }
         var recoveryPlan = AtomicPublicationPlan.Open(directory, journal);
         ValidateJournal(root, recoveryPlan);
         if (journal.State == PublicationTransactionState.Partial)
@@ -396,6 +430,23 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
         recoveryPlan.CleanUp(throwOnFailure: true);
         return true;
+    }
+
+    private static bool IsLiveCreation(string directory)
+    {
+        string[] parts = Path.GetFileName(directory).Split('-');
+        if (parts.Length != 5 || parts[0] != ".aspose" || parts[1] != "publication"
+            || !int.TryParse(parts[2], out int pid) || pid <= 0
+            || !long.TryParse(parts[3], out long ticks) || ticks <= 0
+            || !Guid.TryParseExact(parts[4], "N", out _)) { return false; }
+        try
+        {
+            using Process process = Process.GetProcessById(pid);
+            return process.StartTime.ToUniversalTime().Ticks == ticks;
+        }
+        catch (ArgumentException) { return false; }
+        catch (InvalidOperationException) { return false; }
+        catch (System.ComponentModel.Win32Exception) { return true; }
     }
 
     private static void ValidateTransactionDirectory(

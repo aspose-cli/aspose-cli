@@ -87,7 +87,8 @@ public sealed class ResourceBudgetLedger
 
     public ResourceBudgetLedger(
         OperationDeadline deadline,
-        IReadOnlyDictionary<string, long>? limits = null)
+        IReadOnlyDictionary<string, long>? limits = null,
+        WorkerOutputSession? outputSession = null)
     {
         Deadline = deadline ?? throw new ArgumentNullException(nameof(deadline));
         _limits = NormalizeLimits(limits);
@@ -98,10 +99,19 @@ public sealed class ResourceBudgetLedger
                 ? StringComparer.OrdinalIgnoreCase
                 : StringComparer.Ordinal);
         Inputs = new InputSource(this);
+        OutputSession = outputSession;
     }
 
     /// <summary>Absolute invocation deadline shared with all budget checks.</summary>
     public OperationDeadline Deadline { get; }
+
+    /// <summary>Explicit deferred publication selected by the owning host, if any.</summary>
+    public WorkerOutputSession? OutputSession { get; }
+
+    /// <summary>Whether this invocation has durably committed a final output set.</summary>
+    public bool HasCommittedOutputs { get; private set; }
+    internal void MarkOutputsCommitted() => HasCommittedOutputs = true;
+
 
     /// <summary>Bounded file/stdin/text reader backed by this ledger.</summary>
     public InputSource Inputs { get; }

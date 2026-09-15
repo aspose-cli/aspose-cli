@@ -1,152 +1,149 @@
+using System.ComponentModel;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Sdk.IO;
 
-/// <summary>
-/// Serializes publication and recovery on one filesystem volume while keeping
-/// the requested directory as the transaction's path boundary.
-/// </summary>
+/// <summary>Shared ancestor and exclusive publication-directory leases, released by handle.</summary>
 internal sealed class PublicationDirectoryLease : IDisposable
 {
-    private static readonly TimeSpan WaitTimeout = TimeSpan.FromSeconds(30);
-    private readonly FileStream _lock;
+    private static readonly TimeSpan DefaultWait = TimeSpan.FromSeconds(30);
+    private static StringComparer Comparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
+    private readonly List<FileStream> _handles;
+    private readonly string[] _exclusive;
     private readonly FilePhysicalIdentity? _directoryIdentity;
 
-    private PublicationDirectoryLease(
-        string directory,
-        FileStream @lock,
-        FilePhysicalIdentity? directoryIdentity)
+    private PublicationDirectoryLease(string directory, string[] exclusive, List<FileStream> handles)
     {
         Directory = directory;
-        _lock = @lock;
-        _directoryIdentity = directoryIdentity;
+        _exclusive = exclusive;
+        _handles = handles;
+        _directoryIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(directory);
     }
 
     public string Directory { get; }
 
-    public static PublicationDirectoryLease Acquire(string directory)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(directory);
-        string root = Path.GetFullPath(directory);
-        OutputPathValidator.EnsureSafeDirectory(root);
-        System.IO.Directory.CreateDirectory(root);
-        OutputPathValidator.EnsureSafeDirectory(root);
-        FilePhysicalIdentity? directoryIdentity =
-            FilePublicationOwnedDelete.TryGetDirectoryIdentity(root);
-        if (OperatingSystem.IsWindows() && directoryIdentity is null)
-        {
-            throw CliErrors.OutputUnwritable(
-                root,
-                "the output directory identity could not be verified",
-                phase: "path");
-        }
-        string lockDirectory = PrivateUserStorage.EnsureDirectory(Path.Combine(
-            PrivateUserStorage.PublicationLockRoot(),
-            "publication-locks"));
-        string canonical = OperatingSystem.IsWindows()
-            ? $"volume:{directoryIdentity!.Value.VolumeSerialNumber:X8}"
-            : Path.GetPathRoot(root) ?? root;
-        string lockPath = Path.Combine(
-            lockDirectory,
-            Convert.ToHexString(SHA256.HashData(
-                Encoding.UTF8.GetBytes(canonical))) + ".lock");
-        EnsureLockFile(lockPath);
-        PrivateUserStorage.ValidateFile(lockPath);
+    public static PublicationDirectoryLease Acquire(string directory) => Acquire(directory, [directory], deadline: null);
 
-        DateTime deadline = DateTime.UtcNow + WaitTimeout;
-        while (true)
+    internal static PublicationDirectoryLease Acquire(string directory, IEnumerable<string> outputDirectories, OperationDeadline? deadline)
+    {
+        string root = Normalize(directory);
+        OutputPathValidator.EnsureSafeDirectory(root);
+        string[] requested = outputDirectories.Select(Normalize).Distinct(Comparer).ToArray();
+        if (requested.Length == 0) { requested = [root]; }
+        string[] exclusive = requested.Where(path => !requested.Any(other => !Comparer.Equals(path, other) && IsWithin(other, path))).ToArray();
+        var requests = new Dictionary<string, bool>(Comparer);
+        var volumes = new SortedSet<string>(StringComparer.Ordinal);
+        foreach (string path in exclusive)
         {
-            try
+            OutputPathValidator.EnsureSafeDirectory(path);
+            string existing = path;
+            while (!System.IO.Directory.Exists(existing)) { existing = Path.GetDirectoryName(existing)!; }
+            FilePhysicalIdentity? identity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(existing);
+            if (OperatingSystem.IsWindows() && identity is null) { throw CliErrors.OutputUnwritable(path, "the output volume identity could not be verified"); }
+            volumes.Add(OperatingSystem.IsWindows() ? $"volume:{identity!.Value.VolumeSerialNumber:X8}" : Path.GetPathRoot(path)!);
+            for (string? current = path; current is not null; current = Path.GetDirectoryName(current))
             {
-                var stream = new FileStream(
-                    lockPath,
-                    FileMode.Open,
-                    FileAccess.ReadWrite,
-                    FileShare.None,
-                    bufferSize: 1,
-                    FileOptions.None);
-                var lease = new PublicationDirectoryLease(
-                    root,
-                    stream,
-                    directoryIdentity);
-                try
-                {
-                    lease.EnsureDirectoryUnchanged();
-                    return lease;
-                }
-                catch
-                {
-                    lease.Dispose();
-                    throw;
-                }
+                bool write = Comparer.Equals(current, path);
+                requests[current] = write || requests.GetValueOrDefault(current);
             }
-            catch (IOException) when (DateTime.UtcNow < deadline)
+        }
+        string lockRoot = PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.PublicationLockRoot(), "publication-locks"));
+        using OperationDeadline? fallback = deadline?.OriginalBudget is null
+            ? OperationDeadline.Start(DefaultWait, deadline?.Token ?? CancellationToken.None) : null;
+        OperationDeadline wait = fallback ?? deadline!;
+        var handles = new List<FileStream>();
+        try
+        {
+            // The existing neutral volume key remains a shared compatibility barrier.
+            foreach (string volume in volumes) { handles.Add(AcquireFile(lockRoot, volume, exclusive: false, wait)); }
+            foreach ((string path, bool write) in requests.OrderBy(item => item.Key, Comparer))
             {
-                Thread.Sleep(25);
+                handles.Add(AcquireFile(lockRoot, "directory:" + (OperatingSystem.IsWindows() ? path.ToUpperInvariant() : path), write, wait));
             }
-            catch (IOException)
-            {
-                throw CliErrors.OperationTimeout(
-                    (int)WaitTimeout.TotalSeconds,
-                    "publication-lock");
-            }
+            return new PublicationDirectoryLease(root, exclusive, handles);
+        }
+        catch
+        {
+            foreach (FileStream handle in handles.AsEnumerable().Reverse()) { handle.Dispose(); }
+            throw;
         }
     }
+
+    internal bool CoversDirectories(IEnumerable<string> directories) =>
+        directories.All(path => _exclusive.Any(root => IsWithin(root, Normalize(path))));
 
     public void EnsureCovers(string path)
     {
         OutputPathValidator.EnsureSafeFile(path);
-        EnsureDirectoryUnchanged(path);
-        string parent = Path.GetDirectoryName(Path.GetFullPath(path))
-            ?? throw new IOException($"Publication path '{path}' has no parent directory.");
-        StringComparison comparison = OperatingSystem.IsWindows()
-            ? StringComparison.OrdinalIgnoreCase
-            : StringComparison.Ordinal;
-        string prefix = Directory.TrimEnd(
-            Path.DirectorySeparatorChar,
-            Path.AltDirectorySeparatorChar) + Path.DirectorySeparatorChar;
-        if (!string.Equals(parent, Directory, comparison)
-            && !parent.StartsWith(prefix, comparison))
+        EnsureDirectoryUnchanged();
+        string parent = Path.GetDirectoryName(Path.GetFullPath(path))!;
+        if (!IsWithin(Directory, parent) || !CoversDirectories([parent]))
         {
-            throw new IOException(
-                $"Publication target '{path}' is outside the leased directory '{Directory}'.");
+            throw new IOException($"Publication target '{path}' is outside the leased resources.");
         }
     }
 
-    internal void EnsureDirectoryUnchanged() =>
-        EnsureDirectoryUnchanged(Directory);
-
-    private void EnsureDirectoryUnchanged(string contextPath)
+    internal void EnsureDirectoryUnchanged()
     {
-        FilePhysicalIdentity? currentIdentity =
-            FilePublicationOwnedDelete.TryGetDirectoryIdentity(Directory);
-        if (OperatingSystem.IsWindows()
-            && currentIdentity != _directoryIdentity)
+        OutputPathValidator.EnsureSafeDirectory(Directory);
+        if (OperatingSystem.IsWindows() && _directoryIdentity != FilePublicationOwnedDelete.TryGetDirectoryIdentity(Directory))
         {
-            throw CliErrors.OutputUnwritable(
-                contextPath,
-                "the leased output directory changed during publication",
-                phase: "path");
+            throw CliErrors.OutputUnwritable(Directory, "the leased output directory changed during publication", phase: "path");
         }
     }
 
-    public void Dispose() => _lock.Dispose();
-
-    private static void EnsureLockFile(string path)
+    public void Dispose()
     {
-        if (File.Exists(path))
-        {
-            return;
-        }
+        foreach (FileStream handle in _handles.AsEnumerable().Reverse()) { handle.Dispose(); }
+        _handles.Clear();
+    }
 
-        try
+    private static FileStream AcquireFile(string root, string key, bool exclusive, OperationDeadline deadline)
+    {
+        string path = Path.Combine(root, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key))) + ".lock");
+        if (!File.Exists(path))
         {
-            using FileStream _ = PrivateUserStorage.CreateFile(path);
+            try { using FileStream created = PrivateUserStorage.CreateFile(path); }
+            catch (IOException) when (File.Exists(path)) { }
         }
-        catch (IOException) when (File.Exists(path))
+        PrivateUserStorage.ValidateFile(path);
+        while (true)
         {
+            deadline.ThrowIfExpired("publication-lock");
+            FileStream? stream = null;
+            try
+            {
+                stream = new FileStream(path, FileMode.Open, FileAccess.Read,
+                    OperatingSystem.IsWindows() ? (exclusive ? FileShare.None : FileShare.Read) : FileShare.ReadWrite,
+                    bufferSize: 1, FileOptions.None);
+                if (!OperatingSystem.IsWindows() && Flock(stream.SafeFileHandle.DangerousGetHandle().ToInt32(), (exclusive ? 2 : 1) | 4) != 0)
+                {
+                    int error = Marshal.GetLastPInvokeError();
+                    stream.Dispose();
+                    stream = null;
+                    if (error is not (11 or 35)) { throw new IOException("The publication lock could not be acquired.", new Win32Exception(error)); }
+                }
+                if (stream is not null) { return stream; }
+            }
+            catch (IOException exception) when (OperatingSystem.IsWindows() && (exception.HResult & 0xffff) is 32 or 33)
+            {
+                stream?.Dispose();
+            }
+            if (deadline.Token.WaitHandle.WaitOne(25)) { deadline.ThrowIfExpired("publication-lock"); }
         }
     }
+
+    private static string Normalize(string path) => Path.TrimEndingDirectorySeparator(Path.GetFullPath(path));
+    private static bool IsWithin(string parent, string path) => Comparer.Equals(parent, path)
+        || path.StartsWith(Path.EndsInDirectorySeparator(parent) ? parent : parent + Path.DirectorySeparatorChar,
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+
+    [DllImport("libc", EntryPoint = "flock", SetLastError = true)]
+    private static extern int Flock(int descriptor, int operation);
 }
+
+internal sealed class PublicationLeaseExpansionException : Exception;

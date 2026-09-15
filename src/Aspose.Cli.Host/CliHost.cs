@@ -24,7 +24,7 @@ public static class CliHost
         {
             ProductCatalog catalog = catalogFactory();
             using InvocationInputs? inputs = InvocationInputs.Receive();
-            var host = new HostContext(catalog);
+            var host = new HostContext(catalog, TimeoutWorkerSupervisor.ReceiveOutputSession());
             ConfigureConsole();
             ConfigureUiCulture();
             args = NormalizeInteractiveArguments(args, IsInteractiveDesktop());

@@ -6,6 +6,7 @@ namespace Aspose.Cli.Sdk.IO;
 /// <summary>Bounds and names extracted files, then publishes through the shared transaction.</summary>
 public sealed class ExtractionGuard : IDisposable
 {
+    private readonly WorkerOutputSession? _worker;
     private readonly ExtractionBudgetLedger _budget;
     private readonly ExtractionPlan _plan;
     private readonly AtomicOutputSetWriter _transaction;
@@ -20,8 +21,9 @@ public sealed class ExtractionGuard : IDisposable
         int maxItems, long maxBytes, IPublicationFaultInjector faults)
     {
         ArgumentNullException.ThrowIfNull(resourceBudgets);
+        _worker = resourceBudgets.OutputSession;
         _budget = new ExtractionBudgetLedger(maxItems, maxBytes);
-        _plan = new ExtractionPlan(Path.GetFullPath(root), WorkerOutputSession.IsActive);
+        _plan = new ExtractionPlan(Path.GetFullPath(root), _worker is not null);
         _plan.EnsureRoot();
         try { _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), Path.GetFullPath(root), "extraction", faults); }
         catch { _plan.RemoveCreatedDirectories(); throw; }
@@ -81,9 +83,9 @@ public sealed class ExtractionGuard : IDisposable
     public void Commit()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (WorkerOutputSession.IsActive)
+        if (_worker is not null)
         {
-            foreach (string directory in _plan.Directories) { WorkerOutputSession.RegisterDirectory(directory); }
+            foreach (string directory in _plan.Directories) { _worker.RegisterDirectory(directory); }
         }
         _transaction.Commit();
         _committed = true;

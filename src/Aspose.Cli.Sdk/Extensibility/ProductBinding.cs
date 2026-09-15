@@ -15,6 +15,9 @@ public sealed class ProductActivationContext
     /// <summary>Resolved explicit license path selected for this invocation.</summary>
     public required string? LicensePath { get; init; }
 
+    /// <summary>Explicit validated configuration changes for a license command result.</summary>
+    public UserLicenseChanges? UserLicenseChanges { get; init; }
+
     /// <summary>Already validated process-lifetime licenses, when a long-lived host pins its SDK state.</summary>
     public Func<string, ILicenseGate>? RuntimeLicenseForProduct { get; init; }
 

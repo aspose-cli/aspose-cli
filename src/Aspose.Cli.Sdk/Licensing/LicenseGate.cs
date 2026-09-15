@@ -77,7 +77,7 @@ public abstract class LicenseGate : ILicenseGate
             return bytes;
         }
 
-        using FileStream input = File.OpenRead(WorkerOutputSession.ResolveReadPath(Resolution.Path!));
+        using FileStream input = File.OpenRead(Resolution.ContentPath ?? Resolution.Path!);
         if (input.Length > LicenseInstaller.MaximumBytes)
         {
             throw CliErrors.LicenseInvalid(source, "the license exceeds the one MiB limit");
@@ -111,7 +111,7 @@ internal static class ProductLicenseGateFactory
         {
             LicenseResolution resolution = LicenseResolver.Resolve(
                 context.LicensePath, productId, context.EnvironmentVariable,
-                context.WorkDirectory, context.ConfigDirectory);
+                context.WorkDirectory, context.ConfigDirectory, context.UserLicenseChanges);
             return factory(resolution)
                 ?? throw new InvalidOperationException($"Product '{productId}' returned no license gate.");
         }

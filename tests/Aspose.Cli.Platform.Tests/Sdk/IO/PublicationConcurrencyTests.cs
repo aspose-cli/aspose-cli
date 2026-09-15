@@ -1,0 +1,82 @@
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
+using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.TestKit;
+using Xunit;
+
+namespace Aspose.Cli.Sdk.Tests.IO;
+
+public sealed class PublicationConcurrencyTests
+{
+    [Fact]
+    public async Task AnIndependentCommitCompletesWhileAnotherDirectoryIsPaused()
+    {
+        using var temp = new TempDirectory();
+        using var entered = new ManualResetEventSlim();
+        using var resume = new ManualResetEventSlim();
+        string first = temp.File(Path.Combine("a", "one.txt"));
+        string second = temp.File(Path.Combine("b", "two.txt"));
+        using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), Path.GetDirectoryName(first)!, "paused",
+            new Callback(point =>
+            {
+                if (point.Kind == PublicationFaultKind.Publish)
+                {
+                    entered.Set();
+                    if (!resume.Wait(TimeSpan.FromSeconds(15))) { throw new TimeoutException("The test did not resume publication."); }
+                }
+            }));
+        transaction.Stage(first, false, path => File.WriteAllText(path, "first"));
+        Task commit = Task.Run(() => transaction.Commit());
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            await Task.Run(() => TestBudgets.Writer().Write(second, false, path => File.WriteAllText(path, "second")))
+                .WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal("second", File.ReadAllText(second));
+            Assert.False(File.Exists(first));
+        }
+        finally { resume.Set(); await commit.WaitAsync(TimeSpan.FromSeconds(5)); }
+    }
+
+    [Fact]
+    public void ExpirationBetweenFilesRestoresEarlierPublications()
+    {
+        using var temp = new TempDirectory();
+        using var cancelled = new CancellationTokenSource();
+        using var deadline = OperationDeadline.Start(null, cancelled.Token);
+        var writer = new SafeFileWriter(new ResourceBudgetLedger(deadline));
+        string first = temp.File("one.txt");
+        string second = temp.File("two.txt");
+        File.WriteAllText(first, "original");
+        using var transaction = new AtomicOutputSetWriter(writer, temp.Path, "cancelled",
+            new Callback(point =>
+            {
+                if (point.Kind == PublicationFaultKind.Publish && point.EntryIndex == 0) { cancelled.Cancel(); }
+            }));
+        transaction.Stage(first, true, path => File.WriteAllText(path, "replacement"));
+        transaction.Stage(second, false, path => File.WriteAllText(path, "second"));
+        Assert.ThrowsAny<OperationCanceledException>(() => transaction.Commit());
+        Assert.Equal("original", File.ReadAllText(first));
+        Assert.False(File.Exists(second));
+    }
+
+    [Fact]
+    public void LockWaitUsesTheOriginalDeadlineWithoutPublishing()
+    {
+        using var temp = new TempDirectory();
+        using PublicationDirectoryLease held = PublicationDirectoryLease.Acquire(temp.Path);
+        using var deadline = OperationDeadline.Start(TimeSpan.FromMilliseconds(150));
+        var writer = new SafeFileWriter(new ResourceBudgetLedger(deadline));
+        string target = temp.File("late.txt");
+        using var transaction = new AtomicOutputSetWriter(writer, temp.Path, "deadline");
+        transaction.Stage(target, false, path => File.WriteAllText(path, "late"));
+        CliException error = Assert.Throws<CliException>(() => transaction.Commit());
+        Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
+        Assert.False(File.Exists(target));
+    }
+
+    private sealed class Callback(Action<PublicationFaultPoint> action) : IPublicationFaultInjector
+    {
+        public void Hit(PublicationFaultPoint point) => action(point);
+    }
+}

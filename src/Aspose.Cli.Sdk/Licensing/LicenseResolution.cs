@@ -42,6 +42,8 @@ public sealed record LicenseResolution(LicenseSourceKind Kind, string? Path)
     /// <summary>Normalized product identifier for a product-specific source.</summary>
     public string? ProductId { get; init; }
 
+    internal string? ContentPath { get; init; }
+
     /// <summary>A license source was found (it may still fail validation).</summary>
     public bool IsConfigured => Kind != LicenseSourceKind.None;
 

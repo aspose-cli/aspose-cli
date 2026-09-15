@@ -40,8 +40,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         _plan = AtomicPublicationPlan.Create(
             targetDirectory,
             operation,
-            faults);
-        _plan.ResourceBudgets = writer.ResourceBudgets;
+            faults, writer.ResourceBudgets);
         _staging = new AtomicPublicationStaging(_plan, writer);
         _commit = new AtomicPublicationCommit(_plan);
         _recovery = new AtomicPublicationRecovery(_plan);
@@ -105,6 +104,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
         ThrowIfDisposed();
         try
         {
+            _plan.BeginCommit();
             _plan.EnsureNoUnknownArtifacts();
             return _commit.Execute(beforeCommit);
         }

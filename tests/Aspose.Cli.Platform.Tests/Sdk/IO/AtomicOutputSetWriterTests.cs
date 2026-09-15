@@ -991,7 +991,7 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
-    public async Task VolumeLeaseSerializesAncestorAndDescendantPublications()
+    public async Task StagingDoesNotBlockAnIndependentDirectoryPublication()
     {
         using var temp = new TempDirectory();
         string first = temp.File(Path.Combine("a", "first.txt"));
@@ -1010,8 +1010,8 @@ public sealed class AtomicOutputSetWriterTests
             second,
             overwrite: false,
             staged => File.WriteAllText(staged, "second")));
-        await Task.Delay(100);
-        Assert.False(secondWrite.IsCompleted);
+        await secondWrite.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(File.Exists(first));
 
         set.Commit();
         await secondWrite.WaitAsync(TimeSpan.FromSeconds(5));

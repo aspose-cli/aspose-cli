@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using System.Text;
-using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Configuration;
@@ -89,7 +88,8 @@ internal sealed class LicenseManager(ProductCatalog catalog, GlobalValues global
             Applicable = applicable,
             Products = statuses,
             Identity = identity,
-            SharedUserLicenseInstalled = applicable && WorkerOutputSession.FileExists(LicenseResolver.SharedUserLicensePath(context.ProductActivation.ConfigDirectory)),
+            SharedUserLicenseInstalled = applicable && (context.ProductActivation.UserLicenseChanges?.IsSharedInstalled(context.ProductActivation.ConfigDirectory)
+                ?? File.Exists(LicenseResolver.SharedUserLicensePath(context.ProductActivation.ConfigDirectory))),
         }, context.ProductActivation);
     }
 
@@ -97,10 +97,11 @@ internal sealed class LicenseManager(ProductCatalog catalog, GlobalValues global
     internal static string RequireIdentity(CommandContext context, ProductDefinition product) =>
         context.Activate(product).LicenseGate.Identity;
 
-    internal static IReadOnlyList<string> Install(CommandContext context, string sourcePath, string? productId)
+    internal static LicenseStatusResult Install(CommandContext context, string sourcePath, string? productId)
     {
         ProductDefinition[] products = RequireApplicable(context.Catalog, productId, "installation");
         var compatible = new List<string>();
+        LicenseStatusResult? result = null;
         LicenseInstaller.InstallMany(context.ResourceBudgets, sourcePath, snapshot =>
         {
             CommandContext validation = CompositionRoot.Create(
@@ -126,11 +127,28 @@ internal sealed class LicenseManager(ProductCatalog catalog, GlobalValues global
             {
                 throw rejected ?? CliErrors.LicenseInvalid("file", "the file is not valid for the selected products");
             }
+            result = Inspect(WithChanges(context, new UserLicenseChanges(
+                compatible.Select(id => KeyValuePair.Create<string, string?>(id, snapshot)))));
             ConfigurationPaths.EnsureUserDirectory();
             return compatible.Select(id => LicenseResolver.UserLicensePath(context.ProductActivation.ConfigDirectory, id));
         });
-        return compatible;
+        return result!;
     }
+
+    internal static LicenseStatusResult RemoveAndReport(CommandContext context, string? productId)
+    {
+        bool sharedOnly = productId == "shared";
+        ProductDefinition[] products = RequireApplicable(context.Catalog, sharedOnly ? null : productId, "removal");
+        var changes = new UserLicenseChanges(sharedOnly ? [] : products.Select(product =>
+            KeyValuePair.Create<string, string?>(product.Manifest.Id, null)), productId is null || sharedOnly);
+        LicenseStatusResult result = Inspect(WithChanges(context, changes));
+        Remove(context, productId);
+        return result;
+    }
+
+    private static CommandContext WithChanges(CommandContext context, UserLicenseChanges changes) =>
+        CompositionRoot.Create(context.Catalog, context.Globals, resourceBudgets: context.ResourceBudgets,
+            licenseChanges: changes);
 
     internal static bool Remove(CommandContext context, string? productId)
     {
@@ -167,8 +185,8 @@ internal sealed class LicenseManager(ProductCatalog catalog, GlobalValues global
             Path = gate.Resolution.Path,
             Problem = error?.Message,
             Hint = error?.Hint,
-            UserLicenseInstalled = gate.IsApplicable && WorkerOutputSession.FileExists(LicenseResolver.UserLicensePath(
-                context.ProductActivation.ConfigDirectory, product.Manifest.Id)),
+            UserLicenseInstalled = gate.IsApplicable && (context.ProductActivation.UserLicenseChanges?.IsProductInstalled(context.ProductActivation.ConfigDirectory, product.Manifest.Id)
+                ?? File.Exists(LicenseResolver.UserLicensePath(context.ProductActivation.ConfigDirectory, product.Manifest.Id))),
         };
     }
 

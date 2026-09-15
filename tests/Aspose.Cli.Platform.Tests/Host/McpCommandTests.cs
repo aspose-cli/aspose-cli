@@ -149,8 +149,8 @@ public sealed class McpCommandTests
                 + "while ($true) { Start-Sleep -Milliseconds 100 }");
 
             var runner = new McpCommandRunner(
-                ProbeParser(),
-                () => CreatePowerShellStartInfo(parentScript));
+                ActualCommandTree.Host,
+                () => CreatePowerShellStartInfo(parentScript), parser: ProbeParser());
             var stopwatch = Stopwatch.StartNew();
             execution = runner.RunAsync(
                 ["timeout-probe"],
@@ -222,7 +222,7 @@ public sealed class McpCommandTests
         try
         {
             await File.WriteAllTextAsync(script, "while ($true) { Start-Sleep -Milliseconds 100 }");
-            var runner = new McpCommandRunner(ProbeParser(), () => CreatePowerShellStartInfo(script));
+            var runner = new McpCommandRunner(ActualCommandTree.Host, () => CreatePowerShellStartInfo(script), parser: ProbeParser());
             var stopwatch = Stopwatch.StartNew();
             execution = runner.RunAsync(["timeout-probe"], null, 1, cancellation.Token);
             McpCommandException error = await Assert.ThrowsAsync<McpCommandException>(() => execution);

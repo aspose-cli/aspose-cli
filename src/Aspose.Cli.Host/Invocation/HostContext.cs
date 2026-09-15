@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Host.Serialization;
 using Aspose.Cli.Host.Skills;
@@ -7,8 +8,9 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>Immutable resources owned by one statically composed CLI host.</summary>
 internal sealed class HostContext
 {
-    public HostContext(ProductCatalog catalog)
+    public HostContext(ProductCatalog catalog, WorkerOutputSession? workerOutputs = null)
     {
+        WorkerOutputs = workerOutputs;
         Catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _parser = new Lazy<InvocationParser>(() =>
         {
@@ -26,6 +28,7 @@ internal sealed class HostContext
     internal InvocationParser Parser => _parser.Value;
 
     public ProductCatalog Catalog { get; }
+    public WorkerOutputSession? WorkerOutputs { get; }
 
     public HostContractJson ContractJson { get; }
 

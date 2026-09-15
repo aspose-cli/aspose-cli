@@ -16,8 +16,9 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
 - Installation admits one private snapshot before validation, then publishes the
   validated bytes for compatible products in one transaction. Removal uses the same
   publication locks and rollback, including shared and product-specific locations.
-- Worker results observe staged installation/deletion, while only the supervisor
-  publishes final files. Existing license targets must already be private.
+- Installation/removal results come from explicit validated configuration changes. Only
+  the supervisor publishes worker outputs; ordinary file reads always address physical files.
+  Existing license targets must already be private.
 - A long-lived App pins its validated gates for its entire SDK process. Opening a
   new document cannot silently read a newer license than the App's status/identity.
 - App-side validation uses `LicenseValidationProcess`, a bounded short-lived CLI

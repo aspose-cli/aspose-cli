@@ -13,7 +13,7 @@ public static class FileFingerprints
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string fullPath = Path.GetFullPath(path);
-        string readPath = WorkerOutputSession.ResolveReadPath(fullPath);
+        string readPath = fullPath;
         try
         {
             using var stream = new FileStream(

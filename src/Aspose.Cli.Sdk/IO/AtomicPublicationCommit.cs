@@ -28,8 +28,11 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             }
         }
 
+        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-commit");
         beforeCommit?.Invoke();
+        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-commit-record");
         plan.Transition(PublicationTransactionState.Committed);
+        if (!plan.WorkerStagingOnly) { plan.ResourceBudgets?.MarkOutputsCommitted(); }
         return plan.Journal.Entries
             .OrderBy(static entry => entry.Index)
             .Select(static entry => entry.Size)
@@ -40,17 +43,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
     {
         foreach (PublicationJournalEntry entry in plan.Journal.Entries)
         {
-            WorkerOutputSession.RegisterFile(
-                entry.Target,
-                entry.Staged,
-                entry.Overwrite,
-                entry.RequestedBackup,
-                entry.Original,
-                entry.StagedSnapshot);
-            if (entry.DeleteTarget)
-            {
-                WorkerOutputSession.MarkDeleted(entry.Target);
-            }
+            plan.Worker!.Register(entry);
             entry.State = PublicationEntryState.Published;
             plan.Persist();
         }
@@ -67,6 +60,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                     new Aspose.Cli.Sdk.Contracts.FileFingerprint { Sha256 = expectedInput.Sha256!.ToLowerInvariant() },
                     FileFingerprints.Capture(input));
             }
+            plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-prepare");
             EnsureTargetUnchanged(entry);
             if (entry.RequestedBackup is { } backup && entry.RequestedBackupOriginal is { } expectedBackup)
             {
@@ -151,6 +145,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
 
     private void Publish(PublicationJournalEntry entry)
     {
+        plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-file");
         entry.State = PublicationEntryState.Publishing;
         plan.Persist();
         plan.Faults.Hit(new PublicationFaultPoint(

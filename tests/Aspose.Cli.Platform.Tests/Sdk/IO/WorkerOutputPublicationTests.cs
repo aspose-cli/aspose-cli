@@ -13,7 +13,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         PrivateUserStorage.CreateTemporaryDirectory("worker");
 
     private string ManifestPath =>
-        Path.Combine(_workerRoot, "output-manifest.v1.json");
+        Path.Combine(_workerRoot, WorkerOutputSession.ManifestName);
 
     public void Dispose()
     {
@@ -29,19 +29,17 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         File.WriteAllText(target, "original");
         WorkerOutputManifest manifest = Manifest(
             Entry(target, "published", backup));
-        WorkerOutputSession.WriteManifest(ManifestPath, manifest);
+        WorkerManifestStore.Write(ManifestPath, manifest);
 
         Assert.Equal("original", File.ReadAllText(target));
         Assert.False(File.Exists(backup));
 
-        WorkerOutputSession.Publish(ManifestPath);
+        WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create());
 
         Assert.Equal("published", File.ReadAllText(target));
         Assert.Equal("original", File.ReadAllText(backup));
-        Assert.Contains(
-            "\"state\": 2",
-            PrivateUserStorage.ReadAllText(ManifestPath),
-            StringComparison.Ordinal);
+        Assert.DoesNotContain("\"state\"", PrivateUserStorage.ReadAllText(ManifestPath), StringComparison.Ordinal);
+
     }
 
     [Fact]
@@ -51,24 +49,18 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string replaced = _temp.File("report.txt");
         File.WriteAllText(deleted, "obsolete");
         File.WriteAllText(replaced, "original");
-        WorkerOutputEntry deletion = Entry(deleted, "unused");
-        deletion.DeleteTarget = true;
+        WorkerOutputEntry deletion = Entry(deleted, "unused") with { DeleteTarget = true };
         WorkerOutputManifest manifest = Manifest(
             deletion,
             Entry(replaced, "published"));
-        WorkerOutputSession.WriteManifest(ManifestPath, manifest);
+        WorkerManifestStore.Write(ManifestPath, manifest);
 
-        WorkerOutputSession.Publish(ManifestPath);
+        WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create());
 
         Assert.False(File.Exists(deleted));
         Assert.Equal("published", File.ReadAllText(replaced));
-        WorkerOutputManifest published =
-            WorkerManifestStore.ReadAndValidate(ManifestPath);
-        Assert.All(
-            published.Entries,
-            entry => Assert.Equal(
-                WorkerPublicationState.Published,
-                entry.State));
+        Assert.Equal(2, WorkerManifestStore.ReadAndValidate(ManifestPath).Entries.Count);
+
     }
 
     [Fact]
@@ -133,13 +125,13 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         WorkerOutputManifest manifest = Manifest(
             Entry(first, "first-published"),
             Entry(second, "second-published"));
-        WorkerOutputSession.WriteManifest(ManifestPath, manifest);
+        WorkerManifestStore.Write(ManifestPath, manifest);
         File.WriteAllText(second, "external-change");
 
         CliException error = Assert.Throws<CliException>(
-            () => WorkerOutputSession.Publish(ManifestPath));
+            () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
 
-        Assert.Equal(ErrorCodes.OutputPublicationPartial, error.Code);
+        Assert.Equal(ErrorCodes.OutputConflict, error.Code);
         Assert.Equal("first-original", File.ReadAllText(first));
         Assert.Equal("external-change", File.ReadAllText(second));
     }
@@ -150,7 +142,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string target = _temp.File("report.txt");
         File.WriteAllText(target, "original");
         WorkerOutputManifest manifest = Manifest(Entry(target, "published"));
-        WorkerOutputSession.WriteManifest(ManifestPath, manifest);
+        WorkerManifestStore.Write(ManifestPath, manifest);
         string staged = manifest.Entries[0].Staged;
         string replacement = Path.Combine(
             Path.GetDirectoryName(staged)!,
@@ -163,7 +155,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         File.Replace(replacement, staged, displaced);
 
         CliException error = Assert.Throws<CliException>(
-            () => WorkerOutputSession.Publish(ManifestPath));
+            () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.Equal("original", File.ReadAllText(target));
@@ -174,12 +166,12 @@ public sealed class WorkerOutputPublicationTests : IDisposable
     {
         string parent = _temp.File("undeclared");
         string target = Path.Combine(parent, "report.txt");
-        WorkerOutputSession.WriteManifest(
+        WorkerManifestStore.Write(
             ManifestPath,
             Manifest(Entry(target, "published")));
 
         CliException error = Assert.Throws<CliException>(
-            () => WorkerOutputSession.Publish(ManifestPath));
+            () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.False(Directory.Exists(parent));
@@ -194,97 +186,61 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         WorkerOutputManifest manifest = Manifest(
             Entry(first, "first-published"),
             Entry(second, "second-published"));
-        manifest.Directories.Add(new WorkerDirectoryEntry
-        {
-            Target = createdParent,
-            Existed = false,
-        });
-        WorkerOutputSession.WriteManifest(ManifestPath, manifest);
+        manifest = manifest with { Directories = [new WorkerDirectoryEntry(createdParent, false, null)] };
+        WorkerManifestStore.Write(ManifestPath, manifest);
         File.WriteAllText(second, "external-change");
 
         Assert.Throws<CliException>(() =>
-            WorkerOutputSession.Publish(ManifestPath));
+            WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.False(Directory.Exists(createdParent));
         Assert.Equal("external-change", File.ReadAllText(second));
     }
 
     [Fact]
-    public void Recovery_DoesNotClaimSameContentExternalReplacement()
+    public void Publish_SameContentExternalReplacementIsPreserved()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
         string target = _temp.File("report.txt");
         File.WriteAllText(target, "original");
-        WorkerOutputEntry entry = Entry(target, "published");
-        File.WriteAllText(target, "published");
-        entry.PublishedSnapshot = FilePublicationSnapshot.Capture(target);
-        entry.State = WorkerPublicationState.Published;
+        WorkerOutputManifest manifest = Manifest(Entry(target, "published"));
+        WorkerManifestStore.Write(ManifestPath, manifest);
         string external = _temp.File("external.txt");
-        string displaced = _temp.File("displaced.txt");
         File.WriteAllText(external, "original");
-        File.Replace(external, target, displaced);
-
-        PublicationRecoveryReport recovery =
-            WorkerOutputRecovery.Restore(Manifest(entry));
-
-        Assert.False(recovery.RecoveryComplete);
-        Assert.Equal("unknown", Assert.Single(recovery.Items).Status);
+        File.Replace(external, target, _temp.File("displaced.txt"));
+        Assert.Throws<CliException>(() => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
         Assert.Equal("original", File.ReadAllText(target));
     }
 
     [Fact]
-    public void Recovery_StagedEntryReportsAnExternalTargetChange()
+    public void Publish_InputChangeIsRejectedBeforeAnyTargetChanges()
+    {
+        string input = _temp.File("source.txt");
+        File.WriteAllText(input, "source");
+        string target = _temp.File("report.txt");
+        WorkerOutputEntry entry = Entry(target, "published") with
+        { InputPath = input, InputSnapshot = FilePublicationSnapshot.Capture(input) };
+        WorkerManifestStore.Write(ManifestPath, Manifest(entry));
+        File.WriteAllText(input, "external");
+        CliException error = Assert.Throws<CliException>(() => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
+        Assert.Equal(ErrorCodes.InputChanged, error.Code);
+        Assert.False(File.Exists(target));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Publish_DeadlineOrCancellationCannotBypassFinalPublication(bool expire)
     {
         string target = _temp.File("report.txt");
-        File.WriteAllText(target, "original");
-        WorkerOutputEntry entry = Entry(target, "published");
-        File.WriteAllText(target, "external-change");
-
-        PublicationRecoveryReport recovery =
-            WorkerOutputRecovery.Restore(Manifest(entry));
-
-        Assert.False(recovery.RecoveryComplete);
-        Assert.Equal("unknown", Assert.Single(recovery.Items).Status);
-        Assert.Equal("external-change", File.ReadAllText(target));
-    }
-
-    [Fact]
-    public void Recovery_RestoresDeletionAfterPublishingIntentWasPersisted()
-    {
-        string target = _temp.File("obsolete.txt");
-        File.WriteAllText(target, "original");
-        WorkerOutputEntry entry = Entry(target, "unused");
-        File.Delete(target);
-        entry.DeleteTarget = true;
-        entry.State = WorkerPublicationState.Publishing;
-        entry.PublishedSnapshot = FilePublicationSnapshot.Missing;
-        WorkerOutputSession.WriteManifest(ManifestPath, Manifest(entry));
-
-        WorkerOutputSession.RestoreOrThrow(
-            ManifestPath,
-            new IOException("simulated parent crash"));
-
-        Assert.Equal("original", File.ReadAllText(target));
-    }
-
-    [Fact]
-    public void Manifest_AcceptsPublishedDeletionWithMissingSnapshot()
-    {
-        string target = _temp.File("obsolete.txt");
-        File.WriteAllText(target, "obsolete");
-        WorkerOutputEntry entry = Entry(target, "unused");
-        File.Delete(target);
-        entry.DeleteTarget = true;
-        entry.State = WorkerPublicationState.Published;
-        entry.PublishedSnapshot = FilePublicationSnapshot.Missing;
-        WorkerOutputSession.WriteManifest(ManifestPath, Manifest(entry));
-
-        WorkerOutputSession.Publish(ManifestPath);
-
+        WorkerManifestStore.Write(ManifestPath, Manifest(Entry(target, "published")));
+        using var cancelled = new CancellationTokenSource();
+        using OperationDeadline deadline = expire
+            ? OperationDeadline.FromAbsoluteTick(TimeSpan.FromSeconds(1), Environment.TickCount64 - 1)
+            : OperationDeadline.Start(null, cancelled.Token);
+        if (!expire) { cancelled.Cancel(); }
+        Exception? error = Record.Exception(() => WorkerOutputSession.Publish(ManifestPath, new ResourceBudgetLedger(deadline)));
+        if (expire) { Assert.Equal(ErrorCodes.OperationTimeout, Assert.IsType<CliException>(error).Code); }
+        else { Assert.IsAssignableFrom<OperationCanceledException>(error); }
         Assert.False(File.Exists(target));
     }
 
@@ -296,30 +252,76 @@ public sealed class WorkerOutputPublicationTests : IDisposable
     {
         string target = _temp.File("report.txt");
         WorkerOutputManifest manifest = Manifest(Entry(target, "published"));
-        WorkerOutputSession.WriteManifest(ManifestPath, manifest);
+        WorkerManifestStore.Write(ManifestPath, manifest);
         string json = PrivateUserStorage.ReadAllText(ManifestPath);
         json = corruption switch
         {
             "duplicate" => json.Replace(
-                "\"version\": 1,",
-                "\"version\": 1,\r\n  \"version\": 1,",
+                "\"version\":2,",
+                "\"version\":2,\r\n  \"version\":2,",
                 StringComparison.Ordinal),
             "unknown" => json.Replace(
-                "\"version\": 1,",
-                "\"version\": 1,\r\n  \"unknown\": true,",
+                "\"version\":2,",
+                "\"version\":2,\r\n  \"unknown\": true,",
                 StringComparison.Ordinal),
             _ => json + new string(' ', 1024 * 1024),
         };
         PrivateUserStorage.WriteAllText(ManifestPath, json);
 
         CliException error = Assert.Throws<CliException>(
-            () => WorkerOutputSession.Publish(ManifestPath));
+            () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
 
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.Equal(
             "worker-manifest",
             error.Details!["phase"]!.GetValue<string>());
         Assert.False(File.Exists(target));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void ParentCommitFailureRestoresEarlierOutputsAndDeletion(bool cancel)
+    {
+        string first = _temp.File("first.txt");
+        string second = _temp.File("second.txt");
+        File.WriteAllText(first, "original");
+        File.WriteAllText(second, "obsolete");
+        WorkerManifestStore.Write(ManifestPath, Manifest(Entry(first, "published"),
+            Entry(second, "unused") with { DeleteTarget = true }));
+        using var cancellation = new CancellationTokenSource();
+        using var deadline = OperationDeadline.Start(null, cancellation.Token);
+        var faults = new Callback(point =>
+        {
+            if (point.Kind != PublicationFaultKind.Publish || point.EntryIndex != 1) { return; }
+            if (cancel) { cancellation.Cancel(); }
+            else { throw new IOException("Injected second output failure."); }
+        });
+        Exception? error = Record.Exception(() => WorkerOutputPublisher.Publish(
+            WorkerManifestStore.ReadAndValidate(ManifestPath), new ResourceBudgetLedger(deadline), faults));
+        if (cancel) { Assert.IsAssignableFrom<OperationCanceledException>(error); }
+        else { Assert.IsType<CliException>(error); }
+        Assert.Equal("original", File.ReadAllText(first));
+        Assert.Equal("obsolete", File.ReadAllText(second));
+    }
+
+    [Fact]
+    public void CancellationAfterDurableCommitDoesNotUndoPublishedData()
+    {
+        string target = _temp.File("report.txt");
+        WorkerManifestStore.Write(ManifestPath, Manifest(Entry(target, "published")));
+        using var cancellation = new CancellationTokenSource();
+        using var deadline = OperationDeadline.Start(null, cancellation.Token);
+        var budgets = new ResourceBudgetLedger(deadline);
+        WorkerOutputPublisher.Publish(WorkerManifestStore.ReadAndValidate(ManifestPath), budgets,
+            new Callback(point => { if (point.Kind == PublicationFaultKind.Cleanup) { cancellation.Cancel(); } }));
+        Assert.True(budgets.HasCommittedOutputs);
+        Assert.Equal("published", File.ReadAllText(target));
+    }
+
+    private sealed class Callback(Action<PublicationFaultPoint> action) : IPublicationFaultInjector
+    {
+        public void Hit(PublicationFaultPoint point) => action(point);
     }
 
     private WorkerOutputManifest Manifest(params WorkerOutputEntry[] entries) =>
@@ -341,17 +343,6 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         PrivateUserStorage.ProtectFile(staged);
         FilePublicationSnapshot stagedSnapshot =
             FilePublicationSnapshot.Capture(staged);
-        string? originalBackup = null;
-        FilePublicationSnapshot? originalBackupSnapshot = null;
-        if (original.Exists)
-        {
-            originalBackup = Path.Combine(retained, "original.backup");
-            File.Copy(fullTarget, originalBackup);
-            PrivateUserStorage.ProtectFile(originalBackup);
-            originalBackupSnapshot =
-                FilePublicationSnapshot.Capture(originalBackup);
-        }
-
         string? fullBackup = backupPath is null
             ? null
             : Path.GetFullPath(backupPath);
@@ -364,8 +355,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
             BackupOriginal = fullBackup is null || !original.Exists
                 ? null
                 : FilePublicationSnapshot.Capture(fullBackup),
-            OriginalBackup = originalBackup,
-            OriginalBackupSnapshot = originalBackupSnapshot,
+            TargetParentIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(Path.GetDirectoryName(fullTarget)!),
             Original = original,
             StagedSnapshot = stagedSnapshot,
         };

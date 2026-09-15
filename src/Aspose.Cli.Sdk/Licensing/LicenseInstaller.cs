@@ -81,8 +81,8 @@ public static class LicenseInstaller
         string? snapshotDirectory = null;
         try
         {
-            snapshotDirectory = WorkerOutputSession.IsActive
-                ? WorkerOutputSession.CreatePrivateDirectory("license-snapshot")
+            snapshotDirectory = resourceBudgets.OutputSession is { } worker
+                ? worker.CreatePrivateDirectory("license-snapshot")
                 : PrivateUserStorage.CreateTemporaryDirectory("license-install");
             string snapshot = Path.Combine(snapshotDirectory, "source.lic");
             using (FileStream created = PrivateUserStorage.CreateFile(snapshot))

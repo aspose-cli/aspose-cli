@@ -62,8 +62,7 @@ internal static class LicenseCommandGroup
                 requestedProduct,
                 "installation");
             string source = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            LicenseManager.Install(context, source, requestedProduct);
-            return Result(CompositionRoot.Create(catalog, context.Globals));
+            return LicenseManager.Install(context, source, requestedProduct);
         }));
         return install;
     }
@@ -81,14 +80,10 @@ internal static class LicenseCommandGroup
         remove.SetAction(parse => executor.Run(parse, globals, context =>
         {
             string? selected = parse.GetValue(product);
-            LicenseManager.Remove(context, selected);
-
-            return Result(CompositionRoot.Create(catalog, context.Globals));
+            return LicenseManager.RemoveAndReport(context, selected);
         }));
         return remove;
     }
-
-    private static LicenseStatusResult Result(CommandContext context) => LicenseManager.Inspect(context);
 
     private static Option<string?> ProductOption(
         ProductCatalog catalog,

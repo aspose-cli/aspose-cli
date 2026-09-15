@@ -62,6 +62,8 @@ public sealed class FileWritePrecondition
 
     internal FilePublicationSnapshot Snapshot => _snapshot;
 
+    internal static FileWritePrecondition FromSnapshot(string path, FilePublicationSnapshot snapshot) => new(path, snapshot);
+
     internal bool Targets(string targetPath) =>
         string.Equals(
             Path,

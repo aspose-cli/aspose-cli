@@ -60,7 +60,7 @@ internal static class EditCommand
                 EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
             });
-            WordsPreviewHintPublisher.Publish(result, target.OutputPath);
+            WordsPreviewHintPublisher.Publish(result, target.OutputPath, context.WritePreviewHint);
             return result;
         }));
         return command;

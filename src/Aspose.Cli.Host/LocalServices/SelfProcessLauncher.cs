@@ -51,6 +51,14 @@ internal static class SelfProcessLauncher
                 optionName,
                 missingExecutableHint));
         }
+        foreach (string name in new[]
+        {
+            Aspose.Cli.Sdk.Execution.WorkerOutputSession.WorkerEnvironmentVariable,
+            Aspose.Cli.Sdk.Execution.WorkerOutputSession.RootEnvironmentVariable,
+            Aspose.Cli.Sdk.Execution.WorkerOutputSession.ManifestEnvironmentVariable,
+            Aspose.Cli.Sdk.Execution.WorkerOutputSession.DeadlineEnvironmentVariable,
+            Aspose.Cli.Sdk.Execution.WorkerOutputSession.BudgetEnvironmentVariable,
+        }) { start.Environment.Remove(name); }
         if (OperatingSystem.IsWindows())
         {
             start.WindowStyle = ProcessWindowStyle.Hidden;

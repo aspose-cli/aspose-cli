@@ -83,7 +83,7 @@ internal sealed class CommandExecutor
             {
                 scope.Deadline.ThrowIfExpired("command-start");
                 ResultEnvelope result = handler(scope);
-                scope.Deadline.ThrowIfExpired("command-complete");
+                if (!scope.Budgets.HasCommittedOutputs) { scope.Deadline.ThrowIfExpired("command-complete"); }
                 return scope.Complete(result, detectPartial);
             });
     }
@@ -211,7 +211,7 @@ internal sealed class CommandExecutor
         try
         {
             scope = ExecutionScope.Create(
-                _host.Catalog,
+                _host,
                 parseResult,
                 globals,
                 writer,
@@ -226,7 +226,7 @@ internal sealed class CommandExecutor
                 writer,
                 globals,
                 stopwatch,
-                exception);
+                exception, scope?.Deadline);
         }
         finally
         {
@@ -265,16 +265,16 @@ internal sealed class CommandExecutor
         IOutputWriter writer,
         GlobalValues globals,
         Stopwatch stopwatch,
-        Exception exception)
+        Exception exception, OperationDeadline? deadline)
     {
-        if (exception is OperationCanceledException
-            && globals.TimeoutSeconds is > 0)
+        if (exception is OperationCanceledException && deadline?.IsExpired == true)
         {
             exception = CliErrors.OperationTimeout(
-                globals.TimeoutSeconds.Value,
+                Math.Max(1, (int)Math.Ceiling(deadline.OriginalBudget?.TotalSeconds ?? 1)),
                 "cooperative-cancellation");
         }
 
+        if (exception is OperationCanceledException) { return 130; }
         bool expected = exception is CliException;
         if (!expected)
         {
@@ -299,7 +299,9 @@ internal sealed class CommandExecutor
         CancellationToken cancellationToken)
     {
         TimeSpan? budget = ResolveTimeout(globals);
-        if (budget is { } original
+        if (long.TryParse(Environment.GetEnvironmentVariable(WorkerOutputSession.BudgetEnvironmentVariable),
+                System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture,
+                out long milliseconds) && milliseconds > 0
             && long.TryParse(
                 Environment.GetEnvironmentVariable(
                     WorkerOutputSession.DeadlineEnvironmentVariable),
@@ -313,7 +315,7 @@ internal sealed class CommandExecutor
                 StringComparison.Ordinal))
         {
             return OperationDeadline.FromAbsoluteTick(
-                original,
+                TimeSpan.FromMilliseconds(milliseconds),
                 expiresAt,
                 cancellationToken);
         }
@@ -361,7 +363,7 @@ internal sealed class CommandExecutor
         public ResourceBudgetLedger Budgets { get; }
 
         public static ExecutionScope Create(
-            ProductCatalog catalog,
+            HostContext host,
             ParseResult parseResult,
             GlobalValues globals,
             IOutputWriter writer,
@@ -374,7 +376,7 @@ internal sealed class CommandExecutor
             try
             {
                 ResourceBudgetLedger budgets =
-                    CompositionRoot.CreateBudgets(catalog, globals, deadline);
+                    CompositionRoot.CreateBudgets(host.Catalog, globals, deadline, host.WorkerOutputs);
                 if (admitInputs)
                 {
                     ProductInputAdmission.Admit(

@@ -1,498 +1,147 @@
-using System.Diagnostics;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Sdk.Execution;
 
-/// <summary>
-/// Staging-only publication protocol used by a supervised CLI worker. The
-/// worker never receives publication authority over final user targets.
-/// </summary>
-public static class WorkerOutputSession
+/// <summary>Explicit invocation-owned collection of files awaiting parent publication.</summary>
+public sealed class WorkerOutputSession
 {
-    /// <summary>Private directory used for staged worker output.</summary>
     public const string RootEnvironmentVariable = "ASPOSE_CLI_WORKER_OUTPUT_ROOT";
-
-    /// <summary>Manifest written by the worker for parent publication.</summary>
     public const string ManifestEnvironmentVariable = "ASPOSE_CLI_WORKER_OUTPUT_MANIFEST";
-
-    /// <summary>Absolute monotonic deadline propagated to the worker.</summary>
     public const string DeadlineEnvironmentVariable = "ASPOSE_CLI_WORKER_DEADLINE_TICK";
-
-    /// <summary>Original timeout budget propagated to the worker.</summary>
     public const string BudgetEnvironmentVariable = "ASPOSE_CLI_WORKER_BUDGET_MS";
-
-    /// <summary>Marker that identifies a supervised worker process.</summary>
     public const string WorkerEnvironmentVariable = "ASPOSE_CLI_TIMEOUT_WORKER";
+    public const string ManifestName = "output-manifest.v2.json";
+    private readonly object _gate = new();
+    private readonly List<WorkerOutputEntry> _entries = [];
+    private readonly Dictionary<string, WorkerDirectoryEntry> _directories = new(WorkerManifestStore.PathComparer);
+    private readonly List<WorkerPreviewHint> _hints = [];
+    private readonly string _root;
+    private readonly string _manifestPath;
+    private int _nextId;
 
-    private static readonly object Sync = new();
-    private static readonly List<WorkerOutputEntry> Entries = [];
-    private static readonly List<WorkerDirectoryEntry> Directories = [];
-    private static int _nextId;
-
-    /// <summary>Whether this process has a complete supervised output session.</summary>
-    public static bool IsActive =>
-        string.Equals(
-            Environment.GetEnvironmentVariable(WorkerEnvironmentVariable),
-            "1",
-            StringComparison.Ordinal)
-        && !string.IsNullOrWhiteSpace(Root)
-        && !string.IsNullOrWhiteSpace(ManifestPath);
-
-    /// <summary>
-    /// Resolves a final output to its private staged file while a worker is
-    /// building the command result. Outside a worker the canonical path is
-    /// returned unchanged.
-    /// </summary>
-    public static string ResolveReadPath(string path)
+    public WorkerOutputSession(string root, string manifestPath)
     {
-        string full = Path.GetFullPath(path);
-        if (!IsActive)
-        {
-            return full;
-        }
-
-        lock (Sync)
-        {
-            WorkerOutputEntry? entry = Entries.LastOrDefault(
-                candidate => PathComparer.Equals(candidate.Target, full));
-            if (entry is { DeleteTarget: true })
-            {
-                throw new FileNotFoundException(
-                    "The file is scheduled for deletion by this worker.", full);
-            }
-            return entry?.Staged ?? full;
-        }
+        (_root, _manifestPath) = WorkerManifestStore.ValidateSessionPaths(root, manifestPath, requireManifest: false);
     }
 
-    /// <summary>Checks file existence against the active worker publication plan.</summary>
-    public static bool FileExists(string path)
+    internal string CreatePrivateDirectory(string operation)
     {
-        if (!IsActive)
-        {
-            return File.Exists(path);
-        }
-        string full = Path.GetFullPath(path);
-        lock (Sync)
-        {
-            WorkerOutputEntry? entry = Entries.LastOrDefault(
-                candidate => PathComparer.Equals(candidate.Target, full));
-            return entry is null
-                ? File.Exists(full)
-                : !entry.DeleteTarget && File.Exists(entry.Staged);
-        }
-    }
-    private static string? Root =>
-        Environment.GetEnvironmentVariable(RootEnvironmentVariable);
-
-    private static string? ManifestPath =>
-        Environment.GetEnvironmentVariable(ManifestEnvironmentVariable);
-
-    internal static string CreatePrivateDirectory(string operation)
-    {
-        if (!IsActive)
-        {
-            throw new InvalidOperationException("No supervised worker output session is active.");
-        }
-
-        string safeOperation = string.Concat(
-            operation.Select(static character =>
-                char.IsAsciiLetterOrDigit(character) ? character : '-'));
-        string directory = Path.Combine(
-            ValidateWorkerPaths(requireManifest: false).Root,
-            $"{Interlocked.Increment(ref _nextId):000000}-{safeOperation}");
-        PrivateUserStorage.EnsureDirectory(directory);
-        return directory;
+        string name = string.Concat(operation.Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-'));
+        return PrivateUserStorage.EnsureDirectory(Path.Combine(_root, $"{Interlocked.Increment(ref _nextId):000000}-{name}"));
     }
 
-    internal static void RegisterFile(
-        string targetPath,
-        string sourcePath,
-        bool overwrite,
-        string? backupPath,
-        FilePublicationSnapshot original,
-        FilePublicationSnapshot? expectedSource = null)
+    internal void Register(PublicationJournalEntry entry)
     {
-        if (!IsActive)
+        lock (_gate)
         {
-            throw new InvalidOperationException("No supervised worker output session is active.");
-        }
-
-        string target = Path.GetFullPath(targetPath);
-        string source = Path.GetFullPath(sourcePath);
-        string root = ValidateWorkerPaths(requireManifest: false).Root;
-        if (!IsChild(root, source))
-        {
-            throw new InvalidOperationException(
-                "Worker output source is outside the private staging root.");
-        }
-        PrivateUserStorage.ProtectFile(source);
-        ExtractionPathValidator.EnsureNoLinks(target);
-        string? backup = backupPath is null
-            ? null
-            : Path.GetFullPath(backupPath);
-        if (backup is not null)
-        {
-            ExtractionPathValidator.EnsureNoLinks(backup);
-            if (PathComparer.Equals(backup, target)
-                || Directory.Exists(backup))
+            if (_entries.Count >= WorkerManifestStore.MaximumEntries) { throw new IOException("The worker output entry budget was exceeded."); }
+            if (_entries.Any(existing => WorkerManifestStore.PathComparer.Equals(existing.Target, entry.Target)))
             {
-                throw new IOException(
-                    $"Worker output backup path conflicts with its target: '{backup}'.");
+                throw new IOException($"Duplicate worker output '{entry.Target}'.");
             }
-        }
-
-        lock (Sync)
-        {
-            StringComparer comparer = PathComparer;
-            if (Entries.Count >= WorkerManifestStore.MaximumEntries)
+            string retained = Path.Combine(CreatePrivateDirectory("retained"), "output.stage");
+            using (var source = new FileStream(entry.Staged, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (FileStream target = PrivateUserStorage.CreateFile(retained))
             {
-                throw ManifestBudgetExceeded(
-                    "the worker output entry budget was exceeded");
-            }
-            if (Entries.Any(entry => comparer.Equals(entry.Target, target)))
-            {
-                throw new InvalidOperationException(
-                    $"Worker registered duplicate output target '{target}'.");
-            }
-            if (backup is not null
-                && Entries.Any(entry =>
-                    comparer.Equals(entry.Target, backup)
-                    || entry.BackupPath is not null
-                        && comparer.Equals(entry.BackupPath, backup)))
-            {
-                throw new InvalidOperationException(
-                    $"Worker registered conflicting backup path '{backup}'.");
-            }
-
-            string retainedDirectory = CreatePrivateDirectory("retained");
-            string retained = Path.Combine(retainedDirectory, "output.stage");
-            File.Copy(source, retained, overwrite: false);
-            FilePublicationDurabilityAdapter.FlushFile(retained);
-            PrivateUserStorage.ProtectFile(retained);
-            FilePublicationSnapshot staged = FilePublicationSnapshot.Capture(retained);
-            if (expectedSource is not null
-                && (!expectedSource.ContentEquals(staged)
-                    || !expectedSource.VersionEquals(
-                        FilePublicationSnapshot.Capture(source))))
-            {
-                throw new IOException(
-                    $"Worker staged file '{source}' changed after verification.");
-            }
-            string? originalBackup = null;
-            FilePublicationSnapshot? originalBackupSnapshot = null;
-            if (original.Exists)
-            {
-                EnsureVersion(target, original);
-                originalBackup = Path.Combine(retainedDirectory, "original.backup");
-                File.Copy(target, originalBackup, overwrite: false);
-                FilePublicationDurabilityAdapter.FlushFile(originalBackup);
-                PrivateUserStorage.ProtectFile(originalBackup);
-                originalBackupSnapshot =
-                    FilePublicationSnapshot.Capture(originalBackup);
-                if (!original.ContentEquals(originalBackupSnapshot))
+                if (!entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged)))
                 {
-                    throw CliErrors.OutputConflict(
-                        target,
-                        original,
-                        FilePublicationSnapshot.Capture(target));
+                    throw new IOException("The produced output changed before handoff.");
                 }
-                EnsureVersion(target, original);
+                source.CopyTo(target);
+                target.Flush(flushToDisk: true);
             }
-            else
+            FilePublicationSnapshot snapshot = FilePublicationSnapshot.Capture(retained);
+            if (!entry.StagedSnapshot.ContentEquals(snapshot)) { throw new IOException("Worker handoff changed the output content."); }
+            _entries.Add(new WorkerOutputEntry
             {
-                EnsureVersion(target, original);
-            }
-
-            FilePublicationSnapshot? backupOriginal = backup is null
-                || !original.Exists
-                    ? null
-                    : FilePublicationSnapshot.Capture(backup);
-
-            Entries.Add(new WorkerOutputEntry
-            {
-                Target = target,
-                Staged = retained,
-                Overwrite = overwrite,
-                BackupPath = backup,
-                BackupOriginal = backupOriginal,
-                OriginalBackup = originalBackup,
-                OriginalBackupSnapshot = originalBackupSnapshot,
-                Original = original,
-                StagedSnapshot = staged,
+                Target = entry.Target, Staged = retained, StagedSnapshot = snapshot,
+                Original = entry.Original, Overwrite = entry.Overwrite, DeleteTarget = entry.DeleteTarget,
+                BackupPath = entry.RequestedBackup, BackupOriginal = entry.RequestedBackupOriginal,
+                InputPath = entry.InputPath, InputSnapshot = entry.InputSnapshot,
+                TargetParentIdentity = entry.TargetParentIdentity, BackupParentIdentity = entry.RequestedBackupParentIdentity,
             });
-            RegisterMissingParentDirectories(target);
-            if (backup is not null && original.Exists)
-            {
-                RegisterMissingParentDirectories(backup);
-            }
+            RegisterParents(entry.Target);
+            if (entry.RequestedBackup is not null) { RegisterParents(entry.RequestedBackup); }
             WriteManifest();
         }
     }
 
-    internal static void RegisterDirectory(string targetPath)
+    internal void RegisterDirectory(string target)
     {
-        string target = Path.GetFullPath(targetPath);
-        ExtractionPathValidator.EnsureNoLinks(target);
-        if (File.Exists(target))
+        lock (_gate)
         {
-            throw new IOException(
-                $"Worker output directory path is occupied by a file: '{target}'.");
-        }
-        lock (Sync)
-        {
-            StringComparer comparer = PathComparer;
-            if (!Directories.Any(entry => comparer.Equals(entry.Target, target)))
+            string path = Path.GetFullPath(target);
+            OutputPathValidator.EnsureSafeDirectory(path);
+            if (!_directories.ContainsKey(path))
             {
-                if (Directories.Count >= WorkerManifestStore.MaximumDirectories)
-                {
-                    throw ManifestBudgetExceeded(
-                        "the worker output directory budget was exceeded");
-                }
-                Directories.Add(new WorkerDirectoryEntry
-                {
-                    Target = target,
-                    Existed = Directory.Exists(target),
-                });
-                RegisterMissingParentDirectories(target);
-                WriteManifest();
+                if (_directories.Count >= WorkerManifestStore.MaximumDirectories) { throw new IOException("The worker directory budget was exceeded."); }
+                bool exists = Directory.Exists(path);
+                _directories.Add(path, new WorkerDirectoryEntry(path, exists,
+                    exists ? FilePublicationOwnedDelete.TryGetDirectoryIdentity(path) : null));
             }
-        }
-    }
-
-    /// <summary>
-    /// Deletes a target through the active recoverable worker protocol, or
-    /// directly when the process is not supervised.
-    /// </summary>
-    public static bool Delete(string targetPath)
-    {
-        if (!IsActive)
-        {
-            return File.Exists(targetPath) && DeleteDirect(targetPath);
-        }
-
-        string target = Path.GetFullPath(targetPath);
-        FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-        if (!original.Exists)
-        {
-            return false;
-        }
-
-        string retainedDirectory = CreatePrivateDirectory("deleted");
-        string retained = Path.Combine(retainedDirectory, "original.stage");
-        File.Copy(target, retained, overwrite: false);
-        FilePublicationDurabilityAdapter.FlushFile(retained);
-        original.Metadata?.Apply(retained);
-        RegisterFile(
-            target,
-            retained,
-            overwrite: true,
-            backupPath: null,
-            original);
-        MarkDeleted(target);
-        return true;
-    }
-
-    /// <summary>Marks a registered worker target as intentionally deleted.</summary>
-    public static void MarkDeleted(string targetPath)
-    {
-        string target = Path.GetFullPath(targetPath);
-        lock (Sync)
-        {
-            StringComparer comparer = PathComparer;
-            WorkerOutputEntry entry = Entries.FirstOrDefault(
-                candidate => comparer.Equals(candidate.Target, target))
-                ?? throw new InvalidOperationException(
-                    $"Worker output target '{target}' is not registered.");
-            entry.DeleteTarget = true;
+            RegisterParents(path);
             WriteManifest();
         }
     }
 
-    /// <summary>Publishes and verifies every staged output in a worker manifest.</summary>
-    public static IReadOnlyList<long> Publish(string manifestPath)
+    private void RegisterParents(string target)
     {
-        WorkerOutputManifest manifest =
-            WorkerManifestStore.ReadAndValidate(manifestPath);
-        return WorkerOutputPublisher.Publish(manifest, manifestPath);
-    }
-
-    /// <summary>
-    /// Restores every target recorded by a worker manifest. Incomplete
-    /// recovery is reported as the stable output-publication CLI error.
-    /// </summary>
-    public static void RestoreOrThrow(
-        string manifestPath,
-        Exception originalFailure)
-    {
-        ArgumentNullException.ThrowIfNull(originalFailure);
-        WorkerOutputManifest manifest =
-            WorkerManifestStore.ReadAndValidate(manifestPath);
-        PublicationRecoveryReport recovery =
-            WorkerOutputRecovery.Restore(manifest);
-        if (!recovery.RecoveryComplete)
+        for (string? parent = Path.GetDirectoryName(target); parent is not null && !Directory.Exists(parent); parent = Path.GetDirectoryName(parent))
         {
-            throw CliErrors.OutputPublicationFailure(
-                originalFailure,
-                recovery);
+            if (_directories.Count >= WorkerManifestStore.MaximumDirectories) { throw new IOException("The worker directory budget was exceeded."); }
+            _directories.TryAdd(parent, new WorkerDirectoryEntry(parent, false, null));
         }
     }
 
-    private static void WriteManifest()
+    public bool QueuePreviewHint(string filePath, IReadOnlyList<ProductPreviewPayload> targets)
     {
-        var manifest = new WorkerOutputManifest
+        lock (_gate)
         {
-            Entries = [.. Entries],
-            Directories = [.. Directories],
-        };
-        WorkerManifestStore.Write(ManifestPath!, manifest);
-    }
-
-    internal static void WriteManifest(
-        string path,
-        WorkerOutputManifest manifest)
-        => WorkerManifestStore.Write(path, manifest);
-
-    private static (string Root, string Manifest) ValidateWorkerPaths(
-        bool requireManifest)
-        => WorkerManifestStore.ValidateSessionPaths(
-            Root,
-            ManifestPath,
-            requireManifest);
-
-    private static bool IsChild(string root, string path) =>
-        path.StartsWith(
-            Path.GetFullPath(root).TrimEnd(
-                Path.DirectorySeparatorChar,
-                Path.AltDirectorySeparatorChar)
-                + Path.DirectorySeparatorChar,
-            PathComparison);
-
-    private static void EnsureVersion(
-        string target,
-        FilePublicationSnapshot expected)
-    {
-        FilePublicationSnapshot current = FilePublicationSnapshot.Capture(target);
-        if (!expected.VersionEquals(current) || Directory.Exists(target))
-        {
-            throw CliErrors.OutputConflict(target, expected, current);
+            if (targets.Count == 0 || _hints.Count >= 256) { return false; }
+            _hints.Add(new WorkerPreviewHint(Path.GetFullPath(filePath), targets.ToArray()));
+            try { WriteManifest(); return true; }
+            catch { _hints.RemoveAt(_hints.Count - 1); return false; }
         }
     }
 
-    private static StringComparer PathComparer => OperatingSystem.IsWindows()
-        ? StringComparer.OrdinalIgnoreCase
-        : StringComparer.Ordinal;
+    private void WriteManifest() => WorkerManifestStore.Write(_manifestPath,
+        new WorkerOutputManifest { Entries = _entries.ToArray(), Directories = _directories.Values.ToArray(), Hints = _hints.ToArray() });
 
-    private static StringComparison PathComparison => OperatingSystem.IsWindows()
-        ? StringComparison.OrdinalIgnoreCase
-        : StringComparison.Ordinal;
-
-    private static void RegisterMissingParentDirectories(string target)
+    public static IReadOnlyList<long> Publish(string manifestPath, ResourceBudgetLedger budgets)
     {
-        StringComparer comparer = PathComparer;
-        string? current = Path.GetDirectoryName(target);
-        while (current is not null && !Directory.Exists(current))
+        try { return WorkerOutputPublisher.Publish(WorkerManifestStore.ReadAndValidate(manifestPath), budgets); }
+        catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException)
         {
-            if (!Directories.Any(entry => comparer.Equals(entry.Target, current)))
-            {
-                if (Directories.Count >= WorkerManifestStore.MaximumDirectories)
-                {
-                    throw ManifestBudgetExceeded(
-                        "the worker output directory budget was exceeded");
-                }
-                Directories.Add(new WorkerDirectoryEntry
-                {
-                    Target = current,
-                    Existed = false,
-                });
-            }
-
-            current = Path.GetDirectoryName(current);
+            throw Aspose.Cli.Sdk.Errors.CliErrors.OutputUnwritable(manifestPath,
+                "the worker output could not be published", error, "worker-publication");
         }
     }
-
-    private static bool DeleteDirect(string targetPath)
-    {
-        FilePublicationSnapshot target =
-            FilePublicationSnapshot.Capture(targetPath);
-        return target.Exists
-            && FilePublicationOwnedDelete.TryDelete(targetPath, target);
-    }
-
-    private static SafeBackupResult? PlannedBackup(
-        string? backupPath,
-        FilePublicationSnapshot original)
-    {
-        if (backupPath is null || !original.Exists)
-        {
-            return null;
-        }
-
-        string path = Path.GetFullPath(backupPath);
-        bool exists = File.Exists(path);
-        return new SafeBackupResult(
-            path,
-            Created: !exists,
-            exists ? new FileInfo(path).Length : original.Length);
-    }
-
-    private static CliException ManifestBudgetExceeded(string reason) =>
-        CliErrors.OutputUnwritable(
-            ManifestPath ?? Root ?? "worker-output-manifest",
-            reason,
-            phase: "worker-manifest");
-
 }
 
-internal sealed class WorkerOutputManifest
+internal sealed record WorkerOutputManifest
 {
-    public int Version { get; init; } = 1;
-
-    public List<WorkerOutputEntry> Entries { get; init; } = [];
-
-    public List<WorkerDirectoryEntry> Directories { get; init; } = [];
+    public int Version { get; init; } = 2;
+    public IReadOnlyList<WorkerOutputEntry> Entries { get; init; } = [];
+    public IReadOnlyList<WorkerDirectoryEntry> Directories { get; init; } = [];
+    public IReadOnlyList<WorkerPreviewHint> Hints { get; init; } = [];
 }
 
-internal sealed class WorkerDirectoryEntry
+internal sealed record WorkerOutputEntry
 {
     public required string Target { get; init; }
-
-    public required bool Existed { get; init; }
-
-    public FilePhysicalIdentity? CreatedIdentity { get; set; }
-}
-
-internal enum WorkerPublicationState
-{
-    Staged,
-    Publishing,
-    Published,
-    Restored,
-}
-
-internal sealed class WorkerOutputEntry
-{
-    public required string Target { get; init; }
-
     public required string Staged { get; init; }
-
-    public required bool Overwrite { get; init; }
-
-    public string? BackupPath { get; init; }
-
-    public FilePublicationSnapshot? BackupOriginal { get; init; }
-
-    public string? OriginalBackup { get; init; }
-
-    public FilePublicationSnapshot? OriginalBackupSnapshot { get; init; }
-
     public required FilePublicationSnapshot Original { get; init; }
-
     public required FilePublicationSnapshot StagedSnapshot { get; init; }
-
-    public FilePublicationSnapshot? PublishedSnapshot { get; set; }
-
-    public WorkerPublicationState State { get; set; }
-
-    public bool DeleteTarget { get; set; }
+    public bool Overwrite { get; init; }
+    public bool DeleteTarget { get; init; }
+    public string? BackupPath { get; init; }
+    public FilePublicationSnapshot? BackupOriginal { get; init; }
+    public string? InputPath { get; init; }
+    public FilePublicationSnapshot? InputSnapshot { get; init; }
+    public FilePhysicalIdentity? TargetParentIdentity { get; init; }
+    public FilePhysicalIdentity? BackupParentIdentity { get; init; }
 }
+
+internal sealed record WorkerDirectoryEntry(string Target, bool Existed, FilePhysicalIdentity? OriginalIdentity);
+internal sealed record WorkerPreviewHint(string FilePath, IReadOnlyList<ProductPreviewPayload> Targets);

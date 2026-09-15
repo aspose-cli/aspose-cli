@@ -304,47 +304,29 @@ public sealed class LicenseInstallerTests
         string deleted = Path.Combine(temp.Path, "license.lic");
         WritePrivate(deleted, "old license");
         string workerRoot = PrivateUserStorage.CreateTemporaryDirectory("worker");
-        string manifestPath = Path.Combine(workerRoot, "output-manifest.v1.json");
-        string[] names = [WorkerOutputSession.WorkerEnvironmentVariable,
-            WorkerOutputSession.RootEnvironmentVariable, WorkerOutputSession.ManifestEnvironmentVariable];
-        string?[] previous = names.Select(Environment.GetEnvironmentVariable).ToArray();
+        string manifestPath = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
+        var worker = new WorkerOutputSession(workerRoot, manifestPath);
+        using var deadline = OperationDeadline.Start(null);
+        var budgets = new ResourceBudgetLedger(deadline, outputSession: worker);
         try
         {
-            Environment.SetEnvironmentVariable(names[0], "1");
-            Environment.SetEnvironmentVariable(names[1], workerRoot);
-            Environment.SetEnvironmentVariable(names[2], manifestPath);
             using var source = new MemoryStream("new license"u8.ToArray());
-            LicenseInstaller.InstallMany(TestBudgets.Create(), source, snapshot =>
+            LicenseInstaller.InstallMany(budgets, source, snapshot =>
             {
                 Assert.StartsWith(workerRoot + Path.DirectorySeparatorChar, snapshot);
                 return [installed];
             });
-            LicenseInstaller.RemoveMany(TestBudgets.Create(), [deleted]);
+            LicenseInstaller.RemoveMany(budgets, [deleted]);
             Assert.False(File.Exists(installed));
-            Assert.True(WorkerOutputSession.FileExists(installed));
-            Assert.Equal("new license", File.ReadAllText(WorkerOutputSession.ResolveReadPath(installed)));
-            Assert.False(WorkerOutputSession.FileExists(deleted));
-            Assert.Throws<FileNotFoundException>(() => WorkerOutputSession.ResolveReadPath(deleted));
             Assert.Equal("old license", File.ReadAllText(deleted));
             WorkerOutputManifest manifest = WorkerManifestStore.ReadAndValidate(manifestPath);
             Assert.Equal(2, manifest.Entries.Count);
+            Assert.Equal("new license", File.ReadAllText(Assert.Single(manifest.Entries, entry => entry.Target == installed).Staged));
             Assert.True(Assert.Single(manifest.Entries, entry => entry.Target == deleted).DeleteTarget);
-        }
-        finally
-        {
-            for (int index = 0; index < names.Length; index++)
-            {
-                Environment.SetEnvironmentVariable(names[index], previous[index]);
-            }
-        }
-        try
-        {
-            WorkerOutputSession.Publish(manifestPath);
+            WorkerOutputSession.Publish(manifestPath, TestBudgets.Create());
             Assert.Equal("new license", File.ReadAllText(installed));
             PrivateUserStorage.ValidateFile(installed);
             Assert.False(File.Exists(deleted));
-            Assert.True(WorkerOutputSession.FileExists(installed));
-            Assert.False(WorkerOutputSession.FileExists(deleted));
         }
         finally { PrivateUserStorage.TryDeleteTree(workerRoot); }
     }

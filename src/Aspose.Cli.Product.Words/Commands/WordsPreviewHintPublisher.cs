@@ -8,7 +8,8 @@ internal static class WordsPreviewHintPublisher
 {
     private const int MaxTargets = 12;
 
-    public static void Publish(WordsEditResult result, string outputPath)
+    public static void Publish(WordsEditResult result, string outputPath,
+        Func<string, IReadOnlyList<ProductPreviewPayload>, bool> publish)
     {
         if (result.DryRun || result.Output is null || result.PagesTouched is not { Count: > 0 })
         {
@@ -25,10 +26,7 @@ internal static class WordsPreviewHintPublisher
                     WordsPreviewPayloads.Hint(
                         new WordsPreviewHint(page)))
                 .ToArray();
-            PreviewHintChannel.Write(outputPath, new PreviewHint(
-                targets,
-                Guid.NewGuid().ToString("N"),
-                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
+            publish(outputPath, targets);
         }
         catch (Exception)
         {

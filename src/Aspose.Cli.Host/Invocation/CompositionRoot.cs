@@ -4,6 +4,7 @@ using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -47,6 +48,8 @@ internal static class CompositionRoot
         return new ProductCommandContext<TPort>
         {
             Binding = binding,
+            WritePreviewHint = effectiveBudgets.OutputSession is { } worker
+                ? worker.QueuePreviewHint : PreviewHintChannel.TryWrite,
             Paths = new PathResolver(workDir),
             Inputs = effectiveBudgets.Inputs,
             ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),
@@ -58,7 +61,8 @@ internal static class CompositionRoot
         GlobalValues globals,
         OperationDeadline? deadline = null,
         ResourceBudgetLedger? resourceBudgets = null,
-        Func<string, ILicenseGate>? runtimeLicenses = null)
+        Func<string, ILicenseGate>? runtimeLicenses = null,
+        UserLicenseChanges? licenseChanges = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         ArgumentNullException.ThrowIfNull(globals);
@@ -79,7 +83,7 @@ internal static class CompositionRoot
                 globals,
                 workDir,
                 effectiveBudgets,
-                runtimeLicenses),
+                runtimeLicenses, licenseChanges),
             Catalog = catalog,
         };
     }
@@ -88,7 +92,8 @@ internal static class CompositionRoot
         GlobalValues globals,
         string workDirectory,
         ResourceBudgetLedger resourceBudgets,
-        Func<string, ILicenseGate>? runtimeLicenses = null)
+        Func<string, ILicenseGate>? runtimeLicenses = null,
+        UserLicenseChanges? licenseChanges = null)
     {
         var writer = new SafeFileWriter(resourceBudgets);
         return new ProductActivationContext
@@ -96,6 +101,7 @@ internal static class CompositionRoot
             WorkDirectory = workDirectory,
             LicensePath = ResolveLicensePath(globals.LicensePath, workDirectory),
             RuntimeLicenseForProduct = runtimeLicenses,
+            UserLicenseChanges = licenseChanges,
             ConfigDirectory = Aspose.Cli.Sdk.Configuration.ConfigurationPaths.UserDirectory(),
             EnvironmentVariable = name =>
                 ReadEnvironment(resourceBudgets, name),
@@ -130,7 +136,8 @@ internal static class CompositionRoot
     internal static ResourceBudgetLedger CreateBudgets(
         ProductCatalog catalog,
         GlobalValues globals,
-        OperationDeadline deadline)
+        OperationDeadline deadline,
+        WorkerOutputSession? outputs = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         var limits = new Dictionary<string, long>(StringComparer.Ordinal)
@@ -160,7 +167,7 @@ internal static class CompositionRoot
                     $"Resource budget '{budget.Kind}' is declared more than once.");
             }
         }
-        return new ResourceBudgetLedger(deadline, limits);
+        return new ResourceBudgetLedger(deadline, limits, outputs);
     }
 
     private static string? ReadEnvironment(
