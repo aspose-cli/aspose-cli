@@ -44,7 +44,7 @@ internal static class CommonSchemaSamples
                 Version = "1.0.0",
             },
         ],
-        ResourceBudgetContractVersion = 1,
+        ResourceBudgetContractVersion = Aspose.Cli.Sdk.IO.ResourceBudgetDefaults.ContractVersion,
         Diagnostics = [],
         ResourceBudgets =
         [

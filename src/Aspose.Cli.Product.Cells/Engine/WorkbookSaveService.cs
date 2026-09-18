@@ -4,6 +4,7 @@ using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
@@ -13,89 +14,47 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// </summary>
 internal sealed class WorkbookSaveService(SafeFileWriter writer, WorkbookLoadService loader)
 {
-    private static readonly HashSet<string> EncryptableFormats =
-        new(StringComparer.Ordinal)
-        {
-            "xlsx",
-            "xlsm",
-            "xlsb",
-            "xls",
-            "ods",
-        };
-
     private readonly SafeFileWriter _writer =
         writer ?? throw new ArgumentNullException(nameof(writer));
 
-    internal (
-        OutputInfo Output,
-        BackupInfo? Backup,
-        Warning? Truncated,
-        Warning? FormulasBroken) Save(
-            Workbook workbook,
-            string outputPath,
-            bool overwrite,
-            string? encryptPassword = null,
-            string? backupPath = null,
-            FileWritePrecondition? inputPrecondition = null,
-            bool verifyReopen = false)
+    internal AtomicOutputSetWriter CreateOutputSet(IEnumerable<string> directories, string operation, string? backupPath = null) =>
+        new(_writer, backupPath is null ? directories : directories.Append(Path.GetDirectoryName(backupPath)!), operation);
+
+    internal (OutputInfo Output, BackupInfo? Backup, Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped) Save(
+        Workbook workbook, string outputPath, bool overwrite, LicenseState licenseState, string? encryptPassword = null,
+        string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
+        bool verifyReopen = false, string? inputPassword = null)
     {
-        string extension = Path.GetExtension(outputPath);
-        string formatId = extension.Length > 1
-            ? CellsFormats.ResolveConvert(extension).Id
-            : "xlsx";
-        SaveFormat saveFormat = FormatMapper.ToSaveFormat(formatId);
-        Warning? truncated = DetectGridTruncation(workbook, saveFormat);
+        WorkbookSavePlan plan = WorkbookSavePlan.Create(WorkbookSavePlan.FormatForPath(outputPath), licenseState, encryptPassword, inputPassword);
+        using AtomicOutputSetWriter transaction = CreateOutputSet([Path.GetDirectoryName(outputPath)!], "cells-save", backupPath);
+        WorkbookStagedSave saved = Stage(transaction, workbook, plan, outputPath, overwrite, backupPath, inputPrecondition, verifyReopen);
+        transaction.Commit();
+        return (saved.Output, saved.Backup, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped);
+    }
 
-        if (encryptPassword is not null)
-        {
-            if (!EncryptableFormats.Contains(formatId))
-            {
-                throw CliErrors.OptionInvalid(
-                    "--encrypt",
-                    $"the '{formatId}' format cannot be password-protected",
-                    "Encrypt only spreadsheet outputs (xlsx, xlsm, xlsb, xls, ods).");
-            }
-            workbook.Settings.Password = encryptPassword;
-        }
-
+    internal WorkbookStagedSave Stage(AtomicOutputSetWriter transaction, Workbook workbook,
+        WorkbookSavePlan plan, string outputPath, bool overwrite, string? backupPath,
+        FileWritePrecondition? inputPrecondition, bool verifyReopen)
+    {
+        Warning? truncated = DetectGridTruncation(workbook, plan.Format);
+        Warning? sheetsDropped = plan.DetectSheetLoss(workbook);
         int refsBefore = CountRefFormulas(workbook);
-        SafeWriteResult write = _writer.Write(
-            outputPath,
-            overwrite,
-            backupPath,
-            inputPrecondition,
-            temporaryPath =>
+        StagedOutput candidate = transaction.Stage(outputPath, overwrite, backupPath, inputPrecondition,
+            path => Produce(workbook, plan, path),
+            verify: verifyReopen ? path =>
             {
-                workbook.Save(temporaryPath, saveFormat);
-                if (verifyReopen)
-                {
-                    using LoadedWorkbook reopened = loader.OpenPublishedCandidate(temporaryPath, encryptPassword);
-                    _ = reopened.Workbook.Worksheets.Count;
-                }
-            });
-        Warning? formulasBroken = BuildBrokenFormulaWarning(
-            refsBefore,
-            CountRefFormulas(workbook),
-            formatId);
-        BackupInfo? backup = write.Backup is { } saved
-            ? new BackupInfo
-            {
-                Path = saved.Path,
-                Created = saved.Created,
-                SizeBytes = saved.SizeBytes,
-            }
-            : null;
-        return (
-            new OutputInfo
-            {
-                Path = outputPath,
-                Format = formatId,
-                SizeBytes = write.SizeBytes,
-                Fingerprint = write.Fingerprint,
-            },
-            backup,
-            truncated,
-            formulasBroken);
+                using LoadedWorkbook reopened = loader.OpenPublishedCandidate(path, plan.OutputPassword);
+                _ = reopened.Workbook.Worksheets.Count;
+            } : null);
+        return new WorkbookStagedSave(candidate, plan.FormatId, truncated,
+            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped);
+    }
+
+    internal void Produce(Workbook workbook, WorkbookSavePlan plan, string path)
+    {
+        if (plan.FormatId is "csv" or "tsv" or "md")
+        { NormalizeDatesForTextExport(plan.TextSheet(workbook)); }
+        plan.Save(workbook, path);
     }
 
     internal long Write(
@@ -160,6 +119,7 @@ internal sealed class WorkbookSaveService(SafeFileWriter writer, WorkbookLoadSer
         return new Warning
         {
             Code = CellsDiagnostics.DataTruncated,
+            AffectsCompleteness = true,
             Message =
                 $"The target format's grid holds at most {maxRows} rows × {maxColumns} columns, "
                 + $"so data beyond it was discarded: {string.Join("; ", overflowed)}.",
@@ -197,6 +157,7 @@ internal sealed class WorkbookSaveService(SafeFileWriter writer, WorkbookLoadSer
         return new Warning
         {
             Code = CellsDiagnostics.FormulasBroken,
+            AffectsCompleteness = true,
             Message =
                 $"{newlyBroken} formula(s) referenced cells beyond the {formatId} grid and became #REF! "
                 + "(for example a whole-column total like =SUM(A5:A1048576) downconverted to the smaller "
@@ -211,4 +172,13 @@ internal sealed class WorkbookSaveService(SafeFileWriter writer, WorkbookLoadSer
             SaveFormat.Excel97To2003 => (65536, 256),
             _ => null,
         };
+}
+
+internal sealed record WorkbookStagedSave(StagedOutput Candidate, string Format,
+    Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped)
+{
+    internal OutputInfo Output => new()
+    { Path = Candidate.TargetPath, Format = Format, SizeBytes = Candidate.SizeBytes, Fingerprint = Candidate.Fingerprint };
+    internal BackupInfo? Backup => Candidate.Backup is { } backup
+        ? new BackupInfo { Path = backup.Path, Created = backup.Created, SizeBytes = backup.SizeBytes } : null;
 }

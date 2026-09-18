@@ -145,7 +145,9 @@ public sealed class ResourceBudgetLedgerTests
     [Fact]
     public void SafePublication_RefreshesAdmissionForSameInvocationVerification()
     {
-        string path = TemporaryFile([1, 2, 3]);
+        using var temporaryDirectory = new Aspose.Cli.TestKit.TempDirectory();
+        string path = temporaryDirectory.File("admitted.bin");
+        File.WriteAllBytes(path, [1, 2, 3]);
         try
         {
             using OperationDeadline deadline = OperationDeadline.Start(null);
@@ -235,7 +237,7 @@ public sealed class ResourceBudgetLedgerTests
     }
 
     [Fact]
-    public void RejectedConsumption_DoesNotSpendTheRemainingBudget()
+    public void RejectedConsumption_PreservesCountersButTerminatesTheInvocation()
     {
         using OperationDeadline deadline = OperationDeadline.Start(null);
         ResourceBudgetLedger budgets = Create(
@@ -260,12 +262,9 @@ public sealed class ResourceBudgetLedgerTests
 
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         Assert.Equal(4, budgets.Remaining(ResourceBudgetKinds.MemoryBufferBytes));
-        budgets.Consume(
-            ResourceBudgetKinds.MemoryBufferBytes,
-            4,
-            "bytes",
-            "final");
-        Assert.Equal(0, budgets.Remaining(ResourceBudgetKinds.MemoryBufferBytes));
+        Assert.Same(error, Assert.Throws<CliException>(() => budgets.Consume(
+            ResourceBudgetKinds.MemoryBufferBytes, 4, "bytes", "final")));
+        Assert.Equal(4, budgets.Remaining(ResourceBudgetKinds.MemoryBufferBytes));
     }
 
     [Fact]

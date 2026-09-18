@@ -6,6 +6,11 @@ using Xunit;
 
 namespace Aspose.Cli.Sdk.Tests.IO;
 
+[CollectionDefinition("Publication timing", DisableParallelization = true)]
+public sealed class PublicationTimingCollection;
+
+// Each test exercises concurrent operations itself; unrelated workloads must not consume its deadline.
+[Collection("Publication timing")]
 public sealed class PublicationConcurrencyTests
 {
     [Fact]
@@ -26,7 +31,8 @@ public sealed class PublicationConcurrencyTests
                 }
             }));
         transaction.Stage(first, false, path => File.WriteAllText(path, "first"));
-        Task commit = Task.Run(() => transaction.Commit());
+        Task commit = Task.Factory.StartNew(() => transaction.Commit(), CancellationToken.None,
+            TaskCreationOptions.LongRunning, TaskScheduler.Default);
         try
         {
             Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));

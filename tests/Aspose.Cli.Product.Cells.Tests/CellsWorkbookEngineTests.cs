@@ -22,6 +22,60 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     private static SheetInfo FindSheet(WorkbookInfoResult result, string name) =>
         Assert.Single(result.Workbook.Sheets, sheet => sheet.Name == name);
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EditOwnsDocumentBackupAndEvidenceAcrossSiblingDirectories(bool verify)
+    {
+        using var temp = new Aspose.Cli.TestKit.TempDirectory();
+        string documents = Path.Combine(temp.Path, "documents");
+        Directory.CreateDirectory(documents);
+        string source = Path.Combine(documents, "book.xlsx");
+        File.Copy(_fixture.CreateSalesWorkbook($"backup-root-{verify}.xlsx"), source);
+        byte[] original = File.ReadAllBytes(source);
+        string backup = Path.Combine(temp.Path, "backups", "original.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            OpsParser.Parse("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
+            new EditRequest
+            {
+                OutputPath = source, Overwrite = true, BackupPath = backup,
+                Verify = verify, VerificationDirectory = Path.Combine(temp.Path, "evidence"),
+            });
+        Assert.Equal(original, File.ReadAllBytes(backup));
+        Assert.Equal(backup, result.Backup!.Path);
+        Assert.Equal(source, result.Output!.Path);
+        using var reopened = new Aspose.Cells.Workbook(source);
+        Assert.Equal(7, reopened.Worksheets["Data"].Cells["B2"].IntValue);
+        if (verify)
+        {
+            Assert.NotEmpty(result.Verification!.Renders);
+            Assert.All(result.Verification.Renders, render => Assert.True(File.Exists(render.Path)));
+        }
+    }
+
+    [Fact]
+    public void TextCreationReportsTheSameSheetLossAsConversionAndEditing()
+    {
+        CreateResult result = _fixture.Engine.CreateWorkbook(new NewWorkbookRequest
+        {
+            OutputPath = _fixture.Temp.File("multiple.csv"), SheetNames = ["One", "Two"],
+        });
+        Assert.Contains(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED" && warning.AffectsCompleteness);
+    }
+
+    [Fact]
+    public void TextEditCommitsButDoesNotCertifyAnImplicitlyDroppedWorksheet()
+    {
+        string source = _fixture.CreateSalesWorkbook("text-loss.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            OpsParser.Parse("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("text-loss.csv"), Verify = true });
+        Assert.True(File.Exists(result.Output!.Path));
+        Assert.Contains(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED");
+        Assert.False(result.Verification!.Ok);
+        Assert.Contains(result.Verification.Issues!, issue => issue.Code == "SHEETS_DROPPED");
+    }
+
     [Fact]
     public void GetInfo_ReportsSheetStructure()
     {

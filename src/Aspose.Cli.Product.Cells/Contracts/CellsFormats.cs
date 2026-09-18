@@ -34,6 +34,10 @@ public static class CellsFormats
         FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
     ], CellsFormatRecognition.Rules);
 
+    /// <summary>Workbook formats whose edited output can be reopened and verified.</summary>
+    public static IReadOnlyList<string> EditIds { get; } = Array.AsReadOnly(new[]
+    { "xlsx", "xlsm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml" });
+
     /// <summary>Formats accepted by <c>cells convert --to</c>.</summary>
     public static IReadOnlyList<FormatInfo> Convert { get; } =
         Create(FormatUse.Convert);

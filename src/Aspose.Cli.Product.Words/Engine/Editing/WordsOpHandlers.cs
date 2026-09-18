@@ -34,7 +34,6 @@ internal static class WordsOpHandlers
             [typeof(InsertParagraphsOp)] = static (d, r, _) => WordsContentOpHandlers.InsertParagraphs(d, r.Nodes[0], (InsertParagraphsOp)r.Op),
             [typeof(DeleteBlocksOp)] = static (_, r, _) => WordsContentOpHandlers.Delete(r.Nodes),
             [typeof(InsertBreakOp)] = static (d, r, _) => WordsContentOpHandlers.InsertBreak(d, r.Nodes[0], (InsertBreakOp)r.Op),
-            [typeof(InsertImageOp)] = static (d, r, _) => WordsObjectOpHandlers.InsertImage(d, r.Nodes[0], (InsertImageOp)r.Op),
             [typeof(InsertTableOp)] = static (d, r, _) => WordsTableOpHandlers.InsertTable(d, r.Nodes[0], (InsertTableOp)r.Op),
             [typeof(SetTableCellOp)] = static (_, r, _) => WordsTableOpHandlers.SetTableCell(r.Nodes, (SetTableCellOp)r.Op),
             [typeof(InsertTocOp)] = static (d, r, _) => WordsObjectOpHandlers.InsertToc(d, r.Nodes[0], (InsertTocOp)r.Op),

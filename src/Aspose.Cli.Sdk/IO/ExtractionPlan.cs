@@ -1,12 +1,11 @@
 namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>Plans collision-free names and tracks newly created extraction directories.</summary>
-internal sealed class ExtractionPlan(string root, bool workerStagingOnly)
+internal sealed class ExtractionPlan(string root)
 {
     private readonly HashSet<string> _reserved = new(StringComparer.OrdinalIgnoreCase);
-    private readonly Dictionary<string, FilePhysicalIdentity?> _created = new(StringComparer.OrdinalIgnoreCase);
-    private readonly HashSet<string> _directories = new(StringComparer.OrdinalIgnoreCase);
-    public IEnumerable<string> Directories => _directories;
+    private readonly OwnedOutputDirectories _directories = new(deferred: true);
+    public IEnumerable<string> Directories => _directories.Declared;
     public void EnsureRoot() => EnsureDirectory(root);
 
     public string ReserveFile(string relativePath, string suggestedPath, bool overwrite)
@@ -44,28 +43,6 @@ internal sealed class ExtractionPlan(string root, bool workerStagingOnly)
         ExtractionPathValidator.EnsureNoLinks(full);
     }
 
-    private void EnsureDirectory(string path)
-    {
-        OutputPathValidator.EnsureSafeDirectory(path);
-        _directories.Add(path);
-        if (workerStagingOnly || Directory.Exists(path)) { return; }
-        var missing = new Stack<string>();
-        for (string? current = path; current is not null && !Directory.Exists(current); current = Path.GetDirectoryName(current))
-        {
-            missing.Push(current);
-        }
-        while (missing.TryPop(out string? current))
-        {
-            Directory.CreateDirectory(current);
-            _created.Add(current, FilePublicationOwnedDelete.TryGetDirectoryIdentity(current));
-        }
-    }
+    private void EnsureDirectory(string path) => _directories.Ensure(path);
 
-    public void RemoveCreatedDirectories()
-    {
-        foreach ((string path, FilePhysicalIdentity? identity) in _created.OrderByDescending(item => item.Key.Length))
-        {
-            if (Directory.Exists(path)) { _ = FilePublicationOwnedDelete.TryDeleteDirectory(path, identity); }
-        }
-    }
 }

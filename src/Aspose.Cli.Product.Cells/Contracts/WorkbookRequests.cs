@@ -125,13 +125,19 @@ public sealed record EditRequest
     /// <summary>Shared stale-input, dry-run, and best-effort semantics.</summary>
     public EditCommandOptions Options { get; init; } = new();
 
+    /// <summary>Verify the staged workbook and publish its render evidence with the edit.</summary>
+    public bool Verify { get; init; }
+
+    /// <summary>Absolute evidence directory; defaults beside the output.</summary>
+    public string? VerificationDirectory { get; init; }
+
     /// <summary>Recalculate formulas after applying the ops.</summary>
     public bool Recalculate { get; init; } = true;
 
     /// <summary>Password for opening an encrypted input file.</summary>
     public string? Password { get; init; }
 
-    /// <summary>Resolved password to protect the output file; null leaves it unencrypted.</summary>
+    /// <summary>New output password; null preserves source encryption where the target format supports it.</summary>
     public string? EncryptPassword { get; init; }
 }
 

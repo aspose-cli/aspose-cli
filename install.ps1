@@ -10,7 +10,6 @@ param(
     [switch] $SkipSkills,
     [string] $SkillsRoot,
     [string] $LicensePath,
-    [ValidateSet('cells', 'pdf', 'slides', 'words')]
     [string] $LicenseProduct,
     [switch] $SkipLicensePrompt,
     [switch] $SkipMcp,
@@ -1111,7 +1110,7 @@ function Invoke-OfficialMcp {
 function Register-OwnedMcp {
     param(
         [Parameter(Mandatory)][string] $InstallExecutable,
-        [Parameter(Mandatory)][string[]] $PreviouslyOwned
+        [Parameter(Mandatory)][AllowEmptyCollection()][string[]] $PreviouslyOwned
     )
     $registered = [Collections.Generic.List[string]]::new()
     $mcpHosts = @(
@@ -1428,6 +1427,11 @@ function Recover-PendingTransaction {
 # Dot-sourcing exposes the ownership primitives to black-box contract tests
 # without resolving a package or mutating installation state.
 if ($isDotSourced) { return }
+
+if ($PSBoundParameters.ContainsKey('LicenseProduct') -and $LicenseProduct -cnotin $script:AllowedLicenseProducts) {
+    throw "Unknown license product '$LicenseProduct'. Active products: $($script:AllowedLicenseProducts -join ', ')."
+}
+
 
 if ($SkipSkills -and -not [string]::IsNullOrWhiteSpace($SkillsRoot)) {
     throw '-SkillsRoot conflicts with -SkipSkills.'
@@ -1772,37 +1776,46 @@ try {
     # transactions can be exercised without lying about transaction outcome.
     if ($env:ASPOSE_CLI_INSTALL_CRASH -ceq 'committed') { [Environment]::Exit(97) }
 
-    if (Test-Path -LiteralPath $backup -PathType Container) { Remove-VerifiedInstallDirectory $backup $existingState.Snapshot }
-    foreach ($skillRecord in @($journal.skills)) {
-        $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $customSkillsRoot ([string]$skillRecord.skill) $transactionId
-        if (Test-Path -LiteralPath $paths.Backup -PathType Container) {
+    $committedCleanupComplete = $false
+    try {
+        Invoke-TestFault 'committedCleanup'
+        if (Test-Path -LiteralPath $backup -PathType Container) { Remove-VerifiedInstallDirectory $backup $existingState.Snapshot }
+        foreach ($skillRecord in @($journal.skills)) {
             $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $customSkillsRoot ([string]$skillRecord.skill) $transactionId
-            Remove-VerifiedSkillDirectory $paths.Backup ([string]$skillRecord.skill) ([string]$skillRecord.oldSnapshot)
+            if (Test-Path -LiteralPath $paths.Backup -PathType Container) {
+                $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $customSkillsRoot ([string]$skillRecord.skill) $transactionId
+                Remove-VerifiedSkillDirectory $paths.Backup ([string]$skillRecord.skill) ([string]$skillRecord.oldSnapshot)
+            }
         }
+        foreach ($licenseRecord in @($journal.licenses)) {
+            $licenseBackup = Join-Path (Join-Path $configRoot 'licenses') ".aspose-license-backup-$transactionId-$($licenseRecord.product).lic"
+            if (Test-Path -LiteralPath $licenseBackup -PathType Leaf) {
+                if ($licenseRecord.oldSha256 -and (Get-FileSha256 $licenseBackup) -cne $licenseRecord.oldSha256) { throw "License backup changed before cleanup: $licenseBackup" }
+                Remove-Item -LiteralPath $licenseBackup -Force
+            }
+        }
+
+        Remove-Item -LiteralPath $journalPath -Force
+        $rollbackComplete = $true
+        $committedCleanupComplete = $true
     }
-    foreach ($licenseRecord in @($journal.licenses)) {
-        $licenseBackup = Join-Path (Join-Path $configRoot 'licenses') ".aspose-license-backup-$transactionId-$($licenseRecord.product).lic"
-        if (Test-Path -LiteralPath $licenseBackup -PathType Leaf) {
-            if ($licenseRecord.oldSha256 -and (Get-FileSha256 $licenseBackup) -cne $licenseRecord.oldSha256) { throw "License backup changed before cleanup: $licenseBackup" }
-            Remove-Item -LiteralPath $licenseBackup -Force
-        }
+    catch {
+        Write-Warning "The CLI installation is committed, but transaction cleanup remains pending. MCP setup was skipped; retry installation to finish cleanup: $($_.Exception.Message)"
     }
 
-    if (-not $SkipMcp) {
-        $mcpRegistrations = Register-OwnedMcp (Join-Path $installRoot 'aspose-cli.exe') @($newState.McpRegistrations)
+    if ($committedCleanupComplete -and -not $SkipMcp) {
         try {
+            $mcpRegistrations = @(Register-OwnedMcp (Join-Path $installRoot 'aspose-cli.exe') @($newState.McpRegistrations))
             $installedMarkerPath = Join-Path $installRoot $script:MarkerName
             $installedMarker = Read-StrictJson $installedMarkerPath 'installation marker'
             $installedMarker.mcpRegistrations = @($mcpRegistrations)
             Write-JsonAtomic $installedMarkerPath $installedMarker
+            Invoke-TestFault 'mcpMetadataUpdated'
         }
         catch {
-            Write-Warning "MCP ownership marker could not be updated; the CLI installation remains valid: $($_.Exception.Message)"
+            Write-Warning "Optional MCP setup could not be completed; the CLI installation remains valid: $($_.Exception.Message)"
         }
     }
-    Remove-Item -LiteralPath $journalPath -Force
-    $rollbackComplete = $true
-
     Write-Host "Aspose CLI $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
     if (-not $SkipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
     if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }

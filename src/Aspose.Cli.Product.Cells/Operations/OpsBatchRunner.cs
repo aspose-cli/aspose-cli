@@ -38,7 +38,8 @@ internal static class OpsBatchRunner
                     Targets = OpsFootprint.OutcomeTargets(op),
                 });
             }
-            catch (Exception ex) when (ex is CliException or EngineOpException)
+            catch (Exception ex) when (ex is CliException or EngineOpException
+                && ex is not CliException { IsInvocationFailure: true })
             {
                 if (!continueOnError)
                 {

@@ -10,7 +10,7 @@ internal static class WorkerOutputPublisher
     internal static IReadOnlyList<long> Publish(WorkerOutputManifest manifest, ResourceBudgetLedger budgets, IPublicationFaultInjector? faults = null)
     {
         budgets.Deadline.ThrowIfExpired("worker-publication");
-        var created = new Dictionary<string, FilePhysicalIdentity?>();
+        var created = new OwnedOutputDirectories(deferred: false);
         bool committed = false;
         try
         {
@@ -23,8 +23,7 @@ internal static class WorkerOutputPublisher
                 { throw new IOException($"Worker output directory changed: '{directory.Target}'."); }
                 if (!exists)
                 {
-                    Directory.CreateDirectory(directory.Target);
-                    created.Add(directory.Target, FilePublicationOwnedDelete.TryGetDirectoryIdentity(directory.Target));
+                    created.Ensure(directory.Target);
                 }
                 OutputPathValidator.EnsureSafeDirectory(directory.Target);
             }
@@ -62,8 +61,7 @@ internal static class WorkerOutputPublisher
         {
             if (!committed)
             {
-                foreach ((string path, FilePhysicalIdentity? identity) in created.OrderByDescending(item => item.Key.Length))
-                { if (Directory.Exists(path)) { _ = FilePublicationOwnedDelete.TryDeleteDirectory(path, identity); } }
+                created.CleanUp();
             }
         }
     }
@@ -85,19 +83,8 @@ internal static class WorkerOutputPublisher
         { throw new IOException("The worker output changed during staging."); }
     }
 
-    private static string CommonRoot(IReadOnlyList<WorkerOutputEntry> entries)
-    {
-        string root = Path.GetDirectoryName(entries[0].Target)!;
-        foreach (WorkerOutputEntry entry in entries)
-        {
-            string parent = Path.GetDirectoryName(entry.Target)!;
-            while (!WorkerManifestStore.PathComparer.Equals(parent, root)
-                && !parent.StartsWith(Path.TrimEndingDirectorySeparator(root) + Path.DirectorySeparatorChar,
-                    OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
-            {
-                root = Path.GetDirectoryName(root) ?? throw new IOException("Worker outputs must share a filesystem root.");
-            }
-        }
-        return root;
-    }
+    private static string CommonRoot(IReadOnlyList<WorkerOutputEntry> entries) =>
+        OutputSetPaths.CommonDirectory(entries.SelectMany(entry => entry.BackupPath is null
+            ? new[] { Path.GetDirectoryName(entry.Target)! }
+            : new[] { Path.GetDirectoryName(entry.Target)!, Path.GetDirectoryName(entry.BackupPath)! }));
 }

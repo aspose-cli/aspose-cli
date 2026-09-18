@@ -257,14 +257,14 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         json = corruption switch
         {
             "duplicate" => json.Replace(
-                "\"version\":2,",
-                "\"version\":2,\r\n  \"version\":2,",
+                "\"version\":3,",
+                "\"version\":3,\r\n  \"version\":3,",
                 StringComparison.Ordinal),
             "unknown" => json.Replace(
-                "\"version\":2,",
-                "\"version\":2,\r\n  \"unknown\": true,",
+                "\"version\":3,",
+                "\"version\":3,\r\n  \"unknown\": true,",
                 StringComparison.Ordinal),
-            _ => json + new string(' ', 1024 * 1024),
+            _ => json + new string(' ', PublicationLimits.MaximumMetadataBytes),
         };
         PrivateUserStorage.WriteAllText(ManifestPath, json);
 
@@ -325,7 +325,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
     }
 
     private WorkerOutputManifest Manifest(params WorkerOutputEntry[] entries) =>
-        new() { Entries = [.. entries] };
+        new() { Entries = [.. entries], Sealed = true };
 
     private WorkerOutputEntry Entry(
         string target,

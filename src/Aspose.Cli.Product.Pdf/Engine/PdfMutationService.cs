@@ -29,15 +29,18 @@ internal sealed class PdfMutationService
     private readonly ILicenseGate _licenseGate;
     private readonly SafeFileWriter _writer;
     private readonly PdfDocumentLoader _loader;
+    private readonly InputSource _inputs;
 
     internal PdfMutationService(
         ILicenseGate licenseGate,
         SafeFileWriter writer,
-        PdfDocumentLoader loader)
+        PdfDocumentLoader loader,
+        InputSource inputs)
     {
         _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader;
+        _inputs = inputs;
     }
 
     public PdfEditResult ApplyOps(string filePath, PdfOpsBatch batch, PdfEditRequest request) =>
@@ -51,6 +54,7 @@ internal sealed class PdfMutationService
         EnsurePdfOutput(request.OutputPath);
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
+        using InputResourceScope operationInputs = _inputs.CreateScope();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         SourceInfo input = PdfInfoProjection.Source(filePath, includeFingerprint: true);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
@@ -58,8 +62,10 @@ internal sealed class PdfMutationService
         bool signatures = loaded.Document.Form.SignaturesExist;
         var touched = new SortedSet<int>();
         (List<BoundedOperationOutcome> outcomes, string? outputPassword) =
-            ApplyOperations(loaded.Document, batch, request, touched);
-        Publication publication = Publish(loaded.Document, request, outputPassword, touched, precondition);
+            ApplyOperations(loaded.Document, batch, request, touched, operationInputs);
+        Publication publication;
+        try { publication = Publish(loaded.Document, request, outputPassword, touched, precondition); }
+        finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes);
 
         return new PdfEditResult
@@ -81,7 +87,8 @@ internal sealed class PdfMutationService
         Document document,
         PdfOpsBatch batch,
         PdfEditRequest request,
-        ISet<int> touched)
+        ISet<int> touched,
+        InputResourceScope operationInputs)
     {
         var outcomes = new List<BoundedOperationOutcome>(batch.Ops.Count);
         string? outputPassword = request.Password;
@@ -95,6 +102,7 @@ internal sealed class PdfMutationService
                 _ = request.OpSecrets?.TryGetValue(index, out secrets);
                 long affected = PdfMutationHandlers.ApplyOp(
                     _loader,
+                    operationInputs,
                     document,
                     op,
                     secrets,
@@ -121,7 +129,8 @@ internal sealed class PdfMutationService
             }
             catch (Exception exception) when (
                 exception is CliException or EngineOpException or InvalidOperationException
-                or ArgumentException or IndexOutOfRangeException)
+                or ArgumentException or IndexOutOfRangeException
+                && exception is not CliException { IsInvocationFailure: true })
             {
                 touched.UnionWith(operationPages);
                 CliException translated = exception as CliException ?? InvalidOp(index, op.OpName, exception.Message, exception);

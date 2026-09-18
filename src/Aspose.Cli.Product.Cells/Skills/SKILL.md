@@ -465,3 +465,19 @@ topic):
 5. Fix defects, recalculate, read back, render, and run review again. Stop after at most three visual correction rounds; report remaining defects instead of cycling indefinitely.
 6. Do not claim a visual pass when image or document inspection is unavailable, any required sheet/page/artifact was not actually opened, or coverage is incomplete. State exactly what was reviewed and mark the remainder partial or skipped.
 7. Report evaluation results separately from licensed results. For every evaluation artifact, disclose `EVAL_MODE`, watermarking, row or feature limits, and do not use it as evidence of licensed fidelity.
+
+## Shared input and output limits
+
+Discover the active resource limits with `aspose-cli capabilities --output json`.
+One output set admits at most 1,000 entries and 1,000 new directories; publication
+metadata is bounded at 8 MiB. Extraction defaults and maxima follow those same
+limits. Images, attachments and other explicit auxiliary inputs use the shared
+file/stream budgets. A resource-budget failure aborts the invocation even with
+`--best-effort`; it cannot publish an incomplete output set.
+
+For `cells edit`, output formats are xlsx, xlsm, xlsb, xls, ods, csv, tsv, html and
+mhtml. Automatic recalculation runs after the complete batch even when an
+explicit `recalculate` appeared earlier. `--verify` examines the staged file and
+publishes its images with the document. Encryption is retained for supported
+spreadsheet targets unless `--encrypt-env` supplies a replacement password;
+text/HTML exports cannot retain workbook encryption.

@@ -1,3 +1,5 @@
+using System.Net.Sockets;
+using Aspose.Cli.Host.LocalServices;
 using System.Text;
 using System.Runtime.InteropServices;
 using System.Runtime.Loader;
@@ -20,6 +22,52 @@ public sealed class AppMutationIsolationCollection;
 [Collection("App mutation isolation")]
 public sealed class AppMutationTests
 {
+    [Fact]
+    public async Task SlowPreviewBodyDoesNotBlockStatusOrClearAndKeepsItsUploadAlive()
+    {
+        using var app = new RunningApp();
+        using (var upload = new MemoryStream("Heading,Value\nUPLOADED,42\n"u8.ToArray()))
+        { await app.Host.UploadFileAsync("upload.csv", upload, upload.Length, CancellationToken.None); }
+        string uploaded = Assert.Single(Directory.GetFiles(Path.Combine(app.SessionRoot, "uploads", "files")));
+        using TcpClient client = await BeginSlowPreviewBody(app.Host);
+        var status = Task.Run(app.Host.Status);
+        try
+        {
+            Assert.Equal("upload.csv", (await status.WaitAsync(TimeSpan.FromSeconds(2))).File);
+            await app.Host.ClearLocalDataAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(2));
+            Assert.Null(app.Host.Status().File);
+            Assert.True(File.Exists(uploaded));
+        }
+        finally { client.Dispose(); await status.WaitAsync(TimeSpan.FromSeconds(7)); }
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        while (File.Exists(uploaded)) { await Task.Delay(20, deadline.Token); }
+        Assert.True(File.Exists(app.Original));
+    }
+
+    private static async Task<TcpClient> BeginSlowPreviewBody(AppHost host)
+    {
+        var client = new TcpClient();
+        try
+        {
+            await client.ConnectAsync("127.0.0.1", host.Port);
+            string origin = $"http://127.0.0.1:{host.Port}";
+            using var http = new HttpClient();
+            string shell = await http.GetStringAsync(host.Url);
+            string csrf = System.Text.RegularExpressions.Regex.Match(shell,
+                @"name=""aspose-csrf"" content=""([^""]+)""").Groups[1].Value;
+            Assert.NotEmpty(csrf);
+            string request = $"POST /live/refresh HTTP/1.1\r\nHost: 127.0.0.1:{host.Port}\r\nOrigin: {origin}\r\n{LocalHttpRequestSecurity.CsrfHeader}: {csrf}\r\nContent-Type: application/json\r\nContent-Length: 1\r\nExpect: 100-continue\r\nConnection: close\r\n\r\n";
+            await client.GetStream().WriteAsync(Encoding.ASCII.GetBytes(request));
+            using var reader = new StreamReader(client.GetStream(), Encoding.ASCII, false, 1024, leaveOpen: true);
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+            string? line = await reader.ReadLineAsync(timeout.Token);
+            Assert.Contains("100 Continue", line, StringComparison.OrdinalIgnoreCase);
+            while (!string.IsNullOrEmpty(await reader.ReadLineAsync(timeout.Token))) { }
+            return client;
+        }
+        catch { client.Dispose(); throw; }
+    }
+
     [Fact]
     public async Task UploadSerializesCleanupWhileStatusAndCancellationRemainAvailable()
     {

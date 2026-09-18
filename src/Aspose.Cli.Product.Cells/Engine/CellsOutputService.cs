@@ -64,8 +64,7 @@ internal sealed class CellsOutputService
 
         SaveFormat saveFormat = FormatMapper.ToSaveFormat(request.TargetFormatId);
         string? resolvedSheetName = null;
-        SaveOptions? saveOptions = null;
-        Warning? sheetsDropped = null;
+        int? selectedSheet = null;
 
         // A modern sheet can overflow the legacy xls grid (65,536 rows × 256
         // columns); the engine's save then silently discards everything past it.
@@ -73,22 +72,6 @@ internal sealed class CellsOutputService
         // names the exact rows/columns that would be lost — never silent, as the
         // contract demands and as Excel itself warns when saving down to xls.
         Warning? dataTruncated = _saver.DetectGridTruncation(workbook, saveFormat);
-
-        if (request.TargetFormatId is "html")
-        {
-            // A plain HTML save writes the page PLUS a sibling "<file>_files"
-            // directory and links to it by the name it saw at save time — which
-            // here is the atomic writer's temp file, so the deliverable ends up
-            // pointing at a hidden, GUID-named directory that any copy or zip
-            // drops (probed on 26.9.0). One self-contained file has no
-            // companion to lose, survives the temp-then-move, and is what a
-            // deliverable should be; mhtml remains the archive form.
-            saveOptions = new HtmlSaveOptions
-            {
-                SaveAsSingleFile = true,
-                ExportImagesAsBase64 = true,
-            };
-        }
 
         if (request.SheetName is not null)
         {
@@ -102,7 +85,7 @@ internal sealed class CellsOutputService
             }
             else if (request.TargetFormatId is "pdf")
             {
-                saveOptions = new PdfSaveOptions { SheetSet = new SheetSet([sheet.Index]) };
+                selectedSheet = sheet.Index;
             }
             else
             {
@@ -114,75 +97,22 @@ internal sealed class CellsOutputService
             }
         }
 
-        if (request.TargetFormatId is "csv" or "tsv" or "md")
+        if (request.TargetFormatId is "csv" or "tsv" or "md"
+            && licenseState == LicenseState.Evaluation && request.SheetName is not null)
         {
-            // Text formats export the active sheet as a faithful data extract: the
-            // engine's default (CellStyle) renders a 12-digit id as "1E+11" and a
-            // long decimal display-rounded — silent data loss — and formats a
-            // month-name date in the machine's locale, breaking
-            // output determinism. CellValueFormatStrategy.None writes numbers at
-            // full precision, and dates pre-normalized to invariant ISO stay
-            // meaningful instead of collapsing to a serial number. Both now match
-            // what `read --scope values` returns for the same cell.
-            //
-            // TrimLeadingBlankRowAndColumn defaults true, which drops a leading
-            // empty column A and shifts every field left — so CSV field N no longer
-            // lines up with sheet column N, and the extract disagrees with read's
-            // A1-anchored used range. Turn it off to keep positions faithful.
+            // The evaluation SDK writes the first sheet regardless of ActiveSheetIndex.
             Worksheet active = workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex];
-            if (licenseState == LicenseState.Evaluation)
-            {
-                // The evaluation SDK always writes the first sheet for text
-                // formats, regardless of ActiveSheetIndex. Refuse a conflicting
-                // explicit selection before publishing a misleading report.
-                Worksheet first = workbook.Worksheets[0];
-                if (request.SheetName is not null && active.Index != 0)
-                {
-                    throw CellsErrors.TextExportEvaluationLimit(
-                        request.TargetFormatId, active.Name, first.Name);
-                }
-
-                active = first;
-            }
-            _saver.NormalizeDatesForTextExport(active);
-            saveOptions = request.TargetFormatId is "md"
-                ? new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.None }
-                : new TxtSaveOptions(saveFormat)
-                {
-                    FormatStrategy = CellValueFormatStrategy.None,
-                    TrimLeadingBlankRowAndColumn = false,
-                };
-
-            // A text format holds one sheet, so a multi-sheet workbook loses the
-            // rest silently — the tool's promise is to never do that quietly, and
-            // Excel warns here too. (The eval "Evaluation Warning" sheet is not in
-            // the workbook at open time, so this count is honest in both modes.)
-            int otherSheets = workbook.Worksheets.Count - 1;
-            if (otherSheets > 0)
-            {
-                sheetsDropped = new Warning
-                {
-                    Code = CellsDiagnostics.SheetsDropped,
-                    Message = $"Only the active sheet '{active.Name}' was exported; a {request.TargetFormatId} file "
-                        + $"holds one sheet, so {otherSheets} other sheet(s) were not written.",
-                    Hint = "Export a specific sheet with --sheet, or convert to a multi-sheet format "
-                        + "(xlsx, xlsb, ods, pdf) to keep them all.",
-                };
-            }
+            Worksheet first = workbook.Worksheets[0];
+            if (active.Index != 0)
+            { throw CellsErrors.TextExportEvaluationLimit(request.TargetFormatId, active.Name, first.Name); }
         }
 
         int refsBefore = _saver.CountRefFormulas(workbook);
-        long sizeBytes = _saver.Write(request.OutputPath, request.Overwrite, tempPath =>
-        {
-            if (saveOptions is not null)
-            {
-                workbook.Save(tempPath, saveOptions);
-            }
-            else
-            {
-                workbook.Save(tempPath, saveFormat);
-            }
-        });
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, licenseState,
+            inputPassword: loaded.IsEncrypted ? request.Password : null, selectedSheet: selectedSheet);
+        Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
+        long sizeBytes = _saver.Write(request.OutputPath, request.Overwrite,
+            path => _saver.Produce(workbook, savePlan, path));
         Warning? formulasBroken = _saver.BuildBrokenFormulaWarning(
             refsBefore,
             _saver.CountRefFormulas(workbook),
@@ -199,7 +129,7 @@ internal sealed class CellsOutputService
             },
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, sheetsDropped, dataTruncated, formulasBroken),
+            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning),
         };
     }
 
@@ -408,6 +338,33 @@ internal sealed class CellsOutputService
             License = EnvelopeParts.License(licenseState),
             Warnings = CombineWarnings(licenseState, resourceOmission, sheetsSkipped),
         };
+    }
+
+    internal (IReadOnlyList<SheetRenderOutput> Renders, IReadOnlyList<Warning> Warnings) StageVerification(
+        AtomicOutputSetWriter transaction, Workbook workbook, string outputPath, string directory)
+    {
+        transaction.EnsureDirectory(directory);
+        Worksheet[] sheets = workbook.Worksheets.Cast<Worksheet>().Where(static sheet => sheet.IsVisible).ToArray();
+        string basePath = Path.Combine(directory, Path.GetFileNameWithoutExtension(outputPath) + ".png");
+        IReadOnlyList<string> paths = DerivePerSheetPaths(basePath, sheets);
+        var request = new RenderRequest { TargetFormatId = "png", OutputPath = basePath, Overwrite = true, Dpi = 192 };
+        var rendered = new List<SheetRenderOutput>();
+        var warnings = new List<Warning>();
+        for (int index = 0; index < sheets.Length; index++)
+        {
+            try
+            {
+                StagedOutput image = StageSheet(transaction, sheets[index], request, null, paths[index]);
+                rendered.Add(new SheetRenderOutput { Sheet = sheets[index].Name, Path = image.TargetPath, SizeBytes = image.SizeBytes });
+            }
+            catch (CliException error) when (error.Code == ErrorCodes.RenderEmpty)
+            {
+                warnings.Add(new Warning { Code = CellsDiagnostics.SheetsSkipped,
+                    Message = $"The empty sheet '{sheets[index].Name}' has no renderable verification page.",
+                    Hint = "Inspect empty sheets explicitly when reviewing this edit." });
+            }
+        }
+        return (rendered, warnings);
     }
 
     /// <summary>The one-line reason a sheet was skipped, for the warning message.</summary>

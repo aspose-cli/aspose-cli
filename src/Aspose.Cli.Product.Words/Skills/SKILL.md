@@ -58,3 +58,12 @@ Worked examples:
 ## External resources
 
 External document resources are limited to verified ordinary local files beneath the input directory. Network, data, UNC, device, linked and escaping references are omitted. Reads are capped at 256 resources, 32 MiB each and 128 MiB total, and also consume the invocation input, memory and time budgets. Shared budget failures abort the operation. Omitted resources produce a completeness warning. Platforms without a verified file-handle boundary omit all external resources.
+
+## Shared input and output limits
+
+Discover the active resource limits with `aspose-cli capabilities --output json`.
+One output set admits at most 1,000 entries and 1,000 new directories; publication
+metadata is bounded at 8 MiB. Extraction defaults and maxima follow those same
+limits. Images, attachments and other explicit auxiliary inputs use the shared
+file/stream budgets. A resource-budget failure aborts the invocation even with
+`--best-effort`; it cannot publish an incomplete output set.

@@ -825,7 +825,7 @@ public sealed class AtomicOutputSetWriterTests
 
         Assert.False(File.Exists(target));
         Assert.Equal("external", File.ReadAllText(unknown));
-        Assert.True(File.Exists(Path.Combine(
+        Assert.False(File.Exists(Path.Combine(
             transaction,
             AtomicPublicationPlan.JournalName)));
     }

@@ -27,6 +27,7 @@ internal static class PdfMutationHandlers
 {
     internal static long ApplyOp(
         PdfDocumentLoader loader,
+        InputResourceScope inputs,
         Document document,
         PdfOp op,
         IReadOnlyDictionary<string, string>? secrets,
@@ -46,8 +47,8 @@ internal static class PdfMutationHandlers
                         touched),
                 AddWatermarkTextOp or AddWatermarkImageOp or AddPageNumbersOp or AddHeaderTextOp
                     or AddFooterTextOp or AddStampImageOp or AddLinkOp or RedactTextOp or RedactAreaOp
-                    => ApplyContentOperation(document, op, touched),
-                _ => ApplyDocumentOperation(document, op, secrets),
+                    => ApplyContentOperation(document, op, touched, inputs),
+                _ => ApplyDocumentOperation(document, op, secrets, inputs),
             };
         }
         catch (CliException)
@@ -60,6 +61,7 @@ internal static class PdfMutationHandlers
         {
             throw new EngineOpException(exception.Message, exception);
         }
+        finally { inputs.ThrowIfFailed(); }
     }
 
     private static long ApplyPageOperation(
@@ -85,15 +87,15 @@ internal static class PdfMutationHandlers
                 _ => throw new InvalidOperationException(),
         };
 
-    private static long ApplyContentOperation(Document document, PdfOp op, ISet<int> touched) =>
+    private static long ApplyContentOperation(Document document, PdfOp op, ISet<int> touched, InputResourceScope inputs) =>
         op switch
         {
                 AddWatermarkTextOp value => PdfContentMutationHandlers.WatermarkText(document, value, touched),
-                AddWatermarkImageOp value => PdfContentMutationHandlers.WatermarkImage(document, value, touched),
+                AddWatermarkImageOp value => PdfContentMutationHandlers.WatermarkImage(document, value, touched, inputs),
                 AddPageNumbersOp value => PdfContentMutationHandlers.PageNumbers(document, value, touched),
                 AddHeaderTextOp value => PdfContentMutationHandlers.HeaderFooter(document, value.Text, value.Pages, value.Position, value.Font, touched),
                 AddFooterTextOp value => PdfContentMutationHandlers.HeaderFooter(document, value.Text, value.Pages, value.Position, value.Font, touched),
-                AddStampImageOp value => PdfContentMutationHandlers.StampImage(document, value, touched),
+                AddStampImageOp value => PdfContentMutationHandlers.StampImage(document, value, touched, inputs),
                 AddLinkOp value => PdfContentMutationHandlers.AddLink(document, value, touched),
                 RedactTextOp value => PdfContentMutationHandlers.RedactText(document, value, touched),
                 RedactAreaOp value => PdfContentMutationHandlers.RedactArea(document, value, touched),
@@ -103,14 +105,15 @@ internal static class PdfMutationHandlers
     private static long ApplyDocumentOperation(
         Document document,
         PdfOp op,
-        IReadOnlyDictionary<string, string>? secrets) =>
+        IReadOnlyDictionary<string, string>? secrets,
+        InputResourceScope inputs) =>
         op switch
         {
                 SetMetadataOp value => PdfDocumentMutationHandlers.SetMetadata(document, value),
                 RemoveMetadataOp value => PdfDocumentMutationHandlers.RemoveMetadata(document, value),
                 AddBookmarkOp value => PdfDocumentMutationHandlers.AddBookmark(document, value),
                 DeleteBookmarksOp value => PdfDocumentMutationHandlers.DeleteBookmarks(document, value),
-                AddAttachmentOp value => PdfDocumentMutationHandlers.AddAttachment(document, value),
+                AddAttachmentOp value => PdfDocumentMutationHandlers.AddAttachment(document, value, inputs),
                 RemoveAttachmentOp value => PdfDocumentMutationHandlers.RemoveAttachment(document, value),
                 SetPageLabelsOp value => PdfDocumentMutationHandlers.SetPageLabels(document, value),
                 SetFormFieldOp value => PdfDocumentMutationHandlers.SetFormField(document, value),

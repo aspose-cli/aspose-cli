@@ -37,7 +37,8 @@ public sealed class SafeFileWriter
         string target = OutputPathValidator.NormalizeFile(targetPath);
         string? backup = backupPath is null ? null : OutputPathValidator.NormalizeFile(backupPath, phase: "backup");
         string directory = System.IO.Path.GetDirectoryName(target)!;
-        using var transaction = new AtomicOutputSetWriter(this, directory, "write");
+        using var transaction = new AtomicOutputSetWriter(this,
+            backup is null ? [directory] : new[] { directory, System.IO.Path.GetDirectoryName(backup)! }, "write");
         StagedOutput staged;
         try
         {

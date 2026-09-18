@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
 
+[Collection("Publication timing")]
 public sealed class LocalServiceMarkerSnapshotTests
 {
     [Theory]
@@ -14,14 +15,14 @@ public sealed class LocalServiceMarkerSnapshotTests
     public async Task PairedFiles_AreOneSnapshotDuringConcurrentReadsAndWrites(bool pauseReader)
     {
         using var directory = new TempDirectory();
-        using var entered = new ManualResetEventSlim();
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
         using var release = new ManualResetEventSlim();
         bool armed = false;
         JsonTypeInfo<State> markerType = TypeInfo();
         Action<object> pause = _ =>
         {
             if (!armed) { return; }
-            entered.Set();
+            entered.TrySetResult();
             Assert.True(release.Wait(TimeSpan.FromSeconds(5)), "The concurrent operation was not released.");
         };
         if (pauseReader) { markerType.OnDeserialized = pause; }
@@ -36,12 +37,12 @@ public sealed class LocalServiceMarkerSnapshotTests
         try
         {
             first = pauseReader
-                ? Task.Run(() => { observed = store.Read(); })
-                : Task.Run(() => store.Write(new State(2), new State(2)));
-            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)), "The first file operation did not reach its boundary.");
+                ? RunBlocking(() => { observed = store.Read(); })
+                : RunBlocking(() => store.Write(new State(2), new State(2)));
+            await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
             second = pauseReader
-                ? Task.Run(() => store.Write(new State(2), new State(2)))
-                : Task.Run(() => { observed = store.Read(); });
+                ? RunBlocking(() => store.Write(new State(2), new State(2)))
+                : RunBlocking(() => { observed = store.Read(); });
             await Task.Delay(150);
             Assert.False(second.IsCompleted,
                 "The paired-file operation escaped the shared resource lock.");
@@ -59,6 +60,9 @@ public sealed class LocalServiceMarkerSnapshotTests
             if (second is not null) { await second.WaitAsync(TimeSpan.FromSeconds(10)); }
         }
     }
+
+    private static Task RunBlocking(Action action) => Task.Factory.StartNew(action,
+        CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 
     private static JsonTypeInfo<State> TypeInfo() =>
         (JsonTypeInfo<State>)new JsonSerializerOptions(JsonSerializerDefaults.Web)

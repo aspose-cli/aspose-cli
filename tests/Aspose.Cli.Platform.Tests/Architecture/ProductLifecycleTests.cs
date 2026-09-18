@@ -11,7 +11,7 @@ public sealed class ProductLifecycleTests
 {
 
     [Fact]
-    public void CatalogRowAndProductSlice_AreTheCompleteProductLifecycle()
+    public async Task CatalogRowAndProductSlice_AreTheCompleteProductLifecycle()
     {
         using var temp = new TempDirectory();
         string root = temp.Path;
@@ -37,7 +37,7 @@ public sealed class ProductLifecycleTests
             Path.Combine(root, "eng", "distribution.json"));
         WriteProductSlice(root, "alpha", "Alpha");
         WriteCatalog(root, ("alpha", "Alpha"));
-        AssertSuccess(RunGenerator(root));
+        AssertSuccess(await RunGenerator(root));
 
         string generatedRoot = Path.Combine(
             root,
@@ -67,7 +67,7 @@ public sealed class ProductLifecycleTests
             Assert.DoesNotContain("external/", solution, StringComparison.Ordinal);
         }
         RewriteCatalogWithCrLf(root);
-        AssertSuccess(RunGenerator(root, check: true));
+        AssertSuccess(await RunGenerator(root, check: true));
 
         string composition = File.ReadAllText(
             Path.Combine(generatedRoot, "ProductComposition.props"));
@@ -84,11 +84,11 @@ public sealed class ProductLifecycleTests
 
         string protectedFile = Path.Combine(generatedRoot, "notes.txt");
         File.WriteAllText(protectedFile, "authored", Encoding.UTF8);
-        GeneratorResult protectedResult = RunGenerator(root, check: true);
+        GeneratorResult protectedResult = await RunGenerator(root, check: true);
         Assert.NotEqual(0, protectedResult.ExitCode);
         Assert.Contains("Unknown file", protectedResult.Output, StringComparison.Ordinal);
         Assert.Equal("authored", File.ReadAllText(protectedFile));
-        protectedResult = RunGenerator(root);
+        protectedResult = await RunGenerator(root);
         Assert.NotEqual(0, protectedResult.ExitCode);
         Assert.Contains("Unknown file", protectedResult.Output, StringComparison.Ordinal);
         Assert.Equal("authored", File.ReadAllText(protectedFile));
@@ -99,7 +99,7 @@ public sealed class ProductLifecycleTests
             "src",
             "Aspose.Cli.Product.Orphan");
         Directory.CreateDirectory(orphanSource);
-        GeneratorResult orphanResult = RunGenerator(root, check: true);
+        GeneratorResult orphanResult = await RunGenerator(root, check: true);
         Assert.NotEqual(0, orphanResult.ExitCode);
         Assert.Contains("source catalog drift", orphanResult.Output, StringComparison.Ordinal);
         Directory.Delete(orphanSource);
@@ -109,14 +109,14 @@ public sealed class ProductLifecycleTests
             "tests",
             "Aspose.Cli.Product.Orphan.Tests");
         Directory.CreateDirectory(orphanTest);
-        orphanResult = RunGenerator(root, check: true);
+        orphanResult = await RunGenerator(root, check: true);
         Assert.NotEqual(0, orphanResult.ExitCode);
         Assert.Contains("test catalog drift", orphanResult.Output, StringComparison.Ordinal);
         Directory.Delete(orphanTest);
 
         WriteProductSlice(root, "beta", "Beta");
         WriteCatalog(root, ("alpha", "Alpha"), ("beta", "Beta"));
-        AssertSuccess(RunGenerator(root));
+        AssertSuccess(await RunGenerator(root));
         composition = File.ReadAllText(
             Path.Combine(generatedRoot, "ProductComposition.props"));
         Assert.Contains("Aspose.Cli.Product.Alpha", composition, StringComparison.Ordinal);
@@ -135,13 +135,13 @@ public sealed class ProductLifecycleTests
                 "Aspose.Cli.Product.Alpha.Tests"),
             recursive: true);
         WriteCatalog(root, ("beta", "Beta"));
-        AssertSuccess(RunGenerator(root));
+        AssertSuccess(await RunGenerator(root));
 
         composition = File.ReadAllText(
             Path.Combine(generatedRoot, "ProductComposition.props"));
         Assert.DoesNotContain("Aspose.Cli.Product.Alpha", composition, StringComparison.Ordinal);
         Assert.Contains("Aspose.Cli.Product.Beta", composition, StringComparison.Ordinal);
-        AssertSuccess(RunGenerator(root, check: true));
+        AssertSuccess(await RunGenerator(root, check: true));
     }
 
     private static void WriteProductSlice(
@@ -259,7 +259,7 @@ public sealed class ProductLifecycleTests
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
     }
 
-    private static GeneratorResult RunGenerator(
+    private static async Task<GeneratorResult> RunGenerator(
         string root,
         bool check = false)
     {
@@ -292,16 +292,21 @@ public sealed class ProductLifecycleTests
 
         using Process process = Process.Start(start)
             ?? throw new InvalidOperationException("Could not start PowerShell.");
-        Task<string> outputTask = process.StandardOutput.ReadToEndAsync();
-        Task<string> errorTask = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(30_000))
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        Task<string> outputTask = process.StandardOutput.ReadToEndAsync(timeout.Token);
+        Task<string> errorTask = process.StandardError.ReadToEndAsync(timeout.Token);
+        try
         {
-            process.Kill(entireProcessTree: true);
-            Assert.Fail("Product catalog generator timed out.");
+            await Task.WhenAll(outputTask, errorTask, process.WaitForExitAsync(timeout.Token))
+                .WaitAsync(timeout.Token);
         }
-        Assert.True(Task.WaitAll([outputTask, errorTask], 5000), "Generator output drain timed out.");
-        string stdout = outputTask.GetAwaiter().GetResult();
-        string stderr = errorTask.GetAwaiter().GetResult();
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited) { process.Kill(entireProcessTree: true); }
+            Assert.Fail("Product catalog generator or output drain exceeded the shared 30-second deadline.");
+        }
+        string stdout = await outputTask;
+        string stderr = await errorTask;
         return new GeneratorResult(
             process.ExitCode,
             stdout + Environment.NewLine + stderr);

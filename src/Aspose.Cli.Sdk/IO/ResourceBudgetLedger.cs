@@ -13,12 +13,15 @@ public static class ResourceBudgetKinds
     public const string DecodedTextCharacters = "decoded-text-characters";
     public const string MemoryBufferBytes = "memory-buffer-bytes";
     public const string OutputBytes = "output-bytes";
+    public const string OutputSetEntries = "output-set-entries";
+    public const string OutputSetDirectories = "output-set-directories";
+    public const string PublicationMetadataBytes = "publication-metadata-bytes";
     public const string SecretCharacters = "secret-characters";
 }
 /// <summary>Versioned defaults and hard safety maxima for ordinary CLI input.</summary>
 public static class ResourceBudgetDefaults
 {
-    public const int ContractVersion = 1;
+    public const int ContractVersion = 2;
     public const long DefaultInputBytes = 1L << 30;
     public const long MaximumInputBytes = 4L << 30;
     public const long DefaultStandardInputBytes = 16L << 20;
@@ -61,6 +64,12 @@ public static class ResourceBudgetDefaults
             MaximumOutputBytes,
             "bytes",
             "output-stream"),
+        ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.OutputSetEntries,
+            PublicationLimits.MaximumEntries, PublicationLimits.MaximumEntries, "items", "output-set-admission"),
+        ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.OutputSetDirectories,
+            PublicationLimits.MaximumDirectories, PublicationLimits.MaximumDirectories, "items", "output-directory-admission"),
+        ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.PublicationMetadataBytes,
+            PublicationLimits.MaximumMetadataBytes, PublicationLimits.MaximumMetadataBytes, "bytes", "publication-seal"),
         ResourceBudgetCapabilities.Domain(
             ResourceBudgetKinds.SecretCharacters,
             DefaultSecretCharacters,
@@ -82,6 +91,7 @@ public static class ResourceBudgetDefaults
 public sealed class ResourceBudgetLedger
 {
     private readonly IReadOnlyDictionary<string, long> _limits;
+    private CliException? _failure;
     private readonly ConcurrentDictionary<string, long> _consumed;
     private readonly ConcurrentDictionary<string, AdmittedFile> _admitted;
 
@@ -116,6 +126,18 @@ public sealed class ResourceBudgetLedger
     /// <summary>Bounded file/stdin/text reader backed by this ledger.</summary>
     public InputSource Inputs { get; }
 
+    /// <summary>Rethrows a resource failure even if an engine caught the original read exception.</summary>
+    public void ThrowIfFailed()
+    {
+        if (Volatile.Read(ref _failure) is { } failure) { throw failure; }
+    }
+
+    private CliException Reject(CliException failure)
+    {
+        Interlocked.CompareExchange(ref _failure, failure, null);
+        return _failure!;
+    }
+
     /// <summary>Returns the active limit for one stable resource name.</summary>
     public long Limit(string kind) =>
         _limits.TryGetValue(kind, out long value)
@@ -146,6 +168,7 @@ public sealed class ResourceBudgetLedger
             throw new ArgumentOutOfRangeException(nameof(amount));
         }
 
+        ThrowIfFailed();
         Deadline.ThrowIfExpired(phase);
         long limit = Limit(kind);
         while (true)
@@ -156,12 +179,8 @@ public sealed class ResourceBudgetLedger
                 long observed = amount > long.MaxValue - current
                     ? long.MaxValue
                     : current + amount;
-                throw CliErrors.InputBudgetExceeded(
-                    kind,
-                    observed,
-                    limit,
-                    unit,
-                    phase);
+                throw Reject(CliErrors.InputBudgetExceeded(
+                    kind, observed, limit, unit, phase));
             }
 
             long updated = current + amount;
@@ -188,16 +207,13 @@ public sealed class ResourceBudgetLedger
         {
             throw new ArgumentOutOfRangeException(nameof(observed));
         }
+        ThrowIfFailed();
         Deadline.ThrowIfExpired(phase);
         long limit = Limit(kind);
         if (observed > limit)
         {
-            throw CliErrors.InputBudgetExceeded(
-                kind,
-                observed,
-                limit,
-                unit,
-                phase);
+            throw Reject(CliErrors.InputBudgetExceeded(
+                kind, observed, limit, unit, phase));
         }
     }
 
@@ -211,7 +227,7 @@ public sealed class ResourceBudgetLedger
         {
             // File admission has a specific error; stream and domain budgets
             // use the shared resource-budget error.
-            throw CliErrors.FileTooLarge(info.Length, limit);
+            throw Reject(CliErrors.FileTooLarge(info.Length, limit));
         }
         _admitted[full] = new AdmittedFile(
             info.Length,

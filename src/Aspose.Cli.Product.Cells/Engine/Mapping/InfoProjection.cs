@@ -34,6 +34,7 @@ internal static class InfoProjection
                 errorsTruncated = new Warning
                 {
                     Code = CellsDiagnostics.ErrorsTruncated,
+                    AffectsCompleteness = true,
                     Message = $"The workbook has {total} formula errors; this list is capped at the first "
                         + $"{formulaErrors.Count}, so sheets scanned after the cap are not represented.",
                     Hint = "Treat the count, not the list, as complete; read a specific sheet with "

@@ -15,6 +15,19 @@ namespace Aspose.Cli.Host.Tests;
 public sealed class LocalServiceRuntimeTests
 {
     [Fact]
+    public void ControlProtocol_StartFailsWhenItsWindowsPipeIsAlreadyOwned()
+    {
+        if (!OperatingSystem.IsWindows()) { return; }
+        LocalServiceControlEndpoint endpoint = Endpoint();
+        using var occupied = new NamedPipeServerStream(endpoint.PipeName, PipeDirection.InOut, 1,
+            PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        using var server = new LocalServiceControlServer(endpoint, Guid.NewGuid().ToString("N"),
+            Guid.NewGuid().ToString("N"), _ => throw new InvalidOperationException("No request should arrive."),
+            stageTimeout: TimeSpan.FromMilliseconds(250));
+        Assert.Throws<IOException>(() => server.Start());
+    }
+
+    [Fact]
     public void ControlProtocol_ContainsHandlerAndDiagnosticFailures()
     {
         LocalServiceControlEndpoint endpoint = Endpoint();

@@ -17,6 +17,21 @@ When each tier applies:
 Each tier catches what the previous one structurally cannot see. Run them
 in order; stop and fix at the first finding, then re-run the tier.
 
+## Built-in edit verification
+
+`cells edit --verify` compares a private input snapshot with the exact staged
+output, scans saved formula errors, and stages visible-sheet images before the
+output set is published. It uses the same candidate with `--timeout` and MCP.
+The evidence directory defaults to `.aspose-verify/<output-name>` beside the
+output. A custom `--verify-dir` must share its filesystem and a writable common
+transaction directory with the document.
+
+Inspect `verification.ok`, `issues` and the images. Semantic findings can commit
+with exit 8; a reopen error, rendering execution error, budget failure or
+cancellation aborts publication. Empty sheets are reported as missing visual
+evidence. `--verify` requires final recalculation and cannot accompany
+`--dry-run` or `--no-recalc`.
+
 ## Tier 1 — values
 
 Windowed `query range` of every range you changed, in the right scope:

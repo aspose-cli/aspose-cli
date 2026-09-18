@@ -31,6 +31,7 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
         FileFormatType.Csv,
         FileFormatType.TabDelimited,
         FileFormatType.Html,
+        FileFormatType.XHtml,
         FileFormatType.MHtml,
     ];
 
@@ -51,13 +52,13 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
     }
 
     // Derived output is already bounded by publication; it is not a new user input.
-    internal LoadedWorkbook OpenPublishedCandidate(string path, string? password) =>
-        OpenCore(path, password);
+    internal LoadedWorkbook OpenPublishedCandidate(string path, string? password, string? resourceSource = null) =>
+        OpenCore(path, password, resourceSource);
 
-    private LoadedWorkbook OpenCore(string path, string? password)
+    private LoadedWorkbook OpenCore(string path, string? password, string? resourceSource = null)
     {
         LoadPlan plan = ResolveLoadPlan(path);
-        var resources = new WorkbookResources(path, resourceBudgets, plan.Format == LoadFormat.MHtml);
+        var resources = new WorkbookResources(resourceSource ?? path, resourceBudgets, plan.Format == LoadFormat.MHtml);
         Workbook? workbook = null;
         bool transferred = false;
         try
@@ -72,7 +73,7 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
             resourceBudgets.EnsureWithin(CellsBudgetDomains.Objects,
                 workbook.Worksheets.Cast<Worksheet>().Sum(static sheet => (long)sheet.Shapes.Count),
                 "items", "post-load");
-            if (workbook.FileFormat is FileFormatType.Html or FileFormatType.MHtml)
+            if (workbook.FileFormat is FileFormatType.Html or FileFormatType.XHtml or FileFormatType.MHtml)
             {
                 foreach (Worksheet sheet in workbook.Worksheets)
                 {
@@ -82,7 +83,7 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
             }
             resources.ThrowIfFailed();
             transferred = true;
-            return new LoadedWorkbook(workbook, resources);
+            return new LoadedWorkbook(workbook, resources, plan.Encrypted);
         }
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {
@@ -116,7 +117,7 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
 
         if (detected.IsEncrypted)
         {
-            return LoadPlan.Auto;
+            return LoadPlan.Auto with { Encrypted = true };
         }
 
         if (OpenableFormats.Contains(detected.FileFormatType))
@@ -133,7 +134,7 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
 
             return detected.FileFormatType switch
             {
-                FileFormatType.Html => new LoadPlan(LoadFormat.Html, null),
+                FileFormatType.Html or FileFormatType.XHtml => new LoadPlan(LoadFormat.Html, null),
                 FileFormatType.MHtml => new LoadPlan(LoadFormat.MHtml, null),
                 _ => LoadPlan.Auto,
             };
@@ -293,7 +294,7 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
             signature => text.Contains(signature, StringComparison.Ordinal));
     }
 
-    private readonly record struct LoadPlan(LoadFormat? Format, char? Separator)
+    private readonly record struct LoadPlan(LoadFormat? Format, char? Separator, bool Encrypted = false)
     {
         internal static LoadPlan Auto => default;
 

@@ -9,7 +9,6 @@ param(
     [switch] $SkipSkills,
     [string] $SkillsRoot,
     [string] $LicensePath,
-    [ValidateSet('cells','pdf','slides','words')]
     [string] $LicenseProduct,
     [switch] $SkipLicensePrompt,
     [switch] $SkipMcp
@@ -18,6 +17,10 @@ $ErrorActionPreference = 'Stop'
 if ($env:OS -cne 'Windows_NT') { throw 'Local installation currently supports Windows only.' }
 $repoRoot = Split-Path -Parent $PSScriptRoot
 $layout = & (Join-Path $PSScriptRoot 'resolve-project-layout.ps1') -RepositoryRoot $repoRoot
+$activeProductIds = @((Get-Content -LiteralPath $layout.CatalogPath -Raw | ConvertFrom-Json).products | ForEach-Object { [string]$_.id })
+if ($PSBoundParameters.ContainsKey('LicenseProduct') -and $LicenseProduct -cnotin $activeProductIds) {
+    throw "Unknown license product '$LicenseProduct'. Active products: $($activeProductIds -join ', ')."
+}
 $installRoot = if ([string]::IsNullOrWhiteSpace($InstallDirectory)) {
     Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) $layout.Identity.installDirectory.Replace('/','\')
 } else { [IO.Path]::GetFullPath($InstallDirectory) }

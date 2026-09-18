@@ -69,3 +69,12 @@ Worked example: `examples/assemble-review-report`.
 ## External resources
 
 The custom HTML resource callback uses verified local reads and shared budgets. However, the pinned Aspose.PDF.Drawing 26.8.0 importer can fetch linked images and CSS outside that callback. PDF HTML creation therefore cannot currently guarantee network or filesystem resource isolation. Use trusted HTML inputs only; the callback warning is not proof that external access was prevented.
+
+## Shared input and output limits
+
+Discover the active resource limits with `aspose-cli capabilities --output json`.
+One output set admits at most 1,000 entries and 1,000 new directories; publication
+metadata is bounded at 8 MiB. Extraction defaults and maxima follow those same
+limits. Images, attachments and other explicit auxiliary inputs use the shared
+file/stream budgets. A resource-budget failure aborts the invocation even with
+`--best-effort`; it cannot publish an incomplete output set.

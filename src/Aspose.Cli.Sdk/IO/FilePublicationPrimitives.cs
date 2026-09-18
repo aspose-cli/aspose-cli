@@ -371,8 +371,8 @@ internal static class FilePublicationDurabilityAdapter
 
 internal sealed class PublicationJournal
 {
-    internal const int MaximumBytes = 1024 * 1024;
-    internal const int MaximumEntries = 256;
+    internal const int MaximumBytes = PublicationLimits.MaximumMetadataBytes;
+    internal const int MaximumEntries = PublicationLimits.MaximumEntries;
     internal static bool IsTemporaryPath(string path)
     {
         string name = Path.GetFileName(path);
@@ -447,7 +447,46 @@ internal sealed class PublicationJournal
         return journal;
     }
 
-    public void Write(string path)
+    /// <summary>Checks a fully populated recovery record before any target can be changed.</summary>
+    internal int EnsureLifecycleCapacity(string path)
+    {
+        var complete = new PublicationJournal
+        {
+            Operation = Operation, OwnerProcessId = OwnerProcessId,
+            OwnerProcessStartUtcTicks = OwnerProcessStartUtcTicks,
+            State = PublicationTransactionState.RollingBack,
+            Entries = Entries.Select(entry => new PublicationJournalEntry
+            {
+                Index = entry.Index, Target = entry.Target, Staged = entry.Staged,
+                Overwrite = entry.Overwrite, DeleteTarget = entry.DeleteTarget, Size = entry.Size,
+                Original = entry.Original, StagedSnapshot = entry.StagedSnapshot,
+                InputPath = entry.InputPath, InputSnapshot = entry.InputSnapshot,
+                RequestedBackup = entry.RequestedBackup, RequestedBackupOriginal = entry.RequestedBackupOriginal,
+                TargetParentIdentity = entry.TargetParentIdentity,
+                RequestedBackupParentIdentity = entry.RequestedBackupParentIdentity,
+                Backup = entry.Original.Exists ? Path.Combine(Path.GetDirectoryName(path)!, "backups", $"{entry.Index + 1:000000}.backup") : null,
+                BackupSnapshot = entry.Original.Exists ? LargestSnapshot(entry) : null,
+                Displaced = entry.Original.Exists ? Path.Combine(Path.GetDirectoryName(path)!, "backups", $"{entry.Index + 1:000000}.displaced") : null,
+                DisplacedSnapshot = entry.Original.Exists ? LargestSnapshot(entry) : null,
+                PublishedSnapshot = LargestSnapshot(entry), State = PublicationEntryState.Unknown,
+            }).ToList(),
+        };
+        return Encoding.UTF8.GetByteCount(complete.SerializeBounded(path));
+    }
+
+    private static FilePublicationSnapshot LargestSnapshot(PublicationJournalEntry entry)
+    {
+        FilePublicationSnapshot largest = JsonSerializer.SerializeToUtf8Bytes(entry.Original, JsonOptions).Length
+            > JsonSerializer.SerializeToUtf8Bytes(entry.StagedSnapshot, JsonOptions).Length
+            ? entry.Original : entry.StagedSnapshot;
+        return largest with
+        {
+            Length = long.MaxValue, LastWriteUtcTicks = long.MaxValue,
+            PhysicalIdentity = OperatingSystem.IsWindows() ? new FilePhysicalIdentity(uint.MaxValue, ulong.MaxValue) : null,
+        };
+    }
+
+    private string SerializeBounded(string path)
     {
         if (Entries.Count > MaximumEntries)
         {
@@ -464,6 +503,12 @@ internal sealed class PublicationJournal
                 "the publication journal byte budget was exceeded",
                 phase: "journal");
         }
+        return contents;
+    }
+
+    public void Write(string path)
+    {
+        string contents = SerializeBounded(path);
         string directory = Path.GetDirectoryName(path)
             ?? throw new IOException(
                 $"Publication journal '{path}' has no parent directory.");

@@ -319,6 +319,7 @@ public sealed class LicenseInstallerTests
             LicenseInstaller.RemoveMany(budgets, [deleted]);
             Assert.False(File.Exists(installed));
             Assert.Equal("old license", File.ReadAllText(deleted));
+            worker.SealForPublication();
             WorkerOutputManifest manifest = WorkerManifestStore.ReadAndValidate(manifestPath);
             Assert.Equal(2, manifest.Entries.Count);
             Assert.Equal("new license", File.ReadAllText(Assert.Single(manifest.Entries, entry => entry.Target == installed).Staged));

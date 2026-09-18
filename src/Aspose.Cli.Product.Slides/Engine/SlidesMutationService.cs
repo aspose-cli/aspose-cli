@@ -122,7 +122,8 @@ internal sealed class SlidesMutationService
             catch (Exception exception) when (
                 exception is CliException or EngineOpException or InvalidOperationException
                 or ArgumentException or IndexOutOfRangeException or IOException
-                or UnauthorizedAccessException)
+                or UnauthorizedAccessException
+                && exception is not CliException { IsInvocationFailure: true })
             {
                 touched.UnionWith(operationTouched);
                 CliException translated = exception as CliException

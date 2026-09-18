@@ -32,6 +32,21 @@ public sealed class SkillInstallTests : IDisposable
     }
 
     [Fact]
+    public void SkillInstallationSupportsLongLocalPathsThroughTheRealExecutable()
+    {
+        string skill = FirstSkill();
+        string target = Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90));
+        Assert.True(_workspace.File(target).Length > 260);
+        for (int pass = 0; pass < 2; pass++)
+        {
+            CliResult installed = _workspace.Run(
+                "skill", "install", skill, "--target", target, "--output", "json");
+            Assert.True(installed.ExitCode == 0, installed.StdErr);
+            Assert.True(File.Exists(_workspace.File(Path.Combine(target, skill, "SKILL.md"))));
+        }
+    }
+
+    [Fact]
     public void BundledSkillResources_AreCompleteLinkedDocumentedAndUseKnownCommands()
     {
         DocumentationCommandValidator commands = DocumentationCommandValidator.Read(_workspace);

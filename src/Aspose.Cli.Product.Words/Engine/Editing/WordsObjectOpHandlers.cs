@@ -24,7 +24,7 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// <summary>Owns embedded objects, fields, metadata, protection and merge mutations.</summary>
 internal static class WordsObjectOpHandlers
 {
-    internal static long InsertImage(Document document, Node anchor, InsertImageOp op)
+    internal static long InsertImage(Document document, Node anchor, InsertImageOp op, InputResourceScope inputs)
     {
         if (!File.Exists(op.Path))
         {
@@ -36,7 +36,7 @@ internal static class WordsObjectOpHandlers
         InsertRelative(anchor, ref cursor, paragraph, op.Position);
         var builder = new DocumentBuilder(document);
         builder.MoveTo(paragraph);
-        Shape shape = builder.InsertImage(op.Path);
+        Shape shape = builder.InsertImage(inputs.OpenFile(op.Path));
         if (op.Width is not null)
         {
             shape.Width = op.Width.Value;

@@ -94,7 +94,7 @@
       "items": { "$ref": "#/$defs/command" }
     },
     "resourceBudgetContractVersion": {
-      "const": 1
+      "const": 2
     },
     "resourceBudgets": {
       "type": "array",

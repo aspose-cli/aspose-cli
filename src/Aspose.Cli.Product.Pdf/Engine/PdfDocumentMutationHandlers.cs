@@ -121,11 +121,11 @@ internal static class PdfDocumentMutationHandlers
         return 1;
     }
 
-    internal static long AddAttachment(Document document, AddAttachmentOp op)
+    internal static long AddAttachment(Document document, AddAttachmentOp op, InputResourceScope inputs)
     {
         EnsureFile(op.Path);
         string name = op.Name ?? Path.GetFileName(op.Path);
-        using FileStream stream = File.OpenRead(op.Path);
+        Stream stream = inputs.OpenFile(op.Path);
         var specification = new FileSpecification(stream, name, op.Description ?? string.Empty)
         {
             Name = name,

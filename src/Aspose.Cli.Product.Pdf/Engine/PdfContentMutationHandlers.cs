@@ -52,13 +52,13 @@ internal static class PdfContentMutationHandlers
         return pages.Count;
     }
 
-    internal static long WatermarkImage(Document document, AddWatermarkImageOp op, ISet<int> touched)
+    internal static long WatermarkImage(Document document, AddWatermarkImageOp op, ISet<int> touched, InputResourceScope inputs)
     {
         EnsureFile(op.Path);
         IReadOnlyList<int> pages = ResolveOptional(document, op.Pages);
         foreach (int number in pages)
         {
-            var stamp = new ImageStamp(op.Path)
+            var stamp = new ImageStamp(inputs.OpenFile(op.Path))
             {
                 Background = op.Layer == "under",
                 Opacity = op.Opacity,
@@ -120,12 +120,12 @@ internal static class PdfContentMutationHandlers
         page.AddStamp(stamp);
     }
 
-    internal static long StampImage(Document document, AddStampImageOp op, ISet<int> touched)
+    internal static long StampImage(Document document, AddStampImageOp op, ISet<int> touched, InputResourceScope inputs)
     {
         Page page = PageAt(document, op.Page);
         EnsureFile(op.Path);
         Rectangle rectangle = ToPdfRect(page, op.Rect);
-        var stamp = new ImageStamp(op.Path)
+        var stamp = new ImageStamp(inputs.OpenFile(op.Path))
         {
             XIndent = rectangle.LLX,
             YIndent = rectangle.LLY,

@@ -42,7 +42,7 @@ internal sealed class PdfDocumentEngine : IPdfEngine, IPdfReviewLayoutPort
             resourceBudgets,
             writer,
             loader);
-        _edits = new PdfMutationService(licenseGate, writer, loader);
+        _edits = new PdfMutationService(licenseGate, writer, loader, resourceBudgets.Inputs);
         _forms = new PdfFormService(licenseGate, writer, loader);
         _inspection = new PdfInspectionService(licenseGate, loader);
         _signing = new PdfSigningService(

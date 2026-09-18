@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -18,9 +19,9 @@ public sealed class ExtractionBudgetOptions
         string itemDescription,
         string byteDescription,
         string itemHint = "Use a positive bounded file count.",
-        int defaultItems = 1000,
+        int defaultItems = PublicationLimits.MaximumEntries,
         long defaultBytes = 512L * 1024 * 1024,
-        int maximumItems = 100_000,
+        int maximumItems = PublicationLimits.MaximumEntries,
         long maximumBytes = 16L * 1024 * 1024 * 1024)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(itemDescription);

@@ -60,3 +60,12 @@ Worked examples: `examples/deck-from-outline`,
 5. Fix defects, reopen, render, and run review again. Stop after at most three visual correction rounds and report remaining issues rather than endlessly polishing.
 6. Do not claim a visual pass when slide/page inspection is unavailable, any required artifact was not opened, or coverage is incomplete. State exact slide coverage and mark the rest partial or skipped.
 7. Report evaluation results separately from licensed results. Disclose `EVAL_MODE`, watermarks, truncation, font/media fallback, and lossy conversion for every affected artifact.
+
+## Shared input and output limits
+
+Discover the active resource limits with `aspose-cli capabilities --output json`.
+One output set admits at most 1,000 entries and 1,000 new directories; publication
+metadata is bounded at 8 MiB. Extraction defaults and maxima follow those same
+limits. Images, attachments and other explicit auxiliary inputs use the shared
+file/stream budgets. A resource-budget failure aborts the invocation even with
+`--best-effort`; it cannot publish an incomplete output set.

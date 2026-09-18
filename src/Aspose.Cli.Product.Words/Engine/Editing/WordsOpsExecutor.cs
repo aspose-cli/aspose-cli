@@ -24,6 +24,7 @@ internal static class WordsOpsExecutor
         WordsDocumentLoader loader,
         InputSource inputs)
     {
+        using InputResourceScope operationInputs = inputs.CreateScope();
         ValidateRequest(request);
         SourceInfo input = InfoProjection.Source(inputPath, loaded);
         FileFingerprints.EnsureUnchanged(inputPath, precondition.Fingerprint, input.Fingerprint!);
@@ -37,7 +38,7 @@ internal static class WordsOpsExecutor
         }
 
         IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(loaded, resolved, request, loader, inputs);
+            ApplyOperations(loaded, resolved, request, loader, inputs, operationInputs);
         if (request.TrackChanges)
         {
             loaded.Document.StopTrackRevisions();
@@ -85,7 +86,7 @@ internal static class WordsOpsExecutor
         IReadOnlyList<ResolvedWordsOp> resolved,
         WordsEditRequest request,
         WordsDocumentLoader loader,
-        InputSource inputs)
+        InputSource inputs, InputResourceScope operationInputs)
     {
         Document document = loaded.Document;
         var outcomes = new List<BoundedOperationOutcome>(resolved.Count);
@@ -98,6 +99,7 @@ internal static class WordsOpsExecutor
                 _ = request.OpSecrets?.TryGetValue(index, out secret);
                 long affected = item.Op switch
                 {
+                    InsertImageOp image => WordsObjectOpHandlers.InsertImage(document, item.Nodes[0], image, operationInputs),
                     InsertMarkdownOp markdown =>
                         WordsContentOpHandlers.InsertMarkdown(document, item.Nodes[0], markdown,
                             loader.OpenMarkdown(markdown.Markdown, loaded)),
@@ -119,8 +121,7 @@ internal static class WordsOpsExecutor
             }
             catch (Exception exception) when (
                 exception is CliException or InvalidOperationException or ArgumentException
-                && exception is not CliException { ExitCode: ExitCode.OperationTimeout }
-                && (exception is not CliException failure || failure.Code != ErrorCodes.InputBudgetExceeded))
+                && exception is not CliException { IsInvocationFailure: true })
             {
                 CliException translated = exception as CliException ?? InvalidAt(index, item.Op.OpName, exception.Message);
                 if (!request.Options.BestEffort)
@@ -144,6 +145,7 @@ internal static class WordsOpsExecutor
                     },
                 });
             }
+            finally { operationInputs.ThrowIfFailed(); }
         }
         return outcomes;
     }

@@ -15,8 +15,9 @@ internal sealed class AppDocumentSession : IDisposable
 {
     private readonly object _gate = new();
     // AppHost serializes mutations; this gate protects short immutable-state reads only.
-    private readonly Dictionary<string, OwnedTemporaryFile> _uploads = new(
+    private readonly Dictionary<string, RetainedResource<OwnedTemporaryFile>> _uploads = new(
         OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+    private readonly List<Task> _retiredUploads = [];
     private bool _disposed;
     private readonly ProductCatalog _catalog;
     private readonly Func<CommandContext> _createContext;
@@ -59,13 +60,22 @@ internal sealed class AppDocumentSession : IDisposable
 
     internal AppDocumentHandoff CaptureForRestart()
     {
+        PreviewLease? current;
+        RetainedResource<OwnedTemporaryFile>.Lease? ownership = null;
         lock (_gate)
         {
-            if (_current is not { } current) { return new(null, null, null, null); }
-            FileStream? held = current.UploadedCopy ? _uploads[current.Path].OpenBoundRead() : null;
-            return new(current.UploadedCopy ? null : current.Path,
-                current.UploadedCopy ? current.Path : null, current.FileName, held);
+            current = _current;
+            if (current is null) { return new(null, null, null, null); }
+            if (_uploads.TryGetValue(current.Path, out var upload)) { upload.TryAcquire(out ownership); }
+            if (current.UploadedCopy && ownership is null) { throw CliErrors.FileNotFound(current.Path); }
         }
+        try
+        {
+            FileStream? held = ownership?.Value.OpenBoundRead();
+            return new(ownership is null ? current.Path : null,
+                ownership is null ? null : current.Path, current.FileName, held, ownership);
+        }
+        catch { ownership?.Dispose(); throw; }
     }
 
     public void ConfigureMount(AppPreviewMount mount)
@@ -83,25 +93,16 @@ internal sealed class AppDocumentSession : IDisposable
         }
     }
 
-    public bool RoutePreview(
-        System.Net.HttpListenerContext context,
-        string path)
+    public bool RoutePreview(System.Net.HttpListenerContext context, string path)
     {
+        RetainedResource<MountedPreview>.Lease? request;
+        AppPreviewMount mount;
         lock (_gate)
         {
-            if (_current is null)
-            {
-                return false;
-            }
-
-            AppPreviewMount mount = _mount
-                ?? throw new InvalidOperationException(
-                    "The App preview mount is not configured.");
-            return _current.Runtime.Route(
-                context,
-                mount.Port,
-                path);
+            if (_current is null || !_current.Runtime.TryAcquire(out request)) { return false; }
+            mount = _mount ?? throw new InvalidOperationException("The App preview mount is not configured.");
         }
+        using (request) { return request!.Value.Route(context, mount.Port, path); }
     }
 
     public void Open(string filePath, bool uploadedCopy, string? displayFileName = null)
@@ -253,7 +254,11 @@ internal sealed class AppDocumentSession : IDisposable
             owned.BindProducedFile();
             await WriteStagedUploadAsync(staged, input, fileLimit, existingBytes, cancellationToken).ConfigureAwait(false);
             owned.MoveTo(destination);
-            _uploads.Add(destination, owned);
+            lock (_gate)
+            {
+                ObjectDisposedException.ThrowIf(_disposed, this);
+                _uploads.Add(destination, new RetainedResource<OwnedTemporaryFile>(owned));
+            }
             return destination;
         }
         catch { owned.Dispose(); throw; }
@@ -297,7 +302,13 @@ internal sealed class AppDocumentSession : IDisposable
 
     internal void DiscardUpload(string path)
     {
-        if (_uploads.Remove(path, out OwnedTemporaryFile? file)) { file.Dispose(); }
+        RetainedResource<OwnedTemporaryFile>? upload;
+        lock (_gate)
+        {
+            if (!_uploads.Remove(path, out upload)) { return; }
+            TrackRetirement(upload.Completion);
+        }
+        upload.Dispose();
     }
 
     public void ClearUploads()
@@ -308,27 +319,51 @@ internal sealed class AppDocumentSession : IDisposable
             if (_current?.UploadedCopy is true) { closing = _current; _current = null; }
         }
         DisposePrevious(closing);
-        DeleteOwnedUploads();
+        RetireUploads();
     }
 
-    private void DeleteOwnedUploads()
+    private void RetireUploads()
     {
-        foreach (OwnedTemporaryFile file in _uploads.Values) { file.Dispose(); }
-        _uploads.Clear();
+        RetainedResource<OwnedTemporaryFile>[] uploads;
+        lock (_gate)
+        {
+            uploads = _uploads.Values.ToArray();
+            _uploads.Clear();
+            foreach (var upload in uploads) { TrackRetirement(upload.Completion); }
+        }
+        foreach (var upload in uploads) { upload.Dispose(); }
+    }
+
+    private void TrackRetirement(Task completion)
+    {
+        _retiredUploads.RemoveAll(static task => task.IsCompletedSuccessfully);
+        _retiredUploads.Add(completion);
+    }
+
+    private void DeleteEmptyStorage()
+    {
         string uploads = Path.Combine(_root, "uploads");
-        foreach (string directory in new[] { Path.Combine(uploads, "files"), Path.Combine(uploads, "staging"), uploads })
+        foreach (string directory in new[] { Path.Combine(uploads, "files"), Path.Combine(uploads, "staging"), uploads, _root })
         { LocalFileCleanup.DeleteDirectory(directory, recursive: false); }
     }
 
     public void Dispose()
     {
-        if (_disposed) { return; }
-        _disposed = true;
-        PreviewLease? lease;
-        lock (_gate) { lease = _current; _current = null; }
-        DisposePrevious(lease);
-        DeleteOwnedUploads();
-        LocalFileCleanup.DeleteDirectory(_root, recursive: false);
+        PreviewLease? closing;
+        lock (_gate)
+        {
+            if (_disposed) { return; }
+            _disposed = true;
+            closing = _current;
+            _current = null;
+        }
+        DisposePrevious(closing);
+        RetireUploads();
+        Task completed;
+        lock (_gate) { completed = Task.WhenAll(_retiredUploads); }
+        DeferredResourceCleanup.CompleteOrDefer(completed.IsCompletedSuccessfully,
+            () => completed.GetAwaiter().GetResult(), DeleteEmptyStorage,
+            "aspose-app-upload-cleanup", "retired App upload storage");
     }
 
     private void DisposePrevious(PreviewLease? previous)
@@ -351,25 +386,29 @@ internal sealed class AppDocumentSession : IDisposable
             ?? throw new InvalidOperationException(
                 "The App preview mount is not configured.");
         string view = _preferences.Current.PreviewView(product);
-        MountedPreview runtime = PreviewRuntime.Mount(
-            new PreviewStartOptions(
-                context.Activate(product),
-                product,
-                context.ResourceBudgets,
-                path,
-                RequestedPort: 0,
-                Request: new ProductPreviewRequest(view, FontProfile: _fontProfile),
-                Diagnostic: message =>
-                {
-                    _log.Write($"preview {message}");
-                    Activity?.Invoke();
-                },
-                DisplayName: displayName),
-            mount.Options);
-        return new PreviewLease(path,
-            new AppDocumentSnapshot(displayName, uploadedCopy, product.Manifest.Id, view,
-                $"{mount.Url}?session={Guid.NewGuid():N}"),
-            runtime);
+        var options = new PreviewStartOptions(
+            context.Activate(product), product, context.ResourceBudgets, path,
+            RequestedPort: 0, Request: new ProductPreviewRequest(view, FontProfile: _fontProfile),
+            Diagnostic: message =>
+            {
+                _log.Write($"preview {message}");
+                Activity?.Invoke();
+            }, DisplayName: displayName);
+        RetainedResource<OwnedTemporaryFile>.Lease? input = null;
+        lock (_gate)
+        {
+            if (_uploads.TryGetValue(path, out var upload)) { upload.TryAcquire(out input); }
+            if (uploadedCopy && input is null) { throw CliErrors.FileNotFound(path); }
+        }
+        MountedPreview runtime = PreviewRuntime.Mount(options, mount.Options, input);
+        try
+        {
+            return new PreviewLease(path,
+                new AppDocumentSnapshot(displayName, uploadedCopy || input is not null, product.Manifest.Id, view,
+                    $"{mount.Url}?session={Guid.NewGuid():N}"),
+                new RetainedResource<MountedPreview>(runtime));
+        }
+        catch { runtime.Dispose(); throw; }
     }
 
     private string? Read(Func<PreviewLease, string> selector)
@@ -387,7 +426,7 @@ internal sealed class AppDocumentSession : IDisposable
     private sealed record PreviewLease(
         string Path,
         AppDocumentSnapshot State,
-        MountedPreview Runtime) : IDisposable
+        RetainedResource<MountedPreview> Runtime) : IDisposable
     {
         public string FileName => State.FileName;
         public bool UploadedCopy => State.UploadedCopy;
@@ -410,7 +449,11 @@ internal sealed record AppPreviewMount(
 
 /// <summary>One consistent restart document selection and the held upload identity.</summary>
 internal sealed record AppDocumentHandoff(string? OriginalFilePath, string? UploadedFilePath,
-    string? FileName, FileStream? UploadLease) : IDisposable
+    string? FileName, FileStream? UploadLease, IDisposable? UploadOwnership = null) : IDisposable
 {
-    public void Dispose() => UploadLease?.Dispose();
+    public void Dispose()
+    {
+        try { UploadLease?.Dispose(); }
+        finally { UploadOwnership?.Dispose(); }
+    }
 }

@@ -30,7 +30,11 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         plan.Journal.State = complete
             ? PublicationTransactionState.RolledBack
             : PublicationTransactionState.Partial;
-        plan.TryPersist();
+        if (!plan.TryPersist())
+        {
+            plan.Journal.State = PublicationTransactionState.Partial;
+            complete = false;
+        }
         return new PublicationRecoveryReport(complete, items);
     }
 
@@ -165,8 +169,8 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         PublicationJournalEntry entry)
     {
         bool publicationAttempted =
-            entry.State is PublicationEntryState.Publishing
-                or PublicationEntryState.Published;
+            entry.State is not (PublicationEntryState.Staged or PublicationEntryState.Prepared
+                or PublicationEntryState.Unchanged);
         try
         {
             return RestoreEntry(entry, publicationAttempted);
@@ -234,7 +238,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
         RestoreOriginal(entry, current);
         entry.Original.Metadata?.Apply(entry.Target);
-        bool contentVerified = entry.Original.ContentMatches(entry.Target);
+        bool contentVerified = entry.Original.VersionEquals(FilePublicationSnapshot.Capture(entry.Target));
         bool restoredMetadata = MetadataMatches(entry);
         bool restored = contentVerified && restoredMetadata;
         entry.State = restored
@@ -349,8 +353,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                 ? PublicationDirectoryLease.Acquire(root, [root], deadline) : null;
             if (!(suppliedLease ?? orphanLease!).CoversDirectories([root])) { throw new PublicationLeaseExpansionException(); }
             if (!Directory.Exists(directory) || File.Exists(journalPath) || IsLiveCreation(directory)) { return false; }
-            CleanOrphanJournalTemporaries(directory);
-            return true;
+            return CleanOrphanJournalTemporaries(directory);
         }
         PrivateUserStorage.ValidateFile(journalPath);
         if (!TryReadJournal(journalPath, out PublicationJournal? journal))
@@ -530,8 +533,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                 || !IsWithinRoot(root, targetParent)
                 || !comparer.Equals(staged, expectedStaged)
                 || !Enum.IsDefined(entry.State)
-                || ((entry.State is PublicationEntryState.Published
-                        or PublicationEntryState.Restored)
+                || (entry.State == PublicationEntryState.Published
                     && entry.PublishedSnapshot is null))
             {
                 throw new InvalidDataException(
@@ -674,15 +676,17 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
     {
         try
         {
-            return !File.GetAttributes(directory).HasFlag(FileAttributes.ReparsePoint)
-                && (File.Exists(Path.Combine(
-                        directory,
-                        AtomicPublicationPlan.JournalName))
-                    || Directory.EnumerateFiles(
-                            directory,
-                            ".publication-journal.v1.json.*.tmp",
-                            SearchOption.TopDirectoryOnly)
-                        .Any(PublicationJournal.IsTemporaryPath));
+            if (File.GetAttributes(directory).HasFlag(FileAttributes.ReparsePoint)) { return false; }
+            if (File.Exists(Path.Combine(directory, AtomicPublicationPlan.JournalName))) { return true; }
+            // A private candidate set without its first durable journal never reached publication.
+            // Only an otherwise empty journal-temporary directory is eligible for orphan cleanup.
+            bool hasTemporary = false;
+            foreach (string path in Directory.EnumerateFileSystemEntries(directory))
+            {
+                if (Directory.Exists(path) || !PublicationJournal.IsTemporaryPath(path)) { return false; }
+                hasTemporary = true;
+            }
+            return hasTemporary;
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)
@@ -691,7 +695,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         }
     }
 
-    private static void CleanOrphanJournalTemporaries(string directory)
+    private static bool CleanOrphanJournalTemporaries(string directory)
     {
         string[] entries = Directory.EnumerateFileSystemEntries(
             directory,
@@ -700,8 +704,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         if (entries.Any(path => Directory.Exists(path)
                 || !PublicationJournal.IsTemporaryPath(path)))
         {
-            throw new InvalidDataException(
-                $"Orphan publication transaction '{directory}' contains unknown artifacts.");
+            return false;
         }
         foreach (string path in entries)
         {
@@ -715,6 +718,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             }
         }
         Directory.Delete(directory, recursive: false);
+        return true;
     }
 
     private static bool TryReadJournal(

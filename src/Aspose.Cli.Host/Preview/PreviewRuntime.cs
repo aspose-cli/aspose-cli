@@ -34,6 +34,7 @@ internal sealed record PreviewMountOptions(
 internal sealed class MountedPreview : IDisposable
 {
     private readonly PreviewRequestPipeline _requests;
+    private readonly IDisposable? _inputLease;
     private int _disposed;
 
     public MountedPreview(
@@ -46,7 +47,8 @@ internal sealed class MountedPreview : IDisposable
         LicenseState license,
         string view,
         string documentPath,
-        PreviewRequestPipeline requests)
+        PreviewRequestPipeline requests,
+        IDisposable? inputLease = null)
     {
         Outcome = outcome;
         Storage = storage;
@@ -58,6 +60,7 @@ internal sealed class MountedPreview : IDisposable
         View = view;
         DocumentPath = documentPath;
         _requests = requests;
+        _inputLease = inputLease;
     }
 
     public PreviewRenderOutcome Outcome { get; }
@@ -89,7 +92,8 @@ internal sealed class MountedPreview : IDisposable
             Hub,
             ViewPublications,
             Store,
-            Storage);
+            Storage,
+            _inputLease);
     }
 }
 
@@ -104,7 +108,8 @@ internal static class PreviewResourceCleanup
         LiveEventHub? hub,
         PreviewViewPublicationStore? viewPublications,
         PreviewVersionStore? store,
-        PreviewSessionStorage? storage)
+        PreviewSessionStorage? storage,
+        IDisposable? inputLease = null)
     {
         bool stopped = session is null
             || session.Stop(PreviewSession.DefaultStopTimeout);
@@ -113,11 +118,11 @@ internal static class PreviewResourceCleanup
             session is null
                 ? static () => { }
                 : session.WaitUntilStopped,
-            () => DisposeOwnedResources(
-                hub,
-                viewPublications,
-                store,
-                storage),
+            () =>
+            {
+                DisposeOwnedResources(hub, viewPublications, store, storage);
+                inputLease?.Dispose();
+            },
             "aspose-preview-render-cleanup",
             "preview renderer resources");
     }
@@ -287,40 +292,31 @@ internal static class PreviewRuntime
         }
     }
 
-    public static MountedPreview Mount(
-        PreviewStartOptions options,
-        PreviewMountOptions mount)
+    /// <summary>Takes ownership of the optional input lease, including failed startup cleanup.</summary>
+    public static MountedPreview Mount(PreviewStartOptions options, PreviewMountOptions mount,
+        IDisposable? inputLease = null)
     {
-        ArgumentNullException.ThrowIfNull(mount);
-        if (!mount.DocumentPath.StartsWith("/", StringComparison.Ordinal)
-            || mount.DocumentPath.Length <= 1
-            || mount.DocumentPath.EndsWith("/", StringComparison.Ordinal))
+        bool transferred = false;
+        try
         {
-            throw new ArgumentException(
-                "A mounted preview document path must be an absolute non-root path without a trailing slash.",
-                nameof(mount));
+            ArgumentNullException.ThrowIfNull(mount);
+            if (!mount.DocumentPath.StartsWith("/", StringComparison.Ordinal)
+                || mount.DocumentPath.Length <= 1 || mount.DocumentPath.EndsWith("/", StringComparison.Ordinal))
+            { throw new ArgumentException("A mounted preview document path must be an absolute non-root path without a trailing slash.", nameof(mount)); }
+            transferred = true;
+            return CreateContent(options, mount.DocumentPath, mount.CsrfToken,
+                sameOriginMount: true, inputLease: inputLease);
         }
-        return CreateContent(
-            options,
-            mount.DocumentPath,
-            mount.CsrfToken,
-            sameOriginMount: true);
+        finally { if (!transferred) { inputLease?.Dispose(); } }
     }
 
     private static MountedPreview CreateContent(
         PreviewStartOptions options,
         string documentPath,
         string csrf,
-        bool sameOriginMount)
+        bool sameOriginMount,
+        IDisposable? inputLease = null)
     {
-        ArgumentNullException.ThrowIfNull(options);
-        string path = Path.GetFullPath(options.FilePath);
-        ProductPreviewDefinition preview = options.Product.Preview;
-        preview.ValidateRequest(
-            options.Request,
-            options.PresentationEffect);
-        ProductPreviewPresentation presentation =
-            preview.CreatePresentation(options.PresentationEffect);
         PreviewSessionStorage? sessionStorage = null;
         PreviewVersionStore? store = null;
         PreviewViewPublicationStore? viewPublications = null;
@@ -329,6 +325,11 @@ internal static class PreviewRuntime
 
         try
         {
+            ArgumentNullException.ThrowIfNull(options);
+            string path = Path.GetFullPath(options.FilePath);
+            ProductPreviewDefinition preview = options.Product.Preview;
+            preview.ValidateRequest(options.Request, options.PresentationEffect);
+            ProductPreviewPresentation presentation = preview.CreatePresentation(options.PresentationEffect);
             sessionStorage = PreviewSessionStorage.Create();
             string sessionRoot = sessionStorage.Root;
             store = new PreviewVersionStore(sessionRoot);
@@ -396,7 +397,8 @@ internal static class PreviewRuntime
                 license,
                 options.Request.View,
                 documentPath,
-                requests);
+                requests,
+                inputLease);
         }
         catch
         {
@@ -405,7 +407,8 @@ internal static class PreviewRuntime
                 hub,
                 viewPublications,
                 store,
-                sessionStorage);
+                sessionStorage,
+                inputLease);
             throw;
         }
     }

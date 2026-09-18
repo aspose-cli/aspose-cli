@@ -60,6 +60,10 @@ The default per-user installation is `%LOCALAPPDATA%\Aspose\CLI`.
 Configuration is `%APPDATA%\aspose-cli` or the absolute directory selected by `ASPOSE_CLI_CONFIG_DIR`.
 The other CLI has different commands, configuration, Skills and MCP registrations.
 Managed targets belonging to another application are rejected.
+Optional MCP registration runs only after the installation transaction is finalized.
+Post-commit cleanup failures preserve the recovery journal and defer MCP metadata
+changes; the committed CLI remains usable while cleanup awaits a retry.
+
 
 ## Local development installation
 
@@ -107,6 +111,17 @@ Failures leave stdout empty and write one error envelope to stderr; `--verbose` 
 structured diagnostic lines. Help, version and raw documentation commands retain their
 text output contracts.
 Mutations use safe publication, backups and fingerprints where advertised; extraction is bounded.
+The resource-budget contract is version 2: an output set admits up to 1,000 entries,
+1,000 new directories and 8 MiB of publication metadata. Generation precedes the
+recovery journal; incomplete production cannot block later unrelated publication.
+An unknown recovery state never certifies success without checking the original or
+recovering it from verified evidence. Auxiliary inputs share the invocation budget,
+and resource failures remain fatal even when an engine catches a read exception.
+
+Cells edit verification reads the staged candidate and publishes the document and
+its evidence together. This applies equally to direct CLI, timeout workers and MCP.
+Semantic findings can commit with exit 8; execution failures abort publication.
+
 Generation and validation precede publication locks. CLI timeout and MCP share one supervisor;
 its worker stages files and the supervising process commits the complete output set.
 The same absolute deadline covers generation, lock waits and commit. Expiration before the

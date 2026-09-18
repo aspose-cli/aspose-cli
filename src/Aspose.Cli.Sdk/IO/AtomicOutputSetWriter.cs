@@ -29,6 +29,10 @@ public sealed class AtomicOutputSetWriter : IDisposable
     {
     }
 
+    /// <summary>Creates one transaction spanning directories on the same filesystem.</summary>
+    public AtomicOutputSetWriter(SafeFileWriter writer, IEnumerable<string> targetDirectories, string operation)
+        : this(writer, OutputSetPaths.CommonDirectory(targetDirectories), operation) { }
+
     internal AtomicOutputSetWriter(
         SafeFileWriter writer,
         string targetDirectory,
@@ -44,6 +48,13 @@ public sealed class AtomicOutputSetWriter : IDisposable
         _staging = new AtomicPublicationStaging(_plan, writer);
         _commit = new AtomicPublicationCommit(_plan);
         _recovery = new AtomicPublicationRecovery(_plan);
+    }
+
+    /// <summary>Admits a directory and owns only directories this transaction actually creates.</summary>
+    public void EnsureDirectory(string path)
+    {
+        ThrowIfDisposed();
+        _plan.EnsureOutputDirectory(path);
     }
 
     /// <summary>Stages one unique target without making it user-visible.</summary>
@@ -104,8 +115,8 @@ public sealed class AtomicOutputSetWriter : IDisposable
         ThrowIfDisposed();
         try
         {
+            _plan.Seal();
             _plan.BeginCommit();
-            _plan.EnsureNoUnknownArtifacts();
             return _commit.Execute(beforeCommit);
         }
         catch (Exception commitFailure)
@@ -126,7 +137,8 @@ public sealed class AtomicOutputSetWriter : IDisposable
                 _plan.CleanUp();
             }
             _disposed = true;
-            _plan.ReleaseLease();
+            try { _plan.CleanUpOutputDirectories(); }
+            finally { _plan.ReleaseLease(); }
         }
     }
 
@@ -185,7 +197,8 @@ public sealed class AtomicOutputSetWriter : IDisposable
         }
         finally
         {
-            _plan.ReleaseLease();
+            try { _plan.CleanUpOutputDirectories(); }
+            finally { _plan.ReleaseLease(); }
         }
     }
 

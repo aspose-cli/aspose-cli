@@ -27,6 +27,96 @@ public sealed class CustomerInstallerPowerShellTests : IDisposable, IClassFixtur
         DeleteDirectoryWithRetry(_root);
     }
 
+    [Theory]
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(3)]
+    public void McpRegistrationAcceptsEmptyOwnershipAndReturnsAnArray(int availableHosts)
+    {
+        if (!OperatingSystem.IsWindows()) { return; }
+        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
+        // Only the external host discovery/execution boundary is controlled; the real installer function runs.
+        string command = $$"""
+            $ErrorActionPreference = 'Stop'
+            . {{PowerShellLiteral(installer)}}
+            $available = @(@('codex','claude','opencode') | Select-Object -First {{availableHosts}})
+            function Get-Command {
+                [CmdletBinding()] param([string] $Name, [string] $CommandType)
+                if ($Name -in $available) { [pscustomobject]@{ Source = $Name } }
+            }
+            function Invoke-OfficialMcp {
+                param([string] $Executable, [string[]] $Arguments)
+                [pscustomobject]@{ ExitCode = $(if ($Arguments[1] -eq 'get') { 1 } else { 0 }); StdOut = ''; StdErr = '' }
+            }
+            $registered = @(Register-OwnedMcp 'C:\isolated\aspose-cli.exe' @())
+            if ($registered.Count -ne {{availableHosts}}) { throw 'Unexpected registration count.' }
+            Write-Output ('registered=' + $registered.Count)
+            """;
+        PowerShellResult result = RunExecutable("powershell.exe",
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
+        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
+        Assert.Contains($"registered={availableHosts}", result.StdOut, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void DefaultMcpPathWithoutHostExecutablesCompletesCleanInstall()
+    {
+        if (!OperatingSystem.IsWindows()) { return; }
+        string install = Path.Combine(_root, "default-mcp");
+        string emptyPath = Path.Combine(_root, "empty-command-path");
+        Directory.CreateDirectory(emptyPath);
+        PowerShellResult result = RunInstaller(_package.Path, install,
+            new Dictionary<string, string?> { ["Path"] = emptyPath }, skipMcp: false);
+        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
+        AssertV2Install(install);
+        using JsonDocument marker = JsonDocument.Parse(File.ReadAllText(Path.Combine(install, ".aspose-cli-install.json")));
+        Assert.Equal(0, marker.RootElement.GetProperty("mcpRegistrations").GetArrayLength());
+    }
+
+    [Fact]
+    public void CrashAfterOptionalMcpMetadataDoesNotInvalidateCommittedRecovery()
+    {
+        if (!OperatingSystem.IsWindows()) { return; }
+        string install = Path.Combine(_root, "mcp-metadata-recovery");
+        PowerShellResult initial = RunInstaller(_package.Path, install);
+        Assert.True(initial.ExitCode == 0, initial.StdErr);
+        string markerPath = Path.Combine(install, ".aspose-cli-install.json");
+        JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath))!.AsObject();
+        marker["mcpRegistrations"] = new JsonArray("codex");
+        File.WriteAllText(markerPath, marker.ToJsonString());
+        string emptyPath = Path.Combine(_root, "mcp-empty-path");
+        Directory.CreateDirectory(emptyPath);
+        PowerShellResult interrupted = RunInstaller(_package.Path, install,
+            new Dictionary<string, string?> { ["Path"] = emptyPath, ["ASPOSE_CLI_INSTALL_CRASH"] = "mcpMetadataUpdated" },
+            skipMcp: false);
+        Assert.True(interrupted.ExitCode == 97, interrupted.StdErr + interrupted.StdOut);
+        PowerShellResult recovered = RunInstaller(_package.Path, install);
+        Assert.True(recovered.ExitCode == 0, recovered.StdErr + recovered.StdOut);
+        AssertV2Install(install);
+    }
+
+    [Fact]
+    public void CommittedCleanupFailureKeepsInstallValidAndDefersMcpMetadata()
+    {
+        if (!OperatingSystem.IsWindows()) { return; }
+        string install = Path.Combine(_root, "pending-cleanup");
+        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
+        string markerPath = Path.Combine(install, ".aspose-cli-install.json");
+        JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath))!.AsObject();
+        marker["mcpRegistrations"] = new JsonArray("codex");
+        File.WriteAllText(markerPath, marker.ToJsonString());
+        string emptyPath = Path.Combine(_root, "cleanup-empty-path");
+        Directory.CreateDirectory(emptyPath);
+        PowerShellResult committed = RunInstaller(_package.Path, install,
+            new Dictionary<string, string?> { ["Path"] = emptyPath, ["ASPOSE_CLI_INSTALL_FAULT"] = "committedCleanup" }, skipMcp: false);
+        Assert.True(committed.ExitCode == 0, committed.StdErr + committed.StdOut);
+        Assert.Contains("cleanup remains pending", committed.StdErr + committed.StdOut, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("codex", JsonNode.Parse(File.ReadAllText(markerPath))!["mcpRegistrations"]![0]!.GetValue<string>());
+        AssertV2Install(install);
+        PowerShellResult retry = RunInstaller(_package.Path, install);
+        Assert.True(retry.ExitCode == 0, retry.StdErr + retry.StdOut);
+    }
+
     [Fact]
     public void CleanInstallAndSameVersionUpgrade_PublishVerifiedV2Ownership()
     {
@@ -795,7 +885,8 @@ public sealed class CustomerInstallerPowerShellTests : IDisposable, IClassFixtur
         IReadOnlyList<string>? arguments = null,
         bool skipPath = true,
         bool skipSkills = true,
-        bool developmentPackage = true)
+        bool developmentPackage = true,
+        bool skipMcp = true)
     {
         string script = Path.Combine(RepositoryPaths.Root, "install.ps1");
         var start = new ProcessStartInfo("powershell.exe")
@@ -812,11 +903,11 @@ public sealed class CustomerInstallerPowerShellTests : IDisposable, IClassFixtur
             "-PackageRoot", package,
             "-InstallDirectory", install,
             "-SkipLicensePrompt",
-            "-SkipMcp",
         })
         {
             start.ArgumentList.Add(argument);
         }
+        if (skipMcp) { start.ArgumentList.Add("-SkipMcp"); }
         if (skipPath)
         {
             start.ArgumentList.Add("-SkipPath");

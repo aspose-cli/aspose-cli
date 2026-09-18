@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.IO.Pipes;
 using System.Net.Sockets;
 using System.Security.Cryptography;
@@ -73,6 +74,7 @@ internal sealed class LocalServiceControlServer : IDisposable
     private Socket? _unixListener;
     private Task? _loop;
     private int _started;
+    private int _disposed;
 
     public LocalServiceControlServer(
         LocalServiceControlEndpoint endpoint,
@@ -108,26 +110,27 @@ internal sealed class LocalServiceControlServer : IDisposable
 
     public void Start()
     {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
         if (Interlocked.Exchange(ref _started, 1) != 0)
         {
             throw new InvalidOperationException(
                 "The local-service control server is already started.");
         }
 
-        if (OperatingSystem.IsWindows())
-        {
-            StartWindows();
-            return;
-        }
-
-        StartUnix();
+        if (OperatingSystem.IsWindows()) { StartWindows(); }
+        else { StartUnix(); }
+        _ = _loop!.ContinueWith(static task =>
+            Trace.TraceWarning("The local-service control listener stopped unexpectedly ({0}).",
+                task.Exception!.GetBaseException().GetType().Name),
+            CancellationToken.None, TaskContinuationOptions.OnlyOnFaulted | TaskContinuationOptions.ExecuteSynchronously,
+            TaskScheduler.Default);
     }
 
     public void Dispose()
     {
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) { return; }
         _shutdown.Cancel();
         _unixListener?.Dispose();
-        WakeWindowsListener();
         WaitForLoop();
         try
         {
@@ -159,11 +162,12 @@ internal sealed class LocalServiceControlServer : IDisposable
 
     private void StartWindows()
     {
-        var ready = new TaskCompletionSource(
-            TaskCreationOptions.RunContinuationsAsynchronously);
-        _loop = Task.Run(
-            () => ListenWindows(_shutdown.Token, ready));
-        ready.Task.Wait(_stageTimeout);
+        // Bind synchronously: returning from Start is the readiness guarantee.
+        var pipe = new NamedPipeServerStream(_endpoint.PipeName, PipeDirection.InOut, 1,
+            PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+        CancellationToken cancellationToken = _shutdown.Token;
+        try { _loop = Task.Run(() => ListenWindows(pipe, cancellationToken)); }
+        catch { pipe.Dispose(); throw; }
     }
 
     private void StartUnix()
@@ -180,8 +184,9 @@ internal sealed class LocalServiceControlServer : IDisposable
             CurrentUserPipeSecurity.HardenPath(path);
             listener.Listen(backlog: 8);
             _unixListener = listener;
+            CancellationToken cancellationToken = _shutdown.Token;
             _loop = Task.Run(
-                () => ListenUnix(listener, _shutdown.Token));
+                () => ListenUnix(listener, cancellationToken));
         }
         catch
         {
@@ -191,35 +196,25 @@ internal sealed class LocalServiceControlServer : IDisposable
         }
     }
 
-    private async Task ListenWindows(
-        CancellationToken cancellationToken,
-        TaskCompletionSource ready)
+    private async Task ListenWindows(NamedPipeServerStream listener, CancellationToken cancellationToken)
     {
-        while (!cancellationToken.IsCancellationRequested)
+        // Reuse the bound instance so another process cannot claim the name between requests.
+        using (listener)
         {
-            using var pipe = new NamedPipeServerStream(
-                _endpoint.PipeName,
-                PipeDirection.InOut,
-                1,
-                PipeTransmissionMode.Byte,
-                PipeOptions.Asynchronous
-                    | PipeOptions.CurrentUserOnly);
-            ready.TrySetResult();
-            try
+            while (!cancellationToken.IsCancellationRequested)
             {
-                await pipe.WaitForConnectionAsync(
-                    cancellationToken).ConfigureAwait(false);
-                await HandleAsync(
-                    pipe,
-                    cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception exception) when (
-                exception is OperationCanceledException
-                    or IOException)
-            {
-                if (cancellationToken.IsCancellationRequested)
+                try
                 {
-                    return;
+                    await listener.WaitForConnectionAsync(cancellationToken).ConfigureAwait(false);
+                    await HandleAsync(listener, cancellationToken).ConfigureAwait(false);
+                }
+                catch (Exception exception) when (exception is OperationCanceledException or IOException)
+                {
+                    if (cancellationToken.IsCancellationRequested) { return; }
+                }
+                finally
+                {
+                    if (listener.IsConnected) { listener.Disconnect(); }
                 }
             }
         }
@@ -253,28 +248,6 @@ internal sealed class LocalServiceControlServer : IDisposable
                     return;
                 }
             }
-        }
-    }
-
-    private void WakeWindowsListener()
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
-        try
-        {
-            using var wake = new NamedPipeClientStream(
-                ".",
-                _endpoint.PipeName,
-                PipeDirection.Out,
-                PipeOptions.Asynchronous);
-            wake.Connect(100);
-        }
-        catch (Exception exception) when (
-            exception is IOException or TimeoutException)
-        {
         }
     }
 

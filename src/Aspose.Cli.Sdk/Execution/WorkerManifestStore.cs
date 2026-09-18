@@ -9,9 +9,9 @@ namespace Aspose.Cli.Sdk.Execution;
 /// <summary>Validates immutable worker plans before their data reaches the publisher.</summary>
 internal static class WorkerManifestStore
 {
-    internal const int MaximumEntries = 256;
-    internal const int MaximumDirectories = 256;
-    private const int MaximumBytes = 1024 * 1024;
+    internal const int MaximumEntries = PublicationLimits.MaximumEntries;
+    internal const int MaximumDirectories = PublicationLimits.MaximumDirectories;
+    private const int MaximumBytes = PublicationLimits.MaximumMetadataBytes;
     internal static StringComparer PathComparer => OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
     private static readonly JsonSerializerOptions JsonOptions = new()
     {
@@ -42,14 +42,20 @@ internal static class WorkerManifestStore
     internal static void Write(string manifestPath, WorkerOutputManifest manifest)
     {
         _ = ValidateSessionPaths(Path.GetDirectoryName(manifestPath)!, manifestPath, false);
+        string contents = CheckCapacity(manifest);
+        PrivateUserStorage.WriteAllText(manifestPath, contents);
+        FilePublicationDurabilityAdapter.FlushFile(manifestPath);
+    }
+
+    internal static string CheckCapacity(WorkerOutputManifest manifest)
+    {
         if (manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories || manifest.Hints.Count > 256)
         {
             throw new InvalidDataException("Worker manifest entry budget exceeded.");
         }
         string contents = JsonSerializer.Serialize(manifest, JsonOptions);
         if (Encoding.UTF8.GetByteCount(contents) > MaximumBytes) { throw new InvalidDataException("Worker manifest byte budget exceeded."); }
-        PrivateUserStorage.WriteAllText(manifestPath, contents);
-        FilePublicationDurabilityAdapter.FlushFile(manifestPath);
+        return contents;
     }
 
     internal static (string Root, string Manifest) ValidateSessionPaths(string root, string manifestPath, bool requireManifest)
@@ -71,7 +77,7 @@ internal static class WorkerManifestStore
 
     private static void Validate(string root, WorkerOutputManifest manifest)
     {
-        if (manifest.Version != 2 || manifest.Entries is null || manifest.Directories is null || manifest.Hints is null
+        if (manifest.Version != 3 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null || manifest.Hints is null
             || manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories || manifest.Hints.Count > 256)
         {
             throw new InvalidDataException("The worker manifest violates its bounded contract.");

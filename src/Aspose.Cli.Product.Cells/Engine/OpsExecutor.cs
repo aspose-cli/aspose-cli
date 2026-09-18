@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -16,28 +17,29 @@ namespace Aspose.Cli.Product.Cells.Engine;
 internal static class OpsExecutor
 {
     public static IReadOnlyList<BoundedOperationOutcome> Execute(Workbook workbook, OpsBatch batch, bool continueOnError,
-        IReadOnlyDictionary<string, string?>? secrets) =>
-        OpsBatchRunner.Run(batch, op => Apply(workbook, op, secrets), continueOnError);
+        IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs) =>
+        OpsBatchRunner.Run(batch, op => Apply(workbook, op, secrets, inputs), continueOnError);
 
     /// <summary>
     /// Applies one op, laundering the SDK's <see cref="CellsException"/> into the
     /// Core-visible <see cref="EngineOpException"/>; a mapper's own
     /// <c>CliException</c> propagates untouched for the runner to normalize.
     /// </summary>
-    private static long? Apply(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets)
+    private static long? Apply(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs)
     {
         try
         {
-            return Dispatch(workbook, op, secrets);
+            return Dispatch(workbook, op, secrets, inputs);
         }
         catch (CellsException ex)
         {
             throw new EngineOpException(ex.Message, ex);
         }
+        finally { inputs.ThrowIfFailed(); }
     }
 
     /// <summary>Routes one op to its mapper; returns the touched cell count where meaningful.</summary>
-    private static long? Dispatch(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets) => op switch
+    private static long? Dispatch(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs) => op switch
     {
         RecalculateOp => Recalculate(workbook),
         SetValuesOp or SetFormulaOp or ClearRangeOp or CopyRangeOp or FormatRangeOp
@@ -48,7 +50,7 @@ internal static class OpsExecutor
             or SetActiveSheetOp
             => DispatchSheet(workbook, op),
         CreateChartOp or CreatePivotOp or InsertImageOp or RefreshPivotOp or CreateTableOp
-            or UpdateChartOp or DeleteChartOp or AddSparklineOp => DispatchObject(workbook, op),
+            or UpdateChartOp or DeleteChartOp or AddSparklineOp => DispatchObject(workbook, op, inputs),
         SetPageSetupOp or SetPrintAreaOp or SetAutoFilterOp or SortRangeOp or SetValidationOp
             or DefineNameOp or DeleteNameOp or ClearValidationOp or AddConditionalFormatOp
             or ClearConditionalFormatsOp or SetBordersOp => DispatchData(workbook, op),
@@ -101,11 +103,11 @@ internal static class OpsExecutor
         _ => throw new InvalidOperationException(),
     };
 
-    private static long? DispatchObject(Workbook workbook, Op op) => op switch
+    private static long? DispatchObject(Workbook workbook, Op op, InputResourceScope inputs) => op switch
     {
         CreateChartOp chart => ChartPivotOps.CreateChart(Sheets.Resolve(workbook, op), chart),
         CreatePivotOp or RefreshPivotOp => ChartPivotOps.ApplyPivot(Sheets.Resolve(workbook, op), op),
-        InsertImageOp insertImage => ImageOps.InsertImage(Sheets.Resolve(workbook, op), insertImage),
+        InsertImageOp insertImage => ImageOps.InsertImage(Sheets.Resolve(workbook, op), insertImage, inputs),
         CreateTableOp createTable => TableOps.CreateTable(Sheets.Resolve(workbook, op), createTable),
         UpdateChartOp updateChart => ChartPivotOps.UpdateChart(Sheets.Resolve(workbook, op), updateChart),
         DeleteChartOp deleteChart => ChartPivotOps.DeleteChart(Sheets.Resolve(workbook, op), deleteChart),

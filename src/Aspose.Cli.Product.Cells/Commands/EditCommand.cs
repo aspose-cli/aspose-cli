@@ -35,46 +35,19 @@ internal static class EditCommand
             MutationTarget target = options.Output.Resolve(parseResult, context.Paths, inputPath, requireBackup: verify);
             string? inputPassword = options.Password.Resolve(parseResult, context.Inputs, context.ReadEnvironment, stdinAvailable: opsSource != "-");
             string? encryptPassword = options.Encrypt.Resolve(parseResult, context.Inputs, context.ReadEnvironment);
-            string? baseline = verify ? EditVerificationRunner.CaptureBaseline(inputPath) : null;
-            EditResult result;
-            try
+            EditResult result = context.Port.ApplyOps(inputPath, batch, new EditRequest
             {
-                result = context.Port.ApplyOps(inputPath, batch, new EditRequest
-                {
-                    OutputPath = target.OutputPath,
-                    Overwrite = target.Overwrite,
-                    BackupPath = target.BackupPath,
-                    Options = options.Edit.Read(parseResult, batch.IfMatch),
-                    Recalculate = !noRecalc,
-                    OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
-                    Password = inputPassword,
-                    EncryptPassword = encryptPassword,
-                });
-
-                if (verify)
-                {
-                    string verificationDirectory = ResolveVerificationDirectory(
-                        verifyDirValue,
-                        target.OutputPath,
-                        context);
-                    result = result with
-                    {
-                        Verification = EditVerificationRunner.Run(
-                            context,
-                            baseline!,
-                            target.OutputPath,
-                            batch,
-                            verificationDirectory,
-                            inputPassword,
-                            encryptPassword ?? inputPassword,
-                            result.Warnings),
-                    };
-                }
-            }
-            finally
-            {
-                EditVerificationRunner.DeleteBaseline(baseline);
-            }
+                OutputPath = target.OutputPath,
+                Overwrite = target.Overwrite,
+                BackupPath = target.BackupPath,
+                Options = options.Edit.Read(parseResult, batch.IfMatch),
+                Recalculate = !noRecalc,
+                OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
+                Password = inputPassword,
+                EncryptPassword = encryptPassword,
+                Verify = verify,
+                VerificationDirectory = verify ? ResolveVerificationDirectory(verifyDirValue, target.OutputPath, context) : null,
+            });
 
             // A file was produced (partial successes under --best-effort
             // included): let any live preview of it spotlight the change.
@@ -119,11 +92,11 @@ internal static class EditCommand
         var output = new MutationFileOptions();
         var editOptions = new BoundedEditOptions();
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
-        var verify = new Option<bool>("--verify") { Description = "After editing, diff this invocation, scan formula errors, and render every visible sheet at 192 DPI." };
-        var verifyDirectory = new Option<string?>("--verify-dir") { Description = "Directory for --verify images. Default: .aspose-verify/<output-name> beside the output." }.WithInput(InputKind.None);
+        var verify = new Option<bool>("--verify") { Description = "Verify the staged output and publish its formula/diff results and 192 DPI visual evidence with the document." };
+        var verifyDirectory = new Option<string?>("--verify-dir") { Description = "Directory for --verify images on the output filesystem, with a writable common parent. Default: .aspose-verify/<output-name> beside the output." }.WithInput(InputKind.None);
         var password = new PasswordOptions("--password", "the workbook");
         var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);
-        var command = new Command("edit", "Apply a batch of edit ops to a workbook, atomically.");
+        var command = new Command("edit", $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.");
         command.Arguments.Add(file);
         command.Options.Add(ops);
         command.Options.Add(set);

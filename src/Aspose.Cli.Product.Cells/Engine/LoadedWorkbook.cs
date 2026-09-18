@@ -4,7 +4,7 @@ using Aspose.Cli.Sdk.Contracts;
 namespace Aspose.Cli.Product.Cells.Engine;
 
 /// <summary>Owns the workbook and the external-resource lifetime used to load it.</summary>
-internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resources) : IDisposable
+internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resources, bool IsEncrypted = false) : IDisposable
 {
     internal IReadOnlyList<Warning>? Warnings(params Warning?[] additional)
     {

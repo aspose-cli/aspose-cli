@@ -41,6 +41,10 @@ public sealed class CliException : Exception
     /// <summary>The process exit code this error maps to.</summary>
     public ExitCode ExitCode => Code.ExitCode;
 
+    /// <summary>Invocation-wide failures must never be converted into best-effort operation outcomes.</summary>
+    public bool IsInvocationFailure => Code == ErrorCodes.OperationTimeout
+        || Code == ErrorCodes.InputBudgetExceeded || Code == ErrorCodes.FileTooLarge;
+
     /// <summary>Converts the exception to the public error contract.</summary>
     public ErrorEnvelope ToEnvelope() => new()
     {

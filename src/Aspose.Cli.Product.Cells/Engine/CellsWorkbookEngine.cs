@@ -32,7 +32,8 @@ internal sealed class CellsWorkbookEngine
         var saver = new WorkbookSaveService(fileWriter, loader);
         _queries = new CellsQueryService(licenseGate, resourceBudgets, loader);
         _output = new CellsOutputService(licenseGate, fileWriter, loader, saver);
-        _mutations = new CellsMutationService(licenseGate, loader, saver);
+        _mutations = new CellsMutationService(licenseGate, loader, saver, resourceBudgets,
+            new CellsEditVerifier(loader, resourceBudgets, _output));
     }
 
     public WorkbookInfoResult GetInfo(string filePath, InfoRequest request) =>

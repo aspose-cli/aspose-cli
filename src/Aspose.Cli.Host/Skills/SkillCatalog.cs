@@ -67,7 +67,7 @@ internal sealed record BundledSkill(
         using var extraction = new ExtractionGuard(
             resourceBudgets,
             directory,
-            maxItems: 10_000,
+            maxItems: PublicationLimits.MaximumEntries,
             maxBytes: 512L * 1024 * 1024);
         var files = new List<SkillFileEntry>();
         using IncrementalHash contentHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);

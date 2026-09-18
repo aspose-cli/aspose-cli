@@ -375,9 +375,13 @@ try {
     if ($manifestHash -cne $marker.payloadManifestSha256) {
         throw 'Installed payload manifest does not match the v2 marker hash.'
     }
-    $installedSkills = @(Get-ChildItem -LiteralPath $smokeSkills -Directory | Where-Object { $_.Name -in @('aspose-cli-cells','aspose-cli-pdf','aspose-cli-slides','aspose-cli-words') })
-    if ($installedSkills.Count -ne 4) {
-        throw 'Customer installer did not publish all four bundled Skills to the isolated root.'
+    $expectedSkills = @((Get-Content -LiteralPath $layout.CatalogPath -Raw | ConvertFrom-Json).products |
+        ForEach-Object { [string]$layout.Identity.skillPrefix + [string]$_.id })
+    $installedSkills = @(Get-ChildItem -LiteralPath $smokeSkills -Directory | ForEach-Object Name)
+    $missingSkills = @($expectedSkills | Where-Object { $_ -cnotin $installedSkills })
+    $unexpectedSkills = @($installedSkills | Where-Object { $_ -cnotin $expectedSkills })
+    if ($missingSkills.Count -ne 0 -or $unexpectedSkills.Count -ne 0) {
+        throw "Installed Skills differ from the active catalog. Missing: $($missingSkills -join ', '); unexpected: $($unexpectedSkills -join ', ')."
     }
 }
 finally {

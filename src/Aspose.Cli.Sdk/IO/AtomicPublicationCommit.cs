@@ -16,7 +16,11 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
 
         if (plan.WorkerStagingOnly)
         {
+            plan.ResourceBudgets?.Deadline.ThrowIfExpired("worker-handoff-start");
+            beforeCommit?.Invoke();
             PublishToWorker();
+            plan.Journal.State = PublicationTransactionState.Committed;
+            return plan.Journal.Entries.Select(static entry => entry.Size).ToArray();
         }
         else
         {
@@ -39,15 +43,8 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             .ToArray();
     }
 
-    private void PublishToWorker()
-    {
-        foreach (PublicationJournalEntry entry in plan.Journal.Entries)
-        {
-            plan.Worker!.Register(entry);
-            entry.State = PublicationEntryState.Published;
-            plan.Persist();
-        }
-    }
+    private void PublishToWorker() => plan.Worker!.RegisterBatch(
+        plan.Journal.Entries, plan.OutputDirectories, plan.ResourceBudgets!.Deadline);
 
     private void Prepare()
     {

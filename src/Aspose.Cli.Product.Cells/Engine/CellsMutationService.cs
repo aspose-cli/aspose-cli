@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
@@ -17,11 +18,15 @@ internal sealed class CellsMutationService
     private readonly ILicenseGate _licenseGate;
     private readonly WorkbookLoadService _loader;
     private readonly WorkbookSaveService _saver;
+    private readonly ResourceBudgetLedger _budgets;
+    private readonly CellsEditVerifier _verifier;
 
     internal CellsMutationService(
         ILicenseGate licenseGate,
         WorkbookLoadService loader,
-        WorkbookSaveService saver)
+        WorkbookSaveService saver,
+        ResourceBudgetLedger budgets,
+        CellsEditVerifier verifier)
     {
         ArgumentNullException.ThrowIfNull(licenseGate);
         ArgumentNullException.ThrowIfNull(loader);
@@ -29,6 +34,8 @@ internal sealed class CellsMutationService
         _licenseGate = licenseGate;
         _loader = loader;
         _saver = saver;
+        _budgets = budgets;
+        _verifier = verifier;
     }
 
     /// <inheritdoc />
@@ -37,10 +44,21 @@ internal sealed class CellsMutationService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(batch);
         ArgumentNullException.ThrowIfNull(options);
+        string format = WorkbookSavePlan.FormatForPath(options.OutputPath);
+        if (!CellsFormats.EditIds.Contains(format, StringComparer.Ordinal))
+        { throw CliErrors.FormatUnsupported(format, CellsFormats.EditIds); }
+        if (options.Verify && (options.Options.DryRun || !options.Recalculate))
+        { throw CliErrors.OptionInvalid("--verify", "requires publication and final recalculation", "Omit --dry-run and --no-recalc when verifying an edit."); }
         batch = OpsParser.Prepare(batch);
+        string outputDirectory = Path.GetDirectoryName(options.OutputPath)!;
+        string evidenceDirectory = options.VerificationDirectory
+            ?? Path.Combine(outputDirectory, ".aspose-verify", Path.GetFileNameWithoutExtension(options.OutputPath));
+        using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
+            : _saver.CreateOutputSet(options.Verify ? [outputDirectory, evidenceDirectory] : [outputDirectory], "cells-edit", options.BackupPath);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
+        using InputResourceScope operationInputs = _budgets.Inputs.CreateScope();
         using LoadedWorkbook loaded = _loader.Open(filePath, options.Password);
         Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(filePath, workbook);
@@ -50,44 +68,48 @@ internal sealed class CellsMutationService
             options.Options.IfMatch,
             input.Fingerprint!);
 
+        using CellsEditBaseline? baseline = options.Verify
+            ? CellsEditBaseline.Capture(filePath, precondition, _budgets) : null;
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(format, licenseState, options.EncryptPassword,
+            loaded.IsEncrypted ? options.Password : null);
         IReadOnlyList<BoundedOperationOutcome> applied = OpsExecutor.Execute(
             workbook,
             batch,
             options.Options.BestEffort,
-            options.OpSecrets);
-        bool explicitlyRecalculated = batch.Ops.Any(static op => op is RecalculateOp);
-        if (options.Recalculate && !explicitlyRecalculated)
+            options.OpSecrets, operationInputs);
+        bool explicitlyRecalculated = applied.Any(static op => op.Op == "recalculate" && op.Status == OpStatuses.Ok);
+        if (options.Recalculate)
         {
             workbook.CalculateFormula();
         }
 
-        OutputInfo? output = null;
-        BackupInfo? backup = null;
-        Warning? truncated = null;
-        Warning? formulasBroken = null;
-        if (!options.Options.DryRun)
+        WorkbookStagedSave? saved = null;
+        EditVerification? verification = null;
+        if (transaction is not null)
         {
-            (output, backup, truncated, formulasBroken) = _saver.Save(
-                workbook,
-                options.OutputPath,
-                options.Overwrite,
-                options.EncryptPassword,
-                options.BackupPath,
-                precondition,
-                verifyReopen: true);
+            saved = _saver.Stage(transaction, workbook, savePlan, options.OutputPath, options.Overwrite,
+                options.BackupPath, precondition, verifyReopen: true);
+            if (options.Verify)
+            {
+                verification = _verifier.Verify(transaction, saved.Candidate, baseline!.Path, filePath,
+                    options.Password, savePlan.OutputPassword, batch, evidenceDirectory,
+                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning));
+            }
+            transaction.Commit();
         }
 
         return new EditResult
         {
             Input = input,
-            Output = output,
+            Output = saved?.Output,
             DryRun = options.Options.DryRun,
             Recalculated = options.Recalculate || explicitlyRecalculated,
             Applied = applied,
-            Backup = backup,
+            Backup = saved?.Backup,
+            Verification = verification,
             License = EnvelopeParts.License(licenseState),
             Warnings = options.Options.DryRun ? loaded.Warnings()
-                : CombineWarnings(licenseState, loaded.Resources.CoverageWarning, truncated, formulasBroken),
+                : CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning),
         };
     }
 
@@ -105,10 +127,11 @@ internal sealed class CellsMutationService
             workbook.Worksheets[workbook.Worksheets.Add()].Name = name;
         }
 
-        (OutputInfo output, _, Warning? truncated, Warning? formulasBroken) = _saver.Save(
+        (OutputInfo output, _, Warning? truncated, Warning? formulasBroken, Warning? sheetsDropped) = _saver.Save(
             workbook,
             request.OutputPath,
             request.Overwrite,
+            licenseState,
             request.EncryptPassword);
 
         return new CreateResult
@@ -116,7 +139,7 @@ internal sealed class CellsMutationService
             Output = output,
             Sheets = request.SheetNames,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, truncated, formulasBroken),
+            Warnings = CombineWarnings(licenseState, truncated, formulasBroken, sheetsDropped),
         };
     }
 

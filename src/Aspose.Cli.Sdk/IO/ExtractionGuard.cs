@@ -1,32 +1,30 @@
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>Bounds and names extracted files, then publishes through the shared transaction.</summary>
 public sealed class ExtractionGuard : IDisposable
 {
-    private readonly WorkerOutputSession? _worker;
     private readonly ExtractionBudgetLedger _budget;
     private readonly ExtractionPlan _plan;
     private readonly AtomicOutputSetWriter _transaction;
-    private bool _committed;
     private bool _disposed;
 
     public ExtractionGuard(ResourceBudgetLedger resourceBudgets, string root,
-        int maxItems = 1000, long maxBytes = 512L * 1024 * 1024)
+        int maxItems = PublicationLimits.MaximumEntries, long maxBytes = 512L * 1024 * 1024)
         : this(resourceBudgets, root, maxItems, maxBytes, NoPublicationFaultInjector.Instance) { }
 
     internal ExtractionGuard(ResourceBudgetLedger resourceBudgets, string root,
         int maxItems, long maxBytes, IPublicationFaultInjector faults)
     {
         ArgumentNullException.ThrowIfNull(resourceBudgets);
-        _worker = resourceBudgets.OutputSession;
-        _budget = new ExtractionBudgetLedger(maxItems, maxBytes);
-        _plan = new ExtractionPlan(Path.GetFullPath(root), _worker is not null);
+        if (maxItems is < 1 or > PublicationLimits.MaximumEntries)
+        { throw CliErrors.OptionInvalid("--max-items", $"must be between 1 and {PublicationLimits.MaximumEntries}", "Use a supported extraction item budget."); }
+        _budget = new ExtractionBudgetLedger(maxItems,
+            Math.Min(maxBytes, resourceBudgets.Remaining(ResourceBudgetKinds.OutputBytes)));
+        _plan = new ExtractionPlan(Path.GetFullPath(root));
         _plan.EnsureRoot();
-        try { _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), Path.GetFullPath(root), "extraction", faults); }
-        catch { _plan.RemoveCreatedDirectories(); throw; }
+        _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), Path.GetFullPath(root), "extraction", faults);
     }
 
     public string Reserve(string suggestedName, long sizeBytes) => ReserveRelativePath(suggestedName, sizeBytes, flatten: true);
@@ -83,19 +81,14 @@ public sealed class ExtractionGuard : IDisposable
     public void Commit()
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
-        if (_worker is not null)
-        {
-            foreach (string directory in _plan.Directories) { _worker.RegisterDirectory(directory); }
-        }
+        foreach (string directory in _plan.Directories) { _transaction.EnsureDirectory(directory); }
         _transaction.Commit();
-        _committed = true;
     }
 
     public void Dispose()
     {
         if (_disposed) { return; }
         _disposed = true;
-        try { _transaction.Dispose(); }
-        finally { if (!_committed) { _plan.RemoveCreatedDirectories(); } }
+        _transaction.Dispose();
     }
 }

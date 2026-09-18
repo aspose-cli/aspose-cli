@@ -28,8 +28,15 @@ public sealed class InputSource
         return value;
     }
 
+    /// <summary>Owns bounded streams retained by a document engine through its save phase.</summary>
+    public InputResourceScope CreateScope() => new(this);
+
+    internal void ThrowIfFailed() => _budgets.ThrowIfFailed();
+
     public Stream OpenFile(string path)
     {
+        _budgets.ThrowIfFailed();
+        _budgets.Deadline.ThrowIfExpired("file-open");
         string full = Path.GetFullPath(path);
         _budgets.VerifyAdmission(full);
         var stream = new FileStream(

@@ -405,6 +405,8 @@ internal sealed class CommandExecutor
             ResultEnvelope result,
             bool detectPartial)
         {
+            Budgets.ThrowIfFailed();
+            Budgets.OutputSession?.SealForPublication();
             Write(result);
             Complete();
             return detectPartial
@@ -415,6 +417,8 @@ internal sealed class CommandExecutor
 
         public int Complete()
         {
+            Budgets.ThrowIfFailed();
+            Budgets.OutputSession?.SealForPublication();
             VerboseLog.Completed(
                 Globals,
                 _stopwatch.ElapsedMilliseconds);

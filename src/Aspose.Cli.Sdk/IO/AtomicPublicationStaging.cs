@@ -44,13 +44,16 @@ internal sealed class AtomicPublicationStaging(
             ? null
             : OutputPathValidator.NormalizeFile(requestedBackup, phase: "backup");
         EnsureUnique(target, requestedBackup);
+        plan.EnsureCapacityForEntry();
         FilePublicationSnapshot? backupOriginal = requestedBackup is null ? null : FilePublicationSnapshot.Capture(requestedBackup);
         if (!overwrite && original.Exists)
         {
             throw CliErrors.OutputExists(target);
         }
+        plan.EnsureOutputDirectory(Path.GetDirectoryName(target)!);
         FilePhysicalIdentity? targetParentIdentity = Directory.Exists(Path.GetDirectoryName(target))
             ? OutputPathValidator.CaptureParentIdentity(target) : null;
+        if (requestedBackup is not null) { plan.EnsureOutputDirectory(Path.GetDirectoryName(requestedBackup)!); }
         FilePhysicalIdentity? requestedBackupParentIdentity =
             requestedBackup is null || !Directory.Exists(Path.GetDirectoryName(requestedBackup))
                 ? null
@@ -61,19 +64,15 @@ internal sealed class AtomicPublicationStaging(
         plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);
         if (plan.WorkerStagingOnly) { PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(staged)!); }
         else { FilePublicationMetadata.PrepareOutputDirectory(Path.GetDirectoryName(staged)!, Path.GetDirectoryName(target)!); }
-        FilePublicationSnapshot stagedSnapshot;
-        using (var temporary = OwnedTemporaryFile.Create(staged))
-        {
-            write(staged);
-            temporary.BindInspectAndVerify(inspect, verify);
-            original.Metadata?.ApplyAccess(staged);
-            original.Metadata?.ApplyContentAttributes(staged);
-            temporary.BindProducedFile();
-            temporary.FlushBound();
-            stagedSnapshot = temporary.CaptureBoundSnapshot();
-            writer.ConsumeOutput(stagedSnapshot.Length, "output-set-stage");
-            temporary.MarkPublished();
-        }
+        using var temporary = OwnedTemporaryFile.Create(staged);
+        write(staged);
+        temporary.BindInspectAndVerify(inspect, verify);
+        original.Metadata?.ApplyAccess(staged);
+        original.Metadata?.ApplyContentAttributes(staged);
+        temporary.BindProducedFile();
+        temporary.FlushBound();
+        FilePublicationSnapshot stagedSnapshot = temporary.CaptureBoundSnapshot();
+        writer.ConsumeOutput(stagedSnapshot.Length, "output-set-stage");
 
         long size = stagedSnapshot.Length;
         // Staging files are private content carriers. Replaying a Windows
@@ -110,7 +109,7 @@ internal sealed class AtomicPublicationStaging(
                 : null,
             Size = size,
         });
-        plan.Persist();
+        temporary.MarkPublished();
         return new StagedOutput(plan.Journal.Entries[^1]);
     }
 
@@ -132,6 +131,8 @@ internal sealed class AtomicPublicationStaging(
         plan.EnsureTarget(target);
         target = OutputPathValidator.NormalizeFile(target);
         EnsureUnique(target);
+        plan.EnsureCapacityForEntry();
+        plan.EnsureOutputDirectory(Path.GetDirectoryName(target)!);
         FilePhysicalIdentity? targetParentIdentity = Directory.Exists(Path.GetDirectoryName(target))
             ? OutputPathValidator.CaptureParentIdentity(target) : null;
         int index = plan.Journal.Entries.Count;
@@ -139,14 +140,10 @@ internal sealed class AtomicPublicationStaging(
         plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);
         if (plan.WorkerStagingOnly) { PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(staged)!); }
         else { FilePublicationMetadata.PrepareOutputDirectory(Path.GetDirectoryName(staged)!, Path.GetDirectoryName(target)!); }
-        FilePublicationSnapshot stagedSnapshot;
-        using (var temporary = OwnedTemporaryFile.Create(staged))
-        {
-            temporary.BindInspectAndVerify(inspect: null, verify: null);
-            temporary.FlushBound();
-            stagedSnapshot = temporary.CaptureBoundSnapshot();
-            temporary.MarkPublished();
-        }
+        using var temporary = OwnedTemporaryFile.Create(staged);
+        temporary.BindInspectAndVerify(inspect: null, verify: null);
+        temporary.FlushBound();
+        FilePublicationSnapshot stagedSnapshot = temporary.CaptureBoundSnapshot();
         if (!plan.WorkerStagingOnly)
         {
             OutputPathValidator.EnsureParentUnchanged(
@@ -167,7 +164,7 @@ internal sealed class AtomicPublicationStaging(
             DeleteTarget = true,
             Size = 0,
         });
-        plan.Persist();
+        temporary.MarkPublished();
     }
 
     private void EnsureUnique(string target, string? backup = null)

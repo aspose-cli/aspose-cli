@@ -16,6 +16,7 @@ internal static class CellsDiagnostics
     internal const string ErrorsTruncated = "ERRORS_TRUNCATED";
     internal const string MhtmlResourceCoverageUnverified = "MHTML_RESOURCE_COVERAGE_UNVERIFIED";
     internal const string FormulasBroken = "FORMULAS_BROKEN";
+    internal const string EncryptionRemoved = "WORKBOOK_ENCRYPTION_REMOVED";
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -26,6 +27,7 @@ internal static class CellsDiagnostics
         Warning(DataTruncated),
         Warning(ErrorsTruncated),
         Warning(FormulasBroken),
+        Warning(EncryptionRemoved),
         Warning(MhtmlResourceCoverageUnverified),
     ];
 

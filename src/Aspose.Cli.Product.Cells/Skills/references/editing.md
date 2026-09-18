@@ -111,9 +111,10 @@ named below.
 | `copy_range` | `from`, `to` | Copies values, formulas and formatting. `to` is a single anchor cell. Both may be sheet-qualified: `{"from": "Data!A1:C10", "to": "Summary!B2"}`. |
 
 `recalculate` has no additional fields. It calculates the whole workbook at
-its position in the batch and replaces the automatic final calculation;
-place it after the last formula or input change. Without it, edits calculate
-at the end unless `--no-recalc` is set. Queries read stored results.
+its position in the batch. Edits also calculate again after the complete
+batch unless `--no-recalc` is set, including changes appended with `--set`.
+An earlier explicit calculation never disables the final calculation.
+Queries read stored results.
 
 ## Formatting
 
@@ -440,3 +441,21 @@ One `edit` invocation per logical change-set. A report typically needs
 exactly one batch: values → formulas → formats → structure → chart/pivot.
 Use `--dry-run` first when the batch is large or destructive
 (delete_sheet, delete_rows); it validates everything without writing.
+
+## Output and verification boundary
+
+Editable output formats are xlsx, xlsm, xlsb, xls, ods, csv, tsv, html and mhtml.
+Use `cells convert` for other export formats. HTML output is self-contained and
+embeds its images. Editing encrypted input preserves encryption when the target
+format supports it; `--encrypt-env` changes the password. Text and HTML exports
+do not support workbook encryption.
+
+`--verify` checks the staged candidate before publication, including when
+`--timeout` or MCP is used. The document and verification images form one output
+set. Semantic findings are returned with `verification.ok=false` and exit 8;
+execution errors, resource failures and cancellation abort the output set.
+
+Create, edit and convert share the same save policy. Text output reports
+`SHEETS_DROPPED` when only one of several worksheets can be retained. During
+`--verify`, sheet loss, grid truncation, broken formulas and incomplete error
+scans make verification incomplete while preserving the committed partial result.
