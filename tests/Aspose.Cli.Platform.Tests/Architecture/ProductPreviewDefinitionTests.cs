@@ -4,6 +4,7 @@ using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;
@@ -11,10 +12,10 @@ namespace Aspose.Cli.Architecture.Tests;
 public sealed class ProductPreviewDefinitionTests
 {
     [Fact]
-    public void ReviewDefinition_RejectsAnUndeclaredViewBeforeProductDispatch()
+    public void ViewDefinition_RejectsAnUndeclaredViewBeforeProductDispatch()
     {
-        ProductReviewDefinition review = ProductReviewDefinition.Create(
-            new TestProductReviewAdapter<ITestPort>(),
+        ProductViewDefinition views = ProductViewDefinition.Create(
+            new TestProductViewAdapter<ITestPort>(),
             "test");
         ProductBinding<ITestPort> binding =
             ProductBinding.CreateLicenseFree<ITestPort>(
@@ -22,33 +23,29 @@ public sealed class ProductPreviewDefinitionTests
                 static _ => new TestPort());
 
         CliException failure = Assert.Throws<CliException>(() =>
-            review.CreateRenderer(
-                binding,
-                "file.test",
-                new ProductReviewRequest("missing", MaxItems: 1)));
+            views.Render(binding, "file.test", Request("missing"), new RejectingSink()));
 
         Assert.Equal(ErrorCodes.OptionInvalid, failure.Code);
     }
 
     [Fact]
-    public void ReviewDefinition_MissingFontsCannotRemainComplete()
+    public void ViewDefinition_MissingFontsCannotRemainComplete()
     {
-        ProductReviewDefinition review = ProductReviewDefinition.Create(
-            new TestProductReviewAdapter<ITestPort>(),
+        ProductViewDefinition views = ProductViewDefinition.Create(
+            new TestProductViewAdapter<ITestPort>(),
             "test");
         ProductBinding<ITestPort> binding =
             ProductBinding.CreateLicenseFree<ITestPort, FontPort>(
                 "test",
                 static _ => new FontPort());
+        ViewRenderRequest request = Request("document");
 
-        ProductReviewRenderOutcome outcome = review.CreateRenderer(
-            binding,
-            "file.test",
-            new ProductReviewRequest("document", MaxItems: 1))("evidence");
+        ViewManifest rendered = views.Render(binding, "file.test", request, new RejectingSink());
+        ProductReviewAssessment assessment = views.Assess(binding, "file.test", request, rendered);
 
-        Assert.False(outcome.Complete);
+        Assert.False(assessment.Complete);
         Assert.Contains(
-            outcome.Findings!,
+            assessment.Findings!,
             static finding => finding.Code == "FONTS_MISSING_OR_SUBSTITUTED"
                 && finding.Severity == "error");
     }
@@ -84,6 +81,22 @@ public sealed class ProductPreviewDefinitionTests
                 ProductPreviewPayloadKinds.Selector));
 
         Assert.Contains("$.nested property 'value' is duplicated", failure.Message);
+    }
+
+    private static ViewRenderRequest Request(string view) => new()
+    {
+        View = view,
+        MaxParts = 1,
+        Purpose = ViewPurpose.Evidence,
+    };
+
+    private sealed class RejectingSink : IViewArtifactSink
+    {
+        public void Write(string relativePath, Action<Stream> contentWriter) =>
+            throw new InvalidOperationException("The test view writes no artifacts.");
+
+        public void WriteText(string relativePath, string content) =>
+            throw new InvalidOperationException("The test view writes no artifacts.");
     }
 
     private interface ITestPort;

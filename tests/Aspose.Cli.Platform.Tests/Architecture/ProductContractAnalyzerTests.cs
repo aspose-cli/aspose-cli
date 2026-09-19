@@ -320,28 +320,44 @@ public sealed class ProductContractAnalyzerTests
     }
 
     [Fact]
-    public async Task Apcli007_AllowsTypedReviewAdapterRegistration()
+    public async Task Apcli007_AllowsTypedViewAdapterRegistration()
     {
         string source = ProductSource(
             """
             public interface IPort { }
 
-            public sealed class ReviewAdapter : IProductReviewAdapter<IPort>
+            public sealed class ViewAdapter : IProductViewAdapter<IPort>
             {
-                public string DefaultView => "document";
-                public System.Collections.Generic.IReadOnlyList<string> Views =>
-                    new[] { "document" };
+                public System.Collections.Generic.IReadOnlyList<Aspose.Cli.Sdk.Views.ProductView> Views =>
+                    new[]
+                    {
+                        new Aspose.Cli.Sdk.Views.ProductView(
+                            "document",
+                            "Document",
+                            Aspose.Cli.Sdk.Views.ViewPartKinds.Image),
+                    };
+                public string ReviewView => "document";
+                public string LiveView => "document";
                 public bool VisualInspectionRequired => true;
-                public ProductReviewRenderer CreateRenderer(
+                public Aspose.Cli.Sdk.Views.ViewManifest Render(
                     IPort port,
                     string filePath,
-                    ProductReviewRequest request) =>
-                    _ => new ProductReviewRenderOutcome("index.html", "test", 0)
+                    Aspose.Cli.Sdk.Views.ViewRenderRequest request,
+                    Aspose.Cli.Sdk.Views.IViewArtifactSink artifacts) =>
+                    new Aspose.Cli.Sdk.Views.ViewManifest
                     {
-                        ExpectedItems = 1,
-                        RenderedItems = 1,
-                        Complete = true,
+                        View = "document",
+                        SourceFormat = "test",
+                        SourceSizeBytes = 0,
+                        TotalParts = 0,
+                        Parts = System.Array.Empty<Aspose.Cli.Sdk.Views.ViewPart>(),
                     };
+                public ProductReviewAssessment Assess(
+                    IPort port,
+                    string filePath,
+                    Aspose.Cli.Sdk.Views.ViewRenderRequest request,
+                    Aspose.Cli.Sdk.Views.ViewManifest rendered) =>
+                    new ProductReviewAssessment();
             }
 
             public sealed class ReviewModule : IProductModule
@@ -363,7 +379,7 @@ public sealed class ProductContractAnalyzerTests
                         },
                         AvailableEngines = new[] { "aspose" },
                     })
-                    .Review(new ReviewAdapter())
+                    .View(new ViewAdapter())
                     .Build();
             }
             """);

@@ -37,7 +37,7 @@ public sealed class WordsModule : IProductModule
             .Diagnostics(WordsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
             .Preview(new WordsPreviewAdapter())
-            .Review(new WordsReviewAdapter())
+            .View(new WordsViewAdapter())
             .Output<DocumentInfoResult>(WordsRenderers.Render)
             .Output<DocumentReadResult>(WordsRenderers.Render)
             .Output<WordsConvertResult>(WordsRenderers.Render)

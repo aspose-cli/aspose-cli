@@ -11,6 +11,7 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Views;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Devices;
@@ -68,6 +69,69 @@ internal sealed class PdfProductionService
         PdfErrorTranslator.Execute(
             "preview",
             () => RenderPreviewCore(filePath, request, artifacts));
+
+    /// <summary>Renders the pages of one view, opening the document once.</summary>
+    internal ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        PdfErrorTranslator.Execute(
+            "render",
+            () => RenderViewCore(filePath, request, artifacts));
+
+    private ViewManifest RenderViewCore(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts)
+    {
+        const int evidenceDpi = 150;
+        const int displayDpi = 192;
+        const double cssDpi = 96;
+        ArgumentNullException.ThrowIfNull(artifacts);
+        _ = _licenseGate.EnsureApplied();
+        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
+        int dpi = request.Purpose == ViewPurpose.Display ? displayDpi : evidenceDpi;
+        int total = loaded.Document.Pages.Count;
+        int count = Math.Min(total, request.MaxParts);
+        var parts = new List<ViewPart>(count);
+        for (int pageNumber = 1; pageNumber <= count; pageNumber++)
+        {
+            Page page = loaded.Document.Pages[pageNumber];
+            RenderPixelGuard.EnsureFits(
+                (long)Math.Ceiling(page.Rect.Width / 72d * dpi),
+                (long)Math.Ceiling(page.Rect.Height / 72d * dpi),
+                dpi);
+            string file = string.Create(CultureInfo.InvariantCulture, $"page-{pageNumber:0000}.png");
+            int number = pageNumber;
+            artifacts.Write(
+                file,
+                stream => RenderPage(loaded.Document, number, "png", dpi, stream));
+            parts.Add(new ViewPart
+            {
+                Id = string.Create(CultureInfo.InvariantCulture, $"page-{pageNumber}"),
+                Label = string.Create(CultureInfo.InvariantCulture, $"Page {pageNumber}"),
+                File = file,
+                Kind = ViewPartKinds.Image,
+                Width = Math.Max(1, (int)Math.Ceiling(page.Rect.Width / 72d * cssDpi)),
+                Height = Math.Max(1, (int)Math.Ceiling(page.Rect.Height / 72d * cssDpi)),
+                Properties = new Dictionary<string, string>(StringComparer.Ordinal)
+                {
+                    ["size"] = string.Create(
+                        CultureInfo.InvariantCulture,
+                        $"{page.Rect.Width:0.##} × {page.Rect.Height:0.##} pt"),
+                },
+            });
+        }
+
+        return new ViewManifest
+        {
+            View = PdfViews.Pages,
+            SourceFormat = "pdf",
+            SourceSizeBytes = new FileInfo(filePath).Length,
+            TotalParts = total,
+            Parts = parts,
+        };
+    }
 
     private PreviewRenderOutcome RenderPreviewCore(
         string filePath,

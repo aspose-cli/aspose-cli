@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Words.Ports;
 
@@ -23,6 +24,12 @@ public interface IDocumentEngine
         string filePath,
         WordsPreviewRequest request,
         IPreviewArtifactSink artifacts);
+
+    /// <summary>Renders the parts of one product view, opening the document once.</summary>
+    ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts);
 
     /// <summary>Creates a new document.</summary>
     WordsCreateResult CreateDocument(NewDocumentRequest request);

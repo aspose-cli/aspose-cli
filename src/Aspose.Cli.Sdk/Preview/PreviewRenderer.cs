@@ -51,20 +51,4 @@ public delegate PreviewRenderOutcome PreviewRenderer(PreviewRenderContext contex
 /// Root-relative <c>/asset/</c> URLs are forbidden because that route belongs
 /// to the mutable default document snapshot.
 /// </summary>
-public interface IPreviewArtifactSink
-{
-    /// <summary>
-    /// Writes one canonical relative artifact through a bounded synchronous
-    /// stream. The callback must finish every write before it returns; async
-    /// stream methods are deliberately unsupported because publication is an
-    /// atomic synchronous boundary.
-    /// </summary>
-    void Write(
-        string relativePath,
-        Action<Stream> contentWriter);
-
-    /// <summary>Writes one UTF-8 text artifact through the same bounded path.</summary>
-    void WriteText(
-        string relativePath,
-        string content);
-}
+public interface IPreviewArtifactSink : Views.IViewArtifactSink;

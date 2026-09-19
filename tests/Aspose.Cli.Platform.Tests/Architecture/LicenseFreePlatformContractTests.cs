@@ -167,7 +167,7 @@ public sealed class LicenseFreePlatformContractTests
             .Diagnostics([])
             .Json(new ProductJsonDefinition("free-test", SdkJsonContext.Default))
             .Preview(new TestProductPreviewAdapter<ITestPort>())
-            .Review(new TestProductReviewAdapter<ITestPort>())
+            .View(new TestProductViewAdapter<ITestPort>())
             .Output<TestResult>(static (_, _) => { })
             .Commands(_ => new Command("free-test"))
             .Activator(static _ =>

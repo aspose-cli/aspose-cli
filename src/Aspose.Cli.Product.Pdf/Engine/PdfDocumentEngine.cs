@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Pdf.Ports;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -100,6 +101,12 @@ internal sealed class PdfDocumentEngine : IPdfEngine, IPdfReviewLayoutPort
         PdfPreviewRequest request,
         IPreviewArtifactSink artifacts) =>
         _production.RenderPreview(filePath, request, artifacts);
+
+    public ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        _production.RenderView(filePath, request, artifacts);
 
     public PdfSignResult Sign(string filePath, PdfSignRequest request) =>
         _signing.Sign(filePath, request);

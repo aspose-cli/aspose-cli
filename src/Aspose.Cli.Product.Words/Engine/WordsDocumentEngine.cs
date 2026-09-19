@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
@@ -72,6 +73,13 @@ internal sealed class WordsDocumentEngine : IDocumentEngine, IWordsReviewLayoutP
         WordsPreviewRequest request,
         IPreviewArtifactSink artifacts) =>
         _production.RenderPreview(filePath, request, artifacts);
+
+    /// <inheritdoc />
+    public ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        _production.RenderView(filePath, request, artifacts);
 
     /// <inheritdoc />
     public WordsCreateResult CreateDocument(NewDocumentRequest request) =>

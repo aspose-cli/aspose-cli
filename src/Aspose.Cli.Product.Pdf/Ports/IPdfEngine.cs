@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Pdf.Ports;
 
@@ -53,6 +54,12 @@ public interface IPdfEngine
         string filePath,
         PdfPreviewRequest request,
         IPreviewArtifactSink artifacts);
+
+    /// <summary>Renders the parts of one product view, opening the document once.</summary>
+    ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts);
 
     /// <summary>Applies one PKCS#7 signature and verifies the saved field.</summary>
     PdfSignResult Sign(string filePath, PdfSignRequest request);

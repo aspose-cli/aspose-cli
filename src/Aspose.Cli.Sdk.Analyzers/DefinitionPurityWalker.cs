@@ -289,7 +289,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             return member is
                 "Activator" or "Build" or "Commands" or "Diagnostics"
                 or "Doctor" or "Formats" or "Json"
-                or "Output" or "Preview" or "Review";
+                or "Output" or "Preview" or "View";
         }
         return typeName switch
         {
@@ -309,6 +309,8 @@ internal sealed class DefinitionPurityWalker : OperationWalker
                 IsDataMember(symbol),
             "Aspose.Cli.Sdk.Diagnostics.DiagnosticDescriptor" =>
                 member is "Error" or "Warning" || IsDataMember(symbol),
+            "Aspose.Cli.Sdk.Views.ViewPartKinds" =>
+                symbol is IFieldSymbol { IsConst: true },
             _ => IsDefinitionValue(typeName) && IsDataMember(symbol),
         };
     }
@@ -367,6 +369,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             "Aspose.Cli.Sdk.Extensibility.ProductManifest"
             or "Aspose.Cli.Sdk.Extensibility.ProductPreviewView"
             or "Aspose.Cli.Sdk.Extensibility.RouteOwnership"
+            or "Aspose.Cli.Sdk.Views.ProductView"
             or "Aspose.Cli.Sdk.Preview.ProductPreviewPayloadContract"
             or "Aspose.Cli.Sdk.Serialization.ProductJsonDefinition"
         || typeName.StartsWith(

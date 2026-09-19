@@ -18,7 +18,7 @@ public sealed class ProductDefinition
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
         ProductPreviewDefinition preview,
-        ProductReviewDefinition review,
+        ProductViewDefinition view,
         IReadOnlyList<ProductOutputDefinition> outputs,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
         Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>? doctorChecks,
@@ -33,7 +33,7 @@ public sealed class ProductDefinition
         Formats = formats;
         Json = json ?? throw new ArgumentNullException(nameof(json));
         Preview = preview ?? throw new ArgumentNullException(nameof(preview));
-        Review = review ?? throw new ArgumentNullException(nameof(review));
+        View = view ?? throw new ArgumentNullException(nameof(view));
         Outputs = outputs;
         Diagnostics = diagnostics;
         DoctorChecks = doctorChecks;
@@ -61,8 +61,8 @@ public sealed class ProductDefinition
     /// <summary>Product-owned preview semantics and browser presentation.</summary>
     public ProductPreviewDefinition Preview { get; }
 
-    /// <summary>Product-owned static review evidence semantics.</summary>
-    public ProductReviewDefinition Review { get; }
+    /// <summary>Product-owned views shared by static review and live display.</summary>
+    public ProductViewDefinition View { get; }
 
     /// <summary>Human-readable result renderers owned by this product.</summary>
     public IReadOnlyList<ProductOutputDefinition> Outputs { get; }
@@ -153,7 +153,7 @@ public sealed class ProductDefinitionBuilder<TPort>
     private readonly List<FormatDescriptor> _formats = [];
     private ProductJsonDefinition? _json;
     private ProductPreviewDefinition? _preview;
-    private ProductReviewDefinition? _review;
+    private ProductViewDefinition? _view;
     private readonly List<ProductOutputDefinition> _outputs = [];
     private readonly List<DiagnosticDescriptor> _diagnostics = [];
     private Func<object, IReadOnlyList<Aspose.Cli.Sdk.Contracts.DoctorCheck>>? _doctorChecks;
@@ -226,12 +226,12 @@ public sealed class ProductDefinitionBuilder<TPort>
         return this;
     }
 
-    /// <summary>Registers the product-owned static review adapter.</summary>
-    public ProductDefinitionBuilder<TPort> Review(
-        IProductReviewAdapter<TPort> adapter)
+    /// <summary>Registers the product-owned view adapter used by review and live display.</summary>
+    public ProductDefinitionBuilder<TPort> View(
+        IProductViewAdapter<TPort> adapter)
     {
         EnsureMutable();
-        _review = ProductReviewDefinition.Create(adapter, _manifest.Id);
+        _view = ProductViewDefinition.Create(adapter, _manifest.Id);
         return this;
     }
 
@@ -282,9 +282,9 @@ public sealed class ProductDefinitionBuilder<TPort>
         {
             throw Missing(nameof(Preview));
         }
-        if (_review is null)
+        if (_view is null)
         {
-            throw Missing(nameof(Review));
+            throw Missing(nameof(View));
         }
         if (_outputs.Count == 0)
         {
@@ -307,7 +307,7 @@ public sealed class ProductDefinitionBuilder<TPort>
             formats,
             _json,
             _preview,
-            _review,
+            _view,
             Array.AsReadOnly(_outputs.ToArray()),
             Array.AsReadOnly(_diagnostics.ToArray()),
             _doctorChecks,

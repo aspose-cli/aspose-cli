@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Architecture.Tests;
 
@@ -40,24 +41,35 @@ internal sealed class TestProductPreviewAdapter<TPort>(
     }
 }
 
-internal sealed class TestProductReviewAdapter<TPort>
-    : IProductReviewAdapter<TPort>
+internal sealed class TestProductViewAdapter<TPort>
+    : IProductViewAdapter<TPort>
     where TPort : class
 {
-    public string DefaultView => "document";
+    public IReadOnlyList<ProductView> Views =>
+        [new("document", "Document", ViewPartKinds.Image)];
 
-    public IReadOnlyList<string> Views => [DefaultView];
+    public string ReviewView => "document";
+
+    public string LiveView => "document";
 
     public bool VisualInspectionRequired => true;
 
-    public ProductReviewRenderer CreateRenderer(
+    public ViewManifest Render(
         TPort port,
         string filePath,
-        ProductReviewRequest request) =>
-        _ => new ProductReviewRenderOutcome("index.html", "test", 0)
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) => new()
         {
-            ExpectedItems = 1,
-            RenderedItems = 1,
-            Complete = true,
+            View = request.View,
+            SourceFormat = "test",
+            SourceSizeBytes = 0,
+            TotalParts = 0,
+            Parts = [],
         };
+
+    public ProductReviewAssessment Assess(
+        TPort port,
+        string filePath,
+        ViewRenderRequest request,
+        ViewManifest rendered) => new();
 }

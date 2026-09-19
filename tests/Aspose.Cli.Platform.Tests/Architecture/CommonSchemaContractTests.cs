@@ -169,6 +169,9 @@ public sealed class CommonSchemaContractTests
             (
                 "v2/common/mutation-receipt",
                 """{"verification":"reopened","package":{"changedParts":[{"path":"word/document.xml","change":"modified"}],"preservedParts":37}}"""),
+            (
+                "v2/common/view",
+                """{"schema":"https://schemas.aspose.dev/aspose-cli/v2/common/view.schema.json","schemaVersion":2,"view":"pages","sourceFormat":"docx","sourceSizeBytes":10,"totalParts":2,"parts":[{"id":"page-1","label":"Page 1","file":"page-0001.png","kind":"image","width":816,"height":1056,"hidden":false,"digest":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","properties":{"notes":"Speaker notes"},"elements":[{"id":"shape-3","kind":"paragraph","box":{"x":96,"y":96.5,"width":624,"height":20},"digest":"f00d","label":"Hello","level":1}]}]}"""),
         ];
 
         foreach ((string id, string json) in contracts)
@@ -342,7 +345,7 @@ public sealed class CommonSchemaContractTests
             .Diagnostics([])
             .Json(new ProductJsonDefinition("test", SdkJsonContext.Default))
             .Preview(new TestProductPreviewAdapter<ITestPort>())
-            .Review(new TestProductReviewAdapter<ITestPort>())
+            .View(new TestProductViewAdapter<ITestPort>())
             .Output<TestResult>(static (_, _) => { })
             .Commands(_ => new Command("test"))
             .Activator(static _ =>

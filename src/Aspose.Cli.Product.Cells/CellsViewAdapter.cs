@@ -1,55 +1,41 @@
-using System.Net;
-using System.Text;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Cells;
 
 /// <summary>
-/// Produces a portable visual-review gallery with one PNG per reported visible
-/// worksheet and bounded workbook-structure findings.
+/// Worksheet image and interactive workbook views, and the bounded
+/// workbook-structure findings of their review.
 /// </summary>
-internal sealed class CellsReviewAdapter : IProductReviewAdapter<IWorkbookEngine>
+internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 {
-    private const string SheetsView = "sheets";
-    private const string EntryFileName = "index.html";
+    public IReadOnlyList<ProductView> Views { get; } =
+    [
+        new(CellsViews.Sheets, "Sheets", ViewPartKinds.Image),
+        new(CellsViews.Workbook, "Workbook", ViewPartKinds.Html),
+    ];
 
-    // A valid one-pixel white PNG for a genuinely empty visible worksheet.
-    private static readonly byte[] BlankPng = Convert.FromBase64String(
-        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2VQAAAABJRU5ErkJggg==");
+    public string ReviewView => CellsViews.Sheets;
 
-    public string DefaultView => SheetsView;
-
-    public IReadOnlyList<string> Views { get; } = [SheetsView];
+    public string LiveView => CellsViews.Workbook;
 
     public bool VisualInspectionRequired => true;
 
-    public ProductReviewRenderer CreateRenderer(
+    public ViewManifest Render(
         IWorkbookEngine port,
         string filePath,
-        ProductReviewRequest request)
-    {
-        ArgumentNullException.ThrowIfNull(port);
-        ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
-        ArgumentNullException.ThrowIfNull(request);
-        if (!string.Equals(request.View, SheetsView, StringComparison.Ordinal))
-        {
-            throw CliErrors.OptionInvalid(
-                "--view",
-                $"review view '{request.View}' is not supported by cells",
-                $"Use {SheetsView}.");
-        }
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        port.RenderView(filePath, request, artifacts);
 
-        return directory => Render(port, filePath, request, directory);
-    }
-
-    private static ProductReviewRenderOutcome Render(
+    public ProductReviewAssessment Assess(
         IWorkbookEngine port,
         string filePath,
-        ProductReviewRequest request,
-        string directory)
+        ViewRenderRequest request,
+        ViewManifest rendered)
     {
         WorkbookInfoResult info = port.GetInfo(filePath, new InfoRequest
         {
@@ -64,50 +50,17 @@ internal sealed class CellsReviewAdapter : IProductReviewAdapter<IWorkbookEngine
         WorkbookReviewLayout layout = reviewPort.InspectReviewLayout(
             filePath,
             request.Password);
-        IReadOnlyDictionary<string, WorksheetReviewLayout> layoutBySheet =
-            layout.Sheets.ToDictionary(static sheet => sheet.Name, StringComparer.Ordinal);
         SheetInfo[] visible = info.Workbook.Sheets
             .Where(static sheet => !sheet.Hidden)
             .ToArray();
-        SheetInfo[] reported = visible.Take(request.MaxItems).ToArray();
-        var rendered = new List<(SheetInfo Sheet, string FileName)>();
         var warnings = new List<Warning>(info.Warnings ?? []);
         warnings.AddRange(layout.Warnings ?? []);
-
-        foreach (SheetInfo sheet in reported)
-        {
-            string fileName = $"sheet-{sheet.Index + 1:D4}.png";
-            string output = Path.Combine(directory, fileName);
-            WorksheetReviewLayout sheetLayout = layoutBySheet[sheet.Name];
-            if (sheet.UsedRange is null && !sheetLayout.HasVisualObjects)
-            {
-                File.WriteAllBytes(output, BlankPng);
-            }
-            else
-            {
-                RenderResult render = port.Render(filePath, new RenderRequest
-                {
-                    TargetFormatId = "png",
-                    OutputPath = output,
-                    Overwrite = true,
-                    SheetName = sheet.Name,
-                    Password = request.Password,
-                });
-                warnings.AddRange(render.Warnings ?? []);
-            }
-            rendered.Add((sheet, fileName));
-        }
-
-        File.WriteAllText(
-            Path.Combine(directory, EntryFileName),
-            Gallery(info.Workbook.Name, rendered),
-            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         List<ReviewFinding> findings = Findings(
             info,
             layout,
             visible,
-            reported.Length);
+            rendered.Parts.Count);
         long usedCells = info.Workbook.Sheets.Sum(static sheet =>
             checked((long)sheet.RowCount * sheet.ColumnCount));
         long populatedCells = layout.Sheets.Sum(static sheet => sheet.PopulatedCells);
@@ -118,30 +71,22 @@ internal sealed class CellsReviewAdapter : IProductReviewAdapter<IWorkbookEngine
             + sheet.HiddenPopulatedRows
             + sheet.ShortPopulatedRows
             + sheet.TallPopulatedRows);
-        ReviewCoverageMetric[] coverage =
-        [
-            Metric("sheets", info.Workbook.SheetCount, "sheets"),
-            Metric("visibleSheets", visible.Length, "sheets"),
-            Metric("renderedSheets", reported.Length, "sheets"),
-            Metric("usedCells", usedCells, "cells"),
-            Metric("populatedCells", populatedCells, "cells"),
-            Metric("layoutDimensionIssues", layoutIssues, "dimensions"),
-            Metric("charts", layout.Sheets.Sum(static sheet => sheet.Charts.Count), "charts"),
-            Metric("sheetsWithPrintArea", layout.Sheets.Count(static sheet => sheet.PrintArea is not null), "sheets"),
-            Metric("formulaErrors", info.Workbook.FormulaErrors?.Count ?? 0, "cells"),
-        ];
-
-        return new ProductReviewRenderOutcome(
-            EntryFileName,
-            info.Source.Format,
-            info.Source.SizeBytes)
+        return new ProductReviewAssessment
         {
-            VisualInspectionRequired = true,
             Findings = findings,
             Warnings = warnings.DistinctBy(static warning => warning.Code).ToArray(),
-            Coverage = coverage,
-            ExpectedItems = visible.Length,
-            RenderedItems = reported.Length,
+            Coverage =
+            [
+                Metric("sheets", info.Workbook.SheetCount, "sheets"),
+                Metric("visibleSheets", visible.Length, "sheets"),
+                Metric("renderedSheets", rendered.Parts.Count, "sheets"),
+                Metric("usedCells", usedCells, "cells"),
+                Metric("populatedCells", populatedCells, "cells"),
+                Metric("layoutDimensionIssues", layoutIssues, "dimensions"),
+                Metric("charts", layout.Sheets.Sum(static sheet => sheet.Charts.Count), "charts"),
+                Metric("sheetsWithPrintArea", layout.Sheets.Count(static sheet => sheet.PrintArea is not null), "sheets"),
+                Metric("formulaErrors", info.Workbook.FormulaErrors?.Count ?? 0, "cells"),
+            ],
             Complete = findings.All(static finding => finding.Severity != "error")
                 && !warnings.Any(static warning => warning.AffectsCompleteness),
         };
@@ -416,32 +361,4 @@ internal sealed class CellsReviewAdapter : IProductReviewAdapter<IWorkbookEngine
         Value = value,
         Unit = unit,
     };
-
-    private static string Gallery(
-        string workbookName,
-        IReadOnlyList<(SheetInfo Sheet, string FileName)> rendered)
-    {
-        var html = new StringBuilder()
-            .Append("<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">")
-            .Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">")
-            .Append("<title>Cells review</title><style>")
-            .Append("body{margin:0;padding:20px;font:14px system-ui;background:#eef2f0;color:#17231d}")
-            .Append("h1{margin:0 0 18px;font-size:20px}.sheet{margin:0 0 24px;padding:14px;background:#fff;border:1px solid #ccd8d1;border-radius:8px}")
-            .Append("h2{margin:0 0 10px;font-size:15px}.sheet img{display:block;max-width:100%;height:auto;border:1px solid #dfe6e2;background:#fff}")
-            .Append("</style></head><body><h1>")
-            .Append(WebUtility.HtmlEncode(workbookName))
-            .Append("</h1>");
-        foreach ((SheetInfo sheet, string fileName) in rendered)
-        {
-            string name = WebUtility.HtmlEncode(sheet.Name);
-            html.Append("<section class=\"sheet\"><h2>")
-                .Append(name)
-                .Append("</h2><img loading=\"lazy\" alt=\"")
-                .Append(name)
-                .Append(" worksheet\" src=\"")
-                .Append(fileName)
-                .Append("\"></section>");
-        }
-        return html.Append("</body></html>\n").ToString();
-    }
 }

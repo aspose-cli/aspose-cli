@@ -1,0 +1,86 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/view.schema.json",
+  "title": "Rendered product view",
+  "description": "The view.json manifest beside the parts of one rendered product view: ordered pages, slides or sheets with the semantic layout of each part. Review evidence and live display share it.",
+  "type": "object",
+  "required": ["schema", "schemaVersion", "view", "sourceFormat", "sourceSizeBytes", "totalParts", "parts"],
+  "properties": {
+    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/view.schema.json" },
+    "schemaVersion": { "const": 2 },
+    "view": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
+    "sourceFormat": { "type": "string", "minLength": 1 },
+    "sourceSizeBytes": { "type": "integer", "minimum": 0 },
+    "totalParts": { "type": "integer", "minimum": 0 },
+    "parts": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/part" }
+    },
+    "warnings": { "$ref": "#/$defs/warnings" }
+  },
+  "additionalProperties": false,
+  "$defs": {
+    "part": {
+      "type": "object",
+      "required": ["id", "label", "file", "kind"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "file": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*(/[A-Za-z0-9][A-Za-z0-9._-]*)*$" },
+        "kind": { "enum": ["image", "html"] },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "hidden": { "type": "boolean" },
+        "digest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" },
+        "properties": {
+          "type": "object",
+          "additionalProperties": { "type": "string" }
+        },
+        "elements": {
+          "type": "array",
+          "items": { "$ref": "#/$defs/element" }
+        }
+      },
+      "additionalProperties": false
+    },
+    "element": {
+      "type": "object",
+      "required": ["kind", "box", "digest"],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "kind": { "type": "string", "pattern": "^[a-z][a-z0-9-]*$" },
+        "box": {
+          "type": "object",
+          "required": ["x", "y", "width", "height"],
+          "properties": {
+            "x": { "type": "number" },
+            "y": { "type": "number" },
+            "width": { "type": "number", "minimum": 0 },
+            "height": { "type": "number", "minimum": 0 }
+          },
+          "additionalProperties": false
+        },
+        "digest": { "type": "string", "minLength": 1 },
+        "label": { "type": "string" },
+        "level": { "type": "integer", "minimum": 1 }
+      },
+      "additionalProperties": false
+    },
+    "warnings": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["code", "message"],
+        "properties": {
+          "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+          "message": { "type": "string" },
+          "hint": { "type": "string" },
+          "docs": { "type": "string" },
+          "location": { "type": "string", "minLength": 1 },
+          "affectsCompleteness": { "type": "boolean" }
+        },
+        "additionalProperties": false
+      }
+    }
+  }
+}

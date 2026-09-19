@@ -11,6 +11,7 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Views;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
@@ -454,6 +455,122 @@ internal sealed class CellsOutputService
         string entryFileName = PreviewExporter.Export(workbook, artifacts);
         return new PreviewRenderOutcome(entryFileName, source.Format, source.SizeBytes, loaded.Warnings());
     }
+
+    /// <summary>Renders the parts of one view, opening the workbook once.</summary>
+    internal ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts)
+    {
+        const int dpi = 192;
+        const string workbookFile = "workbook.html";
+        ArgumentException.ThrowIfNullOrEmpty(filePath);
+        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(artifacts);
+
+        _licenseGate.EnsureApplied();
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        Workbook workbook = loaded.Workbook;
+        SourceInfo source = BuildSource(filePath, workbook);
+        if (request.View == CellsViews.Workbook)
+        {
+            PreviewExporter.Export(workbook, artifacts, workbookFile);
+            return new ViewManifest
+            {
+                View = CellsViews.Workbook,
+                SourceFormat = source.Format,
+                SourceSizeBytes = source.SizeBytes,
+                TotalParts = 1,
+                Parts =
+                [
+                    new ViewPart
+                    {
+                        Id = CellsViews.Workbook,
+                        Label = Path.GetFileName(filePath),
+                        File = workbookFile,
+                        Kind = ViewPartKinds.Html,
+                    },
+                ],
+                Warnings = loaded.Warnings(),
+            };
+        }
+
+        Worksheet[] visible = workbook.Worksheets
+            .Cast<Worksheet>()
+            .Where(static sheet => sheet.IsVisible)
+            .ToArray();
+        var parts = new List<ViewPart>();
+        foreach (Worksheet sheet in visible.Take(request.MaxParts))
+        {
+            string file = string.Create(
+                System.Globalization.CultureInfo.InvariantCulture,
+                $"sheet-{sheet.Index + 1:0000}.png");
+            (int width, int height) = RenderSheetPart(sheet, dpi, file, artifacts);
+            parts.Add(new ViewPart
+            {
+                Id = sheet.Name,
+                Label = sheet.Name,
+                File = file,
+                Kind = ViewPartKinds.Image,
+                Width = width,
+                Height = height,
+            });
+        }
+
+        return new ViewManifest
+        {
+            View = CellsViews.Sheets,
+            SourceFormat = source.Format,
+            SourceSizeBytes = source.SizeBytes,
+            TotalParts = visible.Length,
+            Parts = parts,
+            Warnings = loaded.Warnings(),
+        };
+    }
+
+    /// <summary>
+    /// Writes one worksheet image and returns its CSS layout size. A sheet
+    /// without printable content becomes a blank placeholder rather than an
+    /// error, so an empty sheet never hides the rest of the workbook.
+    /// </summary>
+    private static (int Width, int Height) RenderSheetPart(
+        Worksheet sheet,
+        int dpi,
+        string file,
+        IViewArtifactSink artifacts)
+    {
+        var options = new ImageOrPrintOptions
+        {
+            ImageType = Aspose.Cells.Drawing.ImageType.Png,
+            OnePagePerSheet = true,
+            HorizontalResolution = dpi,
+            VerticalResolution = dpi,
+        };
+        var render = new SheetRender(sheet, options);
+        if (render.PageCount == 0)
+        {
+            artifacts.Write(file, stream => stream.Write(BlankPng));
+            return (320, 120);
+        }
+
+        try
+        {
+            EnsureRenderable(render, dpi);
+            float[] inches = render.GetPageSizeInch(0);
+            artifacts.Write(file, stream => render.ToImage(0, stream));
+            return (
+                Math.Max(1, (int)Math.Ceiling(inches[0] * 96)),
+                Math.Max(1, (int)Math.Ceiling(inches[1] * 96)));
+        }
+        catch (CellsException exception)
+        {
+            throw CellsErrors.RenderFailed(sheet.Name, exception.Message);
+        }
+    }
+
+    // A valid one-pixel white PNG for a worksheet without printable content.
+    private static readonly byte[] BlankPng = System.Convert.FromBase64String(
+        "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2VQAAAABJRU5ErkJggg==");
 
     /// <summary>Rejects raster output whose bitmap would exceed the allocation budget.</summary>
     private static void EnsureRenderable(SheetRender render, int dpi)

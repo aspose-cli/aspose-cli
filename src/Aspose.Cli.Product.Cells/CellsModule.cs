@@ -40,7 +40,7 @@ public sealed class CellsModule : IProductModule
             .Diagnostics(CellsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
             .Preview(new CellsPreviewAdapter())
-            .Review(new CellsReviewAdapter())
+            .View(new CellsViewAdapter())
             .Output<WorkbookInfoResult>(CellsRenderers.Render)
             .Output<WorkbookReadResult>(CellsRenderers.Render)
             .Output<ConvertResult>(CellsRenderers.Render)

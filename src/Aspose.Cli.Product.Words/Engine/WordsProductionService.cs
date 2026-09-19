@@ -9,6 +9,7 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Views;
 using Aspose.Words;
 using Aspose.Words.Rendering;
 using Aspose.Words.Saving;
@@ -21,6 +22,8 @@ internal sealed class WordsProductionService
 {
     private const int PreviewDpi = 144;
     private const int CssDpi = 96;
+    private const int EvidenceDpi = 150;
+    private const int DisplayDpi = 192;
     private readonly ILicenseGate _licenseGate;
     private readonly SafeFileWriter _writer;
     private readonly WordsDocumentLoader _loader;
@@ -54,6 +57,15 @@ internal sealed class WordsProductionService
         WordsErrorTranslator.Execute(
             "preview",
             () => RenderPreviewCore(filePath, request, artifacts));
+
+    /// <summary>Renders the fixed-layout pages of one view, opening the document once.</summary>
+    internal ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        WordsErrorTranslator.Execute(
+            "render",
+            () => RenderViewCore(filePath, request, artifacts));
 
     /// <summary>Creates a document from a bounded source or blank template.</summary>
     internal WordsCreateResult CreateDocument(NewDocumentRequest request) =>
@@ -129,6 +141,56 @@ internal sealed class WordsProductionService
             artifacts);
         artifacts.WriteText(entry, PreviewHtml(pages));
         return new PreviewRenderOutcome(entry, loaded.FormatId, new FileInfo(filePath).Length, InputWarnings(loaded));
+    }
+
+    private ViewManifest RenderViewCore(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts)
+    {
+        ArgumentNullException.ThrowIfNull(artifacts);
+        _ = _licenseGate.EnsureApplied();
+        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
+        Document document = loaded.Document;
+        int dpi = request.Purpose == ViewPurpose.Display ? DisplayDpi : EvidenceDpi;
+        int total = document.PageCount;
+        int count = Math.Min(total, request.MaxParts);
+        var parts = new List<ViewPart>(count);
+        for (int page = 1; page <= count; page++)
+        {
+            PageInfo info = document.GetPageInfo(page - 1);
+            RenderPixelGuard.EnsureFits(
+                Pixels(info.WidthInPoints, dpi),
+                Pixels(info.HeightInPoints, dpi),
+                dpi);
+            string file = string.Create(CultureInfo.InvariantCulture, $"page-{page:0000}.png");
+            int pageNumber = page;
+            artifacts.Write(
+                file,
+                stream => document.Save(
+                    stream,
+                    WordsSavePipeline.Options("png", pages: [pageNumber], dpi: dpi)));
+            parts.Add(new ViewPart
+            {
+                Id = string.Create(CultureInfo.InvariantCulture, $"page-{page}"),
+                Label = string.Create(CultureInfo.InvariantCulture, $"Page {page}"),
+                File = file,
+                Kind = ViewPartKinds.Image,
+                Width = Pixels(info.WidthInPoints, CssDpi),
+                Height = Pixels(info.HeightInPoints, CssDpi),
+            });
+        }
+
+        loaded.Resources.ThrowIfFailed();
+        return new ViewManifest
+        {
+            View = WordsViews.Pages,
+            SourceFormat = loaded.FormatId,
+            SourceSizeBytes = new FileInfo(filePath).Length,
+            TotalParts = total,
+            Parts = parts,
+            Warnings = InputWarnings(loaded),
+        };
     }
 
     private static IReadOnlyList<PreviewPage> RenderPreviewPages(

@@ -1,33 +1,40 @@
-using System.Net;
-using System.Text;
 using Aspose.Cli.Product.Words.Contracts;
-using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Words;
 
-/// <summary>Product-owned paginated review evidence and structural heuristics.</summary>
-internal sealed class WordsReviewAdapter : IProductReviewAdapter<IDocumentEngine>
+/// <summary>Product-owned page views and the structural heuristics of their review.</summary>
+internal sealed class WordsViewAdapter : IProductViewAdapter<IDocumentEngine>
 {
-    public string DefaultView => "pages";
+    public IReadOnlyList<ProductView> Views { get; } =
+        [new(WordsViews.Pages, "Pages", ViewPartKinds.Image)];
 
-    public IReadOnlyList<string> Views { get; } = ["pages"];
+    public string ReviewView => WordsViews.Pages;
+
+    public string LiveView => WordsViews.Pages;
 
     public bool VisualInspectionRequired => true;
 
-    public ProductReviewRenderer CreateRenderer(
+    public ViewManifest Render(
         IDocumentEngine port,
         string filePath,
-        ProductReviewRequest request) => directory =>
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        port.RenderView(filePath, request, artifacts);
+
+    public ProductReviewAssessment Assess(
+        IDocumentEngine port,
+        string filePath,
+        ViewRenderRequest request,
+        ViewManifest rendered)
     {
         DocumentInfoResult info = port.GetInfo(filePath, new DocumentInfoRequest
         {
             Details = ["sections", "outline", "images", "tables", "fonts"],
             Password = request.Password,
         });
-        int expectedPages = info.Document.Pages;
-        int requestedPages = Math.Min(expectedPages, request.MaxItems);
         if (port is not IWordsReviewLayoutPort layoutPort)
         {
             throw new InvalidOperationException(
@@ -36,23 +43,7 @@ internal sealed class WordsReviewAdapter : IProductReviewAdapter<IDocumentEngine
         WordsReviewLayout layout = layoutPort.InspectReviewLayout(
             filePath,
             request.Password,
-            requestedPages);
-        WordsRenderResult rendered = port.Render(filePath, new WordsRenderRequest
-        {
-            TargetFormatId = "png",
-            OutputPath = Path.Combine(directory, "page.png"),
-            Pages = requestedPages == 0
-                ? null
-                : PageRange.Parse($"1-{requestedPages}"),
-            Dpi = 150,
-            Password = request.Password,
-        });
-
-        const string entry = "document-review.html";
-        File.WriteAllText(
-            Path.Combine(directory, entry),
-            Gallery(rendered.Outputs),
-            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            rendered.Parts.Count);
 
         var findings = new List<ReviewFinding>();
         if (info.Document.Words == 0
@@ -75,32 +66,23 @@ internal sealed class WordsReviewAdapter : IProductReviewAdapter<IDocumentEngine
                 "document"));
         }
 
-        IReadOnlyList<Warning>? warnings = Aspose.Cli.Sdk.Results.EnvelopeParts.CombineWarnings(
-            info.Warnings, rendered.Warnings);
-        return new ProductReviewRenderOutcome(
-            entry,
-            rendered.Input.Format,
-            rendered.Input.SizeBytes)
+        return new ProductReviewAssessment
         {
-            VisualInspectionRequired = VisualInspectionRequired,
             Findings = findings,
-            Warnings = warnings,
+            Warnings = info.Warnings,
             Coverage =
             [
                 Metric("pages", info.Document.Pages, "pages"),
                 Metric("words", info.Document.Words, "words"),
-                Metric("renderedPages", rendered.Outputs.Count, "pages"),
+                Metric("renderedPages", rendered.Parts.Count, "pages"),
                 Metric("blankPages", layout.Pages.Count(static page => !HasVisibleContent(page)), "pages"),
                 Metric("lowUtilizationPages", layout.Pages.Count(IsExtremelyLowUtilization), "pages"),
                 Metric("outsideObjects", layout.Pages.Sum(static page => page.OutsideObjects), "objects"),
                 Metric("orphanedHeadings", layout.OrphanedHeadings.Count, "headings"),
             ],
-            ExpectedItems = expectedPages,
-            RenderedItems = rendered.Outputs.Count,
-            Complete = findings.All(static finding => finding.Severity != "error")
-                && !(warnings?.Any(static warning => warning.AffectsCompleteness) ?? false),
+            Complete = findings.All(static finding => finding.Severity != "error"),
         };
-    };
+    }
 
     private static void AddLayoutFindings(
         WordsReviewLayout layout,
@@ -179,24 +161,6 @@ internal sealed class WordsReviewAdapter : IProductReviewAdapter<IDocumentEngine
         && page.ContentAreaRatio < 0.025
         && page.VisibleCharacters < 80
         && page.VisualObjects <= 1;
-
-    private static string Gallery(IReadOnlyList<PageOutput> pages)
-    {
-        var body = new StringBuilder();
-        foreach (PageOutput page in pages)
-        {
-            string name = WebUtility.HtmlEncode(Path.GetFileName(page.Output.Path));
-            body.Append("<figure><img src=\"").Append(name)
-                .Append("\" alt=\"Page ").Append(page.Page)
-                .Append("\"><figcaption>Page ").Append(page.Page)
-                .Append("</figcaption></figure>");
-        }
-        return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-            + "<style>body{margin:0;padding:24px;background:#e8edf3;font:14px system-ui;color:#243247}"
-            + "figure{margin:0 auto 28px;max-width:1100px}img{display:block;max-width:100%;height:auto;margin:auto;background:white;box-shadow:0 8px 28px #23344a24}"
-            + "figcaption{text-align:center;margin-top:8px}</style></head><body>"
-            + body + "</body></html>";
-    }
 
     private static ReviewFinding Finding(string code, string severity, string message, string location) => new()
     {

@@ -82,7 +82,7 @@ public sealed class HostCatalogIsolationTests
             .Diagnostics([])
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
             .Preview(new TestProductPreviewAdapter<ITestPort>())
-            .Review(new TestProductReviewAdapter<ITestPort>())
+            .View(new TestProductViewAdapter<ITestPort>())
             .Output<TestResult>(static (_, _) => { })
             .Commands(_ => new Command(id))
             .Activator(static _ =>

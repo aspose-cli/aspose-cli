@@ -596,7 +596,7 @@ public sealed class ProductFileRouterTests
             .Diagnostics([])
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
             .Preview(new TestProductPreviewAdapter<ITestPort>())
-            .Review(new TestProductReviewAdapter<ITestPort>())
+            .View(new TestProductViewAdapter<ITestPort>())
             .Commands(_ => new Command(id))
             .Activator(static _ =>
                 throw new InvalidOperationException(

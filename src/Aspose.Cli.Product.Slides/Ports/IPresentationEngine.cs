@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Slides.Ports;
 
@@ -35,4 +36,10 @@ public interface IPresentationEngine
         string filePath,
         PresentationPreviewRequest request,
         IPreviewArtifactSink artifacts);
+
+    /// <summary>Renders the parts of one product view, opening the presentation once.</summary>
+    ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts);
 }

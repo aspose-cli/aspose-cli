@@ -8,6 +8,7 @@ using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Rendering;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -50,7 +51,7 @@ internal static class ReviewCommand
         }.WithInput(InputKind.None);
         view.AcceptOnlyFromAmong(
             catalog.Products
-                .SelectMany(static item => item.Review.Views)
+                .SelectMany(static item => item.View.ReviewViews)
                 .Append(AutoView)
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)
@@ -87,17 +88,18 @@ internal static class ReviewCommand
                     operation: "review",
                     cancellationToken: context.Deadline.Token);
             string requestedView = parse.GetRequiredValue(view);
+            ProductViewDefinition views = definition.View;
             string selectedView = requestedView == AutoView
-                ? definition.Review.DefaultView
+                ? views.ReviewView
                 : requestedView;
-            if (!definition.Review.Views.Contains(
+            if (!views.ReviewViews.Contains(
                     selectedView,
                     StringComparer.Ordinal))
             {
                 throw CliErrors.OptionInvalid(
                     "--view",
                     $"review view '{selectedView}' is not supported by {definition.Manifest.Id}",
-                    $"Use {string.Join(", ", definition.Review.Views)}.");
+                    $"Use {string.Join(", ", views.ReviewViews)}.");
             }
             string target = parse.GetValue(output) is { } requestedOutput
                 ? context.Paths.ResolveOutput(requestedOutput)
@@ -106,18 +108,22 @@ internal static class ReviewCommand
             LicenseState license = binding.LicenseGate.EnsureApplied();
             FontSearchProfile fontProfile = fonts.Read(parse);
             EnsureFontProfileSupported(definition, fontProfile);
-            var request = new ProductReviewRequest(
-                selectedView,
-                maximum,
-                password.Resolve(parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
-                fontProfile.IsAmbient ? null : fontProfile);
+            var request = new ViewRenderRequest
+            {
+                View = selectedView,
+                MaxParts = maximum,
+                Purpose = ViewPurpose.Evidence,
+                Password = password.Resolve(parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
+                FontProfile = fontProfile.IsAmbient ? null : fontProfile,
+            };
             return ReviewEvidenceWriter.Write(
                 input,
                 definition.Manifest.Id,
-                selectedView,
                 target,
                 maximum,
-                definition.Review.CreateRenderer(binding, input, request),
+                views.VisualInspectionRequired,
+                artifacts => views.Render(binding, input, request, artifacts),
+                rendered => views.Assess(binding, input, request, rendered),
                 license,
                 serializer);
         }));

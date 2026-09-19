@@ -1,38 +1,48 @@
 using System.Net;
+using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Serialization;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.Review;
 
-/// <summary>Publishes one immutable static review bundle into a new directory.</summary>
+/// <summary>
+/// Publishes one immutable static review bundle into a new directory: the
+/// rendered view parts, their <c>view.json</c> manifest, <c>review.json</c>
+/// and a static <c>index.html</c>.
+/// </summary>
 internal static class ReviewEvidenceWriter
 {
     public const int DefaultMaxItems = 256;
     public const int MaximumMaxItems = 8_192;
+    internal const string ViewManifestFile = "view.json";
 
     public static ReviewResult Write(
         string sourcePath,
         string productId,
-        string view,
         string outputDirectory,
         int maxItems,
-        ProductReviewRenderer renderer,
+        bool visualInspectionRequired,
+        Func<IViewArtifactSink, ViewManifest> render,
+        Func<ViewManifest, ProductReviewAssessment> assess,
         LicenseState license,
         ContractJsonSerializer serializer)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
-        ArgumentException.ThrowIfNullOrWhiteSpace(view);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputDirectory);
-        ArgumentNullException.ThrowIfNull(renderer);
+        ArgumentNullException.ThrowIfNull(render);
+        ArgumentNullException.ThrowIfNull(assess);
         ArgumentNullException.ThrowIfNull(serializer);
         ArgumentOutOfRangeException.ThrowIfLessThan(maxItems, 1);
         ArgumentOutOfRangeException.ThrowIfGreaterThan(maxItems, MaximumMaxItems);
@@ -52,27 +62,33 @@ internal static class ReviewEvidenceWriter
             Directory.CreateDirectory(staging);
             string evidenceDirectory = Path.Combine(staging, "artifacts");
             Directory.CreateDirectory(evidenceDirectory);
-
-            ProductReviewRenderOutcome outcome = renderer(evidenceDirectory);
-            PreviewArtifactManifest manifest = PreviewArtifactManifest.Validate(
+            LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
+            ViewManifest manifest = RenderPrivately(render, evidenceDirectory, maxItems, limits);
+            ProductReviewAssessment assessment = assess(manifest);
+            File.WriteAllText(
+                Path.Combine(evidenceDirectory, ViewManifestFile),
+                JsonSerializer.Serialize(manifest, SdkJsonContext.Default.ViewManifest)
+                    + Environment.NewLine,
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            PreviewArtifactManifest files = PreviewArtifactManifest.Validate(
                 evidenceDirectory,
-                outcome.EntryFileName,
-                LocalServiceResourceLimits.Resolve());
-            RewriteStaticHtml(evidenceDirectory, manifest.Files);
+                ViewManifestFile,
+                limits);
             ReviewResult result = BuildResult(
                 source,
                 productId,
-                view,
                 target,
                 maxItems,
+                visualInspectionRequired,
                 evidenceDirectory,
+                files,
                 manifest,
-                outcome,
+                assessment,
                 license);
 
             File.WriteAllText(
                 Path.Combine(staging, "index.html"),
-                IndexHtmlV2(result, manifest.EntryFileName),
+                IndexHtml(result, manifest),
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             File.WriteAllText(
                 Path.Combine(staging, "review.json"),
@@ -110,31 +126,94 @@ internal static class ReviewEvidenceWriter
         }
     }
 
+    /// <summary>
+    /// Renders into private bounded storage, so unvalidated product output
+    /// never lands in the user's directory, then copies the proven parts into
+    /// the evidence directory.
+    /// </summary>
+    private static ViewManifest RenderPrivately(
+        Func<IViewArtifactSink, ViewManifest> render,
+        string evidenceDirectory,
+        int maxItems,
+        LocalServiceResourceLimits limits)
+    {
+        string root = PrivateUserStorage.CreateTemporaryDirectory("review");
+        try
+        {
+            var sink = new BoundedPreviewArtifactSink(root, limits);
+            ViewManifest rendered = render(sink);
+            sink.EnsureComplete();
+            ViewManifest manifest = WithDigests(rendered, root, maxItems);
+            foreach (ViewPart part in manifest.Parts)
+            {
+                string relative = part.File.Replace('/', Path.DirectorySeparatorChar);
+                string destination = Path.Combine(evidenceDirectory, relative);
+                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+                File.Copy(Path.Combine(root, relative), destination);
+            }
+            return manifest;
+        }
+        finally
+        {
+            LocalFileCleanup.DeleteDirectory(root);
+        }
+    }
+
+    /// <summary>
+    /// Proves that the product wrote exactly the files its manifest names and
+    /// stamps each part with the digest of its bytes.
+    /// </summary>
+    private static ViewManifest WithDigests(
+        ViewManifest manifest,
+        string evidenceDirectory,
+        int maxItems)
+    {
+        ViewManifestValidator.Validate(manifest, maxItems);
+        string[] written = Directory
+            .EnumerateFiles(evidenceDirectory, "*", SearchOption.AllDirectories)
+            .Select(path => Path.GetRelativePath(evidenceDirectory, path).Replace('\\', '/'))
+            .ToArray();
+        var named = manifest.Parts
+            .Select(static part => part.File)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        string? stray = written.FirstOrDefault(path => !named.Contains(path));
+        if (stray is not null || written.Length != named.Count)
+        {
+            throw new InvalidOperationException(
+                $"The product view files do not match its manifest{(stray is null ? "" : $": '{stray}'")}.");
+        }
+        return manifest with
+        {
+            Parts = manifest.Parts.Select(part => part with
+            {
+                Digest = Digest(Path.Combine(
+                    evidenceDirectory,
+                    part.File.Replace('/', Path.DirectorySeparatorChar))),
+            }).ToArray(),
+        };
+    }
+
+    private static string Digest(string path)
+    {
+        using FileStream stream = File.OpenRead(path);
+        return "sha256:" + Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
+    }
+
     private static ReviewResult BuildResult(
         string source,
         string productId,
-        string view,
         string target,
         int maxItems,
+        bool visualInspectionRequired,
         string evidenceDirectory,
-        PreviewArtifactManifest manifest,
-        ProductReviewRenderOutcome outcome,
+        PreviewArtifactManifest files,
+        ViewManifest manifest,
+        ProductReviewAssessment assessment,
         LicenseState license)
     {
-        string[] evidenceFiles = manifest.Files
-            .Where(path => !string.Equals(
-                path,
-                manifest.EntryFileName,
-                StringComparison.OrdinalIgnoreCase))
-            .Order(ReviewArtifactPathComparer.Instance)
-            .ToArray();
-        (int expectedItems, int renderedItems) = ValidateCoverage(
-            outcome,
-            evidenceFiles,
-            maxItems);
-        IReadOnlyList<string> selected =
-            [manifest.EntryFileName, .. evidenceFiles];
-        int omittedItems = Math.Max(0, expectedItems - renderedItems);
+        int expected = manifest.TotalParts;
+        int rendered = manifest.Parts.Count;
+        int omitted = expected - rendered;
         ReviewArtifact[] artifacts =
         [
             new ReviewArtifact
@@ -151,16 +230,25 @@ internal static class ReviewEvidenceWriter
                 Role = "manifest",
                 MediaType = "application/json",
             },
-            .. selected.Select((path, index) => CreateArtifact(
+            new ReviewArtifact
+            {
+                Sequence = 2,
+                Path = "artifacts/" + ViewManifestFile,
+                Role = "entry",
+                MediaType = "application/json",
+                Scope = manifest.View,
+                Label = ViewManifestFile,
+            },
+            .. manifest.Parts.Select((part, index) => CreateArtifact(
                 evidenceDirectory,
-                manifest.EntryFileName,
-                view,
-                path,
-                index + 2)),
+                files,
+                manifest.View,
+                part,
+                index + 3)),
         ];
-        IReadOnlyList<ReviewFinding> findings = AssociateEvidence(
-            outcome.Findings ?? [],
-            artifacts);
+        IReadOnlyList<Warning>? warnings = EnvelopeParts.CombineWarnings(
+            EnvelopeParts.OutputWarnings(license),
+            EnvelopeParts.CombineWarnings(manifest.Warnings, assessment.Warnings));
         return new ReviewResult
         {
             Product = productId,
@@ -168,53 +256,28 @@ internal static class ReviewEvidenceWriter
             OutputDirectory = target,
             Index = Path.Combine(target, "index.html"),
             Manifest = Path.Combine(target, "review.json"),
-            View = view,
-            SourceFormat = outcome.SourceFormatId,
-            SourceSizeBytes = outcome.SourceSizeBytes,
-            VisualInspectionRequired = outcome.VisualInspectionRequired,
+            View = manifest.View,
+            SourceFormat = manifest.SourceFormat,
+            SourceSizeBytes = manifest.SourceSizeBytes,
+            VisualInspectionRequired = visualInspectionRequired,
             Coverage = new ReviewCoverage
             {
                 MaxItems = maxItems,
-                DiscoveredItems = expectedItems,
-                ReportedItems = renderedItems,
-                Truncated = omittedItems > 0,
-                ExpectedItems = expectedItems,
-                RenderedItems = renderedItems,
-                OmittedItems = omittedItems,
-                Complete = omittedItems == 0 && outcome.Complete
-                    && !(outcome.Warnings?.Any(static warning => warning.AffectsCompleteness) ?? false),
-                Metrics = outcome.Coverage ?? [],
+                DiscoveredItems = expected,
+                ReportedItems = rendered,
+                Truncated = omitted > 0,
+                ExpectedItems = expected,
+                RenderedItems = rendered,
+                OmittedItems = omitted,
+                Complete = omitted == 0 && assessment.Complete
+                    && !(warnings?.Any(static warning => warning.AffectsCompleteness) ?? false),
+                Metrics = assessment.Coverage ?? [],
             },
             Artifacts = artifacts,
-            Findings = findings,
+            Findings = AssociateEvidence(assessment.Findings ?? [], artifacts),
             License = EnvelopeParts.License(license),
-            Warnings = EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(license), outcome.Warnings),
+            Warnings = warnings,
         };
-    }
-
-    private static (int ExpectedItems, int RenderedItems) ValidateCoverage(
-        ProductReviewRenderOutcome outcome,
-        IReadOnlyList<string> evidenceFiles,
-        int maxItems)
-    {
-        int expected = outcome.ExpectedItems;
-        int rendered = outcome.RenderedItems;
-        if (expected < 0
-            || rendered < 0
-            || rendered > expected
-            || rendered > maxItems)
-        {
-            throw new InvalidOperationException(
-                $"Product review coverage is invalid: expected={expected}, rendered={rendered}, maxItems={maxItems}.");
-        }
-
-        int visualEvidence = evidenceFiles.Count(IsVisualEvidence);
-        if (visualEvidence != rendered)
-        {
-            throw new InvalidOperationException(
-                $"Product review coverage reports {rendered} rendered item(s), but the artifact set contains {visualEvidence} visual item(s).");
-        }
-        return (expected, rendered);
     }
 
     private static IReadOnlyList<ReviewFinding> AssociateEvidence(
@@ -222,8 +285,8 @@ internal static class ReviewEvidenceWriter
         IReadOnlyList<ReviewArtifact> artifacts)
     {
         string[] evidence = artifacts
-            .Where(static artifact => artifact.Role is "entry" or "evidence")
-            .Where(static artifact => IsVisualEvidence(artifact.Path))
+            .Where(static artifact => artifact.Role == "evidence"
+                && IsVisualEvidence(artifact.Path))
             .Select(static artifact => artifact.Path)
             .ToArray();
         if (evidence.Length == 0)
@@ -246,24 +309,27 @@ internal static class ReviewEvidenceWriter
 
     private static ReviewArtifact CreateArtifact(
         string evidenceDirectory,
-        string entry,
+        PreviewArtifactManifest files,
         string view,
-        string relativePath,
+        ViewPart part,
         int sequence)
     {
+        if (!files.Contains(part.File))
+        {
+            throw new InvalidOperationException(
+                $"The product view part '{part.Id}' names a missing file '{part.File}'.");
+        }
         (int? width, int? height) = ReadDimensions(Path.Combine(
             evidenceDirectory,
-            relativePath.Replace('/', Path.DirectorySeparatorChar)));
+            part.File.Replace('/', Path.DirectorySeparatorChar)));
         return new ReviewArtifact
         {
             Sequence = sequence,
-            Path = "artifacts/" + relativePath,
-            Role = string.Equals(relativePath, entry, StringComparison.OrdinalIgnoreCase)
-                ? "entry"
-                : "evidence",
-            MediaType = MediaType(relativePath),
+            Path = "artifacts/" + part.File,
+            Role = "evidence",
+            MediaType = MediaType(part.File),
             Scope = view,
-            Label = Path.GetFileName(relativePath),
+            Label = part.Label.Length == 0 ? Path.GetFileName(part.File) : part.Label,
             Width = width,
             Height = height,
         };
@@ -288,38 +354,9 @@ internal static class ReviewEvidenceWriter
         return width > 0 && height > 0 ? (width, height) : (null, null);
     }
 
-    private static void RewriteStaticHtml(
-        string evidenceDirectory,
-        IReadOnlyList<string> files)
-    {
-        foreach (string relative in files.Where(path =>
-            Path.GetExtension(path).Equals(".html", StringComparison.OrdinalIgnoreCase)
-            || Path.GetExtension(path).Equals(".htm", StringComparison.OrdinalIgnoreCase)))
-        {
-            string path = Path.Combine(
-                evidenceDirectory,
-                relative.Replace('/', Path.DirectorySeparatorChar));
-            string html = File.ReadAllText(path);
-            string rewritten = html
-                .Replace("/asset/", string.Empty, StringComparison.Ordinal)
-                .Replace("/live/shell.css", "data:text/css,", StringComparison.Ordinal)
-                .Replace("/live/client.js", "data:text/javascript,", StringComparison.Ordinal)
-                .Replace("/live/events", "#static-review-events-disabled", StringComparison.Ordinal)
-                .Replace("/live/refresh", "#static-review-refresh-disabled", StringComparison.Ordinal);
-            if (!string.Equals(html, rewritten, StringComparison.Ordinal))
-            {
-                File.WriteAllText(
-                    path,
-                    rewritten,
-                    new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            }
-        }
-    }
-
-    private static string IndexHtmlV2(ReviewResult result, string entry)
+    private static string IndexHtml(ReviewResult result, ViewManifest manifest)
     {
         string title = WebUtility.HtmlEncode(Path.GetFileName(result.Input));
-        string source = WebUtility.HtmlEncode("artifacts/" + entry);
         string product = WebUtility.HtmlEncode(result.Product);
         string coverage = $"{result.Coverage.RenderedItems}/{result.Coverage.ExpectedItems}";
         string findings = result.Findings.Count == 0
@@ -334,12 +371,15 @@ internal static class ReviewEvidenceWriter
                     ? string.Empty
                     : $"<br><span class=\"quiet\">Fix: {WebUtility.HtmlEncode(finding.Hint)}</span>")
                 + "</li>")) + "</ul>";
-        string gallery = string.Concat(result.Artifacts
-            .Where(static artifact => artifact.Role == "evidence"
-                && artifact.MediaType.StartsWith("image/", StringComparison.Ordinal))
-            .Select(artifact =>
-                $"<figure><a href=\"{WebUtility.HtmlEncode(artifact.Path)}\"><img loading=\"lazy\" src=\"{WebUtility.HtmlEncode(artifact.Path)}\" alt=\"{WebUtility.HtmlEncode(artifact.Label)}\"></a>"
-                + $"<figcaption>{WebUtility.HtmlEncode(artifact.Label)}</figcaption></figure>"));
+        string gallery = string.Concat(manifest.Parts.Select(part =>
+        {
+            string path = WebUtility.HtmlEncode("artifacts/" + part.File);
+            string label = WebUtility.HtmlEncode(part.Label);
+            string visual = part.Kind == ViewPartKinds.Image
+                ? $"<a href=\"{path}\"><img loading=\"lazy\" src=\"{path}\" alt=\"{label}\"></a>"
+                : $"<iframe title=\"{label}\" src=\"{path}\"></iframe>";
+            return $"<figure>{visual}<figcaption>{label}</figcaption></figure>";
+        }));
         return "<!doctype html>\n"
             + "<html lang=\"en\"><head><meta charset=\"utf-8\">"
             + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
@@ -353,9 +393,7 @@ internal static class ReviewEvidenceWriter
             + "<span class=\"required\">Visual inspection required</span> &middot; "
             + "<a href=\"review.json\">review.json</a></header><main>"
             + "<h2>Deterministic findings</h2>" + findings
-            + "<h2>Product review</h2>"
-            + $"<iframe title=\"Review evidence\" src=\"{source}\"></iframe>"
-            + "<h2>Visual artifacts</h2><div class=\"gallery\">" + gallery + "</div></main>"
+            + "<h2>Rendered parts</h2><div class=\"gallery\">" + gallery + "</div></main>"
             + "</body></html>\n";
     }
 

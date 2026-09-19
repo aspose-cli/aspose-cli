@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Slides.Ports;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -72,4 +73,10 @@ internal sealed class SlidesPresentationEngine : IPresentationEngine
         PresentationPreviewRequest request,
         IPreviewArtifactSink artifacts) =>
         _production.RenderPreview(filePath, request, artifacts);
+
+    public ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        _production.RenderView(filePath, request, artifacts);
 }

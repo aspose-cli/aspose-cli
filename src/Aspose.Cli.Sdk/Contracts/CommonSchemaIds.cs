@@ -17,6 +17,7 @@ public static class CommonSchemaIds
     public const string PreviewSession = DistributionInfo.SchemaBaseUri + "common/preview-session.schema.json";
     public const string PreviewStatus = DistributionInfo.SchemaBaseUri + "common/preview-status.schema.json";
     public const string Review = DistributionInfo.SchemaBaseUri + "common/review.schema.json";
+    public const string View = DistributionInfo.SchemaBaseUri + "common/view.schema.json";
     public const string BoundedEdit = DistributionInfo.SchemaBaseUri + "common/bounded-edit.schema.json";
     public const string FileFingerprint = DistributionInfo.SchemaBaseUri + "common/file-fingerprint.schema.json";
     public const string ProductIssue = DistributionInfo.SchemaBaseUri + "common/product-issue.schema.json";

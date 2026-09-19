@@ -1,42 +1,42 @@
-using System.Net;
-using System.Text;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Pdf;
 
-/// <summary>Page-aware review evidence with conservative PDF quality findings.</summary>
-internal sealed class PdfReviewAdapter : IProductReviewAdapter<IPdfEngine>
+/// <summary>Page views and the conservative PDF quality findings of their review.</summary>
+internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
 {
-    public string DefaultView => PdfPreviewAdapter.PagesView;
+    public IReadOnlyList<ProductView> Views { get; } =
+        [new(PdfViews.Pages, "Pages", ViewPartKinds.Image)];
 
-    public IReadOnlyList<string> Views { get; } = [PdfPreviewAdapter.PagesView];
+    public string ReviewView => PdfViews.Pages;
+
+    public string LiveView => PdfViews.Pages;
 
     public bool VisualInspectionRequired => true;
 
-    public ProductReviewRenderer CreateRenderer(
+    public ViewManifest Render(
         IPdfEngine port,
         string filePath,
-        ProductReviewRequest request) => directory => Render(
-            port,
-            filePath,
-            request,
-            directory);
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        port.RenderView(filePath, request, artifacts);
 
-    private ProductReviewRenderOutcome Render(
+    public ProductReviewAssessment Assess(
         IPdfEngine port,
         string filePath,
-        ProductReviewRequest request,
-        string directory)
+        ViewRenderRequest request,
+        ViewManifest rendered)
     {
         PdfInfoResult info = port.GetInfo(filePath, new PdfInfoRequest
         {
             Details = ["pages", "forms"],
             Password = request.Password,
         });
-        int inspected = Math.Min(info.Pdf.Pages, request.MaxItems);
+        int inspected = rendered.Parts.Count;
         if (port is not IPdfReviewLayoutPort layoutPort)
         {
             throw new InvalidOperationException(
@@ -73,26 +73,8 @@ internal sealed class PdfReviewAdapter : IProductReviewAdapter<IPdfEngine>
             request.Password,
             read.Pages,
             findings);
-
-        PdfRenderResult rendered = port.Render(filePath, new PdfRenderRequest
+        return new ProductReviewAssessment
         {
-            TargetFormatId = "png",
-            OutputPath = Path.Combine(directory, "page.png"),
-            Pages = inspected == 0 ? null : PageRange.Parse($"1-{inspected}"),
-            Dpi = 150,
-            Password = request.Password,
-        });
-        const string entry = "pdf-review.html";
-        File.WriteAllText(
-            Path.Combine(directory, entry),
-            Gallery(rendered.Outputs),
-            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        return new ProductReviewRenderOutcome(
-            entry,
-            rendered.Input.Format,
-            rendered.Input.SizeBytes)
-        {
-            VisualInspectionRequired = VisualInspectionRequired,
             Findings = findings,
             Coverage =
             [
@@ -106,8 +88,6 @@ internal sealed class PdfReviewAdapter : IProductReviewAdapter<IPdfEngine>
                 Metric("formFields", forms.Fields, "fields"),
                 Metric("formFieldsWithoutPage", forms.FieldsWithoutPage, "fields"),
             ],
-            ExpectedItems = info.Pdf.Pages,
-            RenderedItems = rendered.Outputs.Count,
             Complete = findings.All(static finding => finding.Severity != "error"),
         };
     }
@@ -282,23 +262,6 @@ internal sealed class PdfReviewAdapter : IProductReviewAdapter<IPdfEngine>
                 "document"));
         }
         return unembeddedFonts;
-    }
-
-    private static string Gallery(IReadOnlyList<PdfPageOutput> pages)
-    {
-        string body = string.Concat(pages.Select(page =>
-        {
-            string name = WebUtility.HtmlEncode(Path.GetFileName(page.Output.Path));
-            string number = page.Page.ToString(
-                System.Globalization.CultureInfo.InvariantCulture);
-            return $"<figure><img src=\"{name}\" alt=\"Page {number}\">"
-                + $"<figcaption>Page {number}</figcaption></figure>";
-        }));
-        return "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-            + "<style>body{margin:0;padding:24px;background:#edf0f4;font:14px system-ui;color:#243247}"
-            + "figure{margin:0 auto 28px;max-width:1100px}img{display:block;max-width:100%;height:auto;margin:auto;background:white;box-shadow:0 8px 28px #23344a24}"
-            + "figcaption{text-align:center;margin-top:8px}</style></head><body>"
-            + body + "</body></html>";
     }
 
     private static ReviewFinding Finding(string code, string severity, string message, string location) => new()

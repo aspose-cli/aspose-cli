@@ -12,6 +12,7 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Views;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using Aspose.Slides.Export;
@@ -64,6 +65,77 @@ internal sealed class SlidesProductionService
         SlidesErrorTranslator.Execute(
             "preview",
             () => RenderPreviewCore(filePath, request, artifacts));
+
+    /// <summary>Renders the slides of one view, opening the presentation once.</summary>
+    internal ViewManifest RenderView(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts) =>
+        SlidesErrorTranslator.Execute(
+            "render",
+            () => RenderViewCore(filePath, request, artifacts));
+
+    private ViewManifest RenderViewCore(
+        string filePath,
+        ViewRenderRequest request,
+        IViewArtifactSink artifacts)
+    {
+        const int evidenceWidth = 1600;
+        const int displayWidth = 1920;
+        const int cssWidth = 960;
+        ArgumentNullException.ThrowIfNull(artifacts);
+        LicenseState state = _licenseGate.EnsureApplied();
+        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
+        Presentation presentation = loaded.Presentation;
+        int pixelWidth = request.Purpose == ViewPurpose.Display ? displayWidth : evidenceWidth;
+        float scale = (float)(pixelWidth / presentation.SlideSize.Size.Width);
+        int total = presentation.Slides.Count;
+        int count = Math.Min(total, request.MaxParts);
+        EnsureRasterBudget(
+            _resourceBudgets,
+            (long)Math.Ceiling(presentation.SlideSize.Size.Width * scale),
+            (long)Math.Ceiling(presentation.SlideSize.Size.Height * scale),
+            count,
+            dpi: null);
+        int cssHeight = Math.Max(1, (int)Math.Round(
+            cssWidth * presentation.SlideSize.Size.Height / presentation.SlideSize.Size.Width,
+            MidpointRounding.AwayFromZero));
+        var parts = new List<ViewPart>(count);
+        for (int index = 0; index < count; index++)
+        {
+            ISlide slide = presentation.Slides[index];
+            int number = index + 1;
+            string file = string.Create(CultureInfo.InvariantCulture, $"slide-{number:0000}.png");
+            using (IImage image = slide.GetImage(scale, scale))
+            {
+                artifacts.Write(file, stream => image.Save(stream, ImageFormat.Png));
+            }
+            string? notes = Notes(slide);
+            parts.Add(new ViewPart
+            {
+                Id = string.Create(CultureInfo.InvariantCulture, $"slide-{slide.SlideId}"),
+                Label = Title(slide) ?? string.Create(CultureInfo.InvariantCulture, $"Slide {number}"),
+                File = file,
+                Kind = ViewPartKinds.Image,
+                Width = cssWidth,
+                Height = cssHeight,
+                Hidden = slide.Hidden,
+                Properties = notes is null
+                    ? null
+                    : new Dictionary<string, string>(StringComparer.Ordinal) { ["notes"] = notes },
+            });
+        }
+
+        return new ViewManifest
+        {
+            View = SlidesViews.Slides,
+            SourceFormat = loaded.FormatId,
+            SourceSizeBytes = new FileInfo(filePath).Length,
+            TotalParts = total,
+            Parts = parts,
+            Warnings = EvaluationInputWarnings(state, presentation),
+        };
+    }
 
     private PreviewRenderOutcome RenderPreviewCore(
         string filePath,

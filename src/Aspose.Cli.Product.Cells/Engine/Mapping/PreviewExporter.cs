@@ -111,7 +111,8 @@ internal static class PreviewExporter
     /// </summary>
     public static string Export(
         Workbook workbook,
-        IPreviewArtifactSink artifacts)
+        Aspose.Cli.Sdk.Views.IViewArtifactSink artifacts,
+        string entryFileName = EntryFileName)
     {
         ArgumentNullException.ThrowIfNull(workbook);
         ArgumentNullException.ThrowIfNull(artifacts);
@@ -133,11 +134,11 @@ internal static class PreviewExporter
             0,
             checked((int)stream.Length));
         artifacts.WriteText(
-            EntryFileName,
+            entryFileName,
             StampActiveSheet(
                 html,
                 workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name));
-        return EntryFileName;
+        return entryFileName;
     }
 
     private static string StampActiveSheet(string html, string sheetName)

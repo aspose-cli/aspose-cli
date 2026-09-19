@@ -39,7 +39,7 @@ public sealed class SlidesModule : IProductModule
             .Diagnostics(SlidesDiagnostics.All)
             .Json(ProductJsonContext.Definition)
             .Preview(new SlidesPreviewAdapter())
-            .Review(new SlidesReviewAdapter())
+            .View(new SlidesViewAdapter())
             .Output<PresentationInfoResult>(SlidesRenderers.Render)
             .Output<PresentationReadResult>(SlidesRenderers.Render)
             .Output<SlidesConvertResult>(SlidesRenderers.Render)

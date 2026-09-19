@@ -5,6 +5,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -58,12 +59,18 @@ public sealed class CellsResourceLoadingTests
         await using var server = new ResourceHttpServer();
         string input = fixture.Temp.File("review.html");
         File.WriteAllText(input, $"<html><body><table><tr><td>Data</td></tr></table><img src='{server.Url}/image.png'></body></html>");
-        string directory = fixture.Temp.File("review");
-        Directory.CreateDirectory(directory);
-        ProductReviewRenderOutcome outcome = new CellsReviewAdapter().CreateRenderer(
-            fixture.Engine, input, new ProductReviewRequest("sheets", 10))(directory);
-        Assert.False(outcome.Complete);
-        AssertOmission(outcome.Warnings);
+        var adapter = new CellsViewAdapter();
+        var request = new ViewRenderRequest
+        {
+            View = CellsViews.Sheets,
+            MaxParts = 10,
+            Purpose = ViewPurpose.Evidence,
+        };
+        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new ArtifactSink());
+        ProductReviewAssessment assessment = adapter.Assess(fixture.Engine, input, request, rendered);
+        Assert.False(assessment.Complete);
+        AssertOmission(rendered.Warnings);
+        AssertOmission(assessment.Warnings);
         Assert.Equal(0, server.RequestCount);
     }
 

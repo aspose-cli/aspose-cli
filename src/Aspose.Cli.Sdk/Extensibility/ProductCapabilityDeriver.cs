@@ -57,9 +57,9 @@ internal static class ProductCapabilityDeriver
             },
             Review = new ProductReviewCapabilities
             {
-                DefaultView = product.Review.DefaultView,
-                Views = product.Review.Views,
-                VisualInspectionRequired = product.Review.VisualInspectionRequired,
+                DefaultView = product.View.ReviewView,
+                Views = product.View.ReviewViews,
+                VisualInspectionRequired = product.View.VisualInspectionRequired,
             },
         };
 

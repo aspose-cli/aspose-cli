@@ -59,6 +59,12 @@ internal sealed class CellsWorkbookEngine
         IPreviewArtifactSink artifacts) =>
         _output.RenderPreview(filePath, request, artifacts);
 
+    public Aspose.Cli.Sdk.Views.ViewManifest RenderView(
+        string filePath,
+        Aspose.Cli.Sdk.Views.ViewRenderRequest request,
+        Aspose.Cli.Sdk.Views.IViewArtifactSink artifacts) =>
+        _output.RenderView(filePath, request, artifacts);
+
     public EditResult ApplyOps(string filePath, OpsBatch batch, EditRequest options) =>
         _mutations.ApplyOps(filePath, batch, options);
 

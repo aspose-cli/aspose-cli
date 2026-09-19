@@ -39,6 +39,12 @@ public interface IWorkbookEngine
         PreviewRenderRequest request,
         IPreviewArtifactSink artifacts);
 
+    /// <summary>Renders the parts of one product view, opening the workbook once.</summary>
+    Aspose.Cli.Sdk.Views.ViewManifest RenderView(
+        string filePath,
+        Aspose.Cli.Sdk.Views.ViewRenderRequest request,
+        Aspose.Cli.Sdk.Views.IViewArtifactSink artifacts);
+
     /// <summary>Applies a validated ops batch atomically.</summary>
     EditResult ApplyOps(string filePath, OpsBatch batch, EditRequest options);
 

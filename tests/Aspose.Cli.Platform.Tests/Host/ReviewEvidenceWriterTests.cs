@@ -1,5 +1,5 @@
-using System.Globalization;
 using System.Net;
+using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Host.Review;
@@ -7,6 +7,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Serialization;
+using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -22,63 +23,33 @@ public sealed class ReviewEvidenceWriterTests
     ];
 
     [Fact]
-    public void Write_WhenRendererCoverageIsImpossible_RejectsWithoutPublishing()
+    public void Write_WhenPartsExceedTheirTotal_RejectsWithoutPublishing()
     {
         using var temp = new TempDirectory();
         string output = temp.File("review");
 
-        Assert.Throws<InvalidOperationException>(() => ReviewEvidenceWriter.Write(
-            temp.File("source.docx"),
-            "words",
-            "pages",
+        Assert.Throws<InvalidOperationException>(() => Write(
+            temp,
             output,
             maxItems: 10,
-            directory =>
-            {
-                File.WriteAllText(Path.Combine(directory, "entry.html"), "<html></html>");
-                File.WriteAllBytes(Path.Combine(directory, "page.png"), PngHeader);
-                return new ProductReviewRenderOutcome("entry.html", "docx", 1)
-                {
-                    ExpectedItems = 1,
-                    RenderedItems = 2,
-                    Complete = true,
-                };
-            },
-            LicenseState.NotApplicable,
-            new ContractJsonSerializer([])));
+            totalParts: 1,
+            ["page-1.png", "page-2.png"]));
 
         Assert.False(Directory.Exists(output));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, "*.review.tmp"));
     }
 
     [Fact]
-    public void Write_UsesRendererOwnedUnitCoverageWithoutDroppingArtifacts()
+    public void Write_UsesViewCoverageWithoutDroppingParts()
     {
         using var temp = new TempDirectory();
-        string output = temp.File("review");
 
-        var result = ReviewEvidenceWriter.Write(
-            temp.File("source.docx"),
-            "words",
-            "pages",
-            output,
+        ReviewResult result = Write(
+            temp,
+            temp.File("review"),
             maxItems: 2,
-            directory =>
-            {
-                File.WriteAllText(
-                    Path.Combine(directory, "entry.html"),
-                    "<html><link rel=\"stylesheet\" href=\"review.css\"></html>");
-                File.WriteAllText(Path.Combine(directory, "review.css"), "body{}");
-                File.WriteAllBytes(Path.Combine(directory, "page-1.png"), PngHeader);
-                File.WriteAllBytes(Path.Combine(directory, "page-2.png"), PngHeader);
-                return new ProductReviewRenderOutcome("entry.html", "docx", 1)
-                {
-                    ExpectedItems = 5,
-                    RenderedItems = 2,
-                    Complete = true,
-                };
-            },
-            LicenseState.NotApplicable,
-            new ContractJsonSerializer([]));
+            totalParts: 5,
+            ["page-1.png", "page-2.png"]);
 
         Assert.Equal(5, result.Coverage.DiscoveredItems);
         Assert.Equal(2, result.Coverage.ReportedItems);
@@ -87,35 +58,24 @@ public sealed class ReviewEvidenceWriterTests
         Assert.Equal(3, result.Coverage.OmittedItems);
         Assert.True(result.Coverage.Truncated);
         Assert.False(result.Coverage.Complete);
-        Assert.Contains(result.Artifacts, artifact => artifact.Path == "artifacts/review.css");
-        Assert.Contains(result.Artifacts, artifact => artifact.Path == "artifacts/page-1.png");
-        Assert.Contains(result.Artifacts, artifact => artifact.Path == "artifacts/page-2.png");
+        Assert.Contains(result.Artifacts, static artifact =>
+            artifact.Path == "artifacts/view.json" && artifact.Role == "entry");
+        Assert.Contains(result.Artifacts, static artifact => artifact.Path == "artifacts/page-1.png");
+        Assert.Contains(result.Artifacts, static artifact => artifact.Path == "artifacts/page-2.png");
     }
 
     [Fact]
-    public void Write_WhenVisualEvidenceIsIncomplete_MarksCoverageIncomplete()
+    public void Write_WhenTheAssessmentIsIncomplete_MarksCoverageIncomplete()
     {
         using var temp = new TempDirectory();
 
-        var result = ReviewEvidenceWriter.Write(
-            temp.File("source.docx"),
-            "words",
-            "pages",
+        ReviewResult result = Write(
+            temp,
             temp.File("review"),
             maxItems: 1,
-            directory =>
-            {
-                File.WriteAllText(Path.Combine(directory, "entry.html"), "<html></html>");
-                File.WriteAllBytes(Path.Combine(directory, "page.png"), PngHeader);
-                return new ProductReviewRenderOutcome("entry.html", "docx", 1)
-                {
-                    ExpectedItems = 1,
-                    RenderedItems = 1,
-                    Complete = false,
-                };
-            },
-            LicenseState.NotApplicable,
-            new ContractJsonSerializer([]));
+            totalParts: 1,
+            ["page.png"],
+            new ProductReviewAssessment { Complete = false });
 
         Assert.False(result.Coverage.Truncated);
         Assert.False(result.Coverage.Complete);
@@ -123,100 +83,99 @@ public sealed class ReviewEvidenceWriterTests
     }
 
     [Fact]
-    public void Write_NumberedEvidenceUsesTheSameNaturalOrderInManifestAndGallery()
+    public void Write_EvidenceFollowsDocumentOrderInManifestAndGallery()
     {
         using var temp = new TempDirectory();
-        string[] pages = Enumerable.Range(1, 12).Select(number => $"frame.{number}.png").ToArray();
+        string[] parts = ["slide-10.png", "slide-2.png", "nested/slide-1.png"];
 
-        ReviewResult result = WriteArtifacts(temp, pages.Reverse().ToArray());
-        string[] expected = pages.Select(path => "artifacts/" + path).ToArray();
+        ReviewResult result = Write(temp, temp.File("review"), 8, parts.Length, parts);
+        string[] expected = parts.Select(static part => "artifacts/" + part).ToArray();
 
         Assert.True(result.Coverage.Complete);
-        Assert.Equal(12, result.Coverage.RenderedItems);
-        Assert.Equal(expected, result.Artifacts.Where(artifact => artifact.Role == "evidence")
-            .Select(artifact => artifact.Path));
-        Assert.Equal(Enumerable.Range(0, result.Artifacts.Count), result.Artifacts.Select(artifact => artifact.Sequence));
-        Assert.Equal("index.html", result.Artifacts[0].Path);
-        Assert.Equal("review.json", result.Artifacts[1].Path);
-        Assert.Equal("artifacts/entry.html", result.Artifacts[2].Path);
+        Assert.Equal(
+            ["index.html", "review.json", "artifacts/view.json"],
+            result.Artifacts.Take(3).Select(static artifact => artifact.Path));
+        Assert.Equal(expected, result.Artifacts
+            .Where(static artifact => artifact.Role == "evidence")
+            .Select(static artifact => artifact.Path));
+        Assert.Equal(Enumerable.Range(0, result.Artifacts.Count), result.Artifacts.Select(static artifact => artifact.Sequence));
         Assert.Equal(expected, GalleryPaths(result));
         JsonObject manifest = JsonNode.Parse(File.ReadAllText(result.Manifest))!.AsObject();
         Assert.Equal(expected, manifest["artifacts"]!.AsArray()
-            .Where(artifact => artifact!["role"]!.GetValue<string>() == "evidence")
-            .Select(artifact => artifact!["path"]!.GetValue<string>()));
+            .Where(static artifact => artifact!["role"]!.GetValue<string>() == "evidence")
+            .Select(static artifact => artifact!["path"]!.GetValue<string>()));
     }
 
     [Fact]
-    public void Write_NestedNumbersAndLeadingZeroTiesAreDeterministic()
+    public void Write_PublishesTheViewManifestWithPartDigests()
     {
         using var temp = new TempDirectory();
-        string[] expected =
-        [
-            "set2/frame0.png", "set2/frame00.png",
-            "set2/frame001.png", "set2/frame01.png", "set2/frame1.png",
-            "set2/frame2a.png", "set2/frame02b.png", "set2/frame10.png",
-            "set10/frame2.png",
-        ];
 
-        ReviewResult result = WriteArtifacts(temp, expected.Reverse().ToArray());
+        ReviewResult result = Write(temp, temp.File("review"), 4, 2, ["page-1.png", "page-2.png"]);
 
-        Assert.Equal(expected.Select(path => "artifacts/" + path), GalleryPaths(result));
-        Assert.Equal(expected.Select(path => "artifacts/" + path), result.Artifacts
-            .Where(artifact => artifact.Role == "evidence").Select(artifact => artifact.Path));
+        string digest = "sha256:" + Convert.ToHexString(SHA256.HashData(PngHeader)).ToLowerInvariant();
+        JsonObject view = JsonNode.Parse(File.ReadAllText(
+            Path.Combine(result.OutputDirectory, "artifacts", "view.json")))!.AsObject();
+        Assert.Equal(CommonSchemaIds.View, view["schema"]!.GetValue<string>());
+        Assert.Equal("pages", view["view"]!.GetValue<string>());
+        Assert.All(view["parts"]!.AsArray(), part =>
+            Assert.Equal(digest, part!["digest"]!.GetValue<string>()));
+        Assert.All(result.Artifacts.Where(static artifact => artifact.Role == "evidence"), artifact =>
+            Assert.Equal(PngHeader, File.ReadAllBytes(Path.Combine(
+                result.OutputDirectory,
+                artifact.Path.Replace('/', Path.DirectorySeparatorChar)))));
     }
 
     [Fact]
-    public void Write_NonnumericAssetsAndEscapedLinksKeepTheirExactSafePaths()
+    public void Write_RejectsFilesTheManifestDoesNotName()
     {
         using var temp = new TempDirectory();
-        string[] expected =
-        [
-            "Legend.png", "Résumé.png", "_notes.txt", "alpha.css", "alpha.png",
-            "plates & figures/frame 2's.png", "plates & figures/frame 10's.png",
-            "étude.png",
-        ];
+        string output = temp.File("review");
 
-        ReviewResult result = WriteArtifacts(temp, expected.Reverse().ToArray());
+        Assert.Throws<InvalidOperationException>(() => ReviewEvidenceWriter.Write(
+            temp.File("source.test"),
+            "test",
+            output,
+            maxItems: 4,
+            visualInspectionRequired: true,
+            artifacts =>
+            {
+                artifacts.Write("page-1.png", static stream => stream.Write(PngHeader));
+                artifacts.WriteText("stray.css", "body{}");
+                return Manifest(1, ["page-1.png"]);
+            },
+            static _ => new ProductReviewAssessment(),
+            LicenseState.NotApplicable,
+            new ContractJsonSerializer([])));
 
-        Assert.Equal(expected.Select(path => "artifacts/" + path), result.Artifacts
-            .Where(artifact => artifact.Role == "evidence").Select(artifact => artifact.Path));
-        string[] images = expected.Where(path => path.EndsWith(".png", StringComparison.Ordinal))
-            .Select(path => "artifacts/" + path).ToArray();
-        Assert.Equal(images, GalleryPaths(result));
-        string html = File.ReadAllText(result.Index);
-        foreach (string path in images)
-        {
-            Assert.Contains($"href=\"{WebUtility.HtmlEncode(path)}\"", html, StringComparison.Ordinal);
-            Assert.True(File.Exists(Path.Combine(result.OutputDirectory, path.Replace('/', Path.DirectorySeparatorChar))));
-            Assert.Equal(PngHeader, File.ReadAllBytes(Path.Combine(result.OutputDirectory, path)));
-        }
-        Assert.Contains("plates &amp; figures/frame 2&#39;s.png", html, StringComparison.Ordinal);
-        Assert.DoesNotContain("href=\"artifacts/plates & figures", html, StringComparison.Ordinal);
-        Assert.Equal("body{}", File.ReadAllText(Path.Combine(result.OutputDirectory, "artifacts/alpha.css")));
+        Assert.False(Directory.Exists(output));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, "*.review.tmp"));
     }
 
     [Theory]
-    [InlineData("../outside.html")]
-    [InlineData("/outside.html")]
-    public void Write_OrderingDoesNotBypassEntryPathValidation(string unsafeEntry)
+    [InlineData("../outside.png")]
+    [InlineData("/outside.png")]
+    public void Write_RejectsTraversingArtifactPaths(string unsafePath)
     {
         using var temp = new TempDirectory();
-        string outside = temp.File("outside.html");
+        string outside = temp.File("outside.png");
         File.WriteAllText(outside, "unchanged");
         string output = temp.File("review");
 
         Assert.Throws<InvalidDataException>(() => ReviewEvidenceWriter.Write(
-            temp.File("source.test"), "test", "items", output, 12,
-            directory =>
+            temp.File("source.test"),
+            "test",
+            output,
+            maxItems: 4,
+            visualInspectionRequired: true,
+            artifacts =>
             {
-                File.WriteAllBytes(Path.Combine(directory, "frame10.png"), PngHeader);
-                return new ProductReviewRenderOutcome(unsafeEntry, "test", 1)
-                {
-                    ExpectedItems = 1,
-                    RenderedItems = 1,
-                    Complete = true,
-                };
-            }, LicenseState.NotApplicable, new ContractJsonSerializer([])));
+                artifacts.Write(unsafePath, static stream => stream.Write(PngHeader));
+                return Manifest(1, [unsafePath]);
+            },
+            static _ => new ProductReviewAssessment(),
+            LicenseState.NotApplicable,
+            new ContractJsonSerializer([])));
 
         Assert.False(Directory.Exists(output));
         Assert.Equal("unchanged", File.ReadAllText(outside));
@@ -224,85 +183,62 @@ public sealed class ReviewEvidenceWriterTests
     }
 
     [Theory]
-    [InlineData(null, "", -1)]
-    [InlineData("", "a", -1)]
-    [InlineData("frame2.png", "frame10.png", -1)]
-    [InlineData("frame02.png", "frame2.png", -1)]
-    [InlineData("frame00.png", "frame0.png", 1)]
-    [InlineData("frame02b.png", "frame2a.png", 1)]
-    [InlineData("set02/frame10.png", "set2/frame2.png", 1)]
-    [InlineData("same1.png", "same1.png", 0)]
-    [InlineData("frame2", "frame2.png", -1)]
-    public void PathComparer_UsesNumericValuesAndOrdinalTieBreaks(string? left, string? right, int expected)
+    [InlineData("plates & figures/frame 2's.png")]
+    [InlineData("Résumé.png")]
+    public void Write_RejectsPartNamesOutsideTheSafeAlphabet(string unsafeName)
     {
-        Assert.Equal(expected, Math.Sign(ReviewArtifactPathComparer.Instance.Compare(left, right)));
-        Assert.Equal(-expected, Math.Sign(ReviewArtifactPathComparer.Instance.Compare(right, left)));
+        using var temp = new TempDirectory();
+        string output = temp.File("review");
+
+        Assert.Throws<InvalidOperationException>(() => Write(temp, output, 4, 1, [unsafeName]));
+
+        Assert.False(Directory.Exists(output));
     }
 
-    [Fact]
-    public void PathComparer_HandlesNumericRunsBeyondAnyIntegerWidth()
-    {
-        string lower = "frame" + new string('9', 10_000) + ".png";
-        string higher = "frame1" + new string('0', 10_000) + ".png";
-        string padded = "frame" + new string('0', 10_000) + "9.png";
-
-        Assert.True(ReviewArtifactPathComparer.Instance.Compare(lower, higher) < 0);
-        Assert.True(ReviewArtifactPathComparer.Instance.Compare(higher, lower) > 0);
-        Assert.True(ReviewArtifactPathComparer.Instance.Compare(padded, "frame10.png") < 0);
-        Assert.Equal(Math.Sign(string.CompareOrdinal(padded, "frame9.png")),
-            Math.Sign(ReviewArtifactPathComparer.Instance.Compare(padded, "frame9.png")));
-    }
-
-    [Theory]
-    [InlineData("en-US")]
-    [InlineData("tr-TR")]
-    [InlineData("zh-CN")]
-    public void PathComparer_RetainsOrdinalNonnumericOrderingAcrossCultures(string cultureName)
-    {
-        CultureInfo original = CultureInfo.CurrentCulture;
-        try
-        {
-            CultureInfo.CurrentCulture = CultureInfo.GetCultureInfo(cultureName);
-            string[] names = ["é.png", "a-b.png", "ab.png", "_note.png", "Z.png", "I.png", "ı.png", "frame٢.png"];
-
-            Assert.Equal(names.Order(StringComparer.Ordinal), names.Order(ReviewArtifactPathComparer.Instance));
-        }
-        finally
-        {
-            CultureInfo.CurrentCulture = original;
-        }
-    }
-
-    private static ReviewResult WriteArtifacts(TempDirectory temp, params string[] paths) =>
+    private static ReviewResult Write(
+        TempDirectory temp,
+        string output,
+        int maxItems,
+        int totalParts,
+        string[] files,
+        ProductReviewAssessment? assessment = null) =>
         ReviewEvidenceWriter.Write(
-            temp.File("source.test"), "test", "items", temp.File("review"), 32,
-            directory =>
+            temp.File("source.test"),
+            "test",
+            output,
+            maxItems,
+            visualInspectionRequired: true,
+            artifacts =>
             {
-                File.WriteAllText(Path.Combine(directory, "entry.html"), "<html></html>");
-                foreach (string path in paths)
+                foreach (string file in files)
                 {
-                    string full = Path.Combine(directory, path.Replace('/', Path.DirectorySeparatorChar));
-                    Directory.CreateDirectory(Path.GetDirectoryName(full)!);
-                    if (path.EndsWith(".png", StringComparison.Ordinal))
-                    {
-                        File.WriteAllBytes(full, PngHeader);
-                    }
-                    else
-                    {
-                        File.WriteAllText(full, "body{}");
-                    }
+                    artifacts.Write(file, static stream => stream.Write(PngHeader));
                 }
-                int pages = paths.Count(path => path.EndsWith(".png", StringComparison.Ordinal));
-                return new ProductReviewRenderOutcome("entry.html", "test", 1)
-                {
-                    ExpectedItems = pages,
-                    RenderedItems = pages,
-                    Complete = true,
-                };
-            }, LicenseState.NotApplicable, new ContractJsonSerializer([]));
+                return Manifest(totalParts, files);
+            },
+            _ => assessment ?? new ProductReviewAssessment(),
+            LicenseState.NotApplicable,
+            new ContractJsonSerializer([]));
+
+    private static ViewManifest Manifest(int totalParts, string[] files) => new()
+    {
+        View = "pages",
+        SourceFormat = "test",
+        SourceSizeBytes = 1,
+        TotalParts = totalParts,
+        Parts = files.Select(static (file, index) => new ViewPart
+        {
+            Id = "part-" + index,
+            Label = "Part " + (index + 1),
+            File = file,
+            Kind = ViewPartKinds.Image,
+            Width = 1,
+            Height = 1,
+        }).ToArray(),
+    };
 
     private static string[] GalleryPaths(ReviewResult result) =>
         Regex.Matches(File.ReadAllText(result.Index), "<img[^>]+src=\"([^\"]+)\"",
                 RegexOptions.CultureInvariant, TimeSpan.FromSeconds(1))
-            .Select(match => WebUtility.HtmlDecode(match.Groups[1].Value)).ToArray();
+            .Select(static match => WebUtility.HtmlDecode(match.Groups[1].Value)).ToArray();
 }
