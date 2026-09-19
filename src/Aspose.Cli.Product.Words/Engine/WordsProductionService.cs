@@ -155,6 +155,7 @@ internal sealed class WordsProductionService
         int dpi = request.Purpose == ViewPurpose.Display ? DisplayDpi : EvidenceDpi;
         int total = document.PageCount;
         int count = Math.Min(total, request.MaxParts);
+        IReadOnlyList<IReadOnlyList<ViewElement>> layout = WordsViewLayout.Collect(document, count);
         var parts = new List<ViewPart>(count);
         for (int page = 1; page <= count; page++)
         {
@@ -178,6 +179,7 @@ internal sealed class WordsProductionService
                 Kind = ViewPartKinds.Image,
                 Width = Pixels(info.WidthInPoints, CssDpi),
                 Height = Pixels(info.HeightInPoints, CssDpi),
+                Elements = layout[page - 1].Count == 0 ? null : layout[page - 1],
             });
         }
 

@@ -97,8 +97,9 @@ internal sealed class SlidesProductionService
             (long)Math.Ceiling(presentation.SlideSize.Size.Height * scale),
             count,
             dpi: null);
+        double cssPerPoint = cssWidth / presentation.SlideSize.Size.Width;
         int cssHeight = Math.Max(1, (int)Math.Round(
-            cssWidth * presentation.SlideSize.Size.Height / presentation.SlideSize.Size.Width,
+            presentation.SlideSize.Size.Height * cssPerPoint,
             MidpointRounding.AwayFromZero));
         var parts = new List<ViewPart>(count);
         for (int index = 0; index < count; index++)
@@ -120,6 +121,7 @@ internal sealed class SlidesProductionService
                 Width = cssWidth,
                 Height = cssHeight,
                 Hidden = slide.Hidden,
+                Elements = SlidesViewLayout.Elements(slide, cssPerPoint),
                 Properties = notes is null
                     ? null
                     : new Dictionary<string, string>(StringComparer.Ordinal) { ["notes"] = notes },
