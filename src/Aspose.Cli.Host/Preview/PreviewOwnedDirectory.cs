@@ -46,22 +46,9 @@ internal static class PreviewOwnedDirectory
             {
                 if (item is not DirectoryInfo directory
                     || !IsRealDirectory(directory.FullName)
-                    || (!string.Equals(
-                            directory.Name,
-                            "views",
-                            StringComparison.Ordinal)
-                        && !PreviewVersionStore.TryParseRevision(
-                            directory.Name,
-                            out _)))
-                {
-                    return false;
-                }
-
-                if (string.Equals(
+                    || !PreviewVersionStore.TryParseRevision(
                         directory.Name,
-                        "views",
-                        StringComparison.Ordinal)
-                    && !HasExpectedViewChildren(directory.FullName))
+                        out _))
                 {
                     return false;
                 }
@@ -77,22 +64,6 @@ internal static class PreviewOwnedDirectory
         {
             return false;
         }
-    }
-
-    private static bool HasExpectedViewChildren(string viewsRoot)
-    {
-        foreach (FileSystemInfo item in
-            new DirectoryInfo(viewsRoot).EnumerateFileSystemInfos())
-        {
-            if (item is not DirectoryInfo directory
-                || !PreviewViewPublicationStore.IsToken(directory.Name)
-                || !IsRealDirectory(directory.FullName))
-            {
-                return false;
-            }
-        }
-
-        return true;
     }
 
     private static bool HasBoundedRealTree(string root)

@@ -49,6 +49,7 @@ internal sealed class PreviewServiceController
                 StringComparison.Ordinal));
         if (existing is not null
             && string.Equals(existing.LicenseIdentity, licenseIdentity, StringComparison.Ordinal)
+            && string.Equals(existing.PresentationEffect, presentationEffect, StringComparison.Ordinal)
             && (port == 0 || port == existing.Port))
         {
             LocalServiceControlResponse status =
@@ -73,7 +74,8 @@ internal sealed class PreviewServiceController
         if (existing is not null)
         {
             // Validate the desired license before this method, then replace only the
-            // exact owned session. Reusing its assigned port keeps the existing URL.
+            // exact owned session when its license or presentation effect differs.
+            // Reusing its assigned port keeps the existing URL.
             port = port == 0 ? existing.Port : port;
             StopOwned(existing);
         }
@@ -118,18 +120,18 @@ internal sealed class PreviewServiceController
         foreach (PreviewSessionMarker marker in LiveMarkers()
                      .Where(marker => Matches(marker, id)))
         {
-            PreviewInteractiveState? interaction = ReadInteraction(marker);
-            if (interaction is null)
+            PreviewRevisionStatus? status = ReadStatus(marker);
+            if (status is null)
             {
                 warnings.Add(new Warning
                 {
                     Code = WarningCodes.PreviewStateUnavailable,
-                    Message = $"Preview session '{marker.Id}' did not return its interactive state.",
+                    Message = $"Preview session '{marker.Id}' did not report its current revision.",
                     Hint = "Retry 'aspose-cli preview status'; the preview remains available and stoppable.",
                     Location = $"preview/{marker.Id}",
                 });
             }
-            sessions.Add(ToState(marker, interaction));
+            sessions.Add(ToState(marker, status));
         }
         return new PreviewStatusState(sessions, warnings);
     }
@@ -322,7 +324,7 @@ internal sealed class PreviewServiceController
 
     private static PreviewSessionState ToState(
         PreviewSessionMarker marker,
-        PreviewInteractiveState? interaction = null) => new(
+        PreviewRevisionStatus? status = null) => new(
         marker.Id,
         marker.Product,
         marker.Url,
@@ -330,10 +332,9 @@ internal sealed class PreviewServiceController
         marker.File,
         marker.View,
         marker.Selector,
-        interaction?.Revision,
-        interaction?.State);
+        status?.Revision);
 
-    private static PreviewInteractiveState? ReadInteraction(
+    private static PreviewRevisionStatus? ReadStatus(
         PreviewSessionMarker marker)
     {
         try
@@ -343,7 +344,7 @@ internal sealed class PreviewServiceController
             if (response.Ok && response.Result is { } result)
             {
                 return result.Deserialize(
-                    PreviewLocalServiceJsonContext.Default.PreviewInteractiveState);
+                    PreviewLocalServiceJsonContext.Default.PreviewRevisionStatus);
             }
         }
         catch (Exception exception) when (

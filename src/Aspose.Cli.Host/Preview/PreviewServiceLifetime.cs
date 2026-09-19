@@ -12,7 +12,7 @@ internal sealed class PreviewServiceLifetime : IDisposable
         PreviewSessionStore store,
         PreviewSessionMarker marker,
         Action requestStop,
-        Func<PreviewInteractiveState> readStatus)
+        Func<PreviewRevisionStatus> readStatus)
     {
         _store = store;
         _marker = marker;

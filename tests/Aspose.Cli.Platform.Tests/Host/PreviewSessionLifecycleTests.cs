@@ -27,7 +27,6 @@ public sealed class PreviewSessionLifecycleTests
                 [ResourceBudgetKinds.InputBytes] = 1_048_576,
             });
         using var store = new PreviewVersionStore(temp.File("versions"));
-        using var views = ViewStore(temp.File("views"));
         using var hub = new LiveEventHub(TimeSpan.FromHours(1));
         using var session = new PreviewSession(
             input,
@@ -41,9 +40,7 @@ public sealed class PreviewSessionLifecycleTests
                         + 1));
                 return new PreviewRenderOutcome("oversized.bin", "text", 5);
             },
-            supportsState: false,
             store,
-            views,
             hub,
             TimeSpan.FromMilliseconds(25));
 
@@ -68,15 +65,12 @@ public sealed class PreviewSessionLifecycleTests
                 [ResourceBudgetKinds.InputBytes] = 1_048_576,
             });
         using var store = new PreviewVersionStore(temp.File("versions"));
-        using var views = ViewStore(temp.File("views"));
         using var hub = new LiveEventHub(TimeSpan.FromHours(1));
         using var session = new PreviewSession(
             input,
             budgets,
             context => Render(input, context.Artifacts),
-            supportsState: false,
             store,
-            views,
             hub,
             TimeSpan.FromMilliseconds(25));
 
@@ -111,7 +105,7 @@ public sealed class PreviewSessionLifecycleTests
     }
 
     [Fact]
-    public void ViewPublications_AreIndependentAndDocumentRefreshStaysStateless()
+    public void PublishedSnapshot_IsBoundToItsRevisionAcrossRefreshes()
     {
         using var temp = new TempDirectory();
         string input = temp.File("document.txt");
@@ -124,69 +118,12 @@ public sealed class PreviewSessionLifecycleTests
                 [ResourceBudgetKinds.InputBytes] = 1_048_576,
             });
         using var store = new PreviewVersionStore(temp.File("versions"));
-        using var views = ViewStore(temp.File("views"));
         using var hub = new LiveEventHub(TimeSpan.FromHours(1));
         using var session = new PreviewSession(
             input,
             budgets,
-            context => RenderState(input, context),
-            supportsState: true,
+            context => Render(input, context.Artifacts),
             store,
-            views,
-            hub,
-            TimeSpan.FromMilliseconds(25));
-
-        session.RenderInitial();
-        PreviewSnapshot document = session.Current!;
-        using PreviewViewPublicationStore.PreviewViewLease first =
-            session.PublishView(State("sheet-one"), document.Revision);
-        using PreviewViewPublicationStore.PreviewViewLease second =
-            session.PublishView(State("sheet-two"), document.Revision);
-
-        Assert.Same(document, session.Current);
-        Assert.NotEqual(first.Token, second.Token);
-        Assert.Contains("one:sheet-one", ReadEntry(first.Snapshot), StringComparison.Ordinal);
-        Assert.Contains("one:sheet-two", ReadEntry(second.Snapshot), StringComparison.Ordinal);
-        Assert.Throws<InvalidDataException>(() =>
-            session.PublishView(State("broken"), document.Revision));
-        Assert.Same(document, session.Current);
-
-        ReplaceAtomically(input, "two");
-        WaitUntil(() => session.Current?.Revision > document.Revision);
-        Assert.Contains("two:default", session.Current!.InlineHtml, StringComparison.Ordinal);
-        Assert.Contains("one:sheet-one", ReadEntry(first.Snapshot), StringComparison.Ordinal);
-        Assert.Contains("one:sheet-two", ReadEntry(second.Snapshot), StringComparison.Ordinal);
-        CliException stale = Assert.Throws<CliException>(() =>
-            session.PublishView(State("sheet-one"), document.Revision));
-        Assert.Equal(ErrorCodes.PreviewStateStale, stale.Code);
-        Assert.Equal(
-            session.Current.Revision,
-            stale.Details?["currentRevision"]?.GetValue<int>());
-    }
-
-    [Fact]
-    public void PublishedState_BindsSnapshotRevisionAndLastValidatedStateAtomically()
-    {
-        using var temp = new TempDirectory();
-        string input = temp.File("document.txt");
-        File.WriteAllText(input, "one");
-        using OperationDeadline deadline = OperationDeadline.Start(null);
-        var budgets = new ResourceBudgetLedger(
-            deadline,
-            new Dictionary<string, long>(StringComparer.Ordinal)
-            {
-                [ResourceBudgetKinds.InputBytes] = 1_048_576,
-            });
-        using var store = new PreviewVersionStore(temp.File("versions"));
-        using var views = ViewStore(temp.File("views"));
-        using var hub = new LiveEventHub(TimeSpan.FromHours(1));
-        using var session = new PreviewSession(
-            input,
-            budgets,
-            context => RenderState(input, context),
-            supportsState: true,
-            store,
-            views,
             hub,
             TimeSpan.FromMilliseconds(25));
 
@@ -195,40 +132,28 @@ public sealed class PreviewSessionLifecycleTests
         int initialRevision = published.Revision;
         Assert.Same(session.Current, published.Snapshot);
         Assert.Equal(published.Snapshot!.Revision, published.Revision);
-        Assert.Null(published.State);
-
-        using (session.PublishView(State("first"), initialRevision)) { }
-        using (session.PublishView(State("second"), initialRevision)) { }
-        published = session.Published;
-        Assert.Equal(initialRevision, published.Revision);
-        Assert.Same(session.Current, published.Snapshot);
-        Assert.Equal("second", published.State!.Payload.GetProperty("view").GetString());
-
-        Assert.Throws<InvalidDataException>(() =>
-            session.PublishView(State("broken"), initialRevision));
-        Assert.Equal("second", session.Published.State!.Payload.GetProperty("view").GetString());
+        Assert.Equal(initialRevision, session.Status.Revision);
 
         ReplaceAtomically(input, "two");
         WaitUntil(() => session.Current?.Revision > initialRevision);
         published = session.Published;
         Assert.Same(session.Current, published.Snapshot);
         Assert.Equal(published.Snapshot!.Revision, published.Revision);
-        Assert.Null(published.State);
+        Assert.Equal(published.Revision, session.Status.Revision);
     }
 
     [Fact]
-    public void ControlStatus_ReturnsOnlyTheAuthenticatedInMemoryState()
+    public void ControlStatus_ReturnsOnlyTheAuthenticatedRevision()
     {
         string id = Guid.NewGuid().ToString("N");
         string nonce = Guid.NewGuid().ToString("N");
         string token = Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant();
-        var expected = new PreviewInteractiveState(7, State("selected"));
         using var endpoint = new PreviewControlEndpoint(
             id,
             nonce,
             token,
             requestStop: static () => { },
-            readStatus: () => expected);
+            readStatus: static () => new PreviewRevisionStatus(7));
         endpoint.Start();
         var marker = new PreviewSessionMarker(
             id,
@@ -244,12 +169,11 @@ public sealed class PreviewSessionLifecycleTests
             Nonce: nonce);
 
         LocalServiceControlResponse response = PreviewControlEndpoint.Status(marker);
-        PreviewInteractiveState actual = response.Result!.Value.Deserialize(
-            PreviewLocalServiceJsonContext.Default.PreviewInteractiveState)!;
+        PreviewRevisionStatus actual = response.Result!.Value.Deserialize(
+            PreviewLocalServiceJsonContext.Default.PreviewRevisionStatus)!;
 
         Assert.True(response.Ok);
         Assert.Equal(7, actual.Revision);
-        Assert.Equal("selected", actual.State!.Payload.GetProperty("view").GetString());
         Assert.DoesNotContain(token, response.Result.Value.GetRawText(), StringComparison.Ordinal);
     }
 
@@ -269,7 +193,6 @@ public sealed class PreviewSessionLifecycleTests
                 [ResourceBudgetKinds.InputBytes] = 1_048_576,
             });
         using var store = new PreviewVersionStore(temp.File("versions"));
-        using var views = ViewStore(temp.File("views"));
         using var hub = new LiveEventHub(TimeSpan.FromHours(1));
         var session = new PreviewSession(
             input,
@@ -283,9 +206,7 @@ public sealed class PreviewSessionLifecycleTests
                 }
                 return Render(input, context.Artifacts);
             },
-            supportsState: false,
             store,
-            views,
             hub,
             TimeSpan.FromMilliseconds(10));
         session.RenderInitial();
@@ -323,7 +244,6 @@ public sealed class PreviewSessionLifecycleTests
             static (_, _) => false,
             static path => LocalFileCleanup.DeleteDirectory(path));
         var store = new PreviewVersionStore(storage.Root);
-        var views = ViewStore(Path.Combine(storage.Root, "views"));
         var hub = new LiveEventHub(TimeSpan.FromHours(1));
         var session = new PreviewSession(
             input,
@@ -337,9 +257,7 @@ public sealed class PreviewSessionLifecycleTests
                 }
                 return Render(input, context.Artifacts);
             },
-            supportsState: false,
             store,
-            views,
             hub,
             TimeSpan.FromMilliseconds(10));
         session.RenderInitial();
@@ -349,7 +267,6 @@ public sealed class PreviewSessionLifecycleTests
         PreviewResourceCleanup.Dispose(
             session,
             hub,
-            views,
             store,
             storage);
 
@@ -371,49 +288,6 @@ public sealed class PreviewSessionLifecycleTests
         artifacts.WriteText("index.html", $"<html><body>{content}</body></html>");
         return new PreviewRenderOutcome("index.html", "text", content.Length);
     }
-
-    private static PreviewRenderOutcome RenderState(
-        string input,
-        PreviewRenderContext context)
-    {
-        string view = context.State is null
-            ? "default"
-            : context.State.Payload.GetProperty("view").GetString()!;
-        if (view == "broken")
-        {
-            throw new InvalidDataException("The requested view cannot be rendered.");
-        }
-
-        string content = File.ReadAllText(input) + ":" + view;
-        context.Artifacts.WriteText(
-            "index.html",
-            $"<html><body>{content}</body></html>");
-        return new PreviewRenderOutcome("index.html", "text", content.Length);
-    }
-
-    private static string ReadEntry(PreviewSnapshot snapshot)
-    {
-        using Stream stream = snapshot.ArtifactManifest!
-            .TryOpenRead(snapshot.EntryFileName)!;
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
-    }
-
-    private static ProductPreviewPayload State(string view) => new()
-    {
-        ProductId = "test",
-        Kind = ProductPreviewPayloadKinds.State,
-        SchemaVersion = 2,
-        SchemaId = "v2/test/preview-state",
-        Payload = JsonSerializer.SerializeToElement(new { view }),
-    };
-
-    private static PreviewViewPublicationStore ViewStore(string path) => new(
-        path,
-        maximumEntries: 4,
-        maximumBytes: 1_048_576,
-        lifetime: TimeSpan.FromMinutes(5),
-        utcNow: static () => DateTimeOffset.UtcNow);
 
     private static void ReplaceAtomically(string target, string content)
     {

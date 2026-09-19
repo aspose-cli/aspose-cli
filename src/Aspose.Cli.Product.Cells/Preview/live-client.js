@@ -1019,6 +1019,7 @@
   // pulse-hold-fade life cycle.
   function drawFocusBox(table, bounds, light) {
     var box = overlayBox(table, bounds);
+    box.setAttribute('data-aspose-focus', light ? 'sheet' : 'range');
     box.style.zIndex = '2147483646';
     box.style.opacity = '0';
     box.style.border = '2px solid ' + FOCUS_COLOR;

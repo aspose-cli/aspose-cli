@@ -24,14 +24,11 @@ internal sealed record PreviewSessionState(
     string File,
     string View,
     ProductPreviewPayload? Selector,
-    int? Revision = null,
-    ProductPreviewPayload? State = null);
+    int? Revision = null);
 
-internal sealed record PreviewInteractiveState(
-    int Revision,
-    ProductPreviewPayload? State);
+/// <summary>What a live preview process reports through its control endpoint.</summary>
+internal sealed record PreviewRevisionStatus(int Revision);
 
 internal sealed record PreviewPublishedState(
     PreviewSnapshot? Snapshot,
-    int Revision,
-    ProductPreviewPayload? State);
+    int Revision);

@@ -9,10 +9,19 @@ aspose-cli preview book.xlsx --view workbook --output json
 The result contains `id`, `url`, `pid`, `file`, `view`, and `reused`. The
 session binds only to loopback, refreshes after safe saves, preserves the last
 good snapshot after a render failure, and never modifies the workbook.
-Reuse requires matching product, file, view, selector, font profile and
-validated license identity, with the same requested port or `--port 0`.
-For a matching session, a changed license identity or explicit port causes
-replacement; a rejected requested license leaves it untouched.
+Reuse requires matching product, file, view, selector, font profile,
+presentation effect and validated license identity, with the same requested
+port or `--port 0`. For a matching session, a changed license identity,
+presentation effect or explicit port causes replacement; a rejected requested
+license leaves it untouched.
+
+After each `cells edit --in-place`, the workbook view spotlights the edited
+ranges. For a live demonstration, add `--fx demo` so an animated cursor flies
+to each change before it is highlighted:
+
+```powershell
+aspose-cli preview book.xlsx --fx demo --open --output json
+```
 
 Inspect or stop sessions through the same root lifecycle:
 

@@ -208,14 +208,6 @@ internal static class CommonSchemaSamples
                 File = "D:/data/sample.bin",
                 View = "default",
                 Revision = 3,
-                State = new ProductPreviewPayload
-                {
-                    ProductId = "synthetic",
-                    Kind = ProductPreviewPayloadKinds.State,
-                    SchemaVersion = 2,
-                    SchemaId = "v2/synthetic/preview-state",
-                    Payload = JsonSerializer.SerializeToElement(new { address = "item/1" }),
-                },
             },
             new ProductPreviewSessionInfo
             {

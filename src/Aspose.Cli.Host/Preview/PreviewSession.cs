@@ -40,18 +40,15 @@ internal sealed class PreviewSession : IDisposable
     private readonly string _filePath;
     private readonly ResourceBudgetLedger _resourceBudgets;
     private readonly PreviewRenderer _renderer;
-    private readonly bool _supportsState;
     private readonly Action<ProductPreviewPayload>? _validateHint;
     private readonly PreviewVersionStore _store;
-    private readonly PreviewViewPublicationStore _viewPublications;
     private readonly LiveEventHub _hub;
     private readonly LocalServiceResourceLimits _limits;
     private readonly FileChangeMonitor _monitor;
     private readonly Thread _loop;
     private PreviewPublishedState _published = new(
         Snapshot: null,
-        Revision: 0,
-        State: null);
+        Revision: 0);
     private int _revision;
     private long _lastActivityAt;
     private bool _dirty;
@@ -66,18 +63,14 @@ internal sealed class PreviewSession : IDisposable
     /// <param name="filePath">The document file to monitor and render.</param>
     /// <param name="resourceBudgets">Shared admission and deadline ledger.</param>
     /// <param name="renderer">Renders the file through a bounded artifact sink.</param>
-    /// <param name="supportsState">Whether the renderer accepts interactive state.</param>
     /// <param name="store">Version-directory lifecycle; owned by the caller.</param>
-    /// <param name="viewPublications">Bounded immutable view lifecycle; owned by the caller.</param>
     /// <param name="hub">Event broadcaster; owned by the caller.</param>
     /// <param name="quietPeriod">Debounce window for file-change bursts.</param>
     public PreviewSession(
         string filePath,
         ResourceBudgetLedger resourceBudgets,
         PreviewRenderer renderer,
-        bool supportsState,
         PreviewVersionStore store,
-        PreviewViewPublicationStore viewPublications,
         LiveEventHub hub,
         TimeSpan quietPeriod,
         Action<ProductPreviewPayload>? validateHint = null)
@@ -86,16 +79,13 @@ internal sealed class PreviewSession : IDisposable
         ArgumentNullException.ThrowIfNull(resourceBudgets);
         ArgumentNullException.ThrowIfNull(renderer);
         ArgumentNullException.ThrowIfNull(store);
-        ArgumentNullException.ThrowIfNull(viewPublications);
         ArgumentNullException.ThrowIfNull(hub);
 
         _filePath = Path.GetFullPath(filePath);
         _resourceBudgets = resourceBudgets;
         _renderer = renderer;
-        _supportsState = supportsState;
         _validateHint = validateHint;
         _store = store;
-        _viewPublications = viewPublications;
         _hub = hub;
         _limits = LocalServiceResourceLimits.Resolve();
         _lastActivityAt = Environment.TickCount64;
@@ -109,23 +99,14 @@ internal sealed class PreviewSession : IDisposable
     /// <summary>The snapshot to serve right now; null until the first render completes.</summary>
     public PreviewSnapshot? Current => Published.Snapshot;
 
-    /// <summary>The immutable document snapshot and validated state published together.</summary>
+    /// <summary>The immutable document snapshot and the revision it belongs to.</summary>
     public PreviewPublishedState Published => Volatile.Read(ref _published);
 
     /// <summary>Number of the most recent render attempt; 0 before the first.</summary>
     public int Revision => Volatile.Read(ref _revision);
 
-    /// <summary>Last validated browser state for the current published document revision.</summary>
-    public PreviewInteractiveState InteractiveState
-    {
-        get
-        {
-            PreviewPublishedState published = Published;
-            return new PreviewInteractiveState(
-                published.Revision,
-                published.State);
-        }
-    }
+    /// <summary>The status this session reports to <c>preview status</c>.</summary>
+    public PreviewRevisionStatus Status => new(Published.Revision);
 
     /// <summary>
     /// One-line human-oriented notifications about render rounds (for example
@@ -162,69 +143,6 @@ internal sealed class PreviewSession : IDisposable
     /// exactly like a burst of file events.
     /// </summary>
     public void RenderNow() => QueueRender();
-
-    /// <summary>
-    /// Synchronously renders validated product-owned state into a new opaque,
-    /// immutable view publication. The publication never replaces
-    /// <see cref="Current"/> and is not reused by document refreshes.
-    /// </summary>
-    public PreviewViewPublicationStore.PreviewViewLease PublishView(
-        ProductPreviewPayload state,
-        int sourceRevision)
-    {
-        ArgumentNullException.ThrowIfNull(state);
-        ArgumentOutOfRangeException.ThrowIfNegative(sourceRevision);
-        ProductPreviewPayload immutableState = state with
-        {
-            Payload = state.Payload.Clone(),
-        };
-
-        lock (_renderLock)
-        {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            PreviewPublishedState published = Published;
-            int currentRevision = published.Revision;
-            if (sourceRevision != currentRevision)
-            {
-                throw new CliException(
-                    ErrorCodes.PreviewStateStale,
-                    $"Preview state revision {sourceRevision} is stale; the current revision is {currentRevision}.",
-                    hint: "Retry the same navigation intent against the current preview revision.",
-                    details: new JsonObject
-                    {
-                        ["requestedRevision"] = sourceRevision,
-                        ["currentRevision"] = currentRevision,
-                    });
-            }
-            if (!File.Exists(_filePath))
-            {
-                throw CliErrors.FileNotFound(_filePath);
-            }
-
-            FileUnlockProbe.WaitReadable(
-                _filePath,
-                UnlockAttempts,
-                UnlockInitialDelay);
-            _resourceBudgets.AdmitFile(_filePath);
-            RecordActivity();
-            if (!_supportsState)
-            {
-                throw new InvalidOperationException(
-                    "This product does not render interactive preview state.");
-            }
-            PreviewViewPublicationStore.PreviewViewLease publication =
-                _viewPublications.Publish(
-                    sourceRevision,
-                    sink => _renderer(new PreviewRenderContext(
-                        sink,
-                        immutableState)));
-            Volatile.Write(
-                ref _published,
-                published with { State = immutableState });
-            RecordActivity();
-            return publication;
-        }
-    }
 
     /// <summary>
     /// Blocks the calling thread until the session should end and reports
@@ -325,8 +243,8 @@ internal sealed class PreviewSession : IDisposable
         }
         lock (_renderLock)
         {
-            // Acquiring the render gate proves that document and state
-            // publication have both left their owned stores.
+            // Acquiring the render gate proves that document publication
+            // has left its owned store.
         }
     }
 
@@ -479,8 +397,7 @@ internal sealed class PreviewSession : IDisposable
                     ref _published,
                     new PreviewPublishedState(
                         snapshot,
-                        revision,
-                        State: null));
+                        revision));
             }
             catch
             {

@@ -11,7 +11,7 @@ internal sealed class PreviewControlEndpoint : IDisposable
 {
     private readonly LocalServiceControlEndpoint _endpoint;
     private readonly Action _requestStop;
-    private readonly Func<PreviewInteractiveState> _readStatus;
+    private readonly Func<PreviewRevisionStatus> _readStatus;
     private readonly LocalServiceControlServer _server;
 
     public PreviewControlEndpoint(
@@ -19,7 +19,7 @@ internal sealed class PreviewControlEndpoint : IDisposable
         string nonce,
         string token,
         Action requestStop,
-        Func<PreviewInteractiveState> readStatus)
+        Func<PreviewRevisionStatus> readStatus)
     {
         _endpoint = Endpoint(id);
         _requestStop = requestStop;
@@ -95,7 +95,7 @@ internal sealed class PreviewControlEndpoint : IDisposable
     private static LocalServiceControlResponse Response(
         bool ok,
         string? message = null,
-        PreviewInteractiveState? result = null) => new(
+        PreviewRevisionStatus? result = null) => new(
         0,
         string.Empty,
         string.Empty,
@@ -107,7 +107,7 @@ internal sealed class PreviewControlEndpoint : IDisposable
             ? null
             : JsonSerializer.SerializeToElement(
                 result,
-                PreviewLocalServiceJsonContext.Default.PreviewInteractiveState));
+                PreviewLocalServiceJsonContext.Default.PreviewRevisionStatus));
 
     private static LocalServiceControlEndpoint Endpoint(
         string id) => new("preview", id);

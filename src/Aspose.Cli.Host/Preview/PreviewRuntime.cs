@@ -42,7 +42,6 @@ internal sealed class MountedPreview : IDisposable
         PreviewSessionStorage storage,
         PreviewSession session,
         PreviewVersionStore store,
-        PreviewViewPublicationStore viewPublications,
         LiveEventHub hub,
         LicenseState license,
         string view,
@@ -54,7 +53,6 @@ internal sealed class MountedPreview : IDisposable
         Storage = storage;
         Session = session;
         Store = store;
-        ViewPublications = viewPublications;
         Hub = hub;
         License = license;
         View = view;
@@ -67,7 +65,6 @@ internal sealed class MountedPreview : IDisposable
     public PreviewSessionStorage Storage { get; }
     public PreviewSession Session { get; }
     public PreviewVersionStore Store { get; }
-    public PreviewViewPublicationStore ViewPublications { get; }
     public LiveEventHub Hub { get; }
     public LicenseState License { get; }
     public string View { get; }
@@ -90,7 +87,6 @@ internal sealed class MountedPreview : IDisposable
         PreviewResourceCleanup.Dispose(
             Session,
             Hub,
-            ViewPublications,
             Store,
             Storage,
             _inputLease);
@@ -106,7 +102,6 @@ internal static class PreviewResourceCleanup
     public static void Dispose(
         PreviewSession? session,
         LiveEventHub? hub,
-        PreviewViewPublicationStore? viewPublications,
         PreviewVersionStore? store,
         PreviewSessionStorage? storage,
         IDisposable? inputLease = null)
@@ -120,7 +115,7 @@ internal static class PreviewResourceCleanup
                 : session.WaitUntilStopped,
             () =>
             {
-                DisposeOwnedResources(hub, viewPublications, store, storage);
+                DisposeOwnedResources(hub, store, storage);
                 inputLease?.Dispose();
             },
             "aspose-preview-render-cleanup",
@@ -129,12 +124,10 @@ internal static class PreviewResourceCleanup
 
     private static void DisposeOwnedResources(
         LiveEventHub? hub,
-        PreviewViewPublicationStore? viewPublications,
         PreviewVersionStore? store,
         PreviewSessionStorage? storage)
     {
         DisposeOne(hub);
-        DisposeOne(viewPublications);
         DisposeOne(store);
         DisposeOne(storage);
     }
@@ -319,7 +312,6 @@ internal static class PreviewRuntime
     {
         PreviewSessionStorage? sessionStorage = null;
         PreviewVersionStore? store = null;
-        PreviewViewPublicationStore? viewPublications = null;
         LiveEventHub? hub = null;
         PreviewSession? session = null;
 
@@ -333,11 +325,7 @@ internal static class PreviewRuntime
             sessionStorage = PreviewSessionStorage.Create();
             string sessionRoot = sessionStorage.Root;
             store = new PreviewVersionStore(sessionRoot);
-            viewPublications = new PreviewViewPublicationStore(
-                Path.Combine(sessionRoot, "views"),
-                LocalServiceResourceLimits.Resolve());
             hub = new LiveEventHub();
-            bool hasStateRenderer = preview.SupportsState;
             session = new PreviewSession(
                 path,
                 options.ResourceBudgets,
@@ -345,9 +333,7 @@ internal static class PreviewRuntime
                     options.Binding,
                     path,
                     options.Request),
-                hasStateRenderer,
                 store,
-                viewPublications,
                 hub,
                 QuietPeriod,
                 target => preview.ValidatePayload(
@@ -361,16 +347,6 @@ internal static class PreviewRuntime
             PreviewRenderOutcome outcome = session.RenderInitial();
             LicenseState license = options.Binding.LicenseGate.EnsureApplied();
             string scriptNonce = LocalHttpRequestSecurity.RandomToken();
-            string stateStorageKey = LocalHttpRequestSecurity.RandomToken();
-            PreviewViewStateEndpoint? stateEndpoint =
-                hasStateRenderer
-                    ? new PreviewViewStateEndpoint(
-                        state => preview.ValidatePayload(
-                            state,
-                            ProductPreviewPayloadKinds.State),
-                        session.PublishView,
-                        viewPublications)
-                    : null;
             var requests = new PreviewRequestPipeline(
                 new PreviewRequestOptions(
                     options.Request.View,
@@ -379,9 +355,7 @@ internal static class PreviewRuntime
                     hub,
                     csrf,
                     scriptNonce,
-                    stateStorageKey,
                     RefreshRequested: session.RenderNow,
-                    StateEndpoint: stateEndpoint,
                     ShellStylesheet: presentation.ShellStylesheet,
                     DocumentName: options.DisplayName ?? Path.GetFileName(path),
                     EvalMode: license == LicenseState.Evaluation,
@@ -392,7 +366,6 @@ internal static class PreviewRuntime
                 sessionStorage,
                 session,
                 store,
-                viewPublications,
                 hub,
                 license,
                 options.Request.View,
@@ -405,7 +378,6 @@ internal static class PreviewRuntime
             PreviewResourceCleanup.Dispose(
                 session,
                 hub,
-                viewPublications,
                 store,
                 sessionStorage,
                 inputLease);

@@ -10,7 +10,6 @@ public static class ProductPreviewPayloadKinds
 {
     public const string Selector = "selector";
     public const string Hint = "hint";
-    public const string State = "state";
 }
 
 /// <summary>
@@ -23,7 +22,7 @@ public sealed record ProductPreviewPayload
     /// <summary>Product id that owns the payload schema and semantics.</summary>
     public required string ProductId { get; init; }
 
-    /// <summary>Payload role, such as selector, hint, or state.</summary>
+    /// <summary>Payload role: selector or hint.</summary>
     public required string Kind { get; init; }
 
     /// <summary>Positive product payload contract version.</summary>

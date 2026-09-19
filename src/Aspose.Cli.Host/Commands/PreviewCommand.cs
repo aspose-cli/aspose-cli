@@ -175,7 +175,8 @@ internal static class PreviewCommand
             id,
             token,
             ResultEnvelopeMetadata.From(result),
-            licenseIdentity);
+            licenseIdentity,
+            parse.GetValue(effect));
         TimeSpan idle = service is null
             ? PreviewRuntime.ResolveIdleWindow()
             : Timeout.InfiniteTimeSpan;
@@ -241,7 +242,7 @@ internal static class PreviewCommand
                 Password: symbols.Password.Resolve(
                     parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
                 FontProfile: fontProfile.IsAmbient ? null : fontProfile),
-            presentationEffect: null,
+            presentationEffect: parse.GetValue(symbols.Effect),
             openBrowser: parse.GetValue(symbols.Open));
         return ToResult(state);
     }
@@ -319,7 +320,6 @@ internal static class PreviewCommand
         View = state.View,
         Selector = state.Selector,
         Revision = state.Revision,
-        State = state.State,
     };
 
     private sealed record StartSymbols(
@@ -327,6 +327,7 @@ internal static class PreviewCommand
         Option<string?> Product,
         Option<string> View,
         Option<bool> Open,
+        Option<string?> Effect,
         PasswordOptions Password,
         FontDirectoryOptions Fonts)
     {
@@ -360,11 +361,16 @@ internal static class PreviewCommand
                     .Order(StringComparer.Ordinal)
                     .ToArray());
             var open = new Option<bool>("--open") { Description = "Open the preview URL in the default browser." };
+            var effect = new Option<string?>("--fx")
+            {
+                Description = "Presentation effect for live demonstrations, validated by the product (for example 'demo').",
+            }.WithInput(InputKind.None);
             return new StartSymbols(
                 port,
                 product,
                 view,
                 open,
+                effect,
                 new PasswordOptions("--password", passwordTarget),
                 new FontDirectoryOptions());
         }
@@ -375,6 +381,7 @@ internal static class PreviewCommand
             command.Options.Add(Product);
             command.Options.Add(View);
             command.Options.Add(Open);
+            command.Options.Add(Effect);
             Password.AddTo(command);
             Fonts.AddTo(command);
         }

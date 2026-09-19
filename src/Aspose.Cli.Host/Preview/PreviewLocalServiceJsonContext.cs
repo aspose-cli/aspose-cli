@@ -8,6 +8,6 @@ namespace Aspose.Cli.Host.Preview;
     DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(PreviewSessionMarker))]
 [JsonSerializable(typeof(PreviewSessionSecrets))]
-[JsonSerializable(typeof(PreviewInteractiveState))]
+[JsonSerializable(typeof(PreviewRevisionStatus))]
 internal sealed partial class PreviewLocalServiceJsonContext
     : JsonSerializerContext;

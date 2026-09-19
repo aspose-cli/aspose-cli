@@ -32,8 +32,7 @@
         "file": { "type": "string" },
         "view": { "type": "string", "minLength": 1 },
         "selector": { "$ref": "#/$defs/productPayload" },
-        "revision": { "type": "integer", "minimum": 1 },
-        "state": { "$ref": "#/$defs/statePayload" }
+        "revision": { "type": "integer", "minimum": 1 }
       },
       "additionalProperties": false
     },
@@ -43,18 +42,6 @@
       "properties": {
         "productId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
         "kind": { "const": "selector" },
-        "schemaVersion": { "const": 2 },
-        "schemaId": { "type": "string", "pattern": "^v2/[a-z0-9][a-z0-9-]*/[a-z][a-z0-9-]*$" },
-        "payload": {}
-      },
-      "additionalProperties": false
-    },
-    "statePayload": {
-      "type": "object",
-      "required": ["productId", "kind", "schemaVersion", "schemaId", "payload"],
-      "properties": {
-        "productId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-        "kind": { "const": "state" },
         "schemaVersion": { "const": 2 },
         "schemaId": { "type": "string", "pattern": "^v2/[a-z0-9][a-z0-9-]*/[a-z][a-z0-9-]*$" },
         "payload": {}

@@ -1,5 +1,3 @@
-using Aspose.Cli.Sdk.Preview;
-
 namespace Aspose.Cli.Host.Preview;
 
 /// <summary>
@@ -22,9 +20,6 @@ namespace Aspose.Cli.Host.Preview;
 /// Per-session CSP nonce applied only to the Host-owned inline metadata
 /// bootstrap. Product-authored scripts remain blocked.
 /// </param>
-/// <param name="StateStorageKey">
-/// Opaque per-document identifier used only to isolate browser-tab state.
-/// </param>
 /// <param name="RefreshRequested">
 /// Invoked when a client requests a manual re-render via
 /// <c>POST /live/refresh</c>; null leaves that endpoint a 404.
@@ -34,17 +29,12 @@ namespace Aspose.Cli.Host.Preview;
 /// null serves no stylesheet (the route answers 404 and no link is injected).
 /// </param>
 /// <param name="DocumentName">
-/// File name of the watched document, published in the page metadata and used
-/// as the image view's page title; null publishes <c>"file":null</c> and
-/// falls back to a generic title.
+/// File name of the watched document, published in the page metadata; null
+/// publishes <c>"file":null</c>.
 /// </param>
 /// <param name="EvalMode">
 /// Whether the engine runs under an evaluation license; published in the
 /// page metadata so clients can surface the watermark state.
-/// </param>
-/// <param name="StateEndpoint">
-/// Validates and synchronously publishes product-owned view state received
-/// through <c>POST /live/state</c>; null leaves that endpoint unavailable.
 /// </param>
 /// <param name="DocumentPath">
 /// Route that serves the composed document. Standalone previews use the
@@ -61,23 +51,12 @@ internal sealed record PreviewRequestOptions(
     LiveEventHub Hub,
     string CsrfToken,
     string ScriptNonce,
-    string StateStorageKey,
     Action? RefreshRequested = null,
     string? ShellStylesheet = null,
     string? DocumentName = null,
     bool EvalMode = false,
     string DocumentPath = "/",
-    bool SameOriginMount = false,
-    PreviewViewStateEndpoint? StateEndpoint = null);
-
-/// <summary>
-/// Product-neutral wiring for state validation, synchronous immutable view
-/// publication, and subsequent opaque-token routing.
-/// </summary>
-internal sealed record PreviewViewStateEndpoint(
-    Action<ProductPreviewPayload> Validate,
-    Func<ProductPreviewPayload, int, PreviewViewPublicationStore.PreviewViewLease> Publish,
-    PreviewViewPublicationStore Publications);
+    bool SameOriginMount = false);
 
 /// <summary>
 /// Standalone-listener configuration kept separate from the mountable preview

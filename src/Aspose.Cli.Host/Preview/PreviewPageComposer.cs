@@ -1,10 +1,7 @@
 using System.Globalization;
-using System.Net;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.RegularExpressions;
-
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Host.Preview;
 
@@ -20,9 +17,8 @@ namespace Aspose.Cli.Host.Preview;
 /// A plain token, embedded in JSON without escaping.
 /// </param>
 /// <param name="DocumentName">
-/// File name of the watched document, published in the page metadata and used
-/// as the image shell's title; null publishes <c>"file":null</c> and falls
-/// back to a generic title.
+/// File name of the watched document, published in the page metadata; null
+/// publishes <c>"file":null</c>.
 /// </param>
 /// <param name="EvalMode">
 /// Whether the engine runs under an evaluation license; published in the
@@ -38,17 +34,13 @@ namespace Aspose.Cli.Host.Preview;
 /// <param name="DocumentPath">
 /// Same-origin route from which the live client refreshes the document.
 /// </param>
-/// <param name="StateStorageKey">
-/// Opaque per-document key that prevents state from crossing App documents.
-/// </param>
 internal sealed record PreviewPageShell(
     string View,
     string? DocumentName,
     bool EvalMode,
     bool StylesheetAvailable,
     string ScriptNonce,
-    string DocumentPath,
-    string StateStorageKey);
+    string DocumentPath);
 
 /// <summary>
 /// Composes the HTML pages the preview server serves: it injects the
@@ -56,14 +48,10 @@ internal sealed record PreviewPageShell(
 /// (when one is served), one inline script publishing the page metadata as
 /// <c>window.__asposePreview</c> (whose revision lets the client detect it is
 /// stale against the <c>hello</c> event) and one reference to
-/// <c>/live/client.js</c>. It also builds the self-contained shell page of
-/// the image view.
+/// <c>/live/client.js</c>.
 /// </summary>
 internal static class PreviewPageComposer
 {
-    /// <summary>The image shell's title when the session carries no document name.</summary>
-    private const string FallbackTitle = "Preview";
-
     /// <summary>
     /// Injects the live-client bootstrap before the last closing body tag,
     /// matched case-insensitively; a document without one gets the bootstrap
@@ -82,48 +70,6 @@ internal static class PreviewPageComposer
         string bootstrap = ComposeBootstrap(revision, shell);
         int index = html.LastIndexOf("</body>", StringComparison.OrdinalIgnoreCase);
         return index < 0 ? html + bootstrap : html.Insert(index, bootstrap);
-    }
-
-    /// <summary>
-    /// Builds the shell page of the image view: a minimal, self-contained
-    /// page, titled after the watched document, on a dark neutral backdrop
-    /// that centers the current frame, loaded through a revision-stamped
-    /// <c>/frame.png</c> URL so every revision busts the browser cache. The
-    /// live-client bootstrap is injected exactly as for rendered documents,
-    /// so the client's standard fetch-and-swap refresh replaces the image
-    /// element with one whose <c>rev</c> parameter has already moved on. No
-    /// image-specific client logic is needed.
-    /// </summary>
-    /// <param name="revision">The snapshot revision the shell embeds; 0 before the first render.</param>
-    /// <param name="shell">
-    /// The session-fixed page-shell inputs; the document name becomes the
-    /// page title (HTML-encoded here), falling back to a generic one.
-    /// </param>
-    /// <param name="frameUrl">
-    /// Optional immutable view asset URL; null uses the current document's
-    /// revision-stamped frame route.
-    /// </param>
-    public static string ImageShell(
-        int revision,
-        PreviewPageShell shell,
-        string? frameUrl = null)
-    {
-        ArgumentNullException.ThrowIfNull(shell);
-
-        string revisionToken = revision.ToString(CultureInfo.InvariantCulture);
-        string source = frameUrl
-            ?? "/frame.png?rev=" + revisionToken;
-        // The dark neutral backdrop keeps white document frames readable
-        // without competing with them; the frame keeps its natural size where
-        // it fits and shrinks to the viewport where it does not.
-        string page =
-            "<html><head><meta charset=\"utf-8\"><title>"
-            + WebUtility.HtmlEncode(shell.DocumentName ?? FallbackTitle) + "</title>"
-            + "<style>html,body{margin:0;min-height:100%;background:#1e1e1e}"
-            + "body{display:flex;align-items:center;justify-content:center}</style></head>"
-            + "<body><img src=\"" + HtmlEncoder.Default.Encode(source) + "\" alt=\"Rendered document frame\""
-            + " style=\"max-width:100%;height:auto\"></body></html>";
-        return InjectLiveClient(page, revision, shell);
     }
 
     /// <summary>
@@ -160,9 +106,6 @@ internal static class PreviewPageComposer
         bootstrap.Append(",\"eval\":").Append(shell.EvalMode ? "true" : "false");
         bootstrap.Append(",\"documentPath\":\"")
             .Append(JavaScriptEncoder.Default.Encode(shell.DocumentPath))
-            .Append('"');
-        bootstrap.Append(",\"stateStorageKey\":\"")
-            .Append(JavaScriptEncoder.Default.Encode(shell.StateStorageKey))
             .Append('"');
         bootstrap.Append("};</script><script nonce=\"")
             .Append(HtmlEncoder.Default.Encode(shell.ScriptNonce))

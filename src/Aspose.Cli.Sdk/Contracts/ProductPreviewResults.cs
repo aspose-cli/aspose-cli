@@ -78,7 +78,4 @@ public sealed record ProductPreviewSessionInfo
 
     /// <summary>Current published document revision, when the live process reported it.</summary>
     public int? Revision { get; init; }
-
-    /// <summary>Last validated product-owned browser state for <see cref="Revision"/>.</summary>
-    public ProductPreviewPayload? State { get; init; }
 }

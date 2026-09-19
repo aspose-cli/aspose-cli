@@ -120,7 +120,7 @@ internal sealed class BoundedPreviewArtifactSink : IPreviewArtifactSink
         if (fileLimit < 0)
         {
             throw CliErrors.PreviewBudgetExceeded(
-                "view publication bytes",
+                "view snapshot bytes",
                 _totalBytes,
                 _limits.MaximumSnapshotBytes);
         }

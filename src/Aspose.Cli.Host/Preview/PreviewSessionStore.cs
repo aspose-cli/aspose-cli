@@ -23,7 +23,8 @@ internal sealed record PreviewSessionMarker(
     int Version = 1,
     ProductPreviewPayload? Selector = null,
     string? FontProfileFingerprint = null,
-    string? LicenseIdentity = null);
+    string? LicenseIdentity = null,
+    string? PresentationEffect = null);
 
 internal sealed record PreviewSessionSecrets(
     string Token);

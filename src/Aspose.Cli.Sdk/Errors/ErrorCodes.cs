@@ -85,15 +85,6 @@ public static partial class ErrorCodes
     public static readonly ErrorCode LayoutNotFound = new("LAYOUT_NOT_FOUND", ExitCode.ValidationError);
     public static readonly ErrorCode PreviewBudgetExceeded =
         new("PREVIEW_BUDGET_EXCEEDED", ExitCode.ValidationError);
-    /// <summary>A preview state mutation omitted its required document revision.</summary>
-    public static readonly ErrorCode PreviewRevisionRequired =
-        new("PREVIEW_REVISION_REQUIRED", ExitCode.ValidationError);
-    /// <summary>A preview state request was based on an older document revision.</summary>
-    public static readonly ErrorCode PreviewStateStale =
-        new("PREVIEW_STATE_STALE", ExitCode.ValidationError);
-    /// <summary>A revision-scoped product address no longer resolves.</summary>
-    public static readonly ErrorCode PreviewTargetStale =
-        new("PREVIEW_TARGET_STALE", ExitCode.ValidationError);
     public static readonly ErrorCode UploadBudgetExceeded =
         new("UPLOAD_BUDGET_EXCEEDED", ExitCode.ValidationError);
     public static readonly ErrorCode RectInvalid = new("RECT_INVALID", ExitCode.ValidationError);
@@ -211,9 +202,6 @@ public static partial class ErrorCodes
         LayerNotFound,
         LayoutNotFound,
         PreviewBudgetExceeded,
-        PreviewRevisionRequired,
-        PreviewStateStale,
-        PreviewTargetStale,
         UploadBudgetExceeded,
         RectInvalid,
         RegionInvalid,

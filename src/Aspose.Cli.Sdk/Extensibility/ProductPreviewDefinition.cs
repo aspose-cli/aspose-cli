@@ -27,7 +27,7 @@ public interface IProductPreviewAdapter<TPort>
     /// <summary>Supported views with display metadata.</summary>
     IReadOnlyList<ProductPreviewView> ViewDefinitions { get; }
 
-    /// <summary>Product-owned selector, hint, and state payload contracts.</summary>
+    /// <summary>Product-owned selector and hint payload contracts.</summary>
     IReadOnlyList<ProductPreviewPayloadContract> PayloadContracts { get; }
 
     /// <summary>Creates a renderer backed by only this product's port.</summary>
@@ -101,13 +101,6 @@ public sealed class ProductPreviewDefinition
 
     /// <summary>Versioned product-owned payload contracts.</summary>
     public IReadOnlyList<ProductPreviewPayloadContract> PayloadContracts { get; }
-
-    /// <summary>Whether this product accepts interactive state publications.</summary>
-    public bool SupportsState => PayloadContracts.Any(static contract =>
-        string.Equals(
-            contract.Kind,
-            ProductPreviewPayloadKinds.State,
-            StringComparison.Ordinal));
 
     /// <summary>Creates a renderer from the matching activated binding.</summary>
     public PreviewRenderer CreateRenderer(
@@ -218,7 +211,7 @@ public sealed class ProductPreviewDefinition
             throw CliErrors.OptionInvalid(
                 "preview payload",
                 $"the payload is {payload.Utf8Bytes} bytes; the limit is {contract.MaxBytes}",
-                "Reduce the selector, hint, or state payload.");
+                "Reduce the selector or hint payload.");
         }
         BoundedJsonValidation.ValidateNoDuplicateProperties(
             payload.Payload,

@@ -28,7 +28,8 @@ internal static class PreviewBackgroundService
         string? id,
         string? token,
         ResultEnvelopeMetadata metadata,
-        string licenseIdentity)
+        string licenseIdentity,
+        string? presentationEffect)
     {
         ValidateIdentity(id, token);
         if (id is null || token is null)
@@ -59,11 +60,12 @@ internal static class PreviewBackgroundService
             Selector: selector,
             FontProfileFingerprint:
                 ServiceStartSecretChannel.Current?.FontProfile?.Fingerprint,
-            LicenseIdentity: licenseIdentity);
+            LicenseIdentity: licenseIdentity,
+            PresentationEffect: presentationEffect);
         return new PreviewServiceLifetime(
             new PreviewSessionStore(),
             marker,
             runtime.Session.Dispose,
-            () => runtime.Session.InteractiveState);
+            () => runtime.Session.Status);
     }
 }

@@ -9,22 +9,13 @@ internal static class PreviewRequestBody
     private static readonly TimeSpan ReadTimeout =
         TimeSpan.FromSeconds(5);
 
-    public static int Drain(HttpListenerRequest request)
-    {
-        int status = Read(request, out _);
-        return status;
-    }
-
     /// <summary>
-    /// Reads a request body within the shared preview size and time limits.
+    /// Discards a request body within the shared preview size and time limits.
     /// A zero status indicates success; otherwise the value is an HTTP status.
     /// </summary>
-    public static int Read(
-        HttpListenerRequest request,
-        out byte[] body)
+    public static int Drain(HttpListenerRequest request)
     {
         ArgumentNullException.ThrowIfNull(request);
-        body = [];
         if (request.ContentLength64 > MaximumBytes)
         {
             return 413;
@@ -34,10 +25,6 @@ internal static class PreviewRequestBody
             + (long)ReadTimeout.TotalMilliseconds;
         byte[] buffer = new byte[8192];
         long total = 0;
-        using var output = new MemoryStream(
-            request.ContentLength64 is > 0 and <= MaximumBytes
-                ? (int)request.ContentLength64
-                : 0);
         while (true)
         {
             long remaining = deadline - Environment.TickCount64;
@@ -56,7 +43,6 @@ internal static class PreviewRequestBody
             }
             if (read.Result == 0)
             {
-                body = output.ToArray();
                 return 0;
             }
 
@@ -65,7 +51,6 @@ internal static class PreviewRequestBody
             {
                 return 413;
             }
-            output.Write(buffer, 0, read.Result);
         }
     }
 }
