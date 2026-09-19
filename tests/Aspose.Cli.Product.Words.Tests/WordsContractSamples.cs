@@ -124,9 +124,6 @@ internal static class WordsContractSamples
         Verification = new WordsVerification
         {
             Ok = true,
-            VisualReviewRequired = false,
-            ReadBackBlocks = [1],
-            Renders = [],
             Issues = [],
         },
         License = Licensed,

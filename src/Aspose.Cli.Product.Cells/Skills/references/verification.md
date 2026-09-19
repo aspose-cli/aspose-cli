@@ -20,17 +20,14 @@ in order; stop and fix at the first finding, then re-run the tier.
 ## Built-in edit verification
 
 `cells edit --verify` compares a private input snapshot with the exact staged
-output, scans saved formula errors, and stages visible-sheet images before the
-output set is published. It uses the same candidate with `--timeout` and MCP.
-The evidence directory defaults to `.aspose-verify/<output-name>` beside the
-output. A custom `--verify-dir` must share its filesystem and a writable common
-transaction directory with the document.
+output and scans saved formula errors before the output is published. It uses
+the same candidate with `--timeout` and MCP.
 
-Inspect `verification.ok`, `issues` and the images. Semantic findings can commit
-with exit 8; a reopen error, rendering execution error, budget failure or
-cancellation aborts publication. Empty sheets are reported as missing visual
-evidence. `--verify` requires final recalculation and cannot accompany
-`--dry-run` or `--no-recalc`.
+Inspect `verification.ok`, `directChanges`, `formulaResultChanges`,
+`otherChanges`, `formulaErrors` and `issues`. Semantic findings commit with
+exit 8; a reopen error, budget failure or cancellation aborts publication.
+`--verify` requires final recalculation and cannot accompany `--dry-run` or
+`--no-recalc`. It produces no images; the visual pass is Tier 2.
 
 ## Tier 1 — values
 
@@ -68,29 +65,31 @@ render can.
 How:
 
 ```
-aspose-cli cells render book.xlsx --all-sheets --out check.png --dpi 192
+aspose-cli review book.xlsx --out book.review-1 --output json
 aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out zoom.png --dpi 192
 ```
 
-- One `--all-sheets` render per iteration is the whole-workbook look:
-  one PNG per visible sheet (`check.Data.png`, `check.Summary.png`, …),
-  and you LOOK at every one — a defect on a sheet you did not render is
-  a defect you ship. Hidden sheets are not rendered; an empty or
-  unrenderable sheet is skipped and named in a `SHEETS_SKIPPED` warning,
-  which you read instead of assuming a file exists per sheet.
+- One `review` per iteration is the whole-workbook look: one 192 DPI image
+  per visible sheet plus layout findings in `review.json`, and you LOOK at
+  every image — a defect on a sheet you did not open is a defect you ship.
+  Read `coverage.complete`; hidden sheets are not reviewed. Use a new
+  `--out` directory for each round.
 - Big files: window the sheets in question with `--sheet`/`--range`
   (e.g. `--range A1:G20`) instead of rendering thousands of rows — the
   spot check, and the strict-width view (below).
-- Write to a temp/scratch directory, not the user's folder.
-- DPI: keep the default 192. Latin-only content can drop to 96-150 for a
-  smaller image; anything non-Latin needs >= 150 and is safest at 192 —
-  below that the glyphs change identity (next section).
+- Write review directories and zoom renders to a scratch directory, not the
+  user's folder.
+- DPI: review always uses 192. For zoom renders keep the default 192;
+  Latin-only content can drop to 96-150 for a smaller image, but anything
+  non-Latin needs >= 150 — below that the glyphs change identity (next
+  section).
 - Then OPEN the PNGs with your image-reading tool and actually look.
 - For a deliverable a human opens, the look includes the design self-grade:
   the finishing-pass checklist in `aspose-cli docs design-system` (title band,
   header contrast, number discipline, chart hygiene). This tier owns the
-  render mechanics — DPI floors, the strict `--range` view, `--all-sheets` —
-  and that checklist owns the design bar; fix and re-render until both pass.
+  render mechanics — DPI floors, the strict `--range` view — and that
+  checklist owns the design bar; fix and review again until both pass, for at
+  most three rounds.
 
 ### Non-Latin text: never look below 150 DPI
 
@@ -141,8 +140,8 @@ under `--range`, and a plausible-looking `Headcount plan` in the full-sheet
 render. A `convert --to pdf` hides it the same way.
 
 Judge width, truncation and `###` from a `--range` render of the block in
-question. Keep the full-sheet render for layout, chart placement and page
-flow.
+question. Keep the review's full-sheet images for layout, chart placement
+and page flow.
 
 Checklist while looking:
 
@@ -186,10 +185,9 @@ sweep formula text too.
 
 ## Tier 4 — the session diff
 
-For an edit, `--verify` performs the value/formula diff, workbook-wide formula
-scan, and 192 DPI visible-sheet renders in one call. You still must open the
-returned images. Use the stable backup below for the final multi-edit session
-inventory.
+For an edit, `--verify` performs the value/formula diff and the workbook-wide
+formula scan in one call. Use the stable backup below for the final
+multi-edit session inventory.
 
 When you edited a user's file under the backup protocol (SKILL.md
 section 5), the backup is the pre-session state — diff against it:
@@ -224,8 +222,8 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output json
 ```
 [ ] Values: every changed range read back; all reported numbers came
     from the engine, not from your own arithmetic
-[ ] Visual: rendered to PNG and actually looked, if anything visual
-    changed or a human will open the file — no clipping, no overlap,
+[ ] Visual: reviewed and actually opened every sheet image, if anything
+    visual changed or a human will open the file — no clipping, no overlap,
     charts plausible, layout intact
 [ ] Semantic: cells inspect --detail errors -> workbook.formulaErrors is empty
 [ ] Placeholders: search finds no TBD / TODO / {{...}} / xxx

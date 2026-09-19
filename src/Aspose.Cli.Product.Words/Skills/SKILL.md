@@ -1,69 +1,95 @@
 ---
 name: aspose-cli-words
-description: High-fidelity Word-processing automation with bounded reading, atomic editing, rendering, comparison, extraction, and verification.
+description: Create, inspect, edit, compare, convert and review Word documents with the local Aspose CLI. Markdown or text content is poured into a template's styles, edits are atomic batches with semantic verification, and review renders every page for visual checks.
 ---
 
 # Aspose Words
 
-Use `aspose-cli words` for DOC/DOCX, RTF, ODT, HTML, Markdown, PDF and related document workflows.
+Use `aspose-cli words` for DOC/DOCX, RTF, ODT, HTML, Markdown, PDF and related
+document workflows. A block is a top-level body paragraph or table, numbered
+from 1.
 
-## Safe workflow
+## Workflow
 
-1. Inspect before reading: `aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output json`.
-2. Read only the required block window: `aspose-cli words query blocks input.docx --blocks 1-30 --scope full --output json`.
-3. For edits, create one atomic ops document and prefer `--in-place --backup --verify`, or write to `--out`.
-4. Read back changed blocks and inspect every verification render.
-5. Run `words compare` when semantic evidence against a baseline matters.
-6. Disclose `EVAL_MODE`, tracked changes, signatures, lossy conversion, macro loss, font substitution and layout warnings.
+1. Clarify audience, purpose, reading or print context and requested scope.
+2. **New document:** write Markdown and create it inside a template (see
+   Design below):
 
-HTML, fixed-layout HTML, SVG and Markdown outputs embed their image resources. HTML output also embeds any exported fonts and styles; the result does not depend on temporary sidecar files.
+   ```powershell
+   aspose-cli words create report.docx --markdown report.md --template brand.docx --title "Quarterly Report" --output json
+   ```
 
-## Live preview
+3. **Existing document:** inspect structure, then read only the blocks you need:
 
-Use `aspose-cli preview input.docx --open` for the managed product-routed
-lifecycle. It selects Words and the `document` view from the file, returns
-after the session is ready, and is managed with `preview status|stop`. See
-`references/preview.md`.
+   ```powershell
+   aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output json
+   aspose-cli words query blocks input.docx --blocks 1-30 --scope full --output json
+   ```
 
-Blocks are only top-level body paragraphs and tables. Block addresses are resolved against the original document once per batch, so inserted content cannot be targeted later in that batch.
+4. Put all related changes in one atomic `words edit` batch with `--verify`.
+   Write to `--out`, or use `--in-place --backup` when replacing the user's
+   file is intended. Add `--track-changes --author "Name"` when the change must
+   stay reviewable.
+
+   ```powershell
+   aspose-cli words edit input.docx --ops ops.json --out output.docx --verify --output json
+   ```
+
+5. Verify before delivery (below).
+
+## Design: the template owns the look
+
+- A template supplies styles, page setup, headers and footers; `--markdown` or
+  `--text` supplies the body. Markdown headings map to Heading 1-6, quotes to
+  Quote, lists to list paragraphs; only bold, italic and strike-through from
+  the Markdown survive as direct formatting.
+- Use the user's template when one exists; otherwise the bundled
+  [default A4 template](assets/templates/default-a4.docx) (path relative to
+  this Skill directory). Without `--template`, the SDK's plain default styles
+  are used.
+- Structure with built-in Heading styles; they drive navigation and TOC. Use
+  `set_style`, `define_style`, `insert_toc` and `set_page_numbers` rather than
+  run-by-run formatting.
+
+More: [document standards](references/document-standards.md).
+
+## Verify before delivery
+
+1. **Content:** `--verify` reopens the staged file and reports
+   `semanticChangesDetected`, field, revision and protection state and
+   `issues`. Read changed blocks back with `words query blocks`. Use
+   `words compare` against a revision-free baseline when a redline matters.
+2. **Visual:** run `aspose-cli review output.docx --out <new-dir> --output json`,
+   then open every page image it lists, one by one. Use `review.json` findings
+   to focus, not as a substitute for looking.
+3. Fix, then review again into a fresh directory. Stop after three rounds and
+   report what remains.
+4. Never claim a visual pass for pages you did not open. State the exact page
+   coverage, and disclose tracked changes, signatures, macro loss, font
+   substitution and lossy conversion.
+
+Details: [verification](references/verification.md).
 
 ## Licensing
 
-Without a Words license, output carries evaluation warnings and may contain
-watermarks or evaluation text. Install a Words-only license with
-`aspose-cli license install Aspose.Words.lic --product words`, set
-`ASPOSE_WORDS_LICENSE_PATH`, use a shared `ASPOSE_LICENSE_PATH`, or pass
-`--license <path>`. Always inspect the `words` entry from
-`aspose-cli license status --output json`; a licensed Cells entry does not
-mean Words is licensed.
+Without a Words license, output carries `EVAL_MODE` and may contain evaluation
+text; disclose that with every delivered file. Install a license with
+`aspose-cli license install Aspose.Words.lic --product words` and check the
+`words` entry of `aspose-cli license status --output json`.
 
-See `references/editing.md`, `references/document-standards.md`, `references/revisions.md`, `references/mail-merge.md`, `references/verification.md`, and `references/troubleshooting.md`.
+Passwords come from `--password-env` or `--password-stdin`; operation
+passwords are environment variable names in `passwordEnv`.
 
-Worked examples:
+## References
 
-- `examples/report-from-markdown`
-- `examples/edit-contract-safely`
-- `examples/mail-merge-letters`
+- [Editing and the ops vocabulary](references/editing.md) (`aspose-cli schema v2/words/ops`)
+- [Document standards](references/document-standards.md)
+- [Revisions and comparison](references/revisions.md)
+- [Mail merge](references/mail-merge.md)
+- [Verification](references/verification.md)
+- [Live preview for a human](references/preview.md)
+- [Troubleshooting](references/troubleshooting.md)
 
-## Visual delivery gate
-
-1. Understand the audience, document purpose, reading or print context, document standard, and requested scope before drafting or editing.
-2. For an existing user document, preserve unrelated text, styles, sections, headers and footers, fields, notes, revisions, comments, and document settings; change only the requested scope.
-3. Run `aspose-cli review <artifact> --out <fresh-review-dir> --output json` for every document and exported deliverable, using a fresh output directory for each round. Use its findings to focus inspection, never as a substitute for opening pages or separately checking revisions, signatures, fields, and standards requirements.
-4. Actually open every visual artifact produced by review, one by one, then every rendered page for a new document and every changed or reflow-affected page for a scoped edit; open every page of PDF exports. Check heading hierarchy, typography, paragraph flow, widows and orphans, tables, lists, image placement, captions, cross-references, headers and footers, page numbers, section breaks, clipping, and tracked-change/comment visibility.
-5. Fix defects, reopen, render, and run review again. Stop after at most three visual correction rounds and report any remaining issue.
-6. Do not claim a visual pass when page inspection is unavailable, any required page/artifact was not opened, or coverage is incomplete. State exact page coverage and mark the remainder partial or skipped.
-7. Report evaluation results separately from licensed results. Disclose `EVAL_MODE`, watermarks or evaluation text, truncation, font substitution, macro or format loss, and signature/revision state for each affected artifact.
-
-## External resources
-
-External document resources are limited to verified ordinary local files beneath the input directory. Network, data, UNC, device, linked and escaping references are omitted. Reads are capped at 256 resources, 32 MiB each and 128 MiB total, and also consume the invocation input, memory and time budgets. Shared budget failures abort the operation. Omitted resources produce a completeness warning. Platforms without a verified file-handle boundary omit all external resources.
-
-## Shared input and output limits
-
-Discover the active resource limits with `aspose-cli capabilities --output json`.
-One output set admits at most 1,000 entries and 1,000 new directories; publication
-metadata is bounded at 8 MiB. Extraction defaults and maxima follow those same
-limits. Images, attachments and other explicit auxiliary inputs use the shared
-file/stream budgets. A resource-budget failure aborts the invocation even with
-`--best-effort`; it cannot publish an incomplete output set.
+Examples: [report from Markdown](examples/report-from-markdown/README.md),
+[edit a contract safely](examples/edit-contract-safely/README.md),
+[mail-merge letters](examples/mail-merge-letters/README.md).

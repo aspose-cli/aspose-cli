@@ -29,6 +29,11 @@ internal static class OpsExecutor
     {
         try
         {
+            if (ReadsComputedValues(op))
+            {
+                workbook.CalculateFormula();
+            }
+
             return Dispatch(workbook, op, secrets, inputs);
         }
         catch (CellsException ex)
@@ -38,10 +43,21 @@ internal static class OpsExecutor
         finally { inputs.ThrowIfFailed(); }
     }
 
+    /// <summary>
+    /// Ops whose result depends on formula results calculate the batch's earlier
+    /// edits first, so ordering never depends on an explicit recalculation step.
+    /// </summary>
+    private static bool ReadsComputedValues(Op op) => op switch
+    {
+        ResizeRowsOp resize => resize.Height is null,
+        ResizeColumnsOp resize => resize.Width is null,
+        SortRangeOp or RemoveDuplicatesOp or CreatePivotOp or RefreshPivotOp => true,
+        _ => false,
+    };
+
     /// <summary>Routes one op to its mapper; returns the touched cell count where meaningful.</summary>
     private static long? Dispatch(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs) => op switch
     {
-        RecalculateOp => Recalculate(workbook),
         SetValuesOp or SetFormulaOp or ClearRangeOp or CopyRangeOp or FormatRangeOp
             or MergeCellsOp or UnmergeCellsOp => DispatchCell(workbook, op),
         InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
@@ -61,12 +77,6 @@ internal static class OpsExecutor
         SetDefaultFontOp or SetTabColorOp or SetSheetViewOp => DispatchLook(workbook, op),
         _ => throw new InvalidOperationException($"Unhandled op type {op.GetType().Name}."),
     };
-
-    private static long? Recalculate(Workbook workbook)
-    {
-        workbook.CalculateFormula();
-        return null;
-    }
 
     private static long? DispatchCell(Workbook workbook, Op op) => op switch
     {

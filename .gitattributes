@@ -30,6 +30,8 @@ eng/notices/SkiaSharp-HarfBuzzSharp-NATIVE.txt -text -whitespace
 *.xls binary
 *.ods binary
 *.pdf binary
+*.pptx binary
+*.docx binary
 *.png binary
 *.jpg binary
 *.jpeg binary

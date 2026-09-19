@@ -14,16 +14,16 @@ the form is XFA, omit the fill step and use `review.pdf` instead of
 ```powershell
 aspose-cli pdf inspect cover.pdf --detail forms permissions signatures --output json
 aspose-cli pdf merge cover.pdf body.pdf --out assembled.pdf --output json
-aspose-cli pdf edit assembled.pdf --ops assemble-ops.json --out review.pdf --verify --output json
+aspose-cli pdf edit assembled.pdf --ops assemble-ops.json --out review.pdf --output json
 aspose-cli pdf query forms review.pdf --output json
 aspose-cli pdf edit review.pdf --ops cover-values.json --out review.filled.pdf --output json
 aspose-cli pdf convert review.filled.pdf --to pdfa-2b --out review.archive.pdf --output json
 aspose-cli pdf validate review.archive.pdf --profile pdfa-2b --output json
-aspose-cli pdf render review.archive.pdf --all-pages --to png --dpi 150 --out review.png --output json
+aspose-cli review review.archive.pdf --out review.archive.review --output json
 ```
 
 Require `valid: true` from validation. Compare the archive candidate with the
 review PDF because PDF/A conversion may remove unsupported content. Open every
-rendered page listed in the result and disclose evaluation watermarks when
+page image the review lists and disclose evaluation watermarks when
 applicable. Visible page numbers use `{n}` and `{N}`; they do not change PDF
 navigation labels.

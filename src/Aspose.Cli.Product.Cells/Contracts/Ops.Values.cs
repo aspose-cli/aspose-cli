@@ -2,9 +2,6 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Ops that write cell values, formulas and formatting within a range.
 
-/// <summary>Recalculate all workbook formulas at this point in the batch.</summary>
-public sealed record RecalculateOp() : Op(OpNames.Recalculate);
-
 /// <summary>
 /// Writes a matrix of values. A single-cell <c>range</c> is the top-left
 /// anchor; a multi-cell range must match the matrix dimensions exactly.

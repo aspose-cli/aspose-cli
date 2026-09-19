@@ -50,11 +50,8 @@ internal sealed class CellsMutationService
         if (options.Verify && (options.Options.DryRun || !options.Recalculate))
         { throw CliErrors.OptionInvalid("--verify", "requires publication and final recalculation", "Omit --dry-run and --no-recalc when verifying an edit."); }
         batch = OpsParser.Prepare(batch);
-        string outputDirectory = Path.GetDirectoryName(options.OutputPath)!;
-        string evidenceDirectory = options.VerificationDirectory
-            ?? Path.Combine(outputDirectory, ".aspose-verify", Path.GetFileNameWithoutExtension(options.OutputPath));
         using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
-            : _saver.CreateOutputSet(options.Verify ? [outputDirectory, evidenceDirectory] : [outputDirectory], "cells-edit", options.BackupPath);
+            : _saver.CreateOutputSet([Path.GetDirectoryName(options.OutputPath)!], "cells-edit", options.BackupPath);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
@@ -77,7 +74,6 @@ internal sealed class CellsMutationService
             batch,
             options.Options.BestEffort,
             options.OpSecrets, operationInputs);
-        bool explicitlyRecalculated = applied.Any(static op => op.Op == "recalculate" && op.Status == OpStatuses.Ok);
         if (options.Recalculate)
         {
             workbook.CalculateFormula();
@@ -91,8 +87,8 @@ internal sealed class CellsMutationService
                 options.BackupPath, precondition, verifyReopen: true);
             if (options.Verify)
             {
-                verification = _verifier.Verify(transaction, saved.Candidate, baseline!.Path, filePath,
-                    options.Password, savePlan.OutputPassword, batch, evidenceDirectory,
+                verification = _verifier.Verify(saved.Candidate, baseline!.Path, filePath,
+                    options.Password, savePlan.OutputPassword, batch,
                     CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning));
             }
             transaction.Commit();
@@ -103,7 +99,7 @@ internal sealed class CellsMutationService
             Input = input,
             Output = saved?.Output,
             DryRun = options.Options.DryRun,
-            Recalculated = options.Recalculate || explicitlyRecalculated,
+            Recalculated = options.Recalculate,
             Applied = applied,
             Backup = saved?.Backup,
             Verification = verification,

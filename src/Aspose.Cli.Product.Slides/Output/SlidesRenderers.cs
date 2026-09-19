@@ -115,13 +115,6 @@ internal static class SlidesRenderers
                 + $" ({op.ItemsAffected} affected)"
                 + (op.Error is null ? string.Empty : $" - {op.Error.Code}: {op.Error.Message}"));
         }
-
-        if (result.Verification is not null)
-        {
-            surface.Out.WriteLine(
-                $"verification: {(result.Verification.Ok ? "ok" : "failed")} "
-                + $"({result.Verification.Renders.Count} render(s))");
-        }
     }
 
     public static void Render(SlidesSearchResult result, TableSurface surface)

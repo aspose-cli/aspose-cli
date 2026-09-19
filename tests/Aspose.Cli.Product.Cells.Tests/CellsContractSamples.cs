@@ -242,7 +242,6 @@ internal static class CellsContractSamples
                 Type = SparklineTypes.Line,
             },
             new SetActiveSheetOp { Sheet = "Sales" },
-            new RecalculateOp(),
         ],
     };
 
@@ -298,8 +297,6 @@ internal static class CellsContractSamples
             ],
             OtherChanges = [],
             FormulaErrors = [],
-            Renders = [new SheetRenderOutput { Sheet = "Sales", Path = "D:/data/verify/report.Sales.png", SizeBytes = 15320 }],
-            VisualReviewRequired = true,
             Truncated = false,
         },
         License = Licensed,

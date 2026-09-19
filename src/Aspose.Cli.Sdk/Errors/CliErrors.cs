@@ -536,22 +536,6 @@ public static partial class CliErrors
             });
     }
 
-    public static CliException ReleaseTrustUnavailable(string reason) => new(
-        ErrorCodes.ReleaseTrustUnavailable,
-        $"Release updates are unavailable: {reason}",
-        hint: $"Configure {Release.ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable} with the approved public-key ring, then retry. No production key is bundled in this build.",
-        details: new JsonObject
-        {
-            ["reason"] = reason,
-            ["trustEnvironmentVariable"] = Release.ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable,
-        });
-
-    public static CliException ReleaseVerificationFailed(string reason) => new(
-        ErrorCodes.ReleaseVerificationFailed,
-        $"The release could not be verified: {reason}",
-        hint: "Use the official feed and retry. Do not bypass signature or archive verification.",
-        details: new JsonObject { ["reason"] = reason });
-
     public static CliException LicenseFileNotFound(string path, string source) => new(
         ErrorCodes.LicenseFileNotFound,
         $"License file configured via {source} does not exist: {path}",

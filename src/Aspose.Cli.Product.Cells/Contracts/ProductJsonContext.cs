@@ -75,7 +75,6 @@ namespace Aspose.Cli.Generated;
 [JsonSerializable(typeof(Product.Cells.Contracts.DeleteChartOp))]
 [JsonSerializable(typeof(Product.Cells.Contracts.AddSparklineOp))]
 [JsonSerializable(typeof(Product.Cells.Contracts.SetActiveSheetOp))]
-[JsonSerializable(typeof(Product.Cells.Contracts.RecalculateOp))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(double))]
 [JsonSerializable(typeof(bool))]

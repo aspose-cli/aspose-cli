@@ -42,19 +42,6 @@
       "items": { "type": "integer", "minimum": 1 },
       "uniqueItems": true
     },
-    "verification": {
-      "type": "object",
-      "required": ["ok", "visualReviewRequired", "slides", "readBackSlideIds", "renders", "issues"],
-      "additionalProperties": false,
-      "properties": {
-        "ok": { "type": "boolean" },
-        "visualReviewRequired": { "type": "boolean" },
-        "slides": { "type": "integer", "minimum": 1 },
-        "readBackSlideIds": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
-        "renders": { "type": "array" },
-        "issues": { "type": "array", "items": { "type": "string" } }
-      }
-    },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

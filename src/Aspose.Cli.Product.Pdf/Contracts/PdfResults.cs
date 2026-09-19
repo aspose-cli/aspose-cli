@@ -256,20 +256,8 @@ public sealed record PdfEditResult() : ResultEnvelope(PdfSchemaIds.EditResult, 2
     public BackupInfo? Backup { get; init; }
     public MutationReceipt? Mutation { get; init; }
     public IReadOnlyList<int>? PagesTouched { get; init; }
-    public PdfVerification? Verification { get; init; }
     [JsonIgnore]
-    public bool HasFailures => Applied.Any(static item => item.Status == OpStatuses.Failed)
-        || Verification is { Ok: false };
-}
-
-public sealed record PdfVerification
-{
-    public required bool Ok { get; init; }
-    public required bool VisualReviewRequired { get; init; }
-    public required int Pages { get; init; }
-    public required IReadOnlyList<int> ReadBackPages { get; init; }
-    public required IReadOnlyList<PdfPageOutput> Renders { get; init; }
-    public required IReadOnlyList<string> Issues { get; init; }
+    public bool HasFailures => Applied.Any(static item => item.Status == OpStatuses.Failed);
 }
 
 /// <summary>PDF form field inventory.</summary>

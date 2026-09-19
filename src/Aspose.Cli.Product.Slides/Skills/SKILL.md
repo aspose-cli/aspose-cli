@@ -1,71 +1,92 @@
 ---
 name: aspose-cli-slides
-description: High-fidelity presentation automation with bounded slide inspection, outline authoring, atomic editing, rendering, conversion, extraction, and visual verification.
+description: Create, inspect, edit, convert and review PowerPoint presentations with the local Aspose CLI. Markdown outlines fill real template layouts, edits are atomic batches, and review renders every slide for visual checks.
 ---
 
 # Aspose Slides
 
-Use `aspose-cli slides` for slide, layout, shape, chart, table and speaker-note
-workflows. Presentation addresses are 1-based slide numbers or stable slide and
-shape ids; they are not worksheet cells, document paragraphs or PDF pages.
+Use `aspose-cli slides` for PPTX, PPT, ODP and related presentation formats.
+Slides are addressed by 1-based number or stable `slideId`; shapes by `shapeId`
+or case-sensitive `shapeName` within their slide.
 
-## Safe workflow
+## Workflow
 
-1. Inspect structure before content:
-   `aspose-cli slides inspect deck.pptx --preview --detail masters layouts fonts notes comments sections properties --output json`.
-2. Read only the required slide window:
-   `aspose-cli slides query slides deck.pptx --slides 1-5 --scope full --notes --max-chars 20000 --output json`.
-3. Preserve one baseline before editing an existing user deck.
-4. Put related changes in one `slides edit` batch. Use `--verify`; use
-   `--best-effort` only when partial output is explicitly acceptable.
-5. Read back affected slides, search for expected text, render every changed
-   slide and inspect the images at a useful size.
-6. Confirm masters, layouts, slide size, hidden-slide state, fonts, notes and
-   output format after save.
-7. Disclose `EVAL_MODE`, evaluation watermark or truncation, lossy conversion,
-   and any fallback fonts or unsupported media behavior.
+1. Clarify audience, purpose, talk length, screen ratio and requested scope.
+2. **New deck:** write a Markdown outline and author it into a template (see
+   Design below):
 
-Passwords must come from `--password-env`, `--password-stdin` or
-`--encrypt-env`. Never put secrets in ops JSON, logs, result envelopes or
-preview session state.
+   ```powershell
+   aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx --output json
+   ```
 
-## Preview and licensing
+3. **Existing deck:** inspect structure, then read only the slides you need:
 
-`aspose-cli preview deck.pptx --open --output json` resolves supported
-presentation content to Slides and its default `slides` view. It provides thumbnails, slide
-navigation, live edit activity and last-good recovery without spreadsheet,
-word-processing or PDF controls. Agents use static `slides query slides`,
-`slides render`, `slides query search` and verification results as delivery evidence.
+   ```powershell
+   aspose-cli slides inspect deck.pptx --preview --detail layouts fonts notes --output json
+   aspose-cli slides query slides deck.pptx --slides 1-5 --scope full --notes --output json
+   ```
 
-Install a Slides-only license with
-`aspose-cli license install Aspose.Slides.lic --product slides`, set
-`ASPOSE_SLIDES_LICENSE_PATH`, or use a shared Aspose.Total license through
-`ASPOSE_LICENSE_PATH`. Inspect the `slides` entry from
-`aspose-cli license status --output json`; one product's failure does not
-describe sibling products.
+4. Put all related changes in one atomic `slides edit` batch. Write to `--out`,
+   or use `--in-place --backup` when replacing the user's file is intended:
 
-See `references/editing.md`, `references/outline-authoring.md`,
-`references/design-system.md`, `references/verification.md`,
-`references/preview.md`, and `references/troubleshooting.md`.
+   ```powershell
+   aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output json
+   ```
 
-Worked examples: `examples/deck-from-outline`,
-`examples/edit-deck-safely`, and `examples/data-slides`.
+5. Verify before delivery (below). Every edit reopens its output before
+   publishing it, so a successful edit is a readable presentation.
 
-## Visual delivery gate
+## Design: the template owns the look
 
-1. Understand the audience, presentation purpose, delivery setting, screen ratio, talk length, and requested scope before authoring or editing the deck.
-2. For an existing user deck, preserve unrelated slides, masters, layouts, theme, notes, media, animations, and speaker intent; change only the requested scope.
-3. Run `aspose-cli review <artifact> --out <fresh-review-dir> --output json` for every presentation and exported deliverable, using a fresh output directory for each round. Treat findings as a review queue, not as proof that the deck has been seen.
-4. Actually open every visual artifact produced by review, one by one, then every slide render for a new deck and every changed or affected slide for a scoped edit; also open every page of PDF exports. Check narrative flow, title hierarchy, alignment, spacing, overflow, contrast, font fallback, charts and tables, image crops, footers, slide numbers, consistency, and readability at presentation distance.
-5. Fix defects, reopen, render, and run review again. Stop after at most three visual correction rounds and report remaining issues rather than endlessly polishing.
-6. Do not claim a visual pass when slide/page inspection is unavailable, any required artifact was not opened, or coverage is incomplete. State exact slide coverage and mark the rest partial or skipped.
-7. Report evaluation results separately from licensed results. Disclose `EVAL_MODE`, watermarks, truncation, font/media fallback, and lossy conversion for every affected artifact.
+- Fonts, colors, backgrounds and placeholder geometry come from the template's
+  theme, masters and layouts. Use the user's brand template when one exists;
+  otherwise use the bundled
+  [default 16:9 template](assets/templates/default-16x9.pptx) (path relative
+  to this Skill directory).
+- Markdown authoring fills layout placeholders: `#` becomes a Title Slide, `##`
+  a Title and Content slide, and a slide with both text and an image uses Two
+  Content. It sets no fonts or colors of its own. See
+  [outline authoring](references/outline-authoring.md).
+- Do not restyle text run by run to fix a look; choose or correct the template.
+- One claim per slide. Keep at most six bullets and two levels; prefer a chart
+  or small table over dense prose. Split a slide rather than shrink its text.
 
-## Shared input and output limits
+More: [design system](references/design-system.md).
 
-Discover the active resource limits with `aspose-cli capabilities --output json`.
-One output set admits at most 1,000 entries and 1,000 new directories; publication
-metadata is bounded at 8 MiB. Extraction defaults and maxima follow those same
-limits. Images, attachments and other explicit auxiliary inputs use the shared
-file/stream budgets. A resource-budget failure aborts the invocation even with
-`--best-effort`; it cannot publish an incomplete output set.
+## Verify before delivery
+
+1. **Content:** read changed slides back with `slides query slides` and search
+   for leftovers such as `TODO` with `slides query search`.
+2. **Visual:** run `aspose-cli review deck.pptx --out <new-dir> --output json`,
+   then open every image it lists, one by one. Use `review.json` findings
+   (overflow, small text, overlaps, blank slides) to focus, not as a substitute
+   for looking.
+3. Fix, then run review again into a fresh directory. Stop after three rounds
+   and report what remains.
+4. Never claim a visual pass for slides you did not open. State the exact
+   coverage from `coverage.complete` and the images inspected.
+
+Details: [verification](references/verification.md).
+
+## Licensing
+
+Without a Slides license, output is watermarked and results carry `EVAL_MODE`;
+disclose that with every delivered file. Install a license with
+`aspose-cli license install Aspose.Slides.lic --product slides` and check the
+`slides` entry of `aspose-cli license status --output json`.
+
+Passwords come from `--password-env`, `--password-stdin` or `--encrypt-env`;
+never put secrets in ops JSON.
+
+## References
+
+- [Editing and the ops vocabulary](references/editing.md) (`aspose-cli schema v2/slides/ops`)
+- [Outline authoring](references/outline-authoring.md)
+- [Design system](references/design-system.md)
+- [Verification](references/verification.md)
+- [Live preview for a human](references/preview.md)
+- [Troubleshooting](references/troubleshooting.md)
+
+Examples: [deck from outline](examples/deck-from-outline/README.md),
+[edit a deck safely](examples/edit-deck-safely/README.md),
+[data slides](examples/data-slides/README.md).

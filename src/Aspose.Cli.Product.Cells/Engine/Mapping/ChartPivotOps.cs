@@ -47,18 +47,12 @@ internal static class ChartPivotOps
         return null;
     }
 
-    public static long? ApplyPivot(Worksheet sheet, Op op)
+    public static long? ApplyPivot(Worksheet sheet, Op op) => op switch
     {
-        // Pivot caches capture stored cell results. Calculate dependencies before
-        // adding or refreshing the cache so preceding edits in this batch are visible.
-        sheet.Workbook.CalculateFormula();
-        return op switch
-        {
-            CreatePivotOp create => CreatePivot(sheet, create),
-            RefreshPivotOp refresh => RefreshPivot(sheet, refresh),
-            _ => throw new InvalidOperationException($"Unhandled pivot operation {op.GetType().Name}."),
-        };
-    }
+        CreatePivotOp create => CreatePivot(sheet, create),
+        RefreshPivotOp refresh => RefreshPivot(sheet, refresh),
+        _ => throw new InvalidOperationException($"Unhandled pivot operation {op.GetType().Name}."),
+    };
 
     private static long? CreatePivot(Worksheet sheet, CreatePivotOp op)
     {

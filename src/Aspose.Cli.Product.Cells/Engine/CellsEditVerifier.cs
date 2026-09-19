@@ -6,20 +6,20 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary>Verifies the exact staged workbook and stages its evidence in the same output set.</summary>
-internal sealed class CellsEditVerifier(WorkbookLoadService loader, ResourceBudgetLedger budgets, CellsOutputService output)
+/// <summary>Verifies the exact staged workbook against its pre-edit baseline.</summary>
+internal sealed class CellsEditVerifier(WorkbookLoadService loader, ResourceBudgetLedger budgets)
 {
     private const int MaxDiffs = 1000;
 
-    internal EditVerification Verify(AtomicOutputSetWriter transaction, StagedOutput staged,
+    internal EditVerification Verify(StagedOutput staged,
         string baselinePath, string originalPath, string? inputPassword, string? outputPassword,
-        OpsBatch batch, string evidenceDirectory, IReadOnlyList<Warning>? sourceWarnings) =>
-        staged.Read(candidate => VerifyCandidate(transaction, candidate, staged.TargetPath, baselinePath,
-            originalPath, inputPassword, outputPassword, batch, evidenceDirectory, sourceWarnings));
+        OpsBatch batch, IReadOnlyList<Warning>? sourceWarnings) =>
+        staged.Read(candidate => VerifyCandidate(candidate, baselinePath,
+            originalPath, inputPassword, outputPassword, batch, sourceWarnings));
 
-    private EditVerification VerifyCandidate(AtomicOutputSetWriter transaction, string candidatePath,
-        string outputPath, string baselinePath, string originalPath, string? inputPassword,
-        string? outputPassword, OpsBatch batch, string evidenceDirectory, IReadOnlyList<Warning>? sourceWarnings)
+    private EditVerification VerifyCandidate(string candidatePath,
+        string baselinePath, string originalPath, string? inputPassword,
+        string? outputPassword, OpsBatch batch, IReadOnlyList<Warning>? sourceWarnings)
     {
         using LoadedWorkbook baseline = loader.OpenPublishedCandidate(baselinePath, inputPassword, originalPath);
         using LoadedWorkbook candidate = loader.OpenPublishedCandidate(candidatePath, outputPassword);
@@ -41,16 +41,12 @@ internal sealed class CellsEditVerifier(WorkbookLoadService loader, ResourceBudg
         IReadOnlyList<CellError> errors = summary.FormulaErrors ?? [];
         if (errors.Count > 0)
         { issues.Add(new VerificationIssue { Code = "FORMULA_ERRORS", Message = $"The edited workbook contains {errors.Count} formula error(s)." }); }
-        (IReadOnlyList<SheetRenderOutput> renders, IReadOnlyList<Warning> warnings) =
-            output.StageVerification(transaction, candidate.Workbook, outputPath, evidenceDirectory);
-        foreach (Warning warning in warnings)
-        { issues.Add(new VerificationIssue { Code = warning.Code, Message = warning.Message }); }
         return new EditVerification
         {
             Ok = issues.Count == 0,
             RequestedTargets = footprint.Select(static target => new VerificationTarget { Sheet = target.Sheet, Range = target.Range }).ToArray(),
             DirectChanges = direct, FormulaResultChanges = formulaResults, OtherChanges = other,
-            FormulaErrors = errors, Renders = renders, VisualReviewRequired = renders.Count > 0,
+            FormulaErrors = errors,
             Truncated = diff.Truncated, Issues = issues.Count == 0 ? null : issues,
         };
     }

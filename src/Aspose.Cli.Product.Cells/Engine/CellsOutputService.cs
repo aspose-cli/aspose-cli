@@ -340,33 +340,6 @@ internal sealed class CellsOutputService
         };
     }
 
-    internal (IReadOnlyList<SheetRenderOutput> Renders, IReadOnlyList<Warning> Warnings) StageVerification(
-        AtomicOutputSetWriter transaction, Workbook workbook, string outputPath, string directory)
-    {
-        transaction.EnsureDirectory(directory);
-        Worksheet[] sheets = workbook.Worksheets.Cast<Worksheet>().Where(static sheet => sheet.IsVisible).ToArray();
-        string basePath = Path.Combine(directory, Path.GetFileNameWithoutExtension(outputPath) + ".png");
-        IReadOnlyList<string> paths = DerivePerSheetPaths(basePath, sheets);
-        var request = new RenderRequest { TargetFormatId = "png", OutputPath = basePath, Overwrite = true, Dpi = 192 };
-        var rendered = new List<SheetRenderOutput>();
-        var warnings = new List<Warning>();
-        for (int index = 0; index < sheets.Length; index++)
-        {
-            try
-            {
-                StagedOutput image = StageSheet(transaction, sheets[index], request, null, paths[index]);
-                rendered.Add(new SheetRenderOutput { Sheet = sheets[index].Name, Path = image.TargetPath, SizeBytes = image.SizeBytes });
-            }
-            catch (CliException error) when (error.Code == ErrorCodes.RenderEmpty)
-            {
-                warnings.Add(new Warning { Code = CellsDiagnostics.SheetsSkipped,
-                    Message = $"The empty sheet '{sheets[index].Name}' has no renderable verification page.",
-                    Hint = "Inspect empty sheets explicitly when reviewing this edit." });
-            }
-        }
-        return (rendered, warnings);
-    }
-
     /// <summary>The one-line reason a sheet was skipped, for the warning message.</summary>
     private static string DescribeSkip(CliException exception) =>
         exception.Code == ErrorCodes.RenderFailed

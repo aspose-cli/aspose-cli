@@ -174,7 +174,7 @@ public sealed class SlidesShapeAddressingTests
         Assert.True(create.ExitCode == 0, create.StdErr);
         byte[] original = SHA256.HashData(File.ReadAllBytes(workspace.File("deck.pptx")));
         File.WriteAllText(workspace.File("delete.json"), """{"ops":[{"op":"delete_shape","slide":2,"shapeName":"Title"}]}""");
-        CliResult deleted = workspace.Run("slides", "edit", "deck.pptx", "--ops", "delete.json", "--out", "deleted.pptx", "--verify", "--output", "json");
+        CliResult deleted = workspace.Run("slides", "edit", "deck.pptx", "--ops", "delete.json", "--out", "deleted.pptx", "--output", "json");
         Assert.True(deleted.ExitCode == 0, deleted.StdErr);
         Assert.True(File.Exists(workspace.File("deleted.pptx")));
         Assert.Equal(original, SHA256.HashData(File.ReadAllBytes(workspace.File("deck.pptx"))));

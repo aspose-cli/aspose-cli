@@ -253,23 +253,6 @@ internal static class SlidesContractSamples
             },
         ],
         SlidesTouched = [256],
-        Verification = new SlidesEditVerification
-        {
-            Ok = true,
-            VisualReviewRequired = false,
-            Slides = 3,
-            ReadBackSlideIds = [256],
-            Renders =
-            [
-                new SlideRenderOutput
-                {
-                    Slide = 1,
-                    SlideId = 256,
-                    Output = new OutputInfo { Path = "D:/data/deck.out.pptx.verify.s1.png", Format = "png", SizeBytes = 1000 },
-                },
-            ],
-            Issues = [],
-        },
         License = Licensed,
     };
 

@@ -28,6 +28,6 @@ sheet. Use `--port 0` to request a system-assigned port. `--open` launches the
 default browser unless `ASPOSE_CLI_NO_OPEN=1` is set.
 
 Preview is a human review aid. Agent verification still uses deterministic
-`cells query range`, `cells compare`, and bounded `cells render` output. Evaluation-mode
+`cells query range`, `cells compare` and `review` output. Evaluation-mode
 previews disclose the evaluation state; report any resulting output watermark
 when delivering files.

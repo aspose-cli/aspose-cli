@@ -4,7 +4,6 @@
     { "op": "set_formula", "sheet": "Model", "range": "B3", "formula": "=B1*(1+B2)" },
     { "op": "format_range", "sheet": "Model", "range": "B2", "style": { "numberFormat": "0.0%" } },
     { "op": "format_range", "sheet": "Model", "range": "A1:A3", "style": { "bold": true } },
-    { "op": "resize_columns", "sheet": "Model", "from": "A", "to": "B" },
-    { "op": "recalculate" }
+    { "op": "resize_columns", "sheet": "Model", "from": "A", "to": "B" }
   ]
 }

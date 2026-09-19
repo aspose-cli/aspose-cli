@@ -29,8 +29,8 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             });
 
     [Theory]
-    [InlineData("{\"unexpected\":true,\"ops\":[{\"op\":\"recalculate\"}]}")]
-    [InlineData("{\"ops\":[{\"op\":\"recalculate\",\"unexpected\":true}]}")]
+    [InlineData("{\"unexpected\":true,\"ops\":[{\"op\":\"clear_range\",\"range\":\"A1\"}]}")]
+    [InlineData("{\"ops\":[{\"op\":\"clear_range\",\"range\":\"A1\",\"unexpected\":true}]}")]
     [InlineData("{\"ops\":[{\"op\":\"set_values\",\"range\":\"A1\",\"values\":[[1]],\"values\":[[2]]}]}")]
     public void Parser_RejectsUnknownAndDuplicateFields(string json)
     {

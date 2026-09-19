@@ -7,6 +7,21 @@ namespace Aspose.Cli.Product.Cells.Tests;
 
 public sealed class CellsMutationBoundaryTests
 {
+    [Fact]
+    public void AutoFitMeasuresFormulaResultsWrittenEarlierInTheSameBatch()
+    {
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
+
+        CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops",
+            """{"ops":[{"op":"set_formula","sheet":"Data","range":"A1","formula":"=REPT(\"x\",40)"},{"op":"resize_columns","sheet":"Data","from":"A"}]}""",
+            "--out", "edited.xlsx", "--output", "json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        using var workbook = new Workbook(workspace.File("edited.xlsx"));
+        Assert.True(workbook.Worksheets["Data"].Cells.GetColumnWidth(0) > 30);
+    }
+
     [Theory]
     [InlineData(false, false)]
     [InlineData(true, false)]
@@ -29,26 +44,6 @@ public sealed class CellsMutationBoundaryTests
         Assert.NotEqual(0, edited.ExitCode);
         Assert.Contains("FILE_TOO_LARGE", edited.StdErr, StringComparison.Ordinal);
         Assert.False(File.Exists(workspace.File("result.xlsx")));
-    }
-
-    [Fact]
-    public void FinalRecalculationIncludesChangesAfterAnExplicitRecalculate()
-    {
-        using var workspace = new TempWorkspace();
-        using (var workbook = new Workbook())
-        {
-            workbook.Worksheets[0].Name = "Data";
-            workbook.Worksheets[0].Cells["A1"].PutValue(1);
-            workbook.Worksheets[0].Cells["B1"].Formula = "=A1*2";
-            workbook.CalculateFormula();
-            workbook.Save(workspace.File("source.xlsx"));
-        }
-        CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops",
-            """{"ops":[{"op":"recalculate"}]}""", "--set", "Data!A1=7", "--out", "edited.xlsx", "--output", "json");
-        Assert.True(edited.ExitCode == 0, edited.StdErr);
-        CliResult query = workspace.Run("cells", "query", "range", "edited.xlsx", "--sheet", "Data", "--range", "B1", "--output", "json");
-        Assert.True(query.ExitCode == 0, query.StdErr);
-        Assert.Equal(14, JsonNode.Parse(query.StdOut)!["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<double>());
     }
 
     [Theory]
@@ -120,7 +115,6 @@ public sealed class CellsMutationBoundaryTests
         JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;
         Assert.False(verification["ok"]!.GetValue<bool>());
         Assert.NotEmpty(verification["formulaErrors"]!.AsArray());
-        Assert.NotEmpty(verification["renders"]!.AsArray());
         Assert.DoesNotContain("FILE_NOT_FOUND", edited.StdOut, StringComparison.Ordinal);
     }
 }

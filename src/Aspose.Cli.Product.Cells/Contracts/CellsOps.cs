@@ -70,7 +70,6 @@ public static class CellsOps
         (OpNames.DeleteChart, typeof(DeleteChartOp)),
         (OpNames.AddSparkline, typeof(AddSparklineOp)),
         (OpNames.SetActiveSheet, typeof(SetActiveSheetOp)),
-        (OpNames.Recalculate, typeof(RecalculateOp)),
     ];
 
     /// <summary>Wire name to concrete op record type, keyed ordinally.</summary>

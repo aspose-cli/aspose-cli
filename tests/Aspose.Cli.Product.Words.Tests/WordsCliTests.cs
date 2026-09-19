@@ -88,5 +88,50 @@ public sealed class WordsCliTests : IDisposable
         Assert.True(File.Exists(_workspace.File("evidence/review.json")));
     }
 
+    [Fact]
+    public void CreateFromMarkdown_TakesStylesPageSetupAndFooterFromTheBundledTemplate()
+    {
+        CliResult installed = _workspace.Run(
+            "skill", "install", "aspose-cli-words", "--target", "skills", "--output", "json");
+        Assert.True(installed.ExitCode == 0, installed.StdErr);
+        string template = _workspace.File(
+            Path.Combine("skills", "aspose-cli-words", "assets", "templates", "default-a4.docx"));
+        File.WriteAllText(_workspace.File("brief.md"), "# Brief\n\nPlain **bold** and `code`.\n");
+
+        CliResult created = _workspace.Run(
+            "words", "create", "brief.docx", "--markdown", "brief.md",
+            "--template", template, "--output", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        var document = new Document(_workspace.File("brief.docx"));
+        Section section = Assert.Single(document.Sections.Cast<Section>());
+        Assert.Equal(PaperSize.A4, section.PageSetup.PaperSize);
+        Assert.Contains(
+            section.HeadersFooters[HeaderFooterType.FooterPrimary].Range.Fields.Cast<Aspose.Words.Fields.Field>(),
+            static field => field.Type == Aspose.Words.Fields.FieldType.FieldPage);
+        // Evaluation mode may add a banner paragraph; select the authored paragraphs by text.
+        Paragraph[] paragraphs = section.Body.Paragraphs.Cast<Paragraph>().ToArray();
+        Paragraph heading = Assert.Single(paragraphs, static paragraph => paragraph.GetText().Trim() == "Brief");
+        Assert.Equal(StyleIdentifier.Heading1, heading.ParagraphFormat.StyleIdentifier);
+        Assert.True(heading.Runs[0].Font.Bold);
+        Run[] runs = Assert.Single(paragraphs, static paragraph => paragraph.GetText().StartsWith("Plain", StringComparison.Ordinal))
+            .Runs.Cast<Run>().ToArray();
+        Assert.Equal(["bold"], runs.Where(static run => run.Font.Bold).Select(static run => run.Text));
+        Assert.Equal("InlineCode", Assert.Single(runs, static run => run.Text == "code").Font.StyleName);
+        Assert.DoesNotContain(paragraphs, static paragraph => !paragraph.HasChildNodes);
+    }
+
+    [Fact]
+    public void Create_RejectsBlankWithTemplate()
+    {
+        File.WriteAllBytes(_workspace.File("template.docx"), []);
+
+        CliResult result = _workspace.Run(
+            "words", "create", "out.docx", "--blank", "--template", "template.docx", "--output", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.False(File.Exists(_workspace.File("out.docx")));
+    }
+
     public void Dispose() => _workspace.Dispose();
 }

@@ -6,17 +6,17 @@ namespace Aspose.Cli.IntegrationTests;
 
 public sealed class ProductPublicationTests
 {
-    public static TheoryData<string, string, string[], string, string> VerifyCases => new()
+    public static TheoryData<string, string, string[], string> EditCases => new()
     {
-        { "words", "docx", ["--text", "source.txt"], """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""", ".verify.p1.png" },
-        { "slides", "pptx", ["--from-markdown", "source.md"], """{"ops":[{"op":"set_title","slide":1,"text":"Edited"}]}""", ".verify.s1.png" },
-        { "pdf", "pdf", ["--from-text", "source.txt"], """{"ops":[{"op":"set_metadata","title":"Edited"}]}""", ".verify.p1.png" },
+        { "words", "docx", ["--text", "source.txt"], """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""" },
+        { "slides", "pptx", ["--from-markdown", "source.md"], """{"ops":[{"op":"set_title","slide":1,"text":"Edited"}]}""" },
+        { "pdf", "pdf", ["--from-text", "source.txt"], """{"ops":[{"op":"set_metadata","title":"Edited"}]}""" },
     };
 
     [Theory]
-    [MemberData(nameof(VerifyCases))]
-    public void VerificationReadsTheCandidateInBothExecutionModes(string product, string extension,
-        string[] sourceOptions, string ops, string evidenceSuffix)
+    [MemberData(nameof(EditCases))]
+    public void EditPublishesTheCandidateInBothExecutionModes(string product, string extension,
+        string[] sourceOptions, string ops)
     {
         foreach (bool supervised in new[] { false, true })
         {
@@ -24,37 +24,29 @@ public sealed class ProductPublicationTests
             string input = CreateInput(workspace, product, extension, sourceOptions);
             string output = workspace.File("edited." + extension);
             CliResult edited = workspace.Run([product, "edit", input, "--ops", ops, "--out", output,
-                "--verify", "--output", "json", "--max-input-bytes", new FileInfo(input).Length.ToString(),
+                "--output", "json", "--max-input-bytes", new FileInfo(input).Length.ToString(),
                 .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
-            Assert.True(edited.ExitCode == 0, edited.StdErr + edited.StdOut);
-            Assert.True(JsonNode.Parse(edited.StdOut)!["verification"]!["ok"]!.GetValue<bool>());
+            AssertSuccess(edited);
             Assert.True(File.Exists(output));
-            Assert.True(File.Exists(output + evidenceSuffix));
+            Assert.Equal([output], Directory.GetFiles(workspace.File("."), "edited.*").Select(Path.GetFullPath));
         }
     }
 
     [Theory]
-    [MemberData(nameof(VerifyCases))]
-    public void InPlaceDoesNotAuthorizeEvidenceOverwrite(string product, string extension,
-        string[] sourceOptions, string ops, string evidenceSuffix)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void WordsVerificationReadsTheCandidateInBothExecutionModes(bool supervised)
     {
         using var workspace = new TempWorkspace();
-        string input = CreateInput(workspace, product, extension, sourceOptions);
-        byte[] original = File.ReadAllBytes(input);
-        string evidence = input + evidenceSuffix;
-        File.WriteAllText(evidence, "existing user evidence");
-        CliResult refused = workspace.Run(product, "edit", input, "--ops", ops,
-            "--in-place", "--verify", "--timeout", "30", "--output", "json");
-        Assert.Equal(5, refused.ExitCode);
-        Assert.Equal(string.Empty, refused.StdOut);
-        Assert.Equal(original, File.ReadAllBytes(input));
-        Assert.Equal("existing user evidence", File.ReadAllText(evidence));
-        Assert.False(File.Exists(workspace.File("input.backup." + extension)));
-
-        CliResult permitted = workspace.Run(product, "edit", input, "--ops", ops,
-            "--in-place", "--verify", "--overwrite", "--timeout", "30", "--output", "json");
-        Assert.True(permitted.ExitCode == 0, permitted.StdErr + permitted.StdOut);
-        Assert.Equal("89504E470D0A1A0A", Convert.ToHexString(File.ReadAllBytes(evidence).AsSpan(0, 8)));
+        string input = CreateInput(workspace, "words", "docx", ["--text", "source.txt"]);
+        CliResult edited = workspace.Run(["words", "edit", input,
+            "--ops", """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""",
+            "--out", workspace.File("edited.docx"), "--verify", "--output", "json",
+            .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
+        AssertSuccess(edited);
+        JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;
+        Assert.True(verification["ok"]!.GetValue<bool>());
+        Assert.True(verification["semanticChangesDetected"]!.GetValue<bool>());
     }
 
     [Theory]

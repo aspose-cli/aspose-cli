@@ -76,20 +76,7 @@ internal static class WordsRenderers
         if (result.Verification is { } verification)
         {
             surface.Out.WriteLine(
-                $"verification: {(verification.Ok ? "ok" : "needs attention")}; "
-                + $"visual review {(verification.VisualReviewRequired ? "required" : "not required")}");
-            if (verification.ReadBackBlocks.Count > 0)
-            {
-                surface.Out.WriteLine(
-                    $"  read back blocks: {string.Join(", ", verification.ReadBackBlocks)}");
-            }
-
-            foreach (PageOutput render in verification.Renders)
-            {
-                surface.Out.WriteLine(
-                    $"  review page {render.Page}: {render.Output.Path}");
-            }
-
+                $"verification: {(verification.Ok ? "ok" : "needs attention")}");
             foreach (string issue in verification.Issues)
             {
                 surface.Out.WriteLine($"  issue: {issue}");

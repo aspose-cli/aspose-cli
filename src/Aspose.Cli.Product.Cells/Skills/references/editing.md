@@ -32,8 +32,8 @@ General rules:
 - Rows are 1-based numbers; columns are letters — exactly as in A1.
 - Editing a user-supplied file? Add `--backup --verify` to the first in-place
   edit. The CLI creates `book.backup.xlsx` once and never overwrites it.
-- Open every path in `verification.renders`, then use the stable backup for
-  the final session diff. The full protocol is in the Skill's Editing section.
+- Read `verification`, review the result, then use the stable backup for the
+  final session diff. The full protocol is in the Skill's Editing section.
 
 ## Op index
 
@@ -99,7 +99,6 @@ named below.
 | `set_sheet_view` | Sheet view: gridlines on/off, zoom, headings | Workbook look |
 | `delete_chart` | Remove a chart from a sheet | Charts |
 | `add_sparkline` | Draw tiny in-cell charts, one per data row or column | Sparklines |
-| `recalculate` | Recalculate workbook formulas at this point in the batch | Data |
 
 ## Data
 
@@ -110,10 +109,10 @@ named below.
 | `clear_range` | `range`, `what?` | `contents` (default), `formats`, `all`. |
 | `copy_range` | `from`, `to` | Copies values, formulas and formatting. `to` is a single anchor cell. Both may be sheet-qualified: `{"from": "Data!A1:C10", "to": "Summary!B2"}`. |
 
-`recalculate` has no additional fields. It calculates the whole workbook at
-its position in the batch. Edits also calculate again after the complete
-batch unless `--no-recalc` is set, including changes appended with `--set`.
-An earlier explicit calculation never disables the final calculation.
+Edits calculate the whole workbook once after the complete batch unless
+`--no-recalc` is set, including changes appended with `--set`. Ops that
+depend on formula results (auto-fit resizing, `sort_range`,
+`remove_duplicates`, pivots) calculate the batch's earlier edits first.
 Queries read stored results.
 
 ## Formatting
@@ -451,9 +450,9 @@ format supports it; `--encrypt-env` changes the password. Text and HTML exports
 do not support workbook encryption.
 
 `--verify` checks the staged candidate before publication, including when
-`--timeout` or MCP is used. The document and verification images form one output
-set. Semantic findings are returned with `verification.ok=false` and exit 8;
-execution errors, resource failures and cancellation abort the output set.
+`--timeout` or MCP is used. Semantic findings are returned with
+`verification.ok=false` and exit 8; execution errors, resource failures and
+cancellation abort publication.
 
 Create, edit and convert share the same save policy. Text output reports
 `SHEETS_DROPPED` when only one of several worksheets can be retained. During

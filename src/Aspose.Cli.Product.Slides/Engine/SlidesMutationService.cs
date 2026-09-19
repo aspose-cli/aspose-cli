@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Globalization;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -71,7 +70,7 @@ internal sealed class SlidesMutationService
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
         List<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched);
-        EditPublication publication = Publish(presentation, request, format, touched, precondition);
+        EditPublication publication = Publish(presentation, request, format, precondition);
 
         return new SlidesEditResult
         {
@@ -81,7 +80,6 @@ internal sealed class SlidesMutationService
             Applied = outcomes,
             Backup = publication.Backup,
             SlidesTouched = touched.Count == 0 ? null : touched.Order().ToArray(),
-            Verification = publication.Verification,
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
                 ? EvaluationInputWarnings(state, presentation)
@@ -184,12 +182,10 @@ internal sealed class SlidesMutationService
         Presentation presentation,
         PresentationEditRequest request,
         string format,
-        IReadOnlySet<uint> touched,
         FileWritePrecondition precondition)
     {
         OutputInfo? output = null;
         BackupInfo? backup = null;
-        SlidesEditVerification? verification = null;
         if (!request.Options.DryRun)
         {
             Encrypt(presentation, request.EncryptPassword);
@@ -199,7 +195,13 @@ internal sealed class SlidesMutationService
                 request.Overwrite,
                 request.BackupPath,
                 precondition,
-                temp => presentation.Save(temp, SaveFormatFor(format)));
+                temp =>
+                {
+                    presentation.Save(temp, SaveFormatFor(format));
+                    using LoadedPresentation reopened = _loader.OpenPublishedCandidate(
+                        temp,
+                        request.EncryptPassword ?? request.Password);
+                });
             output = new OutputInfo
             {
                 Path = request.OutputPath,
@@ -216,74 +218,13 @@ internal sealed class SlidesMutationService
                 };
             }
 
-            if (request.Verify)
-            {
-                verification = write.Read(candidate => VerifyEdit(
-                    candidate,
-                    request.OutputPath,
-                    request.EncryptPassword ?? request.Password,
-                    touched,
-                    transaction,
-                    request.OverwriteArtifacts));
-            }
             transaction.Commit();
         }
 
-        return new EditPublication(output, backup, verification);
+        return new EditPublication(output, backup);
     }
 
     private sealed record EditPublication(
         OutputInfo? Output,
-        BackupInfo? Backup,
-        SlidesEditVerification? Verification);
-
-    private SlidesEditVerification VerifyEdit(
-        string candidatePath,
-        string outputPath,
-        string? password,
-        IReadOnlyCollection<uint> touched,
-        AtomicOutputSetWriter transaction,
-        bool overwriteArtifacts)
-    {
-        using LoadedPresentation reopened = _loader.OpenPublishedCandidate(candidatePath, password);
-        ISlide[] selected = (touched.Count == 0
-                ? reopened.Presentation.Slides.Take(1)
-                : reopened.Presentation.Slides.Where(slide => touched.Contains(slide.SlideId)))
-            .Take(12)
-            .ToArray();
-        EnsureRasterBudget(_resourceBudgets,
-            (long)Math.Ceiling(reopened.Presentation.SlideSize.Size.Width * 2d),
-            (long)Math.Ceiling(reopened.Presentation.SlideSize.Size.Height * 2d), selected.Length, 144);
-        var renders = new List<SlideRenderOutput>();
-        var issues = new List<string>();
-        foreach (ISlide slide in selected)
-        {
-            int number = FindSlideNumber(reopened.Presentation, slide);
-            string path = $"{outputPath}.verify.s{number}.png";
-            long size = transaction.Stage(path, overwriteArtifacts, temp =>
-            {
-                using IImage image = slide.GetImage(2f, 2f);
-                using FileStream outputStream = File.Create(temp);
-                image.Save(outputStream, ImageFormat.Png);
-            }).SizeBytes;
-            renders.Add(new SlideRenderOutput
-            {
-                Slide = number,
-                SlideId = slide.SlideId,
-                Output = new OutputInfo { Path = path, Format = "png", SizeBytes = size },
-            });
-        }
-
-        return new SlidesEditVerification
-        {
-            Ok = issues.Count == 0,
-            VisualReviewRequired = reopened.Presentation.Slides.Count > selected.Length
-                || touched.Count > selected.Length,
-            Slides = reopened.Presentation.Slides.Count,
-            ReadBackSlideIds = selected.Select(static slide => slide.SlideId).ToArray(),
-            Renders = renders,
-            Issues = issues,
-        };
-    }
-
+        BackupInfo? Backup);
 }

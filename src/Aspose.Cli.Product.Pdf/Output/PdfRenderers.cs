@@ -122,11 +122,6 @@ internal static class PdfRenderers
             surface.Out.WriteLine(
                 $"  {op.Index}: {op.Op} {op.Status} ({op.ItemsAffected} affected)");
         }
-
-        if (result.Verification is not null)
-        {
-            surface.Out.WriteLine($"verification: {(result.Verification.Ok ? "ok" : "failed")}");
-        }
     }
 
     public static void Render(PdfFormResult result, TableSurface surface)

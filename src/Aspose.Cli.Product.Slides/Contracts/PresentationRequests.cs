@@ -77,10 +77,8 @@ public sealed record PresentationEditRequest
 {
     public required string OutputPath { get; init; }
     public bool Overwrite { get; init; }
-    public bool OverwriteArtifacts { get; init; }
     public string? BackupPath { get; init; }
     public EditCommandOptions Options { get; init; } = new();
-    public bool Verify { get; init; }
     public string? Password { get; init; }
     public string? EncryptPassword { get; init; }
 }

@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -6,9 +5,18 @@ using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 
+/// <summary>
+/// Maps a Markdown outline onto the presentation's own layouts. The builder
+/// only fills title, subtitle and content placeholders; fonts, colors,
+/// backgrounds and geometry always come from the master, layouts and theme,
+/// so a template fully owns the look of the authored deck.
+/// </summary>
 internal static partial class SlidesMarkdownBuilder
 {
     private const int MaxMarkdownBytes = 8 * 1024 * 1024;
+
+    // A code block is the one semantic that needs a typeface the theme does not name.
+    private const string CodeFont = "Consolas";
 
     public static void Build(
         ResourceBudgetLedger resourceBudgets,
@@ -21,59 +29,40 @@ internal static partial class SlidesMarkdownBuilder
             MaxMarkdownBytes);
         string markdown = resourceBudgets.Inputs.ReadTextFile(markdownPath);
         IReadOnlyList<MarkdownSlide> model = Parse(markdown, Path.GetFileNameWithoutExtension(markdownPath));
+        string root = Path.GetDirectoryName(Path.GetFullPath(markdownPath))!;
 
         presentation.Sections.Clear();
         while (presentation.Slides.Count > 0)
         {
             presentation.Slides.RemoveAt(0);
         }
-        ILayoutSlide authoringLayout = presentation.LayoutSlides
-            .FirstOrDefault(static layout => layout.Shapes.Count == 0)
-            ?? presentation.LayoutSlides[0];
+
         foreach (MarkdownSlide item in model)
         {
-            ISlide slide = presentation.Slides.AddEmptySlide(authoringLayout);
-            foreach (IShape placeholder in slide.Shapes
-                .Where(static shape => shape.Placeholder is not null)
-                .ToArray())
+            ISlide slide = presentation.Slides.AddEmptySlide(LayoutFor(presentation, item));
+            IAutoShape title = SlidesPlaceholders.Title(slide) ?? AddFallbackTitle(slide, presentation);
+            title.Name = "Title";
+            title.TextFrame.Text = item.Title;
+
+            IAutoShape[] content = SlidesPlaceholders.Content(slide, includeSubtitle: item.TitleSlide);
+            if (item.Blocks.Count > 0)
             {
-                slide.Shapes.Remove(placeholder);
+                IAutoShape body = content.FirstOrDefault() ?? AddFallbackBody(slide, presentation);
+                body.Name = "Body";
+                WriteBlocks(body.TextFrame, item.Blocks);
+                body.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.Normal;
             }
-            ApplyBackground(slide);
-            AddTitle(slide, presentation, item);
-            AddBody(slide, presentation, item);
+
+            if (item.ImagePath is not null)
+            {
+                AddImage(resourceBudgets, presentation, slide, root, item, content);
+            }
+
+            RemoveEmptyPlaceholders(slide);
             if (item.Section is not null)
             {
                 presentation.Sections.AddSection(item.Section, slide);
             }
-        }
-
-        string root = Path.GetDirectoryName(Path.GetFullPath(markdownPath))!;
-        foreach ((int slideNumber, MarkdownSlide item) in model.Select((item, index) => (index + 1, item)))
-        {
-            if (item.ImagePath is null)
-            {
-                continue;
-            }
-
-            string imagePath = ResolveLocalImage(root, item.ImagePath);
-            InputSizeGuard.Ensure(
-                resourceBudgets,
-                imagePath,
-                InputSizeGuard.ResolveMaxBytes(
-                    Environment.GetEnvironmentVariable));
-            byte[] bytes = resourceBudgets.Inputs.ReadAllBytes(imagePath);
-            IPPImage image = presentation.Images.AddImage(bytes);
-            ISlide slide = presentation.Slides[slideNumber - 1];
-            float slideWidth = presentation.SlideSize.Size.Width;
-            float slideHeight = presentation.SlideSize.Size.Height;
-            slide.Shapes.AddPictureFrame(
-                ShapeType.Rectangle,
-                slideWidth * 0.56f,
-                slideHeight * 0.23f,
-                slideWidth * 0.38f,
-                slideHeight * 0.62f,
-                image);
         }
     }
 
@@ -84,35 +73,20 @@ internal static partial class SlidesMarkdownBuilder
         MarkdownSlide? current = null;
         string? pendingSection = null;
         bool inCode = false;
-        var code = new List<string>();
-
-        void FlushCode()
-        {
-            if (current is not null && code.Count > 0)
-            {
-                current.CodeBlocks.Add(string.Join("\n", code));
-            }
-
-            code.Clear();
-        }
 
         foreach (string raw in lines)
         {
             string line = raw.TrimEnd();
             if (line.StartsWith("```", StringComparison.Ordinal))
             {
-                if (inCode)
-                {
-                    FlushCode();
-                }
-
                 inCode = !inCode;
                 continue;
             }
 
             if (inCode)
             {
-                code.Add(raw);
+                current ??= AddFallback(slides, fallbackTitle, ref pendingSection);
+                current.Blocks.Add(new MarkdownBlock(MarkdownBlockKind.Code, raw, 0));
                 continue;
             }
 
@@ -123,17 +97,16 @@ internal static partial class SlidesMarkdownBuilder
                 continue;
             }
 
-            if (line.StartsWith("# ", StringComparison.Ordinal))
+            if (line.StartsWith("# ", StringComparison.Ordinal)
+                || line.StartsWith("## ", StringComparison.Ordinal))
             {
-                current = new MarkdownSlide(CleanInlineMarkdown(line[2..]), TitleSlide: true) { Section = pendingSection };
-                pendingSection = null;
-                slides.Add(current);
-                continue;
-            }
-
-            if (line.StartsWith("## ", StringComparison.Ordinal))
-            {
-                current = new MarkdownSlide(CleanInlineMarkdown(line[3..]), TitleSlide: false) { Section = pendingSection };
+                bool titleSlide = line[1] == ' ';
+                current = new MarkdownSlide(
+                    CleanInlineMarkdown(line[(titleSlide ? 2 : 3)..]),
+                    titleSlide)
+                {
+                    Section = pendingSection,
+                };
                 pendingSection = null;
                 slides.Add(current);
                 continue;
@@ -144,33 +117,31 @@ internal static partial class SlidesMarkdownBuilder
                 continue;
             }
 
-            current ??= AddFallback(slides, fallbackTitle, pendingSection);
-            pendingSection = null;
-            Match image = ImagePattern().Match(line.Trim());
-            if (image.Success)
+            current ??= AddFallback(slides, fallbackTitle, ref pendingSection);
+            string trimmed = line.Trim();
+            if (ImagePattern().Match(trimmed) is { Success: true } image)
             {
                 current.ImagePath ??= image.Groups["path"].Value.Trim();
             }
-            else if (line.TrimStart().StartsWith('>'))
+            else if (trimmed.StartsWith('>'))
             {
-                current.Quotes.Add(CleanInlineMarkdown(line.TrimStart()[1..]));
+                current.Blocks.Add(new MarkdownBlock(
+                    MarkdownBlockKind.Quote,
+                    $"“{CleanInlineMarkdown(trimmed[1..])}”",
+                    0));
             }
             else if (BulletPattern().Match(line) is { Success: true } bullet)
             {
                 int spaces = bullet.Groups["indent"].Value.Replace("\t", "  ", StringComparison.Ordinal).Length;
-                current.Bullets.Add(new MarkdownBullet(
+                current.Blocks.Add(new MarkdownBlock(
+                    MarkdownBlockKind.Bullet,
                     CleanInlineMarkdown(bullet.Groups["text"].Value),
                     Math.Min(spaces / 2, 8)));
             }
             else
             {
-                current.Paragraphs.Add(CleanInlineMarkdown(line));
+                current.Blocks.Add(new MarkdownBlock(MarkdownBlockKind.Paragraph, CleanInlineMarkdown(line), 0));
             }
-        }
-
-        if (inCode)
-        {
-            FlushCode();
         }
 
         return slides.Count == 0
@@ -178,173 +149,134 @@ internal static partial class SlidesMarkdownBuilder
             : slides;
     }
 
-    private static MarkdownSlide AddFallback(List<MarkdownSlide> slides, string title, string? section)
+    private static MarkdownSlide AddFallback(List<MarkdownSlide> slides, string title, ref string? section)
     {
         var value = new MarkdownSlide(title, TitleSlide: false) { Section = section };
+        section = null;
         slides.Add(value);
         return value;
     }
 
-    private static void AddTitle(ISlide slide, Presentation presentation, MarkdownSlide item)
+    private static ILayoutSlide LayoutFor(Presentation presentation, MarkdownSlide item)
     {
-        bool centered = item.TitleSlide || !item.HasContent;
+        SlideLayoutType type = item switch
+        {
+            { TitleSlide: true } => SlideLayoutType.Title,
+            { ImagePath: not null, Blocks.Count: > 0 } => SlideLayoutType.TwoObjects,
+            { ImagePath: null, Blocks.Count: 0 } => SlideLayoutType.TitleOnly,
+            _ => SlideLayoutType.TitleAndObject,
+        };
+        return presentation.LayoutSlides.GetByType(type)
+            ?? presentation.LayoutSlides.GetByType(SlideLayoutType.TitleAndObject)
+            ?? presentation.LayoutSlides.FirstOrDefault(static layout =>
+                layout.Shapes.Any(static shape => SlidesPlaceholders.IsTitle(shape.Placeholder)))
+            ?? presentation.LayoutSlides[0];
+    }
+
+    private static void WriteBlocks(ITextFrame frame, IReadOnlyList<MarkdownBlock> blocks)
+    {
+        frame.Paragraphs.Clear();
+        foreach (MarkdownBlock block in blocks)
+        {
+            var paragraph = new Paragraph();
+            paragraph.Portions.Add(new Portion(block.Text));
+            paragraph.ParagraphFormat.Depth = (short)block.Level;
+            if (block.Kind != MarkdownBlockKind.Bullet)
+            {
+                paragraph.ParagraphFormat.Bullet.Type = BulletType.None;
+            }
+
+            if (block.Kind == MarkdownBlockKind.Code)
+            {
+                paragraph.Portions[0].PortionFormat.LatinFont = new FontData(CodeFont);
+            }
+
+            frame.Paragraphs.Add(paragraph);
+        }
+    }
+
+    private static void AddImage(
+        ResourceBudgetLedger resourceBudgets,
+        Presentation presentation,
+        ISlide slide,
+        string root,
+        MarkdownSlide item,
+        IAutoShape[] content)
+    {
+        string imagePath = ResolveLocalImage(root, item.ImagePath!);
+        InputSizeGuard.Ensure(
+            resourceBudgets,
+            imagePath,
+            InputSizeGuard.ResolveMaxBytes(
+                Environment.GetEnvironmentVariable));
+        IPPImage image = presentation.Images.AddImage(resourceBudgets.Inputs.ReadAllBytes(imagePath));
+
+        // The image takes the frame of the first content placeholder that holds no text.
+        IAutoShape? frame = content.FirstOrDefault(static shape => string.IsNullOrEmpty(shape.TextFrame?.Text));
         float width = presentation.SlideSize.Size.Width;
         float height = presentation.SlideSize.Size.Height;
-        IAutoShape shape = slide.Shapes.AddAutoShape(
-            ShapeType.Rectangle,
-            width * 0.07f,
-            centered ? height * 0.30f : height * 0.08f,
-            width * 0.86f,
-            centered ? height * 0.24f : height * 0.15f);
-        shape.Name = "Title";
+        (float x, float y, float w, float h) = Fit(
+            image,
+            frame is null
+                ? (width * 0.55f, height * 0.25f, width * 0.38f, height * 0.62f)
+                : (frame.X, frame.Y, frame.Width, frame.Height));
+        IPictureFrame picture = slide.Shapes.AddPictureFrame(ShapeType.Rectangle, x, y, w, h, image);
+        picture.Name = "Image";
+        picture.PictureFrameLock.AspectRatioLocked = true;
+        if (frame is not null)
+        {
+            slide.Shapes.Remove(frame);
+        }
+    }
+
+    /// <summary>Largest rectangle with the image's aspect ratio, centered in the box.</summary>
+    private static (float X, float Y, float Width, float Height) Fit(
+        IPPImage image,
+        (float X, float Y, float Width, float Height) box)
+    {
+        if (image.Width <= 0 || image.Height <= 0)
+        {
+            return box;
+        }
+
+        float scale = Math.Min(box.Width / image.Width, box.Height / image.Height);
+        float width = image.Width * scale;
+        float height = image.Height * scale;
+        return (box.X + ((box.Width - width) / 2), box.Y + ((box.Height - height) / 2), width, height);
+    }
+
+    private static void RemoveEmptyPlaceholders(ISlide slide)
+    {
+        foreach (IShape shape in slide.Shapes
+            .Where(static shape => shape.Placeholder is not null
+                && shape is not IAutoShape { TextFrame.Text.Length: > 0 }
+                && shape is not IPictureFrame)
+            .ToArray())
+        {
+            slide.Shapes.Remove(shape);
+        }
+    }
+
+    // Templates without a title or content placeholder still get readable, unstyled text boxes.
+    private static IAutoShape AddFallbackTitle(ISlide slide, Presentation presentation)
+    {
+        float width = presentation.SlideSize.Size.Width;
+        float height = presentation.SlideSize.Size.Height;
+        IAutoShape shape = slide.Shapes.AddAutoShape(ShapeType.Rectangle, width * 0.07f, height * 0.06f, width * 0.86f, height * 0.16f);
         shape.FillFormat.FillType = FillType.NoFill;
         shape.LineFormat.FillFormat.FillType = FillType.NoFill;
-        shape.TextFrame.Text = item.Title;
-        ApplyTextStyle(
-            shape,
-            centered ? 36 : 28,
-            bold: true,
-            Color.FromArgb(15, 42, 61),
-            "Arial",
-            centered ? TextAlignment.Center : TextAlignment.Left);
-        shape.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.None;
-        shape.TextFrame.TextFrameFormat.AnchoringType = TextAnchorType.Center;
-
-        IAutoShape accent = slide.Shapes.AddAutoShape(
-            ShapeType.Rectangle,
-            width * (centered ? 0.42f : 0.07f),
-            centered ? height * 0.57f : height * 0.19f,
-            centered ? width * 0.16f : width * 0.09f,
-            height * 0.012f);
-        accent.LineFormat.FillFormat.FillType = FillType.NoFill;
-        accent.FillFormat.FillType = FillType.Solid;
-        accent.FillFormat.SolidFillColor.Color = Color.FromArgb(15, 157, 138);
+        return shape;
     }
 
-    private static void AddBody(ISlide slide, Presentation presentation, MarkdownSlide item)
+    private static IAutoShape AddFallbackBody(ISlide slide, Presentation presentation)
     {
-        var content = new List<string>(item.Paragraphs);
-        content.AddRange(item.Bullets.Select(static bullet => bullet.Text));
-        if (content.Count == 0 && item.Quotes.Count == 0 && item.CodeBlocks.Count == 0)
-        {
-            return;
-        }
-
         float width = presentation.SlideSize.Size.Width;
         float height = presentation.SlideSize.Size.Height;
-        float bodyWidth = item.ImagePath is null ? width * 0.86f : width * 0.44f;
-        if (content.Count > 0)
-        {
-            IAutoShape shape = slide.Shapes.AddAutoShape(
-                ShapeType.Rectangle,
-                width * 0.07f,
-                item.TitleSlide ? height * 0.62f : height * 0.25f,
-                bodyWidth,
-                item.TitleSlide ? height * 0.20f : height * (item.Quotes.Count + item.CodeBlocks.Count == 0 ? 0.62f : 0.38f));
-            shape.Name = "Body";
-            shape.FillFormat.FillType = FillType.NoFill;
-            shape.LineFormat.FillFormat.FillType = FillType.NoFill;
-            shape.TextFrame.Paragraphs.Clear();
-            foreach (string paragraphText in item.Paragraphs)
-            {
-                var paragraph = new Paragraph();
-                paragraph.Portions.Add(new Portion(paragraphText));
-                shape.TextFrame.Paragraphs.Add(paragraph);
-            }
-
-            foreach (MarkdownBullet bullet in item.Bullets)
-            {
-                var paragraph = new Paragraph();
-                paragraph.Portions.Add(new Portion(bullet.Text));
-                paragraph.ParagraphFormat.Bullet.Type = BulletType.Symbol;
-                paragraph.ParagraphFormat.Depth = (short)bullet.Level;
-                shape.TextFrame.Paragraphs.Add(paragraph);
-            }
-
-            ApplyTextStyle(
-                shape,
-                ContentFontSize(item, content),
-                bold: false,
-                Color.FromArgb(30, 41, 59),
-                "Arial",
-                TextAlignment.Left);
-            shape.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.Normal;
-        }
-
-        if (item.Quotes.Count > 0)
-        {
-            IAutoShape quote = slide.Shapes.AddAutoShape(
-                ShapeType.RoundCornerRectangle,
-                width * 0.07f,
-                height * 0.70f,
-                item.CodeBlocks.Count > 0 ? width * 0.44f : bodyWidth,
-                height * 0.16f);
-            quote.Name = "Callout";
-            quote.FillFormat.FillType = FillType.Solid;
-            quote.FillFormat.SolidFillColor.Color = Color.FromArgb(224, 242, 254);
-            quote.LineFormat.FillFormat.FillType = FillType.NoFill;
-            quote.TextFrame.Text = string.Join("\n", item.Quotes.Select(static value => $"\u201c{value}\u201d"));
-            ApplyTextStyle(quote, 16, bold: false, Color.FromArgb(3, 105, 161), "Arial", TextAlignment.Center);
-            quote.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.Normal;
-        }
-
-        if (item.CodeBlocks.Count > 0)
-        {
-            IAutoShape code = slide.Shapes.AddAutoShape(
-                ShapeType.RoundCornerRectangle,
-                width * (item.ImagePath is null ? 0.55f : 0.07f),
-                height * 0.70f,
-                width * (item.ImagePath is null ? 0.38f : 0.44f),
-                height * 0.16f);
-            code.Name = "Code";
-            code.FillFormat.FillType = FillType.Solid;
-            code.FillFormat.SolidFillColor.Color = Color.FromArgb(30, 41, 59);
-            code.LineFormat.FillFormat.FillType = FillType.NoFill;
-            code.TextFrame.Text = string.Join("\n\n", item.CodeBlocks);
-            ApplyTextStyle(code, 14, bold: false, Color.FromArgb(226, 232, 240), "Consolas", TextAlignment.Left);
-            code.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.Normal;
-        }
-    }
-
-    private static float ContentFontSize(MarkdownSlide item, IReadOnlyCollection<string> content)
-    {
-        int characters = content.Sum(static value => value.Length);
-        int lines = item.Paragraphs.Count + item.Bullets.Count;
-        return (characters, lines) switch
-        {
-            (> 900, _) or (_, > 12) => 14,
-            (> 600, _) or (_, > 9) => 16,
-            _ => 18,
-        };
-    }
-
-    private static void ApplyBackground(ISlide slide)
-    {
-        slide.Background.Type = BackgroundType.OwnBackground;
-        slide.Background.FillFormat.FillType = FillType.Solid;
-        slide.Background.FillFormat.SolidFillColor.Color = Color.FromArgb(248, 250, 252);
-    }
-
-    private static void ApplyTextStyle(
-        IAutoShape shape,
-        float size,
-        bool bold,
-        Color color,
-        string font,
-        TextAlignment alignment)
-    {
-        foreach (IParagraph paragraph in shape.TextFrame.Paragraphs)
-        {
-            paragraph.ParagraphFormat.Alignment = alignment;
-            foreach (IPortion portion in paragraph.Portions)
-            {
-                portion.PortionFormat.FontHeight = size;
-                portion.PortionFormat.FontBold = bold ? NullableBool.True : NullableBool.False;
-                portion.PortionFormat.LatinFont = new FontData(font);
-                portion.PortionFormat.FillFormat.FillType = FillType.Solid;
-                portion.PortionFormat.FillFormat.SolidFillColor.Color = color;
-            }
-        }
+        IAutoShape shape = slide.Shapes.AddAutoShape(ShapeType.Rectangle, width * 0.07f, height * 0.25f, width * 0.86f, height * 0.65f);
+        shape.FillFormat.FillType = FillType.NoFill;
+        shape.LineFormat.FillFormat.FillType = FillType.NoFill;
+        shape.TextFrame.TextFrameFormat.AnchoringType = TextAnchorType.Top;
+        return shape;
     }
 
     private static string ResolveLocalImage(string root, string value)
@@ -391,21 +323,20 @@ internal static partial class SlidesMarkdownBuilder
     private static partial Regex InlineCodePattern();
 }
 
-internal sealed record MarkdownBullet(string Text, int Level);
+internal enum MarkdownBlockKind
+{
+    Paragraph,
+    Bullet,
+    Quote,
+    Code,
+}
+
+/// <summary>One body paragraph in source order.</summary>
+internal sealed record MarkdownBlock(MarkdownBlockKind Kind, string Text, int Level);
 
 internal sealed record MarkdownSlide(string Title, bool TitleSlide)
 {
     public string? Section { get; set; }
     public string? ImagePath { get; set; }
-    public List<string> Paragraphs { get; } = [];
-    public List<MarkdownBullet> Bullets { get; } = [];
-    public List<string> Quotes { get; } = [];
-    public List<string> CodeBlocks { get; } = [];
-
-    public bool HasContent =>
-        Paragraphs.Count > 0
-        || Bullets.Count > 0
-        || Quotes.Count > 0
-        || CodeBlocks.Count > 0
-        || ImagePath is not null;
+    public List<MarkdownBlock> Blocks { get; } = [];
 }

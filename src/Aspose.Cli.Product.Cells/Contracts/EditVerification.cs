@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// <summary>Post-edit evidence produced by <c>cells edit --verify</c>.</summary>
 public sealed record EditVerification
 {
-    /// <summary><c>true</c> when diffing, formula checks, and rendering all completed without a verification issue.</summary>
+    /// <summary><c>true</c> when diffing and formula checks completed without a verification issue.</summary>
     public required bool Ok { get; init; }
 
     /// <summary>Targets requested by the operations in this invocation.</summary>
@@ -20,12 +20,6 @@ public sealed record EditVerification
 
     /// <summary>Formula errors found anywhere in the edited workbook.</summary>
     public required IReadOnlyList<CellError> FormulaErrors { get; init; }
-
-    /// <summary>Images rendered for every visible, renderable worksheet.</summary>
-    public required IReadOnlyList<SheetRenderOutput> Renders { get; init; }
-
-    /// <summary><c>true</c> when the agent still needs to inspect the rendered images.</summary>
-    public required bool VisualReviewRequired { get; init; }
 
     /// <summary><c>true</c> when the cell-diff budget was reached.</summary>
     public required bool Truncated { get; init; }

@@ -1,13 +1,15 @@
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 
-namespace Aspose.Cli.Sdk.Release;
+namespace Aspose.Cli.Host.Commands;
 
 /// <summary>Verifies detached release metadata without loading a product engine.</summary>
-public static class ReleaseManifestVerifier
+internal static class ReleaseManifestVerifier
 {
     public const string TrustedKeyRingEnvironmentVariable =
         "ASPOSE_CLI_RELEASE_TRUSTED_KEYS";
@@ -461,7 +463,7 @@ public static class ReleaseManifestVerifier
             : bytes;
 }
 
-public sealed record ReleaseManifestInfo(
+internal sealed record ReleaseManifestInfo(
     string Edition,
     string RuntimeIdentifier,
     string ArtifactVersion,
@@ -472,11 +474,11 @@ public sealed record ReleaseManifestInfo(
     string KeyId,
     string SignaturePath);
 
-public sealed record ReleaseEnginePackage(string Product, string PackageId, string Version, string ContentHash);
+internal sealed record ReleaseEnginePackage(string Product, string PackageId, string Version, string ContentHash);
 
-public sealed record TrustedReleaseKey(string KeyId, string PublicKeyPem);
+internal sealed record TrustedReleaseKey(string KeyId, string PublicKeyPem);
 
-public sealed class TrustedReleaseKeyRing
+internal sealed class TrustedReleaseKeyRing
 {
     private readonly IReadOnlyDictionary<string, TrustedReleaseKey> _keys;
 
@@ -504,10 +506,30 @@ public sealed class TrustedReleaseKeyRing
         _keys.TryGetValue(keyId, out key);
 }
 
-public sealed class ReleaseVerificationException(
+internal sealed class ReleaseVerificationException(
     string message,
     bool trustedKeysConfigured = false,
     Exception? innerException = null) : Exception(message, innerException)
 {
     public bool TrustedKeysConfigured { get; } = trustedKeysConfigured;
+}
+
+/// <summary>Errors raised while establishing release trust for an update.</summary>
+internal static class ReleaseErrors
+{
+    public static CliException TrustUnavailable(string reason) => new(
+        ErrorCodes.ReleaseTrustUnavailable,
+        $"Release updates are unavailable: {reason}",
+        hint: $"Configure {ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable} with the approved public-key ring, then retry. No production key is bundled in this build.",
+        details: new JsonObject
+        {
+            ["reason"] = reason,
+            ["trustEnvironmentVariable"] = ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable,
+        });
+
+    public static CliException VerificationFailed(string reason) => new(
+        ErrorCodes.ReleaseVerificationFailed,
+        $"The release could not be verified: {reason}",
+        hint: "Use the official feed and retry. Do not bypass signature or archive verification.",
+        details: new JsonObject { ["reason"] = reason });
 }

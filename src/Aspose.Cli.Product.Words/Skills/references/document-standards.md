@@ -1,12 +1,29 @@
 # Document standards
 
-- Use built-in Heading styles for navigable structure and reliable TOC generation.
-- Define a small named style system before applying presentation formatting.
-- Keep body text readable, consistent and compatible with the target fonts.
-- Use real tables for tabular data; do not align columns with spaces.
+## Template
+
+The template carries the design: Normal and Heading styles, page size and
+margins, headers, footers and page numbers. The bundled
+`assets/templates/default-a4.docx` provides A4 pages, Calibri body text with
+Microsoft YaHei for CJK text, navy and teal headings with a rule under
+Heading 1, a teal-barred Quote style and a centered page number.
+
+To change the look, edit the template in Word once and reuse it. Do not
+correct a design paragraph by paragraph.
+
+## Structure
+
+- Use built-in Heading styles for every heading; never fake one with bold text.
+- Use real tables for tabular data; never align columns with spaces or tabs.
+- Keep one style per role; apply `set_style`, or create one with
+  `define_style`, instead of `format_text` on individual runs.
 - Use section-specific page setup only when layout requirements differ.
 - Keep headers, footers and page numbers consistent across linked sections.
-- Add descriptive document properties such as title, author and subject.
-- Render at 150 DPI or higher for CJK and detailed visual review.
+- Set the document title with `--title` or `set_properties`.
 
-Prefer semantic operations (`set_style`, `define_style`, `insert_toc`, `set_page_numbers`) over run-by-run cosmetic edits.
+## What to look for in review
+
+Heading hierarchy, paragraph flow, widows and orphans, table widths and header
+rows, list numbering, image placement and captions, headers, footers and page
+numbers, section breaks, clipping, tracked-change and comment visibility, and
+missing CJK glyphs.

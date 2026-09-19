@@ -122,10 +122,8 @@ public sealed class SlidesMutationAndSecurityTests
             {
                 OutputPath = output,
                 EncryptPassword = "correct",
-                Verify = true,
             });
 
-        Assert.True(result.Verification!.Ok);
         Assert.Equal(ErrorCodes.PasswordRequired, Assert.Throws<CliException>(() =>
             fixture.Engine.GetInfo(output, new PresentationInfoRequest())).Code);
         Assert.Equal(3, fixture.Engine.GetInfo(
@@ -169,11 +167,10 @@ public sealed class SlidesMutationAndSecurityTests
                     new SlidesSetPropertiesOp { Title = "Q4", Author = "CLI" },
                 ],
             },
-            new PresentationEditRequest { OutputPath = output, Verify = true });
+            new PresentationEditRequest { OutputPath = output });
 
         Assert.All(result.Applied, static operation => Assert.Equal("ok", operation.Status));
         Assert.All(result.Applied, static operation => Assert.NotEmpty(operation.Targets));
-        Assert.True(result.Verification!.Ok);
         using var reopened = new Presentation(output);
         Assert.Contains(reopened.Sections, static section => section.Name == "Results");
         Assert.Equal("Q4", reopened.DocumentProperties.Title);

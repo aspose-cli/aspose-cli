@@ -64,7 +64,7 @@ internal sealed class PdfMutationService
         (List<BoundedOperationOutcome> outcomes, string? outputPassword) =
             ApplyOperations(loaded.Document, batch, request, touched, operationInputs);
         Publication publication;
-        try { publication = Publish(loaded.Document, request, outputPassword, touched, precondition); }
+        try { publication = Publish(loaded.Document, request, outputPassword, precondition); }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes);
 
@@ -77,7 +77,6 @@ internal sealed class PdfMutationService
             Backup = publication.Backup,
             Mutation = publication.Mutation,
             PagesTouched = touched.Count == 0 ? null : touched.ToArray(),
-            Verification = publication.Verification,
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
@@ -188,12 +187,10 @@ internal sealed class PdfMutationService
         Document document,
         PdfEditRequest request,
         string? outputPassword,
-        IReadOnlySet<int> touched,
         FileWritePrecondition precondition)
     {
         OutputInfo? output = null;
         BackupInfo? backup = null;
-        PdfVerification? verification = null;
         MutationReceipt? mutation = null;
         if (!request.Options.DryRun)
         {
@@ -223,21 +220,10 @@ internal sealed class PdfMutationService
                 };
             }
 
-            if (request.Verify)
-            {
-                verification = write.Read(candidate => VerifyEdit(
-                    _loader,
-                    candidate,
-                    request.OutputPath,
-                    outputPassword,
-                    touched,
-                    transaction,
-                    request.OverwriteArtifacts));
-            }
             transaction.Commit();
         }
 
-        return new Publication(output, backup, verification, mutation);
+        return new Publication(output, backup, mutation);
     }
 
     private static List<Warning> BuildWarnings(
@@ -268,6 +254,5 @@ internal sealed class PdfMutationService
     private sealed record Publication(
         OutputInfo? Output,
         BackupInfo? Backup,
-        PdfVerification? Verification,
         MutationReceipt? Mutation);
 }

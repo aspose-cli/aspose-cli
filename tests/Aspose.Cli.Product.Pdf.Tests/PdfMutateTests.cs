@@ -49,9 +49,8 @@ public sealed class PdfMutateTests
                     Rect = new PdfRectInput { X = 20, Y = 100, Width = 40, Height = 20 },
                 },
             ],
-        }, new PdfEditRequest { OutputPath = output, Verify = true });
+        }, new PdfEditRequest { OutputPath = output });
 
-        Assert.True(result.Verification?.Ok);
         Assert.Equal("reopened", result.Mutation?.Verification);
         Assert.NotNull(result.Input.Fingerprint);
         Assert.NotNull(result.Output?.Fingerprint);
@@ -280,7 +279,7 @@ public sealed class PdfMutateTests
                     Permissions = new PdfPermissionsInput { Print = true },
                 },
             ],
-        }, new PdfEditRequest { OutputPath = encrypted, Verify = true, OpSecrets = secrets });
+        }, new PdfEditRequest { OutputPath = encrypted, OpSecrets = secrets });
 
         Assert.Throws<InvalidPasswordException>(() => new Document(encrypted));
         using (var opened = new Document(encrypted, "reader"))

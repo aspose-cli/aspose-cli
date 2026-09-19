@@ -8,7 +8,6 @@
     { "op": "format_range", "sheet": "sales", "range": "A1:E1", "style": { "bold": true, "bg": "#1F4E79", "color": "#FFFFFF" } },
     { "op": "format_range", "sheet": "sales", "range": "A6:E6", "style": { "bold": true } },
     { "op": "format_range", "sheet": "sales", "range": "B2:E6", "style": { "numberFormat": "#,##0" } },
-    { "op": "recalculate" },
     { "op": "resize_columns", "sheet": "sales", "from": "A", "to": "E" },
     { "op": "freeze_panes", "sheet": "sales", "cell": "A2" },
     { "op": "create_chart", "sheet": "sales", "type": "column", "dataRange": "A1:D5", "at": "G2:L18", "title": "Quarterly Sales" }

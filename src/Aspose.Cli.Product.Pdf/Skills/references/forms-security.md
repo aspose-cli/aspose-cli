@@ -43,7 +43,7 @@ aspose-cli pdf inspect report.signed.pdf --detail signatures --output json
 
 Omit `--visible` for an invisible signature; `--rect` requires `--visible`.
 Signature rectangle values are rounded to integer PDF points before the SDK
-call, so render the result to check placement. The command reopens the saved
+call, so review the result to check placement. The command reopens the saved
 file and reports `signature.valid`, which may be true, false or unavailable. Require
 `valid: true` and inspect all signature fields, especially when the input was
 already signed. Command success alone does not prove signature validity, and

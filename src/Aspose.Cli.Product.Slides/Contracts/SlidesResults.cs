@@ -260,24 +260,12 @@ public sealed record SlidesEditResult() : ResultEnvelope(SlidesSchemaIds.EditRes
     public required IReadOnlyList<BoundedOperationOutcome> Applied { get; init; }
     public BackupInfo? Backup { get; init; }
     public IReadOnlyList<uint>? SlidesTouched { get; init; }
-    public SlidesEditVerification? Verification { get; init; }
 
     [JsonIgnore]
     public bool HasFailures => Applied.Any(static op => op.Status == "failed");
 }
 
 /// <summary>Outcome of one operation in an edit batch.</summary>
-/// <summary>Read-back and rendering evidence produced by <c>slides edit --verify</c>.</summary>
-public sealed record SlidesEditVerification
-{
-    public required bool Ok { get; init; }
-    public required bool VisualReviewRequired { get; init; }
-    public required int Slides { get; init; }
-    public required IReadOnlyList<uint> ReadBackSlideIds { get; init; }
-    public required IReadOnlyList<SlideRenderOutput> Renders { get; init; }
-    public required IReadOnlyList<string> Issues { get; init; }
-}
-
 /// <summary>Bounded presentation search result.</summary>
 public sealed record SlidesSearchResult() : ResultEnvelope(SlidesSchemaIds.SearchResult, 2)
 {

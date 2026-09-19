@@ -40,13 +40,10 @@
     "pagesTouched": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "uniqueItems": true },
     "verification": {
       "type": "object",
-      "required": ["ok", "visualReviewRequired", "readBackBlocks", "renders", "issues"],
+      "required": ["ok", "issues"],
       "additionalProperties": false,
       "properties": {
         "ok": { "type": "boolean" },
-        "visualReviewRequired": { "type": "boolean" },
-        "readBackBlocks": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
-        "renders": { "type": "array", "items": { "type": "object" } },
         "issues": { "type": "array", "items": { "type": "string" } },
         "semanticChangesDetected": { "type": "boolean" },
         "fieldCount": { "type": "integer", "minimum": 0 },

@@ -51,7 +51,6 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
               { "op": "set_values", "sheet": "Data", "range": "A1",
                 "values": [["Region","Units","Revenue"],["North",2,null],["South",3,null]] },
               { "op": "set_formula", "sheet": "Data", "range": "C2:C3", "formula": "=B2*100" },
-              { "op": "recalculate" },
               { "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:C3", "at": "A1",
                 "name": "ByRegion", "rows": ["Region"], "values": [{ "field": "Revenue" }] }
             ] }

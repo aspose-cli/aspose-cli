@@ -9,7 +9,7 @@
 - `REMOTE_RESOURCES_BLOCKED`: this warning describes the HTML resource
   callback's decision. The pinned PDF importer can fetch linked images or CSS
   outside that callback, so the warning is not proof of isolation. Use trusted
-  HTML inputs only; see the skill's External resources section.
+  HTML inputs only.
 - `OUTPUT_EXISTS`: choose another path or explicitly pass `--overwrite`.
 - `EVAL_MODE`: disclose evaluation limits and the visible watermark. After a
   license change, start the matching preview again to select the new license.

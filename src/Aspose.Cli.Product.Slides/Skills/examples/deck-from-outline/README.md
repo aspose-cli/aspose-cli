@@ -1,11 +1,14 @@
 # Build a deck from an outline
 
-Turn a Markdown outline into a presentation, inspect it, and render every slide:
+Author a Markdown outline into the bundled template (or the user's brand
+template), inspect the result, and review every slide:
 
 ```powershell
-aspose-cli slides create qbr.pptx --from-markdown notes.md --size 16x9 --output json
-aspose-cli slides inspect qbr.pptx --preview --detail masters layouts fonts notes --output json
-aspose-cli slides render qbr.pptx --all-slides --to png --width 1600 --out qbr.png --output json
+aspose-cli slides create qbr.pptx --from-markdown notes.md --template default-16x9.pptx --output json
+aspose-cli slides inspect qbr.pptx --preview --detail layouts fonts notes --output json
+aspose-cli review qbr.pptx --out qbr.review --output json
 ```
 
-Inspect all rendered images before delivery and disclose evaluation status.
+`default-16x9.pptx` is `assets/templates/default-16x9.pptx` in this Skill.
+Open every image the review lists before delivery and disclose evaluation
+status.

@@ -17,12 +17,8 @@ Use `--product words` to choose Words explicitly for a supported input. Password
 The human browser shell is document-specific: it exposes pages, page
 navigation, zoom, live edit progress, and affected-page emphasis. It never
 shows spreadsheet formula or worksheet controls. Agents should not scrape
-that dynamic shell; use the static `words query blocks`, `words render`, comparison,
-and verification outputs as evidence.
-
-The browser view is for a human; delivery verification still requires
-read-back, semantic comparison when relevant, and inspection of rendered
-verification pages.
+that dynamic shell; use `words query blocks`, `--verify`, comparison and
+`review` as evidence.
 
 Run `preview` again after changing a license. A matching session is reused only
 when the applied license identity also matches. A valid change of source, path

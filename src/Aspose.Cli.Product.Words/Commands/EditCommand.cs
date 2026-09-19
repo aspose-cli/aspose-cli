@@ -50,7 +50,6 @@ internal static class EditCommand
             {
                 OutputPath = target.OutputPath,
                 Overwrite = target.Overwrite,
-                OverwriteArtifacts = target.OverwriteArtifacts,
                 BackupPath = target.BackupPath,
                 Options = editOptions.Read(parse, batch.IfMatch),
                 Verify = parse.GetValue(verify),

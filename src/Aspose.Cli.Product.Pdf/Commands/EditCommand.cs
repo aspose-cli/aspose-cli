@@ -14,14 +14,12 @@ internal static class EditCommand
         var ops = new Option<string>("--ops") { Required = true, Description = "Ops JSON path, inline JSON, or '-' for stdin." }.WithInput(InputKind.JsonSource);
         var output = new MutationFileOptions();
         var editOptions = new BoundedEditOptions();
-        var verify = new Option<bool>("--verify") { Description = "Reopen and render changed pages after save." };
         var password = new PasswordOptions("--password", "the PDF");
         var command = new Command("edit", "Apply one validated, atomic PDF operation batch.");
         command.Arguments.Add(file);
         command.Options.Add(ops);
         output.AddTo(command);
         editOptions.AddTo(command);
-        command.Options.Add(verify);
         password.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
@@ -29,22 +27,14 @@ internal static class EditCommand
             PdfOpsBatch batch = PdfOpsParser.Parse(
                 JsonInputSource.Read(source, context.Paths, context.Inputs, "--ops"));
             batch = NormalizePaths(batch, context);
-            bool isDryRun = parse.GetValue(editOptions.DryRun);
-            if (isDryRun && parse.GetValue(verify))
-            {
-                throw CliErrors.OptionInvalid("--verify", "cannot be combined with --dry-run", "Run the dry run, then save with --verify.");
-            }
-
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             MutationTarget target = output.Resolve(parse, context.Paths, input, requireBackup: true);
             return context.Port.ApplyOps(input, batch, new PdfEditRequest
             {
                 OutputPath = target.OutputPath,
                 Overwrite = target.Overwrite,
-                OverwriteArtifacts = target.OverwriteArtifacts,
                 BackupPath = target.BackupPath,
                 Options = editOptions.Read(parse, batch.IfMatch),
-                Verify = parse.GetValue(verify),
                 Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: source != "-"),
                 OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
             });

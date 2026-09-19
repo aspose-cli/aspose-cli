@@ -1,18 +1,30 @@
 # Presentation design system
 
-Treat the deck as one visual system rather than a collection of unrelated
-slides. Reuse the source template's masters and layouts. Keep a restrained
-palette, one title hierarchy, consistent margins, predictable chart colors and
-short speaker notes.
+A deck is one visual system. The template carries it: theme colors, theme
+fonts (including an East Asian font for CJK text), masters and layouts. Content
+fills placeholders; it does not restyle them.
 
-For executive decks:
+## Choosing the template
 
-- make one claim per slide;
-- prefer a chart or a small table over dense prose;
-- use direct data labels only when they improve comprehension;
-- keep chart legends and gridlines quiet;
-- preserve whitespace and align shapes to a common grid;
-- never shrink body text merely to fit unbounded content.
+1. The user's brand template, when supplied.
+2. Otherwise the bundled `assets/templates/default-16x9.pptx`: a dark title
+   slide, clean white content slides, a restrained teal accent, Calibri with
+   Microsoft YaHei for CJK text.
+3. To change the look, edit the template in PowerPoint once and reuse it;
+   never compensate slide by slide with shape styling.
 
-Render changed slides at 150 DPI or at least 1280 pixels wide. For CJK content,
-check fonts first and inspect the actual rendered glyphs.
+## Content rules
+
+- One claim per slide; put the claim in the title.
+- At most six bullets and two levels per slide. Split rather than shrink.
+- Prefer a chart or a small table over dense prose; label data directly only
+  when it improves comprehension; keep legends and gridlines quiet.
+- Keep charts in the theme's accent colors so every slide agrees.
+- Keep speaker notes short and in `set_notes`, not on the slide.
+
+## What to look for in review
+
+Title hierarchy, text overflowing its placeholder, text shrunk below about
+14 pt, image crops and distortion, chart labels, footer and slide-number
+placement, contrast, and missing CJK glyphs. For CJK content run
+`aspose-cli fonts check deck.pptx` before rendering.

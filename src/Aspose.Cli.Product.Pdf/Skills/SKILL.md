@@ -1,80 +1,74 @@
 ---
 name: aspose-cli-pdf
-description: High-fidelity PDF automation with bounded inspection, page assembly, forms, redaction, security, PDF/A validation, rendering, and verification.
+description: Inspect, assemble, edit, fill, redact, secure, sign, convert, validate and review PDF documents with the local Aspose CLI. Edits are atomic batches that reopen their output before publishing, and review renders every page for visual checks.
 ---
 
 # Aspose PDF
 
-Use `aspose-cli pdf` for PDF-native fixed-layout workflows. Use explicit
-`aspose-cli words convert input.pdf --to docx` only when the intended result
-is an editable word-processing document.
+Use `aspose-cli pdf` for fixed-layout PDF work. When the goal is an editable
+word-processing document, convert explicitly with
+`aspose-cli words convert input.pdf --to docx`. Pages are 1-based physical
+positions; rectangles are points with a top-left origin.
 
-## Safe workflow
+## Workflow
 
-1. Inspect structure and security first:
-   `aspose-cli pdf inspect input.pdf --preview --detail metadata permissions forms signatures attachments outline fonts --output json`.
-2. Read only required pages:
-   `aspose-cli pdf query pages input.pdf --pages 1-5 --mode layout --max-chars 20000 --output json`.
-3. Preserve one baseline before editing an existing user PDF.
-4. Apply related changes in one `pdf edit` batch. Use `--verify`; use
-   `--best-effort` only when partial output is explicitly acceptable.
-5. Read back affected pages, search for expected or removed text, render at
-   least the changed pages, and inspect the images.
-6. Validate the requested PDF/A profile separately; conversion success does
-   not imply conformance.
-7. Disclose `EVAL_MODE`, evaluation watermarks, lossy conversion, suspected
-   scanned pages, signature invalidation, remote-resource blocking and
-   best-effort table extraction.
+1. Clarify audience, viewing or print context, compliance target and scope.
+2. Inspect structure and security, then read only the pages you need:
 
-Passwords and owner secrets must come from `--password-env`,
-`--password-stdin`, or operation `*PasswordEnv` fields. Never put secrets in
-ops JSON, logs, result envelopes, or preview session state.
+   ```powershell
+   aspose-cli pdf inspect input.pdf --preview --detail metadata permissions forms signatures attachments outline fonts --output json
+   aspose-cli pdf query pages input.pdf --pages 1-5 --mode layout --output json
+   ```
 
-Sign only the final verified artifact with `pdf sign`; pass the PKCS#12
-password through `--certificate-password-env`, then confirm it with
-`pdf inspect --detail signatures`. See `references/forms-security.md`.
+3. Put all related changes in one atomic `pdf edit` batch. Write to `--out`,
+   or use `--in-place --backup` when replacing the user's file is intended.
+   Every edit reopens its output before publishing it.
 
-## Preview and licensing
+   ```powershell
+   aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --output json
+   ```
 
-`aspose-cli preview input.pdf --open --output json` resolves valid PDF content
-to the PDF product and its default `pages` view. It provides page navigation, zoom, live edit activity and
-last-good recovery without Words or spreadsheet controls. Agents must use
-static `pdf query pages`, `pdf render`, `pdf query search`, and `pdf validate` results for
-delivery evidence. See `references/preview.md`.
+4. Convert to PDF/A, then validate the result separately; conversion success
+   does not imply conformance.
+5. Sign only the final, verified artifact with `pdf sign`, passing the
+   certificate password through `--certificate-password-env`.
 
-Install a PDF-only license with
-`aspose-cli license install Aspose.PDF.lic --product pdf`, set
-`ASPOSE_PDF_LICENSE_PATH`, or use a shared Aspose.Total license through
-`ASPOSE_LICENSE_PATH`. Inspect the `pdf` entry in the `products` array from
-`aspose-cli license status --output json`; sibling product status is not PDF
-status. Re-run the preview command after a license change; see
-`references/preview.md` for session reuse and evaluation-output limits.
+Create PDFs from HTML only when the HTML is trusted: the PDF importer can fetch
+linked images and CSS outside the CLI's local-resource guard.
 
-See `references/editing.md`, `references/forms-security.md`,
-`references/pdf-standards.md`, `references/verification.md`, and
-`references/troubleshooting.md`.
+## Verify before delivery
 
-Worked example: `examples/assemble-review-report`.
+1. **Content:** read changed pages back with `pdf query pages`, and use
+   `pdf query search` for expected, removed or placeholder text. For
+   redaction, search every relevant page; search is not OCR.
+2. **Standards and security:** require `valid: true` from `pdf validate`, and
+   `valid: true` for signatures from `pdf inspect --detail signatures`.
+3. **Visual:** run `aspose-cli review output.pdf --out <new-dir> --output json`,
+   then open every page image it lists, one by one. Use `review.json` findings
+   to focus, not as a substitute for looking.
+4. Fix, then review again into a fresh directory. Stop after three rounds and
+   report what remains. Never claim a visual pass for pages you did not open;
+   state the exact page coverage.
 
-## Visual delivery gate
+Details: [verification](references/verification.md).
 
-1. Understand the audience, document purpose, viewing or print context, compliance target, and requested scope before assembling or editing the PDF.
-2. For an existing user PDF, preserve unrelated pages, geometry, metadata, forms, attachments, security, and navigation; change only the requested scope. Warn before any requested action that invalidates signatures.
-3. Run `aspose-cli review <artifact> --out <fresh-review-dir> --output json` for every PDF deliverable, using a fresh output directory for each round. Use its findings to target inspection, never as a substitute for opening pages or for separate PDF/A, signature, permission, or redaction validation.
-4. Actually open every visual artifact produced by review, one by one, then every page for a new or assembled PDF and every changed or affected page for a scoped edit. Check page order and size, crop and rotation, text clipping, images, tables, headers and footers, links, fields, annotations, redaction appearance, contrast, and print readability at useful zoom levels.
-5. Fix defects, reopen, render, validate, and run review again. Stop after at most three visual correction rounds and report any unresolved defect.
-6. Do not claim a visual pass when page inspection is unavailable, any required page/artifact was not opened, or coverage is incomplete. State exact page coverage and mark the remainder partial or skipped.
-7. Report evaluation results separately from licensed results. Disclose `EVAL_MODE`, evaluation watermarks, page limits, signature state, and standards-validation results for each affected artifact.
+## Licensing
 
-## External resources
+Without a PDF license, output is watermarked and results carry `EVAL_MODE`;
+disclose that with every delivered file. Install a license with
+`aspose-cli license install Aspose.PDF.lic --product pdf` and check the `pdf`
+entry of `aspose-cli license status --output json`.
 
-The custom HTML resource callback uses verified local reads and shared budgets. However, the pinned Aspose.PDF.Drawing 26.8.0 importer can fetch linked images and CSS outside that callback. PDF HTML creation therefore cannot currently guarantee network or filesystem resource isolation. Use trusted HTML inputs only; the callback warning is not proof that external access was prevented.
+Passwords come from `--password-env`, `--password-stdin` or operation
+`*PasswordEnv` fields; never put secrets in ops JSON.
 
-## Shared input and output limits
+## References
 
-Discover the active resource limits with `aspose-cli capabilities --output json`.
-One output set admits at most 1,000 entries and 1,000 new directories; publication
-metadata is bounded at 8 MiB. Extraction defaults and maxima follow those same
-limits. Images, attachments and other explicit auxiliary inputs use the shared
-file/stream budgets. A resource-budget failure aborts the invocation even with
-`--best-effort`; it cannot publish an incomplete output set.
+- [Editing and the ops vocabulary](references/editing.md) (`aspose-cli schema v2/pdf/ops`)
+- [Forms, encryption and signing](references/forms-security.md)
+- [PDF/A and conversion](references/pdf-standards.md)
+- [Verification](references/verification.md)
+- [Live preview for a human](references/preview.md)
+- [Troubleshooting](references/troubleshooting.md)
+
+Example: [assemble a review-ready report](examples/assemble-review-report/README.md).

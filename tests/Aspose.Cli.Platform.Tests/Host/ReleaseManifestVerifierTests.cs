@@ -2,10 +2,10 @@ using System.Security.Cryptography;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using Aspose.Cli.Sdk.Release;
+using Aspose.Cli.Host.Commands;
 using Xunit;
 
-namespace Aspose.Cli.Sdk.Tests;
+namespace Aspose.Cli.Host.Tests;
 
 public sealed class ReleaseManifestVerifierTests
 {

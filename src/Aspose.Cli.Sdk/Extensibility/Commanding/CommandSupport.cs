@@ -216,11 +216,7 @@ public sealed record MutationTarget(
     string OutputPath,
     bool Overwrite,
     bool InPlace,
-    string? BackupPath)
-{
-    /// <summary>Whether the caller explicitly permitted replacing additional outputs.</summary>
-    public bool OverwriteArtifacts { get; init; }
-}
+    string? BackupPath);
 
 /// <summary>Standard output, in-place, overwrite, and backup mutation options.</summary>
 public sealed class MutationFileOptions
@@ -297,7 +293,7 @@ public sealed class MutationFileOptions
                 inputPath,
                 true,
                 true,
-                backup ? DeriveBackupPath(inputPath) : null) { OverwriteArtifacts = overwrite };
+                backup ? DeriveBackupPath(inputPath) : null);
         }
 
         string output = explicitOut is not null
@@ -305,7 +301,7 @@ public sealed class MutationFileOptions
             : OutputFileOptions.DerivePath(
                 inputPath,
                 Path.GetExtension(inputPath));
-        return new MutationTarget(output, overwrite, false, null) { OverwriteArtifacts = overwrite };
+        return new MutationTarget(output, overwrite, false, null);
     }
 
     private static string DeriveBackupPath(string inputPath)

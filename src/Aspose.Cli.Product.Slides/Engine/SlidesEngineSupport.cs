@@ -270,8 +270,8 @@ internal static class SlidesEngineSupport
         IAutoShape? title = slide.Shapes
             .OfType<IAutoShape>()
             .FirstOrDefault(static shape =>
-                shape.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle
-                && !string.IsNullOrWhiteSpace(shape.TextFrame?.Text));
+                SlidesPlaceholders.IsTitle(shape.Placeholder)
+                &&!string.IsNullOrWhiteSpace(shape.TextFrame?.Text));
         title ??= slide.Shapes
             .OfType<IAutoShape>()
             .FirstOrDefault(static shape => !string.IsNullOrWhiteSpace(shape.TextFrame?.Text));

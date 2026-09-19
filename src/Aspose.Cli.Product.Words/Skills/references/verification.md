@@ -1,26 +1,21 @@
 # Verification
 
-For an existing user document, preserve one baseline before the first edit.
-Apply related changes in one batch with `--verify`; verification is off by default
-and cannot be combined with `--dry-run`.
+## Content
 
-Verification reopens the exact staged file before publication, reports up to 20 read-back block ids,
-checks field/revision/protection state and renders pages at 150 DPI. Documents
-up to 20 pages render every page. For longer documents, touched and adjacent
-pages plus the first and last pages form a candidate set; the first 12 in page
-order are rendered, so the last page is not guaranteed. Check
-`verification.renders` for actual coverage and `verification.visualReviewRequired`
-for a required wider review.
+`words edit --verify` reopens the exact staged file before publication and
+reports:
 
-Inspect `verification.ok` and `verification.issues`. Failed content checks are
-reported as partial success and may publish an output requiring repair. An
-execution failure while reopening or rendering evidence prevents the output set
-from being committed. Verification images require explicit `--overwrite` to
-replace existing files; `--in-place` authorizes only the main document replacement.
-Its semantic comparison accepts revisions only in private clones, preserving
-revisions in the saved document.
+- `ok` and `issues`;
+- `semanticChangesDetected` from a comparison of private copies with revisions
+  accepted, so the saved document keeps its revisions;
+- `fieldCount`, `revisionCount` and `protection`, each checked against the
+  in-memory result.
 
-After saving, compare only when both inputs are revision-free:
+`--verify` cannot be combined with `--dry-run`. Failed content checks are a
+partial-success report (exit 8) and still publish the output for repair;
+execution failures prevent publication.
+
+Then read back what changed:
 
 ```powershell
 aspose-cli words inspect output.docx --detail outline fields comments --output json
@@ -28,4 +23,16 @@ aspose-cli words query blocks output.docx --blocks 1-30 --scope full --output js
 aspose-cli words compare baseline.docx output.docx --output json
 ```
 
-Actually inspect rendered images. JSON success alone does not prove layout quality.
+`words compare` requires revision-free inputs.
+
+## Appearance
+
+```powershell
+aspose-cli review output.docx --out output.review-1 --output json
+```
+
+Open every page image under the review directory, one by one; JSON success
+alone does not prove layout quality. `review.json` lists findings and
+`coverage.complete`; when coverage is incomplete, say so. Fix and review again
+into a new directory, for at most three rounds, then report any remaining
+defects.

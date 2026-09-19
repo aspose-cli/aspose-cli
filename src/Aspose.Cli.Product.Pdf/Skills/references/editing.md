@@ -17,7 +17,7 @@ current document's total page count.
 Edit `rect` values are `{x,y,width,height}` in points (72 points per inch),
 with a top-left origin against the current page dimensions. Coordinates must
 be non-negative, dimensions positive, and the rectangle within page bounds.
-Reinspect geometry and render after changing crop, size or rotation. The
+Reinspect geometry and review after changing crop, size or rotation. The
 `rotate_pages` angle sets the rotation; `set_page_size` scales content only
 with `scaleContent: true`. Cropping changes the visible box; use redaction
 operations when content must be removed.
@@ -25,18 +25,17 @@ operations when content must be removed.
 Create one ops file and apply it atomically:
 
 ```powershell
-aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --verify --output json
+aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --output json
 ```
 
 Use `--in-place --backup` for an intentional in-place edit. A normal operation
 failure publishes no PDF. `--best-effort` permits a partial batch to be saved;
 inspect every operation outcome, and expect exit 8 when failures remain.
-Use `--dry-run` to apply the batch in memory without publishing files;
-`--dry-run` cannot be combined with `--verify`. Use `--if-match <sha256>` or
+Use `--dry-run` to apply the batch in memory without publishing files. Use `--if-match <sha256>` or
 the ops envelope's `ifMatch` to reject a changed baseline.
 
 Redaction is destructive. Preserve a baseline, apply `redact_text` or
-`redact_area`, then verify with `pdf query search` and page renders.
+`redact_area`, then verify with `pdf query search` and `review`.
 `redact_text` works on extractable text and does not perform OCR. A raw-byte
 absence check for a known literal is additional evidence only: PDF text can
 be encoded or compressed. A black rectangle or zero search hits alone is
@@ -55,6 +54,4 @@ aspose-cli schema v2/pdf/ops
 aspose-cli docs pdf/ops
 ```
 
-Verification reopens the exact staged document. Verification images and the
-main output commit together; existing evidence files require explicit
-`--overwrite`. `--in-place` only authorizes replacing the main document.
+Every edit reopens the staged document before it is published.

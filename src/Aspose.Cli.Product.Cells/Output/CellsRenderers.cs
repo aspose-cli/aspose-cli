@@ -157,11 +157,6 @@ internal static class CellsRenderers
                 $"{verification.DirectChanges.Count} direct, " +
                 $"{verification.FormulaResultChanges.Count} formula-result, " +
                 $"{verification.FormulaErrors.Count} formula error(s)");
-            foreach (SheetRenderOutput render in verification.Renders)
-            {
-                surface.Out.WriteLine($"  review {render.Sheet}: {render.Path}");
-            }
-
             foreach (VerificationIssue issue in verification.Issues ?? [])
             {
                 surface.Out.WriteLine($"  {issue.Code}: {issue.Message}");

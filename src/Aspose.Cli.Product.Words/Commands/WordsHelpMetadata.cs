@@ -40,7 +40,7 @@ internal static class WordsHelpMetadata
             ]);
         Find(root, "create").WithExamples(
             [
-                "aspose-cli words create report.docx --markdown report.md --title \"Quarterly report\"",
+                "aspose-cli words create report.docx --markdown report.md --template brand.docx --title \"Quarterly report\"",
                 "aspose-cli words create letter.docx --template letter.dotx",
             ]);
         Find(root, "edit").WithExamples(

@@ -23,15 +23,16 @@ Check `contentTruncated` on bounded slide reads.
 Apply one atomic batch:
 
 ```powershell
-aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --verify --output json
+aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output json
 ```
 
 Use `--in-place --backup` only for an intentional in-place edit. An operation
 failure normally writes no document output. `--best-effort` saves successful
 operations even when others fail; those partial results exit 8. Reserve it for
-workflows that explicitly accept partial delivery.
+workflows that explicitly accept partial delivery. Every save reopens the
+output before it is published.
 
-After `set_footer`, reopen the presentation and render every affected slide.
+After `set_footer`, run `review` and open every affected slide.
 Confirm that footer text, dates, and slide numbers are visible inside the slide
 canvas; template placeholders can retain geometry from an earlier slide size.
 
@@ -44,7 +45,3 @@ aspose-cli docs slides/ops
 
 Video and audio insertion or MP4 rendering are not supported by this build. Existing embedded
 media can be inventoried and extracted, but must not be silently synthesized.
-
-Verification reopens the exact staged document. Verification images and the
-main output commit together; existing evidence files require explicit
-`--overwrite`. `--in-place` only authorizes replacing the main document.

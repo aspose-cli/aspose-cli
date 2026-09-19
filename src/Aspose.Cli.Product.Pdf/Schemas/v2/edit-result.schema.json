@@ -44,19 +44,6 @@
       ]
     },
     "pagesTouched": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
-    "verification": {
-      "type": "object",
-      "required": ["ok", "visualReviewRequired", "pages", "readBackPages", "renders", "issues"],
-      "additionalProperties": false,
-      "properties": {
-        "ok": { "type": "boolean" },
-        "visualReviewRequired": { "type": "boolean" },
-        "pages": { "type": "integer", "minimum": 0 },
-        "readBackPages": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
-        "renders": { "type": "array" },
-        "issues": { "type": "array", "items": { "type": "string" } }
-      }
-    },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   },

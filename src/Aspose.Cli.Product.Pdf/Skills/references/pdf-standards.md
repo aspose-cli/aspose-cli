@@ -23,8 +23,8 @@ file. Read the result's `outputs` for the actual paths. `pdf render` supports
 only `png`, `jpeg`, and `svg`; use `pdf convert --to tiff` for TIFF.
 
 Conversions to document, text and HTML formats are structurally lossy: PDF
-has fixed pages while those formats have different semantic models. Render
-and inspect results before delivery. Raster outputs do not retain selectable
+has fixed pages while those formats have different semantic models. Review
+the results before delivery. Raster outputs do not retain selectable
 text or interactive PDF features. Do not assume SVG or XPS preserves editable
 document structure, forms, annotations or signatures.
 

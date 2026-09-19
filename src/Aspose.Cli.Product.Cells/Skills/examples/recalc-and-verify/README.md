@@ -23,7 +23,7 @@ aspose-cli cells query range model.xlsx --sheet Model --range B1:B3 --output jso
 #    -> B3 v: 125000
 
 # 5. Look at it the way a human would.
-aspose-cli cells render model.xlsx --sheet Model --range A1:B3 --out model.png --overwrite
+aspose-cli review model.xlsx --out model.review --output json
 ```
 
 Deliver values from step 4's `query range` output — they came from the engine's

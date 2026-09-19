@@ -94,7 +94,7 @@
     },
     "editVerification": {
       "type": "object",
-      "required": ["ok", "requestedTargets", "directChanges", "formulaResultChanges", "otherChanges", "formulaErrors", "renders", "visualReviewRequired", "truncated"],
+      "required": ["ok", "requestedTargets", "directChanges", "formulaResultChanges", "otherChanges", "formulaErrors", "truncated"],
       "properties": {
         "ok": { "type": "boolean" },
         "requestedTargets": {
@@ -117,11 +117,6 @@
           "type": "array",
           "items": { "$ref": "#/$defs/cellError" }
         },
-        "renders": {
-          "type": "array",
-          "items": { "$ref": "#/$defs/sheetRenderOutput" }
-        },
-        "visualReviewRequired": { "type": "boolean" },
         "truncated": { "type": "boolean" },
         "issues": {
           "type": "array",
@@ -180,15 +175,6 @@
         "sheet": { "type": "string" },
         "cell": { "type": "string" },
         "error": { "type": "string" }
-      }
-    },
-    "sheetRenderOutput": {
-      "type": "object",
-      "required": ["sheet", "path", "sizeBytes"],
-      "properties": {
-        "sheet": { "type": "string" },
-        "path": { "type": "string" },
-        "sizeBytes": { "type": "integer", "minimum": 0 }
       }
     },
     "verificationIssue": {

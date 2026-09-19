@@ -150,7 +150,6 @@ internal static class CellsOpValidator
             [typeof(DeleteChartOp)] = static (op, index) => Advanced.ValidateDeleteChart((DeleteChartOp)op, index),
             [typeof(AddSparklineOp)] = static (op, index) => Advanced.ValidateAddSparkline((AddSparklineOp)op, index),
             [typeof(SetActiveSheetOp)] = static (op, index) => Core.ValidateNamedSheet((SetActiveSheetOp)op, index),
-            [typeof(RecalculateOp)] = static (op, index) => ValidateRecalculate((RecalculateOp)op, index),
         };
 
     internal static Op Validate(Op op, int index)
@@ -168,12 +167,6 @@ internal static class CellsOpValidator
         {
             throw CellsErrors.OpsInvalidAt(index, op.OpName, ex.Message);
         }
-    }
-
-    private static RecalculateOp ValidateRecalculate(RecalculateOp op, int index)
-    {
-        Require(op.Sheet is null, index, op, "'sheet' is not valid for a workbook recalculation");
-        return op;
     }
 }
 

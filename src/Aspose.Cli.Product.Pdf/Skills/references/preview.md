@@ -29,6 +29,6 @@ state. Licensing a preview does not remove evaluation watermarks or restore
 content already altered in a previously saved evaluation PDF; regenerate that
 artifact from the original inputs with the valid license.
 
-The browser supports human inspection. Agents must also collect static
-`pdf query pages`, `pdf render`, `pdf query search`, and `pdf validate` evidence,
-and actually open the required page images before claiming a visual pass.
+The browser supports human inspection. Agents collect `pdf query pages`,
+`pdf query search`, `pdf validate` and `review` evidence, and open the review
+images before claiming a visual pass.

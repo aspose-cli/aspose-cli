@@ -204,9 +204,6 @@ public sealed record WordsEditResult() : ResultEnvelope(WordsSchemaIds.EditResul
 public sealed record WordsVerification
 {
     public required bool Ok { get; init; }
-    public required bool VisualReviewRequired { get; init; }
-    public required IReadOnlyList<int> ReadBackBlocks { get; init; }
-    public required IReadOnlyList<PageOutput> Renders { get; init; }
     public required IReadOnlyList<string> Issues { get; init; }
     public bool? SemanticChangesDetected { get; init; }
     public int? FieldCount { get; init; }

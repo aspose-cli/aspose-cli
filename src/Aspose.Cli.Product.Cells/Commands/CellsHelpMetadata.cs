@@ -49,7 +49,7 @@ internal static class CellsHelpMetadata
             [
                 "aspose-cli cells edit book.xlsx --in-place --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\"",
                 "aspose-cli cells edit book.xlsx --in-place --ops '{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"A1\",\"values\":[[1]]}]}'",
-                "aspose-cli cells edit book.xlsx --in-place --ops '{\"ops\":[{\"op\":\"recalculate\"}]}'",
+                "aspose-cli cells edit book.xlsx --in-place --backup --verify --ops ops.json",
             ],
             [
                 new("aspose-cli docs editing", "recipes for every operation family"),

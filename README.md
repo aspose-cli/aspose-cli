@@ -2,16 +2,10 @@
 
 Open-source, local-first automation for spreadsheets, PDFs, presentations and Word documents.
 `aspose-cli` provides a CLI, a loopback browser workspace and a local MCP endpoint.
-Document processing runs on your machine. Cells and Words external resources are limited
-to verified ordinary local files beneath the input directory, with shared resource budgets.
-Omitted resources are reported; MHTML resource completeness requires visual confirmation.
-The pinned PDF HTML importer can fetch linked resources outside its callback, so PDF HTML
-creation does not yet provide the same isolation guarantee.
+Document processing runs on your machine.
 
-The CLI source is Apache-2.0. Commercial Aspose SDK dependencies have their own licensing terms. Licensed and SDK evaluation behavior are supported; evaluation output is disclosed.
-
-This project owns its Host, SDK, analyzers, products, tests and publishing tools.
-It has no source, project or package dependency on another CLI project.
+The CLI source is Apache-2.0. Commercial Aspose SDK dependencies have their own licensing terms.
+Licensed and SDK evaluation behavior are supported; evaluation output is disclosed.
 
 ## Capabilities and Skills
 
@@ -25,7 +19,8 @@ aspose-cli skill install aspose-cli-cells --host codex --scope project
 
 The executable is authoritative for formats, operations, budgets and limitations.
 Skills are `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-slides` and `aspose-cli-words`.
-Each includes executable-specific references and reproducible examples.
+Each includes references, reproducible examples and, for Slides and Words, a default
+design template that Markdown content is authored into.
 
 ## Build from source
 
@@ -39,12 +34,10 @@ The verified self-contained customer target is win-x64.
 .\scripts\publish.ps1 -Configuration Release -RuntimeIdentifier win-x64
 ```
 
-eng/products.json is the only product roster. eng/distribution.json owns the fixed application identity.
-sync.ps1 regenerates projections and the solution and refreshes lock files. Normal tests and publishes use locked restore.
-All source and build inputs must remain inside this project; it also builds from a standalone checkout.
-Outputs are ignored under artifacts/ and project-local bin/obj directories.
-Each test run writes per-project TRX results to `artifacts/TestResults/<run-id>/<project>/results.trx`;
-CI retains these results even when tests fail.
+eng/products.json is the only product roster; eng/distribution.json owns the application identity.
+sync.ps1 regenerates projections and the solution and refreshes lock files; tests and publishes use locked restore.
+Outputs are ignored under artifacts/ and project-local bin/obj directories. Each test run writes
+per-project TRX results to `artifacts/TestResults/<run-id>/<project>/results.trx`.
 
 ## Install a released build
 
@@ -55,25 +48,28 @@ Extract the archive, set `ASPOSE_CLI_RELEASE_TRUSTED_KEYS` to the approved key-r
 & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy AllSigned -File .\install.ps1
 ```
 
-Customer installation verifies the installer, package signatures and payload hashes.
-The default per-user installation is `%LOCALAPPDATA%\Aspose\CLI`.
-Configuration is `%APPDATA%\aspose-cli` or the absolute directory selected by `ASPOSE_CLI_CONFIG_DIR`.
-The other CLI has different commands, configuration, Skills and MCP registrations.
-Managed targets belonging to another application are rejected.
-Optional MCP registration runs only after the installation transaction is finalized.
-Post-commit cleanup failures preserve the recovery journal and defer MCP metadata
-changes; the committed CLI remains usable while cleanup awaits a retry.
+The installer verifies itself, the package signatures and the payload hashes, then installs
+per user into `%LOCALAPPDATA%\Aspose\CLI`. Configuration is `%APPDATA%\aspose-cli` or the
+absolute directory selected by `ASPOSE_CLI_CONFIG_DIR`. Optional MCP registration runs only after
+the installation transaction is finalized.
 
+For a local development build, `.\scripts\install-local.ps1` builds and transactionally installs
+an explicitly unsigned package. It does not claim customer release trust.
 
-## Local development installation
+## Working with documents
 
-```powershell
-.\scripts\install-local.ps1
-```
-
-This builds and transactionally installs an explicitly unsigned development package.
-For isolated tests, use package.ps1 -PrepareOnly and invoke install.ps1 with -DevelopmentPackage and a temporary -InstallDirectory.
-The development path does not claim customer release trust. User modifications and unrelated files are protected.
+- Commands that change a document apply one atomic batch of operations and publish the result
+  safely: the output is staged, reopened and only then replaces its target, with an optional
+  backup. `--if-match` rejects a file that changed since it was read.
+- Cells and Words `edit --verify` report semantic evidence (cell changes, formula errors,
+  field, revision and protection state) before publication.
+- `aspose-cli review <file>` writes a static evidence directory with an image of every sheet,
+  slide or page and layout findings. It is the visual check for every product.
+- In JSON mode a successful command writes one result to stdout; a failure writes one error
+  envelope to stderr. `--verbose` adds structured diagnostics.
+- Cells and Words read external resources only from ordinary local files beneath the input
+  directory. The pinned PDF HTML importer can fetch linked resources itself, so create PDFs
+  from trusted HTML only.
 
 ## App, Preview and MCP
 
@@ -83,91 +79,31 @@ aspose-cli preview document.pdf --open
 aspose-cli mcp serve
 ```
 
-App and Preview use loopback URLs. Treat previewUrl as opaque: App replaces it only
-when a new document session is committed; ordinary live updates keep the same URL. Host, same-origin, CSRF,
-current-user lifecycle controls and bounded uploads remain enforced.
-Settings retain unsaved edits across polling and product navigation. Saving commits the
-preferences first; if preview refresh fails, the previous preview stays available and the
-Settings page keeps an explicit message. Save the same values to retry the refresh.
-The MCP registration is named `aspose-cli` and points to the matching installed executable.
-Its `capabilities` tool is read-only. Its `execute` tool runs bounded, allowlisted
-product commands, including document writes; host installation, update, licensing and
-service lifecycle mutations are unavailable through it. Command parameters expose
-`inputKind`, `valueSource` and `secret` from their declarations. MCP uses the same
-command parser as the CLI and retains the server work directory, license source and
-input budget; an execute request cannot raise the server input limit.
-An explicit server license remains an explicit source in child processes, anchored to
-its original work directory. An explicit execute license overrides it and is resolved
-against that execution's work directory.
-Environment-backed command passwords and operation passwords retain their meaning through
-MCP and timeout supervision. Set these variables in the process starting the CLI or MCP
-server. Repeated references share one invocation-scoped secret value and budget.
-Two CLI processes still coordinate document publication through neutral operating-system locks.
-
-## File and output contracts
-
-In JSON mode, structured commands write one result to stdout on success or partial success.
-Failures leave stdout empty and write one error envelope to stderr; `--verbose` adds
-structured diagnostic lines. Help, version and raw documentation commands retain their
-text output contracts.
-Mutations use safe publication, backups and fingerprints where advertised; extraction is bounded.
-The resource-budget contract is version 2: an output set admits up to 1,000 entries,
-1,000 new directories and 8 MiB of publication metadata. Generation precedes the
-recovery journal; incomplete production cannot block later unrelated publication.
-An unknown recovery state never certifies success without checking the original or
-recovering it from verified evidence. Auxiliary inputs share the invocation budget,
-and resource failures remain fatal even when an engine catches a read exception.
-
-Cells edit verification reads the staged candidate and publishes the document and
-its evidence together. This applies equally to direct CLI, timeout workers and MCP.
-Semantic findings can commit with exit 8; execution failures abort publication.
-
-Generation and validation precede publication locks. CLI timeout and MCP share one supervisor;
-its worker stages files and the supervising process commits the complete output set.
-The same absolute deadline covers generation, lock waits and commit. Expiration before the
-durable commit record triggers recovery; expiration after that record cannot undo success.
-Semantic verification issues remain reportable partial outcomes, while execution failures abort publication.
-Schema URIs identify this application and are available offline through its schema command.
-No deprecated command aliases or legacy installer/Skill readers are provided.
+App and Preview are loopback browser views for a human; they enforce exact Host, same-origin,
+CSRF and current-user controls. The MCP registration is named `aspose-cli`: its `capabilities`
+tool is read-only, and its `execute` tool runs bounded, allowlisted product commands with the
+same parser as the CLI. Installation, update, licensing and service lifecycle commands are not
+available through MCP.
 
 ## Commercial SDK licensing
 
-Install a license once with `aspose-cli license install Aspose.Total.lic`; the SDKs validate
-one bounded private snapshot before compatible product files are published atomically.
-`license remove` removes saved user licenses atomically; explicit, environment and project
-sources keep their documented precedence. CLI and App use the same resolution policy.
+```powershell
+aspose-cli license install Aspose.Total.lic
+aspose-cli license status --output json
+```
 
-`aspose-cli license status --output json` returns `products[]`, with each product's effective
-source and `licensed`, `evaluation`, `invalid`, or `not-applicable` mode. There is no
-first-product summary that can hide a different product's failure. Use `--product cells`
-to inspect only Cells. A successful status query may report `invalid`; inspect the selected
-product's `mode`, `problem` and `hint`. Document operations reject an invalid configured
-license instead of falling back to evaluation.
-
-Human-readable Table/Markdown invocations print a compact, SDK-verified license status to
-stderr at startup. `--quiet` suppresses it; JSON, verbose JSONL, MCP and internal worker/service
-protocols stay unchanged. Product commands inspect only their own license; general help
-reports every product. A new Preview/App launch validates the current license snapshot
-before reuse; a changed license replaces the owned process. A running App keeps its
-startup license snapshot until restart. App license installation/removal restarts its SDK
-process and transfers the current uploaded preview through a bounded file copy. If that
-restart fails, the saved configuration remains in place and the old App control is restored;
-repair the document and restart to apply the saved license.
-
-The source license does not grant SDK rights or remove evaluation restrictions.
-See [Aspose EULA](https://about.aspose.com/legal/eula/).
+`license status` reports each product in `products[]` with its effective source and a
+`licensed`, `evaluation`, `invalid` or `not-applicable` mode. Document operations reject an
+invalid configured license instead of falling back to evaluation. Human-readable output prints
+a compact license notice on stderr; `--quiet` suppresses it. The source license does not grant
+SDK rights or remove evaluation restrictions. See [Aspose EULA](https://about.aspose.com/legal/eula/).
 
 ## Release tooling
 
-scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64 requires a clean source revision,
-OpenSSL, an ECDSA P-256 signing key and a valid Authenticode tool/certificate.
-Use `ASPOSE_CLI_RELEASE_SIGNING_KEY`, `ASPOSE_CLI_OPENSSL_PATH`,
-`ASPOSE_CLI_AUTHENTICODE_TOOL` and `ASPOSE_CLI_AUTHENTICODE_CERTIFICATE` or their script parameters.
-No production signing credentials are generated automatically.
-The signed manifest binds the CLI source revision and locked commercial SDK package
-identifiers, versions and content hashes.
-
-The independent GitHub workflows run from this directory once it becomes a repository root.
-The release workflow requires a configured signing runner and produces artifacts without automatically creating a GitHub release.
+`scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64` requires a clean source
+revision, OpenSSL, an ECDSA P-256 signing key and a valid Authenticode tool and certificate,
+supplied through `ASPOSE_CLI_RELEASE_SIGNING_KEY`, `ASPOSE_CLI_OPENSSL_PATH`,
+`ASPOSE_CLI_AUTHENTICODE_TOOL` and `ASPOSE_CLI_AUTHENTICODE_CERTIFICATE`. The signed manifest
+binds the source revision and the locked SDK package identities and hashes.
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [AGENTS.md](AGENTS.md) and [LICENSE](LICENSE).

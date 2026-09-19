@@ -29,8 +29,7 @@ internal static class EditCommand
             bool verify = parseResult.GetValue(options.Verify);
             bool dryRun = parseResult.GetValue(options.Edit.DryRun);
             bool noRecalc = parseResult.GetValue(options.NoRecalc);
-            string? verifyDirValue = parseResult.GetValue(options.VerifyDirectory);
-            ValidateVerificationOptions(verify, verifyDirValue, dryRun, noRecalc);
+            ValidateVerificationOptions(verify, dryRun, noRecalc);
 
             MutationTarget target = options.Output.Resolve(parseResult, context.Paths, inputPath, requireBackup: verify);
             string? inputPassword = options.Password.Resolve(parseResult, context.Inputs, context.ReadEnvironment, stdinAvailable: opsSource != "-");
@@ -46,7 +45,6 @@ internal static class EditCommand
                 Password = inputPassword,
                 EncryptPassword = encryptPassword,
                 Verify = verify,
-                VerificationDirectory = verify ? ResolveVerificationDirectory(verifyDirValue, target.OutputPath, context) : null,
             });
 
             // A file was produced (partial successes under --best-effort
@@ -92,8 +90,7 @@ internal static class EditCommand
         var output = new MutationFileOptions();
         var editOptions = new BoundedEditOptions();
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
-        var verify = new Option<bool>("--verify") { Description = "Verify the staged output and publish its formula/diff results and 192 DPI visual evidence with the document." };
-        var verifyDirectory = new Option<string?>("--verify-dir") { Description = "Directory for --verify images on the output filesystem, with a writable common parent. Default: .aspose-verify/<output-name> beside the output." }.WithInput(InputKind.None);
+        var verify = new Option<bool>("--verify") { Description = "Verify the staged output and report its cell changes and formula errors." };
         var password = new PasswordOptions("--password", "the workbook");
         var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);
         var command = new Command("edit", $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.");
@@ -104,10 +101,9 @@ internal static class EditCommand
         editOptions.AddTo(command);
         command.Options.Add(noRecalc);
         command.Options.Add(verify);
-        command.Options.Add(verifyDirectory);
         password.AddTo(command);
         encrypt.AddTo(command);
-        return new(command, file, ops, set, output, editOptions, noRecalc, verify, verifyDirectory, password, encrypt);
+        return new(command, file, ops, set, output, editOptions, noRecalc, verify, password, encrypt);
     }
 
     private sealed record EditCommandBindings(
@@ -119,17 +115,11 @@ internal static class EditCommand
         BoundedEditOptions Edit,
         Option<bool> NoRecalc,
         Option<bool> Verify,
-        Option<string?> VerifyDirectory,
         PasswordOptions Password,
         PasswordOptions Encrypt);
 
-    private static void ValidateVerificationOptions(bool verify, string? verifyDir, bool dryRun, bool noRecalc)
+    private static void ValidateVerificationOptions(bool verify, bool dryRun, bool noRecalc)
     {
-        if (!verify && verifyDir is not null)
-        {
-            throw CliErrors.OptionInvalid("--verify-dir", "requires --verify", "Add --verify, or omit --verify-dir.");
-        }
-
         if (verify && dryRun)
         {
             throw CliErrors.OptionInvalid("--verify", "cannot be combined with --dry-run", "Run the dry run first, then edit with --verify.");
@@ -139,20 +129,6 @@ internal static class EditCommand
         {
             throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc", "Remove --no-recalc so formula-result verification is reliable.");
         }
-    }
-
-    private static string ResolveVerificationDirectory(
-        string? value,
-        string outputPath,
-        ProductCommandContext<IWorkbookEngine> context)
-    {
-        if (value is not null)
-        {
-            return context.Paths.ResolveOutput(value);
-        }
-
-        string parent = Path.GetDirectoryName(outputPath) ?? context.Paths.BaseDirectory;
-        return Path.Combine(parent, ".aspose-verify", Path.GetFileNameWithoutExtension(outputPath));
     }
 
     /// <summary>

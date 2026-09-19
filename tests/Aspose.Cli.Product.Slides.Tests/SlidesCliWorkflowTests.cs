@@ -75,5 +75,75 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         presentation.Save(path, SaveFormat.Pptx);
     }
 
+    [Fact]
+    public void MarkdownAuthoring_FillsTheBundledTemplateLayoutsWithoutOwnStyling()
+    {
+        string template = InstalledTemplate("default-16x9.pptx");
+        File.WriteAllText(
+            _workspace.File("outline.md"),
+            "# Review\nFor the board\n\n## Results\n- Revenue up\n  - Enterprise\nPlain note\n\n## Close\n");
+
+        CliResult created = _workspace.Run(
+            "slides", "create", "deck.pptx", "--from-markdown", "outline.md",
+            "--template", template, "--output", "json");
+
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        using var deck = new Presentation(_workspace.File("deck.pptx"));
+        Assert.Equal(
+            ["Title Slide", "Title and Content", "Title Only"],
+            deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+        // Evaluation mode may add watermark shapes; the authored shapes are the placeholders.
+        IAutoShape[] authored = deck.Slides
+            .SelectMany(static slide => slide.Shapes.OfType<IAutoShape>())
+            .Where(static shape => shape.Name is "Title" or "Body")
+            .ToArray();
+        Assert.Equal(5, authored.Length);
+        Assert.All(authored, static shape => Assert.NotNull(shape.Placeholder));
+        IAutoShape body = deck.Slides[1].Shapes.OfType<IAutoShape>()
+            .Single(static shape => shape.Placeholder?.Type == PlaceholderType.Object);
+        Assert.Equal([0, 1, 0], body.TextFrame.Paragraphs.Select(static paragraph => (int)paragraph.ParagraphFormat.Depth));
+        Assert.Equal(BulletType.None, body.TextFrame.Paragraphs[2].ParagraphFormat.Bullet.Type);
+        Assert.All(
+            authored.SelectMany(static shape => shape.TextFrame.Paragraphs)
+                .SelectMany(static paragraph => paragraph.Portions),
+            static portion =>
+            {
+                Assert.Null(portion.PortionFormat.LatinFont);
+                Assert.True(float.IsNaN(portion.PortionFormat.FontHeight));
+                Assert.Equal(FillType.NotDefined, portion.PortionFormat.FillFormat.FillType);
+            });
+    }
+
+    [Fact]
+    public void SetBody_FillsTheContentPlaceholderOfAStandardLayout()
+    {
+        string template = InstalledTemplate("default-16x9.pptx");
+        File.WriteAllText(_workspace.File("outline.md"), "## Results\n- Draft\n");
+        Assert.Equal(0, _workspace.Run(
+            "slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--template", template).ExitCode);
+        File.WriteAllText(
+            _workspace.File("ops.json"),
+            """{"ops":[{"op":"set_body","slide":1,"paragraphs":[{"text":"Final"}]}]}""");
+
+        CliResult edited = _workspace.Run(
+            "slides", "edit", "deck.pptx", "--ops", "ops.json", "--in-place", "--output", "json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        using var deck = new Presentation(_workspace.File("deck.pptx"));
+        IAutoShape body = Assert.Single(
+            deck.Slides[0].Shapes.OfType<IAutoShape>(),
+            static shape => shape.Placeholder?.Type == PlaceholderType.Object);
+        Assert.Equal("Final", body.TextFrame.Text);
+        Assert.Single(deck.Slides[0].Shapes.OfType<IAutoShape>(), static shape => shape.TextFrame?.Text == "Final");
+    }
+
+    private string InstalledTemplate(string name)
+    {
+        CliResult installed = _workspace.Run(
+            "skill", "install", "aspose-cli-slides", "--target", "skills", "--output", "json");
+        Assert.True(installed.ExitCode == 0, installed.StdErr);
+        return _workspace.File(Path.Combine("skills", "aspose-cli-slides", "assets", "templates", name));
+    }
+
     public void Dispose() => _workspace.Dispose();
 }

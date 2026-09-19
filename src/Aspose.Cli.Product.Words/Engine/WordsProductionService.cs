@@ -193,97 +193,99 @@ internal sealed class WordsProductionService
         };
     }
 
+    /// <summary>
+    /// A template supplies styles, page setup, headers and footers; Markdown or
+    /// text supplies the body. Content is imported with the destination's
+    /// styles, so the template alone owns the look of the created document.
+    /// </summary>
     private CreatedDocument Create(NewDocumentRequest request)
     {
-        string? source = request.MarkdownPath ?? request.TemplatePath;
-        if (source is not null)
+        var sources = new List<LoadedDocument>();
+        try
         {
-            LoadedDocument loaded = _loader.Open(source, null);
-            try
+            LoadedDocument? template = request.TemplatePath is null ? null : _loader.Open(request.TemplatePath, null);
+            if (template is not null)
             {
-                if (request.MarkdownPath is not null) { ApplyMarkdownDocumentDesign(loaded.Document); }
-                ApplyTitle(loaded.Document, request.Title);
-                return new CreatedDocument(loaded.Document, loaded);
+                sources.Add(template);
             }
-            catch
-            {
-                loaded.Dispose();
-                throw;
-            }
-        }
 
-        if (request.TextPath is not null)
-        {
-            var document = new Document();
-            var builder = new DocumentBuilder(document);
-            builder.Write(_inputs.ReadTextFile(request.TextPath));
+            Document document = template?.Document ?? new Document();
+            Document? content = null;
+            if (request.MarkdownPath is not null)
+            {
+                LoadedDocument markdown = _loader.Open(request.MarkdownPath, null);
+                sources.Add(markdown);
+                content = markdown.Document;
+                KeepOnlyExpressedEmphasis(content);
+            }
+            else if (request.TextPath is not null)
+            {
+                content = new Document();
+                new DocumentBuilder(content).Write(_inputs.ReadTextFile(request.TextPath));
+            }
+
+            if (content is not null)
+            {
+                ReplaceBody(document, content);
+            }
+
             ApplyTitle(document, request.Title);
-            return new CreatedDocument(document, null);
+            return new CreatedDocument(document, template, sources);
         }
-
-        var blank = new Document();
-        ApplyTitle(blank, request.Title);
-        return new CreatedDocument(blank, null);
+        catch
+        {
+            sources.ForEach(static source => source.Dispose());
+            throw;
+        }
     }
 
     /// <summary>
-    /// Gives Markdown-authored documents a restrained, readable native Word
-    /// design. Markdown carries semantic heading/list/table information but no
-    /// dependable page design; leaving the engine defaults untouched produces
-    /// technically valid documents whose hierarchy and page density vary with
-    /// the machine. Only semantic styles and page setup are changed here, so
-    /// explicitly formatted Markdown content remains explicit.
+    /// The Markdown reader stores "no emphasis" as explicit false bold, italic
+    /// and strike-through on every run, which would override the destination's
+    /// heading styles. Only emphasis the Markdown actually expressed and each
+    /// run's character style (inline code, hyperlinks) are kept.
     /// </summary>
-    private static void ApplyMarkdownDocumentDesign(Document document)
+    private static void KeepOnlyExpressedEmphasis(Document markdown)
     {
-        foreach (Section section in document.Sections)
+        foreach (Run run in markdown.GetChildNodes(NodeType.Run, isDeep: true).OfType<Run>())
         {
-            section.PageSetup.TopMargin = 54;
-            section.PageSetup.RightMargin = 58;
-            section.PageSetup.BottomMargin = 54;
-            section.PageSetup.LeftMargin = 58;
+            KeepOnlyExpressedEmphasis(run.Font);
         }
 
-        Style normal = document.Styles[StyleIdentifier.Normal];
-        normal.Font.Name = "Arial";
-        normal.Font.Size = 10.5;
-        normal.Font.Color = System.Drawing.Color.FromArgb(31, 41, 55);
-        normal.ParagraphFormat.SpaceAfter = 6;
-        normal.ParagraphFormat.LineSpacingRule = LineSpacingRule.Multiple;
-        normal.ParagraphFormat.LineSpacing = 13.8;
-        normal.ParagraphFormat.WidowControl = true;
-
-        ApplyHeadingStyle(document, StyleIdentifier.Heading1, 24, 18, 8);
-        ApplyHeadingStyle(document, StyleIdentifier.Heading2, 17, 14, 6);
-        ApplyHeadingStyle(document, StyleIdentifier.Heading3, 13, 10, 4);
-
-        Style quote = document.Styles[StyleIdentifier.Quote];
-        quote.Font.Name = "Arial";
-        quote.Font.Size = 10;
-        quote.Font.Color = System.Drawing.Color.FromArgb(71, 85, 105);
-        quote.ParagraphFormat.LeftIndent = 18;
-        quote.ParagraphFormat.RightIndent = 12;
-        quote.ParagraphFormat.SpaceBefore = 6;
-        quote.ParagraphFormat.SpaceAfter = 8;
+        foreach (Paragraph paragraph in markdown.GetChildNodes(NodeType.Paragraph, isDeep: true).OfType<Paragraph>())
+        {
+            KeepOnlyExpressedEmphasis(paragraph.ParagraphBreakFont);
+        }
     }
 
-    private static void ApplyHeadingStyle(
-        Document document,
-        StyleIdentifier identifier,
-        double size,
-        double before,
-        double after)
+    private static void KeepOnlyExpressedEmphasis(Aspose.Words.Font font)
     {
-        Style style = document.Styles[identifier];
-        style.Font.Name = "Arial";
-        style.Font.Size = size;
-        style.Font.Bold = true;
-        style.Font.Color = System.Drawing.Color.FromArgb(15, 42, 61);
-        style.ParagraphFormat.SpaceBefore = before;
-        style.ParagraphFormat.SpaceAfter = after;
-        style.ParagraphFormat.KeepWithNext = true;
-        style.ParagraphFormat.KeepTogether = true;
-        style.ParagraphFormat.WidowControl = true;
+        (bool bold, bool italic, bool strike, string characterStyle) =
+            (font.Bold, font.Italic, font.StrikeThrough, font.StyleName);
+        font.ClearFormatting();
+        font.StyleName = characterStyle;
+        if (bold) { font.Bold = true; }
+        if (italic) { font.Italic = true; }
+        if (strike) { font.StrikeThrough = true; }
+    }
+
+    private static void ReplaceBody(Document destination, Document content)
+    {
+        while (destination.Sections.Count > 1)
+        {
+            destination.LastSection.Remove();
+        }
+
+        Body body = destination.FirstSection.Body;
+        body.RemoveAllChildren();
+        Paragraph anchor = body.AppendParagraph(string.Empty);
+        var builder = new DocumentBuilder(destination);
+        builder.MoveTo(anchor);
+        builder.InsertDocument(content, ImportFormatMode.UseDestinationStyles);
+        if (body.Paragraphs.Count > 1 && body.LastParagraph is { HasChildNodes: false } trailing)
+        {
+            trailing.Remove();
+        }
     }
 
     private static void ApplyTitle(Document document, string? title)
@@ -331,22 +333,28 @@ internal sealed class WordsProductionService
         return extension switch { "xml" => "flatopc", "htm" => "html", _ => extension };
     }
 
-    private sealed record CreatedDocument(Document Document, LoadedDocument? Source) : IDisposable
+    private sealed record CreatedDocument(
+        Document Document,
+        LoadedDocument? Template,
+        IReadOnlyList<LoadedDocument> Sources) : IDisposable
     {
-        internal int RemoteResourcesBlocked => Source?.RemoteResourcesBlocked ?? 0;
-        internal bool HasMacros => Source?.Format.HasMacros ?? false;
-        internal bool WasSigned => Source?.Format.HasDigitalSignature ?? false;
+        internal int RemoteResourcesBlocked => Sources.Sum(static source => source.RemoteResourcesBlocked);
+        internal bool HasMacros => Template?.Format.HasMacros ?? false;
+        internal bool WasSigned => Template?.Format.HasDigitalSignature ?? false;
 
         internal void Save(string path, SaveOptions options)
         {
             try { Document.Save(path, options); }
-            finally { Source?.Resources.ThrowIfFailed(); }
+            finally
+            {
+                foreach (LoadedDocument source in Sources) { source.Resources.ThrowIfFailed(); }
+            }
         }
 
         public void Dispose()
         {
-            if (Source is not null) { Source.Dispose(); }
-            else { Document.Cleanup(); }
+            if (Template is null) { Document.Cleanup(); }
+            foreach (LoadedDocument source in Sources) { source.Dispose(); }
         }
     }
 

@@ -13,12 +13,12 @@ internal static class NewCommand
         var blank = new Option<bool>("--blank") { Description = "Create a blank document." };
         var markdown = new Option<string?>("--markdown") { Description = "Create from a Markdown file." }.WithInput(InputKind.File);
         var text = new Option<string?>("--text") { Description = "Create from a UTF-8 text file." }.WithInput(InputKind.File);
-        var template = new Option<string?>("--template") { Description = "Create from a document template." }.WithInput(InputKind.File);
+        var template = new Option<string?>("--template") { Description = "Document whose styles, page setup, headers and footers the new document uses; its body is replaced by --markdown or --text content." }.WithInput(InputKind.File);
         var title = new Option<string?>("--title") { Description = "Set the built-in title property." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var encrypt = new PasswordOptions("--encrypt", "the output document", allowStdin: false);
 
-        var command = new Command("create", "Create a document from exactly one source.");
+        var command = new Command("create", "Create a document from one content source, optionally inside a template.");
         command.Arguments.Add(output);
         command.Options.Add(blank);
         command.Options.Add(markdown);
@@ -32,11 +32,13 @@ internal static class NewCommand
             string? markdownValue = parse.GetValue(markdown);
             string? textValue = parse.GetValue(text);
             string? templateValue = parse.GetValue(template);
-            int sources = (parse.GetValue(blank) ? 1 : 0) + (markdownValue is null ? 0 : 1)
-                + (textValue is null ? 0 : 1) + (templateValue is null ? 0 : 1);
-            if (sources != 1)
+            bool isBlank = parse.GetValue(blank);
+            int contents = (isBlank ? 1 : 0) + (markdownValue is null ? 0 : 1) + (textValue is null ? 0 : 1);
+            if (contents + (templateValue is null ? 0 : 1) == 0
+                || contents > 1
+                || (isBlank && templateValue is not null))
             {
-                throw CliErrors.Usage(["Choose exactly one of --blank, --markdown, --text or --template."]);
+                throw CliErrors.Usage(["Choose --blank, --template, or one of --markdown or --text with an optional --template."]);
             }
 
             return context.Port.CreateDocument(new NewDocumentRequest

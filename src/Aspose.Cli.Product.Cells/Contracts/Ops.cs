@@ -94,7 +94,6 @@ public static class OpNames
     public const string DeleteChart = "delete_chart";
     public const string AddSparkline = "add_sparkline";
     public const string SetActiveSheet = "set_active_sheet";
-    public const string Recalculate = "recalculate";
 
     /// <summary>
     /// Every op name, in documentation order. Derived from <see cref="CellsOps"/>

@@ -228,15 +228,6 @@ internal static class PdfContractSamples
         Applied = [new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "rotate_pages", Status = OpStatuses.Ok, ItemsAffected = 1, Targets = ["pdf/page/1"] }],
         Mutation = new MutationReceipt { Verification = "reopened" },
         PagesTouched = [1],
-        Verification = new PdfVerification
-        {
-            Ok = true,
-            VisualReviewRequired = false,
-            Pages = 2,
-            ReadBackPages = [1],
-            Renders = [],
-            Issues = [],
-        },
         License = Licensed,
     };
 

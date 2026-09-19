@@ -11,7 +11,7 @@ internal static class PdfHelpMetadata
             [
                 "aspose-cli pdf inspect report.pdf --preview --detail permissions forms signatures",
                 "aspose-cli pdf query pages report.pdf --pages 1-5 --mode layout --output json",
-                "aspose-cli pdf edit report.pdf --ops ops.json --out reviewed.pdf --verify",
+                "aspose-cli pdf edit report.pdf --ops ops.json --out reviewed.pdf",
                 "aspose-cli pdf sign reviewed.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --out approved.pdf",
             ],
             [

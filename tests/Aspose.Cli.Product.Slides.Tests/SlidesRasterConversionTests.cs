@@ -106,7 +106,7 @@ public sealed class SlidesRasterConversionTests
         Assert.Empty(Directory.GetFiles(directory, "*.stage"));
     }
     [Fact]
-    public void VerifiedEdit_WritesLongPublicationPathsThroughRealCli()
+    public void Edit_WritesLongPublicationPathsThroughRealCli()
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
@@ -115,17 +115,13 @@ public sealed class SlidesRasterConversionTests
         File.WriteAllText(workspace.File("ops.json"), """{"ops":[{"op":"set_notes","slide":1,"text":"Review note"}]}""");
         string directory = workspace.File(Path.Combine(new string('a', 90), new string('b', 90), new string('c', 90)));
         Directory.CreateDirectory(directory);
-        string output = Path.Combine(directory, "verified.pptx");
+        string output = Path.Combine(directory, "edited.pptx");
         Assert.True(output.Length > 260);
-        CliResult edited = workspace.Run("slides", "edit", "deck.pptx", "--ops", "ops.json", "--out", output, "--verify", "--output", "json");
+        CliResult edited = workspace.Run("slides", "edit", "deck.pptx", "--ops", "ops.json", "--out", output, "--output", "json");
         Assert.True(edited.ExitCode == 0, edited.StdErr);
-        JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;
-        Assert.True(verification["ok"]!.GetValue<bool>(), verification.ToJsonString());
-        JsonNode rendered = Assert.Single(verification["renders"]!.AsArray())!;
-        using FileStream stream = File.OpenRead(rendered["output"]!["path"]!.GetValue<string>());
-        using IImage image = Images.FromStream(stream);
-        Assert.Equal(1440, image.Width);
-        Assert.Equal(810, image.Height);
+        Assert.Equal(output, JsonNode.Parse(edited.StdOut)!["output"]!["path"]!.GetValue<string>());
+        Assert.True(File.Exists(output));
+        Assert.Empty(Directory.GetFiles(directory, "*.stage"));
     }
     [Fact]
     public void Review_RendersLongPublicationPathsThroughRealCli()

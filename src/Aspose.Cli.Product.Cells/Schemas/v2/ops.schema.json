@@ -60,7 +60,7 @@
             "set_default_font", "set_tab_color", "set_sheet_view",
             "delete_chart",
             "add_sparkline",
-            "set_active_sheet", "recalculate"
+            "set_active_sheet"
           ]
         },
         "sheet": {
@@ -100,13 +100,6 @@
                 "description": "Formula for the range's top-left cell; relative references shift per cell (Excel fill semantics)."
               }
             }
-          }
-        },
-        {
-          "if": { "properties": { "op": { "const": "recalculate" } } },
-          "then": {
-            "not": { "required": ["sheet"] },
-            "description": "Recalculate the workbook; this operation has no sheet target."
           }
         },
         {

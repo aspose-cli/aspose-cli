@@ -189,8 +189,7 @@ internal static class SlidesStructuralHandlers
 
     internal static long SetTitle(ISlide slide, string text, ISet<uint> touched)
     {
-        IAutoShape? shape = slide.Shapes.OfType<IAutoShape>().FirstOrDefault(item =>
-            item.Placeholder?.Type is PlaceholderType.Title or PlaceholderType.CenteredTitle);
+        IAutoShape? shape = SlidesPlaceholders.Title(slide);
         shape ??= slide.Shapes.OfType<IAutoShape>().FirstOrDefault(item =>
             item.Name.Contains("title", StringComparison.OrdinalIgnoreCase));
         shape ??= slide.Shapes.AddAutoShape(ShapeType.Rectangle, 54, 36, 612, 72);
@@ -204,9 +203,8 @@ internal static class SlidesStructuralHandlers
         IReadOnlyList<SlidesParagraphInput> paragraphs,
         ISet<uint> touched)
     {
-        IAutoShape? shape = slide.Shapes.OfType<IAutoShape>()
-            .FirstOrDefault(item => item.Placeholder?.Type == PlaceholderType.Body);
-        shape ??= slide.Shapes.AddAutoShape(ShapeType.Rectangle, 72, 126, 576, 360);
+        IAutoShape? shape = SlidesPlaceholders.Content(slide).FirstOrDefault();
+        shape ??=slide.Shapes.AddAutoShape(ShapeType.Rectangle, 72, 126, 576, 360);
         ITextFrame frame = shape.TextFrame!;
         frame.Paragraphs.Clear();
         foreach (SlidesParagraphInput input in paragraphs)

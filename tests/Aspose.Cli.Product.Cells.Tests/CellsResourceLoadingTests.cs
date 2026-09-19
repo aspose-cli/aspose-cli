@@ -98,7 +98,7 @@ public sealed class CellsResourceLoadingTests
             ops = new[] { new { op = "set_values", sheet, range = "A1", values = new[] { new[] { "New value" } } } },
         });
         CliResult edited = workspace.Run("cells", "edit", "input.html", "--ops", ops,
-            "--out", "edited.xlsx", "--verify", "--verify-dir", workspace.File("evidence"), "--output", "json");
+            "--out", "edited.xlsx", "--verify", "--output", "json");
         Assert.Equal(8, edited.ExitCode);
         var verification = System.Text.Json.Nodes.JsonNode.Parse(edited.StdOut)!["verification"]!;
         Assert.False(verification["ok"]!.GetValue<bool>());

@@ -128,9 +128,6 @@ public sealed record EditRequest
     /// <summary>Verify the staged workbook and publish its render evidence with the edit.</summary>
     public bool Verify { get; init; }
 
-    /// <summary>Absolute evidence directory; defaults beside the output.</summary>
-    public string? VerificationDirectory { get; init; }
-
     /// <summary>Recalculate formulas after applying the ops.</summary>
     public bool Recalculate { get; init; } = true;
 

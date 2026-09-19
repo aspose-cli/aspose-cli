@@ -465,12 +465,13 @@ one depends on it:
 4. borders (section 5)
 5. freeze panes → tab colors + `move_sheet` order → `set_sheet_view`
 6. print setup (`set_page_setup` + `set_print_area`, every deliverable sheet)
-7. **render each deliverable sheet at 192 dpi and LOOK** — then fix and
-   re-render until every box below ticks. On a large workbook, render
-   `--range` around what you changed instead of whole sheets.
+7. **review the workbook and LOOK at every sheet image** — then fix and
+   review again until every box below ticks, for at most three rounds.
+   Judge widths and truncation from a `--range` render of the block you
+   changed.
 
 ```sh
-aspose-cli cells render book.xlsx --sheet Dashboard --out scratch/dash.png --dpi 192 --overwrite
+aspose-cli review book.xlsx --out scratch/book.review-1 --output json
 aspose-cli cells render book.xlsx --sheet Data --range A1:I12 --out scratch/data.png --dpi 192 --overwrite
 aspose-cli cells inspect book.xlsx --detail errors --output json
 ```
@@ -498,7 +499,7 @@ Self-grade against this checklist while looking at the PNGs:
 ```
 
 The render mechanics — DPI floors, the strict `--range` view that exposes
-truncation a full-sheet render hides, `--all-sheets` — are Tier 2 of
+truncation a full-sheet render hides, review coverage — are Tier 2 of
 `aspose-cli docs verification`; this checklist is the design bar layered on top
 of those tiers, not a replacement. `cells inspect --detail errors` must report zero
 formula errors before anything ships.

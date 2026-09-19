@@ -3,10 +3,8 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Rendering;
 using Aspose.Words;
 using Aspose.Words.Layout;
-using Aspose.Words.Rendering;
 using Aspose.Words.Saving;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
@@ -51,7 +49,6 @@ internal static class WordsOpsExecutor
                 loaded.Document,
                 request,
                 writer,
-                originalPages,
                 baseline,
                 outcomes,
                 loader,
@@ -157,7 +154,6 @@ internal static class WordsOpsExecutor
         Document document,
         WordsEditRequest request,
         SafeFileWriter writer,
-        IReadOnlyList<int> originalPages,
         Document? baseline,
         IReadOnlyList<BoundedOperationOutcome> outcomes,
         WordsDocumentLoader loader,
@@ -202,13 +198,11 @@ internal static class WordsOpsExecutor
                 verification = write.Read(candidate => Verify(
                     candidate,
                     request,
-                    originalPages,
                     baseline!,
                     expected,
                     outcomes.Any(static outcome =>
                         outcome.Status == OpStatuses.Ok && outcome.ItemsAffected > 0),
-                    loader,
-                    transaction));
+                    loader));
             }
             transaction.Commit();
         }
@@ -231,19 +225,15 @@ internal static class WordsOpsExecutor
     private static WordsVerification Verify(
         string candidatePath,
         WordsEditRequest request,
-        IReadOnlyList<int> originalPages,
         Document baseline,
         ExpectedDocumentState expected,
         bool expectedChange,
-        WordsDocumentLoader loader,
-        AtomicOutputSetWriter transaction)
+        WordsDocumentLoader loader)
     {
         var issues = new List<string>();
-        var renders = new List<PageOutput>();
         using LoadedDocument reopened = loader.OpenPublishedCandidate(
             candidatePath,
             request.EncryptPassword);
-        var index = new DocumentBlockIndex(reopened.Document);
         int fieldCount = reopened.Document.Range.Fields.Count;
         int revisionCount = reopened.Document.Revisions.Count;
         string protection = reopened.Document.ProtectionType.ToString();
@@ -278,58 +268,15 @@ internal static class WordsOpsExecutor
             issues.Add("The batch reported affected items, but semantic comparison found no persisted change.");
         }
 
-        IReadOnlyList<int> pages = VerificationPages(reopened.Document.PageCount, originalPages);
-        foreach (int page in pages)
-        {
-            string renderPath = $"{request.OutputPath}.verify.p{page}.png";
-            PageInfo info = reopened.Document.GetPageInfo(page - 1);
-            long width = (long)Math.Ceiling(info.WidthInPoints / 72d * 150);
-            long height = (long)Math.Ceiling(info.HeightInPoints / 72d * 150);
-            RenderPixelGuard.EnsureFits(width, height, 150);
-            var options = (ImageSaveOptions)WordsSavePipeline.Options("png", pages: [page], dpi: 150);
-            StagedOutput rendered = transaction.Stage(renderPath, request.OverwriteArtifacts,
-                path => reopened.Document.Save(path, options));
-            renders.Add(new PageOutput
-            {
-                Page = page,
-                Output = new OutputInfo
-                {
-                    Path = renderPath,
-                    Format = "png",
-                    SizeBytes = rendered.SizeBytes,
-                },
-            });
-        }
-
         return new WordsVerification
         {
             Ok = issues.Count == 0,
-            VisualReviewRequired = reopened.Document.PageCount > 20,
-            ReadBackBlocks = Enumerable.Range(1, Math.Min(index.Count, 20)).ToArray(),
-            Renders = renders,
             Issues = issues,
             SemanticChangesDetected = semanticChanges,
             FieldCount = fieldCount,
             RevisionCount = revisionCount,
             Protection = protection,
         };
-    }
-
-    private static IReadOnlyList<int> VerificationPages(int pageCount, IReadOnlyList<int> touched)
-    {
-        if (pageCount <= 20)
-        {
-            return Enumerable.Range(1, pageCount).ToArray();
-        }
-
-        return touched.SelectMany(static page => new[] { page - 1, page, page + 1 })
-            .Append(1)
-            .Append(pageCount)
-            .Where(page => page >= 1 && page <= pageCount)
-            .Distinct()
-            .Order()
-            .Take(12)
-            .ToArray();
     }
 
     private static string FormatId(string path)

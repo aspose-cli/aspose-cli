@@ -39,7 +39,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
             new EditRequest
             {
                 OutputPath = source, Overwrite = true, BackupPath = backup,
-                Verify = verify, VerificationDirectory = Path.Combine(temp.Path, "evidence"),
+                Verify = verify,
             });
         Assert.Equal(original, File.ReadAllBytes(backup));
         Assert.Equal(backup, result.Backup!.Path);
@@ -48,8 +48,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
         Assert.Equal(7, reopened.Worksheets["Data"].Cells["B2"].IntValue);
         if (verify)
         {
-            Assert.NotEmpty(result.Verification!.Renders);
-            Assert.All(result.Verification.Renders, render => Assert.True(File.Exists(render.Path)));
+            Assert.Equal("B2", Assert.Single(result.Verification!.DirectChanges).Cell);
         }
     }
 
@@ -383,7 +382,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void RecalculateOp_ToXls_RowsBeyondTheGrid_WarnsDataTruncated()
+    public void FormulaOnlyEdit_ToXls_RowsBeyondTheGrid_WarnsDataTruncated()
     {
         _fixture.Gate.EnsureApplied();
         string src = _fixture.Temp.File("calc-tall.xlsx");
@@ -395,7 +394,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
 
         EditResult result = _fixture.Engine.ApplyOps(
             src,
-            OpsParser.Parse("""{ "ops": [ { "op": "recalculate" } ] }"""),
+            OpsParser.Parse("""{ "ops": [ { "op": "set_formula", "range": "B1", "formula": "=1" } ] }"""),
             new EditRequest { OutputPath = _fixture.Temp.File("calc-tall.xls"), Overwrite = true });
 
         Assert.Contains(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
