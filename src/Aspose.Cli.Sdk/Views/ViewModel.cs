@@ -27,6 +27,12 @@ public enum ViewPurpose
 /// <summary>One product view: an id, a label for people and the kind of parts it renders.</summary>
 public sealed record ProductView(string Id, string Label, string PartKind);
 
+/// <summary>
+/// Product-owned browser assets that present a product's views inside the
+/// shared viewer: the presenter script and its optional stylesheet.
+/// </summary>
+public sealed record ViewPresentation(string Script, string? Stylesheet);
+
 /// <summary>Immutable input for one product view render.</summary>
 public sealed record ViewRenderRequest
 {

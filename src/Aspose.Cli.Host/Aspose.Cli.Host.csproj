@@ -32,6 +32,8 @@
     <EmbeddedResource
       Include="Preview\live-runtime.js"
       LogicalName="preview/live-runtime.js" />
+    <EmbeddedResource Include="Viewer\kit.js" LogicalName="viewer/kit.js" />
+    <EmbeddedResource Include="Viewer\kit.css" LogicalName="viewer/kit.css" />
   </ItemGroup>
 
 </Project>

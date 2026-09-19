@@ -1,3 +1,5 @@
+using System.Reflection;
+using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -63,6 +65,7 @@ public sealed partial class ProductViewDefinition
 {
     private readonly Func<object, string, ViewRenderRequest, IViewArtifactSink, ViewManifest> _render;
     private readonly Func<object, string, ViewRenderRequest, ViewManifest, ProductReviewAssessment> _assess;
+    private readonly Lazy<ViewPresentation> _presentation;
 
     private ProductViewDefinition(
         Type portType,
@@ -72,7 +75,8 @@ public sealed partial class ProductViewDefinition
         string liveView,
         bool visualInspectionRequired,
         Func<object, string, ViewRenderRequest, IViewArtifactSink, ViewManifest> render,
-        Func<object, string, ViewRenderRequest, ViewManifest, ProductReviewAssessment> assess)
+        Func<object, string, ViewRenderRequest, ViewManifest, ProductReviewAssessment> assess,
+        Assembly presenterAssembly)
     {
         PortType = portType;
         ProductId = productId;
@@ -86,6 +90,7 @@ public sealed partial class ProductViewDefinition
         VisualInspectionRequired = visualInspectionRequired;
         _render = render;
         _assess = assess;
+        _presentation = new Lazy<ViewPresentation>(() => ReadPresentation(presenterAssembly, productId));
     }
 
     /// <summary>Product id that owns this adapter.</summary>
@@ -108,6 +113,12 @@ public sealed partial class ProductViewDefinition
 
     /// <summary>Whether review evidence always requires visual inspection.</summary>
     public bool VisualInspectionRequired { get; }
+
+    /// <summary>
+    /// The product presenter embedded as <c>Presenter/presenter.js</c> and the
+    /// optional <c>Presenter/presenter.css</c>, read on first use.
+    /// </summary>
+    public ViewPresentation Presentation => _presentation.Value;
 
     /// <summary>Renders one view and validates the product's manifest.</summary>
     public ViewManifest Render(
@@ -156,6 +167,24 @@ public sealed partial class ProductViewDefinition
                     Password = request.Password,
                     FontProfile = request.FontProfile,
                 }));
+    }
+
+    private static ViewPresentation ReadPresentation(Assembly assembly, string productId) =>
+        new(
+            ReadResource(assembly, "Presenter/presenter.js")
+                ?? throw new InvalidOperationException(
+                    $"Product '{productId}' ships no Presenter/presenter.js resource."),
+            ReadResource(assembly, "Presenter/presenter.css"));
+
+    private static string? ReadResource(Assembly assembly, string name)
+    {
+        using Stream? stream = assembly.GetManifestResourceStream(name);
+        if (stream is null)
+        {
+            return null;
+        }
+        using var reader = new StreamReader(stream, Encoding.UTF8);
+        return reader.ReadToEnd();
     }
 
     private object Port(ProductBinding binding)
@@ -275,7 +304,8 @@ public sealed partial class ProductViewDefinition
             (port, path, request, artifacts) =>
                 adapter.Render((TPort)port, path, request, artifacts),
             (port, path, request, rendered) =>
-                adapter.Assess((TPort)port, path, request, rendered));
+                adapter.Assess((TPort)port, path, request, rendered),
+            adapter.GetType().Assembly);
     }
 
     [GeneratedRegex("^[a-z][a-z0-9-]{0,31}$")]

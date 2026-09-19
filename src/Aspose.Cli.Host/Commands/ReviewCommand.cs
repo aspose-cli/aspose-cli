@@ -122,6 +122,7 @@ internal static class ReviewCommand
                 target,
                 maximum,
                 views.VisualInspectionRequired,
+                views.Presentation,
                 artifacts => views.Render(binding, input, request, artifacts),
                 rendered => views.Assess(binding, input, request, rendered),
                 license,

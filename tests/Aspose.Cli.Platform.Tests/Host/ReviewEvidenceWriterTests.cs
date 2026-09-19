@@ -22,6 +22,10 @@ public sealed class ReviewEvidenceWriterTests
         0, 0, 0, 1, 0, 0, 0, 1,
     ];
 
+    private static readonly ViewPresentation Presentation = new(
+        "AsposeViewer.definePresenter('test', { kind: 'Test', glyph: 'T', views: { pages: { layout: 'pages', noun: 'Page' } } });",
+        ".av-app[data-product=\"test\"] { --av-accent: #333; }");
+
     [Fact]
     public void Write_WhenPartsExceedTheirTotal_RejectsWithoutPublishing()
     {
@@ -138,6 +142,7 @@ public sealed class ReviewEvidenceWriterTests
             output,
             maxItems: 4,
             visualInspectionRequired: true,
+            Presentation,
             artifacts =>
             {
                 artifacts.Write("page-1.png", static stream => stream.Write(PngHeader));
@@ -168,6 +173,7 @@ public sealed class ReviewEvidenceWriterTests
             output,
             maxItems: 4,
             visualInspectionRequired: true,
+            Presentation,
             artifacts =>
             {
                 artifacts.Write(unsafePath, static stream => stream.Write(PngHeader));
@@ -195,6 +201,63 @@ public sealed class ReviewEvidenceWriterTests
         Assert.False(Directory.Exists(output));
     }
 
+    [Fact]
+    public void Write_IndexPresentsTheViewAndReviewInTheSharedViewer()
+    {
+        using var temp = new TempDirectory();
+
+        ReviewResult result = Write(temp, temp.File("review"), 4, 2, ["page-1.png", "page-2.png"]);
+
+        string html = File.ReadAllText(result.Index);
+        JsonNode document = ViewerData(html);
+        Assert.True(JsonNode.DeepEquals(
+            JsonNode.Parse(File.ReadAllText(Path.Combine(result.OutputDirectory, "artifacts", "view.json"))),
+            document["view"]));
+        Assert.True(JsonNode.DeepEquals(JsonNode.Parse(File.ReadAllText(result.Manifest)), document["review"]));
+        Assert.Contains(Presentation.Script, html, StringComparison.Ordinal);
+        Assert.Contains(Presentation.Stylesheet!, html, StringComparison.Ordinal);
+        Assert.Contains("AsposeViewer.start({ base: \"artifacts/\" })", html, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Write_DocumentTextCannotEndTheViewerDataBlock()
+    {
+        using var temp = new TempDirectory();
+        const string label = "</script><script>window.injected = true;</script><!--";
+
+        ReviewResult result = ReviewEvidenceWriter.Write(
+            temp.File("source.test"),
+            "test",
+            temp.File("review"),
+            maxItems: 4,
+            visualInspectionRequired: true,
+            Presentation,
+            artifacts =>
+            {
+                artifacts.Write("page-1.png", static stream => stream.Write(PngHeader));
+                ViewManifest manifest = Manifest(1, ["page-1.png"]);
+                return manifest with { Parts = [manifest.Parts[0] with { Label = label }] };
+            },
+            static _ => new ProductReviewAssessment(),
+            LicenseState.NotApplicable,
+            new ContractJsonSerializer([]));
+
+        string html = File.ReadAllText(result.Index);
+        Assert.DoesNotContain(label, html, StringComparison.Ordinal);
+        Assert.Equal(label, ViewerData(html)["view"]!["parts"]![0]!["label"]!.GetValue<string>());
+    }
+
+    private static JsonNode ViewerData(string html)
+    {
+        Match block = Regex.Match(
+            html,
+            "<script type=\"application/json\" id=\"aspose-viewer-data\">(.*?)</script>",
+            RegexOptions.CultureInvariant | RegexOptions.Singleline,
+            TimeSpan.FromSeconds(1));
+        Assert.True(block.Success, "The page must carry the viewer data block.");
+        return JsonNode.Parse(block.Groups[1].Value)!;
+    }
+
     private static ReviewResult Write(
         TempDirectory temp,
         string output,
@@ -208,6 +271,7 @@ public sealed class ReviewEvidenceWriterTests
             output,
             maxItems,
             visualInspectionRequired: true,
+            Presentation,
             artifacts =>
             {
                 foreach (string file in files)

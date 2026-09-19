@@ -1,0 +1,15 @@
+.av-app[data-product="slides"] {
+  --av-accent: #d24726;
+  --av-accent-strong: #9f2f18;
+}
+
+/* The slide number sits beside its thumbnail, as in a slide editor. */
+.av-app[data-product="slides"] .av-thumb {
+  grid-template-columns: 18px minmax(0, 1fr);
+  align-items: start;
+}
+
+.av-app[data-product="slides"] .av-thumb-number {
+  order: -1;
+  text-align: right;
+}

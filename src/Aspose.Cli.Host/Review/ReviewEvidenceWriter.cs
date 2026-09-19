@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
@@ -19,13 +20,14 @@ namespace Aspose.Cli.Host.Review;
 /// <summary>
 /// Publishes one immutable static review bundle into a new directory: the
 /// rendered view parts, their <c>view.json</c> manifest, <c>review.json</c>
-/// and a static <c>index.html</c>.
+/// and an <c>index.html</c> that presents both in the shared viewer.
 /// </summary>
 internal static class ReviewEvidenceWriter
 {
     public const int DefaultMaxItems = 256;
     public const int MaximumMaxItems = 8_192;
     internal const string ViewManifestFile = "view.json";
+    private const string ArtifactsBase = "artifacts/";
 
     public static ReviewResult Write(
         string sourcePath,
@@ -33,6 +35,7 @@ internal static class ReviewEvidenceWriter
         string outputDirectory,
         int maxItems,
         bool visualInspectionRequired,
+        ViewPresentation presentation,
         Func<IViewArtifactSink, ViewManifest> render,
         Func<ViewManifest, ProductReviewAssessment> assess,
         LicenseState license,
@@ -41,6 +44,7 @@ internal static class ReviewEvidenceWriter
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputDirectory);
+        ArgumentNullException.ThrowIfNull(presentation);
         ArgumentNullException.ThrowIfNull(render);
         ArgumentNullException.ThrowIfNull(assess);
         ArgumentNullException.ThrowIfNull(serializer);
@@ -65,10 +69,10 @@ internal static class ReviewEvidenceWriter
             LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
             ViewManifest manifest = RenderPrivately(render, evidenceDirectory, maxItems, limits);
             ProductReviewAssessment assessment = assess(manifest);
+            string viewJson = JsonSerializer.Serialize(manifest, SdkJsonContext.Default.ViewManifest);
             File.WriteAllText(
                 Path.Combine(evidenceDirectory, ViewManifestFile),
-                JsonSerializer.Serialize(manifest, SdkJsonContext.Default.ViewManifest)
-                    + Environment.NewLine,
+                viewJson + Environment.NewLine,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             PreviewArtifactManifest files = PreviewArtifactManifest.Validate(
                 evidenceDirectory,
@@ -86,13 +90,19 @@ internal static class ReviewEvidenceWriter
                 assessment,
                 license);
 
+            string reviewJson = serializer.Serialize(result);
             File.WriteAllText(
                 Path.Combine(staging, "index.html"),
-                IndexHtml(result, manifest),
+                ViewerPage.Static(
+                    "Review: " + Path.GetFileName(source),
+                    presentation,
+                    $"{{\"view\":{viewJson},\"review\":{reviewJson}}}",
+                    ArtifactsBase,
+                    Fallback(manifest)),
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             File.WriteAllText(
                 Path.Combine(staging, "review.json"),
-                serializer.Serialize(result) + Environment.NewLine,
+                reviewJson + Environment.NewLine,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             try
             {
@@ -233,7 +243,7 @@ internal static class ReviewEvidenceWriter
             new ReviewArtifact
             {
                 Sequence = 2,
-                Path = "artifacts/" + ViewManifestFile,
+                Path = ArtifactsBase + ViewManifestFile,
                 Role = "entry",
                 MediaType = "application/json",
                 Scope = manifest.View,
@@ -325,7 +335,7 @@ internal static class ReviewEvidenceWriter
         return new ReviewArtifact
         {
             Sequence = sequence,
-            Path = "artifacts/" + part.File,
+            Path = ArtifactsBase + part.File,
             Role = "evidence",
             MediaType = MediaType(part.File),
             Scope = view,
@@ -354,48 +364,19 @@ internal static class ReviewEvidenceWriter
         return width > 0 && height > 0 ? (width, height) : (null, null);
     }
 
-    private static string IndexHtml(ReviewResult result, ViewManifest manifest)
-    {
-        string title = WebUtility.HtmlEncode(Path.GetFileName(result.Input));
-        string product = WebUtility.HtmlEncode(result.Product);
-        string coverage = $"{result.Coverage.RenderedItems}/{result.Coverage.ExpectedItems}";
-        string findings = result.Findings.Count == 0
-            ? "<p class=\"quiet\">No deterministic findings. AI visual inspection is still required.</p>"
-            : "<ul>" + string.Concat(result.Findings.Select(finding =>
-                $"<li class=\"{WebUtility.HtmlEncode(finding.Severity)}\"><code>{WebUtility.HtmlEncode(finding.Code)}</code> "
-                + WebUtility.HtmlEncode(finding.Message)
-                + (finding.Location is null
-                    ? string.Empty
-                    : $" <span class=\"quiet\">({WebUtility.HtmlEncode(finding.Location)})</span>")
-                + (finding.Hint is null
-                    ? string.Empty
-                    : $"<br><span class=\"quiet\">Fix: {WebUtility.HtmlEncode(finding.Hint)}</span>")
-                + "</li>")) + "</ul>";
-        string gallery = string.Concat(manifest.Parts.Select(part =>
+    /// <summary>What the review page shows without scripts: every part in document order.</summary>
+    private static string Fallback(ViewManifest manifest) =>
+        "<div class=\"av-fallback\"><p>The viewer needs JavaScript. The rendered parts follow; "
+        + "the findings are in <a href=\"review.json\">review.json</a>.</p><div class=\"av-fallback-parts\">"
+        + string.Concat(manifest.Parts.Select(static part =>
         {
-            string path = WebUtility.HtmlEncode("artifacts/" + part.File);
+            string path = WebUtility.HtmlEncode(ArtifactsBase + part.File);
             string label = WebUtility.HtmlEncode(part.Label);
-            string visual = part.Kind == ViewPartKinds.Image
-                ? $"<a href=\"{path}\"><img loading=\"lazy\" src=\"{path}\" alt=\"{label}\"></a>"
-                : $"<iframe title=\"{label}\" src=\"{path}\"></iframe>";
-            return $"<figure>{visual}<figcaption>{label}</figcaption></figure>";
-        }));
-        return "<!doctype html>\n"
-            + "<html lang=\"en\"><head><meta charset=\"utf-8\">"
-            + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-            + $"<title>Review: {title}</title>"
-            + "<style>body{margin:0;font:14px system-ui;background:#f4f5f7;color:#17202a}"
-            + "header,main{padding:16px;max-width:1440px;margin:auto}header{background:#fff;border-bottom:1px solid #ccd1d1}"
-            + "iframe{display:block;width:100%;height:70vh;border:1px solid #ccd1d1;background:#fff}"
-            + ".required,.error{color:#9c2f12;font-weight:600}.warning{color:#7a5200}.quiet{color:#607080}"
-            + ".gallery{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:16px}figure{margin:0;padding:10px;background:#fff;border:1px solid #d7dce1}img{display:block;max-width:100%;height:auto;margin:auto}figcaption{text-align:center;margin-top:8px}</style></head><body>"
-            + $"<header><strong>{title}</strong> &middot; {product} &middot; coverage {coverage} &middot; "
-            + "<span class=\"required\">Visual inspection required</span> &middot; "
-            + "<a href=\"review.json\">review.json</a></header><main>"
-            + "<h2>Deterministic findings</h2>" + findings
-            + "<h2>Rendered parts</h2><div class=\"gallery\">" + gallery + "</div></main>"
-            + "</body></html>\n";
-    }
+            return part.Kind == ViewPartKinds.Image
+                ? $"<figure><img loading=\"lazy\" src=\"{path}\" alt=\"{label}\"><figcaption>{label}</figcaption></figure>"
+                : $"<p><a href=\"{path}\">{label}</a></p>";
+        }))
+        + "</div></div>";
 
     private static string MediaType(string path) =>
         Path.GetExtension(path).ToLowerInvariant() switch
