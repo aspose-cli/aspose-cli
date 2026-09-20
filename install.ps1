@@ -1606,10 +1606,10 @@ try {
         # authority. Never execute the replaceable old installation merely
         # because its marker and manifest are self-consistent.
         $serviceExecutable = Join-Path $stage 'aspose-cli.exe'
-        foreach ($arguments in @(@('app','stop','--output','json'), @('preview','stop','--all','--output','json'))) {
-            $stopResult = Invoke-CliChildProcess $serviceExecutable $arguments
-            if ($stopResult.ExitCode -ne 0) { throw "Existing $($arguments[0]) service could not be stopped safely with exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
-        }
+        # One service holds the App and every open document, so one stop ends
+        # everything that could still be using the installation.
+        $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--all','--output','json')
+        if ($stopResult.ExitCode -ne 0) { throw "Existing local service could not be stopped safely with exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
         $rechecked = Get-ManagedInstallState $installRoot
         if ($rechecked.Snapshot -cne $existingState.Snapshot) { throw 'Existing installation changed while services were stopping.' }
     }

@@ -58,27 +58,6 @@ internal sealed class AppTestSession : IAsyncDisposable
         return result;
     }
 
-    internal async Task FollowRestart(string url)
-    {
-        Url = new Uri(url);
-        Client.Dispose();
-        Client = new HttpClient(new HttpClientHandler { UseCookies = false })
-        {
-            BaseAddress = new Uri(Url.GetLeftPart(UriPartial.Authority)),
-            Timeout = TimeSpan.FromSeconds(30),
-        };
-        string shell = await Client.GetStringAsync("/");
-        string csrf = Regex.Match(shell, @"name=""aspose-csrf"" content=""([^""]+)""").Groups[1].Value;
-        Assert.NotEmpty(csrf);
-        Client.DefaultRequestHeaders.Add("Origin", Client.BaseAddress.GetLeftPart(UriPartial.Authority));
-        Client.DefaultRequestHeaders.Add("X-CSRF-Token", csrf);
-        CliResult status = Workspace.Run("app", "status", "--output", "json");
-        Assert.Equal(0, status.ExitCode);
-        var process = System.Diagnostics.Process.GetProcessById(JsonNode.Parse(status.StdOut)!["pid"]!.GetValue<int>());
-        _ = process.Handle;
-        _processes.Add(process);
-    }
-
     internal async Task<JsonNode> Status() =>
         JsonNode.Parse(await Client.GetStringAsync("/api/status"))!;
 
