@@ -4,6 +4,7 @@ using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
@@ -91,7 +92,7 @@ internal static class ViewRenderWorker
                     ? FontSearchProfile.Explicit(directories)
                     : null,
             };
-            binding.LicenseGate.EnsureApplied();
+            LicenseState state = binding.LicenseGate.EnsureApplied();
             licenses[product] = license;
             ViewManifest manifest = ViewRendering.Render(
                 artifacts => views.Render(binding, request.Source, render, artifacts),
@@ -109,6 +110,7 @@ internal static class ViewRenderWorker
                 Ok = true,
                 Product = product,
                 View = manifest.View,
+                License = state.ToContractName(),
                 TotalParts = manifest.TotalParts,
                 PresenterScript = request.Presentation ? views.Presentation.Script : null,
                 PresenterStylesheet = request.Presentation ? views.Presentation.Stylesheet : null,
@@ -121,6 +123,7 @@ internal static class ViewRenderWorker
                 Id = request.Id,
                 Ok = false,
                 Code = exception is CliException cli ? cli.Code.Name : ErrorCodes.Internal.Name,
+                Exit = (int)(exception is CliException failure ? failure.Code.ExitCode : ExitCode.Internal),
                 Message = Sanitize(exception.Message, request.Source),
             };
         }

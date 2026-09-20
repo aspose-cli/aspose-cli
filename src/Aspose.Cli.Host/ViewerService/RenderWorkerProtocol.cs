@@ -64,6 +64,9 @@ internal sealed record RenderWorkerResponse
     /// <summary>View the product rendered.</summary>
     public string? View { get; init; }
 
+    /// <summary>License mode the engine rendered under.</summary>
+    public string? License { get; init; }
+
     /// <summary>Parts the document contains, including those beyond the bound.</summary>
     public int TotalParts { get; init; }
 
@@ -75,6 +78,9 @@ internal sealed record RenderWorkerResponse
 
     /// <summary>Stable CLI error code when the render failed.</summary>
     public string? Code { get; init; }
+
+    /// <summary>Exit code the same failure would produce on the command line.</summary>
+    public int Exit { get; init; }
 
     /// <summary>Message for the person, already free of private paths.</summary>
     public string? Message { get; init; }

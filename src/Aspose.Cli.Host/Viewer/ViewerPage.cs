@@ -7,7 +7,9 @@ namespace Aspose.Cli.Host.Viewer;
 
 /// <summary>
 /// Composes pages of the shared document viewer: the kit, one product
-/// presenter and the document the kit starts from.
+/// presenter and the document the kit starts from. A static page carries its
+/// document inline and loads parts from disk; a live page carries the state
+/// of an open document and follows it over its event stream.
 /// </summary>
 internal static class ViewerPage
 {
@@ -25,17 +27,54 @@ internal static class ViewerPage
         ViewPresentation presentation,
         string documentJson,
         string partBase,
-        string fallbackHtml)
+        string fallbackHtml) =>
+        Compose(
+            title,
+            presentation,
+            documentJson,
+            $"AsposeViewer.start({{ base: \"{JsonEncodedText.Encode(partBase)}\" }});",
+            fallbackHtml,
+            nonce: null);
+
+    /// <summary>
+    /// The page of one open document. It carries the state the viewer starts
+    /// from and finds everything else under its own address: the revision
+    /// files it serves and the event stream it follows.
+    /// </summary>
+    public static string Live(
+        string fileName,
+        ViewPresentation presentation,
+        string documentJson,
+        string scriptNonce)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(scriptNonce);
+        return Compose(
+            fileName,
+            presentation,
+            $"{{\"live\":{documentJson}}}",
+            "AsposeViewer.start({ live: true });",
+            "<p>The live viewer needs JavaScript.</p>",
+            scriptNonce);
+    }
+
+    private static string Compose(
+        string title,
+        ViewPresentation presentation,
+        string documentJson,
+        string bootstrap,
+        string fallbackHtml,
+        string? nonce)
+    {
+        ArgumentNullException.ThrowIfNull(presentation);
         var page = new StringBuilder()
             .Append("<!doctype html>\n<html lang=\"en\"><head><meta charset=\"utf-8\">\n")
             .Append("<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n")
             .Append("<meta name=\"color-scheme\" content=\"light dark\">\n")
             .Append("<title>").Append(WebUtility.HtmlEncode(title)).Append("</title>\n")
-            .Append(Inline("style", KitStylesheet.Value));
+            .Append(Inline("style", KitStylesheet.Value, nonce: null));
         if (presentation.Stylesheet is { } stylesheet)
         {
-            page.Append(Inline("style", stylesheet));
+            page.Append(Inline("style", stylesheet, nonce: null));
         }
         return page
             .Append("</head><body>\n<noscript>").Append(fallbackHtml).Append("</noscript>\n")
@@ -44,22 +83,22 @@ internal static class ViewerPage
             .Append("<script type=\"application/json\" id=\"aspose-viewer-data\">")
             .Append(documentJson.Replace("<", "\\u003c", StringComparison.Ordinal))
             .Append("</script>\n")
-            .Append(Inline("script", KitScript.Value))
-            .Append(Inline("script", presentation.Script))
-            .Append("<script>AsposeViewer.start({ base: \"")
-            .Append(JsonEncodedText.Encode(partBase))
-            .Append("\" });</script>\n</body></html>\n")
+            .Append(Inline("script", KitScript.Value, nonce))
+            .Append(Inline("script", presentation.Script, nonce))
+            .Append(Inline("script", bootstrap, nonce))
+            .Append("</body></html>\n")
             .ToString();
     }
 
-    private static string Inline(string tag, string content)
+    private static string Inline(string tag, string content, string? nonce)
     {
         if (content.Contains("</" + tag, StringComparison.OrdinalIgnoreCase))
         {
             throw new InvalidOperationException(
                 $"An inlined viewer asset must not contain '</{tag}'.");
         }
-        return $"<{tag}>\n{content}\n</{tag}>\n";
+        string attributes = nonce is null ? string.Empty : $" nonce=\"{nonce}\"";
+        return $"<{tag}{attributes}>\n{content}\n</{tag}>\n";
     }
 
     private static string Read(string name)
