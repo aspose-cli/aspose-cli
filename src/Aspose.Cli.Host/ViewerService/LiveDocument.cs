@@ -43,6 +43,7 @@ internal sealed record LiveRevision(
     string License,
     int TotalParts,
     IReadOnlyDictionary<string, string> Digests,
+    IReadOnlyDictionary<string, string> Addressed,
     PreviewArtifactManifest Files);
 
 /// <summary>
@@ -306,15 +307,17 @@ internal sealed class LiveDocument : IDisposable
     private void Publish(int revision, string directory, RenderWorkerResponse response, long renderMs)
     {
         LiveRevision? previous = Current;
+        (IReadOnlyDictionary<string, string> digests, IReadOnlyDictionary<string, string> addressed) =
+            ReadParts(directory);
         var published = new LiveRevision(
             revision,
             response.Product ?? previous?.Product ?? string.Empty,
             response.View ?? previous?.View ?? string.Empty,
             response.License ?? previous?.License ?? string.Empty,
             response.TotalParts,
-            ReadDigests(directory),
+            digests,
+            addressed,
             PreviewArtifactManifest.Validate(directory, RenderWorkerProtocol.ManifestFileName, _limits));
-        IReadOnlyDictionary<string, string> digests = published.Digests;
         if (response.PresenterScript is { } script)
         {
             Presentation = new ViewPresentation(script, response.PresenterStylesheet);
@@ -339,19 +342,32 @@ internal sealed class LiveDocument : IDisposable
         _versions.Prune(revision - 1);
     }
 
-    /// <summary>Part digests of a published revision, by part id.</summary>
-    private static IReadOnlyDictionary<string, string> ReadDigests(string directory)
+    /// <summary>
+    /// Reads what a published revision contains: the digest of every part by
+    /// part id, and the file behind every digest. Parts are served by digest,
+    /// so a part that survives an edit keeps its address and the viewer never
+    /// downloads it again.
+    /// </summary>
+    private static (IReadOnlyDictionary<string, string> Digests, IReadOnlyDictionary<string, string> Addressed)
+        ReadParts(string directory)
     {
         var digests = new Dictionary<string, string>(StringComparer.Ordinal);
+        var addressed = new Dictionary<string, string>(StringComparer.Ordinal);
         JsonNode manifest = JsonNode.Parse(File.ReadAllText(
             Path.Combine(directory, RenderWorkerProtocol.ManifestFileName)))
             ?? throw new InvalidDataException("The rendered view manifest is empty.");
         foreach (JsonNode? part in manifest["parts"]!.AsArray())
         {
-            digests[part!["id"]!.GetValue<string>()] = part["digest"]?.GetValue<string>() ?? string.Empty;
+            string digest = part!["digest"]?.GetValue<string>() ?? string.Empty;
+            digests[part["id"]!.GetValue<string>()] = digest;
+            addressed[Address(digest)] = part["file"]!.GetValue<string>();
         }
-        return digests;
+        return (digests, addressed);
     }
+
+    /// <summary>The address a part is served under: the hex of its digest.</summary>
+    internal static string Address(string digest) =>
+        digest.StartsWith("sha256:", StringComparison.Ordinal) ? digest["sha256:".Length..] : digest;
 
     private void Report(int revision, string code, string message) =>
         Broadcast("error", new JsonObject

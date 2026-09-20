@@ -168,7 +168,15 @@ internal sealed class ViewerHttpServer : IDisposable
             if (segments is [_, _, "r", { } number, ..]
                 && int.TryParse(number, NumberStyles.None, CultureInfo.InvariantCulture, out int revision))
             {
-                Asset(response, document, revision, string.Join('/', segments.Skip(4)));
+                Serve(response, document.Find(revision), string.Join('/', segments.Skip(4)));
+                return;
+            }
+            if (segments is [_, _, "p", { Length: > 0 } address])
+            {
+                LiveRevision? revisionOf = document.Current is { } current && current.Addressed.ContainsKey(address)
+                    ? current
+                    : document.Find((document.Current?.Number ?? 1) - 1);
+                Serve(response, revisionOf, revisionOf?.Addressed.GetValueOrDefault(address));
                 return;
             }
             Text(response, 404, "text/plain; charset=utf-8", "Not found.");
@@ -221,19 +229,20 @@ internal sealed class ViewerHttpServer : IDisposable
     }
 
     /// <summary>
-    /// Serves one file of a rendered revision. Revisions are immutable, so
-    /// their files are cached forever and a new render is a new URL.
+    /// Serves one file of a rendered revision. Revisions and parts are
+    /// immutable, so their files are cached forever and only what an edit
+    /// changed is ever fetched again.
     /// </summary>
-    private void Asset(HttpListenerResponse response, LiveDocument document, int revision, string file)
+    private void Serve(HttpListenerResponse response, LiveRevision? revision, string? file)
     {
-        using Stream? content = document.Find(revision)?.Files.TryOpenRead(Uri.UnescapeDataString(file));
+        using Stream? content = file is null ? null : revision?.Files.TryOpenRead(Uri.UnescapeDataString(file));
         if (content is null)
         {
             Text(response, 404, "text/plain; charset=utf-8", "Not found.");
             return;
         }
         response.StatusCode = 200;
-        response.ContentType = ContentType(Path.GetExtension(file));
+        response.ContentType = ContentType(Path.GetExtension(file!));
         response.Headers["Cache-Control"] = "private, max-age=31536000, immutable";
         response.ContentLength64 = content.Length;
         content.CopyTo(response.OutputStream);

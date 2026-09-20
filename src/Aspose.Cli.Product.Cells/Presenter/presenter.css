@@ -2,3 +2,23 @@
   --av-accent: #147a52;
   --av-accent-strong: #0c5d3d;
 }
+
+/* The product's own grid fills the stage; its sheet tabs sit under it. */
+.av-app[data-product="cells"][data-layout="grid"] .av-stage {
+  background: var(--av-surface);
+}
+
+.cells-grid {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.cells-grid-frame {
+  flex: 1;
+  width: 100%;
+  min-height: 0;
+  border: 0;
+  background: #fff;
+}

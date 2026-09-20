@@ -7,9 +7,15 @@
  *   deck  - one slide at a time on a stage, with a slideshow,
  *   tabs  - one part at a time behind a tab strip.
  * A product presenter registers with definePresenter and describes how each
- * of its views is presented; its stylesheet sets the product accent. The page
- * supplies the document: a static review page inlines the view.json and
- * review.json that sit beside it and loads parts relative to itself. */
+ * of its views is presented; its stylesheet sets the product accent.
+ *
+ * The page supplies the document in one of two modes. A static review page
+ * inlines the view.json and review.json beside it and loads parts from disk.
+ * A live page carries the state of a document the service keeps rendering:
+ * the kit follows its event stream, and every update swaps only the parts
+ * whose digests changed, keeps the shell and the reading position, and marks
+ * what changed. Parts are addressed by digest, so an unchanged part is never
+ * fetched again. */
 (function () {
   'use strict';
 
@@ -20,6 +26,10 @@
   var AUTO_ZOOM_LIMIT = 1.25;
   var ZOOM_STEPS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.8, 0.9, 1, 1.1, 1.25, 1.5, 1.75, 2, 2.5, 3, 4];
   var SPOTLIGHT_MS = 1800;
+  // Beyond this many changed elements the whole part is marked instead.
+  var SPOTLIGHT_LIMIT = 12;
+  // Aligning two long element runs costs more than it tells; mark the part.
+  var ALIGN_LIMIT = 250000;
   // How long programmatic scrolling may take before scroll tracking resumes
   // where scrollend is not supported.
   var SCROLL_SETTLE_MS = 1000;
@@ -33,7 +43,8 @@
     fitPage: 'M9 4H4v5 M15 4h5v5 M9 20H4v-5 M15 20h5v-5',
     review: 'M6 21V4 M6 4h11l-2.5 4 2.5 4H6',
     slideshow: 'M8 5.5v13l10.5-6.5z',
-    close: 'M6 6l12 12 M18 6L6 18'
+    close: 'M6 6l12 12 M18 6L6 18',
+    follow: 'M12 4v10 M8 10.5l4 4 4-4 M5 19h14'
   };
   var LAYOUTS = { pages: pagesLayout, deck: deckLayout, tabs: tabsLayout };
   var DEFAULT_ZOOM = { pages: 'auto', deck: 'fit-page', tabs: 'auto' };
@@ -49,43 +60,89 @@
 
   /**
    * Starts the viewer on the document the page carries in its
-   * aspose-viewer-data block; options.base prefixes every part file.
+   * aspose-viewer-data block: a static bundle, or one live document.
    */
   function start(options) {
+    options = options || {};
     var data = JSON.parse(document.getElementById('aspose-viewer-data').textContent);
-    var review = data.review;
-    var presenter = presenters[review.product];
-    var spec = presenter && presenter.views[data.view.view];
-    if (!spec) {
-      throw new Error('No presenter shows the ' + data.view.view + ' view of ' + review.product + '.');
+    if (data.live) {
+      startLive(data.live);
+      return;
     }
-    createViewer(document.body, {
+    var review = data.review;
+    show(document.body, {
       product: review.product,
       file: baseName(review.input),
       license: review.license ? review.license.mode : null,
       view: data.view,
       review: review,
       base: options.base || ''
-    }, presenter, spec);
+    });
+  }
+
+  /**
+   * One document the service keeps rendering. The page carries its current
+   * state; the manifest of a revision, the parts and the event stream all
+   * live under the page's own address.
+   */
+  function startLive(live) {
+    manifestOf(live.revision, function (manifest) {
+      connect(show(document.body, {
+        product: live.product,
+        file: live.file,
+        license: live.license,
+        view: manifest,
+        review: null,
+        live: live,
+        base: ''
+      }), live);
+    });
+  }
+
+  function show(host, doc) {
+    var presenter = presenters[doc.product];
+    var spec = presenter && presenter.views[doc.view.view];
+    if (!spec) {
+      throw new Error('No presenter shows the ' + doc.view.view + ' view of ' + doc.product + '.');
+    }
+    return createViewer(host, doc, presenter, spec);
+  }
+
+  /** Reads the manifest of one revision; parts are immutable, so it caches. */
+  function manifestOf(revision, done) {
+    fetch('r/' + revision + '/view.json')
+      .then(function (response) { return response.json(); })
+      .then(done)
+      .catch(function () {
+        // A failed read resolves itself: the next update brings a new one.
+      });
   }
 
   function createViewer(host, doc, presenter, spec) {
-    var parts = doc.view.parts;
-    var total = Math.max(doc.view.totalParts, parts.length);
-    var defaultZoom = spec.zoom || DEFAULT_ZOOM[spec.layout];
-    var state = { index: -1, zoom: defaultZoom };
+    var state = {
+      index: -1,
+      zoom: spec.zoom || DEFAULT_ZOOM[spec.layout] || 1,
+      manifest: doc.view,
+      follow: true
+    };
+    var defaultZoom = state.zoom;
     var ctx = {
-      parts: parts,
-      total: total,
+      parts: doc.view.parts,
+      total: totalOf(doc.view),
       spec: spec,
-      url: function (part) { return doc.base + part.file; },
+      url: doc.live
+        ? function (part) { return 'p/' + address(part.digest); }
+        : function (part) { return doc.base + part.file; },
       fit: function (width, height, viewport, zoom) {
         return fitScale(zoom || state.zoom, width, height, viewport);
       },
+      zoom: function () { return state.zoom; },
+      el: el,
       go: go,
       select: select
     };
-    var layout = LAYOUTS[spec.layout](ctx);
+    // A product that presents a view its own way supplies the layout itself.
+    var layout = (spec.create || LAYOUTS[spec.layout])(ctx);
     var sidebar = spec.sidebar ? createSidebar(ctx) : null;
     var panel = doc.review ? reviewPanel(ctx, doc.review, function () { togglePanel(false); }) : null;
 
@@ -112,10 +169,20 @@
     toolbar.append(
       controls.previous, controls.position, controls.next, separator(),
       controls.zoomOut, controls.zoom, controls.zoomIn, controls.fitWidth, controls.fitPage);
+    if (layout.pager === false) {
+      // The layout navigates its own parts, for example a workbook's sheets.
+      [controls.previous, controls.position, controls.next, controls.fitWidth, controls.fitPage]
+        .forEach(function (control) { control.hidden = true; });
+    }
     if (layout.tools) {
       toolbar.appendChild(separator());
       layout.tools.forEach(function (tool) { toolbar.appendChild(tool); });
     }
+    if (doc.live) {
+      controls.follow = iconButton('follow', 'Follow changes', function () { setFollow(!state.follow); });
+      toolbar.append(separator(), controls.follow);
+    }
+    toolbar.appendChild(el('span', 'av-spacer'));
     if (panel) {
       controls.review = textButton('av-review-toggle', null, togglePanel);
       controls.review.append(icon('review'), el('span', 'av-review-label', 'Review'));
@@ -123,12 +190,14 @@
       if (doc.review.findings.length) {
         controls.review.appendChild(el('span', 'av-count', doc.review.findings.length));
       }
-      toolbar.append(el('span', 'av-spacer'), controls.review);
+      toolbar.appendChild(controls.review);
     }
 
     var body = el('div', 'av-body');
     var stage = el('main', 'av-stage');
-    stage.appendChild(layout.element);
+    var banner = el('div', 'av-banner');
+    banner.hidden = true;
+    stage.append(banner, layout.element);
     if (sidebar) {
       body.appendChild(sidebar.element);
       sidebar.element.addEventListener('click', function (event) {
@@ -145,14 +214,19 @@
 
     var statusbar = el('footer', 'av-statusbar');
     var statusPart = el('span', 'av-status-part');
-    var statusCoverage = el('span', 'av-status-coverage', coverageText());
-    statusCoverage.setAttribute('data-omitted', String(total > parts.length));
-    statusbar.append(statusPart, statusCoverage);
+    var statusNote = el('span', 'av-status-note');
+    var statusCoverage = el('span', 'av-status-coverage');
+    statusbar.append(statusPart, statusNote, statusCoverage);
+    var live = null;
+    if (doc.live) {
+      live = el('span', 'av-badge av-live');
+      live.append(el('span', 'av-live-dot'), el('span', 'av-live-label', 'Live'));
+    }
 
     var app = el('div', 'av-app');
     app.setAttribute('data-product', doc.product);
     app.setAttribute('data-layout', spec.layout);
-    app.append(topBar(doc, presenter), toolbar, body, statusbar);
+    app.append(topBar(doc, presenter, live), toolbar, body, statusbar);
     host.appendChild(app);
 
     if (sidebar) {
@@ -161,11 +235,13 @@
     if (panel) {
       togglePanel(doc.review.findings.length > 0 && !narrowScreen.matches);
     }
-    if (parts.length === 0) {
-      layout.element.replaceWith(el('p', 'av-empty', 'No ' + plural(spec.noun) + ' were rendered.'));
-      [controls.previous, controls.next, controls.zoomOut, controls.zoom, controls.zoomIn,
-        controls.fitWidth, controls.fitPage].forEach(function (control) { control.disabled = true; });
-      return;
+    if (doc.live) {
+      setFollow(true);
+    }
+    coverage();
+    if (ctx.parts.length === 0) {
+      empty();
+      return controller();
     }
 
     layout.rescale();
@@ -184,10 +260,16 @@
         refreshZoom();
       });
     }).observe(stage);
+    return controller();
+
+    /** What the live connection drives from outside. */
+    function controller() {
+      return { apply: apply, connection: connection, problem: problem, element: app };
+    }
 
     /** Brings a part, and optionally one element box on it, into view. */
     function go(index, box) {
-      if (index < 0 || index >= parts.length) {
+      if (index < 0 || index >= ctx.parts.length) {
         return;
       }
       select(index, layout.show(index, box));
@@ -206,11 +288,11 @@
         return;
       }
       state.index = index;
-      var part = parts[index];
-      var position = spec.noun + ' ' + (index + 1) + ' of ' + total;
+      var part = ctx.parts[index];
+      var position = spec.noun + ' ' + (index + 1) + ' of ' + ctx.total;
       controls.position.textContent = position;
       controls.previous.disabled = index === 0;
-      controls.next.disabled = index === parts.length - 1;
+      controls.next.disabled = index === ctx.parts.length - 1;
       var details = [position];
       if (part.label !== spec.noun + ' ' + (index + 1)) {
         details.push(part.label);
@@ -222,8 +304,110 @@
       if (status) {
         details.push(status);
       }
-      statusPart.textContent = details.join(' \u00b7 ');
+      statusPart.textContent = details.join(' · ');
       refreshZoom();
+    }
+
+    /**
+     * Takes in the next revision of the document: the shell and the reading
+     * position stay, only the parts an edit changed are swapped, and what
+     * changed is marked where it is.
+     */
+    function apply(manifest, changed, info) {
+      var before = state.manifest;
+      state.manifest = manifest;
+      ctx.parts = manifest.parts;
+      ctx.total = totalOf(manifest);
+      note(info);
+      if (ctx.parts.length === 0) {
+        empty();
+        return;
+      }
+      var index = state.index;
+      state.index = -1;
+      layout.update();
+      if (sidebar) {
+        sidebar.update();
+      }
+      coverage();
+      select(Math.min(Math.max(index, 0), ctx.parts.length - 1));
+      banner.hidden = true;
+      mark(before, manifest, changed || []);
+    }
+
+    /** Marks what an edit changed, and follows it while following is on. */
+    function mark(before, after, changed) {
+      var first = -1;
+      changed.forEach(function (id) {
+        var index = indexOfPart(after.parts, id);
+        if (index < 0) {
+          return;
+        }
+        var boxes = changedBoxes(partOf(before, id), after.parts[index]);
+        if (first < 0) {
+          first = index;
+          if (state.follow) {
+            go(index, boxes && boxes.length === 1 ? boxes[0] : undefined);
+          }
+        }
+        layout.mark(index, boxes);
+      });
+      if (first >= 0 && doc.live && doc.live.effect === 'demo') {
+        demo(app, layout.pointOf(first));
+      }
+    }
+
+    function note(info) {
+      if (!info) {
+        return;
+      }
+      statusNote.textContent = info.revision
+        ? 'revision ' + info.revision + (info.renderMs ? ' · ' + info.renderMs + ' ms' : '')
+        : '';
+      if (info.license && info.license !== doc.license) {
+        doc.license = info.license;
+        var badge = app.querySelector('.av-badge-evaluation');
+        if (badge) {
+          badge.remove();
+        }
+      }
+    }
+
+    /** Reports the state of the live connection in the top bar. */
+    function connection(status, text) {
+      if (live) {
+        live.setAttribute('data-state', status);
+        live.lastChild.textContent = text;
+      }
+    }
+
+    /** Says why a render failed, keeping the revision on screen. */
+    function problem(payload) {
+      banner.replaceChildren(
+        el('strong', null, payload.code || 'RENDER_FAILED'),
+        el('span', null, payload.message || 'The document could not be rendered.'));
+      banner.hidden = false;
+    }
+
+    function empty() {
+      layout.element.replaceWith(el('p', 'av-empty', 'No ' + plural(spec.noun) + ' were rendered.'));
+      [controls.previous, controls.next, controls.zoomOut, controls.zoom, controls.zoomIn,
+        controls.fitWidth, controls.fitPage].forEach(function (control) { control.disabled = true; });
+      controls.position.textContent = '';
+    }
+
+    function coverage() {
+      var rendered = ctx.parts.length;
+      statusCoverage.textContent = ctx.total > rendered
+        ? rendered + ' of ' + ctx.total + ' ' + plural(spec.noun) + ' rendered'
+        : ctx.total + ' ' + (ctx.total === 1 ? spec.noun.toLowerCase() : plural(spec.noun));
+      statusCoverage.setAttribute('data-omitted', String(ctx.total > rendered));
+    }
+
+    function setFollow(on) {
+      state.follow = on;
+      controls.follow.setAttribute('aria-pressed', String(on));
+      controls.follow.title = on ? 'Following changes' : 'Follow changes';
     }
 
     function setZoom(zoom) {
@@ -244,9 +428,9 @@
     }
 
     function refreshZoom() {
-      var part = parts[state.index];
+      var part = ctx.parts[state.index];
       var fixed = !part || part.kind !== 'image';
-      controls.zoom.textContent = fixed ? '\u2014' : Math.round(layout.scale() * 100) + '%';
+      controls.zoom.textContent = fixed ? '—' : Math.round(layout.scale() * 100) + '%';
       [controls.zoomOut, controls.zoom, controls.zoomIn, controls.fitWidth, controls.fitPage]
         .forEach(function (control) { control.disabled = fixed; });
       controls.fitWidth.setAttribute('aria-pressed', String(state.zoom === 'fit-width'));
@@ -254,15 +438,15 @@
     }
 
     function toggleSidebar(open) {
-      var show = typeof open === 'boolean' ? open : sidebar.element.hidden;
-      sidebar.element.hidden = !show;
-      controls.sidebar.setAttribute('aria-expanded', String(show));
+      var visible = typeof open === 'boolean' ? open : sidebar.element.hidden;
+      sidebar.element.hidden = !visible;
+      controls.sidebar.setAttribute('aria-expanded', String(visible));
     }
 
     function togglePanel(open) {
-      var show = typeof open === 'boolean' ? open : panel.hidden;
-      panel.hidden = !show;
-      controls.review.setAttribute('aria-expanded', String(show));
+      var visible = typeof open === 'boolean' ? open : panel.hidden;
+      panel.hidden = !visible;
+      controls.review.setAttribute('aria-expanded', String(visible));
     }
 
     function onKeyDown(event) {
@@ -293,12 +477,6 @@
       }
       event.preventDefault();
     }
-
-    function coverageText() {
-      return total > parts.length
-        ? parts.length + ' of ' + total + ' ' + plural(spec.noun) + ' rendered'
-        : total + ' ' + (total === 1 ? spec.noun.toLowerCase() : plural(spec.noun));
-    }
   }
 
   // ---- Layouts ------------------------------------------------------------
@@ -307,26 +485,66 @@
   // that takes keyboard focus, show(index, box) to bring a part into view
   // (returning the reading line on it when the layout scrolls through
   // parts), rescale() to apply the current zoom, scale() for the effective
-  // zoom of the part in view and optionally toolbar tools and a keydown hook.
+  // zoom of the part in view, update() to take in the parts of a new
+  // revision without rebuilding what did not change, mark(index, boxes) to
+  // emphasize what an edit changed, pointOf(index) for the demo pointer, and
+  // optionally toolbar tools and a keydown hook.
 
   /** Every page in one scrolling column; scrolling selects the page in view. */
   function pagesLayout(ctx) {
     var scroller = scrollerElement();
     var column = el('div', 'av-pages');
     scroller.appendChild(column);
+    var omitted = el('p', 'av-omitted');
     var widest = 1;
     var tallest = 1;
-    var frames = ctx.parts.map(function (part, index) {
+    var pages = [];
+    var frames = [];
+    place();
+
+    /**
+     * Lays the pages of the current revision out in order, keeping the page
+     * elements of parts an edit did not touch, so their images are neither
+     * re-fetched nor re-decoded and the reading position survives.
+     */
+    function place() {
+      var existing = Object.create(null);
+      pages.forEach(function (page) { existing[page.frame.part.id] = page; });
+      pages = ctx.parts.map(function (part, index) {
+        var page = existing[part.id];
+        if (page && page.frame.part.digest === part.digest) {
+          delete existing[part.id];
+          page.frame.adopt(part);
+        } else {
+          if (page) {
+            delete existing[part.id];
+            page.element.remove();
+          }
+          page = createPage(part);
+        }
+        page.number.textContent = index + 1;
+        widest = Math.max(widest, part.width || 0);
+        tallest = Math.max(tallest, part.height || 0);
+        return page;
+      });
+      Object.keys(existing).forEach(function (id) { existing[id].element.remove(); });
+      pages.forEach(function (page, index) {
+        if (column.children[index] !== page.element) {
+          column.insertBefore(page.element, column.children[index] || null);
+        }
+      });
+      frames = pages.map(function (page) { return page.frame; });
+      omitted.textContent = omittedText(ctx);
+      omitted.hidden = ctx.total <= pages.length;
+      column.appendChild(omitted);
+    }
+
+    function createPage(part) {
       var frame = partFrame(ctx, part);
-      var page = el('div', 'av-page');
-      page.append(frame.element, el('span', 'av-page-number', index + 1));
-      column.appendChild(page);
-      widest = Math.max(widest, part.width || 0);
-      tallest = Math.max(tallest, part.height || 0);
-      return frame;
-    });
-    if (ctx.total > frames.length) {
-      column.appendChild(el('p', 'av-omitted', omittedText(ctx)));
+      var number = el('span', 'av-page-number');
+      var element = el('div', 'av-page');
+      element.append(frame.element, number);
+      return { element: element, frame: frame, number: number };
     }
 
     var scale = 1;
@@ -402,6 +620,23 @@
         frames.forEach(function (frame) { frame.size(scale); });
         scroller.scrollTop = anchor.offsetTop + within * anchor.offsetHeight;
       },
+      update: function () {
+        var anchor = frames.length ? frames[current()].element : null;
+        var within = anchor ? scroller.scrollTop - anchor.offsetTop : 0;
+        var id = anchor ? pages[current()].frame.part.id : null;
+        place();
+        this.rescale();
+        var kept = indexOfPart(ctx.parts, id);
+        if (kept >= 0) {
+          scroller.scrollTop = Math.max(0, frames[kept].element.offsetTop + within);
+        }
+      },
+      mark: function (index, boxes) {
+        if (pages[index]) {
+          pages[index].frame.mark(boxes);
+        }
+      },
+      pointOf: function (index) { return pages[index] ? pages[index].frame.point() : null; },
       scale: function () { return scale; }
     };
   }
@@ -454,6 +689,16 @@
         }
       },
       rescale: function () { stage.fit(presentingZoom()); },
+      update: function () {
+        stage.update();
+        if (notes) {
+          var text = ctx.spec.notes(ctx.parts[stage.index()]);
+          notes.textContent = text || 'No notes';
+          notes.classList.toggle('av-quiet', !text);
+        }
+      },
+      mark: stage.mark,
+      pointOf: stage.pointOf,
       scale: stage.scale,
       keydown: function (event) {
         var index = stage.index();
@@ -495,17 +740,35 @@
     var strip = el('div', 'av-tabstrip');
     strip.setAttribute('role', 'tablist');
     strip.setAttribute('aria-label', capitalize(plural(ctx.spec.noun)));
-    var tabs = ctx.parts.map(function (part, index) {
-      var tab = el('button', 'av-tab', part.label);
-      tab.type = 'button';
-      tab.id = 'av-tab-' + index;
-      tab.setAttribute('role', 'tab');
-      tab.addEventListener('click', function () { ctx.go(index); });
-      strip.appendChild(tab);
-      return tab;
-    });
-    if (ctx.total > tabs.length) {
-      strip.appendChild(el('span', 'av-tab-more', omittedText(ctx)));
+    var tabs = [];
+    var more = el('span', 'av-tab-more');
+    labelTabs();
+
+    /** One tab per part of the current revision, in document order. */
+    function labelTabs() {
+      if (more.parentNode !== strip) {
+        // Tabs are inserted before it, so the strip always ends with it.
+        strip.appendChild(more);
+      }
+      while (tabs.length > ctx.parts.length) {
+        tabs.pop().remove();
+      }
+      ctx.parts.forEach(function (part, index) {
+        var tab = tabs[index];
+        if (!tab) {
+          tab = el('button', 'av-tab');
+          tab.type = 'button';
+          tab.id = 'av-tab-' + index;
+          tab.setAttribute('role', 'tab');
+          tab.tabIndex = -1;
+          tab.addEventListener('click', function () { ctx.go(index); });
+          tabs[index] = tab;
+          strip.insertBefore(tab, more);
+        }
+        tab.textContent = part.label;
+      });
+      more.textContent = omittedText(ctx);
+      more.hidden = ctx.total <= tabs.length;
     }
     strip.addEventListener('keydown', function (event) {
       var index = stage.index();
@@ -540,6 +803,14 @@
         reveal(strip, tabs[index]);
       },
       rescale: function () { stage.fit(); },
+      update: function () {
+        labelTabs();
+        stage.update();
+        selected = -1;
+        this.show(stage.index());
+      },
+      mark: stage.mark,
+      pointOf: stage.pointOf,
       scale: stage.scale
     };
   }
@@ -569,6 +840,37 @@
       index: function () { return index; },
       scale: function () { return scale; },
       fit: fit,
+      /**
+       * Takes in a new revision: frames of parts an edit did not touch are
+       * kept, and the part being read stays on stage even when an edit moved
+       * it, because it is found again by its id.
+       */
+      update: function () {
+        var kept = Object.create(null);
+        frames.forEach(function (frame) {
+          if (frame) {
+            kept[frame.part.id] = frame;
+          }
+        });
+        var current = frames[index] ? frames[index].part.id : null;
+        frames = ctx.parts.map(function (part) {
+          var frame = kept[part.id];
+          if (!frame || frame.part.digest !== part.digest) {
+            return null;
+          }
+          frame.adopt(part);
+          return frame;
+        });
+        var found = indexOfPart(ctx.parts, current);
+        index = found >= 0 ? found : Math.min(Math.max(index, 0), ctx.parts.length - 1);
+        this.show(index);
+      },
+      mark: function (at, boxes) {
+        if (at === index && frames[at]) {
+          frames[at].mark(boxes);
+        }
+      },
+      pointOf: function (at) { return at === index && frames[at] ? frames[at].point() : null; },
       show: function (next, box, zoom) {
         index = next;
         var frame = frames[next] || (frames[next] = partFrame(ctx, ctx.parts[next]));
@@ -607,26 +909,56 @@
     }
     media.src = ctx.url(part);
     element.appendChild(media);
-    return {
+    var frame = {
       element: element,
       part: part,
+      /** Follows the same part into a new revision; its bytes are unchanged. */
+      adopt: function (next) {
+        frame.part = next;
+        part = next;
+        element.setAttribute('aria-label', next.label);
+        // It survived this edit, so it is no longer what changed.
+        element.removeAttribute('data-changed');
+      },
       size: function (scale) {
         if (part.kind === 'image') {
           element.style.width = Math.round(part.width * scale) + 'px';
           element.style.height = Math.round(part.height * scale) + 'px';
         }
       },
-      /** Briefly marks an element box; boxes are in the part's CSS pixels. */
+      /**
+       * Briefly marks what changed: the boxes of the changed elements, in
+       * the part's CSS pixels, or the whole part when no box is known.
+       */
+      mark: function (boxes) {
+        element.setAttribute('data-changed', 'true');
+        if (!boxes || !boxes.length) {
+          frame.spotlight(null);
+          return;
+        }
+        boxes.forEach(frame.spotlight);
+      },
       spotlight: function (box) {
         var mark = el('div', 'av-spotlight');
-        mark.style.left = percent(box.x, part.width);
-        mark.style.top = percent(box.y, part.height);
-        mark.style.width = percent(box.width, part.width);
-        mark.style.height = percent(box.height, part.height);
+        if (box) {
+          mark.style.left = percent(box.x, part.width);
+          mark.style.top = percent(box.y, part.height);
+          mark.style.width = percent(box.width, part.width);
+          mark.style.height = percent(box.height, part.height);
+        } else {
+          mark.classList.add('av-spotlight-part');
+        }
         element.appendChild(mark);
         setTimeout(function () { mark.remove(); }, SPOTLIGHT_MS);
+      },
+      /** Where the pointer should land for this part, in client pixels. */
+      point: function () {
+        var target = element.querySelector('.av-spotlight') || element;
+        var rect = target.getBoundingClientRect();
+        return { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 };
       }
     };
+    return frame;
   }
 
   function scrollerElement() {
@@ -650,12 +982,29 @@
   // ---- Sidebar ------------------------------------------------------------
 
   function createSidebar(ctx) {
-    var content = (ctx.spec.sidebar === 'outline' && outline(ctx)) || thumbnails(ctx);
+    var content = build();
     var element = el('nav', 'av-sidebar');
     element.id = 'av-sidebar';
     element.setAttribute('aria-label', content.title);
     element.append(el('h2', 'av-sidebar-title', content.title), content.list);
-    return { element: element, title: content.title, select: content.select };
+
+    function build() {
+      return (ctx.spec.sidebar === 'outline' && outline(ctx)) || thumbnails(ctx);
+    }
+
+    return {
+      element: element,
+      title: content.title,
+      select: function (index, line) { content.select(index, line); },
+      /** Rebuilds for a new revision, keeping where the reader was looking. */
+      update: function () {
+        var scroll = content.list.scrollTop;
+        var next = build();
+        content.list.replaceWith(next.list);
+        content = next;
+        content.list.scrollTop = scroll;
+      }
+    };
   }
 
   function thumbnails(ctx) {
@@ -861,7 +1210,7 @@
 
   // ---- Chrome ---------------------------------------------------------------
 
-  function topBar(doc, presenter) {
+  function topBar(doc, presenter, live) {
     var bar = el('header', 'av-topbar');
     var brand = el('div', 'av-brand', presenter.glyph);
     brand.setAttribute('aria-hidden', 'true');
@@ -880,8 +1229,151 @@
       snapshot.title = 'Static evidence written by aspose-cli review.';
       badges.appendChild(snapshot);
     }
+    if (live) {
+      badges.appendChild(live);
+    }
     bar.append(brand, title, badges);
     return bar;
+  }
+
+  // ---- Live document --------------------------------------------------------
+
+  /**
+   * Follows one open document. The service announces that a render started,
+   * then either the revision it published or why it could not: a failed
+   * render keeps the revision on screen. The browser reconnects on its own,
+   * and a viewer that was away catches up from the revision the service
+   * greets it with.
+   */
+  function connect(viewer, live) {
+    var revision = live.revision;
+    var source = new EventSource('events');
+    viewer.connection('live', 'Live');
+    source.addEventListener('open', function () { viewer.connection('live', 'Live'); });
+    source.addEventListener('hello', function (event) {
+      viewer.connection('live', 'Live');
+      take(JSON.parse(event.data), null);
+    });
+    source.addEventListener('rendering', function () {
+      viewer.connection('rendering', 'Rendering');
+    });
+    source.addEventListener('update', function (event) {
+      var payload = JSON.parse(event.data);
+      take(payload, payload.changed);
+    });
+    source.addEventListener('error', function (event) {
+      // EventSource reports its own connection failures under this name; the
+      // failures of the service are the ones that carry data.
+      if (event.data) {
+        viewer.connection('live', 'Live');
+        viewer.problem(JSON.parse(event.data));
+      } else {
+        viewer.connection('offline', 'Reconnecting');
+      }
+    });
+    return source;
+
+    function take(info, changed) {
+      if (!info.revision || info.revision <= revision) {
+        return;
+      }
+      revision = info.revision;
+      manifestOf(info.revision, function (manifest) {
+        viewer.connection('live', 'Live');
+        viewer.apply(manifest, changed, info);
+      });
+    }
+  }
+
+  /**
+   * The boxes an edit changed on one part, or null when the part itself
+   * should be marked: a product that places no elements on it, a part the
+   * viewer has not seen before, or a change too wide to point at.
+   */
+  function changedBoxes(before, after) {
+    var elements = after.elements;
+    if (!elements || !elements.length || !before || !before.elements || !before.elements.length) {
+      return null;
+    }
+    var kept = align(before.elements, elements);
+    var boxes = [];
+    for (var i = 0; i < elements.length; i++) {
+      if (!kept[i]) {
+        boxes.push(elements[i].box);
+      }
+    }
+    return boxes.length === 0 || boxes.length > SPOTLIGHT_LIMIT ? null : boxes;
+  }
+
+  /**
+   * Marks which elements of the new part were already on the old one.
+   * Products that identify their elements (the shapes of a slide) are
+   * matched by id; the rest (the blocks of a document) are aligned on their
+   * longest common run of digests, so inserting a paragraph marks the new
+   * paragraph rather than everything below it.
+   */
+  function align(before, after) {
+    var kept = new Array(after.length).fill(false);
+    if (after[0].id) {
+      var was = Object.create(null);
+      before.forEach(function (element) {
+        if (element.id) {
+          was[element.id] = element.digest;
+        }
+      });
+      after.forEach(function (element, index) {
+        kept[index] = element.id ? was[element.id] === element.digest : false;
+      });
+      return kept;
+    }
+    var rows = before.length;
+    var columns = after.length;
+    if (rows * columns > ALIGN_LIMIT) {
+      return kept;
+    }
+    var width = columns + 1;
+    var runs = new Uint16Array((rows + 1) * width);
+    for (var row = rows - 1; row >= 0; row--) {
+      for (var column = columns - 1; column >= 0; column--) {
+        runs[row * width + column] = before[row].digest === after[column].digest
+          ? runs[(row + 1) * width + column + 1] + 1
+          : Math.max(runs[(row + 1) * width + column], runs[row * width + column + 1]);
+      }
+    }
+    var x = 0;
+    var y = 0;
+    while (x < rows && y < columns) {
+      if (before[x].digest === after[y].digest) {
+        kept[y] = true;
+        x++;
+        y++;
+      } else if (runs[(x + 1) * width + y] >= runs[x * width + y + 1]) {
+        x++;
+      } else {
+        y++;
+      }
+    }
+    return kept;
+  }
+
+  /**
+   * The demo pointer: a cursor that travels to what just changed, for
+   * recordings and demonstrations. It is decoration and never takes input.
+   */
+  function demo(app, point) {
+    if (!point || reducedMotion.matches) {
+      return;
+    }
+    var cursor = app.querySelector('.av-cursor');
+    if (!cursor) {
+      cursor = el('div', 'av-cursor');
+      cursor.setAttribute('aria-hidden', 'true');
+      app.appendChild(cursor);
+    }
+    cursor.style.transform = 'translate(' + Math.round(point.x) + 'px,' + Math.round(point.y) + 'px)';
+    cursor.classList.remove('av-cursor-tap');
+    void cursor.offsetWidth;
+    cursor.classList.add('av-cursor-tap');
   }
 
   // ---- Helpers --------------------------------------------------------------
@@ -943,6 +1435,29 @@
     } else if (item.offsetLeft + item.offsetWidth > container.scrollLeft + container.clientWidth) {
       container.scrollLeft = item.offsetLeft + item.offsetWidth - container.clientWidth;
     }
+  }
+
+  function totalOf(manifest) {
+    return Math.max(manifest.totalParts || 0, manifest.parts.length);
+  }
+
+  /** Parts are served by the digest of their bytes. */
+  function address(digest) {
+    return String(digest || '').replace('sha256:', '');
+  }
+
+  function indexOfPart(parts, id) {
+    for (var i = 0; i < parts.length; i++) {
+      if (parts[i].id === id) {
+        return i;
+      }
+    }
+    return -1;
+  }
+
+  function partOf(manifest, id) {
+    var index = manifest ? indexOfPart(manifest.parts, id) : -1;
+    return index < 0 ? null : manifest.parts[index];
   }
 
   function partName(ctx, index) {
