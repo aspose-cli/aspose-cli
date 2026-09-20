@@ -145,9 +145,6 @@ internal sealed partial class AppHost : IDisposable
         _log.Write("app HTTP listener bound");
         try
         {
-            _sessions.ConfigureMount(
-                _server.CreatePreviewMount());
-            _log.Write("app preview router mounted");
             try
             {
                 StartControl();
@@ -208,11 +205,6 @@ internal sealed partial class AppHost : IDisposable
         Touch();
         return _status.Build(_route);
     }
-
-    public bool RoutePreview(
-        System.Net.HttpListenerContext context,
-        string path) =>
-        _sessions.RoutePreview(context, path);
 
     public void Touch() => Interlocked.Exchange(ref _lastActivityTicks, Stopwatch.GetTimestamp());
 

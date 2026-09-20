@@ -44,21 +44,6 @@ internal sealed class AppHttpServer : IDisposable
 
     public int Port { get; private set; }
 
-    public AppPreviewMount CreatePreviewMount()
-    {
-        if (Port == 0)
-        {
-            throw new InvalidOperationException(
-                "The App listener must be bound before mounting previews.");
-        }
-
-        return new AppPreviewMount(
-            Port,
-            new PreviewMountOptions(
-                "/document",
-                _csrf));
-    }
-
     public int Start()
     {
         if (_listener is not null)
@@ -227,12 +212,6 @@ internal sealed class AppHttpServer : IDisposable
             }
 
             string path = request.Url?.AbsolutePath ?? "/";
-            previewOwnsResponse = _host.RoutePreview(context, path);
-            if (previewOwnsResponse)
-            {
-                return;
-            }
-
             AddSecurityHeaders(response);
             if (request.HttpMethod == "GET")
             {
@@ -329,12 +308,12 @@ internal sealed class AppHttpServer : IDisposable
                     request.InputStream, request.ContentLength64, cancellationToken).ConfigureAwait(false);
                 break;
             case ("POST", "/api/license"):
-                string installedUrl = _host.InstallLicenseAndRestart(request.InputStream, request.ContentLength64,
+                string installed = _host.InstallLicense(request.InputStream, request.ContentLength64,
                     NormalizeProduct(request.Headers["X-Product"]));
-                return (HttpStatusCode.OK, new AppRestartResult(true, installedUrl), true);
+                return (HttpStatusCode.OK, new AppLicenseSavedResult(true, installed), true);
             case ("DELETE", "/api/license"):
-                string restartUrl = _host.RemoveLicenseAndRestart(NormalizeProduct(request.Headers["X-Product"]));
-                return (HttpStatusCode.OK, new AppRestartResult(true, restartUrl), true);
+                string removed = _host.RemoveLicense(NormalizeProduct(request.Headers["X-Product"]));
+                return (HttpStatusCode.OK, new AppLicenseSavedResult(true, removed), true);
             case ("POST", "/api/preferences"):
                 AppApiResult preferences = _host.UpdatePreferences(await ReadJson<AppPreferenceRequest>(request).ConfigureAwait(false));
                 return (HttpStatusCode.OK, preferences, false);
@@ -418,8 +397,7 @@ internal sealed class AppHttpServer : IDisposable
 
     private static string FriendlyMessage(CliException exception) => exception.Code.Name switch
     {
-        "APP_BUSY" => "The App is restarting or stopping. Continue at the new App address or start it again.",
-        "APP_STARTUP_FAILED" when exception.Details?["licenseSaved"]?.GetValue<bool>() is true => AppHost.RestartFailedMessage,
+        "APP_BUSY" => "The App is stopping. Start it again to continue.",
         "FILE_NOT_FOUND" => "That file is no longer available. Choose it again from the Files page.",
         "FILE_ACCESS_DENIED" => "Aspose CLI does not have permission to read that file.",
         "FILE_LOCKED" => "That file is temporarily locked by another program. Wait for its save to finish and try again.",

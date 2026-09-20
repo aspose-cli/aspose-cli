@@ -160,6 +160,8 @@ internal sealed class ViewerServiceHost : IDisposable
                     return Ok(Status(), ViewerServiceJsonContext.Default.ViewerStatusResponse);
                 case ViewerServiceCommands.Close:
                     return Ok(Close(request.Path), ViewerServiceJsonContext.Default.ViewerStopResponse);
+                case ViewerServiceCommands.Refresh:
+                    return Ok(Refresh(request.Path), ViewerServiceJsonContext.Default.ViewerStatusResponse);
                 case ViewerServiceCommands.Stop:
                     return Ok(
                         new ViewerStopResponse
@@ -225,6 +227,22 @@ internal sealed class ViewerServiceHost : IDisposable
         Url = string.Create(CultureInfo.InvariantCulture, $"http://127.0.0.1:{_http.Port}/"),
         Documents = _documents.All.Select(State).ToArray(),
     };
+
+    /// <summary>
+    /// Renders one document, or every open document, again. A license that
+    /// was installed while a document was open reaches it this way.
+    /// </summary>
+    private ViewerStatusResponse Refresh(string? id)
+    {
+        foreach (LiveDocument document in _documents.All)
+        {
+            if (id is null || document.Id == id)
+            {
+                document.Refresh();
+            }
+        }
+        return Status();
+    }
 
     private ViewerStopResponse Close(string? id)
     {

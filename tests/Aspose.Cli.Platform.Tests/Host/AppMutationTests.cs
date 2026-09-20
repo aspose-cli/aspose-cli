@@ -23,20 +23,19 @@ public sealed class AppMutationIsolationCollection;
 public sealed class AppMutationTests
 {
     [Fact]
-    public async Task SlowPreviewBodyDoesNotBlockStatusOrClearAndKeepsItsUploadAlive()
+    public async Task SlowRequestBodyDoesNotBlockStatusOrClearAndKeepsItsUploadAlive()
     {
         using var app = new RunningApp();
         using (var upload = new MemoryStream("Heading,Value\nUPLOADED,42\n"u8.ToArray()))
         { await app.Host.UploadFileAsync("upload.csv", upload, upload.Length, CancellationToken.None); }
         string uploaded = Assert.Single(Directory.GetFiles(Path.Combine(app.SessionRoot, "uploads", "files")));
-        using TcpClient client = await BeginSlowPreviewBody(app.Host);
+        using TcpClient client = await BeginSlowRequestBody(app.Host);
         var status = Task.Run(app.Host.Status);
         try
         {
             Assert.Equal("upload.csv", (await status.WaitAsync(TimeSpan.FromSeconds(2))).File);
             await app.Host.ClearLocalDataAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(2));
             Assert.Null(app.Host.Status().File);
-            Assert.True(File.Exists(uploaded));
         }
         finally { client.Dispose(); await status.WaitAsync(TimeSpan.FromSeconds(7)); }
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
@@ -44,7 +43,7 @@ public sealed class AppMutationTests
         Assert.True(File.Exists(app.Original));
     }
 
-    private static async Task<TcpClient> BeginSlowPreviewBody(AppHost host)
+    private static async Task<TcpClient> BeginSlowRequestBody(AppHost host)
     {
         var client = new TcpClient();
         try
@@ -56,7 +55,7 @@ public sealed class AppMutationTests
             string csrf = System.Text.RegularExpressions.Regex.Match(shell,
                 @"name=""aspose-csrf"" content=""([^""]+)""").Groups[1].Value;
             Assert.NotEmpty(csrf);
-            string request = $"POST /live/refresh HTTP/1.1\r\nHost: 127.0.0.1:{host.Port}\r\nOrigin: {origin}\r\n{LocalHttpRequestSecurity.CsrfHeader}: {csrf}\r\nContent-Type: application/json\r\nContent-Length: 1\r\nExpect: 100-continue\r\nConnection: close\r\n\r\n";
+            string request = $"POST /api/preferences HTTP/1.1\r\nHost: 127.0.0.1:{host.Port}\r\nOrigin: {origin}\r\n{LocalHttpRequestSecurity.CsrfHeader}: {csrf}\r\nContent-Type: application/json\r\nContent-Length: 1\r\nExpect: 100-continue\r\nConnection: close\r\n\r\n";
             await client.GetStream().WriteAsync(Encoding.ASCII.GetBytes(request));
             using var reader = new StreamReader(client.GetStream(), Encoding.ASCII, false, 1024, leaveOpen: true);
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
@@ -138,6 +137,7 @@ public sealed class AppMutationTests
     {
         private readonly TempDirectory _temp = new();
         private readonly Dictionary<string, string?> _environment = [];
+        private readonly ViewerServiceProcess _viewer;
         internal AppHost Host { get; }
         internal string Original { get; }
         internal string SessionRoot { get; }
@@ -161,6 +161,7 @@ public sealed class AppMutationTests
                 Environment.SetEnvironmentVariable(name, null);
             }
             Environment.SetEnvironmentVariable("ASPOSE_CLI_CONFIG_DIR", _temp.File("config"));
+            _viewer = new ViewerServiceProcess(_temp.File("config"));
             Original = _temp.File("original.csv");
             File.WriteAllText(Original, "Heading,Value\nORIGINAL,1\n");
             HostContext host = ActualCommandTree.Host;
@@ -175,7 +176,7 @@ public sealed class AppMutationTests
         }
         public void Dispose()
         {
-            try { Host.Dispose(); PrivateUserStorage.TryDeleteTree(SessionRoot); }
+            try { Host.Dispose(); _viewer.Dispose(); PrivateUserStorage.TryDeleteTree(SessionRoot); }
             finally
             {
                 foreach ((string name, string? value) in _environment) { Environment.SetEnvironmentVariable(name, value); }

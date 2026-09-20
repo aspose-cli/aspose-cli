@@ -1,16 +1,20 @@
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Host.App;
 
-/// <summary>Atomically switches the file rendered inside the Web App.</summary>
+/// <summary>
+/// Atomically switches the document the Web App shows. The App renders
+/// nothing itself: it opens the file in the viewer service and frames the
+/// address that service serves it under, so one renderer serves the App and
+/// the preview command alike.
+/// </summary>
 internal sealed class AppDocumentSession : IDisposable
 {
     private readonly object _gate = new();
@@ -27,8 +31,7 @@ internal sealed class AppDocumentSession : IDisposable
     private readonly FontSearchProfile _fontProfile;
     private readonly LocalServiceResourceLimits _limits =
         LocalServiceResourceLimits.Resolve();
-    private AppPreviewMount? _mount;
-    private PreviewLease? _current;
+    private DocumentLease? _current;
 
     public event Action? Activity;
 
@@ -58,53 +61,6 @@ internal sealed class AppDocumentSession : IDisposable
 
     public string? ProductId => Read(static lease => lease.ProductId);
 
-    internal AppDocumentHandoff CaptureForRestart()
-    {
-        PreviewLease? current;
-        RetainedResource<OwnedTemporaryFile>.Lease? ownership = null;
-        lock (_gate)
-        {
-            current = _current;
-            if (current is null) { return new(null, null, null, null); }
-            if (_uploads.TryGetValue(current.Path, out var upload)) { upload.TryAcquire(out ownership); }
-            if (current.UploadedCopy && ownership is null) { throw CliErrors.FileNotFound(current.Path); }
-        }
-        try
-        {
-            FileStream? held = ownership?.Value.OpenBoundRead();
-            return new(ownership is null ? current.Path : null,
-                ownership is null ? null : current.Path, current.FileName, held, ownership);
-        }
-        catch { ownership?.Dispose(); throw; }
-    }
-
-    public void ConfigureMount(AppPreviewMount mount)
-    {
-        ArgumentNullException.ThrowIfNull(mount);
-        lock (_gate)
-        {
-            if (_mount is not null)
-            {
-                throw new InvalidOperationException(
-                    "The App preview mount is already configured.");
-            }
-
-            _mount = mount;
-        }
-    }
-
-    public bool RoutePreview(System.Net.HttpListenerContext context, string path)
-    {
-        RetainedResource<MountedPreview>.Lease? request;
-        AppPreviewMount mount;
-        lock (_gate)
-        {
-            if (_current is null || !_current.Runtime.TryAcquire(out request)) { return false; }
-            mount = _mount ?? throw new InvalidOperationException("The App preview mount is not configured.");
-        }
-        using (request) { return request!.Value.Route(context, mount.Port, path); }
-    }
-
     public void Open(string filePath, bool uploadedCopy, string? displayFileName = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
@@ -124,7 +80,7 @@ internal sealed class AppDocumentSession : IDisposable
             operation: "app");
 
         string displayName = Path.GetFileName(displayFileName ?? full);
-        PreviewLease next = CreateLease(
+        DocumentLease next = CreateLease(
             context,
             full,
             displayName,
@@ -142,7 +98,7 @@ internal sealed class AppDocumentSession : IDisposable
             DisposePrevious(next);
             throw;
         }
-        PreviewLease? previous;
+        DocumentLease? previous;
         lock (_gate)
         {
             previous = _current;
@@ -292,9 +248,24 @@ internal sealed class AppDocumentSession : IDisposable
         output.Flush(flushToDisk: true);
     }
 
+    /// <summary>
+    /// Renders the open document again, so a license saved while it was open
+    /// reaches what the person is looking at.
+    /// </summary>
+    public void Refresh()
+    {
+        DocumentLease? current;
+        lock (_gate) { current = _current; }
+        if (current is not null)
+        {
+            new ViewerServiceClient().Refresh(current.DocumentId);
+            Activity?.Invoke();
+        }
+    }
+
     public void RefreshPreferences(string productId, string desiredView)
     {
-        PreviewLease? current;
+        DocumentLease? current;
         lock (_gate) { current = _current; }
         if (current is not null && current.ProductId == productId && current.View != desiredView)
         { Open(current.Path, current.UploadedCopy, current.FileName); }
@@ -313,7 +284,7 @@ internal sealed class AppDocumentSession : IDisposable
 
     public void ClearUploads()
     {
-        PreviewLease? closing = null;
+        DocumentLease? closing = null;
         lock (_gate)
         {
             if (_current?.UploadedCopy is true) { closing = _current; _current = null; }
@@ -349,7 +320,7 @@ internal sealed class AppDocumentSession : IDisposable
 
     public void Dispose()
     {
-        PreviewLease? closing;
+        DocumentLease? closing;
         lock (_gate)
         {
             if (_disposed) { return; }
@@ -366,7 +337,7 @@ internal sealed class AppDocumentSession : IDisposable
             "aspose-app-upload-cleanup", "retired App upload storage");
     }
 
-    private void DisposePrevious(PreviewLease? previous)
+    private void DisposePrevious(DocumentLease? previous)
     {
         try { previous?.Dispose(); }
         catch (Exception exception)
@@ -375,43 +346,56 @@ internal sealed class AppDocumentSession : IDisposable
         }
     }
 
-    private PreviewLease CreateLease(
+    /// <summary>
+    /// Opens the document in the viewer service and keeps the upload it was
+    /// read from alive for as long as the App shows it.
+    /// </summary>
+    private DocumentLease CreateLease(
         CommandContext context,
         string path,
         string displayName,
         bool uploadedCopy,
         ProductDefinition product)
     {
-        AppPreviewMount mount = _mount
-            ?? throw new InvalidOperationException(
-                "The App preview mount is not configured.");
         string view = _preferences.Current.PreviewView(product);
-        var options = new PreviewStartOptions(
-            context.Activate(product), product, context.ResourceBudgets, path,
-            RequestedPort: 0, Request: new ProductPreviewRequest(view, FontProfile: _fontProfile),
-            Diagnostic: message =>
-            {
-                _log.Write($"preview {message}");
-                Activity?.Invoke();
-            }, DisplayName: displayName);
         RetainedResource<OwnedTemporaryFile>.Lease? input = null;
         lock (_gate)
         {
             if (_uploads.TryGetValue(path, out var upload)) { upload.TryAcquire(out input); }
             if (uploadedCopy && input is null) { throw CliErrors.FileNotFound(path); }
         }
-        MountedPreview runtime = PreviewRuntime.Mount(options, mount.Options, input);
         try
         {
-            return new PreviewLease(path,
-                new AppDocumentSnapshot(displayName, uploadedCopy || input is not null, product.Manifest.Id, view,
-                    $"{mount.Url}?session={Guid.NewGuid():N}"),
-                new RetainedResource<MountedPreview>(runtime));
+            ViewerOpenResponse opened = new ViewerServiceClient().Open(
+                context.Globals,
+                new ViewerOpenRequest
+                {
+                    File = path,
+                    Product = product.Manifest.Id,
+                    View = view,
+                    FontDirectories = _fontProfile.IsAmbient ? null : _fontProfile.Directories,
+                },
+                requestedPort: 0);
+            Activity?.Invoke();
+            return new DocumentLease(
+                path,
+                new AppDocumentSnapshot(
+                    displayName,
+                    uploadedCopy || input is not null,
+                    opened.Document.Product,
+                    opened.Document.View,
+                    opened.Document.Url),
+                opened.Document.Id,
+                input);
         }
-        catch { runtime.Dispose(); throw; }
+        catch
+        {
+            input?.Dispose();
+            throw;
+        }
     }
 
-    private string? Read(Func<PreviewLease, string> selector)
+    private string? Read(Func<DocumentLease, string> selector)
     {
         lock (_gate)
         {
@@ -423,37 +407,38 @@ internal sealed class AppDocumentSession : IDisposable
         string Files,
         string Staging);
 
-    private sealed record PreviewLease(
+    /// <summary>
+    /// One document open in the viewer service on the App's behalf, together
+    /// with the upload it was read from. Closing it releases both.
+    /// </summary>
+    private sealed record DocumentLease(
         string Path,
         AppDocumentSnapshot State,
-        RetainedResource<MountedPreview> Runtime) : IDisposable
+        string DocumentId,
+        IDisposable? Upload) : IDisposable
     {
         public string FileName => State.FileName;
         public bool UploadedCopy => State.UploadedCopy;
         public string ProductId => State.ProductId;
         public string View => State.View;
-        public void Dispose() => Runtime.Dispose();
+
+        public void Dispose()
+        {
+            try
+            {
+                new ViewerServiceClient().Stop(DocumentId, all: false);
+            }
+            catch (CliException)
+            {
+                // The service ended on its own; the document went with it.
+            }
+            finally
+            {
+                Upload?.Dispose();
+            }
+        }
     }
 }
 
 internal sealed record AppDocumentSnapshot(
     string FileName, bool UploadedCopy, string ProductId, string View, string PreviewUrl);
-
-internal sealed record AppPreviewMount(
-    int Port,
-    PreviewMountOptions Options)
-{
-    public string Url =>
-        $"http://127.0.0.1:{Port}{Options.DocumentPath}";
-}
-
-/// <summary>One consistent restart document selection and the held upload identity.</summary>
-internal sealed record AppDocumentHandoff(string? OriginalFilePath, string? UploadedFilePath,
-    string? FileName, FileStream? UploadLease, IDisposable? UploadOwnership = null) : IDisposable
-{
-    public void Dispose()
-    {
-        try { UploadLease?.Dispose(); }
-        finally { UploadOwnership?.Dispose(); }
-    }
-}

@@ -62,6 +62,11 @@
       "format": "uri",
       "description": "Opaque URL for the committed App document session; stable until that session is replaced."
     },
+    "sessionView": {
+      "type": "string",
+      "minLength": 1,
+      "description": "View the open document is rendered in, which a saved preference reaches only when the document reopens."
+    },
     "recentFiles": {
       "type": "array",
       "items": { "$ref": "#/$defs/recentFile" },

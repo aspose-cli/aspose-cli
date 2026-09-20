@@ -9,11 +9,9 @@ namespace Aspose.Cli.Host.App;
 
 internal sealed partial class AppHost
 {
-    internal const string RestartFailedMessage =
-        "The license configuration was saved, but the App could not restart. The current App is still running.";
     private readonly SemaphoreSlim _mutationGate = new(1, 1);
     private volatile MutationState _mutationState;
-    private enum MutationState { Accepting, Restarting, Stopping }
+    private enum MutationState { Accepting, Stopping }
 
     internal void CompleteOnboarding() => Mutate(_workspace.CompleteOnboarding);
     internal AppApiResult PickAndOpen() => Mutate(_workspace.PickAndOpen);
@@ -43,7 +41,7 @@ internal sealed partial class AppHost
 
     internal void PrepareStop() => Mutate(() => _mutationState = MutationState.Stopping);
 
-    internal string InstallLicenseAndRestart(Stream input, long length, string? productId) => Restart(() =>
+    internal string InstallLicense(Stream input, long length, string? productId) => Save(() =>
     {
         if (length > LicenseInstaller.MaximumBytes) { throw CliErrors.FileTooLarge(length, LicenseInstaller.MaximumBytes); }
         IReadOnlyList<string> installed = _licenseState.Install(input, productId);
@@ -51,45 +49,28 @@ internal sealed partial class AppHost
         _log.Write($"license installed for {string.Join(", ", installed)}");
     });
 
-    internal string RemoveLicenseAndRestart(string? productId) => Restart(() =>
+    internal string RemoveLicense(string? productId) => Save(() =>
     {
         string target = productId ?? _sessions.Snapshot?.ProductId ?? _catalog.DefaultProductId();
         _licenseState.Remove(target);
         _log.Write($"saved {target} license removed");
     });
 
-    private string Restart(Action saveConfiguration)
+    /// <summary>
+    /// Saves a license change and tells the browser where to continue. The
+    /// App holds no engine of its own any more, so nothing restarts: the
+    /// viewer service recycles its renderer and the next render applies the
+    /// license.
+    /// </summary>
+    private string Save(Action saveConfiguration)
     {
         // Cross-process singleton -> App mutation gate -> short session state lock.
         using LocalServiceOperationLock singleton = AppServiceController.AcquireOperationLock();
         return Mutate(() =>
         {
-            _mutationState = MutationState.Restarting;
-            try
-            {
-                using AppDocumentHandoff document = _sessions.CaptureForRestart();
-                saveConfiguration();
-                ReleaseControl();
-                AppInstance replacement;
-                try
-                {
-                    replacement = new AppServiceController(_catalog, _capabilities).StartReplacementUnderLock(
-                        _licenseState.Globals, AppRoutes.Settings, document.OriginalFilePath, _fontProfile,
-                        document.UploadedFilePath, document.FileName);
-                }
-                catch (Exception error)
-                {
-                    StartControl();
-                    WriteMarker();
-                    _log.Write($"license saved, restart failed: {error.GetType().Name}");
-                    throw new CliException(ErrorCodes.AppStartupFailed, RestartFailedMessage,
-                        hint: "Repair or reopen the current document, then restart the App to use the saved license.",
-                        details: new JsonObject { ["licenseSaved"] = true }, innerException: error);
-                }
-                _log.Write("license configuration changed; replacement App is ready");
-                return $"http://127.0.0.1:{replacement.Port}/settings";
-            }
-            catch { _mutationState = MutationState.Accepting; throw; }
+            saveConfiguration();
+            _sessions.Refresh();
+            return $"http://127.0.0.1:{Port}{AppRoutes.Settings}";
         });
     }
 
@@ -107,8 +88,8 @@ internal sealed partial class AppHost
     {
         if (_disposed || _mutationState != MutationState.Accepting)
         {
-            throw new CliException(ErrorCodes.AppBusy, "The App is restarting or stopping and cannot accept changes.",
-                hint: "Continue at the replacement App address, or start the App again.");
+            throw new CliException(ErrorCodes.AppBusy, "The App is stopping and cannot accept changes.",
+                hint: "Start the App again to continue.");
         }
     }
 }

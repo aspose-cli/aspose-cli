@@ -1,3 +1,4 @@
+using Xunit;
 using Microsoft.Playwright;
 using Xunit.Abstractions;
 
@@ -19,9 +20,10 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
         {
             ViewportSize = new() { Width = 1280, Height = 900 },
         });
+        // Nothing may leave the machine; the App and the viewer service are
+        // two loopback ports of the same session.
         await context.RouteAsync("**/*", route =>
-            Uri.TryCreate(route.Request.Url, UriKind.Absolute, out Uri? url)
-                && url.Host == "127.0.0.1" && url.Port == app.Url.Port
+            Uri.TryCreate(route.Request.Url, UriKind.Absolute, out Uri? url) && url.Host == "127.0.0.1"
                 ? route.ContinueAsync() : route.AbortAsync());
         await context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true, Sources = true });
         IPage page = await context.NewPageAsync();
@@ -63,24 +65,25 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
 
     internal async Task WaitForPreview(string file, string? view = null)
     {
-        string url = (await app.Status())["previewUrl"]!.GetValue<string>();
-        await page.WaitForFunctionAsync("""
-            expected => {
-              const frame = document.getElementById('preview-frame');
-              const content = frame && frame.contentWindow;
-              const meta = content && content.__asposePreview;
-              return content && content.location.href === expected.url && meta
-                && meta.file === expected.file && (!expected.view || meta.view === expected.view);
-            }
-            """, new { url, file, view });
+        await Assertions.Expect(Preview.Locator(".av-file"))
+            .ToHaveTextAsync(file, new() { Timeout = 60_000 });
+        System.Text.Json.Nodes.JsonNode status = await app.Status();
+        Assert.Equal(file, status["file"]!.GetValue<string>());
+        if (view is not null)
+        {
+            // The view on screen, which a saved preference reaches only when
+            // the document reopens.
+            Assert.Equal(view, status["sessionView"]!.GetValue<string>());
+        }
     }
 
     internal async Task ShowCellText(string sheet, string text)
     {
-        // Select the data sheet through its ordinary tab; evaluation sheets remain available.
-        await Preview.Locator(".aspose-shell-tab").Filter(new() { HasTextRegex =
+        // The workbook grid is the product's own document inside the viewer.
+        await Preview.Locator(".av-tab").Filter(new() { HasTextRegex =
             new System.Text.RegularExpressions.Regex("^" + System.Text.RegularExpressions.Regex.Escape(sheet) + "$") }).ClickAsync();
-        await Preview.GetByText(text, new() { Exact = true }).WaitForAsync();
+        await Preview.FrameLocator(".cells-grid-frame")
+            .GetByText(text, new() { Exact = true }).First.WaitForAsync();
     }
 
     internal async Task Poll()

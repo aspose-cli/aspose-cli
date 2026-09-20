@@ -70,6 +70,7 @@ internal sealed record AppStatusView(
     string? File,
     bool UploadedCopy,
     string? PreviewUrl,
+    string? SessionView,
     IReadOnlyList<AppRecentView> RecentFiles,
     IReadOnlyList<AppDiagnosticView> Diagnostics,
     IReadOnlyList<AppProductView> Products)
@@ -96,4 +97,8 @@ internal sealed record AppApiResult(
 
 internal sealed record AppHealthResult(bool Ok, int Pid);
 
-internal sealed record AppRestartResult(bool Ok, string RestartUrl);
+/// <summary>
+/// A saved license change. Nothing restarts any more, so the address is
+/// simply where the browser continues: the settings it came from.
+/// </summary>
+internal sealed record AppLicenseSavedResult(bool Ok, string ContinueUrl);

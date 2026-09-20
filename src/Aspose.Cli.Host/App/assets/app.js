@@ -606,8 +606,8 @@
         headers: headers,
         body: file
       });
-      toast('License saved. Restarting the local App.');
-      location.replace(result.restartUrl);
+      toast('License saved. Re-rendering the open document.');
+      await loadStatus();
     } catch (error) {
       toast(error.message, true);
     } finally {
@@ -624,12 +624,8 @@
         method: 'DELETE',
         headers: { 'X-Product': productId }
       });
-      toast('Saved license removed. Restarting the local App.');
-      if (result.restartUrl) {
-        location.replace(result.restartUrl);
-      } else {
-        await loadStatus();
-      }
+      toast('Saved license removed. Re-rendering the open document.');
+      await loadStatus();
     } catch (error) {
       toast(error.message, true);
     }

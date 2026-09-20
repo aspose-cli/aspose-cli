@@ -111,7 +111,10 @@ internal sealed class AppWorkspace
     {
         ProductDefinition product = _catalog.ResolveById(
             request.Product ?? _sessions.ProductId ?? _catalog.DefaultProductId());
-        PreviewErrors.EnsureViewSupported(product.Manifest.Id, request.DefaultView, product.Preview.Views);
+        PreviewErrors.EnsureViewSupported(
+            product.Manifest.Id,
+            request.DefaultView,
+            product.View.Views.Select(static view => view.Id).ToArray());
         _preferences.Update(product.Manifest.Id, request.DefaultView, request.RememberRecentFiles);
         try
         {

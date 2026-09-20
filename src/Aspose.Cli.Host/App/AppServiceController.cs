@@ -207,29 +207,6 @@ internal sealed class AppServiceController
     internal static LocalServiceOperationLock AcquireOperationLock() =>
         LocalServiceOperationLock.Acquire("app", "singleton", StartupTimeout + StartupTimeout);
 
-    /// <summary>The calling App already holds the singleton lock and its mutation gate.</summary>
-    internal AppInstance StartReplacementUnderLock(
-        GlobalValues globals,
-        string route,
-        string? filePath,
-        FontSearchProfile fontProfile,
-        string? uploadedFilePath = null,
-        string? uploadedFileName = null)
-    {
-        string? licenseIdentity = LicenseManager.IsolatedInstanceIdentity(
-            CompositionRoot.Create(_catalog, globals));
-        return WaitForMarker(
-            StartBackground(
-                globals,
-                route,
-                filePath,
-                fontProfile,
-                licenseIdentity,
-                uploadedFilePath,
-                uploadedFileName),
-            licenseIdentity);
-    }
-
     public HostedCommandLifecycle StartForeground(
         GlobalValues globals,
         int port,

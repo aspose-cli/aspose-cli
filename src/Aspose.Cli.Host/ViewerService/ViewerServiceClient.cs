@@ -56,6 +56,13 @@ internal sealed class ViewerServiceClient
                 ViewerServiceJsonContext.Default.ViewerStopResponse);
     }
 
+    /// <summary>Renders one open document again, or all of them.</summary>
+    public ViewerStatusResponse? Refresh(string? id = null) =>
+        _store.ReadLive() is { } marker
+            ? Send(marker, ViewerServiceCommands.Refresh, id, null,
+                ViewerServiceJsonContext.Default.ViewerStatusResponse)
+            : null;
+
     private ViewerServiceMarker Running(GlobalValues globals, int requestedPort)
     {
         if (_store.ReadLive() is { } running)

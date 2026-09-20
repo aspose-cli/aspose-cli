@@ -32,8 +32,8 @@ public sealed class AppPreferencesHttpTests
             Assert.NotEmpty(csrf);
             client.DefaultRequestHeaders.Add("Origin", client.BaseAddress.GetLeftPart(UriPartial.Authority));
             client.DefaultRequestHeaders.Add("X-CSRF-Token", csrf);
-            string oldPreview = await client.GetStringAsync("/document");
-            const string preferences = """{"product":"cells","defaultView":"sheet","rememberRecentFiles":true}""";
+            string oldPreview = await PreviewUrl(client);
+            const string preferences = """{"product":"cells","defaultView":"sheets","rememberRecentFiles":true}""";
             using (var held = new FileStream(input, FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 using HttpResponseMessage response = await client.PostAsync("/api/preferences",
@@ -43,10 +43,10 @@ public sealed class AppPreferencesHttpTests
                 Assert.True(result["ok"]!.GetValue<bool>());
                 Assert.Equal("PREVIEW_REFRESH_FAILED", result["code"]!.GetValue<string>());
                 Assert.Contains("saved", result["message"]!.GetValue<string>(), StringComparison.Ordinal);
-                Assert.Equal(oldPreview, await client.GetStringAsync("/document"));
+                Assert.Equal(oldPreview, await PreviewUrl(client));
                 JsonNode saved = JsonNode.Parse(File.ReadAllText(
                     Path.Combine(workspace.ConfigDirectory, "app-settings.json")))!;
-                Assert.Equal("sheet", saved["previewViews"]!["cells"]!.GetValue<string>());
+                Assert.Equal("sheets", saved["previewViews"]!["cells"]!.GetValue<string>());
             }
             using HttpResponseMessage retry = await client.PostAsync("/api/preferences",
                 new StringContent(preferences, Encoding.UTF8, "application/json"));
@@ -54,8 +54,12 @@ public sealed class AppPreferencesHttpTests
             JsonNode retried = JsonNode.Parse(await retry.Content.ReadAsStringAsync())!;
             Assert.True(retried["ok"]!.GetValue<bool>());
             Assert.Null(retried["code"]);
-            Assert.NotEqual(oldPreview, await client.GetStringAsync("/document"));
+            Assert.NotEqual(oldPreview, await PreviewUrl(client));
         }
         finally { _ = workspace.Run("app", "stop", "--output", "json"); }
     }
+
+    /// <summary>Where the App says the open document is being served.</summary>
+    private static async Task<string> PreviewUrl(HttpClient client) =>
+        JsonNode.Parse(await client.GetStringAsync("/api/status"))!["previewUrl"]!.GetValue<string>();
 }

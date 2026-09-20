@@ -28,8 +28,8 @@ public sealed class AppPreferencesTransactionTests
         Action change = mutation switch
         {
             "onboarding" => () => store.CompleteOnboarding(),
-            "update" => () => store.Update("cells", "sheet", false),
-            "record" => () => store.RecordRecent(temp.File("two.xlsx"), "cells", "sheet"),
+            "update" => () => store.Update("cells", "sheets", false),
+            "record" => () => store.RecordRecent(temp.File("two.xlsx"), "cells", "sheets"),
             "remove" => () => store.RemoveRecent(before.RecentFiles[0].Id),
             "clear" => store.ClearRecent,
             _ => throw new InvalidOperationException(),
@@ -63,14 +63,14 @@ public sealed class AppPreferencesTransactionTests
         File.SetAttributes(file, original | FileAttributes.ReadOnly);
         try
         {
-            Exception? error = Record.Exception(() => store.Update("cells", "sheet", false));
+            Exception? error = Record.Exception(() => store.Update("cells", "sheets", false));
             Assert.True(error is IOException or UnauthorizedAccessException, error?.ToString());
             Assert.Same(before, store.Current);
             Assert.Equal(disk, File.ReadAllBytes(file));
         }
         finally { File.SetAttributes(file, original); }
-        store.Update("cells", "sheet", false);
-        Assert.Equal("sheet", store.Current.PreviewViews["cells"]);
+        store.Update("cells", "sheets", false);
+        Assert.Equal("sheets", store.Current.PreviewViews["cells"]);
         _ = PrivateUserStorage.ReadAllText(file);
     }
 
@@ -80,13 +80,13 @@ public sealed class AppPreferencesTransactionTests
         using var temp = new TempDirectory();
         var store = new AppPreferencesStore(ActualCommandTree.Host.Catalog, temp.File("settings.json"));
         await Task.WhenAll(
-            Task.Run(() => store.Update("cells", "sheet", true)),
+            Task.Run(() => store.Update("cells", "sheets", true)),
             Task.Run(() => store.Update("words", "pages", true)),
             Task.Run(store.CompleteOnboarding));
         await Task.WhenAll(Enumerable.Range(0, 8).Select(index => Task.Run(() =>
-            store.RecordRecent(temp.File($"{index}.xlsx"), "cells", "sheet"))));
+            store.RecordRecent(temp.File($"{index}.xlsx"), "cells", "sheets"))));
         AppPreferences snapshot = store.Current;
-        Assert.Equal("sheet", snapshot.PreviewViews["cells"]);
+        Assert.Equal("sheets", snapshot.PreviewViews["cells"]);
         Assert.Equal("pages", snapshot.PreviewViews["words"]);
         Assert.True(snapshot.OnboardingCompleted);
         Assert.Equal(8, snapshot.RecentFiles.Count);

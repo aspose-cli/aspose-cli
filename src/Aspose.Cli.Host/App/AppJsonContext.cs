@@ -9,7 +9,7 @@ namespace Aspose.Cli.Host.App;
 [JsonSerializable(typeof(AppStatusView))]
 [JsonSerializable(typeof(AppApiResult))]
 [JsonSerializable(typeof(AppHealthResult))]
-[JsonSerializable(typeof(AppRestartResult))]
+[JsonSerializable(typeof(AppLicenseSavedResult))]
 [JsonSerializable(typeof(AppPreferenceRequest))]
 [JsonSerializable(typeof(AppIdRequest))]
 internal sealed partial class AppJsonContext : JsonSerializerContext;

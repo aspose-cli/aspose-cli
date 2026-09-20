@@ -40,7 +40,7 @@ internal static class LocalServiceSecurityHeaders
             "camera=(), microphone=(), geolocation=()";
         response.Headers["Content-Security-Policy"] = app
             ? "default-src 'self'; script-src 'self'; style-src 'self'; "
-                + "img-src 'self' data:; frame-src 'self'; "
+                + "img-src 'self' data:; frame-src http://127.0.0.1:*; "
                 + "connect-src 'self'; base-uri 'none'; form-action 'none'; "
                 + "frame-ancestors 'none'"
             : $"default-src 'self'; script-src 'nonce-{scriptNonce}'; "

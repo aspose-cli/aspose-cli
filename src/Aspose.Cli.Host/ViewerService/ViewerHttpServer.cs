@@ -241,6 +241,7 @@ internal sealed class ViewerHttpServer : IDisposable
             Text(response, 404, "text/plain; charset=utf-8", "Not found.");
             return;
         }
+        ContentHeaders(response);
         response.StatusCode = 200;
         response.ContentType = ContentType(Path.GetExtension(file!));
         response.Headers["Cache-Control"] = "private, max-age=31536000, immutable";
@@ -257,6 +258,22 @@ internal sealed class ViewerHttpServer : IDisposable
 
     private void Headers(HttpListenerResponse response) =>
         LocalServiceSecurityHeaders.Apply(response, LocalServicePageKind.ProductPreview, _nonce);
+
+    /// <summary>
+    /// A rendered part is document content, whatever the document contained:
+    /// it may paint inside the viewer and nothing else. Scripts a product
+    /// exported with its HTML never run, because the presenter drives it.
+    /// Every ancestor is checked, so the loopback App that frames the viewer
+    /// is named beside it.
+    /// </summary>
+    private static void ContentHeaders(HttpListenerResponse response)
+    {
+        response.Headers["Content-Security-Policy"] =
+            "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; "
+            + "font-src data:; base-uri 'none'; form-action 'none'; "
+            + "frame-ancestors 'self' http://127.0.0.1:*";
+        response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
+    }
 
     private static void Text(HttpListenerResponse response, int status, string contentType, string body)
     {

@@ -62,12 +62,8 @@ internal sealed class AppStatusQuery
             .ToDictionary(
                 static product => product.Manifest.Id,
                 static product =>
-                    (IReadOnlyList<AppPreviewView>)product.Preview
-                        .ViewDefinitions
-                        .Select(static view =>
-                            new AppPreviewView(
-                                view.Id,
-                                view.DisplayName))
+                    (IReadOnlyList<AppPreviewView>)product.View.Views
+                        .Select(static view => new AppPreviewView(view.Id, view.Label))
                         .ToArray(),
                 StringComparer.Ordinal);
         _products = snapshot.Products
@@ -83,7 +79,6 @@ internal sealed class AppStatusQuery
             _catalog.ResolveById(
                 session?.ProductId
                 ?? _catalog.DefaultProductId());
-        ProductPreviewDefinition preview = product.Preview;
         LicenseStatusResult license = _licenses.Status();
         return new AppStatusView(
             VersionInfo.CliVersion,
@@ -94,7 +89,7 @@ internal sealed class AppStatusQuery
             settings.OnboardingCompleted,
             product.Manifest.Id,
             settings.PreviewView(product),
-            preview.Views,
+            product.View.Views.Select(static view => view.Id).ToArray(),
             _previewViews[product.Manifest.Id],
             _supportedExtensions,
             _skills,
@@ -103,6 +98,7 @@ internal sealed class AppStatusQuery
             session?.FileName,
             session?.UploadedCopy ?? false,
             session?.PreviewUrl,
+            session?.View,
             settings.RecentFiles.Select(RecentView).ToArray(),
             Diagnostics(product, license),
             _products);
@@ -300,9 +296,7 @@ internal sealed class AppStatusQuery
 
         ProductDefinition product = resolved;
         string? view = file.View is not null
-            && product.Preview.Views.Contains(
-                file.View,
-                StringComparer.Ordinal)
+            && product.View.Views.Any(candidate => candidate.Id == file.View)
             ? file.View
             : null;
         return new AppRecentView(
@@ -317,11 +311,10 @@ internal sealed class AppStatusQuery
         ProductDefinition product,
         IReadOnlyList<string> ids)
     {
-        IReadOnlyDictionary<string, string> labels = product.Preview
-            .ViewDefinitions
+        IReadOnlyDictionary<string, string> labels = product.View.Views
             .ToDictionary(
                 static view => view.Id,
-                static view => view.DisplayName,
+                static view => view.Label,
                 StringComparer.Ordinal);
         return ids.Select(id => new AppPreviewView(
                 id,

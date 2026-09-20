@@ -3,7 +3,7 @@ using System.Collections.Frozen;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
-using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 
@@ -29,14 +29,11 @@ internal sealed record AppPreferences
 
     public string PreviewView(ProductDefinition product)
     {
-        ProductPreviewDefinition preview = product.Preview;
-        if (PreviewViews.TryGetValue(product.Manifest.Id, out string? view)
-            && preview.Views.Contains(view, StringComparer.Ordinal))
-        {
-            return view;
-        }
-
-        return preview.DefaultView;
+        ProductViewDefinition views = product.View;
+        return PreviewViews.TryGetValue(product.Manifest.Id, out string? view)
+            && views.Views.Any(candidate => candidate.Id == view)
+            ? view
+            : views.LiveView;
     }
 }
 
@@ -193,7 +190,7 @@ internal sealed class AppPreferencesStore
         foreach (ProductDefinition product in catalog.Products)
         {
             if (storedViews.TryGetValue(product.Manifest.Id, out string? view)
-                && product.Preview.Views.Contains(view, StringComparer.Ordinal))
+                && product.View.Views.Any(candidate => candidate.Id == view))
             {
                 views[product.Manifest.Id] = view;
             }

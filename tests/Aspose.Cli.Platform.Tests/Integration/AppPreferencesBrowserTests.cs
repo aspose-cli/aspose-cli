@@ -13,30 +13,30 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
         BrowserApp.Run("preference-drafts", output, async ui =>
         {
             await ui.Settings();
-            await ui.Page.Locator("#default-view").SelectOptionAsync("sheet");
+            await ui.Page.Locator("#default-view").SelectOptionAsync("sheets");
             await ui.Page.Locator("#remember-recents").UncheckAsync();
             await ui.Poll();
-            await ExpectDraft(ui, "sheet", false);
+            await ExpectDraft(ui, "sheets", false);
             await ui.Page.Locator("a[data-route='/preview']").ClickAsync();
             await ui.Settings();
-            await ExpectDraft(ui, "sheet", false);
+            await ExpectDraft(ui, "sheets", false);
 
             File.WriteAllText(ui.App.Workspace.File("text.txt"), "Draft ownership");
             Assert.Equal(0, ui.App.Workspace.Run("words", "create", "draft.docx", "--text", "text.txt").ExitCode);
             ui.App.Open("draft.docx");
             await ui.Poll();
-            await ExpectDraft(ui, "document", false);
+            await ExpectDraft(ui, "pages", false);
             Assert.True((await ui.Save())["ok"]!.GetValue<bool>());
 
             ui.App.Open("first.csv");
             await ui.Poll();
-            await ExpectDraft(ui, "sheet", false);
+            await ExpectDraft(ui, "sheets", false);
             Assert.Equal("workbook", (await ui.App.Status())["defaultView"]!.GetValue<string>());
             Assert.True((await ui.Save())["ok"]!.GetValue<bool>());
-            await ui.WaitForPreview("first.csv", "sheet");
+            await ui.WaitForPreview("first.csv", "sheets");
             JsonNode settings = ReadSettings(ui);
-            Assert.Equal("sheet", settings["previewViews"]!["cells"]!.GetValue<string>());
-            Assert.Equal("document", settings["previewViews"]!["words"]!.GetValue<string>());
+            Assert.Equal("sheets", settings["previewViews"]!["cells"]!.GetValue<string>());
+            Assert.Equal("pages", settings["previewViews"]!["words"]!.GetValue<string>());
             Assert.False(settings["rememberRecentFiles"]!.GetValue<bool>());
         });
 
@@ -45,7 +45,7 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
         BrowserApp.Run("preference-acknowledgement", output, async ui =>
         {
             await ui.Settings();
-            await ui.Page.Locator("#default-view").SelectOptionAsync("sheet");
+            await ui.Page.Locator("#default-view").SelectOptionAsync("sheets");
             await ui.Page.Locator("#remember-recents").UncheckAsync();
             var captured = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
             var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
@@ -63,7 +63,7 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
             {
                 Task<JsonNode> save = ui.Save();
                 await captured.Task.WaitAsync(TimeSpan.FromSeconds(10));
-                Assert.Equal("sheet", (await ui.App.Status())["defaultView"]!.GetValue<string>());
+                Assert.Equal("sheets", (await ui.App.Status())["defaultView"]!.GetValue<string>());
                 await ui.Page.Locator("#default-view").SelectOptionAsync("workbook");
                 await ui.Page.Locator("#remember-recents").CheckAsync();
                 await ui.Poll();
@@ -91,18 +91,18 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
             string preferences = Path.Combine(ui.App.Workspace.ConfigDirectory, "app-settings.json");
             byte[] original = File.ReadAllBytes(preferences);
             string url = (await ui.App.Status())["previewUrl"]!.GetValue<string>();
-            await ui.Page.Locator("#default-view").SelectOptionAsync("sheet");
+            await ui.Page.Locator("#default-view").SelectOptionAsync("sheets");
             await ui.Page.Locator("#remember-recents").UncheckAsync();
             using (var held = new FileStream(preferences, FileMode.Open, FileAccess.Read, FileShare.Read))
             {
                 Assert.False((await ui.Save())["ok"]!.GetValue<bool>());
                 await ui.Poll();
-                await ExpectDraft(ui, "sheet", false);
+                await ExpectDraft(ui, "sheets", false);
                 Assert.Equal(original, File.ReadAllBytes(preferences));
                 Assert.Equal(url, (await ui.App.Status())["previewUrl"]!.GetValue<string>());
             }
             Assert.True((await ui.Save())["ok"]!.GetValue<bool>());
-            await ui.WaitForPreview("first.csv", "sheet");
+            await ui.WaitForPreview("first.csv", "sheets");
             Assert.False(ReadSettings(ui)["rememberRecentFiles"]!.GetValue<bool>());
         });
 
@@ -111,14 +111,14 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
         BrowserApp.Run("preference-refresh-feedback", output, async ui =>
         {
             await ui.Settings();
-            await ui.Page.Locator("#default-view").SelectOptionAsync("sheet");
+            await ui.Page.Locator("#default-view").SelectOptionAsync("sheets");
             using (var held = new FileStream(ui.App.Workspace.File("first.csv"),
                 FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 JsonNode saved = await ui.Save();
                 Assert.Equal("PREVIEW_REFRESH_FAILED", saved["code"]!.GetValue<string>());
                 await ui.Poll();
-                await ExpectDraft(ui, "sheet", true);
+                await ExpectDraft(ui, "sheets", true);
                 await Assertions.Expect(ui.Page.Locator("#preferences-feedback")).ToContainTextAsync("Preferences were saved");
                 await Assertions.Expect(ui.Page.Locator("#save-preferences")).ToBeEnabledAsync();
                 await ui.WaitForPreview("first.csv", "workbook");
@@ -126,7 +126,7 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
             JsonNode retry = await ui.Save();
             Assert.True(retry["ok"]!.GetValue<bool>());
             Assert.Null(retry["code"]);
-            await ui.WaitForPreview("first.csv", "sheet");
+            await ui.WaitForPreview("first.csv", "sheets");
             await Assertions.Expect(ui.Page.Locator("#preferences-feedback")).ToHaveTextAsync("Preferences saved.");
         });
 

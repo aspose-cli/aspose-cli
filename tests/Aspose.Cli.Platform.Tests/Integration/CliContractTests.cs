@@ -425,16 +425,18 @@ public sealed class CliContractTests : IDisposable
 
             var previewUri = new Uri(
                 statusJson["previewUrl"]!.GetValue<string>());
-            Assert.Equal(launchUri.Port, previewUri.Port);
-            Assert.Equal("/document", previewUri.AbsolutePath);
+            Assert.Equal("127.0.0.1", previewUri.Host);
+            Assert.NotEqual(launchUri.Port, previewUri.Port);
+            Assert.Matches("^/d/[0-9a-f]{32}/$", previewUri.AbsolutePath);
 
             using HttpResponseMessage preview =
                 await client.GetAsync(previewUri);
             Assert.Equal(HttpStatusCode.OK, preview.StatusCode);
+            // The App frames it, so the viewer never forbids being framed.
             Assert.False(
                 preview.Headers.Contains("X-Frame-Options"));
             Assert.Contains(
-                "frame-ancestors 'self'",
+                "frame-ancestors http://127.0.0.1:*",
                 preview.Headers.GetValues(
                     "Content-Security-Policy").Single(),
                 StringComparison.Ordinal);

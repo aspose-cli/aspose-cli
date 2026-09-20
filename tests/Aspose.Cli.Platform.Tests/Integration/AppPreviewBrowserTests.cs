@@ -18,16 +18,13 @@ public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
             Assert.True(created.ExitCode == 0, created.StdErr);
             ui.App.Open("words.docx");
             await ui.Poll();
-            await ui.WaitForPreview("words.docx", "document");
+            await ui.WaitForPreview("words.docx", "pages");
             Assert.Equal("words", (await ui.App.Status())["product"]!.GetValue<string>());
-            await Assertions.Expect(ui.Preview.GetByRole(AriaRole.Img, new() { Name = "Page 1", Exact = true })).ToBeVisibleAsync();
-            await ui.Page.WaitForFunctionAsync("""
-                () => {
-                  const document = window.document.getElementById('preview-frame').contentDocument;
-                  const image = document && document.querySelector('img[alt="Page 1"]');
-                  return image && image.complete && image.naturalWidth > 0;
-                }
-                """);
+            ILocator first = ui.Preview.GetByRole(AriaRole.Img, new() { Name = "Page 1", Exact = true });
+            await Assertions.Expect(first).ToBeVisibleAsync();
+            Assert.True(
+                await first.EvaluateAsync<bool>("image => image.complete && image.naturalWidth > 0"),
+                "The first page must be painted, not merely present.");
 
             ui.App.Open("second.csv");
             ui.App.Open("first.csv");
@@ -41,10 +38,10 @@ public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
         BrowserApp.Run("session-identity", output, async ui =>
         {
             await ui.ShowCellText("first", "FIRST_DOCUMENT");
-            await ui.Page.EvaluateAsync("document.getElementById('preview-frame').contentWindow.retainedProbe = 'retained'");
+            // Marked inside the viewer: a frame that reloaded would lose it.
+            await ui.Preview.Locator(".av-app").EvaluateAsync("app => app.dataset.probe = 'retained'");
             await ui.Poll();
-            Assert.Equal("retained", await ui.Page.EvaluateAsync<string>(
-                "document.getElementById('preview-frame').contentWindow.retainedProbe"));
+            await Assertions.Expect(ui.Preview.Locator(".av-app[data-probe='retained']")).ToHaveCountAsync(1);
             string firstUrl = (await ui.App.Status())["previewUrl"]!.GetValue<string>();
             ui.App.Open("second.csv");
             Assert.NotEqual(firstUrl, (await ui.App.Status())["previewUrl"]!.GetValue<string>());
@@ -75,14 +72,14 @@ public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
         {
             string originalUrl = (await ui.App.Status())["previewUrl"]!.GetValue<string>();
             await ui.Settings();
-            await ui.Page.Locator("#default-view").SelectOptionAsync("sheet");
+            await ui.Page.Locator("#default-view").SelectOptionAsync("sheets");
             using (var locked = new FileStream(ui.App.Workspace.File("first.csv"),
                 FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 JsonNode saved = await ui.Save();
                 Assert.True(saved["ok"]!.GetValue<bool>());
                 Assert.Equal("PREVIEW_REFRESH_FAILED", saved["code"]!.GetValue<string>());
-                Assert.Equal("sheet", (await ui.App.Status())["defaultView"]!.GetValue<string>());
+                Assert.Equal("sheets", (await ui.App.Status())["defaultView"]!.GetValue<string>());
                 Assert.Equal(originalUrl, (await ui.App.Status())["previewUrl"]!.GetValue<string>());
                 await ui.WaitForPreview("first.csv", "workbook");
                 await Assertions.Expect(ui.Page.Locator("#toast")).ToContainTextAsync("Preferences were saved");
@@ -90,7 +87,7 @@ public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
             JsonNode retry = await ui.Save();
             Assert.True(retry["ok"]!.GetValue<bool>());
             Assert.Null(retry["code"]);
-            await ui.WaitForPreview("first.csv", "sheet");
+            await ui.WaitForPreview("first.csv", "sheets");
             Assert.NotEqual(originalUrl, (await ui.App.Status())["previewUrl"]!.GetValue<string>());
         });
 
@@ -116,12 +113,12 @@ public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
             {
                 Task poll = ui.Poll();
                 await captured.Task.WaitAsync(TimeSpan.FromSeconds(10));
-                await ui.Page.Locator("#default-view").SelectOptionAsync("sheet");
+                await ui.Page.Locator("#default-view").SelectOptionAsync("sheets");
                 JsonNode saved = await ui.Save();
                 Assert.True(saved["ok"]!.GetValue<bool>());
                 release.SetResult();
                 await poll;
-                await ui.WaitForPreview("first.csv", "sheet");
+                await ui.WaitForPreview("first.csv", "sheets");
             }
             finally { release.TrySetResult(); }
         });

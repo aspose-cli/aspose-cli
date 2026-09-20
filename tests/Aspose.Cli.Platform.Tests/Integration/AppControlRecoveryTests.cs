@@ -17,7 +17,14 @@ public sealed class AppControlRecoveryTests
         Assert.Equal(originalUrl, (await app.Status())["previewUrl"]!.GetValue<string>());
         Assert.Equal("first.csv", (await app.Status())["file"]!.GetValue<string>());
         app.Open("second.csv");
-        Assert.Equal("second.csv", (await app.Status())["file"]!.GetValue<string>());
-        Assert.Contains("SECOND_DOCUMENT", await app.Client.GetStringAsync("/document"), StringComparison.Ordinal);
+        System.Text.Json.Nodes.JsonNode status = await app.Status();
+        Assert.Equal("second.csv", status["file"]!.GetValue<string>());
+        // The viewer serves the new document at its own address.
+        Assert.NotEqual(originalUrl, status["previewUrl"]!.GetValue<string>());
+        using var viewer = new System.Net.Http.HttpClient();
+        Assert.Contains(
+            "definePresenter('cells'",
+            await viewer.GetStringAsync(status["previewUrl"]!.GetValue<string>()),
+            StringComparison.Ordinal);
     }
 }
