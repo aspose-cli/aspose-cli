@@ -42,6 +42,9 @@ internal sealed record RenderWorkerRequest
     /// <summary>Password of an encrypted document.</summary>
     public string? Password { get; init; }
 
+    /// <summary>Explicit license file, or null for the configured sources.</summary>
+    public string? License { get; init; }
+
     /// <summary>Explicit font directories, or null for the ambient environment.</summary>
     public IReadOnlyList<string>? FontDirectories { get; init; }
 

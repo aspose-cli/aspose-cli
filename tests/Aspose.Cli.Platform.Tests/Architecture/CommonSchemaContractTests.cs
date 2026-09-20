@@ -94,12 +94,13 @@ public sealed class CommonSchemaContractTests
     }
 
     [Theory]
-    [InlineData("http://127.0.0.1:54322/", true)]
-    [InlineData("http://127.0.0.1:54322/extra", false)]
-    [InlineData("http://127.0.0.1:54322/?token=value", false)]
-    [InlineData("http://example.com:54322/", false)]
-    [InlineData("https://127.0.0.1:54322/", false)]
-    public void PreviewSessionUrl_RequiresTheLoopbackRoot(string url, bool valid)
+    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/", true)]
+    [InlineData("http://127.0.0.1:54322/", false)]
+    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/extra", false)]
+    [InlineData("http://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/?token=value", false)]
+    [InlineData("http://example.com:54322/d/0123456789abcdef0123456789abcdef/", false)]
+    [InlineData("https://127.0.0.1:54322/d/0123456789abcdef0123456789abcdef/", false)]
+    public void PreviewSessionUrl_RequiresOneLoopbackDocument(string url, bool valid)
     {
         ProductPreviewStartResult sample = CommonSchemaSamples.ProductPreviewStart with { Url = url };
         string json = new HostContractJson(CommonCatalog).Serializer.Serialize(sample);

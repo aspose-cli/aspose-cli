@@ -13,7 +13,8 @@ internal static class LocalServiceControlClient
         string token,
         string command,
         string? path,
-        TimeSpan? timeout)
+        TimeSpan? timeout,
+        string? payload = null)
     {
         for (int attempt = 0; ; attempt++)
         {
@@ -25,7 +26,8 @@ internal static class LocalServiceControlClient
                     token,
                     command,
                     path,
-                    timeout);
+                    timeout,
+                    payload);
             }
             catch (Exception exception) when (
                 attempt == 0
@@ -42,7 +44,8 @@ internal static class LocalServiceControlClient
         string token,
         string command,
         string? path,
-        TimeSpan? timeout)
+        TimeSpan? timeout,
+        string? payload)
     {
         TimeSpan budget = timeout
             ?? LocalServiceControlCodec.DefaultStageTimeout;
@@ -60,7 +63,8 @@ internal static class LocalServiceControlClient
             nonce,
             token,
             command,
-            path);
+            path,
+            payload);
         byte[] requestPayload = LocalServiceControlCodec.Serialize(request);
         try
         {

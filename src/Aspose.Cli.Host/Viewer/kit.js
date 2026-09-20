@@ -293,7 +293,7 @@
       controls.position.textContent = position;
       controls.previous.disabled = index === 0;
       controls.next.disabled = index === ctx.parts.length - 1;
-      var details = [position];
+      var details = layout.pager === false ? [] : [position];
       if (part.label !== spec.noun + ' ' + (index + 1)) {
         details.push(part.label);
       }
@@ -398,6 +398,10 @@
 
     function coverage() {
       var rendered = ctx.parts.length;
+      if (layout.pager === false) {
+        // The layout shows what it holds; counting its one part says nothing.
+        return;
+      }
       statusCoverage.textContent = ctx.total > rendered
         ? rendered + ' of ' + ctx.total + ' ' + plural(spec.noun) + ' rendered'
         : ctx.total + ' ' + (ctx.total === 1 ? spec.noun.toLowerCase() : plural(spec.noun));
@@ -429,7 +433,7 @@
 
     function refreshZoom() {
       var part = ctx.parts[state.index];
-      var fixed = !part || part.kind !== 'image';
+      var fixed = layout.zoomable ? !layout.zoomable() : !part || part.kind !== 'image';
       controls.zoom.textContent = fixed ? '—' : Math.round(layout.scale() * 100) + '%';
       [controls.zoomOut, controls.zoom, controls.zoomIn, controls.fitWidth, controls.fitPage]
         .forEach(function (control) { control.disabled = fixed; });

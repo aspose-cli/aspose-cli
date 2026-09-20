@@ -496,7 +496,7 @@ public sealed class CliContractTests : IDisposable
             JsonNode session = Parse(started.StdOut);
             id = session["id"]!.GetValue<string>();
             string url = session["url"]!.GetValue<string>();
-            Assert.Equal("/", new Uri(url).AbsolutePath);
+            Assert.Equal($"/d/{id}/", new Uri(url).AbsolutePath);
             Assert.False(session["reused"]!.GetValue<bool>());
 
             using var first = new HttpClient(new HttpClientHandler
@@ -530,9 +530,9 @@ public sealed class CliContractTests : IDisposable
             using HttpResponseMessage afterReuse = await second.GetAsync(url);
             Assert.Equal(HttpStatusCode.OK, afterReuse.StatusCode);
 
-            using HttpResponseMessage rejected = await second.PostAsync(
-                new Uri(new Uri(url), "live/refresh"), content: null);
-            Assert.Equal(HttpStatusCode.Forbidden, rejected.StatusCode);
+            // The viewer answers reads only: nothing can be posted to it.
+            using HttpResponseMessage refused = await second.PostAsync(url, content: null);
+            Assert.Equal(HttpStatusCode.MethodNotAllowed, refused.StatusCode);
         }
         finally
         {

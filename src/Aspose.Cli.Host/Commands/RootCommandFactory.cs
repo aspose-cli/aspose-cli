@@ -41,6 +41,7 @@ internal static class RootCommandFactory
             globals));
         root.Subcommands.Add(PreviewCommand.Create(executor, catalog, globals));
         root.Subcommands.Add(RenderWorkerCommand.Create(catalog, globals));
+        root.Subcommands.Add(ViewerServiceCommand.Create(executor, globals));
         root.Subcommands.Add(ReviewCommand.Create(
             executor,
             catalog,

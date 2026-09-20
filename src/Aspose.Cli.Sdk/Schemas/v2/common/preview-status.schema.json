@@ -27,7 +27,7 @@
       "properties": {
         "id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
         "product": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
-        "url": { "type": "string", "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/$" },
+        "url": { "type": "string", "pattern": "^http://127\\.0\\.0\\.1:[0-9]+/d/[0-9a-f]{32}/$" },
         "pid": { "type": "integer", "minimum": 1 },
         "file": { "type": "string" },
         "view": { "type": "string", "minLength": 1 },

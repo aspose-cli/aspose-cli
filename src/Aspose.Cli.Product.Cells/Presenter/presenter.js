@@ -59,6 +59,8 @@
       focus: frame,
       // The sheet tabs below the grid navigate the workbook.
       pager: false,
+      // The grid zooms like a spreadsheet, whatever the part is made of.
+      zoomable: function () { return true; },
       show: function () {
         var url = ctx.url(ctx.parts[0]);
         if (url === loaded) {

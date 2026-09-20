@@ -22,6 +22,9 @@ internal sealed record LiveDocumentOptions
     /// <summary>Password of an encrypted document.</summary>
     public string? Password { get; init; }
 
+    /// <summary>Explicit license file, or null for the configured sources.</summary>
+    public string? License { get; init; }
+
     /// <summary>Explicit font directories, or null for the ambient environment.</summary>
     public IReadOnlyList<string>? FontDirectories { get; init; }
 
@@ -99,7 +102,9 @@ internal sealed class LiveDocument : IDisposable
         Id = id;
         _source = Path.GetFullPath(sourcePath);
         _root = PrivateUserStorage.EnsureDirectory(Path.GetFullPath(root));
-        _copy = Path.Combine(_root, "source" + Path.GetExtension(_source));
+        // Products label parts after the file they rendered, so the copy
+        // carries the document's own name rather than a private one.
+        _copy = Path.Combine(PrivateUserStorage.EnsureDirectory(Path.Combine(_root, "source")), FileName);
         _worker = worker;
         _options = options;
         _limits = limits;
@@ -169,6 +174,7 @@ internal sealed class LiveDocument : IDisposable
             && _options.View == options.View
             && _options.Effect == options.Effect
             && _options.Password == options.Password
+            && _options.License == options.License
             && (_options.FontDirectories ?? []).SequenceEqual(options.FontDirectories ?? []);
     }
 
@@ -263,6 +269,7 @@ internal sealed class LiveDocument : IDisposable
                     Product = _options.Product,
                     View = _options.View,
                     Password = _options.Password,
+                    License = _options.License,
                     FontDirectories = _options.FontDirectories,
                     Presentation = Presentation is null,
                 });

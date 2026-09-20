@@ -143,41 +143,6 @@ public sealed class PreviewSessionLifecycleTests
     }
 
     [Fact]
-    public void ControlStatus_ReturnsOnlyTheAuthenticatedRevision()
-    {
-        string id = Guid.NewGuid().ToString("N");
-        string nonce = Guid.NewGuid().ToString("N");
-        string token = Convert.ToHexString(Guid.NewGuid().ToByteArray()).ToLowerInvariant();
-        using var endpoint = new PreviewControlEndpoint(
-            id,
-            nonce,
-            token,
-            requestStop: static () => { },
-            readStatus: static () => new PreviewRevisionStatus(7));
-        endpoint.Start();
-        var marker = new PreviewSessionMarker(
-            id,
-            token,
-            Environment.ProcessId,
-            StartTicksUtc: 1,
-            Port: 1,
-            Url: "http://127.0.0.1:1/",
-            File: "document.txt",
-            View: "default",
-            Product: "test",
-            Metadata: new ResultEnvelopeMetadata(),
-            Nonce: nonce);
-
-        LocalServiceControlResponse response = PreviewControlEndpoint.Status(marker);
-        PreviewRevisionStatus actual = response.Result!.Value.Deserialize(
-            PreviewLocalServiceJsonContext.Default.PreviewRevisionStatus)!;
-
-        Assert.True(response.Ok);
-        Assert.Equal(7, actual.Revision);
-        Assert.DoesNotContain(token, response.Result.Value.GetRawText(), StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void Dispose_WhenARendererDoesNotReturn_IsTimeBounded()
     {
         using var temp = new TempDirectory();

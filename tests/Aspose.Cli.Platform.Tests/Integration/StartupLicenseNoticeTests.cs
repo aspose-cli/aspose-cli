@@ -140,12 +140,13 @@ public sealed class StartupLicenseNoticeTests
 
     [Theory]
     [InlineData("mcp", "serve")]
-    [InlineData("preview", "__host")]
     [InlineData("app", "--serve")]
-    public void InternalAndProtocolEntrypoints_DoNotAddStartupNoise(string command, string subcommand)
+    [InlineData("__viewer-service")]
+    [InlineData("__render-worker")]
+    public void InternalAndProtocolEntrypoints_DoNotAddStartupNoise(params string[] entrypoint)
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run(command, subcommand, "--help", "--output", "table");
+        CliResult result = workspace.Run([.. entrypoint, "--help", "--output", "table"]);
 
         Assert.Equal(0, result.ExitCode);
         Assert.Empty(result.StdErr);

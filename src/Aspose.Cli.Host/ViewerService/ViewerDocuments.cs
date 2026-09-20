@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Sdk.Errors;
@@ -58,7 +59,7 @@ internal sealed class ViewerDocuments : IDisposable
                 return reused;
             }
 
-            string id = LocalHttpRequestSecurity.RandomToken();
+            string id = Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(16));
             document = new LiveDocument(
                 id,
                 source,

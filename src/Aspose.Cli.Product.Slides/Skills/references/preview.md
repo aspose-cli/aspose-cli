@@ -1,26 +1,27 @@
 # Slides preview
 
-Start the managed product-routed preview:
+Open the deck in the local viewer and keep it live:
 
 ```powershell
 aspose-cli preview deck.pptx --open --output json
 ```
 
-Inspect or stop the shared session:
+Inspect or close documents:
 
 ```powershell
 aspose-cli preview status --output json
 aspose-cli preview stop <id> --output json
+aspose-cli preview stop --all --output json
 ```
 
-The slide browser shows thumbnails, current-slide navigation, live editing
-feedback, evaluation status and last-good recovery. It is a human review aid;
-agents must use deterministic static commands and rendered snapshots for final
-evidence.
+The deck reads like a slide editor: a numbered slide rail, one slide on the
+stage with its speaker notes, a full-screen slideshow, and a mark on the
+shapes an edit changed. It is a human review aid; agents use deterministic
+static commands and `review` evidence for final proof.
 
-Run `preview` again after changing a license. A matching session is reused only
-when the applied license identity also matches. A valid change of source, path
-or license contents restarts it with a new `id` and `pid` and `reused: false`,
-keeping the URL unless a different port is requested. An invalid selected
-license is rejected before the existing session is stopped. Status and stop
-use the same current-user CLI configuration as startup.
+One viewer service per user serves every open document, so `status` and
+`stop` work across products in the same current-user CLI configuration, and
+`stop --all` ends the service. Opening the same file the same way returns
+the document already open (`reused: true`); the result reports the `license`
+mode the render ran under. A license the engine refuses fails that document
+alone and leaves what is already open rendering.

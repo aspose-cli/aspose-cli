@@ -1,19 +1,21 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Rendering;
-using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Host.Commands;
 
-/// <summary>Product-neutral entry point for background file previews.</summary>
+/// <summary>
+/// Opens a file in the local viewer and keeps it live. The command itself
+/// renders nothing: it hands the file to the per-user viewer service, which
+/// watches it and re-renders it through its warm worker whenever it changes.
+/// </summary>
 internal static class PreviewCommand
 {
     private const string AutoView = "auto";
@@ -29,297 +31,136 @@ internal static class PreviewCommand
             Description = "File to preview; content detection selects the product unless --product is supplied.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.File);
-        StartSymbols shortcutSymbols = StartSymbols.Create(catalog, "the file");
-        var preview = new Command("preview", "Start, inspect, and stop background previews for any file product.");
+        StartSymbols symbols = StartSymbols.Create(catalog, "the file");
+        var preview = new Command("preview", "Watch a file in the local viewer and follow every change.");
         preview.Arguments.Add(file);
-        shortcutSymbols.AddTo(preview);
+        symbols.AddTo(preview);
         preview.Subcommands.Add(CreateStatus(executor, globals));
         preview.Subcommands.Add(CreateStop(executor, globals));
-        preview.Subcommands.Add(CreateHost(executor, catalog, globals));
         preview.SetAction(parse => executor.Run(parse, globals, context =>
-            Start(catalog, parse, context, file, shortcutSymbols)));
+            Start(parse, context, file, symbols)));
         return preview.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
     }
 
-    private static Command CreateHost(
-        CommandExecutor executor,
-        ProductCatalog catalog,
-        GlobalOptions globals)
-    {
-        var file = new Argument<string>("file") { Description = "Preview source file." }.WithInput(InputKind.File);
-        var product = new Option<string>("--product") { Description = "Owning product id." }.WithInput(InputKind.None);
-        var port = new Option<int>("--port") { Description = "Loopback preview port." };
-        var view = new Option<string>("--view") { Description = "Product preview view." }.WithInput(InputKind.None);
-        var effect = new Option<string?>("--presentation-effect")
-        {
-            Description = "Optional product presentation effect.",
-        }.WithInput(InputKind.None);
-        var serviceId = new Option<string?>("--preview-service-id") { Hidden = true }.WithInput(InputKind.None);
-        var password = new PasswordOptions("--password", "the preview source", allowStdin: false);
-        var host = new Command("__host", "Internal product-neutral preview host.")
-        {
-            Hidden = true,
-        };
-        host.Arguments.Add(file);
-        host.Options.Add(product);
-        host.Options.Add(port);
-        host.Options.Add(view);
-        host.Options.Add(effect);
-        host.Options.Add(serviceId);
-        password.AddTo(host);
-        host.SetAction(parse =>
-        {
-            ServiceStartSecrets? secrets =
-                ServiceStartSecretChannel.TryReceive();
-            using IDisposable? scope = secrets is null
-                ? null
-                : ServiceStartSecretChannel.Push(secrets);
-            return executor.RunServer(
-                parse,
-                globals,
-                context => StartHost(
-                    catalog,
-                    parse,
-                    context,
-                    file,
-                    product,
-                    port,
-                    view,
-                    effect,
-                    serviceId,
-                    password,
-                    secrets));
-        });
-        return host;
-    }
-
-    private static HostedCommandLifecycle StartHost(
-        ProductCatalog catalog,
-        ParseResult parse,
-        CommandContext context,
-        Argument<string> file,
-        Option<string> product,
-        Option<int> port,
-        Option<string> view,
-        Option<string?> effect,
-        Option<string?> serviceId,
-        PasswordOptions password,
-        ServiceStartSecrets? secrets)
-    {
-        int requestedPort = parse.GetValue(port);
-        OptionGuards.EnsureInRange(
-            "--port", requestedPort, 0, MaxPort,
-            "Pass --port 0 for a system-assigned port, or a port from 1 to 65535.");
-        string input = context.Paths.ResolveInput(
-            parse.GetRequiredValue(file));
-        ProductDefinition definition = catalog.ResolveById(
-            parse.GetRequiredValue(product));
-        string selectedView = parse.GetRequiredValue(view);
-        Aspose.Cli.Sdk.Preview.ProductPreviewPayload? selectedSelector =
-            secrets?.PreviewSelector;
-        string? id = parse.GetValue(serviceId);
-        string? token = secrets?.ServiceToken;
-        if (id is not null && token is null)
-        {
-            throw CliErrors.OptionInvalid(
-                "preview service",
-                "the authenticated service-start channel is missing",
-                "Start background previews with 'aspose-cli preview <file>'.");
-        }
-
-        string licenseIdentity = LicenseManager.RequireIdentity(context, definition);
-        if (id is not null
-            && !string.Equals(secrets?.ExpectedLicenseIdentity, licenseIdentity, StringComparison.Ordinal))
-        {
-            throw CliErrors.OptionInvalid(
-                "--license",
-                "the resolved license changed while the background preview was starting",
-                "Retry preview after the selected license source is stable.");
-        }
-        using RunningPreview runtime = PreviewRuntime.Start(
-            new PreviewStartOptions(
-                context.Activate(definition),
-                definition,
-                context.ResourceBudgets,
-                input,
-                requestedPort,
-                new ProductPreviewRequest(
-                    selectedView,
-                    Password: secrets?.Password
-                        ?? password.Resolve(
-                            parse,
-                            context.ResourceBudgets.Inputs, context.ReadEnvironment),
-                    Selector: selectedSelector,
-                    FontProfile: secrets?.FontProfile),
-                parse.GetValue(effect)));
-        var result = new ProductPreviewStartResult
-        {
-            Id = id ?? string.Empty,
-            Product = definition.Manifest.Id,
-            Url = runtime.Url,
-            Pid = Environment.ProcessId,
-            File = input,
-            View = runtime.View,
-            Selector = selectedSelector,
-            Reused = false,
-            License = EnvelopeParts.License(runtime.License),
-            Warnings = EnvelopeParts.CombineWarnings(
-                EnvelopeParts.OutputWarnings(runtime.License),
-                runtime.Outcome.Warnings),
-        };
-        PreviewServiceLifetime? service = PreviewBackgroundService.Create(
-            runtime,
-            definition,
-            input,
-            selectedSelector,
-            id,
-            token,
-            ResultEnvelopeMetadata.From(result),
-            licenseIdentity,
-            parse.GetValue(effect));
-        TimeSpan idle = service is null
-            ? PreviewRuntime.ResolveIdleWindow()
-            : Timeout.InfiniteTimeSpan;
-        return runtime.Supervise(result, once: false, idle, service);
-    }
-
     private static ProductPreviewStartResult Start(
-        ProductCatalog catalog,
         ParseResult parse,
         CommandContext context,
         Argument<string?> file,
         StartSymbols symbols)
     {
-        string? fileValue = parse.GetValue(file);
-        if (string.IsNullOrWhiteSpace(fileValue))
+        if (parse.GetValue(file) is not { Length: > 0 } requested)
         {
             throw CliErrors.OptionInvalid(
-                "preview",
-                "a file path is required",
+                "file",
+                "no file was given",
                 "Run 'aspose-cli preview <file>'.");
         }
-
         int port = parse.GetValue(symbols.Port);
         OptionGuards.EnsureInRange(
             "--port", port, 0, MaxPort,
             "Pass --port 0 for a system-assigned port, or a port from 1 to 65535.");
-        string input = context.Paths.ResolveInput(fileValue);
-        ProductDefinition product = catalog.ResolveExistingFile(
-            input,
-            parse.GetValue(symbols.Product),
-            operation: "preview",
-            cancellationToken: context.Deadline.Token);
-        ProductPreviewDefinition adapter = product.Preview;
-        string requestedView = parse.GetValue(symbols.View) ?? AutoView;
-        string view = requestedView == AutoView ? adapter.DefaultView : requestedView;
-        FontSearchProfile fontProfile = symbols.Fonts.Read(parse);
-        if (!fontProfile.IsAmbient
-            && !product.Manifest.Engine.SupportsExplicitFontProfiles)
-        {
-            throw CliErrors.OptionInvalid(
-                "--font-dir",
-                $"explicit font profiles are not supported by {product.Manifest.Id}",
-                "Omit --font-dir or use a product that advertises supportsExplicitFontProfiles.");
-        }
-        PreviewErrors.EnsureViewSupported(
-            product.Manifest.Id,
-            view,
-            adapter.Views);
-        string licenseIdentity = LicenseManager.RequireIdentity(context, product);
-        PreviewStartState state = new PreviewServiceController().Start(
-            product,
-            context.Paths.BaseDirectory,
-            context.Globals.LicensePath is null
-                ? null
-                : Path.GetFullPath(
-                    context.Globals.LicensePath,
-                    context.Paths.BaseDirectory),
-            licenseIdentity,
-            input,
-            port,
-            new ProductPreviewRequest(
-                view,
-                Password: symbols.Password.Resolve(
+        string input = context.Paths.ResolveInput(requested);
+        string view = parse.GetValue(symbols.View) ?? AutoView;
+        FontSearchProfile fonts = symbols.Fonts.Read(parse);
+        ViewerOpenResponse opened = new ViewerServiceClient().Open(
+            context.Globals,
+            new ViewerOpenRequest
+            {
+                File = input,
+                Product = parse.GetValue(symbols.Product),
+                View = view == AutoView ? null : view,
+                Effect = parse.GetValue(symbols.Effect),
+                Password = symbols.Password.Resolve(
                     parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
-                FontProfile: fontProfile.IsAmbient ? null : fontProfile),
-            presentationEffect: parse.GetValue(symbols.Effect),
-            openBrowser: parse.GetValue(symbols.Open));
-        return ToResult(state);
+                License = context.Globals.LicensePath is { } license
+                    ? Path.GetFullPath(license, context.Paths.BaseDirectory)
+                    : null,
+                FontDirectories = fonts.IsAmbient ? null : fonts.Directories,
+            },
+            port);
+        if (parse.GetValue(symbols.Open))
+        {
+            BrowserLauncher.Open(opened.Document.Url);
+        }
+        return new ProductPreviewStartResult
+        {
+            Id = opened.Document.Id,
+            Product = opened.Document.Product,
+            Url = opened.Document.Url,
+            Pid = Pid(),
+            File = opened.Document.File,
+            View = opened.Document.View,
+            Reused = opened.Reused,
+            License = opened.Document.License is { Length: > 0 } mode
+                ? new LicenseInfo { Mode = mode }
+                : null,
+        };
     }
 
-    private static Command CreateStatus(
-        CommandExecutor executor,
-        GlobalOptions globals)
+    private static Command CreateStatus(CommandExecutor executor, GlobalOptions globals)
     {
         var id = new Argument<string?>("id")
         {
-            Description = "Optional session id.",
+            Description = "Optional document id.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.None);
-        var status = new Command("status", "List one or all current-user preview sessions.");
+        var status = new Command("status", "List the documents the local viewer has open.");
         status.Arguments.Add(id);
         status.SetAction(parse => executor.RunLightweight(parse, globals, (_, _) =>
         {
-            PreviewStatusState state = new PreviewServiceController().Status(parse.GetValue(id));
+            ViewerStatusResponse? state = new ViewerServiceClient().Status();
+            string? selected = parse.GetValue(id);
             return new ProductPreviewStatusResult
             {
-                Sessions = state.Sessions.Select(ToInfo).ToArray(),
-                Warnings = state.Warnings.Count == 0 ? null : state.Warnings,
+                Sessions = (state?.Documents ?? [])
+                    .Where(document => selected is null || document.Id == selected)
+                    .Select(document => ToInfo(document, state!.Pid))
+                    .ToArray(),
             };
         }));
         return status.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
     }
 
-    private static Command CreateStop(
-        CommandExecutor executor,
-        GlobalOptions globals)
+    private static Command CreateStop(CommandExecutor executor, GlobalOptions globals)
     {
         var id = new Argument<string?>("id")
         {
-            Description = "Session id to stop.",
+            Description = "Document id to close.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.None);
-        var all = new Option<bool>("--all") { Description = "Stop every current-user preview session." };
-        var stop = new Command("stop", "Gracefully stop one or all background previews.");
+        var all = new Option<bool>("--all")
+        {
+            Description = "Close every document and stop the viewer service.",
+        };
+        var stop = new Command("stop", "Close one document, or stop the local viewer service.");
         stop.Arguments.Add(id);
         stop.Options.Add(all);
         stop.SetAction(parse => executor.RunLightweight(parse, globals, (_, _) =>
         {
-            PreviewStopState state = new PreviewServiceController().Stop(
-                parse.GetValue(id), parse.GetValue(all));
+            var client = new ViewerServiceClient();
+            ViewerStopResponse? state = client.Stop(parse.GetValue(id), parse.GetValue(all));
+            int pid = state is null ? 0 : Pid();
             return new ProductPreviewStopResult
             {
-                Stopped = state.Stopped,
-                Sessions = state.Sessions.Select(ToInfo).ToArray(),
+                Stopped = state?.Stopped ?? [],
+                Sessions = (state?.Documents ?? []).Select(document => ToInfo(document, pid)).ToArray(),
             };
         }));
         return stop;
     }
 
-    private static ProductPreviewStartResult ToResult(PreviewStartState state) => new()
-    {
-        Id = state.Session.Id,
-        Product = state.Session.Product,
-        Url = state.Session.Url,
-        Pid = state.Session.Pid,
-        File = state.Session.File,
-        View = state.Session.View,
-        Selector = state.Session.Selector,
-        Reused = state.Reused,
-        License = state.Metadata.License,
-        Warnings = state.Metadata.Warnings,
-    };
+    /// <summary>The service that answered; documents of one user share it.</summary>
+    private static int Pid() => new ViewerServiceClient().Status()?.Pid ?? 0;
 
-    private static ProductPreviewSessionInfo ToInfo(PreviewSessionState state) => new()
+    private static ProductPreviewSessionInfo ToInfo(ViewerDocumentState document, int pid) => new()
     {
-        Id = state.Id,
-        Product = state.Product,
-        Url = state.Url,
-        Pid = state.Pid,
-        File = state.File,
-        View = state.View,
-        Selector = state.Selector,
-        Revision = state.Revision,
+        Id = document.Id,
+        Product = document.Product,
+        Url = document.Url,
+        Pid = pid,
+        File = document.File,
+        View = document.View,
+        Revision = document.Revision,
     };
 
     private sealed record StartSymbols(
@@ -337,7 +178,7 @@ internal static class PreviewCommand
         {
             var port = new Option<int>("--port")
             {
-                Description = "Loopback port; 0 chooses a free port.",
+                Description = "Loopback port of the viewer service when it starts; 0 chooses a free port.",
                 DefaultValueFactory = _ => 0,
             };
             var product = new Option<string?>("--product")
@@ -345,25 +186,24 @@ internal static class PreviewCommand
                 Description = "Explicit product selection; normally determined by bounded content detection.",
             }.WithInput(InputKind.None);
             product.AcceptOnlyFromAmong(
-                catalog.Products
-                    .Select(static item => item.Manifest.Id)
-                    .ToArray());
+                catalog.Products.Select(static item => item.Manifest.Id).ToArray());
             var view = new Option<string>("--view")
             {
-                Description = "Preview view; auto uses the product default.",
+                Description = "Product view; auto uses the product's live view.",
                 DefaultValueFactory = _ => AutoView,
             }.WithInput(InputKind.None);
             view.AcceptOnlyFromAmong(
                 catalog.Products
-                    .SelectMany(static item => item.Preview.Views)
+                    .SelectMany(static item => item.View.Views)
+                    .Select(static item => item.Id)
                     .Append(AutoView)
                     .Distinct(StringComparer.Ordinal)
                     .Order(StringComparer.Ordinal)
                     .ToArray());
-            var open = new Option<bool>("--open") { Description = "Open the preview URL in the default browser." };
+            var open = new Option<bool>("--open") { Description = "Open the viewer in the default browser." };
             var effect = new Option<string?>("--fx")
             {
-                Description = "Presentation effect for live demonstrations, validated by the product (for example 'demo').",
+                Description = "Presentation effect for live demonstrations (for example 'demo').",
             }.WithInput(InputKind.None);
             return new StartSymbols(
                 port,

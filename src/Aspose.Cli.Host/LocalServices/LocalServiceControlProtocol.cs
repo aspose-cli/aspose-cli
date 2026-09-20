@@ -16,7 +16,8 @@ internal sealed record LocalServiceControlRequest(
     string Nonce,
     string Token,
     string Command,
-    string? Path = null);
+    string? Path = null,
+    string? Payload = null);
 
 internal sealed record LocalServiceControlResponse(
     int Version,
@@ -151,14 +152,16 @@ internal sealed class LocalServiceControlServer : IDisposable
         string token,
         string command,
         string? path = null,
-        TimeSpan? timeout = null) =>
+        TimeSpan? timeout = null,
+        string? payload = null) =>
         LocalServiceControlClient.Send(
             endpoint,
             nonce,
             token,
             command,
             path,
-            timeout);
+            timeout,
+            payload);
 
     private void StartWindows()
     {
