@@ -1,0 +1,155 @@
+using System.Text;
+using System.Text.Json;
+using Aspose.Cli.Host.Catalog;
+using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
+using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Rendering;
+using Aspose.Cli.Sdk.Serialization;
+using Aspose.Cli.Sdk.Views;
+
+namespace Aspose.Cli.Host.Viewer;
+
+/// <summary>
+/// Serves the viewer service's render requests in a child process that keeps
+/// the product engines warm. Every request runs in its own composition root,
+/// with its own deadline and resource ledger, so one render never inherits
+/// the budgets of the last. The worker exits when its input ends, and asks to
+/// be recycled as soon as the license it applied for a product no longer
+/// matches the configured one, because an engine cannot swap a license.
+/// </summary>
+internal static class ViewRenderWorker
+{
+    public static int Run(ProductCatalog catalog, GlobalValues globals)
+    {
+        ArgumentNullException.ThrowIfNull(catalog);
+        ArgumentNullException.ThrowIfNull(globals);
+
+        using Stream input = Console.OpenStandardInput();
+        using Stream output = Console.OpenStandardOutput();
+        LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
+        var licenses = new Dictionary<string, string>(StringComparer.Ordinal);
+        while (true)
+        {
+            RenderWorkerRequest? request = ProcessPipeMessages
+                .ReadOrEndAsync<RenderWorkerRequest>(input, CancellationToken.None)
+                .GetAwaiter().GetResult();
+            if (request is null)
+            {
+                return 0;
+            }
+
+            RenderWorkerResponse response = Serve(catalog, globals, limits, licenses, request);
+            ProcessPipeMessages.WriteAsync(output, response, CancellationToken.None)
+                .GetAwaiter().GetResult();
+            if (response.Recycle)
+            {
+                return 0;
+            }
+        }
+    }
+
+    private static RenderWorkerResponse Serve(
+        ProductCatalog catalog,
+        GlobalValues globals,
+        LocalServiceResourceLimits limits,
+        Dictionary<string, string> licenses,
+        RenderWorkerRequest request)
+    {
+        try
+        {
+            CommandContext context = CompositionRoot.Create(
+                catalog,
+                globals,
+                OperationDeadline.Start(TimeSpan.FromMilliseconds(request.TimeoutMs)));
+            ProductDefinition definition = catalog.ResolveExistingFile(
+                request.Source,
+                request.Product,
+                operation: "preview",
+                cancellationToken: context.Deadline.Token);
+            ProductBinding binding = context.Activate(definition);
+            string product = definition.Manifest.Id;
+            string license = LicenseFingerprint(binding.LicenseGate.Resolution);
+            if (licenses.TryGetValue(product, out string? applied) && applied != license)
+            {
+                return new RenderWorkerResponse { Id = request.Id, Ok = false, Recycle = true };
+            }
+
+            ProductViewDefinition views = definition.View;
+            var render = new ViewRenderRequest
+            {
+                View = request.View ?? views.LiveView,
+                MaxParts = request.MaxParts,
+                Purpose = ViewPurpose.Display,
+                Password = request.Password,
+                FontProfile = request.FontDirectories is { Count: > 0 } directories
+                    ? FontSearchProfile.Explicit(directories)
+                    : null,
+            };
+            binding.LicenseGate.EnsureApplied();
+            licenses[product] = license;
+            ViewManifest manifest = ViewRendering.Render(
+                artifacts => views.Render(binding, request.Source, render, artifacts),
+                request.Output,
+                request.MaxParts,
+                limits);
+            File.WriteAllText(
+                Path.Combine(request.Output, RenderWorkerProtocol.ManifestFileName),
+                JsonSerializer.Serialize(manifest, SdkJsonContext.Default.ViewManifest),
+                new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            PrivateUserStorage.ProtectTree(request.Output);
+            return new RenderWorkerResponse
+            {
+                Id = request.Id,
+                Ok = true,
+                Product = product,
+                View = manifest.View,
+                TotalParts = manifest.TotalParts,
+                PresenterScript = request.Presentation ? views.Presentation.Script : null,
+                PresenterStylesheet = request.Presentation ? views.Presentation.Stylesheet : null,
+            };
+        }
+        catch (Exception exception)
+        {
+            return new RenderWorkerResponse
+            {
+                Id = request.Id,
+                Ok = false,
+                Code = exception is CliException cli ? cli.Code.Name : ErrorCodes.Internal.Name,
+                Message = Sanitize(exception.Message, request.Source),
+            };
+        }
+    }
+
+    /// <summary>
+    /// Identifies the license a product would apply without applying it: the
+    /// source and, for a file, the bytes it holds right now. Reading the file
+    /// on every render would cost more than it proves, because a license is
+    /// installed by replacing the file.
+    /// </summary>
+    private static string LicenseFingerprint(LicenseResolution resolution)
+    {
+        if (!resolution.IsConfigured)
+        {
+            return "none";
+        }
+        if (resolution.Path is not { Length: > 0 } path)
+        {
+            // Environment-carried licenses cannot change under a live process.
+            return resolution.SourceLabel!;
+        }
+        var file = new FileInfo(path);
+        return file.Exists
+            ? string.Join('|', resolution.SourceLabel, path, file.Length, file.LastWriteTimeUtc.Ticks)
+            : string.Join('|', resolution.SourceLabel, path, "missing");
+    }
+
+    /// <summary>The service owns the rendered copy; its path is never the user's.</summary>
+    private static string Sanitize(string message, string source) =>
+        message.Replace(source, Path.GetFileName(source), StringComparison.OrdinalIgnoreCase);
+}

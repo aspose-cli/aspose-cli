@@ -131,5 +131,6 @@ public sealed class PreviewArtifactManifestTests
         MaximumSnapshotBytes: 4096,
         MaximumInlineHtmlBytes: 1024,
         MaximumUploadFiles: 4,
-        MaximumUploadSessionBytes: 4096);
+        MaximumUploadSessionBytes: 4096,
+        RenderTimeout: TimeSpan.FromMinutes(1));
 }

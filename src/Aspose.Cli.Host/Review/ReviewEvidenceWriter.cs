@@ -1,5 +1,4 @@
 using System.Net;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
@@ -150,10 +149,7 @@ internal static class ReviewEvidenceWriter
         string root = PrivateUserStorage.CreateTemporaryDirectory("review");
         try
         {
-            var sink = new BoundedPreviewArtifactSink(root, limits);
-            ViewManifest rendered = render(sink);
-            sink.EnsureComplete();
-            ViewManifest manifest = WithDigests(rendered, root, maxItems);
+            ViewManifest manifest = ViewRendering.Render(render, root, maxItems, limits);
             foreach (ViewPart part in manifest.Parts)
             {
                 string relative = part.File.Replace('/', Path.DirectorySeparatorChar);
@@ -167,46 +163,6 @@ internal static class ReviewEvidenceWriter
         {
             LocalFileCleanup.DeleteDirectory(root);
         }
-    }
-
-    /// <summary>
-    /// Proves that the product wrote exactly the files its manifest names and
-    /// stamps each part with the digest of its bytes.
-    /// </summary>
-    private static ViewManifest WithDigests(
-        ViewManifest manifest,
-        string evidenceDirectory,
-        int maxItems)
-    {
-        ViewManifestValidator.Validate(manifest, maxItems);
-        string[] written = Directory
-            .EnumerateFiles(evidenceDirectory, "*", SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(evidenceDirectory, path).Replace('\\', '/'))
-            .ToArray();
-        var named = manifest.Parts
-            .Select(static part => part.File)
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
-        string? stray = written.FirstOrDefault(path => !named.Contains(path));
-        if (stray is not null || written.Length != named.Count)
-        {
-            throw new InvalidOperationException(
-                $"The product view files do not match its manifest{(stray is null ? "" : $": '{stray}'")}.");
-        }
-        return manifest with
-        {
-            Parts = manifest.Parts.Select(part => part with
-            {
-                Digest = Digest(Path.Combine(
-                    evidenceDirectory,
-                    part.File.Replace('/', Path.DirectorySeparatorChar))),
-            }).ToArray(),
-        };
-    }
-
-    private static string Digest(string path)
-    {
-        using FileStream stream = File.OpenRead(path);
-        return "sha256:" + Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 
     private static ReviewResult BuildResult(

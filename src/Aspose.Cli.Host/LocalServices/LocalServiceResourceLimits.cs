@@ -15,7 +15,8 @@ internal sealed record LocalServiceResourceLimits(
     long MaximumSnapshotBytes,
     long MaximumInlineHtmlBytes,
     int MaximumUploadFiles,
-    long MaximumUploadSessionBytes)
+    long MaximumUploadSessionBytes,
+    TimeSpan RenderTimeout)
 {
     public static LocalServiceResourceLimits Resolve(
         Func<string, string?>? environment = null)
@@ -72,7 +73,13 @@ internal sealed record LocalServiceResourceLimits(
                 environment,
                 "ASPOSE_CLI_APP_MAX_UPLOAD_SESSION_BYTES",
                 defaultValue: 512L * 1024 * 1024,
-                maximum: 2L * 1024 * 1024 * 1024));
+                maximum: 2L * 1024 * 1024 * 1024),
+            TimeSpan.FromMilliseconds(Integer(
+                environment,
+                "ASPOSE_CLI_VIEWER_RENDER_TIMEOUT_MS",
+                defaultValue: 60_000,
+                maximum: 600_000,
+                minimum: 1_000)));
     }
 
     private static int Integer(
