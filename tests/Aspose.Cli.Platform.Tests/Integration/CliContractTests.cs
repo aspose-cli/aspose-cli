@@ -38,10 +38,10 @@ public sealed class CliContractTests : IDisposable
             string,
             (string DefaultView, string[] Views)>(StringComparer.Ordinal)
         {
-            ["cells"] = ("workbook", ["workbook", "sheet"]),
+            ["cells"] = ("workbook", ["sheets", "workbook"]),
             ["pdf"] = ("pages", ["pages"]),
             ["slides"] = ("slides", ["slides"]),
-            ["words"] = ("document", ["document"]),
+            ["words"] = ("pages", ["pages"]),
         };
         CliResult result = _workspace.Run("capabilities", "--output", "json");
 

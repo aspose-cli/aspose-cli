@@ -257,12 +257,12 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         json = corruption switch
         {
             "duplicate" => json.Replace(
-                "\"version\":3,",
-                "\"version\":3,\r\n  \"version\":3,",
+                "\"version\":4,",
+                "\"version\":4,\r\n  \"version\":4,",
                 StringComparison.Ordinal),
             "unknown" => json.Replace(
-                "\"version\":3,",
-                "\"version\":3,\r\n  \"unknown\": true,",
+                "\"version\":4,",
+                "\"version\":4,\r\n  \"unknown\": true,",
                 StringComparison.Ordinal),
             _ => json + new string(' ', PublicationLimits.MaximumMetadataBytes),
         };
