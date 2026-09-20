@@ -426,7 +426,8 @@ public sealed class CliContractTests : IDisposable
             var previewUri = new Uri(
                 statusJson["previewUrl"]!.GetValue<string>());
             Assert.Equal("127.0.0.1", previewUri.Host);
-            Assert.NotEqual(launchUri.Port, previewUri.Port);
+            // The App and the document it frames are one origin.
+            Assert.Equal(launchUri.Port, previewUri.Port);
             Assert.Matches("^/d/[0-9a-f]{32}/$", previewUri.AbsolutePath);
 
             using HttpResponseMessage preview =
@@ -441,12 +442,13 @@ public sealed class CliContractTests : IDisposable
                     "Content-Security-Policy").Single(),
                 StringComparison.Ordinal);
 
+            // The documents answer GET and nothing else; only the App mutates.
             using HttpResponseMessage rejected =
                 await client.PostAsync(
-                    "/live/refresh",
+                    "/d/refresh",
                     content: null);
             Assert.Equal(
-                HttpStatusCode.Forbidden,
+                HttpStatusCode.MethodNotAllowed,
                 rejected.StatusCode);
 
             foreach ((string[] arguments, string route, string path) in new[]

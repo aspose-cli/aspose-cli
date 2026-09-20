@@ -1,16 +1,10 @@
+using System.Net;
+using System.Net.Http.Headers;
 using System.Net.Sockets;
-using Aspose.Cli.Host.LocalServices;
 using System.Text;
-using System.Runtime.InteropServices;
-using System.Runtime.Loader;
-using Aspose.Cli.Host.App;
-using Aspose.Cli.Host.Commands;
-using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Host.Output;
+using System.Text.Json.Nodes;
+using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -19,6 +13,12 @@ namespace Aspose.Cli.Host.Tests;
 [CollectionDefinition("App mutation isolation", DisableParallelization = true)]
 public sealed class AppMutationIsolationCollection;
 
+/// <summary>
+/// The App answers on the viewer service's origin, so its mutations share one
+/// listener with the documents it shows. A request that holds its body open
+/// may not stall the pages a person is looking at, and the temporary copies an
+/// upload owns must outlive the request that made them.
+/// </summary>
 [Collection("App mutation isolation")]
 public sealed class AppMutationTests
 {
@@ -26,67 +26,18 @@ public sealed class AppMutationTests
     public async Task SlowRequestBodyDoesNotBlockStatusOrClearAndKeepsItsUploadAlive()
     {
         using var app = new RunningApp();
-        using (var upload = new MemoryStream("Heading,Value\nUPLOADED,42\n"u8.ToArray()))
-        { await app.Host.UploadFileAsync("upload.csv", upload, upload.Length, CancellationToken.None); }
+        await app.Upload("upload.csv", "Heading,Value\nUPLOADED,42\n");
         string uploaded = Assert.Single(Directory.GetFiles(Path.Combine(app.SessionRoot, "uploads", "files")));
-        using TcpClient client = await BeginSlowRequestBody(app.Host);
-        var status = Task.Run(app.Host.Status);
+        using TcpClient client = await app.BeginSlowRequestBody();
         try
         {
-            Assert.Equal("upload.csv", (await status.WaitAsync(TimeSpan.FromSeconds(2))).File);
-            await app.Host.ClearLocalDataAsync(CancellationToken.None).WaitAsync(TimeSpan.FromSeconds(2));
-            Assert.Null(app.Host.Status().File);
+            Assert.Equal("upload.csv", (await app.Status())["file"]!.GetValue<string>());
+            await app.Post("/api/local-data/clear");
+            Assert.Null((await app.Status())["file"]);
         }
-        finally { client.Dispose(); await status.WaitAsync(TimeSpan.FromSeconds(7)); }
+        finally { client.Dispose(); }
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
         while (File.Exists(uploaded)) { await Task.Delay(20, deadline.Token); }
-        Assert.True(File.Exists(app.Original));
-    }
-
-    private static async Task<TcpClient> BeginSlowRequestBody(AppHost host)
-    {
-        var client = new TcpClient();
-        try
-        {
-            await client.ConnectAsync("127.0.0.1", host.Port);
-            string origin = $"http://127.0.0.1:{host.Port}";
-            using var http = new HttpClient();
-            string shell = await http.GetStringAsync(host.Url);
-            string csrf = System.Text.RegularExpressions.Regex.Match(shell,
-                @"name=""aspose-csrf"" content=""([^""]+)""").Groups[1].Value;
-            Assert.NotEmpty(csrf);
-            string request = $"POST /api/preferences HTTP/1.1\r\nHost: 127.0.0.1:{host.Port}\r\nOrigin: {origin}\r\n{LocalHttpRequestSecurity.CsrfHeader}: {csrf}\r\nContent-Type: application/json\r\nContent-Length: 1\r\nExpect: 100-continue\r\nConnection: close\r\n\r\n";
-            await client.GetStream().WriteAsync(Encoding.ASCII.GetBytes(request));
-            using var reader = new StreamReader(client.GetStream(), Encoding.ASCII, false, 1024, leaveOpen: true);
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
-            string? line = await reader.ReadLineAsync(timeout.Token);
-            Assert.Contains("100 Continue", line, StringComparison.OrdinalIgnoreCase);
-            while (!string.IsNullOrEmpty(await reader.ReadLineAsync(timeout.Token))) { }
-            return client;
-        }
-        catch { client.Dispose(); throw; }
-    }
-
-    [Fact]
-    public async Task UploadSerializesCleanupWhileStatusAndCancellationRemainAvailable()
-    {
-        using var app = new RunningApp();
-        using var input = new PausedInput("Heading,Value\nUPLOADED,42\n");
-        Task upload = app.Host.UploadFileAsync("upload.csv", input, input.Length, CancellationToken.None);
-        await input.Entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
-        Task clear = app.Host.ClearLocalDataAsync(CancellationToken.None);
-        using var cancelled = new CancellationTokenSource();
-        Task abandoned = app.Host.ClearLocalDataAsync(cancelled.Token);
-        try
-        {
-            Assert.False(clear.IsCompleted);
-            Assert.Equal("original.csv", (await Task.Run(app.Host.Status).WaitAsync(TimeSpan.FromSeconds(5))).File);
-            cancelled.Cancel();
-            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => abandoned);
-        }
-        finally { input.Resume.TrySetResult(); }
-        await Task.WhenAll(upload, clear).WaitAsync(TimeSpan.FromSeconds(15));
-        Assert.Null(app.Host.Status().File);
         Assert.True(File.Exists(app.Original));
     }
 
@@ -94,8 +45,7 @@ public sealed class AppMutationTests
     public async Task CleanupPreservesUnknownFilesAndAnExternalReplacementOfAnOwnedUpload()
     {
         using var app = new RunningApp();
-        using var input = new MemoryStream("Heading,Value\nUPLOADED,42\n"u8.ToArray());
-        await app.Host.UploadFileAsync("upload.csv", input, input.Length, CancellationToken.None);
+        await app.Upload("upload.csv", "Heading,Value\nUPLOADED,42\n");
         string directory = Path.Combine(app.SessionRoot, "uploads", "files");
         string uploaded = Assert.Single(Directory.GetFiles(directory));
         string replacement = Path.Combine(directory, "external.csv");
@@ -103,85 +53,119 @@ public sealed class AppMutationTests
         File.Replace(replacement, uploaded, null);
         string unknown = Path.Combine(directory, "unowned.txt");
         File.WriteAllText(unknown, "UNOWNED");
-        await app.Host.ClearLocalDataAsync(CancellationToken.None);
-        app.Host.Dispose();
+
+        await app.Post("/api/local-data/clear");
+
         Assert.Equal("EXTERNAL", File.ReadAllText(uploaded));
         Assert.Equal("UNOWNED", File.ReadAllText(unknown));
         Assert.True(File.Exists(app.Original));
     }
 
     [Fact]
-    public async Task APreparedStopRejectsNewMutationsWithoutBlockingStatus()
+    public async Task AnAbandonedRequestLeavesTheAppAnsweringTheNextOne()
     {
         using var app = new RunningApp();
-        app.Host.PrepareStop();
-        CliException error = Assert.Throws<CliException>(() => app.Host.OpenPath(app.Original));
-        Assert.Equal(ErrorCodes.AppBusy, error.Code);
-        await Assert.ThrowsAsync<CliException>(() => app.Host.ClearLocalDataAsync(CancellationToken.None));
-        Assert.Equal("original.csv", app.Host.Status().File);
+        using (TcpClient abandoned = await app.BeginSlowRequestBody()) { }
+
+        await app.Post("/api/recent/clear");
+
+        Assert.Equal("original.csv", (await app.Status())["file"]!.GetValue<string>());
     }
 
-    private sealed class PausedInput(string text) : MemoryStream(Encoding.UTF8.GetBytes(text))
-    {
-        internal TaskCompletionSource Entered { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        internal TaskCompletionSource Resume { get; } = new(TaskCreationOptions.RunContinuationsAsynchronously);
-        public override async ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
-        {
-            Entered.TrySetResult();
-            await Resume.Task.WaitAsync(cancellationToken);
-            return await base.ReadAsync(buffer, cancellationToken);
-        }
-    }
-
+    /// <summary>
+    /// One real service with the App mounted on it, reached exactly as the
+    /// browser reaches it: same origin, same CSRF token, same routes.
+    /// </summary>
     private sealed class RunningApp : IDisposable
     {
-        private readonly TempDirectory _temp = new();
-        private readonly Dictionary<string, string?> _environment = [];
-        private readonly ViewerServiceProcess _viewer;
-        internal AppHost Host { get; }
-        internal string Original { get; }
-        internal string SessionRoot { get; }
-        static RunningApp()
-        {
-            var dependencies = new AssemblyDependencyResolver(Path.ChangeExtension(CliRunner.ExecutablePath, ".dll"));
-            AssemblyLoadContext.Default.ResolvingUnmanagedDll += (_, name) =>
-                dependencies.ResolveUnmanagedDllToPath(name) is { } path ? NativeLibrary.Load(path) : IntPtr.Zero;
-        }
+        private readonly TempWorkspace _workspace = new();
+        private readonly HttpClient _client;
 
         internal RunningApp()
         {
-            string[] variables = Environment.GetEnvironmentVariables().Keys.Cast<string>()
-                .Where(name => name.StartsWith("ASPOSE_", StringComparison.OrdinalIgnoreCase)
-                    && (name.EndsWith("_LICENSE_PATH", StringComparison.OrdinalIgnoreCase)
-                        || name.EndsWith("_LICENSE_B64", StringComparison.OrdinalIgnoreCase)))
-                .Append("ASPOSE_CLI_CONFIG_DIR").Distinct().ToArray();
-            foreach (string name in variables)
-            {
-                _environment[name] = Environment.GetEnvironmentVariable(name);
-                Environment.SetEnvironmentVariable(name, null);
-            }
-            Environment.SetEnvironmentVariable("ASPOSE_CLI_CONFIG_DIR", _temp.File("config"));
-            _viewer = new ViewerServiceProcess(_temp.File("config"));
-            Original = _temp.File("original.csv");
+            Original = _workspace.File("original.csv");
             File.WriteAllText(Original, "Heading,Value\nORIGINAL,1\n");
-            HostContext host = ActualCommandTree.Host;
-            var root = RootCommandFactory.Create(host, out _);
-            string sessions = PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.TemporaryRoot(), "app"));
-            string[] before = Directory.GetDirectories(sessions, $"{Environment.ProcessId}-*");
-            Host = new AppHost(host.Catalog, () => CliCapabilitySnapshot.Create(root, host.Catalog, host.Schemas).Result,
-                new GlobalValues(OutputMode.Json, true, false, null, _temp.Path, null, InputSizeGuard.DefaultMaxBytes),
-                FontSearchProfile.Ambient);
-            SessionRoot = Assert.Single(Directory.GetDirectories(sessions, $"{Environment.ProcessId}-*").Except(before));
-            Host.Start(0, AppRoutes.Home, Original);
+            CliResult started = _workspace.Run("app", Original, "--no-open", "--output", "json");
+            Assert.True(started.ExitCode == 0, started.StdErr);
+            JsonNode result = JsonNode.Parse(started.StdOut)!;
+            Url = new Uri(result["url"]!.GetValue<string>());
+            int pid = result["pid"]!.GetValue<int>();
+            SessionRoot = Assert.Single(Directory.GetDirectories(
+                PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.TemporaryRoot(), "app")),
+                $"{pid}-*"));
+            _client = new HttpClient(new HttpClientHandler { UseCookies = false })
+            {
+                BaseAddress = new Uri(Url.GetLeftPart(UriPartial.Authority)),
+                Timeout = TimeSpan.FromSeconds(30),
+            };
+            string shell = _client.GetStringAsync("/").GetAwaiter().GetResult();
+            string csrf = System.Text.RegularExpressions.Regex.Match(
+                shell, @"name=""aspose-csrf"" content=""([^""]+)""").Groups[1].Value;
+            Assert.NotEmpty(csrf);
+            _client.DefaultRequestHeaders.Add("Origin", _client.BaseAddress.GetLeftPart(UriPartial.Authority));
+            _client.DefaultRequestHeaders.Add(LocalHttpRequestSecurity.CsrfHeader, csrf);
+            Csrf = csrf;
         }
+
+        internal string Original { get; }
+
+        internal string SessionRoot { get; }
+
+        internal Uri Url { get; }
+
+        internal string Csrf { get; }
+
+        internal async Task<JsonNode> Status() =>
+            JsonNode.Parse(await _client.GetStringAsync("/api/status").WaitAsync(TimeSpan.FromSeconds(5)))!;
+
+        internal async Task Post(string path)
+        {
+            HttpResponseMessage response = await _client
+                .PostAsync(path, new StringContent(string.Empty))
+                .WaitAsync(TimeSpan.FromSeconds(15));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        internal async Task Upload(string name, string content)
+        {
+            var body = new StringContent(content);
+            body.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
+            var request = new HttpRequestMessage(HttpMethod.Post, "/api/files/upload") { Content = body };
+            request.Headers.Add("X-File-Name", name);
+            HttpResponseMessage response = await _client.SendAsync(request).WaitAsync(TimeSpan.FromSeconds(30));
+            Assert.Equal(HttpStatusCode.OK, response.StatusCode);
+        }
+
+        /// <summary>Opens a mutation whose body never arrives, and leaves it open.</summary>
+        internal async Task<TcpClient> BeginSlowRequestBody()
+        {
+            var client = new TcpClient();
+            try
+            {
+                await client.ConnectAsync("127.0.0.1", Url.Port);
+                string request = $"POST /api/preferences HTTP/1.1\r\nHost: 127.0.0.1:{Url.Port}\r\n"
+                    + $"Origin: http://127.0.0.1:{Url.Port}\r\n{LocalHttpRequestSecurity.CsrfHeader}: {Csrf}\r\n"
+                    + "Content-Type: application/json\r\nContent-Length: 1\r\n"
+                    + "Expect: 100-continue\r\nConnection: close\r\n\r\n";
+                await client.GetStream().WriteAsync(Encoding.ASCII.GetBytes(request));
+                using var reader = new StreamReader(client.GetStream(), Encoding.ASCII, false, 1024, leaveOpen: true);
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                string? line = await reader.ReadLineAsync(timeout.Token);
+                Assert.Contains("100 Continue", line, StringComparison.OrdinalIgnoreCase);
+                while (!string.IsNullOrEmpty(await reader.ReadLineAsync(timeout.Token))) { }
+                return client;
+            }
+            catch { client.Dispose(); throw; }
+        }
+
         public void Dispose()
         {
-            try { Host.Dispose(); _viewer.Dispose(); PrivateUserStorage.TryDeleteTree(SessionRoot); }
-            finally
+            try
             {
-                foreach ((string name, string? value) in _environment) { Environment.SetEnvironmentVariable(name, value); }
-                _temp.Dispose();
+                _workspace.Run("app", "stop", "--output", "json");
+                _client.Dispose();
             }
+            finally { _workspace.Dispose(); }
         }
     }
 }

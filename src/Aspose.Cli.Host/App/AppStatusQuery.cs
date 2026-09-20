@@ -14,8 +14,7 @@ internal sealed class AppStatusQuery
 {
     private readonly AppPreferencesStore _preferences;
     private readonly ProductCatalog _catalog;
-    private readonly LicenseManager _licenses;
-    private readonly Func<CommandContext> _createContext;
+    private readonly AppCliGateway _cli;
     private readonly AppDocumentSession _sessions;
     private readonly string _experience;
     private readonly IReadOnlyList<AppProductView> _products;
@@ -33,13 +32,12 @@ internal sealed class AppStatusQuery
         ProductCatalog catalog,
         Func<CapabilitiesResult> capabilities,
         AppPreferencesStore preferences,
-        LicenseManager licenses,
-        AppDocumentSession sessions, Func<CommandContext> createContext)
+        AppCliGateway cli,
+        AppDocumentSession sessions)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _preferences = preferences;
-        _licenses = licenses;
-        _createContext = createContext;
+        _cli = cli;
         _sessions = sessions;
         ArgumentNullException.ThrowIfNull(capabilities);
         CapabilitiesResult snapshot = capabilities();
@@ -79,7 +77,7 @@ internal sealed class AppStatusQuery
             _catalog.ResolveById(
                 session?.ProductId
                 ?? _catalog.DefaultProductId());
-        LicenseStatusResult license = _licenses.Status();
+        LicenseStatusResult license = _cli.LicenseStatus();
         return new AppStatusView(
             VersionInfo.CliVersion,
             DistributionInfo.Edition,
@@ -175,9 +173,7 @@ internal sealed class AppStatusQuery
 
             try
             {
-                CommandContext context = _createContext();
-                FontListResult fonts =
-                    context.Activate(product).FontEnvironment!.ListFonts();
+                FontListResult fonts = _cli.Fonts(product.Manifest.Id);
                 string fallback =
                     fonts.DefaultFont ?? "engine default";
                 _fontDiagnostic = new AppDiagnosticView(

@@ -19,7 +19,6 @@ internal sealed class AppWorkspace
     private readonly AppLog _log;
     private readonly Action _touch;
     private readonly Action<string> _setRoute;
-    private readonly Action _writeMarker;
 
     internal AppWorkspace(
         ProductCatalog catalog,
@@ -27,8 +26,7 @@ internal sealed class AppWorkspace
         AppDocumentSession sessions,
         AppLog log,
         Action touch,
-        Action<string> setRoute,
-        Action writeMarker)
+        Action<string> setRoute)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _preferences = preferences;
@@ -36,7 +34,6 @@ internal sealed class AppWorkspace
         _log = log;
         _touch = touch;
         _setRoute = setRoute;
-        _writeMarker = writeMarker;
     }
 
     internal void CompleteOnboarding()
@@ -134,7 +131,6 @@ internal sealed class AppWorkspace
         _preferences.ClearRecent();
         _sessions.ClearUploads();
         _log.Clear();
-        _writeMarker();
     }
 
 }

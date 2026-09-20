@@ -1,204 +1,52 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.App;
 
-/// <summary>Loopback-only HTTP surface for the embedded local Web App.</summary>
-internal sealed class AppHttpServer : IDisposable
+/// <summary>
+/// The App's HTTP surface. It owns no listener and no port: the viewer
+/// service serves the App and the documents it opens from one loopback
+/// origin, so the page that frames a document is the document's own origin.
+/// </summary>
+internal sealed class AppRequestHandler
 {
-    internal static readonly TimeSpan DefaultStopTimeout =
-        TimeSpan.FromSeconds(2);
-
     private const int MaxJsonBytes = 64 * 1024;
     private readonly AppHost _host;
-    private readonly int _requestedPort;
-    private readonly string _csrf = Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
+    private readonly string _csrf = Convert.ToHexString(
+        System.Security.Cryptography.RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
     private readonly LocalHttpRequestSecurity _security;
-    private readonly HttpRequestGate _requests;
-    private readonly JsonSerializerOptions _json =
-        AppJsonContext.Default.Options;
-    private HttpListener? _listener;
-    private CancellationTokenSource? _shutdown;
-    private Task? _acceptLoop;
-    private int _stopped;
-    private int _disposed;
+    private readonly JsonSerializerOptions _json = AppJsonContext.Default.Options;
 
-    public AppHttpServer(
-        AppHost host,
-        int requestedPort)
+    public AppRequestHandler(AppHost host)
     {
-        _host = host;
-        _requestedPort = requestedPort;
+        _host = host ?? throw new ArgumentNullException(nameof(host));
         _security = new LocalHttpRequestSecurity(_csrf);
-        _requests = new HttpRequestGate(
-            LocalServiceResourceLimits.Resolve()
-                .MaximumConcurrentRequests);
     }
 
-    public int Port { get; private set; }
+    /// <summary>Paths the App answers; everything else belongs to the viewer.</summary>
+    public static bool Owns(string path) =>
+        path is "/" or "/home" or "/preview" or "/settings" or "/app.css" or "/app.js"
+        || path.StartsWith("/api/", StringComparison.Ordinal);
 
-    public int Start()
-    {
-        if (_listener is not null)
-        {
-            return Port;
-        }
+    /// <summary>Answers one request on the viewer service's listener.</summary>
+    public void Handle(HttpListenerContext context, int port) =>
+        HandleAsync(context, port, CancellationToken.None).GetAwaiter().GetResult();
 
-        LoopbackHttpListenerBinding binding = LoopbackHttpListenerBinder.Start(
-            _requestedPort,
-            ["127.0.0.1"]);
-        Port = binding.Port;
-        HttpListener listener = binding.Listener;
-
-        _listener = listener;
-        _shutdown = new CancellationTokenSource();
-        _acceptLoop = Task.Run(() => AcceptLoop(listener, _shutdown.Token));
-        return Port;
-    }
-
-    public void Stop()
-    {
-        _ = Stop(DefaultStopTimeout);
-    }
-
-    internal bool Stop(TimeSpan timeout)
-    {
-        ArgumentOutOfRangeException.ThrowIfLessThan(timeout, TimeSpan.Zero);
-        var elapsed = Stopwatch.StartNew();
-        if (Interlocked.Exchange(ref _stopped, 1) == 0)
-        {
-            _requests.StopAccepting();
-            _shutdown?.Cancel();
-            CloseListener();
-        }
-
-        TimeSpan remaining = Remaining(timeout, elapsed.Elapsed);
-        if (!WaitForAcceptLoop(remaining))
-        {
-            return false;
-        }
-
-        remaining = Remaining(timeout, elapsed.Elapsed);
-        return _requests.WaitForDrain(remaining);
-    }
-
-    internal void WaitUntilStopped()
-    {
-        _ = WaitForAcceptLoop(Timeout.InfiniteTimeSpan);
-        _ = _requests.WaitForDrain(Timeout.InfiniteTimeSpan);
-    }
-
-    private void CloseListener()
-    {
-        HttpListener? listener = Interlocked.Exchange(ref _listener, null);
-        if (listener is null)
-        {
-            return;
-        }
-
-        try
-        {
-            listener.Stop();
-            listener.Close();
-        }
-        catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException or AggregateException)
-        {
-        }
-    }
-
-    public void Dispose()
-    {
-        if (Interlocked.Exchange(ref _disposed, 1) != 0)
-        {
-            return;
-        }
-
-        DeferredResourceCleanup.CompleteOrDefer(
-            Stop(DefaultStopTimeout),
-            WaitUntilStopped,
-            DisposeStoppedResources,
-            "aspose-app-http-cleanup",
-            "App HTTP server");
-    }
-
-    private void DisposeStoppedResources()
-    {
-        _shutdown?.Dispose();
-        _requests.Dispose();
-    }
-
-    private static TimeSpan Remaining(TimeSpan timeout, TimeSpan elapsed) =>
-        elapsed >= timeout ? TimeSpan.Zero : timeout - elapsed;
-
-    private bool WaitForAcceptLoop(TimeSpan timeout)
-    {
-        try
-        {
-            return _acceptLoop?.Wait(timeout) ?? true;
-        }
-        catch (AggregateException exception)
-        {
-            Trace.TraceWarning(
-                "The App accept loop ended unexpectedly: {0}",
-                exception.GetBaseException().GetType().Name);
-            return true;
-        }
-    }
-
-    private async Task AcceptLoop(HttpListener listener, CancellationToken cancellationToken)
-    {
-        while (!cancellationToken.IsCancellationRequested)
-        {
-            HttpListenerContext context;
-            try
-            {
-                context = await listener.GetContextAsync().WaitAsync(cancellationToken).ConfigureAwait(false);
-            }
-            catch (Exception ex) when (ex is HttpListenerException or ObjectDisposedException or OperationCanceledException)
-            {
-                return;
-            }
-
-            if (!_requests.TryEnter(out IDisposable? lease))
-            {
-                AddSecurityHeaders(context.Response);
-                context.Response.StatusCode =
-                    (int)HttpStatusCode.ServiceUnavailable;
-                context.Response.Close();
-                continue;
-            }
-
-            _ = Task.Run(
-                async () =>
-                {
-                    using (lease)
-                    {
-                        await Handle(
-                            context,
-                            cancellationToken).ConfigureAwait(false);
-                    }
-                },
-                CancellationToken.None);
-        }
-    }
-
-    private async Task Handle(
+    private async Task HandleAsync(
         HttpListenerContext context,
+        int port,
         CancellationToken cancellationToken)
     {
         HttpListenerRequest request = context.Request;
         HttpListenerResponse response = context.Response;
-        bool previewOwnsResponse = false;
         bool stopAfterResponse = false;
         try
         {
-            if (!LocalHttpRequestSecurity.IsRequestAllowed(request, Port))
+            if (!LocalHttpRequestSecurity.IsRequestAllowed(request, port))
             {
                 AddSecurityHeaders(response);
                 await WriteError(
@@ -218,7 +66,7 @@ internal sealed class AppHttpServer : IDisposable
                 return;
             }
 
-            if (!_security.IsMutationAuthorized(request, Port))
+            if (!_security.IsMutationAuthorized(request, port))
             {
                 await WriteError(response, HttpStatusCode.Forbidden, "CSRF_REJECTED", "The request did not come from this local App.").ConfigureAwait(false);
                 return;
@@ -247,7 +95,7 @@ internal sealed class AppHttpServer : IDisposable
         }
         finally
         {
-            try { if (!previewOwnsResponse) { response.Close(); } }
+            try { response.Close(); }
             finally { if (stopAfterResponse) { _host.RequestStop(); } }
         }
     }

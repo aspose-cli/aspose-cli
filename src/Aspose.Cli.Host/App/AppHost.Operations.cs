@@ -1,8 +1,10 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.LocalServices;
+using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Host.App;
@@ -44,7 +46,30 @@ internal sealed partial class AppHost
     internal string InstallLicense(Stream input, long length, string? productId) => Save(() =>
     {
         if (length > LicenseInstaller.MaximumBytes) { throw CliErrors.FileTooLarge(length, LicenseInstaller.MaximumBytes); }
-        IReadOnlyList<string> installed = _licenseState.Install(input, productId);
+        // The file the person chose reaches the CLI as a private file of
+        // ours, and is gone again before this answers.
+        string directory = PrivateUserStorage.CreateTemporaryDirectory(
+            "app-license",
+            Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
+        string staged = Path.Combine(directory, Guid.NewGuid().ToString("N") + ".lic");
+        IReadOnlyList<string> installed;
+        try
+        {
+            using (FileStream destination = PrivateUserStorage.CreateFile(staged))
+            {
+                BoundedStreamCopy.CopyAsync(
+                    input,
+                    destination,
+                    LicenseInstaller.MaximumBytes,
+                    total => CliErrors.FileTooLarge(total, LicenseInstaller.MaximumBytes))
+                    .GetAwaiter().GetResult();
+            }
+            installed = _cli.InstallLicense(staged, productId);
+        }
+        finally
+        {
+            LocalFileCleanup.DeleteDirectory(directory);
+        }
         _preferences.CompleteOnboarding();
         _log.Write($"license installed for {string.Join(", ", installed)}");
     });
@@ -52,7 +77,7 @@ internal sealed partial class AppHost
     internal string RemoveLicense(string? productId) => Save(() =>
     {
         string target = productId ?? _sessions.Snapshot?.ProductId ?? _catalog.DefaultProductId();
-        _licenseState.Remove(target);
+        _cli.RemoveLicense(target);
         _log.Write($"saved {target} license removed");
     });
 
@@ -64,8 +89,11 @@ internal sealed partial class AppHost
     /// </summary>
     private string Save(Action saveConfiguration)
     {
-        // Cross-process singleton -> App mutation gate -> short session state lock.
-        using LocalServiceOperationLock singleton = AppServiceController.AcquireOperationLock();
+        // Cross-process license lock -> App mutation gate -> short session state lock.
+        using LocalServiceOperationLock singleton = LocalServiceOperationLock.Acquire(
+            ViewerServiceCommands.Service,
+            ViewerServiceCommands.LockKey("license"),
+            TimeSpan.FromSeconds(30));
         return Mutate(() =>
         {
             saveConfiguration();

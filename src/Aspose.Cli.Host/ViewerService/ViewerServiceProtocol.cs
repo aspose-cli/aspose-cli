@@ -37,6 +37,9 @@ internal static class ViewerServiceCommands
 
     /// <summary>Closes every document and ends the service.</summary>
     public const string Stop = "stop";
+
+    /// <summary>Points the App at a page, and opens a file there.</summary>
+    public const string App = "app";
 }
 
 /// <summary>How a document should be opened.</summary>
@@ -97,6 +100,12 @@ internal sealed record ViewerStatusResponse
     public required string Url { get; init; }
 
     public required IReadOnlyList<ViewerDocumentState> Documents { get; init; }
+
+    /// <summary>The page the App is showing, when one is mounted.</summary>
+    public string? AppRoute { get; init; }
+
+    /// <summary>File name of the document the App is showing, never its path.</summary>
+    public string? AppFile { get; init; }
 }
 
 internal sealed record ViewerStopResponse
@@ -104,6 +113,31 @@ internal sealed record ViewerStopResponse
     public required IReadOnlyList<string> Stopped { get; init; }
 
     public required IReadOnlyList<ViewerDocumentState> Documents { get; init; }
+}
+
+/// <summary>What the App should show when the browser opens.</summary>
+internal sealed record ViewerAppRequest
+{
+    /// <summary>Page the App opens on: welcome, home, preview or settings.</summary>
+    public required string Route { get; init; }
+
+    /// <summary>Absolute path of a file to open, or null to leave the App as it is.</summary>
+    public string? File { get; init; }
+}
+
+/// <summary>Where the App is, and what it is showing.</summary>
+internal sealed record ViewerAppResponse
+{
+    public required string Url { get; init; }
+
+    public required int Port { get; init; }
+
+    public required int Pid { get; init; }
+
+    public required string Route { get; init; }
+
+    /// <summary>File name of the open document, never its path.</summary>
+    public string? File { get; init; }
 }
 
 /// <summary>Why the service refused a request, as the command would report it.</summary>
@@ -130,6 +164,8 @@ internal sealed record ViewerServiceSecrets(string Token);
 [JsonSerializable(typeof(ViewerOpenResponse))]
 [JsonSerializable(typeof(ViewerStatusResponse))]
 [JsonSerializable(typeof(ViewerStopResponse))]
+[JsonSerializable(typeof(ViewerAppRequest))]
+[JsonSerializable(typeof(ViewerAppResponse))]
 [JsonSerializable(typeof(ViewerFailure))]
 [JsonSerializable(typeof(ViewerServiceMarker))]
 [JsonSerializable(typeof(ViewerServiceSecrets))]

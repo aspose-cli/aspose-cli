@@ -10,8 +10,10 @@ namespace Aspose.Cli.Host.ViewerService;
 /// <summary>
 /// The loopback surface of the viewer service. It accepts exact loopback
 /// requests only and serves three things per open document: the viewer page,
-/// its event stream, and the immutable files of a rendered revision. Nothing
-/// here mutates state, so no request carries a body.
+/// its event stream, and the immutable files of a rendered revision. Those
+/// never mutate state, so they carry no body and answer GET alone. The App,
+/// when one is mounted, answers everything outside <c>/d/</c> on the same
+/// origin, including its own mutations.
 /// </summary>
 internal sealed class ViewerHttpServer : IDisposable
 {
@@ -19,6 +21,7 @@ internal sealed class ViewerHttpServer : IDisposable
 
     private readonly ViewerDocuments _documents;
     private readonly HttpRequestGate _requests;
+    private Func<HttpListenerContext, int, bool>? _home;
     private readonly string _nonce = LocalHttpRequestSecurity.RandomToken();
     private readonly int _requestedPort;
     private HttpListener? _listener;
@@ -41,6 +44,12 @@ internal sealed class ViewerHttpServer : IDisposable
 
     /// <summary>Bound loopback port; 0 until the server is started.</summary>
     public int Port => _port;
+
+    /// <summary>
+    /// Mounts the App on this origin. It is attached after the port is bound,
+    /// because the App addresses itself by it.
+    /// </summary>
+    public void Mount(Func<HttpListenerContext, int, bool> home) => _home = home;
 
     /// <summary>The address a person opens for one document.</summary>
     public string Url(string documentId) =>
@@ -126,15 +135,18 @@ internal sealed class ViewerHttpServer : IDisposable
                 Text(response, 403, "text/plain; charset=utf-8", "Forbidden: the viewer accepts exact loopback requests only.");
                 return;
             }
+            string path = context.Request.Url?.AbsolutePath ?? "/";
+            string[] segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
+            if (segments is not ["d", ..] && _home is { } home && home(context, _port))
+            {
+                return;
+            }
             if (!string.Equals(context.Request.HttpMethod, "GET", StringComparison.OrdinalIgnoreCase))
             {
                 response.Headers["Allow"] = "GET";
                 Text(response, 405, "text/plain; charset=utf-8", "Method not allowed: the viewer only serves GET.");
                 return;
             }
-
-            string path = context.Request.Url?.AbsolutePath ?? "/";
-            string[] segments = path.Split('/', StringSplitOptions.RemoveEmptyEntries);
             if (segments.Length == 0)
             {
                 Home(response);

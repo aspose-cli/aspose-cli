@@ -10,8 +10,6 @@ internal static class AppPaths
         PrivateUserStorage.EnsureDirectory(
             Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnsureUserDirectory());
 
-    public static string Marker => Path.Combine(ConfigDirectory, "app-instance.json");
-
     public static string Preferences => Path.Combine(ConfigDirectory, "app-settings.json");
 
     public static string Log => Path.Combine(ConfigDirectory, "app.log");

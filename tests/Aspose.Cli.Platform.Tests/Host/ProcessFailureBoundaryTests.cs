@@ -156,42 +156,6 @@ public sealed class ProcessFailureBoundaryTests
             StringComparison.OrdinalIgnoreCase);
     }
 
-    [Fact]
-    public void HiddenAppService_WithoutASecretChannel_IsRejected()
-    {
-        using var workspace = new TempWorkspace();
-        string config = workspace.File("hidden-service-config");
-        var environment = new Dictionary<string, string?>
-        {
-            ["APPDATA"] = config,
-            ["XDG_CONFIG_HOME"] = config,
-            ["ASPOSE_CLI_CONFIG_DIR"] =
-                Path.Combine(config, "aspose-cli"),
-        };
-        CliResult result = workspace.RunWithEnv(
-            environment,
-            "app",
-            "--serve",
-            "--port",
-            "0",
-            "--route",
-            "home",
-            "--no-open",
-            "--output",
-            "json");
-
-        Assert.Equal(2, result.ExitCode);
-        Assert.Equal(string.Empty, result.StdOut);
-        JsonNode envelope = JsonNode.Parse(result.StdErr)!;
-        Assert.Equal(
-            "OPTION_INVALID",
-            envelope["error"]!["code"]!.GetValue<string>());
-        Assert.DoesNotContain(
-            "token",
-            result.StdErr,
-            StringComparison.OrdinalIgnoreCase);
-    }
-
     [Theory]
     [InlineData("password=hunter2")]
     [InlineData("token=0123456789abcdef")]

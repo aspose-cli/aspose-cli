@@ -1,5 +1,3 @@
-using System.CommandLine;
-using System.CommandLine.Parsing;
 using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk;
@@ -22,8 +20,7 @@ internal static class StartupLicenseNotice
             || globals.Verbose
             || InvocationInputs.Current is not null
             || invocation.CommandPath.FirstOrDefault()?.Name == "mcp"
-            || invocation.CommandPath.Any(static command => command.Hidden)
-            || IsAppService(invocation))
+            || invocation.CommandPath.Any(static command => command.Hidden))
         {
             return;
         }
@@ -46,11 +43,4 @@ internal static class StartupLicenseNotice
         error.WriteLine($"license: {summary}{detail}");
     }
 
-    private static bool IsAppService(ParsedInvocation invocation) =>
-        invocation.Command.Name == "app"
-        && invocation.ParseResult.GetResult("--serve") is OptionResult
-        {
-            Option: Option<bool> option,
-        }
-        && invocation.ParseResult.GetValue(option);
 }

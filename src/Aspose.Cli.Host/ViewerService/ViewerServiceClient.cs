@@ -34,6 +34,22 @@ internal sealed class ViewerServiceClient
             ViewerServiceJsonContext.Default.ViewerOpenResponse);
     }
 
+    /// <summary>
+    /// Points the App at a page, starting the service when none is running.
+    /// The App is part of the service, so this is also how the App starts.
+    /// </summary>
+    public ViewerAppResponse App(GlobalValues globals, ViewerAppRequest page, int requestedPort)
+    {
+        ArgumentNullException.ThrowIfNull(globals);
+        ArgumentNullException.ThrowIfNull(page);
+        return Send(
+            Running(globals, requestedPort),
+            ViewerServiceCommands.App,
+            path: null,
+            payload: JsonSerializer.Serialize(page, ViewerServiceJsonContext.Default.ViewerAppRequest),
+            ViewerServiceJsonContext.Default.ViewerAppResponse);
+    }
+
     /// <summary>What the running service has open, or null when none runs.</summary>
     public ViewerStatusResponse? Status() =>
         _store.ReadLive() is { } marker

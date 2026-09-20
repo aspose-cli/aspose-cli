@@ -27,10 +27,11 @@ internal sealed class AppDocumentSession : IDisposable
     private readonly Func<CommandContext> _createContext;
     private readonly AppPreferencesStore _preferences;
     private readonly AppLog _log;
+    private readonly ViewerDocuments _documents;
+    private readonly LocalServiceResourceLimits _limits = LocalServiceResourceLimits.Resolve();
+    private readonly Func<string, string> _address;
     private readonly string _root;
     private readonly FontSearchProfile _fontProfile;
-    private readonly LocalServiceResourceLimits _limits =
-        LocalServiceResourceLimits.Resolve();
     private DocumentLease? _current;
 
     public event Action? Activity;
@@ -40,6 +41,8 @@ internal sealed class AppDocumentSession : IDisposable
         Func<CommandContext> createContext,
         AppPreferencesStore preferences,
         AppLog log,
+        ViewerDocuments documents,
+        Func<string, string> address,
         string rootDirectory,
         FontSearchProfile fontProfile)
     {
@@ -47,8 +50,11 @@ internal sealed class AppDocumentSession : IDisposable
         _createContext = createContext;
         _preferences = preferences;
         _log = log;
+        _documents = documents ?? throw new ArgumentNullException(nameof(documents));
+        _address = address ?? throw new ArgumentNullException(nameof(address));
         _root = Path.GetFullPath(rootDirectory);
         _fontProfile = fontProfile ?? throw new ArgumentNullException(nameof(fontProfile));
+        Directory.CreateDirectory(_root);
         Directory.CreateDirectory(_root);
     }
 
@@ -258,7 +264,7 @@ internal sealed class AppDocumentSession : IDisposable
         lock (_gate) { current = _current; }
         if (current is not null)
         {
-            new ViewerServiceClient().Refresh(current.DocumentId);
+            _documents.Find(current.DocumentId)?.Refresh();
             Activity?.Invoke();
         }
     }
@@ -366,27 +372,24 @@ internal sealed class AppDocumentSession : IDisposable
         }
         try
         {
-            ViewerOpenResponse opened = new ViewerServiceClient().Open(
-                context.Globals,
-                new ViewerOpenRequest
-                {
-                    File = path,
-                    Product = product.Manifest.Id,
-                    View = view,
-                    FontDirectories = _fontProfile.IsAmbient ? null : _fontProfile.Directories,
-                },
-                requestedPort: 0);
+            LiveDocument opened = _documents.Open(path, new LiveDocumentOptions
+            {
+                Product = product.Manifest.Id,
+                View = view,
+                FontDirectories = _fontProfile.IsAmbient ? null : _fontProfile.Directories,
+            });
             Activity?.Invoke();
             return new DocumentLease(
                 path,
                 new AppDocumentSnapshot(
                     displayName,
                     uploadedCopy || input is not null,
-                    opened.Document.Product,
-                    opened.Document.View,
-                    opened.Document.Url),
-                opened.Document.Id,
-                input);
+                    opened.Current?.Product ?? product.Manifest.Id,
+                    opened.Current?.View ?? view,
+                    _address(opened.Id)),
+                opened.Id,
+                input,
+                _documents);
         }
         catch
         {
@@ -415,7 +418,8 @@ internal sealed class AppDocumentSession : IDisposable
         string Path,
         AppDocumentSnapshot State,
         string DocumentId,
-        IDisposable? Upload) : IDisposable
+        IDisposable? Upload,
+        ViewerDocuments Documents) : IDisposable
     {
         public string FileName => State.FileName;
         public bool UploadedCopy => State.UploadedCopy;
@@ -426,11 +430,11 @@ internal sealed class AppDocumentSession : IDisposable
         {
             try
             {
-                new ViewerServiceClient().Stop(DocumentId, all: false);
+                Documents.Close(DocumentId);
             }
-            catch (CliException)
+            catch (ObjectDisposedException)
             {
-                // The service ended on its own; the document went with it.
+                // The service is ending; the document goes with it.
             }
             finally
             {

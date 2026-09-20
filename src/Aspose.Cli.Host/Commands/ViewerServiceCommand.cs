@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -11,7 +12,11 @@ namespace Aspose.Cli.Host.Commands;
 /// </summary>
 internal static class ViewerServiceCommand
 {
-    public static Command Create(CommandExecutor executor, GlobalOptions globals)
+    public static Command Create(
+        CommandExecutor executor,
+        ProductCatalog catalog,
+        Func<CapabilitiesResult> capabilities,
+        GlobalOptions globals)
     {
         ArgumentNullException.ThrowIfNull(executor);
         ArgumentNullException.ThrowIfNull(globals);
@@ -34,7 +39,11 @@ internal static class ViewerServiceCommand
             return executor.RunHosted(
                 parse,
                 globals,
-                values => ViewerServiceHost.Start(values, secrets, parse.GetValue(port)));
+                values => ViewerServiceHosting.Start(
+                    values,
+                    parse.GetValue(port),
+                    catalog,
+                    capabilities));
         });
         return command.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
     }
