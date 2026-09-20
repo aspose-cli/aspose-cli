@@ -23,7 +23,7 @@ Do not reference its parent workspace or sibling CLI project. Host, SDK and anal
 
 ## Product ownership
 
-Each Product owns Contracts, Ports, Engine, Commands, Output, Schemas/v2, Preview, Skills and its module definition.
+Each Product owns Contracts, Ports, Engine, Commands, Output, Schemas/v2, its view adapter and Presenter, Skills and its module definition.
 Definitions are pure and deterministic. Do not introduce product-specific Host branches.
 Skill names begin with `aspose-cli-` and executable examples must match this build's capabilities.
 Package-relative documentation links must resolve. Existing files must be safely preserved on mutation.

@@ -17,12 +17,12 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
     private static readonly ImmutableHashSet<string> ProductLayers =
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
-            "Contracts", "Ports", "Commands", "Engine", "Output", "Preview");
+            "Contracts", "Ports", "Commands", "Engine", "Output");
 
     private static readonly ImmutableHashSet<string> ImplementationLayers =
         ImmutableHashSet.Create(
             StringComparer.Ordinal,
-            "Commands", "Engine", "Output", "Preview");
+            "Commands", "Engine", "Output");
 
     private static readonly ImmutableDictionary<string, ImmutableHashSet<string>>
         AllowedLayerDependencies =
@@ -37,9 +37,6 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
                     StringComparer.Ordinal,
                     "Contracts", "Ports", "Engine"),
                 ["Output"] = ImmutableHashSet.Create(StringComparer.Ordinal, "Contracts", "Output"),
-                ["Preview"] = ImmutableHashSet.Create(
-                    StringComparer.Ordinal,
-                    "Contracts", "Ports", "Preview"),
             }.ToImmutableDictionary(StringComparer.Ordinal);
 
     private static readonly DiagnosticDescriptor ApiIsolation = Rule(
@@ -66,7 +63,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         "Product layer dependency is not allowed",
         "Product layer '{0}' references '{1}' in layer '{2}'; keep the product "
             + "dependency direction Contracts <- Ports <- Commands and "
-            + "Contracts/Ports <- Engine, with Output and Preview isolated");
+            + "Contracts/Ports <- Engine, with Output isolated");
 
     private static readonly DiagnosticDescriptor ImplementationVisibility = Rule(
         "APCLI010",

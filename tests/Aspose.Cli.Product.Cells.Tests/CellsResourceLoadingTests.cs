@@ -4,7 +4,6 @@ using Aspose.Cli.Product.Cells.Engine;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -45,8 +44,15 @@ public sealed class CellsResourceLoadingTests
             TargetFormatId = "xlsx", OutputPath = output,
         }).Warnings);
         var sink = new ArtifactSink();
-        AssertOmission(fixture.Engine.RenderPreview(input,
-            new PreviewRenderRequest { View = CellsPreviewViews.Workbook }, sink).Warnings);
+        AssertOmission(fixture.Engine.RenderView(
+            input,
+            new ViewRenderRequest
+            {
+                View = CellsViews.Workbook,
+                MaxParts = 8,
+                Purpose = ViewPurpose.Display,
+            },
+            sink).Warnings);
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
         File.WriteAllBytes(fixture.Temp.File("local.png"), []);
     }
@@ -127,7 +133,7 @@ public sealed class CellsResourceLoadingTests
         + "Content-Transfer-Encoding: base64\r\n\r\n" + Convert.ToBase64String(ResourceHttpServer.Image)
         + "\r\n--resource-test--\r\n";
 
-    private sealed class ArtifactSink : IPreviewArtifactSink
+    private sealed class ArtifactSink : IViewArtifactSink
     {
         public void Write(string relativePath, Action<Stream> contentWriter)
         {

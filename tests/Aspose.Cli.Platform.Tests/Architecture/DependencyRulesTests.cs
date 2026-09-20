@@ -221,7 +221,7 @@ public sealed class DependencyRulesTests
     }
 
     [Fact]
-    public void Invocation_DoesNotReferencePreviewImplementations()
+    public void Invocation_DoesNotReferenceViewerImplementations()
     {
         string invocation = Path.Combine(
             RepositoryPaths.Root,
@@ -237,9 +237,9 @@ public sealed class DependencyRulesTests
                 .Any(static name =>
                 {
                     string value = name.ToString();
-                    return value == "Aspose.Cli.Host.Preview"
+                    return value == "Aspose.Cli.Host.ViewerService"
                         || value.StartsWith(
-                            "Aspose.Cli.Host.Preview.",
+                            "Aspose.Cli.Host.ViewerService.",
                             StringComparison.Ordinal);
                 }))
             .Select(static path => Path.GetFileName(path)!)
@@ -248,7 +248,7 @@ public sealed class DependencyRulesTests
 
         Assert.True(
             violations.Length == 0,
-            "Invocation references concrete Preview implementation types:"
+            "Invocation references concrete viewer service types:"
                 + Environment.NewLine
                 + string.Join(Environment.NewLine, violations));
     }
@@ -264,7 +264,8 @@ public sealed class DependencyRulesTests
         string[] forbidden =
         [
             "Aspose.Cli.Host.App",
-            "Aspose.Cli.Host.Preview",
+            "Aspose.Cli.Host.ViewerService",
+            "Aspose.Cli.Host.Viewer",
             "Aspose.Cli.Host.Invocation",
         ];
         string[] violations = Directory
@@ -350,6 +351,61 @@ public sealed class DependencyRulesTests
             source,
             StringComparison.Ordinal);
         Assert.Equal(1, Occurrences(source, "ProductInputAdmission.Admit("));
+    }
+
+    /// <summary>
+    /// The viewer service process holds no product, engine or license of its
+    /// own: it watches files, asks a worker child to render them and serves
+    /// the result. Host global usings hide namespace prefixes, so the rule is
+    /// enforced on the identifiers themselves.
+    /// </summary>
+    [Fact]
+    public void ViewerService_KnowsNoProductOrLicense()
+    {
+        string[] forbidden =
+        [
+            "ProductCatalog",
+            "ProductBinding",
+            "ProductDefinition",
+            "ProductViewDefinition",
+            "CompositionRoot",
+            "LicenseGate",
+            "LicenseResolver",
+            "LicenseState",
+            "Aspose.Cli.Sdk.Licensing",
+        ];
+        string directory = Path.Combine(
+            RepositoryPaths.Root,
+            "src",
+            "Aspose.Cli.Host",
+            "ViewerService");
+        var violations = new List<string>();
+        foreach (string path in Directory.GetFiles(directory, "*.cs"))
+        {
+            string[] hits = CSharpSyntaxTree
+                .ParseText(File.ReadAllText(path))
+                .GetRoot()
+                .DescendantNodes()
+                .OfType<NameSyntax>()
+                .Select(static name => name.ToString())
+                .Where(value => forbidden.Any(identifier =>
+                    value == identifier
+                    || value.StartsWith(identifier + ".", StringComparison.Ordinal)
+                    || value.EndsWith("." + identifier, StringComparison.Ordinal)))
+                .Distinct(StringComparer.Ordinal)
+                .Order(StringComparer.Ordinal)
+                .ToArray();
+            if (hits.Length > 0)
+            {
+                violations.Add($"{Path.GetFileName(path)}: {string.Join(", ", hits)}");
+            }
+        }
+
+        Assert.True(
+            violations.Count == 0,
+            "The viewer service references product or license types:"
+                + Environment.NewLine
+                + string.Join(Environment.NewLine, violations));
     }
 
     private static int Occurrences(string source, string value) =>

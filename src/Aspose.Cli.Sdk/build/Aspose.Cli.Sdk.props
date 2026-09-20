@@ -24,9 +24,6 @@
     <EmbeddedResource Include="$(MSBuildProjectDirectory)\Schemas\v2\*.schema.json">
       <LogicalName>Schemas/v2/$(AsposeProductId)/%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
-    <EmbeddedResource Include="$(MSBuildProjectDirectory)\Preview\*.*">
-      <LogicalName>Preview/%(Filename)%(Extension)</LogicalName>
-    </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildProjectDirectory)\Presenter\*.*">
       <LogicalName>Presenter/%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>

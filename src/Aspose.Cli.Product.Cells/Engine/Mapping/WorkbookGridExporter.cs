@@ -3,17 +3,15 @@ using Aspose.Cells;
 using Aspose.Cells.Drawing;
 using Aspose.Cells.Rendering;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
-/// Renders the representations served by the managed Cells preview: the
-/// self-contained HTML document of the whole workbook (the workbook view) and
-/// the pixel-accurate PNG frame of one worksheet (the sheet view). The HTML option
-/// combination below was probed against Aspose.Cells 26.9.0 (see
-/// <c>PreviewExporterTests</c>, which keep the findings enforced):
+/// Renders the workbook view: one self-contained HTML document holding every
+/// sheet's grid, with each data cell stamped with its A1 address so the
+/// presenter can patch and highlight cells in place. The HTML option
+/// combination below was probed against Aspose.Cells 26.9.0:
 /// <list type="bullet">
 /// <item><description>
 /// Default <see cref="HtmlSaveOptions"/> emit a frameset entry plus an
@@ -36,7 +34,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </description></item>
 /// <item><description>
 /// <see cref="HtmlSaveOptions.ExportActiveWorksheetOnly"/> defaults to
-/// <c>false</c>; it is pinned explicitly because the preview must always show
+/// <c>false</c>; it is pinned explicitly because the view must always show
 /// every sheet, whatever future defaults do.
 /// </description></item>
 /// <item><description>
@@ -77,21 +75,17 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </list>
 /// Every generated artifact is published through the Host-owned bounded sink.
 /// </summary>
-internal static class PreviewExporter
+internal static class WorkbookGridExporter
 {
-    private const int MaxPreviewHtmlBytes = 64 * 1024 * 1024;
-    /// <summary>File name of the document entry point inside every workbook-view version directory.</summary>
+    private const int MaxHtmlBytes = 64 * 1024 * 1024;
+    /// <summary>Default file name of the grid part.</summary>
     private const string EntryFileName = "index.html";
 
     /// <summary>
     /// Name of the attribute that stamps each exported data cell with its A1
-    /// address; the live-preview client locates spotlight targets through it.
+    /// address; the grid presenter patches and highlights cells through it.
     /// </summary>
     private const string CellAddressAttribute = "data-cell";
-
-    /// <summary>File name of the PNG frame inside every sheet-view version directory.</summary>
-    private const string ImageFileName = "frame.png";
-    private const string SheetEntryFileName = "sheet.html";
 
     /// <summary>
     /// Product-owned metadata read by the browser shell to restore the
@@ -100,14 +94,8 @@ internal static class PreviewExporter
     internal const string ActiveSheetMetaName = "aspose-active-sheet";
 
     /// <summary>
-    /// Raster resolution of the sheet view, matching the <c>cells render</c>
-    /// default DPI so the live preview and a render of the same sheet agree.
-    /// </summary>
-    private const int ImageDpi = 192;
-
-    /// <summary>
-    /// Exports <paramref name="workbook"/> as a self-contained HTML preview
-    /// through <paramref name="artifacts"/> and returns the entry file name.
+    /// Exports <paramref name="workbook"/> as one self-contained HTML grid
+    /// through <paramref name="artifacts"/> and returns the part file name.
     /// </summary>
     public static string Export(
         Workbook workbook,
@@ -127,7 +115,7 @@ internal static class PreviewExporter
             CellNameAttribute = CellAddressAttribute,
         };
 
-        using var stream = new LimitedMemoryStream(MaxPreviewHtmlBytes);
+        using var stream = new LimitedMemoryStream(MaxHtmlBytes);
         workbook.Save(stream, options);
         string html = Encoding.UTF8.GetString(
             stream.GetBuffer(),
@@ -152,73 +140,6 @@ internal static class PreviewExporter
 
         string marker = $"<meta name=\"{ActiveSheetMetaName}\" content=\"{System.Net.WebUtility.HtmlEncode(sheetName)}\">\n";
         return html.Insert(headEnd, marker);
-    }
-
-    /// <summary>
-    /// Renders one sheet as a single pixel-accurate PNG frame through
-    /// <paramref name="artifacts"/> and returns the frame file name.
-    /// </summary>
-    /// <param name="workbook">The open workbook that owns <paramref name="sheet"/>; it must stay alive for the duration of the render.</param>
-    /// <param name="sheet">The already-resolved sheet to render.</param>
-    /// <param name="artifacts">Bounded destination for the frame.</param>
-    public static string ExportImage(
-        Workbook workbook,
-        Worksheet sheet,
-        IPreviewArtifactSink artifacts)
-    {
-        ArgumentNullException.ThrowIfNull(workbook);
-        ArgumentNullException.ThrowIfNull(sheet);
-        ArgumentNullException.ThrowIfNull(artifacts);
-
-        // Same zero-page hazard the render verb guards: reveal a hidden sheet in
-        // memory (the preview never saves the workbook) and turn a genuinely
-        // empty one into a clean RENDER_EMPTY, not an ArgumentOutOfRangeException
-        // indexing page 0.
-        if (!sheet.IsVisible)
-        {
-            sheet.IsVisible = true;
-        }
-
-        var options = new ImageOrPrintOptions
-        {
-            ImageType = ImageType.Png,
-            OnePagePerSheet = true,
-            HorizontalResolution = ImageDpi,
-            VerticalResolution = ImageDpi,
-        };
-
-        var render = new SheetRender(sheet, options);
-        if (render.PageCount == 0)
-        {
-            throw CellsErrors.RenderEmpty(sheet.Name);
-        }
-
-        float[] inches = render.GetPageSizeInch(0);
-        long width = (long)Math.Ceiling(inches[0] * ImageDpi);
-        long height = (long)Math.Ceiling(inches[1] * ImageDpi);
-        RenderPixelGuard.EnsureFits(width, height, ImageDpi);
-
-        try
-        {
-            artifacts.Write(
-                ImageFileName,
-                stream => render.ToImage(0, stream));
-        }
-        catch (CellsException ex)
-        {
-            // Same rasterization hazard the render verb guards: a defective
-            // embedded chart/picture is the file's property, not a CLI bug.
-            throw CellsErrors.RenderFailed(sheet.Name, ex.Message);
-        }
-
-        string title = System.Net.WebUtility.HtmlEncode(sheet.Name);
-        artifacts.WriteText(
-            SheetEntryFileName,
-            "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-            + "<title>" + title + "</title><style>html,body{margin:0;min-height:100%;background:#e9edf3}"
-            + "main{padding:20px}img{display:block;max-width:100%;height:auto;margin:auto;background:#fff;box-shadow:0 4px 24px #0003}</style>"
-            + "</head><body><main><img src=\"/asset/" + ImageFileName + "\" alt=\"Worksheet " + title + "\"></main></body></html>");
-        return SheetEntryFileName;
     }
 
     internal sealed class LimitedMemoryStream(long maximumBytes) : MemoryStream

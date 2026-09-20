@@ -2,9 +2,8 @@ using System.Text;
 using System.Text.Json;
 using System.Threading.Channels;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Sdk.Preview;
 
-namespace Aspose.Cli.Host.Preview;
+namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
 /// Bounded, per-client SSE fan-out. Network writes never occur under the

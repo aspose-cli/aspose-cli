@@ -1,7 +1,6 @@
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Serialization;
 using System.CommandLine;
 using System.Diagnostics;
@@ -595,7 +594,6 @@ public sealed class ProductFileRouterTests
         builder
             .Diagnostics([])
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
-            .Preview(new TestProductPreviewAdapter<ITestPort>())
             .View(new TestProductViewAdapter<ITestPort>())
             .Commands(_ => new Command(id))
             .Activator(static _ =>

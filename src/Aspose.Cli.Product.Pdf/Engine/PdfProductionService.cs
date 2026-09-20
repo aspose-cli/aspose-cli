@@ -8,7 +8,6 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
@@ -26,7 +25,6 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Owns PDF conversion, rendering, creation, merge, and preview production.</summary>
 internal sealed class PdfProductionService
 {
-    private const int PreviewDpi = 120;
     private const int ImageDpi = 192;
     private readonly ILicenseGate _licenseGate;
     private readonly ResourceBudgetLedger _resourceBudgets;
@@ -60,15 +58,6 @@ internal sealed class PdfProductionService
     /// <inheritdoc />
     internal PdfWriteResult Merge(PdfMergeRequest request) =>
         PdfErrorTranslator.Execute("merge", () => MergeCore(request));
-
-    /// <inheritdoc />
-    internal PreviewRenderOutcome RenderPreview(
-        string filePath,
-        PdfPreviewRequest request,
-        IPreviewArtifactSink artifacts) =>
-        PdfErrorTranslator.Execute(
-            "preview",
-            () => RenderPreviewCore(filePath, request, artifacts));
 
     /// <summary>Renders the pages of one view, opening the document once.</summary>
     internal ViewManifest RenderView(
@@ -131,66 +120,6 @@ internal sealed class PdfProductionService
             TotalParts = total,
             Parts = parts,
         };
-    }
-
-    private PreviewRenderOutcome RenderPreviewCore(
-        string filePath,
-        PdfPreviewRequest request,
-        IPreviewArtifactSink artifacts)
-    {
-        ArgumentNullException.ThrowIfNull(artifacts);
-        _ = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-
-        var pages = new StringBuilder();
-        for (int pageNumber = 1; pageNumber <= loaded.Document.Pages.Count; pageNumber++)
-        {
-            Page page = loaded.Document.Pages[pageNumber];
-            long pixelWidth = (long)Math.Ceiling(page.Rect.Width / 72d * PreviewDpi);
-            long pixelHeight = (long)Math.Ceiling(page.Rect.Height / 72d * PreviewDpi);
-            RenderPixelGuard.EnsureFits(pixelWidth, pixelHeight, PreviewDpi);
-
-            string imageName = string.Create(
-                CultureInfo.InvariantCulture,
-                $"page-{pageNumber:0000}.png");
-            artifacts.Write(
-                imageName,
-                stream => RenderPage(
-                    loaded.Document,
-                    pageNumber,
-                    "png",
-                    PreviewDpi,
-                    stream));
-
-            string size = string.Create(
-                CultureInfo.InvariantCulture,
-                $"{page.Rect.Width:0.##} × {page.Rect.Height:0.##} pt");
-            pages.Append("<figure class=\"pdf-snapshot-page\" data-page=\"")
-                .Append(pageNumber.ToString(CultureInfo.InvariantCulture))
-                .Append("\"><div class=\"pdf-page-paper\"><img src=\"/asset/")
-                .Append(imageName)
-                .Append("\" alt=\"PDF page ")
-                .Append(pageNumber.ToString(CultureInfo.InvariantCulture))
-                .Append("\" width=\"")
-                .Append(pixelWidth.ToString(CultureInfo.InvariantCulture))
-                .Append("\" height=\"")
-                .Append(pixelHeight.ToString(CultureInfo.InvariantCulture))
-                .Append("\"></div><figcaption>Page ")
-                .Append(pageNumber.ToString(CultureInfo.InvariantCulture))
-                .Append(" · ")
-                .Append(WebUtility.HtmlEncode(size))
-                .Append("</figcaption></figure>");
-        }
-
-        const string entry = "document.html";
-        string title = WebUtility.HtmlEncode(Path.GetFileName(filePath));
-        string pageCount = loaded.Document.Pages.Count.ToString(CultureInfo.InvariantCulture);
-        string html = "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\""
-            + " content=\"width=device-width,initial-scale=1\"><title>" + title + "</title></head>"
-            + "<body><main class=\"pdf-snapshot\" role=\"document\" aria-label=\"PDF pages\""
-            + " data-page-count=\"" + pageCount + "\">" + pages + "</main></body></html>";
-        artifacts.WriteText(entry, html);
-        return new PreviewRenderOutcome(entry, "pdf", new FileInfo(filePath).Length);
     }
 
     private PdfRenderResult RenderCore(string filePath, PdfRenderRequest request)

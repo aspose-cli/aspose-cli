@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Sdk.Contracts;
 
@@ -25,9 +24,6 @@ public sealed record ProductPreviewStartResult()
 
     /// <summary>Effective product preview view.</summary>
     public required string View { get; init; }
-
-    /// <summary>Opaque product-owned selector.</summary>
-    public ProductPreviewPayload? Selector { get; init; }
 
     /// <summary><c>true</c> when an equivalent live session was reused.</summary>
     public required bool Reused { get; init; }
@@ -72,9 +68,6 @@ public sealed record ProductPreviewSessionInfo
 
     /// <summary>Effective product preview view.</summary>
     public required string View { get; init; }
-
-    /// <summary>Opaque product-owned selector.</summary>
-    public ProductPreviewPayload? Selector { get; init; }
 
     /// <summary>Current published document revision, when the live process reported it.</summary>
     public int? Revision { get; init; }

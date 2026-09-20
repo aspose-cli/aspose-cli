@@ -9,7 +9,6 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
@@ -56,15 +55,6 @@ internal sealed class SlidesProductionService
     /// <inheritdoc />
     internal SlidesExtractResult Extract(string filePath, PresentationExtractRequest request) =>
         SlidesErrorTranslator.Execute("extract", () => ExtractCore(filePath, request));
-
-    /// <inheritdoc />
-    internal PreviewRenderOutcome RenderPreview(
-        string filePath,
-        PresentationPreviewRequest request,
-        IPreviewArtifactSink artifacts) =>
-        SlidesErrorTranslator.Execute(
-            "preview",
-            () => RenderPreviewCore(filePath, request, artifacts));
 
     /// <summary>Renders the slides of one view, opening the presentation once.</summary>
     internal ViewManifest RenderView(
@@ -137,79 +127,6 @@ internal sealed class SlidesProductionService
             Parts = parts,
             Warnings = EvaluationInputWarnings(state, presentation),
         };
-    }
-
-    private PreviewRenderOutcome RenderPreviewCore(
-        string filePath,
-        PresentationPreviewRequest request,
-        IPreviewArtifactSink artifacts)
-    {
-        ArgumentNullException.ThrowIfNull(artifacts);
-        _ = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
-        Presentation presentation = loaded.Presentation;
-
-        const int width = 960;
-        double ratio = presentation.SlideSize.Size.Height / presentation.SlideSize.Size.Width;
-        int height = Math.Max(1, (int)Math.Round(width * ratio, MidpointRounding.AwayFromZero));
-        float scale = (float)(width / presentation.SlideSize.Size.Width);
-        EnsureRasterBudget(
-            _resourceBudgets,
-            width,
-            height,
-            presentation.Slides.Count,
-            dpi: 96);
-        var thumbnails = new StringBuilder();
-        var stages = new StringBuilder();
-        for (int index = 0; index < presentation.Slides.Count; index++)
-        {
-            ISlide slide = presentation.Slides[index];
-            int number = index + 1;
-            string imageName = string.Create(CultureInfo.InvariantCulture, $"slide-{number:0000}.png");
-            using (IImage image = slide.GetImage(scale, scale))
-            {
-                artifacts.Write(
-                    imageName,
-                    stream => image.Save(stream, ImageFormat.Png));
-            }
-
-            string title = WebUtility.HtmlEncode(Title(slide) ?? $"Slide {number}");
-            string hidden = slide.Hidden ? " data-hidden=\"true\"" : string.Empty;
-            string selected = number == 1 ? " aria-current=\"true\"" : string.Empty;
-            thumbnails.Append("<button class=\"slides-thumb\" type=\"button\" data-slide=\"")
-                .Append(number.ToString(CultureInfo.InvariantCulture))
-                .Append('"').Append(selected).Append(hidden)
-                .Append("><span class=\"slides-thumb-number\">")
-                .Append(number.ToString(CultureInfo.InvariantCulture))
-                .Append("</span><img src=\"/asset/").Append(imageName)
-                .Append("\" alt=\"Thumbnail for ").Append(title)
-                .Append("\" width=\"240\" height=\"")
-                .Append((height / 4).ToString(CultureInfo.InvariantCulture))
-                .Append("\"><span class=\"slides-thumb-title\">").Append(title)
-                .Append("</span></button>");
-            stages.Append("<figure class=\"slides-snapshot-slide\" data-slide=\"")
-                .Append(number.ToString(CultureInfo.InvariantCulture)).Append('"')
-                .Append(number == 1 ? string.Empty : " hidden").Append(hidden)
-                .Append("><div class=\"slides-canvas\"><img src=\"/asset/")
-                .Append(imageName).Append("\" alt=\"").Append(title)
-                .Append("\" width=\"").Append(width.ToString(CultureInfo.InvariantCulture))
-                .Append("\" height=\"").Append(height.ToString(CultureInfo.InvariantCulture))
-                .Append("\"></div><figcaption>").Append(title)
-                .Append(slide.Hidden ? " · Hidden slide" : string.Empty)
-                .Append("</figcaption></figure>");
-        }
-
-        const string entry = "presentation.html";
-        string fileName = WebUtility.HtmlEncode(Path.GetFileName(filePath));
-        string count = presentation.Slides.Count.ToString(CultureInfo.InvariantCulture);
-        string html = "<!doctype html><html><head><meta charset=\"utf-8\"><meta name=\"viewport\""
-            + " content=\"width=device-width,initial-scale=1\"><title>" + fileName + "</title></head>"
-            + "<body><main class=\"slides-snapshot\" data-slide-count=\"" + count + "\">"
-            + "<aside class=\"slides-snapshot-thumbnails\" aria-label=\"Slide thumbnails\">"
-            + thumbnails + "</aside><section class=\"slides-snapshot-stage\" aria-label=\"Presentation slides\">"
-            + stages + "</section></main></body></html>";
-        artifacts.WriteText(entry, html);
-        return new PreviewRenderOutcome(entry, loaded.FormatId, new FileInfo(filePath).Length);
     }
 
     private SlidesConvertResult ConvertCore(string filePath, PresentationConvertRequest request)

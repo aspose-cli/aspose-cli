@@ -4,9 +4,8 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Host.App;
 

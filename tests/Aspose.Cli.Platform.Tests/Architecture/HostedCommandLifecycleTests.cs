@@ -1,6 +1,5 @@
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Preview;
 using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;

@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Words.Contracts;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Words.Ports;
@@ -18,12 +17,6 @@ public interface IDocumentEngine
 
     /// <summary>Renders selected pages to image files.</summary>
     WordsRenderResult Render(string filePath, WordsRenderRequest request);
-
-    /// <summary>Exports one paginated raster HTML snapshot for the local preview host.</summary>
-    PreviewRenderOutcome RenderPreview(
-        string filePath,
-        WordsPreviewRequest request,
-        IPreviewArtifactSink artifacts);
 
     /// <summary>Renders the parts of one product view, opening the document once.</summary>
     ViewManifest RenderView(

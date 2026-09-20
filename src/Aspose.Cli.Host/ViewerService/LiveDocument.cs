@@ -3,8 +3,8 @@ using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Views;
 
@@ -47,7 +47,7 @@ internal sealed record LiveRevision(
     int TotalParts,
     IReadOnlyDictionary<string, string> Digests,
     IReadOnlyDictionary<string, string> Addressed,
-    PreviewArtifactManifest Files);
+    ViewBundleManifest Files);
 
 /// <summary>
 /// One document open in the viewer. It watches the user's file, renders a
@@ -70,7 +70,7 @@ internal sealed class LiveDocument : IDisposable
     private readonly string _source;
     private readonly string _root;
     private readonly string _copy;
-    private readonly PreviewVersionStore _versions;
+    private readonly RevisionStore _versions;
     private readonly RenderWorkerSupervisor _worker;
     private readonly LiveDocumentOptions _options;
     private readonly LocalServiceResourceLimits _limits;
@@ -108,7 +108,7 @@ internal sealed class LiveDocument : IDisposable
         _worker = worker;
         _options = options;
         _limits = limits;
-        _versions = new PreviewVersionStore(Path.Combine(_root, "revisions"));
+        _versions = new RevisionStore(Path.Combine(_root, "revisions"));
         Events = new LiveEventHub();
         _lastActivityAt = Environment.TickCount64;
         _monitor = new FileChangeMonitor(_source, options.QuietPeriod);
@@ -324,7 +324,7 @@ internal sealed class LiveDocument : IDisposable
             response.TotalParts,
             digests,
             addressed,
-            PreviewArtifactManifest.Validate(directory, RenderWorkerProtocol.ManifestFileName, _limits));
+            ViewBundleManifest.Validate(directory, RenderWorkerProtocol.ManifestFileName, _limits));
         if (response.PresenterScript is { } script)
         {
             Presentation = new ViewPresentation(script, response.PresenterStylesheet);

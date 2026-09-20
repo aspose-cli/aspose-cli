@@ -1,6 +1,5 @@
 using Aspose.Cli.Host.LocalServices;
 using System.Net;
-using Aspose.Cli.Sdk.Preview;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests.LocalServices;

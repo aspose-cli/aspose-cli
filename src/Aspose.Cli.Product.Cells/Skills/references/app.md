@@ -9,23 +9,22 @@ aspose-cli app report.xlsx
 
 The App listens only on `127.0.0.1`; spreadsheet and document processing stays
 on the local machine. Its welcome page installs a `.lic` file or continues in
-evaluation mode, the Files page opens an original file with the operating system's picker,
-and the Preview page follows external saves through the same product-routed
-`PreviewRuntime` as the global `preview` command. Browser uploads are explicitly
-labelled as temporary preview copies.
+evaluation mode, the Files page opens an original file with the operating
+system's picker, and the Preview page shows the document through the same
+per-user viewer service as the global `preview` command, following external
+saves as they happen. Browser uploads are explicitly labelled as temporary
+preview copies.
 
 Settings shows each product's independent license state, effective source and
 priority, preview defaults, fonts/runtime diagnostics, and local-data controls.
 A Total license is detected once and installed for every compatible product;
-product-only licenses can be installed and removed independently. Installing or
-removing a saved license performs a controlled App restart because SDK license
-state belongs to a process. Uploaded preview copies are transferred before the
-old process exits. The App uses the same source precedence as new CLI commands;
-a higher-priority explicit or environment source remains effective.
-The running App keeps its validated license snapshot until restart; external
-CLI installs/removals do not silently change its open SDK session. If a saved
-license change cannot restart the App, it reports the failure and restores
-control of the old session; repair the document and retry the restart.
+product-only licenses can be installed and removed independently. The App holds
+no engine of its own, so installing or removing a saved license changes nothing
+about the App process: the viewer service recycles its renderer and the next
+render applies the license, with open documents left on screen meanwhile. The
+App uses the same source precedence as new CLI commands; a higher-priority
+explicit or environment source remains effective. A license the engine refuses
+fails the document that asked for it and leaves everything else rendering.
 
 Useful lifecycle commands:
 

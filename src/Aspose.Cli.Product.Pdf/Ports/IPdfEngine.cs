@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Pdf.Contracts;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Pdf.Ports;
@@ -48,12 +47,6 @@ public interface IPdfEngine
 
     /// <summary>Validates a PDF against one PDF/A profile.</summary>
     PdfValidateResult Validate(string filePath, PdfValidateRequest request);
-
-    /// <summary>Renders a browser-ready, paginated PDF preview snapshot.</summary>
-    PreviewRenderOutcome RenderPreview(
-        string filePath,
-        PdfPreviewRequest request,
-        IPreviewArtifactSink artifacts);
 
     /// <summary>Renders the parts of one product view, opening the document once.</summary>
     ViewManifest RenderView(

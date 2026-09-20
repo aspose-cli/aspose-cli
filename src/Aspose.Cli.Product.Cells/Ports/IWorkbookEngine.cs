@@ -1,6 +1,5 @@
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Ports;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Product.Cells.Ports;
 
@@ -29,15 +28,6 @@ public interface IWorkbookEngine
 
     /// <summary>Renders one sheet (or a range of it) to an image.</summary>
     RenderResult Render(string filePath, RenderRequest request);
-
-    /// <summary>
-    /// Renders the live-preview representation through the bounded artifact
-    /// sink and reports the entry file.
-    /// </summary>
-    PreviewRenderOutcome RenderPreview(
-        string filePath,
-        PreviewRenderRequest request,
-        IPreviewArtifactSink artifacts);
 
     /// <summary>Renders the parts of one product view, opening the workbook once.</summary>
     Aspose.Cli.Sdk.Views.ViewManifest RenderView(

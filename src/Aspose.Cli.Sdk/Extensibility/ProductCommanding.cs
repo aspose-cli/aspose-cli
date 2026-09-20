@@ -2,7 +2,6 @@ using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -28,11 +27,6 @@ public sealed record ProductCommandContext<TPort>
 
     /// <summary>Resolves a named environment secret through this invocation's input source.</summary>
     public required Func<string, string?> ReadEnvironment { get; init; }
-
-    /// <summary>Queues a decorative preview notification for delivery after final publication.</summary>
-    public Func<string, IReadOnlyList<ProductPreviewPayload>, bool> WritePreviewHint { get; init; } =
-        static (_, _) => false;
-
 }
 
 /// <summary>

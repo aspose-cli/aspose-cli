@@ -147,12 +147,6 @@ public sealed record PdfValidateRequest
     public string? Password { get; init; }
 }
 
-/// <summary>Options for a browser-ready, paginated PDF preview snapshot.</summary>
-public sealed record PdfPreviewRequest
-{
-    public string? Password { get; init; }
-}
-
 /// <summary>Options for applying one PKCS#7 PDF signature.</summary>
 public sealed record PdfSignRequest
 {

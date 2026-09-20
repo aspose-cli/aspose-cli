@@ -2,7 +2,6 @@ using System.CommandLine;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -51,7 +50,6 @@ internal static class EditCommand
             // included): let any live preview of it spotlight the change.
             if (!result.DryRun)
             {
-                PublishPreviewHint(batch, target.OutputPath);
             }
 
             return result;
@@ -192,30 +190,4 @@ internal static class EditCommand
             : document with { Ops = [.. document.Ops, .. compiled] });
     }
 
-    /// <summary>
-    /// Points a running root preview of the output file at what
-    /// this batch touched, over the best-effort sideband
-    /// (<see cref="PreviewHintChannel"/>). The hint is decorative: no failure
-    /// here may ever affect the edit, which already succeeded.
-    /// </summary>
-    private static void PublishPreviewHint(OpsBatch batch, string outputPath)
-    {
-        try
-        {
-            IReadOnlyList<CellsPreviewHint> targets = OpsFootprint.Collect(batch);
-            if (targets.Count == 0)
-            {
-                return;
-            }
-
-            PreviewHintChannel.Write(outputPath, new PreviewHint(
-                targets.Select(CellsPreviewPayloads.Hint).ToArray(),
-                Guid.NewGuid().ToString("N"),
-                DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()));
-        }
-        catch (Exception)
-        {
-            // Best effort by design; the edit result stands either way.
-        }
-    }
 }

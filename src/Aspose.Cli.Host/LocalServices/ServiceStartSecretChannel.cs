@@ -147,12 +147,6 @@ internal sealed record ServiceStartSecrets
 
     public required string ServiceNonce { get; init; }
 
-    public Aspose.Cli.Sdk.Preview.ProductPreviewPayload? PreviewSelector
-    {
-        get;
-        init;
-    }
-
     public Aspose.Cli.Sdk.Rendering.FontSearchProfile? FontProfile
     {
         get;

@@ -1,6 +1,5 @@
-using Aspose.Cli.Sdk.Preview;
 
-namespace Aspose.Cli.Host.Preview;
+namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
 /// Watches one file and raises a single debounced <see cref="Changed"/> per

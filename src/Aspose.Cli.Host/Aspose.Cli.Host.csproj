@@ -5,7 +5,7 @@
     <RootNamespace>Aspose.Cli.Host</RootNamespace>
     <Description>
       Shared Aspose CLI host: command-line surface, output
-      rendering, App and Preview lifecycle, and explicit composition root.
+      rendering, App and viewer service lifecycle, and explicit composition root.
     </Description>
     <IsPackable>false</IsPackable>
     <CopyLocalLockFileAssemblies>true</CopyLocalLockFileAssemblies>
@@ -29,9 +29,6 @@
     <EmbeddedResource Include="App\assets\app.html" LogicalName="app/app.html" />
     <EmbeddedResource Include="App\assets\app.css" LogicalName="app/app.css" />
     <EmbeddedResource Include="App\assets\app.js" LogicalName="app/app.js" />
-    <EmbeddedResource
-      Include="Preview\live-runtime.js"
-      LogicalName="preview/live-runtime.js" />
     <EmbeddedResource Include="Viewer\kit.js" LogicalName="viewer/kit.js" />
     <EmbeddedResource Include="Viewer\kit.css" LogicalName="viewer/kit.css" />
   </ItemGroup>

@@ -2,7 +2,6 @@ using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Ports;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Slides.Engine;
@@ -67,12 +66,6 @@ internal sealed class SlidesPresentationEngine : IPresentationEngine
 
     public SlidesSearchResult Search(string filePath, PresentationSearchRequest request) =>
         _reads.Search(filePath, request);
-
-    public PreviewRenderOutcome RenderPreview(
-        string filePath,
-        PresentationPreviewRequest request,
-        IPreviewArtifactSink artifacts) =>
-        _production.RenderPreview(filePath, request, artifacts);
 
     public ViewManifest RenderView(
         string filePath,

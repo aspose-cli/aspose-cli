@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 
@@ -13,5 +14,29 @@ internal static class ViewerErrors
         return new CliException(
             new ErrorCode(response.Code ?? ErrorCodes.Internal.Name, (ExitCode)exit),
             response.Message ?? $"The viewer could not render {Path.GetFileName(source)}.");
+    }
+
+    /// <summary>Rejects a view the product does not declare, naming the ones it does.</summary>
+    public static void EnsureViewSupported(
+        string product,
+        string view,
+        IReadOnlyList<string> available)
+    {
+        if (available.Contains(view, StringComparer.Ordinal))
+        {
+            return;
+        }
+
+        var values = new JsonArray();
+        foreach (string item in available)
+        {
+            values.Add(item);
+        }
+
+        throw new CliException(
+            ErrorCodes.FeatureUnsupported,
+            $"View '{view}' is not supported by the {product} product.",
+            hint: $"Use one of: {string.Join(", ", available)}.",
+            details: new JsonObject { ["available"] = values });
     }
 }

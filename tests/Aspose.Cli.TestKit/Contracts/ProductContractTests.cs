@@ -6,7 +6,6 @@ using System.CommandLine.Completions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Serialization;
 using Json.Schema;
 using Xunit;
@@ -159,7 +158,7 @@ public abstract class ProductContractTests<TModule>
             $"Product '{definition.Manifest.Id}' has {results.Length} result roots but only {productSchemas.Length} schemas.");
     }
 
-    /// <summary>Ensures schema, preview, and Skill resources travel with the product.</summary>
+    /// <summary>Ensures schema, presenter, and Skill resources travel with the product.</summary>
     [Fact]
     public void Resources_AreProductOwnedAndConventionBased()
     {
@@ -173,8 +172,8 @@ public abstract class ProductContractTests<TModule>
             "aspose-cli-" + definition.Manifest.Id,
             resources.SkillName);
         Assert.False(string.IsNullOrWhiteSpace(resources.SkillDescription));
-        Assert.Contains("Preview/live-client.js", resources.ResourceNames);
-        Assert.Contains("Preview/shell.css", resources.ResourceNames);
+        Assert.Contains("Presenter/presenter.js", resources.ResourceNames);
+        Assert.Contains("Presenter/presenter.css", resources.ResourceNames);
         Assert.NotEmpty(resources.SchemaIds);
     }
 
@@ -554,16 +553,12 @@ public abstract class ProductContractTests<TModule>
                         .Order(StringComparer.Ordinal))),
             string.Join(
                 "|",
-                $"{definition.Preview.ProductId}:{definition.Preview.PortType.AssemblyQualifiedName}:{definition.Preview.DefaultView}",
+                $"{definition.View.ProductId}:{definition.View.PortType.AssemblyQualifiedName}",
+                $"{definition.View.ReviewView}:{definition.View.LiveView}:{definition.View.VisualInspectionRequired}",
                 string.Join(
                     ",",
-                    definition.Preview.ViewDefinitions.Select(
-                        static view => $"{view.Id}:{view.DisplayName}")),
-                string.Join(
-                    ",",
-                    definition.Preview.PayloadContracts.Select(
-                        static contract =>
-                            $"{contract.Kind}@{contract.SchemaVersion}:{contract.SchemaId}:{contract.MaxBytes}"))),
+                    definition.View.Views.Select(
+                        static view => $"{view.Id}:{view.Label}:{view.PartKind}"))),
             FactoryFingerprint(definition, "CommandFactory"),
             FactoryFingerprint(definition, "BindingFactory"));
     }
@@ -690,7 +685,7 @@ public abstract class ProductContractTests<TModule>
         string Formats,
         string Diagnostics,
         string? Json,
-        string? Preview,
+        string? View,
         string? CommandFactory,
         string? BindingFactory);
 

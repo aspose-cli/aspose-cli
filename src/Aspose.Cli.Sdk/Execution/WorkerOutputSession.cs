@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Sdk.Execution;
 
@@ -15,7 +14,6 @@ public sealed class WorkerOutputSession
     private readonly object _gate = new();
     private readonly List<WorkerOutputEntry> _entries = [];
     private readonly Dictionary<string, WorkerDirectoryEntry> _directories = new(WorkerManifestStore.PathComparer);
-    private readonly List<WorkerPreviewHint> _hints = [];
     private readonly string _root;
     private readonly string _manifestPath;
     private int _nextId;
@@ -91,7 +89,7 @@ public sealed class WorkerOutputSession
                 }
                 WorkerOutputEntry[] next = [.. _entries, .. additions];
                 WorkerManifestStore.CheckCapacity(new WorkerOutputManifest
-                { Entries = next, Directories = directories.Values.ToArray(), Hints = _hints.ToArray(), Sealed = true });
+                { Entries = next, Directories = directories.Values.ToArray(), Sealed = true });
                 deadline.ThrowIfExpired("worker-handoff-accept");
                 _entries.AddRange(additions);
                 _directories.Clear();
@@ -132,17 +130,6 @@ public sealed class WorkerOutputSession
         { AddDirectory(directories, parent); }
     }
 
-    public bool QueuePreviewHint(string filePath, IReadOnlyList<ProductPreviewPayload> targets)
-    {
-        lock (_gate)
-        {
-            if (_sealed || targets.Count == 0 || _hints.Count >= 256) { return false; }
-            _hints.Add(new WorkerPreviewHint(Path.GetFullPath(filePath), targets.ToArray()));
-            try { WorkerManifestStore.CheckCapacity(Snapshot()); return true; }
-            catch { _hints.RemoveAt(_hints.Count - 1); return false; }
-        }
-    }
-
     /// <summary>Publishes the handoff only after the host has produced a normal command result.</summary>
     public void SealForPublication()
     {
@@ -155,7 +142,7 @@ public sealed class WorkerOutputSession
     }
 
     private WorkerOutputManifest Snapshot() => new()
-    { Entries = _entries.ToArray(), Directories = _directories.Values.ToArray(), Hints = _hints.ToArray() };
+    { Entries = _entries.ToArray(), Directories = _directories.Values.ToArray() };
 
     private void EnsureMutable()
     {
@@ -175,11 +162,10 @@ public sealed class WorkerOutputSession
 
 internal sealed record WorkerOutputManifest
 {
-    public int Version { get; init; } = 3;
+    public int Version { get; init; } = 4;
     public bool Sealed { get; init; }
     public IReadOnlyList<WorkerOutputEntry> Entries { get; init; } = [];
     public IReadOnlyList<WorkerDirectoryEntry> Directories { get; init; } = [];
-    public IReadOnlyList<WorkerPreviewHint> Hints { get; init; } = [];
 }
 
 internal sealed record WorkerOutputEntry
@@ -199,4 +185,3 @@ internal sealed record WorkerOutputEntry
 }
 
 internal sealed record WorkerDirectoryEntry(string Target, bool Existed, FilePhysicalIdentity? OriginalIdentity);
-internal sealed record WorkerPreviewHint(string FilePath, IReadOnlyList<ProductPreviewPayload> Targets);

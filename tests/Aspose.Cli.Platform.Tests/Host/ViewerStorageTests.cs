@@ -1,11 +1,11 @@
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests.PreviewInfrastructure;
 
-public sealed class PreviewSessionStorageTests
+public sealed class ViewerStorageTests
 {
     [Fact]
     public void Create_RemovesOnlyRecognizedRootsWithoutALiveOwner()
@@ -18,7 +18,7 @@ public sealed class PreviewSessionStorageTests
         string unknown = Path.Combine(category, "customer-files");
         Directory.CreateDirectory(unknown);
 
-        using PreviewSessionStorage storage = PreviewSessionStorage.Create(
+        using ViewerStorage storage = ViewerStorage.Create(
             category,
             (processId, processStart) =>
                 processId == 102 && processStart == 202,
@@ -52,7 +52,7 @@ public sealed class PreviewSessionStorageTests
             return LocalFileCleanup.DeleteDirectory(path);
         }
 
-        PreviewSessionStorage first = PreviewSessionStorage.Create(
+        ViewerStorage first = ViewerStorage.Create(
             category,
             static (_, _) => false,
             Delete);
@@ -60,7 +60,7 @@ public sealed class PreviewSessionStorageTests
         first.Dispose();
         Assert.True(Directory.Exists(failedRoot));
 
-        using PreviewSessionStorage second = PreviewSessionStorage.Create(
+        using ViewerStorage second = ViewerStorage.Create(
             category,
             static (_, _) => false,
             Delete);
@@ -78,7 +78,7 @@ public sealed class PreviewSessionStorageTests
         string stale = CreateOwnedRoot(category, 101, 201, 'a');
         Directory.CreateDirectory(Path.Combine(stale, "customer-files"));
 
-        using PreviewSessionStorage storage = PreviewSessionStorage.Create(
+        using ViewerStorage storage = ViewerStorage.Create(
             category,
             static (_, _) => false,
             static path => LocalFileCleanup.DeleteDirectory(path));
@@ -92,7 +92,7 @@ public sealed class PreviewSessionStorageTests
     {
         using var temp = new TempDirectory();
         string category = temp.File("preview");
-        PreviewSessionStorage storage = PreviewSessionStorage.Create(
+        ViewerStorage storage = ViewerStorage.Create(
             category,
             static (_, _) => false,
             static path => LocalFileCleanup.DeleteDirectory(path));
@@ -109,7 +109,7 @@ public sealed class PreviewSessionStorageTests
     {
         using var temp = new TempDirectory();
         string category = temp.File("preview");
-        PreviewSessionStorage storage = PreviewSessionStorage.Create(
+        ViewerStorage storage = ViewerStorage.Create(
             category,
             static (_, _) => false,
             static path => LocalFileCleanup.DeleteDirectory(path));

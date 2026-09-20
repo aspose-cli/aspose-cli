@@ -3,9 +3,9 @@ using System.Text;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 
-namespace Aspose.Cli.Host.Preview;
+namespace Aspose.Cli.Host.Viewer;
 
 /// <summary>
 /// Materializes one immutable preview view without exposing its owned
@@ -13,7 +13,7 @@ namespace Aspose.Cli.Host.Preview;
 /// renderer cannot create an oversized transient publication before the
 /// manifest validation boundary runs.
 /// </summary>
-internal sealed class BoundedPreviewArtifactSink : IPreviewArtifactSink
+internal sealed class BoundedViewArtifactSink : IViewArtifactSink
 {
     private static readonly UTF8Encoding Utf8 = new(
         encoderShouldEmitUTF8Identifier: false,
@@ -33,7 +33,7 @@ internal sealed class BoundedPreviewArtifactSink : IPreviewArtifactSink
     private ExceptionDispatchInfo? _failure;
     private long _totalBytes;
 
-    public BoundedPreviewArtifactSink(
+    public BoundedViewArtifactSink(
         string root,
         LocalServiceResourceLimits limits)
     {
@@ -96,7 +96,7 @@ internal sealed class BoundedPreviewArtifactSink : IPreviewArtifactSink
         string relativePath,
         Action<Stream> contentWriter)
     {
-        string normalized = PreviewArtifactManifest.NormalizeRelative(
+        string normalized = ViewBundleManifest.NormalizeRelative(
             relativePath);
         if (!_paths.Add(normalized))
         {

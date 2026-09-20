@@ -3,10 +3,8 @@ using System.Globalization;
 using System.Text.Json;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Host.ViewerService;
 
@@ -67,7 +65,7 @@ internal sealed class ViewerServiceHost : IDisposable
                 () => WorkerProcess(globals, secrets),
                 limits.RenderTimeout,
                 static message => Trace.TraceInformation("aspose-cli viewer: {0}", message));
-            _documents = new ViewerDocuments(_worker, PreviewSessionStorage.Create(), limits);
+            _documents = new ViewerDocuments(_worker, ViewerStorage.Create(), limits);
             _http = new ViewerHttpServer(_documents, requestedPort, limits);
             _http.Start();
             _control = new LocalServiceControlServer(

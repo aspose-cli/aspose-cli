@@ -2,20 +2,20 @@ using System.Globalization;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.IO;
 
-namespace Aspose.Cli.Host.Preview;
+namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
 /// Owns rendered version children inside a session storage root: one
 /// <c>v{revision}</c> subdirectory per render. Pruning keeps a one-version
 /// grace window so responses still streaming the previous version do not
 /// lose files mid-read. Final root cleanup belongs to
-/// <see cref="PreviewSessionStorage"/>.
+/// <see cref="ViewerStorage"/>.
 /// </summary>
-internal sealed class PreviewVersionStore : IDisposable
+internal sealed class RevisionStore : IDisposable
 {
     private readonly string _root;
 
-    public PreviewVersionStore(string rootDirectory)
+    public RevisionStore(string rootDirectory)
     {
         ArgumentException.ThrowIfNullOrEmpty(rootDirectory);
         _root = Path.GetFullPath(rootDirectory);
@@ -54,7 +54,7 @@ internal sealed class PreviewVersionStore : IDisposable
                     continue;
                 }
 
-                if (!PreviewOwnedDirectory.CanDelete(
+                if (!OwnedDirectory.CanDelete(
                         _root,
                         directory,
                         static name => TryParseRevision(name, out _))

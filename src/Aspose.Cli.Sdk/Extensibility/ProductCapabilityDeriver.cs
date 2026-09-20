@@ -51,8 +51,9 @@ internal static class ProductCapabilityDeriver
         {
             Preview = new ProductPreviewCapabilities
             {
-                DefaultView = product.Preview.DefaultView,
-                Views = product.Preview.Views,
+                DefaultView = product.View.LiveView,
+                Views = Array.AsReadOnly(
+                    product.View.Views.Select(static view => view.Id).ToArray()),
                 Background = capabilities.Preview?.Background ?? true,
             },
             Review = new ProductReviewCapabilities

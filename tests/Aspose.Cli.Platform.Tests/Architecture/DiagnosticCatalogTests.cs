@@ -3,7 +3,6 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Serialization;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
@@ -102,7 +101,6 @@ public sealed class DiagnosticCatalogTests
             ])
             .Diagnostics(diagnostics)
             .Json(new ProductJsonDefinition(id, SdkJsonContext.Default))
-            .Preview(new TestProductPreviewAdapter<ITestPort>())
             .View(new TestProductViewAdapter<ITestPort>())
             .Output<TestResult>(static (_, _) => { })
             .Commands(_ => new Command(id))

@@ -1,7 +1,6 @@
 using System.Text.Json.Nodes;
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Sdk.Serialization;
 
@@ -25,7 +24,6 @@ namespace Aspose.Cli.Sdk.Serialization;
 [JsonSerializable(typeof(ProductPreviewStartResult))]
 [JsonSerializable(typeof(ProductPreviewStatusResult))]
 [JsonSerializable(typeof(ProductPreviewStopResult))]
-[JsonSerializable(typeof(ProductPreviewPayload))]
 [JsonSerializable(typeof(ReviewResult))]
 [JsonSerializable(typeof(Aspose.Cli.Sdk.Views.ViewManifest))]
 [JsonSerializable(typeof(Warning))]

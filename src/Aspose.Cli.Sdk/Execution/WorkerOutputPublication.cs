@@ -1,6 +1,5 @@
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Sdk.Execution;
 
@@ -54,7 +53,6 @@ internal static class WorkerOutputPublisher
             }
             if (manifest.Entries.Count == 0) { budgets.Deadline.ThrowIfExpired("worker-complete"); }
             committed = true;
-            foreach (WorkerPreviewHint hint in manifest.Hints) { PreviewHintChannel.TryWrite(hint.FilePath, hint.Targets); }
             return sizes;
         }
         finally

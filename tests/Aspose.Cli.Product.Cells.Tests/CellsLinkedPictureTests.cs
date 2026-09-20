@@ -4,7 +4,7 @@ using Aspose.Cells.Drawing;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Engine;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -50,8 +50,15 @@ public sealed class CellsLinkedPictureTests
         Assert.True(string.IsNullOrEmpty(actual.SourceFullName));
 
         var sink = new HtmlSink();
-        fixture.Engine.RenderPreview(input,
-            new PreviewRenderRequest { View = CellsPreviewViews.Workbook }, sink);
+        fixture.Engine.RenderView(
+            input,
+            new ViewRenderRequest
+            {
+                View = CellsViews.Workbook,
+                MaxParts = 8,
+                Purpose = ViewPurpose.Display,
+            },
+            sink);
         Assert.Contains("data:image/png;base64,", sink.Html, StringComparison.Ordinal);
         Assert.Contains(System.Convert.ToBase64String(ResourceHttpServer.Image), sink.Html, StringComparison.Ordinal);
         Assert.Equal(original, File.ReadAllBytes(input));
@@ -106,7 +113,7 @@ public sealed class CellsLinkedPictureTests
         workbook.Save(path, SaveFormat.Xlsx);
     }
 
-    private sealed class HtmlSink : IPreviewArtifactSink
+    private sealed class HtmlSink : IViewArtifactSink
     {
         public string Html { get; private set; } = string.Empty;
         public void Write(string relativePath, Action<Stream> contentWriter)

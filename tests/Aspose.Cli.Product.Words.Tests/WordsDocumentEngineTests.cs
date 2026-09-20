@@ -2,7 +2,7 @@ using System.Text;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 using Aspose.Words;
 using Aspose.Words.Loading;
 using Xunit;
@@ -138,23 +138,32 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
-    public void Preview_WritesPaginatedArtifactsThroughSinkAndPreservesPassword()
+    public void View_WritesPagePartsThroughSinkAndPreservesPassword()
     {
-        const string password = "preview-password";
+        const string password = "view-password";
         string input = _fixture.CreateEncryptedDocument(password);
         var artifacts = new MemoryArtifactSink();
 
-        PreviewRenderOutcome result = _fixture.Engine.RenderPreview(
+        ViewManifest manifest = _fixture.Engine.RenderView(
             input,
-            new WordsPreviewRequest { Password = password },
+            new ViewRenderRequest
+            {
+                View = WordsViews.Pages,
+                MaxParts = 8,
+                Purpose = ViewPurpose.Display,
+                Password = password,
+            },
             artifacts);
 
-        Assert.Equal("document.html", result.EntryFileName);
-        Assert.Equal("docx", result.SourceFormatId);
-        Assert.Null(result.Warnings);
-        Assert.Contains("/asset/page-1.png", artifacts.Text("document.html"), StringComparison.Ordinal);
+        Assert.Equal(WordsViews.Pages, manifest.View);
+        Assert.Equal("docx", manifest.SourceFormat);
+        Assert.Null(manifest.Warnings);
+        ViewPart first = manifest.Parts[0];
+        Assert.Equal("page-0001.png", first.File);
+        Assert.Equal(ViewPartKinds.Image, first.Kind);
+        Assert.True(first.Width > 0 && first.Height > 0);
         Assert.True(HasHeader(
-            artifacts.Bytes("page-1.png"),
+            artifacts.Bytes("page-0001.png"),
             [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]));
     }
 
@@ -367,7 +376,7 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
     private static int Count(string value, string text) =>
         value.Split(text, StringSplitOptions.None).Length - 1;
 
-    private sealed class MemoryArtifactSink : IPreviewArtifactSink
+    private sealed class MemoryArtifactSink : IViewArtifactSink
     {
         private readonly Dictionary<string, byte[]> _files = new(StringComparer.Ordinal);
 

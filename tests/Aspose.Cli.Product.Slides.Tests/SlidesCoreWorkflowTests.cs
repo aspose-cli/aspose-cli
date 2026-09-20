@@ -2,7 +2,7 @@ using System.Text;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Preview;
+using Aspose.Cli.Sdk.Views;
 using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
@@ -23,28 +23,34 @@ public sealed class SlidesCoreWorkflowTests
     }
 
     [Fact]
-    public void Preview_WritesArtifactsThroughSinkAndPreservesPassword()
+    public void View_WritesSlidePartsThroughSinkAndPreservesPassword()
     {
-        const string password = "preview-password";
+        const string password = "view-password";
         using var fixture = new SlidesEngineFixture();
-        string input = fixture.CreatePresentation("preview.pptx", slides: 2, password);
+        string input = fixture.CreatePresentation("view.pptx", slides: 2, password);
         var artifacts = new MemoryArtifactSink();
 
-        PreviewRenderOutcome result = fixture.Engine.RenderPreview(
+        ViewManifest manifest = fixture.Engine.RenderView(
             input,
-            new PresentationPreviewRequest { Password = password },
+            new ViewRenderRequest
+            {
+                View = SlidesViews.Slides,
+                MaxParts = 8,
+                Purpose = ViewPurpose.Display,
+                Password = password,
+            },
             artifacts);
 
-        Assert.Equal("presentation.html", result.EntryFileName);
-        Assert.Equal("pptx", result.SourceFormatId);
-        Assert.Equal(new FileInfo(input).Length, result.SourceSizeBytes);
-        Assert.Null(result.Warnings);
+        Assert.Equal(SlidesViews.Slides, manifest.View);
+        Assert.Equal("pptx", manifest.SourceFormat);
+        Assert.Equal(new FileInfo(input).Length, manifest.SourceSizeBytes);
+        Assert.Equal(2, manifest.TotalParts);
+        Assert.Null(manifest.Warnings);
+        Assert.Equal(["slide-0001.png", "slide-0002.png"], artifacts.Paths);
         Assert.Equal(
-            ["presentation.html", "slide-0001.png", "slide-0002.png"],
-            artifacts.Paths);
-        string html = artifacts.Text("presentation.html");
-        Assert.Contains("/asset/slide-0001.png", html, StringComparison.Ordinal);
-        Assert.Contains("/asset/slide-0002.png", html, StringComparison.Ordinal);
+            ["slide-0001.png", "slide-0002.png"],
+            manifest.Parts.Select(static part => part.File));
+        Assert.All(manifest.Parts, static part => Assert.Equal(ViewPartKinds.Image, part.Kind));
         Assert.True(IsPng(artifacts.Bytes("slide-0001.png")));
         Assert.True(IsPng(artifacts.Bytes("slide-0002.png")));
     }
@@ -134,7 +140,7 @@ public sealed class SlidesCoreWorkflowTests
         content.AsSpan().StartsWith(
             new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a });
 
-    private sealed class MemoryArtifactSink : IPreviewArtifactSink
+    private sealed class MemoryArtifactSink : IViewArtifactSink
     {
         private readonly Dictionary<string, byte[]> _artifacts =
             new(StringComparer.Ordinal);

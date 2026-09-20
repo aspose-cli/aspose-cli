@@ -1,6 +1,5 @@
-using Aspose.Cli.Sdk.Preview;
 
-namespace Aspose.Cli.Host.Preview;
+namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
 /// Polls a file until it can be opened for shared reading. Right after a

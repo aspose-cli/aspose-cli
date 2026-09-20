@@ -4,7 +4,6 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
@@ -52,12 +51,6 @@ internal sealed class CellsWorkbookEngine
 
     public RenderResult Render(string filePath, RenderRequest request) =>
         _output.Render(filePath, request);
-
-    public PreviewRenderOutcome RenderPreview(
-        string filePath,
-        PreviewRenderRequest request,
-        IPreviewArtifactSink artifacts) =>
-        _output.RenderPreview(filePath, request, artifacts);
 
     public Aspose.Cli.Sdk.Views.ViewManifest RenderView(
         string filePath,

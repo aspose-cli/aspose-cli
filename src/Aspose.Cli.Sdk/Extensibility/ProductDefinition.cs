@@ -17,7 +17,6 @@ public sealed class ProductDefinition
         FileRouteDefinition files,
         IReadOnlyList<FormatDescriptor> formats,
         ProductJsonDefinition json,
-        ProductPreviewDefinition preview,
         ProductViewDefinition view,
         IReadOnlyList<ProductOutputDefinition> outputs,
         IReadOnlyList<DiagnosticDescriptor> diagnostics,
@@ -32,7 +31,6 @@ public sealed class ProductDefinition
         Files = files;
         Formats = formats;
         Json = json ?? throw new ArgumentNullException(nameof(json));
-        Preview = preview ?? throw new ArgumentNullException(nameof(preview));
         View = view ?? throw new ArgumentNullException(nameof(view));
         Outputs = outputs;
         Diagnostics = diagnostics;
@@ -57,9 +55,6 @@ public sealed class ProductDefinition
 
     /// <summary>Product-owned source-generated JSON metadata.</summary>
     public ProductJsonDefinition Json { get; }
-
-    /// <summary>Product-owned preview semantics and browser presentation.</summary>
-    public ProductPreviewDefinition Preview { get; }
 
     /// <summary>Product-owned views shared by static review and live display.</summary>
     public ProductViewDefinition View { get; }
@@ -152,7 +147,6 @@ public sealed class ProductDefinitionBuilder<TPort>
     private readonly ProductManifest _manifest;
     private readonly List<FormatDescriptor> _formats = [];
     private ProductJsonDefinition? _json;
-    private ProductPreviewDefinition? _preview;
     private ProductViewDefinition? _view;
     private readonly List<ProductOutputDefinition> _outputs = [];
     private readonly List<DiagnosticDescriptor> _diagnostics = [];
@@ -217,15 +211,6 @@ public sealed class ProductDefinitionBuilder<TPort>
         return this;
     }
 
-    /// <summary>Registers the product-owned typed preview adapter.</summary>
-    public ProductDefinitionBuilder<TPort> Preview(
-        IProductPreviewAdapter<TPort> adapter)
-    {
-        EnsureMutable();
-        _preview = ProductPreviewDefinition.Create(adapter, _manifest.Id);
-        return this;
-    }
-
     /// <summary>Registers the product-owned view adapter used by review and live display.</summary>
     public ProductDefinitionBuilder<TPort> View(
         IProductViewAdapter<TPort> adapter)
@@ -278,10 +263,6 @@ public sealed class ProductDefinitionBuilder<TPort>
         {
             throw Missing(nameof(Json));
         }
-        if (_preview is null)
-        {
-            throw Missing(nameof(Preview));
-        }
         if (_view is null)
         {
             throw Missing(nameof(View));
@@ -306,7 +287,6 @@ public sealed class ProductDefinitionBuilder<TPort>
             files,
             formats,
             _json,
-            _preview,
             _view,
             Array.AsReadOnly(_outputs.ToArray()),
             Array.AsReadOnly(_diagnostics.ToArray()),

@@ -49,7 +49,7 @@ internal static class WorkerManifestStore
 
     internal static string CheckCapacity(WorkerOutputManifest manifest)
     {
-        if (manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories || manifest.Hints.Count > 256)
+        if (manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories)
         {
             throw new InvalidDataException("Worker manifest entry budget exceeded.");
         }
@@ -77,8 +77,8 @@ internal static class WorkerManifestStore
 
     private static void Validate(string root, WorkerOutputManifest manifest)
     {
-        if (manifest.Version != 3 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null || manifest.Hints is null
-            || manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories || manifest.Hints.Count > 256)
+        if (manifest.Version != 4 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
+            || manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories)
         {
             throw new InvalidDataException("The worker manifest violates its bounded contract.");
         }
@@ -134,12 +134,6 @@ internal static class WorkerManifestStore
             {
                 if (!directories.Contains(parent)) { throw new InvalidDataException("A worker output has an undeclared parent directory."); }
             }
-        }
-        foreach (WorkerPreviewHint hint in manifest.Hints)
-        {
-            if (hint is null || hint.Targets is null || hint.Targets.Count > 256) { throw new InvalidDataException("Invalid preview hint."); }
-            _ = Canonical(hint.FilePath);
-            if (JsonSerializer.SerializeToUtf8Bytes(hint, JsonOptions).Length > 64 * 1024) { throw new InvalidDataException("Preview hint exceeds its budget."); }
         }
     }
 

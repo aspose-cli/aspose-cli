@@ -1,6 +1,6 @@
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
@@ -111,7 +111,7 @@ internal sealed class AppWorkspace
     {
         ProductDefinition product = _catalog.ResolveById(
             request.Product ?? _sessions.ProductId ?? _catalog.DefaultProductId());
-        PreviewErrors.EnsureViewSupported(
+        ViewerErrors.EnsureViewSupported(
             product.Manifest.Id,
             request.DefaultView,
             product.View.Views.Select(static view => view.Id).ToArray());

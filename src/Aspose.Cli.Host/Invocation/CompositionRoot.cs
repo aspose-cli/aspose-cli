@@ -4,7 +4,6 @@ using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -48,8 +47,6 @@ internal static class CompositionRoot
         return new ProductCommandContext<TPort>
         {
             Binding = binding,
-            WritePreviewHint = effectiveBudgets.OutputSession is { } worker
-                ? worker.QueuePreviewHint : PreviewHintChannel.TryWrite,
             Paths = new PathResolver(workDir),
             Inputs = effectiveBudgets.Inputs,
             ReadEnvironment = InvocationEnvironment.CreateSecretReader(effectiveBudgets),

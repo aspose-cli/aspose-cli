@@ -7,8 +7,6 @@ namespace Aspose.Cli.Generated;
 /// <summary>Source-generated serialization metadata for Cells contracts.</summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
 [JsonSerializable(typeof(Product.Cells.Contracts.WorkbookInfoResult))]
-[JsonSerializable(typeof(Product.Cells.Contracts.CellsPreviewSelector))]
-[JsonSerializable(typeof(Product.Cells.Contracts.CellsPreviewHint))]
 [JsonSerializable(typeof(Product.Cells.Contracts.WorkbookReadResult))]
 [JsonSerializable(typeof(Product.Cells.Contracts.ConvertResult))]
 [JsonSerializable(typeof(Product.Cells.Contracts.RenderResult))]

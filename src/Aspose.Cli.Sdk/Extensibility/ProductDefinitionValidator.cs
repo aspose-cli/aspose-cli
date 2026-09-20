@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -58,7 +57,6 @@ internal sealed class ProductDefinitionValidator
             }
         }
         ValidateOperationSchemas(definition, resources.SchemaIds);
-        ValidatePreviewPayloadContracts(definition, resources.SchemaIds);
     }
 
     public static IReadOnlyDictionary<IProductModule, ProductModuleRegistration>
@@ -107,74 +105,6 @@ internal sealed class ProductDefinitionValidator
                     + $"'{owner}' and '{productId}'.");
             }
             _outputs.Add(output.ResultType, productId);
-        }
-    }
-
-    private static void ValidatePreviewPayloadContracts(
-        ProductDefinition definition,
-        IReadOnlyList<string> schemaIds)
-    {
-        ProductPreviewDefinition? preview = definition.Preview;
-        if (preview is null)
-        {
-            return;
-        }
-        string productId = definition.Manifest.Id;
-        if (!string.Equals(preview.ProductId, productId, StringComparison.Ordinal))
-        {
-            throw new InvalidOperationException(
-                $"Product '{productId}' preview is bound to payload owner "
-                + $"'{preview.ProductId}'.");
-        }
-
-        var identities = new HashSet<string>(StringComparer.Ordinal);
-        string schemaPrefix = $"v2/{productId}/";
-        foreach (ProductPreviewPayloadContract contract in preview.PayloadContracts)
-        {
-            ArgumentNullException.ThrowIfNull(contract);
-            if (string.IsNullOrWhiteSpace(contract.Kind)
-                || contract.Kind.Length > 32
-                || contract.Kind[0] is < 'a' or > 'z'
-                || contract.Kind.Any(static character =>
-                    character is not (>= 'a' and <= 'z'
-                        or >= '0' and <= '9'
-                        or '-')))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{productId}' preview payload kind "
-                    + $"'{contract.Kind}' is invalid.");
-            }
-            if (contract.SchemaVersion != 2)
-            {
-                throw new InvalidOperationException(
-                    $"Product '{productId}' preview payload "
-                    + $"'{contract.Kind}' uses schema version "
-                    + $"{contract.SchemaVersion}; this build supports version 2.");
-            }
-            if (contract.MaxBytes is < 1 or > 65_536)
-            {
-                throw new InvalidOperationException(
-                    $"Product '{productId}' preview payload "
-                    + $"'{contract.Kind}' has invalid byte limit "
-                    + $"{contract.MaxBytes}.");
-            }
-            if (!contract.SchemaId.StartsWith(schemaPrefix, StringComparison.Ordinal)
-                || !schemaIds.Contains(
-                    contract.SchemaId,
-                    StringComparer.Ordinal))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{productId}' preview payload "
-                    + $"'{contract.Kind}@v{contract.SchemaVersion}' references "
-                    + $"unowned schema '{contract.SchemaId}'.");
-            }
-            string identity = $"{contract.Kind}:{contract.SchemaVersion}";
-            if (!identities.Add(identity))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{productId}' declares preview payload "
-                    + $"'{contract.Kind}@v{contract.SchemaVersion}' more than once.");
-            }
         }
     }
 

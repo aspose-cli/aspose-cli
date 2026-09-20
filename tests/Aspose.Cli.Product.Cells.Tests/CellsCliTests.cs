@@ -142,7 +142,7 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
-    public void PreviewSheetView_UsesTheRootLifecycle()
+    public void PreviewSheetsView_UsesTheRootLifecycle()
     {
         Assert.Equal(0, _workspace.Run(
             "cells", "create", "preview-sheet.xlsx", "--sheets", "Data").ExitCode);
@@ -153,14 +153,14 @@ public sealed class CellsCliTests : IDisposable
         Assert.True(seeded.ExitCode == 0, seeded.StdErr);
 
         CliResult started = _workspace.Run(
-            "preview", "preview-sheet.xlsx", "--view", "sheet",
+            "preview", "preview-sheet.xlsx", "--view", "sheets",
             "--port", "0", "--output", "json");
 
         Assert.True(started.ExitCode == 0, started.StdErr);
         JsonNode result = JsonNode.Parse(started.StdOut)!;
         string id = result["id"]!.GetValue<string>();
         _previewIds.Add(id);
-        Assert.Equal("sheet", result["view"]!.GetValue<string>());
+        Assert.Equal("sheets", result["view"]!.GetValue<string>());
 
         CliResult stopped = _workspace.Run(
             "preview", "stop", id, "--output", "json");

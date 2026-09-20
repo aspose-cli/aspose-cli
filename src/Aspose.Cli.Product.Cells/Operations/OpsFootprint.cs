@@ -1,15 +1,14 @@
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Preview;
 
 namespace Aspose.Cli.Product.Cells.Operations;
 
 /// <summary>
 /// Extracts the visible footprint of an ops batch — where in the workbook the
-/// edits landed — as neutral <see cref="CellsPreviewHint"/>s for the live-preview
-/// spotlight (see <see cref="PreviewHintChannel"/>). The footprint is a hint,
-/// not an audit: targets are de-duplicated, capped at sixteen, and mapped at
+/// edits landed — as neutral <see cref="CellsEditTarget"/>s. Verification
+/// reads it to check that the edits landed where they were asked to. The
+/// footprint is a summary, not an audit: targets are de-duplicated, capped at sixteen, and mapped at
 /// the granularity that is useful to look at — a range where the op has one,
 /// a cell for single-cell ops, the whole sheet for structural changes (A1
 /// deliberately rejects whole-row/column ranges, so a row or column band has
@@ -27,11 +26,11 @@ internal static class OpsFootprint
     /// the active sheet; a null range means the sheet as a whole.
     /// </summary>
     /// <param name="batch">The ops batch that was applied.</param>
-    public static IReadOnlyList<CellsPreviewHint> Collect(OpsBatch batch)
+    public static IReadOnlyList<CellsEditTarget> Collect(OpsBatch batch)
     {
         ArgumentNullException.ThrowIfNull(batch);
 
-        var targets = new List<CellsPreviewHint>();
+        var targets = new List<CellsEditTarget>();
         var seen = new HashSet<(string? Sheet, string? Range)>();
         foreach (Op op in batch.Ops)
         {
@@ -62,7 +61,7 @@ internal static class OpsFootprint
             : [];
 
     /// <summary>Maps one op to its spotlight target, or null when it has none.</summary>
-    internal static CellsPreviewHint? TargetOf(Op op) => op switch
+    internal static CellsEditTarget? TargetOf(Op op) => op switch
     {
         SetValuesOp or SetFormulaOp or ClearRangeOp or FormatRangeOp or MergeCellsOp
             or UnmergeCellsOp or SortRangeOp or SetValidationOp or ClearValidationOp
@@ -79,82 +78,82 @@ internal static class OpsFootprint
         _ => ObjectOrWorkbookTarget(op),
     };
 
-    private static CellsPreviewHint RangeTarget(Op op) => op switch
+    private static CellsEditTarget RangeTarget(Op op) => op switch
     {
         // Range ops spotlight the range they edited. SetAutoFilter and
         // SetPrintArea carry an optional range (null clears/removes) and
         // degrade to the sheet as a whole when it is absent.
-        SetValuesOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        SetFormulaOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        ClearRangeOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        FormatRangeOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        MergeCellsOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        UnmergeCellsOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        SortRangeOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        SetValidationOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        ClearValidationOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        RemoveDuplicatesOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        CreateTableOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        AddConditionalFormatOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        ClearConditionalFormatsOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        SetBordersOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        SetAutoFilterOp o => new CellsPreviewHint(o.Sheet, o.Range),
-        SetPrintAreaOp o => new CellsPreviewHint(o.Sheet, o.Range),
+        SetValuesOp o => new CellsEditTarget(o.Sheet, o.Range),
+        SetFormulaOp o => new CellsEditTarget(o.Sheet, o.Range),
+        ClearRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
+        FormatRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
+        MergeCellsOp o => new CellsEditTarget(o.Sheet, o.Range),
+        UnmergeCellsOp o => new CellsEditTarget(o.Sheet, o.Range),
+        SortRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
+        SetValidationOp o => new CellsEditTarget(o.Sheet, o.Range),
+        ClearValidationOp o => new CellsEditTarget(o.Sheet, o.Range),
+        RemoveDuplicatesOp o => new CellsEditTarget(o.Sheet, o.Range),
+        CreateTableOp o => new CellsEditTarget(o.Sheet, o.Range),
+        AddConditionalFormatOp o => new CellsEditTarget(o.Sheet, o.Range),
+        ClearConditionalFormatsOp o => new CellsEditTarget(o.Sheet, o.Range),
+        SetBordersOp o => new CellsEditTarget(o.Sheet, o.Range),
+        SetAutoFilterOp o => new CellsEditTarget(o.Sheet, o.Range),
+        SetPrintAreaOp o => new CellsEditTarget(o.Sheet, o.Range),
         // A sparkline's visible change is the location strip it draws into,
         // not the data it reads.
-        AddSparklineOp o => new CellsPreviewHint(o.Sheet, o.Location),
+        AddSparklineOp o => new CellsEditTarget(o.Sheet, o.Location),
         _ => throw new InvalidOperationException(),
     };
 
-    private static CellsPreviewHint CellOrStructureTarget(Op op) => op switch
+    private static CellsEditTarget CellOrStructureTarget(Op op) => op switch
     {
         // A copy changes its destination; the destination anchor may be
         // sheet-qualified and then overrides the op's sheet.
         CopyRangeOp o => CopyTarget(o),
 
         // Single-cell ops spotlight their cell.
-        AddCommentOp o => new CellsPreviewHint(o.Sheet, o.Cell),
-        EditCommentOp o => new CellsPreviewHint(o.Sheet, o.Cell),
-        DeleteCommentOp o => new CellsPreviewHint(o.Sheet, o.Cell),
-        SetHyperlinkOp o => new CellsPreviewHint(o.Sheet, o.Cell),
-        RemoveHyperlinkOp o => new CellsPreviewHint(o.Sheet, o.Cell),
+        AddCommentOp o => new CellsEditTarget(o.Sheet, o.Cell),
+        EditCommentOp o => new CellsEditTarget(o.Sheet, o.Cell),
+        DeleteCommentOp o => new CellsEditTarget(o.Sheet, o.Cell),
+        SetHyperlinkOp o => new CellsEditTarget(o.Sheet, o.Cell),
+        RemoveHyperlinkOp o => new CellsEditTarget(o.Sheet, o.Cell),
 
         // Row/column structure shifts everything below or to the right, and
         // A1 has no whole-row/column form — spotlight the sheet.
-        InsertRowsOp o => new CellsPreviewHint(o.Sheet, null),
-        DeleteRowsOp o => new CellsPreviewHint(o.Sheet, null),
-        InsertColumnsOp o => new CellsPreviewHint(o.Sheet, null),
-        DeleteColumnsOp o => new CellsPreviewHint(o.Sheet, null),
-        ResizeRowsOp o => new CellsPreviewHint(o.Sheet, null),
-        ResizeColumnsOp o => new CellsPreviewHint(o.Sheet, null),
-        GroupRowsOp o => new CellsPreviewHint(o.Sheet, null),
-        UngroupRowsOp o => new CellsPreviewHint(o.Sheet, null),
-        GroupColumnsOp o => new CellsPreviewHint(o.Sheet, null),
-        UngroupColumnsOp o => new CellsPreviewHint(o.Sheet, null),
+        InsertRowsOp o => new CellsEditTarget(o.Sheet, null),
+        DeleteRowsOp o => new CellsEditTarget(o.Sheet, null),
+        InsertColumnsOp o => new CellsEditTarget(o.Sheet, null),
+        DeleteColumnsOp o => new CellsEditTarget(o.Sheet, null),
+        ResizeRowsOp o => new CellsEditTarget(o.Sheet, null),
+        ResizeColumnsOp o => new CellsEditTarget(o.Sheet, null),
+        GroupRowsOp o => new CellsEditTarget(o.Sheet, null),
+        UngroupRowsOp o => new CellsEditTarget(o.Sheet, null),
+        GroupColumnsOp o => new CellsEditTarget(o.Sheet, null),
+        UngroupColumnsOp o => new CellsEditTarget(o.Sheet, null),
         _ => throw new InvalidOperationException(),
     };
 
-    private static CellsPreviewHint SheetTarget(Op op) => op switch
+    private static CellsEditTarget SheetTarget(Op op) => op switch
     {
         // Sheet-level ops spotlight the affected sheet as a whole. For
         // add/rename the sheet worth looking at is the one that exists after
         // the edit: the new sheet's name, the renamed sheet's new name.
-        AddSheetOp o => new CellsPreviewHint(o.Name, null),
-        RenameSheetOp o => new CellsPreviewHint(o.To, null),
-        DeleteSheetOp o => new CellsPreviewHint(o.Sheet, null),
-        SetSheetVisibilityOp o => new CellsPreviewHint(o.Sheet, null),
-        MoveSheetOp o => new CellsPreviewHint(o.Sheet, null),
-        FreezePanesOp o => new CellsPreviewHint(o.Sheet, null),
-        ProtectSheetOp o => new CellsPreviewHint(o.Sheet, null),
-        UnprotectSheetOp o => new CellsPreviewHint(o.Sheet, null),
-        SetPageSetupOp o => new CellsPreviewHint(o.Sheet, null),
-        SetTabColorOp o => new CellsPreviewHint(o.Sheet, null),
-        SetSheetViewOp o => new CellsPreviewHint(o.Sheet, null),
-        SetActiveSheetOp o => new CellsPreviewHint(o.Sheet, null),
+        AddSheetOp o => new CellsEditTarget(o.Name, null),
+        RenameSheetOp o => new CellsEditTarget(o.To, null),
+        DeleteSheetOp o => new CellsEditTarget(o.Sheet, null),
+        SetSheetVisibilityOp o => new CellsEditTarget(o.Sheet, null),
+        MoveSheetOp o => new CellsEditTarget(o.Sheet, null),
+        FreezePanesOp o => new CellsEditTarget(o.Sheet, null),
+        ProtectSheetOp o => new CellsEditTarget(o.Sheet, null),
+        UnprotectSheetOp o => new CellsEditTarget(o.Sheet, null),
+        SetPageSetupOp o => new CellsEditTarget(o.Sheet, null),
+        SetTabColorOp o => new CellsEditTarget(o.Sheet, null),
+        SetSheetViewOp o => new CellsEditTarget(o.Sheet, null),
+        SetActiveSheetOp o => new CellsEditTarget(o.Sheet, null),
         _ => throw new InvalidOperationException(),
     };
 
-    private static CellsPreviewHint? ObjectOrWorkbookTarget(Op op) => op switch
+    private static CellsEditTarget? ObjectOrWorkbookTarget(Op op) => op switch
     {
         // Embedded objects land on their sheet; without an explicit sheet
         // there is nothing precise enough to point at.
@@ -179,21 +178,21 @@ internal static class OpsFootprint
         _ => SheetLevelOrNone(op),
     };
 
-    private static CellsPreviewHint? SheetLevelOrNone(Op op) =>
-        op.Sheet is null ? null : new CellsPreviewHint(op.Sheet, null);
+    private static CellsEditTarget? SheetLevelOrNone(Op op) =>
+        op.Sheet is null ? null : new CellsEditTarget(op.Sheet, null);
 
-    private static CellsPreviewHint CopyTarget(CopyRangeOp op)
+    private static CellsEditTarget CopyTarget(CopyRangeOp op)
     {
         try
         {
             RangeSpec destination = A1.ParseRange(op.To);
-            return new CellsPreviewHint(destination.SheetName ?? op.Sheet, A1.FormatRange(destination.Range));
+            return new CellsEditTarget(destination.SheetName ?? op.Sheet, A1.FormatRange(destination.Range));
         }
         catch (CliException)
         {
             // Best effort: an unparsable destination (conceivable under
             // --best-effort) still hints at the op's sheet.
-            return new CellsPreviewHint(op.Sheet, null);
+            return new CellsEditTarget(op.Sheet, null);
         }
     }
 

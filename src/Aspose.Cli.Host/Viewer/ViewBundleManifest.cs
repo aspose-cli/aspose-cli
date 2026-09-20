@@ -2,22 +2,21 @@ using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using System.Security.Cryptography;
-using Aspose.Cli.Sdk.Preview;
 
-namespace Aspose.Cli.Host.Preview;
+namespace Aspose.Cli.Host.Viewer;
 
 /// <summary>
 /// Validated immutable inventory of one renderer-owned version directory.
 /// Only listed regular files may be served.
 /// </summary>
-internal sealed class PreviewArtifactManifest
+internal sealed class ViewBundleManifest
 {
     internal const int MaximumPathSegments = 16;
 
     private readonly IReadOnlyDictionary<string, ArtifactRecord> _files;
     private readonly VerifiedFileBoundary _boundary;
 
-    private PreviewArtifactManifest(
+    private ViewBundleManifest(
         string root,
         VerifiedFileBoundary boundary,
         string entryFileName,
@@ -45,7 +44,7 @@ internal sealed class PreviewArtifactManifest
 
     public long EntryLength => _files[EntryFileName].Length;
 
-    public static PreviewArtifactManifest Validate(
+    public static ViewBundleManifest Validate(
         string directory,
         string entryFileName,
         LocalServiceResourceLimits limits)
@@ -137,7 +136,7 @@ internal sealed class PreviewArtifactManifest
                 "The preview entry file is not a regular file in the artifact manifest.");
         }
 
-        return new PreviewArtifactManifest(
+        return new ViewBundleManifest(
             root,
             boundary,
             entry,

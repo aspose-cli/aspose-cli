@@ -1,11 +1,11 @@
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests.PreviewInfrastructure;
 
-public sealed class PreviewArtifactManifestTests
+public sealed class ViewBundleManifestTests
 {
     [Fact]
     public void TryOpenRead_WhenValidatedFileDisappears_FailsClosed()
@@ -15,7 +15,7 @@ public sealed class PreviewArtifactManifestTests
         Directory.CreateDirectory(root);
         string entry = Path.Combine(root, "index.html");
         File.WriteAllText(entry, "view");
-        PreviewArtifactManifest manifest = PreviewArtifactManifest.Validate(
+        ViewBundleManifest manifest = ViewBundleManifest.Validate(
             root,
             "index.html",
             Limits());
@@ -33,7 +33,7 @@ public sealed class PreviewArtifactManifestTests
         Directory.CreateDirectory(root);
         string entry = Path.Combine(root, "index.html");
         File.WriteAllText(entry, "view");
-        PreviewArtifactManifest manifest = PreviewArtifactManifest.Validate(
+        ViewBundleManifest manifest = ViewBundleManifest.Validate(
             root,
             "index.html",
             Limits());
@@ -51,7 +51,7 @@ public sealed class PreviewArtifactManifestTests
         Directory.CreateDirectory(root);
         string entry = Path.Combine(root, "index.html");
         File.WriteAllText(entry, "view");
-        PreviewArtifactManifest manifest = PreviewArtifactManifest.Validate(
+        ViewBundleManifest manifest = ViewBundleManifest.Validate(
             root,
             "index.html",
             Limits());
@@ -70,7 +70,7 @@ public sealed class PreviewArtifactManifestTests
             '/',
             Enumerable.Repeat(
                 "level",
-                PreviewArtifactManifest.MaximumPathSegments + 1));
+                ViewBundleManifest.MaximumPathSegments + 1));
         string directory = Path.Combine(
             root,
             relative.Replace('/', Path.DirectorySeparatorChar));
@@ -78,7 +78,7 @@ public sealed class PreviewArtifactManifestTests
         File.WriteAllText(Path.Combine(directory, "index.html"), "view");
 
         Assert.Throws<InvalidDataException>(() =>
-            PreviewArtifactManifest.Validate(
+            ViewBundleManifest.Validate(
                 root,
                 relative + "/index.html",
                 Limits()));
@@ -97,7 +97,7 @@ public sealed class PreviewArtifactManifestTests
         }
 
         Assert.ThrowsAny<Exception>(() =>
-            PreviewArtifactManifest.Validate(
+            ViewBundleManifest.Validate(
                 root,
                 "index.html",
                 Limits()));
@@ -111,7 +111,7 @@ public sealed class PreviewArtifactManifestTests
         Directory.CreateDirectory(root);
         string entry = Path.Combine(root, "index.html");
         File.WriteAllText(entry, "view");
-        PreviewArtifactManifest manifest = PreviewArtifactManifest.Validate(
+        ViewBundleManifest manifest = ViewBundleManifest.Validate(
             root,
             "index.html",
             Limits());

@@ -94,19 +94,6 @@ public sealed record RenderRequest
     public string? Password { get; init; }
 }
 
-/// <summary>Options for the Cells live-preview renderer.</summary>
-public sealed record PreviewRenderRequest
-{
-    /// <summary>Preview view mode; one of <c>CellsPreviewViews.All</c>.</summary>
-    public string View { get; init; } = CellsPreviewViews.Workbook;
-
-    /// <summary>Worksheet to render in the sheet view; the active sheet when null. Ignored by the workbook view.</summary>
-    public string? SheetName { get; init; }
-
-    /// <summary>Password for encrypted files.</summary>
-    public string? Password { get; init; }
-}
-
 /// <summary>Options of <c>cells edit</c>.</summary>
 public sealed record EditRequest
 {

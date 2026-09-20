@@ -46,12 +46,6 @@ public sealed record WordsRenderRequest
     public string? Password { get; init; }
 }
 
-/// <summary>Options for an HTML Fixed preview snapshot.</summary>
-public sealed record WordsPreviewRequest
-{
-    public string? Password { get; init; }
-}
-
 /// <summary>Options for creating one document.</summary>
 public sealed record NewDocumentRequest
 {

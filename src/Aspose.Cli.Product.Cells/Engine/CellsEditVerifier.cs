@@ -23,7 +23,7 @@ internal sealed class CellsEditVerifier(WorkbookLoadService loader, ResourceBudg
     {
         using LoadedWorkbook baseline = loader.OpenPublishedCandidate(baselinePath, inputPassword, originalPath);
         using LoadedWorkbook candidate = loader.OpenPublishedCandidate(candidatePath, outputPassword);
-        IReadOnlyList<CellsPreviewHint> footprint = OpsFootprint.Collect(batch);
+        IReadOnlyList<CellsEditTarget> footprint = OpsFootprint.Collect(batch);
         var direct = new List<VerifiedCellChange>();
         var formulaResults = new List<VerifiedCellChange>();
         var other = new List<VerificationOtherChange>();
@@ -65,7 +65,7 @@ internal sealed class CellsEditVerifier(WorkbookLoadService loader, ResourceBudg
 
     private static void Classify(
         DiffComparer.Result diff,
-        IReadOnlyList<CellsPreviewHint> targets,
+        IReadOnlyList<CellsEditTarget> targets,
         ICollection<VerifiedCellChange> direct,
         ICollection<VerifiedCellChange> formulaResults,
         ICollection<VerificationOtherChange> other)
@@ -110,10 +110,10 @@ internal sealed class CellsEditVerifier(WorkbookLoadService loader, ResourceBudg
         }
     }
 
-    private static bool IsRequested(string sheet, string cell, IReadOnlyList<CellsPreviewHint> targets)
+    private static bool IsRequested(string sheet, string cell, IReadOnlyList<CellsEditTarget> targets)
     {
         CellRef address = A1.ParseCell(cell);
-        foreach (CellsPreviewHint target in targets)
+        foreach (CellsEditTarget target in targets)
         {
             // A null sheet means "active sheet". Since diff deliberately does
             // not expose that workbook state, classifying it as direct would

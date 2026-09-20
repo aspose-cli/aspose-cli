@@ -36,7 +36,6 @@ public sealed class PdfModule : IProductModule
             .Formats(PdfFormats.Definitions)
             .Diagnostics(PdfDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .Preview(new PdfPreviewAdapter())
             .View(new PdfViewAdapter())
             .Output<PdfInfoResult>(PdfRenderers.Render)
             .Output<PdfReadResult>(PdfRenderers.Render)

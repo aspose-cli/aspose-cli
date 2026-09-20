@@ -6,7 +6,6 @@ namespace Aspose.Cli.Generated;
 /// <summary>Source-generated serialization metadata for Words contracts.</summary>
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull, WriteIndented = true)]
 [JsonSerializable(typeof(Product.Words.Contracts.DocumentInfoResult))]
-[JsonSerializable(typeof(Product.Words.Contracts.WordsPreviewHint))]
 [JsonSerializable(typeof(Product.Words.Contracts.DocumentReadResult))]
 [JsonSerializable(typeof(Product.Words.Contracts.WordsConvertResult))]
 [JsonSerializable(typeof(Product.Words.Contracts.WordsRenderResult))]

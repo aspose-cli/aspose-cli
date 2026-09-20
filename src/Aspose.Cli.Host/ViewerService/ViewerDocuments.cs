@@ -1,6 +1,5 @@
 using System.Security.Cryptography;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.ViewerService;
@@ -15,13 +14,13 @@ internal sealed class ViewerDocuments : IDisposable
     private readonly object _gate = new();
     private readonly Dictionary<string, LiveDocument> _byId = new(StringComparer.Ordinal);
     private readonly RenderWorkerSupervisor _worker;
-    private readonly PreviewSessionStorage _storage;
+    private readonly ViewerStorage _storage;
     private readonly LocalServiceResourceLimits _limits;
     private bool _disposed;
 
     public ViewerDocuments(
         RenderWorkerSupervisor worker,
-        PreviewSessionStorage storage,
+        ViewerStorage storage,
         LocalServiceResourceLimits limits)
     {
         _worker = worker ?? throw new ArgumentNullException(nameof(worker));

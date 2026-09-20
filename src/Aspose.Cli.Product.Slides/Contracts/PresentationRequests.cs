@@ -45,12 +45,6 @@ public sealed record PresentationRenderRequest
     public string? Password { get; init; }
 }
 
-/// <summary>Options for one immutable slide-browser preview snapshot.</summary>
-public sealed record PresentationPreviewRequest
-{
-    public string? Password { get; init; }
-}
-
 /// <summary>Options for creating a presentation from a bounded source.</summary>
 public sealed record NewPresentationRequest
 {

@@ -1,11 +1,11 @@
-namespace Aspose.Cli.Host.Preview;
+namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
 /// Proves the deletion boundary for Host-owned preview directories. Deletion
 /// is allowed only for a direct child with an expected name and a bounded tree
 /// containing no links or reparse points.
 /// </summary>
-internal static class PreviewOwnedDirectory
+internal static class OwnedDirectory
 {
     private const int MaximumCleanupEntries = 131_072;
     private const int MaximumCleanupDepth = 20;
@@ -46,7 +46,7 @@ internal static class PreviewOwnedDirectory
             {
                 if (item is not DirectoryInfo directory
                     || !IsRealDirectory(directory.FullName)
-                    || !PreviewVersionStore.TryParseRevision(
+                    || !RevisionStore.TryParseRevision(
                         directory.Name,
                         out _))
                 {

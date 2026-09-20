@@ -345,7 +345,6 @@ public sealed class CommonSchemaContractTests
             ])
             .Diagnostics([])
             .Json(new ProductJsonDefinition("test", SdkJsonContext.Default))
-            .Preview(new TestProductPreviewAdapter<ITestPort>())
             .View(new TestProductViewAdapter<ITestPort>())
             .Output<TestResult>(static (_, _) => { })
             .Commands(_ => new Command("test"))

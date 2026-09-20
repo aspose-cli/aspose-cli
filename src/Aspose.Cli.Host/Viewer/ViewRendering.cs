@@ -1,6 +1,6 @@
 using System.Security.Cryptography;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
+using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.Viewer;
@@ -24,7 +24,7 @@ internal static class ViewRendering
         ArgumentException.ThrowIfNullOrWhiteSpace(directory);
         ArgumentNullException.ThrowIfNull(limits);
 
-        var sink = new BoundedPreviewArtifactSink(directory, limits);
+        var sink = new BoundedViewArtifactSink(directory, limits);
         ViewManifest manifest = render(sink);
         sink.EnsureComplete();
         ViewManifestValidator.Validate(manifest, maxParts);

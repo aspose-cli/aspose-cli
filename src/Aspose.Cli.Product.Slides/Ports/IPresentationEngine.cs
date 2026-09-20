@@ -1,5 +1,4 @@
 using Aspose.Cli.Product.Slides.Contracts;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Product.Slides.Ports;
@@ -30,12 +29,6 @@ public interface IPresentationEngine
 
     /// <summary>Searches shape and speaker-notes text.</summary>
     SlidesSearchResult Search(string filePath, PresentationSearchRequest request);
-
-    /// <summary>Renders a self-contained, immutable slide-browser snapshot.</summary>
-    PreviewRenderOutcome RenderPreview(
-        string filePath,
-        PresentationPreviewRequest request,
-        IPreviewArtifactSink artifacts);
 
     /// <summary>Renders the parts of one product view, opening the presentation once.</summary>
     ViewManifest RenderView(

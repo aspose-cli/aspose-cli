@@ -9,7 +9,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
@@ -422,40 +421,6 @@ internal sealed class CellsOutputService
         return builder.Length == 0 ? "_" : builder.ToString();
     }
 
-    /// <inheritdoc />
-    internal PreviewRenderOutcome RenderPreview(
-        string filePath,
-        PreviewRenderRequest request,
-        IPreviewArtifactSink artifacts)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(filePath);
-        ArgumentNullException.ThrowIfNull(request);
-        ArgumentNullException.ThrowIfNull(artifacts);
-
-        _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
-        Workbook workbook = loaded.Workbook;
-        SourceInfo source = BuildSource(filePath, workbook);
-
-        if (request.View == CellsPreviewViews.Sheet)
-        {
-            Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
-            string sheetEntryFileName = PreviewExporter.ExportImage(
-                workbook,
-                sheet,
-                artifacts);
-            return new PreviewRenderOutcome(sheetEntryFileName, source.Format, source.SizeBytes, loaded.Warnings());
-        }
-
-        // The whole-workbook representation is the default view. The command
-        // layer restricts
-        // --view to the known vocabulary, so an unrecognized value cannot reach
-        // this point today; if drift ever produces one, falling back to the
-        // workbook export keeps the live session serving instead of failing it.
-        string entryFileName = PreviewExporter.Export(workbook, artifacts);
-        return new PreviewRenderOutcome(entryFileName, source.Format, source.SizeBytes, loaded.Warnings());
-    }
-
     /// <summary>Renders the parts of one view, opening the workbook once.</summary>
     internal ViewManifest RenderView(
         string filePath,
@@ -474,7 +439,7 @@ internal sealed class CellsOutputService
         SourceInfo source = BuildSource(filePath, workbook);
         if (request.View == CellsViews.Workbook)
         {
-            PreviewExporter.Export(workbook, artifacts, workbookFile);
+            WorkbookGridExporter.Export(workbook, artifacts, workbookFile);
             return new ViewManifest
             {
                 View = CellsViews.Workbook,

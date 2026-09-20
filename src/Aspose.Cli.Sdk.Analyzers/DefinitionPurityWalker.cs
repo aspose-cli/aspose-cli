@@ -289,7 +289,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             return member is
                 "Activator" or "Build" or "Commands" or "Diagnostics"
                 or "Doctor" or "Formats" or "Json"
-                or "Output" or "Preview" or "View";
+                or "Output" or "View";
         }
         return typeName switch
         {
@@ -367,14 +367,9 @@ internal sealed class DefinitionPurityWalker : OperationWalker
     private static bool IsDefinitionValue(string typeName) =>
         typeName is
             "Aspose.Cli.Sdk.Extensibility.ProductManifest"
-            or "Aspose.Cli.Sdk.Extensibility.ProductPreviewView"
             or "Aspose.Cli.Sdk.Extensibility.RouteOwnership"
             or "Aspose.Cli.Sdk.Views.ProductView"
-            or "Aspose.Cli.Sdk.Preview.ProductPreviewPayloadContract"
-            or "Aspose.Cli.Sdk.Serialization.ProductJsonDefinition"
-        || typeName.StartsWith(
-            "Aspose.Cli.Sdk.Extensibility.ProductPreviewAdapterBase<",
-            StringComparison.Ordinal);
+            or "Aspose.Cli.Sdk.Serialization.ProductJsonDefinition";
 
     private static bool IsDataMember(ISymbol symbol) =>
         symbol is IMethodSymbol

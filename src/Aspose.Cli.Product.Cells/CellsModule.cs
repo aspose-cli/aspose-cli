@@ -39,7 +39,6 @@ public sealed class CellsModule : IProductModule
             .Formats(CellsFormats.Definitions)
             .Diagnostics(CellsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
-            .Preview(new CellsPreviewAdapter())
             .View(new CellsViewAdapter())
             .Output<WorkbookInfoResult>(CellsRenderers.Render)
             .Output<WorkbookReadResult>(CellsRenderers.Render)

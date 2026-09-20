@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.TestKit;
 using Microsoft.Playwright;
@@ -28,7 +27,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         _output = output;
         LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
         _worker = new RenderWorkerSupervisor(StartInfo, TimeSpan.FromMinutes(2));
-        _documents = new ViewerDocuments(_worker, PreviewSessionStorage.Create(), limits);
+        _documents = new ViewerDocuments(_worker, ViewerStorage.Create(), limits);
         _server = new ViewerHttpServer(_documents, requestedPort: 0, limits);
         _server.Start();
     }

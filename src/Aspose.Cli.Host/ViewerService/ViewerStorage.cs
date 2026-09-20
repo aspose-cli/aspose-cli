@@ -3,14 +3,14 @@ using System.Globalization;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.IO;
 
-namespace Aspose.Cli.Host.Preview;
+namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
 /// Owns one preview session root. Version and interactive-view stores own only
 /// their children; this component performs final cleanup and retries stale
 /// roots during the next preview startup after a process interruption.
 /// </summary>
-internal sealed class PreviewSessionStorage : IDisposable
+internal sealed class ViewerStorage : IDisposable
 {
     private const int DeleteAttempts = 4;
     private static readonly object Gate = new();
@@ -24,7 +24,7 @@ internal sealed class PreviewSessionStorage : IDisposable
     private readonly string _categoryRoot;
     private bool _disposed;
 
-    private PreviewSessionStorage(
+    private ViewerStorage(
         string categoryRoot,
         string root,
         Func<string, bool> deleteDirectory)
@@ -36,7 +36,7 @@ internal sealed class PreviewSessionStorage : IDisposable
 
     public string Root { get; }
 
-    public static PreviewSessionStorage Create()
+    public static ViewerStorage Create()
     {
         string categoryRoot = PrivateUserStorage.EnsureDirectory(
             Path.Combine(
@@ -48,7 +48,7 @@ internal sealed class PreviewSessionStorage : IDisposable
             static path => LocalFileCleanup.DeleteDirectory(path));
     }
 
-    internal static PreviewSessionStorage Create(
+    internal static ViewerStorage Create(
         string categoryRoot,
         Func<int, long, bool> isOwnerAlive,
         Func<string, bool> deleteDirectory)
@@ -66,7 +66,7 @@ internal sealed class PreviewSessionStorage : IDisposable
             string root = PrivateUserStorage.EnsureDirectory(
                 Path.Combine(category, name));
             ActiveRoots.Add(root);
-            return new PreviewSessionStorage(
+            return new ViewerStorage(
                 category,
                 root,
                 deleteDirectory);
@@ -90,11 +90,11 @@ internal sealed class PreviewSessionStorage : IDisposable
         for (int attempt = 1; attempt <= DeleteAttempts; attempt++)
         {
             if (!IsOwnedRoot(_categoryRoot, Root)
-                || !PreviewOwnedDirectory.CanDelete(
+                || !OwnedDirectory.CanDelete(
                     _categoryRoot,
                     Root,
                     static name => TryParseOwner(name, out _, out _))
-                || !PreviewOwnedDirectory.HasExpectedSessionChildren(Root)
+                || !OwnedDirectory.HasExpectedSessionChildren(Root)
                 || _deleteDirectory(Root))
             {
                 return;
@@ -137,11 +137,11 @@ internal sealed class PreviewSessionStorage : IDisposable
                     out int processId,
                     out long processStart)
                 || isOwnerAlive(processId, processStart)
-                || !PreviewOwnedDirectory.CanDelete(
+                || !OwnedDirectory.CanDelete(
                     categoryRoot,
                     full,
                     static name => TryParseOwner(name, out _, out _))
-                || !PreviewOwnedDirectory.HasExpectedSessionChildren(full))
+                || !OwnedDirectory.HasExpectedSessionChildren(full))
             {
                 continue;
             }

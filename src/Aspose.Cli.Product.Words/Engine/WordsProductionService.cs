@@ -6,7 +6,6 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
@@ -20,7 +19,6 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Owns document conversion, rendering, preview and creation.</summary>
 internal sealed class WordsProductionService
 {
-    private const int PreviewDpi = 144;
     private const int CssDpi = 96;
     private const int EvidenceDpi = 150;
     private const int DisplayDpi = 192;
@@ -48,15 +46,6 @@ internal sealed class WordsProductionService
     /// <summary>Renders selected pages within the pixel budget.</summary>
     internal WordsRenderResult Render(string filePath, WordsRenderRequest request) =>
         WordsErrorTranslator.Execute("render", () => RenderCore(filePath, request));
-
-    /// <summary>Renders the embedded fixed-layout preview.</summary>
-    internal PreviewRenderOutcome RenderPreview(
-        string filePath,
-        WordsPreviewRequest request,
-        IPreviewArtifactSink artifacts) =>
-        WordsErrorTranslator.Execute(
-            "preview",
-            () => RenderPreviewCore(filePath, request, artifacts));
 
     /// <summary>Renders the fixed-layout pages of one view, opening the document once.</summary>
     internal ViewManifest RenderView(
@@ -127,22 +116,6 @@ internal sealed class WordsProductionService
         };
     }
 
-    private PreviewRenderOutcome RenderPreviewCore(
-        string filePath,
-        WordsPreviewRequest request,
-        IPreviewArtifactSink artifacts)
-    {
-        ArgumentNullException.ThrowIfNull(artifacts);
-        _ = _licenseGate.EnsureApplied();
-        using LoadedDocument loaded = _loader.Open(filePath, request.Password);
-        const string entry = "document.html";
-        IReadOnlyList<PreviewPage> pages = RenderPreviewPages(
-            loaded.Document,
-            artifacts);
-        artifacts.WriteText(entry, PreviewHtml(pages));
-        return new PreviewRenderOutcome(entry, loaded.FormatId, new FileInfo(filePath).Length, InputWarnings(loaded));
-    }
-
     private ViewManifest RenderViewCore(
         string filePath,
         ViewRenderRequest request,
@@ -193,49 +166,6 @@ internal sealed class WordsProductionService
             Parts = parts,
             Warnings = InputWarnings(loaded),
         };
-    }
-
-    private static IReadOnlyList<PreviewPage> RenderPreviewPages(
-        Document document,
-        IPreviewArtifactSink artifacts)
-    {
-        var pages = new List<PreviewPage>(document.PageCount);
-        for (int page = 1; page <= document.PageCount; page++)
-        {
-            PageInfo info = document.GetPageInfo(page - 1);
-            int pixelWidth = Pixels(info.WidthInPoints, PreviewDpi);
-            int pixelHeight = Pixels(info.HeightInPoints, PreviewDpi);
-            RenderPixelGuard.EnsureFits(pixelWidth, pixelHeight, PreviewDpi);
-            string fileName = $"page-{page.ToString(CultureInfo.InvariantCulture)}.png";
-            artifacts.Write(
-                fileName,
-                stream => document.Save(
-                    stream,
-                    WordsSavePipeline.Options("png", pages: [page], dpi: PreviewDpi)));
-            pages.Add(new PreviewPage(
-                page,
-                fileName,
-                Pixels(info.WidthInPoints, CssDpi),
-                Pixels(info.HeightInPoints, CssDpi),
-                pixelWidth,
-                pixelHeight));
-        }
-        return pages;
-    }
-
-    private static string PreviewHtml(IReadOnlyList<PreviewPage> pages)
-    {
-        var html = new StringBuilder(
-            "<!doctype html><html><head><meta charset=\"utf-8\">"
-            + "<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
-            + "</head><body>");
-        foreach (PreviewPage page in pages)
-        {
-            html.Append(CultureInfo.InvariantCulture, $"<div class=\"awpage words-raster-page\" data-page=\"{page.Number}\" style=\"width:{page.CssWidth}px;height:{page.CssHeight}px\">")
-                .Append(CultureInfo.InvariantCulture, $"<img class=\"words-page-image\" src=\"/asset/{page.FileName}\" alt=\"Page {page.Number}\" width=\"{page.PixelWidth}\" height=\"{page.PixelHeight}\">")
-                .Append("</div>");
-        }
-        return html.Append("</body></html>").ToString();
     }
 
     private static int Pixels(double points, int dpi) =>
@@ -422,11 +352,4 @@ internal sealed class WordsProductionService
         }
     }
 
-    private sealed record PreviewPage(
-        int Number,
-        string FileName,
-        int CssWidth,
-        int CssHeight,
-        int PixelWidth,
-        int PixelHeight);
 }

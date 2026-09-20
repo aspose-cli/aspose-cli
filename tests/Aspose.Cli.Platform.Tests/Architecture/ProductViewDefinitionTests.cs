@@ -1,15 +1,13 @@
-using System.Text.Json;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Ports;
-using Aspose.Cli.Sdk.Preview;
 using Aspose.Cli.Sdk.Views;
 using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;
 
-public sealed class ProductPreviewDefinitionTests
+public sealed class ProductViewDefinitionTests
 {
     [Fact]
     public void ViewDefinition_RejectsAnUndeclaredViewBeforeProductDispatch()
@@ -48,39 +46,6 @@ public sealed class ProductPreviewDefinitionTests
             assessment.Findings!,
             static finding => finding.Code == "FONTS_MISSING_OR_SUBSTITUTED"
                 && finding.Severity == "error");
-    }
-
-    [Fact]
-    public void ValidatePayload_RejectsDuplicatePropertiesWithoutRelyingOnHttp()
-    {
-        ProductPreviewDefinition preview = ProductPreviewDefinition.Create(
-            new TestProductPreviewAdapter<ITestPort>(
-            [
-                new ProductPreviewPayloadContract
-                {
-                    Kind = ProductPreviewPayloadKinds.Selector,
-                    SchemaVersion = 2,
-                    SchemaId = "v2/test/selector",
-                },
-            ]),
-            "test");
-        using JsonDocument document = JsonDocument.Parse(
-            """{"item":1,"nested":{"value":1,"value":2}}""");
-        var payload = new ProductPreviewPayload
-        {
-            ProductId = "test",
-            Kind = ProductPreviewPayloadKinds.Selector,
-            SchemaVersion = 2,
-            SchemaId = "v2/test/selector",
-            Payload = document.RootElement.Clone(),
-        };
-
-        JsonException failure = Assert.Throws<JsonException>(() =>
-            preview.ValidatePayload(
-                payload,
-                ProductPreviewPayloadKinds.Selector));
-
-        Assert.Contains("$.nested property 'value' is duplicated", failure.Message);
     }
 
     private static ViewRenderRequest Request(string view) => new()

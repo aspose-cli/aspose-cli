@@ -3,7 +3,6 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
-using Aspose.Cli.Host.Preview;
 using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -73,7 +72,7 @@ internal static class ReviewEvidenceWriter
                 Path.Combine(evidenceDirectory, ViewManifestFile),
                 viewJson + Environment.NewLine,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            PreviewArtifactManifest files = PreviewArtifactManifest.Validate(
+            ViewBundleManifest files = ViewBundleManifest.Validate(
                 evidenceDirectory,
                 ViewManifestFile,
                 limits);
@@ -172,7 +171,7 @@ internal static class ReviewEvidenceWriter
         int maxItems,
         bool visualInspectionRequired,
         string evidenceDirectory,
-        PreviewArtifactManifest files,
+        ViewBundleManifest files,
         ViewManifest manifest,
         ProductReviewAssessment assessment,
         LicenseState license)
@@ -275,7 +274,7 @@ internal static class ReviewEvidenceWriter
 
     private static ReviewArtifact CreateArtifact(
         string evidenceDirectory,
-        PreviewArtifactManifest files,
+        ViewBundleManifest files,
         string view,
         ViewPart part,
         int sequence)

@@ -1,8 +1,8 @@
-namespace Aspose.Cli.Sdk.Preview;
+namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
-/// Why <see cref="PreviewSession.Wait"/> returned. The command layer maps
-/// each outcome to its exit path: an orderly shutdown for everything except
+/// Why a hosted service stopped waiting. The command layer maps each
+/// outcome to its exit path: an orderly shutdown for everything except
 /// <see cref="DeadlineExpired"/>, which surfaces as the timeout error.
 /// </summary>
 public enum WaitOutcome
