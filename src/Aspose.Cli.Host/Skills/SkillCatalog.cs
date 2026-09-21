@@ -104,7 +104,10 @@ internal sealed record BundledSkill(
         return files.Count + 1;
     }
 
-    /// <summary>Writes one staged file, consuming the invocation's output budget.</summary>
+    /// <summary>
+    /// Writes one staged file, consuming the invocation's output budget so the
+    /// extraction stays bounded, and refusing to follow a link out of the tree.
+    /// </summary>
     private static void Stage(
         ResourceBudgetLedger resourceBudgets,
         string root,
@@ -115,6 +118,7 @@ internal sealed record BundledSkill(
             ResourceBudgetKinds.OutputBytes, content.Length, "bytes", "skill-stage");
         string path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
         Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        EnsureNoReparsePoint(path);
         using var file = new FileStream(
             path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
         file.Write(content);
