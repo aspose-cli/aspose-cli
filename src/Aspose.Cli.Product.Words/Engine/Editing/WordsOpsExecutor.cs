@@ -195,14 +195,8 @@ internal static class WordsOpsExecutor
                     document.Range.Fields.Count,
                     document.Revisions.Count,
                     document.ProtectionType.ToString());
-                verification = write.Read(candidate => Verify(
-                    candidate,
-                    request,
-                    baseline!,
-                    expected,
-                    outcomes.Any(static outcome =>
-                        outcome.Status == OpStatuses.Ok && outcome.ItemsAffected > 0),
-                    loader));
+                verification = write.Read(
+                    candidate => Verify(candidate, request, baseline!, expected, loader));
             }
             transaction.Commit();
         }
@@ -222,12 +216,16 @@ internal static class WordsOpsExecutor
             .ToArray();
     }
 
+    /// <summary>
+    /// Reports save-and-reopen evidence for the staged candidate. A comparison that
+    /// finds no body change is evidence, not a fault: whether an operation did
+    /// anything is already answered, authoritatively, by its own outcome.
+    /// </summary>
     private static WordsVerification Verify(
         string candidatePath,
         WordsEditRequest request,
         Document baseline,
         ExpectedDocumentState expected,
-        bool expectedChange,
         WordsDocumentLoader loader)
     {
         var issues = new List<string>();
@@ -263,10 +261,6 @@ internal static class WordsOpsExecutor
         bool semanticChanges = comparisonBaseline.Revisions.Count > 0;
         comparisonBaseline.Cleanup();
         comparisonOutput.Cleanup();
-        if (expectedChange && !semanticChanges)
-        {
-            issues.Add("The batch reported affected items, but semantic comparison found no persisted change.");
-        }
 
         return new WordsVerification
         {

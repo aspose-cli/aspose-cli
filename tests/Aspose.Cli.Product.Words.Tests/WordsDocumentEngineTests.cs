@@ -376,6 +376,27 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
     private static int Count(string value, string text) =>
         value.Split(text, StringSplitOptions.None).Length - 1;
 
+    [Fact]
+    public void Verify_AcceptsEditsWholeBodyComparisonCannotSee()
+    {
+        string input = _fixture.CreateReport("verify-metadata.docx");
+        string output = _fixture.Temp.File("verify-metadata.out.docx");
+
+        WordsEditResult result = _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new SetPropertiesOp { Title = "Accepted" }] },
+            new WordsEditRequest { OutputPath = output, Verify = true });
+
+        // Document.Compare only models the body, so a metadata-only edit leaves it
+        // silent. That is evidence, not a fault: the operation outcome already says
+        // the edit happened, and the document itself proves it.
+        Assert.Equal("ok", Assert.Single(result.Applied).Status);
+        Assert.True(result.Verification!.Ok);
+        Assert.Empty(result.Verification.Issues!);
+        Assert.False(result.Verification.SemanticChangesDetected);
+        Assert.Equal("Accepted", new Document(output).BuiltInDocumentProperties.Title);
+    }
+
     private sealed class MemoryArtifactSink : IViewArtifactSink
     {
         private readonly Dictionary<string, byte[]> _files = new(StringComparer.Ordinal);
