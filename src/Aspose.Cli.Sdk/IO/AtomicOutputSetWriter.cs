@@ -61,17 +61,17 @@ public sealed class AtomicOutputSetWriter : IDisposable
     public StagedOutput Stage(string targetPath, bool overwrite, Action<string> write) =>
         Stage(targetPath, overwrite, backupPath: null, inputPrecondition: null, write);
 
-    /// <summary>Stages an output and binds its input, optional stable backup and inspection.</summary>
+    /// <summary>Stages an output, binding its input, optional stable backup and check.</summary>
     public StagedOutput Stage(string targetPath, bool overwrite, string? backupPath,
         FileWritePrecondition? inputPrecondition, Action<string> write,
-        Action<string, Stream>? inspect = null, Action<string>? verify = null)
+        Action<string>? verify = null)
     {
         ThrowIfDisposed();
         string target = OutputPathValidator.NormalizeFile(targetPath);
         FilePublicationSnapshot expected = inputPrecondition?.Targets(target) is true
             ? inputPrecondition.Snapshot : FilePublicationSnapshot.Capture(target);
         return _staging.StagePrepared(target, overwrite, backupPath, expected, write,
-            inputPrecondition, inspect, verify);
+            inputPrecondition, verify);
     }
 
     internal StagedOutput StagePrepared(string targetPath, bool overwrite, string? requestedBackup,

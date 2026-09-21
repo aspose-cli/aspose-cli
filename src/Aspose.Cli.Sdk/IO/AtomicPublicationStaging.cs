@@ -33,7 +33,6 @@ internal sealed class AtomicPublicationStaging(
         FilePublicationSnapshot original,
         Action<string> write,
         FileWritePrecondition? inputPrecondition = null,
-        Action<string, Stream>? inspect = null,
         Action<string>? verify = null)
     {
         ArgumentNullException.ThrowIfNull(write);
@@ -66,7 +65,7 @@ internal sealed class AtomicPublicationStaging(
         else { FilePublicationMetadata.PrepareOutputDirectory(Path.GetDirectoryName(staged)!, Path.GetDirectoryName(target)!); }
         using var temporary = OwnedTemporaryFile.Create(staged);
         write(staged);
-        temporary.BindInspectAndVerify(inspect, verify);
+        temporary.BindAndVerify(verify);
         original.Metadata?.ApplyAccess(staged);
         original.Metadata?.ApplyContentAttributes(staged);
         temporary.BindProducedFile();
@@ -141,7 +140,7 @@ internal sealed class AtomicPublicationStaging(
         if (plan.WorkerStagingOnly) { PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(staged)!); }
         else { FilePublicationMetadata.PrepareOutputDirectory(Path.GetDirectoryName(staged)!, Path.GetDirectoryName(target)!); }
         using var temporary = OwnedTemporaryFile.Create(staged);
-        temporary.BindInspectAndVerify(inspect: null, verify: null);
+        temporary.BindAndVerify(verify: null);
         temporary.FlushBound();
         FilePublicationSnapshot stagedSnapshot = temporary.CaptureBoundSnapshot();
         if (!plan.WorkerStagingOnly)

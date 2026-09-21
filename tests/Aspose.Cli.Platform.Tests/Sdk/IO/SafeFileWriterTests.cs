@@ -163,46 +163,6 @@ public sealed class SafeFileWriterTests : IDisposable
     }
 
     [Fact]
-    public void WriteBound_InspectsAndVerifiesTheOwnedStageBeforePublication()
-    {
-        string target = _temp.File("out.txt");
-
-        _writer.WriteBound(
-            target,
-            overwrite: false,
-            backupPath: null,
-            inputPrecondition: null,
-            temp => File.WriteAllText(temp, "draft"),
-            (_, stream) =>
-            {
-                stream.SetLength(0);
-                stream.Write("ready"u8);
-            },
-            temp => Assert.Equal("ready", File.ReadAllText(temp)));
-
-        Assert.Equal("ready", File.ReadAllText(target));
-    }
-
-    [Fact]
-    public void WriteBound_InspectionFailureKeepsExistingTargetIntact()
-    {
-        string target = _temp.File("out.txt");
-        File.WriteAllText(target, "original");
-
-        Assert.Throws<InvalidOperationException>(() => _writer.WriteBound(
-            target,
-            overwrite: true,
-            backupPath: null,
-            inputPrecondition: null,
-            temp => File.WriteAllText(temp, "draft"),
-            (_, _) => throw new InvalidOperationException("inspection failed"),
-            _ => throw new InvalidOperationException("verification must not run")));
-
-        Assert.Equal("original", File.ReadAllText(target));
-        Assert.Single(Directory.GetFiles(_temp.Path));
-    }
-
-    [Fact]
     public void OwnedTemporaryFile_RejectsIdentityChangesAfterTheProducedFileIsBound()
     {
         if (!OperatingSystem.IsWindows())

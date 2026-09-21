@@ -106,7 +106,7 @@ public sealed class OwnedTemporaryFile : IDisposable
         _producedBound = true;
     }
 
-    internal FileStream OpenBoundReadWrite() => OpenBound(
+    private FileStream OpenBoundReadWrite() => OpenBound(
         FileAccess.ReadWrite,
         FileShare.Read);
 
@@ -115,28 +115,20 @@ public sealed class OwnedTemporaryFile : IDisposable
         FileAccess.Read,
         FileShare.Read);
 
-    internal void BindInspectAndVerify(
-        Action<string, Stream>? inspect,
-        Action<string>? verify)
+    /// <summary>Binds the produced file, then checks it while its ownership is held.</summary>
+    internal void BindAndVerify(Action<string>? verify)
     {
         BindProducedFile();
-        if (inspect is not null)
+        if (verify is null)
         {
-            using (Stream stream = OpenBoundReadWrite())
-            {
-                inspect(Path, stream);
-                stream.Flush();
-            }
-            BindProducedFile();
+            return;
         }
-        if (verify is not null)
+
+        using (Stream stream = OpenBoundRead())
         {
-            using (Stream stream = OpenBoundRead())
-            {
-                verify(Path);
-            }
-            BindProducedFile();
+            verify(Path);
         }
+        BindProducedFile();
     }
 
     internal void FlushBound()

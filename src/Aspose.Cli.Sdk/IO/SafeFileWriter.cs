@@ -20,19 +20,7 @@ public sealed class SafeFileWriter
         Write(targetPath, overwrite, backupPath, inputPrecondition: null, writeToTemp);
 
     public SafeWriteResult Write(string targetPath, bool overwrite, string? backupPath,
-        FileWritePrecondition? inputPrecondition, Action<string> writeToTemp) =>
-        WritePrepared(targetPath, overwrite, backupPath, inputPrecondition, writeToTemp, null, null);
-
-    public SafeWriteResult WriteBound(string targetPath, bool overwrite, string? backupPath,
-        FileWritePrecondition? inputPrecondition, Action<string> writeToTemp,
-        Action<string, Stream> inspectProducedFile, Action<string> verifyProducedFile) =>
-        WritePrepared(targetPath, overwrite, backupPath, inputPrecondition, writeToTemp,
-            inspectProducedFile ?? throw new ArgumentNullException(nameof(inspectProducedFile)),
-            verifyProducedFile ?? throw new ArgumentNullException(nameof(verifyProducedFile)));
-
-    private SafeWriteResult WritePrepared(string targetPath, bool overwrite, string? backupPath,
-        FileWritePrecondition? inputPrecondition, Action<string> writeToTemp,
-        Action<string, Stream>? inspectProducedFile, Action<string>? verifyProducedFile)
+        FileWritePrecondition? inputPrecondition, Action<string> writeToTemp)
     {
         string target = OutputPathValidator.NormalizeFile(targetPath);
         string? backup = backupPath is null ? null : OutputPathValidator.NormalizeFile(backupPath, phase: "backup");
@@ -42,8 +30,7 @@ public sealed class SafeFileWriter
         StagedOutput staged;
         try
         {
-            staged = transaction.Stage(target, overwrite, backup, inputPrecondition,
-                writeToTemp, inspectProducedFile, verifyProducedFile);
+            staged = transaction.Stage(target, overwrite, backup, inputPrecondition, writeToTemp);
         }
         catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
         {
