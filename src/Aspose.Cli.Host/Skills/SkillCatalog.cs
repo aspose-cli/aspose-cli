@@ -56,6 +56,13 @@ internal sealed record BundledSkill(
     private const string ManifestName = ".aspose-skill-manifest.json";
     private const string ManifestProductId = "aspose-cli-skill";
 
+    /// <summary>
+    /// Materialises the package into this invocation's private staging tree.
+    /// The tree is scratch, not a published output: <see cref="InstallInto"/> publishes
+    /// it with a single directory rename. Writing it through the output publication
+    /// transaction would hand it to a supervising parent instead of to disk, leaving
+    /// the rename nothing to publish.
+    /// </summary>
     private int ExtractTo(
         ResourceBudgetLedger resourceBudgets,
         string directory)
@@ -63,12 +70,8 @@ internal sealed record BundledSkill(
         ArgumentNullException.ThrowIfNull(resourceBudgets);
         ArgumentException.ThrowIfNullOrEmpty(directory);
         string prefix = $"skill/{Name}/";
-        int written = 0;
-        using var extraction = new ExtractionGuard(
-            resourceBudgets,
-            directory,
-            maxItems: PublicationLimits.MaximumEntries,
-            maxBytes: 512L * 1024 * 1024);
+        string root = Path.GetFullPath(directory);
+        Directory.CreateDirectory(root);
         var files = new List<SkillFileEntry>();
         using IncrementalHash contentHash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
         foreach (string resource in ResourceNames.Order(StringComparer.Ordinal))
@@ -79,44 +82,42 @@ internal sealed record BundledSkill(
                 continue;
             }
 
-            string relative = normalized[prefix.Length..].Replace('/', Path.DirectorySeparatorChar);
+            string relative = NormalizeManifestPath(normalized[prefix.Length..]);
             using Stream source = ResourceAssembly.GetManifestResourceStream(resource)!;
             using var content = new MemoryStream();
             source.CopyTo(content);
-            byte[] relativeBytes = Encoding.UTF8.GetBytes(
-                relative.Replace(Path.DirectorySeparatorChar, '/'));
-            contentHash.AppendData(relativeBytes);
+            ReadOnlySpan<byte> bytes = content.GetBuffer().AsSpan(0, checked((int)content.Length));
+            contentHash.AppendData(Encoding.UTF8.GetBytes(relative));
             contentHash.AppendData([0]);
-            contentHash.AppendData(content.GetBuffer().AsSpan(0, checked((int)content.Length)));
+            contentHash.AppendData(bytes);
             files.Add(new(
-                relative.Replace(Path.DirectorySeparatorChar, '/'),
-                content.Length,
-                Convert.ToHexString(SHA256.HashData(
-                    content.GetBuffer().AsSpan(0, checked((int)content.Length))))
-                    .ToLowerInvariant()));
-            content.Position = 0;
-            extraction.Write(
                 relative,
                 content.Length,
-                content.CopyTo,
-                flatten: false,
-                overwrite: true);
-            written++;
+                Convert.ToHexString(SHA256.HashData(bytes)).ToLowerInvariant()));
+            Stage(resourceBudgets, root, relative, bytes);
         }
 
         byte[] manifest = InstallManifest(
             files,
             Convert.ToHexString(contentHash.GetHashAndReset()).ToLowerInvariant());
-        extraction.Write(
-            ManifestName,
-            manifest.Length,
-            output => output.Write(manifest),
-            flatten: false,
-            overwrite: true);
-        written++;
+        Stage(resourceBudgets, root, ManifestName, manifest);
+        return files.Count + 1;
+    }
 
-        extraction.Commit();
-        return written;
+    /// <summary>Writes one staged file, consuming the invocation's output budget.</summary>
+    private static void Stage(
+        ResourceBudgetLedger resourceBudgets,
+        string root,
+        string relative,
+        ReadOnlySpan<byte> content)
+    {
+        resourceBudgets.Consume(
+            ResourceBudgetKinds.OutputBytes, content.Length, "bytes", "skill-stage");
+        string path = Path.Combine(root, relative.Replace('/', Path.DirectorySeparatorChar));
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        using var file = new FileStream(
+            path, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+        file.Write(content);
     }
 
     private byte[] InstallManifest(
@@ -359,27 +360,44 @@ internal sealed record BundledSkill(
 
     private void ValidateManagedTarget(string target)
     {
-        string manifestPath = Path.Combine(target, ManifestName);
-        using JsonDocument document = JsonDocument.Parse(
-            File.ReadAllBytes(manifestPath),
-            new JsonDocumentOptions
-            {
-                AllowTrailingCommas = false,
-                CommentHandling = JsonCommentHandling.Disallow,
-                MaxDepth = 32,
-            });
-        EnsureUniqueProperties(document.RootElement);
-        RequireProperties(
-            document.RootElement,
-            "schemaVersion",
-            "productId",
-            "skill",
-            "cliVersion",
-            "executable",
-            "executableSha256",
-            "contentSha256",
-            "files");
-        ValidateManagedTarget(target, document.RootElement);
+        try
+        {
+            string manifestPath = Path.Combine(target, ManifestName);
+            using JsonDocument document = JsonDocument.Parse(
+                File.ReadAllBytes(manifestPath),
+                new JsonDocumentOptions
+                {
+                    AllowTrailingCommas = false,
+                    CommentHandling = JsonCommentHandling.Disallow,
+                    MaxDepth = 32,
+                });
+            EnsureUniqueProperties(document.RootElement);
+            RequireProperties(
+                document.RootElement,
+                "schemaVersion",
+                "productId",
+                "skill",
+                "cliVersion",
+                "executable",
+                "executableSha256",
+                "contentSha256",
+                "files");
+            ValidateManagedTarget(target, document.RootElement);
+        }
+        catch (CliException)
+        {
+            throw;
+        }
+        catch (Exception exception) when (exception is IOException
+            or UnauthorizedAccessException
+            or JsonException
+            or InvalidDataException
+            or InvalidOperationException
+            or KeyNotFoundException)
+        {
+            throw ManagedSkillConflict(
+                target, $"the ownership manifest is invalid: {exception.Message}", exception);
+        }
     }
 
     private void ValidateManagedTarget(string target, JsonElement manifest)
