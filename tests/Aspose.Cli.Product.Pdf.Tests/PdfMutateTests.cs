@@ -489,6 +489,44 @@ public sealed class PdfMutateTests
         return path;
     }
 
+    [Theory]
+    [InlineData("#FFFFFF", 1d, 1d, 1d)]
+    [InlineData("#FF0000", 1d, 0d, 0d)]
+    public void RedactText_CoversTheTextInTheRequestedColour(
+        string fillColor, double red, double green, double blue)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("redact-colour.pdf", pages: 1);
+        string output = fixture.File($"redact-colour{fillColor[1..]}.pdf");
+
+        fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch
+            {
+                Ops = [new RedactTextOp { Pattern = "Portable", FillColor = fillColor }],
+            },
+            new PdfEditRequest { OutputPath = output });
+
+        using var reopened = new Document(output);
+        Assert.DoesNotContain("Portable", PageText(reopened.Pages[1]), StringComparison.Ordinal);
+        Assert.Contains(FillColours(reopened.Pages[1]), colour =>
+            Math.Abs(colour.R - red) < 0.001
+            && Math.Abs(colour.G - green) < 0.001
+            && Math.Abs(colour.B - blue) < 0.001);
+    }
+
+    /// <summary>Every fill colour the page sets, including inside its forms.</summary>
+    private static IReadOnlyList<Aspose.Pdf.Operators.SetRGBColor> FillColours(Page page)
+    {
+        var colours = page.Contents.OfType<Aspose.Pdf.Operators.SetRGBColor>().ToList();
+        foreach (XForm form in page.Resources.Forms)
+        {
+            colours.AddRange(form.Contents.OfType<Aspose.Pdf.Operators.SetRGBColor>());
+        }
+
+        return colours;
+    }
+
     private static string FormDocument(PdfEngineFixture fixture)
     {
         string path = fixture.File("form.pdf");

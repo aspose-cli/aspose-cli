@@ -152,6 +152,7 @@ internal static class PdfContentMutationHandlers
     internal static long RedactText(Document document, RedactTextOp op, ISet<int> touched)
     {
         IReadOnlyList<int> pages = ResolveOptional(document, op.Pages);
+        PdfColor fill = ParseColor(op.FillColor);
         long count = 0;
         foreach (int number in pages)
         {
@@ -166,12 +167,7 @@ internal static class PdfContentMutationHandlers
                 page.Accept(absorber);
                 foreach (TextFragment fragment in absorber.TextFragments)
                 {
-                    var annotation = new RedactionAnnotation(page, fragment.Rectangle)
-                    {
-                        FillColor = ParseColor(op.FillColor),
-                    };
-                    page.Annotations.Add(annotation);
-                    annotation.Redact();
+                    Cover(page, fragment.Rectangle, fill).Redact();
                     count++;
                 }
 
@@ -188,13 +184,25 @@ internal static class PdfContentMutationHandlers
     internal static long RedactArea(Document document, RedactAreaOp op, ISet<int> touched)
     {
         Page page = PageAt(document, op.Page);
-        var annotation = new RedactionAnnotation(page, ToPdfRect(page, op.Rect))
-        {
-            FillColor = ParseColor(op.FillColor),
-        };
-        page.Annotations.Add(annotation);
-        annotation.Redact();
+        Cover(page, ToPdfRect(page, op.Rect), ParseColor(op.FillColor)).Redact();
         touched.Add(op.Page);
         return 1;
+    }
+
+    /// <summary>
+    /// Adds the redaction annotation that covers one rectangle in the requested
+    /// colour. Aspose only builds the cover from FillColor once Color is also set;
+    /// with FillColor alone it draws its default black box whatever was asked for.
+    /// Color itself never reaches the page, so both carry the requested colour.
+    /// </summary>
+    private static RedactionAnnotation Cover(Page page, Rectangle rectangle, PdfColor fill)
+    {
+        var annotation = new RedactionAnnotation(page, rectangle)
+        {
+            FillColor = fill,
+            Color = fill,
+        };
+        page.Annotations.Add(annotation);
+        return annotation;
     }
 }
