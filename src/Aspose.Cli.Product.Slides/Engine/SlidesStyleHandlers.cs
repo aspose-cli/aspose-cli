@@ -58,7 +58,13 @@ internal static class SlidesStyleHandlers
             {
                 if (style.Font is not null)
                 {
-                    portion.PortionFormat.LatinFont = new FontData(style.Font);
+                    // PowerPoint picks a portion's font per character script. Setting
+                    // the Latin font alone leaves East Asian and complex-script text
+                    // on the theme font, so the requested change never appears.
+                    var font = new FontData(style.Font);
+                    portion.PortionFormat.LatinFont = font;
+                    portion.PortionFormat.EastAsianFont = font;
+                    portion.PortionFormat.ComplexScriptFont = font;
                 }
 
                 if (style.Size is not null)

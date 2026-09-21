@@ -133,6 +133,47 @@ public sealed class SlidesChartPresentationTests
         Assert.True(HasLegend(output));
     }
 
+    [Fact]
+    public void SetShapeStyle_AppliesTheFontToEveryScriptInTheText()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string seed = fixture.CreatePresentation("shape-font-seed.pptx", slides: 1);
+        long shapeId;
+        using (var seeded = new Presentation(seed))
+        {
+            IAutoShape shape = seeded.Slides[0].Shapes.OfType<IAutoShape>().First();
+            shape.TextFrame.Text = "中文 Latin";
+            shapeId = (long)shape.OfficeInteropShapeId;
+            seeded.Save(seed, Aspose.Slides.Export.SaveFormat.Pptx);
+        }
+
+        string output = fixture.File("shape-font.pptx");
+        fixture.Engine.ApplyOps(
+            seed,
+            new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new SetShapeStyleOp
+                    {
+                        Slide = 1,
+                        Shape = shapeId,
+                        Style = new SlidesShapeStyleInput { Font = "Microsoft YaHei" },
+                    },
+                ],
+            },
+            new PresentationEditRequest { OutputPath = output });
+
+        // PowerPoint renders the Chinese half with the East Asian font, so setting
+        // only the Latin font would leave the requested change invisible.
+        using var styled = new Presentation(output);
+        IPortionFormat format = styled.Slides[0].Shapes.OfType<IAutoShape>()
+            .First().TextFrame.Paragraphs[0].Portions[0].PortionFormat;
+        Assert.Equal("Microsoft YaHei", format.LatinFont.FontName);
+        Assert.Equal("Microsoft YaHei", format.EastAsianFont.FontName);
+        Assert.Equal("Microsoft YaHei", format.ComplexScriptFont.FontName);
+    }
+
     private static long FindChartShapeId(string presentationPath)
     {
         using var presentation = new Presentation(presentationPath);
