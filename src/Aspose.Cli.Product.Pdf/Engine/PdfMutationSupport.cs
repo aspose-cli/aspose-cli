@@ -197,7 +197,7 @@ internal static class PdfMutationSupport
     /// other value is stored and read back while the box itself stays empty.
     /// </summary>
     internal static string? RejectedFieldValue(Field field, string value) =>
-        field is CheckboxField checkbox
+        field is CheckboxField { AllowedStates.Count: > 0 } checkbox
             && !checkbox.AllowedStates.Contains(value, StringComparer.Ordinal)
             ? $"check box '{field.FullName}' has no state '{value}'; use one of: "
                 + string.Join(", ", checkbox.AllowedStates)
