@@ -70,7 +70,9 @@ internal sealed class PdfSigningService
                 checked((int)Math.Round(visibleRect.Y)),
                 checked((int)Math.Round(visibleRect.Width)),
                 checked((int)Math.Round(visibleRect.Height)));
-        long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+        using var transaction = new AtomicOutputSetWriter(
+            _writer, Path.GetDirectoryName(request.OutputPath)!, "pdf-sign");
+        StagedOutput write = transaction.Stage(request.OutputPath, request.Overwrite, temp =>
         {
             using var facade = new PdfFileSignature(loaded.Document);
             var signature = new PKCS7(request.CertificatePath, request.CertificatePassword)
@@ -83,7 +85,11 @@ internal sealed class PdfSigningService
             facade.Save(temp);
         });
 
-        PdfSignatureInfo signed = VerifySignedOutput(request.OutputPath, request.Password);
+        // The staged candidate is the only readable copy before publication: a supervised
+        // worker leaves the target to its parent, so reading it here would find nothing.
+        PdfSignatureInfo signed = write.Read(
+            candidate => VerifySignedOutput(candidate, request.Password));
+        transaction.Commit();
         return new PdfSignResult
         {
             Input = PdfInfoProjection.Source(filePath),
@@ -91,7 +97,7 @@ internal sealed class PdfSigningService
             {
                 Path = Path.GetFullPath(request.OutputPath),
                 Format = "pdf",
-                SizeBytes = size,
+                SizeBytes = write.SizeBytes,
             },
             Signature = signed,
             Visible = request.Visible,
@@ -112,7 +118,7 @@ internal sealed class PdfSigningService
 
     private PdfSignatureInfo VerifySignedOutput(string path, string? password)
     {
-        using LoadedPdf reopened = _loader.Open(path, password);
+        using LoadedPdf reopened = _loader.OpenPublishedCandidate(path, password);
         SignatureField? field = reopened.Document.Form.Fields
             .OfType<SignatureField>()
             .FirstOrDefault(static value => value.Signature is not null);
