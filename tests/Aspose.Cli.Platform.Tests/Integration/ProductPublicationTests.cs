@@ -1,3 +1,5 @@
+using System.Security.Cryptography;
+using System.Security.Cryptography.X509Certificates;
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -63,6 +65,66 @@ public sealed class ProductPublicationTests
         Assert.Equal(5, result.ExitCode);
         Assert.False(File.Exists(workspace.File("render.First.png")));
         Assert.Equal("existing second sheet", File.ReadAllText(workspace.File("render.Second.png")));
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SignVerifiesTheCandidateInBothExecutionModes(bool supervised)
+    {
+        const string certificatePassword = "publication-test-certificate";
+        using var workspace = new TempWorkspace();
+        string input = CreateInput(workspace, "pdf", "pdf", ["--from-text", "source.txt"]);
+        string output = workspace.File("signed.pdf");
+
+        CliResult signed = workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_CERT_PASSWORD"] = certificatePassword },
+            ["pdf", "sign", input,
+             "--certificate", CreateCertificate(workspace, certificatePassword),
+             "--certificate-password-env", "ASPOSE_CLI_TEST_CERT_PASSWORD",
+             "--out", output, "--output", "json",
+             .. (supervised ? new[] { "--timeout", "60" } : Array.Empty<string>())]);
+
+        AssertSuccess(signed);
+        Assert.True(File.Exists(output));
+        JsonNode signature = JsonNode.Parse(signed.StdOut)!["signature"]!;
+        Assert.True(signature["signed"]!.GetValue<bool>());
+        Assert.True(signature["valid"]!.GetValue<bool>());
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void SkillInstallPublishesItsTreeInBothExecutionModes(bool supervised)
+    {
+        using var workspace = new TempWorkspace();
+        string target = workspace.File("skills");
+
+        CliResult installed = workspace.Run(["skill", "install", "aspose-cli-pdf",
+            "--target", target, "--output", "json",
+            .. (supervised ? new[] { "--timeout", "60" } : Array.Empty<string>())]);
+
+        AssertSuccess(installed);
+        string tree = Path.Combine(target, "aspose-cli-pdf");
+        Assert.True(File.Exists(Path.Combine(tree, "SKILL.md")));
+        Assert.True(File.Exists(Path.Combine(tree, ".aspose-skill-manifest.json")));
+        Assert.Equal(
+            JsonNode.Parse(installed.StdOut)!["files"]!.GetValue<int>(),
+            Directory.GetFiles(tree, "*", SearchOption.AllDirectories).Length);
+    }
+
+    private static string CreateCertificate(TempWorkspace workspace, string password)
+    {
+        using RSA key = RSA.Create(2048);
+        var request = new CertificateRequest(
+            "CN=Aspose CLI Publication Test", key, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+        request.CertificateExtensions.Add(
+            new X509KeyUsageExtension(X509KeyUsageFlags.DigitalSignature, critical: true));
+        using X509Certificate2 certificate = request.CreateSelfSigned(
+            DateTimeOffset.UtcNow.AddMinutes(-5), DateTimeOffset.UtcNow.AddDays(1));
+        string path = workspace.File("signing.pfx");
+        File.WriteAllBytes(path, certificate.Export(X509ContentType.Pfx, password));
+        return path;
     }
 
     private static string CreateInput(TempWorkspace workspace, string product, string extension, string[] sourceOptions)
