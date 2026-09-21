@@ -2,6 +2,7 @@ using System.Text;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Ports;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Words;
 using Aspose.Words.Loading;
@@ -395,6 +396,48 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
         Assert.Empty(result.Verification.Issues!);
         Assert.False(result.Verification.SemanticChangesDetected);
         Assert.Equal("Accepted", new Document(output).BuiltInDocumentProperties.Title);
+    }
+
+    [Fact]
+    public void CheckFonts_ReportsOnlyTheFontsTheContentRenders()
+    {
+        const string eastAsian = "Fictional East Asian Font 987";
+        const string unusedStyle = "Fictional Unused Font 987";
+        string input = _fixture.CreateReport("fonts-latin.docx");
+        var document = new Document(input);
+        foreach (Run run in document.GetChildNodes(NodeType.Run, true).Cast<Run>())
+        {
+            run.Font.NameFarEast = eastAsian;
+        }
+
+        document.Styles.Add(StyleType.Paragraph, "Never Applied").Font.Name = unusedStyle;
+        document.Save(input);
+
+        IReadOnlyList<FontAvailability> fonts =
+            _fixture.Fonts.CheckFonts(input, new FontCheckRequest()).Fonts;
+
+        // A style nothing applies draws no glyph, and neither does an East Asian
+        // font named by runs that contain no East Asian character.
+        Assert.DoesNotContain(fonts, font => font.Name == unusedStyle);
+        Assert.DoesNotContain(fonts, font => font.Name == eastAsian);
+        Assert.Contains(fonts, font => font.Name == "Arial");
+    }
+
+    [Fact]
+    public void CheckFonts_ReportsTheEastAsianFontWhenTheTextNeedsIt()
+    {
+        string input = _fixture.CreateReport("fonts-cjk.docx");
+        var document = new Document(input);
+        var builder = new DocumentBuilder(document);
+        builder.MoveToDocumentEnd();
+        builder.Font.NameFarEast = "Microsoft YaHei";
+        builder.Writeln("中文段落");
+        document.Save(input);
+
+        IReadOnlyList<FontAvailability> fonts =
+            _fixture.Fonts.CheckFonts(input, new FontCheckRequest()).Fonts;
+
+        Assert.Contains(fonts, font => font.Name == "Microsoft YaHei");
     }
 
     private sealed class MemoryArtifactSink : IViewArtifactSink

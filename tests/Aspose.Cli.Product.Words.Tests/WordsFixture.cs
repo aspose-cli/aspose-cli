@@ -26,6 +26,10 @@ public sealed class WordsFixture : IDisposable
         ProductTestBudgets.StartEngine<WordsModule, WordsDocumentEngine>(
             (budgets, writer) => new WordsDocumentEngine(Gate, budgets, writer));
 
+    internal WordsFontEnvironment Fonts =>
+        ProductTestBudgets.StartEngine<WordsModule, WordsFontEnvironment>(
+            (budgets, _) => new WordsFontEnvironment(Gate, budgets));
+
     public TempDirectory Temp { get; } = new();
 
     public LicenseState LicenseState => Gate.EnsureApplied();
