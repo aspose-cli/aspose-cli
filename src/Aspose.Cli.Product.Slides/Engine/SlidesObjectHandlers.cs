@@ -247,6 +247,42 @@ internal static class SlidesObjectHandlers
                 }
             }
         }
+
+        ApplyDataDrivenPresentation(chart, type, series);
     }
 
+    /// <summary>
+    /// Re-applies the presentation the data itself dictates, wherever that data is
+    /// written. Both rules raise a floor and never impose a ceiling, so a template
+    /// author's explicit choice survives an update while a chart that would
+    /// misrepresent its own data is corrected.
+    /// </summary>
+    private static void ApplyDataDrivenPresentation(
+        IChart chart,
+        ChartType type,
+        IReadOnlyList<SlidesChartSeriesInput> series)
+    {
+        // More than one series cannot be told apart without a legend.
+        if (series.Count > 1 && !chart.HasLegend)
+        {
+            chart.HasLegend = true;
+            chart.Legend.Position = LegendPositionType.Bottom;
+        }
+
+        // A bar or column encodes its value as a length, so an engine-chosen
+        // non-zero baseline exaggerates the differences between non-negative
+        // values. An explicit minimum is the author's and is left alone.
+        if (type is not (ChartType.ClusteredBar or ChartType.ClusteredColumn)
+            || series.Any(static item => item.Values.Any(static value => value < 0)))
+        {
+            return;
+        }
+
+        IAxis values = chart.Axes.VerticalAxis;
+        if (values.IsAutomaticMinValue)
+        {
+            values.IsAutomaticMinValue = false;
+            values.MinValue = 0;
+        }
+    }
 }
