@@ -1,3 +1,6 @@
+using System.Globalization;
+using System.IO.Compression;
+using System.Xml.Linq;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Drawing;
@@ -249,5 +252,46 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.Equal(3, group.Sparklines.Count);
         Assert.Equal("Second!B2:E2", group.Sparklines[0].DataRange);
         Assert.Equal("Second!B4:E4", group.Sparklines[2].DataRange);
+    }
+
+    [Fact]
+    public void PageSetup_StoresMarginsInTheInchesTheContractDeclares()
+    {
+        string source = _fixture.CreateSalesWorkbook("margins.xlsx");
+        string output = Apply(
+            source,
+            """
+            { "ops": [
+              { "op": "set_page_setup", "sheet": "Data",
+                "margins": { "top": 1, "bottom": 1.25, "left": 0.5,
+                             "right": 0.5, "header": 0.3, "footer": 0.3 } }
+            ] }
+            """,
+            "margins.out.xlsx").Output!.Path;
+
+        // OOXML stores <pageMargins> in inches, so this pins the contract unit
+        // itself rather than the engine's own centimetre representation.
+        Dictionary<string, double> stored = ReadPageMargins(output, "sheet1.xml");
+        Assert.Equal(1d, stored["top"], 6);
+        Assert.Equal(1.25d, stored["bottom"], 6);
+        Assert.Equal(0.5d, stored["left"], 6);
+        Assert.Equal(0.5d, stored["right"], 6);
+        Assert.Equal(0.3d, stored["header"], 6);
+        Assert.Equal(0.3d, stored["footer"], 6);
+    }
+
+    private static Dictionary<string, double> ReadPageMargins(string workbookPath, string sheetEntry)
+    {
+        using ZipArchive package = ZipFile.OpenRead(workbookPath);
+        ZipArchiveEntry entry = Assert.Single(
+            package.Entries, item => item.FullName == $"xl/worksheets/{sheetEntry}");
+        using Stream content = entry.Open();
+        XElement margins = Assert.Single(
+            XDocument.Load(content).Descendants(),
+            static node => node.Name.LocalName == "pageMargins");
+        return margins.Attributes().ToDictionary(
+            static attribute => attribute.Name.LocalName,
+            static attribute => double.Parse(
+                attribute.Value, CultureInfo.InvariantCulture));
     }
 }

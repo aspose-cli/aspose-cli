@@ -81,37 +81,40 @@ internal static class PageSetupOps
 
     private static void ApplyMargins(PageSetup pageSetup, MarginsData margins)
     {
-        // Aspose page margins are measured in inches.
         if (margins.Top is { } top)
         {
-            pageSetup.TopMargin = top;
+            pageSetup.TopMargin = Centimetres(top);
         }
 
         if (margins.Bottom is { } bottom)
         {
-            pageSetup.BottomMargin = bottom;
+            pageSetup.BottomMargin = Centimetres(bottom);
         }
 
         if (margins.Left is { } left)
         {
-            pageSetup.LeftMargin = left;
+            pageSetup.LeftMargin = Centimetres(left);
         }
 
         if (margins.Right is { } right)
         {
-            pageSetup.RightMargin = right;
+            pageSetup.RightMargin = Centimetres(right);
         }
 
         if (margins.Header is { } header)
         {
-            pageSetup.HeaderMargin = header;
+            pageSetup.HeaderMargin = Centimetres(header);
         }
 
         if (margins.Footer is { } footer)
         {
-            pageSetup.FooterMargin = footer;
+            pageSetup.FooterMargin = Centimetres(footer);
         }
     }
+
+    // Every Aspose.Cells PageSetup margin is measured in centimetres, while the op
+    // contract states inches. The unit is translated here, at the engine boundary.
+    private static double Centimetres(double inches) => inches * 2.54;
 
     private static PaperSizeType ToPaperSize(string paper) => paper switch
     {
