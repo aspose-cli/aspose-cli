@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.IO.Compression;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
@@ -278,6 +279,74 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.Equal(0.5d, stored["right"], 6);
         Assert.Equal(0.3d, stored["header"], 6);
         Assert.Equal(0.3d, stored["footer"], 6);
+    }
+
+    [Theory]
+    [InlineData("column", 95, 100, 105, "0")]      // a length must start at zero
+    [InlineData("bar", 95, 100, 105, "0")]
+    [InlineData("area", 95, 100, 105, "0")]
+    [InlineData("column", -10, 0, 15, null)]       // pinning zero would clip the negative
+    [InlineData("line", 95, 100, 105, null)]       // a line encodes value by position
+    public void Chart_DrawsALengthFromZeroWithoutHidingNegativeValues(
+        string kind, double first, double second, double third, string? expectedMinimum)
+    {
+        string source = _fixture.CreateSalesWorkbook($"axis-{kind}-{first}.xlsx");
+        string output = Apply(
+            source,
+            $$"""
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A1",
+                "values": [["Item","Amount"],["Alpha",{{first}}],["Beta",{{second}}],["Gamma",{{third}}]] },
+              { "op": "create_chart", "sheet": "Data", "type": "{{kind}}",
+                "dataRange": "A1:B4", "at": "D2:K18", "title": "Amount" }
+            ] }
+            """,
+            $"axis-{kind}-{first}.out.xlsx").Output!.Path;
+
+        Assert.Equal(expectedMinimum, ReadValueAxisMinimum(output));
+    }
+
+    [Fact]
+    public void UpdateChart_KeepsAValueAxisMinimumTheWorkbookAlreadyCarried()
+    {
+        string source = _fixture.CreateSalesWorkbook("axis-explicit.xlsx");
+        string seeded = Apply(
+            source,
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A1",
+                "values": [["Item","Amount"],["Alpha",95],["Beta",100],["Gamma",105]] },
+              { "op": "create_chart", "sheet": "Data", "type": "column",
+                "dataRange": "A1:B4", "at": "D2:K18", "title": "Amount" }
+            ] }
+            """,
+            "axis-explicit.seeded.xlsx").Output!.Path;
+        using (var workbook = new Workbook(seeded))
+        {
+            Aspose.Cells.Charts.Axis axis = workbook.Worksheets["Data"].Charts[0].ValueAxis;
+            axis.IsAutomaticMinValue = false;
+            axis.MinValue = 50d;
+            workbook.Save(seeded);
+        }
+
+        string output = Apply(
+            seeded,
+            """{ "ops": [ { "op": "update_chart", "sheet": "Data", "index": 0, "title": "Revised" } ] }""",
+            "axis-explicit.out.xlsx").Output!.Path;
+
+        Assert.Equal("50", ReadValueAxisMinimum(output));
+    }
+
+    private static string? ReadValueAxisMinimum(string workbookPath)
+    {
+        using ZipArchive package = ZipFile.OpenRead(workbookPath);
+        ZipArchiveEntry entry = Assert.Single(
+            package.Entries,
+            item => Regex.IsMatch(item.FullName, @"^xl/charts/chart\d+\.xml$"));
+        using Stream content = entry.Open();
+        return XDocument.Load(content).Descendants()
+            .FirstOrDefault(static node => node.Name.LocalName == "min")
+            ?.Attribute("val")?.Value;
     }
 
     private static Dictionary<string, double> ReadPageMargins(string workbookPath, string sheetEntry)

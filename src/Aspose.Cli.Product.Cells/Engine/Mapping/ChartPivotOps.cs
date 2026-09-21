@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Globalization;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Pivot;
@@ -44,6 +45,7 @@ internal static class ChartPivotOps
         // Defaults first, explicit cosmetics after — a user field always wins.
         ApplyModernDefaults(chart, op.Type);
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
+        EnsureHonestValueAxis(chart);
         return null;
     }
 
@@ -194,6 +196,7 @@ internal static class ChartPivotOps
         // After the type/data changes so the cosmetics see the final chart —
         // the pie/axis-title guard must judge the type the file will carry.
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
+        EnsureHonestValueAxis(chart);
         return null;
     }
 
@@ -418,6 +421,32 @@ internal static class ChartPivotOps
 
     private static bool IsFamily(ChartType type, string prefix) =>
         type.ToString().StartsWith(prefix, StringComparison.Ordinal);
+
+    /// <summary>
+    /// Keeps a chart that draws value as an extent from its baseline from
+    /// exaggerating its own data. The engine's computed minimum answers this on its
+    /// own: a minimum above zero means every plotted value is positive and the
+    /// baseline was simply lifted off it. A minimum the author set is left alone,
+    /// and one at or below zero already shows the values honestly.
+    /// </summary>
+    private static void EnsureHonestValueAxis(Chart chart)
+    {
+        if (chart.Type is not (ChartType.Column or ChartType.Bar or ChartType.Area)
+            || chart.NSeries.Count == 0)
+        {
+            return;
+        }
+
+        chart.Calculate();
+        Axis values = chart.ValueAxis;
+        if (values.IsAutomaticMinValue
+            && values.MinValue is IConvertible computed
+            && Convert.ToDouble(computed, CultureInfo.InvariantCulture) > 0)
+        {
+            values.IsAutomaticMinValue = false;
+            values.MinValue = 0d;
+        }
+    }
 
     private static ChartType ToChartType(string type) => type switch
     {
