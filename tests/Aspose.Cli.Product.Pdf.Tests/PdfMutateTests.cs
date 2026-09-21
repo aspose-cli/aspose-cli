@@ -423,6 +423,72 @@ public sealed class PdfMutateTests
             table => File.ReadAllText(table.Path).Contains("Revenue", StringComparison.Ordinal));
     }
 
+    [Fact]
+    public void SetFormField_RefusesACheckBoxStateThatWouldNotDisplay()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CheckBoxDocument(fixture);
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "Approved", Value = "true" }] },
+            new PdfEditRequest { OutputPath = fixture.File("checkbox.invalid.pdf") }));
+
+        // Storing /true leaves the box drawn empty while a query reads back "true".
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("Off, Yes", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(fixture.File("checkbox.invalid.pdf")));
+    }
+
+    [Fact]
+    public void SetFormField_ChecksTheBoxForAStateItDefines()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CheckBoxDocument(fixture);
+        string output = fixture.File("checkbox.valid.pdf");
+
+        fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "Approved", Value = "Yes" }] },
+            new PdfEditRequest { OutputPath = output });
+
+        using var reopened = new Document(output);
+        var checkbox = (CheckboxField)reopened.Form.Fields.Single();
+        Assert.True(checkbox.Checked);
+        Assert.Equal("Yes", checkbox.ActiveState);
+    }
+
+    [Fact]
+    public void FillForm_RefusesTheSameCheckBoxStateAsTheOpsPath()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CheckBoxDocument(fixture);
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.FillForm(input,
+            new PdfFormFillRequest
+            {
+                Values = new Dictionary<string, string> { ["Approved"] = "true" },
+                OutputPath = fixture.File("checkbox.fill.pdf"),
+            }));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("Off, Yes", error.Message, StringComparison.Ordinal);
+    }
+
+    private static string CheckBoxDocument(PdfEngineFixture fixture)
+    {
+        string path = fixture.File("checkbox.pdf");
+        using var document = new Document();
+        Page page = document.Pages.Add();
+        document.Form.Add(new CheckboxField(page, new Rectangle(72, 700, 92, 720))
+        {
+            PartialName = "Approved",
+            ExportValue = "Yes",
+        });
+        document.Save(path);
+        return path;
+    }
+
     private static string FormDocument(PdfEngineFixture fixture)
     {
         string path = fixture.File("form.pdf");

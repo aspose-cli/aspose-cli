@@ -101,6 +101,11 @@ internal sealed class PdfFormService
                 throw InvalidOp(index, "set_form_field", $"Form field '{name}' was not found.");
             }
 
+            if (RejectedFieldValue(field, value) is { } rejected)
+            {
+                throw InvalidOp(index, "set_form_field", rejected);
+            }
+
             field.Value = value;
             outcomes.Add(new BoundedOperationOutcome
             {

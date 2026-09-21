@@ -175,6 +175,11 @@ internal static class PdfDocumentMutationHandlers
             throw new InvalidOperationException($"Form field '{op.Name}' was not found.");
         }
 
+        if (RejectedFieldValue(field, op.Value) is { } rejected)
+        {
+            throw new InvalidOperationException(rejected);
+        }
+
         field.Value = op.Value;
         return 1;
     }
