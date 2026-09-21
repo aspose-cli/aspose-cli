@@ -19,6 +19,9 @@ internal sealed partial class AppHost
     internal AppApiResult PickAndOpen() => Mutate(_workspace.PickAndOpen);
     internal void OpenPath(string path) => Mutate(() => _workspace.OpenPath(path, uploadedCopy: false));
     internal void OpenRecent(string id) => Mutate(() => _workspace.OpenRecent(id));
+    internal void ActivateDocument(string id) => Mutate(() => _workspace.Activate(id));
+    internal void CloseDocument(string id) => Mutate(() => _workspace.Close(id));
+    internal void ShowDocument(string id, string view) => Mutate(() => _workspace.Show(id, view));
     internal void RemoveRecent(string id) => Mutate(() => _workspace.RemoveRecent(id));
     internal void ClearRecent() => Mutate(_workspace.ClearRecent);
     internal Task ClearLocalDataAsync(CancellationToken token) => MutateAsync(() =>

@@ -25,3 +25,6 @@ One viewer service per user serves every open document, so `status` and
 the document already open (`reused: true`); the result reports the `license`
 mode the render ran under. A license the engine refuses fails that document
 alone and leaves what is already open rendering.
+
+The page's own toolbar switches between light and dark and turns the demo
+pointer on or off while watching; neither needs the document reopened.

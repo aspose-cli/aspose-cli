@@ -32,3 +32,6 @@ inputs with the valid license.
 The page supports human inspection. Agents collect `pdf query pages`,
 `pdf query search`, `pdf validate` and `review` evidence, and open the review
 images before claiming a visual pass.
+
+The page's own toolbar switches between light and dark and turns the demo
+pointer on or off while watching; neither needs the document reopened.

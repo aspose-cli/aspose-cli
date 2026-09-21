@@ -63,11 +63,22 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
         }
     }
 
+    /// <summary>
+    /// Waits until the App shows the named file, in the named view when one
+    /// is given. The page reaches the new document first and the App reports
+    /// it a moment later, so the reported state is given that moment.
+    /// </summary>
     internal async Task WaitForPreview(string file, string? view = null)
     {
         await Assertions.Expect(Preview.Locator(".av-file"))
             .ToHaveTextAsync(file, new() { Timeout = 60_000 });
         System.Text.Json.Nodes.JsonNode status = await app.Status();
+        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        while (!Matches(status, file, view) && !deadline.IsCancellationRequested)
+        {
+            await Task.Delay(100);
+            status = await app.Status();
+        }
         Assert.Equal(file, status["file"]!.GetValue<string>());
         if (view is not null)
         {
@@ -76,6 +87,10 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
             Assert.Equal(view, status["sessionView"]!.GetValue<string>());
         }
     }
+
+    private static bool Matches(System.Text.Json.Nodes.JsonNode status, string file, string? view) =>
+        status["file"]?.GetValue<string>() == file
+        && (view is null || status["sessionView"]?.GetValue<string>() == view);
 
     internal async Task ShowCellText(string sheet, string text)
     {

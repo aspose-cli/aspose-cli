@@ -20,8 +20,8 @@
     kind: 'Workbook',
     glyph: 'C',
     views: {
-      sheets: { layout: 'tabs', noun: 'Sheet', zoom: 1 },
-      workbook: { layout: 'grid', create: grid, noun: 'Sheet', zoom: 1 }
+      sheets: { layout: 'tabs', noun: 'Sheet', zoom: 1, label: 'Sheet images' },
+      workbook: { layout: 'grid', create: grid, noun: 'Sheet', zoom: 1, label: 'Grid' }
     }
   });
 

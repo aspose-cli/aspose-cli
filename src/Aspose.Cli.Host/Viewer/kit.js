@@ -44,10 +44,48 @@
     review: 'M6 21V4 M6 4h11l-2.5 4 2.5 4H6',
     slideshow: 'M8 5.5v13l10.5-6.5z',
     close: 'M6 6l12 12 M18 6L6 18',
-    follow: 'M12 4v10 M8 10.5l4 4 4-4 M5 19h14'
+    follow: 'M12 4v10 M8 10.5l4 4 4-4 M5 19h14',
+    theme: 'M20 14.2A8.4 8.4 0 119.8 4 6.6 6.6 0 0020 14.2z',
+    demo: 'M6 4l12 8-12 8z M6 4v16'
   };
+  var THEME_KEY = 'aspose-cli-theme';
   var LAYOUTS = { pages: pagesLayout, deck: deckLayout, tabs: tabsLayout };
   var DEFAULT_ZOOM = { pages: 'auto', deck: 'fit-page', tabs: 'auto' };
+
+  /**
+   * The theme this person picked, kept for the whole loopback origin so the
+   * App shell and every document it frames agree without talking to each
+   * other. 'system' follows the operating system.
+   */
+  function readTheme() {
+    try {
+      var saved = window.localStorage.getItem(THEME_KEY);
+      return saved === 'light' || saved === 'dark' ? saved : 'system';
+    } catch (error) {
+      return 'system';
+    }
+  }
+
+  function writeTheme(theme) {
+    try {
+      if (theme === 'system') {
+        window.localStorage.removeItem(THEME_KEY);
+      } else {
+        window.localStorage.setItem(THEME_KEY, theme);
+      }
+    } catch (error) {
+      // Private browsing: the choice lasts for this page only.
+    }
+  }
+
+  function applyTheme(theme) {
+    var root = document.documentElement;
+    if (theme === 'system') {
+      root.removeAttribute('data-theme');
+    } else {
+      root.setAttribute('data-theme', theme);
+    }
+  }
 
   var presenters = Object.create(null);
   var reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
@@ -123,7 +161,9 @@
       index: -1,
       zoom: spec.zoom || DEFAULT_ZOOM[spec.layout] || 1,
       manifest: doc.view,
-      follow: true
+      follow: true,
+      demo: !!(doc.live && doc.live.effect === 'demo'),
+      theme: readTheme()
     };
     var defaultZoom = state.zoom;
     var ctx = {
@@ -180,9 +220,12 @@
     }
     if (doc.live) {
       controls.follow = iconButton('follow', 'Follow changes', function () { setFollow(!state.follow); });
-      toolbar.append(separator(), controls.follow);
+      controls.demo = iconButton('demo', 'Demo pointer', function () { setDemo(!state.demo); });
+      toolbar.append(separator(), controls.follow, controls.demo);
     }
     toolbar.appendChild(el('span', 'av-spacer'));
+    controls.theme = iconButton('theme', 'Theme', function () { cycleTheme(); });
+    toolbar.appendChild(controls.theme);
     if (panel) {
       controls.review = textButton('av-review-toggle', null, togglePanel);
       controls.review.append(icon('review'), el('span', 'av-review-label', 'Review'));
@@ -226,9 +269,20 @@
     var app = el('div', 'av-app');
     app.setAttribute('data-product', doc.product);
     app.setAttribute('data-layout', spec.layout);
-    app.append(topBar(doc, presenter, live), toolbar, body, statusbar);
+    app.append(topBar(doc, presenter, spec, live), toolbar, body, statusbar);
     host.appendChild(app);
 
+    setTheme(state.theme);
+    if (controls.demo) {
+      setDemo(state.demo);
+    }
+    // The App shell and the viewer share an origin, so a theme chosen in one
+    // reaches the other without either knowing the other exists.
+    window.addEventListener('storage', function (event) {
+      if (event.key === THEME_KEY || event.key === null) {
+        setTheme(readTheme());
+      }
+    });
     if (sidebar) {
       toggleSidebar(!narrowScreen.matches);
     }
@@ -352,7 +406,7 @@
         }
         layout.mark(index, boxes);
       });
-      if (first >= 0 && doc.live && doc.live.effect === 'demo') {
+      if (first >= 0 && state.demo) {
         demo(app, layout.pointOf(first));
       }
     }
@@ -412,6 +466,33 @@
       state.follow = on;
       controls.follow.setAttribute('aria-pressed', String(on));
       controls.follow.title = on ? 'Following changes' : 'Follow changes';
+    }
+
+    /**
+     * Plays the demo pointer on what an edit changed. It is decoration for
+     * demonstrations and recordings, so it is a choice made while watching,
+     * not only when the document was opened.
+     */
+    function setDemo(on) {
+      state.demo = on;
+      controls.demo.setAttribute('aria-pressed', String(on));
+      controls.demo.title = on ? 'Demo pointer on' : 'Demo pointer';
+    }
+
+    /** Light, dark, or whatever the system says. */
+    function setTheme(theme) {
+      state.theme = theme;
+      applyTheme(theme);
+      controls.theme.setAttribute('aria-pressed', String(theme !== 'system'));
+      controls.theme.title = theme === 'system'
+        ? 'Theme: system'
+        : theme === 'dark' ? 'Theme: dark' : 'Theme: light';
+    }
+
+    function cycleTheme() {
+      var next = state.theme === 'system' ? 'dark' : state.theme === 'dark' ? 'light' : 'system';
+      writeTheme(next);
+      setTheme(next);
     }
 
     function setZoom(zoom) {
@@ -1214,14 +1295,19 @@
 
   // ---- Chrome ---------------------------------------------------------------
 
-  function topBar(doc, presenter, live) {
+  function topBar(doc, presenter, spec, live) {
     var bar = el('header', 'av-topbar');
     var brand = el('div', 'av-brand', presenter.glyph);
     brand.setAttribute('aria-hidden', 'true');
     var title = el('div', 'av-title');
     var file = el('h1', 'av-file', doc.file);
     file.title = doc.file;
-    title.append(el('div', 'av-kind', presenter.kind), file);
+    // A product with one view says what the document is; a product with
+    // several also says which of them is on screen.
+    var kind = Object.keys(presenter.views).length > 1 && spec.label
+      ? presenter.kind + ' · ' + spec.label
+      : presenter.kind;
+    title.append(el('div', 'av-kind', kind), file);
     var badges = el('div', 'av-badges');
     if (doc.license === 'evaluation') {
       var evaluation = el('span', 'av-badge av-badge-evaluation', 'Evaluation');

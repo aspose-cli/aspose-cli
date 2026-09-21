@@ -97,6 +97,14 @@ internal sealed class AppStatusQuery
             session?.UploadedCopy ?? false,
             session?.PreviewUrl,
             session?.View,
+            _sessions.Documents.Select(document => new AppOpenDocumentView(
+                document.Id,
+                document.FileName,
+                document.ProductId,
+                document.View,
+                document.PreviewUrl,
+                document.UploadedCopy,
+                document.Id == session?.Id)).ToArray(),
             settings.RecentFiles.Select(RecentView).ToArray(),
             Diagnostics(product, license),
             _products);

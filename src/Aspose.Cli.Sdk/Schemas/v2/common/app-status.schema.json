@@ -22,6 +22,7 @@
     "rememberRecentFiles",
     "license",
     "uploadedCopy",
+    "documents",
     "recentFiles",
     "diagnostics",
     "products"
@@ -66,6 +67,11 @@
       "type": "string",
       "minLength": 1,
       "description": "View the open document is rendered in, which a saved preference reaches only when the document reopens."
+    },
+    "documents": {
+      "type": "array",
+      "items": { "$ref": "#/$defs/openDocument" },
+      "description": "Documents the App has open, in the order they were opened; one of them is active."
     },
     "recentFiles": {
       "type": "array",
@@ -144,6 +150,20 @@
           "type": "string",
           "pattern": "^[0-9a-f]{64}$"
         }
+      },
+      "additionalProperties": false
+    },
+    "openDocument": {
+      "type": "object",
+      "required": ["id", "fileName", "productId", "view", "url", "uploadedCopy", "active"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
+        "fileName": { "type": "string", "minLength": 1 },
+        "productId": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
+        "view": { "type": "string", "minLength": 1 },
+        "url": { "type": "string", "format": "uri" },
+        "uploadedCopy": { "type": "boolean" },
+        "active": { "type": "boolean" }
       },
       "additionalProperties": false
     },

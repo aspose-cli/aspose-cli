@@ -33,7 +33,12 @@ public sealed class AppMutationTests
         {
             Assert.Equal("upload.csv", (await app.Status())["file"]!.GetValue<string>());
             await app.Post("/api/local-data/clear");
-            Assert.Null((await app.Status())["file"]);
+            // The temporary copy goes; the file opened from disk stays open.
+            JsonNode cleared = await app.Status();
+            Assert.Equal("original.csv", cleared["file"]!.GetValue<string>());
+            Assert.DoesNotContain(
+                cleared["documents"]!.AsArray(),
+                document => document!["uploadedCopy"]!.GetValue<bool>());
         }
         finally { client.Dispose(); }
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));

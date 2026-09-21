@@ -15,6 +15,14 @@ per-user viewer service as the global `preview` command, following external
 saves as they happen. Browser uploads are explicitly labelled as temporary
 preview copies.
 
+Several documents stay open at once. Each has a tab above the preview;
+switching tabs frames the document that was already rendering, so it comes
+back to the sheet, page and scroll position it was showing. Closing the last
+tab returns to the workspace. The view selector beside the tabs shows the same
+file another way — for a workbook, the selectable grid or one image per sheet —
+and the document keeps its tab. The theme control applies to the App and to
+every document it frames.
+
 Settings shows each product's independent license state, effective source and
 priority, preview defaults, fonts/runtime diagnostics, and local-data controls.
 A Total license is detected once and installed for every compatible product;

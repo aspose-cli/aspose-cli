@@ -26,6 +26,7 @@
       <span id="live-chip" class="chip muted"><span class="status-dot" aria-hidden="true"></span>Ready</span>
       <span id="edition-chip" class="chip">Loading build</span>
     </div>
+    <button id="theme-toggle" class="icon-button" type="button" aria-pressed="false" title="Theme: system">Theme</button>
   </header>
 
   <main id="main-content">
@@ -92,9 +93,14 @@
           <small id="preview-kind">Local preview</small>
         </div>
         <span class="toolbar-spacer"></span>
+        <label class="field inline" id="document-view-field" hidden>
+          <span class="sr-only">View</span>
+          <select id="document-view" aria-label="View"></select>
+        </label>
         <button id="preview-open" class="button secondary compact" type="button">Open another</button>
         <button class="icon-button" type="button" data-route="/settings" aria-label="Open settings">Settings</button>
       </div>
+      <div id="document-tabs" class="document-tabs" role="tablist" aria-label="Open documents" hidden></div>
       <div id="preview-edition-mount"></div>
       <div id="preview-empty" class="empty-state">
         <h1 tabindex="-1">No file is open</h1>

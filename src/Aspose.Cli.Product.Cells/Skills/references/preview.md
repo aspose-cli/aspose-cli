@@ -30,7 +30,9 @@ aspose-cli preview stop <id> --output json
 aspose-cli preview stop --all --output json
 ```
 
-Use `--view sheets` for one rendered image per sheet instead of the grid.
+Use `--view sheets` for one rendered image per sheet instead of the grid; the
+page's own toolbar switches the theme and turns the demo pointer on or off
+while watching, so neither needs the document reopened.
 `--port` chooses the service's loopback port when it starts. `--open`
 launches the default browser unless `ASPOSE_CLI_NO_OPEN=1` is set. Opening
 the same file the same way returns the document already open

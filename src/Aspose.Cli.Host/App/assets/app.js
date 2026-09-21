@@ -12,6 +12,48 @@
   var preferencesSave = null;
   var licenseTarget = null;
   var $ = function (id) { return document.getElementById(id); };
+  var THEME_KEY = 'aspose-cli-theme';
+
+  function readTheme() {
+    try {
+      var saved = window.localStorage.getItem(THEME_KEY);
+      return saved === 'light' || saved === 'dark' ? saved : 'system';
+    } catch (error) {
+      return 'system';
+    }
+  }
+
+  /**
+   * Applies the theme here and leaves it where the viewer finds it. The App
+   * and the documents it frames are one origin, so the framed page picks the
+   * change up from storage without either side addressing the other.
+   */
+  function applyTheme(theme) {
+    if (theme === 'system') {
+      document.documentElement.removeAttribute('data-theme');
+    } else {
+      document.documentElement.setAttribute('data-theme', theme);
+    }
+    var toggle = $('theme-toggle');
+    if (toggle) {
+      toggle.setAttribute('aria-pressed', String(theme !== 'system'));
+      toggle.title = 'Theme: ' + theme;
+    }
+  }
+
+  function cycleTheme() {
+    var next = readTheme() === 'system' ? 'dark' : readTheme() === 'dark' ? 'light' : 'system';
+    try {
+      if (next === 'system') {
+        window.localStorage.removeItem(THEME_KEY);
+      } else {
+        window.localStorage.setItem(THEME_KEY, next);
+      }
+    } catch (error) {
+      // Private browsing: the choice lasts for this page only.
+    }
+    applyTheme(next);
+  }
 
   function node(tag, className, text) {
     var result = document.createElement(tag);
@@ -513,8 +555,97 @@
     });
   }
 
+  /**
+   * One tab per open document. Switching tabs asks the App which document is
+   * on screen; the viewer service keeps every one of them rendering, so a tab
+   * comes back to exactly what it was showing.
+   */
+  function renderTabs() {
+    var strip = $('document-tabs');
+    var documents = status.documents || [];
+    strip.replaceChildren();
+    strip.hidden = documents.length < 2;
+    documents.forEach(function (document_) {
+      var tab = node('button', 'document-tab' + (document_.active ? ' active' : ''));
+      tab.type = 'button';
+      tab.setAttribute('role', 'tab');
+      tab.setAttribute('aria-selected', String(document_.active));
+      tab.title = document_.fileName + ' (' + document_.view + ')';
+      tab.append(node('span', 'tab-name', document_.fileName));
+      if (document_.uploadedCopy) {
+        tab.append(node('span', 'tab-badge', 'copy'));
+      }
+      tab.addEventListener('click', function () { activateDocument(document_.id); });
+      var close = node('span', 'tab-close', '\u00d7');
+      close.setAttribute('role', 'button');
+      close.setAttribute('aria-label', 'Close ' + document_.fileName);
+      close.addEventListener('click', function (event) {
+        event.stopPropagation();
+        closeDocument(document_.id);
+      });
+      tab.append(close);
+      strip.append(tab);
+    });
+  }
+
+  /** The views the active document's product offers, and the one on screen. */
+  function renderViewChoice() {
+    var field = $('document-view-field');
+    var select = $('document-view');
+    var product = currentProduct();
+    var views = product && product.preview ? product.preview.views : [];
+    var active = (status.documents || []).find(function (item) { return item.active; });
+    if (!active || views.length < 2) {
+      field.hidden = true;
+      return;
+    }
+    field.hidden = false;
+    select.replaceChildren();
+    views.forEach(function (view) {
+      var option = node('option', '', view.displayName);
+      option.value = view.id;
+      option.selected = view.id === active.view;
+      select.append(option);
+    });
+    select.onchange = function () { showDocument(active.id, select.value); };
+  }
+
+  async function activateDocument(id) {
+    try {
+      await api('/api/documents/activate', { method: 'POST', body: JSON.stringify({ id: id }) });
+      await loadStatus();
+    } catch (error) {
+      toast(error.message, true);
+    }
+  }
+
+  async function closeDocument(id) {
+    try {
+      await api('/api/documents/close', { method: 'POST', body: JSON.stringify({ id: id }) });
+      await loadStatus();
+      if (!status.previewUrl) {
+        go('/home');
+      }
+    } catch (error) {
+      toast(error.message, true);
+    }
+  }
+
+  async function showDocument(id, view) {
+    try {
+      setActivity('Rendering ' + view);
+      await api('/api/documents/view', { method: 'POST', body: JSON.stringify({ id: id, view: view }) });
+      await loadStatus();
+      setActivity('Ready');
+    } catch (error) {
+      toast(error.message, true);
+    }
+  }
+
   function renderPreview() {
     var product = currentProduct();
+    renderTabs();
+    renderViewChoice();
     $('preview-file').textContent = status.file || 'No file open';
     $('preview-kind').textContent = status.uploadedCopy
       ? 'Temporary local copy'
@@ -688,6 +819,7 @@
 
   $('open-file').addEventListener('click', chooseNative);
   $('preview-open').addEventListener('click', chooseNative);
+  $('theme-toggle').addEventListener('click', cycleTheme);
   $('file-input').addEventListener('change', function () {
     uploadFile(this.files[0]);
     this.value = '';
@@ -803,6 +935,7 @@
     }
   });
 
+  applyTheme(readTheme());
   renderRoute(false);
   loadStatus();
 }());

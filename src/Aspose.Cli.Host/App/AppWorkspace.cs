@@ -98,6 +98,36 @@ internal sealed class AppWorkspace
         OpenPath(path, uploadedCopy: false);
     }
 
+    /// <summary>Brings one open document forward and shows the preview page.</summary>
+    internal void Activate(string id)
+    {
+        _touch();
+        _sessions.Activate(id);
+        _setRoute(AppRoutes.Preview);
+    }
+
+    /// <summary>
+    /// Closes one open document. When it was the last one, the App returns to
+    /// the workspace rather than framing nothing.
+    /// </summary>
+    internal void Close(string id)
+    {
+        _touch();
+        _sessions.Close(id);
+        if (_sessions.Snapshot is null)
+        {
+            _setRoute(AppRoutes.Home);
+        }
+    }
+
+    /// <summary>Shows one open document in another of its product's views.</summary>
+    internal void Show(string id, string view)
+    {
+        _touch();
+        _sessions.Show(id, view);
+        _setRoute(AppRoutes.Preview);
+    }
+
     internal void RemoveRecent(string id) =>
         _preferences.RemoveRecent(id);
 

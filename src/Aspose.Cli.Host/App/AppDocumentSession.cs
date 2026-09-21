@@ -10,10 +10,11 @@ using Aspose.Cli.Sdk.Rendering;
 namespace Aspose.Cli.Host.App;
 
 /// <summary>
-/// Atomically switches the document the Web App shows. The App renders
-/// nothing itself: it opens the file in the viewer service and frames the
-/// address that service serves it under, so one renderer serves the App and
-/// the preview command alike.
+/// The documents the App has open, and which of them is on screen. The App
+/// renders nothing itself: it opens each file in the viewer service and
+/// frames the address that service serves it under, so one renderer serves
+/// the App and the preview command alike. Opening a file a second time
+/// brings its tab forward instead of rendering it twice.
 /// </summary>
 internal sealed class AppDocumentSession : IDisposable
 {
@@ -32,6 +33,7 @@ internal sealed class AppDocumentSession : IDisposable
     private readonly Func<string, string> _address;
     private readonly string _root;
     private readonly FontSearchProfile _fontProfile;
+    private readonly List<DocumentLease> _open = [];
     private DocumentLease? _current;
 
     public event Action? Activity;
@@ -63,6 +65,12 @@ internal sealed class AppDocumentSession : IDisposable
         get { lock (_gate) { return _current?.State; } }
     }
 
+    /// <summary>Every open document, in the order it was opened.</summary>
+    public IReadOnlyList<AppDocumentSnapshot> Documents
+    {
+        get { lock (_gate) { return _open.Select(static lease => lease.State).ToArray(); } }
+    }
+
     public string? FileName => Read(static lease => lease.FileName);
 
     public string? ProductId => Read(static lease => lease.ProductId);
@@ -86,12 +94,25 @@ internal sealed class AppDocumentSession : IDisposable
             operation: "app");
 
         string displayName = Path.GetFileName(displayFileName ?? full);
+        string view = _preferences.Current.PreviewView(product);
+        lock (_gate)
+        {
+            // Already open the same way: bring its tab forward.
+            if (Match(full, view) is { } already)
+            {
+                _current = already;
+                _log.Write($"activated '{already.FileName}' ({already.View})");
+                Activity?.Invoke();
+                return;
+            }
+        }
         DocumentLease next = CreateLease(
             context,
             full,
             displayName,
             uploadedCopy,
-            product);
+            product,
+            view);
         try
         {
             if (!uploadedCopy)
@@ -104,17 +125,19 @@ internal sealed class AppDocumentSession : IDisposable
             DisposePrevious(next);
             throw;
         }
-        DocumentLease? previous;
+        DocumentLease? replaced = null;
         lock (_gate)
         {
-            previous = _current;
+            // One tab per file: a different view of the same file replaces it.
+            replaced = _open.FirstOrDefault(lease => SamePath(lease.Path, full));
+            if (replaced is not null)
+            {
+                _open.Remove(replaced);
+            }
+            _open.Add(next);
             _current = next;
         }
-
-        DisposePrevious(previous);
-        if (previous?.UploadedCopy is true && !string.Equals(previous.Path, full,
-            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
-        { DiscardUpload(previous.Path); }
+        DisposePrevious(replaced);
 
         _log.Write(
             $"opened {product.Manifest.Id} file '{Path.GetFileName(full)}' ({next.View})");
@@ -260,21 +283,126 @@ internal sealed class AppDocumentSession : IDisposable
     /// </summary>
     public void Refresh()
     {
-        DocumentLease? current;
-        lock (_gate) { current = _current; }
-        if (current is not null)
+        DocumentLease[] open;
+        lock (_gate) { open = _open.ToArray(); }
+        foreach (DocumentLease lease in open)
         {
-            _documents.Find(current.DocumentId)?.Refresh();
+            _documents.Find(lease.DocumentId)?.Refresh();
+        }
+        if (open.Length > 0)
+        {
             Activity?.Invoke();
         }
     }
+
+    /// <summary>Brings one open document forward.</summary>
+    public void Activate(string documentId)
+    {
+        lock (_gate)
+        {
+            _current = _open.FirstOrDefault(lease => lease.DocumentId == documentId)
+                ?? throw NotOpen();
+        }
+        Activity?.Invoke();
+    }
+
+    /// <summary>
+    /// Closes one open document. The tab beside it takes its place, so the
+    /// App keeps showing something as long as anything is open.
+    /// </summary>
+    public void Close(string documentId)
+    {
+        DocumentLease? closing;
+        lock (_gate)
+        {
+            int index = _open.FindIndex(lease => lease.DocumentId == documentId);
+            if (index < 0)
+            {
+                return;
+            }
+            closing = _open[index];
+            _open.RemoveAt(index);
+            if (_current == closing)
+            {
+                _current = _open.Count == 0 ? null : _open[Math.Min(index, _open.Count - 1)];
+            }
+        }
+        DisposePrevious(closing);
+        if (closing?.UploadedCopy is true)
+        {
+            DiscardUpload(closing.Path);
+        }
+        Activity?.Invoke();
+    }
+
+    /// <summary>
+    /// Shows one open document in another of its product's views. The file
+    /// keeps its tab; what renders it changes.
+    /// </summary>
+    public void Show(string documentId, string view)
+    {
+        DocumentLease lease;
+        lock (_gate)
+        {
+            lease = _open.FirstOrDefault(open => open.DocumentId == documentId) ?? throw NotOpen();
+        }
+        if (string.Equals(lease.View, view, StringComparison.Ordinal))
+        {
+            return;
+        }
+        ProductDefinition product = _catalog.ResolveById(lease.ProductId);
+        ViewerErrors.EnsureViewSupported(
+            product.Manifest.Id,
+            view,
+            product.View.Views.Select(static declared => declared.Id).ToArray());
+        DocumentLease next = CreateLease(
+            _createContext(),
+            lease.Path,
+            lease.FileName,
+            lease.UploadedCopy,
+            product,
+            view);
+        lock (_gate)
+        {
+            int index = _open.IndexOf(lease);
+            if (index < 0)
+            {
+                _open.Add(next);
+            }
+            else
+            {
+                _open[index] = next;
+            }
+            if (_current == lease || _current is null)
+            {
+                _current = next;
+            }
+        }
+        DisposePrevious(lease);
+        _log.Write($"showed '{next.FileName}' as {view}");
+    }
+
+    private static CliException NotOpen() => CliErrors.OptionInvalid(
+        "document",
+        "that document is not open in the App",
+        "Open the file again from the workspace.");
+
+    private DocumentLease? Match(string path, string view) =>
+        _open.FirstOrDefault(lease =>
+            SamePath(lease.Path, path) && string.Equals(lease.View, view, StringComparison.Ordinal));
+
+    private static bool SamePath(string left, string right) =>
+        string.Equals(
+            left,
+            right,
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
 
     public void RefreshPreferences(string productId, string desiredView)
     {
         DocumentLease? current;
         lock (_gate) { current = _current; }
         if (current is not null && current.ProductId == productId && current.View != desiredView)
-        { Open(current.Path, current.UploadedCopy, current.FileName); }
+        { Show(current.DocumentId, desiredView); }
     }
 
     internal void DiscardUpload(string path)
@@ -290,12 +418,20 @@ internal sealed class AppDocumentSession : IDisposable
 
     public void ClearUploads()
     {
-        DocumentLease? closing = null;
+        DocumentLease[] closing;
         lock (_gate)
         {
-            if (_current?.UploadedCopy is true) { closing = _current; _current = null; }
+            closing = _open.Where(static lease => lease.UploadedCopy).ToArray();
+            _open.RemoveAll(static lease => lease.UploadedCopy);
+            if (_current?.UploadedCopy is true)
+            {
+                _current = _open.Count == 0 ? null : _open[^1];
+            }
         }
-        DisposePrevious(closing);
+        foreach (DocumentLease lease in closing)
+        {
+            DisposePrevious(lease);
+        }
         RetireUploads();
     }
 
@@ -326,15 +462,19 @@ internal sealed class AppDocumentSession : IDisposable
 
     public void Dispose()
     {
-        DocumentLease? closing;
+        DocumentLease[] closing;
         lock (_gate)
         {
             if (_disposed) { return; }
             _disposed = true;
-            closing = _current;
+            closing = _open.ToArray();
+            _open.Clear();
             _current = null;
         }
-        DisposePrevious(closing);
+        foreach (DocumentLease lease in closing)
+        {
+            DisposePrevious(lease);
+        }
         RetireUploads();
         Task completed;
         lock (_gate) { completed = Task.WhenAll(_retiredUploads); }
@@ -361,9 +501,9 @@ internal sealed class AppDocumentSession : IDisposable
         string path,
         string displayName,
         bool uploadedCopy,
-        ProductDefinition product)
+        ProductDefinition product,
+        string view)
     {
-        string view = _preferences.Current.PreviewView(product);
         RetainedResource<OwnedTemporaryFile>.Lease? input = null;
         lock (_gate)
         {
@@ -382,6 +522,7 @@ internal sealed class AppDocumentSession : IDisposable
             return new DocumentLease(
                 path,
                 new AppDocumentSnapshot(
+                    opened.Id,
                     displayName,
                     uploadedCopy || input is not null,
                     opened.Current?.Product ?? product.Manifest.Id,
@@ -445,4 +586,4 @@ internal sealed class AppDocumentSession : IDisposable
 }
 
 internal sealed record AppDocumentSnapshot(
-    string FileName, bool UploadedCopy, string ProductId, string View, string PreviewUrl);
+    string Id, string FileName, bool UploadedCopy, string ProductId, string View, string PreviewUrl);

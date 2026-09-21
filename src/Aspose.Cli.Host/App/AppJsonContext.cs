@@ -12,4 +12,5 @@ namespace Aspose.Cli.Host.App;
 [JsonSerializable(typeof(AppLicenseSavedResult))]
 [JsonSerializable(typeof(AppPreferenceRequest))]
 [JsonSerializable(typeof(AppIdRequest))]
+[JsonSerializable(typeof(AppDocumentViewRequest))]
 internal sealed partial class AppJsonContext : JsonSerializerContext;

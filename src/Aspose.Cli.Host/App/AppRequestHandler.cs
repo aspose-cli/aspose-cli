@@ -164,6 +164,16 @@ internal sealed class AppRequestHandler
             case ("POST", "/api/preferences"):
                 AppApiResult preferences = _host.UpdatePreferences(await ReadJson<AppPreferenceRequest>(request).ConfigureAwait(false));
                 return (HttpStatusCode.OK, preferences, false);
+            case ("POST", "/api/documents/activate"):
+                _host.ActivateDocument((await ReadJson<AppIdRequest>(request).ConfigureAwait(false)).Id);
+                break;
+            case ("POST", "/api/documents/close"):
+                _host.CloseDocument((await ReadJson<AppIdRequest>(request).ConfigureAwait(false)).Id);
+                break;
+            case ("POST", "/api/documents/view"):
+                AppDocumentViewRequest shown = await ReadJson<AppDocumentViewRequest>(request).ConfigureAwait(false);
+                _host.ShowDocument(shown.Id, shown.View);
+                break;
             case ("POST", "/api/recent/open"):
                 _host.OpenRecent((await ReadJson<AppIdRequest>(request).ConfigureAwait(false)).Id);
                 break;

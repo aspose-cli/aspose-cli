@@ -28,3 +28,6 @@ what is already open rendering.
 The page is for people: pages, an outline of the document's headings, zoom,
 and a mark on the paragraphs an edit changed. It is not a data source.
 Agents verify with `words query blocks`, `--verify`, comparison and `review`.
+
+The page's own toolbar switches between light and dark and turns the demo
+pointer on or off while watching; neither needs the document reopened.

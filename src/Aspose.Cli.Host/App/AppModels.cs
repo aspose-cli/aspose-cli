@@ -18,6 +18,16 @@ internal sealed record AppDiagnosticView(
 
 internal sealed record AppPreviewView(string Id, string DisplayName);
 
+/// <summary>One document the App has open, as the tab strip shows it.</summary>
+internal sealed record AppOpenDocumentView(
+    string Id,
+    string FileName,
+    string ProductId,
+    string View,
+    string Url,
+    bool UploadedCopy,
+    bool Active);
+
 internal sealed record AppSkillView(
     string Product,
     string Name,
@@ -71,6 +81,7 @@ internal sealed record AppStatusView(
     bool UploadedCopy,
     string? PreviewUrl,
     string? SessionView,
+    IReadOnlyList<AppOpenDocumentView> Documents,
     IReadOnlyList<AppRecentView> RecentFiles,
     IReadOnlyList<AppDiagnosticView> Diagnostics,
     IReadOnlyList<AppProductView> Products)
@@ -83,6 +94,9 @@ internal sealed record AppStatusView(
 }
 
 internal sealed record AppIdRequest(string Id);
+
+/// <summary>Which view of one open document to show.</summary>
+internal sealed record AppDocumentViewRequest(string Id, string View);
 
 internal sealed record AppPreferenceRequest(
     string? Product,
