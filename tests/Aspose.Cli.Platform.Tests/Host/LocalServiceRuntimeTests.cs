@@ -94,7 +94,7 @@ public sealed class LocalServiceRuntimeTests
     }
 
     [Fact]
-    public void ManagedSelfLaunch_UsesTheEntryAssemblyPath()
+    public void ManagedSelfLaunch_UsesTheEntryAssemblyBesideTheHost()
     {
         string path = SelfProcessLauncher.ResolveManagedEntryAssemblyPath(
             typeof(LocalServiceRuntimeTests).Assembly,
@@ -104,6 +104,19 @@ public sealed class LocalServiceRuntimeTests
         Assert.Equal(
             Path.GetFullPath(typeof(LocalServiceRuntimeTests).Assembly.Location),
             path);
+        Assert.Equal(Path.GetFullPath(AppContext.BaseDirectory), Path.GetDirectoryName(path) + Path.DirectorySeparatorChar);
+    }
+
+    [Fact]
+    public void ManagedSelfLaunch_ReportsAnAssemblyThatIsNotBesideTheHost()
+    {
+        CliException error = Assert.Throws<CliException>(() =>
+            SelfProcessLauncher.ResolveManagedEntryAssemblyPath(
+                typeof(string).Assembly,
+                "test",
+                "Build the test assembly."));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
     }
 
     [Fact]

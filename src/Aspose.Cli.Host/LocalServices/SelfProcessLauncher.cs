@@ -67,14 +67,23 @@ internal static class SelfProcessLauncher
         return start;
     }
 
+    /// <summary>
+    /// Where the managed entry assembly sits, for the development layout in
+    /// which the host process is <c>dotnet</c> and the assembly has to be
+    /// named on its command line. It is read from the base directory rather
+    /// than the assembly's own location, because a single-file app reports no
+    /// location for what is embedded in it.
+    /// </summary>
     internal static string ResolveManagedEntryAssemblyPath(
         Assembly entryAssembly,
         string optionName,
         string missingExecutableHint)
     {
         ArgumentNullException.ThrowIfNull(entryAssembly);
-        string path = entryAssembly.Location;
-        if (string.IsNullOrWhiteSpace(path) || !File.Exists(path))
+        string path = Path.Combine(
+            AppContext.BaseDirectory,
+            entryAssembly.GetName().Name + ".dll");
+        if (!File.Exists(path))
         {
             throw CliErrors.OptionInvalid(
                 optionName,

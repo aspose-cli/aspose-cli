@@ -83,6 +83,9 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             await Expect(grid.Locator("td[data-cell='B2']").First).ToContainTextAsync("120");
             await Expect(page.Locator(".av-tabstrip .av-tab").First).ToHaveTextAsync("Data");
             await page.EvaluateAsync("() => { document.querySelector('.cells-grid-frame').dataset.probe = 'grid'; }");
+            // The mark is a flash that fades, so what was marked is recorded
+            // as it happens rather than looked for afterwards.
+            await RecordMarks(grid);
 
             Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
                 "--set", "Data!B2=999", "--output", "json"));
@@ -91,7 +94,38 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             // The grid was patched, not reloaded: the frame is the same element.
             await Expect(page.Locator(".cells-grid-frame[data-probe='grid']")).ToHaveCountAsync(1);
             await Expect(grid.Locator("td[data-cell='A1']").First).ToContainTextAsync("Region");
+            // Only the edited cell is marked, so the mark says where to look.
+            Assert.Equal(["B2"], await Marks(grid));
+
+            // A value written where the sheet had nothing grows the grid. The
+            // cells the growth adds are empty, and an empty cell is not news.
+            // The first mark is given time to fade so the next one stands alone.
+            await Expect(grid.Locator(".aspose-cell-changed")).ToHaveCountAsync(0, new() { Timeout = 10_000 });
+            await RecordMarks(grid);
+            Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
+                "--set", "Data!D4=Later", "--output", "json"));
+
+            await Expect(grid.Locator("td[data-cell='D4']").First).ToContainTextAsync("Later");
+            Assert.Equal(["D4"], await Marks(grid));
         });
+
+    /// <summary>Starts recording which cells the grid marks as changed.</summary>
+    private static Task RecordMarks(IFrameLocator grid) =>
+        grid.Locator("body").EvaluateAsync(@"body => {
+            window.__marks = [];
+            if (window.__observer) { window.__observer.disconnect(); }
+            window.__observer = new MutationObserver(records => records.forEach(record => {
+                const cell = record.target;
+                if (cell.classList && cell.classList.contains('aspose-cell-changed')) {
+                    window.__marks.push(cell.getAttribute('data-cell'));
+                }
+            }));
+            window.__observer.observe(body, { subtree: true, attributes: true, attributeFilter: ['class'] });
+        }");
+
+    private static async Task<string[]> Marks(IFrameLocator grid) =>
+        await grid.Locator("body").EvaluateAsync<string[]>(
+            "() => Array.from(new Set(window.__marks || [])).sort()");
 
     [Fact]
     public Task Slides_AFailedRenderKeepsTheDeckAndSaysWhy() =>
