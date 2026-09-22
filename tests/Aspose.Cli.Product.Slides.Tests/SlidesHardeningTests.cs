@@ -7,6 +7,42 @@ namespace Aspose.Cli.Product.Slides.Tests;
 
 public sealed class SlidesHardeningTests
 {
+    [Theory]
+    [InlineData("text", 4, true)]
+    [InlineData("text", 5, true)]
+    [InlineData("text", 10, true)]
+    [InlineData("text", 20, false)]
+    [InlineData("full", 25, true)]
+    [InlineData("full", 35, false)]
+    public void Read_AccountsForEveryContentProjectionAndExactBoundaries(string scope, int budget, bool truncated)
+    {
+        using var fixture = new SlidesEngineFixture();
+        fixture.Gate.EnsureApplied();
+        string input = fixture.File($"read-budget-{scope}-{budget}.pptx");
+        using (var presentation = new Aspose.Slides.Presentation())
+        {
+            Aspose.Slides.ISlide slide = presentation.Slides[0];
+            slide.Shapes.Clear();
+            slide.Shapes.AddAutoShape(Aspose.Slides.ShapeType.Rectangle, 10, 10, 200, 30).TextFrame.Text = "First";
+            slide.Shapes.AddAutoShape(Aspose.Slides.ShapeType.Rectangle, 10, 50, 200, 30).TextFrame.Text = "Body!";
+            slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "Notes";
+            presentation.CommentAuthors.AddAuthor("Author", "A").Comments.AddComment(
+                "Reply", slide, new System.Drawing.PointF(10, 10), DateTime.UtcNow);
+            presentation.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
+        }
+        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest
+        {
+            Slides = PageRange.Parse("1"), Scope = scope, IncludeNotes = true, MaxCharacters = budget,
+        });
+        SlideData result = Assert.Single(read.Slides);
+        int characters = (result.Title?.Length ?? 0) + (result.Text?.Sum(static text => text.Length) ?? 0)
+            + result.Shapes.Sum(static shape => (shape.Text?.Length ?? 0) + (shape.Runs?.Sum(static run => run.Text.Length) ?? 0))
+            + (result.Notes?.Length ?? 0) + (result.Comments?.Sum(static comment => comment.Text.Length) ?? 0);
+        Assert.Equal(budget, characters);
+        Assert.Equal(truncated, result.ContentTruncated);
+        Assert.Equal(truncated, read.Window.Truncated);
+        Assert.Null(read.Next);
+    }
     [Fact]
     public void FontRegistryOverride_IsRestoredWhenInitializationFails()
     {

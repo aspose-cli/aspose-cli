@@ -18,6 +18,7 @@ public sealed record DocumentReadRequest
     public PageRange? Blocks { get; init; }
     public int? Section { get; init; }
     public string Scope { get; init; } = "text";
+    /// <summary>Returned document-content character budget, including repeated projections.</summary>
     public int MaxCharacters { get; init; } = 20_000;
     public int MaxBlocks { get; init; } = 200;
     public string? Password { get; init; }

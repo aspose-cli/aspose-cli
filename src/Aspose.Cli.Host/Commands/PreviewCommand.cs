@@ -67,6 +67,7 @@ internal static class PreviewCommand
             new ViewerOpenRequest
             {
                 File = input,
+                MaxInputBytes = context.Globals.MaxInputBytes,
                 Product = parse.GetValue(symbols.Product),
                 View = view == AutoView ? null : view,
                 Effect = parse.GetValue(symbols.Effect),
@@ -77,7 +78,8 @@ internal static class PreviewCommand
                     : null,
                 FontDirectories = fonts.IsAmbient ? null : fonts.Directories,
             },
-            port);
+            port,
+            context.Deadline);
         if (parse.GetValue(symbols.Open))
         {
             BrowserLauncher.Open(opened.Document.Url);
@@ -87,7 +89,7 @@ internal static class PreviewCommand
             Id = opened.Document.Id,
             Product = opened.Document.Product,
             Url = opened.Document.Url,
-            Pid = Pid(),
+            Pid = opened.Pid,
             File = opened.Document.File,
             View = opened.Document.View,
             Reused = opened.Reused,
@@ -139,7 +141,7 @@ internal static class PreviewCommand
         {
             var client = new ViewerServiceClient();
             ViewerStopResponse? state = client.Stop(parse.GetValue(id), parse.GetValue(all));
-            int pid = state is null ? 0 : Pid();
+            int pid = state?.Pid ?? 0;
             return new ProductPreviewStopResult
             {
                 Stopped = state?.Stopped ?? [],
@@ -148,9 +150,6 @@ internal static class PreviewCommand
         }));
         return stop;
     }
-
-    /// <summary>The service that answered; documents of one user share it.</summary>
-    private static int Pid() => new ViewerServiceClient().Status()?.Pid ?? 0;
 
     private static ProductPreviewSessionInfo ToInfo(ViewerDocumentState document, int pid) => new()
     {

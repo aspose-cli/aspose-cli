@@ -1,4 +1,7 @@
 using System.Text;
+using System.Text.RegularExpressions;
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
@@ -86,11 +89,52 @@ internal static class PdfEngineSupport
         SizeBytes = size,
     };
 
-    internal static PdfRect ToContractRect(Page page, Rectangle rect) => new()
+    internal static Rectangle ToPdfRect(Page page, PdfRectInput rect)
     {
-        X = rect.LLX,
-        Y = page.Rect.Height - rect.URY,
-        Width = rect.Width,
-        Height = rect.Height,
-    };
+        Rectangle box = page.GetPageRect(considerRotation: true);
+        if (rect.X < 0 || rect.Y < 0 || rect.X + rect.Width > box.Width || rect.Y + rect.Height > box.Height)
+        {
+            throw new InvalidOperationException("Rectangle lies outside the page bounds.");
+        }
+        return page.RotationMatrix.Reverse().Transform(new Rectangle(
+            box.LLX + rect.X, box.URY - rect.Y - rect.Height,
+            box.LLX + rect.X + rect.Width, box.URY - rect.Y));
+    }
+
+    internal static PdfRect ToContractRect(Page page, Rectangle rect)
+    {
+        Rectangle box = page.GetPageRect(considerRotation: true);
+        Rectangle visible = page.RotationMatrix.Transform(rect);
+        return new PdfRect
+        {
+            X = visible.LLX - box.LLX,
+            Y = box.URY - visible.URY,
+            Width = visible.Width,
+            Height = visible.Height,
+        };
+    }
+
+    internal static TextFragmentCollection MatchText(Page page, string pattern, bool regex, bool caseSensitive)
+    {
+        Regex expression = SafeRegex.Create(regex ? pattern : Regex.Escape(pattern), caseSensitive);
+        try
+        {
+            // The SDK overflows on contextual zero-width matches. Reject them before
+            // handing it the original expression, whose timeout and context it preserves.
+            if (regex && expression.Matches(ExtractText(page, PdfReadModes.Plain))
+                .Any(static match => match.Length == 0))
+            {
+                throw new InvalidOperationException("A redaction or search regex must not match an empty string.");
+            }
+            var absorber = new TextFragmentAbsorber(expression, new TextSearchOptions(true));
+            page.Accept(absorber);
+            return absorber.TextFragments;
+        }
+        catch (RegexMatchTimeoutException exception)
+        {
+            throw new CliException(ErrorCodes.OperationTimeout,
+                "The PDF regular expression exceeded its one-second execution budget.",
+                hint: "Simplify the expression or search a narrower page range.", innerException: exception);
+        }
+    }
 }

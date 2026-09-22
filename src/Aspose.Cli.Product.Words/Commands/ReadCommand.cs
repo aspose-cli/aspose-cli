@@ -19,7 +19,7 @@ internal static class ReadCommand
             DefaultValueFactory = _ => "text",
         }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. DocumentReadScopes.All]);
-        var maxChars = new Option<int>("--max-chars") { DefaultValueFactory = _ => 20_000, Description = "Maximum projected characters." };
+        var maxChars = new Option<int>("--max-chars") { DefaultValueFactory = _ => 20_000, Description = "Maximum returned content characters, including repeated text/run projections." };
         var maxBlocks = new Option<int>("--max-blocks") { DefaultValueFactory = _ => 200, Description = "Maximum projected blocks." };
         var password = new PasswordOptions("--password", "the document");
 

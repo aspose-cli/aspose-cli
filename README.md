@@ -41,6 +41,8 @@ publishes use locked restore. Build outputs stay under `artifacts/` and project-
 ## Install a released build
 
 Verify the release signature and archive checksum with an approved key ring.
+The archive includes the CLI `LICENSE` and original dependency notices under `notices/`;
+these files are part of the signed payload.
 Extract the archive, set `ASPOSE_CLI_RELEASE_TRUSTED_KEYS` to the approved key-ring JSON, and run:
 
 ```powershell
@@ -50,7 +52,11 @@ Extract the archive, set `ASPOSE_CLI_RELEASE_TRUSTED_KEYS` to the approved key-r
 The installer verifies itself, the package signatures and the payload hashes, then installs
 per user into `%LOCALAPPDATA%\Aspose\CLI`. Configuration is `%APPDATA%\aspose-cli` or the
 absolute directory selected by `ASPOSE_CLI_CONFIG_DIR`. Optional MCP registration runs only after
-the installation transaction is finalized.
+the installation transaction is finalized. It preserves existing user-owned registrations;
+Codex and Claude use their MCP commands, and OpenCode uses its structured configuration
+query and global noninteractive add (verified with OpenCode 1.18.32). Resolved host
+configuration is never printed. Unsupported host commands produce a warning without
+invalidating the CLI installation.
 
 For a local development build, `.\scripts\install-local.ps1` builds and transactionally installs
 an explicitly unsigned package. It does not claim customer release trust.
@@ -102,7 +108,17 @@ SDK rights or remove evaluation restrictions. See [Aspose EULA](https://about.as
 `scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64` requires a clean source
 revision, OpenSSL, an ECDSA P-256 signing key and a valid Authenticode tool and certificate,
 supplied through `ASPOSE_CLI_RELEASE_SIGNING_KEY`, `ASPOSE_CLI_OPENSSL_PATH`,
-`ASPOSE_CLI_AUTHENTICODE_TOOL` and `ASPOSE_CLI_AUTHENTICODE_CERTIFICATE`. The signed manifest
-binds the source revision and the locked SDK package identities and hashes.
+`ASPOSE_CLI_AUTHENTICODE_TOOL`, `ASPOSE_CLI_AUTHENTICODE_CERTIFICATE` and
+`ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER`. The signed manifest
+binds the source revision and the locked SDK package identities and hashes. Both
+Authenticode signatures must be valid and timestamped; choose a timestamp endpoint
+supported by the configured signing tool and PowerShell signer.
+
+The CLI version is declared once as `Version` in `Directory.Build.props` (currently
+`1.0.0`). Increment it before publishing a new immutable release. Publication checks
+the executable against that declaration; adding a new SHA to the same semantic version
+does not create an upgrade. Notice collection follows the actual published dependency
+graph, including the self-contained .NET runtime, verifies the restored archive hashes,
+and preserves original legal files. See [notice sources](eng/notices/README.md).
 
 See [CONTRIBUTING.md](CONTRIBUTING.md), [SECURITY.md](SECURITY.md), [AGENTS.md](AGENTS.md) and [LICENSE](LICENSE).

@@ -157,24 +157,15 @@ internal static class PdfContentMutationHandlers
         foreach (int number in pages)
         {
             Page page = document.Pages[number];
-            IReadOnlyList<string> phrases = MatchPhrases(page, op.Pattern, op.Regex, caseSensitive: true);
-            foreach (string phrase in phrases)
+            TextFragmentCollection fragments = MatchText(page, op.Pattern, op.Regex, caseSensitive: true);
+            foreach (TextFragment fragment in fragments)
             {
-                var absorber = new TextFragmentAbsorber(Regex.Escape(phrase))
-                {
-                    TextSearchOptions = new TextSearchOptions(isRegularExpressionUsed: true),
-                };
-                page.Accept(absorber);
-                foreach (TextFragment fragment in absorber.TextFragments)
-                {
-                    Cover(page, fragment.Rectangle, fill).Redact();
-                    count++;
-                }
-
-                if (absorber.TextFragments.Count > 0)
-                {
-                    touched.Add(number);
-                }
+                Cover(page, fragment.Rectangle, fill).Redact();
+                count++;
+            }
+            if (fragments.Count > 0)
+            {
+                touched.Add(number);
             }
         }
 

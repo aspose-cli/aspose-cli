@@ -16,13 +16,16 @@ internal static class RenderWorkerProtocol
 }
 
 /// <summary>One render the service asks the warm worker for.</summary>
-internal sealed record RenderWorkerRequest
+internal sealed record RenderWorkerRequest(long MaxInputBytes = Aspose.Cli.Sdk.IO.ResourceBudgetDefaults.DefaultInputBytes)
 {
     /// <summary>Correlates the response; unique for the life of the service.</summary>
     public required int Id { get; init; }
 
     /// <summary>Absolute path of the document copy to render.</summary>
     public required string Source { get; init; }
+
+    /// <summary>Original document path defining the verified local resource boundary of a snapshot.</summary>
+    public string? SourceOrigin { get; init; }
 
     /// <summary>Absolute path of the empty private directory to render into.</summary>
     public required string Output { get; init; }
@@ -32,6 +35,9 @@ internal sealed record RenderWorkerRequest
 
     /// <summary>Wall-clock budget for this render; the worker fails cleanly within it.</summary>
     public required int TimeoutMs { get; init; }
+
+    /// <summary>Parent-created monotonic expiration shared with the worker.</summary>
+    public long? ExpiresAtTick { get; init; }
 
     /// <summary>Product id, or null to select the product from the document.</summary>
     public string? Product { get; init; }

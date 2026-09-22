@@ -161,7 +161,7 @@ internal sealed class SlidesReadService
         int last = slides.Count == 0 ? 0 : slides[^1].Number;
         bool selectionTruncated = slides.Count < requested.Count;
         bool defaultWindowTruncated = request.Slides is null && last < presentation.Slides.Count;
-        bool truncated = selectionTruncated || defaultWindowTruncated;
+        bool truncated = selectionTruncated || defaultWindowTruncated || slides.Any(static slide => slide.ContentTruncated);
         string? nextSlides = selectionTruncated
             ? string.Join(",", requested.Skip(slides.Count))
             : defaultWindowTruncated ? $"{last + 1}-" : null;

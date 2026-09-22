@@ -20,7 +20,7 @@ internal static class ReadCommand
         scope.AcceptOnlyFromAmong([.. PresentationReadScopes.All]);
         var maxChars = new Option<int>("--max-chars")
         {
-            Description = "Maximum projected text characters.",
+            Description = "Maximum returned title/text/run/notes/comment characters, including repeated projections.",
             DefaultValueFactory = _ => 20_000,
         };
         var notes = new Option<bool>("--notes") { Description = "Include speaker notes for returned slides." };

@@ -28,34 +28,102 @@ public sealed class CustomerInstallerPowerShellTests : IDisposable, IClassFixtur
     }
 
     [Theory]
-    [InlineData(0)]
-    [InlineData(1)]
-    [InlineData(3)]
-    public void McpRegistrationAcceptsEmptyOwnershipAndReturnsAnArray(int availableHosts)
+    [InlineData(0, false, false, "exact")]
+    [InlineData(3, false, false, "exact")]
+    [InlineData(3, true, false, "exact")]
+    [InlineData(3, true, true, "exact")]
+    [InlineData(3, true, true, "command")]
+    [InlineData(3, true, true, "args")]
+    [InlineData(3, true, true, "joined-args")]
+    [InlineData(3, true, true, "transport")]
+    public void McpRegistration_SelectsOneExecutableAndPreservesOwnership(int availableHosts, bool existing, bool owned, string variation)
     {
         if (!OperatingSystem.IsWindows()) { return; }
         string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
-        // Only the external host discovery/execution boundary is controlled; the real installer function runs.
         string command = $$"""
             $ErrorActionPreference = 'Stop'
             . {{PowerShellLiteral(installer)}}
             $available = @(@('codex','claude','opencode') | Select-Object -First {{availableHosts}})
+            $script:registrations = @{}
+            $script:adds = 0
+            $installation = 'C:\isolated path\aspose-cli.exe'
+            $variation = '{{variation}}'
+            $configuredCommand = if ($variation -ceq 'command') { $installation + '.other' } else { $installation }
+            $configuredArgs = @(if ($variation -ceq 'args') { 'mcp'; 'other' } elseif ($variation -ceq 'joined-args') { 'mcp serve' } else { 'mcp'; 'serve' })
+            $configuredType = if ($variation -ceq 'transport') { 'http' } else { 'stdio' }
+            $env:CLAUDE_CONFIG_DIR = {{PowerShellLiteral(Path.Combine(_root, "claude-config"))}}
+            [IO.Directory]::CreateDirectory($env:CLAUDE_CONFIG_DIR) | Out-Null
+            if (${{existing.ToString().ToLowerInvariant()}}) {
+                foreach ($hostName in $available) { $script:registrations[$hostName] = $true }
+            }
             function Get-Command {
                 [CmdletBinding()] param([string] $Name, [string] $CommandType)
-                if ($Name -in $available) { [pscustomobject]@{ Source = $Name } }
+                if ($Name -in $available) {
+                    [pscustomobject]@{ Source = "C:\hosts\$Name.cmd" }
+                    [pscustomobject]@{ Source = 'C:\hosts\must-not-run.exe' }
+                }
             }
             function Invoke-OfficialMcp {
-                param([string] $Executable, [string[]] $Arguments)
-                [pscustomobject]@{ ExitCode = $(if ($Arguments[1] -eq 'get') { 1 } else { 0 }); StdOut = ''; StdErr = '' }
+                param([string] $Executable, [string[]] $Arguments, [hashtable] $Environment, [string] $WorkingDirectory)
+                $hostName = [IO.Path]::GetFileNameWithoutExtension($Executable)
+                if ($hostName -notin $available) { throw 'Unexpected executable selection.' }
+                $joined = $Arguments -join '|'
+                if ($hostName -ceq 'opencode' -and $joined -ceq 'debug|config') {
+                    if ($Environment.OPENCODE_DISABLE_PROJECT_CONFIG -cne 'true') { throw 'Project configuration was not excluded.' }
+                    $mcp = @{}
+                    if ($script:registrations.ContainsKey($hostName)) { $mcp['aspose-cli'] = @{ type=$(if ($variation -ceq 'transport') {'remote'} else {'local'}); command=(@($configuredCommand)+$configuredArgs) } }
+                    return [pscustomobject]@{ ExitCode=0; StdOut=(@{ mcp=$mcp; provider=@{ secret='synthetic-provider-secret' } } | ConvertTo-Json -Depth 5); StdErr='' }
+                }
+                $entry = @{ type=$configuredType; command=$configuredCommand; args=$configuredArgs }
+                if ($hostName -ceq 'codex' -and $joined -ceq 'mcp|get|aspose-cli|--json') {
+                    return [pscustomobject]@{ ExitCode=$(if ($script:registrations.ContainsKey($hostName)) {0} else {1}); StdOut=(@{ transport=$entry } | ConvertTo-Json -Depth 5); StdErr='' }
+                }
+                if ($hostName -ceq 'claude' -and $joined -ceq 'mcp|get|aspose-cli') {
+                    [IO.File]::WriteAllText((Join-Path $env:CLAUDE_CONFIG_DIR '.claude.json'), (@{ mcpServers=@{ 'aspose-cli'=$entry }; secret='synthetic-provider-secret' } | ConvertTo-Json -Depth 5))
+                    return [pscustomobject]@{ ExitCode=$(if ($script:registrations.ContainsKey($hostName)) {0} else {1}); StdOut="aspose-cli:`n  Scope: User config (available in all your projects)`n  Type: $configuredType`n  Command: $configuredCommand`n  Args: $($configuredArgs -join ' ')"; StdErr='' }
+                }
+                $expected = @('mcp','add','aspose-cli')
+                if ($hostName -ceq 'claude') { $expected += @('--scope','user') }
+                $expected += @('--',$installation,'mcp','serve')
+                if ($joined -cne ($expected -join '|')) { throw 'Unsupported host command.' }
+                if ($script:registrations.ContainsKey($hostName)) { throw 'Existing registration was overwritten.' }
+                $script:registrations[$hostName] = $true
+                $script:adds++
+                return [pscustomobject]@{ ExitCode=0; StdOut=''; StdErr='' }
             }
-            $registered = @(Register-OwnedMcp 'C:\isolated\aspose-cli.exe' @())
-            if ($registered.Count -ne {{availableHosts}}) { throw 'Unexpected registration count.' }
-            Write-Output ('registered=' + $registered.Count)
+            $previous = @(if (${{owned.ToString().ToLowerInvariant()}}) { $available })
+            $registered = @(Register-OwnedMcp $installation $previous)
+            $expected = if (${{existing.ToString().ToLowerInvariant()}} -and (-not ${{owned.ToString().ToLowerInvariant()}} -or $variation -cne 'exact')) {0} else { {{availableHosts}} }
+            if ($registered.Count -ne $expected) { throw 'Unexpected registration count.' }
+            $again = @(Register-OwnedMcp $installation $registered)
+            if ($again.Count -ne $expected) { throw 'Registration was not idempotent.' }
+            $expectedAdds = if (${{existing.ToString().ToLowerInvariant()}}) {0} else { {{availableHosts}} }
+            if ($script:adds -ne $expectedAdds) { throw 'Unexpected registration writes.' }
+            Write-Output 'MCP contract passed'
             """;
         PowerShellResult result = RunExecutable("powershell.exe",
             ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
         Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        Assert.Contains($"registered={availableHosts}", result.StdOut, StringComparison.Ordinal);
+        Assert.Contains("MCP contract passed", result.StdOut, StringComparison.Ordinal);
+        Assert.DoesNotContain("synthetic-provider-secret", result.StdOut + result.StdErr, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void OfficialMcpCommandShim_PreservesArgumentsWithoutShellExpansion()
+    {
+        if (!OperatingSystem.IsWindows()) { return; }
+        string receiver = Path.Combine(_root, "receive.ps1");
+        File.WriteAllText(receiver, "ConvertTo-Json -InputObject @($args) -Compress", new UTF8Encoding(false));
+        string powerShell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell/v1.0/powershell.exe");
+        string shim = Path.Combine(_root, "host with spaces.cmd");
+        File.WriteAllText(shim, $"@echo off\r\n\"{powerShell}\" -NoProfile -NonInteractive -File \"{receiver}\" %*\r\n", Encoding.ASCII);
+        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
+        string[] arguments = ["mcp", @"C:\literal %USERNAME% & ! ^ ( )\aspose-cli.exe", "A&B", "mcp serve"];
+        string command = $". {PowerShellLiteral(installer)}; $result = Invoke-OfficialMcp {PowerShellLiteral(shim)} @({string.Join(',', arguments.Select(PowerShellLiteral))}); if ($result.ExitCode -ne 0) {{ throw 'Shim failed.' }}; $result.StdOut";
+        PowerShellResult result = RunExecutable(powerShell,
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
+        Assert.True(result.ExitCode == 0, result.StdOut + result.StdErr);
+        Assert.Equal(arguments, JsonSerializer.Deserialize<string[]>(result.StdOut));
     }
 
     [Fact]

@@ -3,6 +3,7 @@ using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Host.App;
@@ -63,11 +64,11 @@ internal sealed class AppWorkspace
         return new AppApiResult(true);
     }
 
-    internal void OpenPath(string path, bool uploadedCopy)
+    internal void OpenPath(string path, bool uploadedCopy, OperationDeadline? deadline = null)
     {
         _touch();
         _preferences.CompleteOnboarding();
-        _sessions.Open(path, uploadedCopy);
+        _sessions.Open(path, uploadedCopy, deadline: deadline);
         _setRoute(AppRoutes.Preview);
     }
 

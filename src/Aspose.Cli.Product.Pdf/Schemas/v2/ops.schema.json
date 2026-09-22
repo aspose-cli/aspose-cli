@@ -168,6 +168,7 @@
     "layer": { "enum": ["over", "under"], "default": "over" },
     "position": { "enum": ["top-left", "top-center", "top-right", "bottom-left", "bottom-center", "bottom-right"] },
     "rect": {
+      "description": "Points relative to the current visible rotated page box, with a top-left origin.",
       "type": "object", "required": ["x", "y", "width", "height"], "additionalProperties": false,
       "properties": {
         "x": { "type": "number" }, "y": { "type": "number" },

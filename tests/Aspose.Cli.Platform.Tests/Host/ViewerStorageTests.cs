@@ -57,6 +57,10 @@ public sealed class ViewerStorageTests
             static (_, _) => false,
             Delete);
         failedRoot = first.Root;
+        string document = first.CreateDocumentRoot(Guid.NewGuid().ToString("N"));
+        File.WriteAllText(Path.Combine(document, ViewerStorage.SourceDirectory, "source.txt"), "source");
+        var revisions = new RevisionStore(Path.Combine(document, ViewerStorage.RevisionsDirectory));
+        File.WriteAllText(Path.Combine(revisions.CreateVersionDirectory(1), "view.json"), "{}");
         first.Dispose();
         Assert.True(Directory.Exists(failedRoot));
 

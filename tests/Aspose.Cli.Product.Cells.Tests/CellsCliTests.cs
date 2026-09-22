@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Xunit;
 
@@ -7,7 +8,8 @@ public sealed class CellsCliTests : IDisposable
 {
     private const string Secret = "test-secret-must-not-leak";
     private readonly TempWorkspace _workspace = new();
-    private readonly List<string> _previewIds = [];
+    private readonly List<Process> _previewServices = [];
+    private bool _previewRequested;
 
     [Fact]
     public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()
@@ -116,6 +118,7 @@ public sealed class CellsCliTests : IDisposable
         File.WriteAllText(
             _workspace.File("sales.csv"),
             "Region,Revenue\nEast,1200\nWest,900\n");
+        _previewRequested = true;
         CliResult started = _workspace.RunWithEnv(
             new Dictionary<string, string?>
             {
@@ -126,7 +129,7 @@ public sealed class CellsCliTests : IDisposable
         Assert.True(started.ExitCode == 0, started.StdErr);
         JsonNode json = JsonNode.Parse(started.StdOut)!;
         string id = json["id"]!.GetValue<string>();
-        _previewIds.Add(id);
+        RememberService(json);
         Assert.Equal("cells", json["product"]!.GetValue<string>());
 
         CliResult status = _workspace.Run(
@@ -138,7 +141,7 @@ public sealed class CellsCliTests : IDisposable
             "preview", "stop", id, "--output", "json");
         Assert.True(stopped.ExitCode == 0, stopped.StdErr);
         Assert.Contains(id, stopped.StdOut, StringComparison.Ordinal);
-        _previewIds.Remove(id);
+        Assert.Empty(JsonNode.Parse(stopped.StdOut)!["sessions"]!.AsArray());
     }
 
     [Fact]
@@ -152,6 +155,7 @@ public sealed class CellsCliTests : IDisposable
             "--in-place", "--output", "json");
         Assert.True(seeded.ExitCode == 0, seeded.StdErr);
 
+        _previewRequested = true;
         CliResult started = _workspace.Run(
             "preview", "preview-sheet.xlsx", "--view", "sheets",
             "--port", "0", "--output", "json");
@@ -159,21 +163,54 @@ public sealed class CellsCliTests : IDisposable
         Assert.True(started.ExitCode == 0, started.StdErr);
         JsonNode result = JsonNode.Parse(started.StdOut)!;
         string id = result["id"]!.GetValue<string>();
-        _previewIds.Add(id);
+        RememberService(result);
         Assert.Equal("sheets", result["view"]!.GetValue<string>());
 
         CliResult stopped = _workspace.Run(
             "preview", "stop", id, "--output", "json");
         Assert.True(stopped.ExitCode == 0, stopped.StdErr);
-        _previewIds.Remove(id);
+        Assert.Empty(JsonNode.Parse(stopped.StdOut)!["sessions"]!.AsArray());
+    }
+
+    private void RememberService(JsonNode started)
+    {
+        int pid = started["pid"]!.GetValue<int>();
+        if (_previewServices.Any(process => process.Id == pid)) { return; }
+        Process service = Process.GetProcessById(pid);
+        _ = service.Handle;
+        _previewServices.Add(service);
     }
 
     public void Dispose()
     {
-        foreach (string id in _previewIds)
+        try
         {
-            _workspace.Run("preview", "stop", id, "--output", "json");
+            if (_previewRequested)
+            {
+                try
+                {
+                    CliResult stopped = _workspace.Run("preview", "stop", "--all", "--output", "json");
+                    Assert.True(stopped.ExitCode == 0, stopped.StdErr);
+                }
+                finally
+                {
+                    // Closing a document keeps the service and its worker warm.
+                    // End this fixture's service before removing its configuration.
+                    foreach (Process service in _previewServices)
+                    {
+                        if (!service.WaitForExit(10_000))
+                        {
+                            service.Kill(entireProcessTree: true);
+                            Assert.True(service.WaitForExit(5_000), "The fixture's viewer service did not exit.");
+                        }
+                    }
+                }
+            }
         }
-        _workspace.Dispose();
+        finally
+        {
+            foreach (Process service in _previewServices) { service.Dispose(); }
+            _workspace.Dispose();
+        }
     }
 }

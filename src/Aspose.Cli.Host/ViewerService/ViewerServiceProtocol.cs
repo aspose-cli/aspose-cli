@@ -43,7 +43,7 @@ internal static class ViewerServiceCommands
 }
 
 /// <summary>How a document should be opened.</summary>
-internal sealed record ViewerOpenRequest
+internal sealed record ViewerOpenRequest(long MaxInputBytes = Aspose.Cli.Sdk.IO.ResourceBudgetDefaults.DefaultInputBytes)
 {
     public required string File { get; init; }
 
@@ -87,6 +87,8 @@ internal sealed record ViewerDocumentState
 
 internal sealed record ViewerOpenResponse
 {
+    public required int Pid { get; init; }
+
     public required ViewerDocumentState Document { get; init; }
 
     /// <summary>Whether the document was already open the same way.</summary>
@@ -110,6 +112,8 @@ internal sealed record ViewerStatusResponse
 
 internal sealed record ViewerStopResponse
 {
+    public required int Pid { get; init; }
+
     public required IReadOnlyList<string> Stopped { get; init; }
 
     public required IReadOnlyList<ViewerDocumentState> Documents { get; init; }

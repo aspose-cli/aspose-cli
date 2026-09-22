@@ -70,49 +70,23 @@ internal sealed class PdfInspectionService
         foreach (int number in pages)
         {
             Page page = loaded.Document.Pages[number];
-            IReadOnlyList<string> phrases = MatchPhrases(
-                page,
-                request.Pattern,
-                request.Regex,
-                request.CaseSensitive);
             int occurrence = 0;
-            foreach (string phrase in phrases)
+            foreach (TextFragment fragment in MatchText(page, request.Pattern, request.Regex, request.CaseSensitive))
             {
-                string expression = Regex.Escape(phrase);
-                if (!request.CaseSensitive && !request.Regex)
+                occurrence++;
+                if (hits.Count == request.MaxHits)
                 {
-                    expression = "(?i:" + expression + ")";
-                }
-
-                var absorber = new TextFragmentAbsorber(expression)
-                {
-                    TextSearchOptions = new TextSearchOptions(isRegularExpressionUsed: true),
-                };
-                page.Accept(absorber);
-                foreach (TextFragment fragment in absorber.TextFragments)
-                {
-                    occurrence++;
-                    if (hits.Count == request.MaxHits)
-                    {
-                        truncated = true;
-                        break;
-                    }
-
-                    hits.Add(new PdfSearchHit
-                    {
-                        Page = number,
-                        Snippet = fragment.Text,
-                        Rect = ToContractRect(page, fragment.Rectangle),
-                        Occurrence = occurrence,
-                    });
-                }
-
-                if (truncated)
-                {
+                    truncated = true;
                     break;
                 }
+                hits.Add(new PdfSearchHit
+                {
+                    Page = number,
+                    Snippet = fragment.Text,
+                    Rect = ToContractRect(page, fragment.Rectangle),
+                    Occurrence = occurrence,
+                });
             }
-
             if (truncated)
             {
                 break;

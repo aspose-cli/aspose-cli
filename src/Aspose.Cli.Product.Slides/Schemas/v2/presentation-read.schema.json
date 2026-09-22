@@ -17,11 +17,11 @@
       "properties": {
         "slides": { "type": "string" },
         "of": { "type": "integer", "minimum": 0 },
-        "truncated": { "type": "boolean" }
+        "truncated": { "type": "boolean", "description": "True if content within a returned item or later selected items was omitted." }
       }
     },
-    "slides": { "type": "array", "items": { "type": "object", "properties": { "shapes": { "type": "array", "items": { "type": "object", "properties": { "shapeId": { "type": "integer", "minimum": 1, "description": "Positive persistent identifier within this slide; pass as an edit operation shape selector." } } } } } } },
-    "next": { "type": "string" },
+    "slides": { "type": "array", "items": { "type": "object", "properties": { "contentTruncated": { "type": "boolean", "description": "The shared max-chars budget covers title, text, runs, requested notes and comments, including repeated projections; re-read this slide with a larger budget for omitted content." }, "shapes": { "type": "array", "items": { "type": "object", "properties": { "shapeId": { "type": "integer", "minimum": 1, "description": "Positive persistent identifier within this slide; pass as an edit operation shape selector." } } } } } } },
+    "next": { "type": "string", "description": "Command for unread items; does not resume within an item whose contentTruncated is true." },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

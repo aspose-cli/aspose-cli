@@ -37,35 +37,6 @@ internal static class OwnedDirectory
         }
     }
 
-    public static bool HasExpectedSessionChildren(string root)
-    {
-        try
-        {
-            foreach (FileSystemInfo item in
-                new DirectoryInfo(root).EnumerateFileSystemInfos())
-            {
-                if (item is not DirectoryInfo directory
-                    || !IsRealDirectory(directory.FullName)
-                    || !RevisionStore.TryParseRevision(
-                        directory.Name,
-                        out _))
-                {
-                    return false;
-                }
-            }
-
-            return true;
-        }
-        catch (Exception exception) when (
-            exception is IOException
-                or UnauthorizedAccessException
-                or ArgumentException
-                or NotSupportedException)
-        {
-            return false;
-        }
-    }
-
     private static bool HasBoundedRealTree(string root)
     {
         var pending = new Stack<(string Path, int Depth)>();

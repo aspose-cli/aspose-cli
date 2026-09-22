@@ -20,7 +20,7 @@ internal static class FileUnlockProbe
     /// <param name="path">The file to probe.</param>
     /// <param name="attempts">Maximum number of open attempts; at least 1.</param>
     /// <param name="initialDelay">Delay after the first failed attempt; doubles each retry.</param>
-    public static bool WaitReadable(string path, int attempts, TimeSpan initialDelay)
+    public static bool WaitReadable(string path, int attempts, TimeSpan initialDelay, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);
         ArgumentOutOfRangeException.ThrowIfLessThan(attempts, 1);
@@ -29,6 +29,7 @@ internal static class FileUnlockProbe
         TimeSpan delay = initialDelay;
         for (int attempt = 1; attempt <= attempts; attempt++)
         {
+            cancellationToken.ThrowIfCancellationRequested();
             try
             {
                 // The most permissive share mode: writers holding read/write
@@ -45,7 +46,7 @@ internal static class FileUnlockProbe
                     return false;
                 }
 
-                Thread.Sleep(delay);
+                if (cancellationToken.WaitHandle.WaitOne(delay)) { cancellationToken.ThrowIfCancellationRequested(); }
                 delay += delay;
             }
         }

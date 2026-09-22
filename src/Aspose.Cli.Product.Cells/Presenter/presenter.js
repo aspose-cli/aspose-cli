@@ -2,9 +2,8 @@
  *
  * The sheet view is one image per sheet behind the shared tab strip. The
  * workbook view is the product's own HTML grid: text stays selectable, cells
- * keep their exact geometry, and an edit is patched into the grid cell by
- * cell, so the scroll position, the sheet in view and everything the edit did
- * not touch stay exactly as they were. */
+ * keep their exact geometry. Each revision replaces the complete exported
+ * content inside the same frame, preserving the sheet, zoom and scroll. */
 (function () {
   'use strict';
 
@@ -43,6 +42,9 @@
     var active = 0;
     var scale = 1;
     var loaded = null;
+    var initialUrl = null;
+    var mounted;
+    var ready = new Promise(function (resolve) { mounted = resolve; });
 
     strip.addEventListener('keydown', function (event) {
       var next = event.key === 'ArrowLeft' ? active - 1
@@ -66,29 +68,36 @@
       // The grid zooms like a spreadsheet, whatever the part is made of.
       zoomable: function () { return true; },
       show: function () {
-        var url = ctx.url(ctx.parts[0]);
-        if (url === loaded) {
-          return undefined;
+        if (initialUrl === null) {
+          initialUrl = ctx.url(ctx.parts[0]);
+          frame.addEventListener('load', mount, { once: true });
+          frame.src = initialUrl;
         }
-        loaded = url;
-        frame.addEventListener('load', mount);
-        frame.src = url;
         return undefined;
       },
-      update: function () {
-        var url = ctx.url(ctx.parts[0]);
-        if (url === loaded || !frame.contentDocument) {
-          return;
+      prepare: function (parts) {
+        var url = ctx.url(parts[0]);
+        return ready.then(function () {
+          if (url === loaded) {
+            return null;
+          }
+          return fetch(url)
+            .then(function (response) {
+              if (!response.ok) {
+                throw new Error('The workbook snapshot could not be loaded.');
+              }
+              return response.text();
+            })
+            .then(function (html) {
+              return { url: url, document: new DOMParser().parseFromString(html, 'text/html') };
+            });
+        });
+      },
+      update: function (snapshot) {
+        if (snapshot) {
+          replace(snapshot.document);
+          loaded = snapshot.url;
         }
-        var previous = loaded;
-        loaded = url;
-        fetch(url)
-          .then(function (response) { return response.text(); })
-          .then(function (html) { patch(html); })
-          .catch(function () {
-            // The grid keeps what it shows; the next revision tries again.
-            loaded = previous;
-          });
       },
       rescale: function () {
         var zoom = ctx.zoom();
@@ -98,7 +107,7 @@
         }
       },
       mark: function () {
-        // The grid marks the cells it patched, which is finer than the part.
+        // The grid compares cells for its own, more precise marks.
       },
       pointOf: function () {
         var cell = frame.contentDocument
@@ -116,92 +125,78 @@
       scale: function () { return scale; }
     };
 
-    /** Indexes the sheets of a freshly loaded grid and shows the active one. */
+    /** Indexes the sheets of the initial document without changing its frame. */
     function mount() {
-      frame.removeEventListener('load', mount);
       var document = frame.contentDocument;
       if (!document) {
         return;
       }
+      decorate(document);
+      sheets = sheetsOf(document);
+      labelTabs();
+      showSheet(indexOf(sheets, activeName(document)));
+      loaded = initialUrl;
+      mounted();
+    }
+
+    function decorate(document) {
       var style = document.createElement('style');
       style.textContent = GRID_STYLE;
       document.head.appendChild(style);
       document.documentElement.style.zoom = scale;
-      sheets = sheetsOf(document);
-      labelTabs();
-      showSheet(indexOf(sheets, activeName(document)));
     }
 
     /**
-     * Takes in a new grid: sheets that are still there keep their element and
-     * only the cells that differ are replaced, so the view does not move.
+     * The exported head and body are one snapshot. Row alignment determines
+     * only highlights; it never decides which document content to keep.
      */
-    function patch(html) {
+    function replace(next) {
       var document = frame.contentDocument;
-      var next = new DOMParser().parseFromString(html, 'text/html');
-      var arrived = sheetsOf(next);
-      var changed = [];
+      var scroll = document.scrollingElement;
+      var left = scroll.scrollLeft;
+      var top = scroll.scrollTop;
       var name = sheets[active] ? sheets[active].name : null;
-      arrived.forEach(function (sheet, index) {
-        var mine = sheets[indexOf(sheets, sheet.name)];
-        if (!mine) {
-          insert(document, sheet, index);
+      var previous = sheets.map(function (sheet) {
+        return { name: sheet.name, rows: rowsOf(sheet.element) };
+      });
+      var changed = [];
+      attributes(document.documentElement, next.documentElement);
+      contents(document.head, next.head);
+      contents(document.body, next.body);
+      decorate(document);
+      sheets = sheetsOf(document);
+      sheets.forEach(function (sheet) {
+        var before = previous[indexOf(previous, sheet.name)];
+        if (!before) {
+          // A new sheet has no cell-level baseline: the whole sheet is new.
+          changed.push(sheet.element);
           return;
         }
-        patchSheet(document, mine, sheet, changed);
+        var marks = rowDifferences(before.rows, rowsOf(sheet.element));
+        changed.push.apply(changed, marks.length > MAX_MARKS ? [sheet.element] : marks);
       });
-      sheets.slice().forEach(function (sheet) {
-        if (indexOf(arrived, sheet.name) < 0) {
-          sheet.element.remove();
-        }
-      });
-      sheets = sheetsOf(document);
       labelTabs();
-      showSheet(Math.max(0, indexOf(sheets, name)));
+      var kept = indexOf(sheets, name);
+      showSheet(kept >= 0 ? kept : indexOf(sheets, activeName(document)));
       flash(changed);
+      scroll.scrollLeft = left;
+      scroll.scrollTop = top;
     }
 
-    function patchSheet(document, mine, theirs, changed) {
-      var was = cellsOf(mine.element);
-      var now = cellsOf(theirs.element);
-      var addresses = Object.keys(now);
-      if (addresses.length === Object.keys(was).length
-          && addresses.every(function (address) { return was[address]; })) {
-        // The same cells are there: only the ones that differ are replaced,
-        // so the view does not move and the mark lands on the edit itself.
-        addresses.forEach(function (address) {
-          if (cellSignature(was[address]) === cellSignature(now[address])) {
-            return;
-          }
-          var cell = document.importNode(now[address], true);
-          was[address].replaceWith(cell);
-          changed.push(cell);
-        });
-        return;
-      }
-      // The grid grew, shrank or moved, so the sheet is swapped in whole.
-      // What is marked is still only what changed: rows are aligned by what
-      // they contain, so an inserted row highlights itself rather than
-      // everything the insert pushed down.
-      var before = rowsOf(mine.element);
-      var replacement = document.importNode(theirs.element, true);
-      mine.element.replaceWith(replacement);
-      var marks = rowDifferences(before, rowsOf(replacement));
-      if (marks.length === 0 || marks.length > MAX_MARKS) {
-        changed.push(replacement);
-        return;
-      }
-      changed.push.apply(changed, marks);
+    function contents(target, source) {
+      attributes(target, source);
+      target.replaceChildren.apply(target, Array.prototype.map.call(source.childNodes, function (node) {
+        return target.ownerDocument.importNode(node, true);
+      }));
     }
 
-    function insert(document, sheet, index) {
-      var element = document.importNode(sheet.element, true);
-      var before = sheets[index] ? sheets[index].element : null;
-      if (before) {
-        before.parentNode.insertBefore(element, before);
-      } else {
-        document.body.appendChild(element);
-      }
+    function attributes(target, source) {
+      Array.prototype.slice.call(target.attributes).forEach(function (attribute) {
+        target.removeAttribute(attribute.name);
+      });
+      Array.prototype.forEach.call(source.attributes, function (attribute) {
+        target.setAttribute(attribute.name, attribute.value);
+      });
     }
 
     function flash(cells) {
@@ -211,9 +206,6 @@
         cell.classList.add(CHANGED_CLASS);
         setTimeout(function () { cell.classList.remove(CHANGED_CLASS); }, FLASH_MS);
       });
-      if (cells.length) {
-        cells[0].scrollIntoView({ block: 'nearest', inline: 'nearest' });
-      }
     }
 
     function showSheet(index) {
@@ -411,15 +403,10 @@
   }
 
   function attribute(element, name) {
-    return (element.getAttribute(name) || '').trim();
-  }
-
-  function cellsOf(element) {
-    var cells = Object.create(null);
-    Array.prototype.forEach.call(element.querySelectorAll('td[data-cell]'), function (cell) {
-      cells[cell.getAttribute('data-cell')] = cell;
-    });
-    return cells;
+    var value = (element.getAttribute(name) || '').trim();
+    return name === 'class'
+      ? value.split(/\s+/).filter(function (item) { return item !== CHANGED_CLASS; }).join(' ')
+      : value;
   }
 
   /** The sheet the workbook was saved on; the product stamps it into the head. */

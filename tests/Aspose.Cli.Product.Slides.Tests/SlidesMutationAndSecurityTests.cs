@@ -8,6 +8,43 @@ namespace Aspose.Cli.Product.Slides.Tests;
 
 public sealed class SlidesMutationAndSecurityTests
 {
+    [Theory]
+    [InlineData(false, "1-3")]
+    [InlineData(true, "1-3")]
+    [InlineData(false, "1")]
+    [InlineData(true, "1")]
+    [InlineData(false, "2-3")]
+    [InlineData(true, "2-3")]
+    public void DeleteSlides_ValidatesEveryResolvedTargetBeforeMutating(bool bestEffort, string secondRange)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("deletions.pptx", slides: 3);
+        byte[] original = File.ReadAllBytes(input);
+        string output = fixture.File("deletions.out.pptx");
+        var batch = new SlidesOpsBatch
+        {
+            Ops = [new DeleteSlidesOp { Slides = "1" }, new DeleteSlidesOp { Slides = secondRange }],
+        };
+        var request = new PresentationEditRequest
+        {
+            OutputPath = output,
+            Options = new EditCommandOptions { BestEffort = bestEffort },
+        };
+        if (bestEffort)
+        {
+            SlidesEditResult result = fixture.Engine.ApplyOps(input, batch, request);
+            Assert.Equal(["ok", "failed"], result.Applied.Select(static outcome => outcome.Status));
+            Assert.Equal(1, result.Applied[0].ItemsAffected);
+            Assert.Equal(0, result.Applied[1].ItemsAffected);
+            Assert.Equal(2, fixture.Engine.GetInfo(output, new PresentationInfoRequest()).Presentation.Slides);
+        }
+        else
+        {
+            Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, batch, request));
+            Assert.False(File.Exists(output));
+        }
+        Assert.Equal(original, File.ReadAllBytes(input));
+    }
     [Fact]
     public void PasswordProtectedPresentation_RequiresTheCorrectPassword()
     {

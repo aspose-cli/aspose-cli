@@ -33,7 +33,7 @@ public sealed class LocalDocumentResourceLoader : IDisposable
             throw new ArgumentOutOfRangeException(nameof(maximumItems),
                 "Local resource limits must be positive.");
         }
-        string root = Path.GetDirectoryName(Path.GetFullPath(documentPath))!;
+        string root = Path.GetDirectoryName(budgets.Inputs.ResourceOriginFor(documentPath))!;
         _baseUri = new Uri(new Uri(Path.EndsInDirectorySeparator(root)
             ? root : root + Path.DirectorySeparatorChar).AbsoluteUri);
         _boundary = new VerifiedFileBoundary(root);

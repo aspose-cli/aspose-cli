@@ -10,6 +10,43 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfHardeningTests
 {
     [Fact]
+    public void RegexTimeout_IsEnforcedByTheSdkAndPreventsPublication()
+    {
+        using var fixture = new PdfEngineFixture();
+        fixture.Gate.EnsureApplied();
+        using var document = new Document();
+        Page page = document.Pages.Add();
+        page.Paragraphs.Add(new TextFragment(new string('a', 4096) + "!"));
+        document.ProcessParagraphs();
+        const string pattern = "(a+)+$";
+        var absorber = new TextFragmentAbsorber(
+            Sdk.Text.SafeRegex.Create(pattern, caseSensitive: true), new TextSearchOptions(true));
+        Assert.Throws<System.Text.RegularExpressions.RegexMatchTimeoutException>(() => page.Accept(absorber));
+        string input = fixture.File("regex-timeout.pdf");
+        document.Save(input);
+        string output = fixture.File("regex-timeout.out.pdf");
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input,
+            new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = true }] },
+            new PdfEditRequest { OutputPath = output }));
+        Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
+        Assert.False(File.Exists(output));
+    }
+
+    [Theory]
+    [InlineData("(?=Portable)")]
+    [InlineData("Portable|(?=page)")]
+    public void ZeroWidthRegex_IsRejectedBeforeTheSdkMutation(string pattern)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("zero-width.pdf", pages: 1);
+        string output = fixture.File("zero-width.out.pdf");
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input,
+            new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = true }] },
+            new PdfEditRequest { OutputPath = output }));
+        Assert.Contains("empty string", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+    [Fact]
     public void Read_CjkTextRoundTripsWithoutLatinSubstitution()
     {
         using var fixture = new PdfEngineFixture();

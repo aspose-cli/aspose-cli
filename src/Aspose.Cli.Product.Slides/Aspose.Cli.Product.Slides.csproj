@@ -8,8 +8,18 @@
     <ProjectReference Include="..\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
   </ItemGroup>
   <ItemGroup>
-    <PackageReference Include="Aspose.Slides.NET6.CrossPlatform" />
+    <PackageReference Include="Aspose.Slides.NET6.CrossPlatform" PrivateAssets="build;buildTransitive;contentFiles;analyzers" />
   </ItemGroup>
+  <!-- The SDK clears RuntimeIdentifier on portable project references. Keep the
+       publication RID separate so this product selects its own native content
+       before the launcher bundles files. -->
+  <Target Name="SelectSlidesNativeAssets" BeforeTargets="AssignTargetPaths"
+          Condition="'$(AsposeCliPublishRuntimeIdentifier)' == 'win-x64' or '$(RuntimeIdentifier)' == 'win-x64'">
+    <ItemGroup>
+      <None Remove="@(None)"
+            Condition="$([System.String]::Copy('%(None.Identity)').Contains('net6.0_native')) and '%(None.Filename)%(None.Extension)' != 'aspose.slides.drawing.capi_vc14x64.dll'" />
+    </ItemGroup>
+  </Target>
   <ItemGroup>
     <InternalsVisibleTo Include="Aspose.Cli.Product.Slides.Tests" />
   </ItemGroup>

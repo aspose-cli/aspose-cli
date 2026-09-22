@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Serialization;
 using Xunit;
 
@@ -22,7 +23,7 @@ public sealed class LocalServiceRuntimeTests
         using var occupied = new NamedPipeServerStream(endpoint.PipeName, PipeDirection.InOut, 1,
             PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
         using var server = new LocalServiceControlServer(endpoint, Guid.NewGuid().ToString("N"),
-            Guid.NewGuid().ToString("N"), _ => throw new InvalidOperationException("No request should arrive."),
+            Guid.NewGuid().ToString("N"), (_, _) => throw new InvalidOperationException("No request should arrive."),
             stageTimeout: TimeSpan.FromMilliseconds(250));
         Assert.Throws<IOException>(() => server.Start());
     }
@@ -34,7 +35,7 @@ public sealed class LocalServiceRuntimeTests
         string nonce = Guid.NewGuid().ToString("N");
         string token = Guid.NewGuid().ToString("N");
         using var server = new LocalServiceControlServer(endpoint, nonce, token,
-            _ => throw new InvalidOperationException("Private operation detail."),
+            (_, _) => throw new InvalidOperationException("Private operation detail."),
             describeFailure: _ => throw new InvalidOperationException("Private diagnostic detail."));
         server.Start();
         LocalServiceControlResponse failure = LocalServiceControlServer.Send(endpoint, nonce, token, "open");
@@ -120,6 +121,62 @@ public sealed class LocalServiceRuntimeTests
     }
 
     [Fact]
+    public async Task ControlProtocol_SeparatesFrameBudgetFromCancellableOperations()
+    {
+        LocalServiceControlEndpoint endpoint = Endpoint();
+        string nonce = Guid.NewGuid().ToString("N");
+        string token = Guid.NewGuid().ToString("N");
+        using var entered = new ManualResetEventSlim();
+        using var resume = new ManualResetEventSlim();
+        using var cancelled = new ManualResetEventSlim();
+        using var parent = OperationDeadline.Start(TimeSpan.FromSeconds(10));
+        using var server = new LocalServiceControlServer(endpoint, nonce, token, (request, deadline) =>
+        {
+            if (request.Command == "open")
+            {
+                Assert.Equal(parent.ExpiresAtTick, request.ExpiresAtTick);
+                entered.Set();
+                resume.Wait(deadline.Token);
+            }
+            else if (request.Command == "cancel")
+            {
+                entered.Set();
+                deadline.Token.WaitHandle.WaitOne();
+                cancelled.Set();
+                deadline.ThrowIfExpired("test");
+            }
+            return new LocalServiceControlResponse(0, "", "", "", "", true);
+        }, stageTimeout: TimeSpan.FromMilliseconds(100), operationTimeout: TimeSpan.FromSeconds(10));
+        server.Start();
+        await Task.Delay(30);
+        Task<LocalServiceControlResponse> opening = Task.Run(() =>
+            LocalServiceControlServer.Send(endpoint, nonce, token, "open", deadline: parent));
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            await Task.Delay(250);
+            Assert.True(LocalServiceControlServer.Send(endpoint, nonce, token, "ping").Ok);
+        }
+        finally { resume.Set(); }
+        Assert.True((await opening.WaitAsync(TimeSpan.FromSeconds(5))).Ok);
+        Assert.False(LocalServiceControlServer.Send(endpoint, nonce, token, "cancel",
+            timeout: TimeSpan.FromMilliseconds(100)).Ok);
+        Assert.True(cancelled.IsSet);
+        cancelled.Reset();
+        entered.Reset();
+        using (Stream connection = await ConnectRaw(endpoint))
+        {
+            byte[] request = LocalServiceControlCodec.Serialize(new LocalServiceControlRequest(
+                LocalServiceControlServer.ProtocolVersion, Guid.NewGuid().ToString("N"), endpoint.Service,
+                endpoint.InstanceId, nonce, token, "cancel"));
+            await LocalServiceControlCodec.WriteFrameAsync(connection, request, CancellationToken.None);
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+        }
+        Assert.True(cancelled.Wait(TimeSpan.FromSeconds(5)));
+        Assert.True(LocalServiceControlServer.Send(endpoint, nonce, token, "ping").Ok);
+    }
+
+    [Fact]
     public void ControlProtocol_RoundTripsVersionedIdentityAndPayload()
     {
         LocalServiceControlEndpoint endpoint = Endpoint();
@@ -129,7 +186,7 @@ public sealed class LocalServiceRuntimeTests
             endpoint,
             nonce,
             token,
-            request => new LocalServiceControlResponse(
+            (request, _) => new LocalServiceControlResponse(
                 0,
                 string.Empty,
                 string.Empty,
@@ -169,7 +226,7 @@ public sealed class LocalServiceRuntimeTests
             endpoint,
             nonce,
             token,
-            request => throw new InvalidOperationException(
+            (request, _) => throw new InvalidOperationException(
                 "Unauthorized requests must not reach the adapter."));
         server.Start();
 
@@ -198,7 +255,7 @@ public sealed class LocalServiceRuntimeTests
             endpoint,
             nonce,
             token,
-            request => new LocalServiceControlResponse(
+            (request, _) => new LocalServiceControlResponse(
                 0,
                 string.Empty,
                 string.Empty,
@@ -237,7 +294,7 @@ public sealed class LocalServiceRuntimeTests
             endpoint,
             nonce,
             token,
-            request => new LocalServiceControlResponse(
+            (request, _) => new LocalServiceControlResponse(
                 0,
                 string.Empty,
                 string.Empty,
@@ -292,7 +349,7 @@ public sealed class LocalServiceRuntimeTests
             endpoint,
             Guid.NewGuid().ToString("N"),
             Guid.NewGuid().ToString("N"),
-            request => new LocalServiceControlResponse(
+            (request, _) => new LocalServiceControlResponse(
                 0,
                 string.Empty,
                 string.Empty,

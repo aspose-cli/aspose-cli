@@ -15,6 +15,7 @@ public abstract record PdfOp : BoundedOperation
     public abstract string OpName { get; }
 }
 
+/// <summary>Points relative to the visible rotated page box, with a top-left origin.</summary>
 public sealed record PdfRectInput
 {
     public required double X { get; init; }

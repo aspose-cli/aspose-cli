@@ -17,6 +17,7 @@ public sealed record PresentationReadRequest
     public PageRange? Slides { get; init; }
     public string Scope { get; init; } = PresentationReadScopes.Shapes;
     public bool IncludeNotes { get; init; }
+    /// <summary>Returned document-content character budget, including repeated projections.</summary>
     public int MaxCharacters { get; init; } = 20_000;
     public string? Password { get; init; }
 }

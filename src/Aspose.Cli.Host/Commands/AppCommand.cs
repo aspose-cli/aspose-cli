@@ -73,12 +73,12 @@ internal static class AppCommand
                         Page(parseResult, values, routeOption, welcomeOption, fileArgument),
                         openBrowser));
             }
-            return executor.RunLightweight(parseResult, globals, (values, _) =>
+            return executor.RunLightweight(parseResult, globals, (values, budgets) =>
             {
                 ViewerAppRequest page = Page(parseResult, values, routeOption, welcomeOption, fileArgument);
                 var client = new ViewerServiceClient();
-                bool reused = client.Status() is not null;
-                ViewerAppResponse opened = client.App(values, page, port);
+                bool reused = client.Status(budgets.Deadline) is not null;
+                ViewerAppResponse opened = client.App(values, page, port, budgets.Deadline);
                 if (openBrowser)
                 {
                     BrowserLauncher.Open(opened.Url);

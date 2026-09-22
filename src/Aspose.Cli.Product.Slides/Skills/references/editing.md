@@ -1,7 +1,9 @@
 # Slides editing
 
 All addresses resolve against the original presentation before the first
-operation is applied. Content inserted earlier in a batch cannot be addressed
+operation is applied. A delete operation fails before removing anything if a
+targeted slide was deleted earlier in the batch; deleting the final slide also
+fails. Content inserted earlier in a batch cannot be addressed
 by later operations in that same batch. Obtain stable `slideId` values from
 `slides inspect` or `slides query slides`. Obtain `shapeId` values from
 `slides query slides --scope shapes` or `--scope full`; `inspect` reports shape

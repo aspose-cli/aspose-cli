@@ -22,7 +22,7 @@ src/**/Skills/assets/design/templates/**/*.md text eol=lf
 src/**/Skills/assets/design/templates/**/LICENSE text eol=lf
 
 # Retain the exact notice bytes, including whitespace, from the pinned packages.
-eng/notices/SkiaSharp-HarfBuzzSharp-NATIVE.txt -text -whitespace
+eng/notices/*.txt -text -whitespace
 
 # Binary fixtures
 *.xlsx binary

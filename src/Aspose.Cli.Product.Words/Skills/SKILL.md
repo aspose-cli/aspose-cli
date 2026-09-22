@@ -9,6 +9,13 @@ Use `aspose-cli words` for DOC/DOCX, RTF, ODT, HTML, Markdown, PDF and related
 document workflows. A block is a top-level body paragraph or table, numbered
 from 1.
 
+`query blocks --max-chars` bounds the sum of returned paragraph, table-cell and
+run text. Full scope counts repeated text/run projections separately; addressing
+and formatting metadata do not consume this text budget. Inspect both
+`window.truncated` and each block's `contentTruncated`. `next` selects unread
+blocks; it does not resume inside a truncated block. Re-read that block with a
+larger budget or extract text when complete content is required.
+
 ## Workflow
 
 1. Clarify audience, purpose, reading or print context and requested scope.

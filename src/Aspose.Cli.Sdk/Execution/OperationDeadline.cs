@@ -66,7 +66,8 @@ public sealed class OperationDeadline : IDisposable
 
     /// <summary>Whether the absolute deadline has elapsed.</summary>
     public bool IsExpired =>
-        _expiresAtTick is { } expires && Environment.TickCount64 >= expires;
+        _deadlineCancellation?.IsCancellationRequested == true
+        || _expiresAtTick is { } expires && Environment.TickCount64 >= expires;
 
     /// <summary>Creates one deadline from a relative caller budget.</summary>
     public static OperationDeadline Start(

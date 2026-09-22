@@ -1,6 +1,7 @@
 using System.Security.Cryptography;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Host.ViewerService;
 
@@ -12,6 +13,7 @@ namespace Aspose.Cli.Host.ViewerService;
 internal sealed class ViewerDocuments : IDisposable
 {
     private readonly object _gate = new();
+    private readonly SemaphoreSlim _opening = new(1, 1);
     private readonly Dictionary<string, LiveDocument> _byId = new(StringComparer.Ordinal);
     private readonly RenderWorkerSupervisor _worker;
     private readonly ViewerStorage _storage;
@@ -38,7 +40,17 @@ internal sealed class ViewerDocuments : IDisposable
     /// Opens a document and renders its first revision, or hands back the one
     /// already open for the same file and options.
     /// </summary>
-    public LiveDocument Open(string path, LiveDocumentOptions options)
+    public LiveDocument Open(string path, LiveDocumentOptions options, OperationDeadline? deadline = null)
+    {
+        using var owned = deadline is null ? OperationDeadline.Start(_limits.RenderTimeout) : null;
+        OperationDeadline operation = deadline ?? owned!;
+        _opening.Wait(operation.Token);
+        try { return OpenCore(path, options, operation); }
+        catch (OperationCanceledException) { operation.ThrowIfExpired("preview-open"); throw; }
+        finally { _opening.Release(); }
+    }
+
+    private LiveDocument OpenCore(string path, LiveDocumentOptions options, OperationDeadline deadline)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(options);
@@ -62,7 +74,7 @@ internal sealed class ViewerDocuments : IDisposable
             document = new LiveDocument(
                 id,
                 source,
-                Path.Combine(_storage.Root, id),
+                _storage.CreateDocumentRoot(id),
                 _worker,
                 options,
                 _limits);
@@ -71,7 +83,7 @@ internal sealed class ViewerDocuments : IDisposable
 
         try
         {
-            RenderWorkerResponse first = document.Open();
+            RenderWorkerResponse first = document.Open(deadline);
             if (!first.Ok)
             {
                 throw ViewerErrors.FromWorker(first, source);
@@ -117,11 +129,13 @@ internal sealed class ViewerDocuments : IDisposable
             documents = _byId.Values.ToArray();
             _byId.Clear();
         }
+        Exception? failure = null;
         foreach (LiveDocument document in documents)
         {
-            document.Dispose();
+            try { document.Dispose(); } catch (Exception exception) { failure ??= exception; }
         }
-        _storage.Dispose();
+        try { _storage.Dispose(); } catch (Exception exception) { failure ??= exception; }
+        if (failure is not null) { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw(); }
     }
 
     private LiveDocument? Find(string source, LiveDocumentOptions options) =>

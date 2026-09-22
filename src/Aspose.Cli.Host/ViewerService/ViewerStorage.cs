@@ -12,6 +12,8 @@ namespace Aspose.Cli.Host.ViewerService;
 /// </summary>
 internal sealed class ViewerStorage : IDisposable
 {
+    internal const string SourceDirectory = "source";
+    internal const string RevisionsDirectory = "revisions";
     private const int DeleteAttempts = 4;
     private static readonly object Gate = new();
     private static readonly HashSet<string> ActiveRoots = new(
@@ -35,6 +37,42 @@ internal sealed class ViewerStorage : IDisposable
     }
 
     public string Root { get; }
+
+    public string CreateDocumentRoot(string id)
+    {
+        if (!IsDocumentId(id)) { throw new ArgumentException("Invalid document id.", nameof(id)); }
+        string root = PrivateUserStorage.EnsureDirectory(Path.Combine(Root, id));
+        PrivateUserStorage.EnsureDirectory(Path.Combine(root, SourceDirectory));
+        PrivateUserStorage.EnsureDirectory(Path.Combine(root, RevisionsDirectory));
+        return root;
+    }
+
+    private static bool IsDocumentId(string name) => name.Length == 32 && name.All(Uri.IsHexDigit);
+
+    private static bool HasExpectedChildren(string root)
+    {
+        try
+        {
+            foreach (FileSystemInfo document in new DirectoryInfo(root).EnumerateFileSystemInfos())
+            {
+                if (document is not DirectoryInfo directory || !IsDocumentId(directory.Name)) { return false; }
+                foreach (FileSystemInfo child in directory.EnumerateFileSystemInfos())
+                {
+                    if (child is not DirectoryInfo content) { return false; }
+                    FileSystemInfo[] entries = content.GetFileSystemInfos();
+                    if (child.Name == SourceDirectory)
+                    {
+                        if (entries.Length > 1 || entries.Any(item => item is not FileInfo)) { return false; }
+                    }
+                    else if (child.Name != RevisionsDirectory || entries.Any(item =>
+                        item is not DirectoryInfo || !RevisionStore.TryParseRevision(item.Name, out _)))
+                    { return false; }
+                }
+            }
+            return true;
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { return false; }
+    }
 
     public static ViewerStorage Create()
     {
@@ -94,7 +132,7 @@ internal sealed class ViewerStorage : IDisposable
                     _categoryRoot,
                     Root,
                     static name => TryParseOwner(name, out _, out _))
-                || !OwnedDirectory.HasExpectedSessionChildren(Root)
+                || !HasExpectedChildren(Root)
                 || _deleteDirectory(Root))
             {
                 return;
@@ -141,7 +179,7 @@ internal sealed class ViewerStorage : IDisposable
                     categoryRoot,
                     full,
                     static name => TryParseOwner(name, out _, out _))
-                || !OwnedDirectory.HasExpectedSessionChildren(full))
+                || !HasExpectedChildren(full))
             {
                 continue;
             }

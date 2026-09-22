@@ -69,41 +69,32 @@ internal static class SlidesEngineSupport
     {
         bool includeShapes = scope is PresentationReadScopes.Shapes or PresentationReadScopes.Full;
         bool contentTruncated = false;
-        IReadOnlyList<string>? textBlocks = null;
-        if (scope == PresentationReadScopes.Text)
-        {
-            var values = new List<string>();
-            foreach (IShape shape in slide.Shapes)
-            {
-                string? value = Take(ShapeText(shape), ref remaining, ref contentTruncated);
-                if (!string.IsNullOrEmpty(value))
-                {
-                    values.Add(value);
-                }
-
-                if (remaining <= 0)
-                {
-                    break;
-                }
-            }
-
-            textBlocks = values;
-        }
-
+        string? title = Take(Title(slide), ref remaining, ref contentTruncated);
+        var textBlocks = scope == PresentationReadScopes.Text ? new List<string>() : null;
         var shapes = new List<SlideShapeData>();
-        if (includeShapes)
+        int zOrder = 0;
+        foreach (IShape shape in slide.Shapes)
         {
-            int zOrder = 0;
-            foreach (IShape shape in slide.Shapes)
+            string? sourceText = ShapeText(shape);
+            if (remaining == 0 && (includeShapes || !string.IsNullOrWhiteSpace(sourceText)))
             {
-                string? shapeText = Take(ShapeText(shape), ref remaining, ref contentTruncated);
+                contentTruncated = true;
+                break;
+            }
+            string? text = Take(sourceText, ref remaining, ref contentTruncated);
+            if (textBlocks is not null && !string.IsNullOrEmpty(text))
+            {
+                textBlocks.Add(text);
+            }
+            if (includeShapes)
+            {
                 shapes.Add(new SlideShapeData
                 {
                     ShapeId = shape.OfficeInteropShapeId,
                     Name = EmptyToNull(shape.Name),
                     Type = ShapeTypeName(shape),
                     Role = PlaceholderRole(shape.Placeholder?.Type),
-                    Text = shapeText,
+                    Text = text,
                     Runs = scope == PresentationReadScopes.Full ? Runs(shape, ref remaining, ref contentTruncated) : null,
                     ZOrder = zOrder++,
                     HasOpaqueFill = SlidesReviewProjection.HasOpaqueFill(shape),
@@ -115,34 +106,39 @@ internal static class SlidesEngineSupport
                         Height = shape.Height,
                     },
                 });
-                if (remaining <= 0)
-                {
-                    break;
-                }
             }
         }
-
         string? notes = scope == PresentationReadScopes.Full || includeNotes
             ? Take(Notes(slide), ref remaining, ref contentTruncated)
             : null;
+        var projectedComments = scope == PresentationReadScopes.Full ? new List<SlideCommentData>() : null;
+        if (projectedComments is not null)
+        {
+            foreach (IComment comment in comments.Where(comment => ReferenceEquals(comment.Slide, slide)))
+            {
+                if (remaining == 0 && !string.IsNullOrWhiteSpace(comment.Text))
+                {
+                    contentTruncated = true;
+                    break;
+                }
+                projectedComments.Add(new SlideCommentData
+                {
+                    Author = comment.Author.Name,
+                    Text = Take(comment.Text, ref remaining, ref contentTruncated) ?? string.Empty,
+                });
+            }
+        }
         return new SlideData
         {
             Number = number,
             SlideId = slide.SlideId,
             Name = EmptyToNull(slide.Name),
             Layout = EmptyToNull(slide.LayoutSlide?.Name),
-            Title = Title(slide),
+            Title = title,
             Text = textBlocks,
             Shapes = shapes,
             Notes = notes,
-            Comments = scope == PresentationReadScopes.Full
-                ? comments.Where(comment => ReferenceEquals(comment.Slide, slide))
-                    .Select(static comment => new SlideCommentData
-                    {
-                        Author = comment.Author.Name,
-                        Text = comment.Text,
-                    }).ToArray()
-                : null,
+            Comments = projectedComments,
             ContentTruncated = contentTruncated,
         };
     }
@@ -202,6 +198,11 @@ internal static class SlidesEngineSupport
         {
             foreach (IPortion portion in paragraph.Portions)
             {
+                if (remaining == 0 && !string.IsNullOrWhiteSpace(portion.Text))
+                {
+                    truncated = true;
+                    return runs;
+                }
                 string? text = Take(portion.Text, ref remaining, ref truncated);
                 if (text is null)
                 {
@@ -218,10 +219,6 @@ internal static class SlidesEngineSupport
                     Bold = effective.FontBold,
                     Italic = effective.FontItalic,
                 });
-                if (remaining <= 0)
-                {
-                    return runs;
-                }
             }
         }
 

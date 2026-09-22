@@ -3,6 +3,7 @@ using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Rendering;
@@ -57,7 +58,6 @@ internal sealed class AppDocumentSession : IDisposable
         _root = Path.GetFullPath(rootDirectory);
         _fontProfile = fontProfile ?? throw new ArgumentNullException(nameof(fontProfile));
         Directory.CreateDirectory(_root);
-        Directory.CreateDirectory(_root);
     }
 
     public AppDocumentSnapshot? Snapshot
@@ -75,7 +75,7 @@ internal sealed class AppDocumentSession : IDisposable
 
     public string? ProductId => Read(static lease => lease.ProductId);
 
-    public void Open(string filePath, bool uploadedCopy, string? displayFileName = null)
+    public void Open(string filePath, bool uploadedCopy, string? displayFileName = null, OperationDeadline? deadline = null)
     {
         ObjectDisposedException.ThrowIf(_disposed, this);
         string full = Path.GetFullPath(filePath);
@@ -91,7 +91,8 @@ internal sealed class AppDocumentSession : IDisposable
             InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
         ProductDefinition product = _catalog.ResolveExistingFile(
             full,
-            operation: "app");
+            operation: "app",
+            cancellationToken: deadline?.Token ?? context.Deadline.Token);
 
         string displayName = Path.GetFileName(displayFileName ?? full);
         string view = _preferences.Current.PreviewView(product);
@@ -112,7 +113,8 @@ internal sealed class AppDocumentSession : IDisposable
             displayName,
             uploadedCopy,
             product,
-            view);
+            view,
+            deadline);
         try
         {
             if (!uploadedCopy)
@@ -502,7 +504,8 @@ internal sealed class AppDocumentSession : IDisposable
         string displayName,
         bool uploadedCopy,
         ProductDefinition product,
-        string view)
+        string view,
+        OperationDeadline? deadline = null)
     {
         RetainedResource<OwnedTemporaryFile>.Lease? input = null;
         lock (_gate)
@@ -517,7 +520,8 @@ internal sealed class AppDocumentSession : IDisposable
                 Product = product.Manifest.Id,
                 View = view,
                 FontDirectories = _fontProfile.IsAmbient ? null : _fontProfile.Directories,
-            });
+                MaxInputBytes = context.Globals.MaxInputBytes,
+            }, deadline);
             Activity?.Invoke();
             return new DocumentLease(
                 path,

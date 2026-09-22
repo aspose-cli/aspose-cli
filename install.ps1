@@ -1045,11 +1045,31 @@ function Get-DetectedSkillHosts {
 function Invoke-OfficialMcp {
     param(
         [Parameter(Mandatory)][string] $Executable,
-        [Parameter(Mandatory)][string[]] $Arguments
+        [Parameter(Mandatory)][string[]] $Arguments,
+        [hashtable] $Environment = @{},
+        [string] $WorkingDirectory
     )
     $start = [Diagnostics.ProcessStartInfo]::new()
     $start.FileName = $Executable
     $start.Arguments = (@($Arguments | ForEach-Object { ConvertTo-NativeArgument ([string]$_) }) -join ' ')
+    if ($WorkingDirectory) { $start.WorkingDirectory = $WorkingDirectory }
+    foreach ($name in $Environment.Keys) { $start.EnvironmentVariables[$name] = $Environment[$name] }
+    if ([IO.Path]::GetExtension($Executable) -in @('.cmd', '.bat')) {
+        # cmd has different escaping from CommandLineToArgvW. Expand private
+        # variables once, inside quotes, with AutoRun and delayed expansion off.
+        $values = @($Executable) + $Arguments
+        $tokens = @()
+        for ($index = 0; $index -lt $values.Count; $index++) {
+            $value = [string]$values[$index]
+            [void](ConvertTo-NativeArgument $value)
+            if ($value.Contains('"')) { throw 'MCP command-shim arguments may not contain double quotes.' }
+            $name = 'ASPOSE_CLI_MCP_ARGUMENT_' + $index
+            $start.EnvironmentVariables[$name] = $value
+            $tokens += '"%' + $name + '%"'
+        }
+        $start.FileName = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::System)) 'cmd.exe'
+        $start.Arguments = '/d /v:off /s /c "' + ($tokens -join ' ') + '"'
+    }
     $start.UseShellExecute = $false
     $start.RedirectStandardOutput = $true
     $start.RedirectStandardError = $true
@@ -1107,6 +1127,84 @@ function Invoke-OfficialMcp {
     }
 }
 
+function Test-StdioMcpCommand {
+    param($Transport, [string] $InstallExecutable)
+    if ($null -eq $Transport) { return $false }
+    $type = $Transport.PSObject.Properties['type']
+    $command = $Transport.PSObject.Properties['command']
+    $arguments = $Transport.PSObject.Properties['args']
+    return $null -ne $type -and $type.Value -ceq 'stdio' -and
+        $null -ne $command -and $command.Value -is [string] -and
+        [string]::Equals($command.Value, $InstallExecutable, [StringComparison]::OrdinalIgnoreCase) -and
+        $null -ne $arguments -and $arguments.Value -is [array] -and $arguments.Value.Count -eq 2 -and
+        $arguments.Value[0] -ceq 'mcp' -and $arguments.Value[1] -ceq 'serve'
+}
+
+function Get-McpRegistration {
+    param([string] $HostName, [string] $Executable, [string] $InstallExecutable)
+    if ($HostName -ceq 'opencode') {
+        # Query only user-wide configuration; never echo the resolved configuration,
+        # which can contain provider credentials unrelated to this installation.
+        $environment = @{
+            OPENCODE_DISABLE_PROJECT_CONFIG = 'true'
+            OPENCODE_CONFIG = ''; OPENCODE_CONFIG_DIR = ''; OPENCODE_CONFIG_CONTENT = ''
+        }
+        $result = Invoke-OfficialMcp $Executable @('debug','config') `
+            -Environment $environment -WorkingDirectory ([IO.Path]::GetTempPath())
+        if ($result.ExitCode -ne 0) { throw 'OpenCode configuration could not be queried.' }
+        try { $configuration = $result.StdOut | ConvertFrom-Json }
+        catch { throw 'OpenCode configuration response is not valid JSON.' }
+        if ($null -eq $configuration -or $configuration -is [array]) { throw 'OpenCode configuration response is not an object.' }
+        $mcp = $configuration.PSObject.Properties['mcp']
+        $entry = if ($null -ne $mcp -and $null -ne $mcp.Value) { $mcp.Value.PSObject.Properties['aspose-cli'] } else { $null }
+        if ($null -eq $entry) { return [pscustomobject]@{ Exists = $false; Matches = $false } }
+        $type = $entry.Value.PSObject.Properties['type']
+        $command = $entry.Value.PSObject.Properties['command']
+        $arguments = if ($null -ne $command) { @($command.Value) } else { @() }
+        $sameCommand = $null -ne $type -and $type.Value -ceq 'local' -and $arguments.Count -eq 3 -and
+            [string]::Equals([string]$arguments[0], $InstallExecutable, [StringComparison]::OrdinalIgnoreCase) -and
+            $arguments[1] -ceq 'mcp' -and $arguments[2] -ceq 'serve'
+        return [pscustomobject]@{ Exists = $true; Matches = [bool]$sameCommand }
+    }
+    $query = @('mcp','get','aspose-cli')
+    if ($HostName -ceq 'codex') { $query += '--json' }
+    $result = Invoke-OfficialMcp $Executable $query -WorkingDirectory ([IO.Path]::GetTempPath())
+    if ($result.ExitCode -ne 0) { return [pscustomobject]@{ Exists = $false; Matches = $false } }
+    if ($HostName -ceq 'codex') {
+        try { $configuration = $result.StdOut | ConvertFrom-Json }
+        catch { throw 'Codex MCP response is not valid JSON.' }
+        $transport = $configuration.PSObject.Properties['transport']
+        $sameCommand = $null -ne $transport -and (Test-StdioMcpCommand $transport.Value $InstallExecutable)
+    }
+    else {
+        # Claude's get output joins arguments with spaces. Read its documented
+        # user configuration to distinguish ['mcp','serve'] from ['mcp serve'].
+        $scope = [regex]::Matches($result.StdOut, '(?m)^  Scope: User config \(available in all your projects\)\r?$')
+        $sameCommand = $false
+        if ($scope.Count -eq 1) {
+            $configDirectory = [Environment]::GetEnvironmentVariable('CLAUDE_CONFIG_DIR', 'Process')
+            if ([string]::IsNullOrWhiteSpace($configDirectory)) {
+                $configDirectory = [Environment]::GetFolderPath([Environment+SpecialFolder]::UserProfile)
+            }
+            elseif (-not [IO.Path]::IsPathRooted($configDirectory)) {
+                $configDirectory = Join-Path ([IO.Path]::GetTempPath()) $configDirectory
+            }
+            $configPath = Join-Path $configDirectory '.claude.json'
+            $stream = [IO.File]::Open($configPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
+            try {
+                if ($stream.Length -gt 1MB) { throw 'Claude user configuration exceeds its read budget.' }
+                $reader = [IO.StreamReader]::new($stream)
+                try { $configuration = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
+            }
+            finally { $stream.Dispose() }
+            $servers = $configuration.PSObject.Properties['mcpServers']
+            $entry = if ($null -ne $servers -and $null -ne $servers.Value) { $servers.Value.PSObject.Properties['aspose-cli'] } else { $null }
+            $sameCommand = $null -ne $entry -and (Test-StdioMcpCommand $entry.Value $InstallExecutable)
+        }
+    }
+    return [pscustomobject]@{ Exists = $true; Matches = [bool]$sameCommand }
+}
+
 function Register-OwnedMcp {
     param(
         [Parameter(Mandatory)][string] $InstallExecutable,
@@ -1119,43 +1217,28 @@ function Register-OwnedMcp {
         [pscustomobject]@{ Name = 'opencode'; Executable = 'opencode'; Add = @('mcp','add','aspose-cli','--',$InstallExecutable,'mcp','serve') }
     )
     foreach ($hostSpec in $mcpHosts) {
-        $command = Get-Command $hostSpec.Executable -CommandType Application -ErrorAction SilentlyContinue
+        $command = Get-Command $hostSpec.Executable -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($null -eq $command) {
             Write-Warning "MCP host '$($hostSpec.Name)' CLI was not found; registration was skipped."
             continue
         }
         try {
-            $get = Invoke-OfficialMcp $command.Source @('mcp','get','aspose-cli')
-        }
-        catch {
-            Write-Warning "MCP host '$($hostSpec.Name)' could not be queried safely; registration was skipped."
-            continue
-        }
-        if ($get.ExitCode -eq 0) {
-            $reported = @($get.StdOut, $get.StdErr) -join [Environment]::NewLine
-            $ownsCurrentExecutable = $reported.IndexOf(
-                $InstallExecutable,
-                [StringComparison]::OrdinalIgnoreCase) -ge 0
-            if ($hostSpec.Name -in $PreviouslyOwned -and $ownsCurrentExecutable) {
-                $registered.Add($hostSpec.Name)
+            $existing = Get-McpRegistration $hostSpec.Name $command.Source $InstallExecutable
+            if ($existing.Exists) {
+                if ($hostSpec.Name -in $PreviouslyOwned -and $existing.Matches) { $registered.Add($hostSpec.Name) }
+                else { Write-Warning "MCP host '$($hostSpec.Name)' already has an 'aspose-cli' registration that could not be verified as installer-owned; it was preserved as user-owned." }
+                continue
             }
-            else {
-                Write-Warning "MCP host '$($hostSpec.Name)' already has an 'aspose-cli' registration that could not be verified as installer-owned; it was preserved as user-owned."
-            }
-            continue
-        }
-        try {
-            $add = Invoke-OfficialMcp $command.Source ([string[]]$hostSpec.Add)
-        }
-        catch {
-            Write-Warning "MCP host '$($hostSpec.Name)' registration failed safely and was skipped; the CLI installation remains valid."
-            continue
-        }
-        if ($add.ExitCode -eq 0) {
+            # OpenCode's named, noninteractive add writes global configuration itself,
+            # preserving JSONC. Do not implement a second host configuration writer.
+            $add = Invoke-OfficialMcp $command.Source ([string[]]$hostSpec.Add) -WorkingDirectory ([IO.Path]::GetTempPath())
+            if ($add.ExitCode -ne 0) { throw 'MCP registration command failed.' }
+            $published = Get-McpRegistration $hostSpec.Name $command.Source $InstallExecutable
+            if (-not $published.Exists -or -not $published.Matches) { throw 'MCP registration could not be verified after adding it.' }
             $registered.Add($hostSpec.Name)
         }
-        else {
-            Write-Warning "MCP host '$($hostSpec.Name)' registration failed and was skipped; the CLI installation remains valid."
+        catch {
+            Write-Warning "MCP host '$($hostSpec.Name)' registration could not be verified and was skipped; the CLI installation remains valid."
         }
     }
     return @($registered)

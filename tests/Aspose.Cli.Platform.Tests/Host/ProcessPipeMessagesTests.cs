@@ -1,4 +1,7 @@
 using System.Buffers.Binary;
+using System.Text.Json;
+using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Host.LocalServices;
 using Xunit;
 
@@ -6,6 +9,23 @@ namespace Aspose.Cli.Host.Tests;
 
 public sealed class ProcessPipeMessagesTests
 {
+    [Theory]
+    [InlineData("", ResourceBudgetDefaults.DefaultInputBytes)]
+    [InlineData(",\"maxInputBytes\":0", 0L)]
+    [InlineData(",\"maxInputBytes\":null", null)]
+    public void ViewerInputBudget_UsesItsWireDefaultOnlyWhenOmitted(string field, long? expected)
+    {
+        string json = "{\"file\":\"input.xlsx\"" + field + "}";
+        if (expected is null)
+        {
+            Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(json, ViewerServiceJsonContext.Default.ViewerOpenRequest));
+        }
+        else
+        {
+            Assert.Equal(expected.Value, JsonSerializer.Deserialize(json, ViewerServiceJsonContext.Default.ViewerOpenRequest)!.MaxInputBytes);
+        }
+    }
+
     [Theory]
     [InlineData(-1)]
     [InlineData(0)]

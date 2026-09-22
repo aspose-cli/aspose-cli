@@ -9,6 +9,13 @@ Use `aspose-cli slides` for PPTX, PPT, ODP and related presentation formats.
 Slides are addressed by 1-based number or stable `slideId`; shapes by `shapeId`
 or case-sensitive `shapeName` within their slide.
 
+`query slides --max-chars` bounds all returned title, text, run, requested note
+and comment text, including repeated projections. Addressing and formatting
+metadata do not consume this text budget. Inspect `window.truncated` and each
+slide's `contentTruncated`. `next` selects unread slides; it does not resume
+inside a truncated slide. Re-read that slide with a larger budget or extract
+text when complete content is required.
+
 ## Workflow
 
 1. Clarify audience, purpose, talk length, screen ratio and requested scope.

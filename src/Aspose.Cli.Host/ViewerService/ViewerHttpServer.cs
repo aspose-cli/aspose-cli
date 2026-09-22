@@ -77,8 +77,13 @@ internal sealed class ViewerHttpServer : IDisposable
         _requests.StopAccepting();
         try { _listener?.Close(); } catch (ObjectDisposedException) { }
         try { _acceptLoop?.Wait(StopTimeout); } catch (AggregateException) { }
-        _requests.WaitForDrain(StopTimeout);
-        _requests.Dispose();
+        bool drained = _requests.WaitForDrain(StopTimeout);
+        DeferredResourceCleanup.CompleteOrDefer(drained && (_acceptLoop?.IsCompleted ?? true),
+            () =>
+            {
+                try { _acceptLoop?.GetAwaiter().GetResult(); } catch (Exception) { }
+                _requests.WaitForDrain(Timeout.InfiniteTimeSpan);
+            }, _requests.Dispose, "aspose-viewer-http-cleanup", "viewer HTTP requests");
     }
 
     private async Task AcceptLoopAsync(HttpListener listener)

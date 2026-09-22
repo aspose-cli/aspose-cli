@@ -23,43 +23,6 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Provides stateless helpers shared by PDF mutation services.</summary>
 internal static class PdfMutationSupport
 {
-    internal static IReadOnlyList<string> MatchPhrases(
-        Page page,
-        string pattern,
-        bool regex,
-        bool caseSensitive)
-    {
-        if (!regex)
-        {
-            return [pattern];
-        }
-
-        try
-        {
-            MatchCollection matches = SafeRegex.Create(pattern, caseSensitive)
-                .Matches(ExtractText(page, PdfReadModes.Plain));
-            string[] phrases = matches.Cast<Match>()
-                .Select(static match => match.Value)
-                .Where(static value => value.Length > 0)
-                .Distinct(StringComparer.Ordinal)
-                .ToArray();
-            if (matches.Count > 0 && phrases.Length == 0)
-            {
-                throw new InvalidOperationException("A redaction or search regex must not match an empty string.");
-            }
-
-            return phrases;
-        }
-        catch (RegexMatchTimeoutException exception)
-        {
-            throw new CliException(
-                ErrorCodes.OperationTimeout,
-                "The PDF regular expression exceeded its one-second execution budget.",
-                hint: "Simplify the expression or search a narrower page range.",
-                innerException: exception);
-        }
-    }
-
     internal static IReadOnlyList<int> Resolve(Document document, string text) =>
         Aspose.Cli.Sdk.Addressing.PageRange.Parse(text).Resolve(document.Pages.Count);
 
@@ -75,21 +38,6 @@ internal static class PdfMutationSupport
         ErrorCodes.PageNotFound,
         $"Requested page {requested} exceeds the available count of {available}.",
         hint: $"Use a page from 1 through {available}.");
-
-    internal static Rectangle ToPdfRect(Page page, PdfRectInput rect)
-    {
-        if (rect.X < 0 || rect.Y < 0 || rect.X + rect.Width > page.Rect.Width || rect.Y + rect.Height > page.Rect.Height)
-        {
-            throw new InvalidOperationException("Rectangle lies outside the page bounds.");
-        }
-
-        return new Rectangle(
-            rect.X,
-            page.Rect.Height - rect.Y - rect.Height,
-            rect.X + rect.Width,
-            page.Rect.Height - rect.Y,
-            normalizeCoordinates: true);
-    }
 
     internal static PdfColor ParseColor(string value)
     {

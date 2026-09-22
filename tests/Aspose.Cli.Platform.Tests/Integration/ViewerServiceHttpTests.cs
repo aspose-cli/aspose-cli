@@ -45,6 +45,31 @@ public sealed class ViewerServiceHttpTests : IDisposable
     }
 
     [Fact]
+    public async Task Shutdown_DoesNotDisposeAnActiveRequestLease()
+    {
+        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        using var release = new ManualResetEventSlim();
+        var completed = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        _server.Mount((context, _) =>
+        {
+            entered.SetResult();
+            try { release.Wait(); context.Response.Close(); }
+            finally { completed.SetResult(); }
+            return true;
+        });
+        Task<HttpResponseMessage> request = Get("/");
+        try
+        {
+            Task winner = await Task.WhenAny(entered.Task, request).WaitAsync(EventTimeout);
+            Assert.Same(entered.Task, winner);
+            _server.Dispose();
+        }
+        finally { release.Set(); }
+        await completed.Task.WaitAsync(EventTimeout);
+        try { using HttpResponseMessage response = await request; } catch (HttpRequestException) { }
+    }
+
+    [Fact]
     public async Task Document_IsServedAsAPageWithImmutableRevisionFiles()
     {
         LiveDocument document = OpenWorkbook();

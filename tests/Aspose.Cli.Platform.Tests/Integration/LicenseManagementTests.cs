@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
 
+[Collection("License storage worker")]
 public sealed class LicenseManagementTests
 {
     [Fact]
@@ -36,14 +37,14 @@ public sealed class LicenseManagementTests
         string sourceHash = Hash(source);
         DateTime sourceTime = File.GetLastWriteTimeUtc(source);
         CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--timeout", "20", "--output", "json");
-        Assert.Equal(0, selected.ExitCode);
+        Assert.True(selected.ExitCode == 0, selected.StdErr);
         JsonNode selectedStatus = JsonNode.Parse(selected.StdOut)!;
         Assert.All(selectedStatus["products"]!.AsArray(), product =>
             Assert.Equal(product!["product"]!.GetValue<string>() == "words" ? "licensed" : "evaluation",
                 product["mode"]!.GetValue<string>()));
 
         CliResult installed = workspace.Run("license", "install", source, "--timeout", "20", "--output", "json");
-        Assert.Equal(0, installed.ExitCode);
+        Assert.True(installed.ExitCode == 0, installed.StdErr);
         Assert.All(JsonNode.Parse(installed.StdOut)!["products"]!.AsArray(), product =>
         {
             Assert.Equal("licensed", product!["mode"]!.GetValue<string>());
@@ -61,7 +62,7 @@ public sealed class LicenseManagementTests
             Assert.Equal(sourceHash, Hash(path)));
 
         CliResult removed = workspace.Run("license", "remove", "--timeout", "20", "--output", "json");
-        Assert.Equal(0, removed.ExitCode);
+        Assert.True(removed.ExitCode == 0, removed.StdErr);
         Assert.All(JsonNode.Parse(removed.StdOut)!["products"]!.AsArray(), product =>
         {
             Assert.Equal("evaluation", product!["mode"]!.GetValue<string>());

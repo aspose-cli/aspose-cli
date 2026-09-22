@@ -15,7 +15,9 @@ visible text: `{n}` counts selected pages from `start`, while `{N}` is the
 current document's total page count.
 
 Edit `rect` values are `{x,y,width,height}` in points (72 points per inch),
-with a top-left origin against the current page dimensions. Coordinates must
+with a top-left origin against the currently visible, rotated CropBox (or
+MediaBox when uncropped). Search rectangles use the same coordinates.
+Coordinates must
 be non-negative, dimensions positive, and the rectangle within page bounds.
 Reinspect geometry and review after changing crop, size or rotation. The
 `rotate_pages` angle sets the rotation; `set_page_size` scales content only
@@ -36,10 +38,12 @@ the ops envelope's `ifMatch` to reject a changed baseline.
 
 Redaction is destructive. Preserve a baseline, apply `redact_text` or
 `redact_area`, then verify with `pdf query search` and `review`.
-`redact_text` works on extractable text and does not perform OCR. A raw-byte
-absence check for a known literal is additional evidence only: PDF text can
-be encoded or compressed. A black rectangle or zero search hits alone is
-not proof that all sensitive content was removed.
+`redact_text` works on extractable text and does not perform OCR. Regex search
+and redaction preserve context and use a one-second regex timeout; expressions
+that match zero characters are rejected. A raw-byte absence check for a known
+literal is additional evidence only: PDF text can be encoded or compressed.
+A black rectangle or zero search hits alone is not proof that all sensitive
+content was removed.
 
 `optimize` can change image quality and font embedding. Compare file sizes and
 visually inspect affected pages.

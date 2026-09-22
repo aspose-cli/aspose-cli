@@ -6,6 +6,7 @@ using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Host.Viewer;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.ViewerService;
@@ -33,6 +34,8 @@ internal sealed record LiveDocumentOptions
 
     /// <summary>Upper bound of rendered parts.</summary>
     public int MaxParts { get; init; } = 512;
+
+    public long MaxInputBytes { get; init; } = ResourceBudgetDefaults.DefaultInputBytes;
 
     /// <summary>Debounce window for bursts of file changes.</summary>
     public TimeSpan QuietPeriod { get; init; } = TimeSpan.FromMilliseconds(120);
@@ -63,10 +66,10 @@ internal sealed class LiveDocument : IDisposable
     private const int UnlockAttempts = 5;
     private const int MessageMaxLength = 200;
     private static readonly TimeSpan UnlockInitialDelay = TimeSpan.FromMilliseconds(50);
-    private static readonly TimeSpan StopTimeout = TimeSpan.FromSeconds(2);
 
     private readonly object _gate = new();
-    private readonly object _renderGate = new();
+    private readonly SemaphoreSlim _renderGate = new(1, 1);
+    private readonly CancellationTokenSource _shutdown = new();
     private readonly string _source;
     private readonly string _root;
     private readonly string _copy;
@@ -83,6 +86,7 @@ internal sealed class LiveDocument : IDisposable
     private bool _dirty;
     private bool _opened;
     private volatile bool _disposed;
+    private bool _preserveStorage;
 
     public LiveDocument(
         string id,
@@ -104,11 +108,11 @@ internal sealed class LiveDocument : IDisposable
         _root = PrivateUserStorage.EnsureDirectory(Path.GetFullPath(root));
         // Products label parts after the file they rendered, so the copy
         // carries the document's own name rather than a private one.
-        _copy = Path.Combine(PrivateUserStorage.EnsureDirectory(Path.Combine(_root, "source")), FileName);
+        _copy = Path.Combine(PrivateUserStorage.EnsureDirectory(Path.Combine(_root, ViewerStorage.SourceDirectory)), FileName);
         _worker = worker;
         _options = options;
         _limits = limits;
-        _versions = new RevisionStore(Path.Combine(_root, "revisions"));
+        _versions = new RevisionStore(Path.Combine(_root, ViewerStorage.RevisionsDirectory));
         Events = new LiveEventHub();
         _lastActivityAt = Environment.TickCount64;
         _monitor = new FileChangeMonitor(_source, options.QuietPeriod);
@@ -155,9 +159,9 @@ internal sealed class LiveDocument : IDisposable
     /// fails where the person can see it. Afterwards the loop consumes file
     /// changes, including any that arrived while this render ran.
     /// </summary>
-    public RenderWorkerResponse Open()
+    public RenderWorkerResponse Open(OperationDeadline? deadline = null)
     {
-        RenderWorkerResponse response = Render();
+        RenderWorkerResponse response = Render(deadline);
         lock (_gate)
         {
             _opened = true;
@@ -175,6 +179,7 @@ internal sealed class LiveDocument : IDisposable
             && _options.Effect == options.Effect
             && _options.Password == options.Password
             && _options.License == options.License
+            && _options.MaxInputBytes == options.MaxInputBytes
             && (_options.FontDirectories ?? []).SequenceEqual(options.FontDirectories ?? []);
     }
 
@@ -196,15 +201,22 @@ internal sealed class LiveDocument : IDisposable
             Monitor.PulseAll(_gate);
         }
 
+        _shutdown.Cancel();
         _monitor.Changed -= MarkDirty;
         _monitor.Dispose();
-        if (Thread.CurrentThread != _loop)
+        if (Thread.CurrentThread != _loop) { _loop.Join(); }
+        // Cancellation stops the worker before storage can be reclaimed, including an initial Open.
+        _renderGate.Wait();
+        try
         {
-            _loop.Join(StopTimeout);
+            Events.Dispose();
+            if (!_preserveStorage)
+            {
+                _versions.Dispose();
+                LocalFileCleanup.DeleteDirectory(_root);
+            }
         }
-        Events.Dispose();
-        _versions.Dispose();
-        LocalFileCleanup.DeleteDirectory(_root);
+        finally { _renderGate.Release(); _shutdown.Dispose(); }
     }
 
     private void MarkDirty()
@@ -243,14 +255,24 @@ internal sealed class LiveDocument : IDisposable
 
             // Outside the gate: a change arriving during the round sets the
             // flag again and the loop immediately runs another round.
-            _ = Render();
+            try { _ = Render(); }
+            catch (OperationCanceledException)
+            {
+                if (_disposed) { return; }
+                Report(Volatile.Read(ref _revision), ErrorCodes.OperationTimeout.Name, "The render deadline expired.");
+            }
         }
     }
 
-    private RenderWorkerResponse Render()
+    private RenderWorkerResponse Render(OperationDeadline? operation = null)
     {
-        lock (_renderGate)
+        using var ownedDeadline = operation is null ? OperationDeadline.Start(_limits.RenderTimeout) : null;
+        OperationDeadline deadline = operation ?? ownedDeadline!;
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(deadline.Token, _shutdown.Token);
+        _renderGate.Wait(cancellation.Token);
+        try
         {
+            cancellation.Token.ThrowIfCancellationRequested();
             int revision = Volatile.Read(ref _revision) + 1;
             Volatile.Write(ref _revision, revision);
             RecordActivity();
@@ -258,21 +280,24 @@ internal sealed class LiveDocument : IDisposable
             string directory = _versions.CreateVersionDirectory(revision);
             try
             {
-                CopySource();
+                CopySource(cancellation.Token);
                 RenderWorkerResponse response = _worker.Render(new RenderWorkerRequest
                 {
                     Id = 0,
                     Source = _copy,
+                    SourceOrigin = _source,
                     Output = directory,
                     MaxParts = _options.MaxParts,
-                    TimeoutMs = 0,
+                    TimeoutMs = (int)(deadline.OriginalBudget ?? _limits.RenderTimeout).TotalMilliseconds,
+                    ExpiresAtTick = deadline.ExpiresAtTick,
+                    MaxInputBytes = _options.MaxInputBytes,
                     Product = _options.Product,
                     View = _options.View,
                     Password = _options.Password,
                     License = _options.License,
                     FontDirectories = _options.FontDirectories,
                     Presentation = Presentation is null,
-                });
+                }, cancellation.Token);
                 if (!response.Ok)
                 {
                     LocalFileCleanup.DeleteDirectory(directory);
@@ -280,35 +305,51 @@ internal sealed class LiveDocument : IDisposable
                     return response;
                 }
 
+                deadline.ThrowIfExpired("render-publication");
+                cancellation.Token.ThrowIfCancellationRequested();
                 Publish(revision, directory, response, timer.ElapsedMilliseconds);
                 return response;
             }
             catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or CliException)
             {
-                LocalFileCleanup.DeleteDirectory(directory);
+                if (exception is CliException termination && termination.Code == ErrorCodes.WorkerTerminationFailed)
+                {
+                    _preserveStorage = true;
+                    // An unconfirmed producer must also prevent the session owner's stale sweep.
+                    File.WriteAllText(Path.Combine(_root, ".worker-unconfirmed"), termination.Message);
+                }
+                else { LocalFileCleanup.DeleteDirectory(directory); }
                 string code = exception is CliException cli ? cli.Code.Name : ErrorCodes.FileNotFound.Name;
                 Report(revision, code, exception.Message);
-                return new RenderWorkerResponse { Id = 0, Ok = false, Code = code, Message = exception.Message };
+                return new RenderWorkerResponse { Id = 0, Ok = false, Code = code,
+                    Exit = (int)(exception is CliException failure ? failure.ExitCode : ExitCode.InputError),
+                    Message = exception.Message };
             }
             finally
             {
                 RecordActivity();
             }
         }
+        finally { _renderGate.Release(); }
     }
 
     /// <summary>
     /// Renders a copy rather than the watched file: the writer keeps its file,
     /// and the render sees one stable state of it.
     /// </summary>
-    private void CopySource()
+    private void CopySource(CancellationToken cancellationToken)
     {
         if (!File.Exists(_source))
         {
             throw CliErrors.FileNotFound(_source);
         }
-        FileUnlockProbe.WaitReadable(_source, UnlockAttempts, UnlockInitialDelay);
-        File.Copy(_source, _copy, overwrite: true);
+        FileUnlockProbe.WaitReadable(_source, UnlockAttempts, UnlockInitialDelay, cancellationToken);
+        using var input = new FileStream(_source, FileMode.Open, FileAccess.Read, FileShare.Read,
+            81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        using var output = new FileStream(_copy, FileMode.Create, FileAccess.Write, FileShare.None,
+            81920, FileOptions.Asynchronous);
+        BoundedStreamCopy.CopyAsync(input, output, _options.MaxInputBytes,
+            size => CliErrors.FileTooLarge(size, _options.MaxInputBytes), cancellationToken).GetAwaiter().GetResult();
     }
 
     private void Publish(int revision, string directory, RenderWorkerResponse response, long renderMs)

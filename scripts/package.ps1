@@ -17,7 +17,9 @@ param(
 
     [string] $AuthenticodeToolPath,
 
-    [string] $AuthenticodeCertificatePath
+    [string] $AuthenticodeCertificatePath,
+
+    [string] $AuthenticodeTimestampServer
 )
 
 $ErrorActionPreference = 'Stop'
@@ -145,7 +147,7 @@ function Get-OpenSslTool {
         $OpenSslPath
     }
     if ([string]::IsNullOrWhiteSpace($candidate)) {
-        $command = Get-Command openssl.exe -ErrorAction SilentlyContinue
+        $command = Get-Command openssl.exe -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
         $candidate = if ($null -eq $command) { $null } else { $command.Source }
     }
     if ([string]::IsNullOrWhiteSpace($candidate)) {
@@ -178,7 +180,23 @@ function Get-AuthenticodeInputs {
     $certificate = [IO.Path]::GetFullPath($certificateValue)
     if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Authenticode signing tool was not found: $tool" }
     if (-not (Test-Path -LiteralPath $certificate -PathType Leaf)) { throw "Authenticode certificate was not found: $certificate" }
-    return [pscustomobject]@{ Tool = $tool; Certificate = $certificate }
+    $timestamp = if ([string]::IsNullOrWhiteSpace($AuthenticodeTimestampServer)) {
+        $env:ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER
+    } else { $AuthenticodeTimestampServer }
+    $timestampUri = $null
+    if (-not [Uri]::TryCreate($timestamp, [UriKind]::Absolute, [ref]$timestampUri) -or
+        $timestampUri.Scheme -notin @('http','https') -or $timestampUri.UserInfo) {
+        throw 'Authenticode signing requires a credential-free timestamp server URL. Supply -AuthenticodeTimestampServer or ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER.'
+    }
+    return [pscustomobject]@{ Tool = $tool; Certificate = $certificate; TimestampServer = $timestamp }
+}
+
+function Assert-TimestampedAuthenticode {
+    param([Parameter(Mandatory)][string] $Path)
+    $signature = Get-AuthenticodeSignature -FilePath $Path
+    if ([string]$signature.Status -cne 'Valid' -or $null -eq $signature.TimeStamperCertificate) {
+        throw "Authenticode signature must be valid and timestamped: $Path"
+    }
 }
 
 function Invoke-ExecutableAuthenticodeHook {
@@ -188,8 +206,9 @@ function Invoke-ExecutableAuthenticodeHook {
     )
     $inputs = Get-AuthenticodeInputs -Required:$Required
     if ($null -eq $inputs) { return }
-    Invoke-SigningTool $inputs.Tool @('sign','/fd','SHA256','/f',$inputs.Certificate,$Executable) 'Authenticode signing'
+    Invoke-SigningTool $inputs.Tool @('sign','/fd','SHA256','/tr',$inputs.TimestampServer,'/td','SHA256','/f',$inputs.Certificate,$Executable) 'Authenticode signing'
     Invoke-SigningTool $inputs.Tool @('verify','/pa','/all',$Executable) 'Authenticode verification'
+    Assert-TimestampedAuthenticode $Executable
 }
 
 function Invoke-PowerShellAuthenticodeHook {
@@ -210,10 +229,12 @@ function Invoke-PowerShellAuthenticodeHook {
     $signature = Set-AuthenticodeSignature `
         -FilePath $Script `
         -Certificate $certificates[0] `
-        -HashAlgorithm SHA256
+        -HashAlgorithm SHA256 `
+        -TimestampServer $inputs.TimestampServer
     if ([string]$signature.Status -cne 'Valid') {
         throw "PowerShell installer Authenticode signing failed: $($signature.StatusMessage)"
     }
+    Assert-TimestampedAuthenticode $Script
 }
 
 function Write-PackageSignature {

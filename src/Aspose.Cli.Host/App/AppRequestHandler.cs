@@ -157,10 +157,10 @@ internal sealed class AppRequestHandler
             case ("POST", "/api/license"):
                 string installed = _host.InstallLicense(request.InputStream, request.ContentLength64,
                     NormalizeProduct(request.Headers["X-Product"]));
-                return (HttpStatusCode.OK, new AppLicenseSavedResult(true, installed), true);
+                return (HttpStatusCode.OK, new AppLicenseSavedResult(true, installed), false);
             case ("DELETE", "/api/license"):
                 string removed = _host.RemoveLicense(NormalizeProduct(request.Headers["X-Product"]));
-                return (HttpStatusCode.OK, new AppLicenseSavedResult(true, removed), true);
+                return (HttpStatusCode.OK, new AppLicenseSavedResult(true, removed), false);
             case ("POST", "/api/preferences"):
                 AppApiResult preferences = _host.UpdatePreferences(await ReadJson<AppPreferenceRequest>(request).ConfigureAwait(false));
                 return (HttpStatusCode.OK, preferences, false);

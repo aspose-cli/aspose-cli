@@ -17,6 +17,7 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'release-common.ps1')
+. (Join-Path $PSScriptRoot 'release-notices.ps1')
 
 $layoutResolver = Join-Path $PSScriptRoot 'resolve-project-layout.ps1'
 $generator = Join-Path $PSScriptRoot 'generate-product-catalog.ps1'
@@ -94,6 +95,7 @@ if ($customerPublish) {
     $publishArguments += @(
         '--runtime'
         $RuntimeIdentifier
+        "-p:AsposeCliPublishRuntimeIdentifier=$RuntimeIdentifier"
         '-p:PublishSingleFile=true'
         '-p:IncludeNativeLibrariesForSelfExtract=true'
         '-p:EnableCompressionInSingleFile=true'
@@ -105,25 +107,6 @@ if ($customerPublish) {
 & dotnet @publishArguments
 if ($LASTEXITCODE -ne 0) {
     throw "Publish failed with exit code $LASTEXITCODE."
-}
-
-if ($customerPublish -and $RuntimeIdentifier.StartsWith('win-', [StringComparison]::Ordinal)) {
-    # Aspose.Slides.NET6.CrossPlatform copies every OS native drawing library as
-    # content. The Windows libraries are bundled into the single file; remove
-    # the unrelated Unix assets so a win-x64 customer does not download 160 MB
-    # of libraries that cannot execute on their machine.
-    $foreignSlidesAssets = @(
-        'libaspose.slides.drawing.capi_aarch64_libstdcpp_libc2.39.so'
-        'libaspose.slides.drawing.capi_appleclang_arm64.dylib'
-        'libaspose.slides.drawing.capi_appleclang_x86_64.dylib'
-        'libaspose.slides.drawing.capi_x86_64_libstdcpp_libc2.23.so'
-    )
-    foreach ($name in $foreignSlidesAssets) {
-        $path = Join-Path $publishRoot $name
-        if (Test-Path -LiteralPath $path -PathType Leaf) {
-            Remove-Item -LiteralPath $path -Force
-        }
-    }
 }
 
 if ($customerPublish) {
@@ -145,6 +128,14 @@ $buildManifest = [ordered]@{
     enginePackages = @($provenance.EnginePackages)
 }
 Write-StableJson (Join-Path $publishRoot $script:BuildManifestName) $buildManifest
+
+[xml] $buildDefaults = Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw
+$framework = $buildDefaults.SelectSingleNode('/Project/PropertyGroup/TargetFramework').InnerText
+$buildOutput = Join-Path $layout.SourceRoot "Aspose.Cli/bin/$Configuration/$framework"
+if ($customerPublish) { $buildOutput = Join-Path $buildOutput $RuntimeIdentifier }
+$noticeFiles = @(Write-ReleaseNotices -RepositoryRoot $repoRoot -OutputRoot $publishRoot `
+    -DependenciesPath (Join-Path $buildOutput 'aspose-cli.deps.json') `
+    -AssetsPath (Join-Path $layout.SourceRoot 'Aspose.Cli/obj/project.assets.json'))
 
 $publishedFiles = @(Get-ChildItem -LiteralPath $publishRoot -File -Recurse)
 $relativeFileNames = @(
@@ -172,7 +163,7 @@ if ($customerPublish) {
     else {
         'aspose-cli'
     }
-    $requiredCustomerFiles = @($executableName, $script:BuildManifestName)
+    $requiredCustomerFiles = @($executableName, $script:BuildManifestName) + $noticeFiles
     $missingCustomerFiles = @(
         $requiredCustomerFiles |
             Where-Object { $_ -cnotin $relativeFileNames }
@@ -198,6 +189,10 @@ if ($customerPublish) {
         throw "Published executable failed capabilities with exit code $LASTEXITCODE."
     }
     $capabilities = ($capabilitiesText -join [Environment]::NewLine) | ConvertFrom-Json
+    $declaredVersion = $buildDefaults.SelectSingleNode('/Project/PropertyGroup/Version').InnerText
+    if ($capabilities.cliVersion -cne $declaredVersion) {
+        throw "Published version '$($capabilities.cliVersion)' does not match declared version '$declaredVersion'."
+    }
     if ($capabilities.edition -cne $layout.Edition) {
         throw "Published executable reports edition '$($capabilities.edition)', expected '$($layout.Edition)'."
     }

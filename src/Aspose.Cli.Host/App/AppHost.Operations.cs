@@ -101,16 +101,16 @@ internal sealed partial class AppHost
         {
             saveConfiguration();
             _sessions.Refresh();
-            return $"http://127.0.0.1:{Port}{AppRoutes.Settings}";
+            return UrlForRoute(AppRoutes.Settings);
         });
     }
 
     private void Mutate(Action action) => Mutate(() => { action(); return true; });
 
-    private T Mutate<T>(Func<T> action)
+    private T Mutate<T>(Func<T> action, CancellationToken cancellationToken = default)
     {
         EnsureMutable();
-        while (!_mutationGate.Wait(25)) { EnsureMutable(); }
+        while (!_mutationGate.Wait(25, cancellationToken)) { EnsureMutable(); }
         try { EnsureMutable(); Touch(); return action(); }
         finally { _mutationGate.Release(); }
     }

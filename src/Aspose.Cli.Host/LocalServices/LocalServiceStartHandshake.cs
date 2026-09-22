@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -15,7 +16,8 @@ internal static class LocalServiceStartHandshake
         string operation,
         Func<TMarker?> readReady,
         Func<string, string> redactDiagnostic,
-        Func<int, string, Exception>? processExited = null)
+        Func<int, string, Exception>? processExited = null,
+        OperationDeadline? deadline = null)
         where TMarker : class
     {
         ArgumentNullException.ThrowIfNull(child);
@@ -26,6 +28,7 @@ internal static class LocalServiceStartHandshake
         {
             while (watch.Elapsed < timeout)
             {
+                deadline?.ThrowIfExpired("local-service-startup");
                 if (child.Process.HasExited)
                 {
                     string error = child.Process.StandardError
@@ -54,10 +57,12 @@ internal static class LocalServiceStartHandshake
                 TMarker? marker = readReady();
                 if (marker is not null)
                 {
+                    deadline?.ThrowIfExpired("local-service-startup");
                     return marker;
                 }
 
-                Thread.Sleep(50);
+                if (deadline is null) { Thread.Sleep(50); }
+                else if (deadline.Token.WaitHandle.WaitOne(50)) { deadline.ThrowIfExpired("local-service-startup"); }
             }
 
             TerminateOrThrow(child.Process);

@@ -35,28 +35,31 @@ internal static class ReadProjection
             candidates = candidates.Where(static entry => entry.Node is Paragraph p && InfoProjection.HeadingLevel(p) is not null).ToArray();
         }
 
-        int take = TakeCount(
-            candidates.Select(CharacterCost),
-            request.MaxBlocks,
-            request.MaxCharacters);
-        IReadOnlyList<BlockEntry> selected = candidates.Take(take).ToArray();
-        int remaining = candidates.Count - selected.Count;
-        int used = 0;
-        var blocks = new List<BlockData>(selected.Count);
-        foreach (BlockEntry entry in selected)
+        int remainingCharacters = request.MaxCharacters;
+        var blocks = new List<BlockData>();
+        foreach (BlockEntry entry in candidates)
         {
-            int available = Math.Max(1, request.MaxCharacters - used);
-            BlockData block = ProjectBlock(entry, request.Scope, available);
-            used += Math.Min(available, CharacterCost(entry));
+            if (blocks.Count >= request.MaxBlocks || blocks.Count > 0 && remainingCharacters == 0)
+            {
+                break;
+            }
+            int available = remainingCharacters;
+            BlockData block = ProjectBlock(entry, request.Scope, ref available);
+            if (blocks.Count > 0 && block.ContentTruncated)
+            {
+                break;
+            }
             blocks.Add(block);
+            remainingCharacters = available;
         }
 
-        int first = selected.Count == 0 ? 0 : selected[0].Index;
-        int last = selected.Count == 0 ? 0 : selected[^1].Index;
-        string window = selected.Count == 0 ? "empty" : first == last ? first.ToString() : $"{first}-{last}";
+        int first = blocks.Count == 0 ? 0 : blocks[0].I;
+        int last = blocks.Count == 0 ? 0 : blocks[^1].I;
+        int remaining = candidates.Count - blocks.Count;
+        string window = blocks.Count == 0 ? "empty" : first == last ? first.ToString() : $"{first}-{last}";
         string? next = remaining <= 0
             ? null
-            : $"aspose-cli words query blocks \"{path}\" --blocks {FormatBlocks(candidates.Skip(take).Select(static entry => entry.Index))} --scope {request.Scope} --max-chars {request.MaxCharacters} --max-blocks {request.MaxBlocks} --output json";
+            : $"aspose-cli words query blocks \"{path}\" --blocks {FormatBlocks(candidates.Skip(blocks.Count).Select(static entry => entry.Index))} --scope {request.Scope} --max-chars {request.MaxCharacters} --max-blocks {request.MaxBlocks} --output json";
 
         return new DocumentReadResult
         {
@@ -66,29 +69,6 @@ internal static class ReadProjection
             Blocks = blocks,
             Next = next,
         };
-    }
-
-    private static int CharacterCost(BlockEntry entry) => Math.Max(1, InfoProjection.Clean(entry.Node.GetText()).Length);
-
-    private static int TakeCount(
-        IEnumerable<int> characterCosts,
-        int maxItems,
-        int maxCharacters)
-    {
-        int count = 0;
-        long characters = 0;
-        foreach (int cost in characterCosts)
-        {
-            if (count > 0
-                && (count >= maxItems
-                    || characters + Math.Max(0, cost) > maxCharacters))
-            {
-                break;
-            }
-            count++;
-            characters += Math.Max(0, cost);
-        }
-        return count;
     }
 
     private static string FormatBlocks(IEnumerable<int> indices)
@@ -114,30 +94,42 @@ internal static class ReadProjection
         return string.Join(',', parts);
     }
 
-    private static BlockData ProjectBlock(BlockEntry entry, string scope, int available)
+    private static BlockData ProjectBlock(BlockEntry entry, string scope, ref int remaining)
     {
+        bool truncated = false;
         if (entry.Node is Paragraph paragraph)
         {
-            string text = InfoProjection.Clean(paragraph.GetText());
-            bool truncated = text.Length > available;
-            string projected = truncated ? text[..available] : text;
+            string text = Take(InfoProjection.Clean(paragraph.GetText()), ref remaining, ref truncated);
+            var runs = scope == "full" ? new List<RunData>() : null;
+            if (runs is not null)
+            {
+                foreach (Run run in paragraph.Runs)
+                {
+                    if (runs.Count == 500 || remaining == 0 && run.Text.Length > 0)
+                    {
+                        truncated = true;
+                        break;
+                    }
+                    runs.Add(new RunData
+                    {
+                        Text = Take(run.Text, ref remaining, ref truncated),
+                        Font = run.Font.Name,
+                        Size = run.Font.Size,
+                        Bold = run.Font.Bold,
+                        Italic = run.Font.Italic,
+                        Color = $"#{run.Font.Color.ToArgb() & 0xffffff:X6}",
+                    });
+                }
+            }
             return new BlockData
             {
                 I = entry.Index,
                 Type = "paragraph",
                 Section = entry.Section,
-                Text = projected,
+                Text = text,
                 Style = paragraph.ParagraphFormat.StyleName,
                 HeadingLevel = InfoProjection.HeadingLevel(paragraph),
-                Runs = scope == "full" ? paragraph.Runs.Cast<Run>().Select(run => new RunData
-                {
-                    Text = run.Text,
-                    Font = run.Font.Name,
-                    Size = run.Font.Size,
-                    Bold = run.Font.Bold,
-                    Italic = run.Font.Italic,
-                    Color = $"#{run.Font.Color.ToArgb() & 0xffffff:X6}",
-                }).Take(500).ToArray() : null,
+                Runs = runs,
                 Images = paragraph.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage)
                     .Select(shape => new ContractImageData
                     {
@@ -155,38 +147,26 @@ internal static class ReadProjection
         }
 
         var table = (Table)entry.Node;
-        int used = 0;
-        bool truncatedCells = false;
         var rows = new List<IReadOnlyList<string>>();
         foreach (Row row in table.Rows)
         {
+            if (remaining == 0)
+            {
+                truncated = true;
+                break;
+            }
             var cells = new List<string>();
             foreach (Cell cell in row.Cells)
             {
-                string value = InfoProjection.Clean(cell.GetText());
-                int remaining = Math.Max(0, available - used);
-                if (value.Length > remaining)
+                if (remaining == 0)
                 {
-                    value = value[..remaining];
-                    truncatedCells = true;
-                }
-
-                used += value.Length;
-                cells.Add(value);
-                if (used >= available)
-                {
-                    truncatedCells = true;
+                    truncated = true;
                     break;
                 }
+                cells.Add(Take(InfoProjection.Clean(cell.GetText()), ref remaining, ref truncated));
             }
-
             rows.Add(cells);
-            if (used >= available)
-            {
-                break;
-            }
         }
-
         return new BlockData
         {
             I = entry.Index,
@@ -195,7 +175,15 @@ internal static class ReadProjection
             Rows = table.Rows.Count,
             Columns = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
             Cells = rows,
-            ContentTruncated = truncatedCells || rows.Count < table.Rows.Count,
+            ContentTruncated = truncated,
         };
+    }
+
+    private static string Take(string value, ref int remaining, ref bool truncated)
+    {
+        int length = Math.Min(value.Length, remaining);
+        truncated |= length < value.Length;
+        remaining -= length;
+        return value[..length];
     }
 }

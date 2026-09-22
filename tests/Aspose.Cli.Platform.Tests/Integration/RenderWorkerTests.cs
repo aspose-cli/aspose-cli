@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.ViewerService;
+using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
@@ -53,6 +54,22 @@ public sealed class RenderWorkerTests : IDisposable
             Assert.StartsWith("sha256:", part!["digest"]!.GetValue<string>(), StringComparison.Ordinal);
             Assert.True(File.Exists(Path.Combine(documentOutput, part["file"]!.GetValue<string>())));
         });
+    }
+
+    [Fact]
+    public void PreviewSnapshot_PreservesTheVerifiedResourceOrigin()
+    {
+        File.WriteAllBytes(_workspace.File("local.png"), Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
+        File.WriteAllText(_workspace.File("relative.md"), "# Relative image\n\n![local](local.png)");
+        using var supervisor = new RenderWorkerSupervisor(StartInfo, RenderTimeout);
+        var direct = Render(supervisor, "relative.md");
+        Assert.True(direct.Response.Ok, direct.Response.Message);
+        using var documents = new ViewerDocuments(supervisor, ViewerStorage.Create(), LocalServiceResourceLimits.Resolve());
+        LiveDocument snapshot = documents.Open(_workspace.File("relative.md"), new LiveDocumentOptions());
+        JsonNode manifest = JsonNode.Parse(File.ReadAllText(Path.Combine(direct.Output, "view.json")))!;
+        Assert.Equal(manifest["parts"]!.AsArray().Select(part => part!["digest"]!.GetValue<string>()).Order(),
+            snapshot.Current!.Digests.Values.Order());
     }
 
     [Fact]

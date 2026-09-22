@@ -16,6 +16,31 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
 
     public WordsDocumentEngineTests(WordsFixture fixture) => _fixture = fixture;
 
+    [Theory]
+    [InlineData(10, 1, 10000)]
+    [InlineData(15, 3, 10)]
+    [InlineData(20, 3, 10)]
+    public void FullRead_CountsTextAndRunsAgainstOneBudget(int budget, int runCount, int textLength)
+    {
+        string input = _fixture.Temp.File($"read-budget-{budget}.docx");
+        var document = new Document();
+        Paragraph paragraph = document.FirstSection.Body.FirstParagraph;
+        for (int index = 0; index < runCount; index++)
+        {
+            var run = new Run(document, index == runCount - 1 ? new string('x', textLength - (3 * index)) : "xxx");
+            run.Font.Bold = index % 2 == 0;
+            paragraph.AppendChild(run);
+        }
+        document.Save(input);
+        BlockData block = Assert.Single(_fixture.Engine.Read(input, new DocumentReadRequest
+        {
+            Blocks = PageRange.Parse("1"), Scope = "full", MaxCharacters = budget,
+        }).Blocks);
+        int characters = (block.Text?.Length ?? 0) + (block.Runs?.Sum(static run => run.Text.Length) ?? 0);
+        Assert.Equal(budget, characters);
+        Assert.Equal(budget < textLength * 2, block.ContentTruncated);
+        Assert.Equal(1, block.I);
+    }
     [Fact]
     public void InfoAndRead_UseOneStableParagraphTableBlockIndex()
     {

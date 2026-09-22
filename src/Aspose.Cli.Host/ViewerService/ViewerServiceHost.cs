@@ -6,6 +6,7 @@ using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Host.ViewerService;
 
@@ -97,7 +98,8 @@ internal sealed class ViewerServiceHost : IDisposable
                 nonce,
                 _token,
                 Dispatch,
-                afterResponse: AfterResponse);
+                afterResponse: AfterResponse,
+                operationTimeout: limits.RenderTimeout);
             _control.Start();
             _store.Write(new ViewerServiceMarker(
                 id,
@@ -121,14 +123,13 @@ internal sealed class ViewerServiceHost : IDisposable
         {
             return;
         }
-        _store.DeleteIfOwned(_token);
-        _app?.Dispose();
-        _control?.Dispose();
-        _http?.Dispose();
-        _documents?.Dispose();
-        _worker?.Dispose();
-        _stop.Dispose();
-        _instance.Dispose();
+        Exception? failure = null;
+        try { _store.DeleteIfOwned(_token); } catch (Exception exception) { failure = exception; }
+        foreach (IDisposable? resource in new IDisposable?[] { _control, _http, _documents, _app, _worker, _stop, _instance })
+        {
+            try { resource?.Dispose(); } catch (Exception exception) { failure ??= exception; }
+        }
+        if (failure is not null) { System.Runtime.ExceptionServices.ExceptionDispatchInfo.Capture(failure).Throw(); }
     }
 
     /// <summary>
@@ -172,14 +173,14 @@ internal sealed class ViewerServiceHost : IDisposable
                 document.Events.ClientCount == 0 && document.IdleMilliseconds >= window);
     }
 
-    private LocalServiceControlResponse Dispatch(LocalServiceControlRequest request)
+    private LocalServiceControlResponse Dispatch(LocalServiceControlRequest request, OperationDeadline deadline)
     {
         try
         {
             switch (request.Command)
             {
                 case ViewerServiceCommands.Open:
-                    return Ok(Open(request.Payload), ViewerServiceJsonContext.Default.ViewerOpenResponse);
+                    return Ok(Open(request.Payload, deadline), ViewerServiceJsonContext.Default.ViewerOpenResponse);
                 case ViewerServiceCommands.Status:
                     return Ok(Status(), ViewerServiceJsonContext.Default.ViewerStatusResponse);
                 case ViewerServiceCommands.Close:
@@ -187,11 +188,14 @@ internal sealed class ViewerServiceHost : IDisposable
                 case ViewerServiceCommands.Refresh:
                     return Ok(Refresh(request.Path), ViewerServiceJsonContext.Default.ViewerStatusResponse);
                 case ViewerServiceCommands.App:
-                    return Ok(App(request.Payload), ViewerServiceJsonContext.Default.ViewerAppResponse);
+                    return Ok(App(request.Payload, deadline), ViewerServiceJsonContext.Default.ViewerAppResponse);
                 case ViewerServiceCommands.Stop:
+                    // Withdraw discovery before acknowledging shutdown; later status calls must not join a closing pipe.
+                    _store.DeleteIfOwned(_token);
                     return Ok(
                         new ViewerStopResponse
                         {
+                            Pid = Environment.ProcessId,
                             Stopped = _documents.All.Select(static document => document.Id).ToArray(),
                             Documents = [],
                         },
@@ -206,6 +210,11 @@ internal sealed class ViewerServiceHost : IDisposable
         catch (CliException exception)
         {
             return Failure(exception);
+        }
+        catch (OperationCanceledException) when (deadline.IsExpired)
+        {
+            return Failure(CliErrors.OperationTimeout(
+                Math.Max(1, (int)Math.Ceiling(deadline.OriginalBudget!.Value.TotalSeconds)), "preview"));
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException or JsonException or InvalidDataException)
@@ -222,7 +231,7 @@ internal sealed class ViewerServiceHost : IDisposable
         }
     }
 
-    private ViewerOpenResponse Open(string? payload)
+    private ViewerOpenResponse Open(string? payload, OperationDeadline deadline)
     {
         ViewerOpenRequest request = payload is null
             ? throw new InvalidDataException("The open request carries no document.")
@@ -239,9 +248,11 @@ internal sealed class ViewerServiceHost : IDisposable
             Password = request.Password,
             License = request.License,
             FontDirectories = request.FontDirectories,
-        });
+            MaxInputBytes = request.MaxInputBytes,
+        }, deadline);
         return new ViewerOpenResponse
         {
+            Pid = Environment.ProcessId,
             Document = State(document),
             Reused = open.Contains(document.Id),
         };
@@ -252,7 +263,7 @@ internal sealed class ViewerServiceHost : IDisposable
     /// service is already listening, so the browser has somewhere to go the
     /// moment this answers.
     /// </summary>
-    private ViewerAppResponse App(string? payload)
+    private ViewerAppResponse App(string? payload, OperationDeadline deadline)
     {
         if (_app is not { } app)
         {
@@ -265,7 +276,7 @@ internal sealed class ViewerServiceHost : IDisposable
             ? throw new InvalidDataException("The app request carries no page.")
             : JsonSerializer.Deserialize(payload, ViewerServiceJsonContext.Default.ViewerAppRequest)
                 ?? throw new InvalidDataException("The app request is empty.");
-        AppResult opened = app.Open(request.Route, request.File);
+        AppResult opened = app.Open(request.Route, request.File, deadline);
         RecordActivity();
         return new ViewerAppResponse
         {
@@ -294,7 +305,7 @@ internal sealed class ViewerServiceHost : IDisposable
         {
             Pid = Environment.ProcessId,
             Url = string.Create(CultureInfo.InvariantCulture, $"http://127.0.0.1:{_http.Port}/"),
-            Documents = _documents.All.Select(State).ToArray(),
+            Documents = _documents.All.Where(static document => document.Current is not null).Select(State).ToArray(),
             AppRoute = app?.Route,
             AppFile = app?.File,
         };
@@ -321,8 +332,9 @@ internal sealed class ViewerServiceHost : IDisposable
         string[] stopped = id is { Length: > 0 } && _documents.Close(id) ? [id] : [];
         return new ViewerStopResponse
         {
+            Pid = Environment.ProcessId,
             Stopped = stopped,
-            Documents = _documents.All.Select(State).ToArray(),
+            Documents = _documents.All.Where(static document => document.Current is not null).Select(State).ToArray(),
         };
     }
 

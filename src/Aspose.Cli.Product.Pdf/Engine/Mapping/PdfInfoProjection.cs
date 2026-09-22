@@ -83,7 +83,7 @@ internal static class PdfInfoProjection
 
     private static PdfPageSizeSummary[] DistinctPageSizes(Document document) =>
         document.Pages
-            .Select(static page => (Width: Round(page.Rect.Width), Height: Round(page.Rect.Height)))
+            .Select(static page => (Width: Round(page.GetPageRect(considerRotation: true).Width), Height: Round(page.GetPageRect(considerRotation: true).Height)))
             .GroupBy(static size => size)
             .Select(static group => new PdfPageSizeSummary
             {
@@ -126,8 +126,8 @@ internal static class PdfInfoProjection
     private static PdfPageInfo Page(Page page) => new()
     {
         Number = page.Number,
-        WidthPoints = Round(page.Rect.Width),
-        HeightPoints = Round(page.Rect.Height),
+        WidthPoints = Round(page.GetPageRect(considerRotation: true).Width),
+        HeightPoints = Round(page.GetPageRect(considerRotation: true).Height),
         Rotation = (int)page.Rotate,
         MediaBox = Box(page.MediaBox),
         CropBox = Box(page.CropBox),

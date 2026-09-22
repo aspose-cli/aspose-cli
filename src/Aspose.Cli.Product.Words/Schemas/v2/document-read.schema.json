@@ -17,7 +17,7 @@
       "properties": {
         "blocks": { "type": "string" },
         "of": { "type": "integer", "minimum": 0 },
-        "truncated": { "type": "boolean" }
+        "truncated": { "type": "boolean", "description": "True if content within a returned item or later selected items was omitted." }
       }
     },
     "blocks": {
@@ -39,11 +39,11 @@
           "rows": { "type": "integer", "minimum": 0 },
           "columns": { "type": "integer", "minimum": 0 },
           "cells": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } },
-          "contentTruncated": { "type": "boolean" }
+          "contentTruncated": { "type": "boolean", "description": "Returned document text shares the max-chars budget, including repeated projections. Re-read this item with a larger budget for omitted content." }
         }
       }
     },
-    "next": { "type": "string" },
+    "next": { "type": "string", "description": "Command for unread items; does not resume within an item whose contentTruncated is true." },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

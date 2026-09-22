@@ -4,6 +4,7 @@ using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Host.App;
@@ -96,12 +97,12 @@ internal sealed partial class AppHost : IDisposable
     /// Points the App at the page a command asked for, and opens the file it
     /// named. The service is already listening, so nothing starts here.
     /// </summary>
-    public AppResult Open(string route, string? filePath)
+    public AppResult Open(string route, string? filePath, OperationDeadline? deadline = null) => Mutate(() =>
     {
         _route = NormalizeRoute(route);
         if (filePath is not null)
         {
-            _workspace.OpenPath(filePath, uploadedCopy: false);
+            _workspace.OpenPath(filePath, uploadedCopy: false, deadline);
             if (route != AppRoutes.Settings)
             {
                 _route = AppRoutes.Preview;
@@ -109,7 +110,7 @@ internal sealed partial class AppHost : IDisposable
         }
         _log.Write($"app mounted on loopback port {_port}");
         return Result(reused: false);
-    }
+    }, deadline?.Token ?? CancellationToken.None);
 
     public AppStatusView Status()
     {

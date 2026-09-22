@@ -5,6 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -17,7 +18,8 @@ internal sealed record LocalServiceControlRequest(
     string Token,
     string Command,
     string? Path = null,
-    string? Payload = null);
+    string? Payload = null,
+    long? ExpiresAtTick = null);
 
 internal sealed record LocalServiceControlResponse(
     int Version,
@@ -67,10 +69,13 @@ internal sealed class LocalServiceControlServer : IDisposable
     private readonly LocalServiceControlIdentity _identity;
     private readonly Func<
         LocalServiceControlRequest,
+        OperationDeadline,
         LocalServiceControlResponse> _handler;
     private readonly Action<LocalServiceControlRequest>? _afterResponse;
     private readonly Func<Exception, string>? _describeFailure;
+    private const int ListenerCount = 4;
     private readonly TimeSpan _stageTimeout;
+    private readonly TimeSpan _operationTimeout;
     private readonly CancellationTokenSource _shutdown = new();
     private Socket? _unixListener;
     private Task? _loop;
@@ -83,10 +88,12 @@ internal sealed class LocalServiceControlServer : IDisposable
         string token,
         Func<
             LocalServiceControlRequest,
+            OperationDeadline,
             LocalServiceControlResponse> handler,
         TimeSpan? stageTimeout = null,
         Action<LocalServiceControlRequest>? afterResponse = null,
-        Func<Exception, string>? describeFailure = null)
+        Func<Exception, string>? describeFailure = null,
+        TimeSpan? operationTimeout = null)
     {
         ArgumentNullException.ThrowIfNull(endpoint);
         ArgumentException.ThrowIfNullOrWhiteSpace(nonce);
@@ -100,6 +107,8 @@ internal sealed class LocalServiceControlServer : IDisposable
             throw new ArgumentOutOfRangeException(nameof(stageTimeout));
         }
 
+        _operationTimeout = operationTimeout ?? _stageTimeout;
+        ArgumentOutOfRangeException.ThrowIfLessThanOrEqual(_operationTimeout, TimeSpan.Zero);
         _identity = new LocalServiceControlIdentity(
             endpoint,
             nonce,
@@ -153,7 +162,8 @@ internal sealed class LocalServiceControlServer : IDisposable
         string command,
         string? path = null,
         TimeSpan? timeout = null,
-        string? payload = null) =>
+        string? payload = null,
+        OperationDeadline? deadline = null) =>
         LocalServiceControlClient.Send(
             endpoint,
             nonce,
@@ -161,16 +171,24 @@ internal sealed class LocalServiceControlServer : IDisposable
             command,
             path,
             timeout,
-            payload);
+            payload,
+            deadline);
 
     private void StartWindows()
     {
-        // Bind synchronously: returning from Start is the readiness guarantee.
-        var pipe = new NamedPipeServerStream(_endpoint.PipeName, PipeDirection.InOut, 1,
-            PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
-        CancellationToken cancellationToken = _shutdown.Token;
-        try { _loop = Task.Run(() => ListenWindows(pipe, cancellationToken)); }
-        catch { pipe.Dispose(); throw; }
+        // Keep every instance bound while requests run, including one long render.
+        var listeners = new List<NamedPipeServerStream>(ListenerCount);
+        try
+        {
+            for (int i = 0; i < ListenerCount; i++)
+            {
+                listeners.Add(new NamedPipeServerStream(_endpoint.PipeName, PipeDirection.InOut, ListenerCount,
+                    PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly));
+            }
+            CancellationToken token = _shutdown.Token;
+            _loop = Task.WhenAll(listeners.Select(pipe => Task.Run(() => ListenWindows(pipe, token))));
+        }
+        catch { foreach (var pipe in listeners) { pipe.Dispose(); } throw; }
     }
 
     private void StartUnix()
@@ -188,8 +206,8 @@ internal sealed class LocalServiceControlServer : IDisposable
             listener.Listen(backlog: 8);
             _unixListener = listener;
             CancellationToken cancellationToken = _shutdown.Token;
-            _loop = Task.Run(
-                () => ListenUnix(listener, cancellationToken));
+            _loop = Task.WhenAll(Enumerable.Range(0, ListenerCount)
+                .Select(_ => Task.Run(() => ListenUnix(listener, cancellationToken))));
         }
         catch
         {
@@ -284,13 +302,21 @@ internal sealed class LocalServiceControlServer : IDisposable
                 stream,
                 stage.Token).ConfigureAwait(false);
             bool authorized = _identity.IsAuthorized(request);
-            LocalServiceControlResponse response =
-                Dispatch(request, authorized);
-            await WriteResponseAsync(
-                stream,
-                response,
-                stage.Token).ConfigureAwait(false);
-            if (authorized)
+            stage.CancelAfter(Timeout.InfiniteTimeSpan);
+            using var disconnected = CancellationTokenSource.CreateLinkedTokenSource(serverCancellation);
+            using var monitor = CancellationTokenSource.CreateLinkedTokenSource(serverCancellation);
+            Task connection = WatchDisconnectAsync(stream, disconnected, monitor.Token);
+            long ceiling = checked(Environment.TickCount64 + (long)_operationTimeout.TotalMilliseconds);
+            using var deadline = OperationDeadline.FromAbsoluteTick(_operationTimeout,
+                Math.Min(request?.ExpiresAtTick ?? ceiling, ceiling), disconnected.Token);
+            LocalServiceControlResponse response;
+            try { response = Dispatch(request, authorized, deadline); }
+            finally { monitor.Cancel(); await connection.ConfigureAwait(false); }
+            // A fresh frame budget allows a timed-out operation to report its failure after cleanup.
+            using var reply = CancellationTokenSource.CreateLinkedTokenSource(serverCancellation);
+            reply.CancelAfter(_stageTimeout);
+            await WriteResponseAsync(stream, response, reply.Token).ConfigureAwait(false);
+            if (authorized && response.Ok)
             {
                 _afterResponse?.Invoke(request!);
             }
@@ -304,9 +330,22 @@ internal sealed class LocalServiceControlServer : IDisposable
         }
     }
 
+    private static async Task WatchDisconnectAsync(Stream stream, CancellationTokenSource operation, CancellationToken token)
+    {
+        try
+        {
+            // A control connection carries one request. EOF or extra bytes cancel its work.
+            await stream.ReadAsync(new byte[1], token).ConfigureAwait(false);
+            operation.Cancel();
+        }
+        catch (OperationCanceledException) when (token.IsCancellationRequested) { }
+        catch (IOException) { operation.Cancel(); }
+    }
+
     private LocalServiceControlResponse Dispatch(
         LocalServiceControlRequest? request,
-        bool authorized)
+        bool authorized,
+        OperationDeadline deadline)
     {
         if (!authorized)
         {
@@ -325,7 +364,8 @@ internal sealed class LocalServiceControlServer : IDisposable
 
         try
         {
-            return _identity.Normalize(request, _handler(request));
+            deadline.ThrowIfExpired("control-operation");
+            return _identity.Normalize(request, _handler(request, deadline));
         }
         catch (Exception exception)
         {

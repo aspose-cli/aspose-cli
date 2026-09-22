@@ -2,6 +2,7 @@ using System.Diagnostics;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Host.ViewerService;
 
@@ -19,13 +20,15 @@ internal sealed class RenderWorkerSupervisor : IDisposable
     private static readonly TimeSpan TerminationGrace = TimeSpan.FromSeconds(2);
     private const int StderrTailBytes = 8 * 1024;
 
-    private readonly object _gate = new();
+    private readonly SemaphoreSlim _gate = new(1, 1);
+    private readonly CancellationTokenSource _shutdown = new();
     private readonly Func<ProcessStartInfo> _startInfo;
     private readonly TimeSpan _timeout;
     private readonly Action<string>? _diagnostic;
     private Worker? _worker;
+    private CliException? _terminationFailure;
     private int _nextId;
-    private bool _disposed;
+    private int _disposed;
 
     /// <param name="startInfo">
     /// Builds the child process for this executable, with the working
@@ -48,100 +51,82 @@ internal sealed class RenderWorkerSupervisor : IDisposable
     /// <summary>Process id of the running worker, or null while none runs.</summary>
     public int? ProcessId
     {
-        get { lock (_gate) { return _worker?.Process.Id; } }
+        get
+        {
+            _gate.Wait();
+            try { return _worker?.Process.Id; }
+            finally { _gate.Release(); }
+        }
     }
 
-    /// <summary>Renders one request, restarting the worker when it cannot answer.</summary>
-    public RenderWorkerResponse Render(RenderWorkerRequest request)
+    /// <summary>One deadline covers admission, startup, I/O and the optional worker recycle.</summary>
+    public RenderWorkerResponse Render(RenderWorkerRequest request, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(request);
-        lock (_gate)
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        TimeSpan budget = TimeSpan.FromMilliseconds(Budget(request.TimeoutMs));
+        using var cancellation = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, _shutdown.Token);
+        long ceiling = checked(Environment.TickCount64 + (long)budget.TotalMilliseconds);
+        using var deadline = OperationDeadline.FromAbsoluteTick(budget,
+            Math.Min(request.ExpiresAtTick ?? ceiling, ceiling), cancellation.Token);
+        bool entered = false;
+        try
         {
-            ObjectDisposedException.ThrowIf(_disposed, this);
-            request = request with { Id = ++_nextId, TimeoutMs = Budget(request.TimeoutMs) };
+            _gate.Wait(deadline.Token);
+            entered = true;
+            ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+            if (_terminationFailure is { } failure) { throw failure; }
+            request = request with { Id = ++_nextId, TimeoutMs = (int)budget.TotalMilliseconds,
+                ExpiresAtTick = deadline.ExpiresAtTick };
             for (int attempt = 0; attempt < 2; attempt++)
             {
-                Worker worker;
+                deadline.ThrowIfExpired("render-start");
+                RenderWorkerResponse? response;
                 try
                 {
-                    worker = _worker ??= Start();
+                    Worker worker = _worker ??= Start();
+                    response = ExchangeAsync(worker, request, deadline.Token).GetAwaiter().GetResult();
                 }
-                catch (Exception exception) when (exception is not OperationCanceledException)
+                catch (Exception exception) when (exception is IOException or InvalidDataException or InvalidOperationException
+                    or System.ComponentModel.Win32Exception)
                 {
-                    return Failure(request, ErrorCodes.Internal.Name, "the render worker could not be started");
+                    response = null;
                 }
-
-                RenderWorkerResponse? response = Exchange(worker, request, out bool timedOut);
-                if (response is { Recycle: false })
-                {
-                    return response;
-                }
-
-                Retire(response is null && !timedOut
-                    ? "the render worker ended before answering"
-                    : response is null ? "the render worker did not answer in time" : "recycling the render worker");
-                if (timedOut)
-                {
-                    return Failure(
-                        request,
-                        ErrorCodes.OperationTimeout.Name,
-                        $"the render did not finish within {(int)_timeout.TotalSeconds} seconds");
-                }
+                deadline.ThrowIfExpired("render-response");
+                if (response is { Recycle: false }) { return response; }
+                Retire(response is null ? "the render worker ended before answering" : "recycling the render worker");
             }
-
-            return Failure(request, ErrorCodes.Internal.Name, "the render worker could not answer");
+            return Failure(request, ErrorCodes.Internal, "the render worker could not answer");
         }
+        catch (Exception exception) when (exception is OperationCanceledException
+            || exception is CliException failure && failure.Code == ErrorCodes.OperationTimeout)
+        {
+            if (entered) { Retire("the render was cancelled"); }
+            if (!deadline.IsExpired) { throw; }
+            return Failure(request, ErrorCodes.OperationTimeout,
+                $"the render did not finish within {Math.Max(1, (int)Math.Ceiling(budget.TotalSeconds))} seconds");
+        }
+        finally { if (entered) { _gate.Release(); } }
     }
 
     public void Dispose()
     {
-        lock (_gate)
-        {
-            _disposed = true;
-            Retire(null);
-        }
+        if (Interlocked.Exchange(ref _disposed, 1) != 0) { return; }
+        _shutdown.Cancel();
+        _gate.Wait();
+        try { Retire(null); }
+        finally { _gate.Release(); _shutdown.Dispose(); }
     }
 
-    /// <summary>
-    /// Sends one request and waits for its answer. Returns null when the
-    /// worker ended or ran past the bound; <paramref name="timedOut"/> tells
-    /// the two apart.
-    /// </summary>
-    private RenderWorkerResponse? Exchange(Worker worker, RenderWorkerRequest request, out bool timedOut)
+    private static async Task<RenderWorkerResponse?> ExchangeAsync(
+        Worker worker, RenderWorkerRequest request, CancellationToken token)
     {
-        timedOut = false;
-        try
-        {
-            ProcessPipeMessages.WriteAsync(worker.Input, request, CancellationToken.None)
-                .GetAwaiter().GetResult();
-            Task<RenderWorkerResponse?> answer = ReadAnswerAsync(worker, request.Id);
-            if (!answer.Wait(_timeout))
-            {
-                timedOut = true;
-                Observe(answer);
-                return null;
-            }
-            return answer.GetAwaiter().GetResult();
-        }
-        catch (Exception exception) when (exception is IOException or InvalidDataException
-            or ObjectDisposedException or AggregateException or InvalidOperationException)
-        {
-            return null;
-        }
-    }
-
-    private static async Task<RenderWorkerResponse?> ReadAnswerAsync(Worker worker, int id)
-    {
-        while (true)
-        {
-            RenderWorkerResponse? response = await ProcessPipeMessages
-                .ReadOrEndAsync<RenderWorkerResponse>(worker.Output, CancellationToken.None)
-                .ConfigureAwait(false);
-            if (response is null || response.Id == id)
-            {
-                return response;
-            }
-        }
+        await ProcessPipeMessages.WriteAsync(worker.Input, request, token).ConfigureAwait(false);
+        RenderWorkerResponse? response = await ProcessPipeMessages
+            .ReadOrEndAsync<RenderWorkerResponse>(worker.Output, token).ConfigureAwait(false);
+        if (response is not null && response.Id != request.Id)
+        { throw new InvalidDataException("The render worker returned a mismatched response."); }
+        return response;
     }
 
     private Worker Start()
@@ -161,7 +146,6 @@ internal sealed class RenderWorkerSupervisor : IDisposable
     private void Retire(string? reason)
     {
         Worker? worker = _worker;
-        _worker = null;
         if (worker is null)
         {
             return;
@@ -170,7 +154,17 @@ internal sealed class RenderWorkerSupervisor : IDisposable
         {
             _diagnostic?.Invoke(reason);
         }
-        worker.Dispose(TerminationGrace, _diagnostic);
+        try
+        {
+            worker.Dispose(TerminationGrace, _diagnostic);
+            _worker = null;
+            _terminationFailure = null;
+        }
+        catch (CliException exception) when (exception.Code == ErrorCodes.WorkerTerminationFailed)
+        {
+            _terminationFailure = exception;
+            throw;
+        }
     }
 
     /// <summary>
@@ -193,18 +187,11 @@ internal sealed class RenderWorkerSupervisor : IDisposable
         return string.Join(' ', tail);
     }
 
-    private static void Observe(Task task) =>
-        _ = task.ContinueWith(
-            static faulted => _ = faulted.Exception,
-            CancellationToken.None,
-            TaskContinuationOptions.OnlyOnFaulted,
-            TaskScheduler.Default);
-
     private int Budget(int requested) =>
         requested > 0 ? Math.Min(requested, (int)_timeout.TotalMilliseconds) : (int)_timeout.TotalMilliseconds;
 
-    private static RenderWorkerResponse Failure(RenderWorkerRequest request, string code, string message) =>
-        new() { Id = request.Id, Ok = false, Code = code, Message = message };
+    private static RenderWorkerResponse Failure(RenderWorkerRequest request, ErrorCode code, string message) =>
+        new() { Id = request.Id, Ok = false, Code = code.Name, Exit = (int)code.ExitCode, Message = message };
 
     private sealed record Worker(Process Process, IDisposable? Job)
     {
@@ -220,27 +207,26 @@ internal sealed class RenderWorkerSupervisor : IDisposable
         /// </summary>
         public void Dispose(TimeSpan grace, Action<string>? diagnostic)
         {
+            bool stopped = false;
             try
             {
                 try { Process.StandardInput.Close(); } catch (IOException) { }
-                if (!Process.WaitForExit((int)grace.TotalMilliseconds))
+                stopped = Process.WaitForExit((int)grace.TotalMilliseconds);
+                if (!stopped)
                 {
-                    Process.Kill(entireProcessTree: true);
-                    Process.WaitForExit((int)grace.TotalMilliseconds);
+                    try { Process.Kill(entireProcessTree: true); }
+                    catch (Exception exception) when (exception is InvalidOperationException
+                        or System.ComponentModel.Win32Exception or NotSupportedException) { }
+                    Job?.Dispose();
+                    stopped = Process.WaitForExit((int)grace.TotalMilliseconds);
                 }
+                if (!stopped) { throw CliErrors.WorkerTerminationFailed(Process.Id); }
                 if (Errors is { IsCompletedSuccessfully: true, Result.Length: > 0 } errors)
-                {
-                    diagnostic?.Invoke("render worker: " + errors.Result);
-                }
-            }
-            catch (Exception exception) when (exception is InvalidOperationException or IOException)
-            {
-                // The worker had already gone; nothing is left to reclaim.
+                { diagnostic?.Invoke("render worker: " + errors.Result); }
             }
             finally
             {
-                Job?.Dispose();
-                Process.Dispose();
+                if (stopped) { Job?.Dispose(); Process.Dispose(); }
             }
         }
     }

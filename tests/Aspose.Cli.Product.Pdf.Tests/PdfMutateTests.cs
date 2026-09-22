@@ -12,6 +12,75 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 
 public sealed class PdfMutateTests
 {
+    [Theory]
+    [InlineData(0)]
+    [InlineData(90)]
+    [InlineData(180)]
+    [InlineData(270)]
+    public void CroppedPageCoordinates_SearchAndRedactionAgreeAfterRotation(int angle)
+    {
+        using var fixture = new PdfEngineFixture();
+        fixture.Gate.EnsureApplied();
+        string input = fixture.File($"coordinates-{angle}.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            page.CropBox = new Rectangle(20, 30, 400, 600);
+            page.Rotate = angle switch { 90 => Rotation.on90, 180 => Rotation.on180, 270 => Rotation.on270, _ => Rotation.None };
+            var builder = new TextBuilder(page);
+            builder.AppendText(new TextFragment("SECRET") { Position = new Position(80, 500) });
+            builder.AppendText(new TextFragment("PUBLIC") { Position = new Position(80, 300) });
+            document.Save(input);
+        }
+        PdfRect rect = Assert.Single(fixture.Engine.Search(input,
+            new PdfSearchRequest { Pattern = "SECRET" }).Hits).Rect;
+        double width = angle is 90 or 270 ? 570 : 380;
+        double height = angle is 90 or 270 ? 380 : 570;
+        PdfPageInfo geometry = Assert.Single(fixture.Engine.GetInfo(input, new PdfInfoRequest { IncludePreview = true }).Pages!);
+        Assert.Equal(width, geometry.WidthPoints);
+        Assert.Equal(height, geometry.HeightPoints);
+        Assert.InRange(rect.X, 0, width - rect.Width);
+        Assert.InRange(rect.Y, 0, height - rect.Height);
+        string output = fixture.File($"coordinates-{angle}.out.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new RedactAreaOp
+            {
+                Page = 1,
+                Rect = new PdfRectInput { X = rect.X - 1, Y = rect.Y - 1, Width = rect.Width + 2, Height = rect.Height + 2 },
+            }],
+        }, new PdfEditRequest { OutputPath = output });
+        string text = fixture.Engine.Read(output, new PdfReadRequest()).Pages[0].Text;
+        Assert.DoesNotContain("SECRET", text, StringComparison.Ordinal);
+        Assert.Contains("PUBLIC", text, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("(?<=SECRET: )1234", true)]
+    [InlineData("SECRET: 1234", false)]
+    public void SearchAndRedaction_PreserveContextAcrossTextSegments(string pattern, bool regex)
+    {
+        using var fixture = new PdfEngineFixture();
+        fixture.Gate.EnsureApplied();
+        string input = fixture.File("context.pdf");
+        using (var document = new Document())
+        {
+            var text = new TextFragment();
+            text.Segments.Add(new TextSegment("SECRET: "));
+            text.Segments.Add(new TextSegment("1234") { TextState = { FontStyle = FontStyles.Bold } });
+            text.Segments.Add(new TextSegment(" PUBLIC: 1234"));
+            document.Pages.Add().Paragraphs.Add(text);
+            document.Save(input);
+        }
+        Assert.Single(fixture.Engine.Search(input, new PdfSearchRequest { Pattern = pattern, Regex = regex }).Hits);
+        string output = fixture.File("context.out.pdf");
+        PdfEditResult edited = fixture.Engine.ApplyOps(input,
+            new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = regex }] },
+            new PdfEditRequest { OutputPath = output });
+        Assert.Equal(1, Assert.Single(edited.Applied).ItemsAffected);
+        Assert.Contains("PUBLIC: 1234", fixture.Engine.Read(output, new PdfReadRequest()).Pages[0].Text, StringComparison.Ordinal);
+        Assert.Empty(fixture.Engine.Search(output, new PdfSearchRequest { Pattern = pattern, Regex = regex }).Hits);
+    }
     [Fact]
     public void Edit_VisualContentAndRedactionPersist()
     {

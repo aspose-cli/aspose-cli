@@ -124,17 +124,7 @@
    * live under the page's own address.
    */
   function startLive(live) {
-    manifestOf(live.revision, function (manifest) {
-      connect(show(document.body, {
-        product: live.product,
-        file: live.file,
-        license: live.license,
-        view: manifest,
-        review: null,
-        live: live,
-        base: ''
-      }), live);
-    });
+    connect(live);
   }
 
   function show(host, doc) {
@@ -147,12 +137,13 @@
   }
 
   /** Reads the manifest of one revision; parts are immutable, so it caches. */
-  function manifestOf(revision, done) {
-    fetch('r/' + revision + '/view.json')
-      .then(function (response) { return response.json(); })
-      .then(done)
-      .catch(function () {
-        // A failed read resolves itself: the next update brings a new one.
+  function manifestOf(revision) {
+    return fetch('r/' + revision + '/view.json')
+      .then(function (response) {
+        if (!response.ok) {
+          throw new Error('The preview manifest could not be loaded.');
+        }
+        return response.json();
       });
   }
 
@@ -367,26 +358,34 @@
      * position stay, only the parts an edit changed are swapped, and what
      * changed is marked where it is.
      */
-    function apply(manifest, changed, info) {
-      var before = state.manifest;
-      state.manifest = manifest;
-      ctx.parts = manifest.parts;
-      ctx.total = totalOf(manifest);
-      note(info);
-      if (ctx.parts.length === 0) {
-        empty();
-        return;
-      }
-      var index = state.index;
-      state.index = -1;
-      layout.update();
-      if (sidebar) {
-        sidebar.update();
-      }
-      coverage();
-      select(Math.min(Math.max(index, 0), ctx.parts.length - 1));
-      banner.hidden = true;
-      mark(before, manifest, changed || []);
+    function apply(manifest, changed, info, current) {
+      // Load a product snapshot before changing the visible revision.
+      return Promise.resolve(layout.prepare && manifest.parts.length ? layout.prepare(manifest.parts) : null)
+        .then(function (prepared) {
+          if (!current()) {
+            return false;
+          }
+          var before = state.manifest;
+          ctx.parts = manifest.parts;
+          ctx.total = totalOf(manifest);
+          var index = state.index;
+          state.index = -1;
+          if (ctx.parts.length === 0) {
+            empty();
+          } else {
+            layout.update(prepared);
+            if (sidebar) {
+              sidebar.update();
+            }
+            coverage();
+            select(Math.min(Math.max(index, 0), ctx.parts.length - 1));
+            mark(before, manifest, changed || []);
+          }
+          state.manifest = manifest;
+          note(info);
+          banner.hidden = true;
+          return true;
+        });
     }
 
     /** Marks what an edit changed, and follows it while following is on. */
@@ -436,10 +435,13 @@
     }
 
     /** Says why a render failed, keeping the revision on screen. */
-    function problem(payload) {
+    function problem(payload, retry) {
       banner.replaceChildren(
         el('strong', null, payload.code || 'RENDER_FAILED'),
         el('span', null, payload.message || 'The document could not be rendered.'));
+      if (retry) {
+        banner.appendChild(textButton('av-retry', 'Retry preview', retry));
+      }
       banner.hidden = false;
     }
 
@@ -571,7 +573,8 @@
   // (returning the reading line on it when the layout scrolls through
   // parts), rescale() to apply the current zoom, scale() for the effective
   // zoom of the part in view, update() to take in the parts of a new
-  // revision without rebuilding what did not change, mark(index, boxes) to
+  // revision without rebuilding what did not change, optionally prepare(parts)
+  // to load a snapshot before update(snapshot) commits it, mark(index, boxes) to
   // emphasize what an edit changed, pointOf(index) for the demo pointer, and
   // optionally toolbar tools and a keydown hook.
 
@@ -1335,43 +1338,102 @@
    * and a viewer that was away catches up from the revision the service
    * greets it with.
    */
-  function connect(viewer, live) {
-    var revision = live.revision;
+  function connect(live) {
+    var viewer = null;
+    var loading = el('p', 'av-empty', 'Loading preview…');
+    document.body.appendChild(loading);
+    var revision = 0;
+    var requested = 0;
+    var generation = 0;
+    var pending = false;
     var source = new EventSource('events');
-    viewer.connection('live', 'Live');
-    source.addEventListener('open', function () { viewer.connection('live', 'Live'); });
+    source.addEventListener('open', function () { connection('live', 'Live'); });
     source.addEventListener('hello', function (event) {
-      viewer.connection('live', 'Live');
+      connection('live', 'Live');
       take(JSON.parse(event.data), null);
     });
     source.addEventListener('rendering', function () {
-      viewer.connection('rendering', 'Rendering');
+      connection('rendering', 'Rendering');
     });
     source.addEventListener('update', function (event) {
       var payload = JSON.parse(event.data);
       take(payload, payload.changed);
     });
     source.addEventListener('error', function (event) {
-      // EventSource reports its own connection failures under this name; the
-      // failures of the service are the ones that carry data.
+      // EventSource's connection errors carry no service payload.
       if (event.data) {
-        viewer.connection('live', 'Live');
-        viewer.problem(JSON.parse(event.data));
+        connection('live', 'Live');
+        if (viewer) {
+          viewer.problem(JSON.parse(event.data));
+        }
       } else {
-        viewer.connection('offline', 'Reconnecting');
+        connection('offline', 'Reconnecting');
       }
     });
+    take(live, null);
     return source;
 
+    function connection(status, text) {
+      if (viewer) {
+        viewer.connection(status, text);
+      }
+    }
+
     function take(info, changed) {
-      if (!info.revision || info.revision <= revision) {
+      if (!info.revision || info.revision <= revision || info.revision < requested
+          || pending && info.revision === requested) {
         return;
       }
-      revision = info.revision;
-      manifestOf(info.revision, function (manifest) {
-        viewer.connection('live', 'Live');
-        viewer.apply(manifest, changed, info);
-      });
+      requested = info.revision;
+      pending = true;
+      var request = ++generation;
+      function current() { return request === generation; }
+      manifestOf(info.revision)
+        .then(function (manifest) {
+          if (!current()) {
+            return false;
+          }
+          if (viewer) {
+            return viewer.apply(manifest, changed, info, current);
+          }
+          viewer = show(document.body, {
+            product: live.product,
+            file: live.file,
+            license: info.license || live.license,
+            view: manifest,
+            review: null,
+            live: live,
+            base: ''
+          });
+          loading.remove();
+          return true;
+        })
+        .then(function (applied) {
+          if (applied && current()) {
+            revision = info.revision;
+            connection('live', 'Live');
+          }
+        })
+        .catch(function () {
+          if (!current()) {
+            return;
+          }
+          function retry() { take(info, changed); }
+          if (viewer) {
+            viewer.problem({
+              code: 'PREVIEW_LOAD_FAILED',
+              message: 'The latest preview could not be loaded. The previous view is kept.'
+            }, retry);
+          } else {
+            loading.replaceChildren(el('span', null, 'The preview could not be loaded. '),
+              textButton('av-retry', 'Retry preview', retry));
+          }
+        })
+        .finally(function () {
+          if (current()) {
+            pending = false;
+          }
+        });
     }
   }
 

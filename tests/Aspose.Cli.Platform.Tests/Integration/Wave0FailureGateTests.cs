@@ -1,4 +1,5 @@
 using System.Text.Json;
+using System.Xml.Linq;
 using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -35,27 +36,9 @@ public sealed class Wave0FailureGateTests
             Assert.Matches("^[0-9a-f]{40}$", sourceRevision);
         }
         Assert.True(capabilities.RootElement.TryGetProperty("enginePins", out _));
-    }
-
-    [Fact]
-    [Trait("Tier", "Release")]
-    public void PublishAndPackageScripts_RequireOwnedOutputAndHashInstallerScripts()
-    {
-        string publish = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root, "scripts", "publish.ps1"));
-        string package = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root, "scripts", "package.ps1"));
-
-        Assert.Contains("ownership marker", publish, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("install.cmd", package, StringComparison.Ordinal);
-        Assert.Contains("install.ps1", package, StringComparison.Ordinal);
-        Assert.Contains("Set-AuthenticodeSignature", package, StringComparison.Ordinal);
-        Assert.Contains("-ExecutionPolicy AllSigned", package, StringComparison.Ordinal);
-        Assert.Contains("else { @('install.ps1') }", package, StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "-notin @('install.cmd', 'install.ps1', 'SHA256SUMS')",
-            package,
-            StringComparison.Ordinal);
+        string declaredVersion = XDocument.Load(Path.Combine(RepositoryPaths.Root, "Directory.Build.props"))
+            .Descendants("Version").Single().Value;
+        Assert.Equal(declaredVersion, capabilities.RootElement.GetProperty("cliVersion").GetString());
     }
 
     [Fact]

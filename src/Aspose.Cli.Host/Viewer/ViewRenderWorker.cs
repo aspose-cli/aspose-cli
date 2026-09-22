@@ -64,10 +64,19 @@ internal static class ViewRenderWorker
     {
         try
         {
-            CommandContext context = CompositionRoot.Create(
-                catalog,
-                request.License is null ? globals : globals with { LicensePath = request.License },
-                OperationDeadline.Start(TimeSpan.FromMilliseconds(request.TimeoutMs)));
+            TimeSpan budget = TimeSpan.FromMilliseconds(request.TimeoutMs);
+            using var deadline = request.ExpiresAtTick is { } expires
+                ? OperationDeadline.FromAbsoluteTick(budget, expires) : OperationDeadline.Start(budget);
+            deadline.ThrowIfExpired("render-admission");
+            CommandContext context = CompositionRoot.Create(catalog, globals with
+            {
+                LicensePath = request.License ?? globals.LicensePath,
+                MaxInputBytes = request.MaxInputBytes,
+            }, deadline);
+            if (request.SourceOrigin is { } origin)
+            {
+                context.ResourceBudgets.Inputs.SetSnapshotOrigin(request.Source, origin);
+            }
             ProductDefinition definition = catalog.ResolveExistingFile(
                 request.Source,
                 request.Product,

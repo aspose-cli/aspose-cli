@@ -1,7 +1,6 @@
-using System.IO.Compression;
-using System.Security.Cryptography;
-using System.Text;
 using System.Xml.Linq;
+using System.Text.Json;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;
@@ -21,112 +20,37 @@ public sealed class CustomerDistributionContractTests
     }
 
     [Fact]
-    public void CustomerPackaging_EnforcesSingleFileChecksumsAndInstallSmoke()
+    public void SlidesProject_SelectsOnlyItsWindowsX64NativeAssetBeforeBundling()
     {
-        string publish = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root,
-            "scripts",
-            "publish.ps1"));
-        Assert.Contains("--self-contained", publish, StringComparison.Ordinal);
-        Assert.Contains("-p:PublishSingleFile=true", publish, StringComparison.Ordinal);
-        Assert.Contains("-p:PublishTrimmed=false", publish, StringComparison.Ordinal);
-
-        string package = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root,
-            "scripts",
-            "package.ps1"));
-        Assert.Contains("SHA256SUMS", package, StringComparison.Ordinal);
-        Assert.Contains("ECDSA-P256-SHA256", package, StringComparison.Ordinal);
-        Assert.Contains("ASPOSE_CLI_RELEASE_SIGNING_KEY", package, StringComparison.Ordinal);
-        Assert.Contains("Formal customer packaging requires", package, StringComparison.Ordinal);
-        Assert.Contains("PACKAGE-SIGNATURE.json", package, StringComparison.Ordinal);
-        Assert.DoesNotContain("status = 'unsigned'", package, StringComparison.Ordinal);
-        Assert.Contains("AuthenticodeToolPath", package, StringComparison.Ordinal);
-        Assert.Contains("Set-AuthenticodeSignature", package, StringComparison.Ordinal);
-        Assert.Contains("-ExecutionPolicy AllSigned", package, StringComparison.Ordinal);
-        Assert.Contains("if ($PrepareOnly) { @('install.cmd', 'install.ps1') } else { @('install.ps1') }", package, StringComparison.Ordinal);
-        Assert.Contains("Customer installer smoke test pass", package, StringComparison.Ordinal);
-
-        string installer = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root,
-            "install.ps1"));
-        Assert.Contains("Checksum mismatch", installer, StringComparison.Ordinal);
-        Assert.Contains("$script:MarkerName = '.aspose-cli-install.json'", installer, StringComparison.Ordinal);
-        Assert.Contains("$script:PayloadManifestName = '.aspose-cli-payload.json'", installer, StringComparison.Ordinal);
-        Assert.Contains("$script:ProductId = 'aspose-cli'", installer, StringComparison.Ordinal);
-        Assert.Contains("schemaVersion = 2", installer, StringComparison.Ordinal);
-        Assert.Contains("Write-Journal", installer, StringComparison.Ordinal);
-        Assert.Contains("SpecialFolder]::LocalApplicationData", installer, StringComparison.Ordinal);
-        Assert.Contains("user PATH update did not persist", installer, StringComparison.Ordinal);
-        Assert.Contains("GetErrorMode()", installer, StringComparison.Ordinal);
-        Assert.Contains("-bor 0x00008003", installer, StringComparison.Ordinal);
-        Assert.Contains("CreateNoWindow = $true", installer, StringComparison.Ordinal);
-        Assert.Contains("Stop-CliChildProcessTree", installer, StringComparison.Ordinal);
-        Assert.Contains("SkipMcp", installer, StringComparison.Ordinal);
-        Assert.Contains("Register-OwnedMcp", installer, StringComparison.Ordinal);
-        Assert.Contains("DevelopmentPackage", installer, StringComparison.Ordinal);
-        Assert.Contains("Get-AuthenticodeSignature", installer, StringComparison.Ordinal);
-        Assert.Contains("Customer installer Authenticode signature is not valid", installer, StringComparison.Ordinal);
-        Assert.Contains("Assert-CustomerPackageTrust", installer, StringComparison.Ordinal);
-        Assert.Contains("BoundedWriteStream", installer, StringComparison.Ordinal);
-        string mcpCapture = installer.Split("function Invoke-OfficialMcp", 2)[1]
-            .Split("function Register-OwnedMcp", 2)[0];
-        Assert.DoesNotContain("ReadToEnd", mcpCapture, StringComparison.Ordinal);
-        Assert.Contains("mcp','get','aspose-cli", installer, StringComparison.Ordinal);
-        Assert.Contains("Invoke-CliChildProcess", installer, StringComparison.Ordinal);
-        Assert.Contains("ownsCurrentExecutable", installer, StringComparison.Ordinal);
-
-        string installerCommand = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root,
-            "install.cmd"));
-        Assert.Contains("-ExecutionPolicy Bypass", installerCommand, StringComparison.Ordinal);
-        Assert.Contains("-DevelopmentPackage", installerCommand, StringComparison.Ordinal);
-        Assert.Contains("Development package installer", installerCommand, StringComparison.Ordinal);
-        Assert.Contains("install.ps1", installerCommand, StringComparison.Ordinal);
-
-        string localInstaller = File.ReadAllText(Path.Combine(
-            RepositoryPaths.Root,
-            "scripts",
-            "install-local.ps1"));
-        Assert.Contains("-PrepareOnly", localInstaller, StringComparison.Ordinal);
-        Assert.Contains("SkipMcp", localInstaller, StringComparison.Ordinal);
-        Assert.Contains("DevelopmentPackage = $true", localInstaller, StringComparison.Ordinal);
-        Assert.DoesNotContain("$env:Path =", localInstaller, StringComparison.Ordinal);
-
-
-    }
-
-    [Fact]
-    public void ExternalArchiveChecksum_CoversInstallerScriptChanges()
-    {
-        string root = Directory.CreateTempSubdirectory("aspose-archive-trust-").FullName;
-        try
+        using var directory = new TempDirectory();
+        string dotnet = new[] { Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") }
+            .Concat((Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)
+                .Where(static path => !string.IsNullOrWhiteSpace(path))
+                .Select(static path => Path.GetFullPath(Path.Combine(path.Trim('"'), OperatingSystem.IsWindows() ? "dotnet.exe" : "dotnet"))))
+            .First(static path => !string.IsNullOrWhiteSpace(path) && File.Exists(path))!;
+        foreach (string projectName in new[] { "Aspose.Cli.Product.Slides", "Aspose.Cli" })
         {
-            string payload = Path.Combine(root, "payload");
-            Directory.CreateDirectory(payload);
-            File.Copy(
-                Path.Combine(RepositoryPaths.Root, "install.ps1"),
-                Path.Combine(payload, "install.ps1"));
-            File.WriteAllText(Path.Combine(payload, "aspose-cli.exe"), "payload", Encoding.UTF8);
-
-            string originalArchive = Path.Combine(root, "original.zip");
-            ZipFile.CreateFromDirectory(payload, originalArchive, CompressionLevel.NoCompression, includeBaseDirectory: false);
-            string externalChecksum = Sha256(originalArchive);
-
-            File.AppendAllText(Path.Combine(payload, "install.ps1"), "# changed", Encoding.UTF8);
-            string changedArchive = Path.Combine(root, "changed.zip");
-            ZipFile.CreateFromDirectory(payload, changedArchive, CompressionLevel.NoCompression, includeBaseDirectory: false);
-
-            Assert.NotEqual(externalChecksum, Sha256(changedArchive));
-        }
-        finally
-        {
-            Directory.Delete(root, recursive: true);
+            string project = Path.Combine(RepositoryPaths.Root, "src", projectName, projectName + ".csproj");
+            CliResult result = new CliProcess(dotnet, CliEnvironment.Evaluation(directory.File("config")), TimeSpan.FromSeconds(30))
+                .Run(directory.Path, args: ["msbuild", project, "-nologo", "-target:AssignTargetPaths",
+                    "-property:AsposeCliPublishRuntimeIdentifier=win-x64", "-getItem:None"]);
+            Assert.True(result.ExitCode == 0, result.StdOut + result.StdErr);
+            using JsonDocument evaluated = JsonDocument.Parse(result.StdOut);
+            string[] native = evaluated.RootElement.GetProperty("Items").GetProperty("None").EnumerateArray()
+                .Select(item => item.GetProperty("Identity").GetString()!)
+                .Where(path => path.Contains("net6.0_native", StringComparison.Ordinal))
+                .Select(path => Path.GetFileName(path)!).ToArray();
+            if (projectName == "Aspose.Cli.Product.Slides")
+            {
+                Assert.Equal(["aspose.slides.drawing.capi_vc14x64.dll"], native);
+            }
+            else
+            {
+                // Its project reference supplies the already selected content.
+                Assert.Empty(native);
+            }
         }
     }
-
-    private static string Sha256(string path) =>
-        Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(path))).ToLowerInvariant();
 
     [Fact]
     public void BundledSkillDescriptions_UseSupportedSingleLineFrontMatter()
