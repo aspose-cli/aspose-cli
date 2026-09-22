@@ -31,21 +31,25 @@ internal sealed class CellsOutputService
     private readonly SafeFileWriter _fileWriter;
     private readonly WorkbookLoadService _loader;
     private readonly WorkbookSaveService _saver;
+    private readonly ResourceBudgetLedger _resourceBudgets;
 
     internal CellsOutputService(
         ILicenseGate licenseGate,
         SafeFileWriter fileWriter,
         WorkbookLoadService loader,
-        WorkbookSaveService saver)
+        WorkbookSaveService saver,
+        ResourceBudgetLedger resourceBudgets)
     {
         ArgumentNullException.ThrowIfNull(licenseGate);
         ArgumentNullException.ThrowIfNull(fileWriter);
         ArgumentNullException.ThrowIfNull(loader);
         ArgumentNullException.ThrowIfNull(saver);
+        ArgumentNullException.ThrowIfNull(resourceBudgets);
         _licenseGate = licenseGate;
         _fileWriter = fileWriter;
         _loader = loader;
         _saver = saver;
+        _resourceBudgets = resourceBudgets;
     }
 
     /// <inheritdoc />
@@ -439,7 +443,7 @@ internal sealed class CellsOutputService
         SourceInfo source = BuildSource(filePath, workbook);
         if (request.View == CellsViews.Workbook)
         {
-            WorkbookGridExporter.Export(workbook, artifacts, workbookFile);
+            WorkbookGridExporter.Export(workbook, artifacts, _resourceBudgets, workbookFile);
             return new ViewManifest
             {
                 View = CellsViews.Workbook,

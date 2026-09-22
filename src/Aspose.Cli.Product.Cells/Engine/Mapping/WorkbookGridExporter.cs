@@ -2,7 +2,7 @@ using System.Text;
 using Aspose.Cells;
 using Aspose.Cells.Drawing;
 using Aspose.Cells.Rendering;
-using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -77,7 +77,6 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class WorkbookGridExporter
 {
-    private const int MaxHtmlBytes = 64 * 1024 * 1024;
     /// <summary>Default file name of the grid part.</summary>
     private const string EntryFileName = "index.html";
 
@@ -100,10 +99,12 @@ internal static class WorkbookGridExporter
     public static string Export(
         Workbook workbook,
         Aspose.Cli.Sdk.Views.IViewArtifactSink artifacts,
+        ResourceBudgetLedger resourceBudgets,
         string entryFileName = EntryFileName)
     {
         ArgumentNullException.ThrowIfNull(workbook);
         ArgumentNullException.ThrowIfNull(artifacts);
+        ArgumentNullException.ThrowIfNull(resourceBudgets);
 
         var options = new HtmlSaveOptions
         {
@@ -115,7 +116,10 @@ internal static class WorkbookGridExporter
             CellNameAttribute = CellAddressAttribute,
         };
 
-        using var stream = new LimitedMemoryStream(MaxHtmlBytes);
+        using var stream = new BudgetedMemoryStream(
+            resourceBudgets,
+            ResourceBudgetKinds.MemoryBufferBytes,
+            "workbook-html");
         workbook.Save(stream, options);
         string html = Encoding.UTF8.GetString(
             stream.GetBuffer(),
@@ -140,43 +144,5 @@ internal static class WorkbookGridExporter
 
         string marker = $"<meta name=\"{ActiveSheetMetaName}\" content=\"{System.Net.WebUtility.HtmlEncode(sheetName)}\">\n";
         return html.Insert(headEnd, marker);
-    }
-
-    internal sealed class LimitedMemoryStream(long maximumBytes) : MemoryStream
-    {
-        public override void SetLength(long value)
-        {
-            EnsureLength(value);
-            base.SetLength(value);
-        }
-
-        public override void Write(byte[] buffer, int offset, int count)
-        {
-            EnsureLength(checked(Position + count));
-            base.Write(buffer, offset, count);
-        }
-
-        public override void Write(ReadOnlySpan<byte> buffer)
-        {
-            EnsureLength(checked(Position + buffer.Length));
-            base.Write(buffer);
-        }
-
-        public override void WriteByte(byte value)
-        {
-            EnsureLength(checked(Position + 1));
-            base.WriteByte(value);
-        }
-
-        private void EnsureLength(long length)
-        {
-            if (length > maximumBytes)
-            {
-                throw CliErrors.PreviewBudgetExceeded(
-                    "workbook HTML bytes",
-                    length,
-                    maximumBytes);
-            }
-        }
     }
 }
