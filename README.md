@@ -34,10 +34,9 @@ The verified self-contained customer target is win-x64.
 .\scripts\publish.ps1 -Configuration Release -RuntimeIdentifier win-x64
 ```
 
-eng/products.json is the only product roster; eng/distribution.json owns the application identity.
-sync.ps1 regenerates projections and the solution and refreshes lock files; tests and publishes use locked restore.
-Outputs are ignored under artifacts/ and project-local bin/obj directories. Each test run writes
-per-project TRX results to `artifacts/TestResults/<run-id>/<project>/results.trx`.
+`sync.ps1` regenerates projections and the solution and refreshes lock files; tests and
+publishes use locked restore. Build outputs stay under `artifacts/` and project-local
+`bin`/`obj`. See [CONTRIBUTING.md](CONTRIBUTING.md) to work on the project.
 
 ## Install a released build
 
