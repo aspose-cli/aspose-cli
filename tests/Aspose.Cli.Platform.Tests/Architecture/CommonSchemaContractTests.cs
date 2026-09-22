@@ -169,7 +169,7 @@ public sealed class CommonSchemaContractTests
                 """{"code":"SHEET_NOT_FOUND","severity":"error","message":"Worksheet was not found.","hint":"Use an existing worksheet name."}"""),
             (
                 "v2/common/mutation-receipt",
-                """{"verification":"reopened","package":{"changedParts":[{"path":"word/document.xml","change":"modified"}],"preservedParts":37}}"""),
+                """{"verification":"reopened"}"""),
             (
                 "v2/common/view",
                 """{"schema":"https://schemas.aspose.dev/aspose-cli/v2/common/view.schema.json","schemaVersion":2,"view":"pages","sourceFormat":"docx","sourceSizeBytes":10,"totalParts":2,"parts":[{"id":"page-1","label":"Page 1","file":"page-0001.png","kind":"image","width":816,"height":1056,"hidden":false,"digest":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","properties":{"notes":"Speaker notes"},"elements":[{"id":"shape-3","kind":"paragraph","box":{"x":96,"y":96.5,"width":624,"height":20},"digest":"f00d","label":"Hello","level":1}]}]}"""),

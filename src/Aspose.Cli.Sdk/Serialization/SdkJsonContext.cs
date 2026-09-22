@@ -29,8 +29,6 @@ namespace Aspose.Cli.Sdk.Serialization;
 [JsonSerializable(typeof(Warning))]
 [JsonSerializable(typeof(BackupInfo))]
 [JsonSerializable(typeof(MutationReceipt))]
-[JsonSerializable(typeof(PackageMutationReceipt))]
-[JsonSerializable(typeof(PackagePartChange))]
 [JsonSerializable(typeof(JsonObject))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(double))]

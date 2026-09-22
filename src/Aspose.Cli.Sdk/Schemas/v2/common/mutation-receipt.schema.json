@@ -5,28 +5,7 @@
   "type": "object",
   "required": ["verification"],
   "properties": {
-    "verification": { "const": "reopened" },
-    "package": {
-      "type": "object",
-      "required": ["changedParts", "preservedParts"],
-      "properties": {
-        "changedParts": {
-          "type": "array",
-          "maxItems": 100000,
-          "items": {
-            "type": "object",
-            "required": ["path", "change"],
-            "properties": {
-              "path": { "type": "string", "minLength": 1 },
-              "change": { "enum": ["added", "modified", "removed"] }
-            },
-            "additionalProperties": false
-          }
-        },
-        "preservedParts": { "type": "integer", "minimum": 0 }
-      },
-      "additionalProperties": false
-    }
+    "verification": { "const": "reopened" }
   },
   "additionalProperties": false
 }
