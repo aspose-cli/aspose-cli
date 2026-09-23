@@ -101,11 +101,13 @@ internal static class LocalServiceControlClient
     {
         if (OperatingSystem.IsWindows())
         {
+            // CurrentUserOnly makes the client verify the server's owner before it sends
+            // the control token and any document password.
             var pipe = new NamedPipeClientStream(
                 ".",
                 endpoint.PipeName,
                 PipeDirection.InOut,
-                PipeOptions.Asynchronous);
+                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
             try
             {
                 await pipe.ConnectAsync(
