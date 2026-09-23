@@ -46,9 +46,15 @@ internal sealed class ParsedInvocation
 /// <summary>One command tree for CLI execution, supervision and MCP authorization.</summary>
 internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
 {
+    // Tokens are always literal. Response-file expansion would read a file relative to
+    // whichever process parses, so a supervisor, worker or MCP child could each resolve
+    // a different command from the same arguments, and '@'-prefixed file names would
+    // be unusable.
+    private static readonly ParserConfiguration Configuration = new() { ResponseFileTokenReplacer = null };
+
     internal ParsedInvocation Parse(string[] args, GlobalValues? inherited = null) =>
-        new(root.Parse(args), globals, inherited);
+        new(root.Parse(args, Configuration), globals, inherited);
 
     internal (OutputMode Output, bool Quiet) ResolveErrorOutput(IReadOnlyList<string> args) =>
-        globals.ResolveForErrorReporting(root.Parse(args.ToArray()));
+        globals.ResolveForErrorReporting(root.Parse(args, Configuration));
 }

@@ -64,6 +64,35 @@ public sealed class McpCommandTests
     }
 
     [Fact]
+    public void Execute_NeverExpandsResponseFiles()
+    {
+        string responseFile = Path.Combine(Path.GetTempPath(), $"aspose-cli-{Guid.NewGuid():N}.rsp");
+        File.WriteAllLines(responseFile, ["update", "install"]);
+        try
+        {
+            ParsedInvocation invocation = ActualCommandTree.Parser.Parse(["@" + responseFile]);
+
+            Assert.Empty(invocation.CommandPath);
+            Assert.NotEmpty(invocation.ParseResult.Errors);
+            Assert.Throws<McpCommandException>(() =>
+                new McpCommandRunner(ActualCommandTree.Host).EnsureAllowed(["@" + responseFile]));
+        }
+        finally
+        {
+            File.Delete(responseFile);
+        }
+    }
+
+    [Fact]
+    public void Parse_KeepsAtPrefixedDocumentNamesLiteral()
+    {
+        ParsedInvocation invocation = ActualCommandTree.Parser.Parse(["cells", "inspect", "@report.xlsx"]);
+
+        Assert.Empty(invocation.ParseResult.Errors);
+        Assert.Equal("@report.xlsx", invocation.ParseResult.CommandResult.Tokens.Single().Value);
+    }
+
+    [Fact]
     public void Execute_EnforcesArgumentInputAndTimeoutBudgets()
     {
         var runner = new McpCommandRunner(ActualCommandTree.Host);
