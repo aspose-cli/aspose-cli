@@ -29,8 +29,8 @@ internal static class CellsHelpMetadata
             ]);
         Find(query, "search").WithExamples(
             [
-                "aspose-cli cells query search book.xlsx TODO --output json",
-                "aspose-cli cells query search book.xlsx SUM --in formulas --max-hits 10",
+                "aspose-cli cells query search book.xlsx --pattern TODO --output json",
+                "aspose-cli cells query search book.xlsx --pattern SUM --scope formulas --max-hits 10",
             ]);
         Find(root, "convert").WithExamples(
             [

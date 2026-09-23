@@ -175,12 +175,12 @@ than shipping `#DIV/0!`.
 Sweep for leftover placeholder tokens:
 
 ```
-aspose-cli cells query search book.xlsx "TBD|TODO|xxx|\{\{" --regex --output json
+aspose-cli cells query search book.xlsx --pattern "TBD|TODO|xxx|\{\{" --regex --output json
 ```
 
 `hits` must be empty — anything found is either unfinished work or an
 intentional token to explain in your report. `query search` covers all sheets
-by default (`--sheet` narrows it) and matches values; add `--in both` to
+by default (`--sheet` narrows it) and matches values; add `--scope both` to
 sweep formula text too.
 
 ## Tier 4 — the session diff

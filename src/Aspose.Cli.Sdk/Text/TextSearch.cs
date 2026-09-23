@@ -3,104 +3,82 @@ using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Text;
 
-/// <summary>Shared, timeout-safe primitives for product text search.</summary>
-public static class TextSearch
+/// <summary>
+/// One validated text query shared by every product search: a literal compared ordinally or
+/// a culture-invariant regular expression with a hard timeout. Only non-empty matches count.
+/// </summary>
+public sealed class TextSearch
 {
+    private const string PatternOption = "--pattern";
+
+    private TextSearch(string pattern, bool caseSensitive, Regex? expression)
+    {
+        Pattern = pattern;
+        CaseSensitive = caseSensitive;
+        Expression = expression;
+    }
+
+    /// <summary>The literal text or regular expression as the caller supplied it.</summary>
+    public string Pattern { get; }
+
+    /// <summary>Whether matching distinguishes letter case.</summary>
+    public bool CaseSensitive { get; }
+
+    /// <summary>The bounded regular expression, or null for a literal search.</summary>
+    public Regex? Expression { get; }
+
     /// <summary>
-    /// Creates a bounded regular expression and rejects expressions that match
-    /// an empty string, or returns <see langword="null"/> for literal search.
+    /// Validates a query: the pattern must be non-empty, and a regular expression must compile
+    /// and must not match an empty string.
     /// </summary>
-    public static Regex? CreateRegex(
-        bool enabled,
-        string pattern,
-        bool caseSensitive,
-        string option = "--pattern",
-        string hint = "Fix the regular expression syntax.")
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> naming <c>--pattern</c>.</exception>
+    public static TextSearch Create(string pattern, bool regex, bool caseSensitive)
     {
         ArgumentNullException.ThrowIfNull(pattern);
-        if (!enabled)
+        if (pattern.Length == 0)
         {
-            return null;
+            throw CliErrors.OptionInvalid(
+                PatternOption,
+                "the pattern is empty",
+                "Pass the text or regular expression to find.");
         }
 
+        if (!regex)
+        {
+            return new TextSearch(pattern, caseSensitive, null);
+        }
+
+        Regex expression;
         try
         {
-            Regex regex = SafeRegex.Create(pattern, caseSensitive);
-            if (regex.IsMatch(string.Empty))
-            {
-                throw new ArgumentException(
-                    "The regular expression must not match an empty string.");
-            }
-
-            return regex;
+            expression = SafeRegex.Create(pattern, caseSensitive);
         }
         catch (ArgumentException exception)
         {
             throw CliErrors.OptionInvalid(
-                option,
-                exception.Message,
-                hint);
+                PatternOption,
+                $"invalid regular expression: {exception.Message}",
+                "Fix the expression, or drop --regex for a literal search.");
         }
+
+        if (expression.IsMatch(string.Empty))
+        {
+            throw CliErrors.OptionInvalid(
+                PatternOption,
+                "the regular expression must not match an empty string",
+                "Use an expression that matches at least one character.");
+        }
+
+        return new TextSearch(pattern, caseSensitive, expression);
     }
 
-    /// <summary>Finds every non-empty regex or literal occurrence in order.</summary>
-    public static IReadOnlyList<(int Start, int Length)> Find(
-        string text,
-        string pattern,
-        bool caseSensitive,
-        Regex? regex,
-        string timeoutMessage,
-        string timeoutHint)
-    {
-        ArgumentNullException.ThrowIfNull(text);
-        ArgumentNullException.ThrowIfNull(pattern);
-        ArgumentException.ThrowIfNullOrWhiteSpace(timeoutMessage);
-        ArgumentException.ThrowIfNullOrWhiteSpace(timeoutHint);
+    /// <summary>Returns whether the text contains at least one non-empty match.</summary>
+    /// <exception cref="CliException"><c>OPERATION_TIMEOUT</c> when the expression exceeds its budget.</exception>
+    public bool IsMatch(string text) => Matches(text).Any();
 
-        if (regex is not null)
-        {
-            try
-            {
-                return regex.Matches(text)
-                    .Cast<Match>()
-                    .Where(static match => match.Length > 0)
-                    .Select(static match => (match.Index, match.Length))
-                    .ToArray();
-            }
-            catch (RegexMatchTimeoutException exception)
-            {
-                throw new CliException(
-                    ErrorCodes.OperationTimeout,
-                    timeoutMessage,
-                    hint: timeoutHint,
-                    innerException: exception);
-            }
-        }
-
-        if (pattern.Length == 0)
-        {
-            return [];
-        }
-
-        StringComparison comparison = caseSensitive
-            ? StringComparison.Ordinal
-            : StringComparison.OrdinalIgnoreCase;
-        var matches = new List<(int Start, int Length)>();
-        int offset = 0;
-        while (offset <= text.Length - pattern.Length)
-        {
-            int found = text.IndexOf(pattern, offset, comparison);
-            if (found < 0)
-            {
-                break;
-            }
-
-            matches.Add((found, pattern.Length));
-            offset = found + pattern.Length;
-        }
-
-        return matches;
-    }
+    /// <summary>Finds every non-empty occurrence in order.</summary>
+    /// <exception cref="CliException"><c>OPERATION_TIMEOUT</c> when the expression exceeds its budget.</exception>
+    public IReadOnlyList<(int Start, int Length)> Find(string text) => Matches(text).ToArray();
 
     /// <summary>Builds a bounded context excerpt around one match.</summary>
     public static string Preview(
@@ -128,5 +106,61 @@ public static class TextSearch
         return (from > 0 ? ellipsis : string.Empty)
             + text[from..to]
             + (to < text.Length ? ellipsis : string.Empty);
+    }
+
+    private IEnumerable<(int Start, int Length)> Matches(string text)
+    {
+        ArgumentNullException.ThrowIfNull(text);
+        return Expression is null ? LiteralMatches(text) : RegexMatches(text);
+    }
+
+    private IEnumerable<(int Start, int Length)> LiteralMatches(string text)
+    {
+        StringComparison comparison = CaseSensitive
+            ? StringComparison.Ordinal
+            : StringComparison.OrdinalIgnoreCase;
+        int offset = 0;
+        while (offset <= text.Length - Pattern.Length)
+        {
+            int found = text.IndexOf(Pattern, offset, comparison);
+            if (found < 0)
+            {
+                yield break;
+            }
+
+            yield return (found, Pattern.Length);
+            offset = found + Pattern.Length;
+        }
+    }
+
+    private IEnumerable<(int Start, int Length)> RegexMatches(string text)
+    {
+        Match match = Evaluate(() => Expression!.Match(text));
+        while (match.Success)
+        {
+            if (match.Length > 0)
+            {
+                yield return (match.Index, match.Length);
+            }
+
+            Match current = match;
+            match = Evaluate(current.NextMatch);
+        }
+    }
+
+    private static Match Evaluate(Func<Match> next)
+    {
+        try
+        {
+            return next();
+        }
+        catch (RegexMatchTimeoutException exception)
+        {
+            throw new CliException(
+                ErrorCodes.OperationTimeout,
+                "The regular expression exceeded its one-second execution budget.",
+                hint: "Simplify the expression or narrow the search.",
+                innerException: exception);
+        }
     }
 }

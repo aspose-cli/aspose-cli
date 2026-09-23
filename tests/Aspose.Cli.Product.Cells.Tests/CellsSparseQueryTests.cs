@@ -111,7 +111,7 @@ public sealed class CellsSparseQueryTests
         using var workbook = new Workbook();
         workbook.Worksheets[0].Cells["XFD1048576"].PutValue("needle");
         workbook.Save(workspace.File("sparse.xlsx"));
-        var search = workspace.Run("cells", "query", "search", "sparse.xlsx", "needle", "--max-hits", "1", "--timeout", "15", "--output", "json");
+        var search = workspace.Run("cells", "query", "search", "sparse.xlsx", "--pattern", "needle", "--max-hits", "1", "--timeout", "15", "--output", "json");
         Assert.True(search.ExitCode == 0, search.StdErr);
         Assert.Contains("XFD1048576", search.StdOut);
         var inspect = workspace.Run("cells", "inspect", "sparse.xlsx", "--detail", "errors", "--timeout", "15", "--output", "json");

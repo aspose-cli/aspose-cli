@@ -1,8 +1,8 @@
-using System.Text.RegularExpressions;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -14,7 +14,6 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 internal static class SearchMatcher
 {
     private const int MaxValueLength = 200;
-    private static readonly TimeSpan RegexTimeout = TimeSpan.FromSeconds(1);
 
     public static (IReadOnlyList<SearchHit> Hits, bool Truncated) Find(ResourceBudgetLedger budgets, Workbook workbook, SearchRequest request)
     {
@@ -22,15 +21,7 @@ internal static class SearchMatcher
         bool inValues = request.In is SearchIn.Values or SearchIn.Both;
         bool inFormulas = request.In is SearchIn.Formulas or SearchIn.Both;
 
-        Regex? regex = request.Regex
-            ? new Regex(
-                request.Pattern,
-                request.CaseSensitive ? RegexOptions.None : RegexOptions.IgnoreCase,
-                RegexTimeout)
-            : null;
-        StringComparison comparison = request.CaseSensitive
-            ? StringComparison.Ordinal
-            : StringComparison.OrdinalIgnoreCase;
+        TextSearch query = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
 
         foreach (Worksheet sheet in workbook.Worksheets)
         {
@@ -49,10 +40,10 @@ internal static class SearchMatcher
                 // caller searching for 13.75572 finds the cell that shows 13.76.
                 string? rawValue = CellMapper.RawValueString(cell);
                 bool valueMatched = inValues
-                    && (Matches(display, regex, request.Pattern, comparison)
-                        || (rawValue is not null && Matches(rawValue, regex, request.Pattern, comparison)));
+                    && (query.IsMatch(display)
+                        || (rawValue is not null && query.IsMatch(rawValue)));
                 bool matched = valueMatched
-                    || (inFormulas && formula is not null && Matches(formula, regex, request.Pattern, comparison));
+                    || (inFormulas && formula is not null && query.IsMatch(formula));
                 if (!matched)
                 {
                     continue;
@@ -80,9 +71,6 @@ internal static class SearchMatcher
 
         return (hits, false);
     }
-
-    private static bool Matches(string text, Regex? regex, string pattern, StringComparison comparison) =>
-        regex is not null ? regex.IsMatch(text) : text.Contains(pattern, comparison);
 
     private static string Truncate(string value) =>
         value.Length <= MaxValueLength ? value : value[..MaxValueLength] + "…";

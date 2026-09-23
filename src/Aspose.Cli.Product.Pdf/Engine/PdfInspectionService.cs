@@ -38,26 +38,12 @@ internal sealed class PdfInspectionService
 
     public PdfSearchResult Search(string filePath, PdfSearchRequest request)
     {
-        if (request.MaxHits < 1 || request.MaxHits > 10_000)
-        {
-            throw CliErrors.OptionInvalid("--max-hits", "must be from 1 through 10000", "Choose a bounded positive hit count.");
-        }
-
+        // Validates the pattern once, the way every product search does, before the document opens.
+        _ = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
-        if (request.Regex)
-        {
-            try
-            {
-                _ = SafeRegex.Create(request.Pattern, request.CaseSensitive);
-            }
-            catch (ArgumentException exception)
-            {
-                throw CliErrors.OptionInvalid("--pattern", exception.Message, "Fix the regular expression syntax.");
-            }
-        }
         var hits = new List<PdfSearchHit>();
         bool truncated = false;
         foreach (int number in pages)

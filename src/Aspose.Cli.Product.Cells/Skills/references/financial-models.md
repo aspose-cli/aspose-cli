@@ -48,7 +48,7 @@ a magic constant buried in formula text (`=B7*0.25` instead of
 `=B7*TaxRate`), sweep formulas for the literal — must return zero hits:
 
 ```sh
-aspose-cli cells query search model.xlsx "0.25" --in formulas --output json
+aspose-cli cells query search model.xlsx --pattern "0.25" --scope formulas --output json
 ```
 
 ## Build order
@@ -121,11 +121,11 @@ Here B12 is closing cash and B13 equity, so the row proves the statements
 articulate. The delivery gate greps for failures and must return zero hits:
 
 ```sh
-aspose-cli cells query search model.xlsx "IMBALANCED|MISMATCH" --regex --output json
+aspose-cli cells query search model.xlsx --pattern "IMBALANCED|MISMATCH" --regex --output json
 ```
 
 Keep the gate on the default values scope: the check formulas carry the
-failure token in their TEXT by design, so `--in formulas` always "fails".
+failure token in their TEXT by design, so `--scope formulas` always "fails".
 Verified: the clean model returns zero hits; hardcoding over one
 closing-cash formula flipped two checks plus the rollup, and the gate
 listed all three, sheet and cell.
@@ -232,7 +232,7 @@ gates — each executable, each with a hard pass condition:
 
 ```sh
 aspose-cli cells inspect model.xlsx --detail errors --output json
-aspose-cli cells query search model.xlsx "IMBALANCED|MISMATCH" --regex --output json
+aspose-cli cells query search model.xlsx --pattern "IMBALANCED|MISMATCH" --regex --output json
 aspose-cli cells query range model.xlsx --sheet Summary --range B3:B6 --output json
 aspose-cli cells query range model.xlsx --sheet Assumptions --range B10 --output json
 aspose-cli cells render model.xlsx --sheet Summary --range A1:G20 --out summary-check.png --dpi 192

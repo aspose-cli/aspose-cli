@@ -85,16 +85,14 @@ internal sealed class WordsInspectionService
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         var index = new DocumentBlockIndex(loaded.Document);
-        System.Text.RegularExpressions.Regex? regex = request.Regex ? SafeRegex.Create(request.Pattern, request.CaseSensitive) : null;
-        StringComparison comparison = request.CaseSensitive ? StringComparison.Ordinal : StringComparison.OrdinalIgnoreCase;
+        TextSearch query = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
         var hits = new List<WordsSearchHit>();
         bool truncated = false;
         IEnumerable<(Node Node, string Scope)> nodes = SearchNodes(loaded.Document, request.Scope);
         foreach ((Node node, string scope) in nodes)
         {
             string text = InfoProjection.Clean(node.GetText());
-            bool matched = regex?.IsMatch(text) ?? text.Contains(request.Pattern, comparison);
-            if (!matched)
+            if (!query.IsMatch(text))
             {
                 continue;
             }

@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Text;
 using System.Globalization;
 using System.Net;
@@ -177,20 +176,7 @@ internal sealed class SlidesReadService
 
     public SlidesSearchResult Search(string filePath, PresentationSearchRequest request)
     {
-        if (!PresentationSearchScopes.Values.Contains(request.Scope, StringComparer.Ordinal))
-        {
-            throw CliErrors.OptionInvalid("--scope", $"unknown scope '{request.Scope}'", "Use shapes, notes or all.");
-        }
-
-        if (request.MaxHits is < 1 or > 10_000)
-        {
-            throw CliErrors.OptionInvalid("--max-hits", "must be from 1 through 10000", "Choose a bounded positive hit count.");
-        }
-
-        Regex? regex = TextSearch.CreateRegex(
-            request.Regex,
-            request.Pattern,
-            request.CaseSensitive);
+        TextSearch query = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
 
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
@@ -232,7 +218,7 @@ internal sealed class SlidesReadService
 
             void AddHits(string text, string scope, long? shapeId, string? shapeName)
             {
-                foreach ((int start, int length) in Matches(text, request, regex))
+                foreach ((int start, int length) in query.Find(text))
                 {
                     if (hits.Count == request.MaxHits)
                     {
@@ -266,18 +252,6 @@ internal sealed class SlidesReadService
             Warnings = EvaluationInputWarnings(state, loaded.Presentation),
         };
     }
-
-    private static IReadOnlyList<(int Start, int Length)> Matches(
-        string text,
-        PresentationSearchRequest request,
-        Regex? regex) =>
-        TextSearch.Find(
-            text,
-            request.Pattern,
-            request.CaseSensitive,
-            regex,
-            "The Slides regular expression exceeded its one-second execution budget.",
-            "Simplify the expression or search a smaller presentation.");
 
     private static string MatchPreview(string text, int start, int length) =>
         TextSearch.Preview(text, start, length, radius: 100);
