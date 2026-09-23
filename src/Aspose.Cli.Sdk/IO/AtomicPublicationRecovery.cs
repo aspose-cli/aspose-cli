@@ -51,9 +51,16 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         return RecoverPendingUnderLease(root, lease: null);
     }
 
+    /// <summary>
+    /// Recovers abandoned transactions in one directory. Without <paramref name="scope"/>
+    /// every transaction there is recovered and any it cannot recover blocks the caller.
+    /// With a scope, the directory is an ancestor of a publication: only transactions whose
+    /// journal names a path overlapping the scope are recovered, because unrelated ones are
+    /// recovered by publications into their own directory.
+    /// </summary>
     internal static int RecoverPendingUnderLease(
         string targetDirectory,
-        PublicationDirectoryLease? lease, OperationDeadline? invocationDeadline = null)
+        PublicationDirectoryLease? lease, OperationDeadline? invocationDeadline = null, string? scope = null)
     {
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
         lease?.EnsureDirectoryUnchanged();
@@ -66,6 +73,10 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         long deadline = Stopwatch.GetTimestamp()
             + (long)(MaximumRecoveryTime.TotalSeconds * Stopwatch.Frequency);
         string[] directories = EnumerateTransactions(root, deadline);
+        if (scope is not null)
+        {
+            directories = Array.FindAll(directories, directory => Concerns(directory, scope, invocationDeadline));
+        }
         if (directories.Length > MaximumTransactionDirectories)
         {
             throw CliErrors.OutputUnwritable(
@@ -128,10 +139,14 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
     internal static int RecoverPendingHierarchy(string targetDirectory, OperationDeadline? deadline)
     {
+        string target = Path.GetFullPath(targetDirectory);
         int recovered = 0;
-        for (string? current = Path.GetFullPath(targetDirectory); current is not null; current = Path.GetDirectoryName(current))
+        for (string? current = target; current is not null; current = Path.GetDirectoryName(current))
         {
-            if (Directory.Exists(current)) { recovered += RecoverPendingUnderLease(current, null, deadline); }
+            if (Directory.Exists(current))
+            {
+                recovered += RecoverPendingUnderLease(current, null, deadline, current == target ? null : target);
+            }
         }
         return recovered;
     }
@@ -143,7 +158,8 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         ArgumentException.ThrowIfNullOrEmpty(targetDirectory);
         ArgumentNullException.ThrowIfNull(lease);
         var hierarchy = new List<string>();
-        string? current = Path.GetFullPath(targetDirectory);
+        string target = Path.GetFullPath(targetDirectory);
+        string? current = target;
         while (current is not null)
         {
             hierarchy.Add(current);
@@ -160,7 +176,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         {
             if (Directory.Exists(directory))
             {
-                recovered += RecoverPendingUnderLease(directory, lease);
+                recovered += RecoverPendingUnderLease(directory, lease, scope: directory == target ? null : target);
             }
         }
         return recovered;
@@ -606,7 +622,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                     "the abandoned publication recovery time budget was exceeded",
                     phase: "recovery");
             }
-            if (HasJournalOrTemporary(directory))
+            if (IsPrivateToCurrentUser(directory) && HasJournalOrTemporary(directory))
             {
                 directories.Add(directory);
                 if (directories.Count > MaximumTransactionDirectories)
@@ -617,6 +633,47 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         }
         directories.Sort(StringComparer.Ordinal);
         return [.. directories];
+    }
+
+    /// <summary>
+    /// Every transaction this code creates is private to its user. Anything else under the
+    /// transaction name was created by another principal: it is neither recoverable nor
+    /// allowed to block this user's publications.
+    /// </summary>
+    private static bool IsPrivateToCurrentUser(string directory)
+    {
+        try
+        {
+            PrivateUserStorage.ValidateDirectory(directory);
+            return true;
+        }
+        catch (Exception exception) when (exception is UnauthorizedAccessException or IOException)
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Returns whether a readable journal names a path overlapping <paramref name="scope"/>.</summary>
+    private static bool Concerns(string directory, string scope, OperationDeadline? deadline)
+    {
+        string journalPath = Path.Combine(directory, AtomicPublicationPlan.JournalName);
+        PublicationJournal journal;
+        try
+        {
+            if (!File.Exists(journalPath)) { return false; }
+            journal = PublicationJournal.Read(journalPath, deadline: deadline);
+        }
+        catch (Exception exception) when (
+            exception is IOException or UnauthorizedAccessException
+                or InvalidDataException or System.Text.Json.JsonException)
+        {
+            return false;
+        }
+
+        IEnumerable<string?> paths = journal.Entries
+            .SelectMany(static entry => new[] { entry.Target, entry.RequestedBackup })
+            .Append(journal.DirectoryOutput?.Target);
+        return paths.Any(path => path is not null && (IsWithinRoot(scope, path) || IsWithinRoot(path, scope)));
     }
 
     private static bool IsWithinRoot(string root, string path)
@@ -796,6 +853,12 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         catch (InvalidOperationException)
         {
             return false;
+        }
+        catch (System.ComponentModel.Win32Exception)
+        {
+            // A reused PID now belongs to a process this user may not inspect; like
+            // IsLiveCreation, treat the owner as alive rather than roll back its work.
+            return true;
         }
     }
 

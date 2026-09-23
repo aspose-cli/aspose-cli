@@ -731,10 +731,10 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
-    public void SingleFileWriteRecoversAnAncestorTransactionFirst()
+    public void SingleFileWriteRecoversAnAncestorTransactionTargetingItsSubtreeFirst()
     {
         using var temp = new TempDirectory();
-        string abandonedTarget = temp.File(Path.Combine("a", "abandoned.txt"));
+        string abandonedTarget = temp.File(Path.Combine("a", "nested", "abandoned.txt"));
         Directory.CreateDirectory(Path.GetDirectoryName(abandonedTarget)!);
         string transaction = CreateAbandonedPublishingTransaction(
             temp.Path,
@@ -926,6 +926,57 @@ public sealed class AtomicOutputSetWriterTests
         Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
         Assert.Equal("recovery", error.Details!["phase"]!.GetValue<string>());
         Assert.True(File.Exists(journal));
+    }
+
+    [Fact]
+    public void ForeignTransactionDirectoriesNeitherBlockNorConsumeRecoveryBudget()
+    {
+        using var temp = new TempDirectory();
+        string nested = Directory.CreateDirectory(temp.File("nested")).FullName;
+        var planted = new List<string>();
+        foreach (string parent in new[] { temp.Path, nested })
+        {
+            for (int index = 0; index < 40; index++)
+            {
+                // Ordinary inherited permissions: any other principal could have created these.
+                string foreign = Directory.CreateDirectory(
+                    Path.Combine(parent, $".aspose-publication-foreign-{index:000}")).FullName;
+                string journal = Path.Combine(foreign, AtomicPublicationPlan.JournalName);
+                File.WriteAllText(journal, "{\"state\":\"Partial\"}");
+                planted.Add(journal);
+            }
+        }
+
+        string target = Path.Combine(nested, "target.txt");
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), nested, "foreign-state"))
+        {
+            set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
+            set.Commit();
+        }
+
+        Assert.Equal("content", File.ReadAllText(target));
+        Assert.All(planted, journal => Assert.True(File.Exists(journal)));
+    }
+
+    [Fact]
+    public void UnrelatedAncestorTransactionDoesNotBlockNestedPublication()
+    {
+        using var temp = new TempDirectory();
+        string transaction = PrivateUserStorage.EnsureDirectory(temp.File(".aspose-publication-invalid-ancestor"));
+        string journal = Path.Combine(transaction, AtomicPublicationPlan.JournalName);
+        File.WriteAllText(journal, """{"version":1,"operation":"invalid","ownerProcessId":1,"state":0,"entries":null}""");
+        string nested = Directory.CreateDirectory(temp.File("nested")).FullName;
+        string target = Path.Combine(nested, "target.txt");
+
+        using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), nested, "nested"))
+        {
+            set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
+            set.Commit();
+        }
+
+        Assert.Equal("content", File.ReadAllText(target));
+        Assert.True(File.Exists(journal));
+        Assert.Throws<CliException>(() => AtomicOutputSetWriter.RecoverPending(temp.Path));
     }
 
     [Fact]
