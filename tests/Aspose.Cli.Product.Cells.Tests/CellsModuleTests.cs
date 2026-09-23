@@ -24,6 +24,17 @@ public sealed class CellsModuleTests
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
+    [Theory]
+    [InlineData("""{"op":"set_formula","range":"A1","formula":null}""")]
+    [InlineData("""{"op":"set_values","range":"A1","values":null}""")]
+    [InlineData("""{"op":"rename_sheet","sheet":"Sheet1","to":null}""")]
+    public void NonNullableFields_RejectExplicitNullAsInvalidOperations(string operation)
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            OpsParser.Parse($$"""{"ops":[{{operation}}]}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
+
     [Fact]
     public void OperationObjects_RejectUnknownNestedFields() =>
         AssertOperationObjectIsStrict<Op>(

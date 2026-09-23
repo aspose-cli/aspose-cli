@@ -58,10 +58,21 @@ public sealed class PdfModuleTests
     [InlineData("""{"op":"encrypt","ownerPasswordEnv":"OWNER"}""", """{"permissions":{"print":false,"copy":false,"modify":false,"annotate":false,"fillForms":false,"extractAccessibility":false,"assemble":false,"printHighResolution":false}}""")]
     [InlineData("""{"op":"optimize"}""", """{"removeUnusedObjects":true,"compressStreams":true}""")]
     [InlineData("""{"op":"optimize","removeUnusedObjects":false,"compressStreams":false}""", """{"removeUnusedObjects":false,"compressStreams":false}""")]
-    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","size":0,"rotation":0,"opacity":0,"color":null}""", """{"size":0,"rotation":0,"opacity":0,"color":null}""")]
+    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","size":0,"rotation":0,"opacity":0}""", """{"size":0,"rotation":0,"opacity":0,"color":"#808080"}""")]
     [InlineData("""{"op":"encrypt","ownerPasswordEnv":"OWNER","permissions":{"copy":true,"print":false}}""", """{"permissions":{"print":false,"copy":true,"modify":false,"annotate":false,"fillForms":false,"extractAccessibility":false,"assemble":false,"printHighResolution":false}}""")]
     public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>
         AssertOperationDefaults<PdfOp>(input, expected);
+
+    [Theory]
+    [InlineData("""{"op":"add_page_numbers","format":null}""")]
+    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","color":null}""")]
+    [InlineData("""{"op":"add_bookmark","title":null,"page":1}""")]
+    public void NonNullableFields_RejectExplicitNullAsInvalidOperations(string operation)
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            PdfOpsParser.Parse($$"""{"ops":[{{operation}}]}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
 
     [Fact]
     public void EncryptionPermissions_RejectExplicitNull()

@@ -111,7 +111,14 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"update_fields"}""", """{"what":"all"}""")]
     [InlineData("""{"op":"insert_image","at":{"block":1},"position":"after","path":"image.png","inline":false}""", """{"inline":false}""")]
     [InlineData("""{"op":"insert_toc","at":{"block":1},"position":"after","maxLevel":0}""", """{"maxLevel":0}""")]
-    [InlineData("""{"op":"replace_text","find":"a","replace":"b","scope":null}""", """{"scope":null}""")]
     public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>
         AssertOperationDefaults<WordsOp>(input, expected);
+
+    [Fact]
+    public void ReplaceTextScope_RejectsExplicitNullAsAnInvalidOperation()
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            WordsOpsParser.Parse("""{"ops":[{"op":"replace_text","find":"a","replace":"b","scope":null}]}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
 }

@@ -62,9 +62,16 @@ public sealed class SlidesModuleTests
     [InlineData("""{"op":"replace_text","find":"a","replace":"b"}""", """{"scope":"all"}""")]
     [InlineData("""{"op":"set_slide_size","size":"800x600pt"}""", """{"scaleContent":true}""")]
     [InlineData("""{"op":"set_slide_size","size":"800x600pt","scaleContent":false}""", """{"scaleContent":false}""")]
-    [InlineData("""{"op":"replace_text","find":"a","replace":"b","scope":null}""", """{"scope":null}""")]
     public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>
         AssertOperationDefaults<SlidesOp>(input, expected);
+
+    [Fact]
+    public void ReplaceTextScope_RejectsExplicitNullAsAnInvalidOperation()
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
+            SlidesOpsParser.Parse("""{"ops":[{"op":"replace_text","find":"a","replace":"b","scope":null}]}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
 
     [Theory]
     [InlineData("""{"op":"set_shape_style","slide":1,"shape":1}""")]

@@ -109,6 +109,9 @@ public sealed class ContractJsonSerializer
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             AllowOutOfOrderMetadataProperties = true,
             AllowDuplicateProperties = false,
+            // 'required' only demands presence; an explicit null in a non-nullable contract
+            // member is also a wire error, not a value for product code to trip over.
+            RespectNullableAnnotations = true,
             Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
             WriteIndented = true,
         };
