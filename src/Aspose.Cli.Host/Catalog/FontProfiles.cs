@@ -2,7 +2,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Rendering;
 
-namespace Aspose.Cli.Host.Commands;
+namespace Aspose.Cli.Host.Catalog;
 
 /// <summary>
 /// Applies a font profile to one product for the length of a visual

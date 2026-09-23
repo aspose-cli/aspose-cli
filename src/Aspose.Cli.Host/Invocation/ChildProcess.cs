@@ -1,10 +1,9 @@
 using System.Buffers;
 using System.ComponentModel;
 using System.Diagnostics;
-using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Errors;
 
-namespace Aspose.Cli.Host.LocalServices;
+namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>How one child process ended and what it wrote.</summary>
 internal sealed record ChildProcessResult(int ExitCode, byte[] Stdout, byte[] Stderr);
