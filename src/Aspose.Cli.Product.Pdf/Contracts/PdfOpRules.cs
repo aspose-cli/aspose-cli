@@ -103,14 +103,19 @@ internal static class PdfOpRules
         Color(op.FillColor);
         if (op.Regex)
         {
+            System.Text.RegularExpressions.Regex expression;
             try
             {
-                _ = SafeRegex.Create(op.Pattern, caseSensitive: true);
+                expression = SafeRegex.Create(op.Pattern, caseSensitive: true);
             }
             catch (ArgumentException exception)
             {
                 throw new OperationInvalidException($"invalid regex: {exception.Message}");
             }
+
+            // As in search: an expression that matches nothing redacts nothing, and the
+            // engine rejects zero-width matches; say so before the document opens.
+            Require(!expression.IsMatch(string.Empty), "the regular expression must not match an empty string");
         }
     }
 

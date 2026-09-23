@@ -22,6 +22,7 @@ public sealed class PdfOpContractTests
     [InlineData("""{"op":"redact_area","page":1,"rect":{"x":0,"y":-5,"width":10,"height":10}}""")]
     [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"ftp://example.com/a"}""")]
     [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"file:///etc/passwd"}""")]
+    [InlineData("""{"op":"redact_text","pattern":""}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -43,6 +44,18 @@ public sealed class PdfOpContractTests
         _ = Parse(batch);
 
         Assert.True(IsSchemaValid(batch), "The schema rejected an operation the parser accepts.");
+    }
+
+    [Theory]
+    [InlineData("a*")]
+    [InlineData("x?")]
+    public void RedactText_RejectsAnExpressionThatMatchesTheEmptyString(string pattern)
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse(
+            $$"""{"ops":[{"op":"redact_text","regex":true,"pattern":{{JsonSerializer.Serialize(pattern)}}}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("empty string", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
