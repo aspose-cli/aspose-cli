@@ -1,7 +1,6 @@
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Product.Words.Engine.Editing;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Product.Words.Operations;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -37,7 +36,7 @@ internal sealed class WordsMutationService
 
     private WordsEditResult ApplyOpsCore(string filePath, WordsOpsBatch batch, WordsEditRequest request)
     {
-        batch = WordsOpsParser.Prepare(batch);
+        batch = WordsOps.Catalog.Prepare(batch);
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);

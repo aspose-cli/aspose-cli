@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Words;
 using Aspose.Words.Layout;
 using Aspose.Words.Saving;
@@ -105,66 +106,34 @@ internal static class WordsOpsExecutor
         InputSource inputs, InputResourceScope operationInputs)
     {
         Document document = loaded.Document;
-        var outcomes = new List<BoundedOperationOutcome>(resolved.Count);
-        for (int index = 0; index < resolved.Count; index++)
-        {
-            ResolvedWordsOp item = resolved[index];
-            try
+        return BoundedOperationRunner.Run(
+            WordsOps.Catalog,
+            resolved.Select(static item => item.Op).ToArray(),
+            request.Options.BestEffort,
+            deadline: null,
+            (op, index) =>
             {
-                WordsAnchorResolver.EnsureAttached(document, item);
-                string? secret = null;
-                _ = request.OpSecrets?.TryGetValue(index, out secret);
-                long affected = item.Op switch
+                ResolvedWordsOp item = resolved[index];
+                try
                 {
-                    InsertImageOp image => WordsObjectOpHandlers.InsertImage(document, item.Nodes[0], image, operationInputs),
-                    InsertMarkdownOp markdown =>
-                        WordsContentOpHandlers.InsertMarkdown(document, item.Nodes[0], markdown,
-                            loader.OpenMarkdown(markdown.Markdown, loaded)),
-                    AppendDocumentOp append =>
-                        WordsStructureOpHandlers.AppendDocument(document, append, loader),
-                    MailMergeOp merge =>
-                        WordsObjectOpHandlers.MailMerge(document, merge, inputs),
-                    _ => WordsOpHandlers.Apply(document, item, secret),
-                };
-                outcomes.Add(new BoundedOperationOutcome
-                {
-                    Id = item.Op.Id!,
-                    Index = index,
-                    Op = item.Op.OpName,
-                    Status = OpStatuses.Ok,
-                    ItemsAffected = affected,
-                    Targets = item.Targets,
-                });
-            }
-            catch (Exception exception) when (
-                exception is CliException or InvalidOperationException or ArgumentException
-                && exception is not CliException { IsInvocationFailure: true })
-            {
-                CliException translated = exception as CliException ?? InvalidAt(index, item.Op.OpName, exception.Message);
-                if (!request.Options.BestEffort)
-                {
-                    throw translated;
-                }
-
-                outcomes.Add(new BoundedOperationOutcome
-                {
-                    Id = item.Op.Id!,
-                    Index = index,
-                    Op = item.Op.OpName,
-                    Status = OpStatuses.Failed,
-                    ItemsAffected = 0,
-                    Targets = item.Targets,
-                    Error = new OpError
+                    WordsAnchorResolver.EnsureAttached(document, item);
+                    string? secret = null;
+                    _ = request.OpSecrets?.TryGetValue(index, out secret);
+                    long affected = op switch
                     {
-                        Code = translated.Code.Name,
-                        Message = translated.Message,
-                        Hint = translated.Hint ?? "Fix the operation target or value, then retry the batch.",
-                    },
-                });
-            }
-            finally { operationInputs.ThrowIfFailed(); }
-        }
-        return outcomes;
+                        InsertImageOp image => WordsObjectOpHandlers.InsertImage(document, item.Nodes[0], image, operationInputs),
+                        InsertMarkdownOp markdown =>
+                            WordsContentOpHandlers.InsertMarkdown(document, item.Nodes[0], markdown,
+                                loader.OpenMarkdown(markdown.Markdown, loaded)),
+                        AppendDocumentOp append => WordsStructureOpHandlers.AppendDocument(document, append, loader),
+                        MailMergeOp merge => WordsObjectOpHandlers.MailMerge(document, merge, inputs),
+                        _ => WordsOpHandlers.Apply(document, item, secret),
+                    };
+                    return new AppliedOperation(affected, item.Targets);
+                }
+                finally { operationInputs.ThrowIfFailed(); }
+            },
+            (_, index) => resolved[index].Targets);
     }
 
     private static (
@@ -303,10 +272,6 @@ internal static class WordsOpsExecutor
         return extension switch { "xml" => "flatopc", "htm" => "html", _ => extension };
     }
 
-    private static CliException InvalidAt(int index, string op, string reason) => new(
-        ErrorCodes.OpsInvalid,
-        $"Words op {index} ({op}) failed: {reason}.",
-        hint: "Correct the operation and retry the complete atomic batch.");
 
     private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string Protection);
 }

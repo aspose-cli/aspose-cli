@@ -19,7 +19,7 @@ public sealed class WordsModuleTests
     public void OperationBatch_RejectsNullOperations()
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            WordsOpsParser.Parse("""{"ops":null}"""));
+            Parse("""{"ops":null}"""));
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
@@ -59,9 +59,9 @@ public sealed class WordsModuleTests
     public void CanonicalOps_CoverEveryRegisteredOperation()
     {
         Assert.Equal(
-            WordsOps.Names.Order(StringComparer.Ordinal),
+            WordsOps.Catalog.Names.Order(StringComparer.Ordinal),
             WordsContractSamples.Ops.Ops
-                .Select(static operation => operation.OpName)
+                .Select(WordsOps.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
     }
 
@@ -80,16 +80,16 @@ public sealed class WordsModuleTests
         Assert.Equal(expectedSizes, declaredSizes);
         foreach (string size in declaredSizes)
         {
-            WordsOpsBatch batch = WordsOpsParser.Parse(
+            WordsOpsBatch batch = Parse(
                 "{\"ops\":[{\"op\":\"set_page_setup\",\"setup\":{\"size\":\""
                 + size
                 + "\"}}]}");
             Assert.Equal(size, Assert.IsType<SetPageSetupOp>(batch.Ops[0]).Setup.Size);
         }
 
-        Assert.Throws<CliException>(() => WordsOpsParser.Parse(
+        Assert.Throws<CliException>(() => Parse(
             """{"ops":[{"op":"set_page_setup","setup":{"size":"A4"}}]}"""));
-        Assert.Throws<CliException>(() => WordsOpsParser.Parse(
+        Assert.Throws<CliException>(() => Parse(
             """{"ops":[{"op":"set_page_setup","setup":{"size":"tabloid"}}]}"""));
     }
 
@@ -118,7 +118,10 @@ public sealed class WordsModuleTests
     public void ReplaceTextScope_RejectsExplicitNullAsAnInvalidOperation()
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            WordsOpsParser.Parse("""{"ops":[{"op":"replace_text","find":"a","replace":"b","scope":null}]}"""));
+            Parse("""{"ops":[{"op":"replace_text","find":"a","replace":"b","scope":null}]}"""));
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
+
+    private static WordsOpsBatch Parse(string json) =>
+        WordsOps.Catalog.Parse<WordsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

@@ -452,6 +452,36 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void SetText_RejectedForATableTargetChangesNothing()
+    {
+        string input = _fixture.Temp.File("set-text-mixed.docx");
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Original paragraph");
+        builder.StartTable();
+        builder.InsertCell();
+        builder.Write("Cell");
+        builder.EndRow();
+        builder.EndTable();
+        document.Save(input);
+        string output = _fixture.Temp.File("set-text-mixed.out.docx");
+
+        WordsEditResult result = _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new SetTextOp { At = new WordsTarget { Blocks = "1-2" }, Text = "Replaced" }],
+        }, new WordsEditRequest
+        {
+            OutputPath = output,
+            Options = new EditCommandOptions { BestEffort = true },
+        });
+
+        Assert.Equal(OpStatuses.Failed, Assert.Single(result.Applied).Status);
+        string text = new Document(output).GetText();
+        Assert.Contains("Original paragraph", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Replaced", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ExtractComments_WritesTheCommentsAsJson()
     {
         string input = _fixture.Temp.File("extract-comments.docx");

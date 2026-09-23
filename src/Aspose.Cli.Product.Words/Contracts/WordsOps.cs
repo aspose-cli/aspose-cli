@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Product.Words.Contracts;
@@ -11,12 +12,7 @@ public sealed record WordsOpsBatch : BoundedOperationEnvelope<WordsOp>;
 /// <summary>Base of every Words operation.</summary>
 [JsonConverter(typeof(Serialization.WordsOpJsonConverter))]
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
-public abstract record WordsOp : BoundedOperation
-{
-    /// <summary>Stable wire discriminator written as the <c>op</c> property.</summary>
-    [JsonIgnore]
-    public abstract string OpName { get; }
-}
+public abstract record WordsOp : BoundedOperation;
 
 /// <summary>A block, range, bookmark, heading or find anchor.</summary>
 [JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
@@ -44,8 +40,6 @@ public sealed record WordsTarget
 /// <summary>Replace literal or regex text within a bounded document scope.</summary>
 public sealed record ReplaceTextOp(string Scope = "body") : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "replace_text";
     public required string Find { get; init; }
     public required string Replace { get; init; }
     public bool Regex { get; init; }
@@ -57,8 +51,6 @@ public sealed record ReplaceTextOp(string Scope = "body") : WordsOp
 /// <summary>Replace the inline content of paragraph blocks.</summary>
 public sealed record SetTextOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_text";
     public required WordsTarget At { get; init; }
     public required string Text { get; init; }
 }
@@ -66,8 +58,6 @@ public sealed record SetTextOp : WordsOp
 /// <summary>Insert structured paragraphs at a block boundary.</summary>
 public sealed record InsertParagraphsOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_paragraphs";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
     public required IReadOnlyList<ParagraphInput> Paragraphs { get; init; }
@@ -84,8 +74,6 @@ public sealed record ParagraphInput
 /// <summary>Import Markdown at a block boundary.</summary>
 public sealed record InsertMarkdownOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_markdown";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
     public required string Markdown { get; init; }
@@ -94,16 +82,12 @@ public sealed record InsertMarkdownOp : WordsOp
 /// <summary>Delete one or more canonical blocks.</summary>
 public sealed record DeleteBlocksOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "delete_blocks";
     public required WordsTarget Target { get; init; }
 }
 
 /// <summary>Insert a page or section break.</summary>
 public sealed record InsertBreakOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_break";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
     public required string Kind { get; init; }
@@ -112,8 +96,6 @@ public sealed record InsertBreakOp : WordsOp
 /// <summary>Insert a local image.</summary>
 public sealed record InsertImageOp(bool Inline = true) : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_image";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
     public required string Path { get; init; }
@@ -124,8 +106,6 @@ public sealed record InsertImageOp(bool Inline = true) : WordsOp
 /// <summary>Insert a table at a block boundary.</summary>
 public sealed record InsertTableOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_table";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
     public required int Rows { get; init; }
@@ -137,8 +117,6 @@ public sealed record InsertTableOp : WordsOp
 /// <summary>Replace one 1-based table cell.</summary>
 public sealed record SetTableCellOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_table_cell";
     public required WordsTarget At { get; init; }
     public required int Row { get; init; }
     public required int Col { get; init; }
@@ -148,8 +126,6 @@ public sealed record SetTableCellOp : WordsOp
 /// <summary>Insert and update a table of contents.</summary>
 public sealed record InsertTocOp(int MaxLevel = 3) : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_toc";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
 }
@@ -157,8 +133,6 @@ public sealed record InsertTocOp(int MaxLevel = 3) : WordsOp
 /// <summary>Bookmark a paragraph's visible text.</summary>
 public sealed record InsertBookmarkOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_bookmark";
     public required WordsTarget At { get; init; }
     public required string Name { get; init; }
 }
@@ -166,8 +140,6 @@ public sealed record InsertBookmarkOp : WordsOp
 /// <summary>Insert a hyperlink at a block boundary.</summary>
 public sealed record InsertHyperlinkOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_hyperlink";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
     public required string Text { get; init; }
@@ -177,8 +149,6 @@ public sealed record InsertHyperlinkOp : WordsOp
 /// <summary>Insert a Word field at a block boundary.</summary>
 public sealed record InsertFieldOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "insert_field";
     public required WordsTarget At { get; init; }
     public required string Position { get; init; }
     public required string Code { get; init; }
@@ -187,8 +157,6 @@ public sealed record InsertFieldOp : WordsOp
 /// <summary>Add a document section.</summary>
 public sealed record AddSectionOp(string Position = "end") : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "add_section";
     public int? After { get; init; }
     public PageSetupInput? PageSetup { get; init; }
 }
@@ -196,16 +164,12 @@ public sealed record AddSectionOp(string Position = "end") : WordsOp
 /// <summary>Delete one section.</summary>
 public sealed record DeleteSectionOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "delete_section";
     public required int Section { get; init; }
 }
 
 /// <summary>Apply page setup to one or all sections.</summary>
 public sealed record SetPageSetupOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_page_setup";
     public int? Section { get; init; }
     public required PageSetupInput Setup { get; init; }
 }
@@ -231,8 +195,6 @@ public sealed record MarginInput
 /// <summary>Replace a section header.</summary>
 public sealed record SetHeaderOp(string Kind = "primary") : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_header";
     public int? Section { get; init; }
     public IReadOnlyList<string>? Paragraphs { get; init; }
     public string? Markdown { get; init; }
@@ -241,8 +203,6 @@ public sealed record SetHeaderOp(string Kind = "primary") : WordsOp
 /// <summary>Replace a section footer.</summary>
 public sealed record SetFooterOp(string Kind = "primary") : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_footer";
     public int? Section { get; init; }
     public IReadOnlyList<string>? Paragraphs { get; init; }
     public string? Markdown { get; init; }
@@ -251,8 +211,6 @@ public sealed record SetFooterOp(string Kind = "primary") : WordsOp
 /// <summary>Configure page-number fields.</summary>
 public sealed record SetPageNumbersOp(string Location = "footer", string Alignment = "center") : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_page_numbers";
     public int? Section { get; init; }
     public string? Format { get; init; }
     public int? Start { get; init; }
@@ -261,8 +219,6 @@ public sealed record SetPageNumbersOp(string Location = "footer", string Alignme
 /// <summary>Apply character formatting to target runs.</summary>
 public sealed record FormatTextOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "format_text";
     public required WordsTarget Target { get; init; }
     public bool? Bold { get; init; }
     public bool? Italic { get; init; }
@@ -276,8 +232,6 @@ public sealed record FormatTextOp : WordsOp
 /// <summary>Apply an existing paragraph style.</summary>
 public sealed record SetStyleOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_style";
     public required WordsTarget Target { get; init; }
     public required string Style { get; init; }
 }
@@ -285,8 +239,6 @@ public sealed record SetStyleOp : WordsOp
 /// <summary>Create or update a named paragraph style.</summary>
 public sealed record DefineStyleOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "define_style";
     public required string Name { get; init; }
     public string? BasedOn { get; init; }
     public string? Font { get; init; }
@@ -300,8 +252,6 @@ public sealed record DefineStyleOp : WordsOp
 /// <summary>Apply bullet or number list formatting.</summary>
 public sealed record ApplyListOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "apply_list";
     public required WordsTarget Target { get; init; }
     public required string Kind { get; init; }
     public int Level { get; init; }
@@ -310,8 +260,6 @@ public sealed record ApplyListOp : WordsOp
 /// <summary>Update default paragraph and character-style fonts.</summary>
 public sealed record SetDefaultFontOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_default_font";
     public required string Font { get; init; }
     public double? Size { get; init; }
 }
@@ -319,8 +267,6 @@ public sealed record SetDefaultFontOp : WordsOp
 /// <summary>Set built-in and custom document properties.</summary>
 public sealed record SetPropertiesOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "set_properties";
     public string? Title { get; init; }
     public string? Author { get; init; }
     public string? Subject { get; init; }
@@ -331,8 +277,6 @@ public sealed record SetPropertiesOp : WordsOp
 /// <summary>Add a text or image watermark.</summary>
 public sealed record AddWatermarkOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "add_watermark";
     public string? Text { get; init; }
     public string? ImagePath { get; init; }
     public double? Opacity { get; init; }
@@ -340,17 +284,11 @@ public sealed record AddWatermarkOp : WordsOp
 }
 
 /// <summary>Remove the document watermark.</summary>
-public sealed record RemoveWatermarkOp : WordsOp
-{
-    /// <inheritdoc />
-    public override string OpName => "remove_watermark";
-}
+public sealed record RemoveWatermarkOp : WordsOp;
 
 /// <summary>Protect a document, optionally with an environment-sourced password.</summary>
 public sealed record ProtectOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "protect";
     public required string Mode { get; init; }
     public string? PasswordEnv { get; init; }
 }
@@ -358,32 +296,24 @@ public sealed record ProtectOp : WordsOp
 /// <summary>Remove document protection.</summary>
 public sealed record UnprotectOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "unprotect";
     public string? PasswordEnv { get; init; }
 }
 
 /// <summary>Accept revisions, optionally filtered by author.</summary>
 public sealed record AcceptRevisionsOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "accept_revisions";
     public string? Author { get; init; }
 }
 
 /// <summary>Reject revisions, optionally filtered by author.</summary>
 public sealed record RejectRevisionsOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "reject_revisions";
     public string? Author { get; init; }
 }
 
 /// <summary>Add a paragraph comment.</summary>
 public sealed record AddCommentOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "add_comment";
     public required WordsTarget At { get; init; }
     public required string Author { get; init; }
     public required string Text { get; init; }
@@ -392,80 +322,64 @@ public sealed record AddCommentOp : WordsOp
 /// <summary>Remove all comments or comments by one author.</summary>
 public sealed record RemoveCommentsOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "remove_comments";
     public string? Author { get; init; }
 }
 
 /// <summary>Append a local document.</summary>
 public sealed record AppendDocumentOp(string ImportFormatMode = "keepSource") : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "append_document";
     public required string Path { get; init; }
 }
 
 /// <summary>Run a simple or region mail merge.</summary>
 public sealed record MailMergeOp : WordsOp
 {
-    /// <inheritdoc />
-    public override string OpName => "mail_merge";
     public string? Path { get; init; }
     public IReadOnlyList<IReadOnlyDictionary<string, string?>>? Inline { get; init; }
     public bool Regions { get; init; }
 }
 
 /// <summary>Update TOC or all document fields and page layout.</summary>
-public sealed record UpdateFieldsOp(string What = "all") : WordsOp
-{
-    /// <inheritdoc />
-    public override string OpName => "update_fields";
-}
+public sealed record UpdateFieldsOp(string What = "all") : WordsOp;
 
-/// <summary>Registry of the v2 Words operation vocabulary.</summary>
+/// <summary>The Words operation vocabulary, in published order.</summary>
 public static class WordsOps
 {
-    /// <summary>Stable discriminator-to-DTO registry.</summary>
-    public static IReadOnlyDictionary<string, Type> Registry { get; } = new Dictionary<string, Type>(StringComparer.Ordinal)
-    {
-        ["replace_text"] = typeof(ReplaceTextOp),
-        ["set_text"] = typeof(SetTextOp),
-        ["insert_paragraphs"] = typeof(InsertParagraphsOp),
-        ["insert_markdown"] = typeof(InsertMarkdownOp),
-        ["delete_blocks"] = typeof(DeleteBlocksOp),
-        ["insert_break"] = typeof(InsertBreakOp),
-        ["insert_image"] = typeof(InsertImageOp),
-        ["insert_table"] = typeof(InsertTableOp),
-        ["set_table_cell"] = typeof(SetTableCellOp),
-        ["insert_toc"] = typeof(InsertTocOp),
-        ["insert_bookmark"] = typeof(InsertBookmarkOp),
-        ["insert_hyperlink"] = typeof(InsertHyperlinkOp),
-        ["insert_field"] = typeof(InsertFieldOp),
-        ["add_section"] = typeof(AddSectionOp),
-        ["delete_section"] = typeof(DeleteSectionOp),
-        ["set_page_setup"] = typeof(SetPageSetupOp),
-        ["set_header"] = typeof(SetHeaderOp),
-        ["set_footer"] = typeof(SetFooterOp),
-        ["set_page_numbers"] = typeof(SetPageNumbersOp),
-        ["format_text"] = typeof(FormatTextOp),
-        ["set_style"] = typeof(SetStyleOp),
-        ["define_style"] = typeof(DefineStyleOp),
-        ["apply_list"] = typeof(ApplyListOp),
-        ["set_default_font"] = typeof(SetDefaultFontOp),
-        ["set_properties"] = typeof(SetPropertiesOp),
-        ["add_watermark"] = typeof(AddWatermarkOp),
-        ["remove_watermark"] = typeof(RemoveWatermarkOp),
-        ["protect"] = typeof(ProtectOp),
-        ["unprotect"] = typeof(UnprotectOp),
-        ["accept_revisions"] = typeof(AcceptRevisionsOp),
-        ["reject_revisions"] = typeof(RejectRevisionsOp),
-        ["add_comment"] = typeof(AddCommentOp),
-        ["remove_comments"] = typeof(RemoveCommentsOp),
-        ["append_document"] = typeof(AppendDocumentOp),
-        ["mail_merge"] = typeof(MailMergeOp),
-        ["update_fields"] = typeof(UpdateFieldsOp),
-    };
-
-    /// <summary>All public operation names in ordinal order.</summary>
-    public static IReadOnlyList<string> Names { get; } = Registry.Keys.Order(StringComparer.Ordinal).ToArray();
+    public static OperationCatalog<WordsOp> Catalog { get; } = new OperationCatalog<WordsOp>(WordsSchemaIds.Ops, maximumOperations: 256)
+        .Add<AcceptRevisionsOp>("accept_revisions")
+        .Add<AddCommentOp>("add_comment", WordsOpRules.AddComment)
+        .Add<AddSectionOp>("add_section", WordsOpRules.AddSection)
+        .Add<AddWatermarkOp>("add_watermark", WordsOpRules.AddWatermark)
+        .Add<AppendDocumentOp>("append_document", WordsOpRules.AppendDocument)
+        .Add<ApplyListOp>("apply_list", WordsOpRules.ApplyList)
+        .Add<DefineStyleOp>("define_style", WordsOpRules.DefineStyle)
+        .Add<DeleteBlocksOp>("delete_blocks", WordsOpRules.DeleteBlocks)
+        .Add<DeleteSectionOp>("delete_section", WordsOpRules.DeleteSection)
+        .Add<FormatTextOp>("format_text", WordsOpRules.FormatText)
+        .Add<InsertBookmarkOp>("insert_bookmark", WordsOpRules.InsertBookmark)
+        .Add<InsertBreakOp>("insert_break", WordsOpRules.InsertBreak)
+        .Add<InsertFieldOp>("insert_field", WordsOpRules.InsertField)
+        .Add<InsertHyperlinkOp>("insert_hyperlink", WordsOpRules.InsertHyperlink)
+        .Add<InsertImageOp>("insert_image", WordsOpRules.InsertImage)
+        .Add<InsertMarkdownOp>("insert_markdown", WordsOpRules.InsertMarkdown)
+        .Add<InsertParagraphsOp>("insert_paragraphs", WordsOpRules.InsertParagraphs)
+        .Add<InsertTableOp>("insert_table", WordsOpRules.InsertTable)
+        .Add<InsertTocOp>("insert_toc", WordsOpRules.InsertToc)
+        .Add<MailMergeOp>("mail_merge", WordsOpRules.MailMerge)
+        .Add<ProtectOp>("protect", WordsOpRules.Protect)
+        .Add<RejectRevisionsOp>("reject_revisions")
+        .Add<RemoveCommentsOp>("remove_comments")
+        .Add<RemoveWatermarkOp>("remove_watermark")
+        .Add<ReplaceTextOp>("replace_text", WordsOpRules.ReplaceText)
+        .Add<SetDefaultFontOp>("set_default_font", WordsOpRules.SetDefaultFont)
+        .Add<SetFooterOp>("set_footer", WordsOpRules.SetFooter)
+        .Add<SetHeaderOp>("set_header", WordsOpRules.SetHeader)
+        .Add<SetPageNumbersOp>("set_page_numbers", WordsOpRules.SetPageNumbers)
+        .Add<SetPageSetupOp>("set_page_setup", WordsOpRules.SetPageSetup)
+        .Add<SetPropertiesOp>("set_properties")
+        .Add<SetStyleOp>("set_style", WordsOpRules.SetStyle)
+        .Add<SetTableCellOp>("set_table_cell", WordsOpRules.SetTableCell)
+        .Add<SetTextOp>("set_text", WordsOpRules.SetText)
+        .Add<UnprotectOp>("unprotect")
+        .Add<UpdateFieldsOp>("update_fields", WordsOpRules.UpdateFields);
 }

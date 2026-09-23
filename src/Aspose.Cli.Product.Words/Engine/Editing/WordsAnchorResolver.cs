@@ -49,7 +49,7 @@ internal static class WordsAnchorResolver
         if (operation.Nodes.Any(node => !ReferenceEquals(node.GetAncestor(NodeType.Document), document))
             || operation.Sections.Any(section => !ReferenceEquals(section.ParentNode, document)))
         {
-            throw Invalid($"operation '{operation.Op.OpName}' references an original object removed by an earlier operation");
+            throw Invalid($"operation '{WordsOps.Catalog.NameOf(operation.Op)}' references an original object removed by an earlier operation");
         }
     }
 
@@ -179,7 +179,7 @@ internal static class WordsAnchorResolver
                 {
                     if (deleted.Contains(ancestor))
                     {
-                        throw Invalid($"op {index} ({item.Op.OpName}) references an object deleted by an earlier op");
+                        throw Invalid($"op {index} ({WordsOps.Catalog.NameOf(item.Op)}) references an object deleted by an earlier op");
                     }
                 }
             }

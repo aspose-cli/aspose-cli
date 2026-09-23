@@ -76,7 +76,7 @@ internal static class EditCommand
 
         WordsOpsBatch? document = source is null
             ? null
-            : WordsOpsParser.Parse(JsonInputSource.Read(source, context.Paths, context.Inputs, "--ops"));
+            : WordsOps.Catalog.Parse<WordsOpsBatch>(JsonInputSource.Read(source, context.Paths, context.Inputs, "--ops"), ProductJsonContext.Definition);
         var sugar = directives.Select(ParseSet).Cast<WordsOp>().ToArray();
         return document is null
             ? new WordsOpsBatch { Ops = sugar }

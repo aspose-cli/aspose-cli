@@ -14,7 +14,7 @@ public sealed class WordsModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = 1700,
         Operations = ProductOperationDescriptor.ForCommand(
-            WordsOps.Names,
+            WordsOps.Catalog.Names,
             "edit",
             "v2/words/ops",
             atomicByDefault: true,

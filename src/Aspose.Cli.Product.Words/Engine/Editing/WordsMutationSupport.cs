@@ -7,6 +7,7 @@ using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
@@ -155,9 +156,6 @@ internal static class WordsMutationSupport
         $"Mail merge data is invalid: {reason}.",
         hint: "Use a JSON array of flat objects or a CSV file with a header row.");
 
-    internal static CliException Invalid(string reason) => new(
-        ErrorCodes.OpsInvalid,
-        $"Invalid Words operation: {reason}.",
-        hint: "Inspect 'aspose-cli schema v2/words/ops' and correct the operation.");
+    internal static OperationInvalidException Invalid(string reason) => new(reason);
 }
 

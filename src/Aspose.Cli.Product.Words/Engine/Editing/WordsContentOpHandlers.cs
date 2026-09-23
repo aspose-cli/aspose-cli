@@ -99,13 +99,14 @@ internal static class WordsContentOpHandlers
 
     internal static long SetText(Document document, IReadOnlyList<Node> nodes, SetTextOp op)
     {
-        foreach (Node node in nodes)
+        // Check every target before the first change: a rejected operation changes nothing.
+        if (nodes.Any(static node => node is not Paragraph))
         {
-            if (node is not Paragraph paragraph)
-            {
-                throw Invalid("set_text accepts paragraph blocks only; use set_table_cell for tables");
-            }
+            throw Invalid("set_text accepts paragraph blocks only; use set_table_cell for tables");
+        }
 
+        foreach (Paragraph paragraph in nodes.Cast<Paragraph>())
+        {
             paragraph.RemoveAllChildren();
             paragraph.AppendChild(new Run(document, op.Text));
         }

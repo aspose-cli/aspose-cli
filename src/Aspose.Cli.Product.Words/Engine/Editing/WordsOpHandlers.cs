@@ -70,6 +70,6 @@ internal static class WordsOpHandlers
             return handler(document, resolved, secret);
         }
         throw Invalid(
-            $"operation '{resolved.Op.OpName}' has no handler");
+            $"no Words handler for {resolved.Op.GetType().Name}");
     }
 }
