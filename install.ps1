@@ -1598,7 +1598,7 @@ if (@($releaseIndicators).Count -ne 0) {
 $localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
 $installRoot = Assert-LocalAbsolutePath $(if ([string]::IsNullOrWhiteSpace($InstallDirectory)) { Join-Path $localAppData 'Aspose\CLI' } else { $InstallDirectory }) 'install directory'
 $installParent = Split-Path -Parent $installRoot
-if (Test-IsSameOrChildPath $installRoot $packageDirectory -or Test-IsSameOrChildPath $packageDirectory $installRoot) { throw 'Package and install directories may not overlap.' }
+if ((Test-IsSameOrChildPath $installRoot $packageDirectory) -or (Test-IsSameOrChildPath $packageDirectory $installRoot)) { throw 'Package and install directories may not overlap.' }
 if (-not [string]::IsNullOrWhiteSpace($customSkillsRoot) -and
     ((Test-IsSameOrChildPath $customSkillsRoot $packageDirectory) -or (Test-IsSameOrChildPath $packageDirectory $customSkillsRoot) -or
      (Test-IsSameOrChildPath $customSkillsRoot $installRoot) -or (Test-IsSameOrChildPath $installRoot $customSkillsRoot))) {
