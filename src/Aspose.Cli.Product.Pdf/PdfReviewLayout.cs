@@ -4,8 +4,10 @@ namespace Aspose.Cli.Product.Pdf;
 internal sealed record PdfReviewLayout(
     IReadOnlyList<PdfReviewPageLayout> Pages);
 
-/// <summary>Text boundary facts for one PDF page.</summary>
+/// <summary>Displayed size (rotation applied, in points) and text boundary facts for one PDF page.</summary>
 internal sealed record PdfReviewPageLayout(
     int Page,
+    double WidthPoints,
+    double HeightPoints,
     int TextFragments,
     int OutsideTextFragments);

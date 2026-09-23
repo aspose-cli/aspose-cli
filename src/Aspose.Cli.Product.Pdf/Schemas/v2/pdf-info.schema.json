@@ -64,7 +64,7 @@
           "number": { "type": "integer", "minimum": 1 },
           "widthPoints": { "type": "number", "exclusiveMinimum": 0 },
           "heightPoints": { "type": "number", "exclusiveMinimum": 0 },
-          "rotation": { "type": "integer" },
+          "rotation": { "enum": [0, 90, 180, 270], "description": "Clockwise page rotation in degrees." },
           "mediaBox": { "$ref": "#/$defs/box" },
           "cropBox": { "$ref": "#/$defs/box" }
         }

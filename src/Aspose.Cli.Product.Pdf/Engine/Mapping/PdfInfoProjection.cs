@@ -128,9 +128,19 @@ internal static class PdfInfoProjection
         Number = page.Number,
         WidthPoints = Round(page.GetPageRect(considerRotation: true).Width),
         HeightPoints = Round(page.GetPageRect(considerRotation: true).Height),
-        Rotation = (int)page.Rotate,
+        Rotation = Degrees(page.Rotate),
         MediaBox = Box(page.MediaBox),
         CropBox = Box(page.CropBox),
+    };
+
+    /// <summary>The page's clockwise rotation in degrees; a full turn is no rotation.</summary>
+    private static int Degrees(Rotation rotation) => rotation switch
+    {
+        Rotation.None or Rotation.on360 => 0,
+        Rotation.on90 => 90,
+        Rotation.on180 => 180,
+        Rotation.on270 => 270,
+        _ => throw new ArgumentOutOfRangeException(nameof(rotation), rotation, "Page rotation is missing from the projection."),
     };
 
     private static PdfBox Box(Rectangle rectangle) => new()

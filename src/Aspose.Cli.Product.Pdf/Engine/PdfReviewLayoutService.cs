@@ -5,7 +5,7 @@ using Aspose.Pdf.Text;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Projects conservative text-boundary facts from the real PDF layout.</summary>
+/// <summary>Projects the displayed page sizes and conservative text-boundary facts from the real PDF layout.</summary>
 internal sealed class PdfReviewLayoutService
 {
     private const double PageBoundaryTolerance = 0.5;
@@ -54,7 +54,8 @@ internal sealed class PdfReviewLayoutService
                 outsideFragments++;
             }
         }
-        return new PdfReviewPageLayout(pageNumber, fragments, outsideFragments);
+        Rectangle displayed = page.GetPageRect(considerRotation: true);
+        return new PdfReviewPageLayout(pageNumber, displayed.Width, displayed.Height, fragments, outsideFragments);
     }
 
     private static bool IsOutsidePage(Rectangle text, Rectangle page) =>

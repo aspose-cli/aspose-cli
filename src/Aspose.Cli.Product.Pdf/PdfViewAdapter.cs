@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
@@ -33,7 +34,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
     {
         PdfInfoResult info = port.GetInfo(filePath, new PdfInfoRequest
         {
-            Details = ["pages", "forms"],
+            Details = ["forms"],
             Password = request.Password,
         });
         int inspected = rendered.Parts.Count;
@@ -55,7 +56,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         });
         var findings = new List<ReviewFinding>();
         AnalyzeTextBounds(layout, findings);
-        int unusualPages = AnalyzePageSizes(info.Pages, findings);
+        int unusualPages = AnalyzePageSizes(layout, findings);
         TextAnalysis text = AnalyzeText(
             read,
             info.Forms?.Fields ?? 0,
@@ -111,11 +112,11 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
     }
 
     private static int AnalyzePageSizes(
-        IReadOnlyList<PdfPageInfo>? pages,
+        PdfReviewLayout layout,
         ICollection<ReviewFinding> findings)
     {
         int unusualPages = 0;
-        foreach (PdfPageInfo page in pages ?? [])
+        foreach (PdfReviewPageLayout page in layout.Pages)
         {
             if (IsUnusualPageSize(page))
             {
@@ -123,14 +124,15 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 findings.Add(Finding(
                     "PDF_UNUSUAL_PAGE_SIZE",
                     "warning",
-                    $"Page size {page.WidthPoints:0.##} x {page.HeightPoints:0.##} pt is unusual and may preview poorly.",
-                    $"page {page.Number}"));
+                    string.Create(CultureInfo.InvariantCulture,
+                        $"Page size {page.WidthPoints:0.##} x {page.HeightPoints:0.##} pt is unusual and may preview poorly."),
+                    $"page {page.Page}"));
             }
         }
         return unusualPages;
     }
 
-    private static bool IsUnusualPageSize(PdfPageInfo page) =>
+    private static bool IsUnusualPageSize(PdfReviewPageLayout page) =>
         page.WidthPoints < 72
         || page.HeightPoints < 72
         || page.WidthPoints > 2_880

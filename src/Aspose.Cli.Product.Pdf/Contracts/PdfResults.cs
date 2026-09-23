@@ -52,6 +52,8 @@ public sealed record PdfPageInfo
     public required int Number { get; init; }
     public required double WidthPoints { get; init; }
     public required double HeightPoints { get; init; }
+
+    /// <summary>Clockwise page rotation in degrees: 0, 90, 180 or 270.</summary>
     public required int Rotation { get; init; }
     public required PdfBox MediaBox { get; init; }
     public required PdfBox CropBox { get; init; }
