@@ -73,25 +73,35 @@ internal static class ChartPivotOps
 
         int pivotIndex = sheet.PivotTables.Add(source, op.At, name);
         PivotTable pivot = sheet.PivotTables[pivotIndex];
-
-        foreach (string row in op.Rows ?? [])
+        try
         {
-            AddField(pivot, PivotFieldType.Row, row);
-        }
-
-        foreach (string column in op.Columns ?? [])
-        {
-            AddField(pivot, PivotFieldType.Column, column);
-        }
-
-        foreach (PivotValueField value in op.Values)
-        {
-            int fieldIndex = AddField(pivot, PivotFieldType.Data, value.Field);
-            pivot.DataFields[fieldIndex].Function = ToFunction(value.Function);
-            if (value.NumberFormat is { } numberFormat)
+            foreach (string row in op.Rows ?? [])
             {
-                pivot.DataFields[fieldIndex].NumberFormat = numberFormat;
+                AddField(pivot, PivotFieldType.Row, row);
             }
+
+            foreach (string column in op.Columns ?? [])
+            {
+                AddField(pivot, PivotFieldType.Column, column);
+            }
+
+            foreach (PivotValueField value in op.Values)
+            {
+                int fieldIndex = AddField(pivot, PivotFieldType.Data, value.Field);
+                pivot.DataFields[fieldIndex].Function = ToFunction(value.Function);
+                if (value.NumberFormat is { } numberFormat)
+                {
+                    pivot.DataFields[fieldIndex].NumberFormat = numberFormat;
+                }
+            }
+        }
+        catch (OperationInvalidException)
+        {
+            // Field names are known only once the engine has read the source
+            // headers; a rejected op must not leave a half-built pivot behind
+            // for --best-effort to publish.
+            sheet.PivotTables.RemoveAt(pivotIndex, keepData: false);
+            throw;
         }
 
         pivot.CalculateData();
@@ -166,7 +176,7 @@ internal static class ChartPivotOps
         bool refreshedAny = false;
         foreach (PivotTable pivot in sheet.PivotTables)
         {
-            if (op.Name is null || string.Equals(pivot.Name, op.Name, StringComparison.Ordinal))
+            if (op.Name is null || string.Equals(pivot.Name, op.Name, StringComparison.OrdinalIgnoreCase))
             {
                 bool autoFit = pivot.AutofitColumnWidthOnUpdate;
                 bool autoFormat = pivot.IsAutoFormat;
@@ -221,6 +231,14 @@ internal static class ChartPivotOps
         Chart chart = sheet.Charts[ResolveChart(sheet, op.Index, op.Name)];
         string? dataRange = op.DataRange is { } text ? Sheets.Reference(sheet, text) : null;
 
+        // The engine silently drops axis-title writes on a pie-family chart. The
+        // parser rejects pie+axisTitles only when the op sets the type; the type
+        // the chart will carry is known here, before anything changes.
+        if (op.AxisTitles is not null && IsPieFamily(op.Type is { } target ? ToChartType(target) : chart.Type))
+        {
+            throw new OperationInvalidException("a 'pie' chart has no axes; omit 'axisTitles'");
+        }
+
         if (op.Type is { } type)
         {
             chart.Type = ToChartType(type);
@@ -236,10 +254,9 @@ internal static class ChartPivotOps
             chart.Title.Text = title;
         }
 
-        // After the type/data changes so the cosmetics see the final chart —
-        // the pie/axis-title guard must judge the type the file will carry.
-        // The value-axis baseline is a creation default: an existing chart keeps
-        // the axis its author chose.
+        // After the type/data changes so the cosmetics see the final chart. The
+        // value-axis baseline is a creation default: an existing chart keeps the
+        // axis its author chose.
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
         return null;
     }
@@ -351,17 +368,8 @@ internal static class ChartPivotOps
 
         if (axisTitles is { } titles)
         {
-            // The engine SILENTLY drops axis-title writes on a pie-family
-            // chart — no throw, nothing stored, nothing rendered.
-            // create_chart rejects pie+axisTitles in the parser; update_chart
-            // only knows the real type here, after resolving the chart, so
-            // the never-silently bar puts the same guard in the mapper. The
-            // executor attaches the op index to this domain error.
-            if (IsPieFamily(chart.Type))
-            {
-                throw new OperationInvalidException("a 'pie' chart has no axes; omit 'axisTitles'");
-            }
-
+            // Both callers reject axis titles on a pie-family chart before
+            // changing anything.
             if (titles.Category is { } category)
             {
                 chart.CategoryAxis.Title.Text = category;
