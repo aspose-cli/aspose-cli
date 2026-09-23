@@ -24,8 +24,13 @@ internal static class UpdateInstaller
         }
         string powerShell = WindowsPowerShell.TryResolve()
             ?? throw ReleaseErrors.VerificationFailed("the trusted Windows PowerShell executable is unavailable");
+        string statusPath = UpdateStatus.PathFor(AppContext.BaseDirectory);
+        // Read the outcome of the previous run before this run replaces it.
+        Warning? previous = UpdateStatus.ReadWarning(statusPath);
+        IReadOnlyList<Warning>? warnings = previous is null ? null : [previous];
         string parent = PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.TemporaryRoot(), "updates"));
-        string target = Path.Combine(parent, "aspose-cli-update-" + Guid.NewGuid().ToString("N"));
+        // install.ps1 accepts only a <distribution id>-update-* cleanup root below the temporary directory.
+        string target = Path.Combine(parent, DistributionInfo.Id + "-update-" + Guid.NewGuid().ToString("N"));
         string source = !Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out _)
             ? feed : Path.GetFullPath(feed, context.Paths.BaseDirectory);
         string[] args = ["update", PreparationCommand, source, target, "--output", "json", "--quiet"];
@@ -52,12 +57,15 @@ internal static class UpdateInstaller
                 || (prepared.Status == "available") != ownsPackage)
             { throw ReleaseErrors.VerificationFailed("the preparation worker returned an inconsistent result"); }
             context.Deadline.ThrowIfExpired("update-handoff");
-            if (!ownsPackage) { return prepared with { Feed = feed }; }
+            if (!ownsPackage) { return prepared with { Feed = feed, Warnings = warnings }; }
             PrivateUserStorage.ValidateDirectory(target);
-            int pid = UpdateClient.HandoffToInstaller(powerShell, target, AppContext.BaseDirectory, context.Deadline);
+            int pid = UpdateClient.HandoffToInstaller(powerShell, target, AppContext.BaseDirectory, statusPath, context.Deadline);
             handedOff = true;
-            // Starting the independent installer is the commit point. It waits for this parent PID.
-            return prepared with { Status = "pending", Feed = feed, ProcessId = pid };
+            // Starting the independent installer is the commit point. It waits for this parent PID
+            // before it records its own progress, so this pending record cannot overwrite it.
+            try { UpdateStatus.WritePending(statusPath, pid, VersionInfo.ArtifactVersion, prepared.AvailableVersion); }
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { }
+            return prepared with { Status = "pending", Feed = feed, ProcessId = pid, Warnings = warnings };
         }
         finally
         {

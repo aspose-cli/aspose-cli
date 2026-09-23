@@ -22,7 +22,14 @@ internal static class UpdateClient
     {
         using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory, context.ResourceBudgets);
         var manifest = Verify(files);
-        return Describe(manifest, feed, CompareVersions(manifest) == 0);
+        return WithLastUpdateWarning(Describe(manifest, feed, CompareVersions(manifest) == 0));
+    }
+
+    /// <summary>Adds the outcome of a failed or unfinished earlier installer run, if any.</summary>
+    internal static UpdateResult WithLastUpdateWarning(UpdateResult result)
+    {
+        Warning? warning = UpdateStatus.ReadWarning(UpdateStatus.PathFor(AppContext.BaseDirectory));
+        return warning is null ? result : result with { Warnings = [.. result.Warnings ?? [], warning] };
     }
 
     /// <summary>Produces a verified package; only the owning parent can launch its installer.</summary>
@@ -134,6 +141,7 @@ internal static class UpdateClient
         string powerShellPath,
         string extracted,
         string installRoot,
+        string statusPath,
         OperationDeadline? deadline = null)
     {
         bool started = false;
@@ -151,10 +159,15 @@ internal static class UpdateClient
                 "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                 "-File", Path.Combine(extracted, "install.ps1"),
                 "-PackageRoot", extracted,
-                "-InstallDirectory", installRoot,
-                "-SkipLicensePrompt",
+                // The installer owns the one spelling of the directory; a trailing separator
+                // would otherwise reach its PATH entry.
+                "-InstallDirectory", Path.TrimEndingDirectorySeparator(installRoot),
+                // Update replays the choices the installation was made with (PATH, Skills, MCP)
+                // and never prompts.
+                "-Update",
                 "-WaitForProcessId", Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture),
                 "-CleanupRoot", extracted,
+                "-StatusPath", statusPath,
             })
             {
                 start.ArgumentList.Add(argument);
@@ -368,18 +381,49 @@ internal static class UpdateClient
         private static void Download(Uri uri, string destination, long maximum, OperationDeadline deadline)
         {
             ValidateHttpsFeedUri(uri);
-            using var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
-            using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, deadline.Token).GetAwaiter().GetResult();
-            if (response.StatusCode != HttpStatusCode.OK
-                || response.Content.Headers.ContentLength is > 0 and var length && length > maximum)
-            { throw ReleaseErrors.VerificationFailed($"HTTPS feed returned {(int)response.StatusCode} or exceeded its size budget"); }
+            // The operation deadline alone bounds the transfer. HttpClient's own 100-second
+            // timeout would end a slow feed as a cancellation without an error.
+            using var client = new HttpClient(new SocketsHttpHandler
+            {
+                AllowAutoRedirect = false,
+                ConnectTimeout = TimeSpan.FromSeconds(30),
+            })
+            { Timeout = Timeout.InfiniteTimeSpan };
             try
             {
-                using var input = response.Content.ReadAsStreamAsync(deadline.Token).GetAwaiter().GetResult();
-                using FileStream output = PrivateUserStorage.CreateFile(destination);
-                CopyBounded(input, output, maximum, deadline);
+                using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, deadline.Token).GetAwaiter().GetResult();
+                if (response.StatusCode != HttpStatusCode.OK)
+                {
+                    throw ReleaseErrors.FeedUnreachable(uri, $"the feed answered HTTP {(int)response.StatusCode}"
+                        + ((int)response.StatusCode is >= 300 and < 400 ? "; redirects are not followed, so use the final HTTPS URL" : string.Empty));
+                }
+                if (response.Content.Headers.ContentLength is > 0 and var length && length > maximum)
+                {
+                    throw ReleaseErrors.VerificationFailed($"the feed file exceeds its {maximum}-byte budget");
+                }
+                try
+                {
+                    using var input = response.Content.ReadAsStreamAsync(deadline.Token).GetAwaiter().GetResult();
+                    using FileStream output = PrivateUserStorage.CreateFile(destination);
+                    CopyBounded(input, output, maximum, deadline);
+                }
+                catch { TryDeleteFile(destination); throw; }
             }
-            catch { TryDeleteFile(destination); throw; }
+            catch (HttpRequestException exception)
+            {
+                throw ReleaseErrors.FeedUnreachable(uri, exception.Message);
+            }
+            catch (IOException exception) when (!deadline.Token.IsCancellationRequested
+                && (exception is HttpIOException || exception.InnerException is System.Net.Sockets.SocketException))
+            {
+                // The connection broke while the response body was being read.
+                throw ReleaseErrors.FeedUnreachable(uri, exception.Message);
+            }
+            catch (OperationCanceledException) when (!deadline.Token.IsCancellationRequested)
+            {
+                // Only the connection timeout cancels without the deadline or the caller.
+                throw ReleaseErrors.FeedUnreachable(uri, "the connection was not established within 30 seconds");
+            }
         }
 
         private static void EnsureLocal(string path)

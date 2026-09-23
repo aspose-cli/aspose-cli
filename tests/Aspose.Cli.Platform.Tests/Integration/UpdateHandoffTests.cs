@@ -29,10 +29,11 @@ public sealed class UpdateHandoffTests
         string scratch = workspace.File("temp");
         Directory.CreateDirectory(scratch);
         string script = $$"""
-            param($PackageRoot, $InstallDirectory, [switch]$SkipLicensePrompt, [int]$WaitForProcessId, $CleanupRoot)
+            param($PackageRoot, $InstallDirectory, [switch]$Update, [int]$WaitForProcessId, $CleanupRoot, $StatusPath)
             $ErrorActionPreference = 'Stop'
             try { Wait-Process -Id $WaitForProcessId -ErrorAction SilentlyContinue } catch { }
-            [IO.File]::WriteAllText('{{Quote(ready)}}', ('{"parent":' + $WaitForProcessId + ',"installer":' + $PID + '}'))
+            $handoff = [ordered]@{ parent = $WaitForProcessId; installer = $PID; update = [bool]$Update; installDirectory = $InstallDirectory; status = $StatusPath }
+            [IO.File]::WriteAllText('{{Quote(ready)}}', ($handoff | ConvertTo-Json -Compress))
             $stop = [DateTime]::UtcNow.AddSeconds(30)
             while (-not [IO.File]::Exists('{{Quote(release)}}') -and [DateTime]::UtcNow -lt $stop) { Start-Sleep -Milliseconds 25 }
             [IO.File]::WriteAllText('{{Quote(complete)}}', 'completed')
@@ -60,6 +61,14 @@ public sealed class UpdateHandoffTests
             JsonNode handoff = JsonNode.Parse(File.ReadAllText(ready))!;
             Assert.Equal(cli.Id, handoff["parent"]!.GetValue<int>());
             Assert.Equal(result["processId"]!.GetValue<int>(), handoff["installer"]!.GetValue<int>());
+            // The installer replays the recorded choices and receives one spelling of the directory.
+            Assert.True(handoff["update"]!.GetValue<bool>());
+            string installDirectory = handoff["installDirectory"]!.GetValue<string>();
+            Assert.False(installDirectory.EndsWith(Path.DirectorySeparatorChar), installDirectory);
+            JsonNode status = JsonNode.Parse(File.ReadAllText(handoff["status"]!.GetValue<string>()))!;
+            Assert.Equal("pending", status["state"]!.GetValue<string>());
+            Assert.Equal(handoff["installer"]!.GetValue<int>(), status["installerProcessId"]!.GetValue<int>());
+            Assert.StartsWith(Path.GetFullPath(scratch), handoff["status"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
             Assert.False(File.Exists(complete));
         }
         finally
