@@ -31,10 +31,7 @@ internal sealed class WordsMutationService
     }
 
     /// <summary>Applies a validated operation batch and commits it atomically.</summary>
-    internal WordsEditResult ApplyOps(string filePath, WordsOpsBatch batch, WordsEditRequest request) =>
-        WordsErrorTranslator.Execute("edit", () => ApplyOpsCore(filePath, batch, request));
-
-    private WordsEditResult ApplyOpsCore(string filePath, WordsOpsBatch batch, WordsEditRequest request)
+    internal WordsEditResult ApplyOps(string filePath, WordsOpsBatch batch, WordsEditRequest request)
     {
         batch = WordsOps.Catalog.Prepare(batch);
         LicenseState state = _licenseGate.EnsureApplied();

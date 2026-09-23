@@ -43,32 +43,8 @@ internal sealed class PdfProductionService
         _loader = loader;
     }
 
-    /// <inheritdoc />
-    internal PdfConvertResult Convert(string filePath, PdfConvertRequest request) =>
-        PdfErrorTranslator.Execute("convert", () => ConvertCore(filePath, request));
-
-    /// <inheritdoc />
-    internal PdfRenderResult Render(string filePath, PdfRenderRequest request) =>
-        PdfErrorTranslator.Execute("render", () => RenderCore(filePath, request));
-
-    /// <inheritdoc />
-    internal PdfWriteResult Create(NewPdfRequest request) =>
-        PdfErrorTranslator.Execute("create", () => CreateCore(request));
-
-    /// <inheritdoc />
-    internal PdfWriteResult Merge(PdfMergeRequest request) =>
-        PdfErrorTranslator.Execute("merge", () => MergeCore(request));
-
     /// <summary>Renders the pages of one view, opening the document once.</summary>
     internal ViewManifest RenderView(
-        string filePath,
-        ViewRenderRequest request,
-        IViewArtifactSink artifacts) =>
-        PdfErrorTranslator.Execute(
-            "render",
-            () => RenderViewCore(filePath, request, artifacts));
-
-    private ViewManifest RenderViewCore(
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts)
@@ -122,7 +98,7 @@ internal sealed class PdfProductionService
         };
     }
 
-    private PdfRenderResult RenderCore(string filePath, PdfRenderRequest request)
+    internal PdfRenderResult Render(string filePath, PdfRenderRequest request)
     {
         if (!PdfFormats.IsRender(request.TargetFormatId))
         {
@@ -205,7 +181,7 @@ internal sealed class PdfProductionService
         }
     }
 
-    private PdfWriteResult CreateCore(NewPdfRequest request)
+    internal PdfWriteResult Create(NewPdfRequest request)
     {
         EnsurePdfOutput(request.OutputPath);
         int sources = request.ImagePaths is { Count: > 0 } ? 1 : 0;
@@ -356,7 +332,7 @@ internal sealed class PdfProductionService
         return document;
     }
 
-    private PdfWriteResult MergeCore(PdfMergeRequest request)
+    internal PdfWriteResult Merge(PdfMergeRequest request)
     {
         EnsurePdfOutput(request.OutputPath);
         if (request.InputPaths.Count < 2)
@@ -395,7 +371,7 @@ internal sealed class PdfProductionService
         };
     }
 
-    private PdfConvertResult ConvertCore(string filePath, PdfConvertRequest request)
+    internal PdfConvertResult Convert(string filePath, PdfConvertRequest request)
     {
         if (!PdfFormats.IsConvert(request.TargetFormatId))
         {

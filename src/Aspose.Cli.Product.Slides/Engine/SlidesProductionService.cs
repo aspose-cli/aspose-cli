@@ -40,32 +40,8 @@ internal sealed class SlidesProductionService
         SlidesFontCatalog.EnsureInitialized();
     }
 
-    /// <inheritdoc />
-    internal SlidesConvertResult Convert(string filePath, PresentationConvertRequest request) =>
-        SlidesErrorTranslator.Execute("convert", () => ConvertCore(filePath, request));
-
-    /// <inheritdoc />
-    internal SlidesRenderResult Render(string filePath, PresentationRenderRequest request) =>
-        SlidesErrorTranslator.Execute("render", () => RenderCore(filePath, request));
-
-    /// <inheritdoc />
-    internal SlidesCreateResult Create(NewPresentationRequest request) =>
-        SlidesErrorTranslator.Execute("create", () => CreateCore(request));
-
-    /// <inheritdoc />
-    internal SlidesExtractResult Extract(string filePath, PresentationExtractRequest request) =>
-        SlidesErrorTranslator.Execute("extract", () => ExtractCore(filePath, request));
-
     /// <summary>Renders the slides of one view, opening the presentation once.</summary>
     internal ViewManifest RenderView(
-        string filePath,
-        ViewRenderRequest request,
-        IViewArtifactSink artifacts) =>
-        SlidesErrorTranslator.Execute(
-            "render",
-            () => RenderViewCore(filePath, request, artifacts));
-
-    private ViewManifest RenderViewCore(
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts)
@@ -129,7 +105,7 @@ internal sealed class SlidesProductionService
         };
     }
 
-    private SlidesConvertResult ConvertCore(string filePath, PresentationConvertRequest request)
+    internal SlidesConvertResult Convert(string filePath, PresentationConvertRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
@@ -229,7 +205,7 @@ internal sealed class SlidesProductionService
         return warnings;
     }
 
-    private SlidesRenderResult RenderCore(string filePath, PresentationRenderRequest request)
+    internal SlidesRenderResult Render(string filePath, PresentationRenderRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
@@ -313,7 +289,7 @@ internal sealed class SlidesProductionService
             },
         }).ToArray();
     }
-    private SlidesCreateResult CreateCore(NewPresentationRequest request)
+    internal SlidesCreateResult Create(NewPresentationRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         string format = Path.GetExtension(request.OutputPath).TrimStart('.').ToLowerInvariant();
@@ -370,7 +346,7 @@ internal sealed class SlidesProductionService
         };
     }
 
-    private SlidesExtractResult ExtractCore(string filePath, PresentationExtractRequest request)
+    internal SlidesExtractResult Extract(string filePath, PresentationExtractRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);

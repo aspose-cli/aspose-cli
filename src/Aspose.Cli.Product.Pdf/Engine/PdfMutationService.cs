@@ -43,12 +43,9 @@ internal sealed class PdfMutationService
         _inputs = inputs;
     }
 
-    public PdfEditResult ApplyOps(string filePath, PdfOpsBatch batch, PdfEditRequest request) =>
-        PdfErrorTranslator.Execute("edit", () => ApplyOpsCore(filePath, batch, request));
-
     /// <inheritdoc />
 
-    private PdfEditResult ApplyOpsCore(string filePath, PdfOpsBatch batch, PdfEditRequest request)
+    public PdfEditResult ApplyOps(string filePath, PdfOpsBatch batch, PdfEditRequest request)
     {
         batch = PdfOps.Catalog.Prepare(batch);
         EnsurePdfOutput(request.OutputPath);

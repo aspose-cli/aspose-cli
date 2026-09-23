@@ -23,7 +23,7 @@ internal sealed class PdfReviewLayoutService
     internal PdfReviewLayout Inspect(
         string filePath,
         string? password,
-        int maxPages) => PdfErrorTranslator.Execute("review", () =>
+        int maxPages)
     {
         _ = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, password);
@@ -34,7 +34,7 @@ internal sealed class PdfReviewLayoutService
             pages.Add(InspectPage(loaded.Document.Pages[pageNumber], pageNumber));
         }
         return new PdfReviewLayout(pages);
-    });
+    }
 
     private static PdfReviewPageLayout InspectPage(Page page, int pageNumber)
     {

@@ -245,7 +245,7 @@ internal sealed class CommandExecutor
                 writer,
                 globals,
                 stopwatch,
-                exception, scope?.Deadline);
+                _host.EngineFailures.Translate(exception) ?? exception, scope?.Deadline);
         }
         finally
         {

@@ -35,19 +35,7 @@ internal sealed class SlidesReadService
         SlidesFontCatalog.EnsureInitialized();
     }
 
-    /// <inheritdoc />
-    internal PresentationInfoResult GetInfo(string filePath, PresentationInfoRequest request) =>
-        SlidesErrorTranslator.Execute("inspect", () => GetInfoCore(filePath, request));
-
-    /// <inheritdoc />
-    internal PresentationReadResult Read(string filePath, PresentationReadRequest request) =>
-        SlidesErrorTranslator.Execute("query slides", () => ReadCore(filePath, request));
-
-    /// <inheritdoc />
-    public SlidesSearchResult Search(string filePath, PresentationSearchRequest request) =>
-        SlidesErrorTranslator.Execute("query search", () => SearchCore(filePath, request));
-
-    private PresentationInfoResult GetInfoCore(string filePath, PresentationInfoRequest request)
+    internal PresentationInfoResult GetInfo(string filePath, PresentationInfoRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
@@ -131,7 +119,7 @@ internal sealed class SlidesReadService
         };
     }
 
-    private PresentationReadResult ReadCore(string filePath, PresentationReadRequest request)
+    internal PresentationReadResult Read(string filePath, PresentationReadRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
@@ -187,7 +175,7 @@ internal sealed class SlidesReadService
         };
     }
 
-    private SlidesSearchResult SearchCore(string filePath, PresentationSearchRequest request)
+    public SlidesSearchResult Search(string filePath, PresentationSearchRequest request)
     {
         if (!PresentationSearchScopes.Values.Contains(request.Scope, StringComparer.Ordinal))
         {

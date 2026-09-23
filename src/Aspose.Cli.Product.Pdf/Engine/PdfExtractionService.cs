@@ -41,15 +41,7 @@ internal sealed class PdfExtractionService
         _loader = loader;
     }
 
-    /// <inheritdoc />
-    internal PdfSplitResult Split(string filePath, PdfSplitRequest request) =>
-        PdfErrorTranslator.Execute("split", () => SplitCore(filePath, request));
-
-    /// <inheritdoc />
-    internal PdfExtractResult Extract(string filePath, PdfExtractRequest request) =>
-        PdfErrorTranslator.Execute("extract", () => ExtractCore(filePath, request));
-
-    private PdfSplitResult SplitCore(string filePath, PdfSplitRequest request)
+    internal PdfSplitResult Split(string filePath, PdfSplitRequest request)
     {
         int modes = request.PageGroups is { Count: > 0 } ? 1 : 0;
         modes += request.Every.HasValue ? 1 : 0;
@@ -94,7 +86,7 @@ internal sealed class PdfExtractionService
         };
     }
 
-    private PdfExtractResult ExtractCore(string filePath, PdfExtractRequest request)
+    internal PdfExtractResult Extract(string filePath, PdfExtractRequest request)
     {
         if (!PdfExtractKinds.All.Contains(request.What, StringComparer.Ordinal))
         {

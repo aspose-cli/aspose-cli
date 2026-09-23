@@ -37,11 +37,7 @@ internal sealed class PdfSigningService
         _loader = loader;
     }
 
-    /// <inheritdoc />
-    public PdfSignResult Sign(string filePath, PdfSignRequest request) =>
-        PdfErrorTranslator.Execute("sign", () => SignCore(filePath, request));
-
-    private PdfSignResult SignCore(string filePath, PdfSignRequest request)
+    public PdfSignResult Sign(string filePath, PdfSignRequest request)
     {
         EnsurePdfOutput(request.OutputPath);
         EnsureCertificate(_resourceBudgets, request.CertificatePath);

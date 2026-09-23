@@ -36,14 +36,7 @@ internal sealed class WordsExtractionService
     }
 
     /// <summary>Splits a document and commits all outputs atomically.</summary>
-    internal WordsSplitResult Split(string filePath, WordsSplitRequest request) =>
-        WordsErrorTranslator.Execute("split", () => SplitCore(filePath, request));
-
-    /// <summary>Extracts bounded document artifacts into a guarded directory.</summary>
-    internal WordsExtractResult Extract(string filePath, WordsExtractRequest request) =>
-        WordsErrorTranslator.Execute("extract", () => ExtractCore(filePath, request));
-
-    private WordsSplitResult SplitCore(string filePath, WordsSplitRequest request)
+    internal WordsSplitResult Split(string filePath, WordsSplitRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
@@ -96,7 +89,8 @@ internal sealed class WordsExtractionService
         };
     }
 
-    private WordsExtractResult ExtractCore(string filePath, WordsExtractRequest request)
+    /// <summary>Extracts bounded document artifacts into a guarded directory.</summary>
+    internal WordsExtractResult Extract(string filePath, WordsExtractRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);

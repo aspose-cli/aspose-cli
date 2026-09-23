@@ -21,14 +21,7 @@ internal sealed class WordsReadService
     }
 
     /// <summary>Returns structural metadata for a document.</summary>
-    internal DocumentInfoResult GetInfo(string filePath, DocumentInfoRequest request) =>
-        WordsErrorTranslator.Execute("inspect", () => GetInfoCore(filePath, request));
-
-    /// <summary>Reads a bounded structural projection of a document.</summary>
-    internal DocumentReadResult Read(string filePath, DocumentReadRequest request) =>
-        WordsErrorTranslator.Execute("query blocks", () => ReadCore(filePath, request));
-
-    private DocumentInfoResult GetInfoCore(string filePath, DocumentInfoRequest request)
+    internal DocumentInfoResult GetInfo(string filePath, DocumentInfoRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
@@ -39,7 +32,8 @@ internal sealed class WordsReadService
         };
     }
 
-    private DocumentReadResult ReadCore(string filePath, DocumentReadRequest request)
+    /// <summary>Reads a bounded structural projection of a document.</summary>
+    internal DocumentReadResult Read(string filePath, DocumentReadRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);

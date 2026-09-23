@@ -40,27 +40,7 @@ internal sealed class WordsProductionService
     }
 
     /// <summary>Converts a document using the selected save pipeline.</summary>
-    internal WordsConvertResult Convert(string filePath, WordsConvertRequest request) =>
-        WordsErrorTranslator.Execute("convert", () => ConvertCore(filePath, request));
-
-    /// <summary>Renders selected pages within the pixel budget.</summary>
-    internal WordsRenderResult Render(string filePath, WordsRenderRequest request) =>
-        WordsErrorTranslator.Execute("render", () => RenderCore(filePath, request));
-
-    /// <summary>Renders the fixed-layout pages of one view, opening the document once.</summary>
-    internal ViewManifest RenderView(
-        string filePath,
-        ViewRenderRequest request,
-        IViewArtifactSink artifacts) =>
-        WordsErrorTranslator.Execute(
-            "render",
-            () => RenderViewCore(filePath, request, artifacts));
-
-    /// <summary>Creates a document from a bounded source or blank template.</summary>
-    internal WordsCreateResult CreateDocument(NewDocumentRequest request) =>
-        WordsErrorTranslator.Execute("create", () => CreateDocumentCore(request));
-
-    private WordsConvertResult ConvertCore(string filePath, WordsConvertRequest request)
+    internal WordsConvertResult Convert(string filePath, WordsConvertRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
@@ -82,7 +62,8 @@ internal sealed class WordsProductionService
         };
     }
 
-    private WordsRenderResult RenderCore(string filePath, WordsRenderRequest request)
+    /// <summary>Renders selected pages within the pixel budget.</summary>
+    internal WordsRenderResult Render(string filePath, WordsRenderRequest request)
     {
         RenderPixelGuard.EnsureDpi(request.Dpi, 36, 1_200);
         LicenseState state = _licenseGate.EnsureApplied();
@@ -116,7 +97,8 @@ internal sealed class WordsProductionService
         };
     }
 
-    private ViewManifest RenderViewCore(
+    /// <summary>Renders the fixed-layout pages of one view, opening the document once.</summary>
+    internal ViewManifest RenderView(
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts)
@@ -171,7 +153,8 @@ internal sealed class WordsProductionService
     private static int Pixels(double points, int dpi) =>
         checked((int)Math.Ceiling(points / 72d * dpi));
 
-    private WordsCreateResult CreateDocumentCore(NewDocumentRequest request)
+    /// <summary>Creates a document from a bounded source or blank template.</summary>
+    internal WordsCreateResult CreateDocument(NewDocumentRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using CreatedDocument created = Create(request);

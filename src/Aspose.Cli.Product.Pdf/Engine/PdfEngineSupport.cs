@@ -114,7 +114,8 @@ internal static class PdfEngineSupport
         };
     }
 
-    internal static TextFragmentCollection MatchText(Page page, string pattern, bool regex, bool caseSensitive)
+    internal static TextFragmentCollection MatchText(
+        Page page, string pattern, bool regex, bool caseSensitive, Func<string, Exception> invalidPattern)
     {
         Regex expression = SafeRegex.Create(regex ? pattern : Regex.Escape(pattern), caseSensitive);
         try
@@ -124,7 +125,7 @@ internal static class PdfEngineSupport
             if (regex && expression.Matches(ExtractText(page, PdfReadModes.Plain))
                 .Any(static match => match.Length == 0))
             {
-                throw new InvalidOperationException("A redaction or search regex must not match an empty string.");
+                throw invalidPattern("the regular expression must not match an empty string");
             }
             var absorber = new TextFragmentAbsorber(expression, new TextSearchOptions(true));
             page.Accept(absorber);

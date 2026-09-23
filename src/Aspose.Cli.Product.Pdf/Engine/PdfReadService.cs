@@ -28,15 +28,7 @@ internal sealed class PdfReadService
         _loader = loader;
     }
 
-    /// <inheritdoc />
-    internal PdfInfoResult GetInfo(string filePath, PdfInfoRequest request) =>
-        PdfErrorTranslator.Execute("inspect", () => GetInfoCore(filePath, request));
-
-    /// <inheritdoc />
-    internal PdfReadResult Read(string filePath, PdfReadRequest request) =>
-        PdfErrorTranslator.Execute("query pages", () => ReadCore(filePath, request));
-
-    private PdfInfoResult GetInfoCore(string filePath, PdfInfoRequest request)
+    internal PdfInfoResult GetInfo(string filePath, PdfInfoRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
@@ -46,7 +38,7 @@ internal sealed class PdfReadService
         };
     }
 
-    private PdfReadResult ReadCore(string filePath, PdfReadRequest request)
+    internal PdfReadResult Read(string filePath, PdfReadRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);

@@ -39,16 +39,9 @@ internal sealed class PdfFormService
         _loader = loader;
     }
 
-    public PdfFormResult ReadForm(string filePath, PdfFormReadRequest request) =>
-        PdfErrorTranslator.Execute("query forms", () => ReadFormCore(filePath, request));
-
-    /// <inheritdoc />
-    public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request) =>
-        PdfErrorTranslator.Execute("extract forms", () => ExportFormCore(filePath, request));
-
     /// <inheritdoc />
 
-    private PdfFormResult ReadFormCore(string filePath, PdfFormReadRequest request)
+    public PdfFormResult ReadForm(string filePath, PdfFormReadRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
@@ -77,7 +70,7 @@ internal sealed class PdfFormService
         };
     }
 
-    private PdfFormExportResult ExportFormCore(string filePath, PdfFormExportRequest request)
+    public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request)
     {
         if (request.TargetFormatId is not ("json" or "fdf" or "xfdf"))
         {

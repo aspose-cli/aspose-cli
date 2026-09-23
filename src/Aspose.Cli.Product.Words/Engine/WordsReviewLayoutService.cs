@@ -26,7 +26,7 @@ internal sealed class WordsReviewLayoutService
     internal WordsReviewLayout Inspect(
         string filePath,
         string? password,
-        int maxPages) => WordsErrorTranslator.Execute("review", () =>
+        int maxPages)
     {
         _ = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, password);
@@ -51,7 +51,7 @@ internal sealed class WordsReviewLayoutService
         return new WordsReviewLayout(
             pages.Select(static page => page.ToContract()).ToArray(),
             headings);
-    });
+    }
 
     private static void CollectLayoutEntities(
         Document document,

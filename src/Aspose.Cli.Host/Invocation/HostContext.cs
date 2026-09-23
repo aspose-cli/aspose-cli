@@ -21,6 +21,7 @@ internal sealed class HostContext
         Schemas = new Aspose.Cli.Host.Commands.HostSchemaCatalog(catalog);
         Docs = new DocsCatalog(catalog);
         Skills = new SkillCatalog(catalog);
+        EngineFailures = EngineFailureTranslator.Create(catalog);
     }
 
     private readonly Lazy<InvocationParser> _parser;
@@ -37,4 +38,6 @@ internal sealed class HostContext
     public DocsCatalog Docs { get; }
 
     public SkillCatalog Skills { get; }
+
+    internal EngineFailureTranslator EngineFailures { get; }
 }

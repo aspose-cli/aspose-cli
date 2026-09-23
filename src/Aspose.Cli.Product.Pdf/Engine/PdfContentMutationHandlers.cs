@@ -157,7 +157,8 @@ internal static class PdfContentMutationHandlers
         foreach (int number in pages)
         {
             Page page = document.Pages[number];
-            TextFragmentCollection fragments = MatchText(page, op.Pattern, op.Regex, caseSensitive: true);
+            TextFragmentCollection fragments = MatchText(page, op.Pattern, op.Regex, caseSensitive: true,
+                static reason => new OperationInvalidException(reason));
             foreach (TextFragment fragment in fragments)
             {
                 Cover(page, fragment.Rectangle, fill).Redact();

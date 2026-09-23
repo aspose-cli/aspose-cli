@@ -29,14 +29,7 @@ internal sealed class WordsInspectionService
     }
 
     /// <summary>Compares two documents and optionally writes a reviewed copy.</summary>
-    internal WordsCompareResult Compare(string leftPath, string rightPath, WordsCompareRequest request) =>
-        WordsErrorTranslator.Execute("compare", () => CompareCore(leftPath, rightPath, request));
-
-    /// <summary>Searches selected document scopes within the configured hit budget.</summary>
-    internal WordsSearchResult Search(string filePath, WordsSearchRequest request) =>
-        WordsErrorTranslator.Execute("query search", () => SearchCore(filePath, request));
-
-    private WordsCompareResult CompareCore(string leftPath, string rightPath, WordsCompareRequest request)
+    internal WordsCompareResult Compare(string leftPath, string rightPath, WordsCompareRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument leftLoaded = _loader.Open(leftPath, request.LeftPassword);
@@ -86,7 +79,8 @@ internal sealed class WordsInspectionService
         };
     }
 
-    private WordsSearchResult SearchCore(string filePath, WordsSearchRequest request)
+    /// <summary>Searches selected document scopes within the configured hit budget.</summary>
+    internal WordsSearchResult Search(string filePath, WordsSearchRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);

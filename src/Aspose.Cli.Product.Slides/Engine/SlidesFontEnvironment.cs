@@ -25,18 +25,14 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
 
     /// <inheritdoc />
     public FontListResult ListFonts() =>
-        SlidesErrorTranslator.Execute("fonts list", () => new FontListResult
+        new FontListResult
         {
             Sources = FontsLoader.GetFontFolders()
                 .Select(static folder => new FontSource { Type = "folder", Location = folder })
                 .ToArray(),
-        });
+        };
 
-    /// <inheritdoc />
-    public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) =>
-        SlidesErrorTranslator.Execute("fonts check", () => CheckFontsCore(filePath, request));
-
-    private FontCheckResult CheckFontsCore(string filePath, FontCheckRequest request)
+    public FontCheckResult CheckFonts(string filePath, FontCheckRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);

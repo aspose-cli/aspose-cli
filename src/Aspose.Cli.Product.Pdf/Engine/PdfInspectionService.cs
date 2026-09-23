@@ -36,14 +36,7 @@ internal sealed class PdfInspectionService
         _loader = loader;
     }
 
-    public PdfSearchResult Search(string filePath, PdfSearchRequest request) =>
-        PdfErrorTranslator.Execute("query search", () => SearchCore(filePath, request));
-
-    /// <inheritdoc />
-    public PdfValidateResult Validate(string filePath, PdfValidateRequest request) =>
-        PdfErrorTranslator.Execute("validate", () => ValidateCore(filePath, request));
-
-    private PdfSearchResult SearchCore(string filePath, PdfSearchRequest request)
+    public PdfSearchResult Search(string filePath, PdfSearchRequest request)
     {
         if (request.MaxHits < 1 || request.MaxHits > 10_000)
         {
@@ -71,7 +64,8 @@ internal sealed class PdfInspectionService
         {
             Page page = loaded.Document.Pages[number];
             int occurrence = 0;
-            foreach (TextFragment fragment in MatchText(page, request.Pattern, request.Regex, request.CaseSensitive))
+            foreach (TextFragment fragment in MatchText(page, request.Pattern, request.Regex, request.CaseSensitive,
+                static reason => CliErrors.OptionInvalid("--pattern", reason, "Use a pattern that matches at least one character.")))
             {
                 occurrence++;
                 if (hits.Count == request.MaxHits)
@@ -103,7 +97,7 @@ internal sealed class PdfInspectionService
         };
     }
 
-    private PdfValidateResult ValidateCore(string filePath, PdfValidateRequest request)
+    public PdfValidateResult Validate(string filePath, PdfValidateRequest request)
     {
         PdfFormat format = request.Profile.ToLowerInvariant() switch
         {

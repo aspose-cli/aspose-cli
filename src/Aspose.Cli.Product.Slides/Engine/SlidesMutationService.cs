@@ -40,14 +40,7 @@ internal sealed class SlidesMutationService
         SlidesFontCatalog.EnsureInitialized();
     }
 
-    /// <inheritdoc />
     public SlidesEditResult ApplyOps(
-        string filePath,
-        SlidesOpsBatch batch,
-        PresentationEditRequest request) =>
-        SlidesErrorTranslator.Execute("edit", () => ApplyOpsCore(filePath, batch, request));
-
-    private SlidesEditResult ApplyOpsCore(
         string filePath,
         SlidesOpsBatch batch,
         PresentationEditRequest request)
