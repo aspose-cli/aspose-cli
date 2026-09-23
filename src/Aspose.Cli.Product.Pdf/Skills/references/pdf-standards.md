@@ -11,9 +11,12 @@ aspose-cli pdf validate report.archive.pdf --profile pdfa-2b --output json
 ```
 
 PDF/A conversion uses the engine's delete-on-conversion-error policy, so
-unsupported content can be removed. Compare the candidate with the original
-before delivery. `pdf validate` checks only the selected PDF/A profile; it is
-not a signature, redaction or permission validator.
+unsupported content can be removed. When the engine cannot make the document
+conform at all, the command fails with `PDFA_CONVERSION_FAILED`, writes no
+output, and lists the problems it could not fix in `error.details.problems`.
+Compare the candidate with the original before delivery. `pdf validate` checks
+only the selected PDF/A profile; it is not a signature, redaction or permission
+validator. Each entry of its `issues` reads `clause (severity, page N): message`.
 
 The exact `--to` ids for `pdf convert` are `docx`, `xlsx`, `pptx`, `html`,
 `epub`, `txt`, `md`, `svg`, `xps`, `pdfa-1b`, `pdfa-2b`, `pdfa-3b`, `png`,

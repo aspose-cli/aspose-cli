@@ -12,7 +12,6 @@ using Aspose.Pdf.Facades;
 using Aspose.Pdf.Forms;
 using static Aspose.Cli.Product.Pdf.Engine.PdfArtifactSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
-using CliPageRange = Aspose.Cli.Sdk.Addressing.PageRange;
 using DrawingRectangle = System.Drawing.Rectangle;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
@@ -44,9 +43,12 @@ internal sealed class PdfSigningService
         ValidateCertificate(request.CertificatePath, request.CertificatePassword);
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        _ = CliPageRange.Parse(
-            request.Page.ToString(System.Globalization.CultureInfo.InvariantCulture))
-            .Resolve(loaded.Document.Pages.Count);
+        _ = PdfMutationSupport.PageAt(loaded.Document, request.Page);
+        // The signature to verify is the one this command adds: a document may already
+        // carry signed fields, and the first of them says nothing about the new one.
+        HashSet<string> alreadySigned = SignedFields(loaded.Document)
+            .Select(static field => field.FullName)
+            .ToHashSet(StringComparer.Ordinal);
 
         PdfSignatureRect? visibleRect = request.Visible
             ? request.Rect ?? new PdfSignatureRect(36, 36, 180, 60)
@@ -84,7 +86,7 @@ internal sealed class PdfSigningService
         // The staged candidate is the only readable copy before publication: a supervised
         // worker leaves the target to its parent, so reading it here would find nothing.
         PdfSignatureInfo signed = write.Read(
-            candidate => VerifySignedOutput(candidate, request.Password));
+            candidate => VerifySignedOutput(candidate, request.Password, alreadySigned));
         transaction.Commit();
         return new PdfSignResult
         {
@@ -112,15 +114,14 @@ internal sealed class PdfSigningService
         };
     }
 
-    private PdfSignatureInfo VerifySignedOutput(string path, string? password)
+    private PdfSignatureInfo VerifySignedOutput(string path, string? password, IReadOnlySet<string> alreadySigned)
     {
         using LoadedPdf reopened = _loader.OpenPublishedCandidate(path, password);
-        SignatureField? field = reopened.Document.Form.Fields
-            .OfType<SignatureField>()
-            .FirstOrDefault(static value => value.Signature is not null);
+        SignatureField? field = SignedFields(reopened.Document)
+            .FirstOrDefault(value => !alreadySigned.Contains(value.FullName));
         if (field?.Signature is null)
         {
-            const string message = "The saved PDF did not contain a signed signature field.";
+            const string message = "The saved PDF did not contain the new signed signature field.";
             throw new EngineOpException(message, new InvalidOperationException(message));
         }
 
@@ -141,6 +142,9 @@ internal sealed class PdfSigningService
             Valid = valid,
         };
     }
+
+    private static IEnumerable<SignatureField> SignedFields(Document document) =>
+        document.Form.Fields.OfType<SignatureField>().Where(static field => field.Signature is not null);
 
     private static void EnsureCertificate(
         ResourceBudgetLedger resourceBudgets,

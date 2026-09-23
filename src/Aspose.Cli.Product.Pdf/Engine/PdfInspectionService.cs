@@ -94,34 +94,17 @@ internal sealed class PdfInspectionService
         };
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        string log = Path.Combine(Path.GetTempPath(), $"aspose-cli-pdf-validate-{Guid.NewGuid():N}.xml");
-        try
+        using var log = new MemoryStream();
+        bool valid = loaded.Document.Validate(log, format);
+        IReadOnlyList<PdfComplianceProblem> problems = PdfComplianceLog.Parse(log);
+        return new PdfValidateResult
         {
-            bool valid = loaded.Document.Validate(log, format);
-            string[] issues = File.Exists(log)
-                ? File.ReadLines(log)
-                    .Select(static line => line.Trim())
-                    .Where(static line => line.Contains("<Problem", StringComparison.OrdinalIgnoreCase)
-                        || line.Contains("<Error", StringComparison.OrdinalIgnoreCase))
-                    .Take(101)
-                    .ToArray()
-                : [];
-            return new PdfValidateResult
-            {
-                Input = PdfInfoProjection.Source(filePath),
-                Profile = request.Profile.ToLowerInvariant(),
-                Valid = valid,
-                Issues = issues.Take(100).ToArray(),
-                Truncated = issues.Length > 100,
-                License = EnvelopeParts.License(state),
-            };
-        }
-        finally
-        {
-            if (File.Exists(log))
-            {
-                File.Delete(log);
-            }
-        }
+            Input = PdfInfoProjection.Source(filePath),
+            Profile = request.Profile.ToLowerInvariant(),
+            Valid = valid,
+            Issues = problems.Take(100).Select(static problem => problem.ToString()).ToArray(),
+            Truncated = problems.Count > 100,
+            License = EnvelopeParts.License(state),
+        };
     }
 }

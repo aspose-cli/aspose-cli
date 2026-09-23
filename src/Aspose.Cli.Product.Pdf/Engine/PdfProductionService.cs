@@ -511,19 +511,10 @@ internal sealed class PdfProductionService
 
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
         {
-            string log = temp + ".conversion.xml";
-            try
-            {
-                _ = selected.Convert(log, format, ConvertErrorAction.Delete);
-                selected.Save(temp);
-            }
-            finally
-            {
-                if (File.Exists(log))
-                {
-                    File.Delete(log);
-                }
-            }
+            using var log = new MemoryStream();
+            PdfComplianceLog.EnsureConverted(
+                selected.Convert(log, format, ConvertErrorAction.Delete), log, request.TargetFormatId);
+            selected.Save(temp);
         });
         return BuildOutput(request.OutputPath, request.TargetFormatId, size);
     }
