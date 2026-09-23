@@ -21,7 +21,8 @@ internal sealed class ParsedInvocation
         path.Reverse();
         CommandPath = path.AsReadOnly();
         ProductId = path.Select(static command => command.Policy().ProductId).FirstOrDefault(static id => id is not null);
-        ServiceLifetime = path.Any(static command => command.Policy().ServiceLifetime);
+        Execution = path.Select(static command => command.Policy().Execution)
+            .FirstOrDefault(static value => value != CommandExecutionOwnership.Worker);
         McpAllowed = ProductId is not null || parse.CommandResult.Command.Policy().McpReadOnly;
     }
 
@@ -30,7 +31,7 @@ internal sealed class ParsedInvocation
     public IReadOnlyList<Command> CommandPath { get; }
     public Command Command => ParseResult.CommandResult.Command;
     public string? ProductId { get; }
-    public bool ServiceLifetime { get; }
+    public CommandExecutionOwnership Execution { get; }
     public bool McpAllowed { get; }
 
     internal void EnsureValid()

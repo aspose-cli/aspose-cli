@@ -4,8 +4,14 @@ using System.Runtime.CompilerServices;
 namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>Host-owned execution policy attached where a command tree is assembled.</summary>
+internal enum CommandExecutionOwnership { Worker, Service, ParentHandoff }
+
 internal sealed record CommandInvocationPolicy(
-    string? ProductId = null, bool ServiceLifetime = false, bool McpReadOnly = false);
+    string? ProductId = null,
+    CommandExecutionOwnership Execution = CommandExecutionOwnership.Worker,
+    bool McpReadOnly = false,
+    IReadOnlyList<string>? EnvironmentVariables = null,
+    long? OutputBytesLimit = null);
 
 internal static class CommandInvocationPolicies
 {

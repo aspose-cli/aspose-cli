@@ -9,6 +9,15 @@ internal static class WorkerOutputPublisher
     internal static IReadOnlyList<long> Publish(WorkerOutputManifest manifest, ResourceBudgetLedger budgets, IPublicationFaultInjector? faults = null)
     {
         budgets.Deadline.ThrowIfExpired("worker-publication");
+        if (manifest.DirectoryOutput is { } output)
+        {
+            NewDirectoryPublication.EnsureAnchor(output.ParentAnchor, output.ParentIdentity);
+            using var directory = new AtomicNewDirectoryWriter(budgets, output.Target, "worker-directory-publication",
+                faults ?? NoPublicationFaultInjector.Instance);
+            NewDirectoryPublication.Copy(output, directory.StagingDirectory, budgets);
+            directory.Commit();
+            return output.Tree.Files.Select(file => file.Snapshot.Length).ToArray();
+        }
         var created = new OwnedOutputDirectories(deferred: false);
         bool committed = false;
         try

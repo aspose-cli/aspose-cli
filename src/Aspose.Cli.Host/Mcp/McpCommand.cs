@@ -13,6 +13,6 @@ internal static class McpCommand
         var serve = new Command("serve", "Run the single-session MCP stdio server.");
         serve.SetAction(parse => McpServerHost.Run(host, globals.Resolve(parse)));
         mcp.Subcommands.Add(serve);
-        return mcp.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
+        return mcp.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
     }
 }

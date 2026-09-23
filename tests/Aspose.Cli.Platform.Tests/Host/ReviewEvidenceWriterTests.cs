@@ -40,7 +40,7 @@ public sealed class ReviewEvidenceWriterTests
             ["page-1.png", "page-2.png"]));
 
         Assert.False(Directory.Exists(output));
-        Assert.Empty(Directory.EnumerateDirectories(temp.Path, "*.review.tmp"));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
     }
 
     [Fact]
@@ -151,10 +151,10 @@ public sealed class ReviewEvidenceWriterTests
             },
             static _ => new ProductReviewAssessment(),
             LicenseState.NotApplicable,
-            new ContractJsonSerializer([])));
+            new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create()));
 
         Assert.False(Directory.Exists(output));
-        Assert.Empty(Directory.EnumerateDirectories(temp.Path, "*.review.tmp"));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
     }
 
     [Theory]
@@ -181,11 +181,11 @@ public sealed class ReviewEvidenceWriterTests
             },
             static _ => new ProductReviewAssessment(),
             LicenseState.NotApplicable,
-            new ContractJsonSerializer([])));
+            new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create()));
 
         Assert.False(Directory.Exists(output));
         Assert.Equal("unchanged", File.ReadAllText(outside));
-        Assert.Empty(Directory.EnumerateDirectories(temp.Path, "*.review.tmp"));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
     }
 
     [Theory]
@@ -240,13 +240,51 @@ public sealed class ReviewEvidenceWriterTests
             },
             static _ => new ProductReviewAssessment(),
             LicenseState.NotApplicable,
-            new ContractJsonSerializer([]));
+            new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
 
         string html = File.ReadAllText(result.Index);
         Assert.DoesNotContain(label, html, StringComparison.Ordinal);
         Assert.Equal(label, ViewerData(html)["view"]!["parts"]![0]!["label"]!.GetValue<string>());
     }
 
+    [Fact]
+    public void Write_WorkerOwnsAllReviewCandidatesUntilParentPublication()
+    {
+        using var temp = new TempDirectory();
+        string workerRoot = Aspose.Cli.Sdk.IO.PrivateUserStorage.CreateTemporaryDirectory("worker");
+        try
+        {
+            string manifest = Path.Combine(workerRoot, Aspose.Cli.Sdk.Execution.WorkerOutputSession.ManifestName);
+            var worker = new Aspose.Cli.Sdk.Execution.WorkerOutputSession(workerRoot, manifest);
+            using var deadline = Aspose.Cli.Sdk.Execution.OperationDeadline.Start(null);
+            var budgets = new Aspose.Cli.Sdk.IO.ResourceBudgetLedger(deadline, outputSession: worker);
+            string target = temp.File("review");
+            ReviewEvidenceWriter.Write(temp.File("source.test"), "test", target, 1, true, Presentation,
+                artifacts => { artifacts.Write("page.png", stream => stream.Write(PngHeader)); return Manifest(1, ["page.png"]); },
+                _ => new ProductReviewAssessment(), LicenseState.NotApplicable, new ContractJsonSerializer([]), budgets);
+            Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
+            worker.SealForPublication();
+            Aspose.Cli.Sdk.Execution.WorkerOutputSession.Publish(manifest, Aspose.Cli.Sdk.Tests.TestBudgets.Create());
+            Assert.True(File.Exists(Path.Combine(target, "index.html")));
+            Assert.True(File.Exists(Path.Combine(target, "review.json")));
+            Assert.True(File.Exists(Path.Combine(target, "artifacts", "page.png")));
+        }
+        finally { Assert.True(Aspose.Cli.Sdk.IO.PrivateUserStorage.TryDeleteTree(workerRoot)); }
+    }
+
+    [Fact]
+    public void Write_CancelledAssessmentReclaimsCandidateWithoutPublishing()
+    {
+        using var temp = new TempDirectory();
+        using var cancellation = new CancellationTokenSource();
+        using var deadline = Aspose.Cli.Sdk.Execution.OperationDeadline.Start(null, cancellation.Token);
+        Assert.Throws<OperationCanceledException>(() => ReviewEvidenceWriter.Write(
+            temp.File("source.test"), "test", temp.File("review"), 1, true, Presentation,
+            artifacts => { artifacts.Write("page.png", stream => stream.Write(PngHeader)); return Manifest(1, ["page.png"]); },
+            _ => { cancellation.Cancel(); return new ProductReviewAssessment(); },
+            LicenseState.NotApplicable, new ContractJsonSerializer([]), new Aspose.Cli.Sdk.IO.ResourceBudgetLedger(deadline)));
+        Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
+    }
     private static JsonNode ViewerData(string html)
     {
         Match block = Regex.Match(
@@ -282,7 +320,7 @@ public sealed class ReviewEvidenceWriterTests
             },
             _ => assessment ?? new ProductReviewAssessment(),
             LicenseState.NotApplicable,
-            new ContractJsonSerializer([]));
+            new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
 
     private static ViewManifest Manifest(int totalParts, string[] files) => new()
     {

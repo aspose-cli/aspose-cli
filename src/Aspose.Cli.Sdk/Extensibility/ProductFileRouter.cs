@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -344,9 +345,7 @@ public sealed class ProductFileRouter
         FileProbeSession session,
         CancellationToken cancellationToken)
     {
-        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(
-            cancellationToken);
-        deadline.CancelAfter(_options.RecognizerTimeout);
+        using OperationDeadline deadline = OperationDeadline.Start(_options.RecognizerTimeout, cancellationToken);
         using var concurrency = new SemaphoreSlim(_options.MaxConcurrency);
 
         Task<RecognitionEntry>[] work = products
@@ -354,13 +353,13 @@ public sealed class ProductFileRouter
                 product,
                 session,
                 concurrency,
-                deadline.Token,
-                cancellationToken))
+                deadline))
             .ToArray();
         try
         {
             RecognitionEntry[] results = await Task.WhenAll(work)
                 .ConfigureAwait(false);
+            deadline.ThrowIfExpired("file-routing");
             return results.OrderBy(
                     static entry => entry.Product.Manifest.Id,
                     StringComparer.Ordinal)
@@ -379,10 +378,9 @@ public sealed class ProductFileRouter
         ProductDefinition product,
         FileProbeSession session,
         SemaphoreSlim concurrency,
-        CancellationToken deadline,
-        CancellationToken callerCancellation)
+        OperationDeadline deadline)
     {
-        await concurrency.WaitAsync(deadline).ConfigureAwait(false);
+        await concurrency.WaitAsync(deadline.Token).ConfigureAwait(false);
         try
         {
             IFileRecognizer recognizer = product.Files.Recognizer!;
@@ -391,7 +389,7 @@ public sealed class ProductFileRouter
             {
                 recognition = await recognizer.RecognizeAsync(
                     session,
-                    deadline).ConfigureAwait(false);
+                    deadline.Token).ConfigureAwait(false);
                 if (recognition.Kind == FileRecognitionKind.Match
                     && recognition.Confidence == 0)
                 {
@@ -406,10 +404,6 @@ public sealed class ProductFileRouter
                     };
                 }
             }
-            catch (OperationCanceledException) when (!callerCancellation.IsCancellationRequested)
-            {
-                throw;
-            }
             catch (OperationCanceledException)
             {
                 throw;
@@ -422,6 +416,7 @@ public sealed class ProductFileRouter
                     Evidence = "recognizer failed",
                 };
             }
+            deadline.ThrowIfExpired("file-routing");
             return new RecognitionEntry(product, recognition);
         }
         finally

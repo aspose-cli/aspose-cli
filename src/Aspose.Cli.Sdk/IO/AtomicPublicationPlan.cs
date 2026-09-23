@@ -228,22 +228,23 @@ internal sealed class AtomicPublicationPlan
         Persist();
     }
 
-    public void Persist()
+    public void Persist(OperationDeadline? deadline = null)
     {
         if (!_sealed || WorkerStagingOnly) { return; }
         _faults.Hit(new PublicationFaultPoint(
             PublicationFaultKind.JournalWrite,
             -1,
             JournalPath));
-        Journal.Write(JournalPath);
+        Journal.Write(JournalPath, deadline: deadline ?? (Journal.State is PublicationTransactionState.RollingBack
+            or PublicationTransactionState.RolledBack or PublicationTransactionState.Partial ? null : ResourceBudgets?.Deadline));
         _durableState = Journal.State;
     }
 
-    public bool TryPersist()
+    public bool TryPersist(OperationDeadline? deadline = null)
     {
         try
         {
-            Persist();
+            Persist(deadline);
             return true;
         }
         catch (Exception exception) when (
@@ -289,9 +290,7 @@ internal sealed class AtomicPublicationPlan
             DeleteEmptyDirectory(backups);
             if (File.Exists(JournalPath))
             {
-                FilePublicationSnapshot journal =
-                    FilePublicationSnapshot.Capture(JournalPath);
-                DeleteKnownFile(JournalPath, journal);
+                PublicationJournal.Delete(JournalPath);
             }
             DeleteEmptyDirectory(StagingDirectory);
         }

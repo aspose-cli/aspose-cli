@@ -15,7 +15,7 @@ internal static class EditCommand
         var set = new Option<string[]>("--set") { Description = "Bookmark sugar: bookmark:Name=text; repeatable." }.WithInput(InputKind.None);
         var output = new MutationFileOptions();
         var editOptions = new BoundedEditOptions();
-        var verify = new Option<bool>("--verify") { Description = "Reopen and render verification pages after save." };
+        var verify = new Option<bool>("--verify") { Description = "Compare the staged document after save and reopen to report semantic verification." };
         var trackChanges = new Option<bool>("--track-changes") { Description = "Track this batch as revisions." };
         var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
         var password = new PasswordOptions("--password", "the document");

@@ -45,6 +45,6 @@ internal static class ViewerServiceCommand
                     catalog,
                     capabilities));
         });
-        return command.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
+        return command.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
     }
 }

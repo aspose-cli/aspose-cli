@@ -5,6 +5,7 @@ using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 using Microsoft.Win32.SafeHandles;
 
 namespace Aspose.Cli.Sdk.IO;
@@ -42,6 +43,8 @@ internal enum PublicationEntryState
 internal enum PublicationFaultKind
 {
     JournalWrite,
+    JournalRead,
+    JournalLockWait,
     Backup,
     Publish,
     Rollback,
@@ -414,8 +417,11 @@ internal sealed class PublicationJournal
 
     public List<PublicationJournalEntry> Entries { get; init; } = [];
 
-    public static PublicationJournal Read(string path)
+    public NewDirectoryOutput? DirectoryOutput { get; set; }
+
+    public static PublicationJournal Read(string path, IPublicationFaultInjector? faults = null, OperationDeadline? deadline = null)
     {
+        using PublicationJournalLock gate = PublicationJournalLock.Acquire(path, deadline, faults);
         using var stream = new FileStream(
             path,
             FileMode.Open,
@@ -423,6 +429,7 @@ internal sealed class PublicationJournal
             FileShare.Read | FileShare.Delete,
             bufferSize: 4096,
             FileOptions.SequentialScan);
+        faults?.Hit(new PublicationFaultPoint(PublicationFaultKind.JournalRead, -1, path));
         if (stream.Length < 1 || stream.Length > MaximumBytes)
         {
             throw new InvalidDataException(
@@ -444,6 +451,7 @@ internal sealed class PublicationJournal
             throw new InvalidDataException(
                 $"Publication journal '{path}' violates its bounded contract.");
         }
+        deadline?.ThrowIfExpired("publication-journal-read");
         return journal;
     }
 
@@ -455,6 +463,7 @@ internal sealed class PublicationJournal
             Operation = Operation, OwnerProcessId = OwnerProcessId,
             OwnerProcessStartUtcTicks = OwnerProcessStartUtcTicks,
             State = PublicationTransactionState.RollingBack,
+            DirectoryOutput = DirectoryOutput,
             Entries = Entries.Select(entry => new PublicationJournalEntry
             {
                 Index = entry.Index, Target = entry.Target, Staged = entry.Staged,
@@ -506,8 +515,19 @@ internal sealed class PublicationJournal
         return contents;
     }
 
-    public void Write(string path)
+    /// <summary>Coordinates deletion with bounded readers and atomic writers of this journal.</summary>
+    internal static void Delete(string path, IPublicationFaultInjector? faults = null)
     {
+        using PublicationJournalLock gate = PublicationJournalLock.Acquire(path, faults: faults);
+        if (!File.Exists(path)) { return; }
+        PrivateUserStorage.ValidateFile(path);
+        if (!FilePublicationOwnedDelete.TryDelete(path, FilePublicationSnapshot.Capture(path)))
+        { throw new IOException("A changed publication journal was preserved."); }
+    }
+
+    public void Write(string path, IPublicationFaultInjector? faults = null, OperationDeadline? deadline = null)
+    {
+        using PublicationJournalLock gate = PublicationJournalLock.Acquire(path, deadline, faults);
         string contents = SerializeBounded(path);
         string directory = Path.GetDirectoryName(path)
             ?? throw new IOException(
@@ -529,6 +549,7 @@ internal sealed class PublicationJournal
         {
             throw CliErrors.OutputConflict(path, expected, current);
         }
+        deadline?.ThrowIfExpired("publication-journal-write");
         File.Move(tempPath, path, overwrite: expected.Exists);
         temporary.MarkPublished();
         if (!staged.VersionEquals(FilePublicationSnapshot.Capture(path)))

@@ -16,6 +16,7 @@ internal static class WordsDiagnostics
     internal static readonly ErrorCode DocumentHasRevisions =
         new("DOCUMENT_HAS_REVISIONS", ExitCode.InputError);
 
+    internal const string EncryptionRemoved = "DOCUMENT_ENCRYPTION_REMOVED";
     internal const string TrackedChangesPresent = "TRACKED_CHANGES_PRESENT";
     internal const string MacrosDropped = "MACROS_DROPPED";
     internal const string LayoutMayDiffer = "LAYOUT_MAY_DIFFER";
@@ -30,6 +31,7 @@ internal static class WordsDiagnostics
         Error(MergeDataInvalid, "validation"),
         Error(DocumentProtected, "input"),
         Error(DocumentHasRevisions, "input"),
+        Warning(EncryptionRemoved),
         Warning(TrackedChangesPresent),
         Warning(MacrosDropped),
         Warning(LayoutMayDiffer),

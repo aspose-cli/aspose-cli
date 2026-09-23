@@ -24,6 +24,6 @@ internal static class RenderWorkerCommand
             Hidden = true,
         };
         command.SetAction(parse => ViewRenderWorker.Run(catalog, globals.Resolve(parse)));
-        return command.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
+        return command.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
     }
 }

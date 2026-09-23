@@ -242,7 +242,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
             },
             _ => assessment,
             LicenseState.NotApplicable,
-            new ContractJsonSerializer([]));
+            new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
 
     private async Task ReviewInBrowser(
         string name,

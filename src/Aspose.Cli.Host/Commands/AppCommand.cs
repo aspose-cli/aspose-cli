@@ -96,7 +96,7 @@ internal static class AppCommand
             });
         });
 
-        return app.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
+        return app.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
     }
 
     private static Command CreateStatus(CommandExecutor executor, GlobalOptions globals)

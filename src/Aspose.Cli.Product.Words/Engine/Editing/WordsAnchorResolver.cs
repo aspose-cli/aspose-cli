@@ -23,11 +23,34 @@ internal static class WordsAnchorResolver
             IReadOnlyList<Node> nodes = target is null
                 ? []
                 : ResolveTarget(document, index, target);
-            resolved.Add(new ResolvedWordsOp(op, nodes, Targets(index, nodes, target)));
+            resolved.Add(new ResolvedWordsOp(op, nodes, ResolveSections(document, op), Targets(index, nodes, target)));
         }
 
         ValidateDeleteConflicts(resolved);
         return resolved;
+    }
+
+    private static IReadOnlyList<Section> ResolveSections(Document document, WordsOp op) => op switch
+    {
+        AddSectionOp { Position: "after", After: int after } => [WordsMutationSupport.GetSection(document, after)],
+        DeleteSectionOp value => [WordsMutationSupport.GetSection(document, value.Section)],
+        SetPageSetupOp value => SelectSections(document, value.Section),
+        SetHeaderOp value => SelectSections(document, value.Section),
+        SetFooterOp value => SelectSections(document, value.Section),
+        SetPageNumbersOp value => SelectSections(document, value.Section),
+        _ => [],
+    };
+
+    private static IReadOnlyList<Section> SelectSections(Document document, int? section) =>
+        section is int number ? [WordsMutationSupport.GetSection(document, number)] : document.Sections.Cast<Section>().ToArray();
+
+    internal static void EnsureAttached(Document document, ResolvedWordsOp operation)
+    {
+        if (operation.Nodes.Any(node => !ReferenceEquals(node.GetAncestor(NodeType.Document), document))
+            || operation.Sections.Any(section => !ReferenceEquals(section.ParentNode, document)))
+        {
+            throw Invalid($"operation '{operation.Op.OpName}' references an original object removed by an earlier operation");
+        }
     }
 
     private static IReadOnlyList<Node> ResolveTarget(Document document, DocumentBlockIndex index, WordsTarget target)
@@ -150,25 +173,29 @@ internal static class WordsAnchorResolver
         for (int index = 0; index < resolved.Count; index++)
         {
             ResolvedWordsOp item = resolved[index];
-            foreach (Node node in item.Nodes)
+            foreach (Node target in item.Nodes.Concat<Node>(item.Sections))
             {
-                if (deleted.Contains(node))
+                for (Node? ancestor = target; ancestor is not null; ancestor = ancestor.ParentNode)
                 {
-                    throw Invalid($"op {index} ({item.Op.OpName}) references a block deleted by an earlier op");
+                    if (deleted.Contains(ancestor))
+                    {
+                        throw Invalid($"op {index} ({item.Op.OpName}) references an object deleted by an earlier op");
+                    }
                 }
             }
 
-            if (item.Op is not DeleteBlocksOp)
+            if (item.Op is DeleteSectionOp)
             {
-                continue;
-            }
-
-            foreach (Node node in item.Nodes)
-            {
-                if (!deleted.Add(node))
+                Section section = item.Sections[0];
+                if (deleted.Any(node => ReferenceEquals(node.GetAncestor(NodeType.Section), section)))
                 {
-                    throw Invalid($"op {index} (delete_blocks) overlaps an earlier deletion");
+                    throw Invalid($"op {index} (delete_section) overlaps an earlier block deletion");
                 }
+                deleted.Add(section);
+            }
+            else if (item.Op is DeleteBlocksOp)
+            {
+                deleted.UnionWith(item.Nodes);
             }
         }
     }
@@ -187,4 +214,5 @@ internal static class WordsAnchorResolver
 internal sealed record ResolvedWordsOp(
     WordsOp Op,
     IReadOnlyList<Node> Nodes,
+    IReadOnlyList<Section> Sections,
     IReadOnlyList<string> Targets);

@@ -231,7 +231,9 @@
     var stage = el('main', 'av-stage');
     var banner = el('div', 'av-banner');
     banner.hidden = true;
-    stage.append(banner, layout.element);
+    var emptyMessage = el('p', 'av-empty', 'No ' + plural(spec.noun) + ' were rendered.');
+    emptyMessage.hidden = true;
+    stage.append(banner, layout.element, emptyMessage);
     if (sidebar) {
       body.appendChild(sidebar.element);
       sidebar.element.addEventListener('click', function (event) {
@@ -286,16 +288,15 @@
     coverage();
     if (ctx.parts.length === 0) {
       empty();
-      return controller();
+    } else {
+      layout.rescale();
+      go(0);
+      layout.focus.focus({ preventScroll: true });
     }
-
-    layout.rescale();
-    go(0);
-    layout.focus.focus({ preventScroll: true });
     document.addEventListener('keydown', onKeyDown);
     var resizeQueued = false;
     new ResizeObserver(function () {
-      if (resizeQueued || typeof state.zoom === 'number') {
+      if (resizeQueued || !ctx.parts.length || typeof state.zoom === 'number') {
         return;
       }
       resizeQueued = true;
@@ -334,6 +335,14 @@
       }
       state.index = index;
       var part = ctx.parts[index];
+      if (!part) {
+        controls.position.textContent = '';
+        controls.previous.disabled = true;
+        controls.next.disabled = true;
+        statusPart.textContent = '';
+        refreshZoom();
+        return;
+      }
       var position = spec.noun + ' ' + (index + 1) + ' of ' + ctx.total;
       controls.position.textContent = position;
       controls.previous.disabled = index === 0;
@@ -366,19 +375,26 @@
             return false;
           }
           var before = state.manifest;
+          var selected = before.parts[state.index];
+          var index = selected ? indexOfPart(manifest.parts, selected.id) : -1;
+          if (index < 0) {
+            // If the selected part was deleted, use its former position or the last part.
+            index = Math.min(Math.max(state.index, 0), manifest.parts.length - 1);
+          }
           ctx.parts = manifest.parts;
           ctx.total = totalOf(manifest);
-          var index = state.index;
           state.index = -1;
-          if (ctx.parts.length === 0) {
+          layout.element.hidden = index < 0;
+          emptyMessage.hidden = index >= 0;
+          layout.update(prepared, index);
+          if (sidebar) {
+            sidebar.update();
+          }
+          coverage();
+          if (index < 0) {
             empty();
           } else {
-            layout.update(prepared);
-            if (sidebar) {
-              sidebar.update();
-            }
-            coverage();
-            select(Math.min(Math.max(index, 0), ctx.parts.length - 1));
+            select(index);
             mark(before, manifest, changed || []);
           }
           state.manifest = manifest;
@@ -419,10 +435,7 @@
         : '';
       if (info.license && info.license !== doc.license) {
         doc.license = info.license;
-        var badge = app.querySelector('.av-badge-evaluation');
-        if (badge) {
-          badge.remove();
-        }
+        renderLicenseBadge(app.querySelector('.av-badges'), doc.license);
       }
     }
 
@@ -446,7 +459,9 @@
     }
 
     function empty() {
-      layout.element.replaceWith(el('p', 'av-empty', 'No ' + plural(spec.noun) + ' were rendered.'));
+      layout.element.hidden = true;
+      emptyMessage.hidden = false;
+      statusPart.textContent = '';
       [controls.previous, controls.next, controls.zoomOut, controls.zoom, controls.zoomIn,
         controls.fitWidth, controls.fitPage].forEach(function (control) { control.disabled = true; });
       controls.position.textContent = '';
@@ -572,8 +587,8 @@
   // that takes keyboard focus, show(index, box) to bring a part into view
   // (returning the reading line on it when the layout scrolls through
   // parts), rescale() to apply the current zoom, scale() for the effective
-  // zoom of the part in view, update() to take in the parts of a new
-  // revision without rebuilding what did not change, optionally prepare(parts)
+  // zoom of the part in view, update(snapshot, index) to take in a revision
+  // and the viewer's selected index without rebuilding unchanged parts, optionally prepare(parts)
   // to load a snapshot before update(snapshot) commits it, mark(index, boxes) to
   // emphasize what an edit changed, pointOf(index) for the demo pointer, and
   // optionally toolbar tools and a keydown hook.
@@ -596,6 +611,8 @@
      * re-fetched nor re-decoded and the reading position survives.
      */
     function place() {
+      widest = 1;
+      tallest = 1;
       var existing = Object.create(null);
       pages.forEach(function (page) { existing[page.frame.part.id] = page; });
       pages = ctx.parts.map(function (part, index) {
@@ -648,6 +665,7 @@
       queued = true;
       requestAnimationFrame(function () {
         queued = false;
+        if (!frames.length) { return; }
         var index = current();
         ctx.select(index, (readingLine() - frames[index].element.offsetTop) / scale);
       });
@@ -701,6 +719,7 @@
         return (top + scroller.clientHeight / 3 - frame.element.offsetTop) / scale;
       },
       rescale: function () {
+        if (!frames.length) { return; }
         // Keep the same spot of the page in view across the size change.
         var anchor = frames[current()].element;
         var within = (scroller.scrollTop - anchor.offsetTop) / (anchor.offsetHeight || 1);
@@ -708,15 +727,18 @@
         frames.forEach(function (frame) { frame.size(scale); });
         scroller.scrollTop = anchor.offsetTop + within * anchor.offsetHeight;
       },
-      update: function () {
-        var anchor = frames.length ? frames[current()].element : null;
-        var within = anchor ? scroller.scrollTop - anchor.offsetTop : 0;
-        var id = anchor ? pages[current()].frame.part.id : null;
+      update: function (_, index) {
+        var anchor = frames.length ? frames[current()] : null;
+        var within = anchor ? scroller.scrollTop - anchor.element.offsetTop : 0;
+        var retained = anchor && ctx.parts[index] && anchor.part.id === ctx.parts[index].id;
         place();
         this.rescale();
-        var kept = indexOfPart(ctx.parts, id);
-        if (kept >= 0) {
-          scroller.scrollTop = Math.max(0, frames[kept].element.offsetTop + within);
+        if (index >= 0) {
+          if (retained) {
+            scroller.scrollTop = Math.max(0, frames[index].element.offsetTop + within);
+          } else {
+            this.show(index);
+          }
         }
       },
       mark: function (index, boxes) {
@@ -777,10 +799,10 @@
         }
       },
       rescale: function () { stage.fit(presentingZoom()); },
-      update: function () {
-        stage.update();
+      update: function (_, index) {
+        stage.update(index);
         if (notes) {
-          var text = ctx.spec.notes(ctx.parts[stage.index()]);
+          var text = index >= 0 ? ctx.spec.notes(ctx.parts[index]) : null;
           notes.textContent = text || 'No notes';
           notes.classList.toggle('av-quiet', !text);
         }
@@ -854,6 +876,8 @@
           strip.insertBefore(tab, more);
         }
         tab.textContent = part.label;
+        tab.setAttribute('aria-selected', 'false');
+        tab.tabIndex = -1;
       });
       more.textContent = omittedText(ctx);
       more.hidden = ctx.total <= tabs.length;
@@ -891,11 +915,11 @@
         reveal(strip, tabs[index]);
       },
       rescale: function () { stage.fit(); },
-      update: function () {
+      update: function (_, index) {
         labelTabs();
-        stage.update();
+        stage.update(index);
         selected = -1;
-        this.show(stage.index());
+        if (index >= 0) { this.show(index); }
       },
       mark: stage.mark,
       pointOf: stage.pointOf,
@@ -930,17 +954,15 @@
       fit: fit,
       /**
        * Takes in a new revision: frames of parts an edit did not touch are
-       * kept, and the part being read stays on stage even when an edit moved
-       * it, because it is found again by its id.
+       * kept. The viewer supplies the selection resolved for this revision.
        */
-      update: function () {
+      update: function (selected) {
         var kept = Object.create(null);
         frames.forEach(function (frame) {
           if (frame) {
             kept[frame.part.id] = frame;
           }
         });
-        var current = frames[index] ? frames[index].part.id : null;
         frames = ctx.parts.map(function (part) {
           var frame = kept[part.id];
           if (!frame || frame.part.digest !== part.digest) {
@@ -949,9 +971,13 @@
           frame.adopt(part);
           return frame;
         });
-        var found = indexOfPart(ctx.parts, current);
-        index = found >= 0 ? found : Math.min(Math.max(index, 0), ctx.parts.length - 1);
-        this.show(index);
+        index = selected;
+        if (index >= 0) {
+          this.show(index);
+        } else {
+          slot.replaceChildren();
+          viewport.removeAttribute('data-kind');
+        }
       },
       mark: function (at, boxes) {
         if (at === index && frames[at]) {
@@ -1312,11 +1338,7 @@
       : presenter.kind;
     title.append(el('div', 'av-kind', kind), file);
     var badges = el('div', 'av-badges');
-    if (doc.license === 'evaluation') {
-      var evaluation = el('span', 'av-badge av-badge-evaluation', 'Evaluation');
-      evaluation.title = 'Rendered in evaluation mode: parts carry an Aspose evaluation watermark.';
-      badges.appendChild(evaluation);
-    }
+    renderLicenseBadge(badges, doc.license);
     if (doc.review) {
       var snapshot = el('span', 'av-badge av-badge-snapshot', 'Review snapshot');
       snapshot.title = 'Static evidence written by aspose-cli review.';
@@ -1327,6 +1349,20 @@
     }
     bar.append(brand, title, badges);
     return bar;
+  }
+
+  /** Initial render and live updates disclose the same effective license mode. */
+  function renderLicenseBadge(badges, mode) {
+    var evaluation = badges.querySelector('.av-badge-evaluation');
+    if (mode === 'evaluation') {
+      if (!evaluation) {
+        evaluation = el('span', 'av-badge av-badge-evaluation', 'Evaluation');
+        evaluation.title = 'Rendered in evaluation mode: parts carry an Aspose evaluation watermark.';
+        badges.prepend(evaluation);
+      }
+    } else if (evaluation) {
+      evaluation.remove();
+    }
   }
 
   // ---- Live document --------------------------------------------------------

@@ -12,6 +12,18 @@ Targets accept one of `block`, `blocks`, `bookmark`, `heading`, or `find`, with 
 
 `set_text` accepts paragraphs only and preserves the paragraph style while replacing inline runs. Use `set_table_cell` for tables. Insertion ops require `position: before|after`; v2 deliberately has no character-offset addressing.
 
+An edit preserves an encrypted input's password when the selected output format
+supports encryption. `--encrypt-env` explicitly replaces that password. Choosing
+a non-encryptable output format produces `DOCUMENT_ENCRYPTION_REMOVED`; supplying
+`--encrypt-env` for such a format is an error. A read password supplied for a
+plaintext input does not encrypt its output.
+
+Reloadable document outputs are reopened before publication, even without
+`--verify`. The optional `--verify` adds semantic checks and reports their results;
+it does not render pages. Outputs that cannot be loaded as documents do not get
+an SDK reopen check and cannot use `--verify`. A dry run publishes no output or
+backup and does not report that encryption was removed.
+
 Passwords used by `protect` and `unprotect` are environment variable names in `passwordEnv`. Never put a resolved secret into JSON.
 
 Discover the exact vocabulary with:
@@ -25,9 +37,13 @@ aspose-cli schema v2/words/ops
 - A block is only a top-level paragraph or table in a section body. Images,
   fields, hyperlinks and breaks belong to their paragraph.
 - All addresses are resolved to original node identities before the first op
-  runs. Inserted content cannot be targeted later in the same batch.
+  runs, including numbered sections and `add_section.after`. Omitted section
+  selections mean all original sections. Inserted content and sections cannot
+  be targeted later in the same batch.
 - Overlapping deletes, delete-then-reference and other invalid dependencies
-  fail before a file is written.
+  fail during preflight, including with `--best-effort`. Removing a section
+  invalidates references to its original blocks and section identity; later
+  section numbers never shift to a different original section.
 - `--best-effort` saves successful operations even when others fail; those
   partial results exit 8. Without it, an operation failure aborts the batch.
 - `--track-changes` requires `--author`. Comparison and tracking metadata use a

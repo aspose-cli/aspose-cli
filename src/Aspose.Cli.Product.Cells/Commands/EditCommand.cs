@@ -46,12 +46,6 @@ internal static class EditCommand
                 Verify = verify,
             });
 
-            // A file was produced (partial successes under --best-effort
-            // included): let any live preview of it spotlight the change.
-            if (!result.DryRun)
-            {
-            }
-
             return result;
         }));
 

@@ -171,11 +171,16 @@ internal static class SlidesObjectHandlers
             ?? chart.ChartData.Series.Select(item => new SlidesChartSeriesInput
             {
                 Name = item.Name.AsCells[0].Value?.ToString() ?? string.Empty,
-                Values = item.DataPoints.Select(point => System.Convert.ToDouble(point.Value.Data, CultureInfo.InvariantCulture)).ToArray(),
+                Values = item.DataPoints.Select(point => System.Convert.ToDouble(
+                    chart.Type == ChartType.ScatterWithStraightLinesAndMarkers ? point.YValue.Data : point.Value.Data,
+                    CultureInfo.InvariantCulture)).ToArray(),
+                XValues = chart.Type == ChartType.ScatterWithStraightLinesAndMarkers
+                    ? item.DataPoints.Select(point => System.Convert.ToDouble(point.XValue.Data, CultureInfo.InvariantCulture)).ToArray()
+                    : null,
             }).ToArray();
-        if (series.Any(item => item.Values.Count != categories.Length))
+        if (op.Categories is { Count: 0 })
         {
-            throw ChartDataInvalid("Each series must match the category count.");
+            throw ChartDataInvalid("Explicit categories must not be empty.");
         }
 
         PopulateChart(chart, chart.Type, categories, series);
@@ -189,8 +194,13 @@ internal static class SlidesObjectHandlers
         IReadOnlyList<string> categories,
         IReadOnlyList<SlidesChartSeriesInput> series)
     {
-        if (categories.Count == 0 || series.Count == 0
-            || series.Any(item => item.Values.Count != categories.Count)
+        // Scatter charts persist X/Y coordinates rather than a category axis. A
+        // reopened scatter chart therefore has no Categories, even when its data
+        // workbook retains the optional row labels supplied during creation.
+        int pointCount = categories.Count > 0 ? categories.Count
+            : type == ChartType.ScatterWithStraightLinesAndMarkers && series.Count > 0 ? series[0].Values.Count : 0;
+        if (pointCount == 0 || series.Count == 0
+            || series.Any(item => item.Values.Count != pointCount)
             || type == ChartType.ScatterWithStraightLinesAndMarkers
             && series.Any(item => item.XValues?.Count != item.Values.Count))
         {

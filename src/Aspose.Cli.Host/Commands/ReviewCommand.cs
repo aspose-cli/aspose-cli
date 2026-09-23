@@ -126,7 +126,8 @@ internal static class ReviewCommand
                 artifacts => views.Render(binding, input, request, artifacts),
                 rendered => views.Assess(binding, input, request, rendered),
                 license,
-                serializer);
+                serializer,
+                context.ResourceBudgets);
         }));
         return command;
     }

@@ -64,8 +64,9 @@ an explicitly unsigned package. It does not claim customer release trust.
 ## Working with documents
 
 - Commands that change a document apply one atomic batch of operations and publish the result
-  safely: the output is staged, reopened and only then replaces its target, with an optional
-  backup. `--if-match` rejects a file that changed since it was read.
+  safely: outputs are staged and validated before publication, with an optional backup.
+  Words edits reopen reloadable document outputs; `--verify` adds semantic evidence.
+  `--if-match` rejects a file that changed since it was read.
 - Cells and Words `edit --verify` report semantic evidence (cell changes, formula errors,
   field, revision and protection state) before publication.
 - `aspose-cli review <file>` writes a static evidence directory with an image of every sheet,

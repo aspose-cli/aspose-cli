@@ -6,7 +6,7 @@ using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 
-namespace Aspose.Cli.Host.Commands;
+namespace Aspose.Cli.Host.Updating;
 
 /// <summary>Verifies detached release metadata without loading a product engine.</summary>
 internal static class ReleaseManifestVerifier

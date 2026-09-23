@@ -75,6 +75,16 @@ internal static class SlidesMutationHandlers
     {
         try
         {
+            if (item.Slide is not null && !presentation.Slides.Contains(item.Slide)
+                || item.Slides?.Any(slide => !presentation.Slides.Contains(slide)) == true)
+            {
+                throw new InvalidOperationException("A targeted slide was deleted by an earlier operation.");
+            }
+            if (item.Shape is not null && !item.Slide!.Shapes.Any(shape => ReferenceEquals(shape, item.Shape)))
+            {
+                throw new InvalidOperationException("A targeted shape was deleted by an earlier operation.");
+            }
+
             return item.Op switch
             {
                 AddSlideOp or DeleteSlidesOp or MoveSlideOp or DuplicateSlideOp

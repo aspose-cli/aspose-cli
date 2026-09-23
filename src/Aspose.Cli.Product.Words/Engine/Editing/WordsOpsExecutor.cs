@@ -24,6 +24,16 @@ internal static class WordsOpsExecutor
     {
         using InputResourceScope operationInputs = inputs.CreateScope();
         ValidateRequest(request);
+        string format = FormatId(request.OutputPath);
+        string? outputPassword = request.EncryptPassword
+            ?? (loaded.Format.IsEncrypted && WordsFormats.EncryptIds.Contains(format, StringComparer.Ordinal)
+                ? request.Password : null);
+        SaveOptions saveOptions = WordsSavePipeline.Options(format, outputPassword);
+        if (request.Verify && !WordsFormats.IsLoad(format))
+        {
+            throw CliErrors.OptionInvalid("--verify", $"format '{format}' cannot be reopened as a document",
+                "Use a reloadable document output when requesting semantic verification.");
+        }
         SourceInfo input = InfoProjection.Source(inputPath, loaded);
         FileFingerprints.EnsureUnchanged(inputPath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(inputPath, request.Options.IfMatch, input.Fingerprint!);
@@ -50,10 +60,12 @@ internal static class WordsOpsExecutor
                 request,
                 writer,
                 baseline,
-                outcomes,
                 loader,
                 precondition,
-                loaded.Resources);
+                loaded.Resources,
+                format,
+                saveOptions,
+                outputPassword);
         baseline?.Cleanup();
         return new WordsEditResult
         {
@@ -64,6 +76,13 @@ internal static class WordsOpsExecutor
             Backup = backup,
             PagesTouched = originalPages.Count == 0 ? null : originalPages,
             Verification = verification,
+            Warnings = loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun
+                ? [new Warning
+                {
+                    Code = WordsDiagnostics.EncryptionRemoved,
+                    Message = $"The '{format}' output cannot retain the source document encryption.",
+                    Hint = "Use an encryption-capable document output to keep password protection.",
+                }] : null,
         };
     }
 
@@ -92,6 +111,7 @@ internal static class WordsOpsExecutor
             ResolvedWordsOp item = resolved[index];
             try
             {
+                WordsAnchorResolver.EnsureAttached(document, item);
                 string? secret = null;
                 _ = request.OpSecrets?.TryGetValue(index, out secret);
                 long affected = item.Op switch
@@ -155,18 +175,18 @@ internal static class WordsOpsExecutor
         WordsEditRequest request,
         SafeFileWriter writer,
         Document? baseline,
-        IReadOnlyList<BoundedOperationOutcome> outcomes,
         WordsDocumentLoader loader,
         FileWritePrecondition precondition,
-        LocalDocumentResourceLoader resources)
+        LocalDocumentResourceLoader resources,
+        string format,
+        SaveOptions saveOptions,
+        string? outputPassword)
     {
         OutputInfo? output = null;
         BackupInfo? backup = null;
         WordsVerification? verification = null;
         if (!request.Options.DryRun)
         {
-            string format = FormatId(request.OutputPath);
-            SaveOptions options = WordsSavePipeline.Options(format, request.EncryptPassword);
             using var transaction = new AtomicOutputSetWriter(writer, Path.GetDirectoryName(request.OutputPath)!, "words-edit");
             StagedOutput write = transaction.Stage(
                 request.OutputPath,
@@ -175,8 +195,12 @@ internal static class WordsOpsExecutor
                 precondition,
                 temp =>
                 {
-                    try { document.Save(temp, options); }
+                    try { document.Save(temp, saveOptions); }
                     finally { resources.ThrowIfFailed(); }
+                    if (!request.Verify && WordsFormats.IsLoad(format))
+                    {
+                        using LoadedDocument reopened = loader.OpenPublishedCandidate(temp, outputPassword);
+                    }
                 });
             output = new OutputInfo { Path = request.OutputPath, Format = format, SizeBytes = write.SizeBytes };
             if (write.Backup is not null)
@@ -196,7 +220,7 @@ internal static class WordsOpsExecutor
                     document.Revisions.Count,
                     document.ProtectionType.ToString());
                 verification = write.Read(
-                    candidate => Verify(candidate, request, baseline!, expected, loader));
+                    candidate => Verify(candidate, outputPassword, baseline!, expected, loader));
             }
             transaction.Commit();
         }
@@ -223,7 +247,7 @@ internal static class WordsOpsExecutor
     /// </summary>
     private static WordsVerification Verify(
         string candidatePath,
-        WordsEditRequest request,
+        string? outputPassword,
         Document baseline,
         ExpectedDocumentState expected,
         WordsDocumentLoader loader)
@@ -231,7 +255,7 @@ internal static class WordsOpsExecutor
         var issues = new List<string>();
         using LoadedDocument reopened = loader.OpenPublishedCandidate(
             candidatePath,
-            request.EncryptPassword);
+            outputPassword);
         int fieldCount = reopened.Document.Range.Fields.Count;
         int revisionCount = reopened.Document.Revisions.Count;
         string protection = reopened.Document.ProtectionType.ToString();

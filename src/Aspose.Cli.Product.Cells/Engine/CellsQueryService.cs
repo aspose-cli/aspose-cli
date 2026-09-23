@@ -41,7 +41,7 @@ internal sealed class CellsQueryService
         Workbook workbook = loaded.Workbook;
 
         (WorkbookSummary summary, Warning? errorsTruncated) =
-            InfoProjection.Summarize(workbook, filePath, request);
+            InfoProjection.Summarize(_resourceBudgets, workbook, filePath, request);
 
         return new WorkbookInfoResult
         {
@@ -136,7 +136,7 @@ internal sealed class CellsQueryService
             throw CellsErrors.SheetNotFound(name, Sheets.Names(workbook));
         }
 
-        (IReadOnlyList<SearchHit> hits, bool truncated) = SearchMatcher.Find(workbook, request);
+        (IReadOnlyList<SearchHit> hits, bool truncated) = SearchMatcher.Find(_resourceBudgets, workbook, request);
 
         return new SearchResult
         {

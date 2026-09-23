@@ -12,14 +12,15 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
     private static readonly TimeSpan MaximumRecoveryTime = TimeSpan.FromSeconds(2);
     public PublicationRecoveryReport RollBack()
     {
+        using OperationDeadline cleanup = OperationDeadline.Start(TimeSpan.FromSeconds(30));
         plan.Journal.State = PublicationTransactionState.RollingBack;
-        plan.TryPersist();
+        plan.TryPersist(cleanup);
         var items = new List<PublicationRecoveryItem>();
         foreach (PublicationJournalEntry entry in plan.Journal.Entries
                      .OrderByDescending(static item => item.Index))
         {
             items.Add(RestoreOrReport(entry));
-            plan.TryPersist();
+            plan.TryPersist(cleanup);
         }
 
         items.Reverse();
@@ -30,7 +31,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         plan.Journal.State = complete
             ? PublicationTransactionState.RolledBack
             : PublicationTransactionState.Partial;
-        if (!plan.TryPersist())
+        if (!plan.TryPersist(cleanup))
         {
             plan.Journal.State = PublicationTransactionState.Partial;
             complete = false;
@@ -356,18 +357,20 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             return CleanOrphanJournalTemporaries(directory);
         }
         PrivateUserStorage.ValidateFile(journalPath);
-        if (!TryReadJournal(journalPath, out PublicationJournal? journal))
+        if (!TryReadJournal(journalPath, out PublicationJournal? journal, deadline))
         {
             return false;
         }
 
         if (IsOwnerAlive(journal) && journal.State is not (PublicationTransactionState.Committed or PublicationTransactionState.RolledBack)) { return false; }
+        if (journal.DirectoryOutput is not null)
+        { return NewDirectoryPublication.Recover(root, directory, journal, suppliedLease, deadline); }
         ValidateJournal(root, AtomicPublicationPlan.Open(directory, journal));
         using PublicationDirectoryLease? ownedLease = suppliedLease is null
             ? PublicationDirectoryLease.Acquire(root, AtomicPublicationPlan.ResourceDirectories(journal), deadline) : null;
         PublicationDirectoryLease lease = suppliedLease ?? ownedLease!;
         if (!File.Exists(journalPath)) { return false; }
-        journal = PublicationJournal.Read(journalPath);
+        journal = PublicationJournal.Read(journalPath, deadline: deadline);
         if (!lease.CoversDirectories(AtomicPublicationPlan.ResourceDirectories(journal))) { throw new PublicationLeaseExpansionException(); }
         if (IsOwnerAlive(journal) && journal.State is not (PublicationTransactionState.Committed or PublicationTransactionState.RolledBack)) { return false; }
         var recoveryPlan = AtomicPublicationPlan.Open(directory, journal);
@@ -724,7 +727,8 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
     private static bool TryReadJournal(
         string path,
         [NotNullWhen(true)]
-        out PublicationJournal? journal)
+        out PublicationJournal? journal,
+        OperationDeadline? deadline = null)
     {
         journal = null;
         if (!File.Exists(path))
@@ -734,8 +738,13 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
         try
         {
-            journal = PublicationJournal.Read(path);
+            journal = PublicationJournal.Read(path, deadline: deadline);
             return true;
+        }
+        catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException && !File.Exists(path))
+        {
+            // A terminal transaction may finish cleanup while discovery waits for the journal mutex.
+            return false;
         }
         catch (Exception exception) when (
             exception is IOException

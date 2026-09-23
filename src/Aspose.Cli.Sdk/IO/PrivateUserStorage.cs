@@ -15,7 +15,8 @@ namespace Aspose.Cli.Sdk.IO;
 /// </summary>
 public static class PrivateUserStorage
 {
-    private const int MaximumCleanupEntries = 4096;
+    // A worker can retain a bounded directory tree plus scratch and file transactions.
+    private const int MaximumCleanupEntries = 2 * (PublicationLimits.MaximumDirectoryFiles + PublicationLimits.MaximumDirectories);
     private const UnixFileMode PrivateDirectoryMode =
         UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
     private const UnixFileMode PrivateFileMode =
@@ -92,6 +93,23 @@ public static class PrivateUserStorage
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         string full = Path.GetFullPath(path);
         RejectLinkedComponents(full, includeLeaf: true);
+
+        if (Directory.Exists(full))
+        {
+            try
+            {
+                ValidateDirectory(full);
+                // Reapplying an inheritable Windows DACL traverses every existing child.
+                // Coordination directories grow over time; already hardened permissions need no rewrite.
+                if (OperatingSystem.IsWindows() ? HasHardenedWindowsDirectoryAcl(full)
+                    : File.GetUnixFileMode(full) == PrivateDirectoryMode)
+                { return full; }
+            }
+            catch (UnauthorizedAccessException)
+            {
+                // Existing caller-owned storage still needs the normal permission normalization below.
+            }
+        }
 
         if (!Directory.Exists(full))
         {
@@ -549,6 +567,27 @@ public static class PrivateUserStorage
         return security;
     }
 
+    [SupportedOSPlatform("windows")]
+    private static bool HasHardenedWindowsDirectoryAcl(string path)
+    {
+        DirectorySecurity security = new DirectoryInfo(path).GetAccessControl(AccessControlSections.Access);
+        if (!security.AreAccessRulesProtected) { return false; }
+        AuthorizationRuleCollection rules = security.GetAccessRules(true, true, typeof(SecurityIdentifier));
+        var expected = new HashSet<SecurityIdentifier>
+        {
+            CurrentUserSid(), new(WellKnownSidType.LocalSystemSid, null),
+        };
+        if (rules.Count != expected.Count) { return false; }
+        foreach (FileSystemAccessRule rule in rules)
+        {
+            if (rule.AccessControlType != AccessControlType.Allow || rule.FileSystemRights != FileSystemRights.FullControl
+                || rule.InheritanceFlags != (InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit)
+                || rule.PropagationFlags != PropagationFlags.None || rule.IsInherited
+                || rule.IdentityReference is not SecurityIdentifier sid || !expected.Remove(sid))
+            { return false; }
+        }
+        return expected.Count == 0;
+    }
     [SupportedOSPlatform("windows")]
     private static void ValidateWindowsAcl(string path, bool isDirectory)
     {

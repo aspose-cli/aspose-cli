@@ -2,6 +2,7 @@ using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -16,7 +17,7 @@ internal static class InfoProjection
     private const int MaxPreviewColumns = 20;
 
     public static (WorkbookSummary Summary, Warning? ErrorsTruncated) Summarize(
-        Workbook workbook, string filePath, InfoRequest request)
+        ResourceBudgetLedger budgets, Workbook workbook, string filePath, InfoRequest request)
     {
         var sheets = new List<SheetInfo>(workbook.Worksheets.Count);
         for (int index = 0; index < workbook.Worksheets.Count; index++)
@@ -28,7 +29,7 @@ internal static class InfoProjection
         Warning? errorsTruncated = null;
         if (WantsDetail(request, InfoDetails.Errors))
         {
-            (formulaErrors, int total) = ScanFormulaErrors(workbook);
+            (formulaErrors, int total) = ScanFormulaErrors(budgets, workbook);
             if (total > formulaErrors.Count)
             {
                 errorsTruncated = new Warning
@@ -129,49 +130,31 @@ internal static class InfoProjection
         return names;
     }
 
-    /// <summary>
-    /// Scans stored cell values for formula errors (#REF!, #DIV/0!, ...). Uses
-    /// the last-saved results — `edit` and `calc` recalculate before saving, so
-    /// this catches errors an edit introduced. The returned LIST is capped so the
-    /// payload stays affordable, but the scan continues to a true <c>Total</c> so
-    /// the count is honest — a real corpus xlsb had 19,318 errors across 6 sheets
-    /// while the old cap returned exactly 1,000 from the first sheet only, with no
-    /// signal, making the later sheets look clean. Counting past the cap is cheap
-    /// (~56 ms for that file); the scan is bounded by each sheet's used range.
-    /// </summary>
-    private static (IReadOnlyList<CellError> Errors, int Total) ScanFormulaErrors(Workbook workbook)
+    /// <summary>Counts every stored error under the work budget and returns the first bounded sample.</summary>
+    private static (IReadOnlyList<CellError> Errors, int Total) ScanFormulaErrors(
+        ResourceBudgetLedger budgets, Workbook workbook)
     {
         const int maxErrors = 1000;
         var errors = new List<CellError>();
         int total = 0;
         foreach (Worksheet sheet in workbook.Worksheets)
         {
-            int maxRow = sheet.Cells.MaxDataRow;
-            int maxColumn = sheet.Cells.MaxDataColumn;
-            for (int row = 0; row <= maxRow; row++)
+            foreach (Cell cell in StoredCells.InAddressOrder(budgets, sheet, "formula-errors"))
             {
-                for (int column = 0; column <= maxColumn; column++)
+                budgets.Deadline.ThrowIfExpired("formula-errors");
+                if (cell.Type != CellValueType.IsError) { continue; }
+                total++;
+                if (errors.Count < maxErrors)
                 {
-                    Cell? cell = sheet.Cells.CheckCell(row, column);
-                    if (cell is null || cell.Type != CellValueType.IsError)
+                    errors.Add(new CellError
                     {
-                        continue;
-                    }
-
-                    total++;
-                    if (errors.Count < maxErrors)
-                    {
-                        errors.Add(new CellError
-                        {
-                            Sheet = sheet.Name,
-                            Cell = A1.FormatCell(new CellRef(row, column)),
-                            Error = cell.StringValue ?? "#ERROR!",
-                        });
-                    }
+                        Sheet = sheet.Name,
+                        Cell = A1.FormatCell(new CellRef(cell.Row, cell.Column)),
+                        Error = cell.StringValue ?? "#ERROR!",
+                    });
                 }
             }
         }
-
         return (errors, total);
     }
 

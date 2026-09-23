@@ -2,7 +2,7 @@ using System.Security.Cryptography;
 using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
-using Aspose.Cli.Host.Commands;
+using Aspose.Cli.Host.Updating;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;

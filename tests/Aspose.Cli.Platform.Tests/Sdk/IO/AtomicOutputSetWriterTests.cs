@@ -1006,10 +1006,14 @@ public sealed class AtomicOutputSetWriterTests
             overwrite: false,
             staged => File.WriteAllText(staged, "first"));
 
-        Task secondWrite = Task.Run(() => TestBudgets.Writer().Write(
-            second,
-            overwrite: false,
-            staged => File.WriteAllText(staged, "second")));
+        var started = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        Task secondWrite = Task.Factory.StartNew(() =>
+        {
+            started.SetResult();
+            TestBudgets.Writer().Write(second, overwrite: false,
+                staged => File.WriteAllText(staged, "second"));
+        }, CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        await started.Task.WaitAsync(TimeSpan.FromSeconds(5));
         await secondWrite.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.False(File.Exists(first));
 

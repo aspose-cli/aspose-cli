@@ -77,10 +77,24 @@ internal static class WorkerManifestStore
 
     private static void Validate(string root, WorkerOutputManifest manifest)
     {
-        if (manifest.Version != 4 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
+        if (manifest.Version != 5 || !manifest.Sealed || manifest.Entries is null || manifest.Directories is null
             || manifest.Entries.Count > MaximumEntries || manifest.Directories.Count > MaximumDirectories)
         {
             throw new InvalidDataException("The worker manifest violates its bounded contract.");
+        }
+        if (manifest.DirectoryOutput is { } output)
+        {
+            if (manifest.Entries.Count != 0 || manifest.Directories.Count != 0)
+            { throw new InvalidDataException("A new-directory output cannot overlap another output set."); }
+            NewDirectoryPublication.ValidateDescriptor(output);
+            EnsureOutsideRoot(root, output.Target);
+            if (!PathComparer.Equals(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), root)
+                || Path.GetFileName(output.Staged) != "directory")
+            { throw new InvalidDataException("A staged directory is outside the worker layout."); }
+            PrivateUserStorage.ValidateDirectory(Path.GetDirectoryName(output.Staged)!);
+            PrivateUserStorage.ValidateDirectory(output.Staged);
+            NewDirectoryPublication.ValidateTree(output.Staged, output.Tree);
+            return;
         }
         var paths = new HashSet<string>(PathComparer);
         foreach (WorkerOutputEntry entry in manifest.Entries)

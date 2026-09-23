@@ -106,8 +106,8 @@ public sealed class McpCommandTests
     [Fact]
     public void McpServer_IsNeverWrappedByTheTimeoutWorker()
     {
-        Assert.True(ActualCommandTree.Parser.Parse(
-            ["--timeout", "30", "mcp", "serve"]).ServiceLifetime);
+        Assert.Equal(CommandExecutionOwnership.Service, ActualCommandTree.Parser.Parse(
+            ["--timeout", "30", "mcp", "serve"]).Execution);
     }
 
     [Theory]

@@ -48,7 +48,8 @@ internal static class InvocationEnvironment
         ProcessStartInfo start, ParsedInvocation invocation, IReadOnlyList<string> productVariables)
     {
         start.Environment.Clear();
-        foreach (string name in Baseline.Concat(productVariables))
+        foreach (string name in Baseline.Concat(productVariables).Concat(invocation.CommandPath
+            .SelectMany(static command => command.Policy().EnvironmentVariables ?? [])))
         {
             if (Environment.GetEnvironmentVariable(name) is { } value)
             {

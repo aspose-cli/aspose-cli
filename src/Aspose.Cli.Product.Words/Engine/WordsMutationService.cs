@@ -55,12 +55,12 @@ internal sealed class WordsMutationService
         return result with
         {
             License = EnvelopeParts.License(state),
-            Warnings = MutationWarnings(
+            Warnings = Combine(result.Warnings, MutationWarnings(
                 state,
                 inputHadRevisions,
                 inputWasSigned,
                 loaded.RemoteResourcesBlocked,
-                loaded.EvaluationInputTruncated || loaded.ImportedInputTruncated),
+                loaded.EvaluationInputTruncated || loaded.ImportedInputTruncated)),
         };
     }
 

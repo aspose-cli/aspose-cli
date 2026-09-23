@@ -83,7 +83,7 @@ internal static class RootCommandFactory
             root.Subcommands.Add(FontsCommandGroup.Create(executor, catalog, globals));
         }
         root.Subcommands.Add(McpCommand.Create(host, globals));
-        root.Subcommands.Add(UpdateCommand.Create(executor, globals));
+        root.Subcommands.Add(UpdateCommand.Create(host, executor, globals));
 
         root.ValidateParameters();
         HostHelpMetadata.Attach(root);

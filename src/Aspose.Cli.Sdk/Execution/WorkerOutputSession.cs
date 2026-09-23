@@ -10,7 +10,7 @@ public sealed class WorkerOutputSession
     public const string DeadlineEnvironmentVariable = "ASPOSE_CLI_WORKER_DEADLINE_TICK";
     public const string BudgetEnvironmentVariable = "ASPOSE_CLI_WORKER_BUDGET_MS";
     public const string WorkerEnvironmentVariable = "ASPOSE_CLI_TIMEOUT_WORKER";
-    public const string ManifestName = "output-manifest.v3.json";
+    public const string ManifestName = "output-manifest.v5.json";
     private readonly object _gate = new();
     private readonly List<WorkerOutputEntry> _entries = [];
     private readonly Dictionary<string, WorkerDirectoryEntry> _directories = new(WorkerManifestStore.PathComparer);
@@ -18,14 +18,18 @@ public sealed class WorkerOutputSession
     private readonly string _manifestPath;
     private int _nextId;
     private bool _sealed;
+    private NewDirectoryOutput? _directoryOutput;
 
     public WorkerOutputSession(string root, string manifestPath)
     {
         (_root, _manifestPath) = WorkerManifestStore.ValidateSessionPaths(root, manifestPath, requireManifest: false);
     }
 
-    internal string CreatePrivateDirectory(string operation)
+    /// <summary>Creates scratch storage reclaimed with this worker, including after forced termination.</summary>
+    public string CreatePrivateDirectory(string operation)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(operation);
+        if (operation.Length > 128) { throw new ArgumentOutOfRangeException(nameof(operation)); }
         string name = string.Concat(operation.Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-'));
         return PrivateUserStorage.EnsureDirectory(Path.Combine(_root, $"{Interlocked.Increment(ref _nextId):000000}-{name}"));
     }
@@ -36,6 +40,7 @@ public sealed class WorkerOutputSession
         lock (_gate)
         {
             EnsureMutable();
+            if (_directoryOutput is not null) { throw new IOException("A new-directory output cannot be combined with file outputs."); }
             if (entries.Count > PublicationLimits.MaximumEntries - _entries.Count)
             { throw new IOException("The worker output entry budget was exceeded."); }
             var paths = new HashSet<string>(_entries.SelectMany(entry => entry.BackupPath is null
@@ -112,6 +117,22 @@ public sealed class WorkerOutputSession
         }
     }
 
+    internal void RegisterDirectory(NewDirectoryOutput output, OperationDeadline deadline)
+    {
+        lock (_gate)
+        {
+            EnsureMutable();
+            if (_directoryOutput is not null || _entries.Count != 0 || _directories.Count != 0)
+            { throw new IOException("A new-directory output must be the invocation's sole output set."); }
+            NewDirectoryPublication.ValidateDescriptor(output);
+            if (!WorkerManifestStore.PathComparer.Equals(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), _root)
+                || Path.GetFileName(output.Staged) != "directory")
+            { throw new IOException("The directory candidate is outside its worker's private storage."); }
+            deadline.ThrowIfExpired("directory-handoff");
+            WorkerManifestStore.CheckCapacity(new WorkerOutputManifest { DirectoryOutput = output, Sealed = true });
+            _directoryOutput = output;
+        }
+    }
     private static void AddDirectory(Dictionary<string, WorkerDirectoryEntry> directories, string target)
     {
         string path = Path.GetFullPath(target);
@@ -142,7 +163,7 @@ public sealed class WorkerOutputSession
     }
 
     private WorkerOutputManifest Snapshot() => new()
-    { Entries = _entries.ToArray(), Directories = _directories.Values.ToArray() };
+    { Entries = _entries.ToArray(), Directories = _directories.Values.ToArray(), DirectoryOutput = _directoryOutput };
 
     private void EnsureMutable()
     {
@@ -162,10 +183,11 @@ public sealed class WorkerOutputSession
 
 internal sealed record WorkerOutputManifest
 {
-    public int Version { get; init; } = 4;
+    public int Version { get; init; } = 5;
     public bool Sealed { get; init; }
     public IReadOnlyList<WorkerOutputEntry> Entries { get; init; } = [];
     public IReadOnlyList<WorkerDirectoryEntry> Directories { get; init; } = [];
+    public NewDirectoryOutput? DirectoryOutput { get; init; }
 }
 
 internal sealed record WorkerOutputEntry

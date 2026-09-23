@@ -1,96 +1,57 @@
 using System.Diagnostics;
 using System.IO.Compression;
 using System.Net;
-using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk;
+using Aspose.Cli.Sdk.Execution;
+using Aspose.Cli.Sdk.IO;
 
-namespace Aspose.Cli.Host.Commands;
+namespace Aspose.Cli.Host.Updating;
 
 /// <summary>Resolves and verifies one explicit release feed.</summary>
 internal static class UpdateClient
 {
     private const int MaximumManifestBytes = 64 * 1024;
-    private const long MaximumArchiveBytes = 1L * 1024 * 1024 * 1024;
+    internal const long MaximumArchiveBytes = 1L * 1024 * 1024 * 1024;
     private const int MaximumZipEntries = 4096;
 
     public static UpdateResult Check(CommandContext context, string feed)
     {
-        using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory);
+        using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory, context.ResourceBudgets);
         var manifest = Verify(files);
-        int comparison = CompareVersions(manifest);
+        return Describe(manifest, feed, CompareVersions(manifest) == 0);
+    }
 
-        return new UpdateResult
+    /// <summary>Produces a verified package; only the owning parent can launch its installer.</summary>
+    internal static UpdateResult Prepare(CommandContext context, string feed, string outputDirectory)
+    {
+        using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory, context.ResourceBudgets);
+        ReleaseManifestInfo manifest = Verify(files);
+        bool current = CompareVersions(manifest) == 0;
+        if (!current)
         {
-            Status = comparison == 0 ? "up-to-date" : "available",
+            string package = files.DownloadArchive(manifest);
+            using var publication = new AtomicNewDirectoryWriter(context.ResourceBudgets, outputDirectory, "update-package");
+            ExtractPackage(package, publication.StagingDirectory, context.Deadline);
+            publication.Commit();
+        }
+        return Describe(manifest, feed, current);
+    }
+
+    private static UpdateResult Describe(ReleaseManifestInfo manifest, string feed, bool current) =>
+        new()
+        {
+            Status = current ? "up-to-date" : "available",
             Edition = DistributionInfo.Edition,
             CurrentVersion = VersionInfo.ArtifactVersion,
-            AvailableVersion = comparison == 0 ? null : manifest.ArtifactVersion,
+            AvailableVersion = current ? null : manifest.ArtifactVersion,
             SourceRevision = manifest.SourceRevision,
             Feed = feed,
             ArchiveSha256 = manifest.ArchiveSha256,
         };
-    }
-
-    public static UpdateResult Install(CommandContext context, string feed)
-    {
-        if (!OperatingSystem.IsWindows() || !string.Equals(RuntimeInformation.RuntimeIdentifier, "win-x64", StringComparison.OrdinalIgnoreCase))
-        {
-            throw CliErrors.OptionInvalid("update install", "the customer updater currently supports Windows x64 only", "Run the win-x64 distribution on Windows, or use update check for feed verification.");
-        }
-
-        using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory);
-        var manifest = Verify(files);
-        if (CompareVersions(manifest) == 0)
-        {
-            return new UpdateResult
-            {
-                Status = "up-to-date",
-                Edition = DistributionInfo.Edition,
-                CurrentVersion = VersionInfo.ArtifactVersion,
-                SourceRevision = manifest.SourceRevision,
-                Feed = feed,
-                ArchiveSha256 = manifest.ArchiveSha256,
-            };
-        }
-
-        string powerShellPath = ResolveWindowsPowerShell();
-        string package = files.DownloadArchive(manifest);
-        string? extracted = null;
-        bool handedOff = false;
-        try
-        {
-            extracted = ExtractPackage(package);
-            string installRoot = Path.GetFullPath(AppContext.BaseDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-            int processId = HandoffToInstaller(
-                powerShellPath,
-                extracted,
-                installRoot);
-            handedOff = true;
-            return new UpdateResult
-            {
-                Status = "pending",
-                Edition = DistributionInfo.Edition,
-                CurrentVersion = VersionInfo.ArtifactVersion,
-                AvailableVersion = manifest.ArtifactVersion,
-                SourceRevision = manifest.SourceRevision,
-                Feed = feed,
-                ArchiveSha256 = manifest.ArchiveSha256,
-                ProcessId = processId,
-            };
-        }
-        finally
-        {
-            if (!handedOff && extracted is not null)
-            {
-                DeleteTree(extracted);
-            }
-            TryDeleteFile(package);
-        }
-    }
 
     private static ReleaseManifestInfo Verify(FeedFiles files)
     {
@@ -191,7 +152,8 @@ internal static class UpdateClient
     internal static int HandoffToInstaller(
         string powerShellPath,
         string extracted,
-        string installRoot)
+        string installRoot,
+        OperationDeadline? deadline = null)
     {
         bool started = false;
         Process? process = null;
@@ -199,8 +161,8 @@ internal static class UpdateClient
         {
             var start = new ProcessStartInfo(powerShellPath)
             {
-                UseShellExecute = false,
-                CreateNoWindow = true,
+                // Detach standard handles as well as lifetime: the installer must not keep CLI result pipes open.
+                UseShellExecute = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
             };
             foreach (string argument in new[]
@@ -217,6 +179,7 @@ internal static class UpdateClient
                 start.ArgumentList.Add(argument);
             }
 
+            deadline?.ThrowIfExpired("update-installer-start");
             process = Process.Start(start)
                 ?? throw ReleaseErrors.VerificationFailed("the installer process could not be started");
             started = true;
@@ -236,67 +199,58 @@ internal static class UpdateClient
         }
     }
 
-    private static string ExtractPackage(string archive)
+    private static void ExtractPackage(string archive, string root, OperationDeadline deadline)
     {
-        string root = Path.Combine(Path.GetTempPath(), "aspose-cli-update-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(root);
-        try
+        using var zip = ZipFile.OpenRead(archive);
+        if (zip.Entries.Count is 0 or > MaximumZipEntries)
         {
-            using var zip = ZipFile.OpenRead(archive);
-            if (zip.Entries.Count is 0 or > MaximumZipEntries)
-            {
-                throw ReleaseErrors.VerificationFailed("the update archive has an invalid entry count");
-            }
-            var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-            long total = 0;
-            foreach (var entry in zip.Entries)
-            {
-                bool directory = entry.FullName.EndsWith('/');
-                string relative = ValidateZipPath(
-                    directory ? entry.FullName.TrimEnd('/') : entry.FullName);
-                if (!paths.Add(relative))
-                {
-                    throw ReleaseErrors.VerificationFailed($"the update archive contains duplicate entry '{relative}'");
-                }
-                if (directory)
-                {
-                    Directory.CreateDirectory(Path.Combine(root, relative));
-                    continue;
-                }
-                total = checked(total + entry.Length);
-                if (total > MaximumArchiveBytes)
-                {
-                    throw ReleaseErrors.VerificationFailed("the update archive exceeds its decompressed size budget");
-                }
-                string destination = Path.Combine(root, relative);
-                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-                using var input = entry.Open();
-                using FileStream output = new(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                long copied = CopyBounded(
-                    input,
-                    output,
-                    MaximumArchiveBytes - (total - entry.Length));
-                if (copied != entry.Length)
-                {
-                    throw ReleaseErrors.VerificationFailed($"the update archive entry '{relative}' has an invalid decompressed size");
-                }
-            }
-
-            foreach (string required in new[] { "aspose-cli.exe", "install.ps1", "SHA256SUMS" })
-            {
-                if (!File.Exists(Path.Combine(root, required)))
-                {
-                    throw ReleaseErrors.VerificationFailed($"the update archive is missing '{required}'");
-                }
-            }
-            return root;
+            throw ReleaseErrors.VerificationFailed("the update archive has an invalid entry count");
         }
-        catch
+        var paths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        long total = 0;
+        foreach (var entry in zip.Entries)
         {
-            DeleteTree(root);
-            throw;
+            deadline.ThrowIfExpired("update-extract");
+            bool directory = entry.FullName.EndsWith('/');
+            string relative = ValidateZipPath(
+                directory ? entry.FullName.TrimEnd('/') : entry.FullName);
+            if (!paths.Add(relative))
+            {
+                throw ReleaseErrors.VerificationFailed($"the update archive contains duplicate entry '{relative}'");
+            }
+            if (directory)
+            {
+                Directory.CreateDirectory(Path.Combine(root, relative));
+                continue;
+            }
+            total = checked(total + entry.Length);
+            if (total > MaximumArchiveBytes)
+            {
+                throw ReleaseErrors.VerificationFailed("the update archive exceeds its decompressed size budget");
+            }
+            string destination = Path.Combine(root, relative);
+            Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
+            using var input = entry.Open();
+            using FileStream output = new(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
+            long copied = CopyBounded(
+                input,
+                output,
+                MaximumArchiveBytes - (total - entry.Length), deadline);
+            if (copied != entry.Length)
+            {
+                throw ReleaseErrors.VerificationFailed($"the update archive entry '{relative}' has an invalid decompressed size");
+            }
+        }
+
+        foreach (string required in new[] { "aspose-cli.exe", "install.ps1", "SHA256SUMS" })
+        {
+            if (!File.Exists(Path.Combine(root, required)))
+            {
+                throw ReleaseErrors.VerificationFailed($"the update archive is missing '{required}'");
+            }
         }
     }
+
 
     private static string ValidateZipPath(string value)
     {
@@ -318,13 +272,14 @@ internal static class UpdateClient
         return normalized;
     }
 
-    private static long CopyBounded(Stream input, Stream output, long maximum)
+    private static long CopyBounded(Stream input, Stream output, long maximum, OperationDeadline deadline)
     {
         byte[] buffer = new byte[64 * 1024];
         long total = 0;
         while (true)
         {
-            int read = input.Read(buffer, 0, buffer.Length);
+            deadline.ThrowIfExpired("update-copy");
+            int read = input.ReadAsync(buffer.AsMemory(), deadline.Token).AsTask().GetAwaiter().GetResult();
             if (read == 0)
             {
                 return total;
@@ -334,23 +289,11 @@ internal static class UpdateClient
             {
                 throw ReleaseErrors.VerificationFailed("the update archive decompressed beyond its safety budget");
             }
-            output.Write(buffer, 0, read);
+            output.WriteAsync(buffer.AsMemory(0, read), deadline.Token).AsTask().GetAwaiter().GetResult();
         }
     }
 
-    private static void DeleteTree(string path)
-    {
-        try
-        {
-            if (Directory.Exists(path))
-            {
-                Directory.Delete(path, true);
-            }
-        }
-        catch
-        {
-        }
-    }
+    private static void DeleteTree(string path) => PrivateUserStorage.TryDeleteTree(path);
 
     private static void TryDeleteFile(string path)
     {
@@ -368,152 +311,94 @@ internal static class UpdateClient
 
     private sealed class FeedFiles : IDisposable
     {
-        private readonly string? _temporaryRoot;
+        private readonly string _temporaryRoot;
         private readonly Uri? _remoteBase;
+        private readonly OperationDeadline _deadline;
 
-        private FeedFiles(string manifestPath, string signaturePath, string? temporaryRoot, Uri? remoteBase)
+        private FeedFiles(string manifestPath, string signaturePath, string temporaryRoot, Uri? remoteBase, OperationDeadline deadline)
         {
             ManifestPath = manifestPath;
             SignaturePath = signaturePath;
             _temporaryRoot = temporaryRoot;
             _remoteBase = remoteBase;
+            _deadline = deadline;
         }
 
         public string ManifestPath { get; }
         public string SignaturePath { get; }
 
-        public static FeedFiles Open(string feed, string baseDirectory)
+        public static FeedFiles Open(string feed, string baseDirectory, ResourceBudgetLedger budgets)
         {
-            if (!Path.IsPathRooted(feed)
-                && Uri.TryCreate(feed, UriKind.Absolute, out var uri))
+            string root = budgets.OutputSession?.CreatePrivateDirectory("update-feed")
+                ?? PrivateUserStorage.CreateTemporaryDirectory("update-feed");
+            try
             {
-                ValidateHttpsFeedUri(uri);
-
-                string root = Path.Combine(Path.GetTempPath(), "aspose-cli-feed-" + Guid.NewGuid().ToString("N"));
-                Directory.CreateDirectory(root);
-                try
+                if (!Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out var uri))
                 {
+                    ValidateHttpsFeedUri(uri);
                     string manifest = Path.Combine(root, "RELEASE-MANIFEST.json");
-                    Download(uri, manifest, MaximumManifestBytes);
+                    Download(uri, manifest, MaximumManifestBytes, budgets.Deadline);
                     string signature = Path.Combine(root, "RELEASE-MANIFEST.sig");
-                    Download(new Uri(uri, "RELEASE-MANIFEST.sig"), signature, 16 * 1024);
-                    return new FeedFiles(manifest, signature, root, uri);
+                    Download(new Uri(uri, "RELEASE-MANIFEST.sig"), signature, 16 * 1024, budgets.Deadline);
+                    return new FeedFiles(manifest, signature, root, uri, budgets.Deadline);
                 }
-                catch
-                {
-                    DeleteTree(root);
-                    throw;
-                }
+                string path = Path.GetFullPath(feed, baseDirectory);
+                if (Directory.Exists(path)) { path = Path.Combine(path, "RELEASE-MANIFEST.json"); }
+                EnsureLocal(path);
+                string signaturePath = Path.Combine(Path.GetDirectoryName(path)!, "RELEASE-MANIFEST.sig");
+                EnsureLocal(signaturePath);
+                return new FeedFiles(path, signaturePath, root, null, budgets.Deadline);
             }
-
-            string path = Path.GetFullPath(feed, baseDirectory);
-            if (Directory.Exists(path))
-            {
-                path = Path.Combine(path, "RELEASE-MANIFEST.json");
-            }
-            EnsureLocal(path);
-            string signaturePath = Path.Combine(Path.GetDirectoryName(path)!, "RELEASE-MANIFEST.sig");
-            EnsureLocal(signaturePath);
-            return new FeedFiles(path, signaturePath, null, null);
+            catch { DeleteTree(root); throw; }
         }
 
         public string DownloadArchive(ReleaseManifestInfo manifest)
         {
-            string target = Path.Combine(Path.GetTempPath(), "aspose-cli-update-" + Guid.NewGuid().ToString("N") + ".zip");
+            string target = Path.Combine(_temporaryRoot, "archive.zip");
             try
             {
                 if (_remoteBase is not null)
                 {
                     if (manifest.ArchivePath.Contains("..", StringComparison.Ordinal))
-                    {
-                        throw ReleaseErrors.VerificationFailed("the feed archive path is unsafe");
-                    }
-                    Download(new Uri(new Uri(_remoteBase, "."), manifest.ArchivePath), target, MaximumArchiveBytes);
+                    { throw ReleaseErrors.VerificationFailed("the feed archive path is unsafe"); }
+                    Download(new Uri(new Uri(_remoteBase, "."), manifest.ArchivePath), target, MaximumArchiveBytes, _deadline);
                 }
                 else
                 {
                     string source = Path.Combine(Path.GetDirectoryName(ManifestPath)!, manifest.ArchivePath.Replace('/', Path.DirectorySeparatorChar));
                     EnsureLocal(source);
-                    CopyBounded(source, target, manifest.ArchiveSize);
+                    using var input = File.OpenRead(source);
+                    using FileStream output = PrivateUserStorage.CreateFile(target);
+                    CopyBounded(input, output, Math.Min(manifest.ArchiveSize, MaximumArchiveBytes), _deadline);
                 }
-                if (new FileInfo(target).Length != manifest.ArchiveSize
-                    || !string.Equals(ComputeSha256(target), manifest.ArchiveSha256, StringComparison.OrdinalIgnoreCase))
-                {
-                    throw ReleaseErrors.VerificationFailed("the downloaded archive hash does not match the signed manifest");
-                }
+                using var stream = File.OpenRead(target);
+                if (stream.Length != manifest.ArchiveSize || !string.Equals(
+                    Convert.ToHexString(SHA256.HashDataAsync(stream, _deadline.Token).GetAwaiter().GetResult()),
+                    manifest.ArchiveSha256, StringComparison.OrdinalIgnoreCase))
+                { throw ReleaseErrors.VerificationFailed("the downloaded archive hash does not match the signed manifest"); }
+                _deadline.ThrowIfExpired("update-archive-verified");
                 return target;
             }
-            catch
-            {
-                TryDeleteFile(target);
-                throw;
-            }
+            catch { TryDeleteFile(target); throw; }
         }
 
-        public void Dispose()
-        {
-            if (_temporaryRoot is not null)
-            {
-                DeleteTree(_temporaryRoot);
-            }
-        }
+        public void Dispose() => DeleteTree(_temporaryRoot);
 
-        private static void Download(Uri uri, string destination, long maximum)
+        private static void Download(Uri uri, string destination, long maximum, OperationDeadline deadline)
         {
             ValidateHttpsFeedUri(uri);
             using var client = new HttpClient(new HttpClientHandler { AllowAutoRedirect = false });
-            using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead).GetAwaiter().GetResult();
+            using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, deadline.Token).GetAwaiter().GetResult();
             if (response.StatusCode != HttpStatusCode.OK
                 || response.Content.Headers.ContentLength is > 0 and var length && length > maximum)
-            {
-                throw ReleaseErrors.VerificationFailed($"HTTPS feed returned {(int)response.StatusCode} or exceeded its size budget");
-            }
+            { throw ReleaseErrors.VerificationFailed($"HTTPS feed returned {(int)response.StatusCode} or exceeded its size budget"); }
             try
             {
-                using var input = response.Content.ReadAsStream();
-                using FileStream output = new(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-                CopyBounded(input, output, maximum);
+                using var input = response.Content.ReadAsStreamAsync(deadline.Token).GetAwaiter().GetResult();
+                using FileStream output = PrivateUserStorage.CreateFile(destination);
+                CopyBounded(input, output, maximum, deadline);
             }
-            catch
-            {
-                TryDeleteFile(destination);
-                throw;
-            }
-        }
-
-        private static void CopyBounded(string source, string destination, long expected)
-        {
-            using var input = File.OpenRead(source);
-            using FileStream output = new(destination, FileMode.CreateNew, FileAccess.Write, FileShare.None);
-            CopyBounded(input, output, expected);
-        }
-
-        private static void CopyBounded(Stream input, Stream output, long maximum)
-        {
-            byte[] buffer = new byte[64 * 1024];
-            long total = 0;
-            while (true)
-            {
-                int read = input.Read(buffer);
-                if (read == 0)
-                {
-                    break;
-                }
-
-                total = checked(total + read);
-                if (total > maximum)
-                {
-                    throw ReleaseErrors.VerificationFailed("feed download exceeds its size budget");
-                }
-
-                output.Write(buffer, 0, read);
-            }
-        }
-
-        private static string ComputeSha256(string path)
-        {
-            using var stream = File.OpenRead(path);
-            return Convert.ToHexString(SHA256.HashData(stream));
+            catch { TryDeleteFile(destination); throw; }
         }
 
         private static void EnsureLocal(string path)

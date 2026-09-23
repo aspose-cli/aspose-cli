@@ -1,9 +1,11 @@
 # Slides editing
 
 All addresses resolve against the original presentation before the first
-operation is applied. A delete operation fails before removing anything if a
-targeted slide was deleted earlier in the batch; deleting the final slide also
-fails. Content inserted earlier in a batch cannot be addressed
+operation is applied. Every operation validates that its original slides and
+shapes still belong to the presentation before modifying anything. A deleted
+slide or shape cannot be targeted later in the batch; multi-target operations
+validate every target before changing any. Moving a slide preserves its original
+identity. Deleting the final slide also fails. Content inserted earlier in a batch cannot be addressed
 by later operations in that same batch. Obtain stable `slideId` values from
 `slides inspect` or `slides query slides`. Obtain `shapeId` values from
 `slides query slides --scope shapes` or `--scope full`; `inspect` reports shape
@@ -47,3 +49,7 @@ aspose-cli docs slides/ops
 
 Video and audio insertion or MP4 rendering are not supported by this build. Existing embedded
 media can be inventoried and extracted, but must not be silently synthesized.
+
+For `update_chart_data`, omitted series retain their existing values, including
+scatter X/Y coordinates. A categories-only update must keep matching lengths.
+Explicit scatter series require matching `xValues` and `values`.

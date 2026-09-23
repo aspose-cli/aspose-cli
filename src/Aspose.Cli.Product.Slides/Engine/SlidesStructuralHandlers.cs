@@ -44,10 +44,7 @@ internal static class SlidesStructuralHandlers
 
     internal static long DeleteSlides(Presentation presentation, IReadOnlyList<ISlide> slides)
     {
-        if (slides.Any(slide => !presentation.Slides.Contains(slide)))
-        {
-            throw new InvalidOperationException("A targeted slide was deleted by an earlier operation.");
-        }
+
         if (slides.Count == presentation.Slides.Count)
         {
             throw new InvalidOperationException("A presentation must retain at least one slide.");

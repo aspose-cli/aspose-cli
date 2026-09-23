@@ -31,7 +31,7 @@ internal static class TimeoutWorkerSupervisor
     public static int Run(HostContext host, string[] args, ParsedInvocation invocation, Func<int> inProcess)
     {
         if (invocation.GlobalValues?.TimeoutSeconds is not > 0
-            || host.WorkerOutputs is not null || invocation.ServiceLifetime) { return inProcess(); }
+            || host.WorkerOutputs is not null || invocation.Execution != CommandExecutionOwnership.Worker) { return inProcess(); }
         using var cancellation = new CancellationTokenSource();
         ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
         Console.CancelKeyPress += onCancel;
@@ -60,6 +60,16 @@ internal static class TimeoutWorkerSupervisor
         GlobalValues? inherited = null, bool redirectInput = false, string? stdin = null)
     {
         using OperationDeadline deadline = OperationDeadline.Start(budget, cancellationToken);
+        return await ExecuteAsync(host, args, invocation, deadline, startInfoFactory,
+            inherited, redirectInput, stdin).ConfigureAwait(false);
+    }
+
+    /// <summary>Runs owned preparation against the caller's existing absolute deadline.</summary>
+    internal static async Task<InvocationProcessResult> ExecuteAsync(
+        HostContext host, string[] args, ParsedInvocation invocation, OperationDeadline deadline,
+        Func<ProcessStartInfo> startInfoFactory, GlobalValues? inherited = null,
+        bool redirectInput = false, string? stdin = null)
+    {
         string root = PrivateUserStorage.CreateTemporaryDirectory("worker");
         string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
         bool safeToClean = true;
@@ -73,15 +83,18 @@ internal static class TimeoutWorkerSupervisor
             start.RedirectStandardInput = redirectInput;
             start.StandardOutputEncoding = start.StandardErrorEncoding = Encoding.UTF8;
             if (redirectInput) { start.StandardInputEncoding = new UTF8Encoding(false); }
-            start.WorkingDirectory = Path.GetFullPath(invocation.GlobalValues?.WorkDir
-                ?? inherited?.WorkDir ?? Directory.GetCurrentDirectory());
+            // Raw arguments are parsed again by the child against the original base.
+            start.WorkingDirectory = Path.GetFullPath(inherited?.WorkDir ?? Directory.GetCurrentDirectory());
             InvocationEnvironment.Configure(start, invocation, InvocationEnvironment.ProductVariables(host.Catalog));
             foreach (string argument in args) { start.ArgumentList.Add(argument); }
             start.Environment[WorkerOutputSession.WorkerEnvironmentVariable] = "1";
             start.Environment[WorkerOutputSession.RootEnvironmentVariable] = root;
             start.Environment[WorkerOutputSession.ManifestEnvironmentVariable] = manifest;
-            start.Environment[WorkerOutputSession.DeadlineEnvironmentVariable] = deadline.ExpiresAtTick!.Value.ToString(CultureInfo.InvariantCulture);
-            start.Environment[WorkerOutputSession.BudgetEnvironmentVariable] = Math.Ceiling(budget.TotalMilliseconds).ToString(CultureInfo.InvariantCulture);
+            if (deadline.ExpiresAtTick is { } expires)
+            {
+                start.Environment[WorkerOutputSession.DeadlineEnvironmentVariable] = expires.ToString(CultureInfo.InvariantCulture);
+                start.Environment[WorkerOutputSession.BudgetEnvironmentVariable] = Math.Ceiling(deadline.OriginalBudget!.Value.TotalMilliseconds).ToString(CultureInfo.InvariantCulture);
+            }
             channel.Configure(start);
             deadline.ThrowIfExpired("worker-start");
             using Process process = Process.Start(start) ?? throw new IOException("The CLI child process could not be started.");
@@ -109,7 +122,8 @@ internal static class TimeoutWorkerSupervisor
             {
                 // This is the only final publisher. Recovery runs here even when the deadline expires.
                 WorkerOutputSession.Publish(manifest, CompositionRoot.CreateBudgets(host.Catalog,
-                    invocation.GlobalValues ?? inherited ?? throw new InvalidDataException("The publishing invocation has no global values."), deadline));
+                    invocation.GlobalValues ?? inherited ?? throw new InvalidDataException("The publishing invocation has no global values."), deadline,
+                    outputBytesLimit: invocation.Command.Policy().OutputBytesLimit));
             }
             return new InvocationProcessResult(exitCode, await stdout.ConfigureAwait(false), await stderr.ConfigureAwait(false));
         }

@@ -24,17 +24,16 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// <summary>Owns section, page, header and document-structure mutations.</summary>
 internal static class WordsStructureOpHandlers
 {
-    internal static long AddSection(Document document, AddSectionOp op)
+    internal static long AddSection(Document document, AddSectionOp op, Section? after)
     {
         var section = new Section(document);
         section.AppendChild(new Body(document));
         section.EnsureMinimum();
         if (op.Position == "after")
         {
-            int after = op.After
-                ?? throw Invalid("add_section position 'after' requires an 'after' section number");
-            Section existing = GetSection(document, after);
-            existing.ParentNode!.InsertAfter(section, existing);
+            Section existing = after
+                ?? throw Invalid("add_section position 'after' requires an original section target");
+            document.InsertAfter(section, existing);
         }
         else if (op.Position == "start")
         {
@@ -53,43 +52,41 @@ internal static class WordsStructureOpHandlers
         return 1;
     }
 
-    internal static long DeleteSection(Document document, DeleteSectionOp op)
+    internal static long DeleteSection(Document document, Section section)
     {
         if (document.Sections.Count == 1)
         {
             throw Invalid("the last section cannot be deleted");
         }
 
-        GetSection(document, op.Section).Remove();
+        section.Remove();
         return 1;
     }
 
-    internal static long SetPageSetup(Document document, SetPageSetupOp op)
+    internal static long SetPageSetup(IReadOnlyList<Section> sections, SetPageSetupOp op)
     {
-        Section[] sections = op.Section is int section ? [GetSection(document, section)] : document.Sections.Cast<Section>().ToArray();
         foreach (Section current in sections)
         {
             ApplyPageSetup(current, op.Setup);
         }
 
-        return sections.Length;
+        return sections.Count;
     }
 
-    internal static long SetHeader(Document document, SetHeaderOp op) =>
-        SetHeaderFooter(document, op.Section, op.Kind, op.Paragraphs, op.Markdown, isHeader: true);
+    internal static long SetHeader(Document document, IReadOnlyList<Section> sections, SetHeaderOp op) =>
+        SetHeaderFooter(document, sections, op.Kind, op.Paragraphs, op.Markdown, isHeader: true);
 
-    internal static long SetFooter(Document document, SetFooterOp op) =>
-        SetHeaderFooter(document, op.Section, op.Kind, op.Paragraphs, op.Markdown, isHeader: false);
+    internal static long SetFooter(Document document, IReadOnlyList<Section> sections, SetFooterOp op) =>
+        SetHeaderFooter(document, sections, op.Kind, op.Paragraphs, op.Markdown, isHeader: false);
 
     internal static long SetHeaderFooter(
         Document document,
-        int? sectionNumber,
+        IReadOnlyList<Section> sections,
         string kind,
         IReadOnlyList<string>? paragraphs,
         string? markdown,
         bool isHeader)
     {
-        Section[] sections = sectionNumber is int number ? [GetSection(document, number)] : document.Sections.Cast<Section>().ToArray();
         HeaderFooterType type = HeaderFooterTypeOf(kind, isHeader);
         foreach (Section section in sections)
         {
@@ -110,12 +107,11 @@ internal static class WordsStructureOpHandlers
             }
         }
 
-        return sections.Length;
+        return sections.Count;
     }
 
-    internal static long SetPageNumbers(Document document, SetPageNumbersOp op)
+    internal static long SetPageNumbers(Document document, IReadOnlyList<Section> sections, SetPageNumbersOp op)
     {
-        Section[] sections = op.Section is int number ? [GetSection(document, number)] : document.Sections.Cast<Section>().ToArray();
         foreach (Section section in sections)
         {
             HeaderFooterType type = op.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
@@ -164,7 +160,7 @@ internal static class WordsStructureOpHandlers
         }
 
         document.UpdatePageLayout();
-        return sections.Length;
+        return sections.Count;
     }
 
     internal static long AppendDocument(

@@ -5,7 +5,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Host.Commands;
+using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.Resources;
 using Aspose.Cli.TestKit;
 using Json.Schema;

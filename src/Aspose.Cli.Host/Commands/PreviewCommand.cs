@@ -39,7 +39,7 @@ internal static class PreviewCommand
         preview.Subcommands.Add(CreateStop(executor, globals));
         preview.SetAction(parse => executor.Run(parse, globals, context =>
             Start(parse, context, file, symbols)));
-        return preview.WithInvocationPolicy(new CommandInvocationPolicy(ServiceLifetime: true));
+        return preview.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
     }
 
     private static ProductPreviewStartResult Start(

@@ -1,0 +1,16 @@
+{
+  "schema": "https://schemas.aspose.dev/aspose-cli/v2/slides/ops.schema.json",
+  "schemaVersion": 2,
+  "ops": [
+    {
+      "op": "set_title",
+      "slide": 2,
+      "text": "Confirmed delivery plan"
+    },
+    {
+      "op": "set_notes",
+      "slide": 2,
+      "text": "Launch approved."
+    }
+  ]
+}

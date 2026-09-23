@@ -254,16 +254,11 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         WorkerOutputManifest manifest = Manifest(Entry(target, "published"));
         WorkerManifestStore.Write(ManifestPath, manifest);
         string json = PrivateUserStorage.ReadAllText(ManifestPath);
+        string version = $"\"version\":{manifest.Version},";
         json = corruption switch
         {
-            "duplicate" => json.Replace(
-                "\"version\":4,",
-                "\"version\":4,\r\n  \"version\":4,",
-                StringComparison.Ordinal),
-            "unknown" => json.Replace(
-                "\"version\":4,",
-                "\"version\":4,\r\n  \"unknown\": true,",
-                StringComparison.Ordinal),
+            "duplicate" => json.Replace(version, version + "\r\n  " + version, StringComparison.Ordinal),
+            "unknown" => json.Replace(version, version + "\r\n  \"unknown\": true,", StringComparison.Ordinal),
             _ => json + new string(' ', PublicationLimits.MaximumMetadataBytes),
         };
         PrivateUserStorage.WriteAllText(ManifestPath, json);

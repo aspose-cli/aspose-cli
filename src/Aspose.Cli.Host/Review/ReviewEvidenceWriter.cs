@@ -37,7 +37,8 @@ internal static class ReviewEvidenceWriter
         Func<IViewArtifactSink, ViewManifest> render,
         Func<ViewManifest, ProductReviewAssessment> assess,
         LicenseState license,
-        ContractJsonSerializer serializer)
+        ContractJsonSerializer serializer,
+        ResourceBudgetLedger budgets)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
@@ -52,20 +53,13 @@ internal static class ReviewEvidenceWriter
         string source = Path.GetFullPath(sourcePath);
         string target = Path.GetFullPath(outputDirectory);
         EnsureNewTarget(target);
-        string parent = Path.GetDirectoryName(target)
-            ?? throw CliErrors.OutputUnwritable(target, "the path has no parent directory");
-        string staging = Path.Combine(
-            parent,
-            $".{Path.GetFileName(target)}.{Guid.NewGuid():N}.review.tmp");
+        using var publication = new AtomicNewDirectoryWriter(budgets, target, "review");
+        string staging = publication.StagingDirectory;
         try
         {
-            Directory.CreateDirectory(parent);
-            EnsureNewTarget(target);
-            Directory.CreateDirectory(staging);
-            string evidenceDirectory = Path.Combine(staging, "artifacts");
-            Directory.CreateDirectory(evidenceDirectory);
+            string evidenceDirectory = PrivateUserStorage.EnsureDirectory(Path.Combine(staging, "artifacts"));
             LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
-            ViewManifest manifest = RenderPrivately(render, evidenceDirectory, maxItems, limits);
+            ViewManifest manifest = ViewRendering.Render(render, evidenceDirectory, maxItems, limits);
             ProductReviewAssessment assessment = assess(manifest);
             string viewJson = JsonSerializer.Serialize(manifest, SdkJsonContext.Default.ViewManifest);
             File.WriteAllText(
@@ -102,22 +96,7 @@ internal static class ReviewEvidenceWriter
                 Path.Combine(staging, "review.json"),
                 reviewJson + Environment.NewLine,
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            try
-            {
-                Directory.Move(staging, target);
-            }
-            catch (IOException) when (Directory.Exists(target) || File.Exists(target))
-            {
-                throw ReviewOutputExists(target);
-            }
-            catch (Exception exception) when (
-                exception is IOException or UnauthorizedAccessException)
-            {
-                throw CliErrors.OutputUnwritable(
-                    target,
-                    "the review evidence directory could not be published",
-                    exception);
-            }
+            publication.Commit();
             return result;
         }
         catch (Exception exception) when (
@@ -127,40 +106,6 @@ internal static class ReviewEvidenceWriter
                 target,
                 "the review evidence could not be written",
                 exception);
-        }
-        finally
-        {
-            TryDeleteStaging(staging, parent);
-        }
-    }
-
-    /// <summary>
-    /// Renders into private bounded storage, so unvalidated product output
-    /// never lands in the user's directory, then copies the proven parts into
-    /// the evidence directory.
-    /// </summary>
-    private static ViewManifest RenderPrivately(
-        Func<IViewArtifactSink, ViewManifest> render,
-        string evidenceDirectory,
-        int maxItems,
-        LocalServiceResourceLimits limits)
-    {
-        string root = PrivateUserStorage.CreateTemporaryDirectory("review");
-        try
-        {
-            ViewManifest manifest = ViewRendering.Render(render, root, maxItems, limits);
-            foreach (ViewPart part in manifest.Parts)
-            {
-                string relative = part.File.Replace('/', Path.DirectorySeparatorChar);
-                string destination = Path.Combine(evidenceDirectory, relative);
-                Directory.CreateDirectory(Path.GetDirectoryName(destination)!);
-                File.Copy(Path.Combine(root, relative), destination);
-            }
-            return manifest;
-        }
-        finally
-        {
-            LocalFileCleanup.DeleteDirectory(root);
         }
     }
 
@@ -365,34 +310,4 @@ internal static class ReviewEvidenceWriter
             hint: "Choose a new directory with --out; review evidence is never overwritten.",
             details: new JsonObject { ["path"] = target });
 
-    private static void TryDeleteStaging(string staging, string parent)
-    {
-        string full = Path.GetFullPath(staging);
-        string root = Path.GetFullPath(parent)
-            .TrimEnd(Path.DirectorySeparatorChar)
-            + Path.DirectorySeparatorChar;
-        if (!full.StartsWith(
-                root,
-                OperatingSystem.IsWindows()
-                    ? StringComparison.OrdinalIgnoreCase
-                    : StringComparison.Ordinal)
-            || !Path.GetFileName(full).EndsWith(
-                ".review.tmp",
-                StringComparison.Ordinal))
-        {
-            return;
-        }
-        try
-        {
-            if (Directory.Exists(full))
-            {
-                Directory.Delete(full, recursive: true);
-            }
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException)
-        {
-            // The target was not published; a later user cleanup can reclaim it.
-        }
-    }
 }

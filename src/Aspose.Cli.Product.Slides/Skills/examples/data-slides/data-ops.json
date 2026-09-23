@@ -1,0 +1,35 @@
+{
+  "schema": "https://schemas.aspose.dev/aspose-cli/v2/slides/ops.schema.json",
+  "schemaVersion": 2,
+  "ops": [
+    {
+      "op": "insert_chart",
+      "slide": 2,
+      "kind": "column",
+      "rect": {
+        "x": 50,
+        "y": 105,
+        "width": 620,
+        "height": 245
+      },
+      "categories": [
+        "North",
+        "South",
+        "East",
+        "West"
+      ],
+      "series": [
+        {
+          "name": "Revenue",
+          "values": [
+            120,
+            90,
+            75,
+            60
+          ]
+        }
+      ],
+      "title": "Regional revenue"
+    }
+  ]
+}

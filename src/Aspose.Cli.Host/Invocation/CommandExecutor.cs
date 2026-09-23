@@ -46,6 +46,26 @@ internal sealed class CommandExecutor
                     resourceBudgets: scope.Budgets)),
             detectPartial: true);
 
+    /// <summary>The handler owns its final deadline check and commits an external process handoff.</summary>
+    public int RunHandoff(ParseResult parseResult, GlobalOptions globalOptions,
+        Func<CommandContext, ResultEnvelope> handler)
+    {
+        using var cancellation = new CancellationTokenSource();
+        ConsoleCancelEventHandler onCancel = (_, e) => { e.Cancel = true; cancellation.Cancel(); };
+        Console.CancelKeyPress += onCancel;
+        try
+        {
+            return Execute(parseResult, globalOptions, admitInputs: true, cancellation.Token, scope =>
+            {
+                scope.Deadline.ThrowIfExpired("handoff-start");
+                ResultEnvelope result = handler(CompositionRoot.Create(_host.Catalog, scope.Globals,
+                    deadline: scope.Deadline, resourceBudgets: scope.Budgets));
+                return scope.Complete(result, detectPartial: false);
+            });
+        }
+        finally { Console.CancelKeyPress -= onCancel; }
+    }
+
     public int RunProduct<TPort>(
         ParseResult parseResult,
         GlobalOptions globalOptions,
@@ -375,7 +395,8 @@ internal sealed class CommandExecutor
             try
             {
                 ResourceBudgetLedger budgets =
-                    CompositionRoot.CreateBudgets(host.Catalog, globals, deadline, host.WorkerOutputs);
+                    CompositionRoot.CreateBudgets(host.Catalog, globals, deadline, host.WorkerOutputs,
+                        parseResult.CommandResult.Command.Policy().OutputBytesLimit);
                 if (admitInputs)
                 {
                     ProductInputAdmission.Admit(

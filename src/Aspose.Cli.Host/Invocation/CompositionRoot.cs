@@ -134,13 +134,14 @@ internal static class CompositionRoot
         ProductCatalog catalog,
         GlobalValues globals,
         OperationDeadline deadline,
-        WorkerOutputSession? outputs = null)
+        WorkerOutputSession? outputs = null, long? outputBytesLimit = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
         var limits = new Dictionary<string, long>(StringComparer.Ordinal)
         {
             [ResourceBudgetKinds.InputBytes] = globals.MaxInputBytes,
         };
+        if (outputBytesLimit is { } bytes) { limits[ResourceBudgetKinds.OutputBytes] = bytes; }
         foreach (ResourceBudgetCapabilities budget
             in catalog.Products
                 .Select(catalog.GetCapabilities)

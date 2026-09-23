@@ -183,6 +183,30 @@ public sealed class ProductFileRouterTests
     }
 
     [Fact]
+    public async Task RecognizerCompletion_CannotTurnCancellationIntoSuccessfulRouting()
+    {
+        var late = new StaticRecognizer(async (_, token) =>
+        {
+            try { await Task.Delay(Timeout.InfiniteTimeSpan, token); }
+            catch (OperationCanceledException) { }
+            return new FileRecognition { Kind = FileRecognitionKind.Match };
+        });
+        ProductCatalog catalog = ProductCatalog.Build([Module("owner", ".owned", late)]);
+        string path = CreateFile(".owned");
+        try
+        {
+            var router = new ProductFileRouter(catalog, new FileProbeOptions
+            { RecognizerTimeout = TimeSpan.FromMilliseconds(20) });
+            CliException error = await Assert.ThrowsAsync<CliException>(async () => await router.RouteAsync(path));
+            Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
+            using var cancelled = new CancellationTokenSource();
+            cancelled.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(async () => await router.RouteAsync(path, cancelled.Token));
+        }
+        finally { File.Delete(path); }
+    }
+
+    [Fact]
     public async Task CallerCancellation_IsNotConvertedToAnUncertainProbe()
     {
         var blocking = new StaticRecognizer(async (_, cancellationToken) =>
