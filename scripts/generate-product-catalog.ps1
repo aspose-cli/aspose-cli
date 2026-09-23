@@ -327,6 +327,21 @@ $products = @(
                         } |
                         Sort-Object packageId)
             }
+            # The catalog is the product's package roster: its project references exactly the
+            # SDK package and the supplemental packages, and the versions come from the catalog.
+            [xml] $projectXml = $projectText
+            $referenced = @(
+                $projectXml.SelectNodes('//*[local-name()="PackageReference"]') |
+                    ForEach-Object { [string] $_.GetAttribute('Include') })
+            $declared = @(
+                @([string] (Get-OptionalValue $row 'sdkPackageId' '')) +
+                    @($supplemental | ForEach-Object { [string] $_.packageId }) |
+                    Where-Object { -not [string]::IsNullOrWhiteSpace($_) })
+            $missingReferences = @($declared | Where-Object { $_ -notin $referenced })
+            $unexpectedReferences = @($referenced | Where-Object { $_ -notin $declared })
+            if ($missingReferences.Count -ne 0 -or $unexpectedReferences.Count -ne 0) {
+                throw "Product '$id' package references drift from eng/products.json (missing: [$($missingReferences -join ', ')], not in the catalog: [$($unexpectedReferences -join ', ')]). Keep supplementalPackages and $projectName.csproj in step."
+            }
             $displayName = [string] (
                 Get-OptionalValue $row 'displayName' $productName)
 
@@ -420,7 +435,7 @@ $allTestProjects = @(
     @($layout.TestRoot) |
         Where-Object { Test-Path -LiteralPath $_ -PathType Container } |
         ForEach-Object {
-            Get-ChildItem -LiteralPath $_ -Recurse -Filter '*.csproj' -File | Where-Object { $_.FullName -notmatch '[/\\]acceptance[/\\]' }
+            Get-ChildItem -LiteralPath $_ -Recurse -Filter '*.csproj' -File
         } |
         ForEach-Object { Relative-ToRepository $_.FullName } |
         Sort-Object -Unique)

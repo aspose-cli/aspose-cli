@@ -20,11 +20,6 @@
 # same bytes whatever their Git line-ending settings.
 /install.ps1 text eol=crlf
 
-# Managed template hashes must be identical on every checkout.
-src/**/Skills/assets/design/templates/**/*.json text eol=lf
-src/**/Skills/assets/design/templates/**/*.md text eol=lf
-src/**/Skills/assets/design/templates/**/LICENSE text eol=lf
-
 # Retain the exact notice bytes, including whitespace, from the pinned packages.
 eng/notices/*.txt -text -whitespace
 
