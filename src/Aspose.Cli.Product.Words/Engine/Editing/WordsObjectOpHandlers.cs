@@ -134,36 +134,37 @@ internal static class WordsObjectOpHandlers
         return 1;
     }
 
-    internal static long AddWatermark(Document document, AddWatermarkOp op)
+    internal static long AddWatermark(
+        Document document,
+        AddWatermarkOp op,
+        InputSource inputs,
+        ResourceBudgetLedger budgets)
     {
         if (op.Text is not null)
         {
-            var options = new TextWatermarkOptions();
+            var options = new TextWatermarkOptions { IsSemitrasparent = op.Faded };
             if (op.Color is not null)
             {
                 options.Color = ParseColor(op.Color);
             }
 
-            if (op.Opacity is not null)
-            {
-                options.IsSemitrasparent = op.Opacity.Value < 1;
-            }
-
             document.Watermark.SetText(op.Text, options);
-        }
-        else
-        {
-            using SKBitmap bitmap = SKBitmap.Decode(op.ImagePath!)
-                ?? throw Invalid($"watermark image '{op.ImagePath}' could not be decoded");
-            var options = new ImageWatermarkOptions();
-            if (op.Opacity is not null)
-            {
-                options.IsWashout = op.Opacity.Value < 1;
-            }
-
-            document.Watermark.SetImage(bitmap, options);
+            return 1;
         }
 
+        // The image is an admitted, size-bounded input; its decoded pixels are charged to the
+        // memory budget from the header before any pixel buffer is allocated.
+        byte[] encoded = inputs.ReadAllBytes(op.ImagePath!);
+        using SKCodec codec = SKCodec.Create(new SKMemoryStream(encoded))
+            ?? throw Invalid($"watermark image '{op.ImagePath}' is not a supported image");
+        budgets.Consume(
+            ResourceBudgetKinds.MemoryBufferBytes,
+            (long)codec.Info.Width * codec.Info.Height * 4,
+            "bytes",
+            "image-decode");
+        using SKBitmap bitmap = SKBitmap.Decode(codec)
+            ?? throw Invalid($"watermark image '{op.ImagePath}' could not be decoded");
+        document.Watermark.SetImage(bitmap, new ImageWatermarkOptions { IsWashout = op.Faded });
         return 1;
     }
 
@@ -269,7 +270,8 @@ internal static class WordsObjectOpHandlers
     internal static long MailMerge(
         Document document,
         MailMergeOp op,
-        InputSource inputs)
+        InputSource inputs,
+        WordsDocumentLoader loader)
     {
         IReadOnlyList<IReadOnlyDictionary<string, string?>> rows =
             op.Inline ?? ReadMergeRows(op.Path!, inputs);
@@ -280,10 +282,14 @@ internal static class WordsObjectOpHandlers
 
         if (op.Regions)
         {
-            ExecuteRegionMerge(document, rows);
+            string region = SingleRegion(document);
+            loader.EnsureNodeCapacity(document, rows.Count * RegionNodeCount(document, region));
+            ExecuteRegionMerge(document, region, rows);
             return rows.Count;
         }
 
+        // Every further row appends one copy of the whole template.
+        loader.EnsureNodeCapacity(document, (rows.Count - 1L) * document.GetChildNodes(NodeType.Any, true).Count);
         Document template = document.Clone();
         ExecuteMergeRow(document, rows[0]);
         for (int index = 1; index < rows.Count; index++)
@@ -299,20 +305,72 @@ internal static class WordsObjectOpHandlers
     internal static void ExecuteMergeRow(Document document, IReadOnlyDictionary<string, string?> row) =>
         document.MailMerge.Execute(row.Keys.ToArray(), row.Values.Cast<object?>().ToArray());
 
-    internal static void ExecuteRegionMerge(
-        Document document,
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
+    /// <summary>
+    /// The one merge region the flat rows feed. Several regions would need hierarchical data,
+    /// so a template with more than one region name is rejected rather than half merged.
+    /// </summary>
+    private static string SingleRegion(Document document)
     {
-        string? marker = document.Range.Fields.Cast<Field>()
-            .OfType<FieldMergeField>()
+        string[] regions = MergeFields(document)
             .Select(static field => field.FieldName)
-            .FirstOrDefault(static name => name.StartsWith("TableStart:", StringComparison.OrdinalIgnoreCase));
-        string? regionName = marker is null ? null : marker["TableStart:".Length..];
-        if (string.IsNullOrWhiteSpace(regionName))
+            .Where(static name => name.StartsWith(TableStart, StringComparison.OrdinalIgnoreCase))
+            .Select(static name => name[TableStart.Length..])
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        return regions switch
         {
-            throw MergeInvalid("regions was requested but the template has no TableStart merge field");
+            [] => throw MergeInvalid("regions was requested but the template has no TableStart merge field"),
+            [var region] when !string.IsNullOrWhiteSpace(region) => region,
+            [_] => throw MergeInvalid("the template's TableStart merge field has no region name"),
+            _ => throw MergeInvalid(
+                $"the template has {regions.Length} merge regions ({string.Join(", ", regions)}) but mail_merge rows feed exactly one; split the template or merge each region separately"),
+        };
+    }
+
+    /// <summary>The nodes one region repetition adds: its table rows, or its body blocks.</summary>
+    private static long RegionNodeCount(Document document, string region)
+    {
+        FieldMergeField[] fields = MergeFields(document).ToArray();
+        FieldMergeField start = fields.First(field =>
+            string.Equals(field.FieldName, TableStart + region, StringComparison.OrdinalIgnoreCase));
+        FieldMergeField end = fields.FirstOrDefault(field =>
+                string.Equals(field.FieldName, "TableEnd:" + region, StringComparison.OrdinalIgnoreCase))
+            ?? throw MergeInvalid($"region '{region}' has no TableEnd:{region} merge field");
+        if (start.Start.GetAncestor(NodeType.Row) is Row first
+            && end.End.GetAncestor(NodeType.Row) is Row last
+            && ReferenceEquals(first.ParentTable, last.ParentTable))
+        {
+            return Span(first, last);
         }
 
+        return Span(start.Start.GetAncestor(NodeType.Paragraph), end.End.GetAncestor(NodeType.Paragraph));
+
+        static long Span(Node first, Node last)
+        {
+            long count = 0;
+            for (Node? node = first; node is not null; node = node.NextSibling)
+            {
+                count += 1 + (node is CompositeNode composite ? composite.GetChildNodes(NodeType.Any, true).Count : 0);
+                if (ReferenceEquals(node, last))
+                {
+                    break;
+                }
+            }
+
+            return count;
+        }
+    }
+
+    private const string TableStart = "TableStart:";
+
+    private static IEnumerable<FieldMergeField> MergeFields(Document document) =>
+        document.Range.Fields.Cast<Field>().OfType<FieldMergeField>();
+
+    internal static void ExecuteRegionMerge(
+        Document document,
+        string regionName,
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
+    {
         string[] columns = rows.SelectMany(static row => row.Keys)
             .Distinct(StringComparer.Ordinal)
             .ToArray();
@@ -368,10 +426,8 @@ internal static class WordsObjectOpHandlers
 
         if (Path.GetExtension(path).Equals(".csv", StringComparison.OrdinalIgnoreCase))
         {
-            string[][] lines = inputs.ReadTextFile(path)
-                .Split(["\r\n", "\n", "\r"], StringSplitOptions.RemoveEmptyEntries)
-                .Select(static line => line.Split(',').Select(static cell => cell.Trim()).ToArray()).ToArray();
-            if (lines.Length < 2)
+            IReadOnlyList<string[]> lines = ReadCsv(inputs.ReadTextFile(path));
+            if (lines.Count < 2)
             {
                 throw MergeInvalid("CSV needs a header and at least one data row");
             }
@@ -395,6 +451,93 @@ internal static class WordsObjectOpHandlers
         {
             throw MergeInvalid(exception.Message);
         }
+    }
+
+    /// <summary>
+    /// Reads RFC 4180 CSV: quoted fields may hold commas, quotes (doubled) and line breaks.
+    /// Unquoted fields are trimmed, and blank lines are skipped.
+    /// </summary>
+    internal static IReadOnlyList<string[]> ReadCsv(string text)
+    {
+        var records = new List<string[]>();
+        var fields = new List<string>();
+        var field = new StringBuilder();
+        bool quoted = false;
+        bool wasQuoted = false;
+
+        void EndField()
+        {
+            fields.Add(wasQuoted ? field.ToString() : field.ToString().Trim());
+            field.Clear();
+            wasQuoted = false;
+        }
+
+        void EndRecord()
+        {
+            EndField();
+            if (fields.Count > 1 || fields[0].Length > 0)
+            {
+                records.Add([.. fields]);
+            }
+
+            fields.Clear();
+        }
+
+        for (int index = 0; index < text.Length; index++)
+        {
+            char current = text[index];
+            if (quoted)
+            {
+                if (current != '"')
+                {
+                    field.Append(current);
+                }
+                else if (index + 1 < text.Length && text[index + 1] == '"')
+                {
+                    field.Append('"');
+                    index++;
+                }
+                else
+                {
+                    quoted = false;
+                }
+            }
+            else if (current == '"' && field.ToString().Trim().Length == 0)
+            {
+                field.Clear();
+                quoted = true;
+                wasQuoted = true;
+            }
+            else if (current == ',')
+            {
+                EndField();
+            }
+            else if (current is '\r' or '\n')
+            {
+                if (current == '\r' && index + 1 < text.Length && text[index + 1] == '\n')
+                {
+                    index++;
+                }
+
+                EndRecord();
+            }
+            else
+            {
+                field.Append(current);
+            }
+        }
+
+        if (quoted)
+        {
+            throw MergeInvalid("the CSV ends inside a quoted field");
+        }
+
+        if (field.Length > 0 || fields.Count > 0)
+        {
+            EndRecord();
+        }
+
+        return records;
     }
 
     internal static IReadOnlyDictionary<string, string?> ReadMergeObject(JsonElement element)

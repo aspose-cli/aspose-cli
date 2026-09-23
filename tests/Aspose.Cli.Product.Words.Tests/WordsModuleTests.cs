@@ -109,6 +109,8 @@ public sealed class WordsModuleTests
     [InlineData("""{"op":"set_page_numbers"}""", """{"location":"footer","alignment":"center"}""")]
     [InlineData("""{"op":"append_document","path":"other.docx"}""", """{"importFormatMode":"keepSource"}""")]
     [InlineData("""{"op":"update_fields"}""", """{"what":"all"}""")]
+    [InlineData("""{"op":"add_watermark","text":"DRAFT"}""", """{"faded":true}""")]
+    [InlineData("""{"op":"add_watermark","text":"DRAFT","faded":false}""", """{"faded":false}""")]
     [InlineData("""{"op":"insert_image","at":{"block":1},"position":"after","path":"image.png","inline":false}""", """{"inline":false}""")]
     [InlineData("""{"op":"insert_toc","at":{"block":1},"position":"after","maxLevel":0}""", """{"maxLevel":0}""")]
     public void OperationFields_PreserveDefaultsAndExplicitValues(string input, string expected) =>

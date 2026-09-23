@@ -78,7 +78,7 @@ aspose-cli schema v2/words/ops
 | `apply_list` | Apply bullet or numbered list formatting at levels 0–8. |
 | `set_default_font` | Update paragraph and character style defaults. |
 | `set_properties` | Set built-in and string custom document properties. |
-| `add_watermark` | Add a text or local-image watermark. |
+| `add_watermark` | Add a text (1-200 characters, optional `color`) or local-image watermark; `faded` (default true) draws semi-transparent text or a washed-out image. |
 | `remove_watermark` | Remove the document watermark. |
 | `protect` | Protect using an optional password read from `passwordEnv`. |
 | `unprotect` | Remove protection using an optional password read from `passwordEnv`. |
@@ -87,7 +87,7 @@ aspose-cli schema v2/words/ops
 | `add_comment` | Comment the complete visible text of a paragraph. |
 | `remove_comments` | Remove all comments or those by an author. |
 | `append_document` | Append a local document with source or destination styles. |
-| `mail_merge` | Merge JSON-object-array or headered CSV data, including regions. |
+| `mail_merge` | Merge JSON-object-array or headered CSV data, including one repeated region. |
 | `update_fields` | Update TOC or all fields, then refresh page layout. |
 
 ## Headers, footers and page numbers

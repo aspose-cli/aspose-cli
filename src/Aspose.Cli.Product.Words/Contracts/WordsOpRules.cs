@@ -6,6 +6,10 @@ namespace Aspose.Cli.Product.Words.Contracts;
 /// <summary>Semantic rules of Words operations that the contract types cannot express.</summary>
 internal static class WordsOpRules
 {
+    // Word's own table limits.
+    private const int MaximumTableRows = 32_767;
+    private const int MaximumTableColumns = 63;
+
     internal static void ReplaceText(ReplaceTextOp op)
     {
         Require(op.Find.Length > 0, "'find' must not be empty");
@@ -47,7 +51,8 @@ internal static class WordsOpRules
     internal static void InsertTable(InsertTableOp op)
     {
         Insert(op.At, op.Position);
-        Require(op.Rows > 0 && op.Cols > 0, "rows and cols must be positive");
+        Require(op.Rows is > 0 and <= MaximumTableRows && op.Cols is > 0 and <= MaximumTableColumns,
+            $"rows must be 1-{MaximumTableRows} and cols 1-{MaximumTableColumns}");
         Require(op.Data is null || op.Data.Count <= op.Rows, "data has more rows than the table");
         Require(op.Data is null || op.Data.All(row => row.Count <= op.Cols), "data has more columns than the table");
     }
@@ -158,7 +163,7 @@ internal static class WordsOpRules
     internal static void AddWatermark(AddWatermarkOp op)
     {
         Require((op.Text is null) != (op.ImagePath is null), "give exactly one of text or imagePath");
-        Require(op.Opacity is null or >= 0 and <= 1, "'opacity' must be from 0 through 1");
+        Require(op.Color is null || op.Text is not null, "'color' applies to text watermarks only");
     }
 
     internal static void Protect(ProtectOp op) =>

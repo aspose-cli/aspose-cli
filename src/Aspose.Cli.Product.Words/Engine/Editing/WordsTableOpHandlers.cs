@@ -24,8 +24,16 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// <summary>Owns table and list mutations.</summary>
 internal static class WordsTableOpHandlers
 {
-    internal static long InsertTable(Document document, Node anchor, InsertTableOp op)
+    internal static long InsertTable(Document document, Node anchor, InsertTableOp op, WordsDocumentLoader loader)
     {
+        Style? style = null;
+        if (op.Style is not null)
+        {
+            style = document.Styles[op.Style] ?? throw StyleNotFound(op.Style);
+        }
+
+        // One table, then per row a row node and per cell a cell, a paragraph and a run.
+        loader.EnsureNodeCapacity(document, 1 + ((long)op.Rows * (1 + (3L * op.Cols))));
         var table = new Table(document);
         for (int rowIndex = 0; rowIndex < op.Rows; rowIndex++)
         {
@@ -44,14 +52,8 @@ internal static class WordsTableOpHandlers
             }
         }
 
-        if (op.Style is not null)
+        if (style is not null)
         {
-            Style? style = document.Styles[op.Style];
-            if (style is null)
-            {
-                throw StyleNotFound(op.Style);
-            }
-
             table.Style = style;
         }
 

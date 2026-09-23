@@ -354,7 +354,7 @@ internal static class WordsContractSamples
             new AddWatermarkOp
             {
                 Text = "DRAFT",
-                Opacity = 0.25,
+                Faded = false,
                 Color = "#808080",
             },
             new RemoveWatermarkOp(),

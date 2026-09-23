@@ -99,16 +99,31 @@ internal sealed class WordsDocumentLoader
         return document;
     }
 
+    /// <summary>The invocation's resource budgets, for operations that allocate beyond the document.</summary>
+    internal ResourceBudgetLedger ResourceBudgets => _resourceBudgets;
+
     internal void EnsureWithinBudgets(Document document, LocalDocumentResourceLoader resources)
     {
         resources.ThrowIfFailed();
-        _resourceBudgets.EnsureWithin(
-            WordsBudgetDomains.Pages, document.PageCount, "items", "post-load");
+        // The node count is cheap; the page count lays out the whole document, so it goes last.
         _resourceBudgets.EnsureWithin(
             WordsBudgetDomains.Nodes, document.GetChildNodes(NodeType.Any, true).Count,
             "items", "projection");
+        _resourceBudgets.EnsureWithin(
+            WordsBudgetDomains.Pages, document.PageCount, "items", "post-load");
         resources.ThrowIfFailed();
     }
+
+    /// <summary>
+    /// Rejects an operation before it allocates <paramref name="additional"/> nodes that would take
+    /// the document past its node budget.
+    /// </summary>
+    internal void EnsureNodeCapacity(Document document, long additional) =>
+        _resourceBudgets.EnsureWithin(
+            WordsBudgetDomains.Nodes,
+            checked(document.GetChildNodes(NodeType.Any, true).Count + additional),
+            "items",
+            "pre-allocation");
 
     private Document Load(Func<LoadOptions, Document> open, LoadFormat format,
         LocalDocumentResourceLoader resources, string path, string? password)

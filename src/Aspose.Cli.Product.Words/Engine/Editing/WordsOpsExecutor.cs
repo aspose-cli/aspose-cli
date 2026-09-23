@@ -126,7 +126,9 @@ internal static class WordsOpsExecutor
                             WordsContentOpHandlers.InsertMarkdown(document, item.Nodes[0], markdown,
                                 loader.OpenMarkdown(markdown.Markdown, loaded)),
                         AppendDocumentOp append => WordsStructureOpHandlers.AppendDocument(document, append, loader),
-                        MailMergeOp merge => WordsObjectOpHandlers.MailMerge(document, merge, inputs),
+                        MailMergeOp merge => WordsObjectOpHandlers.MailMerge(document, merge, inputs, loader),
+                        InsertTableOp table => WordsTableOpHandlers.InsertTable(document, item.Nodes[0], table, loader),
+                        AddWatermarkOp watermark => WordsObjectOpHandlers.AddWatermark(document, watermark, inputs, loader.ResourceBudgets),
                         _ => WordsOpHandlers.Apply(document, item, secret),
                     };
                     return new AppliedOperation(affected, item.Targets);

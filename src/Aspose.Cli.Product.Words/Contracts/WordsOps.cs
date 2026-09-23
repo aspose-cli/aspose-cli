@@ -103,7 +103,7 @@ public sealed record InsertImageOp(bool Inline = true) : WordsOp
     public double? Height { get; init; }
 }
 
-/// <summary>Insert a table at a block boundary.</summary>
+/// <summary>Insert a table at a block boundary; Word allows at most 63 columns.</summary>
 public sealed record InsertTableOp : WordsOp
 {
     public required WordsTarget At { get; init; }
@@ -274,12 +274,11 @@ public sealed record SetPropertiesOp : WordsOp
     public IReadOnlyDictionary<string, string?>? Custom { get; init; }
 }
 
-/// <summary>Add a text or image watermark.</summary>
-public sealed record AddWatermarkOp : WordsOp
+/// <summary>Add a text or image watermark; faded means semi-transparent text or a washed-out image.</summary>
+public sealed record AddWatermarkOp(bool Faded = true) : WordsOp
 {
     public string? Text { get; init; }
     public string? ImagePath { get; init; }
-    public double? Opacity { get; init; }
     public string? Color { get; init; }
 }
 

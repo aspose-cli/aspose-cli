@@ -159,8 +159,8 @@
             "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_table" },
             "at": { "$ref": "#/$defs/target" },
             "position": { "$ref": "#/$defs/position" },
-            "rows": { "type": "integer", "minimum": 1 },
-            "cols": { "type": "integer", "minimum": 1 },
+            "rows": { "type": "integer", "minimum": 1, "maximum": 32767 },
+            "cols": { "type": "integer", "minimum": 1, "maximum": 63 },
             "data": {
               "type": "array",
               "items": { "type": "array", "items": { "type": "string" } }
@@ -376,11 +376,15 @@
           "additionalProperties": false,
           "properties": {
             "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_watermark" },
-            "text": { "type": "string" },
+            "text": { "type": "string", "minLength": 1, "maxLength": 200 },
             "imagePath": { "type": "string", "minLength": 1 },
-            "opacity": { "type": "number", "minimum": 0, "maximum": 1 },
+            "faded": { "type": "boolean", "default": true, "description": "Semi-transparent text or a washed-out image." },
             "color": { "type": "string" }
-          }
+          },
+          "oneOf": [
+            { "required": ["text"], "not": { "required": ["imagePath"] } },
+            { "required": ["imagePath"], "not": { "anyOf": [{ "required": ["text"] }, { "required": ["color"] }] } }
+          ]
         },
         {
           "type": "object",
