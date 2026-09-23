@@ -652,7 +652,7 @@ function Get-RelativePathCompat {
 function Assert-CustomerPackageTrust {
     param(
         [Parameter(Mandatory)][string] $Root,
-        [Parameter(Mandatory)][string] $ChecksumPath,
+        [Parameter(Mandatory)][byte[]] $ChecksumBytes,
         [Parameter(Mandatory)] $Inventory,
         [switch] $Development
     )
@@ -715,7 +715,7 @@ function Assert-CustomerPackageTrust {
     if ($signature.Length -eq 0 -or $signature.Length -gt 16KB -or
         -not [AsposeFileInstaller.ReleaseSignature]::Verify(
             $trustedPem,
-            [IO.File]::ReadAllBytes($ChecksumPath),
+            $ChecksumBytes,
             $signature)) {
         throw 'The customer package detached signature is invalid.'
     }
@@ -1563,11 +1563,14 @@ if (-not (Test-Path -LiteralPath $sourceExecutable -PathType Leaf) -or -not (Tes
 }
 $packageInventory = Get-TreeInventory $packageDirectory
 $packageTrustFiles = @('SHA256SUMS',$script:PackageSignatureManifestName,$script:PackageSignatureName)
-Assert-CustomerPackageTrust $packageDirectory $checksumPath $packageInventory -Development:$DevelopmentPackage
+# Read the checksum manifest once: the bytes whose signature is verified are the bytes parsed.
+if ((Get-Item -LiteralPath $checksumPath).Length -gt 1MB) { throw 'SHA256SUMS exceeds its 1 MiB limit.' }
+$checksumBytes = [IO.File]::ReadAllBytes($checksumPath)
+Assert-CustomerPackageTrust $packageDirectory $checksumBytes $packageInventory -Development:$DevelopmentPackage
 $verifiedFiles = @($packageInventory.Files | Where-Object { $_.Path -cnotin $packageTrustFiles } | Sort-Object Path)
 $payloadFiles = @($verifiedFiles | Where-Object { $_.Path -cnotin @('install.cmd','install.ps1') })
 $checksums = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
-foreach ($line in Get-Content -LiteralPath $checksumPath) {
+foreach ($line in ($script:Utf8.GetString($checksumBytes) -split "`r?`n")) {
     if ([string]::IsNullOrWhiteSpace($line)) { continue }
     if ($line -cnotmatch '^([0-9A-Fa-f]{64})\s+\*?(.+)$') { throw "Malformed SHA256SUMS line: $line" }
     $relative = Assert-SafeRelativePath $Matches[2]

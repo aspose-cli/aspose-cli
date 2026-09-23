@@ -1106,7 +1106,7 @@ public sealed class CustomerInstallerPowerShellTests : IDisposable, IClassFixtur
         string command = $". {PowerShellLiteral(installer)}; "
             + $"$root = {PowerShellLiteral(package)}; "
             + "$inventory = Get-TreeInventory $root; "
-            + "Assert-CustomerPackageTrust $root (Join-Path $root 'SHA256SUMS') $inventory";
+            + "Assert-CustomerPackageTrust $root ([IO.File]::ReadAllBytes((Join-Path $root 'SHA256SUMS'))) $inventory";
         return RunExecutable(
             "powershell.exe",
             ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command],
