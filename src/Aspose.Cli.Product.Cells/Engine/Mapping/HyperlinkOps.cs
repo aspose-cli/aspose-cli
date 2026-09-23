@@ -12,15 +12,14 @@ internal static class HyperlinkOps
     public static long? SetHyperlink(Worksheet sheet, SetHyperlinkOp op)
     {
         CellRef cell = A1.ParseCell(op.Cell);
-        string address = op.Url ?? op.Target!; // the parser guarantees exactly one is set
+        // The parser guarantees exactly one is set. An internal target is rebuilt as a
+        // quoted reference: the engine stores the location verbatim, and Excel cannot
+        // follow an unquoted name such as P&L!A1.
+        string address = op.Url ?? Sheets.Reference(sheet, op.Target!);
         int index = sheet.Hyperlinks.Add(cell.Row, cell.Column, 1, 1, address);
 
-        Hyperlink hyperlink = sheet.Hyperlinks[index];
-        if (op.Display is { } display)
-        {
-            hyperlink.TextToDisplay = display;
-        }
-
+        // The cell shows the caller's text, never the rebuilt reference.
+        sheet.Hyperlinks[index].TextToDisplay = op.Display ?? op.Url ?? op.Target;
         return null;
     }
 

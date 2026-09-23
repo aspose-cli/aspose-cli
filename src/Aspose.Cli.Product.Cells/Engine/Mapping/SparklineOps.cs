@@ -16,7 +16,7 @@ internal static class SparklineOps
 {
     public static long? AddSparkline(Workbook workbook, Worksheet sheet, AddSparklineOp op)
     {
-        RangeSpec data = A1.ParseRange(op.DataRange);
+        (Worksheet dataSheet, RangeRef data) = Sheets.ResolveRange(sheet, op.DataRange);
         RangeRef location = A1.ParseRange(op.Location).Range;
         long locationCells = location.CellCount;
 
@@ -28,11 +28,11 @@ internal static class SparklineOps
         // Neither matching would be a silent partial draw, so it is rejected
         // with both counts spelled out.
         bool isVertical;
-        if (locationCells == data.Range.RowCount)
+        if (locationCells == data.RowCount)
         {
             isVertical = false;
         }
-        else if (locationCells == data.Range.ColumnCount)
+        else if (locationCells == data.ColumnCount)
         {
             isVertical = true;
         }
@@ -40,20 +40,17 @@ internal static class SparklineOps
         {
             // The batch runner attaches the op index.
             throw new OperationInvalidException(
-                $"the location has {locationCells} cells but the data range has {data.Range.RowCount} rows "
-                + $"and {data.Range.ColumnCount} columns; make them match one of the two",
+                $"the location has {locationCells} cells but the data range has {data.RowCount} rows "
+                + $"and {data.ColumnCount} columns; make them match one of the two",
                 hint: "Give one location cell per data row (one sparkline per row) or one per data column.");
         }
 
         // The engine wants the data reference qualified; an unqualified range
         // means the op's sheet (as create_pivot's sourceRange).
-        string dataRange = data.SheetName is not null
-            ? op.DataRange
-            : Sheets.Qualify(sheet.Name) + "!" + A1.FormatRange(data.Range);
-
         CellArea area = CellArea.CreateCellArea(
             location.Start.Row, location.Start.Column, location.End.Row, location.End.Column);
-        int groupIndex = sheet.SparklineGroups.Add(ToType(op.Type), dataRange, isVertical, area);
+        int groupIndex = sheet.SparklineGroups.Add(
+            ToType(op.Type), Sheets.Reference(dataSheet, data), isVertical, area);
 
         if (op.Color is { } color)
         {

@@ -93,7 +93,7 @@ internal static class OpsExecutor
         SetValuesOp setValues => CellOps.SetValues(Sheets.Resolve(workbook, op), setValues),
         SetFormulaOp setFormula => CellOps.SetFormula(Sheets.Resolve(workbook, op), setFormula),
         ClearRangeOp clear => CellOps.Clear(Sheets.Resolve(workbook, op), clear),
-        CopyRangeOp copy => CellOps.Copy(workbook, op, copy),
+        CopyRangeOp copy => CellOps.Copy(Sheets.Resolve(workbook, op), copy),
         FormatRangeOp format => CellOps.Format(workbook, Sheets.Resolve(workbook, op), format),
         MergeCellsOp merge => CellOps.Merge(Sheets.Resolve(workbook, op), merge.Range, merged: true),
         UnmergeCellsOp unmerge => CellOps.Merge(Sheets.Resolve(workbook, op), unmerge.Range, merged: false),

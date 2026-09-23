@@ -403,6 +403,12 @@ internal static class CellsCoreOpValidator
         bool hasUrl = !string.IsNullOrWhiteSpace(op.Url);
         bool hasTarget = !string.IsNullOrWhiteSpace(op.Target);
         Require(hasUrl ^ hasTarget, "give exactly one of 'url' or 'target'");
+        if (hasTarget)
+        {
+            // An internal target is a cell or range, qualified when it lies on another sheet.
+            _ = A1.ParseRange(op.Target!);
+        }
+
         return op;
     }
 

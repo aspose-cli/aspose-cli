@@ -44,13 +44,35 @@ internal static class Sheets
     }
 
     /// <summary>
-    /// Quotes a sheet name that needs it in a qualified reference (shared by
-    /// the mappers that hand qualified range strings to the engine).
+    /// Resolves a range that may be sheet-qualified: a qualified range names its own
+    /// sheet (<c>SHEET_NOT_FOUND</c> when it does not exist), an unqualified one lies
+    /// on <paramref name="opSheet"/>.
     /// </summary>
-    public static string Qualify(string name) =>
-        name.Contains(' ', StringComparison.Ordinal)
-            ? "'" + name.Replace("'", "''", StringComparison.Ordinal) + "'"
-            : name;
+    public static (Worksheet Sheet, RangeRef Range) ResolveRange(Worksheet opSheet, string text)
+    {
+        RangeSpec spec = A1.ParseRange(text);
+        Worksheet sheet = spec.SheetName is { } name ? Resolve(opSheet.Workbook, name) : opSheet;
+        return (sheet, spec.Range);
+    }
+
+    /// <summary>
+    /// The qualified reference the engine receives for a possibly qualified range,
+    /// rebuilt from its parsed parts so the caller's spelling of the sheet never
+    /// reaches the engine.
+    /// </summary>
+    public static string Reference(Worksheet opSheet, string text)
+    {
+        (Worksheet sheet, RangeRef range) = ResolveRange(opSheet, text);
+        return Reference(sheet, range);
+    }
+
+    /// <summary>
+    /// A qualified reference to <paramref name="range"/> on <paramref name="sheet"/>.
+    /// The name is always quoted: digits, punctuation and spaces all require it, and
+    /// a quoted plain name is equally valid.
+    /// </summary>
+    public static string Reference(Worksheet sheet, RangeRef range) =>
+        "'" + sheet.Name.Replace("'", "''", StringComparison.Ordinal) + "'!" + A1.FormatRange(range);
 
     /// <summary>
     /// The range covering all data on the sheet — <c>(0,0)</c> to the last data

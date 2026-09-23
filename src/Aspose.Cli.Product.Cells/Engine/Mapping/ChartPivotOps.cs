@@ -26,6 +26,7 @@ internal static class ChartPivotOps
     public static long? CreateChart(Worksheet sheet, CreateChartOp op)
     {
         RangeRef placement = A1.ParseRange(op.At).Range;
+        string dataRange = Sheets.Reference(sheet, op.DataRange);
         int chartIndex = sheet.Charts.Add(
             ToChartType(op.Type),
             placement.Start.Row,
@@ -36,7 +37,7 @@ internal static class ChartPivotOps
         Chart chart = sheet.Charts[chartIndex];
         // Series-from-columns is the default; SetChartDataRange derives
         // series and category axes from the headers in the range.
-        chart.SetChartDataRange(op.DataRange, isVertical: op.SeriesInRows is not true);
+        chart.SetChartDataRange(dataRange, isVertical: op.SeriesInRows is not true);
 
         if (op.Title is { } title)
         {
@@ -61,11 +62,16 @@ internal static class ChartPivotOps
     {
         // An unqualified source refers to the op's sheet; the engine API
         // requires the qualified form.
-        string source = op.SourceRange.Contains('!', StringComparison.Ordinal)
-            ? op.SourceRange
-            : Sheets.Qualify(sheet.Name) + "!" + op.SourceRange;
+        string source = Sheets.Reference(sheet, op.SourceRange);
+        string name = op.Name ?? UnusedPivotName(sheet.Workbook);
+        if (FindPivot(sheet, name) is not null)
+        {
+            throw new OperationInvalidException(
+                $"sheet '{sheet.Name}' already has a pivot table named '{name}'",
+                hint: "Give the new pivot a 'name' that is unique on its sheet, or omit it for a generated one.");
+        }
 
-        int pivotIndex = sheet.PivotTables.Add(source, op.At, op.Name ?? "PivotTable1");
+        int pivotIndex = sheet.PivotTables.Add(source, op.At, name);
         PivotTable pivot = sheet.PivotTables[pivotIndex];
 
         foreach (string row in op.Rows ?? [])
@@ -90,6 +96,41 @@ internal static class ChartPivotOps
 
         pivot.CalculateData();
         return null;
+    }
+
+    private static PivotTable? FindPivot(Worksheet sheet, string name)
+    {
+        foreach (PivotTable pivot in sheet.PivotTables)
+        {
+            if (string.Equals(pivot.Name, name, StringComparison.OrdinalIgnoreCase))
+            {
+                return pivot;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>
+    /// Excel's own default naming, <c>PivotTableN</c>, with the first N no sheet of the
+    /// workbook uses yet — so later ops and <c>refresh_pivot</c> can address it.
+    /// </summary>
+    private static string UnusedPivotName(Workbook workbook)
+    {
+        for (int number = 1; ; number++)
+        {
+            string candidate = "PivotTable" + number.ToString(CultureInfo.InvariantCulture);
+            bool taken = false;
+            foreach (Worksheet sheet in workbook.Worksheets)
+            {
+                taken |= FindPivot(sheet, candidate) is not null;
+            }
+
+            if (!taken)
+            {
+                return candidate;
+            }
+        }
     }
 
     // AddFieldToArea returns -1 for a name absent from the source headers. Left
@@ -178,13 +219,14 @@ internal static class ChartPivotOps
     public static long? UpdateChart(Worksheet sheet, UpdateChartOp op)
     {
         Chart chart = sheet.Charts[ResolveChart(sheet, op.Index, op.Name)];
+        string? dataRange = op.DataRange is { } text ? Sheets.Reference(sheet, text) : null;
 
         if (op.Type is { } type)
         {
             chart.Type = ToChartType(type);
         }
 
-        if (op.DataRange is { } dataRange)
+        if (dataRange is not null)
         {
             chart.SetChartDataRange(dataRange, isVertical: op.SeriesInRows is not true);
         }

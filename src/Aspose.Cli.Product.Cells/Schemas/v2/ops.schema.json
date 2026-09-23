@@ -559,7 +559,7 @@
             "properties": {
               "cell": { "$ref": "#/$defs/range" },
               "url": { "type": "string", "description": "External URL; give this or 'target'." },
-              "target": { "type": "string", "description": "Internal target, e.g. Summary!A1; give this or 'url'." },
+              "target": { "type": "string", "description": "Internal cell or range, sheet-qualified when on another sheet, e.g. Summary!A1; give this or 'url'." },
               "display": { "type": "string", "description": "Text shown in the cell; the URL or target when omitted." }
             }
           }

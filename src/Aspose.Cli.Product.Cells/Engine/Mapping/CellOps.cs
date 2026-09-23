@@ -75,20 +75,11 @@ internal static class CellOps
         return range.CellCount;
     }
 
-    public static long Copy(Workbook workbook, Op op, CopyRangeOp copy)
+    public static long Copy(Worksheet sheet, CopyRangeOp op)
     {
-        RangeSpec fromSpec = A1.ParseRange(copy.From);
-        RangeSpec toSpec = A1.ParseRange(copy.To);
-
-        Worksheet fromSheet = fromSpec.SheetName is { } fromName
-            ? Sheets.Resolve(workbook, copy with { Sheet = fromName })
-            : Sheets.Resolve(workbook, op);
-        Worksheet toSheet = toSpec.SheetName is { } toName
-            ? Sheets.Resolve(workbook, copy with { Sheet = toName })
-            : Sheets.Resolve(workbook, op);
-
-        RangeRef from = fromSpec.Range;
-        CellRef anchor = toSpec.Range.Start;
+        (Worksheet fromSheet, RangeRef from) = Sheets.ResolveRange(sheet, op.From);
+        (Worksheet toSheet, RangeRef to) = Sheets.ResolveRange(sheet, op.To);
+        CellRef anchor = to.Start;
 
         CellsRange source = fromSheet.Cells.CreateRange(
             from.Start.Row, from.Start.Column, from.RowCount, from.ColumnCount);

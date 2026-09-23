@@ -27,8 +27,10 @@ General rules:
 - `sheet` on any op defaults to the active sheet. Range fields are
   **unqualified** A1 (`B2:D10`); the sheet comes from `sheet`. Only
   `copy_range.from/to`, `create_pivot.sourceRange`, the chart ops'
-  `dataRange` and `add_sparkline.dataRange` accept sheet-qualified
-  references (for cross-sheet work).
+  `dataRange`, `add_sparkline.dataRange` and `set_hyperlink.target` accept
+  sheet-qualified references (for cross-sheet work). Write the sheet name
+  as it appears (`P&L!A1:B9`, `'My Sheet'!A1`); the CLI quotes it for the
+  engine and reports `SHEET_NOT_FOUND` for a sheet that does not exist.
 - Rows are 1-based numbers; columns are letters — exactly as in A1.
 - Editing a user-supplied file? Add `--backup --verify` to the first in-place
   edit. The CLI creates `book.backup.xlsx` once and never overwrites it.
@@ -238,6 +240,8 @@ Remove a chart with `delete_chart`, addressed the same way (exactly one of
       "values": [ { "field": "Sales" }, { "field": "Units", "function": "average" } ] }
 
 - Fields are referenced by **header name** from the source range's first row.
+- `name` must be unique on its sheet; when omitted the pivot is named
+  `PivotTableN` with the first number no pivot in the workbook uses.
 - `function`: sum (default), count, average, max, min.
 - `values[].numberFormat` formats the aggregated numbers, e.g.
   `{ "field": "Sales", "function": "sum", "numberFormat": "#,##0" }` —
@@ -332,7 +336,8 @@ Workbook-scoped named ranges — the backbone of a maintainable model.
     { "op": "set_hyperlink", "cell": "A2", "target": "Summary!B10" }
     { "op": "remove_hyperlink", "cell": "A1" }
 
-Give **either** `url` (external) **or** `target` (an internal cell reference).
+Give **either** `url` (external) **or** `target` (an internal cell or range,
+sheet-qualified when it lies on another sheet; defined names are not accepted).
 `display` sets the cell text; `remove_hyperlink` clears the link covering a cell.
 
 ## Conditional formatting
