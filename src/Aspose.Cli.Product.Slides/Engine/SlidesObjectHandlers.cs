@@ -169,40 +169,20 @@ internal static class SlidesObjectHandlers
             throw new OperationInvalidException($"Shape {shape.OfficeInteropShapeId} is not a chart.");
         }
 
-        string[] categories = op.Categories?.ToArray()
-            ?? chart.ChartData.Categories.Select(category => category.AsCell.Value?.ToString() ?? string.Empty).ToArray();
-        IReadOnlyList<SlidesChartSeriesInput> series = op.Series
-            ?? chart.ChartData.Series.Select(item => new SlidesChartSeriesInput
-            {
-                Name = item.Name.AsCells[0].Value?.ToString() ?? string.Empty,
-                Values = item.DataPoints.Select(point => System.Convert.ToDouble(
-                    chart.Type == ChartType.ScatterWithStraightLinesAndMarkers ? point.YValue.Data : point.Value.Data,
-                    CultureInfo.InvariantCulture)).ToArray(),
-                XValues = chart.Type == ChartType.ScatterWithStraightLinesAndMarkers
-                    ? item.DataPoints.Select(point => System.Convert.ToDouble(point.XValue.Data, CultureInfo.InvariantCulture)).ToArray()
-                    : null,
-            }).ToArray();
-        if (op.Categories is { Count: 0 })
-        {
-            throw ChartDataInvalid("Explicit categories must not be empty.");
-        }
-
-        PopulateChart(chart, chart.Type, categories, series);
+        SlidesChartData.Update(chart, op);
+        ApplyDataDrivenPresentation(chart, chart.Type, SlidesChartData.Values(chart));
         touched.Add(slide.SlideId);
         return 1;
     }
 
-    internal static void PopulateChart(
+    /// <summary>Fills a newly inserted chart; existing charts are updated by <see cref="SlidesChartData"/>.</summary>
+    private static void PopulateChart(
         IChart chart,
         ChartType type,
         IReadOnlyList<string> categories,
         IReadOnlyList<SlidesChartSeriesInput> series)
     {
-        // Scatter charts persist X/Y coordinates rather than a category axis. A
-        // reopened scatter chart therefore has no Categories, even when its data
-        // workbook retains the optional row labels supplied during creation.
-        int pointCount = categories.Count > 0 ? categories.Count
-            : type == ChartType.ScatterWithStraightLinesAndMarkers && series.Count > 0 ? series[0].Values.Count : 0;
+        int pointCount = categories.Count;
         if (pointCount == 0 || series.Count == 0
             || series.Any(item => item.Values.Count != pointCount)
             || type == ChartType.ScatterWithStraightLinesAndMarkers
@@ -262,7 +242,7 @@ internal static class SlidesObjectHandlers
             }
         }
 
-        ApplyDataDrivenPresentation(chart, type, series);
+        ApplyDataDrivenPresentation(chart, type, series.Select(static item => item.Values).ToArray());
     }
 
     /// <summary>
@@ -273,7 +253,7 @@ internal static class SlidesObjectHandlers
     private static void ApplyDataDrivenPresentation(
         IChart chart,
         ChartType type,
-        IReadOnlyList<SlidesChartSeriesInput> series)
+        IReadOnlyList<IReadOnlyList<double>> series)
     {
         // More than one series cannot be told apart without a legend.
         if (series.Count > 1 && !chart.HasLegend)
@@ -288,7 +268,7 @@ internal static class SlidesObjectHandlers
         // values. Preserve every stored explicit minimum, including a zero saved
         // by an earlier CLI operation; its origin cannot be inferred after reload.
         if (type is not (ChartType.ClusteredBar or ChartType.ClusteredColumn)
-            || series.Any(static item => item.Values.Any(static value => value < 0)))
+            || series.Any(static values => values.Any(static value => value < 0)))
         {
             return;
         }

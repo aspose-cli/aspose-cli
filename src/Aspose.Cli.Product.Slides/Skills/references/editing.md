@@ -57,9 +57,16 @@ aspose-cli docs slides/ops
 Video and audio insertion or MP4 rendering are not supported by this build. Existing embedded
 media can be inventoried and extracted, but must not be silently synthesized.
 
-For `update_chart_data`, omitted series retain their existing values, including
-scatter X/Y coordinates. A categories-only update must keep matching lengths.
-Explicit scatter series require matching `xValues` and `values`.
+`update_chart_data` writes into the chart's own workbook cells. Existing series
+keep their fills, markers, data labels and number formats; added series and
+points take the chart's automatic style, and surplus categories, points and
+series are removed from the end. It supports bar, column, line, area, pie,
+doughnut, radar and scatter charts whose data lives in the embedded workbook.
+Other charts (bubble, stock, surface, mixed scatter and category series, external
+or literal data, multi-level categories) fail with `CHART_DATA_INVALID` and are
+left unchanged; recreate them with `insert_chart`. Omitted `series` keep their
+values, so a categories-only update must keep the category count. Scatter
+charts have no categories: pass `series` with matching `xValues` and `values`.
 
 New charts reserve space for their title and legend. Adding a second series to a
 chart without a legend creates a legend outside the plot. Data updates preserve

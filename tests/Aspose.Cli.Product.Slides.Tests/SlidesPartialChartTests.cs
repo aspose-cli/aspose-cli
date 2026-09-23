@@ -9,7 +9,6 @@ namespace Aspose.Cli.Product.Slides.Tests;
 public sealed class SlidesPartialChartTests
 {
     [Theory]
-    [InlineData("scatter")]
     [InlineData("column")]
     [InlineData("line")]
     public void CategoriesOnlyUpdate_PreservesExistingSeriesCoordinates(string kind)
@@ -24,18 +23,26 @@ public sealed class SlidesPartialChartTests
         }, new PresentationEditRequest { OutputPath = output });
         using var reopened = new Presentation(output);
         IChart chart = Chart(reopened);
-        string[] labels = kind == "scatter"
-            ? RowLabels(chart)
-            : chart.ChartData.Categories.Select(category => category.AsCell.Value.ToString()!).ToArray();
-        Assert.Equal(["C", "D"], labels);
+        Assert.Equal(["C", "D"], chart.ChartData.Categories.Select(category => category.AsCell.Value.ToString()!));
         Assert.Equal(["One", "Two"], chart.ChartData.Series.Select(series => series.Name.AsCells[0].Value.ToString()));
-        Assert.Equal([10d, 20d], Values(chart.ChartData.Series[0], kind == "scatter"));
-        Assert.Equal([30d, 40d], Values(chart.ChartData.Series[1], kind == "scatter"));
-        if (kind == "scatter")
+        Assert.Equal([10d, 20d], Values(chart.ChartData.Series[0], scatter: false));
+        Assert.Equal([30d, 40d], Values(chart.ChartData.Series[1], scatter: false));
+    }
+
+    [Fact]
+    public void ScatterCategoriesUpdate_IsRejectedBecauseScatterChartsHaveNoCategories()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string seed = CreateChart(fixture, "scatter");
+        string output = fixture.File("scatter-categories.pptx");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
         {
-            Assert.Equal([1d, 2d], XValues(chart.ChartData.Series[0]));
-            Assert.Equal([3d, 4d], XValues(chart.ChartData.Series[1]));
-        }
+            Ops = [new UpdateChartDataOp { Slide = 1, Shape = ChartId(seed), Categories = ["C", "D"] }],
+        }, new PresentationEditRequest { OutputPath = output }));
+
+        Assert.Equal(SlidesDiagnostics.ChartDataInvalid, error.Code);
+        Assert.False(File.Exists(output));
     }
 
     [Fact]
