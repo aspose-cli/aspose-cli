@@ -90,13 +90,12 @@ internal sealed partial class AppHost
     /// viewer service recycles its renderer and the next render applies the
     /// license.
     /// </summary>
+    /// <remarks>
+    /// The license child publishes under the SDK's own storage locks, so the
+    /// App adds only its mutation gate, then the short session state lock.
+    /// </remarks>
     private string Save(Action saveConfiguration)
     {
-        // Cross-process license lock -> App mutation gate -> short session state lock.
-        using LocalServiceOperationLock singleton = LocalServiceOperationLock.Acquire(
-            ViewerServiceCommands.Service,
-            ViewerServiceCommands.LockKey("license"),
-            TimeSpan.FromSeconds(30));
         return Mutate(() =>
         {
             saveConfiguration();

@@ -13,20 +13,6 @@ internal static class CurrentUserPipeSecurity
     private const UnixFileMode PrivateSocketMode =
         UnixFileMode.UserRead | UnixFileMode.UserWrite;
 
-    public static void Harden(string pipeName)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(pipeName);
-        if (OperatingSystem.IsWindows())
-        {
-            return;
-        }
-
-        string path = Path.Combine(
-            Path.GetTempPath(),
-            "CoreFxPipe_" + pipeName);
-        HardenPath(path);
-    }
-
     public static void HardenPath(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);

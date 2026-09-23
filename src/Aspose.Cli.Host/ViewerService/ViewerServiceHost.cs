@@ -31,7 +31,7 @@ internal sealed class ViewerServiceHost : IDisposable
     private readonly ViewerDocuments _documents;
     private readonly ViewerHttpServer _http;
     private readonly LocalServiceControlServer _control;
-    private readonly AppHost? _app;
+    private readonly AppHost _app;
     private readonly string _token;
     private readonly long _startedAt = Environment.TickCount64;
     private long _lastAppActivity = Environment.TickCount64;
@@ -42,7 +42,7 @@ internal sealed class ViewerServiceHost : IDisposable
         GlobalValues globals,
         ServiceStartSecrets? secrets,
         int requestedPort,
-        Func<ViewerDocuments, int, Action, Action, AppHost>? app = null)
+        Func<ViewerDocuments, int, Action, Action, AppHost> app)
     {
         var host = new ViewerServiceHost(globals, secrets, requestedPort, app);
         return new HostedCommandLifecycle(
@@ -55,9 +55,10 @@ internal sealed class ViewerServiceHost : IDisposable
         GlobalValues globals,
         ServiceStartSecrets? secrets,
         int requestedPort,
-        Func<ViewerDocuments, int, Action, Action, AppHost>? app)
+        Func<ViewerDocuments, int, Action, Action, AppHost> app)
     {
         ArgumentNullException.ThrowIfNull(globals);
+        ArgumentNullException.ThrowIfNull(app);
         try
         {
             _instance = LocalServiceOperationLock.Acquire(
@@ -84,20 +85,17 @@ internal sealed class ViewerServiceHost : IDisposable
             _http.Start();
             // The App is mounted on this origin, so the page that frames a
             // document and the document itself come from one address.
-            _app = app?.Invoke(_documents, _http.Port, RecordActivity, _stop.Set);
-            if (_app is { } mounted)
+            _app = app(_documents, _http.Port, RecordActivity, _stop.Set);
+            var handler = new AppRequestHandler(_app);
+            _http.Mount((context, port) =>
             {
-                var handler = new AppRequestHandler(mounted);
-                _http.Mount((context, port) =>
+                if (!AppRequestHandler.Owns(context.Request.Url?.AbsolutePath ?? "/"))
                 {
-                    if (!AppRequestHandler.Owns(context.Request.Url?.AbsolutePath ?? "/"))
-                    {
-                        return false;
-                    }
-                    handler.Handle(context, port);
-                    return true;
-                });
-            }
+                    return false;
+                }
+                handler.Handle(context, port);
+                return true;
+            });
             _control = new LocalServiceControlServer(
                 new LocalServiceControlEndpoint(ViewerServiceCommands.Service, id),
                 nonce,
@@ -270,13 +268,7 @@ internal sealed class ViewerServiceHost : IDisposable
     /// </summary>
     private ViewerAppResponse App(string? payload, OperationDeadline deadline)
     {
-        if (_app is not { } app)
-        {
-            throw CliErrors.OptionInvalid(
-                "app",
-                "this service was started without the App",
-                "Run 'aspose-cli preview stop --all', then 'aspose-cli app' again.");
-        }
+        AppHost app = _app;
         ViewerAppRequest request = payload is null
             ? throw new InvalidDataException("The app request carries no page.")
             : JsonSerializer.Deserialize(payload, ViewerServiceJsonContext.Default.ViewerAppRequest)
@@ -305,14 +297,14 @@ internal sealed class ViewerServiceHost : IDisposable
 
     private ViewerStatusResponse Status()
     {
-        AppResult? app = _app?.Result(reused: true);
+        AppResult app = _app.Result(reused: true);
         return new ViewerStatusResponse
         {
             Pid = Environment.ProcessId,
             Url = string.Create(CultureInfo.InvariantCulture, $"http://127.0.0.1:{_http.Port}/"),
             Documents = _documents.All.Where(static document => document.Current is not null).Select(State).ToArray(),
-            AppRoute = app?.Route,
-            AppFile = app?.File,
+            AppRoute = app.Route,
+            AppFile = app.File,
         };
     }
 

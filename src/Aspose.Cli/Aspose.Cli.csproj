@@ -24,12 +24,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <RuntimeHostConfigurationOption
-      Include="System.Drawing.EnableUnixSupport"
-      Value="true" />
-  </ItemGroup>
-
-  <ItemGroup>
     <InternalsVisibleTo Include="Aspose.Cli.Tests" />
   </ItemGroup>
 

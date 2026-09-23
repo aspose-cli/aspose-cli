@@ -110,15 +110,6 @@ internal sealed class AppStatusQuery
             _products);
     }
 
-    internal void InvalidateFontDiagnostic()
-    {
-        lock (_fontDiagnosticGate)
-        {
-            _fontDiagnostic = null;
-            _fontDiagnosticProduct = null;
-        }
-    }
-
     private IReadOnlyList<AppDiagnosticView> Diagnostics(
         ProductDefinition product, LicenseStatusResult license)
     {

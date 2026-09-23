@@ -1,8 +1,9 @@
 # License ownership
 
-`LicenseManager` is the management entry point for CLI, App, startup reporting,
-preview and doctor. It selects catalog products, reports each product independently,
-and coordinates validated installation/removal through the SDK storage module.
+`LicenseManager` is the management entry point for the `license` and `doctor`
+commands and the startup notice. It selects catalog products, reports each product
+independently, and coordinates validated installation/removal through the SDK
+storage module.
 
 The SDK `Licensing` directory owns source precedence, bounded input, native gate
 lifetime, identity and atomic storage. Each product Engine retains only its own
@@ -12,34 +13,21 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
 
 - An explicit invalid source is an error; it never falls through to evaluation.
 - A gate reads at most one MiB, validates those exact bytes and exposes their opaque
-  source/content identity. Status and process reuse come from the same snapshot.
+  source/content identity.
 - Installation admits one private snapshot before validation, then publishes the
   validated bytes for compatible products in one transaction. Removal uses the same
   publication locks and rollback, including shared and product-specific locations.
 - Installation/removal results come from explicit validated configuration changes. Only
   the supervisor publishes worker outputs; ordinary file reads always address physical files.
   Existing license targets must already be private.
-- A long-lived App pins immutable gate outcomes, status and identity without retaining
-  activation contexts or invocation resources. AppHost creates each command context. Opening a
-  new document cannot silently read a newer license than the App's status/identity.
-- App-side validation uses `LicenseValidationProcess`, a bounded short-lived CLI
-  process. Management and replacement planning cannot mutate the running SDK state.
-- A new launch compares the validated identity before reusing an App or preview.
-  A changed valid preview license replaces the owned process; an invalid selected
-  license rejects the launch and leaves the existing preview untouched. App Settings
-  remain available with invalid configuration, and such App snapshots are not reused.
-  AppHost serializes mutations and owns restart coordination. Lock order is the App
-  singleton lock, App mutation gate, then the short session state lock. State reads
-  use immutable snapshots. Replacement startup receives the singleton lease's scope
-  without acquiring it again. New mutations are rejected during restart.
-  Failed App restart restores the old control endpoint and reports saved configuration.
-  Uploaded preview files are copied through the existing bounded upload path before
-  the old App exits. The restart response is closed before the old process is stopped;
-  no fixed delay is used. Cleanup deletes only files owned by the session.
+- The long-lived viewer service, which hosts the App, never applies a license. The App
+  runs `license status`, `license install` and `license remove` as bounded CLI child
+  processes (`AppCliGateway`), keeps the status until `LicenseFingerprint` reports a
+  change, and re-raises a child's error with the child's own code and exit code.
+- The render worker applies licenses for the viewer. It asks to be recycled when the
+  `LicenseFingerprint` of a product changes, because an engine cannot swap a license.
 - Human startup messages are emitted once at the outer CLI boundary. JSON, MCP,
   verbose JSONL and internal protocols remain parseable.
 
-App upload/HTTP response and process-control adapters remain with App lifecycle
-code; they do not select a license or invent their own precedence. The public
-status contract is `LicenseStatusResult.Products`; `Identity` is an opaque cache
+The public status contract is `LicenseStatusResult.Products`; `Identity` is an opaque
 key for a fully validated snapshot, not a substitute for SDK validation.
