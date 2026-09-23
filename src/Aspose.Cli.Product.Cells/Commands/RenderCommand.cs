@@ -12,9 +12,6 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// </summary>
 internal static class RenderCommand
 {
-    private const int MinDpi = 24;
-    private const int MaxDpi = 1200;
-
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
         var fileArgument = new Argument<string>("file")
@@ -46,11 +43,7 @@ internal static class RenderCommand
             Description = "Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.",
         };
 
-        var dpiOption = new Option<int>("--dpi")
-        {
-            Description = $"Raster resolution ({MinDpi}-{MaxDpi}); ignored for svg.",
-            DefaultValueFactory = _ => 192,
-        };
+        var dpiOption = new DpiOption();
 
         var password = new PasswordOptions("--password", "the workbook");
 
@@ -60,7 +53,7 @@ internal static class RenderCommand
         render.Options.Add(sheetOption);
         render.Options.Add(rangeOption);
         render.Options.Add(allSheetsOption);
-        render.Options.Add(dpiOption);
+        dpiOption.AddTo(render);
         output.AddTo(render);
         password.AddTo(render);
 
@@ -68,9 +61,7 @@ internal static class RenderCommand
         {
             FormatInfo format = ResolveFormat(parseResult, toOption, output);
 
-            int dpi = parseResult.GetValue(dpiOption);
-            OptionGuards.EnsureInRange("--dpi", dpi, MinDpi, MaxDpi,
-                "Use 96 for screen-quality output or 192 (default) for crisp text.");
+            int dpi = dpiOption.Read(parseResult);
 
             bool allSheets = parseResult.GetValue(allSheetsOption);
             if (allSheets && parseResult.GetValue(sheetOption) is not null)

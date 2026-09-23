@@ -32,7 +32,7 @@ internal sealed class WordsDocumentEngine : IDocumentEngine, IWordsReviewLayoutP
             licenseGate,
             writer,
             loader,
-            resourceBudgets.Inputs);
+            resourceBudgets);
         _extraction = new WordsExtractionService(
             licenseGate,
             writer,

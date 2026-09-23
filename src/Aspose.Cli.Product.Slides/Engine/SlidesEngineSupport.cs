@@ -20,7 +20,6 @@ internal static class SlidesEngineSupport
 {
     internal const string EvaluationTruncationMarker = "truncated due to evaluation version limitation";
     internal const int DefaultRasterDpi = 192;
-    internal const long TotalRasterPixelLimit = 768L * 1024 * 1024;
 
     internal static Warning EvaluationInputWarning { get; } = new()
     {
@@ -397,51 +396,17 @@ internal static class SlidesEngineSupport
         return (request.Dpi ?? DefaultRasterDpi) / 72f;
     }
 
-    internal static void EnsureRasterBudget(
+    internal static void EnsureRasterFits(
         ResourceBudgetLedger resourceBudgets,
         long width,
         long height,
-        int slides,
-        int? dpi)
-    {
-        bool invalidDimensions = width <= 0 || height <= 0;
-        bool singleImageTooLarge = !invalidDimensions
-            && (width > RenderPixelGuard.DefaultMaxPixels
-                || height > RenderPixelGuard.DefaultMaxPixels
-                || width > RenderPixelGuard.DefaultMaxPixels / height);
-        bool batchTooLarge = !invalidDimensions
-            && slides > 0
-            && width > TotalRasterPixelLimit / height / slides;
-        if (!invalidDimensions && !singleImageTooLarge && !batchTooLarge)
-        {
-            resourceBudgets.EnsureWithin(
-                SlidesBudgetDomains.Pixels,
-                checked(width * height * slides),
-                "pixels",
-                "pre-render");
-            return;
-        }
-
-        long totalPixels = invalidDimensions || slides <= 0 || width > long.MaxValue / height / slides
-            ? long.MaxValue
-            : width * height * slides;
-        string resolution = dpi is int value
-            ? string.Create(CultureInfo.InvariantCulture, $" at {value} dpi")
-            : string.Empty;
-        throw new CliException(
-            ErrorCodes.RenderTooLarge,
-            $"Rendering {slides} slide(s){resolution} would require {width}x{height} pixels per slide "
-                + $"({totalPixels / 1_048_576d:0.#} megapixels in total), which exceeds the safe raster budget.",
-            hint: "Render fewer slides with --slides, lower --dpi, or pass a smaller --width.",
-            details: new JsonObject
-            {
-                ["width"] = width,
-                ["height"] = height,
-                ["slides"] = slides,
-                ["dpi"] = dpi,
-                ["maxTotalPixels"] = TotalRasterPixelLimit,
-            });
-    }
+        int? dpi) =>
+        RenderPixelGuard.EnsureFits(
+            resourceBudgets,
+            width,
+            height,
+            dpi,
+            "Lower --dpi or pass a smaller --width.");
 
     internal static void ApplySlideSize(Presentation presentation, string? size)
     {
@@ -546,9 +511,5 @@ internal static class SlidesEngineSupport
         _ => throw Sdk.Errors.CliErrors.FormatUnsupported(format, SlidesFormats.ConvertIds),
     };
 
-    internal static string SlidePath(string path, int slide) =>
-        Path.Combine(
-            Path.GetDirectoryName(path)!,
-            $"{Path.GetFileNameWithoutExtension(path)}.s{slide}{Path.GetExtension(path)}");
 }
 

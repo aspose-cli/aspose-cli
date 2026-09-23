@@ -16,6 +16,7 @@ public static class ResourceBudgetKinds
     public const string OutputSetEntries = "output-set-entries";
     public const string OutputSetDirectories = "output-set-directories";
     public const string PublicationMetadataBytes = "publication-metadata-bytes";
+    public const string RasterPixels = "raster-pixels";
     public const string SecretCharacters = "secret-characters";
 }
 /// <summary>Versioned defaults and hard safety maxima for ordinary CLI input.</summary>
@@ -34,6 +35,9 @@ public static class ResourceBudgetDefaults
     public const long MaximumOutputBytes = 2L << 30;
     public const long DefaultSecretCharacters = 4L << 10;
     public const long MaximumSecretCharacters = 16L << 10;
+
+    /// <summary>Pixels of one raster image: 256 megapixels, about 1 GiB of 32-bit color.</summary>
+    public const long RasterPixels = 256L << 20;
 
     /// <summary>Public global limits in stable resource-name order.</summary>
     public static IReadOnlyList<ResourceBudgetCapabilities> Global { get; } =
@@ -70,6 +74,8 @@ public static class ResourceBudgetDefaults
             PublicationLimits.MaximumDirectories, PublicationLimits.MaximumDirectories, "items", "output-directory-admission"),
         ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.PublicationMetadataBytes,
             PublicationLimits.MaximumMetadataBytes, PublicationLimits.MaximumMetadataBytes, "bytes", "publication-seal"),
+        ResourceBudgetCapabilities.Domain(ResourceBudgetKinds.RasterPixels,
+            RasterPixels, RasterPixels, "pixels", "pre-render"),
         ResourceBudgetCapabilities.Domain(
             ResourceBudgetKinds.SecretCharacters,
             DefaultSecretCharacters,

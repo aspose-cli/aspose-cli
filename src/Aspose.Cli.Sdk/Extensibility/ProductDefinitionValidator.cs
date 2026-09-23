@@ -1,3 +1,4 @@
+using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.Extensibility;
@@ -27,6 +28,7 @@ internal sealed class ProductDefinitionValidator
 
         ValidateManifest(definition.Manifest);
         ValidateFormats(definition);
+        ValidateBudgetOptions(definition);
         RegisterContracts(definition);
         return definition;
     }
@@ -188,6 +190,69 @@ internal sealed class ProductDefinitionValidator
                     $"Product '{manifest.Id}' operation command '{operation.Command}' has an invalid schema, limit or operation list.");
             }
         }
+    }
+
+    /// <summary>
+    /// A budget that names a command option is raised through that option, so the option
+    /// must exist: the host otherwise enforces the budget's maximum instead of its default.
+    /// </summary>
+    private static void ValidateBudgetOptions(ProductDefinition definition)
+    {
+        string[] declared = definition.Manifest.ResourceBudgets
+            .Select(static budget => budget.Option)
+            .OfType<string>()
+            .ToArray();
+        if (declared.Length == 0)
+        {
+            return;
+        }
+
+        var registered = new HashSet<string>(StringComparer.Ordinal);
+        CollectOptions(definition.CreateCommand(InertCommandHostFactory.Instance), registered);
+        foreach (string option in declared)
+        {
+            if (!registered.Contains(option))
+            {
+                throw new InvalidOperationException(
+                    $"Product '{definition.Manifest.Id}' declares a resource budget raised by '{option}', "
+                    + "but no command registers that option.");
+            }
+        }
+    }
+
+    private static void CollectOptions(Command command, ISet<string> names)
+    {
+        foreach (Option option in command.Options)
+        {
+            names.Add(option.Name);
+            foreach (string alias in option.Aliases)
+            {
+                names.Add(alias);
+            }
+        }
+
+        foreach (Command child in command.Subcommands)
+        {
+            CollectOptions(child, names);
+        }
+    }
+
+    /// <summary>Builds a command tree for inspection; its commands cannot run.</summary>
+    private sealed class InertCommandHostFactory : IProductCommandHostFactory
+    {
+        public static InertCommandHostFactory Instance { get; } = new();
+
+        public IProductCommandHost<TPort> Create<TPort>(string productId)
+            where TPort : class => new InertCommandHost<TPort>();
+    }
+
+    private sealed class InertCommandHost<TPort> : IProductCommandHost<TPort>
+        where TPort : class
+    {
+        public int Run(
+            ParseResult parseResult,
+            Func<ProductCommandContext<TPort>, ResultEnvelope> handler) =>
+            throw new InvalidOperationException("A command tree built for validation cannot run.");
     }
 
     private static bool IsToken(string value) =>

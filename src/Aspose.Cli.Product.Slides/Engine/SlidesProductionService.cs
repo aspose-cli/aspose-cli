@@ -57,11 +57,10 @@ internal sealed class SlidesProductionService
         float scale = (float)(pixelWidth / presentation.SlideSize.Size.Width);
         int total = presentation.Slides.Count;
         int count = Math.Min(total, request.MaxParts);
-        EnsureRasterBudget(
+        EnsureRasterFits(
             _resourceBudgets,
             (long)Math.Ceiling(presentation.SlideSize.Size.Width * scale),
             (long)Math.Ceiling(presentation.SlideSize.Size.Height * scale),
-            count,
             dpi: null);
         double cssPerPoint = cssWidth / presentation.SlideSize.Size.Width;
         int cssHeight = Math.Max(1, (int)Math.Round(
@@ -240,11 +239,10 @@ internal sealed class SlidesProductionService
         {
             long width = (long)Math.Ceiling(presentation.SlideSize.Size.Width * scale);
             long height = (long)Math.Ceiling(presentation.SlideSize.Size.Height * scale);
-            EnsureRasterBudget(
+            EnsureRasterFits(
                 _resourceBudgets,
                 width,
                 height,
-                slides.Count,
                 request.Width is null ? request.Dpi ?? DefaultRasterDpi : null);
         }
 
@@ -256,7 +254,7 @@ internal sealed class SlidesProductionService
             ISlide slide = presentation.Slides[number - 1];
             string path = slides.Count == 1
                 ? request.OutputPath
-                : SlidePath(request.OutputPath, number);
+                : PartOutputPath.For(request.OutputPath, PartOutputPath.Slide, number);
             targets.Add((number, slide.SlideId, path));
             transaction.Stage(path, request.Overwrite, temp =>
             {

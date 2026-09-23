@@ -18,7 +18,6 @@ public sealed class SlidesModule : IProductModule
             [
                 ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Slides, 10_000, 50_000, "items", "post-load"),
                 ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Shapes, 1_000_000, 5_000_000, "items", "projection"),
-                ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Pixels, 64L * 1024 * 1024, 1024L * 1024 * 1024, "pixels", "pre-render", "--max-pixels"),
             ],
             Engine = ProductEngineCapabilities.LicenseAware(
                 "aspose",

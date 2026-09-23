@@ -62,10 +62,6 @@ internal sealed class PdfProductionService
         for (int pageNumber = 1; pageNumber <= count; pageNumber++)
         {
             Page page = loaded.Document.Pages[pageNumber];
-            RenderPixelGuard.EnsureFits(
-                (long)Math.Ceiling(page.Rect.Width / 72d * dpi),
-                (long)Math.Ceiling(page.Rect.Height / 72d * dpi),
-                dpi);
             string file = string.Create(CultureInfo.InvariantCulture, $"page-{pageNumber:0000}.png");
             int number = pageNumber;
             artifacts.Write(
@@ -104,7 +100,6 @@ internal sealed class PdfProductionService
         {
             throw CliErrors.FormatUnsupported(request.TargetFormatId, PdfFormats.RenderIds);
         }
-        RenderPixelGuard.EnsureDpi(request.Dpi, 36, 1_200);
 
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
@@ -116,15 +111,9 @@ internal sealed class PdfProductionService
         var staged = new List<(int Page, string Path)>();
         foreach (int pageNumber in pages)
         {
-            Page page = loaded.Document.Pages[pageNumber];
-            if (request.TargetFormatId != "svg")
-            {
-                long width = (long)Math.Ceiling(page.Rect.Width / 72d * request.Dpi);
-                long height = (long)Math.Ceiling(page.Rect.Height / 72d * request.Dpi);
-                RenderPixelGuard.EnsureFits(width, height, request.Dpi);
-            }
-
-            string path = pages.Count == 1 ? Path.GetFullPath(request.OutputPath) : PagePath(request.OutputPath, pageNumber);
+            string path = pages.Count == 1
+                ? Path.GetFullPath(request.OutputPath)
+                : PartOutputPath.For(request.OutputPath, PartOutputPath.Page, pageNumber);
             writer.Stage(path, request.Overwrite, stagedPath =>
             {
                 using FileStream stream = File.Create(stagedPath);
@@ -153,7 +142,11 @@ internal sealed class PdfProductionService
         };
     }
 
-    private static void RenderPage(
+    /// <summary>
+    /// Writes one page as an image. Every page raster passes the shared pixel guard here,
+    /// before the engine allocates the bitmap.
+    /// </summary>
+    private void RenderPage(
         Document document,
         int pageNumber,
         string format,
@@ -161,6 +154,11 @@ internal sealed class PdfProductionService
         Stream stream)
     {
         Page page = document.Pages[pageNumber];
+        if (format != "svg")
+        {
+            EnsurePageFits(page, dpi);
+        }
+
         switch (format)
         {
             case "png":
@@ -180,6 +178,14 @@ internal sealed class PdfProductionService
                 throw CliErrors.FormatUnsupported(format, PdfFormats.RenderIds);
         }
     }
+
+    private void EnsurePageFits(Page page, int dpi) =>
+        RenderPixelGuard.EnsureFits(
+            _resourceBudgets,
+            (long)Math.Ceiling(page.Rect.Width / 72d * dpi),
+            (long)Math.Ceiling(page.Rect.Height / 72d * dpi),
+            dpi,
+            "Render fewer or smaller pages, or lower --dpi.");
 
     internal PdfWriteResult Create(NewPdfRequest request)
     {
@@ -511,28 +517,13 @@ internal sealed class PdfProductionService
         var paths = new List<string>(pages.Count);
         foreach (int pageNumber in pages)
         {
-            string path = pages.Count == 1 ? request.OutputPath : PagePath(request.OutputPath, pageNumber);
+            string path = pages.Count == 1
+                ? request.OutputPath
+                : PartOutputPath.For(request.OutputPath, PartOutputPath.Page, pageNumber);
             writer.Stage(path, request.Overwrite, temp =>
             {
                 using FileStream stream = File.Create(temp);
-                Page page = document.Pages[pageNumber];
-                switch (request.TargetFormatId)
-                {
-                    case "png":
-                        new PngDevice(new Resolution(ImageDpi)).Process(page, stream);
-                        break;
-                    case "jpeg":
-                        new JpegDevice(new Resolution(ImageDpi), 95).Process(page, stream);
-                        break;
-                    case "svg":
-                        using (Document selected = Select(document, [pageNumber]))
-                        {
-                            selected.Save(stream, SaveFormat.Svg);
-                        }
-                        break;
-                    default:
-                        throw CliErrors.FormatUnsupported(request.TargetFormatId, PdfFormats.ImageConvertIds);
-                }
+                RenderPage(document, pageNumber, request.TargetFormatId, ImageDpi, stream);
             });
             paths.Add(path);
         }
@@ -547,6 +538,11 @@ internal sealed class PdfProductionService
         IReadOnlyList<int> pages,
         PdfConvertRequest request)
     {
+        foreach (int pageNumber in pages)
+        {
+            EnsurePageFits(source.Pages[pageNumber], ImageDpi);
+        }
+
         using Document selected = Select(source, pages);
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
         {

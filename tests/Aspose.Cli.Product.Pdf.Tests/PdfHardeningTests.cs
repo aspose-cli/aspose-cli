@@ -46,6 +46,31 @@ public sealed class PdfHardeningTests
         Assert.Contains("empty string", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
+    [Theory]
+    [InlineData("png")]
+    [InlineData("jpeg")]
+    [InlineData("tiff")]
+    public void ConvertToRaster_RejectsAnOversizedPageBeforePublishing(string format)
+    {
+        using var fixture = new PdfEngineFixture();
+        fixture.Gate.EnsureApplied();
+        string input = fixture.File("poster.pdf");
+        using (var document = new Document())
+        {
+            // 200 inches square: 38400 pixels per side at the 192 DPI of convert.
+            document.Pages.Add().SetPageSize(14_400, 14_400);
+            document.Save(input);
+        }
+
+        string output = fixture.File("poster" + PdfFormats.Definitions.ExtensionFor(format));
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(
+            input,
+            new PdfConvertRequest { TargetFormatId = format, OutputPath = output }));
+
+        Assert.Equal(ErrorCodes.RenderTooLarge, error.Code);
+        Assert.False(File.Exists(output));
+    }
+
     [Fact]
     public void Read_CjkTextRoundTripsWithoutLatinSubstitution()
     {

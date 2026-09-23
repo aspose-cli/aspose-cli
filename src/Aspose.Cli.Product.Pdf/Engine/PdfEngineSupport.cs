@@ -73,15 +73,6 @@ internal static class PdfEngineSupport
 
     internal static string PageRangeText(IEnumerable<int> values) => string.Join(",", values);
 
-    internal static string PagePath(string outputPath, int page)
-    {
-        string fullOutputPath = Path.GetFullPath(outputPath);
-        string directory = Path.GetDirectoryName(fullOutputPath)!;
-        string stem = Path.GetFileNameWithoutExtension(fullOutputPath);
-        string extension = Path.GetExtension(fullOutputPath);
-        return Path.Combine(directory, $"{stem}.p{page}{extension}");
-    }
-
     internal static OutputInfo BuildOutput(string path, string format, long size) => new()
     {
         Path = Path.GetFullPath(path),

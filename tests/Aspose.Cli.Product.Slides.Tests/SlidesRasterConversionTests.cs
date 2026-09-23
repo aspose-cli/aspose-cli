@@ -46,13 +46,14 @@ public sealed class SlidesRasterConversionTests
     [Theory]
     [InlineData("png")]
     [InlineData("jpeg")]
-    public void ConvertImages_RejectsAnOversizedBatchBeforePublishing(string format)
+    public void ConvertImages_RejectsAnOversizedSlideBeforePublishingAnyPart(string format)
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation(slides: 8);
         using (var source = new Presentation(input))
         {
-            source.SlideSize.SetSize(4000, 4000, SlideSizeScaleType.DoNotScale);
+            // 7000 pt at the 192 DPI of convert is 18667 px square, above the 256 MiP image budget.
+            source.SlideSize.SetSize(7000, 7000, SlideSizeScaleType.DoNotScale);
             source.Save(input, SaveFormat.Pptx);
         }
         string output = fixture.File("oversized" + SlidesFormats.Definitions.ExtensionFor(format));

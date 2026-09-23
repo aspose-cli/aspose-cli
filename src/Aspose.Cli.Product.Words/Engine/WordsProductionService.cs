@@ -22,21 +22,24 @@ internal sealed class WordsProductionService
     private const int CssDpi = 96;
     private const int EvidenceDpi = 150;
     private const int DisplayDpi = 192;
+    private const string RenderHint = "Render fewer or smaller pages, or lower --dpi.";
     private readonly ILicenseGate _licenseGate;
     private readonly SafeFileWriter _writer;
     private readonly WordsDocumentLoader _loader;
+    private readonly ResourceBudgetLedger _resourceBudgets;
     private readonly InputSource _inputs;
 
     internal WordsProductionService(
         ILicenseGate licenseGate,
         SafeFileWriter writer,
         WordsDocumentLoader loader,
-        InputSource inputs)
+        ResourceBudgetLedger resourceBudgets)
     {
         _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader ?? throw new ArgumentNullException(nameof(loader));
-        _inputs = inputs ?? throw new ArgumentNullException(nameof(inputs));
+        _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
+        _inputs = resourceBudgets.Inputs;
     }
 
     /// <summary>Converts a document using the selected save pipeline.</summary>
@@ -65,7 +68,6 @@ internal sealed class WordsProductionService
     /// <summary>Renders selected pages within the pixel budget.</summary>
     internal WordsRenderResult Render(string filePath, WordsRenderRequest request)
     {
-        RenderPixelGuard.EnsureDpi(request.Dpi, 36, 1_200);
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.AllPages
@@ -78,8 +80,10 @@ internal sealed class WordsProductionService
             PageInfo info = loaded.Document.GetPageInfo(page - 1);
             long width = (long)Math.Ceiling(info.WidthInPoints / 72d * request.Dpi);
             long height = (long)Math.Ceiling(info.HeightInPoints / 72d * request.Dpi);
-            RenderPixelGuard.EnsureFits(width, height, request.Dpi);
-            string path = pages.Count == 1 ? request.OutputPath : PagePath(request.OutputPath, page);
+            RenderPixelGuard.EnsureFits(_resourceBudgets, width, height, request.Dpi, RenderHint);
+            string path = pages.Count == 1
+                ? request.OutputPath
+                : PartOutputPath.For(request.OutputPath, PartOutputPath.Page, page);
             SaveOptions options = WordsSavePipeline.Options(request.TargetFormatId, pages: [page], dpi: request.Dpi);
             long size = transaction.Stage(path, request.Overwrite, temp => loaded.Document.Save(temp, options)).SizeBytes;
             outputs.Add(new PageOutput { Page = page, Output = BuildOutput(path, request.TargetFormatId, size) });
@@ -116,9 +120,11 @@ internal sealed class WordsProductionService
         {
             PageInfo info = document.GetPageInfo(page - 1);
             RenderPixelGuard.EnsureFits(
+                _resourceBudgets,
                 Pixels(info.WidthInPoints, dpi),
                 Pixels(info.HeightInPoints, dpi),
-                dpi);
+                dpi,
+                RenderHint);
             string file = string.Create(CultureInfo.InvariantCulture, $"page-{page:0000}.png");
             int pageNumber = page;
             artifacts.Write(
@@ -297,11 +303,6 @@ internal sealed class WordsProductionService
 
         return Combine(EnvelopeParts.OutputWarnings(state), extra);
     }
-
-    private static string PagePath(string path, int page) =>
-        Path.Combine(
-            Path.GetDirectoryName(path)!,
-            $"{Path.GetFileNameWithoutExtension(path)}.p{page}{Path.GetExtension(path)}");
 
     private static string Truncate(string value, int length) =>
         value.Length <= length ? value : value[..length] + "…";

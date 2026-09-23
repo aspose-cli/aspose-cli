@@ -186,32 +186,25 @@ public static partial class CliErrors
             ["imageHeight"] = imageHeight,
         });
 
-    public static CliException RenderTooLarge(long width, long height, int dpi)
+    public static CliException RenderTooLarge(long width, long height, int? dpi, long maxPixels, string hint)
     {
         string megabytes = ((double)width * height * 4d / 1_048_576d)
             .ToString("0", CultureInfo.InvariantCulture);
+        string resolution = dpi is { } value
+            ? string.Create(CultureInfo.InvariantCulture, $" at {value} DPI")
+            : string.Empty;
         return new CliException(
             ErrorCodes.RenderTooLarge,
-            $"Rendering at {dpi} DPI needs a {width}x{height} pixel image ({megabytes} MB), which exceeds the allocation limit.",
-            hint: "Select a smaller render region or lower --dpi.",
+            $"Rendering{resolution} needs a {width}x{height} pixel image ({megabytes} MB), which exceeds the limit of {maxPixels} pixels per image.",
+            hint: hint,
             details: new JsonObject
             {
                 ["width"] = width,
                 ["height"] = height,
                 ["dpi"] = dpi,
+                ["maxPixels"] = maxPixels,
             });
     }
-
-    public static CliException ImageTooLarge(long pixels, long maxPixels, int frameCount) => new(
-        ErrorCodes.RenderTooLarge,
-        $"The image output needs {pixels} pixels across {frameCount} frame(s), exceeding the configured limit of {maxPixels} pixels.",
-        hint: "Select one frame with --frame, reduce the source dimensions, or raise --max-pixels within the advertised safety limit.",
-        details: new JsonObject
-        {
-            ["pixels"] = pixels,
-            ["maxPixels"] = maxPixels,
-            ["frameCount"] = frameCount,
-        });
 
     public static CliException OperationTimeout(int seconds) => new(
         ErrorCodes.OperationTimeout,

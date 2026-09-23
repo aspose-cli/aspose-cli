@@ -9,6 +9,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
@@ -20,13 +21,6 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// </summary>
 internal sealed class CellsOutputService
 {
-    /// <summary>
-    /// Pixel ceiling for one raster render — 256 megapixels, about 1 GiB of
-    /// BGRA. Comfortably above any image a person or an agent looks at, and
-    /// below where the allocation starts failing.
-    /// </summary>
-    private const long MaxRenderPixels = 256L * 1024 * 1024;
-
     private readonly ILicenseGate _licenseGate;
     private readonly SafeFileWriter _fileWriter;
     private readonly WorkbookLoadService _loader;
@@ -502,7 +496,7 @@ internal sealed class CellsOutputService
     /// without printable content becomes a blank placeholder rather than an
     /// error, so an empty sheet never hides the rest of the workbook.
     /// </summary>
-    private static (int Width, int Height) RenderSheetPart(
+    private (int Width, int Height) RenderSheetPart(
         Worksheet sheet,
         int dpi,
         string file,
@@ -541,16 +535,16 @@ internal sealed class CellsOutputService
     private static readonly byte[] BlankPng = System.Convert.FromBase64String(
         "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2VQAAAABJRU5ErkJggg==");
 
-    /// <summary>Rejects raster output whose bitmap would exceed the allocation budget.</summary>
-    private static void EnsureRenderable(SheetRender render, int dpi)
+    /// <summary>Rejects raster output whose bitmap would exceed the shared pixel budget.</summary>
+    private void EnsureRenderable(SheetRender render, int dpi)
     {
         float[] inches = render.GetPageSizeInch(0);
-        long width = (long)Math.Ceiling(inches[0] * dpi);
-        long height = (long)Math.Ceiling(inches[1] * dpi);
-        if (width * height > MaxRenderPixels)
-        {
-            throw CellsEngineErrors.RenderTooLarge(width, height, dpi);
-        }
+        RenderPixelGuard.EnsureFits(
+            _resourceBudgets,
+            (long)Math.Ceiling(inches[0] * dpi),
+            (long)Math.Ceiling(inches[1] * dpi),
+            dpi,
+            "Render a window of the sheet with --range (e.g. --range A1:H50), or lower --dpi.");
     }
 
 
