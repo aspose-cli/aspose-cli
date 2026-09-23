@@ -133,20 +133,23 @@ internal static class SlidesObjectHandlers
         chart.HasTitle = op.Title is not null;
         if (op.Title is not null)
         {
+            chart.ChartTitle.Overlay = false;
             chart.ChartTitle.AddTextFrameForOverriding(op.Title);
             chart.ChartTitle.TextFormat.TextBlockFormat.TextVerticalType = TextVerticalType.Horizontal;
         }
         chart.HasLegend = op.Series.Count > 1;
         chart.Legend.Position = LegendPositionType.Bottom;
+        chart.Legend.Overlay = false;
         chart.LineFormat.FillFormat.FillType = FillType.NoFill;
         if (type != ChartType.Pie)
         {
             chart.Axes.VerticalAxis.MinorGridLinesFormat.Line.FillFormat.FillType = FillType.NoFill;
             chart.Axes.HorizontalAxis.MinorGridLinesFormat.Line.FillFormat.FillType = FillType.NoFill;
-            chart.Axes.HorizontalAxis.MajorGridLinesFormat.Line.FillFormat.FillType = FillType.NoFill;
+            IAxis categories = CategoryAxis(chart, type);
+            categories.MajorGridLinesFormat.Line.FillFormat.FillType = FillType.NoFill;
             if (type != ChartType.ScatterWithStraightLinesAndMarkers)
             {
-                chart.Axes.HorizontalAxis.CategoryAxisType = CategoryAxisType.Text;
+                categories.CategoryAxisType = CategoryAxisType.Text;
             }
         }
 
@@ -262,10 +265,9 @@ internal static class SlidesObjectHandlers
     }
 
     /// <summary>
-    /// Re-applies the presentation the data itself dictates, wherever that data is
-    /// written. Both rules raise a floor and never impose a ceiling, so a template
-    /// author's explicit choice survives an update while a chart that would
-    /// misrepresent its own data is corrected.
+    /// Enables a missing legend for multiple series and gives automatic non-negative
+    /// bar/column value axes a zero minimum. Stored explicit limits are preserved;
+    /// later data changes can require an independent axis and layout review.
     /// </summary>
     private static void ApplyDataDrivenPresentation(
         IChart chart,
@@ -277,22 +279,30 @@ internal static class SlidesObjectHandlers
         {
             chart.HasLegend = true;
             chart.Legend.Position = LegendPositionType.Bottom;
+            chart.Legend.Overlay = false;
         }
 
         // A bar or column encodes its value as a length, so an engine-chosen
         // non-zero baseline exaggerates the differences between non-negative
-        // values. An explicit minimum is the author's and is left alone.
+        // values. Preserve every stored explicit minimum, including a zero saved
+        // by an earlier CLI operation; its origin cannot be inferred after reload.
         if (type is not (ChartType.ClusteredBar or ChartType.ClusteredColumn)
             || series.Any(static item => item.Values.Any(static value => value < 0)))
         {
             return;
         }
 
-        IAxis values = chart.Axes.VerticalAxis;
+        IAxis values = ValueAxis(chart, type);
         if (values.IsAutomaticMinValue)
         {
             values.IsAutomaticMinValue = false;
             values.MinValue = 0;
         }
     }
+
+    private static IAxis ValueAxis(IChart chart, ChartType type) =>
+        type == ChartType.ClusteredBar ? chart.Axes.HorizontalAxis : chart.Axes.VerticalAxis;
+
+    private static IAxis CategoryAxis(IChart chart, ChartType type) =>
+        type == ChartType.ClusteredBar ? chart.Axes.VerticalAxis : chart.Axes.HorizontalAxis;
 }

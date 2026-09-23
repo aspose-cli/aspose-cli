@@ -1,3 +1,6 @@
+using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.TestKit;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;
 using Xunit;
@@ -99,6 +102,72 @@ public sealed class PdfArtifactWorkflowTests
             using var document = new Document(part.Output.Path);
             Assert.Single(document.Pages);
         });
+    }
+
+    [Fact]
+    public void ExtractAttachments_PublishesOriginalBytesAndMeasuredLengths()
+    {
+        using var fixture = new PdfEngineFixture();
+        fixture.Gate.EnsureApplied();
+        string input = fixture.File("attachments.pdf");
+        byte[] payload = [0, 255, 4, 17, 0, 128];
+        using (var document = new Document())
+        using (var content = new MemoryStream(payload))
+        using (var empty = new MemoryStream())
+        {
+            document.Pages.Add().Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("Supporting evidence"));
+            document.EmbeddedFiles.Add(new FileSpecification(content, "evidence.bin"));
+            document.EmbeddedFiles.Add(new FileSpecification(empty, "empty.txt"));
+            document.Save(input);
+        }
+        byte[] original = File.ReadAllBytes(input);
+        string directory = fixture.File("extracted");
+        PdfExtractResult result = fixture.Engine.Extract(input,
+            new PdfExtractRequest { What = "attachments", OutputDirectory = directory });
+
+        Assert.Equal(2, result.Items.Count);
+        var evidence = Assert.Single(result.Items, item => item.Name == "evidence.bin");
+        var emptyItem = Assert.Single(result.Items, item => item.Name == "empty.txt");
+        Assert.Equal(payload.LongLength, evidence.SizeBytes);
+        Assert.Equal(payload, File.ReadAllBytes(evidence.Path));
+        Assert.Equal(0, emptyItem.SizeBytes);
+        Assert.Empty(File.ReadAllBytes(emptyItem.Path));
+        Assert.Equal(original, File.ReadAllBytes(input));
+        Assert.Equal(2, Directory.GetFiles(directory).Length);
+    }
+
+    [Fact]
+    public void ExtractAttachments_LaterBudgetFailureRollsBackTheWholeSet()
+    {
+        using var fixture = new PdfEngineFixture();
+        fixture.Gate.EnsureApplied();
+        string input = fixture.File("attachment-budget.pdf");
+        using (var document = new Document())
+        using (var first = new MemoryStream([1]))
+        using (var second = new MemoryStream([2, 3, 4]))
+        {
+            document.Pages.Add().Paragraphs.Add(new Aspose.Pdf.Text.TextFragment("Supporting evidence"));
+            document.EmbeddedFiles.Add(new FileSpecification(first, "a.bin"));
+            document.EmbeddedFiles.Add(new FileSpecification(second, "b.bin"));
+            document.Save(input);
+        }
+        byte[] original = File.ReadAllBytes(input);
+        ResourceBudgetLedger budgets = ProductTestBudgets.Create<PdfModule>();
+        budgets.Consume(ResourceBudgetKinds.OutputBytes,
+            budgets.Remaining(ResourceBudgetKinds.OutputBytes) - 2, "bytes", "test-reservation");
+        var engine = new PdfDocumentEngine(fixture.Gate, budgets, new SafeFileWriter(budgets));
+        string output = fixture.File("extracted");
+        Directory.CreateDirectory(output);
+        string unrelated = Path.Combine(output, "keep.txt");
+        File.WriteAllText(unrelated, "Unrelated original file");
+
+        CliException error = Assert.Throws<CliException>(() => engine.Extract(input,
+            new PdfExtractRequest { What = "attachments", OutputDirectory = output }));
+
+        Assert.Equal(ErrorCodes.ExtractBudgetExceeded, error.Code);
+        Assert.Equal(original, File.ReadAllBytes(input));
+        Assert.Equal("Unrelated original file", File.ReadAllText(unrelated));
+        Assert.Equal([unrelated], Directory.GetFiles(output));
     }
 
     private static string PageText(Page page)

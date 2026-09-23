@@ -36,3 +36,13 @@ licensed results only when the CLI reports Slides as licensed.
 
 `slides render` and PNG/JPEG conversion export images for delivery (192 DPI by
 default; a 720-by-405-point slide becomes 1920 by 1080 pixels).
+
+## Existing chart fidelity
+
+An unrelated edit still passes the presentation through the native SDK's full
+save path. The current Aspose.Slides 26.9 SDK can change an untouched chart's
+implicit title layout and color behavior during a plain load/save. Inspect
+existing native charts independently in PowerPoint before publishing a revised
+template. Successful reopen and review coverage do not establish unchanged
+appearance. The CLI does not rewrite imported chart defaults to hide this SDK
+limitation.

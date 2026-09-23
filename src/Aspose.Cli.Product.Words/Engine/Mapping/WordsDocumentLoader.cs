@@ -35,6 +35,10 @@ internal sealed class WordsDocumentLoader
         {
             detected = FileFormatUtil.DetectFileFormat(path);
         }
+        catch (Exception ex) when (ex is FileCorruptedException or UnsupportedFileFormatException)
+        {
+            throw InvalidDocument(path, ex.Message, ex);
+        }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
             throw TranslateIo(path, ex);
@@ -141,9 +145,14 @@ internal sealed class WordsDocumentLoader
         }
     }
 
-    private static CliException TranslateIo(string path, Exception ex) =>
-        ex is UnauthorizedAccessException ? CliErrors.FileAccessDenied(path) :
-        File.Exists(path) ? CliErrors.FileLocked(path) : CliErrors.FileNotFound(path);
+    // These catches surround SDK input detection/parsing, not output publication.
+    private static CliException TranslateIo(string path, Exception exception) => exception switch
+    {
+        FileNotFoundException or DirectoryNotFoundException => CliErrors.FileNotFound(path),
+        UnauthorizedAccessException => CliErrors.FileAccessDenied(path),
+        IOException io when FileAccessProbe.IsSharingViolation(io) => CliErrors.FileLocked(path),
+        _ => InvalidDocument(path, exception.Message, exception),
+    };
 
     private static bool IsTextFallbackForNonTextPath(string formatId, string path)
     {

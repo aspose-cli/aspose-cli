@@ -15,6 +15,15 @@ aspose-cli pdf query search report.final.pdf --pattern DRAFT --output json
 Choose ranges from the inspected page count, check query truncation, and
 compare extracted text with the expected content.
 
+After `move_pages`, also verify each affected bookmark, local link and named
+destination against the original target content, including destination type,
+coordinates, zoom and inherited/null values. Reopening or correct page order does not
+prove navigation preservation. The current move implementation can invalidate
+bookmarks to moved pages, so navigation-sensitive publication is blocked. The pinned
+SDK's typed coordinate getters also collapse null and zero; getter equality alone
+cannot certify those semantics. This limitation is separate from ordinary text and
+page rendering checks.
+
 For redaction, cover all relevant pages, require the expected search results
 and inspect the redacted regions in review; check images, annotations,
 metadata and attachments as needed. Raw-byte absence of a known phrase is
@@ -38,3 +47,12 @@ Check page order and size, crop and rotation, clipping, images, tables,
 headers and footers, fields, annotations, redaction appearance and contrast.
 Fix and review again into a new directory, for at most three rounds, then
 report any remaining defects.
+
+A valid blank or image-only page may have no font resources. Font checking then
+returns an empty fonts array. Review still renders every selected page and
+reports PDF_PAGE_WITHOUT_READABLE_CONTENT for an unscanned page without text;
+that finding is a reason to inspect the page, not an internal error.
+
+For supporting attachments, compare each extracted file with the original bytes.
+The extraction result reports actual written sizes only after the complete output
+set has been published; a later extraction failure must leave no partial set.

@@ -38,3 +38,9 @@ Never add old-command aliases, legacy installer or Skill readers, historical ver
 baselines, historical trust allowlists, or migration frameworks for unpublished builds.
 The application is pre-release: update code, schemas, Skills and tests together for an
 intentional contract change.
+
+Before changing code around a commercial SDK, verify the official API usage and reproduce
+suspected engine behavior with a minimal SDK-only case. Correct our misuse in the owning
+adapter. Keep confirmed SDK defects as upstream issues and release blockers; never hide
+them with implicit default rewrites, file-format patches, or product, producer or version
+special cases.

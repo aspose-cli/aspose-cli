@@ -66,6 +66,7 @@ internal static class PdfArtifactSupport
             long declaredLength = file.Contents.CanSeek
                 ? file.Contents.Length
                 : 0;
+            long writtenLength = 0;
             string path = guard.Write(
                 name,
                 declaredLength,
@@ -74,13 +75,14 @@ internal static class PdfArtifactSupport
                     // budget-allow: ExtractionGuard supplies a BudgetWriteStream
                     // bounded by the remaining extraction byte budget.
                     file.Contents.CopyTo(output);
+                    writtenLength = output.Length;
                 },
                 flatten: true);
             items.Add(new PdfExtractedItem
             {
                 Path = path,
                 Kind = "attachment",
-                SizeBytes = new FileInfo(path).Length,
+                SizeBytes = writtenLength,
                 Name = name,
             });
         }

@@ -56,13 +56,10 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
     private static IReadOnlyList<UsedFont> UsedFonts(Document document)
     {
         var fonts = new Dictionary<string, bool>(StringComparer.Ordinal);
-        foreach (Page page in document.Pages)
+        foreach (Font font in PdfFontResources.Enumerate(document))
         {
-            foreach (Font font in page.Resources.Fonts)
-            {
-                string name = font.DecodedFontName ?? font.FontName ?? "unknown";
-                fonts[name] = fonts.GetValueOrDefault(name) || font.IsEmbedded || font.IsAccessible;
-            }
+            string name = font.DecodedFontName ?? font.FontName ?? "unknown";
+            fonts[name] = fonts.GetValueOrDefault(name) || font.IsEmbedded || font.IsAccessible;
         }
 
         return fonts

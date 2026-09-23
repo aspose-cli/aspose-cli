@@ -300,7 +300,8 @@ internal sealed class PdfProductionService
         var loader = new PdfArtifactSupport.HtmlResourceLoader(resources);
         (double width, double height) = PageDimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
-        var options = new HtmlLoadOptions(Path.GetDirectoryName(fullPath))
+        // Use the native directory form of the verified origin, retaining its trailing separator.
+        var options = new HtmlLoadOptions(new Uri(resources.BaseUri).LocalPath)
         {
             PageInfo = new PageInfo
             {

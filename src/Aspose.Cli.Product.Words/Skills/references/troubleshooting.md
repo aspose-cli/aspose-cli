@@ -1,5 +1,8 @@
 # Troubleshooting
 
+- `FILE_CORRUPT`: the input could not be parsed as a supported document. Verify its format and obtain an intact copy; truncated document containers require repair or replacement.
+- `FILE_LOCKED`: another application holds an exclusive file lock. Close that application and retry; this code does not mean the document is corrupt.
+
 - `PASSWORD_REQUIRED` / `PASSWORD_INVALID`: use `--password-env` or `--password-stdin`.
 - `DOCUMENT_PROTECTED`: inspect protection and explicitly unprotect using an environment-backed password.
 - `DOCUMENT_HAS_REVISIONS`: comparison inputs must be revision-free.

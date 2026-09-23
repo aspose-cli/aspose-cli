@@ -133,5 +133,31 @@ public sealed class WordsCliTests : IDisposable
         Assert.False(File.Exists(_workspace.File("out.docx")));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void MalformedZip_KeepsItsExactInputErrorThroughTheCli(bool supervised)
+    {
+        byte[] bytes = "PK\x03\x04invalid synthetic docx"u8.ToArray();
+        File.WriteAllBytes(_workspace.File("malformed.docx"), bytes);
+        string[] execution = supervised ? ["--timeout", "30"] : [];
+        CliResult inspected = _workspace.Run(
+            ["words", "inspect", "malformed.docx", "--output", "json", .. execution]);
+        Assert.Equal(3, inspected.ExitCode);
+        Assert.Equal(string.Empty, inspected.StdOut);
+        Assert.Equal("FILE_CORRUPT", JsonNode.Parse(inspected.StdErr)!["error"]!["code"]!.GetValue<string>());
+
+        byte[] retained = "Unrelated existing output"u8.ToArray();
+        File.WriteAllBytes(_workspace.File("retained.pdf"), retained);
+        CliResult converted = _workspace.Run(
+            ["words", "convert", "malformed.docx", "--to", "pdf", "--out", "retained.pdf",
+                "--overwrite", "--output", "json", .. execution]);
+        Assert.Equal(3, converted.ExitCode);
+        Assert.Equal(string.Empty, converted.StdOut);
+        Assert.Equal("FILE_CORRUPT", JsonNode.Parse(converted.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(bytes, File.ReadAllBytes(_workspace.File("malformed.docx")));
+        Assert.Equal(retained, File.ReadAllBytes(_workspace.File("retained.pdf")));
+    }
+
     public void Dispose() => _workspace.Dispose();
 }

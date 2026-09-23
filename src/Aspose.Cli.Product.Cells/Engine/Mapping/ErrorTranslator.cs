@@ -1,6 +1,7 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -20,7 +21,7 @@ internal static class ErrorTranslator
                 passwordProvided ? CliErrors.PasswordInvalid(path) : CliErrors.PasswordRequired(path),
             CellsException cells => CellsErrors.FileCorrupt(path, Summarize(cells.Message)),
             FileNotFoundException => CliErrors.FileNotFound(path),
-            IOException io when IsSharingViolation(io) => CliErrors.FileLocked(path),
+            IOException io when FileAccessProbe.IsSharingViolation(io) => CliErrors.FileLocked(path),
             IOException io => CellsErrors.FileCorrupt(path, Summarize(io.Message)),
             UnauthorizedAccessException => CliErrors.FileAccessDenied(path),
             // We are here only because opening the file FAILED, and the try that
@@ -32,13 +33,6 @@ internal static class ErrorTranslator
             // "report a bug", which would send them chasing a defect that isn't ours.
             _ => CellsErrors.FileCorrupt(path, Summarize(exception.Message)),
         };
-
-    /// <summary>
-    /// Detects Windows sharing/lock violations (ERROR_SHARING_VIOLATION = 32,
-    /// ERROR_LOCK_VIOLATION = 33), e.g. a workbook opened in Excel.
-    /// </summary>
-    internal static bool IsSharingViolation(IOException exception) =>
-        (exception.HResult & 0xFFFF) is 32 or 33;
 
     // Prefer the typed code; keep the message check as a fallback in case a
     // future SDK build reports an encrypted-file failure under another code.

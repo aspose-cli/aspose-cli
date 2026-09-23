@@ -67,7 +67,8 @@ public sealed class PdfEngineFixture : IDisposable
         return path;
     }
 
-    public string CreateRawDocument(string fileName, int pages)
+    public string CreateRawDocument(string fileName, int pages,
+        IReadOnlySet<int>? textPages = null, IReadOnlySet<int>? imagePages = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(pages, 1);
         string path = File(fileName);
@@ -79,15 +80,31 @@ public sealed class PdfEngineFixture : IDisposable
         int fontObject = 3;
         objects.Add(string.Empty);
         objects.Add("<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>");
+        int imageObject = objects.Count + 1;
+        if (imagePages is { Count: > 0 })
+        {
+            objects.Add("<< /Type /XObject /Subtype /Image /Width 1 /Height 1 "
+                + "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode "
+                + "/Length 7 >>\nstream\n20B090>\nendstream");
+        }
         for (int pageNumber = 1; pageNumber <= pages; pageNumber++)
         {
             int pageObject = objects.Count + 1;
             int contentObject = pageObject + 1;
             kids.Add(pageObject);
-            string content = $"BT /F1 12 Tf 72 720 Td (Portable PDF page {pageNumber}) Tj ET";
+            bool hasText = textPages is null || textPages.Contains(pageNumber);
+            string content = hasText
+                ? $"BT /F1 12 Tf 72 720 Td (Portable PDF page {pageNumber}) Tj ET"
+                : string.Empty;
+            string resources = hasText ? $"/Font << /F1 {fontObject} 0 R >>" : string.Empty;
+            if (imagePages?.Contains(pageNumber) == true)
+            {
+                resources += $" /XObject << /Im1 {imageObject} 0 R >>";
+                content += "\nq 160 0 0 160 72 400 cm /Im1 Do Q";
+            }
             objects.Add(
                 $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "
-                + $"/Resources << /Font << /F1 {fontObject} 0 R >> >> /Contents {contentObject} 0 R >>");
+                + $"/Resources << {resources} >> /Contents {contentObject} 0 R >>");
             objects.Add(
                 $"<< /Length {Encoding.ASCII.GetByteCount(content)} >>\nstream\n{content}\nendstream");
         }

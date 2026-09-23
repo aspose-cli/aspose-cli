@@ -211,18 +211,15 @@ internal static class PdfInfoProjection
     private static PdfFontInfo[] Fonts(Document document)
     {
         var fonts = new Dictionary<string, PdfFontInfo>(StringComparer.Ordinal);
-        foreach (Page page in document.Pages)
+        foreach (Font font in PdfFontResources.Enumerate(document))
         {
-            foreach (Font font in page.Resources.Fonts)
+            string name = font.FontName ?? "unknown";
+            fonts[name] = new PdfFontInfo
             {
-                string name = font.FontName ?? "unknown";
-                fonts[name] = new PdfFontInfo
-                {
-                    Name = name,
-                    Embedded = font.IsEmbedded,
-                    Subset = font.IsSubset,
-                };
-            }
+                Name = name,
+                Embedded = font.IsEmbedded,
+                Subset = font.IsSubset,
+            };
         }
 
         return fonts.Values.OrderBy(static item => item.Name, StringComparer.Ordinal).ToArray();

@@ -13,6 +13,8 @@ namespace Aspose.Cli.Product.Slides.Tests;
 /// </summary>
 public sealed class SlidesChartPresentationTests
 {
+    private static readonly XNamespace ChartXml = "http://schemas.openxmlformats.org/drawingml/2006/chart";
+
     private static readonly SlidesRectInput Frame =
         new() { X = 50, Y = 105, Width = 620, Height = 245 };
 
@@ -40,27 +42,96 @@ public sealed class SlidesChartPresentationTests
         return output;
     }
 
-    [Fact]
-    public void Column_OfNonNegativeValues_IsDrawnFromZero()
+    [Theory]
+    [InlineData("column", 95, 100, 105)]
+    [InlineData("bar", 95, 100, 105)]
+    [InlineData("column", 0, 0, 0)]
+    [InlineData("bar", 0, 0, 0)]
+    public void NonNegativeValues_UseTheValueAxisZeroBaseline(
+        string kind, double first, double second, double third)
     {
         using var fixture = new SlidesEngineFixture();
 
-        string output = Insert(fixture, "baseline.pptx", "column", 95, 100, 105);
+        string output = Insert(fixture, "baseline.pptx", kind, first, second, third);
 
-        // Without a zero baseline the engine scales 95..105 onto roughly 90..106,
-        // which draws a 10.5% spread as columns of 5, 10 and 15 units.
-        Assert.Equal("0", ReadValueAxisMinimum(output));
+        Assert.Equal("0", ReadAxisScale(output, "valAx", "min"));
+        Assert.Null(ReadAxisScale(output, "catAx", "min"));
+        using var reopened = new Presentation(output);
+        IChart chart = Chart(reopened);
+        IAxis categories = kind == "bar" ? chart.Axes.VerticalAxis : chart.Axes.HorizontalAxis;
+        Assert.Equal(CategoryAxisType.Text, categories.CategoryAxisType);
     }
 
-    [Fact]
-    public void Column_WithANegativeValue_KeepsAutomaticScaling()
+    [Theory]
+    [InlineData("column", 95, -100, 105)]
+    [InlineData("bar", 95, -100, 105)]
+    [InlineData("column", -95, -100, -105)]
+    [InlineData("bar", -95, -100, -105)]
+    public void NegativeValues_KeepAutomaticValueAxisScaling(
+        string kind, double first, double second, double third)
     {
         using var fixture = new SlidesEngineFixture();
 
-        string output = Insert(fixture, "negative.pptx", "column", 95, -100, 105);
+        string output = Insert(fixture, "negative.pptx", kind, first, second, third);
 
-        // Pinning zero here would clip the negative column off the chart.
-        Assert.Null(ReadValueAxisMinimum(output));
+        // A forced zero minimum would clip negative data.
+        Assert.Null(ReadAxisScale(output, "valAx", "min"));
+    }
+
+    [Theory]
+    [InlineData("column", 95, 100, 105)]
+    [InlineData("bar", 95, 100, 105)]
+    [InlineData("column", 0, 0, 0)]
+    [InlineData("bar", 0, 0, 0)]
+    public void UpdatingAutomaticAxisToNonNegativeData_UsesZero(
+        string kind, double first, double second, double third)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string seeded = Insert(fixture, "automatic-seed.pptx", kind, -95, 100, 105);
+        Assert.Null(ReadAxisScale(seeded, "valAx", "min"));
+        string output = fixture.File("updated-baseline.pptx");
+
+        fixture.Engine.ApplyOps(seeded, new SlidesOpsBatch
+        {
+            Ops = [new UpdateChartDataOp
+            {
+                Slide = 1,
+                Shape = FindChartShapeId(seeded),
+                Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [first, second, third] }],
+            }],
+        }, new PresentationEditRequest { OutputPath = output });
+
+        Assert.Equal("0", ReadAxisScale(output, "valAx", "min"));
+        Assert.Null(ReadAxisScale(output, "catAx", "min"));
+    }
+
+    [Theory]
+    [InlineData("column")]
+    [InlineData("bar")]
+    public void DataUpdate_PreservesStoredZeroMinimumAndNegativeSeries(string kind)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string seeded = Insert(fixture, "fixed-zero-seed.pptx", kind, 95, 100, 105);
+        Assert.Equal("0", ReadAxisScale(seeded, "valAx", "min"));
+        string output = fixture.File("fixed-zero-updated.pptx");
+
+        fixture.Engine.ApplyOps(seeded, new SlidesOpsBatch
+        {
+            Ops = [new UpdateChartDataOp
+            {
+                Slide = 1,
+                Shape = FindChartShapeId(seeded),
+                Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [95, -100, 105] }],
+            }],
+        }, new PresentationEditRequest { OutputPath = output });
+
+        // This verifies stored data and range preservation, not rendered visibility.
+        // The fixed range must be reviewed separately when the new data falls outside it.
+        Assert.Equal("0", ReadAxisScale(output, "valAx", "min"));
+        using var reopened = new Presentation(output);
+        IChart chart = Chart(reopened);
+        Assert.Equal([95d, -100d, 105d], chart.ChartData.Series[0].DataPoints
+            .Select(point => Convert.ToDouble(point.Value.Data, System.Globalization.CultureInfo.InvariantCulture)));
     }
 
     [Fact]
@@ -71,15 +142,17 @@ public sealed class SlidesChartPresentationTests
         string output = Insert(fixture, "line.pptx", "line", 95, 100, 105);
 
         // A line encodes value by position, so a zoomed axis is legitimate.
-        Assert.Null(ReadValueAxisMinimum(output));
+        Assert.Null(ReadAxisScale(output, "valAx", "min"));
     }
 
-    [Fact]
-    public void ValueAxis_KeepsAMinimumTheAuthorSetExplicitly()
+    [Theory]
+    [InlineData("column")]
+    [InlineData("bar")]
+    public void ValueAxis_KeepsTheRangeTheAuthorSetExplicitly(string kind)
     {
         using var fixture = new SlidesEngineFixture();
-        string seeded = Insert(fixture, "explicit-seed.pptx", "column", 95, 100, 105);
-        SetValueAxisMinimum(seeded, 50);
+        string seeded = Insert(fixture, "explicit-seed.pptx", kind, 95, 100, 105);
+        SetValueAxisRange(seeded, 50, 200);
         string output = fixture.File("explicit.pptx");
 
         fixture.Engine.ApplyOps(
@@ -98,11 +171,12 @@ public sealed class SlidesChartPresentationTests
             },
             new PresentationEditRequest { OutputPath = output });
 
-        Assert.Equal("50", ReadValueAxisMinimum(output));
+        Assert.Equal("50", ReadAxisScale(output, "valAx", "min"));
+        Assert.Equal("200", ReadAxisScale(output, "valAx", "max"));
     }
 
     [Fact]
-    public void GrowingAChartToASecondSeries_EnablesItsLegend()
+    public void GrowingAChartToASecondSeries_EnablesANonOverlayLegend()
     {
         using var fixture = new SlidesEngineFixture();
         string seeded = Insert(fixture, "legend-seed.pptx", "column", 95, 100, 105);
@@ -131,6 +205,69 @@ public sealed class SlidesChartPresentationTests
 
         // Two series that cannot be told apart are unreadable.
         Assert.True(HasLegend(output));
+        using var reopened = new Presentation(output);
+        IChart chart = Chart(reopened);
+        Assert.False(chart.Legend.Overlay);
+        chart.ValidateChartLayout();
+        AssertDoNotOverlap(chart.Legend, chart.PlotArea.AsIActualLayout);
+    }
+
+    [Theory]
+    [InlineData("column")]
+    [InlineData("bar")]
+    public void NewlyAuthoredTitleAndLegend_ReserveSpaceOutsideThePlot(string kind)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string output = InsertTitledChart(fixture, "titled.pptx", kind);
+
+        using var reopened = new Presentation(output);
+        IChart chart = Chart(reopened);
+        Assert.True(chart.HasTitle);
+        Assert.True(chart.HasLegend);
+        Assert.False(chart.ChartTitle.Overlay);
+        Assert.False(chart.Legend.Overlay);
+        chart.ValidateChartLayout();
+        AssertDoNotOverlap(chart.ChartTitle, chart.PlotArea.AsIActualLayout);
+        AssertDoNotOverlap(chart.Legend, chart.PlotArea.AsIActualLayout);
+        AssertDoNotOverlap(chart.ChartTitle, chart.Legend);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void UpdatingImportedChart_PreservesExplicitTitleAndLegendLayout(bool overlay)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string seeded = InsertTitledChart(fixture, "authored-layout.pptx", "column");
+        using (var authored = new Presentation(seeded))
+        {
+            IChart chart = Chart(authored);
+            chart.ChartTitle.Overlay = overlay;
+            chart.Legend.Overlay = overlay;
+            chart.Legend.Position = LegendPositionType.Right;
+            authored.Save(seeded, Aspose.Slides.Export.SaveFormat.Pptx);
+        }
+        string output = fixture.File("preserved-layout.pptx");
+
+        fixture.Engine.ApplyOps(seeded, new SlidesOpsBatch
+        {
+            Ops = [new UpdateChartDataOp
+            {
+                Slide = 1,
+                Shape = FindChartShapeId(seeded),
+                Series =
+                [
+                    new SlidesChartSeriesInput { Name = "Actual", Values = [40] },
+                    new SlidesChartSeriesInput { Name = "Target", Values = [45] },
+                ],
+            }],
+        }, new PresentationEditRequest { OutputPath = output });
+
+        using var reopened = new Presentation(output);
+        IChart result = Chart(reopened);
+        Assert.Equal(overlay, result.ChartTitle.Overlay);
+        Assert.Equal(overlay, result.Legend.Overlay);
+        Assert.Equal(LegendPositionType.Right, result.Legend.Position);
     }
 
     [Fact]
@@ -181,20 +318,63 @@ public sealed class SlidesChartPresentationTests
             .First(static shape => shape is IChart).OfficeInteropShapeId;
     }
 
-    private static void SetValueAxisMinimum(string presentationPath, double minimum)
+    private static void SetValueAxisRange(string presentationPath, double minimum, double maximum)
     {
         using var presentation = new Presentation(presentationPath);
-        var chart = (IChart)presentation.Slides[0].Shapes.First(static shape => shape is IChart);
-        chart.Axes.VerticalAxis.IsAutomaticMinValue = false;
-        chart.Axes.VerticalAxis.MinValue = minimum;
+        IChart chart = Chart(presentation);
+        IAxis values = chart.Type == ChartType.ClusteredBar ? chart.Axes.HorizontalAxis : chart.Axes.VerticalAxis;
+        values.IsAutomaticMinValue = false;
+        values.MinValue = minimum;
+        values.IsAutomaticMaxValue = false;
+        values.MaxValue = maximum;
         presentation.Save(presentationPath, Aspose.Slides.Export.SaveFormat.Pptx);
     }
 
-    private static string? ReadValueAxisMinimum(string presentationPath) =>
+    private static string? ReadAxisScale(string presentationPath, string axis, string bound) =>
         ReadChartPart(presentationPath)
-            .Descendants()
-            .FirstOrDefault(static node => node.Name.LocalName == "min")
-            ?.Attribute("val")?.Value;
+            .Descendants(ChartXml + axis)
+            .Single()
+            .Element(ChartXml + "scaling")?
+            .Element(ChartXml + bound)?
+            .Attribute("val")?.Value;
+
+    private static IChart Chart(Presentation presentation) =>
+        Assert.Single(presentation.Slides[0].Shapes.OfType<IChart>());
+
+    private static string InsertTitledChart(SlidesEngineFixture fixture, string name, string kind)
+    {
+        string output = fixture.File(name);
+        fixture.Engine.ApplyOps(fixture.CreatePresentation("seed-" + name), new SlidesOpsBatch
+        {
+            Ops = [new InsertChartOp
+            {
+                Slide = 1,
+                Kind = kind,
+                Rect = new SlidesRectInput { X = 40, Y = 106, Width = 305, Height = 238 },
+                Categories = ["Service"],
+                Series =
+                [
+                    new SlidesChartSeriesInput { Name = "Actual", Values = [36] },
+                    new SlidesChartSeriesInput { Name = "Target", Values = [40] },
+                ],
+                Title = "Efficiency improvement (%)",
+            }],
+        }, new PresentationEditRequest { OutputPath = output });
+        return output;
+    }
+
+    private static void AssertDoNotOverlap(IActualLayout first, IActualLayout second)
+    {
+        const float tolerance = 0.5f;
+        Assert.True(first.ActualWidth > 0 && first.ActualHeight > 0);
+        Assert.True(second.ActualWidth > 0 && second.ActualHeight > 0);
+        Assert.True(
+            first.ActualX + first.ActualWidth <= second.ActualX + tolerance
+            || second.ActualX + second.ActualWidth <= first.ActualX + tolerance
+            || first.ActualY + first.ActualHeight <= second.ActualY + tolerance
+            || second.ActualY + second.ActualHeight <= first.ActualY + tolerance,
+            "Chart title, legend and plot must occupy separate layout rectangles.");
+    }
 
     private static bool HasLegend(string presentationPath) =>
         ReadChartPart(presentationPath)

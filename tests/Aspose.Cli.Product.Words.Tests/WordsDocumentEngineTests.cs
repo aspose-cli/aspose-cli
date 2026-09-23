@@ -225,21 +225,84 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
         Assert.Contains("Encrypted portable document", reopened.GetText(), StringComparison.Ordinal);
     }
 
-    [Fact]
-    public void Convert_CorruptInputDoesNotPublishOutput()
+    [Theory]
+    [InlineData("garbage")]
+    [InlineData("malformed-zip")]
+    [InlineData("truncated-docx")]
+    public void CorruptInput_ReportsParsingFailureAndPreservesFiles(string kind)
     {
-        string input = _fixture.Temp.File("corrupt.docx");
-        string output = _fixture.Temp.File("corrupt.pdf");
-        File.WriteAllBytes(input, [0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE]);
+        string input = _fixture.Temp.File($"corrupt-{kind}.docx");
+        string output = _fixture.Temp.File($"corrupt-{kind}.pdf");
+        byte[] bytes = kind switch
+        {
+            "garbage" => [0x00, 0x01, 0x02, 0x03, 0xFF, 0xFE],
+            "malformed-zip" => "PK\x03\x04invalid synthetic docx"u8.ToArray(),
+            _ => File.ReadAllBytes(_fixture.CreateReport("intact-before-truncation.docx"))[..64],
+        };
+        File.WriteAllBytes(input, bytes);
 
-        CliException error = Assert.Throws<CliException>(() =>
+        CliException inspection = Assert.Throws<CliException>(() =>
+            _fixture.Engine.GetInfo(input, new DocumentInfoRequest()));
+        CliException conversion = Assert.Throws<CliException>(() =>
             _fixture.Engine.Convert(input, new WordsConvertRequest
             {
                 TargetFormatId = "pdf",
                 OutputPath = output,
             }));
 
-        Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
+        Assert.Equal(ErrorCodes.FileCorrupt, inspection.Code);
+        Assert.Equal(ErrorCodes.FileCorrupt, conversion.Code);
+        Assert.False(File.Exists(output));
+        Assert.Equal(bytes, File.ReadAllBytes(input));
+
+        byte[] retained = "Existing output must survive a rejected conversion."u8.ToArray();
+        File.WriteAllBytes(output, retained);
+        CliException replacement = Assert.Throws<CliException>(() =>
+            _fixture.Engine.Convert(input, new WordsConvertRequest
+            {
+                TargetFormatId = "pdf",
+                OutputPath = output,
+                Overwrite = true,
+            }));
+        Assert.Equal(ErrorCodes.FileCorrupt, replacement.Code);
+        Assert.Equal(retained, File.ReadAllBytes(output));
+        Assert.Equal(bytes, File.ReadAllBytes(input));
+    }
+
+    [Fact]
+    public void ExclusiveInputLock_IsDistinctFromCorruptionAndReopensAfterRelease()
+    {
+        string input = _fixture.CreateReport("locked-input.docx");
+        byte[] original = File.ReadAllBytes(input);
+        string output = _fixture.Temp.File("locked-input.pdf");
+        using (var held = new FileStream(input, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            CliException error = Assert.Throws<CliException>(() =>
+                _fixture.Engine.Convert(input, new WordsConvertRequest
+                {
+                    TargetFormatId = "pdf",
+                    OutputPath = output,
+                }));
+            Assert.Equal(ErrorCodes.FileLocked, error.Code);
+            Assert.False(File.Exists(output));
+        }
+
+        Assert.True(_fixture.Engine.GetInfo(input, new DocumentInfoRequest()).Document.Blocks > 0);
+        Assert.Equal(original, File.ReadAllBytes(input));
+    }
+
+    [Fact]
+    public void MissingInput_RemainsAFileNotFoundError()
+    {
+        string input = _fixture.Temp.File("missing-parent/missing.docx");
+        string output = _fixture.Temp.File("missing-input.pdf");
+        CliException error = Assert.Throws<CliException>(() =>
+            _fixture.Engine.Convert(input, new WordsConvertRequest
+            {
+                TargetFormatId = "pdf",
+                OutputPath = output,
+            }));
+        Assert.Equal(ErrorCodes.FileNotFound, error.Code);
         Assert.False(File.Exists(output));
     }
 

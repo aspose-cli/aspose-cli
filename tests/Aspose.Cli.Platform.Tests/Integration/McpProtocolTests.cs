@@ -101,6 +101,35 @@ public sealed partial class McpProtocolTests
         }
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task Execute_PreservesCorruptDocumentDiagnostics(bool supervised)
+    {
+        using var temp = new TempDirectory();
+        string input = temp.File("malformed.docx");
+        byte[] bytes = "PK\x03\x04invalid synthetic docx"u8.ToArray();
+        File.WriteAllBytes(input, bytes);
+        await using var server = await Server.Start(temp.Path, temp.Path);
+        string[] args = ["words", "inspect", "malformed.docx", "--output", "json"];
+        if (supervised) { args = ["--timeout", "15", .. args]; }
+
+        JsonNode reply = await server.Execute(args);
+
+        Assert.Null(reply["error"]);
+        JsonObject result = Assert.IsType<JsonObject>(reply["result"]);
+        // The MCP tool completed; the child's input error is carried by the execution result.
+        Assert.False(result["isError"]?.GetValue<bool>() ?? false, reply.ToJsonString());
+        JsonObject execution = Assert.IsType<JsonObject>(result["structuredContent"]);
+        Assert.Equal(3, execution["exitCode"]!.GetValue<int>());
+        Assert.Equal(string.Empty, execution["stdout"]!.GetValue<string>());
+        JsonNode error = JsonNode.Parse(execution["stderr"]!.GetValue<string>())!["error"]!;
+        Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
+        Assert.False(string.IsNullOrWhiteSpace(error["message"]!.GetValue<string>()));
+        Assert.False(string.IsNullOrWhiteSpace(error["hint"]!.GetValue<string>()));
+        Assert.Equal(bytes, File.ReadAllBytes(input));
+    }
+
     private static JsonNode Error(JsonNode reply)
     {
         JsonNode execution = reply["result"]!["structuredContent"]!;

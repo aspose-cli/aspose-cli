@@ -36,7 +36,7 @@ public static partial class CliErrors
     public static CliException FileLocked(string path) => new(
         ErrorCodes.FileLocked,
         $"File is in use by another process: {path}",
-        hint: "Close the file in Excel or any other application holding it, then retry.",
+        hint: "Close the application holding this file, then retry.",
         details: new JsonObject { ["path"] = path });
 
     public static CliException PasswordRequired(string path) => new(

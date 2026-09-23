@@ -53,3 +53,16 @@ media can be inventoried and extracted, but must not be silently synthesized.
 For `update_chart_data`, omitted series retain their existing values, including
 scatter X/Y coordinates. A categories-only update must keep matching lengths.
 Explicit scatter series require matching `xValues` and `values`.
+
+New charts reserve space for their title and legend. Adding a second series to a
+chart without a legend creates a legend outside the plot. Data updates preserve
+an existing chart's explicit title and legend overlay settings. For non-negative
+bar and column data, automatic value axes start at zero in the correct orientation;
+explicit value-axis limits remain unchanged.
+
+The CLI's zero baseline is saved as an explicit fixed minimum of `0`. Later
+data-only updates keep all stored axis limits, including that zero. New negative
+values or values outside a fixed range can therefore be clipped. Adjust the axes
+in a presentation editor or recreate the chart for the new data, then render and
+review it before delivery. A successful data update does not establish that every
+value is visible.
