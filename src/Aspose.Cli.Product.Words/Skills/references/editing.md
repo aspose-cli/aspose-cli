@@ -10,7 +10,7 @@ Inline Markdown uses the same guarded local-resource policy as file loading. Rel
 
 Targets accept one of `block`, `blocks`, `bookmark`, `heading`, or `find`, with optional 1-based `nth`. Prefer bookmarks and headings for durable automation; inspect current block numbers immediately before using numeric targets.
 
-`set_text` accepts paragraphs only and preserves the paragraph style while replacing inline runs. Use `set_table_cell` for tables. Insertion ops require `position: before|after`; v2 deliberately has no character-offset addressing.
+`set_text` accepts paragraphs only and preserves the paragraph style while replacing inline runs. Use `set_table_cell` for tables. With a `bookmark` target (or `--set bookmark:Name=text`), `set_text` replaces only the text the bookmark encloses, anywhere including table cells; the bookmark and the rest of its paragraph remain, and the new text takes the format of the bookmark's first run. A bookmark spanning several paragraphs becomes one paragraph. Insertion ops require `position: before|after`; v2 deliberately has no character-offset addressing.
 
 An edit preserves an encrypted input's password when the selected output format
 supports encryption. `--encrypt-env` explicitly replaces that password. Choosing

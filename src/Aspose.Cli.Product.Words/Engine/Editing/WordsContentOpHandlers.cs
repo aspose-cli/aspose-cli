@@ -99,6 +99,16 @@ internal static class WordsContentOpHandlers
 
     internal static long SetText(Document document, IReadOnlyList<Node> nodes, SetTextOp op)
     {
+        // A bookmark owns exactly its enclosed range, wherever it sits (mid-paragraph or in a
+        // table cell). Only that range changes; the bookmark and its surroundings remain.
+        if (op.At.Bookmark is { } name)
+        {
+            Bookmark bookmark = document.Range.Bookmarks[name]
+                ?? throw Invalid($"bookmark '{name}' was removed by an earlier operation");
+            bookmark.Text = op.Text;
+            return 1;
+        }
+
         // Check every target before the first change: a rejected operation changes nothing.
         if (nodes.Any(static node => node is not Paragraph))
         {
