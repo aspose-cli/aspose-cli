@@ -57,15 +57,16 @@ internal sealed class LocalServiceOperationLock : IDisposable
                         bufferSize: 1,
                         FileOptions.WriteThrough));
             }
-            catch (IOException) when (watch.Elapsed < timeout)
+            catch (IOException)
             {
+                // Another process holds the lock; waiting ends only in the
+                // lock or in a timeout, never in the last sharing violation.
+                if (watch.Elapsed >= timeout)
+                {
+                    throw new TimeoutException(
+                        $"Timed out acquiring the {service} service operation lock.");
+                }
                 Thread.Sleep(25);
-            }
-
-            if (watch.Elapsed >= timeout)
-            {
-                throw new TimeoutException(
-                    $"Timed out acquiring the {service} service operation lock.");
             }
         }
     }

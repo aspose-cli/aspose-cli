@@ -58,10 +58,17 @@ internal sealed class ViewerServiceHost : IDisposable
         Func<ViewerDocuments, int, Action, Action, AppHost>? app)
     {
         ArgumentNullException.ThrowIfNull(globals);
-        _instance = LocalServiceOperationLock.Acquire(
-            ViewerServiceCommands.Service,
-            ViewerServiceCommands.LockKey("instance"),
-            InstanceTimeout);
+        try
+        {
+            _instance = LocalServiceOperationLock.Acquire(
+                ViewerServiceCommands.Service,
+                ViewerServiceCommands.LockKey("instance"),
+                InstanceTimeout);
+        }
+        catch (TimeoutException)
+        {
+            throw ViewerErrors.ServiceBusy();
+        }
         try
         {
             LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
@@ -350,17 +357,19 @@ internal sealed class ViewerServiceHost : IDisposable
     };
 
     /// <summary>
-    /// The worker inherits the service's working directory, configuration and
-    /// license selection, so it resolves exactly what the command would.
+    /// The worker receives the service's working directory, configuration and
+    /// license selection, so it resolves exactly what the command would, while
+    /// the process itself runs in the service directory.
     /// </summary>
     private static ProcessStartInfo WorkerProcess(GlobalValues globals, ServiceStartSecrets? secrets)
     {
         ProcessStartInfo start = SelfProcessLauncher.CreateBackground(
             "preview",
             "Run the published 'aspose-cli' executable directly.");
-        start.WorkingDirectory = secrets?.WorkDirectory
-            ?? globals.WorkDir
-            ?? Directory.GetCurrentDirectory();
+        start.WorkingDirectory = SelfProcessLauncher.ServiceWorkingDirectory;
+        start.ArgumentList.Add("--workdir");
+        start.ArgumentList.Add(Path.GetFullPath(
+            secrets?.WorkDirectory ?? globals.WorkDir ?? Directory.GetCurrentDirectory()));
         if ((secrets?.LicensePath ?? globals.LicensePath) is { } license)
         {
             start.ArgumentList.Add("--license");

@@ -7,6 +7,12 @@ namespace Aspose.Cli.Host.ViewerService;
 /// <summary>Restores the product's own error from a worker response.</summary>
 internal static class ViewerErrors
 {
+    /// <summary>Another App or preview service holds the per-user service lock.</summary>
+    public static CliException ServiceBusy() => new(
+        ErrorCodes.AppBusy,
+        "Another App or preview service is starting, running or stopping for this user.",
+        hint: "Retry in a moment. If it persists, run 'aspose-cli app stop' and start again.");
+
     public static CliException FromWorker(RenderWorkerResponse response, string source)
     {
         ArgumentNullException.ThrowIfNull(response);

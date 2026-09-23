@@ -384,6 +384,26 @@ public sealed class LocalServiceRuntimeTests
     }
 
     [Fact]
+    public void ViewerService_WhileAnotherInstanceHoldsItsLock_IsBusy()
+    {
+        using LocalServiceOperationLock held = LocalServiceOperationLock.Acquire(
+            Aspose.Cli.Host.ViewerService.ViewerServiceCommands.Service,
+            Aspose.Cli.Host.ViewerService.ViewerServiceCommands.LockKey("instance"),
+            TimeSpan.FromSeconds(30));
+
+        CliException busy = Assert.Throws<CliException>(() =>
+            Aspose.Cli.Host.ViewerService.ViewerServiceHost.Start(
+                new Aspose.Cli.Host.Invocation.GlobalValues(
+                    Aspose.Cli.Host.Output.OutputMode.Json, Quiet: true, Verbose: false,
+                    LicensePath: null, WorkDir: null, TimeoutSeconds: null, MaxInputBytes: 1024),
+                secrets: null,
+                requestedPort: 0,
+                static (_, _, _, _) => throw new InvalidOperationException("The App must not mount.")));
+
+        Assert.Equal(ErrorCodes.AppBusy, busy.Code);
+    }
+
+    [Fact]
     public void ProcessIdentity_RequiresPidStartTimeAndNonce()
     {
         LocalServiceProcessIdentity identity =

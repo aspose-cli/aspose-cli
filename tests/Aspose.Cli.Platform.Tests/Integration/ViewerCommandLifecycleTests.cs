@@ -71,6 +71,33 @@ public sealed class ViewerCommandLifecycleTests
     }
 
     [Fact]
+    public void Preview_LeavesTheCallersDirectoryFreeToMove()
+    {
+        using var workspace = new TempWorkspace();
+        using var documents = new TempDirectory();
+        string book = documents.File("book.xlsx");
+        Succeed(workspace.Run("cells", "create", book, "--sheets", "Data", "--output", "json"));
+        string moved = workspace.Path + "-moved";
+        try
+        {
+            Start(workspace, book);
+
+            // Neither the service nor its render worker keeps the caller's
+            // directory as its own, so the caller can still move it.
+            Directory.Move(workspace.Path, moved);
+            Directory.Move(moved, workspace.Path);
+        }
+        finally
+        {
+            if (Directory.Exists(moved) && !Directory.Exists(workspace.Path))
+            {
+                Directory.Move(moved, workspace.Path);
+            }
+            workspace.Run("preview", "stop", "--all", "--output", "json");
+        }
+    }
+
+    [Fact]
     public void Preview_ReportsTheProductFailureOfAnUnreadableDocument()
     {
         using var workspace = new TempWorkspace();

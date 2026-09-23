@@ -125,7 +125,10 @@ public static partial class ErrorCodes
     /// <summary>An expected local App startup stage could not be completed.</summary>
     public static readonly ErrorCode AppStartupFailed = new("APP_STARTUP_FAILED", ExitCode.OutputError);
 
-    /// <summary>The App is transitioning and cannot accept mutations.</summary>
+    /// <summary>
+    /// The App, or the per-user service that hosts it and live previews, is
+    /// transitioning or held by another instance and cannot take the request.
+    /// </summary>
     public static readonly ErrorCode AppBusy = new("APP_BUSY", ExitCode.OutputError);
 
     // -- Format problems (exit 6) --------------------------------------------

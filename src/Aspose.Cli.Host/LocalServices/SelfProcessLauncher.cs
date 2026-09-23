@@ -12,6 +12,15 @@ internal sealed record LocalServiceChild(
 /// <summary>Launches this executable as a silent background child.</summary>
 internal static class SelfProcessLauncher
 {
+    /// <summary>
+    /// The process working directory of a long-lived service. A service that
+    /// kept the caller's directory would hold it open for hours, so the
+    /// caller could neither delete nor rename it; services therefore run in
+    /// the system directory and receive the caller's directory explicitly.
+    /// </summary>
+    public static string ServiceWorkingDirectory { get; } =
+        OperatingSystem.IsWindows() ? Environment.SystemDirectory : "/";
+
     public static ProcessStartInfo CreateBackground(
         string optionName,
         string missingExecutableHint)

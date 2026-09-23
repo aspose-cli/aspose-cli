@@ -99,10 +99,10 @@ internal sealed class ViewerServiceClient
                 ViewerServiceCommands.LockKey("start"),
                 Remaining(deadline, StartLockTimeout));
         }
-        catch (Exception exception) when (exception is TimeoutException or IOException)
+        catch (TimeoutException)
         {
             deadline.ThrowIfExpired("service-start-lock");
-            throw;
+            throw ViewerErrors.ServiceBusy();
         }
         using (starting)
         {
@@ -126,6 +126,7 @@ internal sealed class ViewerServiceClient
         start.ArgumentList.Add("--quiet");
         start.ArgumentList.Add("--output");
         start.ArgumentList.Add("json");
+        start.WorkingDirectory = SelfProcessLauncher.ServiceWorkingDirectory;
         string workDirectory = Path.GetFullPath(globals.WorkDir ?? Directory.GetCurrentDirectory());
         LocalServiceChild child;
         try
