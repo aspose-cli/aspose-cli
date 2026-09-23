@@ -68,7 +68,7 @@ public sealed class PdfEngineFixture : IDisposable
     }
 
     public string CreateRawDocument(string fileName, int pages,
-        IReadOnlySet<int>? textPages = null, IReadOnlySet<int>? imagePages = null)
+        IReadOnlySet<int>? textPages = null, IReadOnlySet<int>? imagePages = null, int imageSide = 1)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(pages, 1);
         string path = File(fileName);
@@ -83,7 +83,9 @@ public sealed class PdfEngineFixture : IDisposable
         int imageObject = objects.Count + 1;
         if (imagePages is { Count: > 0 })
         {
-            objects.Add("<< /Type /XObject /Subtype /Image /Width 1 /Height 1 "
+            // The declared size may exceed the one pixel of data: extraction must refuse
+            // an oversized image from its dictionary, before decoding it.
+            objects.Add($"<< /Type /XObject /Subtype /Image /Width {imageSide} /Height {imageSide} "
                 + "/ColorSpace /DeviceRGB /BitsPerComponent 8 /Filter /ASCIIHexDecode "
                 + "/Length 7 >>\nstream\n20B090>\nendstream");
         }

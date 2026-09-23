@@ -113,7 +113,7 @@ internal sealed class PdfExtractionService
             request.OutputDirectory);
         IReadOnlyList<PdfExtractedItem> items = request.What switch
         {
-            "images" => ExtractImages(loaded.Document, pages, guard),
+            "images" => ExtractImages(loaded.Document, pages, guard, _resourceBudgets),
             "attachments" => ExtractAttachments(loaded.Document, guard),
             "text" => ExtractTextArtifact(loaded.Document, pages, guard),
             "tables" => ExtractTables(loaded.Document, pages, guard),

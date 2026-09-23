@@ -56,9 +56,17 @@ internal static class PdfContentMutationHandlers
     {
         EnsureFile(op.Path);
         IReadOnlyList<int> pages = ResolveOptional(document, op.Pages);
+        // Read (and charge) the image once; every page stamps its own view of the bytes.
+        byte[] image;
+        using (var buffer = new MemoryStream())
+        {
+            inputs.OpenFile(op.Path).CopyTo(buffer);
+            image = buffer.ToArray();
+        }
+
         foreach (int number in pages)
         {
-            var stamp = new ImageStamp(inputs.OpenFile(op.Path))
+            var stamp = new ImageStamp(new MemoryStream(image, writable: false))
             {
                 Background = op.Layer == "under",
                 Opacity = op.Opacity,

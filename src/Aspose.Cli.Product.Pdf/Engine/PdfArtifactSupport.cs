@@ -26,7 +26,8 @@ internal static class PdfArtifactSupport
     internal static IReadOnlyList<PdfExtractedItem> ExtractImages(
         Document document,
         IReadOnlyList<int> pages,
-        ExtractionGuard guard)
+        ExtractionGuard guard,
+        ResourceBudgetLedger budgets)
     {
         var items = new List<PdfExtractedItem>();
         int number = 0;
@@ -36,13 +37,20 @@ internal static class PdfArtifactSupport
             document.Pages[pageNumber].Accept(absorber);
             foreach (ImagePlacement placement in absorber.ImagePlacements)
             {
-                using var stream = new MemoryStream();
-                placement.Save(stream, DrawingImageFormat.Png);
-                byte[] bytes = stream.ToArray();
-                string path = guard.WriteAllBytes($"image-{++number:000}.png", bytes);
+                // The image's own dimensions bound the decode, so check them before decoding.
+                // The SDK's PNG encoder resizes its target stream, which the budgeted
+                // extraction stream does not allow, so the bounded image is encoded in memory
+                // and then written through the extraction budget.
+                XImage image = placement.Image;
+                RenderPixelGuard.EnsureFits(budgets, image.Width, image.Height, dpi: null,
+                    hint: $"The image on page {pageNumber} is too large to decode; extract the other pages with --pages.");
+
+                using var encoded = new MemoryStream();
+                placement.Save(encoded, DrawingImageFormat.Png);
+                byte[] bytes = encoded.ToArray();
                 items.Add(new PdfExtractedItem
                 {
-                    Path = path,
+                    Path = guard.WriteAllBytes($"image-{++number:000}.png", bytes),
                     Kind = "image",
                     SizeBytes = bytes.LongLength,
                     Page = pageNumber,
