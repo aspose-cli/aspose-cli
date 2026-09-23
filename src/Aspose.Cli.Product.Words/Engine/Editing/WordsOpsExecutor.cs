@@ -24,7 +24,7 @@ internal static class WordsOpsExecutor
         InputSource inputs)
     {
         using InputResourceScope operationInputs = inputs.CreateScope();
-        ValidateRequest(request);
+        ValidateRequest(request, batch);
         string format = FormatId(request.OutputPath);
         string? outputPassword = request.EncryptPassword
             ?? (loaded.Format.IsEncrypted && WordsFormats.EncryptIds.Contains(format, StringComparer.Ordinal)
@@ -87,14 +87,32 @@ internal static class WordsOpsExecutor
         };
     }
 
-    private static void ValidateRequest(WordsEditRequest request)
+    private static void ValidateRequest(WordsEditRequest request, WordsOpsBatch batch)
     {
-        if (request.TrackChanges && string.IsNullOrWhiteSpace(request.Author))
+        if (!request.TrackChanges)
+        {
+            return;
+        }
+
+        if (string.IsNullOrWhiteSpace(request.Author))
         {
             throw CliErrors.OptionInvalid(
                 "--author",
                 "--track-changes requires a non-empty author",
                 "Pass --author with the person or agent responsible for the edit.");
+        }
+
+        string[] untracked = batch.Ops
+            .Where(static op => !WordsOpRules.IsTrackable(op))
+            .Select(static op => WordsOps.Catalog.NameOf(op))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (untracked.Length > 0)
+        {
+            throw CliErrors.OptionInvalid(
+                "--track-changes",
+                $"{string.Join(", ", untracked)} cannot be recorded as tracked changes",
+                "Apply these operations in a separate batch without --track-changes; only content insertions and deletions are tracked.");
         }
     }
 

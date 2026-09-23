@@ -177,6 +177,17 @@ internal static class WordsOpRules
         Require(op.Inline is null or { Count: > 0 }, "'inline' must not be empty");
     }
 
+    /// <summary>
+    /// Whether Word can record the operation as tracked changes. Aspose.Words tracks the
+    /// insertion and deletion of content only; formatting, styles, lists, page setup,
+    /// properties, protection, merges, field updates, header replacement and section
+    /// structure would change silently, and resolving revisions is not itself an edit.
+    /// </summary>
+    internal static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
+        or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp or InsertImageOp or InsertTableOp
+        or SetTableCellOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
+        or AddCommentOp or RemoveCommentsOp or AppendDocumentOp;
+
     internal static void UpdateFields(UpdateFieldsOp op) => Require(op.What is "all" or "toc", "'what' must be all or toc");
 
     private static void Target(WordsTarget target)

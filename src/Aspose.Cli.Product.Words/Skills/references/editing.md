@@ -46,8 +46,14 @@ aspose-cli schema v2/words/ops
   section numbers never shift to a different original section.
 - `--best-effort` saves successful operations even when others fail; those
   partial results exit 8. Without it, an operation failure aborts the batch.
-- `--track-changes` requires `--author`. Comparison and tracking metadata use a
-  fixed internal timestamp so JSON summaries remain deterministic.
+- `--track-changes` requires `--author` and records content insertions and
+  deletions: `replace_text`, `set_text`, `insert_*`, `delete_blocks`,
+  `set_table_cell`, `append_document`, and the review annotations `add_comment`
+  and `remove_comments`. Other operations (formatting, styles, lists, page setup,
+  properties, protection, headers and footers, sections, watermarks, mail merge,
+  field updates, accepting or rejecting revisions) would change the document
+  without a revision, so a tracked batch containing them fails with
+  `OPTION_INVALID` before anything changes. Run them in a separate batch.
 
 ## Op index
 
