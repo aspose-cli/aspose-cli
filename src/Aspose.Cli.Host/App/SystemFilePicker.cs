@@ -18,6 +18,7 @@ internal static class SystemFilePicker
         string spacePatterns = semicolonPatterns.Replace(';', ' ');
         if (OperatingSystem.IsWindows())
         {
+            string? powerShell = WindowsPowerShell.TryResolve();
             string script =
                 "Add-Type -AssemblyName System.Windows.Forms; "
                 + "$d=[System.Windows.Forms.OpenFileDialog]::new(); "
@@ -25,7 +26,7 @@ internal static class SystemFilePicker
                 + $"$d.Filter='Supported files|{semicolonPatterns}|All files|*.*'; "
                 + "if($d.ShowDialog() -eq [System.Windows.Forms.DialogResult]::OK){[Console]::Out.Write($d.FileName)}";
             return Run(
-                "powershell.exe", ["-NoProfile", "-STA", "-Command", script], available: true);
+                powerShell ?? string.Empty, ["-NoProfile", "-STA", "-Command", script], available: powerShell is not null);
         }
 
         if (OperatingSystem.IsMacOS())

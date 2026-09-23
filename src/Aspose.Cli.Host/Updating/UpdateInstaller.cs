@@ -22,7 +22,8 @@ internal static class UpdateInstaller
             throw CliErrors.OptionInvalid("update install", "the customer updater currently supports Windows x64 only",
                 "Run the win-x64 distribution on Windows, or use update check for feed verification.");
         }
-        string powerShell = UpdateClient.ResolveWindowsPowerShell();
+        string powerShell = WindowsPowerShell.TryResolve()
+            ?? throw ReleaseErrors.VerificationFailed("the trusted Windows PowerShell executable is unavailable");
         string parent = PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.TemporaryRoot(), "updates"));
         string target = Path.Combine(parent, "aspose-cli-update-" + Guid.NewGuid().ToString("N"));
         string source = !Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out _)

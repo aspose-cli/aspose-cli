@@ -130,25 +130,6 @@ internal static class UpdateClient
             "the feed and installed versions have equal semantic precedence but different immutable identities; publish a higher semantic version");
     }
 
-    internal static string ResolveWindowsPowerShell()
-    {
-        string systemDirectory = Path.GetFullPath(Environment.SystemDirectory);
-        string executable = Path.GetFullPath(Path.Combine(
-            systemDirectory,
-            "WindowsPowerShell",
-            "v1.0",
-            "powershell.exe"));
-        if (!Path.IsPathFullyQualified(executable)
-            || !executable.StartsWith(systemDirectory + Path.DirectorySeparatorChar, StringComparison.OrdinalIgnoreCase)
-            || !File.Exists(executable)
-            || (File.GetAttributes(executable) & FileAttributes.ReparsePoint) != 0)
-        {
-            throw ReleaseErrors.VerificationFailed("the trusted Windows PowerShell executable is unavailable");
-        }
-
-        return executable;
-    }
-
     internal static int HandoffToInstaller(
         string powerShellPath,
         string extracted,

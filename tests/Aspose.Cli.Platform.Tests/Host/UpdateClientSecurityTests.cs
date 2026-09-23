@@ -127,7 +127,7 @@ public sealed class UpdateClientSecurityTests
             "v1.0",
             "powershell.exe"));
 
-        Assert.Equal(expected, UpdateClient.ResolveWindowsPowerShell());
+        Assert.Equal(expected, WindowsPowerShell.TryResolve());
     }
 
     [Fact]
@@ -139,7 +139,7 @@ public sealed class UpdateClientSecurityTests
         using var deadline = Aspose.Cli.Sdk.Execution.OperationDeadline.FromAbsoluteTick(
             TimeSpan.FromSeconds(1), Environment.TickCount64 - 1);
         CliException error = Assert.Throws<CliException>(() => UpdateClient.HandoffToInstaller(
-            UpdateClient.ResolveWindowsPowerShell(), root, Path.Combine(root, "install"), deadline));
+            WindowsPowerShell.TryResolve()!, root, Path.Combine(root, "install"), deadline));
         Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
         Assert.False(Directory.Exists(root));
     }
