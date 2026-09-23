@@ -66,9 +66,9 @@ aspose-cli schema v2/words/ops
 
 | Op | Purpose |
 |---|---|
-| `replace_text` | Replace literal or timeout-bounded regex matches in body, headers/footers, comments or all content; supports `maxReplacements`. |
+| `replace_text` | Replace literal or timeout-bounded regex matches in body, headers/footers, comments or all content; supports `maxReplacements`. A regex replacement honors `$1` and `${name}`; write `$$` for a literal `$`. |
 | `set_text` | Replace one or more paragraph bodies while keeping paragraph style. |
-| `insert_paragraphs` | Insert structured paragraphs before or after an original block. |
+| `insert_paragraphs` | Insert structured paragraphs before or after an original block; `listLevel` makes a paragraph a list item (in the anchor's list, or one new bullet list). |
 | `insert_markdown` | Import Markdown blocks before or after an original block. |
 | `delete_blocks` | Delete original paragraph/table blocks after conflict validation. |
 | `insert_break` | Insert a page break, or split the section at a block boundary; the new section keeps the page setup and continues the headers and footers. |

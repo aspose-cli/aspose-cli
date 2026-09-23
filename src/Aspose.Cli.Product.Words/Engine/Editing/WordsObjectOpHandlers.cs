@@ -242,7 +242,7 @@ internal static class WordsObjectOpHandlers
         }
 
         string initials = string.Concat(op.Author.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static part => char.ToUpperInvariant(part[0])));
-        var comment = new Comment(document, op.Author, initials, new DateTime(2000, 1, 1));
+        var comment = new Comment(document, op.Author, initials, DateTime.Now);
         comment.AppendChild(new Paragraph(document));
         comment.FirstParagraph!.AppendChild(new Run(document, op.Text));
         var start = new CommentRangeStart(document, comment.Id);

@@ -276,8 +276,6 @@ internal sealed class WordsProductionService
         return Combine(EnvelopeParts.OutputWarnings(state), extra);
     }
 
-    private static string Truncate(string value, int length) =>
-        value.Length <= length ? value : value[..length] + "…";
 
     private sealed record CreatedDocument(
         Document Document,

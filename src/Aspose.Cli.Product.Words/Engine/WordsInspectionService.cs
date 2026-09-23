@@ -44,7 +44,7 @@ internal sealed class WordsInspectionService
         }
 
         Document compared = leftLoaded.Document.Clone();
-        compared.Compare(rightLoaded.Document, "Aspose CLI", new DateTime(2000, 1, 1), new CompareOptions
+        compared.Compare(rightLoaded.Document, "Aspose CLI", DateTime.Now, new CompareOptions
         {
             IgnoreFormatting = request.IgnoreFormatting,
             Granularity = Granularity.WordLevel,
@@ -135,7 +135,11 @@ internal sealed class WordsInspectionService
             {
                 foreach (Node node in section.Body.GetChildNodes(NodeType.Paragraph, true))
                 {
-                    yield return (node, "body");
+                    // Comments and footnotes anchored in the body have their own scopes.
+                    if (node.GetAncestor(NodeType.Comment) is null && node.GetAncestor(NodeType.Footnote) is null)
+                    {
+                        yield return (node, "body");
+                    }
                 }
             }
         }

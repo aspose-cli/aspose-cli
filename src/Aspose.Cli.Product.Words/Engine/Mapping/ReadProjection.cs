@@ -105,10 +105,7 @@ internal static class ReadProjection
                         WidthPoints = shape.Width,
                         HeightPoints = shape.Height,
                     }).ToArray(),
-                BreakAfter = paragraph.ParagraphFormat.PageBreakBefore
-                    || paragraph.Runs.Cast<Run>().Any(static run => run.Text.Contains(ControlChar.PageBreak, StringComparison.Ordinal))
-                        ? "page"
-                        : null,
+                BreakAfter = BreakAfter(paragraph),
                 ContentTruncated = truncated,
             };
         }
@@ -152,5 +149,20 @@ internal static class ReadProjection
         truncated |= length < value.Length;
         remaining -= length;
         return value[..length];
+    }
+
+    /// <summary>
+    /// The break that ends a paragraph block: a page break inside it or on the next paragraph
+    /// (page break before), or a section break when it is the last block of a section.
+    /// </summary>
+    private static string? BreakAfter(Paragraph paragraph)
+    {
+        if (paragraph.Runs.Cast<Run>().Any(static run => run.Text.Contains(ControlChar.PageBreak, StringComparison.Ordinal))
+            || paragraph.NextSibling is Paragraph { ParagraphFormat.PageBreakBefore: true })
+        {
+            return "page";
+        }
+
+        return paragraph.NextSibling is null && paragraph.ParentSection?.NextSibling is Section ? "section" : null;
     }
 }

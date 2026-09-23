@@ -43,7 +43,7 @@ internal static class WordsOpsExecutor
         Document? baseline = request.Verify ? loaded.Document.Clone() : null;
         if (request.TrackChanges)
         {
-            loaded.Document.StartTrackRevisions(request.Author!, new DateTime(2000, 1, 1));
+            loaded.Document.StartTrackRevisions(request.Author!, DateTime.Now);
         }
 
         IReadOnlyList<BoundedOperationOutcome> outcomes =

@@ -45,7 +45,7 @@
       "properties": {
         "text": { "type": "string" },
         "style": { "type": "string", "minLength": 1 },
-        "listLevel": { "type": "integer", "minimum": 0, "maximum": 8 }
+        "listLevel": { "type": "integer", "minimum": 0, "maximum": 8, "description": "Makes the paragraph a list item at this level: in the anchor's list when the anchor is a list item, otherwise in one new bullet list." }
       }
     },
     "margins": {
@@ -77,7 +77,7 @@
           "properties": {
             "id": { "$ref": "#/$defs/id" }, "op": { "const": "replace_text" },
             "find": { "type": "string", "minLength": 1 },
-            "replace": { "type": "string" },
+            "replace": { "type": "string", "description": "With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $." },
             "regex": { "type": "boolean" },
             "matchCase": { "type": "boolean" },
             "wholeWord": { "type": "boolean" },
@@ -233,7 +233,10 @@
             "position": { "enum": ["start", "end", "after"] },
             "after": { "type": "integer", "minimum": 1 },
             "pageSetup": { "$ref": "#/$defs/pageSetup" }
-          }
+          },
+          "if": { "required": ["position"], "properties": { "position": { "const": "after" } } },
+          "then": { "required": ["after"] },
+          "else": { "not": { "required": ["after"] } }
         },
         {
           "type": "object",
@@ -264,7 +267,8 @@
             "kind": { "enum": ["primary", "first", "even"] },
             "paragraphs": { "type": "array", "items": { "type": "string" } },
             "markdown": { "type": "string" }
-          }
+          },
+          "oneOf": [{ "required": ["paragraphs"] }, { "required": ["markdown"] }]
         },
         {
           "type": "object",
@@ -276,7 +280,8 @@
             "kind": { "enum": ["primary", "first", "even"] },
             "paragraphs": { "type": "array", "items": { "type": "string" } },
             "markdown": { "type": "string" }
-          }
+          },
+          "oneOf": [{ "required": ["paragraphs"] }, { "required": ["markdown"] }]
         },
         {
           "type": "object",

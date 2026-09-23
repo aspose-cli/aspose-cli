@@ -26,11 +26,6 @@ internal static class WordsContentOpHandlers
 {
     internal static long ReplaceText(Document document, ReplaceTextOp op)
     {
-        if (op.MaxReplacements is <= 0)
-        {
-            throw Invalid("replace_text maxReplacements must be greater than zero");
-        }
-
         LimitedReplacingCallback? limiter = op.MaxReplacements is int maximum
             ? new LimitedReplacingCallback(maximum)
             : null;
@@ -38,6 +33,8 @@ internal static class WordsContentOpHandlers
         {
             MatchCase = op.MatchCase,
             FindWholeWordsOnly = op.WholeWord,
+            // A regex replacement honors $1 and ${name}; a literal one is inserted verbatim.
+            UseSubstitutions = op.Regex,
             ReplacingCallback = limiter,
         };
         Regex pattern = op.Regex
@@ -124,9 +121,15 @@ internal static class WordsContentOpHandlers
         return nodes.Count;
     }
 
+    /// <summary>
+    /// Inserts paragraphs at a block boundary. A paragraph with <c>listLevel</c> joins the
+    /// anchor's list when the anchor is a list paragraph, otherwise one bullet list shared by
+    /// the operation's list paragraphs.
+    /// </summary>
     internal static long InsertParagraphs(Document document, Node anchor, InsertParagraphsOp op)
     {
         Node cursor = anchor;
+        Aspose.Words.Lists.List? list = anchor is Paragraph { IsListItem: true } item ? item.ListFormat.List : null;
         foreach (ParagraphInput input in op.Paragraphs)
         {
             var paragraph = new Paragraph(document);
@@ -134,6 +137,13 @@ internal static class WordsContentOpHandlers
             if (input.Style is not null)
             {
                 ApplyParagraphStyle(document, paragraph, input.Style);
+            }
+
+            if (input.ListLevel is int level)
+            {
+                list ??= document.Lists.Add(ListTemplate.BulletDefault);
+                paragraph.ListFormat.List = list;
+                paragraph.ListFormat.ListLevelNumber = level;
             }
 
             InsertRelative(anchor, ref cursor, paragraph, op.Position);

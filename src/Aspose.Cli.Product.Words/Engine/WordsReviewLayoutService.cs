@@ -239,7 +239,24 @@ internal sealed class WordsReviewLayoutService
     {
         var index = new DocumentBlockIndex(document, evaluation);
         var findings = new List<WordsReviewHeadingLayout>();
-        for (int position = 0; position < index.Entries.Count - 1; position++)
+        IReadOnlyList<BlockEntry> entries = index.Entries;
+
+        // The nearest block with visible content before and after each position, in two passes.
+        var preceding = new BlockEntry?[entries.Count];
+        var following = new BlockEntry?[entries.Count];
+        for (int position = 1; position < entries.Count; position++)
+        {
+            BlockEntry previous = entries[position - 1];
+            preceding[position] = HasVisibleBodyContent(previous) ? previous : preceding[position - 1];
+        }
+
+        for (int position = entries.Count - 2; position >= 0; position--)
+        {
+            BlockEntry next = entries[position + 1];
+            following[position] = HasVisibleBodyContent(next) ? next : following[position + 1];
+        }
+
+        for (int position = 0; position < entries.Count - 1; position++)
         {
             BlockEntry entry = index.Entries[position];
             if (entry.Node is not Paragraph heading
@@ -249,16 +266,14 @@ internal sealed class WordsReviewLayoutService
             {
                 continue;
             }
-            BlockEntry? following = index.Entries.Skip(position + 1).FirstOrDefault(HasVisibleBodyContent);
-            BlockEntry? preceding = index.Entries.Take(position).LastOrDefault(HasVisibleBodyContent);
-            if (following is null || preceding is null)
+            if (following[position] is not BlockEntry next || preceding[position] is not BlockEntry previous)
             {
                 continue;
             }
             int page = collector.GetEndPageIndex(heading);
-            int followingPage = collector.GetStartPageIndex(following.Node);
-            int precedingPage = collector.GetEndPageIndex(preceding.Node);
-            bool followingStartsExplicitPage = following.Node is Paragraph paragraph
+            int followingPage = collector.GetStartPageIndex(next.Node);
+            int precedingPage = collector.GetEndPageIndex(previous.Node);
+            bool followingStartsExplicitPage = next.Node is Paragraph paragraph
                 && paragraph.ParagraphFormat.PageBreakBefore;
             if (page >= 1
                 && page <= maxPage
