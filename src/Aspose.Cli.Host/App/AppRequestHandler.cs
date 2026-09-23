@@ -20,11 +20,13 @@ internal sealed class AppRequestHandler
         System.Security.Cryptography.RandomNumberGenerator.GetBytes(24)).ToLowerInvariant();
     private readonly LocalHttpRequestSecurity _security;
     private readonly JsonSerializerOptions _json = AppJsonContext.Default.Options;
+    private readonly AppErrorMessages _messages;
 
     public AppRequestHandler(AppHost host)
     {
         _host = host ?? throw new ArgumentNullException(nameof(host));
         _security = new LocalHttpRequestSecurity(_csrf);
+        _messages = new AppErrorMessages(host.Catalog);
     }
 
     /// <summary>Paths the App answers; everything else belongs to the viewer.</summary>
@@ -81,7 +83,7 @@ internal sealed class AppRequestHandler
         catch (CliException ex)
         {
             AddSecurityHeaders(response);
-            await WriteError(response, StatusFor(ex), ex.Code.Name, FriendlyMessage(ex)).ConfigureAwait(false);
+            await WriteError(response, StatusFor(ex), ex.Code.Name, _messages.For(ex.Code)).ConfigureAwait(false);
         }
         catch (JsonException)
         {
@@ -252,25 +254,60 @@ internal sealed class AppRequestHandler
         _ => HttpStatusCode.InternalServerError,
     };
 
-    private static string FriendlyMessage(CliException exception) => exception.Code.Name switch
-    {
-        "APP_BUSY" => "The App is stopping. Start it again to continue.",
-        "FILE_NOT_FOUND" => "That file is no longer available. Choose it again from the Files page.",
-        "FILE_ACCESS_DENIED" => "Aspose CLI does not have permission to read that file.",
-        "FILE_LOCKED" => "That file is temporarily locked by another program. Wait for its save to finish and try again.",
-        "FILE_CORRUPT" => "That file could not be opened. It may be damaged or use a different file type.",
-        "PASSWORD_REQUIRED" => "That file is password protected. Use the CLI password options to preview it.",
-        "PASSWORD_INVALID" => "The file password was not accepted.",
-        "FILE_TOO_LARGE" => "That file is larger than the configured local processing limit.",
-        "FORMAT_UNSUPPORTED" => "That file type is not supported. Choose a supported spreadsheet or word-processing document.",
-        "LICENSE_INVALID" => "The selected license was rejected. Choose a valid Aspose .lic file or continue in evaluation mode.",
-        "LICENSE_FILE_NOT_FOUND" => "A configured license file is missing. Install a replacement here or remove the broken environment setting.",
-        _ => "The file could not be opened or rendered. Check that it is a supported, readable document.",
-    };
-
     private static void AddSecurityHeaders(HttpListenerResponse response)
         => LocalServiceSecurityHeaders.Apply(
             response,
             LocalServicePageKind.AppShell);
+}
 
+/// <summary>
+/// What a person reads for an App error. Codes are matched by name, because
+/// an error re-raised from a CLI child carries the child's own exit code.
+/// </summary>
+internal sealed class AppErrorMessages
+{
+    private readonly Dictionary<ErrorCode, string> _messages;
+
+    public AppErrorMessages(ProductCatalog catalog)
+    {
+        ArgumentNullException.ThrowIfNull(catalog);
+        string[] products = catalog.Products
+            .Select(static product => product.Manifest.DisplayName)
+            .ToArray();
+        string choices = products.Length switch
+        {
+            0 => "supported",
+            1 => products[0],
+            _ => string.Join(", ", products[..^1]) + " or " + products[^1],
+        };
+        _messages = new Dictionary<ErrorCode, string>(ErrorCodeNameComparer.Instance)
+        {
+            [ErrorCodes.AppBusy] = "The App is stopping. Start it again to continue.",
+            [ErrorCodes.FileNotFound] = "That file is no longer available. Choose it again from the Files page.",
+            [ErrorCodes.FileAccessDenied] = "Aspose CLI does not have permission to read that file.",
+            [ErrorCodes.FileLocked] = "That file is temporarily locked by another program. Wait for its save to finish and try again.",
+            [ErrorCodes.FileCorrupt] = "That file could not be opened. It may be damaged or use a different file type.",
+            [ErrorCodes.PasswordRequired] = "That file is password protected. Use the CLI password options to preview it.",
+            [ErrorCodes.PasswordInvalid] = "The file password was not accepted.",
+            [ErrorCodes.FileTooLarge] = "That file is larger than the configured local processing limit.",
+            [ErrorCodes.FormatUnsupported] = $"That file type is not supported. Choose a {choices} file.",
+            [ErrorCodes.LicenseInvalid] = "The selected license was rejected. Choose a valid Aspose .lic file or continue in evaluation mode.",
+            [ErrorCodes.LicenseFileNotFound] = "A configured license file is missing. Install a replacement here or remove the broken environment setting.",
+        };
+    }
+
+    public string For(ErrorCode code) =>
+        _messages.TryGetValue(code, out string? message)
+            ? message
+            : "The file could not be opened or rendered. Check that it is a supported, readable document.";
+
+    private sealed class ErrorCodeNameComparer : IEqualityComparer<ErrorCode>
+    {
+        public static readonly ErrorCodeNameComparer Instance = new();
+
+        public bool Equals(ErrorCode? x, ErrorCode? y) =>
+            string.Equals(x?.Name, y?.Name, StringComparison.Ordinal);
+
+        public int GetHashCode(ErrorCode code) => StringComparer.Ordinal.GetHashCode(code.Name);
+    }
 }

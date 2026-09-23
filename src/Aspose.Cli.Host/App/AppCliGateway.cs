@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Text.Json;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -19,48 +20,69 @@ namespace Aspose.Cli.Host.App;
 /// </summary>
 internal sealed class AppCliGateway
 {
-    private static readonly TimeSpan StatusFreshness = TimeSpan.FromSeconds(1);
     private static readonly TimeSpan Timeout = TimeSpan.FromSeconds(60);
     private const int MaximumOutputBytes = 512 * 1024;
 
     private readonly object _gate = new();
+    private readonly object _licenseRefresh = new();
+    private readonly ProductCatalog _catalog;
     private readonly GlobalValues _globals;
     private readonly string _configDirectory;
+    private readonly string _workDirectory;
     private LicenseStatusResult? _license;
-    private long _licenseReadAt;
+    private string? _licenseFingerprint;
     private readonly Dictionary<string, FontListResult> _fonts = new(StringComparer.Ordinal);
+    private readonly Func<IReadOnlyList<string>, ChildProcessResult> _run;
 
-    public AppCliGateway(GlobalValues globals, string configDirectory)
+    public AppCliGateway(ProductCatalog catalog, GlobalValues globals, string configDirectory)
+        : this(catalog, globals, configDirectory, run: null)
     {
+    }
+
+    /// <param name="run">Runs one CLI command; tests replace the child process.</param>
+    internal AppCliGateway(
+        ProductCatalog catalog,
+        GlobalValues globals,
+        string configDirectory,
+        Func<IReadOnlyList<string>, ChildProcessResult>? run)
+    {
+        _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _globals = globals ?? throw new ArgumentNullException(nameof(globals));
         _configDirectory = configDirectory;
+        _workDirectory = Path.GetFullPath(globals.WorkDir ?? Directory.GetCurrentDirectory());
+        _run = run ?? RunChild;
     }
 
     /// <summary>
-    /// The licence state as the CLI sees it now. A change made anywhere —
-    /// here, at a prompt, in the environment — is visible within seconds
-    /// without restarting anything.
+    /// The licence state as the CLI sees it now. The answer is kept until the
+    /// license a product would apply changes — a file installed, replaced or
+    /// removed here or at a prompt — and one refresh serves every request
+    /// that arrives while it runs.
     /// </summary>
     public LicenseStatusResult LicenseStatus()
     {
-        lock (_gate)
+        lock (_licenseRefresh)
         {
-            if (_license is { } cached
-                && Stopwatch.GetElapsedTime(_licenseReadAt) < StatusFreshness)
+            string fingerprint = LicenseFingerprint.Of(
+                _catalog, _globals.LicensePath, _workDirectory, _configDirectory);
+            lock (_gate)
             {
-                return cached;
+                if (_license is { } cached && _licenseFingerprint == fingerprint)
+                {
+                    return cached;
+                }
             }
+            LicenseStatusResult status = Read(
+                ["license", "status"],
+                SdkJsonContext.Default.LicenseStatusResult,
+                CommonSchemaIds.LicenseStatus);
+            lock (_gate)
+            {
+                _license = status;
+                _licenseFingerprint = fingerprint;
+            }
+            return status;
         }
-        LicenseStatusResult status = Read(
-            ["license", "status"],
-            SdkJsonContext.Default.LicenseStatusResult,
-            CommonSchemaIds.LicenseStatus);
-        lock (_gate)
-        {
-            _license = status;
-            _licenseReadAt = Stopwatch.GetTimestamp();
-        }
-        return status;
     }
 
     /// <summary>Installs a licence file for every compatible product, or one named product.</summary>
@@ -73,7 +95,7 @@ internal sealed class AppCliGateway
             arguments,
             SdkJsonContext.Default.LicenseStatusResult,
             CommonSchemaIds.LicenseStatus);
-        Invalidate(installed);
+        Invalidate();
         return installed.Products
             .Where(static product => product.Mode == LicenseModes.Licensed)
             .Select(static product => product.Product)
@@ -86,10 +108,11 @@ internal sealed class AppCliGateway
         string[] arguments = productId is null
             ? ["license", "remove"]
             : ["license", "remove", "--product", productId];
-        Invalidate(Read(
+        _ = Read(
             arguments,
             SdkJsonContext.Default.LicenseStatusResult,
-            CommonSchemaIds.LicenseStatus));
+            CommonSchemaIds.LicenseStatus);
+        Invalidate();
     }
 
     /// <summary>
@@ -113,12 +136,13 @@ internal sealed class AppCliGateway
         return fonts;
     }
 
-    private void Invalidate(LicenseStatusResult status)
+    /// <summary>A licence change here: the next status reads it afresh, and fonts follow.</summary>
+    private void Invalidate()
     {
         lock (_gate)
         {
-            _license = status;
-            _licenseReadAt = Stopwatch.GetTimestamp();
+            _license = null;
+            _licenseFingerprint = null;
             _fonts.Clear();
         }
     }
@@ -162,12 +186,22 @@ internal sealed class AppCliGateway
     /// </summary>
     private byte[] Run(IReadOnlyList<string> arguments)
     {
+        ChildProcessResult child = _run(arguments);
+        return child.ExitCode == 0
+            ? child.Stdout
+            : throw Failure(arguments, child.ExitCode, child.Stderr);
+    }
+
+    private ChildProcessResult RunChild(IReadOnlyList<string> arguments)
+    {
         ProcessStartInfo start = SelfProcessLauncher.CreateBackground(
             arguments[0],
             "Run the published 'aspose-cli' executable directly.");
-        start.WorkingDirectory = _globals.WorkDir ?? Directory.GetCurrentDirectory();
+        start.WorkingDirectory = SelfProcessLauncher.ServiceWorkingDirectory;
         start.Environment[Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnvironmentVariableName] =
             _configDirectory;
+        start.ArgumentList.Add("--workdir");
+        start.ArgumentList.Add(_workDirectory);
         foreach (string argument in arguments)
         {
             start.ArgumentList.Add(argument);
@@ -176,55 +210,31 @@ internal sealed class AppCliGateway
         start.ArgumentList.Add("json");
         start.ArgumentList.Add("--quiet");
 
-        using var process = new Process { StartInfo = start };
         using var cancellation = new CancellationTokenSource(Timeout);
-        IDisposable? job = null;
-        bool started = false;
         try
         {
-            started = process.Start();
-            if (!started)
-            {
-                throw new CliException(
-                    ErrorCodes.Internal,
-                    $"The CLI could not be started to run '{arguments[0]}'.");
-            }
-            job = WindowsProcessJob.TryAttach(process);
-            Task<byte[]> stdout = ReadBoundedAsync(process.StandardOutput.BaseStream, cancellation.Token);
-            Task<byte[]> stderr = ReadBoundedAsync(process.StandardError.BaseStream, cancellation.Token);
-            Task.WhenAll(stdout, stderr, process.WaitForExitAsync(cancellation.Token))
+            return ChildProcess.RunAsync(start, MaximumOutputBytes, cancellation.Token)
                 .GetAwaiter().GetResult();
-            return process.ExitCode == 0
-                ? stdout.GetAwaiter().GetResult()
-                : throw Failure(arguments, stderr.GetAwaiter().GetResult());
         }
         catch (OperationCanceledException)
         {
             throw CliErrors.OperationTimeout((int)Timeout.TotalSeconds, arguments[0]);
         }
         catch (Exception exception) when (
-            exception is IOException or Win32Exception or InvalidOperationException or InvalidDataException)
+            exception is IOException or Win32Exception or InvalidOperationException or ChildOutputLimitException)
         {
             throw new CliException(
                 ErrorCodes.Internal,
                 $"The CLI could not complete '{arguments[0]}'.");
         }
-        finally
-        {
-            if (started)
-            {
-                try { if (!process.HasExited) { process.Kill(entireProcessTree: true); } }
-                catch (Exception exception) when (exception is InvalidOperationException or Win32Exception) { }
-                job?.Dispose();
-            }
-        }
     }
 
     /// <summary>
-    /// Re-raises the child's own error, so the App reports what the command
-    /// reported: an invalid licence file stays LICENSE_INVALID here.
+    /// Re-raises the child's own error with its own exit code, so the App
+    /// reports what the command reported: an invalid licence file stays
+    /// LICENSE_INVALID, and a missing file stays an input error.
     /// </summary>
-    private static CliException Failure(IReadOnlyList<string> arguments, byte[] error)
+    private static CliException Failure(IReadOnlyList<string> arguments, int exitCode, byte[] error)
     {
         try
         {
@@ -236,7 +246,7 @@ internal sealed class AppCliGateway
                 && message.GetString() is { Length: > 0 } text)
             {
                 return new CliException(
-                    new ErrorCode(name, ExitCode.LicenseError),
+                    new ErrorCode(name, (ExitCode)exitCode),
                     text,
                     hint: failure.TryGetProperty("hint", out JsonElement hint) ? hint.GetString() : null);
             }
@@ -248,24 +258,5 @@ internal sealed class AppCliGateway
         return new CliException(
             ErrorCodes.Internal,
             $"The CLI could not complete '{string.Join(' ', arguments)}'.");
-    }
-
-    private static async Task<byte[]> ReadBoundedAsync(Stream stream, CancellationToken cancellationToken)
-    {
-        using var output = new MemoryStream();
-        byte[] buffer = new byte[4096];
-        while (true)
-        {
-            int read = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
-            if (read == 0)
-            {
-                return output.ToArray();
-            }
-            if (output.Length + read > MaximumOutputBytes)
-            {
-                throw new InvalidDataException("The CLI wrote more than its output budget.");
-            }
-            output.Write(buffer, 0, read);
-        }
     }
 }

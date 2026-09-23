@@ -3,6 +3,7 @@ using System.Text.Json;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Commands;
 using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
@@ -90,7 +91,7 @@ internal static class ViewRenderWorker
                 definition,
                 binding,
                 FontSearchProfile.Explicit(request.FontDirectories ?? []));
-            string license = LicenseFingerprint(binding.LicenseGate.Resolution);
+            string license = LicenseFingerprint.Of(binding.LicenseGate.Resolution);
             if (licenses.TryGetValue(product, out string? applied) && applied != license)
             {
                 return new RenderWorkerResponse { Id = request.Id, Ok = false, Recycle = true };
@@ -139,29 +140,6 @@ internal static class ViewRenderWorker
                 Message = Sanitize(exception.Message, request.Source),
             };
         }
-    }
-
-    /// <summary>
-    /// Identifies the license a product would apply without applying it: the
-    /// source and, for a file, the bytes it holds right now. Reading the file
-    /// on every render would cost more than it proves, because a license is
-    /// installed by replacing the file.
-    /// </summary>
-    private static string LicenseFingerprint(LicenseResolution resolution)
-    {
-        if (!resolution.IsConfigured)
-        {
-            return "none";
-        }
-        if (resolution.Path is not { Length: > 0 } path)
-        {
-            // Environment-carried licenses cannot change under a live process.
-            return resolution.SourceLabel!;
-        }
-        var file = new FileInfo(path);
-        return file.Exists
-            ? string.Join('|', resolution.SourceLabel, path, file.Length, file.LastWriteTimeUtc.Ticks)
-            : string.Join('|', resolution.SourceLabel, path, "missing");
     }
 
     /// <summary>The service owns the rendered copy; its path is never the user's.</summary>

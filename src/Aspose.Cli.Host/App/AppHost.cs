@@ -32,6 +32,9 @@ internal sealed partial class AppHost : IDisposable
     private string _route = AppRoutes.Home;
     private bool _disposed;
 
+    /// <summary>The products this App opens files with.</summary>
+    internal ProductCatalog Catalog => _catalog;
+
     public AppHost(
         ProductCatalog catalog,
         Func<CapabilitiesResult> capabilities,
@@ -48,7 +51,7 @@ internal sealed partial class AppHost : IDisposable
         _touch = touch ?? throw new ArgumentNullException(nameof(touch));
         _stop = stop ?? throw new ArgumentNullException(nameof(stop));
         _preferences = new AppPreferencesStore(catalog, AppPaths.Preferences);
-        _cli = new AppCliGateway(globals, AppPaths.ConfigDirectory);
+        _cli = new AppCliGateway(catalog, globals, AppPaths.ConfigDirectory);
         _log = new AppLog(AppPaths.Log);
         _sessions = new AppDocumentSession(
             catalog,
