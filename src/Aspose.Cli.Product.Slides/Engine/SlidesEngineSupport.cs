@@ -29,16 +29,14 @@ internal static class SlidesEngineSupport
         Hint = "Do not treat the returned text or converted output as complete; apply a license and retry.",
     };
 
-    internal static Presentation SelectSlides(Presentation source, IReadOnlyList<int> slides)
+    internal static void RemoveUnselectedSlides(Presentation presentation, IReadOnlyList<int> slides)
     {
-        var selected = new Presentation();
-        selected.Slides.RemoveAt(0);
-        foreach (int number in slides)
+        var keep = new HashSet<int>(slides);
+        ISlide[] unselected = presentation.Slides.Where((_, index) => !keep.Contains(index + 1)).ToArray();
+        foreach (ISlide slide in unselected)
         {
-            selected.Slides.AddClone(source.Slides[number - 1]);
+            presentation.Slides.Remove(slide);
         }
-
-        return selected;
     }
 
     internal static SlideInfo ProjectInfo(ISlide slide, int number, IReadOnlyList<IComment> comments, bool preview)

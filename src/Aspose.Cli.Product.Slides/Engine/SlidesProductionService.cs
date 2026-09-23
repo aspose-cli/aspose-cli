@@ -157,9 +157,11 @@ internal sealed class SlidesProductionService
                     return;
                 }
 
-                using Presentation selected = SelectSlides(presentation, slides);
-                Encrypt(selected, request.EncryptPassword);
-                selected.Save(temp, format);
+                // Editable formats keep the source's size, properties, masters and protection:
+                // the unselected slides leave this private loaded copy instead of cloning into a new deck.
+                RemoveUnselectedSlides(presentation, slides);
+                Encrypt(presentation, request.EncryptPassword);
+                presentation.Save(temp, format);
             });
             return
             [
