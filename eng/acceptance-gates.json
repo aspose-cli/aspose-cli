@@ -1,0 +1,22 @@
+{
+  "schemaVersion": 1,
+  "gates": [
+    {
+      "id": "PDF-MOVE-BOOKMARK",
+      "directory": "tests/acceptance/pdf-page-navigation",
+      "arguments": {
+        "CliPath": "{executable}",
+        "SdkDir": "{buildOutput}",
+        "OutputDirectory": "{output}"
+      }
+    },
+    {
+      "id": "SLD-003",
+      "directory": "tests/acceptance/slides-sdk-fidelity",
+      "arguments": {
+        "SdkAssembly": "{buildOutput}/Aspose.Slides.dll",
+        "Output": "{output}/output.pptx"
+      }
+    }
+  ]
+}

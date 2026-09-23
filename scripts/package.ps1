@@ -1,6 +1,37 @@
 <#
 .SYNOPSIS
-Builds and verifies one customer-installable Aspose CLI archive.
+Builds, signs and verifies one customer-installable Aspose CLI archive.
+
+.DESCRIPTION
+Without a mode switch the script stages and signs on one trusted machine. A release
+pipeline separates the two so that building and testing never see signing material:
+
+  -StageOnly    Publishes a clean build and stages the unsigned release payload in
+                artifacts/publish/<runtime>. No signing input is read.
+  -SignStaged   Signs a payload staged by -StageOnly from this same source revision, without
+                rebuilding: Authenticode, package checksums and signature, an AllSigned
+                install/update/uninstall smoke test, the archive and its signed manifest.
+  -PrepareOnly  Stages an unsigned local development package that also contains install.cmd.
+
+Signing inputs (parameter, or environment variable):
+  -SigningKey / ASPOSE_CLI_RELEASE_SIGNING_KEY
+      ECDSA P-256 package key: a passphrase-protected PEM file, or an OpenSSL store URI such as
+      a PKCS#11 URI of a hardware key (configure its provider through OPENSSL_CONF).
+  ASPOSE_CLI_RELEASE_SIGNING_KEY_PASSPHRASE
+      Passphrase or PIN. OpenSSL reads it from the environment (-passin env:); it never
+      appears on a command line. Unencrypted key files are refused.
+  -OpenSslPath / ASPOSE_CLI_OPENSSL_PATH
+      OpenSSL 3; otherwise openssl.exe from PATH.
+  -AuthenticodeToolPath / ASPOSE_CLI_AUTHENTICODE_TOOL
+      signtool.exe.
+  -AuthenticodeCertificateThumbprint / ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT
+      SHA-1 thumbprint of the code-signing certificate in CurrentUser\My or LocalMachine\My.
+      Its private key may live in an HSM behind a CSP/KSP; no password is passed to any tool.
+  -AuthenticodeTimestampServer / ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER
+      RFC 3161 timestamp URL.
+The AllSigned smoke test runs the signed installer, so the signing certificate must be
+trusted on the signing machine (its chain trusted, and the certificate itself in the
+current user's or machine's Trusted Publishers store).
 #>
 [CmdletBinding()]
 param(
@@ -11,13 +42,17 @@ param(
 
     [switch] $PrepareOnly,
 
-    [string] $SigningKeyPath,
+    [switch] $StageOnly,
+
+    [switch] $SignStaged,
+
+    [string] $SigningKey,
 
     [string] $OpenSslPath,
 
     [string] $AuthenticodeToolPath,
 
-    [string] $AuthenticodeCertificatePath,
+    [string] $AuthenticodeCertificateThumbprint,
 
     [string] $AuthenticodeTimestampServer
 )
@@ -25,6 +60,10 @@ param(
 $ErrorActionPreference = 'Stop'
 $repoRoot = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot 'release-common.ps1')
+if (@(@($PrepareOnly, $StageOnly, $SignStaged) | Where-Object { $_ }).Count -gt 1) {
+    throw '-PrepareOnly, -StageOnly and -SignStaged select different modes; use at most one.'
+}
+$passphraseVariable = 'ASPOSE_CLI_RELEASE_SIGNING_KEY_PASSPHRASE'
 
 if ($env:OS -ceq 'Windows_NT') {
     if ($null -eq ('AsposeFilePackage.NativeMethods' -as [type])) {
@@ -99,10 +138,15 @@ function Invoke-VersionDiscovery {
 $layout = & (Join-Path $PSScriptRoot 'resolve-project-layout.ps1') `
     -RepositoryRoot $repoRoot
 $publishRoot = Join-Path $repoRoot "artifacts/publish/$RuntimeIdentifier"
-& (Join-Path $PSScriptRoot 'publish.ps1') `
-    -Configuration $Configuration `
-    -RuntimeIdentifier $RuntimeIdentifier `
-    -RequireClean:(-not $PrepareOnly)
+if (-not $SignStaged) {
+    & (Join-Path $PSScriptRoot 'publish.ps1') `
+        -Configuration $Configuration `
+        -RuntimeIdentifier $RuntimeIdentifier `
+        -RequireClean:(-not $PrepareOnly)
+}
+elseif (-not (Test-Path -LiteralPath $publishRoot -PathType Container)) {
+    throw "-SignStaged needs the payload staged by -StageOnly at $publishRoot."
+}
 
 $buildManifestPath = Join-Path $publishRoot $script:BuildManifestName
 $buildManifest = Read-BuildManifest $buildManifestPath
@@ -110,6 +154,22 @@ if ($buildManifest.edition -cne $layout.Edition -or
     $buildManifest.runtimeIdentifier -cne $RuntimeIdentifier -or
     [bool]([bool]$buildManifest.buildDirty -and -not $PrepareOnly)) {
     throw 'Published build manifest does not describe this clean package build.'
+}
+if ($SignStaged) {
+    # Sign only what this checkout staged: the same source revision, the same installer and
+    # nothing that a signing run would itself produce.
+    $provenance = Get-RepositoryProvenance -RepositoryRoot $repoRoot
+    if ($provenance.BuildDirty -or $buildManifest.sourceRevision -cne $provenance.SourceRevision) {
+        throw "The staged payload was built from $($buildManifest.sourceRevision), but this clean checkout is at $($provenance.SourceRevision)."
+    }
+    foreach ($forbidden in @('install.cmd','SHA256SUMS','PACKAGE-SIGNATURE.json','PACKAGE-SIGNATURE.sig')) {
+        if (Test-Path -LiteralPath (Join-Path $publishRoot $forbidden)) { throw "The staged payload unexpectedly contains '$forbidden'." }
+    }
+    $stagedInstaller = Join-Path $publishRoot 'install.ps1'
+    if (-not (Test-Path -LiteralPath $stagedInstaller -PathType Leaf) -or
+        (Get-FileHash -LiteralPath $stagedInstaller -Algorithm SHA256).Hash -cne (Get-FileHash -LiteralPath (Join-Path $repoRoot 'install.ps1') -Algorithm SHA256).Hash) {
+        throw 'The staged install.ps1 is missing or differs from this checkout.'
+    }
 }
 
 function Invoke-SigningTool {
@@ -124,19 +184,40 @@ function Invoke-SigningTool {
     }
 }
 
-function Get-SigningKeyPath {
-    $candidate = if ([string]::IsNullOrWhiteSpace($SigningKeyPath)) {
+function Get-SigningKey {
+    $candidate = if ([string]::IsNullOrWhiteSpace($SigningKey)) {
         $env:ASPOSE_CLI_RELEASE_SIGNING_KEY
     }
     else {
-        $SigningKeyPath
+        $SigningKey
     }
-    if ([string]::IsNullOrWhiteSpace($candidate)) { return $null }
+    if ([string]::IsNullOrWhiteSpace($candidate)) {
+        throw 'Formal customer packaging requires -SigningKey or ASPOSE_CLI_RELEASE_SIGNING_KEY. Use -PrepareOnly only for local development installation.'
+    }
+    # An OpenSSL store URI (for example pkcs11:...) names a key that never leaves its store.
+    if ($candidate -match '^[A-Za-z][A-Za-z0-9+.-]+:(?![\\/])') { return $candidate }
     $resolved = [IO.Path]::GetFullPath($candidate)
     if (-not (Test-Path -LiteralPath $resolved -PathType Leaf)) {
         throw "The requested release signing key does not exist: $resolved"
     }
+    $pem = [IO.File]::ReadAllText($resolved)
+    if ($pem -notmatch '-----BEGIN ENCRYPTED PRIVATE KEY-----' -and $pem -notmatch 'Proc-Type: 4,ENCRYPTED') {
+        throw "The release signing key '$resolved' is not passphrase-protected. Encrypt it (openssl pkcs8 -topk8 -v2 aes-256-cbc) or use a hardware-backed OpenSSL store URI."
+    }
+    if ([string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($passphraseVariable))) {
+        throw "The passphrase-protected release signing key needs $passphraseVariable."
+    }
     return $resolved
+}
+
+# OpenSSL reads the passphrase or PIN from the environment, never from its command line.
+function Get-SigningKeyArguments {
+    param([Parameter(Mandatory)][string] $Key)
+    $arguments = @($Key)
+    if (-not [string]::IsNullOrEmpty([Environment]::GetEnvironmentVariable($passphraseVariable))) {
+        $arguments += @('-passin', "env:$passphraseVariable")
+    }
+    return $arguments
 }
 
 function Get-OpenSslTool {
@@ -164,22 +245,39 @@ function Get-AuthenticodeInputs {
         $env:ASPOSE_CLI_AUTHENTICODE_TOOL
     }
     else { $AuthenticodeToolPath }
-    $certificateValue = if ([string]::IsNullOrWhiteSpace($AuthenticodeCertificatePath)) {
-        $env:ASPOSE_CLI_AUTHENTICODE_CERTIFICATE
+    $thumbprintValue = if ([string]::IsNullOrWhiteSpace($AuthenticodeCertificateThumbprint)) {
+        $env:ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT
     }
-    else { $AuthenticodeCertificatePath }
+    else { $AuthenticodeCertificateThumbprint }
     if ([string]::IsNullOrWhiteSpace($toolValue) -and
-        [string]::IsNullOrWhiteSpace($certificateValue) -and -not $Required) {
+        [string]::IsNullOrWhiteSpace($thumbprintValue) -and -not $Required) {
         return $null
     }
     if ([string]::IsNullOrWhiteSpace($toolValue) -or
-        [string]::IsNullOrWhiteSpace($certificateValue)) {
-        throw 'Formal customer packaging requires both an Authenticode signing tool and certificate. Supply the parameters or ASPOSE_CLI_AUTHENTICODE_TOOL and ASPOSE_CLI_AUTHENTICODE_CERTIFICATE.'
+        [string]::IsNullOrWhiteSpace($thumbprintValue)) {
+        throw 'Formal customer packaging requires an Authenticode signing tool and a certificate thumbprint. Supply the parameters or ASPOSE_CLI_AUTHENTICODE_TOOL and ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT.'
     }
     $tool = [IO.Path]::GetFullPath($toolValue)
-    $certificate = [IO.Path]::GetFullPath($certificateValue)
     if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Authenticode signing tool was not found: $tool" }
-    if (-not (Test-Path -LiteralPath $certificate -PathType Leaf)) { throw "Authenticode certificate was not found: $certificate" }
+    # The certificate comes from a Windows certificate store, so a hardware-backed key works
+    # through its CSP/KSP and no tool ever receives a password.
+    $thumbprint = ($thumbprintValue -replace '[\s‎]', '').ToUpperInvariant()
+    if ($thumbprint -cnotmatch '^[0-9A-F]{40}$') { throw 'The Authenticode certificate thumbprint must be 40 hexadecimal characters.' }
+    $certificate = $null
+    $machineStore = $false
+    foreach ($location in @('CurrentUser', 'LocalMachine')) {
+        $store = [Security.Cryptography.X509Certificates.X509Store]::new('My', $location)
+        try {
+            $store.Open([Security.Cryptography.X509Certificates.OpenFlags]'ReadOnly, OpenExistingOnly')
+            $found = @($store.Certificates.Find('FindByThumbprint', $thumbprint, $false))
+            if ($found.Count -eq 1) { $certificate = $found[0]; $machineStore = $location -ceq 'LocalMachine'; break }
+        }
+        catch [Security.Cryptography.CryptographicException] { }
+        finally { $store.Dispose() }
+    }
+    if ($null -eq $certificate -or -not $certificate.HasPrivateKey) {
+        throw "No code-signing certificate with a private key and thumbprint $thumbprint is in CurrentUser\My or LocalMachine\My."
+    }
     $timestamp = if ([string]::IsNullOrWhiteSpace($AuthenticodeTimestampServer)) {
         $env:ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER
     } else { $AuthenticodeTimestampServer }
@@ -188,7 +286,13 @@ function Get-AuthenticodeInputs {
         $timestampUri.Scheme -notin @('http','https') -or $timestampUri.UserInfo) {
         throw 'Authenticode signing requires a credential-free timestamp server URL. Supply -AuthenticodeTimestampServer or ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER.'
     }
-    return [pscustomobject]@{ Tool = $tool; Certificate = $certificate; TimestampServer = $timestamp }
+    return [pscustomobject]@{
+        Tool = $tool
+        Thumbprint = $thumbprint
+        Certificate = $certificate
+        MachineStore = $machineStore
+        TimestampServer = $timestamp
+    }
 }
 
 function Assert-TimestampedAuthenticode {
@@ -206,7 +310,8 @@ function Invoke-ExecutableAuthenticodeHook {
     )
     $inputs = Get-AuthenticodeInputs -Required:$Required
     if ($null -eq $inputs) { return }
-    Invoke-SigningTool $inputs.Tool @('sign','/fd','SHA256','/tr',$inputs.TimestampServer,'/td','SHA256','/f',$inputs.Certificate,$Executable) 'Authenticode signing'
+    $store = if ($inputs.MachineStore) { @('/sm') } else { @() }
+    Invoke-SigningTool $inputs.Tool (@('sign','/sha1',$inputs.Thumbprint) + $store + @('/fd','SHA256','/tr',$inputs.TimestampServer,'/td','SHA256',$Executable)) 'Authenticode signing'
     Invoke-SigningTool $inputs.Tool @('verify','/pa','/all',$Executable) 'Authenticode verification'
     Assert-TimestampedAuthenticode $Executable
 }
@@ -219,16 +324,9 @@ function Invoke-PowerShellAuthenticodeHook {
     Import-Module `
         (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1') `
         -ErrorAction Stop
-    $certificates = @(
-        Get-PfxCertificate -FilePath $inputs.Certificate |
-            Where-Object HasPrivateKey
-    )
-    if ($certificates.Count -ne 1) {
-        throw 'Authenticode certificate must contain exactly one code-signing certificate with a private key.'
-    }
     $signature = Set-AuthenticodeSignature `
         -FilePath $Script `
-        -Certificate $certificates[0] `
+        -Certificate $inputs.Certificate `
         -HashAlgorithm SHA256 `
         -TimestampServer $inputs.TimestampServer
     if ([string]$signature.Status -cne 'Valid') {
@@ -248,10 +346,10 @@ function Write-PackageSignature {
     $publicPem = Join-Path $Root ('.package-signing-' + [Guid]::NewGuid().ToString('N') + '.pem')
     $rawSignature = Join-Path $Root ('.package-signing-' + [Guid]::NewGuid().ToString('N') + '.bin')
     try {
-        Invoke-SigningTool $OpenSsl @('pkey','-in',$SigningKey,'-pubout','-outform','DER','-out',$publicDer) 'Package public-key extraction'
-        Invoke-SigningTool $OpenSsl @('pkey','-in',$SigningKey,'-pubout','-out',$publicPem) 'Package public-key export'
+        Invoke-SigningTool $OpenSsl (@('pkey','-in') + (Get-SigningKeyArguments $SigningKey) + @('-pubout','-outform','DER','-out',$publicDer)) 'Package public-key extraction'
+        Invoke-SigningTool $OpenSsl (@('pkey','-in') + (Get-SigningKeyArguments $SigningKey) + @('-pubout','-out',$publicPem)) 'Package public-key export'
         $keyId = (Get-FileHash -LiteralPath $publicDer -Algorithm SHA256).Hash.ToLowerInvariant()
-        Invoke-SigningTool $OpenSsl @('dgst','-sha256','-sign',$SigningKey,'-out',$rawSignature,$checksumPath) 'Package checksum signing'
+        Invoke-SigningTool $OpenSsl (@('dgst','-sha256','-sign') + (Get-SigningKeyArguments $SigningKey) + @('-out',$rawSignature,$checksumPath)) 'Package checksum signing'
         Invoke-SigningTool $OpenSsl @('dgst','-sha256','-verify',$publicPem,'-signature',$rawSignature,$checksumPath) 'Package checksum signature verification'
         Write-StableJson (Join-Path $Root 'PACKAGE-SIGNATURE.json') ([ordered]@{
             schemaVersion = 1
@@ -277,26 +375,29 @@ function Write-PackageSignature {
     }
 }
 
-foreach ($packageFile in @('install.cmd','install.ps1','SHA256SUMS','PACKAGE-SIGNATURE.json','PACKAGE-SIGNATURE.sig')) {
-    Remove-Item -LiteralPath (Join-Path $publishRoot $packageFile) -Force -ErrorAction SilentlyContinue
+if (-not $SignStaged) {
+    foreach ($packageFile in @('install.cmd','install.ps1','SHA256SUMS','PACKAGE-SIGNATURE.json','PACKAGE-SIGNATURE.sig')) {
+        Remove-Item -LiteralPath (Join-Path $publishRoot $packageFile) -Force -ErrorAction SilentlyContinue
+    }
+    $installerNames = if ($PrepareOnly) { @('install.cmd', 'install.ps1') } else { @('install.ps1') }
+    foreach ($installerName in $installerNames) {
+        Copy-Item `
+            -LiteralPath (Join-Path $repoRoot $installerName) `
+            -Destination (Join-Path $publishRoot $installerName)
+    }
+}
+if ($StageOnly) {
+    Write-Host "Unsigned release payload staged for signing at $publishRoot"
+    return
 }
 $signingKey = $null
 $openSsl = $null
 if (-not $PrepareOnly) {
-    $signingKey = Get-SigningKeyPath
-    if ($null -eq $signingKey) {
-        throw 'Formal customer packaging requires -SigningKeyPath or ASPOSE_CLI_RELEASE_SIGNING_KEY. Use -PrepareOnly only for local development installation.'
-    }
+    $signingKey = Get-SigningKey
     $openSsl = Get-OpenSslTool
 }
 
 Invoke-ExecutableAuthenticodeHook (Join-Path $publishRoot $layout.Names.ExecutableName) -Required:(-not $PrepareOnly)
-$installerNames = if ($PrepareOnly) { @('install.cmd', 'install.ps1') } else { @('install.ps1') }
-foreach ($installerName in $installerNames) {
-    Copy-Item `
-        -LiteralPath (Join-Path $repoRoot $installerName) `
-        -Destination (Join-Path $publishRoot $installerName)
-}
 if (-not $PrepareOnly) {
     Invoke-PowerShellAuthenticodeHook (Join-Path $publishRoot 'install.ps1')
 }
@@ -456,7 +557,7 @@ $payloadPath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().T
 $publicKeyPath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().ToString('N') + '.der')
 $rawSignaturePath = Join-Path $releaseRoot ('.release-signing-' + [Guid]::NewGuid().ToString('N') + '.bin')
 try {
-    Invoke-SigningTool $openSsl @('pkey','-in',$signingKey,'-pubout','-outform','DER','-out',$publicKeyPath) 'Release public-key extraction'
+    Invoke-SigningTool $openSsl (@('pkey','-in') + (Get-SigningKeyArguments $signingKey) + @('-pubout','-outform','DER','-out',$publicKeyPath)) 'Release public-key extraction'
     $keyId = (Get-FileHash -LiteralPath $publicKeyPath -Algorithm SHA256).Hash.ToLowerInvariant()
     $engineLines = @($buildManifest.enginePackages | Sort-Object product | ForEach-Object {
         "enginePackages.$($_.product).packageId=$($_.packageId)"
@@ -483,7 +584,7 @@ try {
         ''
     ) -join "`n"
     [IO.File]::WriteAllText($payloadPath, $signedPayload, [Text.UTF8Encoding]::new($false))
-    Invoke-SigningTool $openSsl @('dgst','-sha256','-sign',$signingKey,'-out',$rawSignaturePath,$payloadPath) 'Release manifest signing'
+    Invoke-SigningTool $openSsl (@('dgst','-sha256','-sign') + (Get-SigningKeyArguments $signingKey) + @('-out',$rawSignaturePath,$payloadPath)) 'Release manifest signing'
     Invoke-SigningTool $openSsl @('dgst','-sha256','-verify',$publicKeyPath,'-signature',$rawSignaturePath,$payloadPath) 'Release signature verification'
     [IO.File]::WriteAllText(
         (Join-Path $releaseRoot $signaturePath),

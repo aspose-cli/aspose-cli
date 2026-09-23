@@ -16,6 +16,10 @@
 *.ps1 text
 *.sh text eol=lf
 
+# The release signs the installer as checked out; the build and signing jobs must see the
+# same bytes whatever their Git line-ending settings.
+/install.ps1 text eol=crlf
+
 # Managed template hashes must be identical on every checkout.
 src/**/Skills/assets/design/templates/**/*.json text eol=lf
 src/**/Skills/assets/design/templates/**/*.md text eol=lf

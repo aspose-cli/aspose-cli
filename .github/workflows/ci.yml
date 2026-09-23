@@ -3,9 +3,10 @@ on: [push, pull_request, workflow_dispatch]
 permissions:
   contents: read
 jobs:
+  # Evaluation mode: no license reaches this job, so every commercial SDK runs as evaluation.
   verify:
     runs-on: windows-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     env:
       GIT_LFS_SKIP_SMUDGE: '1'
     defaults:
@@ -23,10 +24,55 @@ jobs:
       - run: ./scripts/test.ps1 -Configuration Release
       - run: ./scripts/publish.ps1 -Configuration Release
       - run: ./scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64 -PrepareOnly
+      - run: ./scripts/acceptance.ps1 -Plan
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
           name: verification-evidence
+          path: |
+            artifacts/TestResults/**/*.trx
+            artifacts/TestResults/**/browser/**
+          if-no-files-found: warn
+
+  # Licensed mode: the same suite with a real license, so LicensedFact cases run instead of
+  # being skipped. Evaluation-contract subprocesses strip license variables themselves.
+  # Secrets are not available to pull requests from forks, so those runs skip this job.
+  licensed:
+    if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: windows-latest
+    timeout-minutes: 60
+    environment: licensed-tests
+    env:
+      GIT_LFS_SKIP_SMUDGE: '1'
+    defaults:
+      run:
+        shell: pwsh
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          submodules: false
+          lfs: false
+          persist-credentials: false
+      - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
+        with:
+          global-json-file: global.json
+      - name: Provide the test license
+        env:
+          LICENSE_BASE64: ${{ secrets.ASPOSE_TEST_LICENSE_BASE64 }}
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:LICENSE_BASE64)) { throw 'The licensed-tests environment needs the ASPOSE_TEST_LICENSE_BASE64 secret.' }
+          $path = Join-Path $env:RUNNER_TEMP 'Aspose.Total.lic'
+          [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:LICENSE_BASE64))
+          "ASPOSE_CLI_TEST_LICENSE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          "ASPOSE_LICENSE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+      - run: ./scripts/test.ps1 -Configuration Release -RequireLicense
+      - name: Remove the test license
+        if: always()
+        run: Remove-Item -LiteralPath (Join-Path $env:RUNNER_TEMP 'Aspose.Total.lic') -Force -ErrorAction SilentlyContinue
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        if: always()
+        with:
+          name: licensed-verification-evidence
           path: |
             artifacts/TestResults/**/*.trx
             artifacts/TestResults/**/browser/**
