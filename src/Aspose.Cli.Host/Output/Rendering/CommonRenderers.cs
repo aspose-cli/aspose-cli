@@ -94,7 +94,7 @@ internal static class CommonRenderers
             if (product.Operations.Count > 0)
             {
                 surface.Out.WriteLine(
-                    $"  ops:      {string.Join(", ", product.Operations.Select(static operation => operation.Id))}");
+                    $"  ops:      {string.Join(", ", product.Operations.SelectMany(static operation => operation.Ops))}");
             }
             surface.Out.WriteLine(
                 $"  budgets:  {string.Join(", ", product.ResourceBudgets.Select(static budget => budget.Kind))}");

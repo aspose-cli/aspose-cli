@@ -13,12 +13,7 @@ public sealed class WordsModule : IProductModule
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = 1700,
-        Operations = ProductOperationDescriptor.ForCommand(
-            WordsOps.Catalog.Names,
-            "edit",
-            "v2/words/ops",
-            atomicByDefault: true,
-            supportsDryRun: true),
+        Operations = [WordsOps.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(WordsBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),

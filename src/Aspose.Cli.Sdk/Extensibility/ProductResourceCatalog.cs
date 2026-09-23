@@ -83,7 +83,7 @@ public sealed class ProductResourceCatalog
                     ProductOperationSchemaIndex.Build(
                         group.Key,
                         Read(entry),
-                        group.Select(static operation => operation.Id).ToArray()));
+                        group.SelectMany(static operation => operation.Ops).ToArray()));
             }
         }
         return new ProductResourceCatalog(

@@ -450,7 +450,7 @@ public abstract class ProductContractTests<TModule>
                 StringComparer.Ordinal))
         {
             string[] expected = group
-                .Select(static operation => operation.Id)
+                .SelectMany(static operation => operation.Ops)
                 .Order(StringComparer.Ordinal)
                 .ToArray();
             Assert.Equal(expected, catalog.Resources.GetOperations(group.Key));

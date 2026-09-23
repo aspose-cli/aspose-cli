@@ -14,12 +14,7 @@ public sealed class CellsModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = 100,
         IsDefaultCandidate = true,
-        Operations = ProductOperationDescriptor.ForCommand(
-            CellsOps.Catalog.Names,
-            "edit",
-            "v2/cells/ops",
-            atomicByDefault: true,
-            supportsDryRun: true),
+        Operations = [CellsOps.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Sheets, 1_000, 10_000, "items", "post-load"),

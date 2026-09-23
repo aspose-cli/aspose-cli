@@ -13,12 +13,7 @@ public sealed class SlidesModule : IProductModule
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = 1200,
-        Operations = ProductOperationDescriptor.ForCommand(
-            SlidesOps.Catalog.Names,
-            "edit",
-            "v2/slides/ops",
-            atomicByDefault: true,
-            supportsDryRun: true),
+        Operations = [SlidesOps.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(SlidesBudgetDomains.Slides, 10_000, 50_000, "items", "post-load"),

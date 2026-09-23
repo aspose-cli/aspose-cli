@@ -91,10 +91,8 @@ public sealed class CliContractTests : IDisposable
                 Assert.Contains(
                     operation["inputSchema"]!.GetValue<string>(),
                     schemas);
-                Assert.True(
-                    operation["atomicByDefault"]!.GetValue<bool>());
-                Assert.True(
-                    operation["supportsDryRun"]!.GetValue<bool>());
+                Assert.True(operation["maximumOperations"]!.GetValue<int>() > 0);
+                Assert.NotEmpty(operation["ops"]!.AsArray());
             }
 
             (string defaultView, string[] views) = expectedPreviewViews[id];
@@ -229,7 +227,7 @@ public sealed class CliContractTests : IDisposable
         JsonNode capabilities = Parse(capabilitiesResult.StdOut);
         JsonNode operation = capabilities["products"]![0]!["operations"]![0]!;
         string schemaId = operation["inputSchema"]!.GetValue<string>();
-        string operationId = operation["id"]!.GetValue<string>();
+        string operationId = operation["ops"]![0]!.GetValue<string>();
 
         CliResult selected = _workspace.Run(
             "schema", schemaId, "--operation", operationId);

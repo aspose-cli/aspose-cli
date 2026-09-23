@@ -30,7 +30,8 @@ public sealed class OperationCatalog<TOp>
         string relative = schemaId.StartsWith(DistributionInfo.SchemaBaseUri, StringComparison.Ordinal)
             ? schemaId[DistributionInfo.SchemaBaseUri.Length..]
             : schemaId;
-        DefaultHint = $"Fix the named operation; 'aspose-cli schema v2/{relative.Replace(".schema.json", string.Empty, StringComparison.Ordinal)}' documents every operation.";
+        SchemaCommandId = "v2/" + relative.Replace(".schema.json", string.Empty, StringComparison.Ordinal);
+        DefaultHint = $"Fix the named operation; 'aspose-cli schema {SchemaCommandId}' documents every operation.";
     }
 
     /// <summary>Canonical schema identifier of the operation document.</summary>
@@ -46,6 +47,8 @@ public sealed class OperationCatalog<TOp>
     public IReadOnlyDictionary<string, Type> Registry => _types;
 
     internal string DefaultHint { get; }
+
+    private string SchemaCommandId { get; }
 
     /// <summary>Registers one operation. Append new operations: the order is published.</summary>
     /// <param name="name">Stable wire name.</param>
@@ -81,6 +84,19 @@ public sealed class OperationCatalog<TOp>
             check(op);
             return op;
         });
+    }
+
+    /// <summary>Describes the command that applies documents of this vocabulary.</summary>
+    public ProductOperationDescriptor Describe(string command)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(command);
+        return new ProductOperationDescriptor
+        {
+            Command = command,
+            InputSchema = SchemaCommandId,
+            MaximumOperations = MaximumOperations,
+            Ops = Names,
+        };
     }
 
     /// <summary>Returns the wire name of a registered operation.</summary>

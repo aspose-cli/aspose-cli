@@ -125,7 +125,7 @@ internal sealed class ProductDefinitionValidator
                     StringComparer.Ordinal))
             {
                 throw new InvalidOperationException(
-                    $"Product '{productId}' operation '{operation.Id}' references unowned schema '{operation.InputSchema}'.");
+                    $"Product '{productId}' operation command '{operation.Command}' references unowned schema '{operation.InputSchema}'.");
             }
         }
     }
@@ -165,34 +165,27 @@ internal sealed class ProductDefinitionValidator
 
     private static void ValidateOperations(ProductManifest manifest)
     {
-        var ids = new HashSet<string>(StringComparer.Ordinal);
-        foreach (ProductOperationDescriptor? operation in
-            manifest.Operations)
+        var commands = new HashSet<string>(StringComparer.Ordinal);
+        foreach (ProductOperationDescriptor? operation in manifest.Operations)
         {
+            string[] command = operation?.Command.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
             if (operation is null
-                || !IsToken(operation.Id)
-                || !ids.Add(operation.Id))
-            {
-                throw new InvalidOperationException(
-                    $"Product '{manifest.Id}' declares an invalid or duplicate operation id.");
-            }
-            string[] command = operation.Command.Split(
-                ' ',
-                StringSplitOptions.RemoveEmptyEntries);
-            if (command.Length == 0
+                || command.Length == 0
                 || command.Any(static segment => !IsToken(segment))
-                || !string.Equals(
-                    operation.Command,
-                    string.Join(' ', command),
-                    StringComparison.Ordinal))
+                || !string.Equals(operation.Command, string.Join(' ', command), StringComparison.Ordinal)
+                || !commands.Add(operation.Command))
             {
                 throw new InvalidOperationException(
-                    $"Product '{manifest.Id}' operation '{operation.Id}' declares invalid command path '{operation.Command}'.");
+                    $"Product '{manifest.Id}' declares an invalid or duplicate operation command.");
             }
-            if (string.IsNullOrWhiteSpace(operation.InputSchema))
+            if (string.IsNullOrWhiteSpace(operation.InputSchema)
+                || operation.MaximumOperations < 1
+                || operation.Ops.Count == 0
+                || operation.Ops.Any(static op => !IsToken(op))
+                || operation.Ops.Distinct(StringComparer.Ordinal).Count() != operation.Ops.Count)
             {
                 throw new InvalidOperationException(
-                    $"Product '{manifest.Id}' operation '{operation.Id}' has no input schema.");
+                    $"Product '{manifest.Id}' operation command '{operation.Command}' has an invalid schema, limit or operation list.");
             }
         }
     }

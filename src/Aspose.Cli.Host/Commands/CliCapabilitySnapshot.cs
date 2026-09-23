@@ -299,7 +299,7 @@ internal sealed class CliCapabilitySnapshot
                 if (!commands.Contains(path))
                 {
                     throw new InvalidOperationException(
-                        $"Product '{product.Id}' operation '{operation.Id}' references missing command '{operation.Command}'.");
+                        $"Product '{product.Id}' operations reference missing command '{operation.Command}'.");
                 }
             }
         }

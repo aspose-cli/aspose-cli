@@ -108,44 +108,23 @@ public sealed record ProductCapabilities
     public IReadOnlyList<ResourceBudgetCapabilities> ResourceBudgets { get; init; } = [];
 }
 
-/// <summary>One product-owned mutation operation and how an Agent invokes it.</summary>
+/// <summary>
+/// One command that applies a bounded operation document, and the operations it accepts.
+/// Every such command is atomic unless --best-effort is given and supports --dry-run.
+/// </summary>
 public sealed record ProductOperationDescriptor
 {
-    /// <summary>Stable discriminator used by the product's mutation contract.</summary>
-    public required string Id { get; init; }
-
-    /// <summary>Product-relative command path, such as <c>edit</c> or <c>form fill</c>.</summary>
+    /// <summary>Product-relative command path, such as <c>edit</c>.</summary>
     public required string Command { get; init; }
 
     /// <summary>Product-owned schema id printable through <c>schema &lt;id&gt;</c>.</summary>
     public required string InputSchema { get; init; }
 
-    /// <summary>Whether the command is all-or-nothing unless best effort is explicitly requested.</summary>
-    public required bool AtomicByDefault { get; init; }
+    /// <summary>Largest accepted number of operations in one document.</summary>
+    public required int MaximumOperations { get; init; }
 
-    /// <summary>Whether the command can validate and apply in memory without writing.</summary>
-    public required bool SupportsDryRun { get; init; }
-
-    /// <summary>Builds deterministic descriptors for operations sharing one command contract.</summary>
-    public static IReadOnlyList<ProductOperationDescriptor> ForCommand(
-        IEnumerable<string> ids,
-        string command,
-        string inputSchema,
-        bool atomicByDefault,
-        bool supportsDryRun)
-    {
-        ArgumentNullException.ThrowIfNull(ids);
-        ArgumentException.ThrowIfNullOrWhiteSpace(command);
-        ArgumentException.ThrowIfNullOrWhiteSpace(inputSchema);
-        return Array.AsReadOnly(ids.Select(id => new ProductOperationDescriptor
-        {
-            Id = id,
-            Command = command,
-            InputSchema = inputSchema,
-            AtomicByDefault = atomicByDefault,
-            SupportsDryRun = supportsDryRun,
-        }).ToArray());
-    }
+    /// <summary>Operation names in published order.</summary>
+    public required IReadOnlyList<string> Ops { get; init; }
 }
 
 /// <summary>One discoverable default and hard maximum for a resource.</summary>

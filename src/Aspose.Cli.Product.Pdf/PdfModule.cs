@@ -13,12 +13,7 @@ public sealed class PdfModule : IProductModule
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = 900,
-        Operations = ProductOperationDescriptor.ForCommand(
-            PdfOps.Catalog.Names,
-            "edit",
-            "v2/pdf/ops",
-            atomicByDefault: true,
-            supportsDryRun: true),
+        Operations = [PdfOps.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),

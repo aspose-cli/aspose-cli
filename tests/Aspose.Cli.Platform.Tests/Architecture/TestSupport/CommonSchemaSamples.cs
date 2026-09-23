@@ -66,11 +66,10 @@ internal static class CommonSchemaSamples
                 [
                     new ProductOperationDescriptor
                     {
-                        Id = "replace_text",
                         Command = "edit",
                         InputSchema = "v2/test/ops",
-                        AtomicByDefault = true,
-                        SupportsDryRun = false,
+                        MaximumOperations = 16,
+                        Ops = ["replace_text"],
                     },
                 ],
                 Engine = new ProductEngineCapabilities

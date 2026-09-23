@@ -141,18 +141,16 @@
     "productOperation": {
       "type": "object",
       "required": [
-        "id",
         "command",
         "inputSchema",
-        "atomicByDefault",
-        "supportsDryRun"
+        "maximumOperations",
+        "ops"
       ],
       "properties": {
-        "id": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" },
         "command": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*( [a-z][a-z0-9_-]*)*$" },
         "inputSchema": { "type": "string", "pattern": "^v2/[a-z][a-z0-9_-]*/[a-z][a-z0-9_/-]*$" },
-        "atomicByDefault": { "type": "boolean" },
-        "supportsDryRun": { "type": "boolean" }
+        "maximumOperations": { "type": "integer", "minimum": 1 },
+        "ops": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" } }
       },
       "additionalProperties": false
     },

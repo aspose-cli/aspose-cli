@@ -141,15 +141,14 @@ public sealed class CommonSchemaContractTests
 
         Assert.Equal(
             [
-                "id",
                 "command",
                 "inputSchema",
-                "atomicByDefault",
-                "supportsDryRun",
+                "maximumOperations",
+                "ops",
             ],
             operation.Select(static property => property.Key));
         Assert.Equal(
-            """{"id":"replace_text","command":"edit","inputSchema":"v2/test/ops","atomicByDefault":true,"supportsDryRun":false}""",
+            """{"command":"edit","inputSchema":"v2/test/ops","maximumOperations":16,"ops":["replace_text"]}""",
             operation.ToJsonString());
     }
 
@@ -240,7 +239,7 @@ public sealed class CommonSchemaContractTests
     }
 
     [Theory]
-    [InlineData("", "has no input schema")]
+    [InlineData("", "has an invalid schema, limit or operation list")]
     [InlineData("v2/test/missing", "references unowned schema")]
     public void ProductCatalog_RejectsIncompleteOperationDescriptors(
         string inputSchema,
@@ -250,11 +249,10 @@ public sealed class CommonSchemaContractTests
         {
             new ProductOperationDescriptor
             {
-                Id = "replace_text",
                 Command = "edit",
                 InputSchema = inputSchema,
-                AtomicByDefault = true,
-                SupportsDryRun = false,
+                MaximumOperations = 16,
+                Ops = ["replace_text"],
             },
         };
 
