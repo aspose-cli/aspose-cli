@@ -70,10 +70,9 @@ internal static class PdfRenderers
 
     public static void Render(PdfConvertResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"wrote {result.Outputs.Count} output(s)");
         foreach (var output in result.Outputs)
         {
-            surface.Out.WriteLine($"  {output.Path} ({output.Format}, {TableText.Bytes(output.SizeBytes)})");
+            ResultText.Produced(surface, output, result.Pages is null ? null : $"pages {result.Pages}");
         }
     }
 
@@ -114,13 +113,10 @@ internal static class PdfRenderers
 
     public static void Render(PdfEditResult result, TableSurface surface)
     {
-        surface.Out.WriteLine(result.DryRun
-            ? $"dry run: {result.Applied.Count} operation(s)"
-            : $"edited: {result.Output?.Path} ({result.Applied.Count} operation(s))");
-        foreach (BoundedOperationOutcome op in result.Applied)
+        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
+        if (result.PagesTouched is { Count: > 0 } pages)
         {
-            surface.Out.WriteLine(
-                $"  {op.Index}: {op.Op} {op.Status} ({op.ItemsAffected} affected)");
+            surface.Out.WriteLine($"pages touched: {string.Join(", ", pages)}");
         }
     }
 

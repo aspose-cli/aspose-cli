@@ -1,6 +1,5 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Contracts;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Words.Output;
@@ -36,7 +35,8 @@ internal static class WordsRenderers
         }
     }
 
-    public static void Render(WordsConvertResult result, TableSurface surface) => Produced(result.Output, surface);
+    public static void Render(WordsConvertResult result, TableSurface surface) =>
+        ResultText.Produced(surface, result.Output, result.Pages is null ? null : $"pages {result.Pages}");
 
     public static void Render(WordsRenderResult result, TableSurface surface)
     {
@@ -47,27 +47,11 @@ internal static class WordsRenderers
         }
     }
 
-    public static void Render(WordsCreateResult result, TableSurface surface) => Produced(result.Output, surface);
+    public static void Render(WordsCreateResult result, TableSurface surface) => ResultText.Produced(surface, result.Output);
 
     public static void Render(WordsEditResult result, TableSurface surface)
     {
-        surface.Out.WriteLine(result.DryRun ? "dry run; nothing written" : $"applied {result.Applied.Count} op(s)");
-        if (result.Output is not null)
-        {
-            Produced(result.Output, surface);
-        }
-
-        foreach (BoundedOperationOutcome op in result.Applied)
-        {
-            surface.Out.WriteLine($"  [{op.Index}] {op.Op}: {op.Status} ({op.ItemsAffected} items)");
-        }
-
-        if (result.Backup is { } backup)
-        {
-            surface.Out.WriteLine(
-                $"backup: {backup.Path} ({(backup.Created ? "created" : "kept existing")})");
-        }
-
+        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
         if (result.PagesTouched is { Count: > 0 } pages)
         {
             surface.Out.WriteLine($"pages touched: {string.Join(", ", pages)}");
@@ -139,9 +123,6 @@ internal static class WordsRenderers
             surface.Out.WriteLine($"  {item.Path} ({TableText.Bytes(item.SizeBytes)})");
         }
     }
-
-    private static void Produced(OutputInfo output, TableSurface surface) =>
-        surface.Out.WriteLine($"wrote {output.Path} ({output.Format}, {TableText.Bytes(output.SizeBytes)})");
 
     private static void RenderInfoDetails(
         DocumentInfoResult result,

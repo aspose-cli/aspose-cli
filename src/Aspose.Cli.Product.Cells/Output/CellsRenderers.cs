@@ -1,7 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Output;
@@ -103,7 +102,7 @@ internal static class CellsRenderers
     }
 
     public static void Render(ConvertResult convert, TableSurface surface) =>
-        RenderProducedFile(convert.Output, convert.Sheet is null ? null : $"sheet {convert.Sheet}", surface);
+        ResultText.Produced(surface, convert.Output, convert.Sheet is null ? null : $"sheet {convert.Sheet}");
 
     public static void Render(RenderResult render, TableSurface surface)
     {
@@ -121,35 +120,12 @@ internal static class CellsRenderers
             return;
         }
 
-        RenderProducedFile(render.Output, DescribeRender(render), surface);
+        ResultText.Produced(surface, render.Output, DescribeRender(render));
     }
 
     public static void Render(EditResult edit, TableSurface surface)
     {
-        if (edit.DryRun)
-        {
-            surface.Out.WriteLine($"dry run: {edit.Applied.Count} op(s) would apply cleanly; nothing was written");
-        }
-        else if (edit.Output is { } output)
-        {
-            string ops = edit.Applied.Count == 0
-                ? "recalculated formulas"
-                : $"applied {edit.Applied.Count} op(s)";
-            RenderProducedFile(output, ops, surface);
-        }
-
-        foreach (BoundedOperationOutcome op in edit.Applied)
-        {
-            surface.Out.WriteLine(
-                string.Create(CultureInfo.InvariantCulture,
-                    $"  [{op.Id}/{op.Index}] {op.Op}: {op.Status} ({op.ItemsAffected} items)"));
-        }
-
-        if (edit.Backup is { } backup)
-        {
-            surface.Out.WriteLine($"backup: {backup.Path} ({(backup.Created ? "created" : "kept existing")})");
-        }
-
+        ResultText.Edit(surface, edit.DryRun, edit.Output, edit.Applied, edit.Backup);
         if (edit.Verification is { } verification)
         {
             surface.Out.WriteLine(
@@ -166,10 +142,7 @@ internal static class CellsRenderers
 
     public static void Render(CreateResult create, TableSurface surface)
     {
-        RenderProducedFile(
-            create.Output,
-            $"sheets: {string.Join(", ", create.Sheets)}",
-            surface);
+        ResultText.Produced(surface, create.Output, $"sheets: {string.Join(", ", create.Sheets)}");
     }
 
     public static void Render(DiffResult diff, TableSurface surface)
@@ -223,13 +196,6 @@ internal static class CellsRenderers
         {
             surface.Out.WriteLine($"({hint})");
         }
-    }
-
-    private static void RenderProducedFile(OutputInfo output, string? detail, TableSurface surface)
-    {
-        string suffix = detail is null ? string.Empty : $", {detail}";
-        surface.Out.WriteLine(
-            $"wrote {output.Path} ({output.Format}, {TableText.Bytes(output.SizeBytes)}{suffix})");
     }
 
     private static string FormatCellValue(CellData cell) => cell.V switch

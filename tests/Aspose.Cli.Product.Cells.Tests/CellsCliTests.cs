@@ -94,6 +94,22 @@ public sealed class CellsCliTests : IDisposable
             StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Edit_BestEffortTablePrintsTheFailedOperationErrorAndHint()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+
+        CliResult edited = _workspace.Run(
+            "cells", "edit", "book.xlsx", "--set", "Data!A1=1", "--set", "Missing!A1=2",
+            "--best-effort", "--out", "edited.xlsx", "--output", "table");
+
+        Assert.Equal(8, edited.ExitCode);
+        Assert.Contains("1 of 2 op(s) applied, 1 failed", edited.StdOut, StringComparison.Ordinal);
+        Assert.Contains("[op-0002/1] set_values: failed", edited.StdOut, StringComparison.Ordinal);
+        Assert.Contains("      SHEET_NOT_FOUND: ", edited.StdOut, StringComparison.Ordinal);
+        Assert.Contains("      hint: ", edited.StdOut, StringComparison.Ordinal);
+    }
+
     /// <summary>Splits a generated command the way a shell would, dropping the executable name.</summary>
     private static string[] Tokens(string command)
     {

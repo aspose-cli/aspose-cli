@@ -74,9 +74,7 @@ internal static class SlidesRenderers
     {
         foreach (var output in result.Outputs)
         {
-            surface.Out.WriteLine(
-                $"wrote {output.Path} ({output.Format}, {TableText.Bytes(output.SizeBytes)})"
-                + (result.Slides is null ? string.Empty : $" from slides {result.Slides}"));
+            ResultText.Produced(surface, output, result.Slides is null ? null : $"slides {result.Slides}");
         }
     }
 
@@ -105,15 +103,10 @@ internal static class SlidesRenderers
 
     public static void Render(SlidesEditResult result, TableSurface surface)
     {
-        surface.Out.WriteLine(result.DryRun
-            ? $"dry run: {result.Applied.Count} operation(s)"
-            : $"edited {result.Output?.Path} ({result.Applied.Count} operation(s))");
-        foreach (BoundedOperationOutcome op in result.Applied)
+        ResultText.Edit(surface, result.DryRun, result.Output, result.Applied, result.Backup);
+        if (result.SlidesTouched is { Count: > 0 } slides)
         {
-            surface.Out.WriteLine(
-                $"[{op.Index}] {op.Op}: {op.Status}"
-                + $" ({op.ItemsAffected} affected)"
-                + (op.Error is null ? string.Empty : $" - {op.Error.Code}: {op.Error.Message}"));
+            surface.Out.WriteLine($"slide ids touched: {string.Join(", ", slides)}");
         }
     }
 
