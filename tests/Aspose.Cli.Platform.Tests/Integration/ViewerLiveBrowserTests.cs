@@ -47,7 +47,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             File.WriteAllText(_workspace.File("report.md"), string.Join("\n\n",
                 Enumerable.Range(1, 120).Select(index => $"Paragraph {index} of the report.")));
             Succeed(_workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output", "json"));
-            return _documents.Open(_workspace.File("report.docx"), new LiveDocumentOptions());
+            return _documents.Open(_workspace.File("report.docx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, document) =>
         {
@@ -75,7 +75,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             Succeed(_workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Notes", "--output", "json"));
             Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
                 "--set", "Data!A1=Region", "--set", "Data!B1=Revenue", "--set", "Data!B2=120", "--output", "json"));
-            return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions());
+            return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, _) =>
         {
@@ -208,7 +208,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         InBrowser(name, () =>
         {
             File.WriteAllText(_workspace.File("controlled.csv"), "Region,Revenue\nEast,120\n");
-            return _documents.Open(_workspace.File("controlled.csv"), new LiveDocumentOptions());
+            return _documents.Open(_workspace.File("controlled.csv"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         }, (page, _) => test(page), async page =>
         {
             // The production page and presenter run in Chromium. Only transport
@@ -309,7 +309,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         {
             File.WriteAllText(_workspace.File("deck.md"), "# First slide\n\n- One\n\n# Second slide\n\n- Two\n");
             Succeed(_workspace.Run("slides", "create", "deck.pptx", "--markdown", "deck.md", "--output", "json"));
-            return _documents.Open(_workspace.File("deck.pptx"), new LiveDocumentOptions());
+            return _documents.Open(_workspace.File("deck.pptx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, document) =>
         {

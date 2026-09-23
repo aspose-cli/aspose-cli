@@ -8,13 +8,21 @@ namespace Aspose.Cli.Host.ViewerService;
 /// <summary>
 /// The documents the viewer service has open. Opening the same file the same
 /// way returns the document already being watched, so running <c>preview</c>
-/// twice lands on one tab rather than two renders of the same file.
+/// twice lands on one tab rather than two renders of the same file. Every
+/// opener names a holder, and a document stays open until its last holder
+/// releases it: the <c>preview</c> command holds a document once however often
+/// it opens it, and each App tab holds it on its own, so closing one never
+/// takes the document from the other.
 /// </summary>
 internal sealed class ViewerDocuments : IDisposable
 {
+    /// <summary>The holder of every document opened by the <c>preview</c> command.</summary>
+    public static readonly object PreviewHolder = new();
+
     private readonly object _gate = new();
     private readonly SemaphoreSlim _opening = new(1, 1);
     private readonly Dictionary<string, LiveDocument> _byId = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, HashSet<object>> _holders = new(StringComparer.Ordinal);
     private readonly RenderWorkerSupervisor _worker;
     private readonly ViewerStorage _storage;
     private readonly LocalServiceResourceLimits _limits;
@@ -37,20 +45,29 @@ internal sealed class ViewerDocuments : IDisposable
     }
 
     /// <summary>
-    /// Opens a document and renders its first revision, or hands back the one
-    /// already open for the same file and options.
+    /// Opens a document for <paramref name="holder"/> and renders its first
+    /// revision, or hands back the one already open for the same file and options.
     /// </summary>
-    public LiveDocument Open(string path, LiveDocumentOptions options, OperationDeadline? deadline = null)
+    public LiveDocument Open(
+        string path,
+        LiveDocumentOptions options,
+        object holder,
+        OperationDeadline? deadline = null)
     {
+        ArgumentNullException.ThrowIfNull(holder);
         using var owned = deadline is null ? OperationDeadline.Start(_limits.RenderTimeout) : null;
         OperationDeadline operation = deadline ?? owned!;
         _opening.Wait(operation.Token);
-        try { return OpenCore(path, options, operation); }
+        try { return OpenCore(path, options, holder, operation); }
         catch (OperationCanceledException) { operation.ThrowIfExpired("preview-open"); throw; }
         finally { _opening.Release(); }
     }
 
-    private LiveDocument OpenCore(string path, LiveDocumentOptions options, OperationDeadline deadline)
+    private LiveDocument OpenCore(
+        string path,
+        LiveDocumentOptions options,
+        object holder,
+        OperationDeadline deadline)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
         ArgumentNullException.ThrowIfNull(options);
@@ -66,6 +83,7 @@ internal sealed class ViewerDocuments : IDisposable
             ObjectDisposedException.ThrowIf(_disposed, this);
             if (Find(source, options) is { } reused)
             {
+                _holders[reused.Id].Add(holder);
                 reused.RecordActivity();
                 return reused;
             }
@@ -79,6 +97,7 @@ internal sealed class ViewerDocuments : IDisposable
                 options,
                 _limits);
             _byId[id] = document;
+            _holders[id] = [holder];
         }
 
         try
@@ -92,7 +111,7 @@ internal sealed class ViewerDocuments : IDisposable
         }
         catch
         {
-            Close(document.Id);
+            Release(document.Id, holder);
             throw;
         }
     }
@@ -105,18 +124,29 @@ internal sealed class ViewerDocuments : IDisposable
         }
     }
 
-    /// <summary>Closes one document and reclaims its revisions.</summary>
-    public bool Close(string id)
+    /// <summary>
+    /// Ends <paramref name="holder"/>'s hold on one document, and closes the
+    /// document and reclaims its revisions when no one else holds it.
+    /// </summary>
+    /// <returns>Whether the holder held the document.</returns>
+    public bool Release(string id, object holder)
     {
+        ArgumentNullException.ThrowIfNull(holder);
         LiveDocument? document;
         lock (_gate)
         {
-            if (!_byId.Remove(id, out document))
+            if (!_holders.TryGetValue(id, out HashSet<object>? holders) || !holders.Remove(holder))
             {
                 return false;
             }
+            if (holders.Count > 0)
+            {
+                return true;
+            }
+            _holders.Remove(id);
+            _byId.Remove(id, out document);
         }
-        document.Dispose();
+        document?.Dispose();
         return true;
     }
 
@@ -128,6 +158,7 @@ internal sealed class ViewerDocuments : IDisposable
             _disposed = true;
             documents = _byId.Values.ToArray();
             _byId.Clear();
+            _holders.Clear();
         }
         Exception? failure = null;
         foreach (LiveDocument document in documents)

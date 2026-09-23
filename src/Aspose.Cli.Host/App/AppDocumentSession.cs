@@ -508,12 +508,13 @@ internal sealed class AppDocumentSession : IDisposable
         }
         try
         {
+            var holder = new object();
             LiveDocument opened = _documents.Open(path, new LiveDocumentOptions
             {
                 Product = product.Manifest.Id,
                 View = view,
                 MaxInputBytes = context.Globals.MaxInputBytes,
-            }, deadline);
+            }, holder, deadline);
             Activity?.Invoke();
             return new DocumentLease(
                 path,
@@ -525,6 +526,7 @@ internal sealed class AppDocumentSession : IDisposable
                     opened.Current?.View ?? view,
                     _address(opened.Id)),
                 opened.Id,
+                holder,
                 input,
                 _documents);
         }
@@ -548,13 +550,15 @@ internal sealed class AppDocumentSession : IDisposable
         string Staging);
 
     /// <summary>
-    /// One document open in the viewer service on the App's behalf, together
-    /// with the upload it was read from. Closing it releases both.
+    /// One hold on a document open in the viewer service on the App's behalf,
+    /// together with the upload it was read from. Closing it releases both;
+    /// the document itself stays open while a preview or another tab holds it.
     /// </summary>
     private sealed record DocumentLease(
         string Path,
         AppDocumentSnapshot State,
         string DocumentId,
+        object Holder,
         IDisposable? Upload,
         ViewerDocuments Documents) : IDisposable
     {
@@ -567,7 +571,7 @@ internal sealed class AppDocumentSession : IDisposable
         {
             try
             {
-                Documents.Close(DocumentId);
+                Documents.Release(DocumentId, Holder);
             }
             catch (ObjectDisposedException)
             {

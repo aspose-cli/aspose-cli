@@ -84,7 +84,7 @@ public sealed class RenderWorkerTests : IDisposable
         var direct = Render(supervisor, "relative.md");
         Assert.True(direct.Response.Ok, direct.Response.Message);
         using var documents = new ViewerDocuments(supervisor, ViewerStorage.Create(), LocalServiceResourceLimits.Resolve());
-        LiveDocument snapshot = documents.Open(_workspace.File("relative.md"), new LiveDocumentOptions());
+        LiveDocument snapshot = documents.Open(_workspace.File("relative.md"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         JsonNode manifest = JsonNode.Parse(File.ReadAllText(Path.Combine(direct.Output, "view.json")))!;
         Assert.Equal(manifest["parts"]!.AsArray().Select(part => part!["digest"]!.GetValue<string>()).Order(),
             snapshot.Current!.Digests.Values.Order());

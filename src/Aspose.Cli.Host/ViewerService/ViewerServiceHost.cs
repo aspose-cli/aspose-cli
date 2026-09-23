@@ -249,7 +249,7 @@ internal sealed class ViewerServiceHost : IDisposable
             License = request.License,
             FontDirectories = request.FontDirectories,
             MaxInputBytes = request.MaxInputBytes,
-        }, deadline);
+        }, ViewerDocuments.PreviewHolder, deadline);
         return new ViewerOpenResponse
         {
             Pid = Environment.ProcessId,
@@ -329,7 +329,9 @@ internal sealed class ViewerServiceHost : IDisposable
 
     private ViewerStopResponse Close(string? id)
     {
-        string[] stopped = id is { Length: > 0 } && _documents.Close(id) ? [id] : [];
+        string[] stopped = id is { Length: > 0 } && _documents.Release(id, ViewerDocuments.PreviewHolder)
+            ? [id]
+            : [];
         return new ViewerStopResponse
         {
             Pid = Environment.ProcessId,

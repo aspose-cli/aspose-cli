@@ -133,12 +133,33 @@ public sealed class ViewerServiceHttpTests : IDisposable
     public void Opening_TheSameFileTheSameWay_ReusesTheOpenDocument()
     {
         LiveDocument first = OpenWorkbook();
-        LiveDocument again = _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions());
-        LiveDocument other = _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { Effect = "demo" });
+        LiveDocument again = _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
+        LiveDocument other = _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { Effect = "demo" }, ViewerDocuments.PreviewHolder);
 
         Assert.Same(first, again);
         Assert.NotSame(first, other);
         Assert.Equal(2, _documents.All.Count);
+    }
+
+    [Fact]
+    public void Release_ClosesADocumentOnlyWhenItsLastHolderLetsGo()
+    {
+        LiveDocument preview = OpenWorkbook();
+        var firstTab = new object();
+        var secondTab = new object();
+        Assert.Same(preview, _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions(), firstTab));
+        Assert.Same(preview, _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions(), secondTab));
+        Assert.Same(preview, _documents.Open(
+            _workspace.File("book.xlsx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder));
+
+        Assert.True(_documents.Release(preview.Id, ViewerDocuments.PreviewHolder));
+        Assert.False(_documents.Release(preview.Id, ViewerDocuments.PreviewHolder));
+        Assert.True(_documents.Release(preview.Id, firstTab));
+        Assert.Same(preview, _documents.Find(preview.Id));
+
+        Assert.True(_documents.Release(preview.Id, secondTab));
+        Assert.Null(_documents.Find(preview.Id));
+        Assert.Empty(_documents.All);
     }
 
     [Fact]
@@ -147,7 +168,7 @@ public sealed class ViewerServiceHttpTests : IDisposable
         File.WriteAllText(_workspace.File("broken.xlsx"), "not a workbook");
 
         Aspose.Cli.Sdk.Errors.CliException error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(
-            () => _documents.Open(_workspace.File("broken.xlsx"), new LiveDocumentOptions()));
+            () => _documents.Open(_workspace.File("broken.xlsx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder));
 
         Assert.NotEmpty(error.Code.Name);
         Assert.Empty(_documents.All);
@@ -158,7 +179,7 @@ public sealed class ViewerServiceHttpTests : IDisposable
         Succeed(_workspace.Run("cells", "create", "book.xlsx", "--sheets", "First,Second", "--output", "json"));
         Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
             "--set", "First!A1=Region", "--set", "Second!A1=Raw", "--output", "json"));
-        return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { View = view });
+        return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { View = view }, ViewerDocuments.PreviewHolder);
     }
 
     private string Url(string path) => $"http://127.0.0.1:{_server.Port}{path}";
