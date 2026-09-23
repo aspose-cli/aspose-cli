@@ -15,7 +15,6 @@ using Aspose.Pdf.Devices;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Optimization;
 using Aspose.Pdf.Text;
-using static Aspose.Cli.Product.Pdf.Engine.PdfArtifactSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfMutationSupport;
 using PdfColor = Aspose.Pdf.Color;
@@ -113,7 +112,7 @@ internal sealed class PdfFormService
             Input = PdfInfoProjection.Source(filePath),
             Output = BuildOutput(request.OutputPath, request.TargetFormatId, size),
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state),
+            Warnings = EnvelopeParts.OutputWarnings(state),
         };
     }
 }

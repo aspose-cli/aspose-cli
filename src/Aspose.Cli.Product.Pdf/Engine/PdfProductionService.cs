@@ -18,7 +18,6 @@ using Aspose.Pdf.Text;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using DrawingImageFormat = Aspose.Pdf.Drawing.ImageFormat;
 
-using static Aspose.Cli.Product.Pdf.Engine.PdfArtifactSupport;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -138,7 +137,7 @@ internal sealed class PdfProductionService
             }).ToArray(),
             Dpi = request.TargetFormatId == "svg" ? null : request.Dpi,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state),
+            Warnings = EnvelopeParts.OutputWarnings(state),
         };
     }
 
@@ -214,7 +213,7 @@ internal sealed class PdfProductionService
             finally { resources?.ThrowIfFailed(); }
         });
         int blocked = resources?.OmittedCount ?? 0;
-        var warnings = OutputWarnings(state)?.ToList() ?? [];
+        var warnings = EnvelopeParts.OutputWarnings(state)?.ToList() ?? [];
         if (blocked > 0)
         {
             warnings.Add(new Warning
@@ -279,7 +278,7 @@ internal sealed class PdfProductionService
             throw CliErrors.FileNotFound(fullPath);
         }
 
-        var loader = new PdfArtifactSupport.HtmlResourceLoader(resources);
+        var loader = new HtmlResourceLoader(resources);
         (double width, double height) = PageDimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
         // Use the native directory form of the verified origin, retaining its trailing separator.
@@ -455,11 +454,7 @@ internal sealed class PdfProductionService
             _ => [ConvertDocument(loaded.Document, pages, request)],
         };
 
-        var warnings = new List<Warning>();
-        if (state == LicenseState.Evaluation)
-        {
-            warnings.Add(EnvelopeParts.EvaluationWatermark);
-        }
+        List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];
 
         if (request.TargetFormatId is not ("xps" or "svg" or "png" or "jpeg" or "tiff"))
         {
@@ -518,20 +513,7 @@ internal sealed class PdfProductionService
     private OutputInfo ConvertText(Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
     {
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
-        {
-            var builder = new StringBuilder();
-            foreach (int pageNumber in pages)
-            {
-                if (builder.Length > 0)
-                {
-                    builder.Append('\f').AppendLine();
-                }
-
-                builder.Append(ExtractText(source.Pages[pageNumber], PdfReadModes.Plain));
-            }
-
-            File.WriteAllText(temp, builder.ToString(), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-        });
+            File.WriteAllText(temp, DocumentText(source, pages), new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)));
         return BuildOutput(request.OutputPath, "txt", size);
     }
 
@@ -600,5 +582,117 @@ internal sealed class PdfProductionService
             device.Process(selected, 1, selected.Pages.Count, stream);
         });
         return BuildOutput(request.OutputPath, "tiff", size);
+    }
+
+    private static MarginInfo Margin(PdfMargins margins) => new()
+    {
+        Top = margins.Top,
+        Right = margins.Right,
+        Bottom = margins.Bottom,
+        Left = margins.Left,
+    };
+
+    private static void ValidateMargins(PdfMargins margins, double width, double height)
+    {
+        if (margins.Top < 0 || margins.Right < 0 || margins.Bottom < 0 || margins.Left < 0
+            || margins.Left + margins.Right >= width
+            || margins.Top + margins.Bottom >= height)
+        {
+            throw CliErrors.OptionInvalid(
+                "--margins",
+                "values must be non-negative and leave a positive content area",
+                "Use smaller top,right,bottom,left values in points.");
+        }
+    }
+
+    private static IReadOnlyList<SourceInfo> CreationInputs(NewPdfRequest request)
+    {
+        IEnumerable<string> paths = request.ImagePaths
+            ?? (request.HtmlPath is not null ? [request.HtmlPath] : [request.TextPath!]);
+        return paths.Select(path => new SourceInfo
+        {
+            Path = Path.GetFullPath(path),
+            Format = Path.GetExtension(path).TrimStart('.').ToLowerInvariant(),
+            SizeBytes = new FileInfo(path).Length,
+        }).ToArray();
+    }
+
+    private static void EnsureCreationInputs(
+        ResourceBudgetLedger resourceBudgets,
+        NewPdfRequest request)
+    {
+        IReadOnlyList<string> paths = request.ImagePaths
+            ?? (request.HtmlPath is not null ? [request.HtmlPath] : [request.TextPath!]);
+        if (paths.Count > 1000)
+        {
+            throw CliErrors.OptionInvalid(
+                "--from-images",
+                "more than 1000 inputs were requested",
+                "Create smaller PDFs and merge them in bounded batches.");
+        }
+
+        foreach (string path in paths)
+        {
+            InputSizeGuard.Ensure(resourceBudgets, path);
+        }
+    }
+
+    /// <summary>
+    /// Copies an outline into the merged document, pointing each bookmark at its page with
+    /// a Fit destination, and returns how many working bookmarks lost fidelity: a location
+    /// or zoom other than Fit, or a named destination the merged document does not carry.
+    /// </summary>
+    private static int CopyOutline(
+        Document source,
+        IEnumerable<OutlineItemCollection> items,
+        ICollection<OutlineItemCollection> target,
+        Document document,
+        int pageOffset)
+    {
+        int degraded = 0;
+        foreach (OutlineItemCollection item in items)
+        {
+            var copied = new OutlineItemCollection(document.Outlines)
+            {
+                Title = item.Title,
+                Bold = item.Bold,
+                Italic = item.Italic,
+                Color = item.Color,
+            };
+            IAppointment? destination = PdfNavigationCensus.Target(item.Destination, item.Action);
+            int page = PdfNavigationCensus.DestinationPage(item);
+            if (page > 0)
+            {
+                copied.Destination = new FitExplicitDestination(document.Pages[pageOffset + page]);
+            }
+
+            if (PdfNavigationCensus.Resolves(source, destination)
+                && (page == 0 || destination is not FitExplicitDestination))
+            {
+                degraded++;
+            }
+
+            degraded += CopyOutline(source, item, copied, document, pageOffset);
+            target.Add(copied);
+        }
+
+        return degraded;
+    }
+
+    private sealed class HtmlResourceLoader(LocalDocumentResourceLoader resources)
+    {
+        public LoadOptions.ResourceLoadingResult Load(string resourceUri)
+        {
+            if (resources.TryRead(resourceUri, out byte[] data))
+            {
+                return new LoadOptions.ResourceLoadingResult(data);
+            }
+
+            return new LoadOptions.ResourceLoadingResult(Array.Empty<byte>())
+            {
+                // Cancelling the custom loader would enable the SDK default loader.
+                LoadingCancelled = false,
+            };
+        }
     }
 }

@@ -28,6 +28,29 @@ public sealed class PdfBudgetTests
     }
 
     [Fact]
+    public void TextOutputs_SeparateEveryPageEvenWhenAPageHasNoText()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateRawDocument("blank-first.pdf", pages: 2, textPages: new HashSet<int> { 2 });
+        string converted = fixture.File("blank-first.txt");
+
+        fixture.Engine.Convert(input, new PdfConvertRequest { TargetFormatId = "txt", OutputPath = converted });
+        string extracted = Assert.Single(fixture.Engine.Extract(input, new PdfExtractRequest
+        {
+            What = "text",
+            OutputDirectory = fixture.File("blank-first"),
+        }).Items).Path;
+
+        foreach (string text in new[] { File.ReadAllText(converted), File.ReadAllText(extracted) })
+        {
+            string[] pages = text.Split('\f');
+            Assert.Equal(2, pages.Length);
+            Assert.DoesNotContain("page 2", pages[0], StringComparison.Ordinal);
+            Assert.Contains("Portable PDF page 2", pages[1], StringComparison.Ordinal);
+        }
+    }
+
+    [Fact]
     public void ExtractImages_RefusesAnOversizedImageBeforeDecodingIt()
     {
         using var fixture = new PdfEngineFixture();

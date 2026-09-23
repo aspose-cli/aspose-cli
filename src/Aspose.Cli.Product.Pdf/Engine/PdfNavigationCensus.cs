@@ -82,4 +82,17 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
 
         return count;
     }
+
+    /// <summary>The page an outline item's explicit destination names, or 0 when it has none.</summary>
+    internal static int DestinationPage(OutlineItemCollection item)
+    {
+        if (item.Destination is ExplicitDestination direct)
+        {
+            return direct.PageNumber;
+        }
+
+        return item.Action is GoToAction { Destination: ExplicitDestination action }
+            ? action.PageNumber
+            : 0;
+    }
 }

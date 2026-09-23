@@ -15,7 +15,6 @@ using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Optimization;
 using Aspose.Pdf.Text;
-using static Aspose.Cli.Product.Pdf.Engine.PdfArtifactSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using PdfColor = Aspose.Pdf.Color;
 

@@ -46,6 +46,15 @@ internal static class PdfEngineSupport
         return absorber.Text ?? string.Empty;
     }
 
+    /// <summary>
+    /// The plain text of the pages, each page separated from the next by a form feed and a
+    /// line break, so page boundaries survive even when a page has no text.
+    /// </summary>
+    internal static string DocumentText(Document document, IReadOnlyList<int> pages) =>
+        string.Join(
+            "\f" + Environment.NewLine,
+            pages.Select(pageNumber => ExtractText(document.Pages[pageNumber], PdfReadModes.Plain)));
+
     internal static bool IsImageDominated(Page page)
     {
         var absorber = new ImagePlacementAbsorber { IsReadOnlyMode = true };
@@ -111,6 +120,26 @@ internal static class PdfEngineSupport
             throw new CliException(ErrorCodes.OperationTimeout,
                 "The PDF regular expression exceeded its one-second execution budget.",
                 hint: "Simplify the expression or search a narrower page range.", innerException: exception);
+        }
+    }
+
+    internal static (double Width, double Height) PageDimensions(string id) => id.ToUpperInvariant() switch
+    {
+        "A3" => (841.89, 1190.55),
+        "A4" => (595.28, 841.89),
+        "LETTER" => (612, 792),
+        "LEGAL" => (612, 1008),
+        _ => throw CliErrors.OptionInvalid("--page-size", $"unknown size '{id}'", "Use A3, A4, Letter or Legal."),
+    };
+
+    internal static void EnsurePdfOutput(string path)
+    {
+        if (!string.Equals(Path.GetExtension(path), ".pdf", StringComparison.OrdinalIgnoreCase))
+        {
+            throw CliErrors.OptionInvalid(
+                "--out",
+                $"PDF output must use the .pdf extension: '{path}'",
+                "Choose a path ending in .pdf.");
         }
     }
 }

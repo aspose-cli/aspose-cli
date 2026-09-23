@@ -14,7 +14,6 @@ internal static class PdfDiagnostics
     internal static readonly ErrorCode PdfaConversionFailed =
         new("PDFA_CONVERSION_FAILED", ExitCode.FormatError);
 
-    internal const string PagesSkipped = "PAGES_SKIPPED";
     internal const string ScannedPagesSuspected = "SCANNED_PAGES_SUSPECTED";
 
     /// <summary>Bookmarks, links or named destinations that no longer lead to their page.</summary>
@@ -25,7 +24,6 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Error(SignCertInvalid, "pdf", "input"),
         DiagnosticDescriptor.Error(FormXfaUnsupported, "pdf", "format"),
         DiagnosticDescriptor.Error(PdfaConversionFailed, "pdf", "format"),
-        DiagnosticDescriptor.Warning(PagesSkipped, "pdf", "warning"),
         DiagnosticDescriptor.Warning(ScannedPagesSuspected, "pdf", "warning"),
         DiagnosticDescriptor.Warning(NavigationDegraded, "pdf", "warning"),
     ];

@@ -10,7 +10,6 @@ using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Facades;
 using Aspose.Pdf.Forms;
-using static Aspose.Cli.Product.Pdf.Engine.PdfArtifactSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using DrawingRectangle = System.Drawing.Rectangle;
 
