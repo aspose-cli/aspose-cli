@@ -12,6 +12,7 @@ using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using Aspose.Slides.Export;
+using Aspose.Slides.SmartArt;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -162,8 +163,56 @@ internal static class SlidesEngineSupport
         return result;
     }
 
+    /// <summary>The text a shape shows: its own frame, table cells, group children and SmartArt nodes.</summary>
     internal static string? ShapeText(IShape shape) =>
-        shape is IAutoShape { TextFrame: not null } auto ? EmptyToNull(auto.TextFrame.Text) : null;
+        EmptyToNull(string.Join(
+            "\n",
+            TextFrames(shape).Select(static frame => frame.Text).Where(static text => !string.IsNullOrWhiteSpace(text))));
+
+    /// <summary>
+    /// Every text frame a shape shows, in reading order: its own frame, each table cell
+    /// (a merged range once), each group child and each SmartArt node. Chart text is not included.
+    /// </summary>
+    internal static IEnumerable<ITextFrame> TextFrames(IShape shape)
+    {
+        switch (shape)
+        {
+            case IGroupShape group:
+                foreach (ITextFrame frame in group.Shapes.SelectMany(TextFrames))
+                {
+                    yield return frame;
+                }
+
+                break;
+            case ITable table:
+                for (int row = 0; row < table.Rows.Count; row++)
+                {
+                    for (int column = 0; column < table.Columns.Count; column++)
+                    {
+                        ICell cell = table[column, row];
+                        if (cell.FirstRowIndex == row && cell.FirstColumnIndex == column && cell.TextFrame is { } text)
+                        {
+                            yield return text;
+                        }
+                    }
+                }
+
+                break;
+            case ISmartArt smartArt:
+                foreach (ISmartArtNode node in smartArt.AllNodes)
+                {
+                    if (node.TextFrame is { } text)
+                    {
+                        yield return text;
+                    }
+                }
+
+                break;
+            case IAutoShape { TextFrame: { } text }:
+                yield return text;
+                break;
+        }
+    }
 
     internal static IReadOnlyList<Warning>? EvaluationInputWarnings(
         LicenseState state,
@@ -187,13 +236,8 @@ internal static class SlidesEngineSupport
         ref int remaining,
         ref bool truncated)
     {
-        if (shape is not IAutoShape { TextFrame: not null } auto)
-        {
-            return null;
-        }
-
         var runs = new List<SlideTextRunData>();
-        foreach (IParagraph paragraph in auto.TextFrame.Paragraphs)
+        foreach (IParagraph paragraph in TextFrames(shape).SelectMany(static frame => frame.Paragraphs))
         {
             foreach (IPortion portion in paragraph.Portions)
             {

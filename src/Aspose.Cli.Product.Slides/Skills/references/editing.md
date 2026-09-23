@@ -17,7 +17,15 @@ and pair it with that slide's `slide` or `slideId`. Reading a different slide
 window does not change these ids. Read new ids after duplicating or importing shapes.
 Shape selectors address top-level slide shapes, including a group as one shape;
 nested group children are not separately projected or addressed. `shapeName`
-matching is case-sensitive.
+matching is case-sensitive. A shape's text in `query slides`, `query search` and
+`extract --what text` includes its table cells, group children and SmartArt nodes;
+chart titles, labels and data are not text and are never searched or replaced.
+
+`replace_text` matches within one paragraph at a time, in shapes (including table
+cells, group children and SmartArt nodes) and speaker notes. Only the matched
+characters change: the replacement takes the formatting of the first matched
+character, and all other runs keep theirs. With `regex`, the replacement honors
+.NET substitutions such as `$1` and `${name}`; write `$$` for a literal `$`.
 
 `set_notes` replaces the selected slide's speaker-note text. `inspect --detail notes`
 reports only presence and character counts. Read note text with

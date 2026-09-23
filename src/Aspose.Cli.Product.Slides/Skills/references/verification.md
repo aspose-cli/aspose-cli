@@ -11,8 +11,9 @@ aspose-cli slides query slides deck.revised.pptx --slides 1- --scope full --note
 aspose-cli slides query search deck.revised.pptx --pattern TODO --scope all --output json
 ```
 
-Check `contentTruncated` on bounded reads. Chart series and table-cell text are
-not part of the read projection; confirm them visually.
+Check `contentTruncated` on bounded reads. Table cells, group children and
+SmartArt nodes are part of their shape's text; chart titles, labels and series are
+not, so confirm them visually.
 
 ## Appearance
 
