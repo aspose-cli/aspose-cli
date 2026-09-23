@@ -29,9 +29,6 @@ public readonly record struct RangeRef
     /// <summary>Total number of cells covered by the range.</summary>
     public long CellCount => (long)RowCount * ColumnCount;
 
-    /// <summary>Creates a range covering a single cell.</summary>
-    public static RangeRef Single(CellRef cell) => new(cell, cell);
-
     /// <summary>Formats the range in A1 notation, e.g. <c>A1:C10</c> or <c>B2</c>.</summary>
     public override string ToString() => A1.FormatRange(this);
 }

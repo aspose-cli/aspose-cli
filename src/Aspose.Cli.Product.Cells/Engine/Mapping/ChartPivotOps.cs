@@ -18,8 +18,8 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 internal static class ChartPivotOps
 {
     /// <summary>
-    /// The default series palette of the modern chart look (the probe-ranked
-    /// V4 scheme), cycled across series in order.
+    /// The default series palette of the modern chart look, cycled across
+    /// series in order.
     /// </summary>
     private static readonly string[] ModernPalette = ["#1F4E79", "#2E75B6", "#9DC3E6", "#D9D9D9"];
 
@@ -282,12 +282,11 @@ internal static class ChartPivotOps
 
     /// <summary>
     /// The modern default look, applied on create only and before the user's
-    /// explicit cosmetics (which therefore always win). The set is the
-    /// probe-ranked V4 recipe (acceptance PROBES.md, P9–P16): the engine's own
+    /// explicit cosmetics (which therefore always win). The engine's own
     /// defaults are the 2003 look — gray <c>#C0C0C0</c> plot area, an outer
     /// chart border, gap width 150 and a right-docked legend.
     /// <c>Chart.Style</c> is deliberately not used: it persists in the file
-    /// but the renderer ignores it (probe: byte-identical renders).
+    /// but the renderer ignores it (verified: byte-identical renders).
     /// </summary>
     private static void ApplyModernDefaults(Chart chart, string type)
     {
@@ -298,8 +297,8 @@ internal static class ChartPivotOps
 
         if (type != ChartTypes.Pie)
         {
-            // A pie has no axes; the engine silently drops axis writes there
-            // (probe P9), so the code skips them to stay honest.
+            // A pie has no axes; the engine silently drops axis writes there,
+            // so the code skips them to stay honest.
             chart.ValueAxis.MajorGridLines.Color = StyleWriter.ParseHex("#D9D9D9");
             chart.ValueAxis.AxisLine.IsVisible = false;
             chart.ValueAxis.MajorTickMark = TickMarkType.None;
@@ -353,7 +352,7 @@ internal static class ChartPivotOps
         if (axisTitles is { } titles)
         {
             // The engine SILENTLY drops axis-title writes on a pie-family
-            // chart — no throw, nothing stored, nothing rendered (probe P9).
+            // chart — no throw, nothing stored, nothing rendered.
             // create_chart rejects pie+axisTitles in the parser; update_chart
             // only knows the real type here, after resolving the chart, so
             // the never-silently bar puts the same guard in the mapper. The
@@ -390,8 +389,8 @@ internal static class ChartPivotOps
 
                 if (labels.Format is { } format)
                 {
-                    // Setting the string format auto-clears NumberFormatLinked
-                    // (probe P9); the int-typed Number property is ignored.
+                    // Setting the string format auto-clears NumberFormatLinked;
+                    // the int-typed Number property is ignored.
                     series.DataLabels.NumberFormat = format;
                 }
             }
@@ -399,8 +398,8 @@ internal static class ChartPivotOps
     }
 
     /// <summary>
-    /// Colors the series with the per-type recipe the render probes pinned
-    /// (P10): fills for column/bar/area, the line color for line, line plus
+    /// Colors the series with a per-type recipe verified in renders: fills
+    /// for column/bar/area, the line color for line, line plus
     /// marker for scatter (whose markers otherwise keep the default palette),
     /// and per-point slice fills for the pie family (one series, points
     /// pre-materialized per category). Colors beyond the series/slice count

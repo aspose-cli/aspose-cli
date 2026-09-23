@@ -237,16 +237,8 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
             encoding = Encoding.BigEndianUnicode;
         }
 
-        string text;
-        try
-        {
-            text = encoding.GetString(prefix);
-        }
-        catch (DecoderFallbackException)
-        {
-            text = Encoding.Latin1.GetString(prefix);
-        }
-
+        // These encodings replace undecodable bytes instead of throwing.
+        string text = encoding.GetString(prefix);
         if (text.Length > 0 && text[0] == '\uFEFF')
         {
             text = text[1..];

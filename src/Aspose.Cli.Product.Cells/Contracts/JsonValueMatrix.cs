@@ -12,7 +12,6 @@ internal static class JsonValueMatrix
     /// Converts a raw deserialized matrix into strings, doubles, booleans and
     /// nulls. Rejects empty and ragged matrices and non-scalar entries.
     /// </summary>
-    /// <exception cref="Errors.CliException"><c>OPS_INVALID</c>-style reasons are thrown as plain messages by the caller's wrapper.</exception>
     public static IReadOnlyList<IReadOnlyList<object?>> Normalize(
         IReadOnlyList<IReadOnlyList<object?>> values,
         Func<string, Exception> invalid)
@@ -52,8 +51,6 @@ internal static class JsonValueMatrix
         {
             null => null,
             string or bool or double => value,
-            int i => (double)i,
-            long l => (double)l,
             JsonElement element => NormalizeElement(element, row, column, invalid),
             _ => throw invalid($"cell [{row},{column}] has unsupported type {value.GetType().Name}"),
         };
