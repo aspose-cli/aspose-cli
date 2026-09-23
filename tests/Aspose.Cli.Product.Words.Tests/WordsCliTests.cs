@@ -134,6 +134,31 @@ public sealed class WordsCliTests : IDisposable
     }
 
     [Fact]
+    public void QueryBlocks_NextKeepsANonContiguousRangeAndTheSectionFilter()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# Title\n\nOne.\n\nTwo.\n\nThree.\n\nFour.\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--markdown", "source.md").ExitCode);
+
+        CliResult spread = _workspace.Run(
+            "words", "query", "blocks", "notes.docx", "--blocks", "1,3,5", "--max-blocks", "1", "--output", "json");
+        CliResult section = _workspace.Run(
+            "words", "query", "blocks", "notes.docx", "--section", "1", "--blocks", "2-3", "--max-blocks", "1", "--output", "json");
+
+        Assert.True(spread.ExitCode == 0, spread.StdErr);
+        Assert.EndsWith(
+            " --blocks 3,5 --scope text --max-chars 20000 --max-blocks 1 --output json",
+            JsonNode.Parse(spread.StdOut)!["next"]!.GetValue<string>(),
+            StringComparison.Ordinal);
+        Assert.True(section.ExitCode == 0, section.StdErr);
+        JsonNode read = JsonNode.Parse(section.StdOut)!;
+        Assert.Equal(2, Assert.Single(read["blocks"]!.AsArray())!["i"]!.GetValue<int>());
+        Assert.EndsWith(
+            " --blocks 3 --section 1 --scope text --max-chars 20000 --max-blocks 1 --output json",
+            read["next"]!.GetValue<string>(),
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Edit_RejectsABadSetDirectiveBeforeReadingOpsFromStdin()
     {
         File.WriteAllText(_workspace.File("source.md"), "# Contract\n");

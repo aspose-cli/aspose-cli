@@ -55,22 +55,6 @@ internal static class PdfEngineSupport
             placement.Rectangle.Width * placement.Rectangle.Height >= pageArea * 0.8d);
     }
 
-    internal static string? NextCommand(
-        string filePath,
-        PdfReadRequest request,
-        IReadOnlyList<int> requested,
-        int consumed,
-        bool truncated)
-    {
-        if (!truncated || consumed >= requested.Count)
-        {
-            return null;
-        }
-
-        string remaining = PageRangeText(requested.Skip(consumed));
-        return $"aspose-cli pdf query pages \"{Path.GetFullPath(filePath)}\" --pages {remaining} --mode {request.Mode} --max-chars {request.MaxCharacters} --output json";
-    }
-
     internal static string PageRangeText(IEnumerable<int> values) => string.Join(",", values);
 
     internal static OutputInfo BuildOutput(string path, string format, long size) => new()

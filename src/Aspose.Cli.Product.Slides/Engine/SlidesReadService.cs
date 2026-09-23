@@ -149,14 +149,6 @@ internal sealed class SlidesReadService
         bool selectionTruncated = slides.Count < requested.Count;
         bool defaultWindowTruncated = request.Slides is null && last < presentation.Slides.Count;
         bool truncated = selectionTruncated || defaultWindowTruncated || slides.Any(static slide => slide.ContentTruncated);
-        string? nextSlides = selectionTruncated
-            ? string.Join(",", requested.Skip(slides.Count))
-            : defaultWindowTruncated ? $"{last + 1}-" : null;
-        string? next = nextSlides is not null
-            ? $"aspose-cli slides query slides \"{filePath}\" --slides {nextSlides} --scope {request.Scope}"
-                + (request.IncludeNotes ? " --notes" : string.Empty)
-                + $" --max-chars {request.MaxCharacters} --output json"
-            : null;
         return new PresentationReadResult
         {
             Source = Source(filePath, loaded.FormatId),
@@ -168,7 +160,6 @@ internal sealed class SlidesReadService
                 Truncated = truncated,
             },
             Slides = slides,
-            Next = next,
             License = EnvelopeParts.License(state),
             Warnings = EvaluationInputWarnings(state, presentation),
         };

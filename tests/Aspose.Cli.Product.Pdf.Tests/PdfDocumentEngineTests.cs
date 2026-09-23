@@ -98,7 +98,7 @@ public sealed class PdfDocumentEngineTests
     }
 
     [Fact]
-    public void Read_StopsAtCharacterBudgetAndReturnsDeterministicNextCommand()
+    public void Read_StopsAtCharacterBudgetAndMarksTheCutPage()
     {
         using var fixture = new PdfEngineFixture();
         string path = fixture.CreateDocument(pages: 3);
@@ -107,8 +107,7 @@ public sealed class PdfDocumentEngineTests
 
         Assert.True(result.Window.Truncated);
         Assert.Equal(24, result.Pages.Sum(static page => page.Text.Length));
-        Assert.NotNull(result.Next);
-        Assert.Contains("--pages ", result.Next, StringComparison.Ordinal);
+        Assert.True(result.Pages[^1].Truncated);
     }
 
     [Fact]
@@ -202,7 +201,6 @@ public sealed class PdfDocumentEngineTests
         Assert.Equal(100, result.Window.Of);
         Assert.Single(result.Pages);
         Assert.True(result.Window.Truncated);
-        Assert.Contains("--pages 2,3,4", result.Next, StringComparison.Ordinal);
     }
 
     [Fact]

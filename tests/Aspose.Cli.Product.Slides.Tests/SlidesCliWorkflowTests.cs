@@ -162,6 +162,49 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.Contains("\"role\": \"body\"", shapes.StdOut, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void QuerySlides_NextSpellsRemainingSlidesAsRangesAndRereadsACutSlide()
+    {
+        SlidesFontCatalog.EnsureInitialized();
+        using (var presentation = new Presentation())
+        {
+            for (int index = 0; index < 4; index++)
+            {
+                ISlide slide = index == 0
+                    ? presentation.Slides[0]
+                    : presentation.Slides.AddEmptySlide(presentation.Slides[0].LayoutSlide);
+                slide.Shapes.Clear();
+                slide.Shapes.AddAutoShape(ShapeType.Rectangle, 10, 10, 300, 40).TextFrame.Text = "Quarterly";
+            }
+
+            presentation.Save(_workspace.File("four.pptx"), SaveFormat.Pptx);
+        }
+
+        CliResult window = _workspace.Run(
+            "slides", "query", "slides", "four.pptx", "--slides", "1,2,4", "--max-chars", "20", "--output", "json");
+        CliResult single = _workspace.Run(
+            "slides", "query", "slides", "four.pptx", "--max-chars", "4", "--notes", "--output", "json");
+
+        // Evaluation mode may add watermark text, so the cut point comes from the response.
+        Assert.True(window.ExitCode == 0, window.StdErr);
+        JsonNode read = JsonNode.Parse(window.StdOut)!;
+        JsonArray returned = read["slides"]!.AsArray();
+        JsonNode last = returned[^1]!;
+        bool cut = last["contentTruncated"]!.GetValue<bool>();
+        int[] selection = [1, 2, 4];
+        int resume = Array.IndexOf(selection, last["number"]!.GetValue<int>()) + (cut ? 0 : 1);
+        int budget = cut && returned.Count == 1 ? 40 : 20;
+        Assert.EndsWith(
+            $" --slides {Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..])} --scope shapes --max-chars {budget} --output json",
+            read["next"]!.GetValue<string>(),
+            StringComparison.Ordinal);
+        Assert.True(single.ExitCode == 0, single.StdErr);
+        Assert.EndsWith(
+            " --slides 1-4 --scope shapes --notes --max-chars 8 --output json",
+            JsonNode.Parse(single.StdOut)!["next"]!.GetValue<string>(),
+            StringComparison.Ordinal);
+    }
+
     private string InstalledTemplate(string name)
     {
         CliResult installed = _workspace.Run(

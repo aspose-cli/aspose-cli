@@ -71,7 +71,7 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(2, table.Columns);
         Assert.Equal("Metric", table.Cells![0][0]);
         Assert.Equal("120", table.Cells[1][1]);
-        Assert.NotNull(first.Next);
+        Assert.True(first.Window.Truncated);
     }
 
     [Fact]
@@ -101,22 +101,6 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
         Assert.DoesNotContain(
             read.Blocks,
             block => block.Text?.Contains("evaluation copy", StringComparison.OrdinalIgnoreCase) == true);
-    }
-
-    [Fact]
-    public void Read_ContinuationPreservesANonContiguousExplicitRange()
-    {
-        string input = _fixture.CreateReport();
-
-        DocumentReadResult read = _fixture.Engine.Read(input, new DocumentReadRequest
-        {
-            Blocks = PageRange.Parse("1,3,5"),
-            Scope = "text",
-            MaxBlocks = 1,
-            MaxCharacters = 10_000,
-        });
-
-        Assert.Contains("--blocks 3,5 ", read.Next, StringComparison.Ordinal);
     }
 
     [Fact]

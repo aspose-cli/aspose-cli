@@ -47,7 +47,7 @@
     },
     "next": {
       "type": "string",
-      "description": "Ready-to-run command for the next window when truncated."
+      "description": "Ready-to-run command for the next window of a planned scan: a default read over the used range, or a page generated for an explicit range too large for one read."
     },
     "license": {
       "$ref": "#/$defs/licenseInfo"

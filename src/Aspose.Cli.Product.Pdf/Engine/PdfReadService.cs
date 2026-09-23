@@ -76,7 +76,6 @@ internal sealed class PdfReadService
         }
 
         bool windowTruncated = consumed < requested.Count || pages.Any(static page => page.Truncated);
-        string? next = NextCommand(filePath, request, requested, consumed, windowTruncated);
         IReadOnlyList<Warning>? warnings = scanned.Count == 0
             ? null
             : [new Warning
@@ -100,7 +99,6 @@ internal sealed class PdfReadService
             },
             Pages = pages,
             ScannedPagesSuspected = scanned.Count == 0 ? null : scanned,
-            Next = next,
             License = EnvelopeParts.License(state),
             Warnings = warnings,
         };

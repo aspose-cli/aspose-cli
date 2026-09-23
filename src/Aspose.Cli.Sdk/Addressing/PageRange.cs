@@ -59,6 +59,44 @@ public sealed class PageRange
             s.End is null ? $"{s.Start}-" : s.End == s.Start ? s.Start.ToString() : $"{s.Start}-{s.End}")));
     }
 
+    /// <summary>
+    /// Spells 1-based numbers as the shortest range text, such as <c>2-4,7</c>, or returns
+    /// null when there are none.
+    /// </summary>
+    public static string? Describe(IEnumerable<int> values)
+    {
+        ArgumentNullException.ThrowIfNull(values);
+        int[] sorted = values.Distinct().Order().ToArray();
+        if (sorted.Length == 0)
+        {
+            return null;
+        }
+
+        if (sorted[0] < 1)
+        {
+            throw new ArgumentOutOfRangeException(nameof(values), "Range values are 1-based.");
+        }
+
+        var segments = new List<string>();
+        int start = sorted[0];
+        int previous = start;
+        foreach (int value in sorted.Skip(1).Append(int.MinValue))
+        {
+            if (value == previous + 1)
+            {
+                previous = value;
+                continue;
+            }
+
+            segments.Add(start == previous
+                ? start.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"{start}-{previous}"));
+            start = previous = value;
+        }
+
+        return string.Join(",", segments);
+    }
+
     /// <summary>Resolves the range against the available count, sorted and deduplicated.</summary>
     public IReadOnlyList<int> Resolve(int available)
     {

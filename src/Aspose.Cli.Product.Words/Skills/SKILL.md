@@ -12,9 +12,10 @@ from 1.
 `query blocks --max-chars` bounds the sum of returned paragraph, table-cell and
 run text. Full scope counts repeated text/run projections separately; addressing
 and formatting metadata do not consume this text budget. Inspect both
-`window.truncated` and each block's `contentTruncated`. `next` selects unread
-blocks; it does not resume inside a truncated block. Re-read that block with a
-larger budget or extract text when complete content is required.
+`window.truncated` and each block's `contentTruncated`. Run `next` verbatim: it
+reads the remaining blocks and starts again at a block the budget cut short;
+when that block alone exceeded the budget, `next` doubles `--max-chars`.
+`--section` with `--blocks` reads only that section's blocks in the range.
 
 ## Workflow
 

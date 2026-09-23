@@ -43,7 +43,7 @@
         }
       }
     },
-    "next": { "type": "string", "description": "Command for unread items; does not resume within an item whose contentTruncated is true." },
+    "next": { "type": "string", "description": "Ready-to-run command for the unread parts, or absent when the read covered its selection. It starts again at a part whose content was truncated and doubles --max-chars when that part alone exceeded the budget." },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

@@ -67,6 +67,77 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
+    public void QueryRange_ScansAnOverBudgetRegionThroughRunnableNextCommands()
+    {
+        File.WriteAllLines(
+            _workspace.File("grid.csv"),
+            Enumerable.Range(1, 10).Select(static row => $"{row},{row * 2},{row * 3}"));
+
+        CliResult summary = _workspace.Run("cells", "query", "range", "grid.csv", "--max-cells", "10", "--output", "json");
+        CliResult refused = _workspace.Run(
+            "cells", "query", "range", "grid.csv", "--range", "A1:C10", "--max-cells", "10", "--output", "json");
+
+        Assert.True(summary.ExitCode == 0, summary.StdErr);
+        string first = JsonNode.Parse(summary.StdOut)!["next"]!.GetValue<string>();
+        Assert.EndsWith(" --range A1:C3 --scan-range A1:C10 --scope values --max-cells 10 --output json", first, StringComparison.Ordinal);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("RANGE_TOO_LARGE", error["code"]!.GetValue<string>());
+        Assert.Contains(" --range A1:C3 --scan-range A1:C10 ", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+
+        CliResult second = _workspace.Run(Tokens(first));
+        Assert.True(second.ExitCode == 0, second.StdErr);
+        JsonNode page = JsonNode.Parse(second.StdOut)!;
+        Assert.Equal("A1:C3", page["sheet"]!["window"]!.GetValue<string>());
+        Assert.EndsWith(
+            " --range A4:C6 --scan-range A1:C10 --scope values --max-cells 10 --output json",
+            page["next"]!.GetValue<string>(),
+            StringComparison.Ordinal);
+    }
+
+    /// <summary>Splits a generated command the way a shell would, dropping the executable name.</summary>
+    private static string[] Tokens(string command)
+    {
+        var tokens = new List<string>();
+        var current = new System.Text.StringBuilder();
+        bool quoted = false;
+        bool started = false;
+        for (int index = 0; index < command.Length; index++)
+        {
+            char character = command[index];
+            if (quoted && character == '\\' && index + 1 < command.Length && command[index + 1] is '"' or '$' or '`')
+            {
+                current.Append(command[++index]);
+            }
+            else if (character == '"')
+            {
+                quoted = !quoted;
+                started = true;
+            }
+            else if (character == ' ' && !quoted)
+            {
+                if (started)
+                {
+                    tokens.Add(current.ToString());
+                    current.Clear();
+                    started = false;
+                }
+            }
+            else
+            {
+                current.Append(character);
+                started = true;
+            }
+        }
+
+        if (started)
+        {
+            tokens.Add(current.ToString());
+        }
+
+        return [.. tokens.Skip(1)];
+    }
+
+    [Fact]
     public void PasswordEnvironmentAndStdin_RoundTripEncryptedOutputWithoutLeaks()
     {
         var variables = new Dictionary<string, string?>

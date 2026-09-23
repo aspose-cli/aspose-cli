@@ -11,7 +11,7 @@ internal static class ReadCommand
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
         Argument<string> file = SlidesOptions.File();
-        var slides = new Option<string?>("--slides") { Description = "1-based slide range, e.g. 1-3,7,9-." }.WithInput(InputKind.None);
+        var slides = new Option<string?>("--slides") { Description = "1-based slide range, e.g. 1-3,7,9-. Default: the first 10 slides." }.WithInput(InputKind.None);
         var scope = new Option<string>("--scope")
         {
             Description = "Projection scope: text, shapes or full.",
@@ -36,20 +36,48 @@ internal static class ReadCommand
         {
             int characters = parse.GetValue(maxChars);
             OptionGuards.EnsureInRange(
-                "--max-chars", characters, 1, 10_000_000,
+                "--max-chars", characters, 1, ReadContinuation.MaximumCharacters,
                 "Use a positive bounded character budget.");
             string? range = parse.GetValue(slides);
-            return context.Port.Read(
-                context.Paths.ResolveInput(parse.GetRequiredValue(file)),
-                new PresentationReadRequest
-                {
-                    Slides = range is null ? null : PageRange.Parse(range),
-                    Scope = parse.GetValue(scope) ?? PresentationReadScopes.Shapes,
-                    IncludeNotes = parse.GetValue(notes),
-                    MaxCharacters = characters,
-                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
-                });
+            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            var request = new PresentationReadRequest
+            {
+                Slides = range is null ? null : PageRange.Parse(range),
+                Scope = parse.GetValue(scope) ?? PresentationReadScopes.Shapes,
+                IncludeNotes = parse.GetValue(notes),
+                MaxCharacters = characters,
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
+            };
+            PresentationReadResult result = context.Port.Read(input, request);
+            return result with { Next = Next(input, request, result) };
         }));
         return command;
+    }
+
+    /// <summary>
+    /// The read that resumes where this one stopped, or null when it covered the selection.
+    /// Without --slides the selection is every slide, read ten at a time.
+    /// </summary>
+    private static string? Next(string input, PresentationReadRequest request, PresentationReadResult result)
+    {
+        if (!result.Window.Truncated || result.Window.Of == 0)
+        {
+            return null;
+        }
+
+        IReadOnlyList<int> selection = request.Slides?.Resolve(result.Window.Of)
+            ?? Enumerable.Range(1, result.Window.Of).ToArray();
+        return ReadContinuation.After(
+                selection,
+                [.. result.Slides.Select(static slide => new ReadPart(slide.Number, slide.ContentTruncated))],
+                request.MaxCharacters) is { } continuation
+            ? new ContinuationCommand("slides", "query", "slides")
+                .Argument(input)
+                .Option("--slides", continuation.Parts)
+                .Option("--scope", request.Scope)
+                .Flag("--notes", request.IncludeNotes)
+                .Option("--max-chars", continuation.MaxCharacters)
+                .ToString()
+            : null;
     }
 }

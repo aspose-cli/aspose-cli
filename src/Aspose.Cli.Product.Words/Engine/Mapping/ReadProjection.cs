@@ -11,7 +11,9 @@ internal static class ReadProjection
     public static DocumentReadResult Project(LoadedDocument loaded, string path, DocumentReadRequest request)
     {
         var index = new DocumentBlockIndex(loaded.Document);
-        IReadOnlyList<BlockEntry> candidates;
+        IReadOnlyList<BlockEntry> candidates = request.Blocks is { } range
+            ? range.Resolve(index.Count).Select(index.Get).ToArray()
+            : index.Entries;
         if (request.Section is { } section)
         {
             if (section < 1 || section > loaded.Document.Sections.Count)
@@ -19,15 +21,7 @@ internal static class ReadProjection
                 throw WordsErrors.SectionNotFound(section, loaded.Document.Sections.Count);
             }
 
-            candidates = index.Entries.Where(entry => entry.Section == section).ToArray();
-        }
-        else if (request.Blocks is { } range)
-        {
-            candidates = range.Resolve(index.Count).Select(index.Get).ToArray();
-        }
-        else
-        {
-            candidates = index.Entries;
+            candidates = candidates.Where(entry => entry.Section == section).ToArray();
         }
 
         if (request.Scope == "outline")
@@ -57,9 +51,6 @@ internal static class ReadProjection
         int last = blocks.Count == 0 ? 0 : blocks[^1].I;
         int remaining = candidates.Count - blocks.Count;
         string window = blocks.Count == 0 ? "empty" : first == last ? first.ToString() : $"{first}-{last}";
-        string? next = remaining <= 0
-            ? null
-            : $"aspose-cli words query blocks \"{path}\" --blocks {FormatBlocks(candidates.Skip(blocks.Count).Select(static entry => entry.Index))} --scope {request.Scope} --max-chars {request.MaxCharacters} --max-blocks {request.MaxBlocks} --output json";
 
         return new DocumentReadResult
         {
@@ -67,31 +58,7 @@ internal static class ReadProjection
             Scope = request.Scope,
             Window = new BlockWindow { Blocks = window, Of = index.Count, Truncated = remaining > 0 || blocks.Any(static b => b.ContentTruncated) },
             Blocks = blocks,
-            Next = next,
         };
-    }
-
-    private static string FormatBlocks(IEnumerable<int> indices)
-    {
-        int[] values = indices.ToArray();
-        var parts = new List<string>();
-        int start = values[0];
-        int previous = start;
-        for (int index = 1; index < values.Length; index++)
-        {
-            int current = values[index];
-            if (current == previous + 1)
-            {
-                previous = current;
-                continue;
-            }
-
-            parts.Add(start == previous ? start.ToString() : $"{start}-{previous}");
-            start = previous = current;
-        }
-
-        parts.Add(start == previous ? start.ToString() : $"{start}-{previous}");
-        return string.Join(',', parts);
     }
 
     private static BlockData ProjectBlock(BlockEntry entry, string scope, ref int remaining)

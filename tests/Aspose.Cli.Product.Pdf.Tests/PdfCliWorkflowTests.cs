@@ -117,5 +117,38 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal(original, File.ReadAllBytes(input));
     }
 
+    [Fact]
+    public void QueryPages_NextRereadsACutPageAndRaisesTheBudgetForAPageThatAloneExceedsIt()
+    {
+        using (var document = new Document())
+        {
+            for (int number = 1; number <= 3; number++)
+            {
+                document.Pages.Add().Paragraphs.Add(new TextFragment($"Portable PDF page {number}"));
+            }
+
+            document.Save(_workspace.File("pages.pdf"));
+        }
+
+        CliResult window = _workspace.Run("pdf", "query", "pages", "pages.pdf", "--max-chars", "24", "--output", "json");
+        CliResult single = _workspace.Run("pdf", "query", "pages", "pages.pdf", "--pages", "2", "--max-chars", "5", "--output", "json");
+
+        Assert.True(window.ExitCode == 0, window.StdErr);
+        JsonNode result = JsonNode.Parse(window.StdOut)!;
+        JsonArray pages = result["pages"]!.AsArray();
+        Assert.True(pages[^1]!["truncated"]!.GetValue<bool>());
+        int cut = pages[^1]!["number"]!.GetValue<int>();
+        string resume = cut == 3 ? "3" : $"{cut}-3";
+        int budget = pages.Count == 1 ? 48 : 24;
+        string next = result["next"]!.GetValue<string>();
+        Assert.StartsWith("aspose-cli pdf query pages ", next, StringComparison.Ordinal);
+        Assert.EndsWith($" --pages {resume} --mode plain --max-chars {budget} --output json", next, StringComparison.Ordinal);
+        Assert.True(single.ExitCode == 0, single.StdErr);
+        Assert.EndsWith(
+            " --pages 2 --mode plain --max-chars 10 --output json",
+            JsonNode.Parse(single.StdOut)!["next"]!.GetValue<string>(),
+            StringComparison.Ordinal);
+    }
+
     public void Dispose() => _workspace.Dispose();
 }

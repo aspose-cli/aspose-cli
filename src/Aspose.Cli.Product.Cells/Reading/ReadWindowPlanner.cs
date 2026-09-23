@@ -33,7 +33,7 @@ internal static class ReadWindowPlanner
                 throw CellsErrors.RangeTooLarge(
                     range.CellCount,
                     maxCells,
-                    $"Request at most {maxCells} cells per call: start with --range {A1.FormatRange(suggested)} and follow the 'next' commands, or raise --max-cells.");
+                    $"Request at most {maxCells} cells per call, such as --range {A1.FormatRange(suggested)}, or raise --max-cells.");
             }
 
             return (range, false);
