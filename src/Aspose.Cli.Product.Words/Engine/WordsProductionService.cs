@@ -203,7 +203,6 @@ internal sealed class WordsProductionService
                 sources.Add(template);
             }
 
-            Document document = template?.Document ?? new Document();
             Document? content = null;
             if (request.MarkdownPath is not null)
             {
@@ -214,9 +213,11 @@ internal sealed class WordsProductionService
             }
             else if (request.TextPath is not null)
             {
-                content = new Document();
+                content = WordsDocumentLoader.CreateBlank(policySource: null);
                 new DocumentBuilder(content).Write(_inputs.ReadTextFile(request.TextPath));
             }
+
+            Document document = template?.Document ?? WordsDocumentLoader.CreateBlank(content);
 
             if (content is not null)
             {

@@ -16,6 +16,15 @@ internal sealed class WordsDocumentLoader
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
     }
 
+    /// <summary>
+    /// Creates an empty document under the resource policy of <paramref name="policySource"/>,
+    /// or under a policy that denies every external resource. Engine code creates documents
+    /// only here or through <see cref="Open"/>: a document without a resource callback lets
+    /// field updates such as INCLUDETEXT read arbitrary files.
+    /// </summary>
+    internal static Document CreateBlank(Document? policySource) =>
+        new() { ResourceLoadingCallback = policySource?.ResourceLoadingCallback ?? DenyAllResources.Instance };
+
     public LoadedDocument Open(string path, string? password)
     {
         InputSizeGuard.Ensure(
@@ -180,6 +189,13 @@ internal sealed class WordsDocumentLoader
             .Any(static text =>
                 text.Contains("document was truncated", StringComparison.OrdinalIgnoreCase)
                 && text.Contains("evaluation", StringComparison.OrdinalIgnoreCase));
+
+    private sealed class DenyAllResources : IResourceLoadingCallback
+    {
+        internal static readonly DenyAllResources Instance = new();
+
+        public ResourceLoadingAction ResourceLoading(ResourceLoadingArgs args) => ResourceLoadingAction.Skip;
+    }
 
     private sealed class BlockingResourceCallback : IResourceLoadingCallback
     {

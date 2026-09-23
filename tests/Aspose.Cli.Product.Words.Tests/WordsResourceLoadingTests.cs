@@ -32,6 +32,40 @@ public sealed class WordsResourceLoadingTests
     }
 
     [Fact]
+    public void UpdateFields_DoesNotIncludeFilesOutsideTheInputDirectory()
+    {
+        using var fixture = new WordsFixture();
+        string secret = fixture.Temp.File("secret.txt");
+        File.WriteAllText(secret, "OUTSIDE-SECRET");
+        string documents = Directory.CreateDirectory(fixture.Temp.File("documents")).FullName;
+        string input = Path.Combine(documents, "include.docx");
+        var source = new Document();
+        new DocumentBuilder(source).InsertField($"INCLUDETEXT \"{secret.Replace("\\", "\\\\")}\"", "placeholder");
+        source.Save(input);
+        string output = Path.Combine(documents, "updated.docx");
+
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch { Ops = [new UpdateFieldsOp()] },
+            new WordsEditRequest { OutputPath = output });
+
+        Assert.DoesNotContain("OUTSIDE-SECRET", new Document(output).GetText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void BlankDocumentWithoutAPolicySourceDeniesEveryResource()
+    {
+        using var fixture = new WordsFixture();
+        string text = fixture.Temp.File("body.txt");
+        File.WriteAllText(text, "Body");
+
+        Document blank = WordsDocumentLoader.CreateBlank(policySource: null);
+        new DocumentBuilder(blank).InsertField($"INCLUDETEXT \"{text.Replace("\\", "\\\\")}\"", "placeholder");
+        blank.UpdateFields();
+
+        Assert.NotNull(blank.ResourceLoadingCallback);
+        Assert.DoesNotContain("Body", blank.GetText(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public async Task Html_PreservesLocalImageAndReportsRemoteOmissionsWithoutHttp()
     {
         if (!OperatingSystem.IsWindows()) { return; }

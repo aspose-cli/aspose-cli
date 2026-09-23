@@ -161,7 +161,7 @@ internal sealed class WordsExtractionService
         {
             int start = starts[group];
             int end = group + 1 < starts.Count ? starts[group + 1] - 1 : index.Count;
-            var part = new Document();
+            Document part = WordsDocumentLoader.CreateBlank(document);
             part.FirstSection.Body.RemoveAllChildren();
             for (int block = start; block <= end; block++)
             {
