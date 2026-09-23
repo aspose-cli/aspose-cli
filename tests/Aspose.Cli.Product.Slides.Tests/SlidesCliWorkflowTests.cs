@@ -31,8 +31,8 @@ public sealed class SlidesCliWorkflowTests : IDisposable
                 "set_slide_size", "set_table_cell", "set_text", "set_title",
                 "set_transition", "update_chart_data",
             ],
-            product["operations"]!.AsArray()
-                .Select(static operation => operation!["id"]!.GetValue<string>()));
+            Assert.Single(product["operations"]!.AsArray())!["ops"]!.AsArray()
+                .Select(static operation => operation!.GetValue<string>()));
 
         CreateDeck(_workspace.File("deck.pptx"));
 

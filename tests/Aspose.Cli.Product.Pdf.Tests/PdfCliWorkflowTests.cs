@@ -44,8 +44,8 @@ public sealed class PdfCliWorkflowTests : IDisposable
                 "redact_text", "remove_attachment", "remove_metadata", "rotate_pages",
                 "set_form_field", "set_metadata", "set_page_labels", "set_page_size",
             ],
-            product["operations"]!.AsArray()
-                .Select(static operation => operation!["id"]!.GetValue<string>()));
+            Assert.Single(product["operations"]!.AsArray())!["ops"]!.AsArray()
+                .Select(static operation => operation!.GetValue<string>()));
 
         CliResult info = _workspace.Run(
             "pdf", "inspect", "source.pdf", "--output", "json");
