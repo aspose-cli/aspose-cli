@@ -49,7 +49,7 @@ internal sealed class CellsMutationService
         { throw CliErrors.FormatUnsupported(format, CellsFormats.EditIds); }
         if (options.Verify && (options.Options.DryRun || !options.Recalculate))
         { throw CliErrors.OptionInvalid("--verify", "requires publication and final recalculation", "Omit --dry-run and --no-recalc when verifying an edit."); }
-        batch = OpsParser.Prepare(batch);
+        batch = CellsOps.Catalog.Prepare(batch);
         using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
             : _saver.CreateOutputSet([Path.GetDirectoryName(options.OutputPath)!], "cells-edit", options.BackupPath);
 
@@ -73,7 +73,7 @@ internal sealed class CellsMutationService
             workbook,
             batch,
             options.Options.BestEffort,
-            options.OpSecrets, operationInputs);
+            options.OpSecrets, operationInputs, _budgets);
         if (options.Recalculate)
         {
             workbook.CalculateFormula();

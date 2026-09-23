@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
@@ -38,6 +39,6 @@ internal static class HyperlinkOps
         }
 
         // The executor attaches the op index to this domain error.
-        throw CellsErrors.OpsInvalid($"no hyperlink covers cell '{op.Cell}'");
+        throw new OperationInvalidException($"no hyperlink covers cell '{op.Cell}'");
     }
 }

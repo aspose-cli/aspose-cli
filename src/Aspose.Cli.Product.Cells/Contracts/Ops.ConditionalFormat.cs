@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Conditional formatting: highlight cells by value, colour scale, data bar or duplicates.
 
 /// <summary>Adds a conditional format over a range.</summary>
-public sealed record AddConditionalFormatOp() : Op(OpNames.AddConditionalFormat)
+public sealed record AddConditionalFormatOp() : Op
 {
     /// <summary>The range to format, e.g. <c>B2:B100</c>.</summary>
     public required string Range { get; init; }
@@ -105,7 +105,7 @@ public static class IconSetNames
 }
 
 /// <summary>Removes all conditional formatting overlapping a range.</summary>
-public sealed record ClearConditionalFormatsOp() : Op(OpNames.ClearConditionalFormats)
+public sealed record ClearConditionalFormatsOp() : Op
 {
     /// <summary>The range to clear conditional formatting from.</summary>
     public required string Range { get; init; }

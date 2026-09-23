@@ -30,10 +30,11 @@ most likely fix. Read the hint first; this page adds background.
 - **RANGE_TOO_LARGE** — you asked for more cells than `--max-cells`.
   Follow the hint's suggested first window and then the `next` commands,
   or raise `--max-cells` when you truly need everything.
-- **OPS_INVALID** — `error.details.index` is the zero-based position of
-  the failing op; `details.cause` (when present) is the underlying code,
-  e.g. SHEET_NOT_FOUND. The batch was atomic: fix that one op and re-run
-  the whole document.
+- **OPS_INVALID** — an op failed validation; `error.details.index` is its
+  zero-based position, `details.op` its name and `details.reason` the rule
+  it broke. A failure found while applying an op keeps its own code (for
+  example SHEET_NOT_FOUND) and carries the same `index` and `op` details.
+  The batch was atomic: fix that one op and re-run the whole document.
 
 ## Output problems (exit 5)
 

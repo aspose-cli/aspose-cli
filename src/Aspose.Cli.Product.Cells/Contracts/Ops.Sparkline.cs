@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// Adds a sparkline group over a data block: one sparkline per data row (or
 /// column), each drawn in one cell of <see cref="Location"/>.
 /// </summary>
-public sealed record AddSparklineOp() : Op(OpNames.AddSparkline)
+public sealed record AddSparklineOp() : Op
 {
     /// <summary>
     /// The data to plot, e.g. <c>B2:E10</c>. May be sheet-qualified

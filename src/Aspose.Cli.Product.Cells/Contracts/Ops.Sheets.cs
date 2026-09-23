@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Ops that operate at the sheet level (add, rename, delete, visibility, panes).
 
 /// <summary>Adds a sheet.</summary>
-public sealed record AddSheetOp() : Op(OpNames.AddSheet)
+public sealed record AddSheetOp() : Op
 {
     /// <summary>Name of the new sheet.</summary>
     public required string Name { get; init; }
@@ -13,17 +13,17 @@ public sealed record AddSheetOp() : Op(OpNames.AddSheet)
 }
 
 /// <summary>Renames a sheet (the op's <c>sheet</c> field is the current name).</summary>
-public sealed record RenameSheetOp() : Op(OpNames.RenameSheet)
+public sealed record RenameSheetOp() : Op
 {
     /// <summary>The new name.</summary>
     public required string To { get; init; }
 }
 
 /// <summary>Deletes a sheet (the op's <c>sheet</c> field names it).</summary>
-public sealed record DeleteSheetOp() : Op(OpNames.DeleteSheet);
+public sealed record DeleteSheetOp() : Op;
 
 /// <summary>Hides or shows a sheet (the op's <c>sheet</c> field names it).</summary>
-public sealed record SetSheetVisibilityOp() : Op(OpNames.SetSheetVisibility)
+public sealed record SetSheetVisibilityOp() : Op
 {
     /// <summary><c>true</c> hides the sheet; <c>false</c> shows it.</summary>
     public required bool Hidden { get; init; }
@@ -33,14 +33,14 @@ public sealed record SetSheetVisibilityOp() : Op(OpNames.SetSheetVisibility)
 /// Makes the explicitly named visible sheet the workbook's active sheet.
 /// The choice survives save/reopen and becomes the initial HTML preview tab.
 /// </summary>
-public sealed record SetActiveSheetOp() : Op(OpNames.SetActiveSheet);
+public sealed record SetActiveSheetOp() : Op;
 
 /// <summary>
 /// Moves a sheet to a new position in the tab order (the op's <c>sheet</c>
 /// field names it). Cross-sheet and 3-D references re-scope to the new order
 /// exactly as they would in Excel.
 /// </summary>
-public sealed record MoveSheetOp() : Op(OpNames.MoveSheet)
+public sealed record MoveSheetOp() : Op
 {
     /// <summary>
     /// Zero-based destination index in the tab order; a value past the last
@@ -53,7 +53,7 @@ public sealed record MoveSheetOp() : Op(OpNames.MoveSheet)
 /// Freezes panes above and left of a cell (<c>B2</c> freezes row 1 and
 /// column A); <c>A1</c> unfreezes.
 /// </summary>
-public sealed record FreezePanesOp() : Op(OpNames.FreezePanes)
+public sealed record FreezePanesOp() : Op
 {
     /// <summary>The anchor cell.</summary>
     public required string Cell { get; init; }
@@ -63,7 +63,7 @@ public sealed record FreezePanesOp() : Op(OpNames.FreezePanes)
 /// Sets page layout for printing and PDF export. Only the fields present are
 /// applied; the rest of the sheet's page setup is preserved.
 /// </summary>
-public sealed record SetPageSetupOp() : Op(OpNames.SetPageSetup)
+public sealed record SetPageSetupOp() : Op
 {
     /// <summary>Page orientation; one of <see cref="PageOrientations"/>.</summary>
     public string? Orientation { get; init; }
@@ -137,7 +137,7 @@ public static class PaperSizes
 }
 
 /// <summary>Sets or clears the print area of a sheet, with optional repeating titles.</summary>
-public sealed record SetPrintAreaOp() : Op(OpNames.SetPrintArea)
+public sealed record SetPrintAreaOp() : Op
 {
     /// <summary>The print area, e.g. <c>A1:H50</c>; omit to clear it.</summary>
     public string? Range { get; init; }

@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Ops for review and collaboration: cell comments.
 
 /// <summary>Adds a note (comment) to a cell.</summary>
-public sealed record AddCommentOp() : Op(OpNames.AddComment)
+public sealed record AddCommentOp() : Op
 {
     /// <summary>The cell to annotate, e.g. <c>B2</c>.</summary>
     public required string Cell { get; init; }
@@ -16,7 +16,7 @@ public sealed record AddCommentOp() : Op(OpNames.AddComment)
 }
 
 /// <summary>Replaces the text of an existing cell comment.</summary>
-public sealed record EditCommentOp() : Op(OpNames.EditComment)
+public sealed record EditCommentOp() : Op
 {
     /// <summary>The cell whose comment to change.</summary>
     public required string Cell { get; init; }
@@ -29,7 +29,7 @@ public sealed record EditCommentOp() : Op(OpNames.EditComment)
 }
 
 /// <summary>Removes a cell comment.</summary>
-public sealed record DeleteCommentOp() : Op(OpNames.DeleteComment)
+public sealed record DeleteCommentOp() : Op
 {
     /// <summary>The cell whose comment to remove.</summary>
     public required string Cell { get; init; }

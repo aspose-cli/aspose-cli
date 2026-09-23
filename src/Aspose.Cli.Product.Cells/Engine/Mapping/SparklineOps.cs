@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cli.Product.Cells.Addressing;
@@ -38,7 +39,7 @@ internal static class SparklineOps
         else
         {
             // The batch runner attaches the op index.
-            throw CellsErrors.OpsInvalid(
+            throw new OperationInvalidException(
                 $"the location has {locationCells} cells but the data range has {data.Range.RowCount} rows "
                 + $"and {data.Range.ColumnCount} columns; make them match one of the two",
                 hint: "Give one location cell per data row (one sparkline per row) or one per data column.");

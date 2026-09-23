@@ -24,7 +24,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         IReadOnlyDictionary<string, string?>? secrets = null) =>
         _fixture.Engine.ApplyOps(
             path,
-            OpsParser.Parse(operations),
+            ParseOps(operations),
             new EditRequest
             {
                 OutputPath = _fixture.Temp.File(output),
@@ -38,26 +38,44 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     [InlineData("{\"ops\":[{\"op\":\"set_values\",\"range\":\"A1\",\"values\":[[1]],\"values\":[[2]]}]}")]
     public void Parser_RejectsUnknownAndDuplicateFields(string json)
     {
-        CliException error = Assert.Throws<CliException>(() => OpsParser.Parse(json));
+        CliException error = Assert.Throws<CliException>(() => ParseOps(json));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
     }
 
     [Fact]
-    public void Runner_ReportsSuccessfulAndFailedAttemptedTargets()
+    public void BestEffort_ReportsSuccessfulAndFailedAttemptedTargets()
     {
-        OpsBatch batch = OpsParser.Parse(
-            "{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[1]]},{\"op\":\"clear_range\",\"sheet\":\"Missing\",\"range\":\"A1:B1\"}]}");
-        IReadOnlyList<BoundedOperationOutcome> outcomes = OpsBatchRunner.Run(
-            batch,
-            op => op.Sheet == "Missing"
-                ? throw new EngineOpException("missing", new InvalidOperationException("missing"))
-                : 1,
-            continueOnError: true);
+        string source = _fixture.CreateSalesWorkbook("attempted.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(
+            source,
+            ParseOps("{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Data\",\"range\":\"A1\",\"values\":[[1]]},{\"op\":\"clear_range\",\"sheet\":\"Missing\",\"range\":\"A1:B1\"}]}"),
+            new EditRequest
+            {
+                OutputPath = _fixture.Temp.File("attempted.out.xlsx"),
+                Overwrite = true,
+                Options = new EditCommandOptions { BestEffort = true },
+            });
 
-        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], outcomes.Select(static item => item.Status));
-        Assert.Equal(["Data!A1"], outcomes[0].Targets);
-        Assert.Equal(["Missing!A1:B1"], outcomes[1].Targets);
+        Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], result.Applied.Select(static item => item.Status));
+        Assert.Equal(["Data!A1"], result.Applied[0].Targets);
+        Assert.Equal(["Missing!A1:B1"], result.Applied[1].Targets);
+        Assert.Equal("SHEET_NOT_FOUND", result.Applied[1].Error!.Code);
+    }
+
+    [Fact]
+    public void CellBudget_RejectsAWholeSheetFormulaBeforeWriting()
+    {
+        string source = _fixture.CreateSalesWorkbook("budget.xlsx");
+        string output = _fixture.Temp.File("budget.out.xlsx");
+
+        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
+            source,
+            ParseOps("{\"ops\":[{\"op\":\"set_formula\",\"range\":\"A1:XFD1048576\",\"formula\":\"=1\"}]}"),
+            new EditRequest { OutputPath = output, Overwrite = true }));
+
+        Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
+        Assert.False(File.Exists(output));
     }
 
     [Fact]
@@ -363,4 +381,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             static attribute => double.Parse(
                 attribute.Value, CultureInfo.InvariantCulture));
     }
+
+    private static OpsBatch ParseOps(string json) =>
+        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

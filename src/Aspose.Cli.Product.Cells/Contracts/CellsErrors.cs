@@ -83,29 +83,4 @@ public static class CellsErrors
             hint: "Use one of the available sheet names (they are case-sensitive), or run 'aspose-cli cells inspect <file>' to inspect the structure.",
             details: new JsonObject { ["requested"] = requested, ["available"] = names });
     }
-
-    public static CliException OpsInvalid(string reason, string? hint = null) => new(
-        ErrorCodes.OpsInvalid,
-        $"The ops batch is invalid: {reason}",
-        hint: hint ?? "Fix the ops document and retry; 'aspose-cli schema v2/cells/ops' documents every op.",
-        details: new JsonObject { ["reason"] = reason });
-
-    public static CliException OpsInvalidAt(int index, string opName, string reason, string? hint = null) => new(
-        ErrorCodes.OpsInvalid,
-        $"Op {index} ({opName}) is invalid: {reason}",
-        hint: hint ?? "Fix this op and retry; nothing was written (batches are atomic).",
-        details: new JsonObject { ["index"] = index, ["op"] = opName, ["reason"] = reason });
-
-    /// <summary>Wraps a failure raised while applying one op of a batch.</summary>
-    public static CliException OpsFailedAt(int index, string opName, CliException cause) => new(
-        ErrorCodes.OpsInvalid,
-        $"Op {index} ({opName}) failed: {cause.Message}",
-        hint: cause.Hint ?? "Fix this op and retry; nothing was written (batches are atomic).",
-        details: new JsonObject
-        {
-            ["index"] = index,
-            ["op"] = opName,
-            ["cause"] = cause.Code.Name,
-        },
-        innerException: cause);
 }

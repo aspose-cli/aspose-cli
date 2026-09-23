@@ -55,6 +55,16 @@ internal static class OpsFootprint
         return targets;
     }
 
+    /// <summary>
+    /// Cells an operation writes, charged against the cells budget before it runs: the
+    /// target range, or the source range of a copy.
+    /// </summary>
+    internal static long CellCost(Op op) => op switch
+    {
+        CopyRangeOp copy => A1.ParseRange(copy.From).Range.CellCount,
+        _ => TargetOf(op) is { Range: { } range } ? A1.ParseRange(range).Range.CellCount : 0,
+    };
+
     internal static IReadOnlyList<string> OutcomeTargets(Op op) =>
         TargetOf(op) is { Sheet: not null } target
             ? [target.Range is null ? target.Sheet : $"{target.Sheet}!{target.Range}"]

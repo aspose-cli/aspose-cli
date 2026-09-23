@@ -35,7 +35,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
         byte[] original = File.ReadAllBytes(source);
         string backup = Path.Combine(temp.Path, "backups", "original.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
-            OpsParser.Parse("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
+            ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
             new EditRequest
             {
                 OutputPath = source, Overwrite = true, BackupPath = backup,
@@ -67,7 +67,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     {
         string source = _fixture.CreateSalesWorkbook("text-loss.xlsx");
         EditResult result = _fixture.Engine.ApplyOps(source,
-            OpsParser.Parse("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
+            ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
             new EditRequest { OutputPath = _fixture.Temp.File("text-loss.csv"), Verify = true });
         Assert.True(File.Exists(result.Output!.Path));
         Assert.Contains(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED");
@@ -375,7 +375,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
 
         EditResult result = _fixture.Engine.ApplyOps(
             src,
-            OpsParser.Parse("""{ "ops": [ { "op": "set_values", "sheet": "Sheet1", "range": "A1", "values": [["x"]] } ] }"""),
+            ParseOps("""{ "ops": [ { "op": "set_values", "sheet": "Sheet1", "range": "A1", "values": [["x"]] } ] }"""),
             new EditRequest { OutputPath = _fixture.Temp.File("edit-tall.xls"), Overwrite = true });
 
         Assert.Contains(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
@@ -394,7 +394,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
 
         EditResult result = _fixture.Engine.ApplyOps(
             src,
-            OpsParser.Parse("""{ "ops": [ { "op": "set_formula", "range": "B1", "formula": "=1" } ] }"""),
+            ParseOps("""{ "ops": [ { "op": "set_formula", "range": "B1", "formula": "=1" } ] }"""),
             new EditRequest { OutputPath = _fixture.Temp.File("calc-tall.xls"), Overwrite = true });
 
         Assert.Contains(result.Warnings ?? [], w => w.Code == "DATA_TRUNCATED");
@@ -545,4 +545,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
         return stream.Read(actual, 0, actual.Length) == actual.Length
             && actual.AsSpan().SequenceEqual(expected);
     }
+
+    private static OpsBatch ParseOps(string json) =>
+        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

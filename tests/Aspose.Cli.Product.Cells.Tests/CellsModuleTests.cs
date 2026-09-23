@@ -20,7 +20,7 @@ public sealed class CellsModuleTests
     public void OperationBatch_RejectsNullOperations()
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            OpsParser.Parse("""{"ops":null}"""));
+            ParseOps("""{"ops":null}"""));
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
@@ -31,7 +31,7 @@ public sealed class CellsModuleTests
     public void NonNullableFields_RejectExplicitNullAsInvalidOperations(string operation)
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            OpsParser.Parse($$"""{"ops":[{{operation}}]}"""));
+            ParseOps($$"""{"ops":[{{operation}}]}"""));
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
@@ -58,9 +58,9 @@ public sealed class CellsModuleTests
     [Fact]
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
-            OpNames.All.Order(StringComparer.Ordinal),
+            CellsOps.Catalog.Names.Order(StringComparer.Ordinal),
             CellsContractSamples.Ops.Ops
-                .Select(static operation => operation.OpName)
+                .Select(CellsOps.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 
     [Fact]
@@ -137,4 +137,7 @@ public sealed class CellsModuleTests
             int.Parse(match.Groups[2].Value),
             int.Parse(match.Groups[3].Value));
     }
+
+    private static OpsBatch ParseOps(string json) =>
+        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

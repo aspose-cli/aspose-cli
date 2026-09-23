@@ -1,82 +1,70 @@
+using Aspose.Cli.Sdk.Operations;
+using Core = Aspose.Cli.Product.Cells.Contracts.CellsCoreOpValidator;
+using Advanced = Aspose.Cli.Product.Cells.Contracts.CellsAdvancedOpValidator;
+
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>
-/// The op vocabulary of this build as data: the single place a new op is
-/// registered. <see cref="OpNames"/> exposes the wire names and the
-/// discriminator converter resolves them to types, and both derive from this
-/// one list — so the wire name, the CLR record type and the documented order
-/// can never drift apart as the vocabulary grows.
+/// The Cells operation vocabulary: the single place an operation is registered. Append new
+/// operations at the end; the order is published through capabilities and the schema.
 /// </summary>
 public static class CellsOps
 {
-    // The ordered source of truth for both membership and documentation order.
-    // Append new ops at the end: the order is wire-visible — it drives
-    // OpNames.All, capabilities.operations and the schema's "op" enum.
-    private static readonly (string Name, Type Type)[] Entries =
-    [
-        (OpNames.SetValues, typeof(SetValuesOp)),
-        (OpNames.SetFormula, typeof(SetFormulaOp)),
-        (OpNames.ClearRange, typeof(ClearRangeOp)),
-        (OpNames.CopyRange, typeof(CopyRangeOp)),
-        (OpNames.FormatRange, typeof(FormatRangeOp)),
-        (OpNames.MergeCells, typeof(MergeCellsOp)),
-        (OpNames.UnmergeCells, typeof(UnmergeCellsOp)),
-        (OpNames.InsertRows, typeof(InsertRowsOp)),
-        (OpNames.DeleteRows, typeof(DeleteRowsOp)),
-        (OpNames.InsertColumns, typeof(InsertColumnsOp)),
-        (OpNames.DeleteColumns, typeof(DeleteColumnsOp)),
-        (OpNames.ResizeRows, typeof(ResizeRowsOp)),
-        (OpNames.ResizeColumns, typeof(ResizeColumnsOp)),
-        (OpNames.AddSheet, typeof(AddSheetOp)),
-        (OpNames.RenameSheet, typeof(RenameSheetOp)),
-        (OpNames.DeleteSheet, typeof(DeleteSheetOp)),
-        (OpNames.SetSheetVisibility, typeof(SetSheetVisibilityOp)),
-        (OpNames.FreezePanes, typeof(FreezePanesOp)),
-        (OpNames.CreateChart, typeof(CreateChartOp)),
-        (OpNames.CreatePivot, typeof(CreatePivotOp)),
-        (OpNames.SetPageSetup, typeof(SetPageSetupOp)),
-        (OpNames.SetPrintArea, typeof(SetPrintAreaOp)),
-        (OpNames.InsertImage, typeof(InsertImageOp)),
-        (OpNames.RefreshPivot, typeof(RefreshPivotOp)),
-        (OpNames.CreateTable, typeof(CreateTableOp)),
-        (OpNames.SetAutoFilter, typeof(SetAutoFilterOp)),
-        (OpNames.SortRange, typeof(SortRangeOp)),
-        (OpNames.SetValidation, typeof(SetValidationOp)),
-        (OpNames.DefineName, typeof(DefineNameOp)),
-        (OpNames.DeleteName, typeof(DeleteNameOp)),
-        (OpNames.AddComment, typeof(AddCommentOp)),
-        (OpNames.EditComment, typeof(EditCommentOp)),
-        (OpNames.DeleteComment, typeof(DeleteCommentOp)),
-        (OpNames.ProtectSheet, typeof(ProtectSheetOp)),
-        (OpNames.UnprotectSheet, typeof(UnprotectSheetOp)),
-        (OpNames.GroupRows, typeof(GroupRowsOp)),
-        (OpNames.UngroupRows, typeof(UngroupRowsOp)),
-        (OpNames.GroupColumns, typeof(GroupColumnsOp)),
-        (OpNames.UngroupColumns, typeof(UngroupColumnsOp)),
-        (OpNames.ClearValidation, typeof(ClearValidationOp)),
-        (OpNames.RemoveDuplicates, typeof(RemoveDuplicatesOp)),
-        (OpNames.ProtectWorkbook, typeof(ProtectWorkbookOp)),
-        (OpNames.UnprotectWorkbook, typeof(UnprotectWorkbookOp)),
-        (OpNames.SetHyperlink, typeof(SetHyperlinkOp)),
-        (OpNames.RemoveHyperlink, typeof(RemoveHyperlinkOp)),
-        (OpNames.UpdateChart, typeof(UpdateChartOp)),
-        (OpNames.AddConditionalFormat, typeof(AddConditionalFormatOp)),
-        (OpNames.ClearConditionalFormats, typeof(ClearConditionalFormatsOp)),
-        (OpNames.MoveSheet, typeof(MoveSheetOp)),
-        (OpNames.SetBorders, typeof(SetBordersOp)),
-        (OpNames.SetDefaultFont, typeof(SetDefaultFontOp)),
-        (OpNames.SetTabColor, typeof(SetTabColorOp)),
-        (OpNames.SetSheetView, typeof(SetSheetViewOp)),
-        (OpNames.DeleteChart, typeof(DeleteChartOp)),
-        (OpNames.AddSparkline, typeof(AddSparklineOp)),
-        (OpNames.SetActiveSheet, typeof(SetActiveSheetOp)),
-    ];
-
-    /// <summary>Wire name to concrete op record type, keyed ordinally.</summary>
-    public static IReadOnlyDictionary<string, Type> Registry { get; } =
-        Entries.ToDictionary(e => e.Name, e => e.Type, StringComparer.Ordinal);
-
-    /// <summary>Every op name in registration (documentation) order.</summary>
-    public static IReadOnlyList<string> Names { get; } =
-        Entries.Select(e => e.Name).ToArray();
+    public static OperationCatalog<Op> Catalog { get; } = new OperationCatalog<Op>(CellsSchemaIds.Ops, maximumOperations: 10_000)
+        .Add<SetValuesOp>("set_values", static op => Core.ValidateSetValues(op))
+        .Add<SetFormulaOp>("set_formula", static op => Core.ValidateSetFormula(op))
+        .Add<ClearRangeOp>("clear_range", static op => Core.ValidateClear(op))
+        .Add<CopyRangeOp>("copy_range", static op => Core.ValidateCopy(op))
+        .Add<FormatRangeOp>("format_range", static op => Core.ValidateFormat(op))
+        .Add<MergeCellsOp>("merge_cells", static op => Core.ValidateRange(op, op.Range))
+        .Add<UnmergeCellsOp>("unmerge_cells", static op => Core.ValidateRange(op, op.Range))
+        .Add<InsertRowsOp>("insert_rows", static op => Core.ValidateRow(op, op.At, op.Count))
+        .Add<DeleteRowsOp>("delete_rows", static op => Core.ValidateRow(op, op.At, op.Count))
+        .Add<InsertColumnsOp>("insert_columns", static op => Core.ValidateColumn(op, op.At, op.Count))
+        .Add<DeleteColumnsOp>("delete_columns", static op => Core.ValidateColumn(op, op.At, op.Count))
+        .Add<ResizeRowsOp>("resize_rows", static op => Core.ValidateResizeRows(op))
+        .Add<ResizeColumnsOp>("resize_columns", static op => Core.ValidateResizeColumns(op))
+        .Add<AddSheetOp>("add_sheet", static op => Core.ValidateAddSheet(op))
+        .Add<RenameSheetOp>("rename_sheet", static op => Core.ValidateRenameSheet(op))
+        .Add<DeleteSheetOp>("delete_sheet", static op => Core.ValidateNamedSheet(op))
+        .Add<SetSheetVisibilityOp>("set_sheet_visibility", static op => Core.ValidateNamedSheet(op))
+        .Add<FreezePanesOp>("freeze_panes", static op => Core.ValidateFreeze(op))
+        .Add<CreateChartOp>("create_chart", static op => Core.ValidateChart(op))
+        .Add<CreatePivotOp>("create_pivot", static op => Core.ValidatePivot(op))
+        .Add<SetPageSetupOp>("set_page_setup", static op => Core.ValidatePageSetup(op))
+        .Add<SetPrintAreaOp>("set_print_area", static op => Core.ValidatePrintArea(op))
+        .Add<InsertImageOp>("insert_image", static op => Core.ValidateInsertImage(op))
+        .Add<RefreshPivotOp>("refresh_pivot")
+        .Add<CreateTableOp>("create_table", static op => Core.ValidateRange(op, op.Range))
+        .Add<SetAutoFilterOp>("set_autofilter", static op => Core.ValidateAutoFilter(op))
+        .Add<SortRangeOp>("sort_range", static op => Core.ValidateSort(op))
+        .Add<SetValidationOp>("set_validation", static op => Core.ValidateValidation(op))
+        .Add<DefineNameOp>("define_name", static op => Core.ValidateDefineName(op))
+        .Add<DeleteNameOp>("delete_name", static op => Core.ValidateName(op, op.Name))
+        .Add<AddCommentOp>("add_comment", static op => Core.ValidateComment(op, op.Cell, op.Text))
+        .Add<EditCommentOp>("edit_comment", static op => Core.ValidateComment(op, op.Cell, op.Text))
+        .Add<DeleteCommentOp>("delete_comment", static op => Core.ValidateCommentCell(op, op.Cell))
+        .Add<ProtectSheetOp>("protect_sheet", static op => Core.ValidateProtect(op))
+        .Add<UnprotectSheetOp>("unprotect_sheet")
+        .Add<GroupRowsOp>("group_rows", static op => Core.ValidateRowSpan(op, op.From, op.To))
+        .Add<UngroupRowsOp>("ungroup_rows", static op => Core.ValidateRowSpan(op, op.From, op.To))
+        .Add<GroupColumnsOp>("group_columns", static op => Core.ValidateColumnSpan(op, op.From, op.To))
+        .Add<UngroupColumnsOp>("ungroup_columns", static op => Core.ValidateColumnSpan(op, op.From, op.To))
+        .Add<ClearValidationOp>("clear_validation", static op => Core.ValidateRange(op, op.Range))
+        .Add<RemoveDuplicatesOp>("remove_duplicates", static op => Core.ValidateRemoveDuplicates(op))
+        .Add<ProtectWorkbookOp>("protect_workbook")
+        .Add<UnprotectWorkbookOp>("unprotect_workbook")
+        .Add<SetHyperlinkOp>("set_hyperlink", static op => Core.ValidateSetHyperlink(op))
+        .Add<RemoveHyperlinkOp>("remove_hyperlink", static op => Core.ValidateCommentCell(op, op.Cell))
+        .Add<UpdateChartOp>("update_chart", static op => Advanced.ValidateUpdateChart(op))
+        .Add<AddConditionalFormatOp>("add_conditional_format", static op => Advanced.ValidateAddConditionalFormat(op))
+        .Add<ClearConditionalFormatsOp>("clear_conditional_formats", static op => Core.ValidateRange(op, op.Range))
+        .Add<MoveSheetOp>("move_sheet", static op => Core.ValidateMoveSheet(op))
+        .Add<SetBordersOp>("set_borders", static op => Advanced.ValidateSetBorders(op))
+        .Add<SetDefaultFontOp>("set_default_font", static op => Advanced.ValidateSetDefaultFont(op))
+        .Add<SetTabColorOp>("set_tab_color", static op => Advanced.ValidateSetTabColor(op))
+        .Add<SetSheetViewOp>("set_sheet_view", static op => Advanced.ValidateSetSheetView(op))
+        .Add<DeleteChartOp>("delete_chart", static op => Advanced.ValidateDeleteChart(op))
+        .Add<AddSparklineOp>("add_sparkline", static op => Advanced.ValidateAddSparkline(op))
+        .Add<SetActiveSheetOp>("set_active_sheet", static op => Core.ValidateNamedSheet(op));
 }

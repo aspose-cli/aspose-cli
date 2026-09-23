@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
@@ -27,7 +28,7 @@ internal static class CommentOps
         Comment? comment = sheet.Comments[cell.Row, cell.Column];
         if (comment is null)
         {
-            throw CellsErrors.OpsInvalid($"no comment on cell '{op.Cell}' to edit");
+            throw new OperationInvalidException($"no comment on cell '{op.Cell}' to edit");
         }
 
         comment.Note = op.Text;
@@ -44,7 +45,7 @@ internal static class CommentOps
         CellRef cell = A1.ParseCell(op.Cell);
         if (sheet.Comments[cell.Row, cell.Column] is null)
         {
-            throw CellsErrors.OpsInvalid($"no comment on cell '{op.Cell}' to delete");
+            throw new OperationInvalidException($"no comment on cell '{op.Cell}' to delete");
         }
 
         sheet.Comments.RemoveAt(cell.Row, cell.Column);

@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Row and column outline grouping — the collapsible +/- summaries in Excel.
 
 /// <summary>Groups a span of rows into an outline level.</summary>
-public sealed record GroupRowsOp() : Op(OpNames.GroupRows)
+public sealed record GroupRowsOp() : Op
 {
     /// <summary>First row of the group (1-based).</summary>
     public required int From { get; init; }
@@ -16,7 +16,7 @@ public sealed record GroupRowsOp() : Op(OpNames.GroupRows)
 }
 
 /// <summary>Removes one outline level from a span of rows.</summary>
-public sealed record UngroupRowsOp() : Op(OpNames.UngroupRows)
+public sealed record UngroupRowsOp() : Op
 {
     /// <summary>First row of the span (1-based).</summary>
     public required int From { get; init; }
@@ -26,7 +26,7 @@ public sealed record UngroupRowsOp() : Op(OpNames.UngroupRows)
 }
 
 /// <summary>Groups a span of columns into an outline level.</summary>
-public sealed record GroupColumnsOp() : Op(OpNames.GroupColumns)
+public sealed record GroupColumnsOp() : Op
 {
     /// <summary>First column of the group, as letters (e.g. <c>B</c>).</summary>
     public required string From { get; init; }
@@ -39,7 +39,7 @@ public sealed record GroupColumnsOp() : Op(OpNames.GroupColumns)
 }
 
 /// <summary>Removes one outline level from a span of columns.</summary>
-public sealed record UngroupColumnsOp() : Op(OpNames.UngroupColumns)
+public sealed record UngroupColumnsOp() : Op
 {
     /// <summary>First column of the span, as letters (e.g. <c>B</c>).</summary>
     public required string From { get; init; }

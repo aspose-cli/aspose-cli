@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// named edge gets the same line style and color. Existing cell styling
 /// (fills, fonts, number formats and borders not named) is preserved.
 /// </summary>
-public sealed record SetBordersOp() : Op(OpNames.SetBorders)
+public sealed record SetBordersOp() : Op
 {
     /// <summary>The range to border, e.g. <c>B2:D10</c>.</summary>
     public required string Range { get; init; }

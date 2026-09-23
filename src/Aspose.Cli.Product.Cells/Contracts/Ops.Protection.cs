@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// still-permitted actions in <see cref="Allow"/>. Any password is read from
 /// the environment variable named by <see cref="PasswordEnv"/>.
 /// </summary>
-public sealed record ProtectSheetOp() : Op(OpNames.ProtectSheet)
+public sealed record ProtectSheetOp() : Op
 {
     /// <summary>Name of the environment variable holding the protection password.</summary>
     public string? PasswordEnv { get; init; }
@@ -19,7 +19,7 @@ public sealed record ProtectSheetOp() : Op(OpNames.ProtectSheet)
 }
 
 /// <summary>Removes sheet protection.</summary>
-public sealed record UnprotectSheetOp() : Op(OpNames.UnprotectSheet)
+public sealed record UnprotectSheetOp() : Op
 {
     /// <summary>Name of the environment variable holding the current password, if the sheet is password-protected.</summary>
     public string? PasswordEnv { get; init; }
@@ -29,14 +29,14 @@ public sealed record UnprotectSheetOp() : Op(OpNames.UnprotectSheet)
 /// Protects the workbook structure — adding, deleting, moving and hiding sheets.
 /// Any password is read from the environment variable named by <see cref="PasswordEnv"/>.
 /// </summary>
-public sealed record ProtectWorkbookOp() : Op(OpNames.ProtectWorkbook)
+public sealed record ProtectWorkbookOp() : Op
 {
     /// <summary>Name of the environment variable holding the protection password.</summary>
     public string? PasswordEnv { get; init; }
 }
 
 /// <summary>Removes workbook structure protection.</summary>
-public sealed record UnprotectWorkbookOp() : Op(OpNames.UnprotectWorkbook)
+public sealed record UnprotectWorkbookOp() : Op
 {
     /// <summary>Name of the environment variable holding the current password, if the workbook is password-protected.</summary>
     public string? PasswordEnv { get; init; }

@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Ops that change the row and column structure of a sheet.
 
 /// <summary>Inserts rows before a 1-based row number.</summary>
-public sealed record InsertRowsOp() : Op(OpNames.InsertRows)
+public sealed record InsertRowsOp() : Op
 {
     /// <summary>1-based row number to insert before.</summary>
     public required int At { get; init; }
@@ -13,7 +13,7 @@ public sealed record InsertRowsOp() : Op(OpNames.InsertRows)
 }
 
 /// <summary>Deletes rows starting at a 1-based row number.</summary>
-public sealed record DeleteRowsOp() : Op(OpNames.DeleteRows)
+public sealed record DeleteRowsOp() : Op
 {
     /// <summary>1-based first row to delete.</summary>
     public required int At { get; init; }
@@ -23,7 +23,7 @@ public sealed record DeleteRowsOp() : Op(OpNames.DeleteRows)
 }
 
 /// <summary>Inserts columns before a column letter.</summary>
-public sealed record InsertColumnsOp() : Op(OpNames.InsertColumns)
+public sealed record InsertColumnsOp() : Op
 {
     /// <summary>Column letter to insert before, e.g. <c>C</c>.</summary>
     public required string At { get; init; }
@@ -33,7 +33,7 @@ public sealed record InsertColumnsOp() : Op(OpNames.InsertColumns)
 }
 
 /// <summary>Deletes columns starting at a column letter.</summary>
-public sealed record DeleteColumnsOp() : Op(OpNames.DeleteColumns)
+public sealed record DeleteColumnsOp() : Op
 {
     /// <summary>First column letter to delete, e.g. <c>C</c>.</summary>
     public required string At { get; init; }
@@ -43,7 +43,7 @@ public sealed record DeleteColumnsOp() : Op(OpNames.DeleteColumns)
 }
 
 /// <summary>Sets row heights, or auto-fits when <see cref="Height"/> is omitted.</summary>
-public sealed record ResizeRowsOp() : Op(OpNames.ResizeRows)
+public sealed record ResizeRowsOp() : Op
 {
     /// <summary>1-based first row.</summary>
     public required int From { get; init; }
@@ -56,7 +56,7 @@ public sealed record ResizeRowsOp() : Op(OpNames.ResizeRows)
 }
 
 /// <summary>Sets column widths, or auto-fits when <see cref="Width"/> is omitted.</summary>
-public sealed record ResizeColumnsOp() : Op(OpNames.ResizeColumns)
+public sealed record ResizeColumnsOp() : Op
 {
     /// <summary>First column letter.</summary>
     public required string From { get; init; }

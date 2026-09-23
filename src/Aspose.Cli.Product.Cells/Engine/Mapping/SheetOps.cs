@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
@@ -47,7 +48,7 @@ internal static class SheetOps
         // relying on the SDK to ignore or normalize an invalid selection.
         if (!sheet.IsVisible)
         {
-            throw CellsErrors.OpsInvalid($"sheet '{sheet.Name}' is hidden; show it before making it active");
+            throw new OperationInvalidException($"sheet '{sheet.Name}' is hidden; show it before making it active");
         }
 
         workbook.Worksheets.ActiveSheetIndex = sheet.Index;

@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Operations;
 using System.Drawing;
 using System.Globalization;
 using Aspose.Cells;
@@ -110,7 +111,7 @@ internal static class ChartPivotOps
                 available.Add(pivot.BaseFields[i].Name);
             }
 
-            throw CellsErrors.OpsInvalid(
+            throw new OperationInvalidException(
                 $"create_pivot references field '{field}', which is not a column of the source data; " +
                 $"available fields: {string.Join(", ", available)}",
                 hint: "Use one of the source header names (case-sensitive) for 'rows', 'columns' and 'values[].field'.");
@@ -168,7 +169,7 @@ internal static class ChartPivotOps
         if (op.Name is { } name && !refreshedAny)
         {
             // The executor attaches the op index to this domain error.
-            throw CellsErrors.OpsInvalid($"no pivot table named '{name}' on sheet '{sheet.Name}'");
+            throw new OperationInvalidException($"no pivot table named '{name}' on sheet '{sheet.Name}'");
         }
 
         return null;
@@ -219,7 +220,7 @@ internal static class ChartPivotOps
             if (wanted < 0 || wanted >= sheet.Charts.Count)
             {
                 // The executor attaches the op index to this domain error.
-                throw CellsErrors.OpsInvalid($"no chart at index {wanted} on sheet '{sheet.Name}'");
+                throw new OperationInvalidException($"no chart at index {wanted} on sheet '{sheet.Name}'");
             }
 
             return wanted;
@@ -233,7 +234,7 @@ internal static class ChartPivotOps
             }
         }
 
-        throw CellsErrors.OpsInvalid($"no chart named '{name}' on sheet '{sheet.Name}'");
+        throw new OperationInvalidException($"no chart named '{name}' on sheet '{sheet.Name}'");
     }
 
     /// <summary>
@@ -316,7 +317,7 @@ internal static class ChartPivotOps
             // executor attaches the op index to this domain error.
             if (IsPieFamily(chart.Type))
             {
-                throw CellsErrors.OpsInvalid("a 'pie' chart has no axes; omit 'axisTitles'");
+                throw new OperationInvalidException("a 'pie' chart has no axes; omit 'axisTitles'");
             }
 
             if (titles.Category is { } category)

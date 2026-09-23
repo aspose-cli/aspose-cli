@@ -137,10 +137,13 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
 
     private string Apply(string source, string operations, string output) => _fixture.Engine.ApplyOps(
         source,
-        OpsParser.Parse(operations),
+        ParseOps(operations),
         new EditRequest
         {
             OutputPath = _fixture.Temp.File(output),
             Overwrite = true,
         }).Output!.Path;
+
+    private static OpsBatch ParseOps(string json) =>
+        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

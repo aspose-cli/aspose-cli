@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -20,7 +21,7 @@ internal static class NameOps
         if (workbook.Worksheets.Names[op.Name] is null)
         {
             // The executor attaches the op index to this domain error.
-            throw CellsErrors.OpsInvalid($"no defined name '{op.Name}' in the workbook");
+            throw new OperationInvalidException($"no defined name '{op.Name}' in the workbook");
         }
 
         workbook.Worksheets.Names.Remove(op.Name);

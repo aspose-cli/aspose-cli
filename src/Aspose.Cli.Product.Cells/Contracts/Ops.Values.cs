@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// anchor; a multi-cell range must match the matrix dimensions exactly.
 /// Values are strings, numbers, booleans or null (clears the cell).
 /// </summary>
-public sealed record SetValuesOp() : Op(OpNames.SetValues)
+public sealed record SetValuesOp() : Op
 {
     /// <summary>Anchor cell or exact target range, e.g. <c>B2</c> or <c>B2:D4</c>.</summary>
     public required string Range { get; init; }
@@ -20,7 +20,7 @@ public sealed record SetValuesOp() : Op(OpNames.SetValues)
 /// Sets a formula on every cell of a range with Excel fill semantics:
 /// relative references shift per cell, absolute (<c>$</c>) references stay.
 /// </summary>
-public sealed record SetFormulaOp() : Op(OpNames.SetFormula)
+public sealed record SetFormulaOp() : Op
 {
     /// <summary>The range to fill with the formula, e.g. <c>C2:C100</c>.</summary>
     public required string Range { get; init; }
@@ -35,7 +35,7 @@ public sealed record SetFormulaOp() : Op(OpNames.SetFormula)
 /// materializes absent members as null and the default is applied downstream,
 /// so the contract never depends on C# property-initializer behavior.
 /// </remarks>
-public sealed record ClearRangeOp() : Op(OpNames.ClearRange)
+public sealed record ClearRangeOp() : Op
 {
     /// <summary>The range to clear, e.g. <c>B2:D10</c>.</summary>
     public required string Range { get; init; }
@@ -61,7 +61,7 @@ public static class ClearTargets
 }
 
 /// <summary>Copies a range (values, formulas and formatting).</summary>
-public sealed record CopyRangeOp() : Op(OpNames.CopyRange)
+public sealed record CopyRangeOp() : Op
 {
     /// <summary>Source range; may be sheet-qualified.</summary>
     public required string From { get; init; }
@@ -74,7 +74,7 @@ public sealed record CopyRangeOp() : Op(OpNames.CopyRange)
 /// Applies formatting to a range. Only the style fields present in
 /// <see cref="Style"/> are touched; existing formatting is preserved.
 /// </summary>
-public sealed record FormatRangeOp() : Op(OpNames.FormatRange)
+public sealed record FormatRangeOp() : Op
 {
     /// <summary>The range to format, e.g. <c>B2:D10</c>.</summary>
     public required string Range { get; init; }
@@ -84,14 +84,14 @@ public sealed record FormatRangeOp() : Op(OpNames.FormatRange)
 }
 
 /// <summary>Merges a range into one cell.</summary>
-public sealed record MergeCellsOp() : Op(OpNames.MergeCells)
+public sealed record MergeCellsOp() : Op
 {
     /// <summary>The range to merge, e.g. <c>A1:C1</c>.</summary>
     public required string Range { get; init; }
 }
 
 /// <summary>Reverts a merged range.</summary>
-public sealed record UnmergeCellsOp() : Op(OpNames.UnmergeCells)
+public sealed record UnmergeCellsOp() : Op
 {
     /// <summary>The merged range to split, e.g. <c>A1:C1</c>.</summary>
     public required string Range { get; init; }

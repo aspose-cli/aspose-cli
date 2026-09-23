@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Cell hyperlinks: external URLs and internal cross-sheet references.
 
 /// <summary>Adds a hyperlink to a single cell. Give either a URL or an internal target.</summary>
-public sealed record SetHyperlinkOp() : Op(OpNames.SetHyperlink)
+public sealed record SetHyperlinkOp() : Op
 {
     /// <summary>The cell to link, e.g. <c>B2</c>.</summary>
     public required string Cell { get; init; }
@@ -19,7 +19,7 @@ public sealed record SetHyperlinkOp() : Op(OpNames.SetHyperlink)
 }
 
 /// <summary>Removes the hyperlink covering a cell.</summary>
-public sealed record RemoveHyperlinkOp() : Op(OpNames.RemoveHyperlink)
+public sealed record RemoveHyperlinkOp() : Op
 {
     /// <summary>A cell the hyperlink covers, e.g. <c>B2</c>.</summary>
     public required string Cell { get; init; }

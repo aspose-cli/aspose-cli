@@ -3,22 +3,32 @@ using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
 /// <summary>
-/// Applies a validated ops batch to an in-memory workbook. The product-neutral
-/// loop — index bookkeeping and the atomic-vs-best-effort contract — lives in
-/// <see cref="OpsBatchRunner"/>; this class supplies the SDK-specific dispatch
-/// and launders Aspose.Cells' own exception into <see cref="EngineOpException"/>
-/// so Core normalizes failures without ever referencing the engine SDK. Each
-/// op's work lives in a mapper.
+/// Applies a validated ops batch to an in-memory workbook through the SDK runner. This class
+/// supplies the engine dispatch and launders Aspose.Cells exceptions into
+/// <see cref="EngineOpException"/>; each op's work lives in a mapper.
 /// </summary>
 internal static class OpsExecutor
 {
-    public static IReadOnlyList<BoundedOperationOutcome> Execute(Workbook workbook, OpsBatch batch, bool continueOnError,
-        IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs) =>
-        OpsBatchRunner.Run(batch, op => Apply(workbook, op, secrets, inputs), continueOnError);
+    public static IReadOnlyList<BoundedOperationOutcome> Execute(Workbook workbook, OpsBatch batch, bool bestEffort,
+        IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs, ResourceBudgetLedger budgets) =>
+        BoundedOperationRunner.Run(
+            CellsOps.Catalog,
+            batch.Ops,
+            bestEffort,
+            budgets.Deadline,
+            (op, _) =>
+            {
+                // Charge the cells an operation writes before it writes them: a tiny op over a
+                // whole sheet must fail on the budget, not after billions of assignments.
+                budgets.Consume(CellsBudgetDomains.Cells, OpsFootprint.CellCost(op), "items", "edit");
+                return new AppliedOperation(Apply(workbook, op, secrets, inputs) ?? 0, OpsFootprint.OutcomeTargets(op));
+            },
+            (op, _) => OpsFootprint.OutcomeTargets(op));
 
     /// <summary>
     /// Applies one op, laundering the SDK's <see cref="CellsException"/> into the

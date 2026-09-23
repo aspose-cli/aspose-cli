@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Ops that add embedded objects (charts, pivot tables) to a sheet.
 
 /// <summary>Adds a native chart plotting a data range.</summary>
-public sealed record CreateChartOp() : Op(OpNames.CreateChart)
+public sealed record CreateChartOp() : Op
 {
     /// <summary>Chart type; one of <see cref="ChartTypes"/>.</summary>
     public required string Type { get; init; }
@@ -103,7 +103,7 @@ public sealed record ChartDataLabelsData
 }
 
 /// <summary>Adds a pivot table summarizing a source range.</summary>
-public sealed record CreatePivotOp() : Op(OpNames.CreatePivot)
+public sealed record CreatePivotOp() : Op
 {
     /// <summary>
     /// Source data including headers; may be sheet-qualified
@@ -154,7 +154,7 @@ public static class PivotFunctions
 }
 
 /// <summary>Inserts a picture from a file, anchored at a cell.</summary>
-public sealed record InsertImageOp() : Op(OpNames.InsertImage)
+public sealed record InsertImageOp() : Op
 {
     /// <summary>Path to the image file (png, jpeg, gif, bmp).</summary>
     public required string Path { get; init; }
@@ -174,7 +174,7 @@ public sealed record InsertImageOp() : Op(OpNames.InsertImage)
 /// refresh automatically). Refreshes the named pivot, or every pivot on the
 /// sheet when <see cref="Name"/> is omitted.
 /// </summary>
-public sealed record RefreshPivotOp() : Op(OpNames.RefreshPivot)
+public sealed record RefreshPivotOp() : Op
 {
     /// <summary>Pivot table name; all pivots on the sheet when omitted.</summary>
     public string? Name { get; init; }
@@ -184,7 +184,7 @@ public sealed record RefreshPivotOp() : Op(OpNames.RefreshPivot)
 /// Turns a range into a native table (ListObject) with filtering, an optional
 /// built-in style and an optional totals row.
 /// </summary>
-public sealed record CreateTableOp() : Op(OpNames.CreateTable)
+public sealed record CreateTableOp() : Op
 {
     /// <summary>The range to convert, including its header row, e.g. <c>A1:D20</c>.</summary>
     public required string Range { get; init; }
@@ -204,7 +204,7 @@ public sealed record CreateTableOp() : Op(OpNames.CreateTable)
 /// Identify the chart by <see cref="Index"/> or <see cref="Name"/>, then set any
 /// of the other fields to change them.
 /// </summary>
-public sealed record UpdateChartOp() : Op(OpNames.UpdateChart)
+public sealed record UpdateChartOp() : Op
 {
     /// <summary>Zero-based index of the chart on the sheet. Give this or <see cref="Name"/>.</summary>
     public int? Index { get; init; }
@@ -244,7 +244,7 @@ public sealed record UpdateChartOp() : Op(OpNames.UpdateChart)
 /// Removes a chart from a sheet. Identify the chart by <see cref="Index"/> or
 /// <see cref="Name"/>, exactly as <see cref="UpdateChartOp"/> does.
 /// </summary>
-public sealed record DeleteChartOp() : Op(OpNames.DeleteChart)
+public sealed record DeleteChartOp() : Op
 {
     /// <summary>Zero-based index of the chart on the sheet. Give this or <see cref="Name"/>.</summary>
     public int? Index { get; init; }

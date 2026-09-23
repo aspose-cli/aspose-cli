@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -99,7 +100,7 @@ internal static class ProtectOps
         if (string.IsNullOrEmpty(value))
         {
             // Names the variable, never a value. The executor attaches the op index.
-            throw CellsErrors.OpsInvalid($"passwordEnv '{envVar}' is not set");
+            throw new OperationInvalidException($"passwordEnv '{envVar}' is not set");
         }
 
         return value;

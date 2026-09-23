@@ -150,7 +150,7 @@ internal static class EditCommand
 
         if (opsSource is null)
         {
-            return OpsParser.Prepare(new OpsBatch { Ops = compiled });
+            return CellsOps.Catalog.Prepare(new OpsBatch { Ops = compiled });
         }
 
         string opsText = JsonInputSource.Read(
@@ -161,7 +161,7 @@ internal static class EditCommand
         OpsBatch document;
         try
         {
-            document = OpsParser.Parse(opsText);
+            document = CellsOps.Catalog.Parse<OpsBatch>(opsText, ProductJsonContext.Definition);
         }
         catch (CliException ex) when (
             ex.Code == ErrorCodes.OpsInvalid && opsSource != "-" && !opsText.Contains('"'))
@@ -179,7 +179,7 @@ internal static class EditCommand
                 docs: ex.Docs);
         }
 
-        return OpsParser.Prepare(compiled.Length == 0
+        return CellsOps.Catalog.Prepare(compiled.Length == 0
             ? document
             : document with { Ops = [.. document.Ops, .. compiled] });
     }

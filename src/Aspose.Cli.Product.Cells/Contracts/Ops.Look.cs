@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// widths are chosen against the font that will actually render. Cells with
 /// an explicitly set font keep it.
 /// </summary>
-public sealed record SetDefaultFontOp() : Op(OpNames.SetDefaultFont)
+public sealed record SetDefaultFontOp() : Op
 {
     /// <summary>Font family name, e.g. <c>Calibri</c>.</summary>
     public required string Name { get; init; }
@@ -20,7 +20,7 @@ public sealed record SetDefaultFontOp() : Op(OpNames.SetDefaultFont)
 }
 
 /// <summary>Sets or removes a sheet's tab color.</summary>
-public sealed record SetTabColorOp() : Op(OpNames.SetTabColor)
+public sealed record SetTabColorOp() : Op
 {
     /// <summary>Tab color as <c>#RRGGBB</c>; omit to remove the tab color.</summary>
     public string? Color { get; init; }
@@ -32,7 +32,7 @@ public sealed record SetTabColorOp() : Op(OpNames.SetTabColor)
 /// they affect Excel and the live preview, not the printed page or the PNG
 /// <c>render</c> output (draw borders when a grid must appear in renders).
 /// </summary>
-public sealed record SetSheetViewOp() : Op(OpNames.SetSheetView)
+public sealed record SetSheetViewOp() : Op
 {
     /// <summary>Show the on-screen gridlines; unchanged when omitted.</summary>
     public bool? Gridlines { get; init; }

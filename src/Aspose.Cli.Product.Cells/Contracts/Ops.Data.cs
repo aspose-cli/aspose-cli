@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Ops for the data-cleaning pipeline: filtering, sorting and validation.
 
 /// <summary>Adds or clears an AutoFilter over a range.</summary>
-public sealed record SetAutoFilterOp() : Op(OpNames.SetAutoFilter)
+public sealed record SetAutoFilterOp() : Op
 {
     /// <summary>The range to filter, including its header row, e.g. <c>A1:D20</c>. Required unless <see cref="Off"/>.</summary>
     public string? Range { get; init; }
@@ -13,7 +13,7 @@ public sealed record SetAutoFilterOp() : Op(OpNames.SetAutoFilter)
 }
 
 /// <summary>Sorts a range in place by one or more columns.</summary>
-public sealed record SortRangeOp() : Op(OpNames.SortRange)
+public sealed record SortRangeOp() : Op
 {
     /// <summary>The range to sort, e.g. <c>A2:D100</c>.</summary>
     public required string Range { get; init; }
@@ -51,7 +51,7 @@ public static class SortOrders
 /// <see cref="ListSource"/>; for numeric, date and length types give an
 /// <see cref="Operator"/> and bounds; for <c>custom</c> give a formula.
 /// </summary>
-public sealed record SetValidationOp() : Op(OpNames.SetValidation)
+public sealed record SetValidationOp() : Op
 {
     /// <summary>The range to validate, e.g. <c>B2:B100</c>.</summary>
     public required string Range { get; init; }
@@ -85,14 +85,14 @@ public sealed record SetValidationOp() : Op(OpNames.SetValidation)
 }
 
 /// <summary>Removes all data validation whose area overlaps a range.</summary>
-public sealed record ClearValidationOp() : Op(OpNames.ClearValidation)
+public sealed record ClearValidationOp() : Op
 {
     /// <summary>The range to clear validation from, e.g. <c>B2:B100</c>.</summary>
     public required string Range { get; init; }
 }
 
 /// <summary>Removes duplicate rows from a range, comparing all columns or a subset.</summary>
-public sealed record RemoveDuplicatesOp() : Op(OpNames.RemoveDuplicates)
+public sealed record RemoveDuplicatesOp() : Op
 {
     /// <summary>The range to de-duplicate, including any header row, e.g. <c>A1:D100</c>.</summary>
     public required string Range { get; init; }

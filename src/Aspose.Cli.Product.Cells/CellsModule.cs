@@ -15,7 +15,7 @@ public sealed class CellsModule : IProductModule
         DisplayOrder = 100,
         IsDefaultCandidate = true,
         Operations = ProductOperationDescriptor.ForCommand(
-            OpNames.All,
+            CellsOps.Catalog.Names,
             "edit",
             "v2/cells/ops",
             atomicByDefault: true,

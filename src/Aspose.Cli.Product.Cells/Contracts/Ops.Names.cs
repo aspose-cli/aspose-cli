@@ -3,7 +3,7 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 // Ops for workbook-scoped defined names (named ranges).
 
 /// <summary>Creates or replaces a workbook-scoped defined name (a named range).</summary>
-public sealed record DefineNameOp() : Op(OpNames.DefineName)
+public sealed record DefineNameOp() : Op
 {
     /// <summary>The name, e.g. <c>TaxRate</c>.</summary>
     public required string Name { get; init; }
@@ -13,7 +13,7 @@ public sealed record DefineNameOp() : Op(OpNames.DefineName)
 }
 
 /// <summary>Removes a workbook-scoped defined name.</summary>
-public sealed record DeleteNameOp() : Op(OpNames.DeleteName)
+public sealed record DeleteNameOp() : Op
 {
     /// <summary>The name to remove.</summary>
     public required string Name { get; init; }
