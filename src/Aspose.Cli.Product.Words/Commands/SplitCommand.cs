@@ -14,7 +14,7 @@ internal static class SplitCommand
         var by = new Option<string>("--by") { Required = true, Description = "section, heading1 or pages." }.WithInput(InputKind.None);
         by.AcceptOnlyFromAmong("section", "heading1", "pages");
         var pages = new Option<string?>("--pages") { Description = "Page range when --by pages." }.WithInput(InputKind.None);
-        var outDirectory = new Option<string>("--out-dir", "--out") { Required = true, Description = "Output directory." }.WithInput(InputKind.None);
+        var outDirectory = new OutputDirectoryOption("Directory that receives the parts.", required: true);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var password = new PasswordOptions("--password", "the document");
 
@@ -22,7 +22,7 @@ internal static class SplitCommand
         command.Arguments.Add(file);
         command.Options.Add(by);
         command.Options.Add(pages);
-        command.Options.Add(outDirectory);
+        outDirectory.AddTo(command);
         command.Options.Add(overwrite);
         password.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
@@ -40,7 +40,7 @@ internal static class SplitCommand
                 {
                     By = mode,
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
-                    OutputDirectory = WordsOptions.ResolveDirectory(parse, context, outDirectory),
+                    OutputDirectory = outDirectory.ResolveRequired(parse, context.Paths),
                     Overwrite = parse.GetValue(overwrite),
                     Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });

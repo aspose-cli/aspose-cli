@@ -2,7 +2,6 @@ using System.CommandLine;
 using System.Globalization;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -12,26 +11,6 @@ internal static class PdfOptions
     {
         Description = "PDF document to open.",
     }.WithInput(InputKind.File);
-
-    public static string ResolveDirectory(
-        ParseResult parse,
-        ProductCommandContext<IPdfEngine> context,
-        Option<string> option) =>
-        ResolveDirectory(parse.GetRequiredValue(option), context, option.Name);
-
-    public static string ResolveDirectory(
-        string value,
-        ProductCommandContext<IPdfEngine> context,
-        string optionName = "--out-dir")
-    {
-        string path = context.Paths.ResolveOutput(value);
-        if (System.IO.File.Exists(path))
-        {
-            throw CliErrors.OptionInvalid(optionName, $"a file already exists at '{path}'", "Pass a directory path.");
-        }
-
-        return path;
-    }
 
     public static PdfMargins ParseMargins(string text)
     {

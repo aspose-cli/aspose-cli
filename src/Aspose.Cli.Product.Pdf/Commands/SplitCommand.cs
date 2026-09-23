@@ -17,7 +17,7 @@ internal static class SplitCommand
         }.WithInput(InputKind.None);
         var every = new Option<int?>("--every") { Description = "Pages per output part." };
         var bookmarks = new Option<bool>("--by-bookmarks") { Description = "Split at top-level bookmark destinations." };
-        var outDirectory = new Option<string>("--out-dir") { Required = true, Description = "Output directory." }.WithInput(InputKind.None);
+        var outDirectory = new OutputDirectoryOption("Directory that receives the parts.", required: true);
         var name = new Option<string>("--name-template")
         {
             DefaultValueFactory = _ => "{stem}.{n}.pdf",
@@ -30,7 +30,7 @@ internal static class SplitCommand
         command.Options.Add(pages);
         command.Options.Add(every);
         command.Options.Add(bookmarks);
-        command.Options.Add(outDirectory);
+        outDirectory.AddTo(command);
         command.Options.Add(name);
         command.Options.Add(overwrite);
         password.AddTo(command);
@@ -44,7 +44,7 @@ internal static class SplitCommand
                     PageGroups = groupTexts.Length == 0 ? null : groupTexts.Select(PageRange.Parse).ToArray(),
                     Every = parse.GetValue(every),
                     ByBookmarks = parse.GetValue(bookmarks),
-                    OutputDirectory = PdfOptions.ResolveDirectory(parse, context, outDirectory),
+                    OutputDirectory = outDirectory.ResolveRequired(parse, context.Paths),
                     NameTemplate = parse.GetValue(name) ?? "{stem}.{n}.pdf",
                     Overwrite = parse.GetValue(overwrite),
                     Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),

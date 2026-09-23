@@ -14,7 +14,7 @@ internal static class ExtractCommand
         var what = new Option<string>("--what") { Required = true, Description = "images, attachments, text, tables or forms." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PdfExtractKinds.All, "forms"]);
         var pages = new Option<string?>("--pages") { Description = "Optional page range for images, text or tables." }.WithInput(InputKind.None);
-        var outDirectory = new Option<string?>("--out-dir") { Description = "Safe extraction directory; required unless --what forms." }.WithInput(InputKind.None);
+        var outDirectory = new OutputDirectoryOption("Safe extraction directory; required unless --what forms.", required: false);
         var to = new Option<string?>("--to") { Description = "Form export format: json, fdf or xfdf; only with --what forms." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong("json", "fdf", "xfdf");
         var outFile = new Option<string?>("--out", "-o") { Description = "Form-data output file; only with --what forms. Default extension follows --to." }.WithInput(InputKind.None);
@@ -24,7 +24,7 @@ internal static class ExtractCommand
         command.Arguments.Add(file);
         command.Options.Add(what);
         command.Options.Add(pages);
-        command.Options.Add(outDirectory);
+        outDirectory.AddTo(command);
         command.Options.Add(to);
         command.Options.Add(outFile);
         command.Options.Add(overwrite);
@@ -33,13 +33,12 @@ internal static class ExtractCommand
         {
             string kind = parse.GetRequiredValue(what);
             string? pageText = parse.GetValue(pages);
-            string? directory = parse.GetValue(outDirectory);
             string? format = parse.GetValue(to);
             string? outPath = parse.GetValue(outFile);
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             if (string.Equals(kind, "forms", StringComparison.Ordinal))
             {
-                if (pageText is not null || directory is not null)
+                if (pageText is not null || outDirectory.IsGiven(parse))
                 {
                     throw CliErrors.OptionInvalid("--what", "forms cannot be combined with --pages or --out-dir", "Use --what forms --to <json|fdf|xfdf> and optionally --out.");
                 }
@@ -63,17 +62,12 @@ internal static class ExtractCommand
             {
                 throw CliErrors.OptionInvalid("--to/--out/--overwrite", "form-output options are only valid with --what forms", "Remove them or use --what forms.");
             }
-            if (directory is null)
-            {
-                throw CliErrors.OptionInvalid("--out-dir", "is required for asset extraction", "Pass a safe extraction directory.");
-            }
-
             return context.Port.Extract(
                 input,
                 new PdfExtractRequest
                 {
                     What = kind,
-                    OutputDirectory = PdfOptions.ResolveDirectory(directory, context),
+                    OutputDirectory = outDirectory.ResolveRequired(parse, context.Paths),
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
                     Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
