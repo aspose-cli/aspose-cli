@@ -25,7 +25,7 @@ internal static class WordsOpsExecutor
     {
         using InputResourceScope operationInputs = inputs.CreateScope();
         ValidateRequest(request, batch);
-        string format = FormatId(request.OutputPath);
+        string format = WordsFormats.ForOutput(request.OutputPath, loaded.FormatId);
         string? outputPassword = request.EncryptPassword
             ?? (loaded.Format.IsEncrypted && WordsFormats.EncryptIds.Contains(format, StringComparer.Ordinal)
                 ? request.Password : null);
@@ -292,11 +292,6 @@ internal static class WordsOpsExecutor
         };
     }
 
-    private static string FormatId(string path)
-    {
-        string extension = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
-        return extension switch { "xml" => "flatopc", "htm" => "html", _ => extension };
-    }
 
 
     private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string Protection);

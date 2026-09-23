@@ -7,6 +7,7 @@ using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Comparing;
+using Aspose.Words.Saving;
 using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
@@ -52,8 +53,10 @@ internal sealed class WordsInspectionService
         OutputInfo? output = null;
         if (request.OutputPath is not null)
         {
-            long size = _writer.Write(request.OutputPath, request.Overwrite, temp => compared.Save(temp, SaveFormat.Docx));
-            output = BuildOutput(request.OutputPath, "docx", size);
+            string format = WordsFormats.ForOutput(request.OutputPath, leftLoaded.FormatId);
+            SaveOptions options = WordsSavePipeline.Options(format);
+            long size = _writer.Write(request.OutputPath, request.Overwrite, temp => compared.Save(temp, options));
+            output = BuildOutput(request.OutputPath, format, size);
         }
 
         return new WordsCompareResult

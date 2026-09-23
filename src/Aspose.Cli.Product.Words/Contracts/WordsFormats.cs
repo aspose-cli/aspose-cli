@@ -52,4 +52,22 @@ public static class WordsFormats
         ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "odt", "ott"];
 
     public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
+
+    /// <summary>
+    /// The save format an output path selects. A source format that owns the extension is kept,
+    /// so an in-place edit of a WordML <c>.xml</c> file stays WordML; otherwise the first
+    /// convertible format declaring the extension wins (<c>.xml</c> is Flat OPC, <c>.html</c> is HTML).
+    /// </summary>
+    public static string ForOutput(string path, string? sourceFormatId = null)
+    {
+        string extension = Path.GetExtension(path);
+        FormatDescriptor[] candidates = Definitions
+            .Where(static format => format.Uses.HasFlag(FormatUse.Convert))
+            .Where(format => format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            .OrderBy(static format => format.ConvertOrder)
+            .ToArray();
+        return candidates.FirstOrDefault(format => string.Equals(format.Id, sourceFormatId, StringComparison.Ordinal))?.Id
+            ?? candidates.FirstOrDefault()?.Id
+            ?? throw Sdk.Errors.CliErrors.FormatUnsupported(extension.TrimStart('.').ToLowerInvariant(), ConvertIds);
+    }
 }

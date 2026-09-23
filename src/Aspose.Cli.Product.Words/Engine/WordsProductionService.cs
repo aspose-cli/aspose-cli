@@ -164,7 +164,7 @@ internal sealed class WordsProductionService
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using CreatedDocument created = Create(request);
-        string formatId = FormatIdFromOutput(request.OutputPath);
+        string formatId = WordsFormats.ForOutput(request.OutputPath);
         SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp => created.Save(temp, options));
 
@@ -278,11 +278,6 @@ internal sealed class WordsProductionService
 
     private static string Truncate(string value, int length) =>
         value.Length <= length ? value : value[..length] + "…";
-    private static string FormatIdFromOutput(string path)
-    {
-        string extension = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
-        return extension switch { "xml" => "flatopc", "htm" => "html", _ => extension };
-    }
 
     private sealed record CreatedDocument(
         Document Document,
