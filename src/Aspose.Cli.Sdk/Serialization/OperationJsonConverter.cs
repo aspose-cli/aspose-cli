@@ -24,13 +24,6 @@ public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperat
         operationName = catalog.NameOf;
     }
 
-    /// <summary>Connects an explicit vocabulary to the shared wire protocol.</summary>
-    protected OperationJsonConverter(IReadOnlyDictionary<string, Type> operations, Func<TOperation, string> operationName)
-    {
-        this.operations = operations;
-        this.operationName = operationName;
-    }
-
     /// <inheritdoc />
     public override bool HandleNull => true;
 

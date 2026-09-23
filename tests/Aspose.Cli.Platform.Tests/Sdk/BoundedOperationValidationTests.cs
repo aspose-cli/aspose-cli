@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Sdk;

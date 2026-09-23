@@ -1,9 +1,10 @@
 using System.Globalization;
+using Aspose.Cli.Sdk.Contracts;
 
-namespace Aspose.Cli.Sdk.Contracts;
+namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>Product-neutral validation for the bounded operation envelope.</summary>
-public static class BoundedOperationValidation
+internal static class BoundedOperationValidation
 {
     /// <summary>Validates the shared version and optional schema identity once.</summary>
     public static void ValidateEnvelope<TOperation>(
@@ -37,7 +38,7 @@ public static class BoundedOperationValidation
 }
 
 /// <summary>Stable identifiers shared by bounded operation documents.</summary>
-public static class BoundedOperationIds
+internal static class BoundedOperationIds
 {
     /// <summary>Returns whether an explicit operation ID follows the wire grammar.</summary>
     public static bool IsValid(string? id) =>
