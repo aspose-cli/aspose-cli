@@ -14,23 +14,15 @@ internal sealed class HostedCommandLifecycle
 
     public HostedCommandLifecycle(
         ResultEnvelope startup,
-        bool once,
-        TimeSpan idleAfter,
         Func<TimeSpan?, CancellationToken, WaitOutcome> wait,
         Action shutdown)
     {
         Startup = startup ?? throw new ArgumentNullException(nameof(startup));
-        Once = once;
-        IdleAfter = idleAfter;
         _wait = wait ?? throw new ArgumentNullException(nameof(wait));
         _shutdown = shutdown ?? throw new ArgumentNullException(nameof(shutdown));
     }
 
     public ResultEnvelope Startup { get; }
-
-    public bool Once { get; }
-
-    public TimeSpan IdleAfter { get; }
 
     public WaitOutcome Wait(
         TimeSpan? deadline,

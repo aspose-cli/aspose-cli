@@ -62,8 +62,6 @@ public sealed class HostedCommandLifecycleTests
         Action? shutdown = null) =>
         new(
             new TestResult(),
-            once: false,
-            TimeSpan.FromMinutes(1),
             wait ?? (static (_, _) => WaitOutcome.Completed),
             shutdown ?? (static () => { }));
 

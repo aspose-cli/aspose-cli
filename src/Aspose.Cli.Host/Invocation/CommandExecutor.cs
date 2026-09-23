@@ -123,8 +123,7 @@ internal sealed class CommandExecutor
                 scope.Deadline.ThrowIfExpired("raw-start");
                 string result = handler();
                 scope.Deadline.ThrowIfExpired("raw-complete");
-                Console.Out.WriteLine(result);
-                return scope.Complete();
+                return scope.Complete(() => Console.Out.WriteLine(result));
             });
     }
 
@@ -138,26 +137,6 @@ internal sealed class CommandExecutor
             parseResult,
             globalOptions,
             scope => handler(scope.Globals));
-    }
-
-    public int RunServer(
-        ParseResult parseResult,
-        GlobalOptions globalOptions,
-        Func<CommandContext, HostedCommandLifecycle> handler)
-    {
-        ArgumentNullException.ThrowIfNull(handler);
-        return RunService(
-            parseResult,
-            globalOptions,
-            scope =>
-            {
-                CommandContext context = CompositionRoot.Create(
-                    _host.Catalog,
-                    scope.Globals,
-                    deadline: scope.Deadline,
-                    resourceBudgets: scope.Budgets);
-                return handler(context);
-            });
     }
 
     private int RunService(
@@ -177,30 +156,26 @@ internal sealed class CommandExecutor
                     scope.Deadline.ThrowIfExpired("server-start");
                     start = handler(scope);
                     scope.Deadline.ThrowIfExpired("server-handshake");
-                    scope.Write(start.Startup);
+                    int exitCode = scope.Complete(start.Startup, detectPartial: false);
                     Console.Out.Flush();
 
-                    if (!start.Once)
+                    WaitOutcome outcome = WaitForShutdownSignal(
+                        cancellationToken => start.Wait(
+                            scope.Deadline.Remaining,
+                            cancellationToken));
+                    if (outcome == WaitOutcome.DeadlineExpired
+                        && scope.Deadline.OriginalBudget is { } budget)
                     {
-                        WaitOutcome outcome = WaitForShutdownSignal(
-                            cancellationToken => start.Wait(
-                                scope.Deadline.Remaining,
-                                cancellationToken));
-                        if (outcome == WaitOutcome.DeadlineExpired
-                            && scope.Deadline.OriginalBudget is { } budget)
-                        {
-                            throw CliErrors.OperationTimeout(
-                                (int)budget.TotalSeconds);
-                        }
-                        if (outcome == WaitOutcome.IdleExpired
-                            && !scope.Globals.Quiet)
-                        {
-                            Console.Error.WriteLine(
-                                "preview: no clients and no render activity within the idle window; shutting down.");
-                        }
+                        throw CliErrors.OperationTimeout(
+                            (int)budget.TotalSeconds);
                     }
-
-                    return scope.Complete();
+                    if (outcome == WaitOutcome.IdleExpired
+                        && !scope.Globals.Quiet)
+                    {
+                        Console.Error.WriteLine(
+                            "preview: no clients and no render activity within the idle window; shutting down.");
+                    }
+                    return exitCode;
                 }
                 finally
                 {
@@ -245,7 +220,9 @@ internal sealed class CommandExecutor
                 writer,
                 globals,
                 stopwatch,
-                _host.EngineFailures.Translate(exception) ?? exception, scope?.Deadline);
+                _host.EngineFailures.Translate(exception) ?? exception,
+                scope?.Deadline,
+                scope?.ResultWritten == true);
         }
         finally
         {
@@ -280,20 +257,35 @@ internal sealed class CommandExecutor
         }
     }
 
+    /// <summary>
+    /// The one failure path. A command answers with one result or one error:
+    /// once its result is on stdout, a later failure (a service ending on its
+    /// deadline, a failed shutdown) keeps that result and reports itself only
+    /// through the exit code and a plain diagnostic line.
+    /// </summary>
     private static int HandleFailure(
         IOutputWriter writer,
         GlobalValues globals,
         Stopwatch stopwatch,
-        Exception exception, OperationDeadline? deadline)
+        Exception exception,
+        OperationDeadline? deadline,
+        bool resultWritten)
     {
-        if (exception is OperationCanceledException && deadline?.IsExpired == true)
+        if (exception is OperationCanceledException)
         {
-            exception = CliErrors.OperationTimeout(
-                Math.Max(1, (int)Math.Ceiling(deadline.OriginalBudget?.TotalSeconds ?? 1)),
-                "cooperative-cancellation");
+            if (deadline?.IsExpired == true)
+            {
+                exception = CliErrors.OperationTimeout(
+                    Math.Max(1, (int)Math.Ceiling(deadline.OriginalBudget?.TotalSeconds ?? 1)),
+                    "cooperative-cancellation");
+            }
+            else if (deadline?.Token.IsCancellationRequested == true)
+            {
+                // The caller cancelled through the invocation's own token.
+                return UserCancelledExitCode;
+            }
         }
 
-        if (exception is OperationCanceledException) { return 130; }
         bool expected = exception is CliException;
         if (!expected)
         {
@@ -305,13 +297,23 @@ internal sealed class CommandExecutor
             : CliErrors.Internal(
                 exception,
                 HostDiagnosticIds.CommandUnhandled);
-        writer.WriteError(error.ToEnvelope());
+        if (!resultWritten)
+        {
+            writer.WriteError(error.ToEnvelope());
+        }
+        else if (!globals.Quiet)
+        {
+            Console.Error.WriteLine($"aspose-cli: {error.Code.Name}: {error.Message}");
+        }
         VerboseLog.Failed(
             globals,
             stopwatch.ElapsedMilliseconds,
             error);
         return (int)error.ExitCode;
     }
+
+    /// <summary>The conventional exit code of a process ended by Ctrl+C.</summary>
+    private const int UserCancelledExitCode = 130;
 
     private static OperationDeadline CreateDeadline(
         GlobalValues globals,
@@ -418,27 +420,31 @@ internal sealed class CommandExecutor
             }
         }
 
-        public void Write(ResultEnvelope result) =>
-            _writer.WriteResult(result);
+        /// <summary>Whether the command's result has reached stdout.</summary>
+        public bool ResultWritten { get; private set; }
 
+        /// <summary>
+        /// Runs every finalization step that can fail, then writes the result,
+        /// so a command never answers with both a result and an error.
+        /// </summary>
         public int Complete(
             ResultEnvelope result,
             bool detectPartial)
         {
-            Budgets.ThrowIfFailed();
-            Budgets.OutputSession?.SealForPublication();
-            Write(result);
-            Complete();
+            int exitCode = Complete(() => _writer.WriteResult(result));
             return detectPartial
                 && result is IPartialOutcome { HasFailures: true }
                     ? (int)ExitCode.PartialFailure
-                    : (int)ExitCode.Success;
+                    : exitCode;
         }
 
-        public int Complete()
+        /// <inheritdoc cref="Complete(ResultEnvelope, bool)"/>
+        public int Complete(Action writeResult)
         {
             Budgets.ThrowIfFailed();
             Budgets.OutputSession?.SealForPublication();
+            ResultWritten = true;
+            writeResult();
             VerboseLog.Completed(
                 Globals,
                 _stopwatch.ElapsedMilliseconds);

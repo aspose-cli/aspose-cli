@@ -47,8 +47,6 @@ internal sealed class ViewerServiceHost : IDisposable
         var host = new ViewerServiceHost(globals, secrets, requestedPort, app);
         return new HostedCommandLifecycle(
             new ProductPreviewStatusResult { Sessions = [] },
-            once: false,
-            IdleWindow,
             host.Wait,
             host.Dispose);
     }
