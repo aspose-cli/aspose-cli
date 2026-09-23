@@ -74,6 +74,12 @@ if ($LASTEXITCODE -ne 0) {
 
 # Existing output is deleted only after its sibling ownership marker proves this build owns it.
 Initialize-OwnedArtifactDirectory $publishRoot $allowedRoot 'publish'
+$launcherAssets = Join-Path (Split-Path -Parent $layout.LauncherProject) 'obj/project.assets.json'
+$runtimePackLock = Join-Path $repoRoot 'eng/runtime-packs.lock.json'
+Assert-RuntimePackLock -AssetsPath $launcherAssets -LockPath $runtimePackLock
+# The notices follow the dependency manifest that ships. A single-file publish embeds it in the
+# bundle, so name the file the bundler reads; otherwise it is published beside the executable.
+$dependencyManifest = if ($customerPublish) { "$publishRoot.deps.json" } else { Join-Path $publishRoot $layout.Names.DependencyManifestName }
 
 $publishArguments = @(
     'publish'
@@ -96,6 +102,7 @@ if ($customerPublish) {
         '--runtime'
         $RuntimeIdentifier
         "-p:AsposeCliPublishRuntimeIdentifier=$RuntimeIdentifier"
+        "-p:PublishDepsFilePath=$dependencyManifest"
         '-p:PublishSingleFile=true'
         '-p:IncludeNativeLibrariesForSelfExtract=true'
         '-p:EnableCompressionInSingleFile=true'
@@ -130,12 +137,14 @@ $buildManifest = [ordered]@{
 Write-StableJson (Join-Path $publishRoot $script:BuildManifestName) $buildManifest
 
 [xml] $buildDefaults = Get-Content -LiteralPath (Join-Path $repoRoot 'Directory.Build.props') -Raw
-$framework = $buildDefaults.SelectSingleNode('/Project/PropertyGroup/TargetFramework').InnerText
-$buildOutput = Join-Path $layout.SourceRoot "Aspose.Cli/bin/$Configuration/$framework"
-if ($customerPublish) { $buildOutput = Join-Path $buildOutput $RuntimeIdentifier }
+if (-not (Test-Path -LiteralPath $dependencyManifest -PathType Leaf)) {
+    throw "The published dependency manifest is missing: $dependencyManifest"
+}
 $noticeFiles = @(Write-ReleaseNotices -RepositoryRoot $repoRoot -OutputRoot $publishRoot `
-    -DependenciesPath (Join-Path $buildOutput $layout.Names.DependencyManifestName) `
-    -AssetsPath (Join-Path $layout.SourceRoot 'Aspose.Cli/obj/project.assets.json'))
+    -DependenciesPath $dependencyManifest `
+    -AssetsPath $launcherAssets `
+    -PackagesLockPath (Join-Path (Split-Path -Parent $layout.LauncherProject) 'packages.lock.json') `
+    -RuntimePacksLockPath $runtimePackLock)
 
 $publishedFiles = @(Get-ChildItem -LiteralPath $publishRoot -File -Recurse)
 $relativeFileNames = @(

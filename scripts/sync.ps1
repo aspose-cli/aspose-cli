@@ -41,6 +41,10 @@ if (-not (Test-Path -LiteralPath $solution -PathType Leaf)) {
     throw "Generated solution does not exist: $solution"
 }
 Invoke-DotNetRestore -Arguments @('--force-evaluate')
+# Runtime packs are downloads outside packages.lock.json; pin the ones this SDK selects.
+. (Join-Path $repoRoot 'scripts/release-common.ps1')
+$launcherAssets = Join-Path (Split-Path -Parent $layout.LauncherProject) 'obj/project.assets.json'
+Write-StableJson (Join-Path $repoRoot 'eng/runtime-packs.lock.json') (Get-RuntimePackLock -AssetsPath $launcherAssets)
 & $generator `
     -Check `
     -RepositoryRoot $repoRoot

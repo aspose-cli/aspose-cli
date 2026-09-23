@@ -1,5 +1,6 @@
 # Names derived from eng/distribution.json; the layout resolver is their only author.
-$script:ProjectLayout = & (Join-Path $PSScriptRoot 'resolve-project-layout.ps1') -RepositoryRoot (Split-Path -Parent $PSScriptRoot)
+$script:ReleaseRepositoryRoot = Split-Path -Parent $PSScriptRoot
+$script:ProjectLayout = & (Join-Path $PSScriptRoot 'resolve-project-layout.ps1') -RepositoryRoot $script:ReleaseRepositoryRoot
 $script:ArtifactOwnerProductId = $script:ProjectLayout.Names.ArtifactOwnerProductId
 $script:BuildManifestName = $script:ProjectLayout.Names.BuildManifestName
 
@@ -186,4 +187,93 @@ function Read-BuildManifest {
         throw "Build manifest has invalid provenance fields: $Path"
     }
     return $manifest
+}
+
+# NuGet's own implementation computes a package's content hash: the SHA-512 recorded in
+# packages.lock.json, which excludes a repository signature. It ships with the active SDK
+# (selected by global.json) and targets .NET 8, so PowerShell 7.4 or later loads it.
+function Initialize-NuGetPackaging {
+    if ($null -ne ('NuGet.Packaging.PackageArchiveReader' -as [type])) { return }
+    Push-Location -LiteralPath $script:ReleaseRepositoryRoot
+    try {
+        $version = ([string](& dotnet --version | Select-Object -Last 1)).Trim()
+        $sdks = @(& dotnet --list-sdks)
+    }
+    finally { Pop-Location }
+    $sdkDirectory = $null
+    foreach ($line in $sdks) {
+        if ($line -match '^(?<version>\S+) \[(?<root>.+)\]$' -and $Matches.version -ceq $version) {
+            $sdkDirectory = Join-Path $Matches.root $version
+        }
+    }
+    if ($null -eq $sdkDirectory) { throw "The active .NET SDK $version was not found by 'dotnet --list-sdks'." }
+    foreach ($name in @('NuGet.Common', 'NuGet.Frameworks', 'NuGet.Versioning', 'NuGet.Configuration', 'NuGet.Packaging')) {
+        Add-Type -LiteralPath (Join-Path $sdkDirectory "$name.dll")
+    }
+}
+
+function Get-NuGetContentHash {
+    param([Parameter(Mandatory)][string] $Path)
+    Initialize-NuGetPackaging
+    $reader = [NuGet.Packaging.PackageArchiveReader]::new($Path)
+    try { return $reader.GetContentHash([Threading.CancellationToken]::None) }
+    finally { $reader.Dispose() }
+}
+
+function Find-RestoredPackageArchive {
+    param(
+        [Parameter(Mandatory)] $PackageFolders,
+        [Parameter(Mandatory)][string] $Id,
+        [Parameter(Mandatory)][string] $Version
+    )
+    foreach ($folder in @($PackageFolders.PSObject.Properties.Name)) {
+        $candidate = Join-Path $folder "$($Id.ToLowerInvariant())/$($Version.ToLowerInvariant())/$($Id.ToLowerInvariant()).$($Version.ToLowerInvariant()).nupkg"
+        if (Test-Path -LiteralPath $candidate -PathType Leaf) { return $candidate }
+    }
+    throw "Restored archive is missing for package '$Id/$Version'."
+}
+
+# Runtime packs are NuGet downloads that packages.lock.json does not record, and the SDK's patch
+# level selects their version. eng/runtime-packs.lock.json pins every pack the launcher restore
+# downloads, so a different SDK cannot silently change the shipped runtime.
+function Get-RuntimePackLock {
+    param([Parameter(Mandatory)][string] $AssetsPath)
+    $assets = Get-Content -LiteralPath $AssetsPath -Raw | ConvertFrom-Json
+    $packs = @(
+        foreach ($framework in @($assets.project.frameworks.PSObject.Properties)) {
+            foreach ($download in @($framework.Value.downloadDependencies)) {
+                if ($null -eq $download) { continue }
+                if (-not ([string]$download.version -cmatch '^\[(?<version>[^,\]\s]+), ?(?<upper>[^,\]\s]+)\]$') -or $Matches.version -cne $Matches.upper) {
+                    throw "Runtime pack '$($download.name)' is not pinned to one version: $($download.version)"
+                }
+                $version = $Matches.version
+                $archive = Find-RestoredPackageArchive $assets.packageFolders ([string]$download.name) $version
+                [pscustomobject][ordered]@{ id = [string]$download.name; version = $version; contentHash = Get-NuGetContentHash $archive }
+            }
+        })
+    return [ordered]@{ schemaVersion = 1; runtimePacks = @($packs | Sort-Object id -Unique) }
+}
+
+function Read-RuntimePackLock {
+    param([Parameter(Mandatory)][string] $Path)
+    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { throw "The runtime pack lock is missing: $Path. Run scripts/sync.ps1." }
+    $lock = Get-Content -LiteralPath $Path -Raw | ConvertFrom-Json
+    if ($lock.schemaVersion -ne 1 -or $null -eq $lock.runtimePacks) { throw "The runtime pack lock is invalid: $Path. Run scripts/sync.ps1." }
+    return @($lock.runtimePacks)
+}
+
+# Every pack the current restore downloads must be the one the committed lock pins.
+function Assert-RuntimePackLock {
+    param([Parameter(Mandatory)][string] $AssetsPath, [Parameter(Mandatory)][string] $LockPath)
+    $assets = Get-Content -LiteralPath $AssetsPath -Raw | ConvertFrom-Json
+    $downloaded = @(
+        foreach ($framework in @($assets.project.frameworks.PSObject.Properties)) {
+            foreach ($download in @($framework.Value.downloadDependencies)) {
+                if ($null -ne $download) { "$($download.name)/$(([string]$download.version).Trim('[', ']').Split(',')[0].Trim())" }
+            }
+        }) | Sort-Object -Unique
+    $locked = @(Read-RuntimePackLock $LockPath | ForEach-Object { "$($_.id)/$($_.version)" }) | Sort-Object -Unique
+    if (@(Compare-Object @($downloaded) @($locked)).Count -ne 0) {
+        throw "Restored runtime packs [$($downloaded -join ', ')] differ from eng/runtime-packs.lock.json [$($locked -join ', ')]. The active SDK selects a different runtime; run scripts/sync.ps1 and review the lock change."
+    }
 }

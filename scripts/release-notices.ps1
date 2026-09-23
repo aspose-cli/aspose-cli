@@ -1,14 +1,41 @@
-# Legal files come from the restored archives, not mutable loose cache files.
-# The published dependency graph is the package roster, including runtime packs.
+# Legal files come from restored archives whose bytes are bound to the committed lock files:
+# packages.lock.json pins NuGet packages and eng/runtime-packs.lock.json pins the runtime packs
+# of a self-contained publish. The published dependency manifest is the package roster.
+function Get-LockedContentHashes {
+    param(
+        [Parameter(Mandatory)][string] $PackagesLockPath,
+        [Parameter(Mandatory)][string] $RuntimePacksLockPath
+    )
+    $packages = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $lock = Get-Content -LiteralPath $PackagesLockPath -Raw | ConvertFrom-Json
+    foreach ($target in @($lock.dependencies.PSObject.Properties)) {
+        foreach ($entry in @($target.Value.PSObject.Properties)) {
+            $hash = [string]$entry.Value.contentHash
+            if ([string]::IsNullOrWhiteSpace($hash)) { continue }
+            $key = "$($entry.Name)/$($entry.Value.resolved)"
+            if ($packages.ContainsKey($key) -and $packages[$key] -cne $hash) { throw "packages.lock.json records two content hashes for $key." }
+            $packages[$key] = $hash
+        }
+    }
+    $runtimePacks = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($pack in @(Read-RuntimePackLock $RuntimePacksLockPath)) {
+        $runtimePacks["$($pack.id)/$($pack.version)"] = [string]$pack.contentHash
+    }
+    return [pscustomobject]@{ Packages = $packages; RuntimePacks = $runtimePacks }
+}
+
 function Write-ReleaseNotices {
     param(
         [Parameter(Mandatory)][string] $RepositoryRoot,
         [Parameter(Mandatory)][string] $OutputRoot,
         [Parameter(Mandatory)][string] $DependenciesPath,
-        [Parameter(Mandatory)][string] $AssetsPath
+        [Parameter(Mandatory)][string] $AssetsPath,
+        [Parameter(Mandatory)][string] $PackagesLockPath,
+        [Parameter(Mandatory)][string] $RuntimePacksLockPath
     )
     $dependencies = Get-Content -LiteralPath $DependenciesPath -Raw | ConvertFrom-Json
     $assets = Get-Content -LiteralPath $AssetsPath -Raw | ConvertFrom-Json
+    $locked = Get-LockedContentHashes $PackagesLockPath $RuntimePacksLockPath
     $files = [Collections.Generic.List[string]]::new()
     $packages = [Collections.Generic.List[object]]::new()
     Copy-Item -LiteralPath (Join-Path $RepositoryRoot 'LICENSE') -Destination (Join-Path $OutputRoot 'LICENSE')
@@ -21,27 +48,23 @@ function Write-ReleaseNotices {
         }
         $id, $version = $identity.Split('/')
         $packagePath = $identity.ToLowerInvariant()
-        $archive = $null
-        foreach ($folder in $assets.packageFolders.PSObject.Properties.Name) {
-            $candidate = Join-Path $folder "$packagePath/$($id.ToLowerInvariant()).$($version.ToLowerInvariant()).nupkg"
-            if (Test-Path -LiteralPath $candidate -PathType Leaf) { $archive = $candidate; break }
+        $lockName = if ($library.Value.type -eq 'runtimepack') { 'eng/runtime-packs.lock.json' } else { 'packages.lock.json' }
+        $expected = $null
+        $pins = if ($library.Value.type -eq 'runtimepack') { $locked.RuntimePacks } else { $locked.Packages }
+        if (-not $pins.TryGetValue($identity, [ref]$expected)) {
+            throw "Deployed package '$identity' is not pinned by $lockName. Run scripts/sync.ps1 and review the lock change."
         }
-        if ($null -eq $archive) { throw "Restored archive is missing for deployed package '$identity'." }
-        $cacheMetadata = Get-Content -LiteralPath (Join-Path ([IO.Path]::GetDirectoryName($archive)) '.nupkg.metadata') -Raw | ConvertFrom-Json
-        $contentHash = [string]$cacheMetadata.contentHash
-        if ($library.Value.type -eq 'package' -and
-            $contentHash -cne [string]$assets.libraries.PSObject.Properties[$identity].Value.sha512) {
-            throw "Restored package content hash differs from the locked assets: $identity"
+        $archive = Find-RestoredPackageArchive $assets.packageFolders $id $version
+        # The archive bytes, not a sidecar file in the mutable cache, must produce the locked hash.
+        $actual = $null
+        try { $actual = Get-NuGetContentHash $archive }
+        catch { $actual = "unreadable ($($_.Exception.Message))" }
+        if ($actual -cne $expected) {
+            throw "Restored package hash differs from $lockName for '$identity': expected $expected, got $actual."
         }
-        # NuGet records the content hash separately from the signed archive hash.
-        # Runtime pack versions come from the pinned SDK's published dependency graph.
-        $expectedHash = [IO.File]::ReadAllText($archive + '.sha512').Trim()
         $stream = [IO.File]::OpenRead($archive)
-        try { $actualHash = [Convert]::ToBase64String([Security.Cryptography.SHA512]::HashData($stream)) }
+        try { $archiveSha512 = [Convert]::ToBase64String([Security.Cryptography.SHA512]::HashData($stream)) }
         finally { $stream.Dispose() }
-        if ([string]::IsNullOrWhiteSpace($expectedHash) -or $actualHash -cne $expectedHash) {
-            throw "Restored package hash differs from its restore metadata: $identity"
-        }
         $zip = [IO.Compression.ZipFile]::OpenRead($archive)
         try {
             $nuspec = @($zip.Entries | Where-Object { $_.FullName -notmatch '/' -and $_.Name.EndsWith('.nuspec') })
@@ -88,7 +111,7 @@ function Write-ReleaseNotices {
                 $records.Add([ordered]@{ path = $relative; sha256 = (Get-FileHash -LiteralPath $target -Algorithm SHA256).Hash.ToLowerInvariant() })
             }
             $packages.Add([ordered]@{
-                package = $id; version = $version; contentHash = $contentHash; archiveSha512 = $actualHash
+                package = $id; version = $version; contentHash = $expected; archiveSha512 = $archiveSha512
                 copyright = $copyright
                 licenseExpression = $expression; files = @($records)
             })

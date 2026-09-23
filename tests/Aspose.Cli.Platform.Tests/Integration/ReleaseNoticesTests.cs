@@ -17,20 +17,28 @@ public sealed class ReleaseNoticesTests
         using var directory = new TempDirectory();
         string cache = directory.File("packages");
         var dependencies = new JsonObject();
-        var libraries = new JsonObject();
+        var locked = new JsonObject();
+        var runtimePacks = new JsonArray();
         byte[] original = Encoding.UTF8.GetBytes("Original copyright\r\n  preserve spaces\t\r\n");
         string engine = Package("Fixture.Engine", "1.2.3", runtime: false, original);
         Package("Microsoft.NETCore.App.Runtime.win-x64", "10.0.10", runtime: true, original);
         Package("Fixture.Expression", "1.0.0", runtime: false, license: null);
-        libraries["Fixture.NotDeployed/1.0.0"] = new JsonObject { ["sha512"] = "not deployed" };
+        locked["Fixture.NotDeployed"] = new JsonObject { ["type"] = "Transitive", ["resolved"] = "1.0.0", ["contentHash"] = "not deployed" };
         string deps = directory.File("app.deps.json");
         string assets = directory.File("project.assets.json");
+        string packagesLock = directory.File("packages.lock.json");
+        string runtimeLock = directory.File("runtime-packs.lock.json");
         File.WriteAllText(deps, new JsonObject { ["libraries"] = dependencies }.ToJsonString());
         File.WriteAllText(assets, new JsonObject
         {
-            ["libraries"] = libraries,
             ["packageFolders"] = new JsonObject { [cache] = new JsonObject() },
         }.ToJsonString());
+        File.WriteAllText(packagesLock, new JsonObject
+        {
+            ["version"] = 1,
+            ["dependencies"] = new JsonObject { ["net10.0"] = locked, ["net10.0/win-x64"] = new JsonObject() },
+        }.ToJsonString());
+        File.WriteAllText(runtimeLock, new JsonObject { ["schemaVersion"] = 1, ["runtimePacks"] = runtimePacks }.ToJsonString());
         string output = directory.File("output");
         Directory.CreateDirectory(output);
         CliResult result = Collect(output);
@@ -53,12 +61,22 @@ public sealed class ReleaseNoticesTests
             }
         }
         Assert.False(Directory.Exists(Path.Combine(output, "notices/fixture.notdeployed")));
+        byte[] pristine = File.ReadAllBytes(engine);
         File.AppendAllText(engine, "tampered");
         string refused = directory.File("refused");
         Directory.CreateDirectory(refused);
         CliResult failed = Collect(refused);
         Assert.NotEqual(0, failed.ExitCode);
-        Assert.Contains("package hash differs", failed.StdErr, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("package hash differs from packages.lock.json", Flat(failed), StringComparison.OrdinalIgnoreCase);
+
+        File.WriteAllBytes(engine, pristine);
+        // A deployed runtime pack must be pinned by the runtime pack lock, not only restored.
+        File.WriteAllText(runtimeLock, new JsonObject { ["schemaVersion"] = 1, ["runtimePacks"] = new JsonArray() }.ToJsonString());
+        string unpinned = directory.File("unpinned");
+        Directory.CreateDirectory(unpinned);
+        CliResult unpinnedResult = Collect(unpinned);
+        Assert.NotEqual(0, unpinnedResult.ExitCode);
+        Assert.Contains("is not pinned by eng/runtime-packs.lock.json", Flat(unpinnedResult), StringComparison.Ordinal);
 
         string Package(string id, string version, bool runtime, byte[]? license)
         {
@@ -78,10 +96,11 @@ public sealed class ReleaseNoticesTests
                 }
             }
             string hash = Convert.ToBase64String(SHA512.HashData(File.ReadAllBytes(archive)));
-            File.WriteAllText(archive + ".sha512", hash);
-            File.WriteAllText(Path.Combine(root, ".nupkg.metadata"), JsonSerializer.Serialize(new { contentHash = hash }));
+            // No cache sidecar files: only the archive bytes and the lock files count.
             dependencies[(runtime ? "runtimepack." : "") + identity] = new JsonObject { ["type"] = runtime ? "runtimepack" : "package" };
-            if (!runtime) { libraries[identity] = new JsonObject { ["sha512"] = hash }; }
+            // An unsigned archive's NuGet content hash is the SHA-512 of the whole file.
+            if (runtime) { runtimePacks.Add(new JsonObject { ["id"] = id, ["version"] = version, ["contentHash"] = hash }); }
+            else { locked[id] = new JsonObject { ["type"] = "Direct", ["resolved"] = version, ["contentHash"] = hash }; }
             return archive;
         }
 
@@ -89,8 +108,11 @@ public sealed class ReleaseNoticesTests
         {
             string common = Path.Combine(RepositoryPaths.Root, "scripts/release-common.ps1");
             string notices = Path.Combine(RepositoryPaths.Root, "scripts/release-notices.ps1");
-            string script = $"$ErrorActionPreference='Stop'; . {Literal(common)}; . {Literal(notices)}; "
-                + $"Write-ReleaseNotices -RepositoryRoot {Literal(RepositoryPaths.Root)} -OutputRoot {Literal(target)} -DependenciesPath {Literal(deps)} -AssetsPath {Literal(assets)}";
+            // Print a failure plainly: redirected pwsh serializes its error stream as CLIXML.
+            string script = $"$ErrorActionPreference='Stop'; try {{ . {Literal(common)}; . {Literal(notices)}; "
+                + $"Write-ReleaseNotices -RepositoryRoot {Literal(RepositoryPaths.Root)} -OutputRoot {Literal(target)} -DependenciesPath {Literal(deps)} -AssetsPath {Literal(assets)} "
+                + $"-PackagesLockPath {Literal(packagesLock)} -RuntimePacksLockPath {Literal(runtimeLock)} }} "
+                + "catch { [Console]::Out.WriteLine($_.Exception.Message); exit 1 }";
             string shell = (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)
                 .Where(static path => !string.IsNullOrWhiteSpace(path))
                 .Select(static path => Path.GetFullPath(Path.Combine(path.Trim('"'), OperatingSystem.IsWindows() ? "pwsh.exe" : "pwsh")))
@@ -99,6 +121,9 @@ public sealed class ReleaseNoticesTests
                 .Run(directory.Path, args: ["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(script))]);
         }
     }
+
+    private static string Flat(CliResult result) =>
+        (result.StdOut + result.StdErr).Replace("\r", string.Empty, StringComparison.Ordinal).Replace("\n", string.Empty, StringComparison.Ordinal);
 
     private static string Literal(string value) => "'" + value.Replace("'", "''", StringComparison.Ordinal) + "'";
 }
