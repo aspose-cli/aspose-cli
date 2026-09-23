@@ -2,9 +2,9 @@
 
 Inputs: [sales.csv](sales.csv), [ops.json](ops.json). Run from this directory.
 
-```sh
+```powershell
 # 1. CSV becomes a real workbook; its data sheet is named sales.
-aspose-cli cells convert sales.csv --to xlsx --out report.xlsx --overwrite
+aspose-cli cells convert sales.csv --to xlsx --out report.xlsx --overwrite --output json
 
 # 2. One atomic batch: totals row+column, header styling, widths, chart.
 aspose-cli cells edit report.xlsx --ops ops.json --in-place --output json
@@ -14,7 +14,7 @@ aspose-cli cells query range report.xlsx --sheet sales --range E1:E6 --scope for
 
 # 4. ...and visually, then deliver as PDF.
 aspose-cli review report.xlsx --out report.review --output json
-aspose-cli cells convert report.xlsx --to pdf --sheet sales --overwrite
+aspose-cli cells convert report.xlsx --to pdf --sheet sales --overwrite --output json
 ```
 
 Auto-fitting columns calculates the batch's formulas first, so widths account

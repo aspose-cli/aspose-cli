@@ -17,9 +17,9 @@ SO-2026-002,2026-01-15,Software,East,Maria Silva,3,1150
 ...
 ```
 
-```sh
+```powershell
 # 1. CSV becomes a workbook (sheet is named after the file: "sales").
-aspose-cli cells convert sales.csv --to xlsx --out dashboard.xlsx --overwrite
+aspose-cli cells convert sales.csv --to xlsx --out dashboard.xlsx --overwrite --output json
 
 # 2. Structure: default font FIRST, real sheet names, sort, derived columns.
 aspose-cli cells edit dashboard.xlsx --ops ops-structure.json --in-place --output json
@@ -40,7 +40,7 @@ aspose-cli cells edit dashboard.xlsx --ops ops-structure.json --in-place --outpu
 The sort runs while the range is still pure values — never `sort_range` over
 live formulas — and only then do the Amount and Month formulas land.
 
-```sh
+```powershell
 # 3. The Data register: table, formats, widths, freeze, data bar, print.
 aspose-cli cells edit dashboard.xlsx --ops ops-data.json --in-place --output json
 ```
@@ -61,7 +61,7 @@ aspose-cli cells edit dashboard.xlsx --ops ops-data.json --in-place --output jso
 ]}
 ```
 
-```sh
+```powershell
 # 4. The Dashboard: title band, summary blocks (SUMIFS/COUNTIFS), 4 KPI
 #    cards + sparklines, two charts with cosmetics, chrome, print.
 aspose-cli cells edit dashboard.xlsx --ops ops-dashboard.json --in-place --output json
@@ -113,12 +113,12 @@ The region block is listed ASCENDING (West 22,700 → North 67,535) because a
 bar chart plots the first source row at the bottom — that order is what makes
 the ranking read largest-first top-down (`aspose-cli docs design-system`, Charts).
 
-```sh
+```powershell
 # 5. Verify values: every reported number comes from the engine.
 aspose-cli cells query range dashboard.xlsx --sheet Dashboard --range B4:K6 --scope values --output json
 
 # 6. The eyes loop: render at 192 dpi and actually LOOK.
-aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-1.png --dpi 192 --overwrite
+aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-1.png --dpi 192 --overwrite --output json
 ```
 
 The read returns the KPI row computed by the engine: revenue `156460`,
@@ -130,10 +130,10 @@ checklist finds two real defects: the 16pt title's glyph tops are shaved
 ascender) and the Revenue KPI shows `######` (six figures at 20pt do not
 fit width 12). Fix both, re-render, look again:
 
-```sh
+```powershell
 # 7. Fix what the render showed, then re-check.
 aspose-cli cells edit dashboard.xlsx --ops ops-fix.json --in-place --output json
-aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-2.png --dpi 192 --overwrite
+aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-2.png --dpi 192 --overwrite --output json
 ```
 
 ```json
@@ -154,12 +154,12 @@ money and data bars). The workbook also saves `Dashboard` as the active sheet,
 so both Excel and the Cells Preview open on the summary. Then the semantic
 gate and the print delivery:
 
-```sh
+```powershell
 # 8. Zero formula errors before delivery.
 aspose-cli cells inspect dashboard.xlsx --detail errors --output json
 
 # 9. Print-accurate PDF (proves the page setup, not just the screen look).
-aspose-cli cells convert dashboard.xlsx --to pdf --out dashboard.pdf --overwrite
+aspose-cli cells convert dashboard.xlsx --to pdf --out dashboard.pdf --overwrite --output json
 ```
 
 Measured outcome: `workbook.formulaErrors` is empty; the PDF is three A4

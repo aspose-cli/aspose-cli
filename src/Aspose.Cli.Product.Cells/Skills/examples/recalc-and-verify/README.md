@@ -4,9 +4,9 @@ The pattern that makes delivered numbers trustworthy: never do the math
 yourself — write inputs, let the real engine recalculate, read results
 back. Run from this directory.
 
-```sh
+```powershell
 # 1. Build a tiny model: revenue, growth assumption, projection formula.
-aspose-cli cells create model.xlsx --sheets Model --overwrite
+aspose-cli cells create model.xlsx --sheets Model --overwrite --output json
 aspose-cli cells edit model.xlsx --ops model-ops.json --in-place --output json
 
 # 2. Read the projected value the engine computed.
@@ -16,7 +16,7 @@ aspose-cli cells query range model.xlsx --sheet Model --range B3 --scope formula
 #     display with a numberFormat, never by rewriting the value.)
 
 # 3. Change the assumption; dependent formulas recalculate automatically.
-aspose-cli cells edit model.xlsx --set "Model!B2=0.25" --in-place
+aspose-cli cells edit model.xlsx --set "Model!B2=0.25" --in-place --output json
 
 # 4. Verify: the projection now reflects the new growth rate.
 aspose-cli cells query range model.xlsx --sheet Model --range B1:B3 --output json
