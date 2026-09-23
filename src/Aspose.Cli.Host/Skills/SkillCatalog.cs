@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.Skills;
@@ -55,11 +56,12 @@ internal sealed record BundledSkill(
 {
     private const string ManifestName = ".aspose-skill-manifest.json";
     private const string ManifestProductId = "aspose-cli-skill";
+    private static readonly TimeSpan InstallLockTimeout = TimeSpan.FromSeconds(5);
 
     /// <summary>
-    /// Materialises the package into this invocation's private staging tree.
-    /// The tree is scratch, not a published output: <see cref="InstallInto"/> publishes
-    /// it with a single directory rename. Writing it through the output publication
+    /// Materialises the package into a staging tree beside the target, so the
+    /// publishing rename stays on one volume. The tree is scratch, not a published
+    /// output: <see cref="InstallInto"/> publishes it with a single directory rename. Writing it through the output publication
     /// transaction would hand it to a supervising parent instead of to disk, leaving
     /// the rename nothing to publish.
     /// </summary>
@@ -184,17 +186,15 @@ internal sealed record BundledSkill(
         Directory.CreateDirectory(parent);
         EnsureNoReparsePoint(parent);
 
-        string lockPath = Path.Combine(parent, $".aspose-skill-{TargetKey(target)}.lock");
-        FileStream? installLock = null;
+        // One resource-keyed interprocess lock per target. Its file lives in the
+        // private service lock directory and is never deleted, so two installers
+        // can never hold locks on different files for the same target.
+        LocalServiceOperationLock installLock;
         try
         {
-            installLock = new FileStream(
-                lockPath,
-                FileMode.OpenOrCreate,
-                FileAccess.ReadWrite,
-                FileShare.None);
+            installLock = LocalServiceOperationLock.Acquire("skill-install", LockKey(target), InstallLockTimeout);
         }
-        catch (IOException exception)
+        catch (TimeoutException exception)
         {
             throw ManagedSkillConflict(
                 target,
@@ -273,14 +273,6 @@ internal sealed record BundledSkill(
                 {
                     // A changed recovery tree is intentionally retained.
                 }
-            }
-            try
-            {
-                File.Delete(lockPath);
-            }
-            catch (IOException)
-            {
-                // A stale empty lock file is harmless; the exclusive handle is the lock.
             }
         }
 
@@ -626,10 +618,8 @@ internal sealed record BundledSkill(
         return Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
     }
 
-    private static string TargetKey(string target) =>
-        Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(
-            OperatingSystem.IsWindows() ? target.ToUpperInvariant() : target)))
-            .ToLowerInvariant()[..16];
+    private static string LockKey(string target) =>
+        OperatingSystem.IsWindows() ? target.ToUpperInvariant() : target;
 
     private static void EnsureNoReparsePoint(string path)
     {
