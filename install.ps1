@@ -778,6 +778,20 @@ function Get-TreeInventory {
     return [pscustomobject]@{ Files = @($files); Directories = @($directories) }
 }
 
+function Get-ProcessesUsingDirectory {
+    param([Parameter(Mandatory)][string] $Root)
+    $prefix = $Root.TrimEnd('\') + '\'
+    $users = @()
+    foreach ($process in @(Get-Process -ErrorAction SilentlyContinue)) {
+        $path = $null
+        try { $path = $process.Path } catch { }
+        if (-not [string]::IsNullOrEmpty($path) -and $path.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase)) {
+            $users += "$($process.ProcessName) (pid $($process.Id))"
+        }
+    }
+    return $users
+}
+
 function Move-DirectoryWithRetry {
     param(
         [Parameter(Mandatory)][string] $Source,
@@ -790,7 +804,9 @@ function Move-DirectoryWithRetry {
         }
         catch {
             if ($attempt -eq 30) {
-                throw "Directory publication remained blocked after 3 seconds: '$Source' -> '$Destination' ($($_.Exception.Message))"
+                $users = @(Get-ProcessesUsingDirectory $Source)
+                $running = if ($users.Count -ne 0) { " Running from it: $($users -join ', ')." } else { '' }
+                throw "Directory publication remained blocked after 3 seconds: '$Source' -> '$Destination' ($($_.Exception.Message)).$running Close every program that uses it, including AI agents (Codex, Claude Code, OpenCode) that started '$($script:CommandName) mcp serve' and terminals whose current directory is inside it, then retry."
             }
             Start-Sleep -Milliseconds 100
         }
@@ -862,6 +878,19 @@ function Invoke-Capabilities {
 
 
 
+function Assert-InstallChoices {
+    param($Choices)
+    if ($Choices -isnot [Management.Automation.PSCustomObject]) { throw 'The installation marker has invalid installation choices.' }
+    Assert-ExactProperties $Choices @('path','skills','skillsRoot','mcp') 'installation marker choices'
+    if ($Choices.path -isnot [bool] -or $Choices.mcp -isnot [bool] -or
+        $Choices.skills -isnot [string] -or $Choices.skills -cnotin @('detected-hosts','custom','none') -or
+        ($Choices.skills -ceq 'custom' -and ($Choices.skillsRoot -isnot [string] -or $Choices.skillsRoot -cnotmatch '^[A-Za-z]:\\')) -or
+        ($Choices.skills -cne 'custom' -and $null -ne $Choices.skillsRoot)) {
+        throw 'The installation marker has invalid installation choices.'
+    }
+    return $Choices
+}
+
 function Get-ManagedInstallState {
     param([Parameter(Mandatory)][string] $Root)
     $inventory = Get-TreeInventory $Root
@@ -871,28 +900,30 @@ function Get-ManagedInstallState {
     if ('schemaVersion' -cnotin @($marker.PSObject.Properties.Name)) {
         throw 'Installation marker is missing required property schemaVersion.'
     }
-    if (-not (Test-JsonInteger $marker.schemaVersion 2)) {
+    if (-not (Test-JsonInteger $marker.schemaVersion 3)) {
         throw 'Installation marker schemaVersion must be an integer with a supported value.'
     }
     $schemaVersion = [long]$marker.schemaVersion
 
         if ('mcpRegistrations' -cnotin @($marker.PSObject.Properties.Name)) { throw 'Installation marker is missing mcpRegistrations.' }
-        $markerNames = @('schemaVersion','productId','edition','cliVersion','payloadManifest','payloadManifestSha256','mcpRegistrations')
-        Assert-ExactProperties $marker $markerNames 'v2 installation marker'
+        $markerNames = @('schemaVersion','productId','edition','cliVersion','sourceRevision','payloadManifest','payloadManifestSha256','choices','mcpRegistrations')
+        Assert-ExactProperties $marker $markerNames 'installation marker'
         if ($marker.productId -isnot [string] -or $marker.productId -cne $script:ProductId -or
             $marker.edition -isnot [string] -or $marker.edition -cnotin $script:AllowedEditions -or
             $marker.cliVersion -isnot [string] -or [string]::IsNullOrWhiteSpace($marker.cliVersion) -or
             $marker.cliVersion -cnotmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$' -or
+            $marker.sourceRevision -isnot [string] -or $marker.sourceRevision -cnotmatch '^(?:[0-9a-f]{40}|unknown)$' -or
             $marker.payloadManifest -isnot [string] -or $marker.payloadManifest -cne $script:PayloadManifestName -or
             $marker.payloadManifestSha256 -isnot [string] -or $marker.payloadManifestSha256 -cnotmatch '^[0-9a-f]{64}$' -or
             $marker.mcpRegistrations -isnot [Array]) {
-            throw 'The v2 installation marker has invalid ownership fields.'
+            throw 'The installation marker has invalid ownership fields.'
         }
+        $choices = Assert-InstallChoices $marker.choices
         $registrations = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
         foreach ($registration in @($marker.mcpRegistrations)) {
             if ($registration -isnot [string] -or $registration -notin @('codex','claude','opencode') -or
                 -not $registrations.Add([string]$registration)) {
-                throw 'The v2 installation marker contains an invalid or duplicate MCP registration.'
+                throw 'The installation marker contains an invalid or duplicate MCP registration.'
             }
         }
         $payloadManifestPath = Join-Path $Root $script:PayloadManifestName
@@ -909,8 +940,8 @@ function Get-ManagedInstallState {
             $expectedPayload.Add($relative, $file)
         }
         $expected = @($expectedPayload.Keys) + @($script:MarkerName, $script:PayloadManifestName)
-        Assert-SetEqual $expected @($inventory.Files.Path) 'v2 managed installation'
-        Assert-SetEqual (Get-ExpectedDirectories $expected) @($inventory.Directories) 'v2 managed directories'
+        Assert-SetEqual $expected @($inventory.Files.Path) 'managed installation'
+        Assert-SetEqual (Get-ExpectedDirectories $expected) @($inventory.Directories) 'managed directories'
         foreach ($relative in $expectedPayload.Keys) {
             $actual = $inventory.Files | Where-Object { $_.Path.Equals($relative, [StringComparison]::OrdinalIgnoreCase) }
             $declared = $expectedPayload[$relative]
@@ -924,13 +955,68 @@ function Get-ManagedInstallState {
         SchemaVersion = $schemaVersion
         Edition = [string]$marker.edition
         CliVersion = [string]$marker.cliVersion
+        SourceRevision = [string]$marker.sourceRevision
+        Choices = $choices
         Snapshot = Get-InventorySnapshot $inventory
         BuildMetadata = $buildMetadata
-        McpRegistrations = @(
-            if ($schemaVersion -eq 2) {
-                @($marker.mcpRegistrations)
-            }
-        )
+        McpRegistrations = @($marker.mcpRegistrations)
+    }
+}
+
+function Compare-NumericText {
+    param([string] $Left, [string] $Right)
+    $a = $Left.TrimStart('0')
+    $b = $Right.TrimStart('0')
+    if ($a.Length -ne $b.Length) { return $a.Length.CompareTo($b.Length) }
+    return [Math]::Sign([string]::CompareOrdinal($a, $b))
+}
+
+# Semantic Version 2.0 precedence; build metadata does not take part.
+function Compare-SemanticVersion {
+    param([Parameter(Mandatory)][string] $Left, [Parameter(Mandatory)][string] $Right)
+    $pattern = '^(\d+)\.(\d+)\.(\d+)(?:-([0-9A-Za-z.-]+))?(?:\+[0-9A-Za-z.-]+)?$'
+    $parts = foreach ($value in @($Left, $Right)) {
+        if ($value -cnotmatch $pattern) { throw "Version '$value' is not a semantic version." }
+        ,@($Matches[1], $Matches[2], $Matches[3], $(if ($Matches.ContainsKey(4)) { $Matches[4] } else { '' }))
+    }
+    for ($index = 0; $index -lt 3; $index++) {
+        $order = Compare-NumericText $parts[0][$index] $parts[1][$index]
+        if ($order -ne 0) { return $order }
+    }
+    $leftPre = [string]$parts[0][3]
+    $rightPre = [string]$parts[1][3]
+    if ($leftPre -ceq $rightPre) { return 0 }
+    if ($leftPre -ceq '') { return 1 }
+    if ($rightPre -ceq '') { return -1 }
+    $leftIds = $leftPre.Split('.')
+    $rightIds = $rightPre.Split('.')
+    for ($index = 0; $index -lt [Math]::Min($leftIds.Count, $rightIds.Count); $index++) {
+        $leftNumeric = $leftIds[$index] -cmatch '^\d+$'
+        $rightNumeric = $rightIds[$index] -cmatch '^\d+$'
+        $order = if ($leftNumeric -and $rightNumeric) { Compare-NumericText $leftIds[$index] $rightIds[$index] }
+            elseif ($leftNumeric) { -1 }
+            elseif ($rightNumeric) { 1 }
+            else { [Math]::Sign([string]::CompareOrdinal($leftIds[$index], $rightIds[$index])) }
+        if ($order -ne 0) { return $order }
+    }
+    return $leftIds.Count.CompareTo($rightIds.Count)
+}
+
+# One rule for installer and updater: a release replaces an installation only when its
+# version has higher precedence, or when it is the identical build (a repair). A release
+# never replaces a newer build or a different build with the same version.
+function Assert-InstallationUpgrade {
+    param(
+        [Parameter(Mandatory)] $Installed,
+        [Parameter(Mandatory)][string] $Version,
+        [Parameter(Mandatory)][string] $Revision
+    )
+    $order = Compare-SemanticVersion $Version $Installed.CliVersion
+    if ($order -lt 0) {
+        throw "The package version $Version is older than the installed version $($Installed.CliVersion). Downgrades are refused; to roll back deliberately, run install.ps1 -Uninstall, then install the older release."
+    }
+    if ($order -eq 0 -and -not ($Version -ceq $Installed.CliVersion -and $Revision -ieq $Installed.SourceRevision)) {
+        throw "The package ($Version, revision $Revision) has the same version precedence as the installed build ($($Installed.CliVersion), revision $($Installed.SourceRevision)) but is a different build. A new build needs a higher version; to replace it deliberately, run install.ps1 -Uninstall first."
     }
 }
 
@@ -1007,11 +1093,12 @@ function Set-UserPath {
         [IntPtr]0xffff, 0x001A, [UIntPtr]::Zero, 'Environment', 0x0002, 5000, [ref]$ignored)
 }
 
-# Keeps every other raw entry and exactly one install-directory entry at the end. Entries
-# are compared after expansion, so a %LOCALAPPDATA%-relative entry counts as the install root.
-function Get-UpdatedUserPath {
+# Separates the install-directory entries from every other raw entry. Entries are compared
+# after expansion, so a %LOCALAPPDATA%-relative entry counts as the install root.
+function Split-UserPath {
     param([AllowNull()][string] $CurrentPath, [Parameter(Mandatory)][string] $InstallRoot)
-    $entries = @()
+    $others = @()
+    $containsRoot = $false
     foreach ($entry in @(($CurrentPath -split ';'))) {
         $trimmed = $entry.Trim().Trim('"').TrimEnd('\')
         if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
@@ -1021,9 +1108,21 @@ function Get-UpdatedUserPath {
             $same = [IO.Path]::GetFullPath($expanded).TrimEnd('\').Equals($InstallRoot.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)
         }
         catch { $same = $false }
-        if (-not $same) { $entries += $entry.Trim() }
+        if ($same) { $containsRoot = $true } else { $others += $entry.Trim() }
     }
-    return (@($entries) + $InstallRoot) -join ';'
+    return [pscustomobject]@{ Others = @($others); ContainsRoot = $containsRoot }
+}
+
+# Keeps every other raw entry and exactly one install-directory entry at the end.
+function Get-UpdatedUserPath {
+    param([AllowNull()][string] $CurrentPath, [Parameter(Mandatory)][string] $InstallRoot)
+    return (@((Split-UserPath $CurrentPath $InstallRoot).Others) + $InstallRoot) -join ';'
+}
+
+# Keeps every other raw entry and no install-directory entry.
+function Get-UserPathWithoutInstallRoot {
+    param([AllowNull()][string] $CurrentPath, [Parameter(Mandatory)][string] $InstallRoot)
+    return @((Split-UserPath $CurrentPath $InstallRoot).Others) -join ';'
 }
 
 function Set-TransactionalUserPath {
@@ -1041,7 +1140,7 @@ function Set-TransactionalUserPath {
 }
 
 function Restore-TransactionPath {
-    param($Journal, [string] $TargetKey)
+    param($Journal, [string] $TargetKey, [string] $InstallRoot)
     if ($Journal.pathState -ceq 'none') { return }
     $currentPath = Get-UserPath
     $originalPath = if ([bool]$Journal.originalPathNull) { $null } else { Unprotect-PathValue ([string]$Journal.originalPath) $TargetKey }
@@ -1053,8 +1152,19 @@ function Restore-TransactionPath {
             (-not [bool]$Journal.originalPathNull -and $restoredPath -cne $originalPath)) {
             throw 'The original user PATH could not be restored exactly.'
         }
+        return
     }
-    elseif (-not $isOriginal) { throw 'User PATH changed externally; automatic recovery stopped.' }
+    if ($isOriginal) { return }
+    # Another program changed the PATH after this transaction wrote it. Keep that change and
+    # return only the install-directory entry to what the original PATH had.
+    $shouldContain = (Split-UserPath $originalPath $InstallRoot).ContainsRoot
+    $current = Split-UserPath $currentPath $InstallRoot
+    if ($current.ContainsRoot -ne $shouldContain) {
+        $repaired = if ($shouldContain) { Get-UpdatedUserPath $currentPath $InstallRoot } else { @($current.Others) -join ';' }
+        Set-UserPath $repaired
+        if ((Get-UserPath) -cne $repaired) { throw 'The user PATH could not be repaired exactly.' }
+    }
+    Write-Warning 'The user PATH was changed by another program during the interrupted transaction. That change was kept; only the install-directory entry was returned to its original state.'
 }
 
 function Get-HostSkillParent {
@@ -1077,13 +1187,6 @@ function Get-SkillParent {
     }
     if (-not [string]::IsNullOrWhiteSpace($CustomRoot)) { throw "Unexpected detected Skill host '$TargetName' in a custom-root transaction." }
     return Get-HostSkillParent $TargetName
-}
-
-function Get-SkillTransactionKey {
-    param([bool] $SkillsSkipped, [string] $CustomRoot)
-    if ($SkillsSkipped) { return 'skip' }
-    if ([string]::IsNullOrWhiteSpace($CustomRoot)) { return 'detected-hosts' }
-    return 'custom-' + (Get-StringSha256 $CustomRoot.ToUpperInvariant())
 }
 
 function Get-SkillTransactionPaths {
@@ -1193,17 +1296,56 @@ function Invoke-OfficialMcp {
     }
 }
 
+# Parses host JSON into case-sensitive dictionaries. PowerShell objects merge keys that differ
+# only in case, and host configuration files (Claude's in particular) grow far beyond what a
+# strict tokenizer should read, so neither ConvertFrom-Json objects nor Read-StrictJson fit.
+function ConvertFrom-HostJson {
+    param([Parameter(Mandatory)][AllowEmptyString()][string] $Text, [Parameter(Mandatory)][string] $Context)
+    try {
+        if ($PSVersionTable.PSEdition -ceq 'Core') {
+            return ,(ConvertFrom-Json -InputObject $Text -AsHashtable)
+        }
+        Add-Type -AssemblyName System.Web.Extensions
+        $serializer = [Web.Script.Serialization.JavaScriptSerializer]::new()
+        $serializer.MaxJsonLength = [int]::MaxValue
+        $serializer.RecursionLimit = 256
+        return ,$serializer.DeserializeObject($Text)
+    }
+    catch { throw "$Context is not valid JSON." }
+}
+
+function Read-HostJsonFile {
+    param([Parameter(Mandatory)][string] $Path, [Parameter(Mandatory)][string] $Context)
+    # The host may be writing its own file; share it fully and never hold it open.
+    $stream = [IO.File]::Open($Path, [IO.FileMode]::Open, [IO.FileAccess]::Read,
+        [IO.FileShare]::ReadWrite -bor [IO.FileShare]::Delete)
+    try {
+        if ($stream.Length -gt 256MB) { throw "$Context exceeds its 256 MiB read budget." }
+        $reader = [IO.StreamReader]::new($stream, $script:Utf8, $true)
+        try { $text = $reader.ReadToEnd() } finally { $reader.Dispose() }
+    }
+    finally { $stream.Dispose() }
+    return ,(ConvertFrom-HostJson $text $Context)
+}
+
+function Get-JsonMember {
+    param($Object, [Parameter(Mandatory)][string] $Name)
+    # Both parsers' dictionaries expose ContainsKey; Dictionary<,> hides IDictionary.Contains.
+    if ($Object -isnot [Collections.IDictionary] -or -not $Object.ContainsKey($Name)) { return $null }
+    $value = $Object[$Name]
+    if ($null -eq $value) { return $null }
+    return ,$value
+}
+
 function Test-StdioMcpCommand {
     param($Transport, [string] $InstallExecutable)
-    if ($null -eq $Transport) { return $false }
-    $type = $Transport.PSObject.Properties['type']
-    $command = $Transport.PSObject.Properties['command']
-    $arguments = $Transport.PSObject.Properties['args']
-    return $null -ne $type -and $type.Value -ceq 'stdio' -and
-        $null -ne $command -and $command.Value -is [string] -and
-        [string]::Equals($command.Value, $InstallExecutable, [StringComparison]::OrdinalIgnoreCase) -and
-        $null -ne $arguments -and $arguments.Value -is [array] -and $arguments.Value.Count -eq 2 -and
-        $arguments.Value[0] -ceq 'mcp' -and $arguments.Value[1] -ceq 'serve'
+    $type = Get-JsonMember $Transport 'type'
+    $command = Get-JsonMember $Transport 'command'
+    $arguments = Get-JsonMember $Transport 'args'
+    return $type -is [string] -and $type -ceq 'stdio' -and
+        $command -is [string] -and [string]::Equals($command, $InstallExecutable, [StringComparison]::OrdinalIgnoreCase) -and
+        $arguments -is [array] -and $arguments.Count -eq 2 -and
+        $arguments[0] -ceq 'mcp' -and $arguments[1] -ceq 'serve'
 }
 
 function Get-McpRegistration {
@@ -1218,17 +1360,16 @@ function Get-McpRegistration {
         $result = Invoke-OfficialMcp $Executable @('debug','config') `
             -Environment $environment -WorkingDirectory ([IO.Path]::GetTempPath())
         if ($result.ExitCode -ne 0) { throw 'OpenCode configuration could not be queried.' }
-        try { $configuration = $result.StdOut | ConvertFrom-Json }
-        catch { throw 'OpenCode configuration response is not valid JSON.' }
-        if ($null -eq $configuration -or $configuration -is [array]) { throw 'OpenCode configuration response is not an object.' }
-        $mcp = $configuration.PSObject.Properties['mcp']
-        $entry = if ($null -ne $mcp -and $null -ne $mcp.Value) { $mcp.Value.PSObject.Properties[$script:CommandName] } else { $null }
+        $configuration = ConvertFrom-HostJson $result.StdOut 'OpenCode configuration response'
+        if ($configuration -isnot [Collections.IDictionary]) { throw 'OpenCode configuration response is not an object.' }
+        $entry = Get-JsonMember (Get-JsonMember $configuration 'mcp') $script:CommandName
         if ($null -eq $entry) { return [pscustomobject]@{ Exists = $false; Matches = $false } }
-        $type = $entry.Value.PSObject.Properties['type']
-        $command = $entry.Value.PSObject.Properties['command']
-        $arguments = if ($null -ne $command) { @($command.Value) } else { @() }
-        $sameCommand = $null -ne $type -and $type.Value -ceq 'local' -and $arguments.Count -eq 3 -and
-            [string]::Equals([string]$arguments[0], $InstallExecutable, [StringComparison]::OrdinalIgnoreCase) -and
+        $type = Get-JsonMember $entry 'type'
+        # Get-JsonMember keeps an array whole, so wrap only a scalar.
+        $command = Get-JsonMember $entry 'command'
+        $arguments = if ($command -is [array]) { $command } else { @($command) }
+        $sameCommand = $type -is [string] -and $type -ceq 'local' -and $arguments.Count -eq 3 -and
+            $arguments[0] -is [string] -and [string]::Equals($arguments[0], $InstallExecutable, [StringComparison]::OrdinalIgnoreCase) -and
             $arguments[1] -ceq 'mcp' -and $arguments[2] -ceq 'serve'
         return [pscustomobject]@{ Exists = $true; Matches = [bool]$sameCommand }
     }
@@ -1237,10 +1378,8 @@ function Get-McpRegistration {
     $result = Invoke-OfficialMcp $Executable $query -WorkingDirectory ([IO.Path]::GetTempPath())
     if ($result.ExitCode -ne 0) { return [pscustomobject]@{ Exists = $false; Matches = $false } }
     if ($HostName -ceq 'codex') {
-        try { $configuration = $result.StdOut | ConvertFrom-Json }
-        catch { throw 'Codex MCP response is not valid JSON.' }
-        $transport = $configuration.PSObject.Properties['transport']
-        $sameCommand = $null -ne $transport -and (Test-StdioMcpCommand $transport.Value $InstallExecutable)
+        $configuration = ConvertFrom-HostJson $result.StdOut 'Codex MCP response'
+        $sameCommand = Test-StdioMcpCommand (Get-JsonMember $configuration 'transport') $InstallExecutable
     }
     else {
         # Claude's get output joins arguments with spaces. Read its documented
@@ -1255,59 +1394,131 @@ function Get-McpRegistration {
             elseif (-not [IO.Path]::IsPathRooted($configDirectory)) {
                 $configDirectory = Join-Path ([IO.Path]::GetTempPath()) $configDirectory
             }
-            $configPath = Join-Path $configDirectory '.claude.json'
-            $stream = [IO.File]::Open($configPath, [IO.FileMode]::Open, [IO.FileAccess]::Read, [IO.FileShare]::Read)
-            try {
-                if ($stream.Length -gt 1MB) { throw 'Claude user configuration exceeds its read budget.' }
-                $reader = [IO.StreamReader]::new($stream)
-                try { $configuration = $reader.ReadToEnd() | ConvertFrom-Json } finally { $reader.Dispose() }
-            }
-            finally { $stream.Dispose() }
-            $servers = $configuration.PSObject.Properties['mcpServers']
-            $entry = if ($null -ne $servers -and $null -ne $servers.Value) { $servers.Value.PSObject.Properties[$script:CommandName] } else { $null }
-            $sameCommand = $null -ne $entry -and (Test-StdioMcpCommand $entry.Value $InstallExecutable)
+            $configuration = Read-HostJsonFile (Join-Path $configDirectory '.claude.json') 'Claude user configuration'
+            $entry = Get-JsonMember (Get-JsonMember $configuration 'mcpServers') $script:CommandName
+            $sameCommand = Test-StdioMcpCommand $entry $InstallExecutable
         }
     }
     return [pscustomobject]@{ Exists = $true; Matches = [bool]$sameCommand }
 }
 
+# Each host's own CLI adds and removes its registration; OpenCode's named, noninteractive add
+# writes global configuration itself, preserving JSONC. Do not implement a second host
+# configuration writer. OpenCode has no noninteractive remove, so its removal is manual.
+function Get-McpHostSpecs {
+    param([Parameter(Mandatory)][string] $InstallExecutable)
+    $name = $script:CommandName
+    return @(
+        [pscustomobject]@{ Name = 'codex'; Executable = 'codex'
+            Add = @('mcp','add',$name,'--',$InstallExecutable,'mcp','serve'); Remove = @('mcp','remove',$name)
+            ManualRemoval = "run 'codex mcp remove $name'" },
+        [pscustomobject]@{ Name = 'claude'; Executable = 'claude'
+            Add = @('mcp','add',$name,'--scope','user','--',$InstallExecutable,'mcp','serve'); Remove = @('mcp','remove',$name,'--scope','user')
+            ManualRemoval = "run 'claude mcp remove $name --scope user'" },
+        [pscustomobject]@{ Name = 'opencode'; Executable = 'opencode'
+            Add = @('mcp','add',$name,'--',$InstallExecutable,'mcp','serve'); Remove = $null
+            ManualRemoval = "remove the '$name' entry from the 'mcp' section of the OpenCode global configuration (~/.config/opencode/opencode.json or opencode.jsonc)" }
+    )
+}
+
+function Remove-McpRegistration {
+    param([Parameter(Mandatory)] $HostSpec, [Parameter(Mandatory)][string] $Executable, [Parameter(Mandatory)][string] $InstallExecutable)
+    if ($null -eq $HostSpec.Remove) { return $false }
+    try {
+        $removal = Invoke-OfficialMcp $Executable ([string[]]$HostSpec.Remove) -WorkingDirectory ([IO.Path]::GetTempPath())
+        if ($removal.ExitCode -ne 0) { return $false }
+        return -not (Get-McpRegistration $HostSpec.Name $Executable $InstallExecutable).Exists
+    }
+    catch { return $false }
+}
+
+# Returns the hosts whose registration this installation owns afterwards. An entry is owned
+# only when this installer created it: an existing entry stays owned while it still matches,
+# and a failed query keeps the recorded ownership instead of silently giving it up.
 function Register-OwnedMcp {
     param(
         [Parameter(Mandatory)][string] $InstallExecutable,
         [Parameter(Mandatory)][AllowEmptyCollection()][string[]] $PreviouslyOwned
     )
     $registered = [Collections.Generic.List[string]]::new()
-    $mcpHosts = @(
-        [pscustomobject]@{ Name = 'codex'; Executable = 'codex'; Add = @('mcp','add',$script:CommandName,'--',$InstallExecutable,'mcp','serve') },
-        [pscustomobject]@{ Name = 'claude'; Executable = 'claude'; Add = @('mcp','add',$script:CommandName,'--scope','user','--',$InstallExecutable,'mcp','serve') },
-        [pscustomobject]@{ Name = 'opencode'; Executable = 'opencode'; Add = @('mcp','add',$script:CommandName,'--',$InstallExecutable,'mcp','serve') }
-    )
-    foreach ($hostSpec in $mcpHosts) {
+    foreach ($hostSpec in @(Get-McpHostSpecs $InstallExecutable)) {
+        $name = $hostSpec.Name
+        $owned = $name -in $PreviouslyOwned
         $command = Get-Command $hostSpec.Executable -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
         if ($null -eq $command) {
-            Write-Warning "MCP host '$($hostSpec.Name)' CLI was not found; registration was skipped."
+            if ($owned) { $registered.Add($name) }
+            Write-Warning "MCP host '$name' CLI was not found; registration was skipped."
             continue
         }
-        try {
-            $existing = Get-McpRegistration $hostSpec.Name $command.Source $InstallExecutable
-            if ($existing.Exists) {
-                if ($hostSpec.Name -in $PreviouslyOwned -and $existing.Matches) { $registered.Add($hostSpec.Name) }
-                else { Write-Warning "MCP host '$($hostSpec.Name)' already has an '$($script:CommandName)' registration that could not be verified as installer-owned; it was preserved as user-owned." }
-                continue
-            }
-            # OpenCode's named, noninteractive add writes global configuration itself,
-            # preserving JSONC. Do not implement a second host configuration writer.
-            $add = Invoke-OfficialMcp $command.Source ([string[]]$hostSpec.Add) -WorkingDirectory ([IO.Path]::GetTempPath())
-            if ($add.ExitCode -ne 0) { throw 'MCP registration command failed.' }
-            $published = Get-McpRegistration $hostSpec.Name $command.Source $InstallExecutable
-            if (-not $published.Exists -or -not $published.Matches) { throw 'MCP registration could not be verified after adding it.' }
-            $registered.Add($hostSpec.Name)
-        }
+        try { $existing = Get-McpRegistration $name $command.Source $InstallExecutable }
         catch {
-            Write-Warning "MCP host '$($hostSpec.Name)' registration could not be verified and was skipped; the CLI installation remains valid."
+            if ($owned) { $registered.Add($name) }
+            Write-Warning "MCP host '$name' registration could not be queried and was left unchanged ($($_.Exception.Message)); the CLI installation remains valid."
+            continue
+        }
+        if ($existing.Exists) {
+            if ($owned -and $existing.Matches) { $registered.Add($name) }
+            else { Write-Warning "MCP host '$name' already has a '$($script:CommandName)' registration that is not verified as installer-owned; it was preserved as user-owned." }
+            continue
+        }
+        try { $add = Invoke-OfficialMcp $command.Source ([string[]]$hostSpec.Add) -WorkingDirectory ([IO.Path]::GetTempPath()) }
+        catch {
+            Write-Warning "MCP host '$name' registration command could not run ($($_.Exception.Message)); registration was skipped."
+            continue
+        }
+        if ($add.ExitCode -ne 0) {
+            Write-Warning "MCP host '$name' registration command failed with exit code $($add.ExitCode); registration was skipped."
+            continue
+        }
+        # No entry existed before the add, so whatever is registered now was created here.
+        $verified = $false
+        try {
+            $published = Get-McpRegistration $name $command.Source $InstallExecutable
+            $verified = $published.Exists -and $published.Matches
+        }
+        catch { $verified = $false }
+        if ($verified) { $registered.Add($name); continue }
+        if (Remove-McpRegistration $hostSpec $command.Source $InstallExecutable) {
+            Write-Warning "MCP host '$name' accepted the registration, but it could not be verified, so it was removed again."
+        }
+        else {
+            $registered.Add($name)
+            Write-Warning "MCP host '$name' accepted the registration, but it could not be verified or removed again; it is recorded as installer-owned so that uninstall removes it."
         }
     }
     return @($registered)
+}
+
+# Removes only registrations this installation owns and that still point at it.
+function Unregister-OwnedMcp {
+    param(
+        [Parameter(Mandatory)][string] $InstallExecutable,
+        [Parameter(Mandatory)][AllowEmptyCollection()][string[]] $Owned
+    )
+    foreach ($hostSpec in @(Get-McpHostSpecs $InstallExecutable | Where-Object { $_.Name -in $Owned })) {
+        $name = $hostSpec.Name
+        $command = Get-Command $hostSpec.Executable -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
+        if ($null -eq $command) {
+            Write-Warning "MCP host '$name' CLI was not found. To remove this installation's MCP registration, $($hostSpec.ManualRemoval)."
+            continue
+        }
+        try { $existing = Get-McpRegistration $name $command.Source $InstallExecutable }
+        catch {
+            Write-Warning "MCP host '$name' registration could not be queried ($($_.Exception.Message)). To remove it, $($hostSpec.ManualRemoval)."
+            continue
+        }
+        if (-not $existing.Exists) { continue }
+        if (-not $existing.Matches) {
+            Write-Warning "MCP host '$name' has a '$($script:CommandName)' registration that no longer points at this installation; it was preserved."
+            continue
+        }
+        if (Remove-McpRegistration $hostSpec $command.Source $InstallExecutable) {
+            Write-Host "Removed the '$($script:CommandName)' MCP registration from $name."
+        }
+        else {
+            Write-Warning "MCP host '$name' registration could not be removed automatically. To remove it, $($hostSpec.ManualRemoval)."
+        }
+    }
 }
 
 function Get-SkillContentHash {
@@ -1364,7 +1575,11 @@ function Get-SkillState {
         if ($contentHash -cne [string]$manifest.contentSha256) { throw 'The managed Skill aggregate content hash does not match.' }
     }
 
-    return [pscustomobject]@{ Version = $version; Snapshot = Get-InventorySnapshot $inventory }
+    return [pscustomobject]@{
+        Version = $version
+        Snapshot = Get-InventorySnapshot $inventory
+        ExecutableSha256 = [string]$manifest.executableSha256
+    }
 }
 
 function Remove-VerifiedInstallDirectory {
@@ -1410,38 +1625,56 @@ function Invoke-TestFault {
     if ($script:TestFaultsEnabled -and [Environment]::GetEnvironmentVariable($script:EnvironmentVariablePrefix + 'INSTALL_FAULT') -ceq $Phase) { throw "Injected installer failure at '$Phase'." }
 }
 
+function Get-InvalidJournalMessage {
+    param([string] $JournalPath, [string] $Reason)
+    return "The installer journal '$JournalPath' is damaged or was written by a different installer version ($Reason). It was preserved and nothing was changed. Compare it with the sibling .$($script:ProductId)-stage-*, .$($script:ProductId)-backup-* and .aspose-skill-install-backup-* directories, keep what you need, move the journal aside, then retry."
+}
+
 function Recover-PendingTransaction {
     param(
         [string] $JournalPath,
         [string] $InstallRoot,
         [string] $InstallParent,
-        [string] $TargetKey,
-        [string] $CustomSkillsRoot,
-        [bool] $SkillsSkipped
+        [string] $TargetKey
     )
     if (-not (Test-Path -LiteralPath $JournalPath -PathType Leaf)) { return }
-    $journal = Read-StrictJson $JournalPath 'installer transaction journal'
-    Assert-ExactProperties $journal @(
-        'schemaVersion','productId','targetKey','transactionId','phase','oldSnapshot','newSnapshot',
-        'pathState','originalPath','originalPathNull','appliedPathSha256','skillTargetKey',
-        'customSkillsRootExisted','skills') 'installer transaction journal'
-    if (-not (Test-JsonInteger $journal.schemaVersion 4) -or $journal.productId -cne $script:ProductId -or
-        $journal.targetKey -cne $TargetKey -or $journal.transactionId -cnotmatch '^[0-9a-f]{32}$' -or
-        $journal.phase -cnotin @('prepared','oldMoved','newPublished','committed') -or
-        $journal.pathState -cnotin @('none','intent','applied') -or
-        $journal.originalPathNull -isnot [bool] -or $journal.customSkillsRootExisted -isnot [bool] -or
-        ($journal.pathState -ceq 'none' -and $journal.appliedPathSha256 -cne '') -or
-        ($journal.pathState -cne 'none' -and $journal.appliedPathSha256 -cnotmatch '^[0-9a-f]{64}$') -or
-        $journal.skillTargetKey -cne (Get-SkillTransactionKey $SkillsSkipped $CustomSkillsRoot)) {
-        throw "Installer journal is invalid and was preserved for inspection: $JournalPath"
+    try {
+        $journal = Read-StrictJson $JournalPath 'installer transaction journal'
+        Assert-ExactProperties $journal @(
+            'schemaVersion','productId','targetKey','transactionId','phase','oldSnapshot','newSnapshot',
+            'pathState','originalPath','originalPathNull','appliedPathSha256','customSkillsRoot',
+            'customSkillsRootExisted','skills') 'installer transaction journal'
+        if (-not (Test-JsonInteger $journal.schemaVersion 5) -or $journal.productId -cne $script:ProductId -or
+            $journal.targetKey -cne $TargetKey -or $journal.transactionId -cnotmatch '^[0-9a-f]{32}$' -or
+            $journal.phase -cnotin @('prepared','oldMoved','newPublished','committed') -or
+            $journal.oldSnapshot -isnot [string] -or $journal.newSnapshot -isnot [string] -or
+            $journal.pathState -cnotin @('none','intent','applied') -or
+            $journal.originalPathNull -isnot [bool] -or $journal.customSkillsRootExisted -isnot [bool] -or
+            $journal.customSkillsRoot -isnot [string] -or
+            ($journal.pathState -ceq 'none' -and $journal.appliedPathSha256 -cne '') -or
+            ($journal.pathState -cne 'none' -and $journal.appliedPathSha256 -cnotmatch '^[0-9a-f]{64}$')) {
+            throw 'its fields are invalid'
+        }
+        # The journal names its own Skill root, so recovery never depends on the switches
+        # of the invocation that happens to find it.
+        $CustomSkillsRoot = ''
+        if ([string]$journal.customSkillsRoot) {
+            $CustomSkillsRoot = Unprotect-PathValue ([string]$journal.customSkillsRoot) $TargetKey
+        }
     }
+    catch { throw (Get-InvalidJournalMessage $JournalPath $_.Exception.Message) }
     $id = [string]$journal.transactionId
     $stage = Join-Path $InstallParent ".$($script:ProductId)-stage-$id"
     $backup = Join-Path $InstallParent ".$($script:ProductId)-backup-$id"
     $skillStageParent = Join-Path $InstallParent ".$($script:ProductId)-skill-stage-$id"
     if ($journal.phase -ceq 'committed') {
-        $current = Get-ManagedInstallState $InstallRoot
-        if ($current.Snapshot -cne $journal.newSnapshot) { throw "Committed installation changed externally; recovery stopped: $InstallRoot" }
+        if ([string]$journal.newSnapshot) {
+            $current = Get-ManagedInstallState $InstallRoot
+            if ($current.Snapshot -cne $journal.newSnapshot) { throw "Committed installation changed externally; recovery stopped: $InstallRoot" }
+        }
+        elseif (Test-Path -LiteralPath $InstallRoot) {
+            throw "A directory appeared where an uninstalled installation was removed; recovery stopped: $InstallRoot"
+        }
         if (Test-Path -LiteralPath $backup -PathType Container) { Remove-VerifiedInstallDirectory $backup ([string]$journal.oldSnapshot) }
         if (Test-Path -LiteralPath $stage -PathType Container) { Remove-VerifiedInstallDirectory $stage ([string]$journal.newSnapshot) }
         foreach ($skillRecord in @($journal.skills)) {
@@ -1472,7 +1705,7 @@ function Recover-PendingTransaction {
                 $skillRecord.oldSnapshot -and $targetState.Snapshot -ceq $skillRecord.oldSnapshot) {
                 $targetIsOld = $true
             }
-            elseif ($targetState.Snapshot -ceq $skillRecord.newSnapshot) {
+            elseif ($skillRecord.newSnapshot -and $targetState.Snapshot -ceq $skillRecord.newSnapshot) {
                 $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $CustomSkillsRoot ([string]$skillRecord.skill) $id
                 Remove-VerifiedSkillDirectory $paths.Target ([string]$skillRecord.skill) ([string]$skillRecord.newSnapshot)
             }
@@ -1493,7 +1726,7 @@ function Recover-PendingTransaction {
             throw "Skill backup required for recovery is missing: $($paths.Backup)"
         }
     }
-    Restore-TransactionPath $journal $TargetKey
+    Restore-TransactionPath $journal $TargetKey $InstallRoot
     # Recover from observed snapshots, not only the last journal phase. A
     # process can terminate after an atomic directory move but before the next
     # phase write reaches disk.
@@ -1509,7 +1742,7 @@ function Recover-PendingTransaction {
             if ($oldSnapshot -and $targetState.Snapshot -ceq $oldSnapshot) {
                 $targetIsOld = $true
             }
-            elseif ($targetState.Snapshot -ceq $newSnapshot) {
+            elseif ($newSnapshot -and $targetState.Snapshot -ceq $newSnapshot) {
                 Remove-VerifiedInstallDirectory $InstallRoot $newSnapshot
             }
             else { throw "Installation target changed externally during recovery: $InstallRoot" }
@@ -1549,382 +1782,738 @@ function Recover-PendingTransaction {
     Remove-Item -LiteralPath $JournalPath -Force
 }
 
-# Dot-sourcing exposes the ownership primitives to black-box contract tests
-# without resolving a package or mutating installation state.
-if ($isDotSourced) { return }
-
-if ($PSBoundParameters.ContainsKey('LicenseProduct') -and $LicenseProduct -cnotin $script:AllowedLicenseProducts) {
-    throw "Unknown license product '$LicenseProduct'. Active products: $($script:AllowedLicenseProducts -join ', ')."
+function Resolve-InstallRoot {
+    param([AllowEmptyString()][string] $Directory)
+    $localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
+    $requested = if ([string]::IsNullOrWhiteSpace($Directory)) { Join-Path $localAppData $script:DefaultInstallDirectory } else { $Directory }
+    $full = Assert-LocalAbsolutePath $requested 'install directory'
+    # One spelling per directory: the transaction key, lock, journal and PATH entry must not
+    # depend on whether a caller passed a trailing separator.
+    $trimmed = $full.TrimEnd('\')
+    if ($trimmed.Length -le ([IO.Path]::GetPathRoot($full)).TrimEnd('\').Length) { throw "The install directory may not be a drive root: $full" }
+    return $trimmed
 }
 
-
-if ($SkipSkills -and -not [string]::IsNullOrWhiteSpace($SkillsRoot)) {
-    throw '-SkillsRoot conflicts with -SkipSkills.'
+function Get-TransactionKey {
+    param([Parameter(Mandatory)][string] $InstallRoot)
+    return (Get-StringSha256 $InstallRoot.ToUpperInvariant()).Substring(0, 16)
 }
-$cleanupDirectory = ''
-if (-not [string]::IsNullOrWhiteSpace($CleanupRoot)) {
-    $cleanupDirectory = Assert-LocalAbsolutePath $CleanupRoot 'update staging directory'
-    $temporaryRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
-    if ((-not $cleanupDirectory.StartsWith($temporaryRoot, [StringComparison]::OrdinalIgnoreCase)) -or (-not [IO.Path]::GetFileName($cleanupDirectory).StartsWith($script:ProductId + '-update-', [StringComparison]::OrdinalIgnoreCase))) {
-        throw "-CleanupRoot must be a $($script:ProductId)-update-* directory below the local temporary directory."
+
+# Install, update and uninstall share two locks: a per-user mutex for state shared by every
+# installation (the user PATH and host registrations), and a per-directory lock file.
+function Enter-InstallLock {
+    param([Parameter(Mandatory)][string] $InstallRoot)
+    $installParent = Split-Path -Parent $InstallRoot
+    [IO.Directory]::CreateDirectory($installParent) | Out-Null
+    $targetKey = Get-TransactionKey $InstallRoot
+    $userIdentity = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
+    $mutex = [Threading.Mutex]::new($false, "Global\AsposeCli.Install.$(Get-StringSha256 $userIdentity)")
+    $held = $false
+    try { $held = $mutex.WaitOne([TimeSpan]::FromMinutes(5)) }
+    catch [Threading.AbandonedMutexException] { $held = $true }
+    if (-not $held) { $mutex.Dispose(); throw 'Another installer is updating the current user state. Retry after it completes.' }
+    $lockPath = Join-Path $installParent ".$($script:ProductId)-install-$targetKey.lock"
+    try { $stream = [IO.FileStream]::new($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None) }
+    catch { $mutex.ReleaseMutex(); $mutex.Dispose(); throw "Another installation is using '$InstallRoot'. Retry after it finishes." }
+    return [pscustomobject]@{
+        InstallRoot = $InstallRoot
+        InstallParent = $installParent
+        TargetKey = $targetKey
+        JournalPath = Join-Path $installParent ".$($script:ProductId)-transaction-$targetKey.json"
+        LockPath = $lockPath
+        Stream = $stream
+        Mutex = $mutex
     }
 }
-$customSkillsRoot = ''
-if (-not [string]::IsNullOrWhiteSpace($SkillsRoot)) {
-    if ($SkillsRoot -cnotmatch '^[A-Za-z]:[\\/]') {
+
+function Exit-InstallLock {
+    param($Lock)
+    if ($null -eq $Lock) { return }
+    $Lock.Stream.Dispose()
+    $Lock.Mutex.ReleaseMutex()
+    $Lock.Mutex.Dispose()
+    try { Remove-Item -LiteralPath $Lock.LockPath -Force -ErrorAction SilentlyContinue } catch { }
+}
+
+function Invoke-PendingRecovery {
+    param([Parameter(Mandatory)] $Lock)
+    try { Recover-PendingTransaction $Lock.JournalPath $Lock.InstallRoot $Lock.InstallParent $Lock.TargetKey }
+    catch {
+        throw "An interrupted earlier transaction for '$($Lock.InstallRoot)' could not be completed automatically: $($_.Exception.Message) Its journal '$($Lock.JournalPath)' was kept and nothing unverified was deleted; resolve the named path, then retry."
+    }
+}
+
+function Resolve-CustomSkillsRoot {
+    param([AllowEmptyString()][string] $Root)
+    if ([string]::IsNullOrWhiteSpace($Root)) { return '' }
+    if ($Root -cnotmatch '^[A-Za-z]:[\\/]') {
         throw '-SkillsRoot must be an absolute local fixed-disk directory.'
     }
-    $customSkillsRoot = Assert-LocalAbsolutePath $SkillsRoot 'custom Skill root'
-    $rootPath = [IO.Path]::GetPathRoot($customSkillsRoot)
-    if ($customSkillsRoot.TrimEnd('\').Equals($rootPath.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)) {
+    $full = (Assert-LocalAbsolutePath $Root 'custom Skill root').TrimEnd('\')
+    $drive = [IO.Path]::GetPathRoot($full)
+    if ($full.Length -le $drive.TrimEnd('\').Length) {
         throw '-SkillsRoot may not be a drive root.'
     }
-    if ([IO.DriveInfo]::new($rootPath).DriveType -ne [IO.DriveType]::Fixed) {
+    if ([IO.DriveInfo]::new($drive).DriveType -ne [IO.DriveType]::Fixed) {
         throw '-SkillsRoot must be on a fixed local disk.'
     }
-    if ((Test-Path -LiteralPath $customSkillsRoot) -and -not (Test-Path -LiteralPath $customSkillsRoot -PathType Container)) {
-        throw "Custom Skill root is not a directory: $customSkillsRoot"
+    if ((Test-Path -LiteralPath $full) -and -not (Test-Path -LiteralPath $full -PathType Container)) {
+        throw "Custom Skill root is not a directory: $full"
+    }
+    return $full
+}
+
+function Assert-SkillsRootPlacement {
+    param([AllowEmptyString()][string] $SkillsRoot, [string] $PackageDirectory, [string] $InstallRoot)
+    if ([string]::IsNullOrWhiteSpace($SkillsRoot)) { return }
+    if ((Test-IsSameOrChildPath $SkillsRoot $PackageDirectory) -or (Test-IsSameOrChildPath $PackageDirectory $SkillsRoot) -or
+        (Test-IsSameOrChildPath $SkillsRoot $InstallRoot) -or (Test-IsSameOrChildPath $InstallRoot $SkillsRoot)) {
+        throw 'Custom Skill root may not overlap the package or install directory.'
     }
 }
 
-# Resolve and verify the release package before touching customer state.
-$packageDirectory = Assert-LocalAbsolutePath ((Resolve-Path -LiteralPath $PackageRoot).Path) 'package directory'
-$sourceExecutable = Join-Path $packageDirectory $script:ExecutableName
-$checksumPath = Join-Path $packageDirectory 'SHA256SUMS'
-if (-not (Test-Path -LiteralPath $sourceExecutable -PathType Leaf) -or -not (Test-Path -LiteralPath $checksumPath -PathType Leaf)) {
-    throw "Release package must contain $($script:ExecutableName) and SHA256SUMS: $packageDirectory"
-}
-$packageInventory = Get-TreeInventory $packageDirectory
-$packageTrustFiles = @('SHA256SUMS',$script:PackageSignatureManifestName,$script:PackageSignatureName)
-# Read the checksum manifest once: the bytes whose signature is verified are the bytes parsed.
-if ((Get-Item -LiteralPath $checksumPath).Length -gt 1MB) { throw 'SHA256SUMS exceeds its 1 MiB limit.' }
-$checksumBytes = [IO.File]::ReadAllBytes($checksumPath)
-Assert-CustomerPackageTrust $packageDirectory $checksumBytes $packageInventory -Development:$DevelopmentPackage
-$verifiedFiles = @($packageInventory.Files | Where-Object { $_.Path -cnotin $packageTrustFiles } | Sort-Object Path)
-$payloadFiles = @($verifiedFiles | Where-Object { $_.Path -cnotin @('install.cmd','install.ps1') })
-$checksums = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
-foreach ($line in ($script:Utf8.GetString($checksumBytes) -split "`r?`n")) {
-    if ([string]::IsNullOrWhiteSpace($line)) { continue }
-    if ($line -cnotmatch '^([0-9A-Fa-f]{64})\s+\*?(.+)$') { throw "Malformed SHA256SUMS line: $line" }
-    $relative = Assert-SafeRelativePath $Matches[2]
-    if ($checksums.ContainsKey($relative)) { throw "Duplicate checksum path '$relative'." }
-    $checksums.Add($relative, $Matches[1].ToLowerInvariant())
-}
-Assert-SetEqual @($verifiedFiles.Path) @($checksums.Keys) 'package checksum manifest'
-foreach ($payload in $verifiedFiles) {
-    if ($payload.Sha256 -cne $checksums[$payload.Path]) { throw "Checksum mismatch for '$($payload.Path)': expected $($checksums[$payload.Path]), got $($payload.Sha256)." }
-}
-$capabilities = Invoke-Capabilities $sourceExecutable
-if ($capabilities.edition -cnotin $script:AllowedEditions) { throw "Packaged executable reports unknown edition '$($capabilities.edition)'." }
-$releaseIndicators = @('install.cmd','install.ps1',$script:BuildManifestName) |
-    Where-Object { $_ -cin @($packageInventory.Files.Path) }
-if (@($releaseIndicators).Count -ne 0) {
-    if (-not $DevelopmentPackage -and 'install.cmd' -cin @($packageInventory.Files.Path)) {
-        throw "Customer release packages must not contain the unsigned development entry 'install.cmd'."
+function Resolve-CleanupRoot {
+    param([AllowEmptyString()][string] $Root)
+    if ([string]::IsNullOrWhiteSpace($Root)) { return '' }
+    $directory = Assert-LocalAbsolutePath $Root 'update staging directory'
+    $temporaryRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
+    if ((-not $directory.StartsWith($temporaryRoot, [StringComparison]::OrdinalIgnoreCase)) -or
+        (-not [IO.Path]::GetFileName($directory).StartsWith($script:ProductId + '-update-', [StringComparison]::OrdinalIgnoreCase))) {
+        throw "-CleanupRoot must be a $($script:ProductId)-update-* directory below the local temporary directory."
     }
-    $requiredReleaseFiles = @('install.ps1',$script:BuildManifestName)
-    if ($DevelopmentPackage) { $requiredReleaseFiles += 'install.cmd' }
-    foreach ($required in $requiredReleaseFiles) {
-        if ($required -cnotin @($packageInventory.Files.Path)) { throw "Release package is missing '$required'." }
-    }
-    $packageBuildMetadata = Read-BuildMetadata $packageDirectory
-    Assert-CapabilitiesMatchBuildMetadata $capabilities $packageBuildMetadata
+    return $directory
 }
 
-$localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
-$installRoot = Assert-LocalAbsolutePath $(if ([string]::IsNullOrWhiteSpace($InstallDirectory)) { Join-Path $localAppData $script:DefaultInstallDirectory } else { $InstallDirectory }) 'install directory'
-$installParent = Split-Path -Parent $installRoot
-if ((Test-IsSameOrChildPath $installRoot $packageDirectory) -or (Test-IsSameOrChildPath $packageDirectory $installRoot)) { throw 'Package and install directories may not overlap.' }
-if (-not [string]::IsNullOrWhiteSpace($customSkillsRoot) -and
-    ((Test-IsSameOrChildPath $customSkillsRoot $packageDirectory) -or (Test-IsSameOrChildPath $packageDirectory $customSkillsRoot) -or
-     (Test-IsSameOrChildPath $customSkillsRoot $installRoot) -or (Test-IsSameOrChildPath $installRoot $customSkillsRoot))) {
-    throw 'Custom Skill root may not overlap the package or install directory.'
-}
-[IO.Directory]::CreateDirectory($installParent) | Out-Null
-$targetKey = (Get-StringSha256 $installRoot.ToUpperInvariant()).Substring(0,16)
-
-$userIdentity = [Security.Principal.WindowsIdentity]::GetCurrent().User.Value
-$userHashAlgorithm = [Security.Cryptography.SHA256]::Create()
-try { $userLockHash = ([BitConverter]::ToString($userHashAlgorithm.ComputeHash([Text.Encoding]::UTF8.GetBytes($userIdentity)))).Replace('-','').ToLowerInvariant() }
-finally { $userHashAlgorithm.Dispose() }
-$installStateMutex = [Threading.Mutex]::new($false, "Global\AsposeCli.Install.$userLockHash")
-$installStateHeld = $false
-try { $installStateHeld = $installStateMutex.WaitOne([TimeSpan]::FromMinutes(5)) }
-catch [Threading.AbandonedMutexException] { $installStateHeld = $true }
-if (-not $installStateHeld) { $installStateMutex.Dispose(); throw 'Another installer is updating the current user state. Retry after it completes.' }
-
-$lockPath = Join-Path $installParent ".$($script:ProductId)-install-$targetKey.lock"
-$journalPath = Join-Path $installParent ".$($script:ProductId)-transaction-$targetKey.json"
-try {
-    $installLock = [IO.FileStream]::new($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
-}
-catch { $installStateMutex.ReleaseMutex(); $installStateMutex.Dispose(); throw "Another installation is using '$installRoot'. Retry after it finishes." }
-
-$transactionId = [Guid]::NewGuid().ToString('N')
-$stage = Join-Path $installParent ".$($script:ProductId)-stage-$transactionId"
-$backup = Join-Path $installParent ".$($script:ProductId)-backup-$transactionId"
-$licenseStage = Join-Path $installParent ".$($script:ProductId)-license-stage-$transactionId"
-$journal = $null
-$licenseFailure = $null
-$existingState = $null
-$oldUserPath = $null
-$rollbackComplete = $false
-try {
-    Recover-PendingTransaction $journalPath $installRoot $installParent $targetKey $customSkillsRoot ([bool]$SkipSkills)
-    if (Test-Path -LiteralPath $installRoot -PathType Container) {
-        if (@(Get-ChildItem -LiteralPath $installRoot -Force).Count -ne 0) { $existingState = Get-ManagedInstallState $installRoot }
+# The status file tells a later CLI run how a detached installer run ended. The CLI may have
+# written it first (state 'pending', with the versions involved); those fields are kept.
+function Start-InstallerStatus {
+    param([Parameter(Mandatory)][string] $Path)
+    $full = Assert-LocalAbsolutePath $Path 'installer status file'
+    if ([IO.Path]::GetExtension($full) -cne '.json' -or -not (Test-Path -LiteralPath (Split-Path -Parent $full) -PathType Container)) {
+        throw '-StatusPath must name a .json file in an existing directory.'
     }
-    elseif (Test-Path -LiteralPath $installRoot) { throw "Install target is not a directory: $installRoot" }
-
-    [IO.Directory]::CreateDirectory($stage) | Out-Null
-    foreach ($payload in $payloadFiles) {
-        $destination = Join-Path $stage $payload.Path.Replace('/', '\')
-        [IO.Directory]::CreateDirectory((Split-Path -Parent $destination)) | Out-Null
-        Copy-Item -LiteralPath $payload.FullPath -Destination $destination
+    $status = $null
+    if (Test-Path -LiteralPath $full -PathType Leaf) {
+        try { $status = Read-StrictJson $full 'installer status' } catch { $status = $null }
     }
-    $payloadManifest = [ordered]@{
+    if ($status -isnot [Management.Automation.PSCustomObject]) { $status = [pscustomobject]@{} }
+    $context = [pscustomobject]@{ Path = $full; Log = [IO.Path]::ChangeExtension($full, '.log'); Status = $status; Transcript = $false }
+    Set-InstallerStatus $context 'running' $null
+    try {
+        Start-Transcript -LiteralPath $context.Log -Force | Out-Null
+        $context.Transcript = $true
+    }
+    catch { Write-Warning "The installer log could not be started at '$($context.Log)': $($_.Exception.Message)" }
+    return $context
+}
+
+function Set-InstallerStatus {
+    # $Message stays untyped: a [string] parameter would turn $null into an empty string.
+    param($Context, [string] $State, $Message)
+    if ($null -eq $Context) { return }
+    $values = [ordered]@{
         schemaVersion = 1
-        productId = $script:ProductId
-        files = @($payloadFiles | ForEach-Object { [ordered]@{ path = $_.Path; size = $_.Size; sha256 = $_.Sha256 } })
+        state = $State
+        installerProcessId = $PID
+        message = $Message
+        log = $Context.Log
+        updatedAt = [DateTime]::UtcNow.ToString('o', [Globalization.CultureInfo]::InvariantCulture)
     }
-    $payloadManifestPath = Join-Path $stage $script:PayloadManifestName
-    Write-JsonAtomic $payloadManifestPath $payloadManifest
-    $marker = [ordered]@{
-        schemaVersion = 2
-        productId = $script:ProductId
-        edition = [string]$capabilities.edition
-        cliVersion = [string]$capabilities.cliVersion
-        payloadManifest = $script:PayloadManifestName
-        payloadManifestSha256 = Get-FileSha256 $payloadManifestPath
-        mcpRegistrations = @(
-            if ($null -ne $existingState) { @($existingState.McpRegistrations) }
-        )
+    foreach ($entry in $values.GetEnumerator()) {
+        $Context.Status | Add-Member -NotePropertyName $entry.Key -NotePropertyValue $entry.Value -Force
     }
-    Write-JsonAtomic (Join-Path $stage $script:MarkerName) $marker
-    $newState = Get-ManagedInstallState $stage
+    try { Write-JsonAtomic $Context.Path $Context.Status }
+    catch { Write-Warning "The installer status could not be written to '$($Context.Path)': $($_.Exception.Message)" }
+}
 
-    if ($LicenseProduct -and [string]::IsNullOrWhiteSpace($LicensePath)) { throw '-LicenseProduct requires -LicensePath.' }
-    if ([string]::IsNullOrWhiteSpace($LicensePath) -and -not $SkipLicensePrompt) {
-        $LicensePath = Read-Host 'Optional Commercial .lic path (press Enter to keep the current license configuration)'
+# Pristine Skill copies that this installation's executable installed at the recorded places.
+function Get-OwnedSkillCopies {
+    param([Parameter(Mandatory)] $Choices, [Parameter(Mandatory)][string] $ExecutableSha256)
+    $customRoot = ''
+    $hosts = @()
+    if ($Choices.skills -ceq 'custom') { $customRoot = [string]$Choices.skillsRoot; $hosts = @('custom') }
+    elseif ($Choices.skills -ceq 'detected-hosts') { $hosts = @('codex','claude-code','opencode') }
+    foreach ($hostName in $hosts) {
+        $parent = $null
+        try { $parent = Get-SkillParent $hostName $customRoot }
+        catch { Write-Warning "Skills for '$hostName' were kept: $($_.Exception.Message)"; continue }
+        if (-not (Test-Path -LiteralPath $parent -PathType Container)) { continue }
+        foreach ($skill in $script:AllowedSkills) {
+            $target = Join-Path $parent $skill
+            if (-not (Test-Path -LiteralPath $target -PathType Container)) { continue }
+            $state = $null
+            try { $state = Get-SkillState $target $skill }
+            catch { Write-Warning "Kept customized or unmanaged Skill '$skill' for '$hostName': $($_.Exception.Message)"; continue }
+            if ($state.ExecutableSha256 -cne $ExecutableSha256) {
+                Write-Warning "Kept Skill '$skill' for '$hostName': another $($script:DisplayName) executable installed it."
+                continue
+            }
+            [pscustomobject]@{ Host = $hostName; Skill = $skill; Snapshot = $state.Snapshot }
+        }
     }
-    # License storage belongs to the CLI. The installer validates the license with the staged
-    # executable in a throwaway configuration before changing anything, and installs it with the
-    # installed executable once the installation is committed.
-    $licenseArguments = $null
-    if (-not [string]::IsNullOrWhiteSpace($LicensePath)) {
-        $resolvedLicense = Assert-LocalAbsolutePath ((Resolve-Path -LiteralPath $LicensePath).Path) 'license file'
-        if (-not (Test-Path -LiteralPath $resolvedLicense -PathType Leaf)) { throw "License file is missing: $resolvedLicense" }
-        $licenseArguments = @('license','install',$resolvedLicense)
-        if ($LicenseProduct) { $licenseArguments += @('--product',$LicenseProduct) }
-        $licenseArguments += @('--output','json')
-        [IO.Directory]::CreateDirectory($licenseStage) | Out-Null
-        $previousConfig = [Environment]::GetEnvironmentVariable($script:EnvironmentVariablePrefix + 'CONFIG_DIR','Process')
-        [Environment]::SetEnvironmentVariable($script:EnvironmentVariablePrefix + 'CONFIG_DIR',$licenseStage,'Process')
+}
+
+# Removes the CLI configuration directory (settings and installed licenses), only on request
+# and only when its ownership marker names this distribution.
+function Remove-OwnedConfiguration {
+    $configured = [Environment]::GetEnvironmentVariable($script:EnvironmentVariablePrefix + 'CONFIG_DIR', 'Process')
+    if ([string]::IsNullOrWhiteSpace($configured)) {
+        $appData = [Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
+        $configured = Join-Path $appData $script:ConfigurationDirectoryName
+    }
+    elseif ($configured -cnotmatch '^[A-Za-z]:[\\/]') {
+        throw "$($script:EnvironmentVariablePrefix)CONFIG_DIR must be an absolute local directory; the configuration was preserved."
+    }
+    $directory = Assert-LocalAbsolutePath $configured 'configuration directory'
+    if (-not (Test-Path -LiteralPath $directory)) {
+        Write-Host "No configuration directory exists at $directory."
+        return
+    }
+    $owner = $null
+    try { $owner = Read-StrictJson (Join-Path $directory $script:ConfigurationOwnerName) 'configuration ownership marker' } catch { }
+    if ($null -eq $owner -or $owner.productId -cne $script:ProductId) {
+        throw "The configuration directory '$directory' is not marked as owned by $($script:DisplayName) and was preserved."
+    }
+    # The inventory rejects reparse points anywhere in the tree before anything is deleted.
+    [void](Get-TreeInventory $directory)
+    Remove-DirectoryWithRetry $directory $true
+    Write-Host "Removed the configuration directory $directory, including installed licenses."
+}
+
+function Install-Release {
+    $bound = $script:ScriptParameters
+    if ($bound.ContainsKey('LicenseProduct') -and $LicenseProduct -cnotin $script:AllowedLicenseProducts) {
+        throw "Unknown license product '$LicenseProduct'. Active products: $($script:AllowedLicenseProducts -join ', ')."
+    }
+    $skipPath = [bool]$SkipPath
+    $skipSkills = [bool]$SkipSkills
+    $skipMcp = [bool]$SkipMcp
+    $skipLicensePrompt = [bool]$SkipLicensePrompt
+    $licensePath = $LicensePath
+    if ($Update) {
+        foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','SkipMcp','LicensePath','LicenseProduct')) {
+            if ($bound.ContainsKey($name)) { throw "-Update replays the choices recorded by the existing installation and cannot be combined with -$name." }
+        }
+        $skipLicensePrompt = $true
+    }
+    elseif ($skipSkills -and -not [string]::IsNullOrWhiteSpace($SkillsRoot)) {
+        throw '-SkillsRoot conflicts with -SkipSkills.'
+    }
+    $customSkillsRoot = ''
+    if (-not $Update) { $customSkillsRoot = Resolve-CustomSkillsRoot $SkillsRoot }
+
+    # Resolve and verify the release package before touching customer state.
+    $packageDirectory = Assert-LocalAbsolutePath ((Resolve-Path -LiteralPath $PackageRoot).Path) 'package directory'
+    $sourceExecutable = Join-Path $packageDirectory $script:ExecutableName
+    $checksumPath = Join-Path $packageDirectory 'SHA256SUMS'
+    if (-not (Test-Path -LiteralPath $sourceExecutable -PathType Leaf) -or -not (Test-Path -LiteralPath $checksumPath -PathType Leaf)) {
+        throw "Release package must contain $($script:ExecutableName) and SHA256SUMS: $packageDirectory"
+    }
+    $packageInventory = Get-TreeInventory $packageDirectory
+    $packageTrustFiles = @('SHA256SUMS',$script:PackageSignatureManifestName,$script:PackageSignatureName)
+    # Read the checksum manifest once: the bytes whose signature is verified are the bytes parsed.
+    if ((Get-Item -LiteralPath $checksumPath).Length -gt 1MB) { throw 'SHA256SUMS exceeds its 1 MiB limit.' }
+    $checksumBytes = [IO.File]::ReadAllBytes($checksumPath)
+    Assert-CustomerPackageTrust $packageDirectory $checksumBytes $packageInventory -Development:$DevelopmentPackage
+    $verifiedFiles = @($packageInventory.Files | Where-Object { $_.Path -cnotin $packageTrustFiles } | Sort-Object Path)
+    # The signed install.ps1 is part of the payload, so the installation can update and
+    # uninstall itself. The unsigned development entry point is not.
+    $payloadFiles = @($verifiedFiles | Where-Object { $_.Path -cne 'install.cmd' })
+    $checksums = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
+    foreach ($line in ($script:Utf8.GetString($checksumBytes) -split "`r?`n")) {
+        if ([string]::IsNullOrWhiteSpace($line)) { continue }
+        if ($line -cnotmatch '^([0-9A-Fa-f]{64})\s+\*?(.+)$') { throw "Malformed SHA256SUMS line: $line" }
+        $relative = Assert-SafeRelativePath $Matches[2]
+        if ($checksums.ContainsKey($relative)) { throw "Duplicate checksum path '$relative'." }
+        $checksums.Add($relative, $Matches[1].ToLowerInvariant())
+    }
+    Assert-SetEqual @($verifiedFiles.Path) @($checksums.Keys) 'package checksum manifest'
+    foreach ($payload in $verifiedFiles) {
+        if ($payload.Sha256 -cne $checksums[$payload.Path]) { throw "Checksum mismatch for '$($payload.Path)': expected $($checksums[$payload.Path]), got $($payload.Sha256)." }
+    }
+    $capabilities = Invoke-Capabilities $sourceExecutable
+    if ($capabilities.edition -cnotin $script:AllowedEditions) { throw "Packaged executable reports unknown edition '$($capabilities.edition)'." }
+    $releaseIndicators = @('install.cmd','install.ps1',$script:BuildManifestName) |
+        Where-Object { $_ -cin @($packageInventory.Files.Path) }
+    if (@($releaseIndicators).Count -ne 0) {
+        if (-not $DevelopmentPackage -and 'install.cmd' -cin @($packageInventory.Files.Path)) {
+            throw "Customer release packages must not contain the unsigned development entry 'install.cmd'."
+        }
+        $requiredReleaseFiles = @('install.ps1',$script:BuildManifestName)
+        if ($DevelopmentPackage) { $requiredReleaseFiles += 'install.cmd' }
+        foreach ($required in $requiredReleaseFiles) {
+            if ($required -cnotin @($packageInventory.Files.Path)) { throw "Release package is missing '$required'." }
+        }
+        $packageBuildMetadata = Read-BuildMetadata $packageDirectory
+        Assert-CapabilitiesMatchBuildMetadata $capabilities $packageBuildMetadata
+    }
+
+    $installRoot = Resolve-InstallRoot $InstallDirectory
+    if ((Test-IsSameOrChildPath $installRoot $packageDirectory) -or (Test-IsSameOrChildPath $packageDirectory $installRoot)) { throw 'Package and install directories may not overlap.' }
+    Assert-SkillsRootPlacement $customSkillsRoot $packageDirectory $installRoot
+    $lock = Enter-InstallLock $installRoot
+    $installParent = $lock.InstallParent
+    $targetKey = $lock.TargetKey
+    $journalPath = $lock.JournalPath
+    $installExecutable = Join-Path $installRoot $script:ExecutableName
+
+    $transactionId = [Guid]::NewGuid().ToString('N')
+    $stage = Join-Path $installParent ".$($script:ProductId)-stage-$transactionId"
+    $backup = Join-Path $installParent ".$($script:ProductId)-backup-$transactionId"
+    $licenseStage = Join-Path $installParent ".$($script:ProductId)-license-stage-$transactionId"
+    $journal = $null
+    $licenseFailure = $null
+    $existingState = $null
+    $oldUserPath = $null
+    try {
+        Invoke-PendingRecovery $lock
+        if (Test-Path -LiteralPath $installRoot -PathType Container) {
+            if (@(Get-ChildItem -LiteralPath $installRoot -Force).Count -ne 0) { $existingState = Get-ManagedInstallState $installRoot }
+        }
+        elseif (Test-Path -LiteralPath $installRoot) { throw "Install target is not a directory: $installRoot" }
+
+        if ($Update) {
+            if ($null -eq $existingState) { throw "No managed installation exists at '$installRoot'; -Update requires one. Install it with install.ps1 first." }
+            # Replay the choices the installation was made with.
+            $choices = $existingState.Choices
+            $skipPath = -not [bool]$choices.path
+            $skipMcp = -not [bool]$choices.mcp
+            $skipSkills = $choices.skills -ceq 'none'
+            if ($choices.skills -ceq 'custom') {
+                $customSkillsRoot = Resolve-CustomSkillsRoot ([string]$choices.skillsRoot)
+                Assert-SkillsRootPlacement $customSkillsRoot $packageDirectory $installRoot
+            }
+        }
+        # Development packages are explicitly unsigned builds that may replace any build.
+        if ($null -ne $existingState -and -not $DevelopmentPackage) {
+            Assert-InstallationUpgrade $existingState ([string]$capabilities.cliVersion) ([string]$capabilities.sourceRevision)
+        }
+
+        [IO.Directory]::CreateDirectory($stage) | Out-Null
+        foreach ($payload in $payloadFiles) {
+            $destination = Join-Path $stage $payload.Path.Replace('/', '\')
+            [IO.Directory]::CreateDirectory((Split-Path -Parent $destination)) | Out-Null
+            Copy-Item -LiteralPath $payload.FullPath -Destination $destination
+        }
+        $payloadManifest = [ordered]@{
+            schemaVersion = 1
+            productId = $script:ProductId
+            files = @($payloadFiles | ForEach-Object { [ordered]@{ path = $_.Path; size = $_.Size; sha256 = $_.Sha256 } })
+        }
+        $payloadManifestPath = Join-Path $stage $script:PayloadManifestName
+        Write-JsonAtomic $payloadManifestPath $payloadManifest
+        $marker = [ordered]@{
+            schemaVersion = 3
+            productId = $script:ProductId
+            edition = [string]$capabilities.edition
+            cliVersion = [string]$capabilities.cliVersion
+            sourceRevision = [string]$capabilities.sourceRevision
+            payloadManifest = $script:PayloadManifestName
+            payloadManifestSha256 = Get-FileSha256 $payloadManifestPath
+            # The choices this installation was made with; -Update and -Uninstall replay them.
+            choices = [ordered]@{
+                path = -not $skipPath
+                skills = $(if ($skipSkills) { 'none' } elseif ($customSkillsRoot) { 'custom' } else { 'detected-hosts' })
+                skillsRoot = $(if ($customSkillsRoot) { $customSkillsRoot } else { $null })
+                mcp = -not $skipMcp
+            }
+            mcpRegistrations = @(
+                if ($null -ne $existingState) { @($existingState.McpRegistrations) }
+            )
+        }
+        Write-JsonAtomic (Join-Path $stage $script:MarkerName) $marker
+        $newState = Get-ManagedInstallState $stage
+
+        if ($LicenseProduct -and [string]::IsNullOrWhiteSpace($licensePath)) { throw '-LicenseProduct requires -LicensePath.' }
+        if ([string]::IsNullOrWhiteSpace($licensePath) -and -not $skipLicensePrompt) {
+            $licensePath = Read-Host 'Optional Commercial .lic path (press Enter to keep the current license configuration)'
+        }
+        # License storage belongs to the CLI. The installer validates the license with the staged
+        # executable in a throwaway configuration before changing anything, and installs it with the
+        # installed executable once the installation is committed.
+        $licenseArguments = $null
+        if (-not [string]::IsNullOrWhiteSpace($licensePath)) {
+            $resolvedLicense = Assert-LocalAbsolutePath ((Resolve-Path -LiteralPath $licensePath).Path) 'license file'
+            if (-not (Test-Path -LiteralPath $resolvedLicense -PathType Leaf)) { throw "License file is missing: $resolvedLicense" }
+            $licenseArguments = @('license','install',$resolvedLicense)
+            if ($LicenseProduct) { $licenseArguments += @('--product',$LicenseProduct) }
+            $licenseArguments += @('--output','json')
+            [IO.Directory]::CreateDirectory($licenseStage) | Out-Null
+            $configurationVariable = $script:EnvironmentVariablePrefix + 'CONFIG_DIR'
+            $previousConfig = [Environment]::GetEnvironmentVariable($configurationVariable,'Process')
+            [Environment]::SetEnvironmentVariable($configurationVariable,$licenseStage,'Process')
+            try {
+                $licenseResult = Invoke-CliChildProcess (Join-Path $stage $script:ExecutableName) $licenseArguments
+                if ($licenseResult.ExitCode -ne 0) { throw "License validation failed with exit code $($licenseResult.ExitCode): $(Get-ChildProcessDiagnostic $licenseResult)" }
+            }
+            finally { [Environment]::SetEnvironmentVariable($configurationVariable,$previousConfig,'Process') }
+        }
+
+        if ($null -ne $existingState) {
+            # The package executable is the caller-selected, checksum-verified
+            # authority. Never execute the replaceable old installation merely
+            # because its marker and manifest are self-consistent.
+            $serviceExecutable = Join-Path $stage $script:ExecutableName
+            # One service holds the App and every open document, so one stop ends
+            # everything that could still be using the installation.
+            $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--all','--output','json')
+            if ($stopResult.ExitCode -ne 0) { throw "Existing local service could not be stopped safely with exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
+            $rechecked = Get-ManagedInstallState $installRoot
+            if ($rechecked.Snapshot -cne $existingState.Snapshot) { throw 'Existing installation changed while services were stopping.' }
+        }
+
+        $oldUserPath = Get-UserPath
+        $journal = [ordered]@{
+            schemaVersion = 5
+            productId = $script:ProductId
+            targetKey = $targetKey
+            transactionId = $transactionId
+            phase = 'prepared'
+            oldSnapshot = $(if ($null -eq $existingState) { '' } else { $existingState.Snapshot })
+            newSnapshot = $newState.Snapshot
+            pathState = 'none'
+            originalPath = Protect-PathValue $oldUserPath $targetKey
+            originalPathNull = ($null -eq $oldUserPath)
+            appliedPathSha256 = ''
+            customSkillsRoot = $(if ($customSkillsRoot) { Protect-PathValue $customSkillsRoot $targetKey } else { '' })
+            customSkillsRootExisted = (-not [string]::IsNullOrWhiteSpace($customSkillsRoot) -and (Test-Path -LiteralPath $customSkillsRoot -PathType Container))
+            skills = @()
+        }
+        Write-Journal $journalPath $journal
+        Invoke-TestFault 'prepared'
+        if ($null -ne $existingState) { Move-DirectoryWithRetry $installRoot $backup }
+        elseif (Test-Path -LiteralPath $installRoot -PathType Container) { Remove-DirectoryWithRetry $installRoot $false }
+        Invoke-TestFault 'oldMovedBeforeJournal'
+        $journal.phase = 'oldMoved'; Write-Journal $journalPath $journal; Invoke-TestFault 'oldMoved'
+        Move-DirectoryWithRetry $stage $installRoot
+        Invoke-TestFault 'newPublishedBeforeJournal'
+        $journal.phase = 'newPublished'; Write-Journal $journalPath $journal; Invoke-TestFault 'newPublished'
+        $published = Get-ManagedInstallState $installRoot
+        if ($published.Snapshot -cne $newState.Snapshot) { throw 'Published installation failed its payload manifest verification.' }
+
+        if (-not $skipPath) {
+            Set-TransactionalUserPath $journalPath $journal (Get-UpdatedUserPath $oldUserPath $installRoot)
+        }
+
+        $installedSkills = 0
+        if (-not $skipSkills) {
+            $skillListResult = Invoke-CliChildProcess $installExecutable @('skill','list','--output','json')
+            if ($skillListResult.ExitCode -ne 0) { throw "Bundled Skills could not be listed: $(Get-ChildProcessDiagnostic $skillListResult)" }
+            $skillList = $skillListResult.StdOut | ConvertFrom-Json
+            $skillTargets = @(
+                if (-not [string]::IsNullOrWhiteSpace($customSkillsRoot)) {
+                    [pscustomobject]@{ Name = 'custom'; Arguments = @('--target',$customSkillsRoot) }
+                }
+                else {
+                    Get-DetectedSkillHosts | ForEach-Object {
+                    [pscustomobject]@{ Name = $_; Arguments = @('--host',$_,'--scope','user') }
+                    }
+                }
+            )
+            $skillStageParent = Join-Path $installParent ".$($script:ProductId)-skill-stage-$transactionId"
+            $expectedSkills = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
+            if ($skillTargets.Count -ne 0) {
+                foreach ($skill in @($skillList.skills)) {
+                    if ($skill.name -cnotin $script:AllowedSkills) { throw "Executable reported unknown Skill '$($skill.name)'." }
+                    $probeResult = Invoke-CliChildProcess $installExecutable @('skill','install',[string]$skill.name,'--target',$skillStageParent,'--output','json')
+                    if ($probeResult.ExitCode -ne 0) { throw "Skill '$($skill.name)' could not be staged: $(Get-ChildProcessDiagnostic $probeResult)" }
+                    $probeTarget = Join-Path $skillStageParent $skill.name
+                    $expectedSkills.Add([string]$skill.name, (Get-SkillState $probeTarget $skill.name))
+                }
+            }
+            foreach ($skillTarget in $skillTargets) {
+                $hostName = [string]$skillTarget.Name
+                $parent = Get-SkillParent $hostName $customSkillsRoot
+                [IO.Directory]::CreateDirectory($parent) | Out-Null
+                [void](Get-SkillParent $hostName $customSkillsRoot)
+                foreach ($skill in @($skillList.skills)) {
+                    if ($skill.name -cnotin $script:AllowedSkills) { throw "Executable reported unknown Skill '$($skill.name)'." }
+                    $paths = Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId
+                    $oldSkill = $null
+                    if (Test-Path -LiteralPath $paths.Target -PathType Container) {
+                        try { $oldSkill = Get-SkillState $paths.Target $skill.name }
+                        catch { Write-Warning "Skipped customized or unmanaged Skill '$($skill.name)' for '$hostName': $($_.Exception.Message)"; continue }
+                    }
+                    elseif (Test-Path -LiteralPath $paths.Target) { Write-Warning "Skipped Skill '$($skill.name)' because its target is a file: $($paths.Target)"; continue }
+                    $skillRecord = [ordered]@{
+                        order = $journal.skills.Count
+                        host = $hostName
+                        skill = $skill.name
+                        oldSnapshot = $(if ($null -eq $oldSkill) { '' } else { $oldSkill.Snapshot })
+                        newSnapshot = $expectedSkills[$skill.name].Snapshot
+                        status = 'prepared'
+                    }
+                    $journal.skills += $skillRecord
+                    Write-Journal $journalPath $journal
+                    Invoke-TestFault 'skillPrepared'
+                    if ($null -ne $oldSkill) {
+                        $paths = Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId
+                        Copy-Item -LiteralPath $paths.Target -Destination $paths.Backup -Recurse
+                    }
+                    [void](Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId)
+                    $skillArguments = @('skill','install',[string]$skill.name) + @($skillTarget.Arguments) + @('--output','json')
+                    $skillResult = Invoke-CliChildProcess $installExecutable $skillArguments
+                    if ($skillResult.ExitCode -ne 0) { throw "Skill '$($skill.name)' installation failed: $(Get-ChildProcessDiagnostic $skillResult)" }
+                    $paths = Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId
+                    $newSkill = Get-SkillState $paths.Target $skill.name
+                    if ($newSkill.Snapshot -cne $expectedSkills[$skill.name].Snapshot) {
+                        throw "Skill '$($skill.name)' published content differs from its verified stage."
+                    }
+                    $skillRecord['status'] = 'published'
+                    Write-Journal $journalPath $journal
+                    $installedSkills++
+                    Invoke-TestFault 'skillUpdated'
+                }
+            }
+            Remove-VerifiedSkillStageParent $skillStageParent
+        }
+
+        $final = Get-ManagedInstallState $installRoot
+        if ($final.Snapshot -cne $newState.Snapshot -or $final.Edition -cne $capabilities.edition) { throw 'Final installed CLI validation failed.' }
+        $journal.phase = 'committed'
+        Write-Journal $journalPath $journal
+        # Once committed, an injected ordinary failure must not report a rollbackable
+        # error. A hard-exit hook remains so recovery of committed-but-not-cleaned
+        # transactions can be exercised without lying about transaction outcome.
+        Invoke-TestCrash 'committed'
+
+        $committedCleanupComplete = $false
         try {
-            $licenseResult = Invoke-CliChildProcess (Join-Path $stage $script:ExecutableName) $licenseArguments
-            if ($licenseResult.ExitCode -ne 0) { throw "License validation failed with exit code $($licenseResult.ExitCode): $(Get-ChildProcessDiagnostic $licenseResult)" }
-        }
-        finally { [Environment]::SetEnvironmentVariable($script:EnvironmentVariablePrefix + 'CONFIG_DIR',$previousConfig,'Process') }
-    }
-
-    if ($null -ne $existingState) {
-        # The package executable is the caller-selected, checksum-verified
-        # authority. Never execute the replaceable old installation merely
-        # because its marker and manifest are self-consistent.
-        $serviceExecutable = Join-Path $stage $script:ExecutableName
-        # One service holds the App and every open document, so one stop ends
-        # everything that could still be using the installation.
-        $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--all','--output','json')
-        if ($stopResult.ExitCode -ne 0) { throw "Existing local service could not be stopped safely with exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
-        $rechecked = Get-ManagedInstallState $installRoot
-        if ($rechecked.Snapshot -cne $existingState.Snapshot) { throw 'Existing installation changed while services were stopping.' }
-    }
-
-    $oldUserPath = Get-UserPath
-    $journal = [ordered]@{
-        schemaVersion = 4
-        productId = $script:ProductId
-        targetKey = $targetKey
-        transactionId = $transactionId
-        phase = 'prepared'
-        oldSnapshot = $(if ($null -eq $existingState) { '' } else { $existingState.Snapshot })
-        newSnapshot = $newState.Snapshot
-        pathState = 'none'
-        originalPath = Protect-PathValue $oldUserPath $targetKey
-        originalPathNull = ($null -eq $oldUserPath)
-        appliedPathSha256 = ''
-        skillTargetKey = Get-SkillTransactionKey ([bool]$SkipSkills) $customSkillsRoot
-        customSkillsRootExisted = (-not [string]::IsNullOrWhiteSpace($customSkillsRoot) -and (Test-Path -LiteralPath $customSkillsRoot -PathType Container))
-        skills = @()
-    }
-    Write-Journal $journalPath $journal
-    Invoke-TestFault 'prepared'
-    if ($null -ne $existingState) { Move-DirectoryWithRetry $installRoot $backup }
-    elseif (Test-Path -LiteralPath $installRoot -PathType Container) { Remove-DirectoryWithRetry $installRoot $false }
-    Invoke-TestFault 'oldMovedBeforeJournal'
-    $journal.phase = 'oldMoved'; Write-Journal $journalPath $journal; Invoke-TestFault 'oldMoved'
-    Move-DirectoryWithRetry $stage $installRoot
-    Invoke-TestFault 'newPublishedBeforeJournal'
-    $journal.phase = 'newPublished'; Write-Journal $journalPath $journal; Invoke-TestFault 'newPublished'
-    $published = Get-ManagedInstallState $installRoot
-    if ($published.Snapshot -cne $newState.Snapshot) { throw 'Published installation failed its payload manifest verification.' }
-
-    if (-not $SkipPath) {
-        Set-TransactionalUserPath $journalPath $journal (Get-UpdatedUserPath $oldUserPath $installRoot)
-    }
-
-    $installedSkills = 0
-    if (-not $SkipSkills) {
-        $skillListResult = Invoke-CliChildProcess (Join-Path $installRoot $script:ExecutableName) @('skill','list','--output','json')
-        if ($skillListResult.ExitCode -ne 0) { throw "Bundled Skills could not be listed: $(Get-ChildProcessDiagnostic $skillListResult)" }
-        $skillList = $skillListResult.StdOut | ConvertFrom-Json
-        $skillTargets = @(
-            if (-not [string]::IsNullOrWhiteSpace($customSkillsRoot)) {
-                [pscustomobject]@{ Name = 'custom'; Arguments = @('--target',$customSkillsRoot) }
-            }
-            else {
-                Get-DetectedSkillHosts | ForEach-Object {
-                [pscustomobject]@{ Name = $_; Arguments = @('--host',$_,'--scope','user') }
+            Invoke-TestFault 'committedCleanup'
+            if (Test-Path -LiteralPath $backup -PathType Container) { Remove-VerifiedInstallDirectory $backup $existingState.Snapshot }
+            foreach ($skillRecord in @($journal.skills)) {
+                $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $customSkillsRoot ([string]$skillRecord.skill) $transactionId
+                if (Test-Path -LiteralPath $paths.Backup -PathType Container) {
+                    $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $customSkillsRoot ([string]$skillRecord.skill) $transactionId
+                    Remove-VerifiedSkillDirectory $paths.Backup ([string]$skillRecord.skill) ([string]$skillRecord.oldSnapshot)
                 }
             }
-        )
-        $skillStageParent = Join-Path $installParent ".$($script:ProductId)-skill-stage-$transactionId"
-        $expectedSkills = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
-        if ($skillTargets.Count -ne 0) {
-            foreach ($skill in @($skillList.skills)) {
-                if ($skill.name -cnotin $script:AllowedSkills) { throw "Executable reported unknown Skill '$($skill.name)'." }
-                $probeResult = Invoke-CliChildProcess (Join-Path $installRoot $script:ExecutableName) @('skill','install',[string]$skill.name,'--target',$skillStageParent,'--output','json')
-                if ($probeResult.ExitCode -ne 0) { throw "Skill '$($skill.name)' could not be staged: $(Get-ChildProcessDiagnostic $probeResult)" }
-                $probeTarget = Join-Path $skillStageParent $skill.name
-                $expectedSkills.Add([string]$skill.name, (Get-SkillState $probeTarget $skill.name))
+            Remove-Item -LiteralPath $journalPath -Force
+            $committedCleanupComplete = $true
+        }
+        catch {
+            Write-Warning "The CLI installation is committed, but transaction cleanup remains pending. MCP setup was skipped; retry installation to finish cleanup: $($_.Exception.Message)"
+        }
+
+        if ($committedCleanupComplete -and -not $skipMcp) {
+            try {
+                $mcpRegistrations = @(Register-OwnedMcp $installExecutable @($newState.McpRegistrations))
+                $installedMarkerPath = Join-Path $installRoot $script:MarkerName
+                $installedMarker = Read-StrictJson $installedMarkerPath 'installation marker'
+                $installedMarker.mcpRegistrations = @($mcpRegistrations)
+                Write-JsonAtomic $installedMarkerPath $installedMarker
+                Invoke-TestFault 'mcpMetadataUpdated'
+            }
+            catch {
+                Write-Warning "Optional MCP setup could not be completed; the CLI installation remains valid: $($_.Exception.Message)"
             }
         }
-        foreach ($skillTarget in $skillTargets) {
-            $hostName = [string]$skillTarget.Name
-            $parent = Get-SkillParent $hostName $customSkillsRoot
-            [IO.Directory]::CreateDirectory($parent) | Out-Null
-            [void](Get-SkillParent $hostName $customSkillsRoot)
-            foreach ($skill in @($skillList.skills)) {
-                if ($skill.name -cnotin $script:AllowedSkills) { throw "Executable reported unknown Skill '$($skill.name)'." }
-                $paths = Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId
-                $oldSkill = $null
-                if (Test-Path -LiteralPath $paths.Target -PathType Container) {
-                    try { $oldSkill = Get-SkillState $paths.Target $skill.name }
-                    catch { Write-Warning "Skipped customized or unmanaged Skill '$($skill.name)' for '$hostName': $($_.Exception.Message)"; continue }
+        if ($null -ne $licenseArguments) {
+            $licenseResult = Invoke-CliChildProcess $installExecutable $licenseArguments
+            if ($licenseResult.ExitCode -ne 0) {
+                $licenseFailure = "The CLI is installed, but the validated license could not be installed (exit code $($licenseResult.ExitCode)): $(Get-ChildProcessDiagnostic $licenseResult) Retry with: $($script:CommandName) $($licenseArguments[0..($licenseArguments.Count - 3)] -join ' ')"
+            }
+        }
+        Write-Host "$($script:DisplayName) $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
+        if (-not $skipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
+        if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }
+        if ($null -eq $licenseArguments -and -not $Update) { Write-Host "No license was supplied for this installation. Check effective product licenses with: $($script:CommandName) license status" }
+    }
+    catch {
+        $failure = $_
+        try {
+            if ($null -ne $journal -and (Test-Path -LiteralPath $journalPath -PathType Leaf)) {
+                Recover-PendingTransaction $journalPath $installRoot $installParent $targetKey
+            }
+            elseif (Test-Path -LiteralPath $stage -PathType Container) {
+                $stageState = Get-ManagedInstallState $stage
+                Remove-VerifiedInstallDirectory $stage $stageState.Snapshot
+            }
+        }
+        catch {
+            throw "Installation failed: $($failure.Exception.Message) Recovery also stopped safely: $($_.Exception.Message) Inspect '$journalPath' and sibling stage/backup paths; no unverified tree was deleted."
+        }
+        throw $failure
+    }
+    finally {
+        if (Test-Path -LiteralPath $licenseStage -PathType Container) {
+            try { Remove-DirectoryWithRetry $licenseStage $true } catch { Write-Warning "Temporary validated license staging remains at '$licenseStage'." }
+        }
+        Exit-InstallLock $lock
+    }
+    if ($null -ne $licenseFailure) { throw $licenseFailure }
+}
+
+function Uninstall-Installation {
+    $bound = $script:ScriptParameters
+    foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','SkipMcp','LicensePath','LicenseProduct')) {
+        if ($bound.ContainsKey($name)) { throw "-Uninstall cannot be combined with -$name." }
+    }
+    # The installed copy of this script uninstalls the installation it belongs to.
+    $requested = $InstallDirectory
+    if (-not $bound.ContainsKey('InstallDirectory') -and -not [string]::IsNullOrWhiteSpace($PSScriptRoot) -and
+        (Test-Path -LiteralPath (Join-Path $PSScriptRoot $script:MarkerName) -PathType Leaf)) {
+        $requested = $PSScriptRoot
+    }
+    $installRoot = Resolve-InstallRoot $requested
+    if (-not (Test-Path -LiteralPath (Split-Path -Parent $installRoot) -PathType Container)) {
+        Write-Host "No $($script:DisplayName) installation exists at $installRoot."
+        if ($RemoveConfiguration) { Remove-OwnedConfiguration }
+        return
+    }
+    $lock = Enter-InstallLock $installRoot
+    $journalPath = $lock.JournalPath
+    $transactionId = [Guid]::NewGuid().ToString('N')
+    $backup = Join-Path $lock.InstallParent ".$($script:ProductId)-backup-$transactionId"
+    $journal = $null
+    try {
+        Invoke-PendingRecovery $lock
+        if (-not (Test-Path -LiteralPath $installRoot)) {
+            Write-Host "No $($script:DisplayName) installation exists at $installRoot."
+        }
+        elseif (-not (Test-Path -LiteralPath $installRoot -PathType Container)) {
+            throw "Install target is not a directory: $installRoot"
+        }
+        elseif (@(Get-ChildItem -LiteralPath $installRoot -Force).Count -eq 0) {
+            Remove-DirectoryWithRetry $installRoot $false
+            Write-Host "Removed the empty install directory $installRoot."
+        }
+        else {
+            $state = Get-ManagedInstallState $installRoot
+            $executable = Join-Path $installRoot $script:ExecutableName
+            # One service holds the App and every open document. The verified installed
+            # executable is the only one available to stop it; no package is involved here.
+            $stopFailure = $null
+            try {
+                $stopResult = Invoke-CliChildProcess $executable @('preview','stop','--all','--output','json')
+                if ($stopResult.ExitCode -ne 0) { $stopFailure = "exit code $($stopResult.ExitCode): $(Get-ChildProcessDiagnostic $stopResult)" }
+            }
+            catch { $stopFailure = $_.Exception.Message }
+            if ($null -ne $stopFailure) {
+                $users = @(Get-ProcessesUsingDirectory $installRoot)
+                if ($users.Count -ne 0) {
+                    throw "Local services of the installation could not be stopped ($stopFailure). Running from it: $($users -join ', '). Close them, including AI agents that started '$($script:CommandName) mcp serve', then retry."
                 }
-                elseif (Test-Path -LiteralPath $paths.Target) { Write-Warning "Skipped Skill '$($skill.name)' because its target is a file: $($paths.Target)"; continue }
+                Write-Warning "Local services could not be stopped ($stopFailure), but no program runs from the installation; uninstall continues."
+            }
+            $rechecked = Get-ManagedInstallState $installRoot
+            if ($rechecked.Snapshot -cne $state.Snapshot) { throw 'The installation changed while its services were stopping.' }
+            $customSkillsRoot = ''
+            if ($state.Choices.skills -ceq 'custom') { $customSkillsRoot = [string]$state.Choices.skillsRoot }
+            $skillCopies = @(Get-OwnedSkillCopies $state.Choices (Get-FileSha256 $executable))
+            $oldUserPath = Get-UserPath
+            $journal = [ordered]@{
+                schemaVersion = 5
+                productId = $script:ProductId
+                targetKey = $lock.TargetKey
+                transactionId = $transactionId
+                phase = 'prepared'
+                oldSnapshot = $state.Snapshot
+                newSnapshot = ''
+                pathState = 'none'
+                originalPath = Protect-PathValue $oldUserPath $lock.TargetKey
+                originalPathNull = ($null -eq $oldUserPath)
+                appliedPathSha256 = ''
+                customSkillsRoot = $(if ($customSkillsRoot) { Protect-PathValue $customSkillsRoot $lock.TargetKey } else { '' })
+                customSkillsRootExisted = $true
+                skills = @()
+            }
+            Write-Journal $journalPath $journal
+            Invoke-TestFault 'prepared'
+            Move-DirectoryWithRetry $installRoot $backup
+            Invoke-TestFault 'oldMovedBeforeJournal'
+            $journal.phase = 'oldMoved'; Write-Journal $journalPath $journal; Invoke-TestFault 'oldMoved'
+            # The directory is gone, so a PATH entry that points at it can only be stale.
+            if ((Split-UserPath $oldUserPath $installRoot).ContainsRoot) {
+                Set-TransactionalUserPath $journalPath $journal (Get-UserPathWithoutInstallRoot $oldUserPath $installRoot)
+            }
+            foreach ($copy in $skillCopies) {
                 $skillRecord = [ordered]@{
                     order = $journal.skills.Count
-                    host = $hostName
-                    skill = $skill.name
-                    oldSnapshot = $(if ($null -eq $oldSkill) { '' } else { $oldSkill.Snapshot })
-                    newSnapshot = $expectedSkills[$skill.name].Snapshot
+                    host = $copy.Host
+                    skill = $copy.Skill
+                    oldSnapshot = $copy.Snapshot
+                    newSnapshot = ''
                     status = 'prepared'
                 }
                 $journal.skills += $skillRecord
                 Write-Journal $journalPath $journal
                 Invoke-TestFault 'skillPrepared'
-                if ($null -ne $oldSkill) {
-                    $paths = Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId
-                    Copy-Item -LiteralPath $paths.Target -Destination $paths.Backup -Recurse
+                $paths = Get-SkillTransactionPaths $copy.Host $customSkillsRoot $copy.Skill $transactionId
+                if ((Get-SkillState $paths.Target $copy.Skill).Snapshot -cne $copy.Snapshot) {
+                    throw "Managed Skill changed during uninstall and was preserved: $($paths.Target)"
                 }
-                [void](Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId)
-                $skillArguments = @('skill','install',[string]$skill.name) + @($skillTarget.Arguments) + @('--output','json')
-                $skillResult = Invoke-CliChildProcess (Join-Path $installRoot $script:ExecutableName) $skillArguments
-                if ($skillResult.ExitCode -ne 0) { throw "Skill '$($skill.name)' installation failed: $(Get-ChildProcessDiagnostic $skillResult)" }
-                $paths = Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId
-                $newSkill = Get-SkillState $paths.Target $skill.name
-                if ($newSkill.Snapshot -cne $expectedSkills[$skill.name].Snapshot) {
-                    throw "Skill '$($skill.name)' published content differs from its verified stage."
-                }
+                Move-DirectoryWithRetry $paths.Target $paths.Backup
                 $skillRecord['status'] = 'published'
                 Write-Journal $journalPath $journal
-                $installedSkills++
                 Invoke-TestFault 'skillUpdated'
             }
+            $journal.phase = 'committed'
+            Write-Journal $journalPath $journal
+            Invoke-TestCrash 'committed'
+            try {
+                Invoke-TestFault 'committedCleanup'
+                Remove-VerifiedInstallDirectory $backup $state.Snapshot
+                foreach ($skillRecord in @($journal.skills)) {
+                    $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $customSkillsRoot ([string]$skillRecord.skill) $transactionId
+                    Remove-VerifiedSkillDirectory $paths.Backup ([string]$skillRecord.skill) ([string]$skillRecord.oldSnapshot)
+                }
+                Remove-Item -LiteralPath $journalPath -Force
+            }
+            catch {
+                Write-Warning "The uninstall is committed, but removing its backups remains pending; run install.ps1 -Uninstall again to finish: $($_.Exception.Message)"
+            }
+            # Host registrations are not transactional; they are removed once the removal is final.
+            Unregister-OwnedMcp $executable @($state.McpRegistrations)
+            Write-Host "$($script:DisplayName) $($state.CliVersion) was removed from $installRoot."
+            if ($skillCopies.Count -ne 0) { Write-Host "Removed $($skillCopies.Count) pristine bundled Agent Skill package(s)." }
+            Write-Host 'Restart terminals and AI agents so that they stop using the removed installation.'
         }
-        Remove-VerifiedSkillStageParent $skillStageParent
     }
-
-    $final = Get-ManagedInstallState $installRoot
-    if ($final.Snapshot -cne $newState.Snapshot -or $final.Edition -cne $capabilities.edition) { throw 'Final installed CLI validation failed.' }
-    $journal.phase = 'committed'
-    Write-Journal $journalPath $journal
-    # Once committed, an injected ordinary failure must not report a rollbackable
-    # error. A hard-exit hook remains so recovery of committed-but-not-cleaned
-    # transactions can be exercised without lying about transaction outcome.
-    Invoke-TestCrash 'committed'
-
-    $committedCleanupComplete = $false
-    try {
-        Invoke-TestFault 'committedCleanup'
-        if (Test-Path -LiteralPath $backup -PathType Container) { Remove-VerifiedInstallDirectory $backup $existingState.Snapshot }
-        foreach ($skillRecord in @($journal.skills)) {
-            $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $customSkillsRoot ([string]$skillRecord.skill) $transactionId
-            if (Test-Path -LiteralPath $paths.Backup -PathType Container) {
-                $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $customSkillsRoot ([string]$skillRecord.skill) $transactionId
-                Remove-VerifiedSkillDirectory $paths.Backup ([string]$skillRecord.skill) ([string]$skillRecord.oldSnapshot)
+    catch {
+        $failure = $_
+        if ($null -ne $journal -and (Test-Path -LiteralPath $journalPath -PathType Leaf)) {
+            try { Recover-PendingTransaction $journalPath $installRoot $lock.InstallParent $lock.TargetKey }
+            catch {
+                throw "Uninstall failed: $($failure.Exception.Message) Recovery also stopped safely: $($_.Exception.Message) Inspect '$journalPath' and sibling backup paths; no unverified tree was deleted."
             }
         }
-        Remove-Item -LiteralPath $journalPath -Force
-        $rollbackComplete = $true
-        $committedCleanupComplete = $true
+        throw $failure
     }
-    catch {
-        Write-Warning "The CLI installation is committed, but transaction cleanup remains pending. MCP setup was skipped; retry installation to finish cleanup: $($_.Exception.Message)"
-    }
+    finally { Exit-InstallLock $lock }
+    if ($RemoveConfiguration) { Remove-OwnedConfiguration }
+}
 
-    if ($committedCleanupComplete -and -not $SkipMcp) {
-        try {
-            $mcpRegistrations = @(Register-OwnedMcp (Join-Path $installRoot $script:ExecutableName) @($newState.McpRegistrations))
-            $installedMarkerPath = Join-Path $installRoot $script:MarkerName
-            $installedMarker = Read-StrictJson $installedMarkerPath 'installation marker'
-            $installedMarker.mcpRegistrations = @($mcpRegistrations)
-            Write-JsonAtomic $installedMarkerPath $installedMarker
-            Invoke-TestFault 'mcpMetadataUpdated'
-        }
-        catch {
-            Write-Warning "Optional MCP setup could not be completed; the CLI installation remains valid: $($_.Exception.Message)"
-        }
+# Dot-sourcing exposes the ownership primitives to black-box contract tests
+# without resolving a package or mutating installation state.
+if ($isDotSourced) { return }
+
+$script:ScriptParameters = $PSBoundParameters
+$statusContext = $null
+if (-not [string]::IsNullOrWhiteSpace($StatusPath)) { $statusContext = Start-InstallerStatus $StatusPath }
+$cleanupDirectory = ''
+try {
+    $cleanupDirectory = Resolve-CleanupRoot $CleanupRoot
+    if ($Uninstall) {
+        if ($Update) { throw '-Uninstall cannot be combined with -Update.' }
+        Uninstall-Installation
     }
-    if ($null -ne $licenseArguments) {
-        $licenseResult = Invoke-CliChildProcess (Join-Path $installRoot $script:ExecutableName) $licenseArguments
-        if ($licenseResult.ExitCode -ne 0) {
-            $licenseFailure = "The CLI is installed, but the validated license could not be installed (exit code $($licenseResult.ExitCode)): $(Get-ChildProcessDiagnostic $licenseResult) Retry with: $($script:CommandName) $($licenseArguments[0..($licenseArguments.Count - 3)] -join ' ')"
-        }
+    else {
+        if ($RemoveConfiguration) { throw '-RemoveConfiguration applies only to -Uninstall.' }
+        Install-Release
     }
-    Write-Host "$($script:DisplayName) $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
-    if (-not $SkipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
-    if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }
-    if ($null -eq $licenseArguments) { Write-Host "No license was supplied for this installation. Check effective product licenses with: $($script:CommandName) license status" }
+    Set-InstallerStatus $statusContext 'succeeded' $null
 }
 catch {
-    $failure = $_
-    try {
-        if ($null -ne $journal -and (Test-Path -LiteralPath $journalPath -PathType Leaf)) {
-            Recover-PendingTransaction $journalPath $installRoot $installParent $targetKey $customSkillsRoot ([bool]$SkipSkills)
-        }
-        elseif (Test-Path -LiteralPath $stage -PathType Container) {
-            $stageState = Get-ManagedInstallState $stage
-            Remove-VerifiedInstallDirectory $stage $stageState.Snapshot
-        }
-        $rollbackComplete = $true
-    }
-    catch {
-        throw "Installation failed: $($failure.Exception.Message) Recovery also stopped safely: $($_.Exception.Message) Inspect '$journalPath' and sibling stage/backup paths; no unverified tree was deleted."
-    }
-    throw $failure
+    Set-InstallerStatus $statusContext 'failed' $_.Exception.Message
+    throw
 }
 finally {
-    if (Test-Path -LiteralPath $licenseStage -PathType Container) {
-        try { Remove-DirectoryWithRetry $licenseStage $true } catch { Write-Warning "Temporary validated license staging remains at '$licenseStage'." }
-    }
-    if ($null -ne $installLock) { $installLock.Dispose() }
-    if ($installStateHeld) { $installStateMutex.ReleaseMutex(); $installStateMutex.Dispose() }
-    try { Remove-Item -LiteralPath $lockPath -Force -ErrorAction SilentlyContinue } catch { }
     if (-not [string]::IsNullOrWhiteSpace($cleanupDirectory)) {
         try { Remove-DirectoryWithRetry $cleanupDirectory $true }
         catch { Write-Warning "Temporary update staging remains at '$cleanupDirectory'." }
     }
+    if ($null -ne $statusContext -and $statusContext.Transcript) {
+        try { Stop-Transcript | Out-Null } catch { }
+    }
 }
-if ($null -ne $licenseFailure) { throw $licenseFailure }

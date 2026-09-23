@@ -1,6 +1,10 @@
 <#
 .SYNOPSIS
-Builds and transactionally installs this project's development package.
+Builds and transactionally installs, updates or uninstalls this project's development package.
+
+.DESCRIPTION
+-Update rebuilds the package and replays the choices recorded by the existing installation.
+-Uninstall removes the development installation without building anything.
 #>
 [CmdletBinding()]
 param(
@@ -11,7 +15,10 @@ param(
     [string] $LicensePath,
     [string] $LicenseProduct,
     [switch] $SkipLicensePrompt,
-    [switch] $SkipMcp
+    [switch] $SkipMcp,
+    [switch] $Update,
+    [switch] $Uninstall,
+    [switch] $RemoveConfiguration
 )
 $ErrorActionPreference = 'Stop'
 if ($env:OS -cne 'Windows_NT') { throw 'Local installation currently supports Windows only.' }
@@ -24,18 +31,18 @@ if ($PSBoundParameters.ContainsKey('LicenseProduct') -and $LicenseProduct -cnoti
 $installRoot = if ([string]::IsNullOrWhiteSpace($InstallDirectory)) {
     Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) $layout.Names.WindowsInstallDirectory
 } else { [IO.Path]::GetFullPath($InstallDirectory) }
-& (Join-Path $PSScriptRoot 'package.ps1') -Configuration Release -RuntimeIdentifier win-x64 -PrepareOnly
+# The installer itself rejects switches that conflict with -Update or -Uninstall.
 $parameters = @{
-    PackageRoot = Join-Path $repoRoot 'artifacts/publish/win-x64'
     InstallDirectory = $installRoot
     DevelopmentPackage = $true
 }
-if ($SkipPath) { $parameters.SkipPath = $true }
-if ($SkipSkills) { $parameters.SkipSkills = $true }
-if ($SkillsRoot) { $parameters.SkillsRoot = $SkillsRoot }
-if ($SkipMcp) { $parameters.SkipMcp = $true }
-if ($LicensePath) { $parameters.LicensePath = $LicensePath }
-if ($LicenseProduct) { $parameters.LicenseProduct = $LicenseProduct }
-if ($SkipLicensePrompt) { $parameters.SkipLicensePrompt = $true }
+foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','SkipMcp','LicensePath','LicenseProduct','SkipLicensePrompt','Update','Uninstall','RemoveConfiguration')) {
+    if ($PSBoundParameters.ContainsKey($name)) { $parameters[$name] = $PSBoundParameters[$name] }
+}
+if (-not $Uninstall) {
+    & (Join-Path $PSScriptRoot 'package.ps1') -Configuration Release -RuntimeIdentifier win-x64 -PrepareOnly
+    $parameters.PackageRoot = Join-Path $repoRoot 'artifacts/publish/win-x64'
+}
 & (Join-Path $repoRoot 'install.ps1') @parameters
-Write-Host "$($layout.Identity.displayName) installed from this project's current source."
+$outcome = if ($Uninstall) { 'uninstalled' } elseif ($Update) { 'updated from this project''s current source' } else { 'installed from this project''s current source' }
+Write-Host "$($layout.Identity.displayName) $outcome."

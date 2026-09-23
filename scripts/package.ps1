@@ -307,11 +307,12 @@ $verifiedFiles = @(
         } |
         Sort-Object FullName
 )
+# The signed installer is installed with the payload so an installation can update and
+# uninstall itself; the unsigned development entry point is not.
 $payloadFiles = @(
     $verifiedFiles |
         Where-Object {
-            (Get-ArtifactRelativePath -Root $publishRoot -Path $_.FullName) `
-                -notin @('install.cmd', 'install.ps1')
+            (Get-ArtifactRelativePath -Root $publishRoot -Path $_.FullName) -cne 'install.cmd'
         }
 )
 $checksumLines = @(
@@ -352,25 +353,28 @@ Write-StableJson $smokeTrustRing ([ordered]@{
 $trustRingVariable = [string]$layout.Identity.environmentVariablePrefix + 'RELEASE_TRUSTED_KEYS'
 $previousTrustRing = [Environment]::GetEnvironmentVariable($trustRingVariable, 'Process')
 [Environment]::SetEnvironmentVariable($trustRingVariable, $smokeTrustRing, 'Process')
+# Keep the smoke installation away from the builder's own configuration.
+$configurationVariable = [string]$layout.Identity.environmentVariablePrefix + 'CONFIG_DIR'
+$previousConfiguration = [Environment]::GetEnvironmentVariable($configurationVariable, 'Process')
+[Environment]::SetEnvironmentVariable($configurationVariable, (Join-Path $smokeRoot 'configuration'), 'Process')
 try {
     $installerCommand = Join-Path $publishRoot 'install.ps1'
     $powerShell = Join-Path `
         ([Environment]::GetFolderPath([Environment+SpecialFolder]::System)) `
         'WindowsPowerShell\v1.0\powershell.exe'
-    foreach ($pass in 1..2) {
+    # A clean install, then an update that replays the recorded choices.
+    foreach ($pass in @(
+        @('-InstallDirectory', $smokeInstall, '-SkipPath', '-SkillsRoot', $smokeSkills, '-SkipLicensePrompt', '-SkipMcp'),
+        @('-InstallDirectory', $smokeInstall, '-Update'))) {
         & $powerShell `
             -NoLogo `
             -NoProfile `
             -NonInteractive `
             -ExecutionPolicy AllSigned `
             -File $installerCommand `
-            -InstallDirectory $smokeInstall `
-            -SkipPath `
-            -SkillsRoot $smokeSkills `
-            -SkipLicensePrompt `
-            -SkipMcp
+            @pass
         if ($LASTEXITCODE -ne 0) {
-            throw "Customer installer smoke test pass $pass failed with exit code $LASTEXITCODE."
+            throw "Customer installer smoke test '$($pass -join ' ')' failed with exit code $LASTEXITCODE."
         }
     }
     foreach ($file in $payloadFiles) {
@@ -387,15 +391,17 @@ try {
     }
     $markerPath = Join-Path $smokeInstall $layout.Names.MarkerName
     $marker = Get-Content -LiteralPath $markerPath -Raw | ConvertFrom-Json
-    if ($marker.schemaVersion -ne 2 -or
+    if ($marker.schemaVersion -ne 3 -or
         $marker.productId -cne [string]$layout.Identity.id -or
-        $marker.payloadManifest -cne $layout.Names.PayloadManifestName) {
-        throw 'Customer installer did not publish a valid v2 ownership marker.'
+        $marker.payloadManifest -cne $layout.Names.PayloadManifestName -or
+        $marker.choices.path -or $marker.choices.mcp -or
+        $marker.choices.skills -cne 'custom' -or $marker.choices.skillsRoot -cne $smokeSkills) {
+        throw 'Customer installer did not publish a valid ownership marker with the recorded choices.'
     }
     $payloadManifestPath = Join-Path $smokeInstall $marker.payloadManifest
     $manifestHash = (Get-FileHash -LiteralPath $payloadManifestPath -Algorithm SHA256).Hash.ToLowerInvariant()
     if ($manifestHash -cne $marker.payloadManifestSha256) {
-        throw 'Installed payload manifest does not match the v2 marker hash.'
+        throw 'Installed payload manifest does not match the marker hash.'
     }
     $expectedSkills = @((Get-Content -LiteralPath $layout.CatalogPath -Raw | ConvertFrom-Json).products |
         ForEach-Object { [string]$layout.Identity.skillPrefix + [string]$_.id })
@@ -405,9 +411,19 @@ try {
     if ($missingSkills.Count -ne 0 -or $unexpectedSkills.Count -ne 0) {
         throw "Installed Skills differ from the active catalog. Missing: $($missingSkills -join ', '); unexpected: $($unexpectedSkills -join ', ')."
     }
+    # The installed, signed copy of the installer uninstalls its own installation.
+    & $powerShell -NoLogo -NoProfile -NonInteractive -ExecutionPolicy AllSigned `
+        -File (Join-Path $smokeInstall 'install.ps1') -Uninstall
+    if ($LASTEXITCODE -ne 0) {
+        throw "Customer uninstall smoke test failed with exit code $LASTEXITCODE."
+    }
+    if ((Test-Path -LiteralPath $smokeInstall) -or @(Get-ChildItem -LiteralPath $smokeSkills -Force).Count -ne 0) {
+        throw 'Customer uninstall left installation files or Skills behind.'
+    }
 }
 finally {
     [Environment]::SetEnvironmentVariable($trustRingVariable, $previousTrustRing, 'Process')
+    [Environment]::SetEnvironmentVariable($configurationVariable, $previousConfiguration, 'Process')
     if (Test-Path -LiteralPath $smokeRoot -PathType Container) {
         Remove-SmokeDirectory `
             -Path $smokeRoot `
@@ -508,4 +524,4 @@ Write-StableJson $releaseManifestPath $releaseManifest
     "$archiveHash  $archiveName$([Environment]::NewLine)",
     [Text.UTF8Encoding]::new($false))
 
-Write-Host "Customer archive passed publish, checksum, install, upgrade, and launch verification: $archivePath"
+Write-Host "Customer archive passed publish, checksum, install, update, uninstall and launch verification: $archivePath"
