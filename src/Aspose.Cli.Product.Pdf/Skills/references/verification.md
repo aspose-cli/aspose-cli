@@ -18,8 +18,9 @@ compare extracted text with the expected content.
 After `move_pages`, also verify each affected bookmark, local link and named
 destination against the original target content, including destination type,
 coordinates, zoom and inherited/null values. Reopening or correct page order does not
-prove navigation preservation. The current move implementation can invalidate
-bookmarks to moved pages, so navigation-sensitive publication is blocked. The pinned
+prove navigation preservation. A `NAVIGATION_DEGRADED` warning counts the entries
+the edit or merge left without their exact target; its absence covers only the
+page each entry reaches, not its location or zoom. The pinned
 SDK's typed coordinate getters also collapse null and zero; getter equality alone
 cannot certify those semantics. This limitation is separate from ordinary text and
 page rendering checks.

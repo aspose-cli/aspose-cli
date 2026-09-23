@@ -58,12 +58,22 @@ internal sealed class PdfMutationService
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
         bool signatures = loaded.Document.Form.SignaturesExist;
         var touched = new SortedSet<int>();
+        PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
         (IReadOnlyList<BoundedOperationOutcome> outcomes, string? outputPassword) =
             ApplyOperations(loaded.Document, batch, request, touched, operationInputs);
+        PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
+            navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         Publication publication;
         try { publication = Publish(loaded.Document, request, outputPassword, precondition); }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes);
+        if (navigation.ToWarning(
+                "no longer lead to a page: moving or deleting pages leaves destinations pointing at pages the document no longer has",
+                "Re-create the affected bookmarks (add_bookmark) and links (add_link) after the page change, or reorder pages before adding navigation.")
+            is { } degraded)
+        {
+            warnings.Add(degraded);
+        }
 
         return new PdfEditResult
         {

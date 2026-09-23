@@ -337,43 +337,46 @@ internal static class PdfArtifactSupport
         }
     }
 
-    internal static void CopyOutline(
-        IEnumerable<OutlineItemCollection> source,
-        OutlineCollection target,
+    /// <summary>
+    /// Copies an outline into the merged document, pointing each bookmark at its page with
+    /// a Fit destination, and returns how many working bookmarks lost fidelity: a location
+    /// or zoom other than Fit, or a named destination the merged document does not carry.
+    /// </summary>
+    internal static int CopyOutline(
+        Document source,
+        IEnumerable<OutlineItemCollection> items,
+        ICollection<OutlineItemCollection> target,
         Document document,
         int pageOffset)
     {
-        foreach (OutlineItemCollection item in source)
+        int degraded = 0;
+        foreach (OutlineItemCollection item in items)
         {
-            var copied = CopyOutlineItem(item, document, pageOffset);
+            var copied = new OutlineItemCollection(document.Outlines)
+            {
+                Title = item.Title,
+                Bold = item.Bold,
+                Italic = item.Italic,
+                Color = item.Color,
+            };
+            IAppointment? destination = PdfNavigationCensus.Target(item.Destination, item.Action);
+            int page = DestinationPage(item);
+            if (page > 0)
+            {
+                copied.Destination = new FitExplicitDestination(document.Pages[pageOffset + page]);
+            }
+
+            if (PdfNavigationCensus.Resolves(source, destination)
+                && (page == 0 || destination is not FitExplicitDestination))
+            {
+                degraded++;
+            }
+
+            degraded += CopyOutline(source, item, copied, document, pageOffset);
             target.Add(copied);
         }
-    }
 
-    internal static OutlineItemCollection CopyOutlineItem(
-        OutlineItemCollection source,
-        Document document,
-        int pageOffset)
-    {
-        var copied = new OutlineItemCollection(document.Outlines)
-        {
-            Title = source.Title,
-            Bold = source.Bold,
-            Italic = source.Italic,
-            Color = source.Color,
-        };
-        int page = DestinationPage(source);
-        if (page > 0)
-        {
-            copied.Destination = new FitExplicitDestination(document.Pages[pageOffset + page]);
-        }
-
-        foreach (OutlineItemCollection child in source)
-        {
-            copied.Add(CopyOutlineItem(child, document, pageOffset));
-        }
-
-        return copied;
+        return degraded;
     }
 
     internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state) =>

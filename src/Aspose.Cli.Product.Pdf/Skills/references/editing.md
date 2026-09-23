@@ -6,12 +6,16 @@ Page ranges are 1-based physical page positions. Each operation resolves its
 range against the document as it exists at that point in the batch; earlier
 insert, delete or move operations can change later targets.
 
-Current navigation limitation: `move_pages` can reorder content while leaving
-existing bookmarks to moved pages invalid. Preservation of local links, named
-destinations and their location/zoom semantics is not certified. Navigation-sensitive
-move publication remains blocked even when the command exits 0; command availability
-has not changed. Retain the original and follow the destination checks in
-[verification](verification.md). Do not substitute lossy bookmark or PDF-object rewriting.
+Navigation limitation: `move_pages` reorders content but leaves bookmarks, local
+links and named destinations that pointed at moved pages without a target, and
+`delete_pages` does the same for deleted pages. `pdf merge` points each copied
+bookmark at its page with Fit zoom (other locations and zooms are lost) and does
+not carry named destinations. Both publish their output and say so: a
+`NAVIGATION_DEGRADED` warning (it affects completeness) counts the bookmarks,
+links and named destinations that no longer lead where they did. When it
+appears, re-create the affected entries with `add_bookmark`/`add_link`, or
+reorder pages before adding navigation, then follow the destination checks in
+[verification](verification.md).
 
 `set_page_labels` changes navigation labels, not visible page text. Its
 `ranges[].startPage` is also 1-based; `startingValue` is the first label value

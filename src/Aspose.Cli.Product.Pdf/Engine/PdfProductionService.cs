@@ -349,31 +349,52 @@ internal sealed class PdfProductionService
         LicenseState state = _licenseGate.EnsureApplied();
         var inputs = new List<SourceInfo>(request.InputPaths.Count);
         using var merged = new Document();
+        int bookmarks = 0;
+        int brokenInputLinks = 0;
+        int namedDestinations = 0;
         foreach (string path in request.InputPaths)
         {
             using LoadedPdf loaded = _loader.Open(path, request.Password);
+            Document source = loaded.Document;
+            brokenInputLinks += PdfNavigationCensus.Unresolved(source).Links;
+            // The merged document carries no named destinations, so every working one is lost.
+            namedDestinations += source.NamedDestinations.Names.Count(name =>
+                PdfNavigationCensus.Resolves(source, source.NamedDestinations[name]));
             int offset = merged.Pages.Count;
-            foreach (Page page in loaded.Document.Pages)
+            foreach (Page page in source.Pages)
             {
                 merged.Pages.Add(page);
             }
 
             if (request.PreserveBookmarks)
             {
-                CopyOutline(loaded.Document.Outlines, merged.Outlines, merged, offset);
+                bookmarks += CopyOutline(source, source.Outlines, merged.Outlines, merged, offset);
             }
 
             inputs.Add(PdfInfoProjection.Source(path));
         }
 
+        var navigation = new PdfNavigationCensus(
+            bookmarks,
+            Math.Max(0, PdfNavigationCensus.Unresolved(merged).Links - brokenInputLinks),
+            namedDestinations);
         long size = _writer.Write(request.OutputPath, request.Overwrite, merged.Save);
+        List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];
+        if (navigation.ToWarning(
+                "lost their exact target: merged bookmarks open their page at Fit zoom, and named destinations are not carried into the merged document",
+                "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the merged PDF.")
+            is { } degraded)
+        {
+            warnings.Add(degraded);
+        }
+
         return new PdfWriteResult
         {
             Action = "merge",
             Output = BuildOutput(request.OutputPath, "pdf", size),
             Inputs = inputs,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state),
+            Warnings = warnings.Count == 0 ? null : warnings,
         };
     }
 
