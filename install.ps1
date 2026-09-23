@@ -51,6 +51,10 @@ namespace AsposeFileInstaller {
         public static extern uint GetErrorMode();
         [DllImport("kernel32.dll")]
         public static extern uint SetErrorMode(uint mode);
+        [DllImport("user32.dll", SetLastError = true, CharSet = CharSet.Unicode)]
+        public static extern System.IntPtr SendMessageTimeout(
+            System.IntPtr window, uint message, System.UIntPtr wParam, string lParam,
+            uint flags, uint timeout, out System.UIntPtr result);
     }
 
     public sealed class BoundedWriteStream : System.IO.Stream {
@@ -951,13 +955,53 @@ function Unprotect-PathValue {
     return $script:Utf8.GetString($plain)
 }
 
+# The user PATH is read and written as its raw registry value. The .NET environment API
+# expands %VAR% entries on read and always writes REG_SZ, which would permanently freeze
+# entries such as %USERPROFILE%\AppData\Local\Microsoft\WindowsApps.
 function Get-UserPath {
-    return [Environment]::GetEnvironmentVariable('Path','User')
+    $key = [Microsoft.Win32.Registry]::CurrentUser.OpenSubKey('Environment', $false)
+    if ($null -eq $key) { return $null }
+    try { return $key.GetValue('Path', $null, [Microsoft.Win32.RegistryValueOptions]::DoNotExpandEnvironmentNames) }
+    finally { $key.Dispose() }
 }
 
+# Writes keep the existing value kind, so restoring the original string also restores the
+# original kind. A newly created PATH is REG_EXPAND_SZ, the Windows default for it.
 function Set-UserPath {
     param([AllowNull()] $Value)
-    [Environment]::SetEnvironmentVariable('Path',$Value,'User')
+    $key = [Microsoft.Win32.Registry]::CurrentUser.CreateSubKey('Environment')
+    try {
+        if ($null -eq $Value) { $key.DeleteValue('Path', $false) }
+        else {
+            $kind = if ($null -eq $key.GetValue('Path')) { [Microsoft.Win32.RegistryValueKind]::ExpandString }
+                else { $key.GetValueKind('Path') }
+            $key.SetValue('Path', [string]$Value, $kind)
+        }
+    }
+    finally { $key.Dispose() }
+    $ignored = [UIntPtr]::Zero
+    # HWND_BROADCAST, WM_SETTINGCHANGE, SMTO_ABORTIFHUNG: processes started later see the change.
+    [void][AsposeFileInstaller.NativeMethods]::SendMessageTimeout(
+        [IntPtr]0xffff, 0x001A, [UIntPtr]::Zero, 'Environment', 0x0002, 5000, [ref]$ignored)
+}
+
+# Keeps every other raw entry and exactly one install-directory entry at the end. Entries
+# are compared after expansion, so %LOCALAPPDATA%\Aspose\CLI counts as the install root.
+function Get-UpdatedUserPath {
+    param([AllowNull()][string] $CurrentPath, [Parameter(Mandatory)][string] $InstallRoot)
+    $entries = @()
+    foreach ($entry in @(($CurrentPath -split ';'))) {
+        $trimmed = $entry.Trim().Trim('"').TrimEnd('\')
+        if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
+        $same = $false
+        try {
+            $expanded = [Environment]::ExpandEnvironmentVariables($trimmed)
+            $same = [IO.Path]::GetFullPath($expanded).TrimEnd('\').Equals($InstallRoot.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase)
+        }
+        catch { $same = $false }
+        if (-not $same) { $entries += $entry.Trim() }
+    }
+    return (@($entries) + $InstallRoot) -join ';'
 }
 
 function Set-TransactionalUserPath {
@@ -1753,16 +1797,7 @@ try {
     if ($published.Snapshot -cne $newState.Snapshot) { throw 'Published installation failed its payload manifest verification.' }
 
     if (-not $SkipPath) {
-        $entries = @()
-        foreach ($entry in @(($oldUserPath -split ';'))) {
-            $trimmed = $entry.Trim().Trim('"').TrimEnd('\')
-            if ([string]::IsNullOrWhiteSpace($trimmed)) { continue }
-            $same = $false
-            try { $same = [IO.Path]::GetFullPath($trimmed).TrimEnd('\').Equals($installRoot.TrimEnd('\'), [StringComparison]::OrdinalIgnoreCase) } catch { $same = $false }
-            if (-not $same) { $entries += $entry.Trim() }
-        }
-        $updatedPath = (@($entries) + $installRoot) -join ';'
-        Set-TransactionalUserPath $journalPath $journal $updatedPath
+        Set-TransactionalUserPath $journalPath $journal (Get-UpdatedUserPath $oldUserPath $installRoot)
     }
 
     foreach ($license in $stagedLicenses) {

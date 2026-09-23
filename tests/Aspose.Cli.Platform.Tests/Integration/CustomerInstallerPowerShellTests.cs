@@ -497,6 +497,37 @@ public sealed class CustomerInstallerPowerShellTests : IDisposable, IClassFixtur
     }
 
     [Fact]
+    public void PathComposition_KeepsRawEntriesAndLeavesExactlyOneInstallEntry()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+
+        string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        string installRoot = Path.Combine(localAppData, "Aspose", "CLI");
+        string current = string.Join(';',
+            @"%USERPROFILE%\AppData\Local\Microsoft\WindowsApps",
+            @"%LOCALAPPDATA%\Aspose\CLI\",
+            @"C:\Tools",
+            $"\"{installRoot.ToUpperInvariant()}\"",
+            "",
+            installRoot);
+        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
+        string command = $". {PowerShellLiteral(installer)}; "
+            + $"Get-UpdatedUserPath {PowerShellLiteral(current)} {PowerShellLiteral(installRoot)}";
+
+        PowerShellResult result = RunExecutable(
+            "powershell.exe",
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
+
+        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.Equal(
+            string.Join(';', @"%USERPROFILE%\AppData\Local\Microsoft\WindowsApps", @"C:\Tools", installRoot),
+            result.StdOut.Trim());
+    }
+
+    [Fact]
     public void UnsupportedOldInstallIsRejectedWithoutExecutingOrChangingIt()
     {
         if (!OperatingSystem.IsWindows())
