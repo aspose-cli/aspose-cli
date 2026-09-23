@@ -61,6 +61,23 @@ public sealed class LocalServiceMarkerSnapshotTests
         }
     }
 
+    [Fact]
+    public void DeleteIf_JudgesThePairStoredUnderTheLockNotAnEarlierRead()
+    {
+        using var directory = new TempDirectory();
+        var store = new LocalServiceMarkerFiles<State, State>(
+            directory.File("marker.json"), directory.File("secrets.json"), TypeInfo(), TypeInfo());
+        store.Write(new State(1), new State(1));
+        (State Marker, State Secrets) judged = store.Read()!.Value;
+        store.Write(new State(2), new State(2));
+
+        store.DeleteIf(current => current?.Secrets == judged.Secrets);
+
+        Assert.Equal(2, store.Read()!.Value.Marker.Revision);
+        store.DeleteIf(current => current?.Secrets.Revision == 2);
+        Assert.Null(store.Read());
+    }
+
     private static Task RunBlocking(Action action) => Task.Factory.StartNew(action,
         CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
 

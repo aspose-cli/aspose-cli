@@ -34,7 +34,8 @@ internal sealed class ViewerServiceStore
         {
             return marker;
         }
-        Files().Delete();
+        // Liveness was judged outside the lock; delete only the stale pair that was judged.
+        Files().DeleteIf(current => current is null || IsSameService(current.Value, marker));
         return null;
     }
 
@@ -51,14 +52,13 @@ internal sealed class ViewerServiceStore
     }
 
     /// <summary>Removes the marker, unless another service has published its own.</summary>
-    public void DeleteIfOwned(string token)
-    {
-        ViewerServiceMarker? current = Read();
-        if (current is null || string.Equals(current.Token, token, StringComparison.Ordinal))
-        {
-            Files().Delete();
-        }
-    }
+    public void DeleteIfOwned(string token) =>
+        Files().DeleteIf(current => current is null
+            || string.Equals(current.Value.Secrets.Token, token, StringComparison.Ordinal));
+
+    private static bool IsSameService((ViewerServiceMarker Marker, ViewerServiceSecrets Secrets) stored, ViewerServiceMarker judged) =>
+        string.Equals(stored.Secrets.Token, judged.Token, StringComparison.Ordinal)
+        && string.Equals(stored.Marker.Nonce, judged.Nonce, StringComparison.Ordinal);
 
     private ViewerServiceMarker? Read()
     {

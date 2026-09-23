@@ -51,6 +51,34 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
         try
         {
             using LocalServiceOperationLock lease = Acquire();
+            return ReadHeld();
+        }
+        catch (TimeoutException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Deletes the pair only if the currently stored pair, re-read under the same lock,
+    /// still satisfies <paramref name="predicate"/>. A caller that decided on an older read
+    /// can therefore never delete a pair another process published in between.
+    /// </summary>
+    public void DeleteIf(Func<(TMarker Marker, TSecrets Secrets)?, bool> predicate)
+    {
+        ArgumentNullException.ThrowIfNull(predicate);
+        using LocalServiceOperationLock lease = Acquire();
+        if (predicate(ReadHeld()))
+        {
+            LocalFileCleanup.DeleteFile(_markerPath);
+            LocalFileCleanup.DeleteFile(_secretPath);
+        }
+    }
+
+    private (TMarker Marker, TSecrets Secrets)? ReadHeld()
+    {
+        try
+        {
             if (!File.Exists(_markerPath)
                 || !File.Exists(_secretPath))
             {
@@ -73,8 +101,7 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
             exception is IOException
                 or UnauthorizedAccessException
                 or JsonException
-                or ArgumentException
-                or TimeoutException)
+                or ArgumentException)
         {
             return null;
         }
@@ -101,11 +128,4 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
 
     private LocalServiceOperationLock Acquire() =>
         LocalServiceOperationLock.Acquire("marker-files", _lockKey, LocalServiceControlCodec.DefaultStageTimeout);
-
-    public void Delete()
-    {
-        using LocalServiceOperationLock lease = Acquire();
-        LocalFileCleanup.DeleteFile(_markerPath);
-        LocalFileCleanup.DeleteFile(_secretPath);
-    }
 }
