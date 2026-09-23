@@ -1329,10 +1329,19 @@ function Remove-VerifiedSkillStageParent {
     Remove-DirectoryWithRetry $Root $false
 }
 
+# Fault injection exists for transaction tests. A signed customer installation never
+# honors it: only development packages and dot-sourced test hosts do.
+$script:TestFaultsEnabled = $DevelopmentPackage -or $isDotSourced
+
+function Invoke-TestCrash {
+    param([string] $Phase)
+    if ($script:TestFaultsEnabled -and $env:ASPOSE_CLI_INSTALL_CRASH -ceq $Phase) { [Environment]::Exit(97) }
+}
+
 function Invoke-TestFault {
     param([string] $Phase)
-    if ($env:ASPOSE_CLI_INSTALL_CRASH -ceq $Phase) { [Environment]::Exit(97) }
-    if ($env:ASPOSE_CLI_INSTALL_FAULT -ceq $Phase) { throw "Injected installer failure at '$Phase'." }
+    Invoke-TestCrash $Phase
+    if ($script:TestFaultsEnabled -and $env:ASPOSE_CLI_INSTALL_FAULT -ceq $Phase) { throw "Injected installer failure at '$Phase'." }
 }
 
 function Recover-PendingTransaction {
@@ -1857,7 +1866,7 @@ try {
     # Once committed, an injected ordinary failure must not report a rollbackable
     # error. A hard-exit hook remains so recovery of committed-but-not-cleaned
     # transactions can be exercised without lying about transaction outcome.
-    if ($env:ASPOSE_CLI_INSTALL_CRASH -ceq 'committed') { [Environment]::Exit(97) }
+    Invoke-TestCrash 'committed'
 
     $committedCleanupComplete = $false
     try {
