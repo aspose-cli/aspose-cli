@@ -1,5 +1,4 @@
 using System.Globalization;
-using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.SlidesMutationSupport;
 

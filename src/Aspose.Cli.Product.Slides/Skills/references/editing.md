@@ -56,6 +56,9 @@ aspose-cli docs slides/ops
 
 Video and audio insertion or MP4 rendering are not supported by this build. Existing embedded
 media can be inventoried and extracted, but must not be silently synthesized.
+`extract --what media --slides 2-3` writes only the media those slides show (pictures,
+picture fills, backgrounds, audio and video, not master or layout art); each item keeps
+its presentation-wide `index`.
 
 `update_chart_data` writes into the chart's own workbook cells. Existing series
 keep their fills, markers, data labels and number formats; added series and

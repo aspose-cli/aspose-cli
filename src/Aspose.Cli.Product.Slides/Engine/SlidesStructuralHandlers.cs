@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Globalization;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -6,12 +5,10 @@ using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
-using Aspose.Slides.Charts;
 using Aspose.Slides.SlideShow;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 using static Aspose.Cli.Product.Slides.Engine.SlidesMutationSupport;

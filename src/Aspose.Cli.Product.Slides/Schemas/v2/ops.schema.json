@@ -267,7 +267,7 @@
     "setSlideSize": {
       "type": "object", "required": ["op", "size"], "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_slide_size" }, "size": { "type": "string", "pattern": "^(16x9|4x3|[0-9]+(?:\\.[0-9]+)?x[0-9]+(?:\\.[0-9]+)?pt)$" },
+        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_slide_size" }, "size": { "type": "string", "pattern": "^(16x9|4x3|[0-9]+(?:\\.[0-9]+)?x[0-9]+(?:\\.[0-9]+)?pt)$", "description": "16x9, 4x3, or WxHpt such as 800x450pt; each side is 72 through 7200 points." },
         "scaleContent": { "type": "boolean", "default": true }
       }
     },

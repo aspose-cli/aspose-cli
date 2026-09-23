@@ -1,4 +1,3 @@
-using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Ports;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;

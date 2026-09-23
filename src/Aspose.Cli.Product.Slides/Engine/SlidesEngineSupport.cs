@@ -1,6 +1,5 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
@@ -374,16 +373,28 @@ internal static class SlidesEngineSupport
             ["title"] = EmptyToNull(properties.Title),
         };
 
+    /// <summary>
+    /// Stages embedded media. With a slide selection only the media those slides show
+    /// (pictures, picture fills, backgrounds, audio and video) is staged; indexes stay the
+    /// presentation-wide positions.
+    /// </summary>
     internal static void StageMedia(
         Presentation presentation,
+        IReadOnlyList<int>? slides,
         PresentationExtractRequest request,
         AtomicOutputSetWriter transaction,
         List<(string Path, string Kind, int? Slide, uint? SlideId, int? Index, string? Name, string? ContentType)> items)
     {
+        HashSet<object>? shown = slides is null ? null : ShownMedia(presentation, slides);
         int index = 0;
         foreach (IPPImage image in presentation.Images)
         {
             index++;
+            if (shown?.Contains(image) == false)
+            {
+                continue;
+            }
+
             string path = Path.Combine(
                 request.OutputDirectory,
                 $"media.image.{index}{ContentExtension(image.ContentType, ".bin")}");
@@ -394,6 +405,11 @@ internal static class SlidesEngineSupport
         foreach (IAudio audio in presentation.Audios)
         {
             index++;
+            if (shown?.Contains(audio) == false)
+            {
+                continue;
+            }
+
             string path = Path.Combine(
                 request.OutputDirectory,
                 $"media.audio.{index}{ContentExtension(audio.ContentType, ".bin")}");
@@ -404,11 +420,65 @@ internal static class SlidesEngineSupport
         foreach (IVideo video in presentation.Videos)
         {
             index++;
+            if (shown?.Contains(video) == false)
+            {
+                continue;
+            }
+
             string path = Path.Combine(
                 request.OutputDirectory,
                 $"media.video.{index}{ContentExtension(video.ContentType, ".bin")}");
             transaction.Stage(path, request.Overwrite, temp => File.WriteAllBytes(temp, video.BinaryData));
             items.Add((path, "video", null, null, index, null, EmptyToNull(video.ContentType)));
+        }
+    }
+
+    private static HashSet<object> ShownMedia(Presentation presentation, IReadOnlyList<int> slides)
+    {
+        var shown = new HashSet<object>(ReferenceEqualityComparer.Instance);
+        foreach (int number in slides)
+        {
+            ISlide slide = presentation.Slides[number - 1];
+            AddPicture(shown, slide.Background.FillFormat);
+            foreach (IShape shape in slide.Shapes)
+            {
+                AddShown(shown, shape);
+            }
+        }
+
+        return shown;
+    }
+
+    private static void AddShown(HashSet<object> shown, IShape shape)
+    {
+        switch (shape)
+        {
+            case IGroupShape group:
+                foreach (IShape child in group.Shapes)
+                {
+                    AddShown(shown, child);
+                }
+
+                break;
+            case IAudioFrame { EmbeddedAudio: { } audio }:
+                shown.Add(audio);
+                break;
+            case IVideoFrame { EmbeddedVideo: { } video }:
+                shown.Add(video);
+                break;
+            case IPictureFrame { PictureFormat.Picture.Image: { } image }:
+                shown.Add(image);
+                break;
+        }
+
+        AddPicture(shown, shape.FillFormat);
+    }
+
+    private static void AddPicture(HashSet<object> shown, IFillFormat? fill)
+    {
+        if (fill is { FillType: FillType.Picture, PictureFillFormat.Picture.Image: { } image })
+        {
+            shown.Add(image);
         }
     }
 

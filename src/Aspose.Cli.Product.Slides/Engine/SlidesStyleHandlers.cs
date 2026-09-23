@@ -1,4 +1,3 @@
-using System.Drawing;
 using System.Globalization;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -6,14 +5,12 @@ using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
-using Aspose.Slides.Charts;
 using Aspose.Slides.SlideShow;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 using static Aspose.Cli.Product.Slides.Engine.SlidesMutationSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
@@ -211,13 +208,13 @@ internal static class SlidesStyleHandlers
                 op.Size == "16x9" ? SlideSizeType.OnScreen16x9 : SlideSizeType.OnScreen,
                 scale);
         }
+        else if (SlidesOpRules.TryParseCustomSize(op.Size, out float width, out float height))
+        {
+            presentation.SlideSize.SetSize(width, height, scale);
+        }
         else
         {
-            string[] parts = op.Size[..^2].Split('x', StringSplitOptions.TrimEntries);
-            presentation.SlideSize.SetSize(
-                float.Parse(parts[0], CultureInfo.InvariantCulture),
-                float.Parse(parts[1], CultureInfo.InvariantCulture),
-                scale);
+            throw new OperationInvalidException($"Unsupported slide size '{op.Size}'.");
         }
 
         foreach (ISlide slide in presentation.Slides)

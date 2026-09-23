@@ -1,5 +1,4 @@
 using System.Text.Json.Serialization;
-using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
 

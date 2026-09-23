@@ -1,7 +1,5 @@
 using System.Globalization;
-using System.Net;
 using System.Text;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
@@ -9,11 +7,9 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Slides;
-using Aspose.Slides.Charts;
 using Aspose.Slides.Export;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
@@ -354,7 +350,7 @@ internal sealed class SlidesProductionService
 
         if (request.What == PresentationExtractKinds.Media)
         {
-            StageMedia(loaded.Presentation, request, transaction, items);
+            StageMedia(loaded.Presentation, request.Slides is null ? null : slides, request, transaction, items);
         }
         else
         {

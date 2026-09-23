@@ -1,5 +1,5 @@
 using System.Globalization;
-using Aspose.Cli.Sdk.Addressing;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Text;
 using static Aspose.Cli.Sdk.Operations.OperationInvalidException;
@@ -7,7 +7,7 @@ using static Aspose.Cli.Sdk.Operations.OperationInvalidException;
 namespace Aspose.Cli.Product.Slides.Contracts;
 
 /// <summary>Semantic rules of Slides operations that the contract types cannot express.</summary>
-internal static class SlidesOpRules
+internal static partial class SlidesOpRules
 {
     private const int MaximumCategories = 1000;
     private const int MaximumSeries = 50;
@@ -180,7 +180,28 @@ internal static class SlidesOpRules
             || op.Keywords is not null || op.Company is not null, "at least one property is required");
 
     internal static void SetSlideSize(SetSlideSizeOp op) =>
-        Require(op.Size is "16x9" or "4x3" || IsCustomSize(op.Size), "size must be 16x9, 4x3 or WxHpt");
+        Require(
+            op.Size is "16x9" or "4x3" || TryParseCustomSize(op.Size, out _, out _),
+            "size must be 16x9, 4x3 or WxHpt with each side from 72 through 7200 points");
+
+    /// <summary>
+    /// Parses a custom slide size such as <c>800x450pt</c> or <c>800.5x450pt</c>: the exact
+    /// spelling the ops schema allows, with each side from 72 through 7200 points.
+    /// </summary>
+    internal static bool TryParseCustomSize(string value, out float width, out float height)
+    {
+        width = 0;
+        height = 0;
+        Match match = CustomSizePattern().Match(value);
+        return match.Success
+            && float.TryParse(match.Groups["width"].Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out width)
+            && float.TryParse(match.Groups["height"].Value, NumberStyles.AllowDecimalPoint, CultureInfo.InvariantCulture, out height)
+            && width is >= 72 and <= 7200
+            && height is >= 72 and <= 7200;
+    }
+
+    [GeneratedRegex(@"^(?<width>[0-9]+(?:\.[0-9]+)?)x(?<height>[0-9]+(?:\.[0-9]+)?)pt$", RegexOptions.CultureInvariant)]
+    private static partial Regex CustomSizePattern();
 
     private static void Target(SlideTargetOp op) =>
         Require((op.Slide is not null) != (op.SlideId is not null)
@@ -248,17 +269,4 @@ internal static class SlidesOpRules
 
     private static void Text(string value, string field) => Require(!string.IsNullOrWhiteSpace(value), $"{field} is required");
 
-    private static bool IsCustomSize(string value)
-    {
-        if (!value.EndsWith("pt", StringComparison.OrdinalIgnoreCase))
-        {
-            return false;
-        }
-        string[] parts = value[..^2].Split('x', StringSplitOptions.TrimEntries);
-        return parts.Length == 2
-            && double.TryParse(parts[0], NumberStyles.Float, CultureInfo.InvariantCulture, out double width)
-            && double.TryParse(parts[1], NumberStyles.Float, CultureInfo.InvariantCulture, out double height)
-            && width is >= 72 and <= 7200
-            && height is >= 72 and <= 7200;
-    }
 }

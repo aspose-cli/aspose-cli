@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
