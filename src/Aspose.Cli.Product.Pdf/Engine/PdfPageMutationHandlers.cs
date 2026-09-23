@@ -5,6 +5,7 @@ using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -33,7 +34,7 @@ internal static class PdfPageMutationHandlers
             90 => Rotation.on90,
             180 => Rotation.on180,
             270 => Rotation.on270,
-            _ => throw new InvalidOperationException("Rotation must be 90, 180 or 270 degrees."),
+            _ => throw new OperationInvalidException("Rotation must be 90, 180 or 270 degrees."),
         };
         foreach (int number in pages)
         {
@@ -49,7 +50,7 @@ internal static class PdfPageMutationHandlers
         int[] pages = Resolve(document, op.Pages).ToArray();
         if (pages.Length == document.Pages.Count)
         {
-            throw new InvalidOperationException("A PDF must retain at least one page.");
+            throw new OperationInvalidException("A PDF must retain at least one page.");
         }
 
         document.Pages.Delete(pages);

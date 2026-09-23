@@ -17,7 +17,7 @@ public sealed class PdfModuleTests
     public void OperationBatch_RejectsNullOperations()
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            PdfOpsParser.Parse("""{"ops":null}"""));
+            Parse("""{"ops":null}"""));
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
@@ -37,9 +37,9 @@ public sealed class PdfModuleTests
     [Fact]
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
-            PdfOps.Names.Order(StringComparer.Ordinal),
+            PdfOps.Catalog.Names.Order(StringComparer.Ordinal),
             PdfContractSamples.PdfOpsBatch.Ops
-                .Select(static operation => operation.OpName)
+                .Select(PdfOps.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 
     [Theory]
@@ -54,6 +54,7 @@ public sealed class PdfModuleTests
     [InlineData("""{"op":"redact_area","page":1,"rect":{"x":0,"y":0,"width":10,"height":10}}""", """{"fillColor":"#000000"}""")]
     [InlineData("""{"op":"remove_metadata"}""", """{"xmp":true,"documentInfo":true}""")]
     [InlineData("""{"op":"flatten_forms"}""", """{"all":true}""")]
+    [InlineData("""{"op":"flatten_forms","fields":["Customer"]}""", """{"all":false}""")]
     [InlineData("""{"op":"set_page_labels","ranges":[{"startPage":1}]}""", """{"ranges":[{"startPage":1,"style":"arabic","startingValue":1}]}""")]
     [InlineData("""{"op":"encrypt","ownerPasswordEnv":"OWNER"}""", """{"permissions":{"print":false,"copy":false,"modify":false,"annotate":false,"fillForms":false,"extractAccessibility":false,"assemble":false,"printHighResolution":false}}""")]
     [InlineData("""{"op":"optimize"}""", """{"removeUnusedObjects":true,"compressStreams":true}""")]
@@ -70,7 +71,7 @@ public sealed class PdfModuleTests
     public void NonNullableFields_RejectExplicitNullAsInvalidOperations(string operation)
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            PdfOpsParser.Parse($$"""{"ops":[{{operation}}]}"""));
+            Parse($$"""{"ops":[{{operation}}]}"""));
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
@@ -78,7 +79,10 @@ public sealed class PdfModuleTests
     public void EncryptionPermissions_RejectExplicitNull()
     {
         Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            PdfOpsParser.Parse(
+            Parse(
                 """{"ops":[{"op":"encrypt","ownerPasswordEnv":"OWNER","permissions":null}]}"""));
     }
+
+    private static PdfOpsBatch Parse(string json) =>
+        PdfOps.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

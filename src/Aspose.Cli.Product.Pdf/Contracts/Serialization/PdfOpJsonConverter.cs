@@ -5,7 +5,7 @@ namespace Aspose.Cli.Product.Pdf.Contracts.Serialization;
 
 /// <summary>Connects the Pdf operation vocabulary to the shared wire protocol.</summary>
 internal sealed class PdfOpJsonConverter()
-    : OperationJsonConverter<PdfOp>(PdfOps.Registry, static operation => operation.OpName)
+    : OperationJsonConverter<PdfOp>(PdfOps.Catalog)
 {
     protected override PdfOp ApplyDefaults(PdfOp value, JsonElement root) => value switch
     {
@@ -40,7 +40,8 @@ internal sealed class PdfOpJsonConverter()
             Xmp = Missing(root, "xmp") || op.Xmp,
             DocumentInfo = Missing(root, "documentInfo") || op.DocumentInfo,
         },
-        FlattenFormsOp op when Missing(root, "all") => op with { All = true },
+        // Naming fields selects them; "all" defaults to true only when no fields are named.
+        FlattenFormsOp op when Missing(root, "all") => op with { All = op.Fields is null },
         SetPageLabelsOp op => op with { Ranges = PageLabelDefaults(op.Ranges, root) },
         EncryptPdfOp op when Missing(root, "permissions") => op with { Permissions = new PdfPermissionsInput() },
         OptimizePdfOp op => op with

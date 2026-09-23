@@ -2,18 +2,34 @@ using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Serialization;
 
 /// <summary>
 /// Owns the operation discriminator protocol; each product supplies its vocabulary and defaults.
 /// </summary>
-public abstract class OperationJsonConverter<TOperation>(
-    IReadOnlyDictionary<string, Type> operations,
-    Func<TOperation, string> operationName) : JsonConverter<TOperation>
+public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperation>
     where TOperation : BoundedOperation
 {
     private static readonly ConditionalWeakTable<JsonSerializerOptions, JsonSerializerOptions> StrictOptions = new();
+    private readonly IReadOnlyDictionary<string, Type> operations;
+    private readonly Func<TOperation, string> operationName;
+
+    /// <summary>Connects a product's operation catalog to the shared wire protocol.</summary>
+    protected OperationJsonConverter(OperationCatalog<TOperation> catalog)
+    {
+        ArgumentNullException.ThrowIfNull(catalog);
+        operations = catalog.Registry;
+        operationName = catalog.NameOf;
+    }
+
+    /// <summary>Connects an explicit vocabulary to the shared wire protocol.</summary>
+    protected OperationJsonConverter(IReadOnlyDictionary<string, Type> operations, Func<TOperation, string> operationName)
+    {
+        this.operations = operations;
+        this.operationName = operationName;
+    }
 
     /// <inheritdoc />
     public override bool HandleNull => true;

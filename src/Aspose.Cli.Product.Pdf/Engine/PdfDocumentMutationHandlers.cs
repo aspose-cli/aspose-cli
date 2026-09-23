@@ -5,6 +5,7 @@ using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -81,7 +82,7 @@ internal static class PdfDocumentMutationHandlers
             OutlineItemCollection? parent = FindOutline(document.Outlines, op.Parent.Split('/', StringSplitOptions.RemoveEmptyEntries));
             if (parent is null)
             {
-                throw new InvalidOperationException($"Bookmark parent '{op.Parent}' was not found.");
+                throw new OperationInvalidException($"Bookmark parent '{op.Parent}' was not found.");
             }
 
             var nested = new OutlineItemCollection(document.Outlines)
@@ -114,7 +115,7 @@ internal static class PdfDocumentMutationHandlers
         OutlineItemCollection? item = FindOutline(document.Outlines, path);
         if (item is null)
         {
-            throw new InvalidOperationException($"Bookmark '{op.Path}' was not found.");
+            throw new OperationInvalidException($"Bookmark '{op.Path}' was not found.");
         }
 
         item.Delete();
@@ -137,10 +138,10 @@ internal static class PdfDocumentMutationHandlers
 
     internal static long RemoveAttachment(Document document, RemoveAttachmentOp op)
     {
-        FileSpecification? existing = document.EmbeddedFiles.FindByName(op.Name);
-        if (existing is null)
+        // FindByName throws an engine exception for a missing name; match the names query reports.
+        if (!document.EmbeddedFiles.Any(file => string.Equals(file.UnicodeName ?? file.Name, op.Name, StringComparison.Ordinal)))
         {
-            throw new InvalidOperationException($"Attachment '{op.Name}' was not found.");
+            throw new OperationInvalidException($"Attachment '{op.Name}' was not found.");
         }
 
         document.EmbeddedFiles.Delete(op.Name);
@@ -172,12 +173,12 @@ internal static class PdfDocumentMutationHandlers
             value => string.Equals(value.FullName, op.Name, StringComparison.Ordinal));
         if (field is null)
         {
-            throw new InvalidOperationException($"Form field '{op.Name}' was not found.");
+            throw new OperationInvalidException($"Form field '{op.Name}' was not found.");
         }
 
         if (RejectedFieldValue(field, op.Value) is { } rejected)
         {
-            throw new InvalidOperationException(rejected);
+            throw new OperationInvalidException(rejected);
         }
 
         field.Value = op.Value;
@@ -194,21 +195,16 @@ internal static class PdfDocumentMutationHandlers
             return count;
         }
 
-        int flattened = 0;
-        foreach (string name in op.Fields!)
+        // Resolve every name first: a missing field must reject the operation before any change.
+        Field[] fields = op.Fields!.Select(name => document.Form.Fields.FirstOrDefault(
+                value => string.Equals(value.FullName, name, StringComparison.Ordinal))
+            ?? throw new OperationInvalidException($"Form field '{name}' was not found.")).ToArray();
+        foreach (Field field in fields)
         {
-            Field? field = document.Form.Fields.FirstOrDefault(
-                value => string.Equals(value.FullName, name, StringComparison.Ordinal));
-            if (field is null)
-            {
-                throw new InvalidOperationException($"Form field '{name}' was not found.");
-            }
-
             field.Flatten();
-            flattened++;
         }
 
-        return flattened;
+        return fields.Length;
     }
 
     internal static long Encrypt(

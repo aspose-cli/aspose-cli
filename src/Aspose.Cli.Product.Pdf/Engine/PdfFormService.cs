@@ -43,10 +43,6 @@ internal sealed class PdfFormService
         PdfErrorTranslator.Execute("query forms", () => ReadFormCore(filePath, request));
 
     /// <inheritdoc />
-    public PdfEditResult FillForm(string filePath, PdfFormFillRequest request) =>
-        PdfErrorTranslator.Execute("edit", () => FillFormCore(filePath, request));
-
-    /// <inheritdoc />
     public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request) =>
         PdfErrorTranslator.Execute("extract forms", () => ExportFormCore(filePath, request));
 
@@ -78,83 +74,6 @@ internal sealed class PdfFormService
             ReadOnly = form.HasXfa,
             Fields = fields,
             License = EnvelopeParts.License(state),
-        };
-    }
-
-    private PdfEditResult FillFormCore(string filePath, PdfFormFillRequest request)
-    {
-        EnsurePdfOutput(request.OutputPath);
-        FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
-        LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        EnsureAcroForm(loaded.Document);
-        SourceInfo input = PdfInfoProjection.Source(filePath, includeFingerprint: true);
-        FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
-        var outcomes = new List<BoundedOperationOutcome>();
-        int index = 0;
-        foreach ((string name, string value) in request.Values.OrderBy(static item => item.Key, StringComparer.Ordinal))
-        {
-            Field? field = loaded.Document.Form.Fields.FirstOrDefault(
-                item => string.Equals(item.FullName, name, StringComparison.Ordinal));
-            if (field is null)
-            {
-                throw InvalidOp(index, "set_form_field", $"Form field '{name}' was not found.");
-            }
-
-            if (RejectedFieldValue(field, value) is { } rejected)
-            {
-                throw InvalidOp(index, "set_form_field", rejected);
-            }
-
-            field.Value = value;
-            outcomes.Add(new BoundedOperationOutcome
-            {
-                Id = $"op-{index + 1:D4}",
-                Index = index++,
-                Op = "set_form_field",
-                Status = OpStatuses.Ok,
-                ItemsAffected = 1,
-                Targets = ["pdf/form"],
-            });
-        }
-
-        if (request.Flatten)
-        {
-            int count = loaded.Document.Form.Count;
-            loaded.Document.Form.Flatten();
-            outcomes.Add(new BoundedOperationOutcome
-            {
-                Id = $"op-{index + 1:D4}",
-                Index = index,
-                Op = "flatten_forms",
-                Status = OpStatuses.Ok,
-                ItemsAffected = count,
-                Targets = ["pdf/form"],
-            });
-        }
-
-        SafeWriteResult write = _writer.Write(
-            request.OutputPath,
-            request.Overwrite,
-            backupPath: null,
-            precondition,
-            temp =>
-            {
-                loaded.Document.Save(temp);
-                using LoadedPdf reopened = _loader.OpenPublishedCandidate(temp, request.Password);
-            });
-        return new PdfEditResult
-        {
-            Input = input,
-            Output = BuildOutput(request.OutputPath, "pdf", write.SizeBytes) with
-            {
-                Fingerprint = write.Fingerprint,
-            },
-            DryRun = false,
-            Applied = outcomes,
-            Mutation = new MutationReceipt { Verification = "reopened" },
-            License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state),
         };
     }
 

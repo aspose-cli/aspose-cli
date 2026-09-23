@@ -117,14 +117,6 @@ public sealed record PdfEditRequest
 }
 
 public sealed record PdfFormReadRequest { public string? Password { get; init; } }
-public sealed record PdfFormFillRequest
-{
-    public required IReadOnlyDictionary<string, string> Values { get; init; }
-    public required string OutputPath { get; init; }
-    public bool Overwrite { get; init; }
-    public bool Flatten { get; init; }
-    public string? Password { get; init; }
-}
 public sealed record PdfFormExportRequest
 {
     public required string TargetFormatId { get; init; }

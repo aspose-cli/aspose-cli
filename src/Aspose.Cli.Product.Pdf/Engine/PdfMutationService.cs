@@ -2,11 +2,11 @@ using System.Globalization;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Product.Pdf.Engine.Mapping;
-using Aspose.Cli.Product.Pdf.Operations;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
@@ -50,7 +50,7 @@ internal sealed class PdfMutationService
 
     private PdfEditResult ApplyOpsCore(string filePath, PdfOpsBatch batch, PdfEditRequest request)
     {
-        batch = PdfOpsParser.Prepare(batch);
+        batch = PdfOps.Catalog.Prepare(batch);
         EnsurePdfOutput(request.OutputPath);
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
@@ -61,7 +61,7 @@ internal sealed class PdfMutationService
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
         bool signatures = loaded.Document.Form.SignaturesExist;
         var touched = new SortedSet<int>();
-        (List<BoundedOperationOutcome> outcomes, string? outputPassword) =
+        (IReadOnlyList<BoundedOperationOutcome> outcomes, string? outputPassword) =
             ApplyOperations(loaded.Document, batch, request, touched, operationInputs);
         Publication publication;
         try { publication = Publish(loaded.Document, request, outputPassword, precondition); }
@@ -82,30 +82,25 @@ internal sealed class PdfMutationService
         };
     }
 
-    private (List<BoundedOperationOutcome> Outcomes, string? OutputPassword) ApplyOperations(
+    private (IReadOnlyList<BoundedOperationOutcome> Outcomes, string? OutputPassword) ApplyOperations(
         Document document,
         PdfOpsBatch batch,
         PdfEditRequest request,
         ISet<int> touched,
         InputResourceScope operationInputs)
     {
-        var outcomes = new List<BoundedOperationOutcome>(batch.Ops.Count);
         string? outputPassword = request.Password;
-        for (int index = 0; index < batch.Ops.Count; index++)
-        {
-            PdfOp op = batch.Ops[index];
-            var operationPages = new SortedSet<int>();
-            try
+        IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
+            PdfOps.Catalog,
+            batch.Ops,
+            request.Options.BestEffort,
+            deadline: null,
+            (op, index) =>
             {
                 IReadOnlyDictionary<string, string>? secrets = null;
                 _ = request.OpSecrets?.TryGetValue(index, out secrets);
-                long affected = PdfMutationHandlers.ApplyOp(
-                    _loader,
-                    operationInputs,
-                    document,
-                    op,
-                    secrets,
-                    operationPages);
+                var operationPages = new SortedSet<int>();
+                long affected = PdfMutationHandlers.ApplyOp(_loader, operationInputs, document, op, secrets, operationPages);
                 touched.UnionWith(operationPages);
                 if (op is EncryptPdfOp)
                 {
@@ -115,47 +110,9 @@ internal sealed class PdfMutationService
                 {
                     outputPassword = null;
                 }
-
-                outcomes.Add(new BoundedOperationOutcome
-                {
-                    Id = op.Id!,
-                    Index = index,
-                    Op = op.OpName,
-                    Status = OpStatuses.Ok,
-                    ItemsAffected = affected,
-                    Targets = OperationTargets(op, operationPages),
-                });
-            }
-            catch (Exception exception) when (
-                exception is CliException or EngineOpException or InvalidOperationException
-                or ArgumentException or IndexOutOfRangeException
-                && exception is not CliException { IsInvocationFailure: true })
-            {
-                touched.UnionWith(operationPages);
-                CliException translated = exception as CliException ?? InvalidOp(index, op.OpName, exception.Message, exception);
-                if (!request.Options.BestEffort)
-                {
-                    throw translated;
-                }
-
-                outcomes.Add(new BoundedOperationOutcome
-                {
-                    Id = op.Id!,
-                    Index = index,
-                    Op = op.OpName,
-                    Status = OpStatuses.Failed,
-                    ItemsAffected = 0,
-                    Targets = OperationTargets(op, operationPages),
-                    Error = new OpError
-                    {
-                        Code = translated.Code.Name,
-                        Message = translated.Message,
-                        Hint = translated.Hint ?? "Fix the operation target or value, then retry the batch.",
-                    },
-                });
-            }
-        }
-
+                return new AppliedOperation(affected, OperationTargets(op, operationPages));
+            },
+            (op, _) => OperationTargets(op, []));
         return (outcomes, outputPassword);
     }
 

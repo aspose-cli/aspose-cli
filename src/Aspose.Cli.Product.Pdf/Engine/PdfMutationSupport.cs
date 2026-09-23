@@ -5,6 +5,7 @@ using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -46,7 +47,7 @@ internal static class PdfMutationSupport
             || !int.TryParse(value.AsSpan(3, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int green)
             || !int.TryParse(value.AsSpan(5, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture, out int blue))
         {
-            throw new InvalidOperationException($"Color '{value}' must use #RRGGBB.");
+            throw new OperationInvalidException($"Color '{value}' must use #RRGGBB.");
         }
 
         return PdfColor.FromRgb(red / 255d, green / 255d, blue / 255d);
@@ -99,7 +100,7 @@ internal static class PdfMutationSupport
         "letters-upper" => NumberingStyle.LettersUppercase,
         "letters-lower" => NumberingStyle.LettersLowercase,
         "none" => NumberingStyle.None,
-        _ => throw new InvalidOperationException($"Unknown page-label style '{value}'."),
+        _ => throw new OperationInvalidException($"Unknown page-label style '{value}'."),
     };
 
     internal static void EnsureAcroForm(Document document)
@@ -125,7 +126,7 @@ internal static class PdfMutationSupport
 
         if (required)
         {
-            throw new InvalidOperationException($"The required {name} environment variable is missing or empty.");
+            throw new OperationInvalidException($"The required {name} environment variable is missing or empty.");
         }
 
         return null;
@@ -150,10 +151,4 @@ internal static class PdfMutationSupport
             ? $"check box '{field.FullName}' has no state '{value}'; use one of: "
                 + string.Join(", ", checkbox.AllowedStates)
             : null;
-
-    internal static CliException InvalidOp(int index, string op, string reason, Exception? inner = null) => new(
-        ErrorCodes.OpsInvalid,
-        $"PDF op {index} ({op}) failed: {reason}",
-        hint: "Fix the operation and retry the atomic batch, or use --best-effort for an explicit partial result.",
-        innerException: inner);
 }

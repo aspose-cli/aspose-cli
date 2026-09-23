@@ -241,7 +241,7 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
-    public void Forms_ReadFillExportSetAndFlatten()
+    public void Forms_ReadSetExportAndFlatten()
     {
         using var fixture = new PdfEngineFixture();
         string input = FormDocument(fixture);
@@ -250,11 +250,10 @@ public sealed class PdfMutateTests
         Assert.Contains(read.Fields, static field => field.Name == "Customer");
 
         string filled = fixture.File("form.filled.pdf");
-        PdfEditResult filledResult = fixture.Engine.FillForm(input, new PdfFormFillRequest
+        PdfEditResult filledResult = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
-            Values = new Dictionary<string, string> { ["Customer"] = "Contoso" },
-            OutputPath = filled,
-        });
+            Ops = [new SetFormFieldOp { Name = "Customer", Value = "Contoso" }],
+        }, new PdfEditRequest { OutputPath = filled });
         Assert.Equal(["pdf/form"], Assert.Single(filledResult.Applied).Targets);
         Assert.Equal("reopened", filledResult.Mutation?.Verification);
         Assert.NotNull(filledResult.Input.Fingerprint);
@@ -310,13 +309,10 @@ public sealed class PdfMutateTests
         }
 
         string output = fixture.File("xfa.out.pdf");
-        CliException exception = Assert.Throws<CliException>(() => fixture.Engine.FillForm(
+        CliException exception = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
-            new PdfFormFillRequest
-            {
-                Values = new Dictionary<string, string> { ["seed"] = "value" },
-                OutputPath = output,
-            }));
+            new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "seed", Value = "value" }] },
+            new PdfEditRequest { OutputPath = output }));
 
         Assert.Equal("FORM_XFA_UNSUPPORTED", exception.Code.Name);
         Assert.False(File.Exists(output));
@@ -525,23 +521,6 @@ public sealed class PdfMutateTests
         var checkbox = (CheckboxField)reopened.Form.Fields.Single();
         Assert.True(checkbox.Checked);
         Assert.Equal("Yes", checkbox.ActiveState);
-    }
-
-    [Fact]
-    public void FillForm_RefusesTheSameCheckBoxStateAsTheOpsPath()
-    {
-        using var fixture = new PdfEngineFixture();
-        string input = CheckBoxDocument(fixture);
-
-        CliException error = Assert.Throws<CliException>(() => fixture.Engine.FillForm(input,
-            new PdfFormFillRequest
-            {
-                Values = new Dictionary<string, string> { ["Approved"] = "true" },
-                OutputPath = fixture.File("checkbox.fill.pdf"),
-            }));
-
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains("Off, Yes", error.Message, StringComparison.Ordinal);
     }
 
     private static string CheckBoxDocument(PdfEngineFixture fixture)

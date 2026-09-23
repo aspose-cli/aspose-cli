@@ -14,7 +14,7 @@ public sealed class PdfModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = 900,
         Operations = ProductOperationDescriptor.ForCommand(
-            PdfOps.Names,
+            PdfOps.Catalog.Names,
             "edit",
             "v2/pdf/ops",
             atomicByDefault: true,

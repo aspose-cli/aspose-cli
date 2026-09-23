@@ -83,9 +83,6 @@ internal sealed class PdfDocumentEngine : IPdfEngine, IPdfReviewLayoutPort
     public PdfFormResult ReadForm(string filePath, PdfFormReadRequest request) =>
         _forms.ReadForm(filePath, request);
 
-    public PdfEditResult FillForm(string filePath, PdfFormFillRequest request) =>
-        _forms.FillForm(filePath, request);
-
     public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request) =>
         _forms.ExportForm(filePath, request);
 

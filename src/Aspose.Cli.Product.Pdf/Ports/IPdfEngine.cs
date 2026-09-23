@@ -36,9 +36,6 @@ public interface IPdfEngine
     /// <summary>Reads AcroForm or XFA field metadata.</summary>
     PdfFormResult ReadForm(string filePath, PdfFormReadRequest request);
 
-    /// <summary>Fills AcroForm values atomically.</summary>
-    PdfEditResult FillForm(string filePath, PdfFormFillRequest request);
-
     /// <summary>Exports PDF form data.</summary>
     PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request);
 

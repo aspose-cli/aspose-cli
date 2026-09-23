@@ -22,7 +22,7 @@ using PdfColor = Aspose.Pdf.Color;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Routes a validated PDF operation to its cohesive operation family.</summary>
+/// <summary>Routes a validated PDF operation to its handler.</summary>
 internal static class PdfMutationHandlers
 {
     internal static long ApplyOp(
@@ -37,59 +37,13 @@ internal static class PdfMutationHandlers
         {
             return op switch
             {
-                RotatePagesOp or DeletePagesOp or MovePagesOp or InsertPagesFromOp
-                    or InsertBlankPageOp or CropPagesOp or SetPageSizeOp
-                    => ApplyPageOperation(
-                        loader,
-                        document,
-                        op,
-                        secrets,
-                        touched),
-                AddWatermarkTextOp or AddWatermarkImageOp or AddPageNumbersOp or AddHeaderTextOp
-                    or AddFooterTextOp or AddStampImageOp or AddLinkOp or RedactTextOp or RedactAreaOp
-                    => ApplyContentOperation(document, op, touched, inputs),
-                _ => ApplyDocumentOperation(document, op, secrets, inputs),
-            };
-        }
-        catch (CliException)
-        {
-            throw;
-        }
-        catch (Exception exception) when (
-            exception.GetType().Assembly.GetName().Name == "Aspose.PDF"
-            || exception is IOException or UnauthorizedAccessException)
-        {
-            throw new EngineOpException(exception.Message, exception);
-        }
-        finally { inputs.ThrowIfFailed(); }
-    }
-
-    private static long ApplyPageOperation(
-        PdfDocumentLoader loader,
-        Document document,
-        PdfOp op,
-        IReadOnlyDictionary<string, string>? secrets,
-        ISet<int> touched) =>
-        op switch
-        {
                 RotatePagesOp value => PdfPageMutationHandlers.Rotate(document, value, touched),
                 DeletePagesOp value => PdfPageMutationHandlers.DeletePages(document, value),
                 MovePagesOp value => PdfPageMutationHandlers.MovePages(document, value, touched),
-                InsertPagesFromOp value => PdfPageMutationHandlers.InsertPages(
-                    loader,
-                    document,
-                    value,
-                    secrets,
-                    touched),
+                InsertPagesFromOp value => PdfPageMutationHandlers.InsertPages(loader, document, value, secrets, touched),
                 InsertBlankPageOp value => PdfPageMutationHandlers.InsertBlank(document, value, touched),
                 CropPagesOp value => PdfPageMutationHandlers.Crop(document, value, touched),
                 SetPageSizeOp value => PdfPageMutationHandlers.SetPageSize(document, value, touched),
-                _ => throw new InvalidOperationException(),
-        };
-
-    private static long ApplyContentOperation(Document document, PdfOp op, ISet<int> touched, InputResourceScope inputs) =>
-        op switch
-        {
                 AddWatermarkTextOp value => PdfContentMutationHandlers.WatermarkText(document, value, touched),
                 AddWatermarkImageOp value => PdfContentMutationHandlers.WatermarkImage(document, value, touched, inputs),
                 AddPageNumbersOp value => PdfContentMutationHandlers.PageNumbers(document, value, touched),
@@ -99,16 +53,6 @@ internal static class PdfMutationHandlers
                 AddLinkOp value => PdfContentMutationHandlers.AddLink(document, value, touched),
                 RedactTextOp value => PdfContentMutationHandlers.RedactText(document, value, touched),
                 RedactAreaOp value => PdfContentMutationHandlers.RedactArea(document, value, touched),
-                _ => throw new InvalidOperationException(),
-        };
-
-    private static long ApplyDocumentOperation(
-        Document document,
-        PdfOp op,
-        IReadOnlyDictionary<string, string>? secrets,
-        InputResourceScope inputs) =>
-        op switch
-        {
                 SetMetadataOp value => PdfDocumentMutationHandlers.SetMetadata(document, value),
                 RemoveMetadataOp value => PdfDocumentMutationHandlers.RemoveMetadata(document, value),
                 AddBookmarkOp value => PdfDocumentMutationHandlers.AddBookmark(document, value),
@@ -121,6 +65,15 @@ internal static class PdfMutationHandlers
                 EncryptPdfOp value => PdfDocumentMutationHandlers.Encrypt(document, value, secrets),
                 DecryptPdfOp => PdfDocumentMutationHandlers.Decrypt(document),
                 OptimizePdfOp value => PdfDocumentMutationHandlers.Optimize(document, value),
-                _ => throw new InvalidOperationException($"Unsupported PDF op '{op.OpName}'."),
-        };
+                _ => throw new InvalidOperationException($"No PDF handler for {op.GetType().Name}."),
+            };
+        }
+        catch (Exception exception) when (
+            exception.GetType().Assembly.GetName().Name == "Aspose.PDF"
+            || exception is IOException or UnauthorizedAccessException)
+        {
+            throw new EngineOpException(exception.Message, exception);
+        }
+        finally { inputs.ThrowIfFailed(); }
+    }
 }
