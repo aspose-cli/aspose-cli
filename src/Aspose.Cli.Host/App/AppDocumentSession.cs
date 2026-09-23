@@ -6,7 +6,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Host.App;
 
@@ -33,7 +32,6 @@ internal sealed class AppDocumentSession : IDisposable
     private readonly LocalServiceResourceLimits _limits = LocalServiceResourceLimits.Resolve();
     private readonly Func<string, string> _address;
     private readonly string _root;
-    private readonly FontSearchProfile _fontProfile;
     private readonly List<DocumentLease> _open = [];
     private DocumentLease? _current;
 
@@ -46,8 +44,7 @@ internal sealed class AppDocumentSession : IDisposable
         AppLog log,
         ViewerDocuments documents,
         Func<string, string> address,
-        string rootDirectory,
-        FontSearchProfile fontProfile)
+        string rootDirectory)
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _createContext = createContext;
@@ -56,7 +53,6 @@ internal sealed class AppDocumentSession : IDisposable
         _documents = documents ?? throw new ArgumentNullException(nameof(documents));
         _address = address ?? throw new ArgumentNullException(nameof(address));
         _root = Path.GetFullPath(rootDirectory);
-        _fontProfile = fontProfile ?? throw new ArgumentNullException(nameof(fontProfile));
         Directory.CreateDirectory(_root);
     }
 
@@ -516,7 +512,6 @@ internal sealed class AppDocumentSession : IDisposable
             {
                 Product = product.Manifest.Id,
                 View = view,
-                FontDirectories = _fontProfile.IsAmbient ? null : _fontProfile.Directories,
                 MaxInputBytes = context.Globals.MaxInputBytes,
             }, deadline);
             Activity?.Invoke();

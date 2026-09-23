@@ -19,7 +19,6 @@ namespace Aspose.Cli.Sdk.Serialization;
 [JsonSerializable(typeof(SkillListResult))]
 [JsonSerializable(typeof(FontListResult))]
 [JsonSerializable(typeof(FontCheckResult))]
-[JsonSerializable(typeof(FontProfileInfo))]
 [JsonSerializable(typeof(AppResult))]
 [JsonSerializable(typeof(ProductPreviewStartResult))]
 [JsonSerializable(typeof(ProductPreviewStatusResult))]

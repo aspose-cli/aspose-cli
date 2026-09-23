@@ -165,7 +165,6 @@ public sealed partial class ProductViewDefinition
                 fonts.CheckFonts(filePath, new FontCheckRequest
                 {
                     Password = request.Password,
-                    FontProfile = request.FontProfile,
                 }));
     }
 

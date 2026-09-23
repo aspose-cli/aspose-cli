@@ -105,16 +105,15 @@ internal static class ReviewCommand
                 ? context.Paths.ResolveOutput(requestedOutput)
                 : input + ".review";
             ProductBinding binding = context.Activate(definition);
+            FontSearchProfile fontProfile = fonts.Read(parse, context.Paths);
+            using IDisposable fontScope = FontProfiles.Use(catalog, definition, binding, fontProfile);
             LicenseState license = binding.LicenseGate.EnsureApplied();
-            FontSearchProfile fontProfile = fonts.Read(parse);
-            EnsureFontProfileSupported(definition, fontProfile);
             var request = new ViewRenderRequest
             {
                 View = selectedView,
                 MaxParts = maximum,
                 Purpose = ViewPurpose.Evidence,
                 Password = password.Resolve(parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
-                FontProfile = fontProfile.IsAmbient ? null : fontProfile,
             };
             return ReviewEvidenceWriter.Write(
                 input,
@@ -130,19 +129,5 @@ internal static class ReviewCommand
                 context.ResourceBudgets);
         }));
         return command;
-    }
-
-    private static void EnsureFontProfileSupported(
-        ProductDefinition product,
-        FontSearchProfile profile)
-    {
-        if (!profile.IsAmbient
-            && !product.Manifest.Engine.SupportsExplicitFontProfiles)
-        {
-            throw CliErrors.OptionInvalid(
-                "--font-dir",
-                $"explicit font profiles are not supported by {product.Manifest.Id}",
-                "Omit --font-dir or use a product that advertises supportsExplicitFontProfiles.");
-        }
     }
 }

@@ -24,7 +24,7 @@ public sealed class CellsModule : IProductModule
             Engine = ProductEngineCapabilities.LicenseAware(
                 "aspose",
                 ProductBuildMetadata.EngineName,
-                ProductBuildMetadata.SdkVersion),
+                ProductBuildMetadata.SdkVersion, supportsExplicitFontProfiles: true),
             AvailableEngines = ["aspose"],
     };
 

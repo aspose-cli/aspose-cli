@@ -133,17 +133,7 @@ internal sealed record ServiceStartSecrets
 
     public string? LicensePath { get; init; }
 
-    public string? ExpectedLicenseIdentity { get; init; }
-
-    public string? Password { get; init; }
-
     public required string ServiceToken { get; init; }
 
     public required string ServiceNonce { get; init; }
-
-    public Aspose.Cli.Sdk.Rendering.FontSearchProfile? FontProfile
-    {
-        get;
-        init;
-    }
 }

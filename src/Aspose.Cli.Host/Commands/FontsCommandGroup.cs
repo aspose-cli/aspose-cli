@@ -100,29 +100,16 @@ internal static class FontsCommandGroup
                         .Select(static provider => provider.Manifest.Id)
                         .ToArray());
             }
-            IFontEnvironment environment = context.Activate(product).FontEnvironment!;
-            Aspose.Cli.Sdk.Rendering.FontSearchProfile profile =
-                fontDirectories.Read(parseResult);
-            if (!profile.IsAmbient
-                && !product.Manifest.Engine.SupportsExplicitFontProfiles)
-            {
-                throw CliErrors.FeatureUnsupported(
-                    "explicit font profiles",
-                    product.Manifest.Id,
-                    Providers(catalog)
-                        .Where(static provider => provider.Manifest.Engine
-                            .SupportsExplicitFontProfiles)
-                        .Select(static provider => provider.Manifest.Id)
-                        .ToArray());
-            }
-            return environment.CheckFonts(
+            ProductBinding binding = context.Activate(product);
+            using IDisposable fontScope = FontProfiles.Use(
+                catalog, product, binding, fontDirectories.Read(parseResult, context.Paths));
+            return binding.FontEnvironment!.CheckFonts(
                 path,
                 new FontCheckRequest
                 {
                     Password = password.Resolve(
                         parseResult,
                         context.ResourceBudgets.Inputs, context.ReadEnvironment),
-                    FontProfile = profile,
                 });
         }));
 

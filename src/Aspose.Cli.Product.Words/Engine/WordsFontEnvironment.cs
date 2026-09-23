@@ -4,6 +4,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 using Aspose.Words.Fonts;
@@ -35,6 +36,24 @@ internal sealed class WordsFontEnvironment : IFontEnvironment
             .Select(ToContract)
             .ToArray(),
     };
+
+    /// <inheritdoc />
+    /// <remarks>
+    /// Every document opened without its own font settings uses the default
+    /// instance, so the directories reach rendering, layout and this check alike.
+    /// </remarks>
+    public IDisposable UseFonts(FontSearchProfile profile) =>
+        FontScope.Enter(profile, static directories =>
+        {
+            FontSettings settings = FontSettings.DefaultInstance;
+            FontSourceBase[] ambient = settings.GetFontsSources();
+            settings.SetFontsSources(
+            [
+                .. ambient,
+                .. directories.Select(static directory => new FolderFontSource(directory, scanSubfolders: false)),
+            ]);
+            return () => settings.SetFontsSources(ambient);
+        });
 
     /// <inheritdoc />
     public FontCheckResult CheckFonts(string filePath, FontCheckRequest request)

@@ -3,7 +3,6 @@ using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Host.Commands;
 
@@ -34,7 +33,6 @@ internal static class ViewerServiceHosting
                 catalog,
                 capabilities,
                 globals,
-                FontSearchProfile.Ambient,
                 documents,
                 port,
                 touch,

@@ -3,6 +3,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 
@@ -20,7 +21,6 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
     {
         _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
         _loader = new SlidesPresentationLoader(resourceBudgets);
-        SlidesFontCatalog.EnsureInitialized();
     }
 
     /// <inheritdoc />
@@ -32,6 +32,19 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
                 .ToArray(),
         };
 
+    /// <inheritdoc />
+    /// <remarks>
+    /// External fonts are the documented process-wide Slides sources, and the
+    /// application loads no other, so clearing them restores the system fonts.
+    /// </remarks>
+    public IDisposable UseFonts(FontSearchProfile profile) =>
+        FontScope.Enter(profile, static directories =>
+        {
+            FontsLoader.LoadExternalFonts(directories.ToArray());
+            return FontsLoader.ClearCache;
+        });
+
+    /// <inheritdoc />
     public FontCheckResult CheckFonts(string filePath, FontCheckRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();

@@ -1,198 +1,95 @@
-using System.Globalization;
-using System.Security.Cryptography;
-using System.Text;
-using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Rendering;
 
-/// <summary>Validated font roots shared by bounded visual commands.</summary>
-public sealed record FontSearchProfile
+/// <summary>
+/// Font directories a visual command adds to the system fonts. The ambient
+/// profile adds none. An explicit profile holds validated absolute local
+/// directories whose font files stay within a bounded count and size, so an
+/// engine never scans an unbounded tree on the caller's behalf.
+/// </summary>
+public sealed class FontSearchProfile
 {
     private const int MaximumCandidates = 4096;
     private const long MaximumFontBytes = 64L * 1024 * 1024;
     private const long MaximumProfileBytes = 1024L * 1024 * 1024;
 
-    public static FontSearchProfile Ambient { get; } = CreateAmbient();
+    private FontSearchProfile(IReadOnlyList<string> directories)
+    {
+        Directories = directories;
+    }
 
-    public required IReadOnlyList<string> Directories { get; init; }
+    /// <summary>The system fonts alone.</summary>
+    public static FontSearchProfile Ambient { get; } = new([]);
 
-    public required bool UseAmbientSystemFonts { get; init; }
+    /// <summary>Absolute directories searched in addition to the system fonts.</summary>
+    public IReadOnlyList<string> Directories { get; }
 
-    public required string Fingerprint { get; init; }
+    /// <summary>Whether the profile adds no directory.</summary>
+    public bool IsAmbient => Directories.Count == 0;
 
-    [JsonIgnore]
-    public IReadOnlyDictionary<string, string> FileFingerprints { get; init; } =
-        new Dictionary<string, string>();
-
-    public bool IsAmbient => Directories.Count == 0 && UseAmbientSystemFonts;
-
+    /// <summary>
+    /// Creates a profile of absolute directories after checking the font files
+    /// directly inside them against the candidate and byte budgets.
+    /// </summary>
+    /// <exception cref="CliException">
+    /// <c>OPTION_INVALID</c> for <c>--font-dir</c> when a directory cannot be
+    /// read, a budget is exceeded or a font file is a reparse point.
+    /// </exception>
     public static FontSearchProfile Explicit(IReadOnlyList<string> directories)
     {
         ArgumentNullException.ThrowIfNull(directories);
-        (string fingerprint, IReadOnlyDictionary<string, string> files) =
-            CaptureExplicit(directories);
-        return new FontSearchProfile
+        if (directories.Count == 0)
         {
-            Directories = Array.AsReadOnly(directories.ToArray()),
-            UseAmbientSystemFonts = false,
-            Fingerprint = fingerprint,
-            FileFingerprints = files,
-        };
-    }
-
-    public FontSearchProfile? CaptureCurrent()
-    {
-        if (IsAmbient)
-        {
-            return this;
+            return Ambient;
         }
+
+        long totalBytes = 0;
+        int candidates = 0;
         try
         {
-            FontSearchProfile current = Explicit(Directories);
-            return string.Equals(Fingerprint, current.Fingerprint, StringComparison.Ordinal)
-                ? current
-                : null;
+            foreach (string root in directories)
+            {
+                if (!Path.IsPathFullyQualified(root))
+                {
+                    throw new ArgumentException($"Font directory '{root}' is not absolute.", nameof(directories));
+                }
+                foreach (string file in Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly)
+                    .Where(IsFontFile))
+                {
+                    if (++candidates > MaximumCandidates)
+                    {
+                        throw Invalid($"the font directories hold more than {MaximumCandidates} font files");
+                    }
+                    var info = new FileInfo(file);
+                    if ((info.Attributes & FileAttributes.ReparsePoint) != 0)
+                    {
+                        throw Invalid($"font file '{file}' is a reparse point");
+                    }
+                    if (info.Length > MaximumFontBytes
+                        || totalBytes > MaximumProfileBytes - info.Length)
+                    {
+                        throw Invalid("the font files exceed the byte budget");
+                    }
+                    totalBytes += info.Length;
+                }
+            }
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)
         {
-            return null;
+            throw Invalid("the font directories could not be read");
         }
+        return new FontSearchProfile(Array.AsReadOnly(directories.ToArray()));
     }
 
-    public bool IsCurrent() => CaptureCurrent() is not null;
-
-    private static (string Fingerprint, IReadOnlyDictionary<string, string> Files)
-        CaptureExplicit(IReadOnlyList<string> directories)
-    {
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        var fingerprints = new Dictionary<string, string>(
-            OperatingSystem.IsWindows()
-                ? StringComparer.OrdinalIgnoreCase
-                : StringComparer.Ordinal);
-        hash.AppendData("explicit\0"u8);
-        long totalBytes = 0;
-        int candidates = 0;
-        for (int rootIndex = 0; rootIndex < directories.Count; rootIndex++)
-        {
-            string root = directories[rootIndex];
-            hash.AppendData([(byte)rootIndex]);
-            hash.AppendData(Encoding.UTF8.GetBytes(Normalize(root)));
-            hash.AppendData([0]);
-
-            string[] files = Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly)
-                .Where(IsFontFile)
-                .OrderBy(Normalize, StringComparer.Ordinal)
-                .ToArray();
-            if (candidates + files.Length > MaximumCandidates)
-            {
-                throw new InvalidDataException(
-                    $"Explicit font roots exceed the {MaximumCandidates} file budget.");
-            }
-
-            foreach (string file in files)
-            {
-                candidates++;
-                if ((File.GetAttributes(file) & FileAttributes.ReparsePoint) != 0)
-                {
-                    throw new InvalidDataException("Explicit font files must not be reparse points.");
-                }
-
-                var info = new FileInfo(file);
-                if (info.Length > MaximumFontBytes
-                    || totalBytes > MaximumProfileBytes - info.Length)
-                {
-                    throw new InvalidDataException("Explicit font roots exceed the byte budget.");
-                }
-                totalBytes += info.Length;
-                hash.AppendData(Encoding.UTF8.GetBytes(Normalize(Path.GetFileName(file))));
-                hash.AppendData([0]);
-                using var stream = new FileStream(
-                    file,
-                    FileMode.Open,
-                    FileAccess.Read,
-                    FileShare.Read,
-                    64 * 1024,
-                    FileOptions.SequentialScan);
-                byte[] fileHash = SHA256.HashData(stream);
-                string canonicalPath = Path.GetFullPath(file);
-                fingerprints.Add(
-                    canonicalPath,
-                    Convert.ToHexString(fileHash).ToLowerInvariant());
-                hash.AppendData(fileHash);
-                hash.AppendData([0]);
-            }
-        }
-        return (
-            Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant(),
-            fingerprints);
-    }
-
-    private static FontSearchProfile CreateAmbient()
-    {
-        using var hash = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
-        hash.AppendData("ambient\0"u8);
-        var roots = new HashSet<string>(
-            OperatingSystem.IsWindows()
-                ? StringComparer.OrdinalIgnoreCase
-                : StringComparer.Ordinal);
-        AddRoot(roots, Environment.GetFolderPath(Environment.SpecialFolder.Fonts));
-        string? windows = Environment.GetEnvironmentVariable("WINDIR");
-        if (!string.IsNullOrWhiteSpace(windows))
-        {
-            AddRoot(roots, Path.Combine(windows, "Fonts"));
-        }
-        foreach (string root in roots.OrderBy(Normalize, StringComparer.Ordinal))
-        {
-            hash.AppendData(Encoding.UTF8.GetBytes(Normalize(root)));
-            hash.AppendData([0]);
-            try
-            {
-                string[] files = Directory.EnumerateFiles(root, "*", SearchOption.TopDirectoryOnly)
-                    .Where(IsFontFile)
-                    .Take(MaximumCandidates + 1)
-                    .ToArray();
-                if (files.Length > MaximumCandidates)
-                {
-                    hash.AppendData("overflow\0"u8);
-                    hash.AppendData(Encoding.UTF8.GetBytes(
-                        Directory.GetLastWriteTimeUtc(root).Ticks.ToString(
-                            CultureInfo.InvariantCulture)));
-                    continue;
-                }
-                foreach (string file in files.OrderBy(Normalize, StringComparer.Ordinal))
-                {
-                    var info = new FileInfo(file);
-                    hash.AppendData(Encoding.UTF8.GetBytes(Normalize(Path.GetFileName(file))));
-                    hash.AppendData(Encoding.UTF8.GetBytes(
-                        info.Length.ToString(CultureInfo.InvariantCulture)));
-                    hash.AppendData([0]);
-                    hash.AppendData(Encoding.UTF8.GetBytes(
-                        info.LastWriteTimeUtc.Ticks.ToString(CultureInfo.InvariantCulture)));
-                    hash.AppendData([0]);
-                }
-            }
-            catch (Exception exception) when (
-                exception is IOException or UnauthorizedAccessException)
-            {
-                hash.AppendData("unavailable\0"u8);
-            }
-        }
-        return new FontSearchProfile
-        {
-            Directories = [],
-            UseAmbientSystemFonts = true,
-            Fingerprint = Convert.ToHexString(hash.GetHashAndReset()).ToLowerInvariant(),
-        };
-    }
-
-    private static void AddRoot(ISet<string> roots, string? path)
-    {
-        if (!string.IsNullOrWhiteSpace(path) && Directory.Exists(path))
-        {
-            roots.Add(Path.GetFullPath(path));
-        }
-    }
+    private static CliException Invalid(string reason) =>
+        CliErrors.OptionInvalid(
+            "--font-dir",
+            reason,
+            $"Use readable local font directories with at most {MaximumCandidates} font files, "
+                + $"each at most {MaximumFontBytes / (1024 * 1024)} MiB and "
+                + $"{MaximumProfileBytes / (1024 * 1024)} MiB in total.");
 
     private static bool IsFontFile(string path)
     {
@@ -202,7 +99,4 @@ public sealed record FontSearchProfile
             || extension.Equals(".ttc", StringComparison.OrdinalIgnoreCase)
             || extension.Equals(".otc", StringComparison.OrdinalIgnoreCase);
     }
-
-    private static string Normalize(string value) =>
-        OperatingSystem.IsWindows() ? value.ToUpperInvariant() : value;
 }

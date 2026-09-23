@@ -5,7 +5,6 @@ using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
-using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Host.App;
 
@@ -26,7 +25,6 @@ internal sealed partial class AppHost : IDisposable
     private readonly AppWorkspace _workspace;
     private readonly Func<CapabilitiesResult> _capabilities;
     private readonly AppStatusQuery _status;
-    private readonly FontSearchProfile _fontProfile;
     private readonly Action _touch;
     private readonly Action _stop;
     private readonly GlobalValues _globals;
@@ -38,7 +36,6 @@ internal sealed partial class AppHost : IDisposable
         ProductCatalog catalog,
         Func<CapabilitiesResult> capabilities,
         GlobalValues globals,
-        FontSearchProfile fontProfile,
         ViewerDocuments documents,
         int port,
         Action touch,
@@ -46,7 +43,6 @@ internal sealed partial class AppHost : IDisposable
     {
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _capabilities = capabilities;
-        _fontProfile = fontProfile ?? throw new ArgumentNullException(nameof(fontProfile));
         _globals = globals;
         _port = port;
         _touch = touch ?? throw new ArgumentNullException(nameof(touch));
@@ -61,8 +57,7 @@ internal sealed partial class AppHost : IDisposable
             _log,
             documents,
             id => $"http://127.0.0.1:{port}/d/{id}/",
-            AppPaths.SessionRoot(Environment.ProcessId),
-            _fontProfile);
+            AppPaths.SessionRoot(Environment.ProcessId));
         _status = new AppStatusQuery(
             catalog,
             capabilities,

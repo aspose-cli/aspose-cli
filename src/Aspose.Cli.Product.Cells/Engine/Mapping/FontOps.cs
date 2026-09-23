@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -16,6 +17,25 @@ internal static class FontOps
         DefaultFont = FontConfigs.DefaultFontName,
         Sources = FontConfigs.GetFontSources().Select(ToSource).ToArray(),
     };
+
+    /// <summary>
+    /// Adds the profile's directories to the global font configuration for one
+    /// scope. The global configuration, not <see cref="LoadOptions.FontConfigs"/>,
+    /// is the documented way here: individual font configs of one workbook leak
+    /// into every workbook the process loads next, including the availability
+    /// answers of <see cref="FontConfigs.IsFontAvailable"/>.
+    /// </summary>
+    public static IDisposable Use(FontSearchProfile profile) =>
+        FontScope.Enter(profile, static directories =>
+        {
+            FontSourceBase[] ambient = FontConfigs.GetFontSources();
+            FontConfigs.SetFontSources(
+            [
+                .. ambient,
+                .. directories.Select(static directory => new FolderFontSource(directory, false)),
+            ]);
+            return () => FontConfigs.SetFontSources(ambient);
+        });
 
     /// <summary>The distinct font names a workbook uses, sorted — the input to
     /// both <c>cells inspect --detail fonts</c> and the <c>fonts check</c> diagnostic.</summary>

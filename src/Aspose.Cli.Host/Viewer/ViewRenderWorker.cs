@@ -1,6 +1,7 @@
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Host.Catalog;
+using Aspose.Cli.Host.Commands;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
@@ -84,14 +85,11 @@ internal static class ViewRenderWorker
                 cancellationToken: context.Deadline.Token);
             ProductBinding binding = context.Activate(definition);
             string product = definition.Manifest.Id;
-            if (request.FontDirectories is { Count: > 0 }
-                && !definition.Manifest.Engine.SupportsExplicitFontProfiles)
-            {
-                throw CliErrors.OptionInvalid(
-                    "--font-dir",
-                    $"explicit font profiles are not supported by {product}",
-                    "Omit --font-dir or preview a file of a product that advertises supportsExplicitFontProfiles.");
-            }
+            using IDisposable fontScope = FontProfiles.Use(
+                catalog,
+                definition,
+                binding,
+                FontSearchProfile.Explicit(request.FontDirectories ?? []));
             string license = LicenseFingerprint(binding.LicenseGate.Resolution);
             if (licenses.TryGetValue(product, out string? applied) && applied != license)
             {
@@ -105,9 +103,6 @@ internal static class ViewRenderWorker
                 MaxParts = request.MaxParts,
                 Purpose = ViewPurpose.Display,
                 Password = request.Password,
-                FontProfile = request.FontDirectories is { Count: > 0 } directories
-                    ? FontSearchProfile.Explicit(directories)
-                    : null,
             };
             LicenseState state = binding.LicenseGate.EnsureApplied();
             licenses[product] = license;

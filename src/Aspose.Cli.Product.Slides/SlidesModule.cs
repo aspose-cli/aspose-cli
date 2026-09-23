@@ -22,7 +22,7 @@ public sealed class SlidesModule : IProductModule
             Engine = ProductEngineCapabilities.LicenseAware(
                 "aspose",
                 ProductBuildMetadata.EngineName,
-                ProductBuildMetadata.SdkVersion),
+                ProductBuildMetadata.SdkVersion, supportsExplicitFontProfiles: true),
             AvailableEngines = ["aspose"],
     };
 

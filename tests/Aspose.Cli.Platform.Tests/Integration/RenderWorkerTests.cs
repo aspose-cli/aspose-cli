@@ -57,6 +57,24 @@ public sealed class RenderWorkerTests : IDisposable
     }
 
     [Fact]
+    public void Render_AppliesFontDirectoriesToOneRenderOnly()
+    {
+        File.WriteAllText(
+            _workspace.File("fixture.rtf"),
+            @"{\rtf1\ansi{\fonttbl{\f0 " + FontFixtures.UniqueFamily + @";}}\f0\fs48 Fixture text WWW mmm\par}");
+        string fonts = _workspace.File("fonts");
+        FontFixtures.WriteUniqueFont(fonts);
+        using var supervisor = new RenderWorkerSupervisor(StartInfo, RenderTimeout);
+
+        string before = PartDigest(Render(supervisor, "fixture.rtf"));
+        string withFonts = PartDigest(Render(supervisor, "fixture.rtf", fontDirectories: [fonts]));
+        string after = PartDigest(Render(supervisor, "fixture.rtf"));
+
+        Assert.NotEqual(before, withFonts);
+        Assert.Equal(before, after);
+    }
+
+    [Fact]
     public void PreviewSnapshot_PreservesTheVerifiedResourceOrigin()
     {
         File.WriteAllBytes(_workspace.File("local.png"), Convert.FromBase64String(
@@ -119,7 +137,8 @@ public sealed class RenderWorkerTests : IDisposable
     private (RenderWorkerResponse Response, string Output) Render(
         RenderWorkerSupervisor supervisor,
         string file,
-        bool presentation = false)
+        bool presentation = false,
+        IReadOnlyList<string>? fontDirectories = null)
     {
         string output = PrivateUserStorage.EnsureDirectory(
             Path.Combine(_storage, Guid.NewGuid().ToString("N")));
@@ -131,8 +150,16 @@ public sealed class RenderWorkerTests : IDisposable
             MaxParts = 8,
             TimeoutMs = (int)RenderTimeout.TotalMilliseconds,
             Presentation = presentation,
+            FontDirectories = fontDirectories,
         });
         return (response, output);
+    }
+
+    private static string PartDigest((RenderWorkerResponse Response, string Output) rendered)
+    {
+        Assert.True(rendered.Response.Ok, rendered.Response.Message);
+        JsonNode view = JsonNode.Parse(File.ReadAllText(Path.Combine(rendered.Output, "view.json")))!;
+        return view["parts"]![0]!["digest"]!.GetValue<string>();
     }
 
     private ProcessStartInfo StartInfo()

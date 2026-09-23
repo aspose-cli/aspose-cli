@@ -1,6 +1,5 @@
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Sdk.Views;
 
@@ -47,9 +46,6 @@ public sealed record ViewRenderRequest
 
     /// <summary>Password of the source document, when encrypted.</summary>
     public string? Password { get; init; }
-
-    /// <summary>Explicit font profile, or null for the ambient environment.</summary>
-    public FontSearchProfile? FontProfile { get; init; }
 }
 
 /// <summary>

@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Sdk.Ports;
 
@@ -15,6 +16,15 @@ public interface IFontEnvironment
 
     /// <summary>Reports whether a document's fonts are available here, and what they substitute to.</summary>
     FontCheckResult CheckFonts(string filePath, FontCheckRequest request);
+
+    /// <summary>
+    /// Makes the profile's directories available, in addition to the system
+    /// fonts, to every render, layout and font check of this engine until the
+    /// returned scope is disposed. Implementations enter through
+    /// <see cref="FontScope.Enter"/>, so scopes never overlap within a process
+    /// and each one restores the engine's previous fonts when it ends.
+    /// </summary>
+    IDisposable UseFonts(FontSearchProfile profile);
 }
 
 /// <summary>Options of <c>aspose-cli fonts check</c>.</summary>
@@ -22,7 +32,4 @@ public sealed record FontCheckRequest
 {
     /// <summary>Password for an encrypted workbook.</summary>
     public string? Password { get; init; }
-
-    /// <summary>Optional explicit font roots used by the visual command.</summary>
-    public Rendering.FontSearchProfile? FontProfile { get; init; }
 }

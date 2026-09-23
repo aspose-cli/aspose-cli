@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Product.Cells.Ports;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
@@ -74,4 +75,7 @@ internal sealed class CellsWorkbookEngine
 
     public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) =>
         _queries.CheckFonts(filePath, request);
+
+    public IDisposable UseFonts(Aspose.Cli.Sdk.Rendering.FontSearchProfile profile) =>
+        FontOps.Use(profile);
 }

@@ -3,6 +3,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
+using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;
@@ -28,6 +29,26 @@ internal sealed class PdfFontEnvironment : IFontEnvironment
     {
         Sources = FontRepository.Sources.Select(ToContract).ToArray(),
     };
+
+    /// <inheritdoc />
+    /// <remarks>Aspose.PDF resolves fonts only through its global repository.</remarks>
+    public IDisposable UseFonts(FontSearchProfile profile) =>
+        FontScope.Enter(profile, static directories =>
+        {
+            Aspose.Pdf.Text.FontSource[] ambient = FontRepository.Sources.ToArray();
+            foreach (string directory in directories)
+            {
+                FontRepository.Sources.Add(new FolderFontSource(directory));
+            }
+            return () =>
+            {
+                FontRepository.Sources.Clear();
+                foreach (Aspose.Pdf.Text.FontSource source in ambient)
+                {
+                    FontRepository.Sources.Add(source);
+                }
+            };
+        });
 
     /// <inheritdoc />
     public FontCheckResult CheckFonts(string filePath, FontCheckRequest request)

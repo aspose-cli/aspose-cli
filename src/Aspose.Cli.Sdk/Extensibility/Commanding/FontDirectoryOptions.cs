@@ -5,13 +5,13 @@ using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
-/// <summary>Repeatable explicit font-root option for visual commands.</summary>
+/// <summary>Repeatable font-directory option for visual commands.</summary>
 public sealed class FontDirectoryOptions
 {
     private const int MaximumDirectories = 16;
     private readonly Option<string[]> _directories = new Option<string[]>("--font-dir")
     {
-        Description = "Local font directory; repeat to define an explicit-only deterministic font profile.",
+        Description = "Local font directory searched in addition to the system fonts; repeat for more.",
         Arity = new ArgumentArity(1, MaximumDirectories),
         AllowMultipleArgumentsPerToken = false,
     }.WithInput(InputKind.None);
@@ -22,9 +22,11 @@ public sealed class FontDirectoryOptions
         command.Options.Add(_directories);
     }
 
-    public FontSearchProfile Read(ParseResult parse)
+    /// <summary>Reads the directories, resolving relative paths against <paramref name="paths"/>.</summary>
+    public FontSearchProfile Read(ParseResult parse, PathResolver paths)
     {
         ArgumentNullException.ThrowIfNull(parse);
+        ArgumentNullException.ThrowIfNull(paths);
         string[] values = parse.GetValue(_directories) ?? [];
         if (values.Length == 0)
         {
@@ -45,46 +47,35 @@ public sealed class FontDirectoryOptions
                 : StringComparer.Ordinal);
         foreach (string value in values)
         {
-            string fullPath = Validate(value);
+            string fullPath = Validate(value, paths.BaseDirectory);
             if (seen.Add(fullPath))
             {
                 directories.Add(fullPath);
             }
         }
-        try
-        {
-            return FontSearchProfile.Explicit(directories);
-        }
-        catch (Exception exception) when (
-            exception is IOException or UnauthorizedAccessException)
-        {
-            throw CliErrors.OptionInvalid(
-                "--font-dir",
-                "the explicit font profile could not be read safely",
-                "Use stable local font directories within the documented file and byte budgets.");
-        }
+        return FontSearchProfile.Explicit(directories);
     }
 
-    private static string Validate(string value)
+    private static string Validate(string value, string baseDirectory)
     {
-        if (string.IsNullOrWhiteSpace(value)
-            || !Path.IsPathFullyQualified(value)
-            || value.StartsWith("\\\\", StringComparison.Ordinal)
-            || value.StartsWith("\\\\?\\", StringComparison.Ordinal)
-            || value.StartsWith("\\\\.\\", StringComparison.Ordinal))
+        if (string.IsNullOrWhiteSpace(value))
         {
-            throw Invalid(value, "must be an absolute local path");
+            throw Invalid(value, "is empty");
         }
 
         string fullPath;
         try
         {
-            fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(value));
+            fullPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(value, baseDirectory));
         }
         catch (Exception exception) when (
             exception is ArgumentException or NotSupportedException or PathTooLongException)
         {
             throw Invalid(value, "is not a valid local path");
+        }
+        if (IsNetworkOrDevicePath(value) || IsNetworkOrDevicePath(fullPath))
+        {
+            throw Invalid(value, "must be a local path");
         }
         if (!Directory.Exists(fullPath))
         {
@@ -110,9 +101,13 @@ public sealed class FontDirectoryOptions
         return fullPath;
     }
 
+    private static bool IsNetworkOrDevicePath(string path) =>
+        path.StartsWith(@"\\", StringComparison.Ordinal)
+        || (OperatingSystem.IsWindows() && path.StartsWith("//", StringComparison.Ordinal));
+
     private static CliException Invalid(string value, string reason) =>
         CliErrors.OptionInvalid(
             "--font-dir",
             $"'{value}' {reason}",
-            "Use an existing absolute directory on a fixed local disk; UNC, device and relative paths are rejected.");
+            "Use an existing directory on a fixed local disk; relative paths resolve against --workdir, and UNC and device paths are rejected.");
 }

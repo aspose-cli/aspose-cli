@@ -83,5 +83,8 @@ public sealed class ProductViewDefinitionTests
             AllAvailable = false,
             Fonts = [new FontAvailability { Name = "Missing", Available = false }],
         };
+
+        public IDisposable UseFonts(Aspose.Cli.Sdk.Rendering.FontSearchProfile profile) =>
+            Aspose.Cli.Sdk.Rendering.FontScope.Enter(profile, static _ => static () => { });
     }
 }

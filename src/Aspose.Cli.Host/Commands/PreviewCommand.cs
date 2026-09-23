@@ -61,7 +61,7 @@ internal static class PreviewCommand
             "Pass --port 0 for a system-assigned port, or a port from 1 to 65535.");
         string input = context.Paths.ResolveInput(requested);
         string view = parse.GetValue(symbols.View) ?? AutoView;
-        FontSearchProfile fonts = symbols.Fonts.Read(parse);
+        FontSearchProfile fonts = symbols.Fonts.Read(parse, context.Paths);
         ViewerOpenResponse opened = new ViewerServiceClient().Open(
             context.Globals,
             new ViewerOpenRequest
