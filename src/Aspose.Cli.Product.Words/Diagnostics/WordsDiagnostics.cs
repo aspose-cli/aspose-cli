@@ -20,6 +20,7 @@ internal static class WordsDiagnostics
     internal const string TrackedChangesPresent = "TRACKED_CHANGES_PRESENT";
     internal const string MacrosDropped = "MACROS_DROPPED";
     internal const string LayoutMayDiffer = "LAYOUT_MAY_DIFFER";
+    internal const string LinkedImagesSkipped = "LINKED_IMAGES_SKIPPED";
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -35,6 +36,7 @@ internal static class WordsDiagnostics
         Warning(TrackedChangesPresent),
         Warning(MacrosDropped),
         Warning(LayoutMayDiffer),
+        Warning(LinkedImagesSkipped),
     ];
 
     private static ErrorCode Validation(string code) =>

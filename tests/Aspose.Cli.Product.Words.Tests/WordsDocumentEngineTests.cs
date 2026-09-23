@@ -451,6 +451,49 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
         Assert.Equal("existing", File.ReadAllText(Path.Combine(outputDirectory, "part-002.docx")));
     }
 
+    [Fact]
+    public void ExtractComments_WritesTheCommentsAsJson()
+    {
+        string input = _fixture.Temp.File("extract-comments.docx");
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Reviewed clause");
+        var comment = new Comment(document, "Reviewer", "R", DateTime.UnixEpoch);
+        comment.SetText("Please confirm the term.");
+        builder.CurrentParagraph.AppendChild(comment);
+        document.Save(input);
+
+        var extracted = _fixture.Engine.Extract(input, new WordsExtractRequest
+        {
+            What = "comments",
+            OutputDirectory = _fixture.Temp.File("extract-comments"),
+        });
+
+        string json = File.ReadAllText(Assert.Single(extracted.Items).Path);
+        Assert.Contains("\"Reviewer\"", json, StringComparison.Ordinal);
+        Assert.Contains("Please confirm the term.", json, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ExtractImages_SkipsLinkOnlyImagesAndDisclosesThem()
+    {
+        string input = _fixture.Temp.File("extract-linked-image.docx");
+        var document = new Document();
+        var linked = new Aspose.Words.Drawing.Shape(document, Aspose.Words.Drawing.ShapeType.Image) { Width = 10, Height = 10 };
+        linked.ImageData.SourceFullName = "https://example.invalid/logo.png";
+        new DocumentBuilder(document).InsertNode(linked);
+        document.Save(input);
+
+        var extracted = _fixture.Engine.Extract(input, new WordsExtractRequest
+        {
+            What = "images",
+            OutputDirectory = _fixture.Temp.File("extract-linked-image"),
+        });
+
+        Assert.Empty(extracted.Items);
+        Assert.Contains(extracted.Warnings!, warning => warning.Code == "LINKED_IMAGES_SKIPPED");
+    }
+
     private static bool HasHeader(string path, byte[] expected)
     {
         byte[] actual = new byte[expected.Length];

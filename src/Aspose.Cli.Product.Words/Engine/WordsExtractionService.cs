@@ -103,20 +103,40 @@ internal sealed class WordsExtractionService
         using var guard = new ExtractionGuard(_resourceBudgets, request.OutputDirectory);
         var index = new DocumentBlockIndex(loaded.Document);
         var items = new List<ExtractedItem>();
+        var warnings = new List<Warning>();
         if (request.What == "images")
         {
             int number = 0;
+            int linked = 0;
             foreach (Shape shape in loaded.Document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static s => s.HasImage))
             {
+                // A link-only image has no stored bytes; reading them would fetch the link.
+                if (shape.ImageData.IsLinkOnly)
+                {
+                    linked++;
+                    continue;
+                }
+
                 byte[] bytes = shape.ImageData.ImageBytes;
                 string extension = FileFormatUtil.ImageTypeToExtension(shape.ImageData.ImageType);
                 string path = guard.WriteAllBytes($"image-{++number:000}{extension}", bytes);
                 items.Add(new ExtractedItem { Path = path, Kind = "image", SizeBytes = bytes.LongLength, Block = index.FindBlock(shape) });
             }
+
+            if (linked > 0)
+            {
+                warnings.Add(new Warning
+                {
+                    Code = WordsDiagnostics.LinkedImagesSkipped,
+                    Message = $"{linked} linked image(s) store no bytes in the document and were not extracted.",
+                    Hint = "Embed linked images in the source document to extract them.",
+                    AffectsCompleteness = true,
+                });
+            }
         }
         else if (request.What == "comments")
         {
-            ContractCommentData[] comments = loaded.Document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
+            IReadOnlyList<ContractCommentData> comments = loaded.Document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
                 .Select(comment => new ContractCommentData { Author = comment.Author, Text = InfoProjection.Clean(comment.GetText()), Block = index.FindBlock(comment) }).ToArray();
             string json = JsonSerializer.Serialize(
                 comments,
@@ -143,7 +163,7 @@ internal sealed class WordsExtractionService
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),
-            Warnings = Combine(EnvelopeParts.OutputWarnings(state), InputWarnings(loaded)),
+            Warnings = Combine(Combine(EnvelopeParts.OutputWarnings(state), InputWarnings(loaded)), warnings),
         };
     }
 
