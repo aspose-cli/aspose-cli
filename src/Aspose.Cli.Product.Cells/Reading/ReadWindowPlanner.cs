@@ -64,20 +64,15 @@ internal static class ReadWindowPlanner
     /// promises to. A truncated summary suggests the first window; otherwise
     /// the window shifts down one page of the same shape.
     /// </summary>
-    /// <param name="windowWasPlanned">
-    /// True when this CLI chose the window (a read without an explicit range),
-    /// in which case the chain owes the caller the WHOLE used range: when the
-    /// budget is smaller than the used range is wide, the window clamps to the
-    /// leftmost columns, and paging down alone would end — with no 'next' and
-    /// truncated:false — having never returned the right-hand columns. The
-    /// caller, doing exactly what the skill tells it ("execute it verbatim
-    /// instead of computing ranges yourself"), would take that for the whole
-    /// sheet. So a planned chain moves to the next column band once its rows
-    /// run out. An explicit range is the caller's own choice of columns: its
-    /// chain keeps walking down those columns and never wanders sideways.
-    /// </param>
+    /// <remarks>
+    /// Only planned scans page through a sheet, and a planned chain owes the caller the
+    /// WHOLE used range: when the budget is smaller than the used range is wide, the
+    /// window clamps to the leftmost columns, and paging down alone would end — with no
+    /// 'next' and truncated:false — having never returned the right-hand columns. So the
+    /// chain moves to the next column band once its rows run out.
+    /// </remarks>
     public static RangeRef? NextWindow(
-        RangeRef? window, RangeRef? usedRange, int maxCells, bool truncated, bool windowWasPlanned = true)
+        RangeRef? window, RangeRef? usedRange, int maxCells, bool truncated)
     {
         if (usedRange is not { } used)
         {
@@ -105,7 +100,7 @@ internal static class ReadWindowPlanner
                 new CellRef(nextEndRow, w.End.Column));
         }
 
-        if (windowWasPlanned && w.End.Column < used.End.Column)
+        if (w.End.Column < used.End.Column)
         {
             // Rows exhausted but columns remain: start the next band at the top.
             int startColumn = w.End.Column + 1;
