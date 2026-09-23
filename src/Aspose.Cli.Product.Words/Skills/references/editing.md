@@ -94,7 +94,7 @@ aspose-cli schema v2/words/ops
 | `remove_comments` | Remove all comments or those by an author. |
 | `append_document` | Append a local document with source or destination styles. |
 | `mail_merge` | Merge JSON-object-array or headered CSV data, including one repeated region. |
-| `update_fields` | Update TOC or all fields, then refresh page layout. |
+| `update_fields` | Update the tables of contents (`toc`, including their page numbers) or all fields (`all`). |
 
 ## Headers, footers and page numbers
 

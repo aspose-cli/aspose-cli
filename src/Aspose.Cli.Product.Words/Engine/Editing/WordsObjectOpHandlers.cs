@@ -59,9 +59,8 @@ internal static class WordsObjectOpHandlers
         Paragraph paragraph = InsertBuilderParagraph(document, anchor, op.Position);
         var builder = new DocumentBuilder(document);
         builder.MoveTo(paragraph);
-        builder.InsertTableOfContents($"\\o \"1-{op.MaxLevel}\" \\h \\z \\u");
-        document.UpdateFields();
-        document.UpdatePageLayout();
+        var toc = (FieldToc)builder.InsertTableOfContents($"\\o \"1-{op.MaxLevel}\" \\h \\z \\u");
+        UpdateTocs(document, [toc]);
         return 1;
     }
 
@@ -210,22 +209,29 @@ internal static class WordsObjectOpHandlers
 
     internal static long ChangeRevisions(Document document, string? author, bool accept)
     {
-        Revision[] revisions = document.Revisions.Cast<Revision>()
-            .Where(revision => author is null || string.Equals(revision.Author, author, StringComparison.Ordinal))
-            .ToArray();
-        foreach (Revision revision in revisions)
+        if (author is not null)
         {
-            if (accept)
-            {
-                revision.Accept();
-            }
-            else
-            {
-                revision.Reject();
-            }
+            var byAuthor = new AuthorCriteria(author);
+            return accept ? document.Revisions.Accept(byAuthor) : document.Revisions.Reject(byAuthor);
         }
 
-        return revisions.LongLength;
+        int count = document.Revisions.Count;
+        if (accept)
+        {
+            document.Revisions.AcceptAll();
+        }
+        else
+        {
+            document.Revisions.RejectAll();
+        }
+
+        return count;
+    }
+
+    private sealed class AuthorCriteria(string author) : IRevisionCriteria
+    {
+        public bool IsMatch(Revision revision) =>
+            string.Equals(revision?.Author, author, StringComparison.Ordinal);
     }
 
     internal static long AddComment(Document document, Node anchor, AddCommentOp op)
@@ -252,16 +258,16 @@ internal static class WordsObjectOpHandlers
         Comment[] comments = document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
             .Where(comment => op.Author is null || string.Equals(comment.Author, op.Author, StringComparison.Ordinal))
             .ToArray();
-        foreach (Comment comment in comments)
+        // Collect every node first: removing from a live node collection while enumerating it skips nodes.
+        var ids = comments.Select(static comment => comment.Id).ToHashSet();
+        Node[] anchors = document.GetChildNodes(NodeType.CommentRangeStart, true).Cast<CommentRangeStart>()
+            .Where(start => ids.Contains(start.Id)).Cast<Node>()
+            .Concat(document.GetChildNodes(NodeType.CommentRangeEnd, true).Cast<CommentRangeEnd>()
+                .Where(end => ids.Contains(end.Id)))
+            .ToArray();
+        foreach (Node node in comments.Concat(anchors))
         {
-            int id = comment.Id;
-            comment.Remove();
-            foreach (Node node in document.GetChildNodes(NodeType.CommentRangeStart, true).Cast<CommentRangeStart>()
-                         .Where(start => start.Id == id).Cast<Node>()
-                         .Concat(document.GetChildNodes(NodeType.CommentRangeEnd, true).Cast<CommentRangeEnd>().Where(end => end.Id == id)))
-            {
-                node.Remove();
-            }
+            node.Remove();
         }
 
         return comments.LongLength;
@@ -400,19 +406,35 @@ internal static class WordsObjectOpHandlers
     {
         if (op.What == "toc")
         {
-            foreach (FieldToc toc in document.Range.Fields.Cast<Field>().OfType<FieldToc>())
-            {
-                toc.Update();
-            }
+            // Updating a TOC adds its own hyperlink and PAGEREF fields, so snapshot the TOCs first.
+            UpdateTocs(document, document.Range.Fields.Cast<Field>().OfType<FieldToc>().ToArray());
         }
         else
         {
             document.NormalizeFieldTypes();
             document.UpdateFields();
+            document.UpdatePageLayout();
+        }
+
+        return document.Range.Fields.Count;
+    }
+
+    /// <summary>
+    /// Rebuilds the given tables of contents only, then fills their page numbers from a fresh
+    /// layout. Other fields (DATE, INCLUDETEXT and the like) keep their stored results.
+    /// </summary>
+    private static void UpdateTocs(Document document, IReadOnlyList<FieldToc> tocs)
+    {
+        foreach (FieldToc toc in tocs)
+        {
+            toc.Update();
         }
 
         document.UpdatePageLayout();
-        return document.Range.Fields.Count;
+        foreach (FieldToc toc in tocs)
+        {
+            toc.UpdatePageNumbers();
+        }
     }
 
     internal static IReadOnlyList<IReadOnlyDictionary<string, string?>> ReadMergeRows(
