@@ -8,14 +8,32 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class EditCommand
 {
+    private const string BookmarkPrefix = "bookmark:";
+
+    private static readonly BoundedEditDefinition<WordsOp, WordsOpsBatch> Definition = new()
+    {
+        Catalog = WordsOps.Catalog,
+        Contracts = ProductJsonContext.Definition,
+        SetDirectives = new(
+            "Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. "
+                + "Example: --set \"bookmark:ClientName=Contoso Ltd.\".",
+            ParseSet,
+            static ops => new WordsOpsBatch { Ops = ops }),
+        VerifyDescription = "Compare the staged document after save and reopen to report semantic verification.",
+        NormalizePaths = static (op, paths) => op switch
+        {
+            InsertImageOp value => value with { Path = paths.ResolveInput(value.Path) },
+            AddWatermarkOp { ImagePath: not null } value => value with { ImagePath = paths.ResolveInput(value.ImagePath) },
+            AppendDocumentOp value => value with { Path = paths.ResolveInput(value.Path) },
+            MailMergeOp { Path: not null } value => value with { Path = paths.ResolveInput(value.Path) },
+            _ => op,
+        },
+    };
+
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File("Document to edit.");
-        var ops = new Option<string?>("--ops") { Description = "Ops JSON path, inline JSON, or '-' for stdin." }.WithInput(InputKind.JsonSource);
-        var set = new Option<string[]>("--set") { Description = "Bookmark sugar: bookmark:Name=text; repeatable." }.WithInput(InputKind.None);
-        var output = new MutationFileOptions();
-        var editOptions = new BoundedEditOptions();
-        var verify = new Option<bool>("--verify") { Description = "Compare the staged document after save and reopen to report semantic verification." };
+        var edit = new BoundedEditCommand<WordsOp, WordsOpsBatch>(Definition);
         var trackChanges = new Option<bool>("--track-changes") { Description = "Track this batch as revisions." };
         var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
         var password = new PasswordOptions("--password", "the document");
@@ -23,96 +41,46 @@ internal static class EditCommand
 
         var command = new Command("edit", "Apply one validated, atomic Words operation batch.");
         command.Arguments.Add(file);
-        command.Options.Add(ops);
-        command.Options.Add(set);
-        output.AddTo(command);
-        editOptions.AddTo(command);
-        command.Options.Add(verify);
+        edit.AddTo(command);
         command.Options.Add(trackChanges);
         command.Options.Add(author);
         password.AddTo(command);
         encrypt.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
-            string? opsSource = parse.GetValue(ops);
-            string[] directives = parse.GetValue(set) ?? [];
-            WordsOpsBatch batch = BuildBatch(opsSource, directives, context);
-            batch = NormalizePaths(batch, context);
-            bool isDryRun = parse.GetValue(editOptions.DryRun);
-            if (isDryRun && parse.GetValue(verify))
-            {
-                throw CliErrors.OptionInvalid("--verify", "cannot be combined with --dry-run", "Run the dry run, then save with --verify.");
-            }
-
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            MutationTarget target = output.Resolve(parse, context.Paths, input, requireBackup: true);
-            WordsEditResult result = context.Port.ApplyOps(input, batch, new WordsEditRequest
+            BoundedEditInvocation<WordsOpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
+            return context.Port.ApplyOps(input, invocation.Batch, new WordsEditRequest
             {
-                OutputPath = target.OutputPath,
-                Overwrite = target.Overwrite,
-                BackupPath = target.BackupPath,
-                Options = editOptions.Read(parse, batch.IfMatch),
-                Verify = parse.GetValue(verify),
+                OutputPath = invocation.Target.OutputPath,
+                Overwrite = invocation.Target.Overwrite,
+                BackupPath = invocation.Target.BackupPath,
+                Options = invocation.Options,
+                Verify = invocation.Verify,
                 TrackChanges = parse.GetValue(trackChanges),
                 Author = parse.GetValue(author),
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: opsSource != "-"),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: !invocation.OpsFromStandardInput),
                 EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
-                OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
+                OpSecrets = ResolveSecrets(invocation.Batch, context.ReadEnvironment),
             });
-            return result;
         }));
         return command;
     }
 
-    internal static WordsOpsBatch BuildBatch(
-        string? source,
-        IReadOnlyList<string> directives,
-        ProductCommandContext<IDocumentEngine> context)
-    {
-        if (source is null && directives.Count == 0)
-        {
-            throw CliErrors.Usage(["Give --ops, --set, or both."]);
-        }
-
-        WordsOpsBatch? document = source is null
-            ? null
-            : WordsOps.Catalog.Parse<WordsOpsBatch>(JsonInputSource.Read(source, context.Paths, context.Inputs, "--ops"), ProductJsonContext.Definition);
-        var sugar = directives.Select(ParseSet).Cast<WordsOp>().ToArray();
-        return document is null
-            ? new WordsOpsBatch { Ops = sugar }
-            : sugar.Length == 0 ? document : document with { Ops = [.. document.Ops, .. sugar] };
-    }
-
-    private static SetTextOp ParseSet(string value)
+    private static WordsOp ParseSet(string value)
     {
         int equals = value.IndexOf('=');
-        const string prefix = "bookmark:";
-        if (!value.StartsWith(prefix, StringComparison.Ordinal) || equals <= prefix.Length)
+        if (!value.StartsWith(BookmarkPrefix, StringComparison.Ordinal) || equals <= BookmarkPrefix.Length)
         {
-            throw CliErrors.OptionInvalid("--set", $"invalid directive '{value}'", "Use bookmark:Name=text.");
+            throw CliErrors.OptionInvalid("--set", $"invalid directive '{value}'", "Use bookmark:NAME=TEXT.");
         }
 
         return new SetTextOp
         {
-            At = new WordsTarget { Bookmark = value[prefix.Length..equals] },
+            At = new WordsTarget { Bookmark = value[BookmarkPrefix.Length..equals] },
             Text = value[(equals + 1)..],
         };
     }
-
-    private static WordsOpsBatch NormalizePaths(
-        WordsOpsBatch batch,
-        ProductCommandContext<IDocumentEngine> context) =>
-        batch with
-        {
-            Ops = batch.Ops.Select(op => op switch
-            {
-                InsertImageOp value => value with { Path = context.Paths.ResolveInput(value.Path) },
-                AddWatermarkOp { ImagePath: not null } value => value with { ImagePath = context.Paths.ResolveInput(value.ImagePath) },
-                AppendDocumentOp value => value with { Path = context.Paths.ResolveInput(value.Path) },
-                MailMergeOp { Path: not null } value => value with { Path = context.Paths.ResolveInput(value.Path) },
-                _ => op,
-            }).ToArray(),
-        };
 
     private static IReadOnlyDictionary<int, string>? ResolveSecrets(WordsOpsBatch batch, Func<string, string?> readEnvironment)
     {

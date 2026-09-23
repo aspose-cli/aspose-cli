@@ -133,6 +133,22 @@ public sealed class WordsCliTests : IDisposable
         Assert.False(File.Exists(_workspace.File("out.docx")));
     }
 
+    [Fact]
+    public void Edit_RejectsABadSetDirectiveBeforeReadingOpsFromStdin()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# Contract\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--markdown", "source.md").ExitCode);
+
+        CliResult edited = _workspace.RunWithInput(
+            "not json",
+            "words", "edit", "contract.docx", "--ops", "-", "--set", "Client=Contoso", "--output", "json");
+
+        Assert.Equal(2, edited.ExitCode);
+        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("--set", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

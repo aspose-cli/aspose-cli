@@ -6,50 +6,67 @@ using Aspose.Cli.Sdk.Extensibility;
 namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary>
-/// <c>aspose-cli cells edit</c> — the core mutation command: applies a batch of
-/// ops atomically, from a JSON document (<c>--ops</c>: file, stdin or inline)
-/// and/or one-cell <c>--set</c> directives. One process invocation per batch
-/// amortizes startup cost for agents.
+/// <c>aspose-cli cells edit</c>: applies one atomic batch from an <c>--ops</c> document
+/// and/or one-cell <c>--set</c> directives through the shared bounded-edit skeleton.
 /// </summary>
 internal static class EditCommand
 {
+    private static readonly BoundedEditDefinition<Op, OpsBatch> Definition = new()
+    {
+        Catalog = CellsOps.Catalog,
+        Contracts = ProductJsonContext.Definition,
+        SetDirectives = new(
+            "Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. "
+                + "A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and "
+                + "anything else is text. Quote sheet names that need it: --set \"'My Sheet'!A1=5\". "
+                + "Example: --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\".",
+            SetDirectiveParser.Parse,
+            static ops => new OpsBatch { Ops = ops }),
+        VerifyDescription = "Verify the staged output and report its cell changes and formula errors.",
+        NormalizePaths = static (op, paths) => op is InsertImageOp image
+            ? image with { Path = Path.GetFullPath(image.Path, paths.BaseDirectory) }
+            : op,
+    };
+
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
-        EditCommandBindings options = CreateOptions();
-        Command edit = options.Command;
+        var file = new Argument<string>("file") { Description = "Workbook to edit." }.WithInput(InputKind.File);
+        var edit = new BoundedEditCommand<Op, OpsBatch>(Definition);
+        var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
+        var password = new PasswordOptions("--password", "the workbook");
+        var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);
+        var command = new Command("edit", $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.");
+        command.Arguments.Add(file);
+        edit.AddTo(command);
+        command.Options.Add(noRecalc);
+        password.AddTo(command);
+        encrypt.AddTo(command);
 
-        edit.SetAction(parseResult => host.Run(parseResult, context =>
+        command.SetAction(parse => host.Run(parse, context =>
         {
-            string? opsSource = parseResult.GetValue(options.Ops);
-            string[] setDirectives = parseResult.GetValue(options.Set) ?? [];
-            OpsBatch batch = BuildBatch(opsSource, setDirectives, context);
-
-            string inputPath = context.Paths.ResolveInput(parseResult.GetRequiredValue(options.File));
-            bool verify = parseResult.GetValue(options.Verify);
-            bool dryRun = parseResult.GetValue(options.Edit.DryRun);
-            bool noRecalc = parseResult.GetValue(options.NoRecalc);
-            ValidateVerificationOptions(verify, dryRun, noRecalc);
-
-            MutationTarget target = options.Output.Resolve(parseResult, context.Paths, inputPath, requireBackup: verify);
-            string? inputPassword = options.Password.Resolve(parseResult, context.Inputs, context.ReadEnvironment, stdinAvailable: opsSource != "-");
-            string? encryptPassword = options.Encrypt.Resolve(parseResult, context.Inputs, context.ReadEnvironment);
-            EditResult result = context.Port.ApplyOps(inputPath, batch, new EditRequest
+            bool recalculate = !parse.GetValue(noRecalc);
+            if (!recalculate && edit.IsVerifyRequested(parse))
             {
-                OutputPath = target.OutputPath,
-                Overwrite = target.Overwrite,
-                BackupPath = target.BackupPath,
-                Options = options.Edit.Read(parseResult, batch.IfMatch),
-                Recalculate = !noRecalc,
-                OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
-                Password = inputPassword,
-                EncryptPassword = encryptPassword,
-                Verify = verify,
-            });
+                throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc", "Remove --no-recalc so formula-result verification is reliable.");
+            }
 
-            return result;
+            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            BoundedEditInvocation<OpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
+            return context.Port.ApplyOps(input, invocation.Batch, new EditRequest
+            {
+                OutputPath = invocation.Target.OutputPath,
+                Overwrite = invocation.Target.Overwrite,
+                BackupPath = invocation.Target.BackupPath,
+                Options = invocation.Options,
+                Recalculate = recalculate,
+                OpSecrets = ResolveSecrets(invocation.Batch, context.ReadEnvironment),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: !invocation.OpsFromStandardInput),
+                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                Verify = invocation.Verify,
+            });
         }));
 
-        return edit;
+        return command;
     }
 
     private static IReadOnlyDictionary<string, string?> ResolveSecrets(
@@ -63,125 +80,4 @@ internal static class EditCommand
             _ => null,
         }).OfType<string>().Distinct(StringComparer.Ordinal)
             .ToDictionary(static name => name, readEnvironment, StringComparer.Ordinal);
-    private static EditCommandBindings CreateOptions()
-    {
-        var file = new Argument<string>("file") { Description = "Workbook to edit." }.WithInput(InputKind.File);
-        var ops = new Option<string>("--ops")
-        {
-            Description = "The ops JSON: a path to the document, '-' to read it from stdin, or the "
-                + "document itself when the value starts with { or [ (inline). To name a file "
-                + "whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/cells/ops.",
-        }.WithInput(InputKind.JsonSource);
-        var set = new Option<string[]>("--set")
-        {
-            Description = "Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. "
-                + "A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and "
-                + "anything else is text. Quote sheet names that need it: --set \"'My Sheet'!A1=5\". "
-                + "Example: --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\".",
-        }.WithInput(InputKind.None);
-        var output = new MutationFileOptions();
-        var editOptions = new BoundedEditOptions();
-        var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
-        var verify = new Option<bool>("--verify") { Description = "Verify the staged output and report its cell changes and formula errors." };
-        var password = new PasswordOptions("--password", "the workbook");
-        var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);
-        var command = new Command("edit", $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.");
-        command.Arguments.Add(file);
-        command.Options.Add(ops);
-        command.Options.Add(set);
-        output.AddTo(command);
-        editOptions.AddTo(command);
-        command.Options.Add(noRecalc);
-        command.Options.Add(verify);
-        password.AddTo(command);
-        encrypt.AddTo(command);
-        return new(command, file, ops, set, output, editOptions, noRecalc, verify, password, encrypt);
-    }
-
-    private sealed record EditCommandBindings(
-        Command Command,
-        Argument<string> File,
-        Option<string> Ops,
-        Option<string[]> Set,
-        MutationFileOptions Output,
-        BoundedEditOptions Edit,
-        Option<bool> NoRecalc,
-        Option<bool> Verify,
-        PasswordOptions Password,
-        PasswordOptions Encrypt);
-
-    private static void ValidateVerificationOptions(bool verify, bool dryRun, bool noRecalc)
-    {
-        if (verify && dryRun)
-        {
-            throw CliErrors.OptionInvalid("--verify", "cannot be combined with --dry-run", "Run the dry run first, then edit with --verify.");
-        }
-
-        if (verify && noRecalc)
-        {
-            throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc", "Remove --no-recalc so formula-result verification is reliable.");
-        }
-    }
-
-    /// <summary>
-    /// Assembles the one atomic batch of this invocation: the <c>--ops</c>
-    /// document (when given) followed by the ops compiled from each
-    /// <c>--set</c> directive, in command-line order. Everything downstream —
-    /// dry runs, recalculation, continue-on-error, the preview hint — sees one
-    /// batch and needs no special case.
-    /// </summary>
-    private static OpsBatch BuildBatch(
-        string? opsSource,
-        IReadOnlyList<string> setDirectives,
-        ProductCommandContext<IWorkbookEngine> context)
-    {
-        if (opsSource is null && setDirectives.Count == 0)
-        {
-            throw CliErrors.Usage(["Give --ops (an ops JSON document), --set (SHEET!CELL=VALUE), or both."]);
-        }
-
-        // Compile the sugar first: a bad directive fails before any document
-        // IO — in particular before '--ops -' consumes stdin.
-        var compiled = new Op[setDirectives.Count];
-        for (int index = 0; index < setDirectives.Count; index++)
-        {
-            compiled[index] = SetDirectiveParser.Parse(setDirectives[index]);
-        }
-
-        if (opsSource is null)
-        {
-            return CellsOps.Catalog.Prepare(new OpsBatch { Ops = compiled });
-        }
-
-        string opsText = JsonInputSource.Read(
-            opsSource,
-            context.Paths,
-            context.Inputs,
-            "--ops");
-        OpsBatch document;
-        try
-        {
-            document = CellsOps.Catalog.Parse<OpsBatch>(opsText, ProductJsonContext.Definition);
-        }
-        catch (CliException ex) when (
-            ex.Code == ErrorCodes.OpsInvalid && opsSource != "-" && !opsText.Contains('"'))
-        {
-            // Valid ops JSON always contains double quotes, so an inline
-            // value without a single one means the shell removed them —
-            // Windows PowerShell does exactly that to embedded quotes in
-            // native arguments. Same code and message; the hint teaches the
-            // three ways out.
-            throw new CliException(
-                ex.Code,
-                ex.Message,
-                hint: $"{ex.Hint} The value reached the CLI without any double quotes — Windows PowerShell strips them from inline arguments: escape them as \\\" , pipe the document via --ops - , or use --set.",
-                details: ex.Details,
-                docs: ex.Docs);
-        }
-
-        return CellsOps.Catalog.Prepare(compiled.Length == 0
-            ? document
-            : document with { Ops = [.. document.Ops, .. compiled] });
-    }
-
 }

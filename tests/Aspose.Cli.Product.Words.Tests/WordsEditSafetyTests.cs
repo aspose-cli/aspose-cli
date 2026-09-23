@@ -126,7 +126,7 @@ public sealed class WordsEditSafetyTests
         CliResult created = workspace.RunWithEnv(environment, "words", "create", "secret.docx", "--text", "source.txt", "--encrypt-env", "WORDS_EDIT_SECRET", "--output", "json");
         Assert.True(created.ExitCode == 0, created.StdErr);
         byte[] original = File.ReadAllBytes(workspace.File("secret.docx"));
-        CliResult edited = workspace.RunWithEnv(environment, "words", "edit", "secret.docx", "--ops", "ops.json", "--password-env", "WORDS_EDIT_SECRET", "--in-place", "--verify", "--output", "json");
+        CliResult edited = workspace.RunWithEnv(environment, "words", "edit", "secret.docx", "--ops", "ops.json", "--password-env", "WORDS_EDIT_SECRET", "--in-place", "--backup", "--verify", "--output", "json");
         Assert.True(edited.ExitCode == 0, edited.StdErr);
         Assert.True(FileFormatUtil.DetectFileFormat(workspace.File("secret.docx")).IsEncrypted);
         Assert.Equal(original, File.ReadAllBytes(workspace.File("secret.backup.docx")));

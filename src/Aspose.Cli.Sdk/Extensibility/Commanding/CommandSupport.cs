@@ -258,18 +258,19 @@ public sealed class MutationFileOptions
         command.Options.Add(_backup);
     }
 
-    /// <summary>Resolves and validates the mutation destination.</summary>
+    /// <summary>
+    /// Resolves and validates the mutation destination. A backup is made only when
+    /// <c>--backup</c> is given.
+    /// </summary>
     public MutationTarget Resolve(
         ParseResult parseResult,
         PathResolver paths,
-        string inputPath,
-        bool requireBackup = false)
+        string inputPath)
     {
         string? explicitOut = parseResult.GetValue(_out);
         bool inPlace = parseResult.GetValue(_inPlace);
         bool overwrite = parseResult.GetValue(_overwrite);
-        bool requestedBackup = parseResult.GetValue(_backup);
-        bool backup = requestedBackup || (requireBackup && inPlace);
+        bool backup = parseResult.GetValue(_backup);
 
         if (explicitOut is not null && inPlace)
         {
@@ -279,7 +280,7 @@ public sealed class MutationFileOptions
                 "Choose --out or --in-place.");
         }
 
-        if (requestedBackup && !inPlace)
+        if (backup && !inPlace)
         {
             throw CliErrors.OptionInvalid(
                 "--backup",

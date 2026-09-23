@@ -135,6 +135,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
             static shape => shape.Placeholder?.Type == PlaceholderType.Object);
         Assert.Equal("Final", body.TextFrame.Text);
         Assert.Single(deck.Slides[0].Shapes.OfType<IAutoShape>(), static shape => shape.TextFrame?.Text == "Final");
+        Assert.False(File.Exists(_workspace.File("deck.backup.pptx")), "An in-place edit makes a backup only with --backup.");
     }
 
     [Fact]

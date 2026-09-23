@@ -8,55 +8,45 @@ namespace Aspose.Cli.Product.Pdf.Commands;
 
 internal static class EditCommand
 {
+    private static readonly BoundedEditDefinition<PdfOp, PdfOpsBatch> Definition = new()
+    {
+        Catalog = PdfOps.Catalog,
+        Contracts = ProductJsonContext.Definition,
+        NormalizePaths = static (op, paths) => op switch
+        {
+            InsertPagesFromOp value => value with { Path = paths.ResolveInput(value.Path) },
+            AddWatermarkImageOp value => value with { Path = paths.ResolveInput(value.Path) },
+            AddStampImageOp value => value with { Path = paths.ResolveInput(value.Path) },
+            AddAttachmentOp value => value with { Path = paths.ResolveInput(value.Path) },
+            _ => op,
+        },
+    };
+
     public static Command Create(IProductCommandHost<IPdfEngine> host)
     {
         Argument<string> file = PdfOptions.File();
-        var ops = new Option<string>("--ops") { Required = true, Description = "Ops JSON path, inline JSON, or '-' for stdin." }.WithInput(InputKind.JsonSource);
-        var output = new MutationFileOptions();
-        var editOptions = new BoundedEditOptions();
+        var edit = new BoundedEditCommand<PdfOp, PdfOpsBatch>(Definition);
         var password = new PasswordOptions("--password", "the PDF");
         var command = new Command("edit", "Apply one validated, atomic PDF operation batch.");
         command.Arguments.Add(file);
-        command.Options.Add(ops);
-        output.AddTo(command);
-        editOptions.AddTo(command);
+        edit.AddTo(command);
         password.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
-            string source = parse.GetRequiredValue(ops);
-            PdfOpsBatch batch = PdfOps.Catalog.Parse<PdfOpsBatch>(
-                JsonInputSource.Read(source, context.Paths, context.Inputs, "--ops"),
-                ProductJsonContext.Definition);
-            batch = NormalizePaths(batch, context);
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            MutationTarget target = output.Resolve(parse, context.Paths, input, requireBackup: true);
-            return context.Port.ApplyOps(input, batch, new PdfEditRequest
+            BoundedEditInvocation<PdfOpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
+            return context.Port.ApplyOps(input, invocation.Batch, new PdfEditRequest
             {
-                OutputPath = target.OutputPath,
-                Overwrite = target.Overwrite,
-                BackupPath = target.BackupPath,
-                Options = editOptions.Read(parse, batch.IfMatch),
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: source != "-"),
-                OpSecrets = ResolveSecrets(batch, context.ReadEnvironment),
+                OutputPath = invocation.Target.OutputPath,
+                Overwrite = invocation.Target.Overwrite,
+                BackupPath = invocation.Target.BackupPath,
+                Options = invocation.Options,
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: !invocation.OpsFromStandardInput),
+                OpSecrets = ResolveSecrets(invocation.Batch, context.ReadEnvironment),
             });
         }));
         return command;
     }
-
-    private static PdfOpsBatch NormalizePaths(
-        PdfOpsBatch batch,
-        ProductCommandContext<IPdfEngine> context) =>
-        batch with
-        {
-            Ops = batch.Ops.Select(op => op switch
-            {
-                InsertPagesFromOp value => value with { Path = context.Paths.ResolveInput(value.Path) },
-                AddWatermarkImageOp value => value with { Path = context.Paths.ResolveInput(value.Path) },
-                AddStampImageOp value => value with { Path = context.Paths.ResolveInput(value.Path) },
-                AddAttachmentOp value => value with { Path = context.Paths.ResolveInput(value.Path) },
-                _ => op,
-            }).ToArray(),
-        };
 
     private static IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>>? ResolveSecrets(PdfOpsBatch batch, Func<string, string?> readEnvironment)
     {
