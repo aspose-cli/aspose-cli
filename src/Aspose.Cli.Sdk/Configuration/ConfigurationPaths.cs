@@ -28,8 +28,19 @@ public static class ConfigurationPaths
 
     public static string EnsureUserDirectory()
     {
-        string root = PrivateUserStorage.EnsureDirectory(UserDirectory());
-        string marker = Path.Combine(root, OwnerFileName);
+        string selected = UserDirectory();
+        string marker = Path.Combine(selected, OwnerFileName);
+        // Claiming makes the directory private, which rewrites its permissions. The default
+        // location is named for this CLI; a directory chosen through the environment is claimed
+        // only when it is new, empty or already marked, never when it holds someone else's files.
+        if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(EnvironmentVariableName))
+            && Directory.Exists(selected)
+            && !File.Exists(marker)
+            && Directory.EnumerateFileSystemEntries(selected).Any())
+        {
+            throw Conflict();
+        }
+        string root = PrivateUserStorage.EnsureDirectory(selected);
         try
         {
             using FileStream file = new(marker, FileMode.CreateNew, FileAccess.Write, FileShare.None);

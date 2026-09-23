@@ -29,6 +29,22 @@ public sealed class LicenseManagementTests
             product => Assert.Equal("evaluation", product!["mode"]!.GetValue<string>()));
     }
 
+    [Fact]
+    public void SelectedConfigurationDirectoryWithForeignFiles_IsRefusedAndLeftUntouched()
+    {
+        using var workspace = new TempWorkspace();
+        Directory.CreateDirectory(workspace.ConfigDirectory);
+        string foreign = Path.Combine(workspace.ConfigDirectory, "notes.txt");
+        File.WriteAllText(foreign, "user data");
+
+        CliResult result = workspace.Run("preview", "status", "--output", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Contains("OPTION_INVALID", result.StdErr, StringComparison.Ordinal);
+        Assert.Equal("user data", File.ReadAllText(foreign));
+        Assert.False(File.Exists(Path.Combine(workspace.ConfigDirectory, ".aspose-cli-config.json")));
+    }
+
     [LicensedFact]
     public void ValidatedTotalLicense_InstallsAndRemovesAtomicallyThroughWorkers()
     {
