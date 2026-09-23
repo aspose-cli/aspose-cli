@@ -192,7 +192,7 @@ public sealed record CreateTableOp() : Op
     /// <summary>Table name; generated when omitted.</summary>
     public string? Name { get; init; }
 
-    /// <summary>Built-in table style name, e.g. <c>TableStyleMedium2</c>.</summary>
+    /// <summary>Built-in table style name, e.g. <c>TableStyleMedium2</c>, or a custom style the workbook defines.</summary>
     public string? Style { get; init; }
 
     /// <summary>Add a totals row below the table.</summary>

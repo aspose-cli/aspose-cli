@@ -54,7 +54,7 @@ internal sealed class StylePool
     internal static StyleData Map(Style style) => new()
     {
         Font = style.Font.Name,
-        Size = style.Font.Size,
+        Size = style.Font.DoubleSize,
         Bold = style.Font.IsBold ? true : null,
         Italic = style.Font.IsItalic ? true : null,
         Color = ToHex(style.Font.Color),

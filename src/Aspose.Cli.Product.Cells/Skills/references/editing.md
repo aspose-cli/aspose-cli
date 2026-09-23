@@ -199,8 +199,10 @@ and is also honored by the Cells browser Preview.
 
 `create_chart` applies a modern default look on its own: white plot area
 (no gray fill), no outer chart border, bottom legend, slim column/bar gaps
-and the `#1F4E79`/`#2E75B6`/`#9DC3E6`/`#D9D9D9` series palette. Do not
-re-specify any of that — set the cosmetic fields only to deviate from it.
+and the `#1F4E79`/`#2E75B6`/`#9DC3E6`/`#D9D9D9` series palette. A column,
+bar or area chart whose values are all positive starts its value axis at
+zero. Do not re-specify any of that — set the cosmetic fields only to
+deviate from it.
 
 Cosmetic fields, accepted by `create_chart` and `update_chart` alike:
 
@@ -222,8 +224,9 @@ A column chart with the full set:
 
 Update an existing chart with `update_chart` — identify it by `index`
 (zero-based) or `name`, then set any of `title`, `dataRange`, `type`,
-`seriesInRows` or the cosmetic fields above. Include `dataRange` when changing
-`seriesInRows`; orientation is applied when the chart's data range is reset:
+`seriesInRows` or the cosmetic fields above. `seriesInRows` is accepted only
+with `dataRange`: orientation is applied when the chart's data range is reset.
+An update leaves the value axis as the chart already has it:
 
     { "op": "update_chart", "sheet": "Data", "index": 0,
       "title": "Revised", "type": "bar" }
@@ -269,7 +272,7 @@ applied; the rest of the page setup is preserved.
 
 | op | fields | notes |
 |----|--------|-------|
-| `create_table` | `range` (includes headers), `name?`, `style?` (`TableStyleMedium2`), `totalsRow?` | A native table with its own filter dropdowns. Do **not** also `set_autofilter` the same range. |
+| `create_table` | `range` (includes headers), `name?`, `style?` (`TableStyleMedium2`), `totalsRow?` | A native table with its own filter dropdowns. `style` is a built-in name (`TableStyleLight1`–`21`, `TableStyleMedium1`–`28`, `TableStyleDark1`–`11`) or a custom style the workbook defines; any other name is rejected. Do **not** also `set_autofilter` the same range. |
 | `set_autofilter` | `range`, `off?` | `{"off": true}` removes the sheet filter. |
 | `sort_range` | `range`, `by`, `hasHeader?` | `by` is `[{ "column": "B", "order": "desc" }]` (asc default); sorts in place by one or more columns. |
 | `remove_duplicates` | `range`, `columns?`, `hasHeader?` | Drops duplicate rows. `columns` (letters) restricts the comparison to a subset; omit to compare all columns. |
@@ -286,6 +289,9 @@ applied; the rest of the page setup is preserved.
 - `type`: `list` (give `listItems` **or** a `listSource` range), `wholeNumber`,
   `decimal`, `date`, `textLength` (give `operator` + `value1`, plus `value2`
   for `between`/`notBetween`), or `custom` (`value1` is a formula).
+- `listItems` are stored as one comma-separated literal: no item may contain
+  a comma or a double quote, and the joined list stays within Excel's 255
+  characters. Put longer lists in cells and give `listSource`.
 - `operator`: between, notBetween, equal, notEqual, greaterThan, lessThan,
   greaterOrEqual, lessOrEqual.
 - Optional `inputMessage`, `errorMessage`, `allowBlank` (default true).

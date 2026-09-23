@@ -283,6 +283,20 @@ internal static class CellsCoreOpValidator
             bool hasSource = !string.IsNullOrWhiteSpace(op.ListSource);
             Require(hasItems ^ hasSource,
                 "a 'list' validation needs exactly one of 'listItems' or 'listSource'");
+            if (op.ListItems is { } items)
+            {
+                // Excel stores the items as one quoted, comma-separated literal of at
+                // most 255 characters, with no escape for a comma or a quote.
+                const string LongListHint = "Put the items in cells and give 'listSource' instead, e.g. \"Lists!A1:A40\".";
+                foreach (string item in items)
+                {
+                    Require(item.Length > 0 && !item.Contains(',', StringComparison.Ordinal) && !item.Contains('"', StringComparison.Ordinal),
+                        $"list item '{item}' must be non-empty and contain no comma or double quote", LongListHint);
+                }
+
+                int length = items.Sum(static item => item.Length) + items.Count - 1;
+                Require(length <= 255, $"'listItems' joined with commas is {length} characters; Excel allows 255", LongListHint);
+            }
         }
         else if (op.Type == ValidationTypes.Custom)
         {
@@ -420,12 +434,16 @@ internal static class CellsAdvancedOpValidator
         Require(op.Index is null or >= 0, "'index' is zero-based and must not be negative");
 
         bool anyChange = op.Title is not null || op.DataRange is not null
-            || op.Type is not null || op.SeriesInRows is not null
+            || op.Type is not null
             || op.Legend is not null || op.AxisTitles is not null
             || op.SeriesColors is not null || op.DataLabels is not null;
         Require(anyChange,
-            "update_chart needs at least one field to change (title, dataRange, type, seriesInRows, "
+            "update_chart needs at least one field to change (title, dataRange, type, "
             + "legend, axisTitles, seriesColors or dataLabels)");
+        // The orientation is read when a data range is plotted; on its own it would change nothing.
+        Require(op.SeriesInRows is null || op.DataRange is not null,
+            "'seriesInRows' applies only together with 'dataRange'",
+            "Give the chart's data range again with the orientation, e.g. \"dataRange\": \"A1:D5\", \"seriesInRows\": true.");
 
         Require(op.Type is null || ChartTypes.All.Contains(op.Type),
             $"'type' must be one of: {string.Join(", ", ChartTypes.All)}");

@@ -25,7 +25,7 @@ internal static class LookOps
         style.Font.Name = op.Name;
         if (op.Size is { } size)
         {
-            style.Font.Size = (int)Math.Round(size);
+            style.Font.DoubleSize = size;
         }
 
         workbook.DefaultStyle = style;

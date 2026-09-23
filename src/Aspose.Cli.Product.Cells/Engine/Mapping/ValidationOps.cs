@@ -21,14 +21,16 @@ internal static class ValidationOps
             case ValidationTypes.List:
                 validation.Type = ValidationType.List;
                 validation.InCellDropDown = true;
-                // An explicit list is a quoted, comma-separated literal; a source
+                // An explicit list is a comma-separated string literal, given as a
+                // formula so the engine stores it as Excel's "a,b,c" (a bare quoted
+                // string is stored with its quotes escaped into the items). A source
                 // range is a formula reference. Callers sometimes already write
                 // the leading '=' (it reads naturally next to other formula
                 // fields) — doubling it produces "==Sheet!A1", which the engine
                 // rejects as "Absent operand for '='", so normalize instead of
                 // always prepending.
                 validation.Formula1 = op.ListItems is { } items
-                    ? "\"" + string.Join(",", items) + "\""
+                    ? "=\"" + string.Join(",", items) + "\""
                     : op.ListSource!.StartsWith('=') ? op.ListSource : "=" + op.ListSource;
                 break;
 

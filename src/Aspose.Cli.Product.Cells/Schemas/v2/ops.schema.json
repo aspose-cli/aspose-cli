@@ -351,7 +351,7 @@
             "properties": {
               "range": { "$ref": "#/$defs/range" },
               "name": { "type": "string" },
-              "style": { "type": "string", "description": "Built-in table style, e.g. TableStyleMedium2." },
+              "style": { "type": "string", "minLength": 1, "description": "Built-in table style (TableStyleLight1-21, TableStyleMedium1-28, TableStyleDark1-11), e.g. TableStyleMedium2, or a custom table style the workbook defines." },
               "totalsRow": { "type": "boolean" }
             }
           }
@@ -398,7 +398,7 @@
               "operator": { "enum": ["between", "notBetween", "equal", "notEqual", "greaterThan", "lessThan", "greaterOrEqual", "lessOrEqual"] },
               "value1": { "type": "string" },
               "value2": { "type": "string" },
-              "listItems": { "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "listItems": { "type": "array", "minItems": 1, "items": { "type": "string", "pattern": "^[^,\"]+$" }, "description": "Dropdown items; none may contain a comma or double quote, and joined with commas they stay within Excel's 255 characters. Use listSource for longer lists." },
               "listSource": { "type": "string" },
               "inputMessage": { "type": "string" },
               "errorMessage": { "type": "string" },

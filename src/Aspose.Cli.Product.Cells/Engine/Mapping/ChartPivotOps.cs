@@ -238,8 +238,9 @@ internal static class ChartPivotOps
 
         // After the type/data changes so the cosmetics see the final chart —
         // the pie/axis-title guard must judge the type the file will carry.
+        // The value-axis baseline is a creation default: an existing chart keeps
+        // the axis its author chose.
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
-        EnsureHonestValueAxis(chart);
         return null;
     }
 

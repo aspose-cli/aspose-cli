@@ -44,7 +44,7 @@ internal static class StyleWriter
 
         if (data.Size is { } size)
         {
-            style.Font.Size = (int)Math.Round(size);
+            style.Font.DoubleSize = size;
             flag.FontSize = true;
         }
 
