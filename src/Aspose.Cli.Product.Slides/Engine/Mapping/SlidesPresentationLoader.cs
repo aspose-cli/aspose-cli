@@ -10,10 +10,7 @@ internal sealed class SlidesPresentationLoader(
 {
     public LoadedPresentation Open(string path, string? password)
     {
-        InputSizeGuard.Ensure(
-            resourceBudgets,
-            path,
-            InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        InputSizeGuard.Ensure(resourceBudgets, path);
         return OpenCore(path, password);
     }
 

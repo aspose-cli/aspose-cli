@@ -45,6 +45,32 @@ public sealed class ResourceBudgetLedgerTests
         }
     }
 
+    [Fact]
+    public void InputSizeGuard_UsesOnlyTheLedgerLimitAndRejectsAChangedAdmission()
+    {
+        string within = TemporaryFile(new byte[8]);
+        string above = TemporaryFile(new byte[9]);
+        try
+        {
+            using OperationDeadline deadline = OperationDeadline.Start(null);
+            ResourceBudgetLedger budgets = Create(deadline, (ResourceBudgetKinds.InputBytes, 8));
+
+            InputSizeGuard.Ensure(budgets, within);
+            CliException tooLarge = Assert.Throws<CliException>(() => InputSizeGuard.Ensure(budgets, above));
+            File.WriteAllBytes(within, new byte[4]);
+            CliException changed = Assert.Throws<CliException>(() => InputSizeGuard.Ensure(budgets, within));
+
+            Assert.Equal(ErrorCodes.FileTooLarge, tooLarge.Code);
+            Assert.Equal(8L, tooLarge.Details!["limitBytes"]!.GetValue<long>());
+            Assert.Equal(ErrorCodes.InputChanged, changed.Code);
+        }
+        finally
+        {
+            File.Delete(within);
+            File.Delete(above);
+        }
+    }
+
     [Theory]
     [InlineData(7, true)]
     [InlineData(8, true)]

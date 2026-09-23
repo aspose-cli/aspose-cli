@@ -320,10 +320,9 @@ internal static class PdfArtifactSupport
                 "Create smaller PDFs and merge them in bounded batches.");
         }
 
-        long budget = InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable);
         foreach (string path in paths)
         {
-            InputSizeGuard.Ensure(resourceBudgets, path, budget);
+            InputSizeGuard.Ensure(resourceBudgets, path);
         }
     }
 

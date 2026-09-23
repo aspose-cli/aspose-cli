@@ -13,7 +13,6 @@ namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 /// </summary>
 internal static partial class SlidesMarkdownBuilder
 {
-    private const int MaxMarkdownBytes = 8 * 1024 * 1024;
 
     // A code block is the one semantic that needs a typeface the theme does not name.
     private const string CodeFont = "Consolas";
@@ -23,10 +22,7 @@ internal static partial class SlidesMarkdownBuilder
         Presentation presentation,
         string markdownPath)
     {
-        InputSizeGuard.Ensure(
-            resourceBudgets,
-            markdownPath,
-            MaxMarkdownBytes);
+        InputSizeGuard.Ensure(resourceBudgets, markdownPath);
         string markdown = resourceBudgets.Inputs.ReadTextFile(markdownPath);
         IReadOnlyList<MarkdownSlide> model = Parse(markdown, Path.GetFileNameWithoutExtension(markdownPath));
         string root = Path.GetDirectoryName(Path.GetFullPath(markdownPath))!;
@@ -204,11 +200,7 @@ internal static partial class SlidesMarkdownBuilder
         IAutoShape[] content)
     {
         string imagePath = ResolveLocalImage(root, item.ImagePath!);
-        InputSizeGuard.Ensure(
-            resourceBudgets,
-            imagePath,
-            InputSizeGuard.ResolveMaxBytes(
-                Environment.GetEnvironmentVariable));
+        InputSizeGuard.Ensure(resourceBudgets, imagePath);
         IPPImage image = presentation.Images.AddImage(resourceBudgets.Inputs.ReadAllBytes(imagePath));
 
         // The image takes the frame of the first content placeholder that holds no text.

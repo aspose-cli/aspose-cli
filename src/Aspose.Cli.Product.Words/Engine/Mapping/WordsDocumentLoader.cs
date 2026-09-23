@@ -27,10 +27,7 @@ internal sealed class WordsDocumentLoader
 
     public LoadedDocument Open(string path, string? password)
     {
-        InputSizeGuard.Ensure(
-            _resourceBudgets,
-            path,
-            InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        InputSizeGuard.Ensure(_resourceBudgets, path);
         return OpenCore(path, password);
     }
 

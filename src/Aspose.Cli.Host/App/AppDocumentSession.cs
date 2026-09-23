@@ -85,10 +85,7 @@ internal sealed class AppDocumentSession : IDisposable
         }
 
         CommandContext context = _createContext();
-        InputSizeGuard.Ensure(
-            context.ResourceBudgets,
-            full,
-            InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        InputSizeGuard.Ensure(context.ResourceBudgets, full);
         ProductDefinition product = _catalog.ResolveExistingFile(
             full,
             operation: "app",

@@ -46,8 +46,7 @@ internal sealed class WorkbookLoadService(ResourceBudgetLedger resourceBudgets)
 
     internal LoadedWorkbook Open(string path, string? password)
     {
-        InputSizeGuard.Ensure(resourceBudgets, path,
-            InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        InputSizeGuard.Ensure(resourceBudgets, path);
         return OpenCore(path, password);
     }
 

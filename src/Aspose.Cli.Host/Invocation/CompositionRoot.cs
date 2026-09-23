@@ -100,8 +100,7 @@ internal static class CompositionRoot
             RuntimeLicenseForProduct = runtimeLicenses,
             UserLicenseChanges = licenseChanges,
             ConfigDirectory = Aspose.Cli.Sdk.Configuration.ConfigurationPaths.UserDirectory(),
-            EnvironmentVariable = name =>
-                ReadEnvironment(resourceBudgets, name),
+            EnvironmentVariable = Environment.GetEnvironmentVariable,
             SafeFileWriter = writer,
             ResourceBudgets = resourceBudgets,
         };
@@ -167,15 +166,4 @@ internal static class CompositionRoot
         }
         return new ResourceBudgetLedger(deadline, limits, outputs);
     }
-
-    private static string? ReadEnvironment(
-        ResourceBudgetLedger budgets,
-        string name) =>
-        string.Equals(
-            name,
-            InputSizeGuard.BudgetVariable,
-            StringComparison.Ordinal)
-            ? budgets.Limit(ResourceBudgetKinds.InputBytes)
-                .ToString(System.Globalization.CultureInfo.InvariantCulture)
-            : Environment.GetEnvironmentVariable(name);
 }

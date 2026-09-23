@@ -10,10 +10,7 @@ internal sealed class PdfDocumentLoader(
 {
     public LoadedPdf Open(string path, string? password)
     {
-        InputSizeGuard.Ensure(
-            resourceBudgets,
-            path,
-            InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        InputSizeGuard.Ensure(resourceBudgets, path);
         return OpenCore(path, password);
     }
 

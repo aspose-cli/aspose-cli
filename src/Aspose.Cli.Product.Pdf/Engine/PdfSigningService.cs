@@ -157,10 +157,7 @@ internal sealed class PdfSigningService
         {
             throw CliErrors.FileNotFound(path);
         }
-        InputSizeGuard.Ensure(
-            resourceBudgets,
-            path,
-            InputSizeGuard.ResolveMaxBytes(Environment.GetEnvironmentVariable));
+        InputSizeGuard.Ensure(resourceBudgets, path);
     }
 
     private static void ValidateCertificate(string path, string password)
