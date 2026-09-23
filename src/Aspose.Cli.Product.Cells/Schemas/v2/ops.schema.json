@@ -29,6 +29,7 @@
     "op": {
       "type": "object",
       "required": ["op"],
+      "unevaluatedProperties": false,
       "properties": {
         "id": {
           "type": "string",
@@ -287,6 +288,7 @@
                 "items": {
                   "type": "object",
                   "required": ["field"],
+                  "additionalProperties": false,
                   "properties": {
                     "field": { "type": "string", "description": "Header name of the source column." },
                     "function": { "enum": ["sum", "count", "average", "max", "min"], "default": "sum" },
@@ -316,9 +318,9 @@
           "if": { "properties": { "op": { "const": "set_print_area" } } },
           "then": {
             "properties": {
-              "range": { "$ref": "#/$defs/range" },
-              "titleRows": { "type": "string", "description": "Rows repeated on each page, e.g. \"1:1\"." },
-              "titleColumns": { "type": "string", "description": "Columns repeated on each page, e.g. \"A:A\"." }
+              "range": { "$ref": "#/$defs/range", "description": "The print area. Titles alone keep the current print area; an op with no fields clears it." },
+              "titleRows": { "type": "string", "pattern": "^\\$?[0-9]+(:\\$?[0-9]+)?$", "description": "Rows repeated on each page, e.g. \"1:2\" or \"1\"." },
+              "titleColumns": { "type": "string", "pattern": "^\\$?[A-Za-z]{1,3}(:\\$?[A-Za-z]{1,3})?$", "description": "Columns repeated on each page, e.g. \"A:B\" or \"A\"." }
             }
           }
         },
@@ -376,6 +378,7 @@
                 "items": {
                   "type": "object",
                   "required": ["column"],
+                  "additionalProperties": false,
                   "properties": {
                     "column": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Column letters, e.g. B." },
                     "order": { "enum": ["asc", "desc"], "default": "asc" }
@@ -476,7 +479,7 @@
             "properties": {
               "from": { "type": "integer", "minimum": 1, "description": "First row of the span (1-based)." },
               "to": { "type": "integer", "minimum": 1, "description": "Last row (1-based); defaults to `from`." },
-              "collapse": { "type": "boolean", "description": "Collapse the new group (ignored by ungroup_rows)." }
+              "collapse": { "type": "boolean", "description": "Collapse the new group; expanded when omitted." }
             }
           }
         },
@@ -486,8 +489,7 @@
             "required": ["from"],
             "properties": {
               "from": { "type": "integer", "minimum": 1, "description": "First row of the span (1-based)." },
-              "to": { "type": "integer", "minimum": 1, "description": "Last row (1-based); defaults to `from`." },
-              "collapse": { "type": "boolean", "description": "Collapse the new group (ignored by ungroup_rows)." }
+              "to": { "type": "integer", "minimum": 1, "description": "Last row (1-based); defaults to `from`." }
             }
           }
         },
@@ -498,7 +500,7 @@
             "properties": {
               "from": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "First column of the span, as letters." },
               "to": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Last column; defaults to `from`." },
-              "collapse": { "type": "boolean", "description": "Collapse the new group (ignored by ungroup_columns)." }
+              "collapse": { "type": "boolean", "description": "Collapse the new group; expanded when omitted." }
             }
           }
         },
@@ -508,8 +510,7 @@
             "required": ["from"],
             "properties": {
               "from": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "First column of the span, as letters." },
-              "to": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Last column; defaults to `from`." },
-              "collapse": { "type": "boolean", "description": "Collapse the new group (ignored by ungroup_columns)." }
+              "to": { "type": "string", "pattern": "^[A-Za-z]{1,3}$", "description": "Last column; defaults to `from`." }
             }
           }
         },
@@ -606,6 +607,7 @@
               "rule": {
                 "type": "object",
                 "required": ["kind"],
+                "additionalProperties": false,
                 "properties": {
                   "kind": { "enum": ["cellValue", "colorScale", "dataBar", "duplicates", "formula", "topBottom", "iconSet"] },
                   "operator": { "enum": ["between", "notBetween", "equal", "notEqual", "greaterThan", "lessThan", "greaterOrEqual", "lessOrEqual"] },
@@ -621,7 +623,7 @@
                   "iconSet": { "enum": ["arrows3", "trafficLights3", "symbols3", "rating4", "rating5"], "description": "For iconSet: which icons to draw (thresholds are automatic); omit style." }
                 }
               },
-              "style": { "$ref": "#/$defs/style" }
+              "style": { "$ref": "#/$defs/conditionalStyle" }
             }
           }
         },
@@ -705,6 +707,7 @@
     },
     "chartLegend": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Legend settings; only the fields present are applied. There is no 'none' position — hide the legend with visible: false.",
       "minProperties": 1,
       "properties": {
@@ -714,6 +717,7 @@
     },
     "chartAxisTitles": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Axis titles; only the fields present are applied. Pie charts have no axes and reject these.",
       "minProperties": 1,
       "properties": {
@@ -729,6 +733,7 @@
     },
     "chartDataLabels": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Data label settings; only the fields present are applied.",
       "minProperties": 1,
       "properties": {
@@ -740,14 +745,15 @@
       "type": "object",
       "description": "Only the fields present are applied; existing formatting is preserved.",
       "minProperties": 1,
+      "additionalProperties": false,
       "properties": {
-        "font": { "type": "string" },
-        "size": { "type": "number", "exclusiveMinimum": 0 },
+        "font": { "type": "string", "minLength": 1 },
+        "size": { "type": "number", "minimum": 1, "maximum": 409, "description": "Points; fractional sizes such as 10.5 are kept." },
         "bold": { "type": "boolean" },
         "italic": { "type": "boolean" },
         "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
         "bg": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
-        "numberFormat": { "type": "string" },
+        "numberFormat": { "type": "string", "minLength": 1 },
         "hAlign": { "enum": ["left", "center", "right"] },
         "vAlign": { "enum": ["top", "middle", "bottom"] },
         "wrap": { "type": "boolean" },
@@ -756,8 +762,24 @@
         "indent": { "type": "integer", "minimum": 0, "maximum": 250 }
       }
     },
+    "conditionalStyle": {
+      "type": "object",
+      "description": "The differential style a matching cell receives. Excel applies only font emphasis, colors and the number format in a conditional format; use format_range for fonts, sizes, alignment, wrapping and indents.",
+      "minProperties": 1,
+      "additionalProperties": false,
+      "properties": {
+        "bold": { "type": "boolean" },
+        "italic": { "type": "boolean" },
+        "underline": { "type": "boolean" },
+        "strikethrough": { "type": "boolean" },
+        "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "bg": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "numberFormat": { "type": "string", "minLength": 1 }
+      }
+    },
     "margins": {
       "type": "object",
+      "additionalProperties": false,
       "description": "Page margins in inches; only the sides present are applied.",
       "minProperties": 1,
       "properties": {

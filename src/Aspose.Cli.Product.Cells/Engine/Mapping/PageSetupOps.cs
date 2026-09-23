@@ -63,17 +63,26 @@ internal static class PageSetupOps
     {
         PageSetup pageSetup = sheet.PageSetup;
 
-        // An empty print area clears it; a range restricts printing to it.
-        pageSetup.PrintArea = op.Range ?? string.Empty;
+        // A range restricts printing to it; titles alone leave the print area as
+        // it is, and an op with no fields clears it.
+        if (op.Range is { } range)
+        {
+            pageSetup.PrintArea = range;
+        }
+        else if (op.TitleRows is null && op.TitleColumns is null)
+        {
+            pageSetup.PrintArea = string.Empty;
+        }
 
+        // The parser normalized the titles to Excel's absolute band form.
         if (op.TitleRows is { } rows)
         {
-            pageSetup.PrintTitleRows = NormalizeTitle(rows);
+            pageSetup.PrintTitleRows = rows;
         }
 
         if (op.TitleColumns is { } columns)
         {
-            pageSetup.PrintTitleColumns = NormalizeTitle(columns);
+            pageSetup.PrintTitleColumns = columns;
         }
 
         return null;
@@ -124,19 +133,7 @@ internal static class PageSetupOps
         PaperSizes.A4 => PaperSizeType.PaperA4,
         PaperSizes.A5 => PaperSizeType.PaperA5,
         PaperSizes.Tabloid => PaperSizeType.PaperTabloid,
-        _ => PaperSizeType.PaperLetter, // the parser guarantees a known value
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(paper), paper, "Paper size is missing from the engine mapper."),
     };
-
-    // Excel stores print titles as "$1:$2" / "$A:$B"; accept the friendlier
-    // "1:2" / "A:B" too, since the parser only checks they are non-empty.
-    private static string NormalizeTitle(string title)
-    {
-        if (title.Contains('$', StringComparison.Ordinal))
-        {
-            return title;
-        }
-
-        string[] parts = title.Split(':');
-        return parts.Length == 2 ? $"${parts[0]}:${parts[1]}" : title;
-    }
 }

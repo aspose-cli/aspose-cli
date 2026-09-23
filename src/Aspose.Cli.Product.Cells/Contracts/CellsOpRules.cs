@@ -65,18 +65,7 @@ internal static class CellsCoreOpValidator
     internal static FormatRangeOp ValidateFormat(FormatRangeOp op)
     {
         _ = ParseUnqualifiedRange(op.Range);
-        StyleData style = op.Style;
-
-        Require(style != new StyleData(), "the style has no fields set");
-        RequireColor(style.Color, "color");
-        RequireColor(style.Bg, "bg");
-        Require(style.HAlign is null || HorizontalAlignments.All.Contains(style.HAlign),
-            $"'hAlign' must be one of: {string.Join(", ", HorizontalAlignments.All)}");
-        Require(style.VAlign is null || VerticalAlignments.All.Contains(style.VAlign),
-            $"'vAlign' must be one of: {string.Join(", ", VerticalAlignments.All)}");
-        Require(style.Size is null or > 0, "'size' must be positive");
-        Require(style.Indent is null or (>= 0 and <= 250), "'indent' must be between 0 and 250");
-
+        ValidateStyle(op.Style, conditional: false);
         return op;
     }
 
@@ -190,7 +179,13 @@ internal static class CellsCoreOpValidator
             _ = ParseUnqualifiedRange(range);
         }
 
-        return op;
+        // Titles are normalized to Excel's absolute band form ("$1:$2", "$A:$B") here,
+        // so the engine receives exactly what it stores.
+        return op with
+        {
+            TitleRows = op.TitleRows is { } rows ? A1.ParseRowBand(rows) : null,
+            TitleColumns = op.TitleColumns is { } columns ? A1.ParseColumnBand(columns) : null,
+        };
     }
 
     internal static InsertImageOp ValidateInsertImage(InsertImageOp op)
@@ -316,6 +311,7 @@ internal static class CellsCoreOpValidator
 
     internal static RenameSheetOp ValidateRenameSheet(RenameSheetOp op)
     {
+        ValidateSheetIsNamed(op);
         Require(!string.IsNullOrWhiteSpace(op.To), "the new sheet name must not be empty");
         return op;
     }
@@ -565,8 +561,7 @@ internal static class CellsAdvancedOpValidator
 
         if (op.Style is { } style)
         {
-            RequireColor(style.Color, "style.color");
-            RequireColor(style.Bg, "style.bg");
+            ValidateStyle(style, conditional: true);
         }
 
         return op;
@@ -665,6 +660,44 @@ internal static class CellsValidationSupport
     }
 
     internal static int ParseColumn(string letters) => A1.ParseColumn(letters);
+
+    /// <summary>
+    /// The style rules shared by <c>format_range</c> and <c>add_conditional_format</c>.
+    /// A conditional style is differential and Excel applies only its font emphasis,
+    /// colors and number format, so the other fields are rejected there instead of
+    /// being stored and silently ignored.
+    /// </summary>
+    internal static void ValidateStyle(StyleData style, bool conditional)
+    {
+        Require(style != new StyleData(), "'style' has no fields set; set at least one field");
+        if (conditional)
+        {
+            string[] unsupported = new (string Name, bool Set)[]
+                {
+                    ("font", style.Font is not null), ("size", style.Size is not null),
+                    ("hAlign", style.HAlign is not null), ("vAlign", style.VAlign is not null),
+                    ("wrap", style.Wrap is not null), ("indent", style.Indent is not null),
+                }
+                .Where(static field => field.Set)
+                .Select(static field => "'style." + field.Name + "'")
+                .ToArray();
+            Require(unsupported.Length == 0,
+                $"a conditional format cannot set {string.Join(", ", unsupported)}",
+                "A conditional style may set bold, italic, underline, strikethrough, color, bg and "
+                + "numberFormat; use format_range for fonts, sizes, alignment, wrapping and indents.");
+        }
+
+        Require(style.Font is null || !string.IsNullOrWhiteSpace(style.Font), "'style.font' must not be empty");
+        Require(style.Size is null or (>= 1 and <= 409), "'style.size' must be between 1 and 409 points");
+        RequireColor(style.Color, "style.color");
+        RequireColor(style.Bg, "style.bg");
+        Require(style.NumberFormat is null || style.NumberFormat.Length > 0, "'style.numberFormat' must not be empty");
+        Require(style.HAlign is null || HorizontalAlignments.All.Contains(style.HAlign),
+            $"'style.hAlign' must be one of: {string.Join(", ", HorizontalAlignments.All)}");
+        Require(style.VAlign is null || VerticalAlignments.All.Contains(style.VAlign),
+            $"'style.vAlign' must be one of: {string.Join(", ", VerticalAlignments.All)}");
+        Require(style.Indent is null or (>= 0 and <= 250), "'style.indent' must be between 0 and 250");
+    }
 
     internal static void Require(bool condition, string reason, string? hint = null)
     {

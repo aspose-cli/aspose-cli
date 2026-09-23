@@ -136,15 +136,18 @@ public static class PaperSizes
     public static IReadOnlyList<string> All { get; } = [Letter, Legal, A3, A4, A5, Tabloid];
 }
 
-/// <summary>Sets or clears the print area of a sheet, with optional repeating titles.</summary>
+/// <summary>
+/// Sets the print area of a sheet and its repeating titles. Titles alone keep the
+/// current print area; an op with no fields clears it.
+/// </summary>
 public sealed record SetPrintAreaOp() : Op
 {
-    /// <summary>The print area, e.g. <c>A1:H50</c>; omit to clear it.</summary>
+    /// <summary>The print area, e.g. <c>A1:H50</c>.</summary>
     public string? Range { get; init; }
 
-    /// <summary>Rows repeated on every printed page, e.g. <c>1:1</c>.</summary>
+    /// <summary>Rows repeated on every printed page, e.g. <c>1:2</c> or <c>1</c>.</summary>
     public string? TitleRows { get; init; }
 
-    /// <summary>Columns repeated on every printed page, e.g. <c>A:A</c>.</summary>
+    /// <summary>Columns repeated on every printed page, e.g. <c>A:B</c> or <c>A</c>.</summary>
     public string? TitleColumns { get; init; }
 }

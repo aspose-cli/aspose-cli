@@ -64,9 +64,58 @@ internal static class A1
     public static int ParseColumn(string letters)
     {
         ArgumentNullException.ThrowIfNull(letters);
+        string trimmed = letters.Trim();
+        if (trimmed.Length == 0 || !trimmed.All(char.IsAsciiLetter))
+        {
+            throw CellsErrors.RangeInvalid(letters, $"'{letters}' is not a column; give letters such as B or AA");
+        }
+
         // Anchor the letters to row 1 and reuse the cell parser, so column
         // bounds and error reporting stay identical to a full cell reference.
-        return ParseCell(letters.Trim() + "1").Column;
+        return ParseCell(trimmed + "1").Column;
+    }
+
+    /// <summary>
+    /// Parses a whole-row band such as <c>1:3</c>, <c>$1:$3</c> or <c>2</c> into its
+    /// absolute form <c>$1:$3</c>, the only place whole rows are addressable.
+    /// </summary>
+    /// <exception cref="CliException"><c>RANGE_INVALID</c> when the text is not a row band.</exception>
+    public static string ParseRowBand(string band) => ParseBand(band, part =>
+    {
+        if (!int.TryParse(part, System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out int row)
+            || row < 1 || row > MaxRows)
+        {
+            throw CellsErrors.RangeInvalid(band, $"'{part}' is not a row number in 1..{MaxRows}");
+        }
+
+        return row;
+    }, static row => row.ToString(System.Globalization.CultureInfo.InvariantCulture));
+
+    /// <summary>
+    /// Parses a whole-column band such as <c>A:B</c>, <c>$A:$B</c> or <c>C</c> into its
+    /// absolute form <c>$A:$B</c>.
+    /// </summary>
+    /// <exception cref="CliException"><c>RANGE_INVALID</c> when the text is not a column band.</exception>
+    public static string ParseColumnBand(string band) => ParseBand(band, ParseColumn, ColumnName);
+
+    private static string ParseBand(string band, Func<string, int> parse, Func<int, string> format)
+    {
+        ArgumentNullException.ThrowIfNull(band);
+        string[] parts = band.Split(':');
+        if (parts.Length > 2)
+        {
+            throw CellsErrors.RangeInvalid(band, "a band has at most one ':' separator");
+        }
+
+        int first = parse(StripAbsolute(parts[0]));
+        int last = parts.Length == 2 ? parse(StripAbsolute(parts[1])) : first;
+        return $"${format(Math.Min(first, last))}:${format(Math.Max(first, last))}";
+
+        static string StripAbsolute(string part)
+        {
+            string trimmed = part.Trim();
+            return trimmed.StartsWith('$') ? trimmed[1..] : trimmed;
+        }
     }
 
     /// <summary>Formats a zero-based column index as letters (0 becomes <c>A</c>).</summary>

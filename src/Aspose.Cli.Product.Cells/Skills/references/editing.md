@@ -120,11 +120,12 @@ Queries read stored results.
 ## Formatting
 
 `format_range` applies only the style fields you set — everything else is
-preserved. Fields: `font`, `size`, `bold`, `italic`, `color` (#RRGGBB text
-color), `bg` (#RRGGBB fill), `numberFormat` (Excel format code, e.g.
-`0.0%`, `#,##0.00`, `yyyy-mm-dd`), `hAlign` (left/center/right), `vAlign`
+preserved. Fields: `font`, `size` (1–409 points; fractional sizes such as
+10.5 are kept), `bold`, `italic`, `color` (#RRGGBB text color), `bg`
+(#RRGGBB fill), `numberFormat` (Excel format code, e.g. `0.0%`,
+`#,##0.00`, `yyyy-mm-dd`), `hAlign` (left/center/right), `vAlign`
 (top/middle/bottom), `wrap`, `underline`, `strikethrough`, `indent`
-(0–250; 0 removes the indent).
+(0–250; 0 removes the indent). A style must set at least one field.
 
 Recipe — header row:
 
@@ -161,7 +162,7 @@ Recipe — a bordered table (light grid, heavier frame and header rule):
 | `resize_rows` | `from`, `to?`, `height?` (points; omit to auto-fit) |
 | `resize_columns` | `from`, `to?` (letters), `width?` (chars; omit to auto-fit) |
 | `add_sheet` | `name`, `position?` (zero-based; appended when omitted) |
-| `rename_sheet` | `sheet` (current name), `to` |
+| `rename_sheet` | `sheet` (required, current name), `to` |
 | `delete_sheet` | `sheet` (required, explicit) |
 | `set_sheet_visibility` | `sheet` (required), `hidden` |
 | `set_active_sheet` | `sheet` (required and visible) |
@@ -262,7 +263,7 @@ applied; the rest of the page setup is preserved.
 | op | fields |
 |----|--------|
 | `set_page_setup` | `orientation` (portrait/landscape), `paperSize` (letter/legal/a3/a4/a5/tabloid), `fitToWidth?`/`fitToHeight?` (pages; 0 = auto), `scale?` (10–400), `margins?` (inches: top/bottom/left/right/header/footer), `header?`/`footer?` (center text; Excel codes `&P` page, `&N` pages, `&D` date) |
-| `set_print_area` | `range` (omit to clear), `titleRows?` (`1:1`), `titleColumns?` (`A:A`) |
+| `set_print_area` | `range?`, `titleRows?` (`1:2` or `1`), `titleColumns?` (`A:B` or `A`); titles alone keep the current print area, and an op with no fields clears it |
 
 ## Tables, filtering and sorting
 
@@ -365,6 +366,10 @@ sheet-qualified when it lies on another sheet; defined names are not accepted).
   - `iconSet` — `iconSet` names the set: `arrows3`, `trafficLights3`,
     `symbols3`, `rating4`, `rating5`. Thresholds are automatic; icons are
     the formatting, so **omit `style`** (it is rejected).
+- A conditional `style` may set only `bold`, `italic`, `underline`,
+  `strikethrough`, `color`, `bg` and `numberFormat` — Excel ignores fonts,
+  sizes, alignment, wrapping and indents in a conditional format, so those
+  fields are rejected.
 - `{ "op": "clear_conditional_formats", "range": "B2:B100" }` removes all
   conditional formatting overlapping a range.
 

@@ -83,9 +83,11 @@ internal static class StyleWriter
         {
             style.HorizontalAlignment = horizontal switch
             {
-                "left" => TextAlignmentType.Left,
-                "center" => TextAlignmentType.Center,
-                _ => TextAlignmentType.Right,
+                HorizontalAlignments.Left => TextAlignmentType.Left,
+                HorizontalAlignments.Center => TextAlignmentType.Center,
+                HorizontalAlignments.Right => TextAlignmentType.Right,
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(data), horizontal, "Horizontal alignment is missing from the engine mapper."),
             };
             flag.HorizontalAlignment = true;
         }
@@ -94,9 +96,11 @@ internal static class StyleWriter
         {
             style.VerticalAlignment = vertical switch
             {
-                "top" => TextAlignmentType.Top,
-                "middle" => TextAlignmentType.Center,
-                _ => TextAlignmentType.Bottom,
+                VerticalAlignments.Top => TextAlignmentType.Top,
+                VerticalAlignments.Middle => TextAlignmentType.Center,
+                VerticalAlignments.Bottom => TextAlignmentType.Bottom,
+                _ => throw new ArgumentOutOfRangeException(
+                    nameof(data), vertical, "Vertical alignment is missing from the engine mapper."),
             };
             flag.VerticalAlignment = true;
         }
