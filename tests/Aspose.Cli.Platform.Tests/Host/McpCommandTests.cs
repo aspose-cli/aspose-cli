@@ -39,6 +39,8 @@ public sealed class McpCommandTests
     [InlineData("fonts", "check", "input.xlsx")]
     [InlineData("preview", "status")]
     [InlineData("app", "status")]
+    [InlineData("license", "status")]
+    [InlineData("skill", "list")]
     public void Execute_AllowsOnlyDocumentAndReadOnlyHostCommands(
         params string[] args)
     {
@@ -56,6 +58,9 @@ public sealed class McpCommandTests
     [InlineData("preview", "stop")]
     [InlineData("app", "stop")]
     [InlineData("update", "install")]
+    [InlineData("app")]
+    [InlineData("preview", "input.xlsx")]
+    [InlineData("update")]
     public void Execute_RejectsPrivilegedAndLifecycleCommands(
         params string[] args)
     {

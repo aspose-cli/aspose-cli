@@ -85,11 +85,13 @@ aspose-cli preview document.pdf --open
 aspose-cli mcp serve
 ```
 
-App and Preview are loopback browser views for a human; they enforce exact Host, same-origin,
-CSRF and current-user controls. The MCP registration is named `aspose-cli`: its `capabilities`
-tool is read-only, and its `execute` tool runs bounded, allowlisted product commands with the
-same parser as the CLI. Installation, update, licensing and service lifecycle commands are not
-available through MCP.
+App and Preview are loopback browser views for a human on `http://127.0.0.1:<port>`; they
+enforce the exact Host `127.0.0.1:<port>`, same-origin, CSRF and current-user controls. The MCP
+registration is named `aspose-cli`: its `capabilities` tool is read-only, and its `execute` tool
+runs bounded product commands and the read-only host commands `doctor`, `schema`, `docs`,
+`fonts list`, `fonts check`, `license status`, `skill list`, `preview status` and `app status`
+with the same parser as the CLI. Installation, update, license changes and service lifecycle
+commands are not available through MCP.
 
 ## Commercial SDK licensing
 

@@ -36,7 +36,7 @@ internal static class LicenseCommandGroup
             parse,
             globals,
             context => LicenseManager.Inspect(context, parse.GetValue(product))));
-        return status;
+        return status.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
     }
 
     private static Command CreateInstall(
