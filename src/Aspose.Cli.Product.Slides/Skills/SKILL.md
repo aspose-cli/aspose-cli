@@ -52,8 +52,9 @@ the budget, `next` doubles `--max-chars`.
   without `--template`, `slides create` uses the built-in 16:9 design.
 - Markdown authoring fills layout placeholders: `#` becomes a Title Slide, `##`
   a Title and Content slide, and a slide with both text and an image uses Two
-  Content. It sets no colors and no fonts of its own, except a monospace font
-  for code blocks. See [outline authoring](references/outline-authoring.md).
+  Content. It sets no colors or fonts of its own: emphasis becomes bold or
+  italic and code uses a monospace font. See
+  [outline authoring](references/outline-authoring.md).
 - Do not restyle text run by run to fix a look; choose or correct the template.
 - One claim per slide. Keep at most six bullets and two levels; prefer a chart
   or small table over dense prose. Split a slide rather than shrink its text.

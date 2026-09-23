@@ -191,11 +191,7 @@ internal static class SlidesStructuralHandlers
 
     internal static long SetTitle(ISlide slide, string text, ISet<uint> touched)
     {
-        IAutoShape? shape = SlidesPlaceholders.Title(slide);
-        shape ??= slide.Shapes.OfType<IAutoShape>().FirstOrDefault(item =>
-            item.Name.Contains("title", StringComparison.OrdinalIgnoreCase));
-        shape ??= slide.Shapes.AddAutoShape(ShapeType.Rectangle, 54, 36, 612, 72);
-        shape.TextFrame!.Text = text;
+        SlidesAuthoring.Title(slide).TextFrame.Text = text;
         touched.Add(slide.SlideId);
         return 1;
     }
@@ -205,21 +201,13 @@ internal static class SlidesStructuralHandlers
         IReadOnlyList<SlidesParagraphInput> paragraphs,
         ISet<uint> touched)
     {
-        IAutoShape? shape = SlidesPlaceholders.Content(slide).FirstOrDefault();
-        shape ??=slide.Shapes.AddAutoShape(ShapeType.Rectangle, 72, 126, 576, 360);
-        ITextFrame frame = shape.TextFrame!;
-        frame.Paragraphs.Clear();
-        foreach (SlidesParagraphInput input in paragraphs)
-        {
-            var paragraph = new Paragraph { Text = input.Text };
-            paragraph.ParagraphFormat.Depth = (short)input.Level;
-            if (input.Level >= 0)
-            {
-                paragraph.ParagraphFormat.Bullet.Type = BulletType.Symbol;
-            }
-
-            frame.Paragraphs.Add(paragraph);
-        }
+        // Bullets and spacing come from the placeholder's levels, as in PowerPoint.
+        SlidesAuthoring.WriteParagraphs(
+            SlidesAuthoring.Body(slide).TextFrame,
+            paragraphs.Select(static input => new AuthoredParagraph(
+                [new AuthoredRun(input.Text)],
+                input.Level,
+                ParagraphList.Inherit)));
 
         touched.Add(slide.SlideId);
         return paragraphs.Count;

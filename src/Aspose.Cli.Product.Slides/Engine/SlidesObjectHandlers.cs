@@ -32,14 +32,11 @@ internal static class SlidesObjectHandlers
         EnsureFile(op.Path);
         IPPImage image = presentation.Images.AddImage(
             inputs.ReadAllBytes(op.Path));
-        SlidesRectInput rect = op.Rect ?? FitImage(presentation, image);
-        slide.Shapes.AddPictureFrame(
-            ShapeType.Rectangle,
-            (float)rect.X,
-            (float)rect.Y,
-            (float)rect.Width,
-            (float)rect.Height,
-            image);
+        // Without a rectangle the picture keeps its aspect ratio, centered in 80% x 75% of the slide.
+        RectangleF rect = op.Rect is { } given
+            ? new RectangleF((float)given.X, (float)given.Y, (float)given.Width, (float)given.Height)
+            : SlidesAuthoring.Fit(image, SlidesAuthoring.Canvas(slide, new RectangleF(0.1f, 0.125f, 0.8f, 0.75f)));
+        slide.Shapes.AddPictureFrame(ShapeType.Rectangle, rect.X, rect.Y, rect.Width, rect.Height, image);
         touched.Add(slide.SlideId);
         return 1;
     }

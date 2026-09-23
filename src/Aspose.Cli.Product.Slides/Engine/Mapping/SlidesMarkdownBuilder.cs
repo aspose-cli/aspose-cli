@@ -1,3 +1,4 @@
+using System.Drawing;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
@@ -6,17 +7,13 @@ using Aspose.Slides;
 namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 
 /// <summary>
-/// Maps a Markdown outline onto the presentation's own layouts. The builder
-/// only fills title, subtitle and content placeholders; fonts, colors,
-/// backgrounds and geometry always come from the master, layouts and theme,
-/// so a template fully owns the look of the authored deck.
+/// Maps a Markdown outline onto the presentation's own layouts. The builder only
+/// fills title, subtitle and content placeholders; colors, backgrounds, geometry and
+/// fonts come from the master, layouts and theme, so a template fully owns the look.
+/// Emphasis becomes bold or italic runs, and code uses a monospace font.
 /// </summary>
 internal static partial class SlidesMarkdownBuilder
 {
-
-    // A code block is the one semantic that needs a typeface the theme does not name.
-    private const string CodeFont = "Consolas";
-
     public static void Build(
         ResourceBudgetLedger resourceBudgets,
         Presentation presentation,
@@ -36,22 +33,22 @@ internal static partial class SlidesMarkdownBuilder
         foreach (MarkdownSlide item in model)
         {
             ISlide slide = presentation.Slides.AddEmptySlide(LayoutFor(presentation, item));
-            IAutoShape title = SlidesPlaceholders.Title(slide) ?? AddFallbackTitle(slide, presentation);
-            title.Name = "Title";
+            IAutoShape title = SlidesAuthoring.Title(slide);
+            title.Name = SlidesAuthoring.TitleName;
             title.TextFrame.Text = item.Title;
 
             IAutoShape[] content = SlidesPlaceholders.Content(slide, includeSubtitle: item.TitleSlide);
             if (item.Blocks.Count > 0)
             {
-                IAutoShape body = content.FirstOrDefault() ?? AddFallbackBody(slide, presentation);
-                body.Name = "Body";
-                WriteBlocks(body.TextFrame, item.Blocks);
+                IAutoShape body = SlidesAuthoring.Body(slide, includeSubtitle: item.TitleSlide);
+                body.Name = SlidesAuthoring.BodyName;
+                SlidesAuthoring.WriteParagraphs(body.TextFrame, item.Blocks);
                 body.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.Normal;
             }
 
-            if (item.ImagePath is not null)
+            if (item.Image is not null)
             {
-                AddImage(resourceBudgets, presentation, slide, root, item, content);
+                AddImage(resourceBudgets, presentation, slide, root, item.Image, content);
             }
 
             RemoveEmptyPlaceholders(slide);
@@ -73,7 +70,7 @@ internal static partial class SlidesMarkdownBuilder
         foreach (string raw in lines)
         {
             string line = raw.TrimEnd();
-            if (line.StartsWith("```", StringComparison.Ordinal))
+            if (line.TrimStart().StartsWith("```", StringComparison.Ordinal))
             {
                 inCode = !inCode;
                 continue;
@@ -82,7 +79,7 @@ internal static partial class SlidesMarkdownBuilder
             if (inCode)
             {
                 current ??= AddFallback(slides, fallbackTitle, ref pendingSection);
-                current.Blocks.Add(new MarkdownBlock(MarkdownBlockKind.Code, raw, 0));
+                current.Blocks.Add(new AuthoredParagraph([new AuthoredRun(raw, Code: true)], 0, ParagraphList.None));
                 continue;
             }
 
@@ -93,18 +90,26 @@ internal static partial class SlidesMarkdownBuilder
                 continue;
             }
 
-            if (line.StartsWith("# ", StringComparison.Ordinal)
-                || line.StartsWith("## ", StringComparison.Ordinal))
+            if (HeadingPattern().Match(line) is { Success: true } heading)
             {
-                bool titleSlide = line[1] == ' ';
-                current = new MarkdownSlide(
-                    CleanInlineMarkdown(line[(titleSlide ? 2 : 3)..]),
-                    titleSlide)
+                int depth = heading.Groups["marks"].Length;
+                string text = heading.Groups["text"].Value;
+                if (depth <= 2)
                 {
-                    Section = pendingSection,
-                };
-                pendingSection = null;
-                slides.Add(current);
+                    current = new MarkdownSlide(PlainText(text), TitleSlide: depth == 1) { Section = pendingSection };
+                    pendingSection = null;
+                    slides.Add(current);
+                }
+                else
+                {
+                    // Deeper headings are sub-heads inside the current slide's body.
+                    current ??= AddFallback(slides, fallbackTitle, ref pendingSection);
+                    current.Blocks.Add(new AuthoredParagraph(
+                        Inline(text).Select(static run => run with { Bold = true }).ToArray(),
+                        0,
+                        ParagraphList.None));
+                }
+
                 continue;
             }
 
@@ -117,26 +122,29 @@ internal static partial class SlidesMarkdownBuilder
             string trimmed = line.Trim();
             if (ImagePattern().Match(trimmed) is { Success: true } image)
             {
-                current.ImagePath ??= image.Groups["path"].Value.Trim();
+                current.Image ??= new MarkdownImage(
+                    image.Groups["path"].Value,
+                    EmptyToNull(image.Groups["alt"].Value),
+                    EmptyToNull(image.Groups["title"].Value));
             }
             else if (trimmed.StartsWith('>'))
             {
-                current.Blocks.Add(new MarkdownBlock(
-                    MarkdownBlockKind.Quote,
-                    $"“{CleanInlineMarkdown(trimmed[1..])}”",
-                    0));
+                current.Blocks.Add(new AuthoredParagraph(
+                    [new AuthoredRun("“"), .. Inline(trimmed[1..].Trim()), new AuthoredRun("”")],
+                    0,
+                    ParagraphList.None));
             }
-            else if (BulletPattern().Match(line) is { Success: true } bullet)
+            else if (ListPattern().Match(line) is { Success: true } item)
             {
-                int spaces = bullet.Groups["indent"].Value.Replace("\t", "  ", StringComparison.Ordinal).Length;
-                current.Blocks.Add(new MarkdownBlock(
-                    MarkdownBlockKind.Bullet,
-                    CleanInlineMarkdown(bullet.Groups["text"].Value),
-                    Math.Min(spaces / 2, 8)));
+                int spaces = item.Groups["indent"].Value.Replace("\t", "  ", StringComparison.Ordinal).Length;
+                current.Blocks.Add(new AuthoredParagraph(
+                    Inline(item.Groups["text"].Value),
+                    Math.Min(spaces / 2, 8),
+                    item.Groups["number"].Success ? ParagraphList.Numbered : ParagraphList.Inherit));
             }
             else
             {
-                current.Blocks.Add(new MarkdownBlock(MarkdownBlockKind.Paragraph, CleanInlineMarkdown(line), 0));
+                current.Blocks.Add(new AuthoredParagraph(Inline(trimmed), 0, ParagraphList.None));
             }
         }
 
@@ -144,6 +152,53 @@ internal static partial class SlidesMarkdownBuilder
             ? [new MarkdownSlide(fallbackTitle, TitleSlide: true)]
             : slides;
     }
+
+    /// <summary>Inline Markdown as runs: strong, emphasis and code spans; links keep their text.</summary>
+    internal static IReadOnlyList<AuthoredRun> Inline(string text)
+    {
+        var runs = new List<AuthoredRun>();
+        Append(runs, text.Trim(), bold: false, italic: false);
+        return runs.Count == 0 ? [new AuthoredRun(string.Empty)] : runs;
+    }
+
+    private static void Append(List<AuthoredRun> runs, string text, bool bold, bool italic)
+    {
+        int offset = 0;
+        foreach (Match match in InlinePattern().Matches(text))
+        {
+            AppendPlain(runs, text[offset..match.Index], bold, italic);
+            if (match.Groups["code"].Success)
+            {
+                runs.Add(new AuthoredRun(match.Groups["code"].Value, bold, italic, Code: true));
+            }
+            else if (match.Groups["strong"].Success)
+            {
+                Append(runs, match.Groups["strong"].Value, bold: true, italic);
+            }
+            else if (match.Groups["em"].Success)
+            {
+                Append(runs, match.Groups["em"].Value, bold, italic: true);
+            }
+            else
+            {
+                Append(runs, match.Groups["link"].Value, bold, italic);
+            }
+
+            offset = match.Index + match.Length;
+        }
+
+        AppendPlain(runs, text[offset..], bold, italic);
+    }
+
+    private static void AppendPlain(List<AuthoredRun> runs, string text, bool bold, bool italic)
+    {
+        if (text.Length > 0)
+        {
+            runs.Add(new AuthoredRun(text, bold, italic));
+        }
+    }
+
+    private static string PlainText(string text) => string.Concat(Inline(text).Select(static run => run.Text));
 
     private static MarkdownSlide AddFallback(List<MarkdownSlide> slides, string title, ref string? section)
     {
@@ -158,33 +213,11 @@ internal static partial class SlidesMarkdownBuilder
         SlideLayoutType type = item switch
         {
             { TitleSlide: true } => SlideLayoutType.Title,
-            { ImagePath: not null, Blocks.Count: > 0 } => SlideLayoutType.TwoObjects,
-            { ImagePath: null, Blocks.Count: 0 } => SlideLayoutType.TitleOnly,
+            { Image: not null, Blocks.Count: > 0 } => SlideLayoutType.TwoObjects,
+            { Image: null, Blocks.Count: 0 } => SlideLayoutType.TitleOnly,
             _ => SlideLayoutType.TitleAndObject,
         };
         return SlidesPlaceholders.Layout(presentation, type);
-    }
-
-    private static void WriteBlocks(ITextFrame frame, IReadOnlyList<MarkdownBlock> blocks)
-    {
-        frame.Paragraphs.Clear();
-        foreach (MarkdownBlock block in blocks)
-        {
-            var paragraph = new Paragraph();
-            paragraph.Portions.Add(new Portion(block.Text));
-            paragraph.ParagraphFormat.Depth = (short)block.Level;
-            if (block.Kind != MarkdownBlockKind.Bullet)
-            {
-                paragraph.ParagraphFormat.Bullet.Type = BulletType.None;
-            }
-
-            if (block.Kind == MarkdownBlockKind.Code)
-            {
-                paragraph.Portions[0].PortionFormat.LatinFont = new FontData(CodeFont);
-            }
-
-            frame.Paragraphs.Add(paragraph);
-        }
     }
 
     private static void AddImage(
@@ -192,45 +225,37 @@ internal static partial class SlidesMarkdownBuilder
         Presentation presentation,
         ISlide slide,
         string root,
-        MarkdownSlide item,
+        MarkdownImage source,
         IAutoShape[] content)
     {
-        string imagePath = ResolveLocalImage(root, item.ImagePath!);
+        string imagePath = ResolveLocalImage(root, source.Path);
         InputSizeGuard.Ensure(resourceBudgets, imagePath);
         IPPImage image = presentation.Images.AddImage(resourceBudgets.Inputs.ReadAllBytes(imagePath));
 
         // The image takes the frame of the first content placeholder that holds no text.
         IAutoShape? frame = content.FirstOrDefault(static shape => string.IsNullOrEmpty(shape.TextFrame?.Text));
-        float width = presentation.SlideSize.Size.Width;
-        float height = presentation.SlideSize.Size.Height;
-        (float x, float y, float w, float h) = Fit(
+        RectangleF box = SlidesAuthoring.Fit(
             image,
             frame is null
-                ? (width * 0.55f, height * 0.25f, width * 0.38f, height * 0.62f)
-                : (frame.X, frame.Y, frame.Width, frame.Height));
-        IPictureFrame picture = slide.Shapes.AddPictureFrame(ShapeType.Rectangle, x, y, w, h, image);
+                ? SlidesAuthoring.Canvas(slide, new RectangleF(0.55f, 0.25f, 0.38f, 0.62f))
+                : new RectangleF(frame.X, frame.Y, frame.Width, frame.Height));
+        IPictureFrame picture = slide.Shapes.AddPictureFrame(ShapeType.Rectangle, box.X, box.Y, box.Width, box.Height, image);
         picture.Name = "Image";
         picture.PictureFrameLock.AspectRatioLocked = true;
+        if (source.Alt is not null)
+        {
+            picture.AlternativeText = source.Alt;
+        }
+
+        if (source.Title is not null)
+        {
+            picture.AlternativeTextTitle = source.Title;
+        }
+
         if (frame is not null)
         {
             slide.Shapes.Remove(frame);
         }
-    }
-
-    /// <summary>Largest rectangle with the image's aspect ratio, centered in the box.</summary>
-    private static (float X, float Y, float Width, float Height) Fit(
-        IPPImage image,
-        (float X, float Y, float Width, float Height) box)
-    {
-        if (image.Width <= 0 || image.Height <= 0)
-        {
-            return box;
-        }
-
-        float scale = Math.Min(box.Width / image.Width, box.Height / image.Height);
-        float width = image.Width * scale;
-        float height = image.Height * scale;
-        return (box.X + ((box.Width - width) / 2), box.Y + ((box.Height - height) / 2), width, height);
     }
 
     private static void RemoveEmptyPlaceholders(ISlide slide)
@@ -243,28 +268,6 @@ internal static partial class SlidesMarkdownBuilder
         {
             slide.Shapes.Remove(shape);
         }
-    }
-
-    // Templates without a title or content placeholder still get readable, unstyled text boxes.
-    private static IAutoShape AddFallbackTitle(ISlide slide, Presentation presentation)
-    {
-        float width = presentation.SlideSize.Size.Width;
-        float height = presentation.SlideSize.Size.Height;
-        IAutoShape shape = slide.Shapes.AddAutoShape(ShapeType.Rectangle, width * 0.07f, height * 0.06f, width * 0.86f, height * 0.16f);
-        shape.FillFormat.FillType = FillType.NoFill;
-        shape.LineFormat.FillFormat.FillType = FillType.NoFill;
-        return shape;
-    }
-
-    private static IAutoShape AddFallbackBody(ISlide slide, Presentation presentation)
-    {
-        float width = presentation.SlideSize.Size.Width;
-        float height = presentation.SlideSize.Size.Height;
-        IAutoShape shape = slide.Shapes.AddAutoShape(ShapeType.Rectangle, width * 0.07f, height * 0.25f, width * 0.86f, height * 0.65f);
-        shape.FillFormat.FillType = FillType.NoFill;
-        shape.LineFormat.FillFormat.FillType = FillType.NoFill;
-        shape.TextFrame.TextFrameFormat.AnchoringType = TextAnchorType.Top;
-        return shape;
     }
 
     private static string ResolveLocalImage(string root, string value)
@@ -287,44 +290,36 @@ internal static partial class SlidesMarkdownBuilder
         return path;
     }
 
-    private static string CleanInlineMarkdown(string value)
-    {
-        string cleaned = MarkdownLinkPattern().Replace(value.Trim(), "${text}");
-        cleaned = StrongEmphasisPattern().Replace(cleaned, "${text}");
-        cleaned = InlineCodePattern().Replace(cleaned, "${text}");
-        return cleaned;
-    }
+    private static string? EmptyToNull(string value) => string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    [GeneratedRegex(@"^\s*!\[[^\]]*\]\((?<path>[^)]+)\)\s*$", RegexOptions.CultureInvariant)]
+    [GeneratedRegex(@"^(?<marks>#{1,6})\s+(?<text>.+?)\s*#*$", RegexOptions.CultureInvariant)]
+    private static partial Regex HeadingPattern();
+
+    // ![alt](path), ![alt](<path with spaces>) and ![alt](path "title").
+    [GeneratedRegex(@"^!\[(?<alt>[^\]]*)\]\(\s*(?:<(?<path>[^>]+)>|(?<path>[^\s)]+))(?:\s+""(?<title>[^""]*)"")?\s*\)$", RegexOptions.CultureInvariant)]
     private static partial Regex ImagePattern();
 
-    [GeneratedRegex(@"^(?<indent>\s*)[-*]\s+(?<text>.+)$", RegexOptions.CultureInvariant)]
-    private static partial Regex BulletPattern();
+    // Bullets (-, *, +) and ordered items (1. or 1)).
+    [GeneratedRegex(@"^(?<indent>\s*)(?:[-*+]|(?<number>\d{1,9})[.)])\s+(?<text>.+)$", RegexOptions.CultureInvariant)]
+    private static partial Regex ListPattern();
 
-    [GeneratedRegex(@"\[(?<text>[^\]]+)\]\([^)]+\)", RegexOptions.CultureInvariant)]
-    private static partial Regex MarkdownLinkPattern();
-
-    [GeneratedRegex(@"(?:\*\*|__)(?<text>.+?)(?:\*\*|__)", RegexOptions.CultureInvariant)]
-    private static partial Regex StrongEmphasisPattern();
-
-    [GeneratedRegex(@"`(?<text>[^`]+)`", RegexOptions.CultureInvariant)]
-    private static partial Regex InlineCodePattern();
+    // Code spans first, then strong, emphasis and links. Underscore emphasis needs
+    // word boundaries so snake_case identifiers stay intact.
+    [GeneratedRegex(
+        @"`(?<code>[^`]+)`"
+        + @"|\*\*(?<strong>.+?)\*\*|__(?<strong>.+?)__"
+        + @"|\*(?<em>[^*\s](?:[^*]*[^*\s])?)\*|(?<![\p{L}\p{N}_])_(?<em>[^_\s](?:[^_]*[^_\s])?)_(?![\p{L}\p{N}_])"
+        + @"|\[(?<link>[^\]]+)\]\([^)]*\)",
+        RegexOptions.CultureInvariant)]
+    private static partial Regex InlinePattern();
 }
 
-internal enum MarkdownBlockKind
-{
-    Paragraph,
-    Bullet,
-    Quote,
-    Code,
-}
-
-/// <summary>One body paragraph in source order.</summary>
-internal sealed record MarkdownBlock(MarkdownBlockKind Kind, string Text, int Level);
+/// <summary>A local picture referenced by the outline.</summary>
+internal sealed record MarkdownImage(string Path, string? Alt, string? Title);
 
 internal sealed record MarkdownSlide(string Title, bool TitleSlide)
 {
     public string? Section { get; set; }
-    public string? ImagePath { get; set; }
-    public List<MarkdownBlock> Blocks { get; } = [];
+    public MarkdownImage? Image { get; set; }
+    public List<AuthoredParagraph> Blocks { get; } = [];
 }

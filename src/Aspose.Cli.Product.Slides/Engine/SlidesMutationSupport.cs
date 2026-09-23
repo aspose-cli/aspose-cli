@@ -99,22 +99,6 @@ internal static class SlidesMutationSupport
         _ => throw ChartDataInvalid($"Unknown chart kind '{kind}'."),
     };
 
-    internal static SlidesRectInput FitImage(Presentation presentation, IPPImage image)
-    {
-        double maxWidth = presentation.SlideSize.Size.Width * 0.8;
-        double maxHeight = presentation.SlideSize.Size.Height * 0.75;
-        double scale = Math.Min(maxWidth / image.Width, maxHeight / image.Height);
-        double width = image.Width * scale;
-        double height = image.Height * scale;
-        return new SlidesRectInput
-        {
-            X = (presentation.SlideSize.Size.Width - width) / 2,
-            Y = (presentation.SlideSize.Size.Height - height) / 2,
-            Width = width,
-            Height = height,
-        };
-    }
-
     internal static Color ParseColor(string value) => Color.FromArgb(
         int.Parse(value.AsSpan(1, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture),
         int.Parse(value.AsSpan(3, 2), NumberStyles.HexNumber, CultureInfo.InvariantCulture),
