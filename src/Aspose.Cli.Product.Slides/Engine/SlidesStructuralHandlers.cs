@@ -6,6 +6,7 @@ using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
@@ -47,7 +48,7 @@ internal static class SlidesStructuralHandlers
 
         if (slides.Count == presentation.Slides.Count)
         {
-            throw new InvalidOperationException("A presentation must retain at least one slide.");
+            throw new OperationInvalidException("A presentation must retain at least one slide.");
         }
 
         foreach (ISlide slide in slides)
@@ -161,7 +162,7 @@ internal static class SlidesStructuralHandlers
     {
         if (presentation.Sections.Any(section => string.Equals(section.Name, op.Name, StringComparison.Ordinal)))
         {
-            throw new InvalidOperationException($"Section '{op.Name}' already exists.");
+            throw new OperationInvalidException($"Section '{op.Name}' already exists.");
         }
 
         presentation.Sections.AddSection(op.Name, start);

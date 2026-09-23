@@ -137,6 +137,30 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.Single(deck.Slides[0].Shapes.OfType<IAutoShape>(), static shape => shape.TextFrame?.Text == "Final");
     }
 
+    [Fact]
+    public void BodyPlaceholderTarget_ReachesTheContentPlaceholderOfAStandardLayout()
+    {
+        string template = InstalledTemplate("default-16x9.pptx");
+        File.WriteAllText(_workspace.File("outline.md"), "## Results\n- Draft\n");
+        Assert.Equal(0, _workspace.Run(
+            "slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--template", template).ExitCode);
+        File.WriteAllText(
+            _workspace.File("ops.json"),
+            """{"ops":[{"op":"set_text","slide":1,"placeholder":"body","text":"Final"}]}""");
+
+        CliResult edited = _workspace.Run(
+            "slides", "edit", "deck.pptx", "--ops", "ops.json", "--in-place", "--output", "json");
+
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+        using var deck = new Presentation(_workspace.File("deck.pptx"));
+        IAutoShape body = Assert.Single(
+            deck.Slides[0].Shapes.OfType<IAutoShape>(),
+            static shape => shape.Placeholder?.Type == PlaceholderType.Object);
+        Assert.Equal("Final", body.TextFrame.Text);
+        CliResult shapes = _workspace.Run("slides", "query", "slides", "deck.pptx", "--slides", "1", "--output", "json");
+        Assert.Contains("\"role\": \"body\"", shapes.StdOut, StringComparison.Ordinal);
+    }
+
     private string InstalledTemplate(string name)
     {
         CliResult installed = _workspace.Run(

@@ -26,8 +26,9 @@ internal static class EditCommand
         command.SetAction(parse => host.Run(parse, context =>
         {
             string source = parse.GetRequiredValue(ops);
-            SlidesOpsBatch batch = SlidesOpsParser.Parse(
-                JsonInputSource.Read(source, context.Paths, context.Inputs, "--ops"));
+            SlidesOpsBatch batch = SlidesOps.Catalog.Parse<SlidesOpsBatch>(
+                JsonInputSource.Read(source, context.Paths, context.Inputs, "--ops"),
+                ProductJsonContext.Definition);
             batch = NormalizePaths(batch, context);
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             MutationTarget target = output.Resolve(parse, context.Paths, input, requireBackup: true);

@@ -6,6 +6,7 @@ using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
@@ -24,7 +25,7 @@ internal static class SlidesContentHandlers
     {
         if (shape is not IAutoShape { TextFrame: not null } auto)
         {
-            throw new InvalidOperationException($"Shape {shape.OfficeInteropShapeId} has no editable text frame.");
+            throw new OperationInvalidException($"Shape {shape.OfficeInteropShapeId} has no editable text frame.");
         }
 
         auto.TextFrame.Text = text;

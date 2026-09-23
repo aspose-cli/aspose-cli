@@ -17,7 +17,7 @@ public sealed class SlidesModuleTests
     public void OperationBatch_RejectsNullOperations()
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            SlidesOpsParser.Parse("""{"ops":null}"""));
+            ParseOps("""{"ops":null}"""));
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
@@ -49,9 +49,9 @@ public sealed class SlidesModuleTests
     [Fact]
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
-            SlidesOps.Names.Order(StringComparer.Ordinal),
+            SlidesOps.Catalog.Names.Order(StringComparer.Ordinal),
             SlidesContractSamples.SlidesOpsBatch.Ops
-                .Select(static operation => operation.OpName)
+                .Select(SlidesOps.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 
     private static byte[] OpenDocument() => ProductRoutingContract.ZipMarker(
@@ -69,7 +69,7 @@ public sealed class SlidesModuleTests
     public void ReplaceTextScope_RejectsExplicitNullAsAnInvalidOperation()
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            SlidesOpsParser.Parse("""{"ops":[{"op":"replace_text","find":"a","replace":"b","scope":null}]}"""));
+            ParseOps("""{"ops":[{"op":"replace_text","find":"a","replace":"b","scope":null}]}"""));
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
@@ -79,6 +79,19 @@ public sealed class SlidesModuleTests
     public void ShapeStyle_RequiresTheStyleObject(string input)
     {
         Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
-            SlidesOpsParser.Parse("{\"ops\":[" + input + "]}"));
+            ParseOps("{\"ops\":[" + input + "]}"));
     }
+
+    [Theory]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shape":2}""")]
+    [InlineData("""{"op":"update_chart_data","slide":1,"shape":2,"series":[]}""")]
+    [InlineData("""{"op":"set_text","slide":1,"placeholder":"object","text":"x"}""")]
+    public void OperationRules_RejectIncompleteOrUnknownValues(string operation)
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => ParseOps($$"""{"ops":[{{operation}}]}"""));
+        Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    private static SlidesOpsBatch ParseOps(string json) =>
+        SlidesOps.Catalog.Parse<SlidesOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

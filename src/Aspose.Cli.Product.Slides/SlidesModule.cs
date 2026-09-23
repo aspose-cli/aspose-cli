@@ -14,7 +14,7 @@ public sealed class SlidesModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = 1200,
         Operations = ProductOperationDescriptor.ForCommand(
-            SlidesOps.Names,
+            SlidesOps.Catalog.Names,
             "edit",
             "v2/slides/ops",
             atomicByDefault: true,

@@ -3,7 +3,6 @@ using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
-using Aspose.Cli.Product.Slides.Operations;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -53,7 +52,7 @@ internal sealed class SlidesMutationService
         SlidesOpsBatch batch,
         PresentationEditRequest request)
     {
-        batch = SlidesOpsParser.Prepare(batch);
+        batch = SlidesOps.Catalog.Prepare(batch);
         string format = Path.GetExtension(request.OutputPath).TrimStart('.').ToLowerInvariant();
         if (!SlidesFormats.WriteIds.Contains(format, StringComparer.Ordinal))
         {
@@ -69,7 +68,7 @@ internal sealed class SlidesMutationService
         Presentation presentation = loaded.Presentation;
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
-        List<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched);
+        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched);
         EditPublication publication = Publish(presentation, request, format, precondition);
 
         return new SlidesEditResult
@@ -87,70 +86,25 @@ internal sealed class SlidesMutationService
         };
     }
 
-    private List<BoundedOperationOutcome> ApplyOperations(
+    private IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
         Presentation presentation,
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved,
-        bool continueOnError,
-        ISet<uint> touched)
-    {
-        var outcomes = new List<BoundedOperationOutcome>(resolved.Count);
-        for (int index = 0; index < resolved.Count; index++)
-        {
-            SlidesMutationHandlers.ResolvedSlidesOp item = resolved[index];
-            var operationTouched = new SortedSet<uint>();
-            try
+        bool bestEffort,
+        ISet<uint> touched) =>
+        BoundedOperationRunner.Run(
+            SlidesOps.Catalog,
+            resolved.Select(static item => item.Op).ToArray(),
+            bestEffort,
+            deadline: null,
+            (_, index) =>
             {
-                long affected = ApplyResolved(
-                    _resourceBudgets,
-                    _loader,
-                    presentation,
-                    item,
-                    operationTouched);
+                SlidesMutationHandlers.ResolvedSlidesOp item = resolved[index];
+                var operationTouched = new SortedSet<uint>();
+                long affected = ApplyResolved(_resourceBudgets, _loader, presentation, item, operationTouched);
                 touched.UnionWith(operationTouched);
-                outcomes.Add(new BoundedOperationOutcome
-                {
-                    Id = item.Op.Id!,
-                    Index = index,
-                    Op = item.Op.OpName,
-                    Status = "ok",
-                    ItemsAffected = affected,
-                    Targets = OperationTargets(item, operationTouched),
-                });
-            }
-            catch (Exception exception) when (
-                exception is CliException or EngineOpException or InvalidOperationException
-                or ArgumentException or IndexOutOfRangeException or IOException
-                or UnauthorizedAccessException
-                && exception is not CliException { IsInvocationFailure: true })
-            {
-                touched.UnionWith(operationTouched);
-                CliException translated = exception as CliException
-                    ?? InvalidOp(index, item.Op.OpName, exception.Message, exception);
-                if (!continueOnError)
-                {
-                    throw translated;
-                }
-
-                outcomes.Add(new BoundedOperationOutcome
-                {
-                    Id = item.Op.Id!,
-                    Index = index,
-                    Op = item.Op.OpName,
-                    Status = "failed",
-                    ItemsAffected = 0,
-                    Targets = OperationTargets(item, operationTouched),
-                    Error = new OpError
-                    {
-                        Code = translated.Code.Name,
-                        Message = translated.Message,
-                        Hint = translated.Hint ?? "Fix the operation target or value, then retry the batch.",
-                    },
-                });
-            }
-        }
-
-        return outcomes;
-    }
+                return new AppliedOperation(affected, OperationTargets(item, operationTouched));
+            },
+            (_, index) => OperationTargets(resolved[index], []));
 
     private static IReadOnlyList<string> OperationTargets(
         SlidesMutationHandlers.ResolvedSlidesOp item,

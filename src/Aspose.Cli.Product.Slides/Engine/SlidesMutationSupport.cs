@@ -51,7 +51,7 @@ internal static class SlidesMutationSupport
             : op.ShapeName is not null
                 ? slide.Shapes.FirstOrDefault(item => string.Equals(item.Name, op.ShapeName, StringComparison.Ordinal))
                 : slide.Shapes.FirstOrDefault(item =>
-                    string.Equals(PlaceholderRole(item.Placeholder?.Type), op.Placeholder, StringComparison.Ordinal));
+                    string.Equals(SlidesPlaceholders.Role(item.Placeholder?.Type), op.Placeholder, StringComparison.Ordinal));
         if (shape is not null)
         {
             return shape;
@@ -137,12 +137,6 @@ internal static class SlidesMutationSupport
         SlidesDiagnostics.ChartDataInvalid,
         $"Slides chart data is invalid: {reason}",
         hint: "Use matching category and series lengths with a supported chart kind.");
-
-    internal static CliException InvalidOp(int index, string op, string reason, Exception? inner = null) => new(
-        ErrorCodes.OpsInvalid,
-        $"Slides op {index} ({op}) failed: {reason}",
-        hint: "Fix the operation and retry the atomic batch, or use --best-effort for an explicit partial result.",
-        innerException: inner);
 
 }
 

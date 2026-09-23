@@ -93,7 +93,7 @@ internal static class SlidesEngineSupport
                     ShapeId = shape.OfficeInteropShapeId,
                     Name = EmptyToNull(shape.Name),
                     Type = ShapeTypeName(shape),
-                    Role = PlaceholderRole(shape.Placeholder?.Type),
+                    Role = SlidesPlaceholders.Role(shape.Placeholder?.Type),
                     Text = text,
                     Runs = scope == PresentationReadScopes.Full ? Runs(shape, ref remaining, ref contentTruncated) : null,
                     ZOrder = zOrder++,
@@ -235,18 +235,6 @@ internal static class SlidesEngineSupport
         IPictureFrame => "image",
         IGroupShape => "group",
         _ => "shape",
-    };
-
-    internal static string? PlaceholderRole(PlaceholderType? type) => type switch
-    {
-        null => null,
-        PlaceholderType.Title or PlaceholderType.CenteredTitle => "title",
-        PlaceholderType.Body => "body",
-        PlaceholderType.Subtitle => "subtitle",
-        PlaceholderType.Footer => "footer",
-        PlaceholderType.DateAndTime => "date",
-        PlaceholderType.SlideNumber => "slide-number",
-        _ => type.Value.ToString().ToLowerInvariant(),
     };
 
     internal static string? PreviewText(ISlide slide)

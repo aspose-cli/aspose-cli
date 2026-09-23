@@ -6,6 +6,7 @@ using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
@@ -196,7 +197,7 @@ internal static class SlidesStyleHandlers
                     "wipe" => TransitionType.Wipe,
                     "split" => TransitionType.Split,
                     "cover" => TransitionType.Cover,
-                    _ => throw new InvalidOperationException($"Unknown transition '{op.Kind}'."),
+                    _ => throw new OperationInvalidException($"Unknown transition '{op.Kind}'."),
                 };
             }
 

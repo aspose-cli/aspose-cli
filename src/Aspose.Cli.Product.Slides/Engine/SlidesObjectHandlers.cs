@@ -6,6 +6,7 @@ using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
@@ -52,7 +53,7 @@ internal static class SlidesObjectHandlers
             "ellipse" => ShapeType.Ellipse,
             "line" => ShapeType.Line,
             "chevron" => ShapeType.Chevron,
-            _ => throw new InvalidOperationException($"Unknown shape kind '{op.Kind}'."),
+            _ => throw new OperationInvalidException($"Unknown shape kind '{op.Kind}'."),
         };
         IAutoShape shape = slide.Shapes.AddAutoShape(
             type,
@@ -105,12 +106,12 @@ internal static class SlidesObjectHandlers
     {
         if (shape is not ITable table)
         {
-            throw new InvalidOperationException($"Shape {shape.OfficeInteropShapeId} is not a table.");
+            throw new OperationInvalidException($"Shape {shape.OfficeInteropShapeId} is not a table.");
         }
 
         if (op.Row > table.Rows.Count || op.Col > table.Columns.Count)
         {
-            throw new InvalidOperationException(
+            throw new OperationInvalidException(
                 $"Table cell ({op.Row},{op.Col}) exceeds {table.Rows.Count} rows and {table.Columns.Count} columns.");
         }
 
@@ -165,7 +166,7 @@ internal static class SlidesObjectHandlers
     {
         if (shape is not IChart chart)
         {
-            throw new InvalidOperationException($"Shape {shape.OfficeInteropShapeId} is not a chart.");
+            throw new OperationInvalidException($"Shape {shape.OfficeInteropShapeId} is not a chart.");
         }
 
         string[] categories = op.Categories?.ToArray()

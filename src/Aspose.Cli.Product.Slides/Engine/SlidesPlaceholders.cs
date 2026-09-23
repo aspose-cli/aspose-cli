@@ -23,4 +23,20 @@ internal static class SlidesPlaceholders
                 || (includeSubtitle && shape.Placeholder?.Type == PlaceholderType.Subtitle))
             .OrderBy(static shape => shape.Placeholder!.Index)
             .ToArray();
+
+    /// <summary>
+    /// The public role of a placeholder, shared by queries and shape targets. Content
+    /// placeholders report "body" whether the layout typed them as body or object.
+    /// </summary>
+    internal static string? Role(PlaceholderType? type) => type switch
+    {
+        null => null,
+        PlaceholderType.Title or PlaceholderType.CenteredTitle => "title",
+        PlaceholderType.Body or PlaceholderType.Object => "body",
+        PlaceholderType.Subtitle => "subtitle",
+        PlaceholderType.Footer => "footer",
+        PlaceholderType.DateAndTime => "date",
+        PlaceholderType.SlideNumber => "slide-number",
+        _ => type.Value.ToString().ToLowerInvariant(),
+    };
 }

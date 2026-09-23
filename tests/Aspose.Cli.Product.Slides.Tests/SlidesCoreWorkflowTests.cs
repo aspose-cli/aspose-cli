@@ -12,13 +12,13 @@ public sealed class SlidesCoreWorkflowTests
     [Fact]
     public void Parse_AcceptsVersionTwoAndRejectsVersionOne()
     {
-        SlidesOpsBatch batch = SlidesOpsParser.Parse(
+        SlidesOpsBatch batch = ParseOps(
             """{"schemaVersion":2,"ops":[{"op":"set_properties","title":"Briefing"}]}""");
 
         Assert.Equal(2, batch.SchemaVersion);
         Assert.Equal(
             ErrorCodes.OpsInvalid,
-            Assert.Throws<CliException>(() => SlidesOpsParser.Parse(
+            Assert.Throws<CliException>(() => ParseOps(
                 """{"schemaVersion":1,"ops":[{"op":"set_properties","title":"Briefing"}]}""")).Code);
     }
 
@@ -163,4 +163,7 @@ public sealed class SlidesCoreWorkflowTests
         public string Text(string relativePath) =>
             Encoding.UTF8.GetString(Bytes(relativePath));
     }
+
+    private static SlidesOpsBatch ParseOps(string json) =>
+        SlidesOps.Catalog.Parse<SlidesOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

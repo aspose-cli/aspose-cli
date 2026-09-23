@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
 
@@ -9,11 +10,7 @@ public sealed record SlidesOpsBatch : BoundedOperationEnvelope<SlidesOp>;
 
 /// <summary>Base of every Slides operation.</summary>
 [JsonConverter(typeof(Serialization.SlidesOpJsonConverter))]
-public abstract record SlidesOp : BoundedOperation
-{
-    [JsonIgnore]
-    public abstract string OpName { get; }
-}
+public abstract record SlidesOp : BoundedOperation;
 
 /// <summary>A 1-based slide number or stable slide identifier.</summary>
 public abstract record SlideTargetOp : SlidesOp
@@ -67,46 +64,39 @@ public sealed record SlidesChartSeriesInput
 
 public sealed record AddSlideOp : SlidesOp
 {
-    public override string OpName => "add_slide";
     public string? Layout { get; init; }
     public int? At { get; init; }
 }
 
 public sealed record DeleteSlidesOp : SlidesOp
 {
-    public override string OpName => "delete_slides";
     public required string Slides { get; init; }
 }
 
 public sealed record MoveSlideOp : SlideTargetOp
 {
-    public override string OpName => "move_slide";
     public required int To { get; init; }
 }
 
 public sealed record DuplicateSlideOp : SlideTargetOp
 {
-    public override string OpName => "duplicate_slide";
     public int? At { get; init; }
 }
 
 public sealed record SetSlideHiddenOp : SlidesOp
 {
-    public override string OpName => "set_slide_hidden";
     public required string Slides { get; init; }
     public required bool Hidden { get; init; }
 }
 
 public sealed record ApplyLayoutOp : SlidesOp
 {
-    public override string OpName => "apply_layout";
     public required string Slides { get; init; }
     public required string Layout { get; init; }
 }
 
 public sealed record SetBackgroundOp : SlidesOp
 {
-    public override string OpName => "set_background";
     public string? Slides { get; init; }
     public string? Color { get; init; }
     public string? ImagePath { get; init; }
@@ -114,39 +104,33 @@ public sealed record SetBackgroundOp : SlidesOp
 
 public sealed record AddSectionOp : SlidesOp
 {
-    public override string OpName => "add_section";
     public required string Name { get; init; }
     public required int AtSlide { get; init; }
 }
 
 public sealed record AppendPresentationOp : SlidesOp
 {
-    public override string OpName => "append_presentation";
     public required string Path { get; init; }
     public string MasterPolicy { get; init; } = "keep-source";
 }
 
 public sealed record SetTitleOp : SlideTargetOp
 {
-    public override string OpName => "set_title";
     public required string Text { get; init; }
 }
 
 public sealed record SetBodyOp : SlideTargetOp
 {
-    public override string OpName => "set_body";
     public required IReadOnlyList<SlidesParagraphInput> Paragraphs { get; init; }
 }
 
 public sealed record SetTextOp : ShapeTargetOp
 {
-    public override string OpName => "set_text";
     public required string Text { get; init; }
 }
 
 public sealed record SlidesReplaceTextOp : SlidesOp
 {
-    public override string OpName => "replace_text";
     public required string Find { get; init; }
     public required string Replace { get; init; }
     public bool Regex { get; init; }
@@ -156,20 +140,17 @@ public sealed record SlidesReplaceTextOp : SlidesOp
 
 public sealed record SetNotesOp : SlideTargetOp
 {
-    public override string OpName => "set_notes";
     public required string Text { get; init; }
 }
 
 public sealed record SlidesInsertImageOp : SlideTargetOp
 {
-    public override string OpName => "insert_image";
     public required string Path { get; init; }
     public SlidesRectInput? Rect { get; init; }
 }
 
 public sealed record InsertShapeOp : SlideTargetOp
 {
-    public override string OpName => "insert_shape";
     public required string Kind { get; init; }
     public required SlidesRectInput Rect { get; init; }
     public string? Text { get; init; }
@@ -178,7 +159,6 @@ public sealed record InsertShapeOp : SlideTargetOp
 
 public sealed record SlidesInsertTableOp : SlideTargetOp
 {
-    public override string OpName => "insert_table";
     public required SlidesRectInput Rect { get; init; }
     public required int Rows { get; init; }
     public required int Cols { get; init; }
@@ -187,7 +167,6 @@ public sealed record SlidesInsertTableOp : SlideTargetOp
 
 public sealed record SlidesSetTableCellOp : ShapeTargetOp
 {
-    public override string OpName => "set_table_cell";
     public required int Row { get; init; }
     public required int Col { get; init; }
     public required string Text { get; init; }
@@ -195,7 +174,6 @@ public sealed record SlidesSetTableCellOp : ShapeTargetOp
 
 public sealed record InsertChartOp : SlideTargetOp
 {
-    public override string OpName => "insert_chart";
     public required string Kind { get; init; }
     public required SlidesRectInput Rect { get; init; }
     public required IReadOnlyList<string> Categories { get; init; }
@@ -205,25 +183,19 @@ public sealed record InsertChartOp : SlideTargetOp
 
 public sealed record UpdateChartDataOp : ShapeTargetOp
 {
-    public override string OpName => "update_chart_data";
     public IReadOnlyList<string>? Categories { get; init; }
     public IReadOnlyList<SlidesChartSeriesInput>? Series { get; init; }
 }
 
-public sealed record DeleteShapeOp : ShapeTargetOp
-{
-    public override string OpName => "delete_shape";
-}
+public sealed record DeleteShapeOp : ShapeTargetOp;
 
 public sealed record SetShapeStyleOp : ShapeTargetOp
 {
-    public override string OpName => "set_shape_style";
-    public SlidesShapeStyleInput Style { get; init; } = new();
+    public required SlidesShapeStyleInput Style { get; init; }
 }
 
 public sealed record SetFooterOp : SlidesOp
 {
-    public override string OpName => "set_footer";
     public string? Slides { get; init; }
     public string? Text { get; init; }
     public bool? ShowNumber { get; init; }
@@ -232,7 +204,6 @@ public sealed record SetFooterOp : SlidesOp
 
 public sealed record SetTransitionOp : SlidesOp
 {
-    public override string OpName => "set_transition";
     public required string Slides { get; init; }
     public string? Kind { get; init; }
     public int? DurationMs { get; init; }
@@ -240,7 +211,6 @@ public sealed record SetTransitionOp : SlidesOp
 
 public sealed record SlidesSetPropertiesOp : SlidesOp
 {
-    public override string OpName => "set_properties";
     public string? Title { get; init; }
     public string? Author { get; init; }
     public string? Subject { get; init; }
@@ -250,44 +220,38 @@ public sealed record SlidesSetPropertiesOp : SlidesOp
 
 public sealed record SetSlideSizeOp : SlidesOp
 {
-    public override string OpName => "set_slide_size";
     public required string Size { get; init; }
     public bool ScaleContent { get; init; } = true;
 }
 
-/// <summary>Frozen Slides v2 operation registry.</summary>
+/// <summary>The Slides operation vocabulary, in published order.</summary>
 public static class SlidesOps
 {
-    public static IReadOnlyDictionary<string, Type> Registry { get; } =
-        new SortedDictionary<string, Type>(StringComparer.Ordinal)
-        {
-            ["add_section"] = typeof(AddSectionOp),
-            ["add_slide"] = typeof(AddSlideOp),
-            ["append_presentation"] = typeof(AppendPresentationOp),
-            ["apply_layout"] = typeof(ApplyLayoutOp),
-            ["delete_shape"] = typeof(DeleteShapeOp),
-            ["delete_slides"] = typeof(DeleteSlidesOp),
-            ["duplicate_slide"] = typeof(DuplicateSlideOp),
-            ["insert_chart"] = typeof(InsertChartOp),
-            ["insert_image"] = typeof(SlidesInsertImageOp),
-            ["insert_shape"] = typeof(InsertShapeOp),
-            ["insert_table"] = typeof(SlidesInsertTableOp),
-            ["move_slide"] = typeof(MoveSlideOp),
-            ["replace_text"] = typeof(SlidesReplaceTextOp),
-            ["set_background"] = typeof(SetBackgroundOp),
-            ["set_body"] = typeof(SetBodyOp),
-            ["set_footer"] = typeof(SetFooterOp),
-            ["set_notes"] = typeof(SetNotesOp),
-            ["set_properties"] = typeof(SlidesSetPropertiesOp),
-            ["set_shape_style"] = typeof(SetShapeStyleOp),
-            ["set_slide_hidden"] = typeof(SetSlideHiddenOp),
-            ["set_slide_size"] = typeof(SetSlideSizeOp),
-            ["set_table_cell"] = typeof(SlidesSetTableCellOp),
-            ["set_text"] = typeof(SetTextOp),
-            ["set_title"] = typeof(SetTitleOp),
-            ["set_transition"] = typeof(SetTransitionOp),
-            ["update_chart_data"] = typeof(UpdateChartDataOp),
-        };
-
-    public static IReadOnlyList<string> Names { get; } = Registry.Keys.ToArray();
+    public static OperationCatalog<SlidesOp> Catalog { get; } = new OperationCatalog<SlidesOp>(SlidesSchemaIds.Ops, maximumOperations: 256)
+        .Add<AddSectionOp>("add_section", SlidesOpRules.AddSection)
+        .Add<AddSlideOp>("add_slide", SlidesOpRules.AddSlide)
+        .Add<AppendPresentationOp>("append_presentation", SlidesOpRules.AppendPresentation)
+        .Add<ApplyLayoutOp>("apply_layout", SlidesOpRules.ApplyLayout)
+        .Add<DeleteShapeOp>("delete_shape", SlidesOpRules.DeleteShape)
+        .Add<DeleteSlidesOp>("delete_slides", SlidesOpRules.DeleteSlides)
+        .Add<DuplicateSlideOp>("duplicate_slide", SlidesOpRules.DuplicateSlide)
+        .Add<InsertChartOp>("insert_chart", SlidesOpRules.InsertChart)
+        .Add<SlidesInsertImageOp>("insert_image", SlidesOpRules.InsertImage)
+        .Add<InsertShapeOp>("insert_shape", SlidesOpRules.InsertShape)
+        .Add<SlidesInsertTableOp>("insert_table", SlidesOpRules.InsertTable)
+        .Add<MoveSlideOp>("move_slide", SlidesOpRules.MoveSlide)
+        .Add<SlidesReplaceTextOp>("replace_text", SlidesOpRules.ReplaceText)
+        .Add<SetBackgroundOp>("set_background", SlidesOpRules.SetBackground)
+        .Add<SetBodyOp>("set_body", SlidesOpRules.SetBody)
+        .Add<SetFooterOp>("set_footer", SlidesOpRules.SetFooter)
+        .Add<SetNotesOp>("set_notes", SlidesOpRules.SetNotes)
+        .Add<SlidesSetPropertiesOp>("set_properties", SlidesOpRules.SetProperties)
+        .Add<SetShapeStyleOp>("set_shape_style", SlidesOpRules.SetShapeStyle)
+        .Add<SetSlideHiddenOp>("set_slide_hidden", SlidesOpRules.SetSlideHidden)
+        .Add<SetSlideSizeOp>("set_slide_size", SlidesOpRules.SetSlideSize)
+        .Add<SlidesSetTableCellOp>("set_table_cell", SlidesOpRules.SetTableCell)
+        .Add<SetTextOp>("set_text", SlidesOpRules.SetText)
+        .Add<SetTitleOp>("set_title", SlidesOpRules.SetTitle)
+        .Add<SetTransitionOp>("set_transition", SlidesOpRules.SetTransition)
+        .Add<UpdateChartDataOp>("update_chart_data", SlidesOpRules.UpdateChartData);
 }
