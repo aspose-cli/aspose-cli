@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Slides.Contracts;

@@ -1,12 +1,10 @@
 using System.Drawing;
 using System.Globalization;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;

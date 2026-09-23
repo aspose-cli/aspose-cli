@@ -1,17 +1,14 @@
 using System.Data;
 using System.Drawing;
-using System.Globalization;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
-using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
 using Aspose.Words.Lists;
 using Aspose.Words.Replacing;

@@ -1,4 +1,3 @@
-using System.Data;
 using System.Drawing;
 using System.Globalization;
 using System.Text;
@@ -10,7 +9,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
-using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
 using Aspose.Words.Lists;
 using Aspose.Words.Replacing;

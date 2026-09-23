@@ -1,4 +1,3 @@
-using System.Globalization;
 using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
@@ -11,7 +10,6 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
-using Aspose.Slides.Export;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
