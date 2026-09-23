@@ -1,6 +1,7 @@
 using System.Text;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Pdf;
 using Aspose.Pdf.Text;
 using Xunit;
