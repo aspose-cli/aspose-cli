@@ -12,6 +12,10 @@
     <PackageReference Include="SkiaSharp.NativeAssets.Linux" />
   </ItemGroup>
   <ItemGroup>
+    <!-- The design every new document starts from when no template is given. -->
+    <EmbeddedResource Include="Engine\Templates\default-a4.docx" LogicalName="Templates/default-a4.docx" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Aspose.Cli.Product.Words.Tests" />
   </ItemGroup>
 </Project>

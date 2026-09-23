@@ -145,20 +145,13 @@ internal static class WordsContentOpHandlers
     internal static long InsertMarkdown(Document document, Node anchor, InsertMarkdownOp op, Document markdown)
     {
         Node cursor = anchor;
-        int count = 0;
-        foreach (Node child in markdown.FirstSection.Body.GetChildNodes(NodeType.Any, false))
+        IReadOnlyList<Node> blocks = WordsMarkdownImport.Blocks(document, markdown);
+        foreach (Node block in blocks)
         {
-            if (child is not Paragraph and not Table)
-            {
-                continue;
-            }
-
-            Node imported = document.ImportNode(child, true, ImportFormatMode.KeepSourceFormatting);
-            InsertRelative(anchor, ref cursor, imported, op.Position);
-            count++;
+            InsertRelative(anchor, ref cursor, block, op.Position);
         }
 
-        return count;
+        return blocks.Count;
     }
 
     internal static long Delete(IReadOnlyList<Node> nodes)

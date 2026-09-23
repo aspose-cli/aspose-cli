@@ -73,37 +73,49 @@ internal static class WordsStructureOpHandlers
         return sections.Count;
     }
 
-    internal static long SetHeader(Document document, IReadOnlyList<Section> sections, SetHeaderOp op) =>
-        SetHeaderFooter(document, sections, op.Kind, op.Paragraphs, op.Markdown, isHeader: true);
-
-    internal static long SetFooter(Document document, IReadOnlyList<Section> sections, SetFooterOp op) =>
-        SetHeaderFooter(document, sections, op.Kind, op.Paragraphs, op.Markdown, isHeader: false);
-
+    /// <summary>
+    /// Replaces one kind of header or footer in each section with plain paragraphs or imported
+    /// Markdown. A first-page or even-page kind also turns on the section setting that shows it.
+    /// </summary>
     internal static long SetHeaderFooter(
         Document document,
         IReadOnlyList<Section> sections,
         string kind,
         IReadOnlyList<string>? paragraphs,
-        string? markdown,
+        Document? markdown,
         bool isHeader)
     {
         HeaderFooterType type = HeaderFooterTypeOf(kind, isHeader);
         foreach (Section section in sections)
         {
-            HeaderFooter? current = section.HeadersFooters[type];
-            current?.Remove();
+            section.HeadersFooters[type]?.Remove();
             var replacement = new HeaderFooter(document, type);
             section.HeadersFooters.Add(replacement);
-            foreach (string text in paragraphs ?? MarkdownLines(markdown!))
+            IEnumerable<Node> blocks = markdown is null
+                ? paragraphs!.Select(text =>
+                {
+                    var paragraph = new Paragraph(document);
+                    paragraph.AppendChild(new Run(document, text));
+                    return (Node)paragraph;
+                })
+                : WordsMarkdownImport.Blocks(document, markdown);
+            foreach (Node block in blocks)
             {
-                var paragraph = new Paragraph(document);
-                paragraph.AppendChild(new Run(document, text));
-                replacement.AppendChild(paragraph);
+                replacement.AppendChild(block);
             }
 
             if (!replacement.HasChildNodes)
             {
                 replacement.AppendChild(new Paragraph(document));
+            }
+
+            if (kind == "first")
+            {
+                section.PageSetup.DifferentFirstPageHeaderFooter = true;
+            }
+            else if (kind == "even")
+            {
+                section.PageSetup.OddAndEvenPagesHeaderFooter = true;
             }
         }
 

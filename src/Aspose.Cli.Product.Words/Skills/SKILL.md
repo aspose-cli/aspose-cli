@@ -51,10 +51,9 @@ when that block alone exceeded the budget, `next` doubles `--max-chars`.
   `--text` supplies the body. Markdown headings map to Heading 1-6, quotes to
   Quote, lists to list paragraphs; only bold, italic and strike-through from
   the Markdown survive as direct formatting.
-- Use the user's template when one exists; otherwise the bundled
-  [default A4 template](assets/templates/default-a4.docx) (path relative to
-  this Skill directory). Without `--template`, the SDK's plain default styles
-  are used.
+- Use the user's template when one exists; without `--template`,
+  `words create` uses the built-in A4 design. `insert_markdown` and Markdown
+  headers or footers import the same way, into the edited document's styles.
 - Structure with built-in Heading styles; they drive navigation and TOC. Use
   `set_style`, `define_style`, `insert_toc` and `set_page_numbers` rather than
   run-by-run formatting.

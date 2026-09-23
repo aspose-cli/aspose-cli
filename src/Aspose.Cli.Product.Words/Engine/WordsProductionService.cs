@@ -177,9 +177,9 @@ internal sealed class WordsProductionService
     }
 
     /// <summary>
-    /// A template supplies styles, page setup, headers and footers; Markdown or
-    /// text supplies the body. Content is imported with the destination's
-    /// styles, so the template alone owns the look of the created document.
+    /// A template (the built-in A4 design unless one is given) supplies styles, page setup,
+    /// headers and footers; Markdown or text supplies the body. Content takes the
+    /// destination's styles, so the template alone owns the look of the created document.
     /// </summary>
     private CreatedDocument Create(NewDocumentRequest request)
     {
@@ -192,25 +192,24 @@ internal sealed class WordsProductionService
                 sources.Add(template);
             }
 
-            Document? content = null;
+            Document document = template?.Document ?? WordsDocumentLoader.OpenDefaultTemplate();
             if (request.MarkdownPath is not null)
             {
                 LoadedDocument markdown = _loader.Open(request.MarkdownPath, null);
                 sources.Add(markdown);
-                content = markdown.Document;
-                KeepOnlyExpressedEmphasis(content);
+                ReplaceBody(document, WordsMarkdownImport.Blocks(document, markdown.Document));
             }
             else if (request.TextPath is not null)
             {
-                content = WordsDocumentLoader.CreateBlank(policySource: null);
-                new DocumentBuilder(content).Write(_inputs.ReadTextFile(request.TextPath));
-            }
-
-            Document document = template?.Document ?? WordsDocumentLoader.CreateBlank(content);
-
-            if (content is not null)
-            {
-                ReplaceBody(document, content);
+                ReplaceBody(document, _inputs.ReadTextFile(request.TextPath)
+                    .Split(["\r\n", "\n", "\r"], StringSplitOptions.None)
+                    .Select(line =>
+                    {
+                        var paragraph = new Paragraph(document);
+                        paragraph.AppendChild(new Run(document, line));
+                        return (Node)paragraph;
+                    })
+                    .ToArray());
             }
 
             ApplyTitle(document, request.Title);
@@ -223,37 +222,7 @@ internal sealed class WordsProductionService
         }
     }
 
-    /// <summary>
-    /// The Markdown reader stores "no emphasis" as explicit false bold, italic
-    /// and strike-through on every run, which would override the destination's
-    /// heading styles. Only emphasis the Markdown actually expressed and each
-    /// run's character style (inline code, hyperlinks) are kept.
-    /// </summary>
-    private static void KeepOnlyExpressedEmphasis(Document markdown)
-    {
-        foreach (Run run in markdown.GetChildNodes(NodeType.Run, isDeep: true).OfType<Run>())
-        {
-            KeepOnlyExpressedEmphasis(run.Font);
-        }
-
-        foreach (Paragraph paragraph in markdown.GetChildNodes(NodeType.Paragraph, isDeep: true).OfType<Paragraph>())
-        {
-            KeepOnlyExpressedEmphasis(paragraph.ParagraphBreakFont);
-        }
-    }
-
-    private static void KeepOnlyExpressedEmphasis(Aspose.Words.Font font)
-    {
-        (bool bold, bool italic, bool strike, string characterStyle) =
-            (font.Bold, font.Italic, font.StrikeThrough, font.StyleName);
-        font.ClearFormatting();
-        font.StyleName = characterStyle;
-        if (bold) { font.Bold = true; }
-        if (italic) { font.Italic = true; }
-        if (strike) { font.StrikeThrough = true; }
-    }
-
-    private static void ReplaceBody(Document destination, Document content)
+    private static void ReplaceBody(Document destination, IReadOnlyList<Node> blocks)
     {
         while (destination.Sections.Count > 1)
         {
@@ -262,14 +231,12 @@ internal sealed class WordsProductionService
 
         Body body = destination.FirstSection.Body;
         body.RemoveAllChildren();
-        Paragraph anchor = body.AppendParagraph(string.Empty);
-        var builder = new DocumentBuilder(destination);
-        builder.MoveTo(anchor);
-        builder.InsertDocument(content, ImportFormatMode.UseDestinationStyles);
-        if (body.Paragraphs.Count > 1 && body.LastParagraph is { HasChildNodes: false } trailing)
+        foreach (Node block in blocks)
         {
-            trailing.Remove();
+            body.AppendChild(block);
         }
+
+        destination.FirstSection.EnsureMinimum();
     }
 
     private static void ApplyTitle(Document document, string? title)

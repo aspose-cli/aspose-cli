@@ -42,8 +42,6 @@ internal static class WordsOpHandlers
             [typeof(AddSectionOp)] = static (d, r, _) => WordsStructureOpHandlers.AddSection(d, (AddSectionOp)r.Op, r.Sections.FirstOrDefault()),
             [typeof(DeleteSectionOp)] = static (d, r, _) => WordsStructureOpHandlers.DeleteSection(d, r.Sections[0]),
             [typeof(SetPageSetupOp)] = static (d, r, _) => WordsStructureOpHandlers.SetPageSetup(r.Sections, (SetPageSetupOp)r.Op),
-            [typeof(SetHeaderOp)] = static (d, r, _) => WordsStructureOpHandlers.SetHeader(d, r.Sections, (SetHeaderOp)r.Op),
-            [typeof(SetFooterOp)] = static (d, r, _) => WordsStructureOpHandlers.SetFooter(d, r.Sections, (SetFooterOp)r.Op),
             [typeof(SetPageNumbersOp)] = static (d, r, _) => WordsStructureOpHandlers.SetPageNumbers(d, r.Sections, (SetPageNumbersOp)r.Op),
             [typeof(FormatTextOp)] = static (_, r, _) => WordsFormattingOpHandlers.FormatText(r.Nodes, (FormatTextOp)r.Op),
             [typeof(SetStyleOp)] = static (d, r, _) => WordsFormattingOpHandlers.SetStyle(d, r.Nodes, (SetStyleOp)r.Op),

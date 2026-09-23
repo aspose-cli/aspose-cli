@@ -8,12 +8,12 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsSkillExampleTests
 {
     [Fact]
-    public void ReportExampleUsesBundledTemplateAndPreservesItsTable()
+    public void ReportExampleUsesTheBuiltInDesignAndPreservesItsTable()
     {
         using var workspace = new TempWorkspace();
         string directory = InstalledSkillExample.Run(workspace, "aspose-cli-words", "report-from-markdown").Directory;
         var report = new Document(Path.Combine(directory, "report.docx"));
-        var template = new Document(Path.Combine(directory, "../../assets/templates/default-a4.docx"));
+        Document template = Aspose.Cli.Product.Words.Engine.Mapping.WordsDocumentLoader.OpenDefaultTemplate();
 
         Assert.Contains("Quarterly Report", report.Range.Text, StringComparison.Ordinal);
         Assert.Contains("Summary", report.Range.Text, StringComparison.Ordinal);

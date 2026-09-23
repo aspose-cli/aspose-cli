@@ -3,10 +3,12 @@
 ## Template
 
 The template carries the design: Normal and Heading styles, page size and
-margins, headers, footers and page numbers. The bundled
-`assets/templates/default-a4.docx` provides A4 pages, Calibri body text with
+margins, headers, footers and page numbers. Without `--template`,
+`words create` uses the built-in A4 design: A4 pages, Calibri body text with
 Microsoft YaHei for CJK text, navy and teal headings with a rule under
 Heading 1, a teal-barred Quote style and a centered page number.
+`words create base.docx` writes that design as a starting point for a brand
+template.
 
 To change the look, edit the template in Word once and reuse it. Do not
 correct a design paragraph by paragraph.

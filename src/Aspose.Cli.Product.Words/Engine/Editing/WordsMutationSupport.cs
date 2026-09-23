@@ -130,10 +130,6 @@ internal static class WordsMutationSupport
         _ => throw Invalid($"unknown alignment '{alignment}'"),
     };
 
-    internal static IEnumerable<string> MarkdownLines(string markdown) =>
-        markdown.Split(["\r\n", "\n"], StringSplitOptions.None)
-            .Select(static line => line.TrimStart('#', ' '));
-
     internal static Color ParseColor(string value)
     {
         try

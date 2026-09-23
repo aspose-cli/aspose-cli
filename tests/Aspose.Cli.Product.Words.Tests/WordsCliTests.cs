@@ -89,18 +89,12 @@ public sealed class WordsCliTests : IDisposable
     }
 
     [Fact]
-    public void CreateFromMarkdown_TakesStylesPageSetupAndFooterFromTheBundledTemplate()
+    public void CreateFromMarkdown_TakesStylesPageSetupAndFooterFromTheBuiltInDesign()
     {
-        CliResult installed = _workspace.Run(
-            "skill", "install", "aspose-cli-words", "--target", "skills", "--output", "json");
-        Assert.True(installed.ExitCode == 0, installed.StdErr);
-        string template = _workspace.File(
-            Path.Combine("skills", "aspose-cli-words", "assets", "templates", "default-a4.docx"));
         File.WriteAllText(_workspace.File("brief.md"), "# Brief\n\nPlain **bold** and `code`.\n");
 
         CliResult created = _workspace.Run(
-            "words", "create", "brief.docx", "--markdown", "brief.md",
-            "--template", template, "--output", "json");
+            "words", "create", "brief.docx", "--markdown", "brief.md", "--output", "json");
 
         Assert.True(created.ExitCode == 0, created.StdErr);
         var document = new Document(_workspace.File("brief.docx"));

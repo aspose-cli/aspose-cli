@@ -125,6 +125,12 @@ internal static class WordsOpsExecutor
                         InsertMarkdownOp markdown =>
                             WordsContentOpHandlers.InsertMarkdown(document, item.Nodes[0], markdown,
                                 loader.OpenMarkdown(markdown.Markdown, loaded)),
+                        SetHeaderOp header => WordsStructureOpHandlers.SetHeaderFooter(
+                            document, item.Sections, header.Kind, header.Paragraphs,
+                            header.Markdown is null ? null : loader.OpenMarkdown(header.Markdown, loaded), isHeader: true),
+                        SetFooterOp footer => WordsStructureOpHandlers.SetHeaderFooter(
+                            document, item.Sections, footer.Kind, footer.Paragraphs,
+                            footer.Markdown is null ? null : loader.OpenMarkdown(footer.Markdown, loaded), isHeader: false),
                         AppendDocumentOp append => WordsStructureOpHandlers.AppendDocument(document, append, loader),
                         MailMergeOp merge => WordsObjectOpHandlers.MailMerge(document, merge, inputs, loader),
                         InsertTableOp table => WordsTableOpHandlers.InsertTable(document, item.Nodes[0], table, loader),

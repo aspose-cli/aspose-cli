@@ -25,6 +25,19 @@ internal sealed class WordsDocumentLoader
     internal static Document CreateBlank(Document? policySource) =>
         new() { ResourceLoadingCallback = policySource?.ResourceLoadingCallback ?? DenyAllResources.Instance };
 
+    /// <summary>
+    /// Opens the built-in A4 design that new documents use without a template. It is a
+    /// product resource, so it loads under the deny-all resource policy.
+    /// </summary>
+    internal static Document OpenDefaultTemplate()
+    {
+        using Stream stream = typeof(WordsDocumentLoader).Assembly.GetManifestResourceStream(DefaultTemplateResource)
+            ?? throw new InvalidOperationException($"The built-in resource {DefaultTemplateResource} is missing.");
+        return new Document(stream, new LoadOptions { ResourceLoadingCallback = DenyAllResources.Instance });
+    }
+
+    private const string DefaultTemplateResource = "Templates/default-a4.docx";
+
     public LoadedDocument Open(string path, string? password)
     {
         InputSizeGuard.Ensure(_resourceBudgets, path);

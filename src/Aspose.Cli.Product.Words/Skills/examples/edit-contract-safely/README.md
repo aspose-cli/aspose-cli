@@ -5,7 +5,7 @@ examples/edit-contract-safely. [contract.md](contract.md) is a synthetic contrac
 [update-ops.json](update-ops.json) changes its notice period and adds a comment.
 
 ```powershell
-aspose-cli words create contract.docx --markdown contract.md --template ../../assets/templates/default-a4.docx --output json
+aspose-cli words create contract.docx --markdown contract.md --output json
 aspose-cli words inspect contract.docx --detail outline bookmarks comments --output json
 aspose-cli words edit contract.docx --ops update-ops.json --out contract.review.docx --track-changes --author "Legal Ops" --verify --output json
 aspose-cli words inspect contract.review.docx --detail comments --output json
