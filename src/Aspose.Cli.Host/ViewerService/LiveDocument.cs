@@ -261,6 +261,14 @@ internal sealed class LiveDocument : IDisposable
                 if (_disposed) { return; }
                 Report(Volatile.Read(ref _revision), ErrorCodes.OperationTimeout.Name, "The render deadline expired.");
             }
+            catch (Exception exception)
+            {
+                // This thread serves every open document of the per-user service; one failed
+                // background round must not end the process. The last good revision stays live.
+                if (_disposed) { return; }
+                Report(Volatile.Read(ref _revision), ErrorCodes.Internal.Name,
+                    $"The render failed unexpectedly ({exception.GetType().Name}).");
+            }
         }
     }
 
@@ -310,16 +318,24 @@ internal sealed class LiveDocument : IDisposable
                 Publish(revision, directory, response, timer.ElapsedMilliseconds);
                 return response;
             }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or CliException)
+            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or CliException
+                or InvalidDataException or System.Text.Json.JsonException)
             {
                 if (exception is CliException termination && termination.Code == ErrorCodes.WorkerTerminationFailed)
                 {
                     _preserveStorage = true;
                     // An unconfirmed producer must also prevent the session owner's stale sweep.
-                    File.WriteAllText(Path.Combine(_root, ".worker-unconfirmed"), termination.Message);
+                    try { File.WriteAllText(Path.Combine(_root, ".worker-unconfirmed"), termination.Message); }
+                    catch (Exception marker) when (marker is IOException or UnauthorizedAccessException) { }
                 }
                 else { LocalFileCleanup.DeleteDirectory(directory); }
-                string code = exception is CliException cli ? cli.Code.Name : ErrorCodes.FileNotFound.Name;
+                string code = exception switch
+                {
+                    CliException cli => cli.Code.Name,
+                    // The worker produced a bundle that failed manifest validation.
+                    InvalidDataException or System.Text.Json.JsonException => ErrorCodes.RenderFailed.Name,
+                    _ => ErrorCodes.FileNotFound.Name,
+                };
                 Report(revision, code, exception.Message);
                 return new RenderWorkerResponse { Id = 0, Ok = false, Code = code,
                     Exit = (int)(exception is CliException failure ? failure.ExitCode : ExitCode.InputError),
