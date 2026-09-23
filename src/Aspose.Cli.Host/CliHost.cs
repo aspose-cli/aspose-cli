@@ -27,7 +27,7 @@ public static class CliHost
             var host = new HostContext(catalog, TimeoutWorkerSupervisor.ReceiveOutputSession());
             ConfigureConsole();
             ConfigureUiCulture();
-            args = NormalizeInteractiveArguments(args, IsInteractiveDesktop());
+            args = NormalizeInteractiveArguments(args, IsInteractiveDesktop(), host.Parser);
             return ProcessFailureBoundary.Run(host, args, arguments =>
             {
                 ParsedInvocation invocation = host.Parser.Parse(arguments);
@@ -59,9 +59,16 @@ public static class CliHost
         && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI"))
         && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"));
 
+    /// <summary>
+    /// A double-click, or dropping a file on the executable, opens the App. A
+    /// lone argument names a file to open only when it is not already a
+    /// command line, so <c>aspose-cli doctor</c> stays the doctor even in a
+    /// folder that holds a file named <c>doctor</c>.
+    /// </summary>
     internal static string[] NormalizeInteractiveArguments(
         string[] args,
-        bool interactiveDesktop)
+        bool interactiveDesktop,
+        InvocationParser parser)
     {
         if (!interactiveDesktop)
         {
@@ -73,7 +80,9 @@ public static class CliHost
             return ["app"];
         }
 
-        return args.Length == 1 && File.Exists(args[0])
+        return args.Length == 1
+            && File.Exists(args[0])
+            && parser.Parse(args).ParseResult.Errors.Count > 0
             ? ["app", args[0]]
             : args;
     }

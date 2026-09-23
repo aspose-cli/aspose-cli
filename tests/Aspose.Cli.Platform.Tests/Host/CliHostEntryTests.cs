@@ -1,8 +1,14 @@
 using Aspose.Cli.Host;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
 
+/// <summary>Runs alone: one case changes the process working directory.</summary>
+[CollectionDefinition("Process working directory", DisableParallelization = true)]
+public sealed class ProcessWorkingDirectoryCollection;
+
+[Collection("Process working directory")]
 public sealed class CliHostEntryTests
 {
     [Fact]
@@ -10,7 +16,7 @@ public sealed class CliHostEntryTests
     {
         Assert.Equal(
             ["app"],
-            CliHost.NormalizeInteractiveArguments([], interactiveDesktop: true));
+            Normalize([], interactiveDesktop: true));
     }
 
     [Fact]
@@ -21,7 +27,7 @@ public sealed class CliHostEntryTests
         {
             Assert.Equal(
                 ["app", path],
-                CliHost.NormalizeInteractiveArguments([path], interactiveDesktop: true));
+                Normalize([path], interactiveDesktop: true));
         }
         finally
         {
@@ -38,7 +44,7 @@ public sealed class CliHostEntryTests
             string[] args = [path];
             Assert.Same(
                 args,
-                CliHost.NormalizeInteractiveArguments(args, interactiveDesktop: false));
+                Normalize(args, interactiveDesktop: false));
         }
         finally
         {
@@ -54,6 +60,30 @@ public sealed class CliHostEntryTests
         string[] args = [argument];
         Assert.Same(
             args,
-            CliHost.NormalizeInteractiveArguments(args, interactiveDesktop: true));
+            Normalize(args, interactiveDesktop: true));
     }
+
+    [Theory]
+    [InlineData("doctor")]
+    [InlineData("capabilities")]
+    [InlineData("--version")]
+    public void InteractiveDesktop_KeepsACommandThatIsAlsoAnExistingFile(string command)
+    {
+        using var temp = new TempDirectory();
+        string previous = Directory.GetCurrentDirectory();
+        File.WriteAllText(temp.File(command), "not a document");
+        Directory.SetCurrentDirectory(temp.Path);
+        try
+        {
+            string[] args = [command];
+            Assert.Same(args, Normalize(args, interactiveDesktop: true));
+        }
+        finally
+        {
+            Directory.SetCurrentDirectory(previous);
+        }
+    }
+
+    private static string[] Normalize(string[] args, bool interactiveDesktop) =>
+        CliHost.NormalizeInteractiveArguments(args, interactiveDesktop, ActualCommandTree.Parser);
 }
