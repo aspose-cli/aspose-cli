@@ -184,7 +184,7 @@ internal static class WordsOpRules
     /// structure would change silently, and resolving revisions is not itself an edit.
     /// </summary>
     internal static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
-        or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp or InsertImageOp or InsertTableOp
+        or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp { Kind: "page" } or InsertImageOp or InsertTableOp
         or SetTableCellOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
         or AddCommentOp or RemoveCommentsOp or AppendDocumentOp;
 

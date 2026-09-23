@@ -24,25 +24,30 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// <summary>Owns section, page, header and document-structure mutations.</summary>
 internal static class WordsStructureOpHandlers
 {
+    /// <summary>
+    /// Adds an empty section that starts with the page setup of its neighbour (the section it
+    /// follows, or the first section for <c>start</c>), as Word does, instead of SDK defaults.
+    /// Without its own headers and footers it continues its neighbour's.
+    /// </summary>
     internal static long AddSection(Document document, AddSectionOp op, Section? after)
     {
-        var section = new Section(document);
-        section.AppendChild(new Body(document));
-        section.EnsureMinimum();
-        if (op.Position == "after")
+        Section reference = op.Position switch
         {
-            Section existing = after
-                ?? throw Invalid("add_section position 'after' requires an original section target");
-            document.InsertAfter(section, existing);
-        }
-        else if (op.Position == "start")
+            "after" => after ?? throw Invalid("add_section position 'after' requires an original section target"),
+            "start" => document.FirstSection,
+            _ => document.LastSection,
+        };
+        Section section = EmptyLike(reference);
+        if (op.Position == "start")
         {
             document.PrependChild(section);
         }
         else
         {
-            document.AppendChild(section);
+            document.InsertAfter(section, reference);
         }
+
+        section.EnsureMinimum();
 
         if (op.PageSetup is not null)
         {
@@ -50,6 +55,44 @@ internal static class WordsStructureOpHandlers
         }
 
         return 1;
+    }
+
+    /// <summary>
+    /// Splits the anchor's section at a block boundary: the blocks from the boundary on move
+    /// into a new section with the same page setup, which continues the headers and footers.
+    /// </summary>
+    internal static long InsertSectionBreak(Node anchor, string position)
+    {
+        var owner = (Section)anchor.GetAncestor(NodeType.Section);
+        Section section = EmptyLike(owner);
+        owner.ParentNode!.InsertAfter(section, owner);
+        for (Node? node = position == "before" ? anchor : anchor.NextSibling; node is not null;)
+        {
+            Node? next = node.NextSibling;
+            section.Body.AppendChild(node);
+            node = next;
+        }
+
+        EndWithParagraph(owner.Body);
+        EndWithParagraph(section.Body);
+        return 1;
+    }
+
+    private static Section EmptyLike(Section reference)
+    {
+        // A shallow clone copies the section properties (page setup, columns, numbering) only.
+        var section = (Section)reference.Clone(false);
+        section.AppendChild(new Body(reference.Document));
+        return section;
+    }
+
+    // A body must end with a paragraph, which also carries the section break.
+    private static void EndWithParagraph(Body body)
+    {
+        if (body.LastChild is not Paragraph)
+        {
+            body.AppendChild(new Paragraph(body.Document));
+        }
     }
 
     internal static long DeleteSection(Document document, Section section)

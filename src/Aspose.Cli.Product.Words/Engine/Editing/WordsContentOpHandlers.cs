@@ -168,12 +168,7 @@ internal static class WordsContentOpHandlers
     {
         if (op.Kind == "section")
         {
-            var section = new Section(document);
-            section.AppendChild(new Body(document));
-            Section owner = (Section)anchor.GetAncestor(NodeType.Section);
-            owner.ParentNode!.InsertAfter(section, owner);
-            section.EnsureMinimum();
-            return 1;
+            return WordsStructureOpHandlers.InsertSectionBreak(anchor, op.Position);
         }
 
         var paragraph = new Paragraph(document);

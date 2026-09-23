@@ -47,7 +47,7 @@ aspose-cli schema v2/words/ops
 - `--best-effort` saves successful operations even when others fail; those
   partial results exit 8. Without it, an operation failure aborts the batch.
 - `--track-changes` requires `--author` and records content insertions and
-  deletions: `replace_text`, `set_text`, `insert_*`, `delete_blocks`,
+  deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not section breaks), `delete_blocks`,
   `set_table_cell`, `append_document`, and the review annotations `add_comment`
   and `remove_comments`. Other operations (formatting, styles, lists, page setup,
   properties, protection, headers and footers, sections, watermarks, mail merge,
@@ -64,7 +64,7 @@ aspose-cli schema v2/words/ops
 | `insert_paragraphs` | Insert structured paragraphs before or after an original block. |
 | `insert_markdown` | Import Markdown blocks before or after an original block. |
 | `delete_blocks` | Delete original paragraph/table blocks after conflict validation. |
-| `insert_break` | Insert a page or section break at a block boundary. |
+| `insert_break` | Insert a page break, or split the section at a block boundary; the new section keeps the page setup and continues the headers and footers. |
 | `insert_image` | Insert an inline or floating local image with optional dimensions. |
 | `insert_table` | Insert a table with bounded row/column data. |
 | `set_table_cell` | Replace one 1-based cell in a targeted table block. |
@@ -72,7 +72,7 @@ aspose-cli schema v2/words/ops
 | `insert_bookmark` | Bookmark the complete visible text of a paragraph. |
 | `insert_hyperlink` | Insert a hyperlink paragraph at a block boundary. |
 | `insert_field` | Insert an explicit Word field code at a block boundary. |
-| `add_section` | Add a section at the start, end or after a numbered section. |
+| `add_section` | Add an empty section at the start, end or after a numbered section, with its neighbour's page setup. |
 | `delete_section` | Delete a section, but never the document's final section. |
 | `set_page_setup` | Set size (`a3`, `a4`, `a5`, `letter`, or `legal`, lowercase only), orientation, margins and columns on one or all sections. |
 | `set_header` | Replace primary, first-page or even-page header content. |
