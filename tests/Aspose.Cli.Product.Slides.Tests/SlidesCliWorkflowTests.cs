@@ -164,7 +164,6 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     [Fact]
     public void QuerySlides_NextSpellsRemainingSlidesAsRangesAndRereadsACutSlide()
     {
-        SlidesFontCatalog.EnsureInitialized();
         using (var presentation = new Presentation())
         {
             for (int index = 0; index < 4; index++)
