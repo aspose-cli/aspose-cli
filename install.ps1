@@ -1401,9 +1401,9 @@ function Recover-PendingTransaction {
     $journal = Read-StrictJson $JournalPath 'installer transaction journal'
     Assert-ExactProperties $journal @(
         'schemaVersion','productId','targetKey','transactionId','phase','oldSnapshot','newSnapshot',
-        'pathState','originalPath','originalPathNull','appliedPathSha256','licenseConfig','skillTargetKey',
-        'customSkillsRootExisted','skills','licenses') 'installer transaction journal'
-    if (-not (Test-JsonInteger $journal.schemaVersion 3) -or $journal.productId -cne $script:ProductId -or
+        'pathState','originalPath','originalPathNull','appliedPathSha256','skillTargetKey',
+        'customSkillsRootExisted','skills') 'installer transaction journal'
+    if (-not (Test-JsonInteger $journal.schemaVersion 4) -or $journal.productId -cne $script:ProductId -or
         $journal.targetKey -cne $TargetKey -or $journal.transactionId -cnotmatch '^[0-9a-f]{32}$' -or
         $journal.phase -cnotin @('prepared','oldMoved','newPublished','committed') -or
         $journal.pathState -cnotin @('none','intent','applied') -or
@@ -1417,9 +1417,6 @@ function Recover-PendingTransaction {
     $stage = Join-Path $InstallParent ".aspose-cli-stage-$id"
     $backup = Join-Path $InstallParent ".aspose-cli-backup-$id"
     $skillStageParent = Join-Path $InstallParent ".aspose-cli-skill-stage-$id"
-    $licenseConfig = Assert-LocalAbsolutePath (
-        Unprotect-PathValue ([string]$journal.licenseConfig) "$TargetKey-license") `
-        'journal license configuration directory'
     if ($journal.phase -ceq 'committed') {
         $current = Get-ManagedInstallState $InstallRoot
         if ($current.Snapshot -cne $journal.newSnapshot) { throw "Committed installation changed externally; recovery stopped: $InstallRoot" }
@@ -1432,15 +1429,6 @@ function Recover-PendingTransaction {
             if (Test-Path -LiteralPath $paths.Backup -PathType Container) {
                 $paths = Get-SkillTransactionPaths ([string]$skillRecord.host) $CustomSkillsRoot ([string]$skillRecord.skill) $id
                 Remove-VerifiedSkillDirectory $paths.Backup ([string]$skillRecord.skill) ([string]$skillRecord.oldSnapshot)
-            }
-        }
-        foreach ($licenseRecord in @($journal.licenses)) {
-            Assert-ExactProperties $licenseRecord @('order','product','oldSha256','newSha256','status') 'license transaction record'
-            if ($licenseRecord.status -cne 'published') { throw 'Committed journal contains an incomplete license record.' }
-            $licenseBackup = Join-Path (Join-Path $licenseConfig 'licenses') ".aspose-license-backup-$id-$($licenseRecord.product).lic"
-            if (Test-Path -LiteralPath $licenseBackup -PathType Leaf) {
-                if (-not $licenseRecord.oldSha256 -or (Get-FileSha256 $licenseBackup) -cne $licenseRecord.oldSha256) { throw "License backup changed externally: $licenseBackup" }
-                Remove-Item -LiteralPath $licenseBackup -Force
             }
         }
         Remove-VerifiedSkillStageParent $skillStageParent
@@ -1481,27 +1469,6 @@ function Recover-PendingTransaction {
         }
         elseif ($skillRecord.oldSnapshot -and -not $targetIsOld) {
             throw "Skill backup required for recovery is missing: $($paths.Backup)"
-        }
-    }
-    foreach ($licenseRecord in @($journal.licenses) | Sort-Object -Property order -Descending) {
-        Assert-ExactProperties $licenseRecord @('order','product','oldSha256','newSha256','status') 'license transaction record'
-        if ($licenseRecord.product -cnotin $script:AllowedLicenseProducts -or $licenseRecord.status -cnotin @('prepared','published')) { throw 'Installer journal contains an unknown license product.' }
-        $target = Join-Path $licenseConfig "licenses\$($licenseRecord.product).lic"
-        $licenseBackup = Join-Path (Split-Path -Parent $target) ".aspose-license-backup-$id-$($licenseRecord.product).lic"
-        $targetIsOld = $false
-        if (Test-Path -LiteralPath $target -PathType Leaf) {
-            $targetSha = Get-FileSha256 $target
-            if ($targetSha -ceq $licenseRecord.newSha256) { Remove-Item -LiteralPath $target -Force }
-            elseif ($licenseRecord.oldSha256 -and $targetSha -ceq $licenseRecord.oldSha256) { $targetIsOld = $true }
-            else { throw "Installed license changed externally: $target" }
-        }
-        if (Test-Path -LiteralPath $licenseBackup -PathType Leaf) {
-            if (-not $licenseRecord.oldSha256 -or (Get-FileSha256 $licenseBackup) -cne $licenseRecord.oldSha256) { throw "License backup changed externally: $licenseBackup" }
-            if ($targetIsOld) { Remove-Item -LiteralPath $licenseBackup -Force }
-            else { [IO.File]::Move($licenseBackup, $target) }
-        }
-        elseif ($licenseRecord.oldSha256 -and -not $targetIsOld) {
-            throw "License backup required for recovery is missing: $licenseBackup"
         }
     }
     Restore-TransactionPath $journal $TargetKey
@@ -1676,6 +1643,7 @@ $stage = Join-Path $installParent ".aspose-cli-stage-$transactionId"
 $backup = Join-Path $installParent ".aspose-cli-backup-$transactionId"
 $licenseStage = Join-Path $installParent ".aspose-cli-license-stage-$transactionId"
 $journal = $null
+$licenseFailure = $null
 $existingState = $null
 $oldUserPath = $null
 $rollbackComplete = $false
@@ -1717,27 +1685,24 @@ try {
     if ([string]::IsNullOrWhiteSpace($LicensePath) -and -not $SkipLicensePrompt) {
         $LicensePath = Read-Host 'Optional Commercial .lic path (press Enter to keep the current license configuration)'
     }
-    $stagedLicenses = @()
+    # License storage belongs to the CLI. The installer validates the license with the staged
+    # executable in a throwaway configuration before changing anything, and installs it with the
+    # installed executable once the installation is committed.
+    $licenseArguments = $null
     if (-not [string]::IsNullOrWhiteSpace($LicensePath)) {
         $resolvedLicense = Assert-LocalAbsolutePath ((Resolve-Path -LiteralPath $LicensePath).Path) 'license file'
         if (-not (Test-Path -LiteralPath $resolvedLicense -PathType Leaf)) { throw "License file is missing: $resolvedLicense" }
+        $licenseArguments = @('license','install',$resolvedLicense)
+        if ($LicenseProduct) { $licenseArguments += @('--product',$LicenseProduct) }
+        $licenseArguments += @('--output','json')
         [IO.Directory]::CreateDirectory($licenseStage) | Out-Null
         $previousConfig = [Environment]::GetEnvironmentVariable('ASPOSE_CLI_CONFIG_DIR','Process')
         [Environment]::SetEnvironmentVariable('ASPOSE_CLI_CONFIG_DIR',$licenseStage,'Process')
         try {
-            $arguments = @('license','install',$resolvedLicense)
-            if ($LicenseProduct) { $arguments += @('--product',$LicenseProduct) }
-            $arguments += @('--output','json')
-            $licenseResult = Invoke-CliChildProcess (Join-Path $stage 'aspose-cli.exe') $arguments
+            $licenseResult = Invoke-CliChildProcess (Join-Path $stage 'aspose-cli.exe') $licenseArguments
             if ($licenseResult.ExitCode -ne 0) { throw "License validation failed with exit code $($licenseResult.ExitCode): $(Get-ChildProcessDiagnostic $licenseResult)" }
         }
         finally { [Environment]::SetEnvironmentVariable('ASPOSE_CLI_CONFIG_DIR',$previousConfig,'Process') }
-        foreach ($file in @(Get-ChildItem -LiteralPath (Join-Path $licenseStage 'licenses') -File -ErrorAction SilentlyContinue)) {
-            $product = [IO.Path]::GetFileNameWithoutExtension($file.Name).ToLowerInvariant()
-            if ($product -cnotin $script:AllowedLicenseProducts) { throw "License validation produced an unknown product '$product'." }
-            $stagedLicenses += [pscustomobject]@{ Product = $product; Path = $file.FullName; Sha256 = Get-FileSha256 $file.FullName }
-        }
-        if ($stagedLicenses.Count -eq 0) { throw 'License validation did not produce a validated product license.' }
     }
 
     if ($null -ne $existingState) {
@@ -1753,21 +1718,9 @@ try {
         if ($rechecked.Snapshot -cne $existingState.Snapshot) { throw 'Existing installation changed while services were stopping.' }
     }
 
-    $configRootValue = [Environment]::GetEnvironmentVariable('ASPOSE_CLI_CONFIG_DIR')
-    if ([string]::IsNullOrWhiteSpace($configRootValue)) {
-        $configRootValue = Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::ApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)) 'aspose-cli'
-    }
-    $configRoot = Assert-LocalAbsolutePath $configRootValue 'application configuration directory'
-
-    $configOwnerPath = Join-Path $configRoot '.aspose-cli-config.json'
-    if (Test-Path -LiteralPath $configOwnerPath -PathType Leaf) {
-        $configOwner = Read-StrictJson $configOwnerPath 'configuration ownership'
-        if ($configOwner.productId -cne $script:ProductId) { throw 'Configuration directory belongs to another CLI. Choose a separate configuration directory.' }
-    }
-
     $oldUserPath = Get-UserPath
     $journal = [ordered]@{
-        schemaVersion = 3
+        schemaVersion = 4
         productId = $script:ProductId
         targetKey = $targetKey
         transactionId = $transactionId
@@ -1778,11 +1731,9 @@ try {
         originalPath = Protect-PathValue $oldUserPath $targetKey
         originalPathNull = ($null -eq $oldUserPath)
         appliedPathSha256 = ''
-        licenseConfig = Protect-PathValue $configRoot "$targetKey-license"
         skillTargetKey = Get-SkillTransactionKey ([bool]$SkipSkills) $customSkillsRoot
         customSkillsRootExisted = (-not [string]::IsNullOrWhiteSpace($customSkillsRoot) -and (Test-Path -LiteralPath $customSkillsRoot -PathType Container))
         skills = @()
-        licenses = @()
     }
     Write-Journal $journalPath $journal
     Invoke-TestFault 'prepared'
@@ -1798,30 +1749,6 @@ try {
 
     if (-not $SkipPath) {
         Set-TransactionalUserPath $journalPath $journal (Get-UpdatedUserPath $oldUserPath $installRoot)
-    }
-
-    foreach ($license in $stagedLicenses) {
-        $licenseDirectory = Join-Path $configRoot 'licenses'
-        [IO.Directory]::CreateDirectory($licenseDirectory) | Out-Null
-        $target = Join-Path $licenseDirectory "$($license.Product).lic"
-        $licenseBackup = Join-Path $licenseDirectory ".aspose-license-backup-$transactionId-$($license.Product).lic"
-        $oldSha = ''
-        if (Test-Path -LiteralPath $target -PathType Leaf) { $oldSha = Get-FileSha256 $target }
-        $licenseRecord = [ordered]@{
-            order = $journal.licenses.Count
-            product = $license.Product
-            oldSha256 = $oldSha
-            newSha256 = $license.Sha256
-            status = 'prepared'
-        }
-        $journal.licenses += $licenseRecord
-        Write-Journal $journalPath $journal
-        if ($oldSha) { [IO.File]::Move($target,$licenseBackup) }
-        Copy-Item -LiteralPath $license.Path -Destination $target
-        if ((Get-FileSha256 $target) -cne $license.Sha256) { throw "Installed license failed verification: $target" }
-        $licenseRecord['status'] = 'published'
-        Write-Journal $journalPath $journal
-        Invoke-TestFault 'licenseUpdated'
     }
 
     $installedSkills = 0
@@ -1917,14 +1844,6 @@ try {
                 Remove-VerifiedSkillDirectory $paths.Backup ([string]$skillRecord.skill) ([string]$skillRecord.oldSnapshot)
             }
         }
-        foreach ($licenseRecord in @($journal.licenses)) {
-            $licenseBackup = Join-Path (Join-Path $configRoot 'licenses') ".aspose-license-backup-$transactionId-$($licenseRecord.product).lic"
-            if (Test-Path -LiteralPath $licenseBackup -PathType Leaf) {
-                if ($licenseRecord.oldSha256 -and (Get-FileSha256 $licenseBackup) -cne $licenseRecord.oldSha256) { throw "License backup changed before cleanup: $licenseBackup" }
-                Remove-Item -LiteralPath $licenseBackup -Force
-            }
-        }
-
         Remove-Item -LiteralPath $journalPath -Force
         $rollbackComplete = $true
         $committedCleanupComplete = $true
@@ -1946,10 +1865,16 @@ try {
             Write-Warning "Optional MCP setup could not be completed; the CLI installation remains valid: $($_.Exception.Message)"
         }
     }
+    if ($null -ne $licenseArguments) {
+        $licenseResult = Invoke-CliChildProcess (Join-Path $installRoot 'aspose-cli.exe') $licenseArguments
+        if ($licenseResult.ExitCode -ne 0) {
+            $licenseFailure = "The CLI is installed, but the validated license could not be installed (exit code $($licenseResult.ExitCode)): $(Get-ChildProcessDiagnostic $licenseResult) Retry with: aspose-cli $($licenseArguments[0..($licenseArguments.Count - 3)] -join ' ')"
+        }
+    }
     Write-Host "Aspose CLI $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
     if (-not $SkipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
     if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }
-    if ($stagedLicenses.Count -eq 0) { Write-Host 'No license was supplied for this installation. Check effective product licenses with: aspose-cli license status' }
+    if ($null -eq $licenseArguments) { Write-Host 'No license was supplied for this installation. Check effective product licenses with: aspose-cli license status' }
 }
 catch {
     $failure = $_
@@ -1980,3 +1905,4 @@ finally {
         catch { Write-Warning "Temporary update staging remains at '$cleanupDirectory'." }
     }
 }
+if ($null -ne $licenseFailure) { throw $licenseFailure }
