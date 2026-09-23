@@ -44,27 +44,6 @@ public sealed class SlidesHardeningTests
         Assert.Null(read.Next);
     }
     [Fact]
-    public void FontRegistryOverride_IsRestoredWhenInitializationFails()
-    {
-        nint replacement = 42;
-        var applied = new List<nint>();
-        var expected = new InvalidOperationException("font initialization failed");
-
-        InvalidOperationException actual = Assert.Throws<InvalidOperationException>(() =>
-            SlidesFontCatalog.RunWithTemporaryUserRegistryOverride(
-                replacement,
-                handle =>
-                {
-                    applied.Add(handle);
-                    return 0;
-                },
-                () => throw expected));
-
-        Assert.Same(expected, actual);
-        Assert.Equal([replacement, nint.Zero], applied);
-    }
-
-    [Fact]
     public void LargeDeck_RemainsProgressiveAndSupportsBoundedRendering()
     {
         using var fixture = new SlidesEngineFixture();

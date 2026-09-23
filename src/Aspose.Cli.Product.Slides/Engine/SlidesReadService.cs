@@ -31,7 +31,6 @@ internal sealed class SlidesReadService
     {
         _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
         _loader = loader;
-        SlidesFontCatalog.EnsureInitialized();
     }
 
     internal PresentationInfoResult GetInfo(string filePath, PresentationInfoRequest request)

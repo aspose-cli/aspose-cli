@@ -11,9 +11,6 @@ public sealed class SlidesEngineFixture : IDisposable
 {
     public SlidesEngineFixture()
     {
-        // Test fixtures create source decks before invoking the production
-        // engine, so they must use the same guarded SDK font initialization.
-        SlidesFontCatalog.EnsureInitialized();
         LicenseResolution resolution = LicenseResolver.Resolve(
             flagPath: null,
             productId: "slides",

@@ -57,7 +57,6 @@ public sealed class SlidesCliWorkflowTests : IDisposable
 
     private static void CreateDeck(string path)
     {
-        SlidesFontCatalog.EnsureInitialized();
         using var presentation = new Presentation();
         for (int index = 0; index < 3; index++)
         {

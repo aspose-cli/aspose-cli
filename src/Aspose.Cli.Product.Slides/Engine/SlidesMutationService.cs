@@ -37,7 +37,6 @@ internal sealed class SlidesMutationService
         _resourceBudgets = resourceBudgets;
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader;
-        SlidesFontCatalog.EnsureInitialized();
     }
 
     public SlidesEditResult ApplyOps(

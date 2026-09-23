@@ -37,7 +37,6 @@ internal sealed class SlidesProductionService
         _resourceBudgets = resourceBudgets;
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader;
-        SlidesFontCatalog.EnsureInitialized();
     }
 
     /// <summary>Renders the slides of one view, opening the presentation once.</summary>
