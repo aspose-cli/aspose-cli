@@ -14,7 +14,7 @@ internal sealed class McpCommandRunner
     internal const int MaximumArgumentsBytes = 64 * 1024;
     internal const int MaximumInputBytes = 1024 * 1024;
     internal const int MaximumOutputBytes = TimeoutWorkerSupervisor.MaximumOutputBytes;
-    internal static readonly TimeSpan ShutdownGracePeriod = TimeoutWorkerSupervisor.TerminationGrace;
+    internal static readonly TimeSpan ShutdownGracePeriod = ChildProcess.TerminationGrace;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly InvocationParser _parser;
     private readonly GlobalValues? _inherited;
@@ -150,7 +150,7 @@ internal sealed class McpCommandRunner
             catch (CliException exception) when (exception.ExitCode == ExitCode.OperationTimeout)
             { throw new McpCommandException($"The CLI command exceeded the {effectiveSeconds}-second timeout."); }
             catch (CliException exception) { result = TimeoutWorkerSupervisor.RenderError(_host, args, exception); }
-            catch (InvocationProcessException exception) { throw new McpCommandException(exception.Message); }
+            catch (ChildOutputLimitException exception) { throw new McpCommandException(exception.Message); }
             return new McpExecutionResult { ExitCode = result.ExitCode, Stdout = result.Stdout, Stderr = result.Stderr };
         }
         catch (McpCommandException) { throw; }

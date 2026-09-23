@@ -55,76 +55,27 @@ internal static class LicenseValidationProcess
             start.ArgumentList.Add(products[0].Manifest.Id);
         }
 
-        using var process = new Process { StartInfo = start };
-        bool started = false;
-        IDisposable? job = null;
         try
         {
-            started = process.Start();
-            if (!started)
-            {
-                throw CliErrors.LicenseInvalid("file", "the license validation process could not be started");
-            }
-            job = WindowsProcessJob.TryAttach(process);
-            Task<byte[]> stdout = ReadBoundedAsync(process.StandardOutput.BaseStream, process, cancellation.Token);
-            Task<byte[]> stderr = ReadBoundedAsync(process.StandardError.BaseStream, process, cancellation.Token);
-            await Task.WhenAll(stdout, stderr, process.WaitForExitAsync(cancellation.Token)).ConfigureAwait(false);
+            ChildProcessResult child = await ChildProcess.RunAsync(start, MaximumOutputBytes, cancellation.Token)
+                .ConfigureAwait(false);
             context.Deadline.ThrowIfExpired("license-validation");
-            if (process.ExitCode != 0)
+            if (child.ExitCode != 0)
             {
                 // Native diagnostics can contain submitted data. Keep child output private.
-                throw CliErrors.LicenseInvalid("file", $"the license validation process failed with exit code {process.ExitCode}");
+                throw CliErrors.LicenseInvalid("file", $"the license validation process failed with exit code {child.ExitCode}");
             }
-            return Parse(await stdout.ConfigureAwait(false), validatingSnapshot ? licensePath : null, products);
+            return Parse(child.Stdout, validatingSnapshot ? licensePath : null, products);
         }
         catch (OperationCanceledException)
         {
             context.Deadline.ThrowIfExpired("license-validation");
             throw CliErrors.OperationTimeout(TimeoutSeconds, "license-validation");
         }
-        catch (Exception exception) when (exception is IOException or JsonException or Win32Exception or InvalidOperationException)
+        catch (Exception exception) when (
+            exception is IOException or JsonException or Win32Exception or InvalidOperationException)
         {
             throw CliErrors.LicenseInvalid("file", "the license validation process did not return a valid status");
-        }
-        finally
-        {
-            if (started)
-            {
-                TryKill(process);
-                job?.Dispose();
-                if (!process.WaitForExit(5000))
-                {
-                    throw CliErrors.WorkerTerminationFailed(process.Id);
-                }
-            }
-        }
-    }
-
-    private static async Task<byte[]> ReadBoundedAsync(
-        Stream stream, Process process, CancellationToken cancellationToken)
-    {
-        try
-        {
-            using var output = new MemoryStream();
-            byte[] buffer = new byte[4096];
-            while (true)
-            {
-                int read = await stream.ReadAsync(buffer.AsMemory(), cancellationToken).ConfigureAwait(false);
-                if (read == 0)
-                {
-                    return output.ToArray();
-                }
-                if (output.Length + read > MaximumOutputBytes)
-                {
-                    throw new InvalidDataException("The license validation output exceeded its byte limit.");
-                }
-                output.Write(buffer, 0, read);
-            }
-        }
-        catch
-        {
-            TryKill(process);
-            throw;
         }
     }
 
@@ -192,20 +143,5 @@ internal static class LicenseValidationProcess
             throw new InvalidDataException("The license validation identity is invalid.");
         }
         return result;
-    }
-
-    private static void TryKill(Process process)
-    {
-        try
-        {
-            if (!process.HasExited)
-            {
-                process.Kill(entireProcessTree: true);
-            }
-        }
-        catch (Exception exception) when (exception is InvalidOperationException or Win32Exception or NotSupportedException)
-        {
-            // The owned process job and exit confirmation remain the final cleanup boundary.
-        }
     }
 }
