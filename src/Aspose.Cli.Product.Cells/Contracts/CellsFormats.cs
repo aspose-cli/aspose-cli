@@ -82,6 +82,7 @@ public static class CellsFormats
         return Find(formats, requested) ?? throw CliErrors.FormatUnsupported(requested, ids);
     }
 
+    /// <summary>Finds a format by id, alias or any extension it declares (<c>.htm</c>, <c>.xltx</c>).</summary>
     private static FormatInfo? Find(IReadOnlyList<FormatInfo> formats, string requested)
     {
         ArgumentException.ThrowIfNullOrEmpty(requested);
@@ -89,8 +90,12 @@ public static class CellsFormats
 
         foreach (FormatInfo format in formats)
         {
+            IReadOnlyList<string> extensions = Definitions
+                .Single(definition => string.Equals(definition.Id, format.Id, StringComparison.Ordinal))
+                .Extensions;
             if (string.Equals(format.Id, normalized, StringComparison.OrdinalIgnoreCase)
-                || format.Aliases.Any(alias => string.Equals(alias, normalized, StringComparison.OrdinalIgnoreCase)))
+                || format.Aliases.Any(alias => string.Equals(alias, normalized, StringComparison.OrdinalIgnoreCase))
+                || extensions.Any(extension => string.Equals(extension[1..], normalized, StringComparison.OrdinalIgnoreCase)))
             {
                 return format;
             }

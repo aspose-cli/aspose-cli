@@ -14,12 +14,12 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     private static readonly HashSet<string> EncryptableFormats = new(StringComparer.Ordinal)
     { "xlsx", "xlsm", "xlsb", "xls", "ods" };
 
-    internal static WorkbookSavePlan Create(string formatId, LicenseState licenseState, string? encryptPassword = null,
-        string? inputPassword = null, int? selectedSheet = null)
+    internal static WorkbookSavePlan Create(string formatId, string outputPath, LicenseState licenseState,
+        string? encryptPassword = null, string? inputPassword = null, int? selectedSheet = null)
     {
         if (encryptPassword is not null && !EncryptableFormats.Contains(formatId))
         { throw CliErrors.OptionInvalid("--encrypt", $"the '{formatId}' format cannot be password-protected", "Encrypt only spreadsheet outputs (xlsx, xlsm, xlsb, xls, ods)."); }
-        SaveFormat format = FormatMapper.ToSaveFormat(formatId);
+        SaveFormat format = FormatMapper.ToSaveFormat(formatId, outputPath);
         SaveOptions? options = formatId switch
         {
             "html" => new HtmlSaveOptions { SaveAsSingleFile = true, ExportImagesAsBase64 = true },
@@ -39,6 +39,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         return new WorkbookSavePlan(formatId, format, options, password, warning, licenseState == LicenseState.Evaluation);
     }
 
+    /// <summary>The convert format whose id, alias or declared extension the path carries; xlsx without one.</summary>
     internal static string FormatForPath(string path)
     {
         string extension = Path.GetExtension(path);

@@ -106,7 +106,7 @@ internal sealed class CellsOutputService
         }
 
         int refsBefore = _saver.CountRefFormulas(workbook);
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, licenseState,
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, request.OutputPath, licenseState,
             inputPassword: loaded.IsEncrypted ? request.Password : null, selectedSheet: selectedSheet);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
         long sizeBytes = _saver.Write(request.OutputPath, request.Overwrite,

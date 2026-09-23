@@ -30,6 +30,19 @@ internal static class FormatMapper
             nameof(formatId), formatId, "Format id is missing from the engine mapper."),
     };
 
+    /// <summary>
+    /// Maps a canonical convert format id and the output path to the engine save
+    /// format: the template extensions a workbook format declares (<c>.xltx</c>,
+    /// <c>.xltm</c>) keep the file a template.
+    /// </summary>
+    public static SaveFormat ToSaveFormat(string formatId, string outputPath) =>
+        (formatId, Path.GetExtension(outputPath).ToLowerInvariant()) switch
+        {
+            ("xlsx", ".xltx") => SaveFormat.Xltx,
+            ("xlsm", ".xltm") => SaveFormat.Xltm,
+            _ => ToSaveFormat(formatId),
+        };
+
     /// <summary>Maps a canonical render format id to the engine image type.</summary>
     public static ImageType ToImageType(string formatId) => formatId switch
     {
