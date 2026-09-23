@@ -8,7 +8,11 @@ internal sealed class DocumentBlockIndex
     private readonly IReadOnlyList<BlockEntry> _entries;
     private readonly Dictionary<Node, BlockEntry> _byNode;
 
-    public DocumentBlockIndex(Document document)
+    /// <summary>
+    /// Indexes the top-level blocks. Under evaluation the banner paragraph that evaluation
+    /// mode inserts before the first block is not a block.
+    /// </summary>
+    public DocumentBlockIndex(Document document, bool evaluation)
     {
         var entries = new List<BlockEntry>();
         for (int sectionIndex = 0; sectionIndex < document.Sections.Count; sectionIndex++)
@@ -16,7 +20,7 @@ internal sealed class DocumentBlockIndex
             Section section = document.Sections[sectionIndex];
             foreach (Node node in section.Body.GetChildNodes(NodeType.Any, false))
             {
-                if (node is Paragraph paragraph && IsEvaluationBanner(paragraph, entries.Count))
+                if (evaluation && entries.Count == 0 && node is Paragraph paragraph && WordsEvaluation.IsBanner(paragraph))
                 {
                     continue;
                 }
@@ -61,21 +65,6 @@ internal sealed class DocumentBlockIndex
         return null;
     }
 
-    private static bool IsEvaluationBanner(Paragraph paragraph, int indexedBlockCount)
-    {
-        if (indexedBlockCount != 0)
-        {
-            return false;
-        }
-
-        string text = paragraph.GetText().Trim();
-        return text.StartsWith(
-                "Created with an evaluation copy of Aspose.Words.",
-                StringComparison.Ordinal)
-            && text.Contains(
-                "https://products.aspose.com/words/temporary-license/",
-                StringComparison.Ordinal);
-    }
 }
 
 internal sealed record BlockEntry(int Index, int Section, Node Node);

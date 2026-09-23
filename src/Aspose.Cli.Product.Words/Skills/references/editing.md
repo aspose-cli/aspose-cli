@@ -25,6 +25,13 @@ an SDK reopen check and cannot use `--verify`. A dry run publishes no output or
 backup and does not report that encryption was removed.
 
 Passwords used by `protect` and `unprotect` are environment variable names in `passwordEnv`. Never put a resolved secret into JSON.
+Word editing restrictions (`protect`) are not encryption: they guide Word's user
+interface and do not bind the CLI. Editing a restricted document succeeds and
+reports `PROTECTION_NOT_ENFORCED`; the output keeps the restrictions. `unprotect`
+with `passwordEnv` verifies the password and fails with `DOCUMENT_PROTECTED` when
+it is wrong; without `passwordEnv` it removes the restrictions regardless of their
+password, so use it only when the user owns that decision. Encrypted documents
+are different: they need `--password-env` to open at all.
 
 Discover the exact vocabulary with:
 

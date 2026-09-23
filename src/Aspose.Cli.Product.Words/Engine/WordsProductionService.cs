@@ -114,7 +114,7 @@ internal sealed class WordsProductionService
         int dpi = request.Purpose == ViewPurpose.Display ? DisplayDpi : EvidenceDpi;
         int total = document.PageCount;
         int count = Math.Min(total, request.MaxParts);
-        IReadOnlyList<IReadOnlyList<ViewElement>> layout = WordsViewLayout.Collect(document, count);
+        IReadOnlyList<IReadOnlyList<ViewElement>> layout = WordsViewLayout.Collect(document, loaded.Evaluation, count);
         var parts = new List<ViewPart>(count);
         for (int page = 1; page <= count; page++)
         {
@@ -256,6 +256,11 @@ internal sealed class WordsProductionService
         if (created.RemoteResourcesBlocked > 0)
         {
             extra.Add(RemoteWarning(created.RemoteResourcesBlocked));
+        }
+
+        if (created.Sources.Any(static source => source.EvaluationInputTruncated))
+        {
+            extra.Add(EvaluationTruncated);
         }
 
         if (created.HasMacros && format is not "docm" and not "dotm")

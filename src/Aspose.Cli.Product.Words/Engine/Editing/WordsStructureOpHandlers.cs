@@ -219,11 +219,13 @@ internal static class WordsStructureOpHandlers
     }
 
     internal static long AppendDocument(
-        Document document,
+        LoadedDocument destination,
         AppendDocumentOp op,
         WordsDocumentLoader loader)
     {
+        Document document = destination.Document;
         using LoadedDocument loaded = loader.Open(op.Path, null);
+        destination.Imported(loaded);
         ImportFormatMode mode = op.ImportFormatMode == "useDestination"
             ? ImportFormatMode.UseDestinationStyles
             : ImportFormatMode.KeepSourceFormatting;

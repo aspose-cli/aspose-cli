@@ -75,7 +75,7 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
-    public void Read_ExcludesAsposeEvaluationBannerFromCanonicalBlockAddresses()
+    public void Read_ExcludesTheEvaluationBannerOnlyUnderEvaluation()
     {
         string input = _fixture.Temp.File("evaluation-banner.docx");
         var document = new Document();
@@ -96,11 +96,10 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
             MaxCharacters = 10_000,
         });
 
-        Assert.Equal("User heading", read.Blocks[0].Text);
+        // A licensed document that merely quotes the banner keeps it as its first block.
+        bool evaluation = _fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Evaluation;
+        Assert.Equal(evaluation ? "User heading" : "Created with an evaluation copy of Aspose.Words.", read.Blocks[0].Text![..(evaluation ? 12 : 48)]);
         Assert.Equal(1, read.Blocks[0].I);
-        Assert.DoesNotContain(
-            read.Blocks,
-            block => block.Text?.Contains("evaluation copy", StringComparison.OrdinalIgnoreCase) == true);
     }
 
     [Fact]

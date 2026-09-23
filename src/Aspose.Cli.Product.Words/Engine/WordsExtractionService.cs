@@ -70,7 +70,7 @@ internal sealed class WordsExtractionService
         }
         else if (request.By == "heading1")
         {
-            SplitByHeading(loaded.Document, writer);
+            SplitByHeading(loaded, writer);
         }
         else
         {
@@ -95,7 +95,7 @@ internal sealed class WordsExtractionService
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         using var guard = new ExtractionGuard(_resourceBudgets, request.OutputDirectory);
-        var index = new DocumentBlockIndex(loaded.Document);
+        var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         var items = new List<ExtractedItem>();
         var warnings = new List<Warning>();
         if (request.What == "images")
@@ -161,9 +161,13 @@ internal sealed class WordsExtractionService
         };
     }
 
-    private static void SplitByHeading(Document document, WordsSplitWriter writer)
+    /// <summary>
+    /// Writes one part per Heading 1. Each part is a copy of the whole document with the other
+    /// blocks removed, so it keeps its sections' page setup, headers, footers and styles.
+    /// </summary>
+    private static void SplitByHeading(LoadedDocument loaded, WordsSplitWriter writer)
     {
-        var index = new DocumentBlockIndex(document);
+        var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         List<int> starts = index.Entries.Where(static entry => entry.Node is Paragraph p && InfoProjection.HeadingLevel(p) == 1)
             .Select(static entry => entry.Index).ToList();
         if (starts.Count == 0)
@@ -175,16 +179,24 @@ internal sealed class WordsExtractionService
         {
             int start = starts[group];
             int end = group + 1 < starts.Count ? starts[group + 1] - 1 : index.Count;
-            Document part = WordsDocumentLoader.CreateBlank(document);
-            part.FirstSection.Body.RemoveAllChildren();
-            for (int block = start; block <= end; block++)
+            Document part = loaded.Document.Clone();
+            var partIndex = new DocumentBlockIndex(part, loaded.Evaluation);
+            foreach (BlockEntry entry in partIndex.Entries.Where(entry => entry.Index < start || entry.Index > end))
             {
-                Node imported = part.ImportNode(index.Get(block).Node, true, ImportFormatMode.KeepSourceFormatting);
-                part.FirstSection.Body.AppendChild(imported);
+                entry.Node.Remove();
+            }
+
+            foreach (Section section in part.Sections.Cast<Section>().ToArray())
+            {
+                if (part.Sections.Count > 1 && !section.Body.HasChildNodes)
+                {
+                    section.Remove();
+                }
             }
 
             part.EnsureMinimum();
             writer.Stage(part, group + 1, $"blocks-{start}-{end}");
+            part.Cleanup();
         }
     }
 }

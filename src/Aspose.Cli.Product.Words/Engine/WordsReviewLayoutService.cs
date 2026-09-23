@@ -41,10 +41,12 @@ internal sealed class WordsReviewLayoutService
             })
             .ToArray();
         var collector = new LayoutCollector(document);
-        CollectLayoutEntities(document, pages);
-        CollectNodeFacts(document, collector, pages);
+        bool evaluation = loaded.Evaluation;
+        CollectLayoutEntities(document, pages, evaluation);
+        CollectNodeFacts(document, collector, pages, evaluation);
         IReadOnlyList<WordsReviewHeadingLayout> headings = OrphanedHeadings(
             document,
+            evaluation,
             collector,
             pageCount);
         collector.Document = null;
@@ -55,7 +57,8 @@ internal sealed class WordsReviewLayoutService
 
     private static void CollectLayoutEntities(
         Document document,
-        IReadOnlyList<MutablePage> pages)
+        IReadOnlyList<MutablePage> pages,
+        bool evaluation)
     {
         if (pages.Count == 0)
         {
@@ -65,7 +68,7 @@ internal sealed class WordsReviewLayoutService
         enumerator.Reset();
         do
         {
-            Visit(enumerator, pages, excludedStory: false);
+            Visit(enumerator, pages, excludedStory: false, evaluation);
         }
         while (enumerator.MoveNext());
     }
@@ -73,7 +76,8 @@ internal sealed class WordsReviewLayoutService
     private static void Visit(
         LayoutEnumerator enumerator,
         IReadOnlyList<MutablePage> pages,
-        bool excludedStory)
+        bool excludedStory,
+        bool evaluation)
     {
         LayoutEntityType type = enumerator.Type;
         bool excluded = excludedStory
@@ -84,7 +88,7 @@ internal sealed class WordsReviewLayoutService
             if (type == LayoutEntityType.Span
                 && !string.IsNullOrWhiteSpace(enumerator.Text)
                 && !string.Equals(enumerator.Kind, "PAGE", StringComparison.Ordinal)
-                && !IsEvaluationMark(enumerator.Text))
+                && !(evaluation && WordsEvaluation.IsLayoutMark(enumerator.Text)))
             {
                 int visibleCharacters = enumerator.Text.Count(static character =>
                     !char.IsControl(character) && !char.IsWhiteSpace(character));
@@ -107,35 +111,32 @@ internal sealed class WordsReviewLayoutService
         }
         do
         {
-            Visit(enumerator, pages, excluded);
+            Visit(enumerator, pages, excluded, evaluation);
         }
         while (enumerator.MoveNext());
         _ = enumerator.MoveParent();
     }
 
-    private static bool IsEvaluationMark(string text) =>
-        text.Contains("Evaluation Only", StringComparison.OrdinalIgnoreCase)
-        || text.Contains("Created with Aspose.Words", StringComparison.OrdinalIgnoreCase)
-        || text.Contains("Aspose.Words Evaluation", StringComparison.OrdinalIgnoreCase);
-
     private static void CollectNodeFacts(
         Document document,
         LayoutCollector collector,
-        IReadOnlyList<MutablePage> pages)
+        IReadOnlyList<MutablePage> pages,
+        bool evaluation)
     {
-        CollectFontFacts(document, collector, pages);
+        CollectFontFacts(document, collector, pages, evaluation);
         CollectPageBreakFacts(document, collector, pages);
-        CollectShapeFacts(document, collector, pages);
+        CollectShapeFacts(document, collector, pages, evaluation);
     }
 
     private static void CollectFontFacts(
         Document document,
         LayoutCollector collector,
-        IReadOnlyList<MutablePage> pages)
+        IReadOnlyList<MutablePage> pages,
+        bool evaluation)
     {
         foreach (Run run in document.GetChildNodes(NodeType.Run, true).Cast<Run>())
         {
-            if (ShouldSkipRun(run))
+            if (ShouldSkipRun(run, evaluation))
             {
                 continue;
             }
@@ -147,11 +148,12 @@ internal sealed class WordsReviewLayoutService
         }
     }
 
-    private static bool ShouldSkipRun(Run run) =>
+    private static bool ShouldSkipRun(Run run, bool evaluation) =>
         run.GetAncestor(NodeType.HeaderFooter) is not null
         || string.IsNullOrWhiteSpace(run.Text)
-        || run.GetAncestor(NodeType.Paragraph) is Paragraph paragraph
-            && IsEvaluationMark(InfoProjection.Clean(paragraph.GetText()));
+        || evaluation
+            && run.GetAncestor(NodeType.Paragraph) is Paragraph paragraph
+            && WordsEvaluation.IsLayoutMark(InfoProjection.Clean(paragraph.GetText()));
 
     private static void CollectPageBreakFacts(
         Document document,
@@ -180,12 +182,13 @@ internal sealed class WordsReviewLayoutService
     private static void CollectShapeFacts(
         Document document,
         LayoutCollector collector,
-        IReadOnlyList<MutablePage> pages)
+        IReadOnlyList<MutablePage> pages,
+        bool evaluation)
     {
         var nodeEnumerator = new LayoutEnumerator(document);
         foreach (Shape shape in document.GetChildNodes(NodeType.Shape, true).Cast<Shape>())
         {
-            if (ShouldSkipShape(shape))
+            if (ShouldSkipShape(shape, evaluation))
             {
                 continue;
             }
@@ -210,14 +213,14 @@ internal sealed class WordsReviewLayoutService
         }
     }
 
-    private static bool ShouldSkipShape(Shape shape)
+    private static bool ShouldSkipShape(Shape shape, bool evaluation)
     {
         if (shape.GetAncestor(NodeType.HeaderFooter) is not null)
         {
             return true;
         }
         string shapeText = InfoProjection.Clean(shape.GetText());
-        return !string.IsNullOrEmpty(shapeText) && IsEvaluationMark(shapeText);
+        return evaluation && !string.IsNullOrEmpty(shapeText) && WordsEvaluation.IsLayoutMark(shapeText);
     }
 
     private static bool IsIncludedPage(int page, int pageCount) => page >= 1 && page <= pageCount;
@@ -230,10 +233,11 @@ internal sealed class WordsReviewLayoutService
 
     private static IReadOnlyList<WordsReviewHeadingLayout> OrphanedHeadings(
         Document document,
+        bool evaluation,
         LayoutCollector collector,
         int maxPage)
     {
-        var index = new DocumentBlockIndex(document);
+        var index = new DocumentBlockIndex(document, evaluation);
         var findings = new List<WordsReviewHeadingLayout>();
         for (int position = 0; position < index.Entries.Count - 1; position++)
         {

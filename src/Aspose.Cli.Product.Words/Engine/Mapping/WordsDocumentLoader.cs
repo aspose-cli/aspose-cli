@@ -2,6 +2,7 @@ using System.Text;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Words;
 using Aspose.Words.Loading;
 
@@ -10,10 +11,16 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 internal sealed class WordsDocumentLoader
 {
     private readonly ResourceBudgetLedger _resourceBudgets;
+    private readonly ILicenseGate? _licenseGate;
 
-    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets)
+    /// <summary>
+    /// Creates a loader. With a license gate, loaded documents know whether evaluation mode
+    /// altered them; without one (font inspection) no evaluation artifacts are reported.
+    /// </summary>
+    internal WordsDocumentLoader(ResourceBudgetLedger resourceBudgets, ILicenseGate? licenseGate = null)
     {
         _resourceBudgets = resourceBudgets ?? throw new ArgumentNullException(nameof(resourceBudgets));
+        _licenseGate = licenseGate;
     }
 
     /// <summary>
@@ -89,7 +96,7 @@ internal sealed class WordsDocumentLoader
             Document document = Load(options => new Document(path, options),
                 detected.LoadFormat, resources, path, password);
             return new LoadedDocument(document, detected, id, resources,
-                HasEvaluationTruncationMarker(document));
+                _licenseGate?.EnsureApplied() == LicenseState.Evaluation);
         }
         catch
         {
@@ -108,7 +115,7 @@ internal sealed class WordsDocumentLoader
         using var input = new MemoryStream(Encoding.UTF8.GetBytes(markdown), writable: false);
         Document document = Load(options => new Document(input, options),
             LoadFormat.Markdown, owner.Resources, "inline Markdown", password: null);
-        owner.Retain(document, HasEvaluationTruncationMarker(document));
+        owner.Retain(document);
         return document;
     }
 
@@ -207,14 +214,6 @@ internal sealed class WordsDocumentLoader
         hint: "Verify the file opens in Word and that its content matches a format listed by 'aspose-cli capabilities'.",
         innerException: inner);
 
-    private static bool HasEvaluationTruncationMarker(Document document) =>
-        document.GetChildNodes(NodeType.Paragraph, true)
-            .Cast<Paragraph>()
-            .Select(static paragraph => paragraph.GetText())
-            .Any(static text =>
-                text.Contains("document was truncated", StringComparison.OrdinalIgnoreCase)
-                && text.Contains("evaluation", StringComparison.OrdinalIgnoreCase));
-
     private sealed class DenyAllResources : IResourceLoadingCallback
     {
         internal static readonly DenyAllResources Instance = new();
@@ -249,16 +248,25 @@ internal sealed record LoadedDocument(
     FileFormatInfo Format,
     string FormatId,
     LocalDocumentResourceLoader Resources,
-    bool EvaluationInputTruncated) : IDisposable
+    bool Evaluation) : IDisposable
 {
     private readonly List<Document> _imports = [];
+
+    /// <summary>Whether evaluation mode cut this document short while loading it.</summary>
+    public bool EvaluationInputTruncated { get; } = Evaluation && WordsEvaluation.IsTruncated(Document);
+
+    /// <summary>Whether evaluation mode cut short a document imported into this one.</summary>
     public bool ImportedInputTruncated { get; private set; }
 
-    internal void Retain(Document document, bool truncated)
+    internal void Retain(Document document)
     {
         _imports.Add(document);
-        ImportedInputTruncated |= truncated;
+        ImportedInputTruncated |= Evaluation && WordsEvaluation.IsTruncated(document);
     }
+
+    /// <summary>Records content imported from another loaded document.</summary>
+    internal void Imported(LoadedDocument source) =>
+        ImportedInputTruncated |= source.EvaluationInputTruncated || source.ImportedInputTruncated;
 
     public int RemoteResourcesBlocked
     {

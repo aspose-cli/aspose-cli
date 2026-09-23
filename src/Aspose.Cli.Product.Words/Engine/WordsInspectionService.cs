@@ -84,7 +84,7 @@ internal sealed class WordsInspectionService
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
-        var index = new DocumentBlockIndex(loaded.Document);
+        var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         TextSearch query = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
         var hits = new List<WordsSearchHit>();
         bool truncated = false;

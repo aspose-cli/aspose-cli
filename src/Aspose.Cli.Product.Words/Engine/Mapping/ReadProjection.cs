@@ -10,7 +10,7 @@ internal static class ReadProjection
 {
     public static DocumentReadResult Project(LoadedDocument loaded, string path, DocumentReadRequest request)
     {
-        var index = new DocumentBlockIndex(loaded.Document);
+        var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         IReadOnlyList<BlockEntry> candidates = request.Blocks is { } range
             ? range.Resolve(index.Count).Select(index.Get).ToArray()
             : index.Entries;

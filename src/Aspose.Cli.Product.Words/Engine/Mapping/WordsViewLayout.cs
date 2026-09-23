@@ -25,7 +25,7 @@ internal static class WordsViewLayout
     private const int LabelLength = 80;
 
     /// <summary>Returns the elements of each of the first <paramref name="pageCount"/> pages.</summary>
-    internal static IReadOnlyList<IReadOnlyList<ViewElement>> Collect(Document document, int pageCount)
+    internal static IReadOnlyList<IReadOnlyList<ViewElement>> Collect(Document document, bool evaluation, int pageCount)
     {
         List<LayoutBlock>? blocks = WalkLayout(document, pageCount);
         List<Node> body = BodyBlocks(document);
@@ -34,7 +34,7 @@ internal static class WordsViewLayout
             return Empty(pageCount);
         }
 
-        var index = new DocumentBlockIndex(document);
+        var index = new DocumentBlockIndex(document, evaluation);
         var pages = Enumerable.Range(0, pageCount).Select(static _ => new List<ViewElement>()).ToArray();
         for (int position = 0; position < blocks.Count; position++)
         {

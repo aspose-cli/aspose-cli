@@ -6,6 +6,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Words;
 using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
@@ -39,6 +40,7 @@ internal sealed class WordsMutationService
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         bool inputHadRevisions = loaded.Document.Revisions.Count > 0;
         bool inputWasSigned = loaded.Format.HasDigitalSignature;
+        ProtectionType inputProtection = loaded.Document.ProtectionType;
         WordsEditResult result = WordsOpsExecutor.Apply(
             loaded,
             filePath,
@@ -55,6 +57,7 @@ internal sealed class WordsMutationService
                 state,
                 inputHadRevisions,
                 inputWasSigned,
+                inputProtection,
                 loaded.RemoteResourcesBlocked,
                 loaded.EvaluationInputTruncated || loaded.ImportedInputTruncated)),
         };
@@ -64,6 +67,7 @@ internal sealed class WordsMutationService
         LicenseState state,
         bool inputHadRevisions,
         bool inputWasSigned,
+        ProtectionType inputProtection,
         int remoteResourcesBlocked,
         bool evaluationInputTruncated)
     {
@@ -78,6 +82,17 @@ internal sealed class WordsMutationService
             extra.Add(new Warning { Code = WarningCodes.SignatureInvalidated, Message = "Editing invalidates the document's digital signature.", Hint = "Re-sign the produced document after review." });
         }
 
+        if (inputProtection != ProtectionType.NoProtection)
+        {
+            // Editing restrictions guide Word's UI; they are not encryption and do not bind the SDK.
+            extra.Add(new Warning
+            {
+                Code = WordsDiagnostics.ProtectionNotEnforced,
+                Message = $"The input has {inputProtection} editing restrictions; the edit was applied through them.",
+                Hint = "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect.",
+            });
+        }
+
         if (remoteResourcesBlocked > 0)
         {
             extra.Add(RemoteWarning(remoteResourcesBlocked));
@@ -85,7 +100,7 @@ internal sealed class WordsMutationService
 
         if (evaluationInputTruncated)
         {
-            extra.Add(new Warning { Code = WarningCodes.EvalInputTruncated, Message = "Aspose.Words evaluation mode truncated the input document while loading it.", Hint = "Do not deliver this edit as complete; apply a license and retry." });
+            extra.Add(EvaluationTruncated);
         }
 
         return Combine(EnvelopeParts.OutputWarnings(state), extra);

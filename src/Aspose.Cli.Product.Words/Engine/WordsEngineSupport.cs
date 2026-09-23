@@ -23,16 +23,19 @@ internal static class WordsEngineSupport
 
         if (loaded.EvaluationInputTruncated)
         {
-            warnings.Add(new Warning
-            {
-                Code = WarningCodes.EvalInputTruncated,
-                Message = "Aspose.Words evaluation mode truncated the input document while loading it.",
-                Hint = "Do not treat this projection or output as complete; apply a license and retry.",
-            });
+            warnings.Add(EvaluationTruncated);
         }
 
         return warnings.Count == 0 ? null : warnings;
     }
+
+    /// <summary>Evaluation mode cut short an input or imported document.</summary>
+    internal static Warning EvaluationTruncated { get; } = new()
+    {
+        Code = WarningCodes.EvalInputTruncated,
+        Message = "Aspose.Words evaluation mode truncated an input document while loading it.",
+        Hint = "Do not treat this projection or output as complete; apply a license and retry.",
+    };
 
     internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedDocument loaded, string format)
     {

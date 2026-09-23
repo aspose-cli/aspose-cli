@@ -24,7 +24,7 @@ internal sealed class WordsDocumentEngine : IDocumentEngine, IWordsReviewLayoutP
         ArgumentNullException.ThrowIfNull(licenseGate);
         ArgumentNullException.ThrowIfNull(resourceBudgets);
         ArgumentNullException.ThrowIfNull(writer);
-        var loader = new WordsDocumentLoader(resourceBudgets);
+        var loader = new WordsDocumentLoader(resourceBudgets, licenseGate);
         _reading = new WordsReadService(licenseGate, loader);
         _reviewLayout = new WordsReviewLayoutService(licenseGate, loader);
         _inspection = new WordsInspectionService(licenseGate, writer, loader);

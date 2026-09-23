@@ -13,9 +13,10 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// </summary>
 internal static class WordsAnchorResolver
 {
-    public static IReadOnlyList<ResolvedWordsOp> Resolve(Document document, WordsOpsBatch batch)
+    public static IReadOnlyList<ResolvedWordsOp> Resolve(LoadedDocument loaded, WordsOpsBatch batch)
     {
-        var index = new DocumentBlockIndex(document);
+        Document document = loaded.Document;
+        var index = new DocumentBlockIndex(document, loaded.Evaluation);
         var resolved = new List<ResolvedWordsOp>(batch.Ops.Count);
         foreach (WordsOp op in batch.Ops)
         {

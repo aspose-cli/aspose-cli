@@ -16,7 +16,7 @@ internal static class InfoProjection
     public static DocumentInfoResult Project(LoadedDocument loaded, string path, DocumentInfoRequest request)
     {
         Document document = loaded.Document;
-        var index = new DocumentBlockIndex(document);
+        var index = new DocumentBlockIndex(document, loaded.Evaluation);
         HashSet<string> details = request.Details?.ToHashSet(StringComparer.OrdinalIgnoreCase) ?? [];
         NodeCollection paragraphs = document.GetChildNodes(NodeType.Paragraph, true);
         NodeCollection tables = document.GetChildNodes(NodeType.Table, true);

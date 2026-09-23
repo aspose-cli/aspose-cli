@@ -38,7 +38,7 @@ internal static class WordsOpsExecutor
         SourceInfo input = InfoProjection.Source(inputPath, loaded);
         FileFingerprints.EnsureUnchanged(inputPath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(inputPath, request.Options.IfMatch, input.Fingerprint!);
-        IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded.Document, batch);
+        IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded, batch);
         IReadOnlyList<int> originalPages = ResolveOriginalPages(loaded.Document, resolved);
         Document? baseline = request.Verify ? loaded.Document.Clone() : null;
         if (request.TrackChanges)
@@ -149,7 +149,7 @@ internal static class WordsOpsExecutor
                         SetFooterOp footer => WordsStructureOpHandlers.SetHeaderFooter(
                             document, item.Sections, footer.Kind, footer.Paragraphs,
                             footer.Markdown is null ? null : loader.OpenMarkdown(footer.Markdown, loaded), isHeader: false),
-                        AppendDocumentOp append => WordsStructureOpHandlers.AppendDocument(document, append, loader),
+                        AppendDocumentOp append => WordsStructureOpHandlers.AppendDocument(loaded, append, loader),
                         MailMergeOp merge => WordsObjectOpHandlers.MailMerge(document, merge, inputs, loader),
                         InsertTableOp table => WordsTableOpHandlers.InsertTable(document, item.Nodes[0], table, loader),
                         AddWatermarkOp watermark => WordsObjectOpHandlers.AddWatermark(document, watermark, inputs, loader.ResourceBudgets),
