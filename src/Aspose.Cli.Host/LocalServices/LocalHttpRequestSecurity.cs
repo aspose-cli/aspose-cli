@@ -29,11 +29,9 @@ internal sealed class LocalHttpRequestSecurity
         HttpListenerRequest request,
         int expectedPort)
     {
-        string expectedOrigin =
-            $"http://127.0.0.1:{expectedPort}";
         return string.Equals(
                 request.Headers["Origin"],
-                expectedOrigin,
+                "http://" + Authority(expectedPort),
                 StringComparison.Ordinal)
             && SecretText.FixedEquals(
                 request.Headers[CsrfHeader],
@@ -44,25 +42,21 @@ internal sealed class LocalHttpRequestSecurity
         remoteEndPoint is not null
         && IPAddress.IsLoopback(remoteEndPoint.Address);
 
+    /// <summary>
+    /// The one Host a local service answers: the address it is bound to, as
+    /// a byte-exact string. Parsing the header as a URI would accept user
+    /// information, trailing dots or default ports that name the same host.
+    /// </summary>
     internal static bool IsExactLoopbackHost(
         string? hostHeader,
-        int expectedPort)
-    {
-        if (string.IsNullOrWhiteSpace(hostHeader)
-            || !Uri.TryCreate(
-                "http://" + hostHeader,
-                UriKind.Absolute,
-                out Uri? uri)
-            || uri.Port != expectedPort)
-        {
-            return false;
-        }
+        int expectedPort) =>
+        string.Equals(hostHeader, Authority(expectedPort), StringComparison.Ordinal);
 
-        string host = uri.Host.Trim('[', ']');
-        return string.Equals(host, "127.0.0.1", StringComparison.Ordinal)
-            || string.Equals(host, "localhost", StringComparison.OrdinalIgnoreCase)
-            || string.Equals(host, "::1", StringComparison.Ordinal);
-    }
+    /// <summary>The Host and Origin authority a browser sends for the bound address.</summary>
+    private static string Authority(int port) =>
+        port == 80
+            ? "127.0.0.1"
+            : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"127.0.0.1:{port}");
 
     internal static string RandomToken() =>
         Convert.ToHexString(System.Security.Cryptography.RandomNumberGenerator.GetBytes(32))

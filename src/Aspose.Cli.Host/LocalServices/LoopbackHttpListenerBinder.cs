@@ -7,11 +7,12 @@ using Aspose.Cli.Sdk.Errors;
 namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
-/// Atomically starts an <see cref="HttpListener"/> on explicit loopback host
-/// prefixes. A requested port of zero searches the dynamic range directly
-/// with HTTP.sys instead of probing with a TCP socket first; on Windows the
-/// TCP allocator can return ports reserved from HTTP.sys, so a probe is not
-/// proof that an HTTP listener can bind the same number.
+/// Atomically starts an <see cref="HttpListener"/> on <c>127.0.0.1</c>, the
+/// one address and Host a local service answers and the one origin its pages
+/// accept mutations from. A requested port of zero searches the dynamic range
+/// directly with HTTP.sys instead of probing with a TCP socket first; on
+/// Windows the TCP allocator can return ports reserved from HTTP.sys, so a
+/// probe is not proof that an HTTP listener can bind the same number.
 /// </summary>
 internal static class LoopbackHttpListenerBinder
 {
@@ -21,28 +22,16 @@ internal static class LoopbackHttpListenerBinder
     private const int MaxCandidateAttempts = 128;
 
     /// <summary>
-    /// Starts a listener for the supplied loopback host names and returns the
-    /// listener together with its resolved port. The caller owns the listener.
+    /// Starts a listener on <c>127.0.0.1</c> and returns it together with its
+    /// resolved port. The caller owns the listener.
     /// </summary>
     /// <param name="requestedPort">An explicit port, or zero to select one.</param>
-    /// <param name="hosts">
-    /// Loopback host names to register, such as <c>127.0.0.1</c> and
-    /// <c>localhost</c>.
-    /// </param>
     /// <exception cref="CliException">
     /// Thrown with <c>LOOPBACK_PORT_IN_USE</c> when the explicit port or every
     /// sampled dynamic candidate cannot be bound.
     /// </exception>
-    public static LoopbackHttpListenerBinding Start(
-        int requestedPort,
-        IReadOnlyList<string> hosts)
+    public static LoopbackHttpListenerBinding Start(int requestedPort)
     {
-        ArgumentNullException.ThrowIfNull(hosts);
-        if (hosts.Count == 0)
-        {
-            throw new ArgumentException("At least one loopback host is required.", nameof(hosts));
-        }
-
         if (requestedPort is < 0 or > 65_535)
         {
             throw new ArgumentOutOfRangeException(
@@ -50,22 +39,9 @@ internal static class LoopbackHttpListenerBinder
                 "A loopback listener port is zero or between 1 and 65535.");
         }
 
-        if (hosts.Any(static host =>
-            !string.Equals(host, "127.0.0.1", StringComparison.Ordinal)
-            && !string.Equals(
-                host,
-                "localhost",
-                StringComparison.OrdinalIgnoreCase)
-            && !string.Equals(host, "[::1]", StringComparison.Ordinal)))
-        {
-            throw new ArgumentException(
-                "Listener prefixes must name an explicit loopback host.",
-                nameof(hosts));
-        }
-
         if (requestedPort != 0)
         {
-            return TryStart(requestedPort, hosts)
+            return TryStart(requestedPort)
                 ?? throw CliErrors.LoopbackPortInUse(requestedPort);
         }
 
@@ -75,7 +51,7 @@ internal static class LoopbackHttpListenerBinder
         {
             int offset = (start + (attempt * CandidateStep)) % DynamicPortCount;
             lastCandidate = DynamicPortStart + offset;
-            LoopbackHttpListenerBinding? binding = TryStart(lastCandidate, hosts);
+            LoopbackHttpListenerBinding? binding = TryStart(lastCandidate);
             if (binding is not null)
             {
                 return binding;
@@ -85,17 +61,12 @@ internal static class LoopbackHttpListenerBinder
         throw CliErrors.LoopbackPortInUse(lastCandidate);
     }
 
-    private static LoopbackHttpListenerBinding? TryStart(
-        int port,
-        IReadOnlyList<string> hosts)
+    private static LoopbackHttpListenerBinding? TryStart(int port)
     {
         var listener = new HttpListener();
-        foreach (string host in hosts)
-        {
-            listener.Prefixes.Add(string.Create(
-                CultureInfo.InvariantCulture,
-                $"http://{host}:{port}/"));
-        }
+        listener.Prefixes.Add(string.Create(
+            CultureInfo.InvariantCulture,
+            $"http://127.0.0.1:{port}/"));
 
         try
         {

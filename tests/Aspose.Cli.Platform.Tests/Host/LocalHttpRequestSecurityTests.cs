@@ -28,13 +28,19 @@ public sealed class LocalHttpRequestSecurityTests
 
     [Theory]
     [InlineData("127.0.0.1:4680", 4680, true)]
-    [InlineData("localhost:4680", 4680, true)]
-    [InlineData("[::1]:4680", 4680, true)]
+    [InlineData("localhost:4680", 4680, false)]
+    [InlineData("[::1]:4680", 4680, false)]
+    [InlineData("x@127.0.0.1:4680", 4680, false)]
+    [InlineData("127.0.0.1.:4680", 4680, false)]
+    [InlineData("127.0.0.1:04680", 4680, false)]
+    [InlineData("127.0.0.1", 4680, false)]
     [InlineData("127.0.0.1:4681", 4680, false)]
     [InlineData("localhost", 4680, false)]
     [InlineData("evil.example:4680", 4680, false)]
     [InlineData("*:4680", 4680, false)]
-    public void IsExactLoopbackHost_RequiresTheBoundPort(
+    [InlineData("127.0.0.1", 80, true)]
+    [InlineData("127.0.0.1:80", 80, false)]
+    public void IsExactLoopbackHost_RequiresTheBoundAddressAndPortExactly(
         string host,
         int port,
         bool expected) =>

@@ -431,11 +431,12 @@ public sealed class CliContractTests : IDisposable
             using HttpResponseMessage preview =
                 await client.GetAsync(previewUri);
             Assert.Equal(HttpStatusCode.OK, preview.StatusCode);
-            // The App frames it, so the viewer never forbids being framed.
-            Assert.False(
-                preview.Headers.Contains("X-Frame-Options"));
-            Assert.Contains(
-                "frame-ancestors http://127.0.0.1:*",
+            // The App frames it from the same origin, and nothing else may.
+            Assert.Equal(
+                "SAMEORIGIN",
+                preview.Headers.GetValues("X-Frame-Options").Single());
+            Assert.EndsWith(
+                "frame-ancestors 'self'",
                 preview.Headers.GetValues(
                     "Content-Security-Policy").Single(),
                 StringComparison.Ordinal);

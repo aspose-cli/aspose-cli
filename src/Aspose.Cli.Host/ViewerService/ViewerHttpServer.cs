@@ -58,9 +58,7 @@ internal sealed class ViewerHttpServer : IDisposable
     /// <summary>Binds loopback and starts accepting; returns the bound port.</summary>
     public int Start()
     {
-        LoopbackHttpListenerBinding binding = LoopbackHttpListenerBinder.Start(
-            _requestedPort,
-            ["127.0.0.1", "localhost"]);
+        LoopbackHttpListenerBinding binding = LoopbackHttpListenerBinder.Start(_requestedPort);
         _listener = binding.Listener;
         _port = binding.Port;
         _acceptLoop = Task.Run(() => AcceptLoopAsync(binding.Listener));
@@ -152,11 +150,6 @@ internal sealed class ViewerHttpServer : IDisposable
                 Text(response, 405, "text/plain; charset=utf-8", "Method not allowed: the viewer only serves GET.");
                 return;
             }
-            if (segments.Length == 0)
-            {
-                Home(response);
-                return;
-            }
             if (segments is not ["d", { Length: > 0 } id, ..]
                 || _documents.Find(id) is not { } document)
             {
@@ -207,19 +200,6 @@ internal sealed class ViewerHttpServer : IDisposable
             }
             catch (Exception) { }
         }
-    }
-
-    private void Home(HttpListenerResponse response)
-    {
-        var page = new StringBuilder(
-            "<!doctype html><html lang=\"en\"><head><meta charset=\"utf-8\">"
-            + "<title>Aspose CLI viewer</title></head><body><h1>Open documents</h1><ul>");
-        foreach (LiveDocument document in _documents.All)
-        {
-            page.Append("<li><a href=\"/d/").Append(document.Id).Append("/\">")
-                .Append(WebUtility.HtmlEncode(document.FileName)).Append("</a></li>");
-        }
-        Text(response, 200, "text/html; charset=utf-8", page.Append("</ul></body></html>").ToString());
     }
 
     private void Page(HttpListenerResponse response, LiveDocument document)
@@ -279,16 +259,16 @@ internal sealed class ViewerHttpServer : IDisposable
     /// <summary>
     /// A rendered part is document content, whatever the document contained:
     /// it may paint inside the viewer and nothing else. Scripts a product
-    /// exported with its HTML never run, because the presenter drives it.
-    /// Every ancestor is checked, so the loopback App that frames the viewer
-    /// is named beside it.
+    /// exported with its HTML never run, because the presenter drives it,
+    /// and no part is ever served as a script. The App and the viewer share
+    /// this origin, so every ancestor that frames a part is the origin itself.
     /// </summary>
     private static void ContentHeaders(HttpListenerResponse response)
     {
         response.Headers["Content-Security-Policy"] =
             "default-src 'none'; img-src 'self' data:; style-src 'unsafe-inline'; "
             + "font-src data:; base-uri 'none'; form-action 'none'; "
-            + "frame-ancestors 'self' http://127.0.0.1:*";
+            + "frame-ancestors 'self'";
         response.Headers["Cross-Origin-Resource-Policy"] = "same-origin";
     }
 
@@ -307,7 +287,6 @@ internal sealed class ViewerHttpServer : IDisposable
         {
             ".html" or ".htm" => "text/html; charset=utf-8",
             ".css" => "text/css; charset=utf-8",
-            ".js" => "text/javascript; charset=utf-8",
             ".json" => "application/json; charset=utf-8",
             ".png" => "image/png",
             ".jpg" or ".jpeg" => "image/jpeg",
