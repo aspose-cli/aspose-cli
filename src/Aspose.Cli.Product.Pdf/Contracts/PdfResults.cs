@@ -275,12 +275,33 @@ public sealed record PdfFormResult() : ResultEnvelope(PdfSchemaIds.FormResult, 2
 public sealed record PdfFormField
 {
     public required string Name { get; init; }
+
+    /// <summary>The field kind; one of <see cref="PdfFormFieldTypes"/>.</summary>
     public required string Type { get; init; }
     public string? Value { get; init; }
     public IReadOnlyList<string>? Options { get; init; }
     public required bool ReadOnly { get; init; }
     public required bool Required { get; init; }
     public int? Page { get; init; }
+}
+
+/// <summary>The product vocabulary of form field kinds, independent of the engine's class names.</summary>
+public static class PdfFormFieldTypes
+{
+    public const string Text = "text";
+    public const string Checkbox = "checkbox";
+    public const string Radio = "radio";
+    public const string RadioOption = "radio-option";
+    public const string ComboBox = "combobox";
+    public const string ListBox = "listbox";
+    public const string Button = "button";
+    public const string Signature = "signature";
+
+    /// <summary>A field kind the vocabulary does not name.</summary>
+    public const string Other = "other";
+
+    public static IReadOnlyList<string> All { get; } =
+        [Text, Checkbox, Radio, RadioOption, ComboBox, ListBox, Button, Signature, Other];
 }
 
 /// <summary>Result of exporting PDF form data.</summary>

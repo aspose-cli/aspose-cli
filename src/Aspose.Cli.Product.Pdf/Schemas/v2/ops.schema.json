@@ -85,7 +85,7 @@
           },
           {
             "type": "object", "required": ["op", "page", "rect", "url"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_link" }, "page": { "$ref": "#/$defs/page" }, "rect": { "$ref": "#/$defs/rect" }, "url": { "type": "string", "format": "uri" } }
+            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_link" }, "page": { "$ref": "#/$defs/page" }, "rect": { "$ref": "#/$defs/rect" }, "url": { "type": "string", "format": "uri", "pattern": "^(https?://|mailto:)", "description": "An absolute http, https or mailto URL." } }
           },
           {
             "type": "object", "required": ["op", "pattern"], "additionalProperties": false,
@@ -162,7 +162,7 @@
     "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$" },
     "page": { "type": "integer", "minimum": 1 },
     "pages": { "type": "string", "minLength": 1 },
-    "pageSize": { "enum": ["A3", "A4", "LETTER", "LEGAL", "Letter", "Legal"] },
+    "pageSize": { "enum": ["A3", "A4", "Letter", "Legal"] },
     "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "default": "#000000" },
     "opacity": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.35 },
     "layer": { "enum": ["over", "under"], "default": "over" },
@@ -171,7 +171,7 @@
       "description": "Points relative to the current visible rotated page box, with a top-left origin.",
       "type": "object", "required": ["x", "y", "width", "height"], "additionalProperties": false,
       "properties": {
-        "x": { "type": "number" }, "y": { "type": "number" },
+        "x": { "type": "number", "minimum": 0 }, "y": { "type": "number", "minimum": 0 },
         "width": { "type": "number", "exclusiveMinimum": 0 }, "height": { "type": "number", "exclusiveMinimum": 0 }
       }
     },

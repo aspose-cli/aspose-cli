@@ -195,7 +195,7 @@ internal static class PdfContractSamples
             new InsertPagesFromOp { Path = "D:/data/append.pdf", Pages = "1", At = 2, PasswordEnv = "PDF_PASSWORD" },
             new InsertBlankPageOp { At = 2, Size = "A4" },
             new CropPagesOp { Pages = "1", Box = "crop", Rect = new PdfRectInput { X = 10, Y = 20, Width = 500, Height = 700 } },
-            new SetPageSizeOp { Pages = "1", Size = "LETTER", ScaleContent = true },
+            new SetPageSizeOp { Pages = "1", Size = "Letter", ScaleContent = true },
             new AddWatermarkTextOp { Pages = "1-", Text = "DRAFT" },
             new AddWatermarkImageOp { Path = "D:/data/logo.png" },
             new AddPageNumbersOp(),
@@ -241,7 +241,7 @@ internal static class PdfContractSamples
             new PdfFormField
             {
                 Name = "Customer",
-                Type = "TextBoxField",
+                Type = PdfFormFieldTypes.Text,
                 Value = "Contoso",
                 ReadOnly = false,
                 Required = true,

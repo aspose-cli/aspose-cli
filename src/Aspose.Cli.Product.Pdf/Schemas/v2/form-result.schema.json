@@ -17,7 +17,7 @@
         "required": ["name", "type", "readOnly", "required"],
         "additionalProperties": false,
         "properties": {
-          "name": { "type": "string" }, "type": { "type": "string" }, "value": { "type": "string" },
+          "name": { "type": "string" }, "type": { "enum": ["text", "checkbox", "radio", "radio-option", "combobox", "listbox", "button", "signature", "other"] }, "value": { "type": "string" },
           "options": { "type": "array", "items": { "type": "string" } },
           "readOnly": { "type": "boolean" }, "required": { "type": "boolean" },
           "page": { "type": "integer", "minimum": 1 }

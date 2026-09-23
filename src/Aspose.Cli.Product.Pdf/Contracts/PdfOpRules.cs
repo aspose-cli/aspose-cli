@@ -89,8 +89,11 @@ internal static class PdfOpRules
         Require(op.Page > 0, "page is 1-based");
         Rect(op.Rect);
         Require(
-            Uri.TryCreate(op.Url, UriKind.Absolute, out Uri? uri) && uri.Scheme is "http" or "https" or "mailto",
-            "url must use http, https or mailto");
+            (op.Url.StartsWith("http://", StringComparison.Ordinal)
+                || op.Url.StartsWith("https://", StringComparison.Ordinal)
+                || op.Url.StartsWith("mailto:", StringComparison.Ordinal))
+            && Uri.TryCreate(op.Url, UriKind.Absolute, out _),
+            "url must be an absolute http://, https:// or mailto: URL");
     }
 
     internal static void RedactText(RedactTextOp op)
@@ -175,7 +178,7 @@ internal static class PdfOpRules
     }
 
     private static void PageSize(string value) =>
-        Require(value.ToUpperInvariant() is "A3" or "A4" or "LETTER" or "LEGAL", "unknown page size");
+        Require(value is "A3" or "A4" or "Letter" or "Legal", "size must be one of: A3, A4, Letter, Legal");
 
     private static void Rect(PdfRectInput value) =>
         Require(value.X >= 0 && value.Y >= 0 && value.Width > 0 && value.Height > 0,

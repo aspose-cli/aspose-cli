@@ -9,7 +9,10 @@ aspose-cli pdf extract cover.filled.pdf --what forms --to json --out form-result
 ```
 
 AcroForm fields are addressed by exact field name using `set_form_field`
-operations. `query forms` reports XFA as `type: "xfa"` and `readOnly: true`;
+operations. Each field's `type` is one of `text` (including date, number,
+password and rich-text boxes), `checkbox`, `radio`, `radio-option`,
+`combobox`, `listbox`, `button`, `signature` or `other`.
+`query forms` reports XFA as `type: "xfa"` and `readOnly: true`;
 filling, flattening and form export reject it with `FORM_XFA_UNSUPPORTED`.
 Flattening is an edit operation, not a `--flatten` option: use
 `{"op":"flatten_forms","all":true}` or

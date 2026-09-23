@@ -58,6 +58,38 @@ public sealed class PdfArtifactWorkflowTests
     }
 
     [Fact]
+    public void Create_PlainTextAppliesPageSizeAndMarginsAndFlowsAcrossPages()
+    {
+        using var fixture = new PdfEngineFixture();
+        string text = fixture.File("long.txt");
+        File.WriteAllLines(text, ["Opening\tline", .. Enumerable.Range(2, 90).Select(static line => $"Line {line}")]);
+        string output = fixture.File("long.pdf");
+
+        fixture.Engine.Create(new NewPdfRequest
+        {
+            TextPath = text,
+            OutputPath = output,
+            PageSize = "Letter",
+            Margins = new PdfMargins(72, 54, 60, 90),
+        });
+
+        using var reopened = new Document(output);
+        Assert.True(reopened.Pages.Count > 1);
+        Assert.All(reopened.Pages, static page =>
+        {
+            Assert.Equal(612, page.Rect.Width, precision: 1);
+            Assert.Equal(792, page.Rect.Height, precision: 1);
+        });
+        var absorber = new TextFragmentAbsorber("Opening");
+        reopened.Pages[1].Accept(absorber);
+        TextFragment first = Assert.Single(absorber.TextFragments);
+        Assert.True(first.Rectangle.LLX >= 89, $"Text starts at {first.Rectangle.LLX}, outside the requested left margin.");
+        Assert.True(first.Rectangle.URY <= 721, $"Text ends at {first.Rectangle.URY}, outside the requested top margin.");
+        Assert.Contains("Opening line", PageText(reopened.Pages[1]), StringComparison.Ordinal);
+        Assert.Contains("Line 91", PageText(reopened.Pages[reopened.Pages.Count]), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void CreateMergeAndSplit_PreserveTheArtifactSequence()
     {
         using var fixture = new PdfEngineFixture();

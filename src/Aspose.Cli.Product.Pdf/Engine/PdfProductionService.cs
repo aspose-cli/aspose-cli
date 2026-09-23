@@ -318,24 +318,61 @@ internal sealed class PdfProductionService
 
         (double width, double height) = PageDimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
-        Document document = markdown
-            ? new Document(fullPath, new MdLoadOptions
-            {
-                PageInfo = new PageInfo
-                {
-                    Width = width,
-                    Height = height,
-                    Margin = Margin(request.Margins),
-                },
-            })
-            : new Document(fullPath, new TxtLoadOptions());
-        foreach (Page page in document.Pages)
+        var pageInfo = new PageInfo { Width = width, Height = height, Margin = Margin(request.Margins) };
+        return markdown
+            ? new Document(fullPath, new MdLoadOptions { PageInfo = pageInfo })
+            : CreateFromPlainText(fullPath, pageInfo);
+    }
+
+    /// <summary>
+    /// Lays plain text out line by line on pages of the requested size and margins. The
+    /// SDK's text loader has no page settings and fixes its own page and origin, so
+    /// resizing its pages afterwards leaves the text where the loader put it.
+    /// </summary>
+    private static Document CreateFromPlainText(string path, PageInfo pageInfo)
+    {
+        var document = new Document();
+        try
         {
-            page.SetPageSize(width, height);
-            page.PageInfo.Margin = Margin(request.Margins);
+            Page page = document.Pages.Add();
+            page.SetPageSize(pageInfo.Width, pageInfo.Height);
+            page.PageInfo.Margin = pageInfo.Margin;
+            foreach (string line in File.ReadLines(path))
+            {
+                page.Paragraphs.Add(new TextFragment(ExpandTabs(line)));
+            }
+
+            return document;
+        }
+        catch
+        {
+            document.Dispose();
+            throw;
+        }
+    }
+
+    /// <summary>Replaces tabs with spaces up to the next eight-column stop, as a terminal shows them.</summary>
+    private static string ExpandTabs(string line)
+    {
+        if (!line.Contains('\t', StringComparison.Ordinal))
+        {
+            return line;
         }
 
-        return document;
+        var expanded = new StringBuilder(line.Length + 8);
+        foreach (char character in line)
+        {
+            if (character == '\t')
+            {
+                expanded.Append(' ', 8 - (expanded.Length % 8));
+            }
+            else
+            {
+                expanded.Append(character);
+            }
+        }
+
+        return expanded.ToString();
     }
 
     internal PdfWriteResult Merge(PdfMergeRequest request)

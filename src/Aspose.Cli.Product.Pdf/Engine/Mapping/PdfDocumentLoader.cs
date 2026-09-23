@@ -33,9 +33,10 @@ internal sealed class PdfDocumentLoader(
                     document.Pages.Count,
                     "items",
                     "post-load");
+                // Annotations are the per-page objects a loaded PDF exposes; Paragraphs
+                // belongs to the generator model and is always empty after a load.
                 long objects = document.Pages.Cast<Page>()
-                    .Sum(static page =>
-                        (long)page.Annotations.Count + page.Paragraphs.Count);
+                    .Sum(static page => (long)page.Annotations.Count);
                 resourceBudgets.EnsureWithin(
                     PdfBudgetDomains.Objects,
                     objects,

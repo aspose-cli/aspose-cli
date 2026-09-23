@@ -50,7 +50,7 @@ internal sealed class PdfFormService
             .Select(static field => new PdfFormField
             {
                 Name = field.FullName,
-                Type = field.GetType().Name,
+                Type = FieldType(field),
                 Value = field.Value,
                 Options = field is ChoiceField choice
                     ? choice.Options.Select(static option => option.Value ?? option.Name).ToArray()
@@ -69,6 +69,23 @@ internal sealed class PdfFormService
             License = EnvelopeParts.License(state),
         };
     }
+
+    /// <summary>
+    /// Maps an engine field class to the product vocabulary. Specialized text boxes
+    /// (date, number, password, barcode, rich text, file selection) are text fields.
+    /// </summary>
+    private static string FieldType(Field field) => field switch
+    {
+        TextBoxField => PdfFormFieldTypes.Text,
+        CheckboxField => PdfFormFieldTypes.Checkbox,
+        RadioButtonField => PdfFormFieldTypes.Radio,
+        RadioButtonOptionField => PdfFormFieldTypes.RadioOption,
+        ComboBoxField => PdfFormFieldTypes.ComboBox,
+        ListBoxField => PdfFormFieldTypes.ListBox,
+        ButtonField => PdfFormFieldTypes.Button,
+        SignatureField => PdfFormFieldTypes.Signature,
+        _ => PdfFormFieldTypes.Other,
+    };
 
     public PdfFormExportResult ExportForm(string filePath, PdfFormExportRequest request)
     {
