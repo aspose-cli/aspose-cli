@@ -80,7 +80,7 @@ public static class CellsErrors
         return new CliException(
             CellsDiagnostics.SheetNotFound,
             $"Worksheet '{requested}' not found. Available sheets: {string.Join(", ", available)}",
-            hint: "Use one of the available sheet names (they are case-sensitive), or run 'aspose-cli cells inspect <file>' to inspect the structure.",
+            hint: "Use one of the available sheet names (matched case-insensitively, as in Excel), or run 'aspose-cli cells inspect <file>' to inspect the structure.",
             details: new JsonObject { ["requested"] = requested, ["available"] = names });
     }
 }

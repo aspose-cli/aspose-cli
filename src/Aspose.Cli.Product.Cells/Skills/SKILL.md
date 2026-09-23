@@ -172,7 +172,7 @@ Exit codes: 0 ok, 1 internal, 2 usage, 3 input file, 4 validation, 5 output,
 | Windows PowerShell strips inner quotes from inline `--ops` JSON | Escape them as `\"`, pipe via `--ops -`, or use `--set` |
 | Windows PowerShell `>` re-encodes stdout as UTF-16 | Parse stdout directly |
 | A workbook open in Excel | Reads work; the in-place save fails with OUTPUT_UNWRITABLE — ask the user to close it |
-| Sheet names are case-sensitive; evaluation adds a sheet | Use exact names from `error.details.available`; never rely on sheet order |
+| Evaluation adds a sheet | Sheet names match case-insensitively; take them from `error.details.available` and never rely on sheet order |
 | Passwords | Prefer `--password-env VAR`; protect outputs with `--encrypt-env` |
 
 ## 9. Task routing

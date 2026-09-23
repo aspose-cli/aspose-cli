@@ -15,7 +15,9 @@ internal static class SearchMatcher
 {
     private const int MaxValueLength = 200;
 
-    public static (IReadOnlyList<SearchHit> Hits, bool Truncated) Find(ResourceBudgetLedger budgets, Workbook workbook, SearchRequest request)
+    /// <summary>Searches every sheet, or only the already resolved <paramref name="sheetIndex"/>.</summary>
+    public static (IReadOnlyList<SearchHit> Hits, bool Truncated) Find(
+        ResourceBudgetLedger budgets, Workbook workbook, SearchRequest request, int? sheetIndex)
     {
         var hits = new List<SearchHit>();
         bool inValues = request.In is SearchIn.Values or SearchIn.Both;
@@ -25,7 +27,7 @@ internal static class SearchMatcher
 
         foreach (Worksheet sheet in workbook.Worksheets)
         {
-            if (request.SheetName is { } name && !string.Equals(sheet.Name, name, StringComparison.Ordinal))
+            if (sheetIndex is { } only && sheet.Index != only)
             {
                 continue;
             }

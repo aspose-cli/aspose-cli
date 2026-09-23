@@ -131,12 +131,8 @@ internal sealed class CellsQueryService
         Workbook workbook = loaded.Workbook;
         SourceInfo source = BuildSource(filePath, workbook);
 
-        if (request.SheetName is { } name && workbook.Worksheets[name] is null)
-        {
-            throw CellsErrors.SheetNotFound(name, Sheets.Names(workbook));
-        }
-
-        (IReadOnlyList<SearchHit> hits, bool truncated) = SearchMatcher.Find(_resourceBudgets, workbook, request);
+        int? sheetIndex = request.SheetName is { } name ? Sheets.Resolve(workbook, name).Index : null;
+        (IReadOnlyList<SearchHit> hits, bool truncated) = SearchMatcher.Find(_resourceBudgets, workbook, request, sheetIndex);
 
         return new SearchResult
         {

@@ -90,6 +90,29 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
         Assert.False(File.Exists(output));
     }
 
+    [Theory]
+    [InlineData("Data")]
+    [InlineData("data")]
+    [InlineData("DATA")]
+    public void SearchSheetFilter_MatchesTheSheetCaseInsensitivelyLikeEveryOtherCommand(string sheet)
+    {
+        string source = Seed("Data");
+
+        SearchResult result = _fixture.Engine.Search(source, new SearchRequest { Pattern = "East", SheetName = sheet });
+
+        SearchHit hit = Assert.Single(result.Hits);
+        Assert.Equal(("Data", "A2"), (hit.Sheet, hit.Cell));
+    }
+
+    [Fact]
+    public void SearchSheetFilter_ReportsAMissingSheet()
+    {
+        CliException error = Assert.Throws<CliException>(() =>
+            _fixture.Engine.Search(Seed("Data"), new SearchRequest { Pattern = "East", SheetName = "Nope" }));
+
+        Assert.Equal(CellsDiagnostics.SheetNotFound, error.Code);
+    }
+
     [Fact]
     public void HyperlinkTarget_MustBeACellReference()
     {
