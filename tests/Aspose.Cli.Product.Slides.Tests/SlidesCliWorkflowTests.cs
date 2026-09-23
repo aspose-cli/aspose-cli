@@ -75,16 +75,15 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     [Fact]
-    public void MarkdownAuthoring_FillsTheBundledTemplateLayoutsWithoutOwnStyling()
+    public void MarkdownAuthoring_FillsTheBuiltInDesignLayoutsWithoutOwnStyling()
     {
-        string template = InstalledTemplate("default-16x9.pptx");
         File.WriteAllText(
             _workspace.File("outline.md"),
             "# Review\nFor the board\n\n## Results\n- Revenue up\n  - Enterprise\nPlain note\n\n## Close\n");
 
         CliResult created = _workspace.Run(
             "slides", "create", "deck.pptx", "--from-markdown", "outline.md",
-            "--template", template, "--output", "json");
+            "--output", "json");
 
         Assert.True(created.ExitCode == 0, created.StdErr);
         using var deck = new Presentation(_workspace.File("deck.pptx"));
@@ -116,10 +115,9 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     [Fact]
     public void SetBody_FillsTheContentPlaceholderOfAStandardLayout()
     {
-        string template = InstalledTemplate("default-16x9.pptx");
         File.WriteAllText(_workspace.File("outline.md"), "## Results\n- Draft\n");
         Assert.Equal(0, _workspace.Run(
-            "slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--template", template).ExitCode);
+            "slides", "create", "deck.pptx", "--from-markdown", "outline.md").ExitCode);
         File.WriteAllText(
             _workspace.File("ops.json"),
             """{"ops":[{"op":"set_body","slide":1,"paragraphs":[{"text":"Final"}]}]}""");
@@ -140,10 +138,9 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     [Fact]
     public void BodyPlaceholderTarget_ReachesTheContentPlaceholderOfAStandardLayout()
     {
-        string template = InstalledTemplate("default-16x9.pptx");
         File.WriteAllText(_workspace.File("outline.md"), "## Results\n- Draft\n");
         Assert.Equal(0, _workspace.Run(
-            "slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--template", template).ExitCode);
+            "slides", "create", "deck.pptx", "--from-markdown", "outline.md").ExitCode);
         File.WriteAllText(
             _workspace.File("ops.json"),
             """{"ops":[{"op":"set_text","slide":1,"placeholder":"body","text":"Final"}]}""");
@@ -201,14 +198,6 @@ public sealed class SlidesCliWorkflowTests : IDisposable
             " --slides 1-4 --scope shapes --notes --max-chars 8 --output json",
             JsonNode.Parse(single.StdOut)!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
-    }
-
-    private string InstalledTemplate(string name)
-    {
-        CliResult installed = _workspace.Run(
-            "skill", "install", "aspose-cli-slides", "--target", "skills", "--output", "json");
-        Assert.True(installed.ExitCode == 0, installed.StdErr);
-        return _workspace.File(Path.Combine("skills", "aspose-cli-slides", "assets", "templates", name));
     }
 
     public void Dispose() => _workspace.Dispose();

@@ -36,9 +36,8 @@ operations even when others fail; those partial results exit 8. Reserve it for
 workflows that explicitly accept partial delivery. Every save reopens the
 output before it is published.
 
-After `set_footer`, run `review` and open every affected slide.
-Confirm that footer text, dates, and slide numbers are visible inside the slide
-canvas; template placeholders can retain geometry from an earlier slide size.
+`set_footer` shows footer text, slide numbers or dates through the layout's own
+placeholders; their position and style come from the template.
 
 The current operation vocabulary is available offline:
 

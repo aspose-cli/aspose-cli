@@ -110,7 +110,7 @@ internal static class SlidesMutationHandlers
                 UpdateChartDataOp value => UpdateChart(item.Slide!, item.Shape!, value, touched),
                 DeleteShapeOp => DeleteShape(item.Slide!, item.Shape!, touched),
                 SetShapeStyleOp value => SetShapeStyle(item.Slide!, item.Shape!, value.Style, touched),
-                SetFooterOp value => SetFooter(presentation, item.Slides!, value, touched),
+                SetFooterOp value => SetFooter(item.Slides!, value, touched),
                 SetTransitionOp value => SetTransition(item.Slides!, value, touched),
                 SlidesSetPropertiesOp value => SetProperties(presentation, value),
                 SetSlideSizeOp value => SetSlideSize(presentation, value, touched),

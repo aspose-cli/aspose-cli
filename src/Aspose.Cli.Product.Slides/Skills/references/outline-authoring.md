@@ -24,9 +24,10 @@ slide size are kept. A layout type the template lacks falls back to Title and
 Content. Unused placeholders are removed, and body text uses the layout's
 autofit so PowerPoint shrinks overflowing text.
 
-Without `--template`, the SDK's plain default theme is used. Prefer the bundled
-`assets/templates/default-16x9.pptx` or the user's brand template, and choose
-`--size 16x9` or `--size 4x3` only when no template sets the size.
+Without `--template`, the built-in 16:9 design is used. `--size 16x9` or
+`--size 4x3` resizes the canvas and scales the masters, layouts and slides with
+it. Without `--from-markdown`, the template's own slides are kept; a template
+that has none yields one empty Title Slide.
 
 After creation, inspect the slide inventory before adding charts, tables,
 images, notes or transitions with `slides edit`.

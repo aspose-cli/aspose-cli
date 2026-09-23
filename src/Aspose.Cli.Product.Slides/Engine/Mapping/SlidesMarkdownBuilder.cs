@@ -162,11 +162,7 @@ internal static partial class SlidesMarkdownBuilder
             { ImagePath: null, Blocks.Count: 0 } => SlideLayoutType.TitleOnly,
             _ => SlideLayoutType.TitleAndObject,
         };
-        return presentation.LayoutSlides.GetByType(type)
-            ?? presentation.LayoutSlides.GetByType(SlideLayoutType.TitleAndObject)
-            ?? presentation.LayoutSlides.FirstOrDefault(static layout =>
-                layout.Shapes.Any(static shape => SlidesPlaceholders.IsTitle(shape.Placeholder)))
-            ?? presentation.LayoutSlides[0];
+        return SlidesPlaceholders.Layout(presentation, type);
     }
 
     private static void WriteBlocks(ITextFrame frame, IReadOnlyList<MarkdownBlock> blocks)

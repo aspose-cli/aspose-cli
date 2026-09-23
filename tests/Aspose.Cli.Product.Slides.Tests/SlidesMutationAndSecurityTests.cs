@@ -221,7 +221,7 @@ public sealed class SlidesMutationAndSecurityTests
     }
 
     [Fact]
-    public void SetFooter_WidescreenSlidesKeepVisiblePlaceholdersInsideTheCanvas()
+    public void SetFooter_ActivatesLayoutPlaceholdersInsideAScaledCanvasAndKeepsExplicitGeometry()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("footer-source.pptx");
@@ -236,7 +236,7 @@ public sealed class SlidesMutationAndSecurityTests
         {
             presentation.SlideSize.SetSize(
                 SlideSizeType.OnScreen16x9,
-                SlideSizeScaleType.DoNotScale);
+                SlideSizeScaleType.EnsureFit);
             _ = presentation.Slides.AddEmptySlide(presentation.LayoutSlides[0]);
             foreach (ISlide slide in presentation.Slides)
             {

@@ -5,7 +5,7 @@ examples/edit-deck-safely. [deck.md](deck.md) creates a synthetic source present
 [deck-ops.json](deck-ops.json) updates its second slide.
 
 ```powershell
-aspose-cli slides create deck.pptx --from-markdown deck.md --template ../../assets/templates/default-16x9.pptx --output json
+aspose-cli slides create deck.pptx --from-markdown deck.md --output json
 aspose-cli slides inspect deck.pptx --preview --output json
 aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output json
 aspose-cli slides query slides deck.revised.pptx --slides 1- --scope full --notes --output json

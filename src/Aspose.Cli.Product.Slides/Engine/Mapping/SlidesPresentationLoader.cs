@@ -17,6 +17,16 @@ internal sealed class SlidesPresentationLoader(
     // Generated candidates are bounded by publication, not a second user-input admission.
     internal LoadedPresentation OpenPublishedCandidate(string path, string? password) => OpenCore(path, password);
 
+    /// <summary>Opens the built-in 16:9 design that new presentations use without a template.</summary>
+    internal static LoadedPresentation OpenDefaultTemplate()
+    {
+        using Stream stream = typeof(SlidesPresentationLoader).Assembly.GetManifestResourceStream(DefaultTemplateResource)
+            ?? throw new InvalidOperationException($"The built-in resource {DefaultTemplateResource} is missing.");
+        return new LoadedPresentation(new Presentation(stream), "pptx");
+    }
+
+    private const string DefaultTemplateResource = "Templates/default-16x9.pptx";
+
     private LoadedPresentation OpenCore(string path, string? password)
     {
 

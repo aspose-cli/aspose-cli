@@ -26,6 +26,8 @@ the budget, `next` doubles `--max-chars`.
    aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx --output json
    ```
 
+   Omit `--template` to use the built-in 16:9 design.
+
 3. **Existing deck:** inspect structure, then read only the slides you need:
 
    ```powershell
@@ -47,13 +49,11 @@ the budget, `next` doubles `--max-chars`.
 
 - Fonts, colors, backgrounds and placeholder geometry come from the template's
   theme, masters and layouts. Use the user's brand template when one exists;
-  otherwise use the bundled
-  [default 16:9 template](assets/templates/default-16x9.pptx) (path relative
-  to this Skill directory).
+  without `--template`, `slides create` uses the built-in 16:9 design.
 - Markdown authoring fills layout placeholders: `#` becomes a Title Slide, `##`
   a Title and Content slide, and a slide with both text and an image uses Two
-  Content. It sets no fonts or colors of its own. See
-  [outline authoring](references/outline-authoring.md).
+  Content. It sets no colors and no fonts of its own, except a monospace font
+  for code blocks. See [outline authoring](references/outline-authoring.md).
 - Do not restyle text run by run to fix a look; choose or correct the template.
 - One claim per slide. Keep at most six bullets and two levels; prefer a chart
   or small table over dense prose. Split a slide rather than shrink its text.

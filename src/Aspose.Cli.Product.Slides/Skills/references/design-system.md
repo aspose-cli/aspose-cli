@@ -7,11 +7,12 @@ fills placeholders; it does not restyle them.
 ## Choosing the template
 
 1. The user's brand template, when supplied.
-2. Otherwise the bundled `assets/templates/default-16x9.pptx`: a dark title
-   slide, clean white content slides, a restrained teal accent, Calibri with
-   Microsoft YaHei for CJK text.
+2. Otherwise omit `--template`: `slides create` uses the built-in 16:9 design
+   with a dark title slide, clean white content slides, a restrained teal
+   accent, and Calibri with Microsoft YaHei for CJK text.
 3. To change the look, edit the template in PowerPoint once and reuse it;
-   never compensate slide by slide with shape styling.
+   never compensate slide by slide with shape styling. `slides create base.pptx`
+   writes the built-in design as a starting point.
 
 ## Content rules
 

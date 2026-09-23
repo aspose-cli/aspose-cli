@@ -25,6 +25,17 @@ internal static class SlidesPlaceholders
             .ToArray();
 
     /// <summary>
+    /// The presentation's layout of the requested type. A template without it falls back
+    /// to Title and Content, then to any layout with a title placeholder.
+    /// </summary>
+    internal static ILayoutSlide Layout(Presentation presentation, SlideLayoutType type) =>
+        presentation.LayoutSlides.GetByType(type)
+            ?? presentation.LayoutSlides.GetByType(SlideLayoutType.TitleAndObject)
+            ?? presentation.LayoutSlides.FirstOrDefault(static layout =>
+                layout.Shapes.Any(static shape => IsTitle(shape.Placeholder)))
+            ?? presentation.LayoutSlides[0];
+
+    /// <summary>
     /// The public role of a placeholder, shared by queries and shape targets. Content
     /// placeholders report "body" whether the layout typed them as body or object.
     /// </summary>

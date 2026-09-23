@@ -130,8 +130,7 @@ internal sealed class SlidesProductionService
     {
         if (request.TargetFormatId is "png" or "jpeg" or "svg")
         {
-            IReadOnlyList<int> selected = slides
-                ?? Enumerable.Range(1, presentation.Slides.Count).ToArray();
+            IReadOnlyList<int> selected = slides ?? AllSlides(presentation.Slides.Count);
             return RenderImages(presentation, new PresentationRenderRequest
             {
                 TargetFormatId = request.TargetFormatId,
@@ -208,10 +207,8 @@ internal sealed class SlidesProductionService
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> slides = request.AllSlides
-            ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
-            : request.Slides is null
-                ? [1]
-                : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
+            ? AllSlides(loaded.Presentation.Slides.Count)
+            : ResolveSlideRange(request.Slides ?? PageRange.Parse("1"), loaded.Presentation.Slides.Count);
         IReadOnlyList<SlideRenderOutput> outputs = RenderImages(
             loaded.Presentation, request, slides, "slides-render");
         return new SlidesRenderResult
@@ -295,11 +292,10 @@ internal sealed class SlidesProductionService
             throw Sdk.Errors.CliErrors.FormatUnsupported(format, SlidesFormats.WriteIds);
         }
 
-        using LoadedPresentation? template = request.TemplatePath is null
-            ? null
+        using LoadedPresentation template = request.TemplatePath is null
+            ? SlidesPresentationLoader.OpenDefaultTemplate()
             : _loader.Open(request.TemplatePath, password: null);
-        using Presentation? blank = template is null ? new Presentation() : null;
-        Presentation presentation = template?.Presentation ?? blank!;
+        Presentation presentation = template.Presentation;
         ApplySlideSize(presentation, request.Size);
         if (request.MarkdownPath is not null)
         {
@@ -308,9 +304,10 @@ internal sealed class SlidesProductionService
                 presentation,
                 request.MarkdownPath);
         }
-        else if (template is null)
+        else if (presentation.Slides.Count == 0)
         {
-            presentation.Slides[0].Shapes.Clear();
+            // A design template may hold only masters and layouts; a presentation needs a slide.
+            presentation.Slides.AddEmptySlide(SlidesPlaceholders.Layout(presentation, SlideLayoutType.Title));
         }
 
         Encrypt(presentation, request.EncryptPassword);
@@ -329,7 +326,7 @@ internal sealed class SlidesProductionService
             Slides = presentation.Slides.Count,
             Template = request.TemplatePath is null
                 ? null
-                : Source(request.TemplatePath, template!.FormatId),
+                : Source(request.TemplatePath, template.FormatId),
             Markdown = request.MarkdownPath is null
                 ? null
                 : new SourceInfo
@@ -339,7 +336,7 @@ internal sealed class SlidesProductionService
                     SizeBytes = new FileInfo(request.MarkdownPath).Length,
                 },
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, template?.Presentation),
+            Warnings = OutputWarnings(state, presentation),
         };
     }
 

@@ -89,7 +89,6 @@ internal static class SlidesStyleHandlers
     }
 
     internal static long SetFooter(
-        Presentation presentation,
         IReadOnlyList<ISlide> slides,
         SetFooterOp op,
         ISet<uint> touched)
@@ -113,71 +112,29 @@ internal static class SlidesStyleHandlers
                 manager.SetDateTimeVisibility(op.ShowDate.Value);
             }
 
-            NormalizeActivatedPlaceholders(presentation, slide, op);
+            FillEmptyFooters(slide, op);
             touched.Add(slide.SlideId);
         }
 
         return slides.Count;
     }
 
-    private static void NormalizeActivatedPlaceholders(
-        Presentation presentation,
-        ISlide slide,
-        SetFooterOp op)
+    // A footer placeholder activated from the layout starts empty; give it the requested text.
+    private static void FillEmptyFooters(ISlide slide, SetFooterOp op)
     {
-        SizeF slideSize = presentation.SlideSize.Size;
-        if (op.Text is not null)
-        {
-            foreach (IShape shape in Placeholders(slide, PlaceholderType.Footer))
-            {
-                if (shape is IAutoShape { TextFrame: not null } footer
-                    && string.IsNullOrEmpty(footer.TextFrame.Text))
-                {
-                    footer.TextFrame.Text = op.Text;
-                }
-
-                KeepInsideCanvas(shape, slideSize);
-            }
-        }
-
-        if (op.ShowNumber is true)
-        {
-            foreach (IShape shape in Placeholders(slide, PlaceholderType.SlideNumber))
-            {
-                KeepInsideCanvas(shape, slideSize);
-            }
-        }
-
-        if (op.ShowDate is true)
-        {
-            foreach (IShape shape in Placeholders(slide, PlaceholderType.DateAndTime))
-            {
-                KeepInsideCanvas(shape, slideSize);
-            }
-        }
-    }
-
-    private static IEnumerable<IShape> Placeholders(ISlide slide, PlaceholderType type) =>
-        slide.Shapes.Where(shape => shape.Placeholder?.Type == type);
-
-    private static void KeepInsideCanvas(IShape shape, SizeF slideSize)
-    {
-        const float tolerance = 0.5f;
-        if (shape.X >= -tolerance
-            && shape.Y >= -tolerance
-            && shape.X + shape.Width <= slideSize.Width + tolerance
-            && shape.Y + shape.Height <= slideSize.Height + tolerance)
+        if (op.Text is null)
         {
             return;
         }
 
-        float inset = Math.Min(12f, Math.Min(slideSize.Width, slideSize.Height) * 0.03f);
-        float maximumWidth = slideSize.Width - (2 * inset);
-        float maximumHeight = slideSize.Height - (2 * inset);
-        shape.Width = Math.Min(shape.Width, maximumWidth);
-        shape.Height = Math.Min(shape.Height, maximumHeight);
-        shape.X = Math.Clamp(shape.X, inset, slideSize.Width - inset - shape.Width);
-        shape.Y = Math.Clamp(shape.Y, inset, slideSize.Height - inset - shape.Height);
+        foreach (IShape shape in slide.Shapes.Where(static shape => shape.Placeholder?.Type == PlaceholderType.Footer))
+        {
+            if (shape is IAutoShape { TextFrame: not null } footer
+                && string.IsNullOrEmpty(footer.TextFrame.Text))
+            {
+                footer.TextFrame.Text = op.Text;
+            }
+        }
     }
 
     internal static long SetTransition(

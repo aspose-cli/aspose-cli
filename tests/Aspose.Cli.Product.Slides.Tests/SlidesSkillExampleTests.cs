@@ -16,13 +16,13 @@ public sealed class SlidesSkillExampleTests
         string directory = run.Directory;
         bool evaluation = AssertEvaluationDisclosed(run);
         using var deck = new Presentation(Path.Combine(directory, "qbr.pptx"));
-        using var template = new Presentation(Path.Combine(directory, "../../assets/templates/default-16x9.pptx"));
+        using LoadedPresentation template = SlidesPresentationLoader.OpenDefaultTemplate();
 
         Assert.Equal(3, deck.Slides.Count);
         AssertText("Quarterly update", Text(deck.Slides[0]), evaluation);
         AssertText("Highlights", Text(deck.Slides[1]), evaluation);
         AssertText("Next steps", Text(deck.Slides[2]), evaluation);
-        Assert.Equal(template.SlideSize.Size, deck.SlideSize.Size);
+        Assert.Equal(template.Presentation.SlideSize.Size, deck.SlideSize.Size);
         Assert.True(File.Exists(Path.Combine(directory, "qbr.review/review.json")));
     }
 

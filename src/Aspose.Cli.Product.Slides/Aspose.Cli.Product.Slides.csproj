@@ -21,6 +21,10 @@
     </ItemGroup>
   </Target>
   <ItemGroup>
+    <!-- The design every new presentation starts from when no template is given. -->
+    <EmbeddedResource Include="Engine\Templates\default-16x9.pptx" LogicalName="Templates/default-16x9.pptx" />
+  </ItemGroup>
+  <ItemGroup>
     <InternalsVisibleTo Include="Aspose.Cli.Product.Slides.Tests" />
   </ItemGroup>
 </Project>

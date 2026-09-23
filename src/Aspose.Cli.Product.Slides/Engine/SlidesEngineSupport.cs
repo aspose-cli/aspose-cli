@@ -408,6 +408,10 @@ internal static class SlidesEngineSupport
             dpi,
             "Lower --dpi or pass a smaller --width.");
 
+    /// <summary>
+    /// Resizes the canvas and scales masters, layouts and slides with it, so inherited
+    /// placeholder geometry (footers, slide numbers, dates) stays inside the new canvas.
+    /// </summary>
     internal static void ApplySlideSize(Presentation presentation, string? size)
     {
         if (size is null)
@@ -425,7 +429,7 @@ internal static class SlidesEngineSupport
                     $"unsupported slide size '{size}'",
                     "Use 16x9 or 4x3."),
             },
-            SlideSizeScaleType.DoNotScale);
+            SlideSizeScaleType.EnsureFit);
     }
 
     internal static void EnsureEncryptionSupported(string? password, string targetFormat)
@@ -480,6 +484,7 @@ internal static class SlidesEngineSupport
 
     internal static IReadOnlyList<int> ResolveSlideRange(PageRange range, int slideCount)
     {
+        EnsureHasSlides(slideCount);
         try
         {
             return range.Resolve(slideCount);
@@ -492,6 +497,24 @@ internal static class SlidesEngineSupport
                 hint: $"Use slide numbers from 1 to {slideCount}.",
                 details: exception.Details,
                 innerException: exception);
+        }
+    }
+
+    /// <summary>Every slide number; a presentation without slides has nothing to select.</summary>
+    internal static IReadOnlyList<int> AllSlides(int slideCount)
+    {
+        EnsureHasSlides(slideCount);
+        return Enumerable.Range(1, slideCount).ToArray();
+    }
+
+    private static void EnsureHasSlides(int slideCount)
+    {
+        if (slideCount == 0)
+        {
+            throw new CliException(
+                SlidesDiagnostics.SlideNotFound,
+                "The presentation has no slides.",
+                hint: "Add a slide with an add_slide operation in 'slides edit' first.");
         }
     }
 
