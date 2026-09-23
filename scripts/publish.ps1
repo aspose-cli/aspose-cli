@@ -120,7 +120,7 @@ if ($customerPublish) {
 
 $buildManifest = [ordered]@{
     schemaVersion = 1
-    productId = 'aspose-cli'
+    productId = [string]$layout.Identity.id
     edition = $layout.Edition
     runtimeIdentifier = $publishFlavor
     sourceRevision = $provenance.SourceRevision
@@ -134,7 +134,7 @@ $framework = $buildDefaults.SelectSingleNode('/Project/PropertyGroup/TargetFrame
 $buildOutput = Join-Path $layout.SourceRoot "Aspose.Cli/bin/$Configuration/$framework"
 if ($customerPublish) { $buildOutput = Join-Path $buildOutput $RuntimeIdentifier }
 $noticeFiles = @(Write-ReleaseNotices -RepositoryRoot $repoRoot -OutputRoot $publishRoot `
-    -DependenciesPath (Join-Path $buildOutput 'aspose-cli.deps.json') `
+    -DependenciesPath (Join-Path $buildOutput $layout.Names.DependencyManifestName) `
     -AssetsPath (Join-Path $layout.SourceRoot 'Aspose.Cli/obj/project.assets.json'))
 
 $publishedFiles = @(Get-ChildItem -LiteralPath $publishRoot -File -Recurse)
@@ -158,10 +158,10 @@ if ($contamination.Count -ne 0) {
 
 if ($customerPublish) {
     $executableName = if ($RuntimeIdentifier.StartsWith('win-', [StringComparison]::Ordinal)) {
-        'aspose-cli.exe'
+        [string]$layout.Names.ExecutableName
     }
     else {
-        'aspose-cli'
+        [string]$layout.Identity.commandName
     }
     $requiredCustomerFiles = @($executableName, $script:BuildManifestName) + $noticeFiles
     $missingCustomerFiles = @(

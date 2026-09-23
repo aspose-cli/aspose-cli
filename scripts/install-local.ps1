@@ -22,7 +22,7 @@ if ($PSBoundParameters.ContainsKey('LicenseProduct') -and $LicenseProduct -cnoti
     throw "Unknown license product '$LicenseProduct'. Active products: $($activeProductIds -join ', ')."
 }
 $installRoot = if ([string]::IsNullOrWhiteSpace($InstallDirectory)) {
-    Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) $layout.Identity.installDirectory.Replace('/','\')
+    Join-Path ([Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData)) $layout.Names.WindowsInstallDirectory
 } else { [IO.Path]::GetFullPath($InstallDirectory) }
 & (Join-Path $PSScriptRoot 'package.ps1') -Configuration Release -RuntimeIdentifier win-x64 -PrepareOnly
 $parameters = @{

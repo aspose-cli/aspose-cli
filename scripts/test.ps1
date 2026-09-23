@@ -17,10 +17,10 @@ $layoutResolver = Join-Path $PSScriptRoot 'resolve-project-layout.ps1'
 $layout = & $layoutResolver  -RepositoryRoot $repoRoot
 $solution = $layout.SolutionPath
 $executableName = if ($env:OS -eq 'Windows_NT') {
-    'aspose-cli.exe'
+    [string]$layout.Names.ExecutableName
 }
 else {
-    'aspose-cli'
+    [string]$layout.Identity.commandName
 }
 $builtExecutable = Join-Path $layout.SourceRoot (
     "Aspose.Cli/bin/$Configuration/net10.0/$executableName")

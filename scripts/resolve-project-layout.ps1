@@ -14,9 +14,25 @@ if ($identity.id -cnotmatch '^[a-z][a-z0-9-]*$' -or $identity.commandName -cne $
 foreach ($relative in @($identity.configurationDirectoryName,$identity.installDirectory,$identity.solutionName)) {
     if ([IO.Path]::IsPathRooted($relative) -or $relative -match '(^|[/\\])\.\.([/\\]|$)') { throw 'Distribution paths must be project-relative and bounded.' }
 }
+# Every file and directory name derived from the identity is spelled here once; the generator
+# projects these names into install.ps1, and the release scripts read them from this layout.
+$names = [pscustomobject][ordered]@{
+    ExecutableName = [string]$identity.commandName + '.exe'
+    DependencyManifestName = [string]$identity.commandName + '.deps.json'
+    MarkerName = '.' + [string]$identity.id + '-install.json'
+    PayloadManifestName = '.' + [string]$identity.id + '-payload.json'
+    BuildManifestName = ([string]$identity.id).ToUpperInvariant() + '-BUILD.json'
+    ConfigurationOwnerName = '.' + [string]$identity.id + '-config.json'
+    SkillManifestProductId = [string]$identity.id + '-skill'
+    ArtifactOwnerProductId = [string]$identity.id + '-build-output'
+    ReleaseSignatureDomain = [string]$identity.id + '-release-v1'
+    WindowsInstallDirectory = ([string]$identity.installDirectory).Replace('/', '\')
+}
 [pscustomobject][ordered]@{
     Identity = $identity
+    Names = $names
     Edition = [string]$identity.edition
+    DistributionPath = $identityPath
     CatalogPath = Join-Path $repoRoot 'eng/products.json'
     SourceRoot = Join-Path $repoRoot 'src'
     TestRoot = Join-Path $repoRoot 'tests'

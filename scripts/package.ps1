@@ -255,7 +255,7 @@ function Write-PackageSignature {
         Invoke-SigningTool $OpenSsl @('dgst','-sha256','-verify',$publicPem,'-signature',$rawSignature,$checksumPath) 'Package checksum signature verification'
         Write-StableJson (Join-Path $Root 'PACKAGE-SIGNATURE.json') ([ordered]@{
             schemaVersion = 1
-            productId = 'aspose-cli'
+            productId = [string]$layout.Identity.id
             algorithm = 'ECDSA-P256-SHA256'
             format = 'rfc3279-der'
             keyId = $keyId
@@ -290,7 +290,7 @@ if (-not $PrepareOnly) {
     $openSsl = Get-OpenSslTool
 }
 
-Invoke-ExecutableAuthenticodeHook (Join-Path $publishRoot 'aspose-cli.exe') -Required:(-not $PrepareOnly)
+Invoke-ExecutableAuthenticodeHook (Join-Path $publishRoot $layout.Names.ExecutableName) -Required:(-not $PrepareOnly)
 $installerNames = if ($PrepareOnly) { @('install.cmd', 'install.ps1') } else { @('install.ps1') }
 foreach ($installerName in $installerNames) {
     Copy-Item `
@@ -326,7 +326,7 @@ $checksumLines = @(
     $checksumLines,
     [Text.UTF8Encoding]::new($false))
 
-$versionText = Invoke-VersionDiscovery (Join-Path $publishRoot 'aspose-cli.exe')
+$versionText = Invoke-VersionDiscovery (Join-Path $publishRoot $layout.Names.ExecutableName)
 $artifactVersion = $versionText.Trim()
 if ($artifactVersion -notmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$') {
     throw "Published executable returned an invalid artifact version: $artifactVersion"
@@ -349,8 +349,9 @@ $smokeTrustRing = Join-Path $smokeRoot 'release-trust-ring.json'
 Write-StableJson $smokeTrustRing ([ordered]@{
     keys = @([ordered]@{ keyId = $packageTrust.KeyId; publicKeyPem = $packageTrust.PublicKeyPem })
 })
-$previousTrustRing = [Environment]::GetEnvironmentVariable('ASPOSE_CLI_RELEASE_TRUSTED_KEYS', 'Process')
-[Environment]::SetEnvironmentVariable('ASPOSE_CLI_RELEASE_TRUSTED_KEYS', $smokeTrustRing, 'Process')
+$trustRingVariable = [string]$layout.Identity.environmentVariablePrefix + 'RELEASE_TRUSTED_KEYS'
+$previousTrustRing = [Environment]::GetEnvironmentVariable($trustRingVariable, 'Process')
+[Environment]::SetEnvironmentVariable($trustRingVariable, $smokeTrustRing, 'Process')
 try {
     $installerCommand = Join-Path $publishRoot 'install.ps1'
     $powerShell = Join-Path `
@@ -384,11 +385,11 @@ try {
             throw "Installed payload file '$relativePath' failed checksum verification."
         }
     }
-    $markerPath = Join-Path $smokeInstall '.aspose-cli-install.json'
+    $markerPath = Join-Path $smokeInstall $layout.Names.MarkerName
     $marker = Get-Content -LiteralPath $markerPath -Raw | ConvertFrom-Json
     if ($marker.schemaVersion -ne 2 -or
-        $marker.productId -cne 'aspose-cli' -or
-        $marker.payloadManifest -cne '.aspose-cli-payload.json') {
+        $marker.productId -cne [string]$layout.Identity.id -or
+        $marker.payloadManifest -cne $layout.Names.PayloadManifestName) {
         throw 'Customer installer did not publish a valid v2 ownership marker.'
     }
     $payloadManifestPath = Join-Path $smokeInstall $marker.payloadManifest
@@ -406,7 +407,7 @@ try {
     }
 }
 finally {
-    [Environment]::SetEnvironmentVariable('ASPOSE_CLI_RELEASE_TRUSTED_KEYS', $previousTrustRing, 'Process')
+    [Environment]::SetEnvironmentVariable($trustRingVariable, $previousTrustRing, 'Process')
     if (Test-Path -LiteralPath $smokeRoot -PathType Container) {
         Remove-SmokeDirectory `
             -Path $smokeRoot `
@@ -426,7 +427,7 @@ if (-not $releaseRoot.StartsWith($allowedReleasePrefix, [StringComparison]::Ordi
 }
 Initialize-OwnedArtifactDirectory $releaseRoot $allowedReleaseRoot 'release'
 
-$archiveName = "aspose-cli-$archiveVersion-$RuntimeIdentifier.zip"
+$archiveName = "$($layout.Identity.id)-$archiveVersion-$RuntimeIdentifier.zip"
 $archivePath = Join-Path $releaseRoot $archiveName
 Compress-Archive `
     -Path (Join-Path $publishRoot '*') `
@@ -447,8 +448,8 @@ try {
         "enginePackages.$($_.product).contentHash=$($_.contentHash)"
     })
     $signedPayload = @(
-        'aspose-cli-release-v1',
-        'productId=aspose-cli',
+        [string]$layout.Names.ReleaseSignatureDomain,
+        "productId=$($layout.Identity.id)",
         "edition=$($layout.Edition)",
         "runtimeIdentifier=$RuntimeIdentifier",
         "artifactVersion=$artifactVersion",
@@ -487,7 +488,7 @@ finally {
 }
 $releaseManifest = [ordered]@{
     schemaVersion = 1
-    productId = 'aspose-cli'
+    productId = [string]$layout.Identity.id
     edition = $layout.Edition
     runtimeIdentifier = $RuntimeIdentifier
     artifactVersion = $artifactVersion

@@ -1,5 +1,7 @@
-$script:ArtifactOwnerProductId = 'aspose-cli-build-output'
-$script:BuildManifestName = 'ASPOSE-CLI-BUILD.json'
+# Names derived from eng/distribution.json; the layout resolver is their only author.
+$script:ProjectLayout = & (Join-Path $PSScriptRoot 'resolve-project-layout.ps1') -RepositoryRoot (Split-Path -Parent $PSScriptRoot)
+$script:ArtifactOwnerProductId = $script:ProjectLayout.Names.ArtifactOwnerProductId
+$script:BuildManifestName = $script:ProjectLayout.Names.BuildManifestName
 
 function Invoke-RepositoryGit {
     param(
@@ -177,7 +179,7 @@ function Read-BuildManifest {
     try { $manifest = [IO.File]::ReadAllText($Path, [Text.Encoding]::UTF8) | ConvertFrom-Json }
     catch { throw "Build manifest is invalid: $Path" }
     if ([int]$manifest.schemaVersion -ne 1 -or
-        $manifest.productId -cne 'aspose-cli' -or
+        $manifest.productId -cne $script:ProjectLayout.Identity.id -or
         $manifest.sourceRevision -cnotmatch '^[0-9a-f]{40}$' -or
         $manifest.buildDirty -isnot [bool] -or
         @($manifest.enginePackages).Count -lt 1) {

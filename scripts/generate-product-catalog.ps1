@@ -135,9 +135,14 @@ function Write-Generated {
     $directory = Split-Path -Parent $path
     [IO.Directory]::CreateDirectory($directory) | Out-Null
     if (Test-Path -LiteralPath $path -PathType Leaf) {
-        $actual = [IO.File]::ReadAllText($path).Replace("`r`n", "`n")
-        if ($actual -ceq $normalized) {
+        $existing = [IO.File]::ReadAllText($path)
+        if ($existing.Replace("`r`n", "`n") -ceq $normalized) {
             return
+        }
+        # Keep the checkout's line endings, so regenerating a region of a CRLF file
+        # does not rewrite every other line.
+        if ($existing.Contains("`r`n")) {
+            $normalized = $normalized.Replace("`n", "`r`n")
         }
     }
 
@@ -447,15 +452,24 @@ Write-Generated 'eng/generated/DistributionInfo.g.cs' $distributionCode.ToString
 $installerPath = Join-Path $repoRoot 'install.ps1'
 if (Test-Path -LiteralPath $installerPath -PathType Leaf) {
     $identity = $layout.Identity
+    $names = $layout.Names
     $settings = [Collections.Generic.List[string]]::new()
     $settings.Add('# <generated-distribution-identity>')
     foreach ($entry in ([ordered]@{
         ProductId = [string]$identity.id
-        MarkerName = ".$($identity.id)-install.json"
-        PayloadManifestName = ".$($identity.id)-payload.json"
-        BuildManifestName = "$($identity.id.ToUpperInvariant())-BUILD.json"
+        CommandName = [string]$identity.commandName
+        DisplayName = [string]$identity.displayName
+        ExecutableName = [string]$names.ExecutableName
+        MarkerName = [string]$names.MarkerName
+        PayloadManifestName = [string]$names.PayloadManifestName
+        BuildManifestName = [string]$names.BuildManifestName
         PackageSignatureManifestName = 'PACKAGE-SIGNATURE.json'
         PackageSignatureName = 'PACKAGE-SIGNATURE.sig'
+        SkillManifestProductId = [string]$names.SkillManifestProductId
+        DefaultInstallDirectory = [string]$names.WindowsInstallDirectory
+        ConfigurationDirectoryName = [string]$identity.configurationDirectoryName
+        ConfigurationOwnerName = [string]$names.ConfigurationOwnerName
+        EnvironmentVariablePrefix = [string]$identity.environmentVariablePrefix
     }).GetEnumerator()) {
         $literal = "'" + ([string]$entry.Value).Replace("'","''") + "'"
         $settings.Add('$script:' + $entry.Key + ' = ' + $literal)
@@ -476,6 +490,7 @@ if (Test-Path -LiteralPath $installerPath -PathType Leaf) {
 }
 
 $catalogHashes = Get-NormalizedTextHashes $catalogPath
+$distributionHashes = Get-NormalizedTextHashes $layout.DistributionPath
 $catalogSource = Normalize-RelativePath (Relative-ToRepository $catalogPath)
 $generatedRelativeRoot = "eng/generated"
 $repositoryBuild = [Text.StringBuilder]::new()
@@ -497,14 +512,19 @@ foreach ($product in $products) {
 [void] $repositoryBuild.AppendLine('  <PropertyGroup>')
 [void] $repositoryBuild.AppendLine("    <GeneratedProductsLfSha256>$($catalogHashes.Lf)</GeneratedProductsLfSha256>")
 [void] $repositoryBuild.AppendLine("    <GeneratedProductsCrLfSha256>$($catalogHashes.CrLf)</GeneratedProductsCrLfSha256>")
+[void] $repositoryBuild.AppendLine("    <GeneratedDistributionLfSha256>$($distributionHashes.Lf)</GeneratedDistributionLfSha256>")
+[void] $repositoryBuild.AppendLine("    <GeneratedDistributionCrLfSha256>$($distributionHashes.CrLf)</GeneratedDistributionCrLfSha256>")
 [void] $repositoryBuild.AppendLine('  </PropertyGroup>')
 [void] $repositoryBuild.AppendLine('  <Target Name="ValidateRepositoryProjectionSources" BeforeTargets="PrepareForBuild">')
-[void] $repositoryBuild.AppendLine("    <Error Condition=`"'`$(GeneratedProductsLfSha256)' == '' Or '`$(GeneratedProductsCrLfSha256)' == ''`" Text=`"Generated repository projections are missing. Run scripts/sync.ps1 .`" />")
+[void] $repositoryBuild.AppendLine("    <Error Condition=`"'`$(GeneratedProductsLfSha256)' == '' Or '`$(GeneratedProductsCrLfSha256)' == '' Or '`$(GeneratedDistributionLfSha256)' == '' Or '`$(GeneratedDistributionCrLfSha256)' == ''`" Text=`"Generated repository projections are missing. Run scripts/sync.ps1 .`" />")
 [void] $repositoryBuild.AppendLine('    <GetFileHash Files="$(MSBuildThisFileDirectory)..\products.json" Algorithm="SHA256"><Output TaskParameter="Items" ItemName="_CurrentProductsHash" /></GetFileHash>')
+[void] $repositoryBuild.AppendLine('    <GetFileHash Files="$(MSBuildThisFileDirectory)..\distribution.json" Algorithm="SHA256"><Output TaskParameter="Items" ItemName="_CurrentDistributionHash" /></GetFileHash>')
 [void] $repositoryBuild.AppendLine('    <PropertyGroup>')
 [void] $repositoryBuild.AppendLine('      <CurrentProductsSha256>@(_CurrentProductsHash->''%(FileHash)'')</CurrentProductsSha256>')
+[void] $repositoryBuild.AppendLine('      <CurrentDistributionSha256>@(_CurrentDistributionHash->''%(FileHash)'')</CurrentDistributionSha256>')
 [void] $repositoryBuild.AppendLine('    </PropertyGroup>')
 [void] $repositoryBuild.AppendLine("    <Error Condition=`"'`$(CurrentProductsSha256)' != '`$(GeneratedProductsLfSha256)' And '`$(CurrentProductsSha256)' != '`$(GeneratedProductsCrLfSha256)'`" Text=`"Generated repository projections are stale. Run scripts/sync.ps1 .`" />")
+[void] $repositoryBuild.AppendLine("    <Error Condition=`"'`$(CurrentDistributionSha256)' != '`$(GeneratedDistributionLfSha256)' And '`$(CurrentDistributionSha256)' != '`$(GeneratedDistributionCrLfSha256)'`" Text=`"Generated distribution identity projections are stale. Run scripts/sync.ps1 .`" />")
 [void] $repositoryBuild.AppendLine('  </Target>')
 [void] $repositoryBuild.AppendLine('</Project>')
 Write-Generated "$generatedRelativeRoot/RepositoryBuild.props" $repositoryBuild.ToString()

@@ -1,6 +1,12 @@
 <#
 .SYNOPSIS
-Installs or upgrades a verified Aspose CLI Windows release.
+Installs, updates or uninstalls a verified Aspose CLI Windows release for the current user.
+
+.DESCRIPTION
+An installation records the choices it was made with (PATH, Skills, MCP). -Update replaces an
+existing installation and replays those choices; -Uninstall removes the installation, its PATH
+entry, its pristine Skill copies and the MCP registrations it owns. Every mode is one
+transaction under per-user interprocess locks.
 #>
 [CmdletBinding()]
 param(
@@ -14,11 +20,19 @@ param(
     [switch] $SkipLicensePrompt,
     [switch] $SkipMcp,
 
+    [switch] $Update,
+
+    [switch] $Uninstall,
+
+    [switch] $RemoveConfiguration,
+
     [switch] $DevelopmentPackage,
 
     [int] $WaitForProcessId,
 
-    [string] $CleanupRoot
+    [string] $CleanupRoot,
+
+    [string] $StatusPath
 )
 
 $isDotSourced = $MyInvocation.InvocationName -ceq '.'
@@ -243,11 +257,19 @@ if ($WaitForProcessId -gt 0 -and $WaitForProcessId -ne $PID) {
 
 # <generated-distribution-identity>
 $script:ProductId = 'aspose-cli'
+$script:CommandName = 'aspose-cli'
+$script:DisplayName = 'Aspose CLI'
+$script:ExecutableName = 'aspose-cli.exe'
 $script:MarkerName = '.aspose-cli-install.json'
 $script:PayloadManifestName = '.aspose-cli-payload.json'
 $script:BuildManifestName = 'ASPOSE-CLI-BUILD.json'
 $script:PackageSignatureManifestName = 'PACKAGE-SIGNATURE.json'
 $script:PackageSignatureName = 'PACKAGE-SIGNATURE.sig'
+$script:SkillManifestProductId = 'aspose-cli-skill'
+$script:DefaultInstallDirectory = 'Aspose\CLI'
+$script:ConfigurationDirectoryName = 'aspose-cli'
+$script:ConfigurationOwnerName = '.aspose-cli-config.json'
+$script:EnvironmentVariablePrefix = 'ASPOSE_CLI_'
 $script:Utf8 = [Text.UTF8Encoding]::new($false)
 $script:AllowedEditions = @('commercial')
 $script:AllowedSkills = @('aspose-cli-cells', 'aspose-cli-pdf', 'aspose-cli-slides', 'aspose-cli-words')
@@ -685,9 +707,9 @@ function Assert-CustomerPackageTrust {
         throw 'Customer package signature metadata is invalid.'
     }
 
-    $trustRingValue = [Environment]::GetEnvironmentVariable('ASPOSE_CLI_RELEASE_TRUSTED_KEYS', 'Process')
+    $trustRingValue = [Environment]::GetEnvironmentVariable($script:EnvironmentVariablePrefix + 'RELEASE_TRUSTED_KEYS', 'Process')
     if ([string]::IsNullOrWhiteSpace($trustRingValue)) {
-        throw 'Customer release verification requires ASPOSE_CLI_RELEASE_TRUSTED_KEYS. Use scripts/install-local.ps1 only for unsigned local development builds.'
+        throw "Customer release verification requires $($script:EnvironmentVariablePrefix)RELEASE_TRUSTED_KEYS. Use scripts/install-local.ps1 only for unsigned local development builds."
     }
     $trustRingPath = Assert-LocalAbsolutePath ((Resolve-Path -LiteralPath $trustRingValue).Path) 'release trust ring'
     if ((Get-Item -LiteralPath $trustRingPath).Length -gt 64KB) { throw 'The release trust ring exceeds its 64 KiB limit.' }
@@ -986,7 +1008,7 @@ function Set-UserPath {
 }
 
 # Keeps every other raw entry and exactly one install-directory entry at the end. Entries
-# are compared after expansion, so %LOCALAPPDATA%\Aspose\CLI counts as the install root.
+# are compared after expansion, so a %LOCALAPPDATA%-relative entry counts as the install root.
 function Get-UpdatedUserPath {
     param([AllowNull()][string] $CurrentPath, [Parameter(Mandatory)][string] $InstallRoot)
     $entries = @()
@@ -1107,7 +1129,7 @@ function Invoke-OfficialMcp {
             $value = [string]$values[$index]
             [void](ConvertTo-NativeArgument $value)
             if ($value.Contains('"')) { throw 'MCP command-shim arguments may not contain double quotes.' }
-            $name = 'ASPOSE_CLI_MCP_ARGUMENT_' + $index
+            $name = $script:EnvironmentVariablePrefix + 'MCP_ARGUMENT_' + $index
             $start.EnvironmentVariables[$name] = $value
             $tokens += '"%' + $name + '%"'
         }
@@ -1200,7 +1222,7 @@ function Get-McpRegistration {
         catch { throw 'OpenCode configuration response is not valid JSON.' }
         if ($null -eq $configuration -or $configuration -is [array]) { throw 'OpenCode configuration response is not an object.' }
         $mcp = $configuration.PSObject.Properties['mcp']
-        $entry = if ($null -ne $mcp -and $null -ne $mcp.Value) { $mcp.Value.PSObject.Properties['aspose-cli'] } else { $null }
+        $entry = if ($null -ne $mcp -and $null -ne $mcp.Value) { $mcp.Value.PSObject.Properties[$script:CommandName] } else { $null }
         if ($null -eq $entry) { return [pscustomobject]@{ Exists = $false; Matches = $false } }
         $type = $entry.Value.PSObject.Properties['type']
         $command = $entry.Value.PSObject.Properties['command']
@@ -1210,7 +1232,7 @@ function Get-McpRegistration {
             $arguments[1] -ceq 'mcp' -and $arguments[2] -ceq 'serve'
         return [pscustomobject]@{ Exists = $true; Matches = [bool]$sameCommand }
     }
-    $query = @('mcp','get','aspose-cli')
+    $query = @('mcp','get',$script:CommandName)
     if ($HostName -ceq 'codex') { $query += '--json' }
     $result = Invoke-OfficialMcp $Executable $query -WorkingDirectory ([IO.Path]::GetTempPath())
     if ($result.ExitCode -ne 0) { return [pscustomobject]@{ Exists = $false; Matches = $false } }
@@ -1242,7 +1264,7 @@ function Get-McpRegistration {
             }
             finally { $stream.Dispose() }
             $servers = $configuration.PSObject.Properties['mcpServers']
-            $entry = if ($null -ne $servers -and $null -ne $servers.Value) { $servers.Value.PSObject.Properties['aspose-cli'] } else { $null }
+            $entry = if ($null -ne $servers -and $null -ne $servers.Value) { $servers.Value.PSObject.Properties[$script:CommandName] } else { $null }
             $sameCommand = $null -ne $entry -and (Test-StdioMcpCommand $entry.Value $InstallExecutable)
         }
     }
@@ -1256,9 +1278,9 @@ function Register-OwnedMcp {
     )
     $registered = [Collections.Generic.List[string]]::new()
     $mcpHosts = @(
-        [pscustomobject]@{ Name = 'codex'; Executable = 'codex'; Add = @('mcp','add','aspose-cli','--',$InstallExecutable,'mcp','serve') },
-        [pscustomobject]@{ Name = 'claude'; Executable = 'claude'; Add = @('mcp','add','aspose-cli','--scope','user','--',$InstallExecutable,'mcp','serve') },
-        [pscustomobject]@{ Name = 'opencode'; Executable = 'opencode'; Add = @('mcp','add','aspose-cli','--',$InstallExecutable,'mcp','serve') }
+        [pscustomobject]@{ Name = 'codex'; Executable = 'codex'; Add = @('mcp','add',$script:CommandName,'--',$InstallExecutable,'mcp','serve') },
+        [pscustomobject]@{ Name = 'claude'; Executable = 'claude'; Add = @('mcp','add',$script:CommandName,'--scope','user','--',$InstallExecutable,'mcp','serve') },
+        [pscustomobject]@{ Name = 'opencode'; Executable = 'opencode'; Add = @('mcp','add',$script:CommandName,'--',$InstallExecutable,'mcp','serve') }
     )
     foreach ($hostSpec in $mcpHosts) {
         $command = Get-Command $hostSpec.Executable -CommandType Application -ErrorAction SilentlyContinue | Select-Object -First 1
@@ -1270,7 +1292,7 @@ function Register-OwnedMcp {
             $existing = Get-McpRegistration $hostSpec.Name $command.Source $InstallExecutable
             if ($existing.Exists) {
                 if ($hostSpec.Name -in $PreviouslyOwned -and $existing.Matches) { $registered.Add($hostSpec.Name) }
-                else { Write-Warning "MCP host '$($hostSpec.Name)' already has an 'aspose-cli' registration that could not be verified as installer-owned; it was preserved as user-owned." }
+                else { Write-Warning "MCP host '$($hostSpec.Name)' already has an '$($script:CommandName)' registration that could not be verified as installer-owned; it was preserved as user-owned." }
                 continue
             }
             # OpenCode's named, noninteractive add writes global configuration itself,
@@ -1322,7 +1344,7 @@ function Get-SkillState {
     $version = [long]$manifest.schemaVersion
     if ($version -eq 2) {
         Assert-ExactProperties $manifest @('schemaVersion','productId','skill','cliVersion','executable','executableSha256','contentSha256','files') 'Skill v2 manifest'
-        if ($manifest.productId -cne 'aspose-cli-skill' -or $manifest.skill -cne $ExpectedSkill) { throw 'Skill ownership fields do not match the target.' }
+        if ($manifest.productId -cne $script:SkillManifestProductId -or $manifest.skill -cne $ExpectedSkill) { throw 'Skill ownership fields do not match the target.' }
         $expectedFiles = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::OrdinalIgnoreCase)
         foreach ($file in @($manifest.files)) {
             Assert-ExactProperties $file @('path','size','sha256') 'Skill file manifest'
@@ -1379,13 +1401,13 @@ $script:TestFaultsEnabled = $DevelopmentPackage -or $isDotSourced
 
 function Invoke-TestCrash {
     param([string] $Phase)
-    if ($script:TestFaultsEnabled -and $env:ASPOSE_CLI_INSTALL_CRASH -ceq $Phase) { [Environment]::Exit(97) }
+    if ($script:TestFaultsEnabled -and [Environment]::GetEnvironmentVariable($script:EnvironmentVariablePrefix + 'INSTALL_CRASH') -ceq $Phase) { [Environment]::Exit(97) }
 }
 
 function Invoke-TestFault {
     param([string] $Phase)
     Invoke-TestCrash $Phase
-    if ($script:TestFaultsEnabled -and $env:ASPOSE_CLI_INSTALL_FAULT -ceq $Phase) { throw "Injected installer failure at '$Phase'." }
+    if ($script:TestFaultsEnabled -and [Environment]::GetEnvironmentVariable($script:EnvironmentVariablePrefix + 'INSTALL_FAULT') -ceq $Phase) { throw "Injected installer failure at '$Phase'." }
 }
 
 function Recover-PendingTransaction {
@@ -1414,9 +1436,9 @@ function Recover-PendingTransaction {
         throw "Installer journal is invalid and was preserved for inspection: $JournalPath"
     }
     $id = [string]$journal.transactionId
-    $stage = Join-Path $InstallParent ".aspose-cli-stage-$id"
-    $backup = Join-Path $InstallParent ".aspose-cli-backup-$id"
-    $skillStageParent = Join-Path $InstallParent ".aspose-cli-skill-stage-$id"
+    $stage = Join-Path $InstallParent ".$($script:ProductId)-stage-$id"
+    $backup = Join-Path $InstallParent ".$($script:ProductId)-backup-$id"
+    $skillStageParent = Join-Path $InstallParent ".$($script:ProductId)-skill-stage-$id"
     if ($journal.phase -ceq 'committed') {
         $current = Get-ManagedInstallState $InstallRoot
         if ($current.Snapshot -cne $journal.newSnapshot) { throw "Committed installation changed externally; recovery stopped: $InstallRoot" }
@@ -1543,8 +1565,8 @@ $cleanupDirectory = ''
 if (-not [string]::IsNullOrWhiteSpace($CleanupRoot)) {
     $cleanupDirectory = Assert-LocalAbsolutePath $CleanupRoot 'update staging directory'
     $temporaryRoot = [IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\') + '\'
-    if ((-not $cleanupDirectory.StartsWith($temporaryRoot, [StringComparison]::OrdinalIgnoreCase)) -or (-not [IO.Path]::GetFileName($cleanupDirectory).StartsWith('aspose-cli-update-', [StringComparison]::OrdinalIgnoreCase))) {
-        throw '-CleanupRoot must be an aspose-cli-update-* directory below the local temporary directory.'
+    if ((-not $cleanupDirectory.StartsWith($temporaryRoot, [StringComparison]::OrdinalIgnoreCase)) -or (-not [IO.Path]::GetFileName($cleanupDirectory).StartsWith($script:ProductId + '-update-', [StringComparison]::OrdinalIgnoreCase))) {
+        throw "-CleanupRoot must be a $($script:ProductId)-update-* directory below the local temporary directory."
     }
 }
 $customSkillsRoot = ''
@@ -1567,10 +1589,10 @@ if (-not [string]::IsNullOrWhiteSpace($SkillsRoot)) {
 
 # Resolve and verify the release package before touching customer state.
 $packageDirectory = Assert-LocalAbsolutePath ((Resolve-Path -LiteralPath $PackageRoot).Path) 'package directory'
-$sourceExecutable = Join-Path $packageDirectory 'aspose-cli.exe'
+$sourceExecutable = Join-Path $packageDirectory $script:ExecutableName
 $checksumPath = Join-Path $packageDirectory 'SHA256SUMS'
 if (-not (Test-Path -LiteralPath $sourceExecutable -PathType Leaf) -or -not (Test-Path -LiteralPath $checksumPath -PathType Leaf)) {
-    throw "Release package must contain aspose-cli.exe and SHA256SUMS: $packageDirectory"
+    throw "Release package must contain $($script:ExecutableName) and SHA256SUMS: $packageDirectory"
 }
 $packageInventory = Get-TreeInventory $packageDirectory
 $packageTrustFiles = @('SHA256SUMS',$script:PackageSignatureManifestName,$script:PackageSignatureName)
@@ -1610,7 +1632,7 @@ if (@($releaseIndicators).Count -ne 0) {
 }
 
 $localAppData = [Environment]::GetFolderPath([Environment+SpecialFolder]::LocalApplicationData, [Environment+SpecialFolderOption]::DoNotVerify)
-$installRoot = Assert-LocalAbsolutePath $(if ([string]::IsNullOrWhiteSpace($InstallDirectory)) { Join-Path $localAppData 'Aspose\CLI' } else { $InstallDirectory }) 'install directory'
+$installRoot = Assert-LocalAbsolutePath $(if ([string]::IsNullOrWhiteSpace($InstallDirectory)) { Join-Path $localAppData $script:DefaultInstallDirectory } else { $InstallDirectory }) 'install directory'
 $installParent = Split-Path -Parent $installRoot
 if ((Test-IsSameOrChildPath $installRoot $packageDirectory) -or (Test-IsSameOrChildPath $packageDirectory $installRoot)) { throw 'Package and install directories may not overlap.' }
 if (-not [string]::IsNullOrWhiteSpace($customSkillsRoot) -and
@@ -1631,17 +1653,17 @@ try { $installStateHeld = $installStateMutex.WaitOne([TimeSpan]::FromMinutes(5))
 catch [Threading.AbandonedMutexException] { $installStateHeld = $true }
 if (-not $installStateHeld) { $installStateMutex.Dispose(); throw 'Another installer is updating the current user state. Retry after it completes.' }
 
-$lockPath = Join-Path $installParent ".aspose-cli-install-$targetKey.lock"
-$journalPath = Join-Path $installParent ".aspose-cli-transaction-$targetKey.json"
+$lockPath = Join-Path $installParent ".$($script:ProductId)-install-$targetKey.lock"
+$journalPath = Join-Path $installParent ".$($script:ProductId)-transaction-$targetKey.json"
 try {
     $installLock = [IO.FileStream]::new($lockPath, [IO.FileMode]::OpenOrCreate, [IO.FileAccess]::ReadWrite, [IO.FileShare]::None)
 }
 catch { $installStateMutex.ReleaseMutex(); $installStateMutex.Dispose(); throw "Another installation is using '$installRoot'. Retry after it finishes." }
 
 $transactionId = [Guid]::NewGuid().ToString('N')
-$stage = Join-Path $installParent ".aspose-cli-stage-$transactionId"
-$backup = Join-Path $installParent ".aspose-cli-backup-$transactionId"
-$licenseStage = Join-Path $installParent ".aspose-cli-license-stage-$transactionId"
+$stage = Join-Path $installParent ".$($script:ProductId)-stage-$transactionId"
+$backup = Join-Path $installParent ".$($script:ProductId)-backup-$transactionId"
+$licenseStage = Join-Path $installParent ".$($script:ProductId)-license-stage-$transactionId"
 $journal = $null
 $licenseFailure = $null
 $existingState = $null
@@ -1696,20 +1718,20 @@ try {
         if ($LicenseProduct) { $licenseArguments += @('--product',$LicenseProduct) }
         $licenseArguments += @('--output','json')
         [IO.Directory]::CreateDirectory($licenseStage) | Out-Null
-        $previousConfig = [Environment]::GetEnvironmentVariable('ASPOSE_CLI_CONFIG_DIR','Process')
-        [Environment]::SetEnvironmentVariable('ASPOSE_CLI_CONFIG_DIR',$licenseStage,'Process')
+        $previousConfig = [Environment]::GetEnvironmentVariable($script:EnvironmentVariablePrefix + 'CONFIG_DIR','Process')
+        [Environment]::SetEnvironmentVariable($script:EnvironmentVariablePrefix + 'CONFIG_DIR',$licenseStage,'Process')
         try {
-            $licenseResult = Invoke-CliChildProcess (Join-Path $stage 'aspose-cli.exe') $licenseArguments
+            $licenseResult = Invoke-CliChildProcess (Join-Path $stage $script:ExecutableName) $licenseArguments
             if ($licenseResult.ExitCode -ne 0) { throw "License validation failed with exit code $($licenseResult.ExitCode): $(Get-ChildProcessDiagnostic $licenseResult)" }
         }
-        finally { [Environment]::SetEnvironmentVariable('ASPOSE_CLI_CONFIG_DIR',$previousConfig,'Process') }
+        finally { [Environment]::SetEnvironmentVariable($script:EnvironmentVariablePrefix + 'CONFIG_DIR',$previousConfig,'Process') }
     }
 
     if ($null -ne $existingState) {
         # The package executable is the caller-selected, checksum-verified
         # authority. Never execute the replaceable old installation merely
         # because its marker and manifest are self-consistent.
-        $serviceExecutable = Join-Path $stage 'aspose-cli.exe'
+        $serviceExecutable = Join-Path $stage $script:ExecutableName
         # One service holds the App and every open document, so one stop ends
         # everything that could still be using the installation.
         $stopResult = Invoke-CliChildProcess $serviceExecutable @('preview','stop','--all','--output','json')
@@ -1753,7 +1775,7 @@ try {
 
     $installedSkills = 0
     if (-not $SkipSkills) {
-        $skillListResult = Invoke-CliChildProcess (Join-Path $installRoot 'aspose-cli.exe') @('skill','list','--output','json')
+        $skillListResult = Invoke-CliChildProcess (Join-Path $installRoot $script:ExecutableName) @('skill','list','--output','json')
         if ($skillListResult.ExitCode -ne 0) { throw "Bundled Skills could not be listed: $(Get-ChildProcessDiagnostic $skillListResult)" }
         $skillList = $skillListResult.StdOut | ConvertFrom-Json
         $skillTargets = @(
@@ -1766,12 +1788,12 @@ try {
                 }
             }
         )
-        $skillStageParent = Join-Path $installParent ".aspose-cli-skill-stage-$transactionId"
+        $skillStageParent = Join-Path $installParent ".$($script:ProductId)-skill-stage-$transactionId"
         $expectedSkills = [Collections.Generic.Dictionary[string,object]]::new([StringComparer]::Ordinal)
         if ($skillTargets.Count -ne 0) {
             foreach ($skill in @($skillList.skills)) {
                 if ($skill.name -cnotin $script:AllowedSkills) { throw "Executable reported unknown Skill '$($skill.name)'." }
-                $probeResult = Invoke-CliChildProcess (Join-Path $installRoot 'aspose-cli.exe') @('skill','install',[string]$skill.name,'--target',$skillStageParent,'--output','json')
+                $probeResult = Invoke-CliChildProcess (Join-Path $installRoot $script:ExecutableName) @('skill','install',[string]$skill.name,'--target',$skillStageParent,'--output','json')
                 if ($probeResult.ExitCode -ne 0) { throw "Skill '$($skill.name)' could not be staged: $(Get-ChildProcessDiagnostic $probeResult)" }
                 $probeTarget = Join-Path $skillStageParent $skill.name
                 $expectedSkills.Add([string]$skill.name, (Get-SkillState $probeTarget $skill.name))
@@ -1808,7 +1830,7 @@ try {
                 }
                 [void](Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId)
                 $skillArguments = @('skill','install',[string]$skill.name) + @($skillTarget.Arguments) + @('--output','json')
-                $skillResult = Invoke-CliChildProcess (Join-Path $installRoot 'aspose-cli.exe') $skillArguments
+                $skillResult = Invoke-CliChildProcess (Join-Path $installRoot $script:ExecutableName) $skillArguments
                 if ($skillResult.ExitCode -ne 0) { throw "Skill '$($skill.name)' installation failed: $(Get-ChildProcessDiagnostic $skillResult)" }
                 $paths = Get-SkillTransactionPaths $hostName $customSkillsRoot ([string]$skill.name) $transactionId
                 $newSkill = Get-SkillState $paths.Target $skill.name
@@ -1854,7 +1876,7 @@ try {
 
     if ($committedCleanupComplete -and -not $SkipMcp) {
         try {
-            $mcpRegistrations = @(Register-OwnedMcp (Join-Path $installRoot 'aspose-cli.exe') @($newState.McpRegistrations))
+            $mcpRegistrations = @(Register-OwnedMcp (Join-Path $installRoot $script:ExecutableName) @($newState.McpRegistrations))
             $installedMarkerPath = Join-Path $installRoot $script:MarkerName
             $installedMarker = Read-StrictJson $installedMarkerPath 'installation marker'
             $installedMarker.mcpRegistrations = @($mcpRegistrations)
@@ -1866,15 +1888,15 @@ try {
         }
     }
     if ($null -ne $licenseArguments) {
-        $licenseResult = Invoke-CliChildProcess (Join-Path $installRoot 'aspose-cli.exe') $licenseArguments
+        $licenseResult = Invoke-CliChildProcess (Join-Path $installRoot $script:ExecutableName) $licenseArguments
         if ($licenseResult.ExitCode -ne 0) {
-            $licenseFailure = "The CLI is installed, but the validated license could not be installed (exit code $($licenseResult.ExitCode)): $(Get-ChildProcessDiagnostic $licenseResult) Retry with: aspose-cli $($licenseArguments[0..($licenseArguments.Count - 3)] -join ' ')"
+            $licenseFailure = "The CLI is installed, but the validated license could not be installed (exit code $($licenseResult.ExitCode)): $(Get-ChildProcessDiagnostic $licenseResult) Retry with: $($script:CommandName) $($licenseArguments[0..($licenseArguments.Count - 3)] -join ' ')"
         }
     }
-    Write-Host "Aspose CLI $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
+    Write-Host "$($script:DisplayName) $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
     if (-not $SkipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
     if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }
-    if ($null -eq $licenseArguments) { Write-Host 'No license was supplied for this installation. Check effective product licenses with: aspose-cli license status' }
+    if ($null -eq $licenseArguments) { Write-Host "No license was supplied for this installation. Check effective product licenses with: $($script:CommandName) license status" }
 }
 catch {
     $failure = $_
