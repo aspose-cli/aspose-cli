@@ -123,7 +123,10 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
     {
         // Under evaluation every saved input starts with the banner; appending one document to
         // another must not carry that banner into the middle of the result as a block.
-        string input = _fixture.CreateReport("banner-source.docx");
+        string markdown = _fixture.Temp.File("banner-source.md");
+        File.WriteAllText(markdown, "Contents\n\n# One\n\nSee [the source](https://example.com/source).\n");
+        string input = _fixture.Temp.File("banner-source.docx");
+        _fixture.Engine.CreateDocument(new NewDocumentRequest { OutputPath = input, MarkdownPath = markdown });
         string[] original = BlockTexts(input);
         string appended = _fixture.Temp.File("banner-appended.docx");
         string merged = _fixture.Temp.File("banner-merged.docx");
@@ -136,7 +139,13 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
             input,
             new WordsOpsBatch
             {
-                Ops = [new MailMergeOp { Inline = [new Dictionary<string, string?>(), new Dictionary<string, string?>()] }],
+                Ops =
+                [
+                    new MailMergeOp
+                    {
+                        Inline = [new Dictionary<string, string?> { ["Name"] = "Ava" }, new Dictionary<string, string?> { ["Name"] = "Noah" }],
+                    },
+                ],
             },
             new WordsEditRequest { OutputPath = merged });
 

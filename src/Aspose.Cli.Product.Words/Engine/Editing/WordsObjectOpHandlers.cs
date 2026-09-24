@@ -294,16 +294,18 @@ internal static class WordsObjectOpHandlers
         // Every further row appends one copy of the whole template.
         loader.EnsureNodeCapacity(document, (rows.Count - 1L) * document.GetChildNodes(NodeType.Any, true).Count);
         Document template = document.Clone();
-        if (loaded.Evaluation)
-        {
-            WordsEvaluation.RemoveLeadingBanners(template);
-        }
-
         ExecuteMergeRow(document, rows[0]);
         for (int index = 1; index < rows.Count; index++)
         {
             Document letter = template.Clone();
             ExecuteMergeRow(letter, rows[index]);
+            // Under evaluation a letter starts with a banner: the template's own, or the one
+            // the evaluation merge writes into it.
+            if (loaded.Evaluation)
+            {
+                WordsEvaluation.RemoveLeadingBanners(letter);
+            }
+
             document.AppendDocument(letter, ImportFormatMode.KeepSourceFormatting);
         }
 
