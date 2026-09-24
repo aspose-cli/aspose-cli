@@ -13,8 +13,7 @@ internal static class MergeCommand
             Description = "Two or more PDF inputs in merge order.",
             Arity = ArgumentArity.OneOrMore,
         }.WithInput(InputKind.File);
-        var output = new Option<string>("--out", "-o") { Required = true, Description = "Merged PDF output path." }.WithInput(InputKind.None);
-        Option<bool> overwrite = OutputOptions.Overwrite();
+        var output = new OutputFileOptions("Merged PDF output path.", required: true);
         var bookmarks = new Option<string>("--bookmarks")
         {
             DefaultValueFactory = _ => "preserve",
@@ -24,19 +23,21 @@ internal static class MergeCommand
         var password = new PasswordOptions("--password", "all input PDFs");
         var command = new Command("merge", "Merge PDF inputs in order.");
         command.Arguments.Add(inputs);
-        command.Options.Add(output);
-        command.Options.Add(overwrite);
+        output.AddTo(command);
         command.Options.Add(bookmarks);
         password.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
-            context.Port.Merge(new PdfMergeRequest
+        {
+            string[] inputPaths = parse.GetRequiredValue(inputs).Select(context.Paths.ResolveInput).ToArray();
+            return context.Port.Merge(new PdfMergeRequest
             {
-                InputPaths = parse.GetRequiredValue(inputs).Select(context.Paths.ResolveInput).ToArray(),
-                OutputPath = context.Paths.ResolveOutput(parse.GetRequiredValue(output)),
-                Overwrite = parse.GetValue(overwrite),
+                InputPaths = inputPaths,
+                OutputPath = output.ResolveRequired(parse, context.Paths, inputPaths),
+                Overwrite = output.Overwrite(parse),
                 PreserveBookmarks = (parse.GetValue(bookmarks) ?? "preserve") == "preserve",
                 Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
-            })));
+            });
+        }));
         return command;
     }
 }

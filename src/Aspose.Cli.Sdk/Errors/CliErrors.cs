@@ -241,16 +241,16 @@ public static partial class CliErrors
         details: new JsonObject { ["path"] = path });
 
     /// <summary>
-    /// An explicit output resolves to the input document. Replacing the input is the in-place
+    /// An explicit output resolves to an input document. Replacing the input is the in-place
     /// mode's job, which alone carries its backup and fingerprint precondition.
     /// </summary>
-    internal static CliException OutputIsInput(string path, bool inPlaceAvailable) => new(
+    internal static CliException OutputIsInput(string parameter, string path, bool inPlaceAvailable) => new(
         ErrorCodes.OptionInvalid,
-        $"Invalid use of --out: the output resolves to the input file: {path}",
+        $"Invalid use of {parameter}: the output resolves to an input file: {path}",
         hint: inPlaceAvailable
-            ? "Pass --in-place instead of --out to modify the input, with --backup or --if-match as needed; or choose another output path."
+            ? $"Pass --in-place instead of {parameter} to modify the input, with --backup or --if-match as needed; or choose another output path."
             : "Choose another output path; this command never replaces its input.",
-        details: new JsonObject { ["option"] = "--out", ["path"] = path });
+        details: new JsonObject { ["option"] = parameter, ["path"] = path });
 
     /// <summary>Two outputs of one operation, including a backup, resolve to the same path.</summary>
     internal static CliException DuplicateOutput(string path) => new(

@@ -110,18 +110,23 @@ public static class JsonInputSource
 
 }
 
-/// <summary>The standard output path and overwrite option pair.</summary>
+/// <summary>
+/// The standard output path and overwrite option pair, and the one rule for every output
+/// file a caller names: it resolves against the working directory and never names an input.
+/// </summary>
 public sealed class OutputFileOptions
 {
+    private const string OutOption = "--out";
     private readonly Option<string?> _out;
     private readonly Option<bool> _overwrite;
 
     /// <summary>Creates an output option pair with product-specific help.</summary>
-    public OutputFileOptions(string description)
+    public OutputFileOptions(string description, bool required = false)
     {
-        _out = new Option<string?>("--out", "-o")
+        _out = new Option<string?>(OutOption, "-o")
         {
             Description = description,
+            Required = required,
         }.WithInput(InputKind.None);
         _overwrite = OutputOptions.Overwrite();
     }
@@ -132,6 +137,10 @@ public sealed class OutputFileOptions
         command.Options.Add(_out);
         command.Options.Add(_overwrite);
     }
+
+    /// <summary>Whether the caller gave <c>--out</c>.</summary>
+    public bool IsGiven(ParseResult parseResult) =>
+        parseResult.GetValue(_out) is not null;
 
     /// <summary>Returns whether replacement was explicitly allowed.</summary>
     public bool Overwrite(ParseResult parseResult) =>
@@ -152,17 +161,59 @@ public sealed class OutputFileOptions
         PathResolver paths,
         string inputPath,
         string targetExtension) =>
-        parseResult.GetValue(_out) is { } explicitOut
-            ? ResolveExplicit(paths, explicitOut, inputPath, inPlaceAvailable: false)
-            : DerivePath(inputPath, targetExtension);
+        Resolve(parseResult, paths, inputPath)
+            ?? DerivePath(inputPath, targetExtension);
 
-    /// <summary>Resolves an explicit <c>--out</c> path and rejects one that names the input.</summary>
-    internal static string ResolveExplicit(PathResolver paths, string explicitOut, string inputPath, bool inPlaceAvailable)
+    /// <summary>Resolves <c>--out</c>, which must name none of the inputs, or returns null when it was omitted.</summary>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> when the output resolves to an input.</exception>
+    public string? Resolve(
+        ParseResult parseResult,
+        PathResolver paths,
+        params IReadOnlyList<string?> inputPaths) =>
+        parseResult.GetValue(_out) is { } explicitOut
+            ? ResolveExplicit(paths, explicitOut, OutOption, inputPaths)
+            : null;
+
+    /// <summary>Resolves a required <c>--out</c>, which must name none of the inputs.</summary>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> when it is missing or resolves to an input.</exception>
+    public string ResolveRequired(
+        ParseResult parseResult,
+        PathResolver paths,
+        params IReadOnlyList<string?> inputPaths) =>
+        Resolve(parseResult, paths, inputPaths)
+            ?? throw CliErrors.OptionInvalid(OutOption, "is required", "Pass the output file path.");
+
+    /// <summary>
+    /// Resolves an output file the caller names, such as a create command's file argument,
+    /// and rejects one that names any of the command's inputs: replacing an input is the
+    /// in-place mode's job alone, with its backup and fingerprint precondition.
+    /// </summary>
+    /// <param name="paths">The invocation path resolver.</param>
+    /// <param name="output">The output path as given.</param>
+    /// <param name="parameter">The option or argument that names the output, for the error.</param>
+    /// <param name="inputPaths">The command's resolved input files; an absent optional input is null.</param>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> when the output resolves to an input.</exception>
+    public static string ResolveExplicit(
+        PathResolver paths,
+        string output,
+        string parameter,
+        params IReadOnlyList<string?> inputPaths) =>
+        ResolveExplicit(paths, output, parameter, inPlaceAvailable: false, inputPaths);
+
+    internal static string ResolveExplicit(
+        PathResolver paths,
+        string output,
+        string parameter,
+        bool inPlaceAvailable,
+        IReadOnlyList<string?> inputPaths)
     {
-        string output = paths.ResolveOutput(explicitOut);
-        return OutputPathValidator.IsSameFile(output, inputPath)
-            ? throw CliErrors.OutputIsInput(output, inPlaceAvailable)
-            : output;
+        ArgumentNullException.ThrowIfNull(paths);
+        ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
+        ArgumentNullException.ThrowIfNull(inputPaths);
+        string resolved = paths.ResolveOutput(output);
+        return inputPaths.Any(input => input is not null && OutputPathValidator.IsSameFile(resolved, input))
+            ? throw CliErrors.OutputIsInput(parameter, resolved, inPlaceAvailable)
+            : resolved;
     }
 
     internal static string DerivePath(
@@ -268,7 +319,7 @@ public sealed class MutationFileOptions
         }
 
         string output = explicitOut is not null
-            ? OutputFileOptions.ResolveExplicit(paths, explicitOut, inputPath, inPlaceAvailable: true)
+            ? OutputFileOptions.ResolveExplicit(paths, explicitOut, "--out", inPlaceAvailable: true, [inputPath])
             : OutputFileOptions.DerivePath(
                 inputPath,
                 Path.GetExtension(inputPath));

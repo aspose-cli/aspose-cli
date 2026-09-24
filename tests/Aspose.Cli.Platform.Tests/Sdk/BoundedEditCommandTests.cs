@@ -157,6 +157,29 @@ public sealed class BoundedEditCommandTests : IDisposable
             command.Parse([]), new PathResolver(_temp.Path), _input, ".test"));
     }
 
+    [Fact]
+    public void OutputFileOptions_NeverResolveToAnyInput()
+    {
+        var output = new OutputFileOptions("Output path.");
+        var command = new Command("merge");
+        output.AddTo(command);
+        var paths = new PathResolver(_temp.Path);
+        string other = _temp.File("other.test");
+        File.WriteAllText(other, "other");
+
+        CliException error = Assert.Throws<CliException>(() => output.Resolve(
+            command.Parse(["--out", "OTHER.test"]), paths, _input, null, other));
+        CliException argument = Assert.Throws<CliException>(() => OutputFileOptions.ResolveExplicit(
+            paths, "BOOK.TEST", "file", null, _input));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
+        Assert.Equal("file", argument.Details!["option"]!.GetValue<string>());
+        Assert.Null(output.Resolve(command.Parse([]), paths, _input, other));
+        Assert.Equal(_temp.File("merged.test"), output.Resolve(
+            command.Parse(["--out", "merged.test"]), paths, _input, other));
+    }
+
     [Theory]
     [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'")]
     [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "'value' must be a whole number")]

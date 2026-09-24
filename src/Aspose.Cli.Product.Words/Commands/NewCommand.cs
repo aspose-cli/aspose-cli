@@ -43,14 +43,19 @@ internal static class NewCommand
                 throw CliErrors.Usage(["Choose --blank, --template, or one of --markdown or --text with an optional --template."]);
             }
 
+            string? markdownPath = markdownValue is null ? null : context.Paths.ResolveInput(markdownValue);
+            string? textPath = textValue is null ? null : context.Paths.ResolveInput(textValue);
+            string? templatePath = templateValue is null ? null : context.Paths.ResolveInput(templateValue);
+            string outputPath = OutputFileOptions.ResolveExplicit(
+                context.Paths, parse.GetRequiredValue(output), output.Name, markdownPath, textPath, templatePath);
             using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.CreateDocument(new NewDocumentRequest
             {
-                OutputPath = context.Paths.ResolveOutput(parse.GetRequiredValue(output)),
+                OutputPath = outputPath,
                 Overwrite = parse.GetValue(overwrite),
-                MarkdownPath = markdownValue is null ? null : context.Paths.ResolveInput(markdownValue),
-                TextPath = textValue is null ? null : context.Paths.ResolveInput(textValue),
-                TemplatePath = templateValue is null ? null : context.Paths.ResolveInput(templateValue),
+                MarkdownPath = markdownPath,
+                TextPath = textPath,
+                TemplatePath = templatePath,
                 Title = parse.GetValue(title),
                 EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });

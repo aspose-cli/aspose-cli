@@ -10,8 +10,7 @@ internal static class CompareCommand
     {
         var left = new Argument<string>("left") { Description = "Original document." }.WithInput(InputKind.File);
         var right = new Argument<string>("right") { Description = "Changed document." }.WithInput(InputKind.File);
-        var outOption = new Option<string?>("--out", "-o") { Description = "Optional redline output; its extension selects the format, such as .docx or .pdf." }.WithInput(InputKind.None);
-        Option<bool> overwrite = OutputOptions.Overwrite();
+        var output = new OutputFileOptions("Optional redline output; its extension selects the format, such as .docx or .pdf.");
         var ignoreFormatting = new Option<bool>("--ignore-formatting") { Description = "Ignore formatting-only changes." };
         var leftPassword = new PasswordOptions("--left-password", "the original document", allowStdin: false);
         var rightPassword = new PasswordOptions("--right-password", "the changed document", allowStdin: false);
@@ -20,8 +19,7 @@ internal static class CompareCommand
         var command = new Command("compare", "Semantically compare two documents and optionally save a redline.");
         command.Arguments.Add(left);
         command.Arguments.Add(right);
-        command.Options.Add(outOption);
-        command.Options.Add(overwrite);
+        output.AddTo(command);
         command.Options.Add(ignoreFormatting);
         leftPassword.AddTo(command);
         rightPassword.AddTo(command);
@@ -30,12 +28,13 @@ internal static class CompareCommand
         {
             string original = context.Paths.ResolveInput(parse.GetRequiredValue(left));
             string changed = context.Paths.ResolveInput(parse.GetRequiredValue(right));
+            string? redline = output.Resolve(parse, context.Paths, original, changed);
             using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Compare(original, changed, new WordsCompareRequest
             {
                 IgnoreFormatting = parse.GetValue(ignoreFormatting),
-                OutputPath = parse.GetValue(outOption) is { } output ? context.Paths.ResolveOutput(output) : null,
-                Overwrite = parse.GetValue(overwrite),
+                OutputPath = redline,
+                Overwrite = output.Overwrite(parse),
                 LeftPassword = leftPassword.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 RightPassword = rightPassword.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });

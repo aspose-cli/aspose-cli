@@ -17,8 +17,7 @@ internal static class ExtractCommand
         var outDirectory = new OutputDirectoryOption("Safe extraction directory; required unless --what forms.", required: false);
         var to = new Option<string?>("--to") { Description = "Form export format: json, fdf or xfdf; only with --what forms." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong("json", "fdf", "xfdf");
-        var outFile = new Option<string?>("--out", "-o") { Description = "Form-data output file; only with --what forms. Default extension follows --to." }.WithInput(InputKind.None);
-        Option<bool> overwrite = OutputOptions.Overwrite();
+        var outFile = new OutputFileOptions("Form-data output file; only with --what forms. Default extension follows --to.");
         var password = new PasswordOptions("--password", "the PDF");
         var command = new Command("extract", "Extract bounded PDF assets, text, tables or form data.");
         command.Arguments.Add(file);
@@ -26,15 +25,13 @@ internal static class ExtractCommand
         command.Options.Add(pages);
         outDirectory.AddTo(command);
         command.Options.Add(to);
-        command.Options.Add(outFile);
-        command.Options.Add(overwrite);
+        outFile.AddTo(command);
         password.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string kind = parse.GetRequiredValue(what);
             string? pageText = parse.GetValue(pages);
             string? format = parse.GetValue(to);
-            string? outPath = parse.GetValue(outFile);
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             if (string.Equals(kind, "forms", StringComparison.Ordinal))
             {
@@ -50,15 +47,13 @@ internal static class ExtractCommand
                 return context.Port.ExportForm(input, new PdfFormExportRequest
                 {
                     TargetFormatId = format,
-                    OutputPath = outPath is null
-                        ? Path.ChangeExtension(input, "." + format)
-                        : context.Paths.ResolveOutput(outPath),
-                    Overwrite = parse.GetValue(overwrite),
+                    OutputPath = outFile.ResolvePath(parse, context.Paths, input, "." + format),
+                    Overwrite = outFile.Overwrite(parse),
                     Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
                 });
             }
 
-            if (format is not null || outPath is not null || parse.GetValue(overwrite))
+            if (format is not null || outFile.IsGiven(parse) || outFile.Overwrite(parse))
             {
                 throw CliErrors.OptionInvalid("--to/--out/--overwrite", "form-output options are only valid with --what forms", "Remove them or use --what forms.");
             }

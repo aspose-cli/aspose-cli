@@ -27,12 +27,15 @@ internal static class NewCommand
         {
             string? markdownValue = parse.GetValue(markdown);
             string? templateValue = parse.GetValue(template);
+            string? markdownPath = markdownValue is null ? null : context.Paths.ResolveInput(markdownValue);
+            string? templatePath = templateValue is null ? null : context.Paths.ResolveInput(templateValue);
             return context.Port.Create(new NewPresentationRequest
             {
-                OutputPath = context.Paths.ResolveOutput(parse.GetRequiredValue(file)),
+                OutputPath = OutputFileOptions.ResolveExplicit(
+                    context.Paths, parse.GetRequiredValue(file), file.Name, markdownPath, templatePath),
                 Overwrite = parse.GetValue(overwrite),
-                MarkdownPath = markdownValue is null ? null : context.Paths.ResolveInput(markdownValue),
-                TemplatePath = templateValue is null ? null : context.Paths.ResolveInput(templateValue),
+                MarkdownPath = markdownPath,
+                TemplatePath = templatePath,
                 Size = parse.GetValue(size),
                 EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
             });
