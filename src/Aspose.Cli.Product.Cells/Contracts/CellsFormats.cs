@@ -50,26 +50,6 @@ public static class CellsFormats
         return extension.Length > 1 ? ResolveConvert(extension).Id : "xlsx";
     }
 
-    /// <summary>
-    /// Rejects an output password for a format that cannot carry one, naming the option that
-    /// supplied it (<c>--encrypt</c> or <c>--encrypt-env</c>).
-    /// </summary>
-    /// <param name="outputPath">The resolved output path.</param>
-    /// <param name="encryptOption">The option that supplied the password, or null for none.</param>
-    internal static void RequireEncryptable(string outputPath, string? encryptOption)
-    {
-        if (encryptOption is null)
-        {
-            return;
-        }
-
-        string format = ForOutputPath(outputPath);
-        if (!EncryptableIds.Contains(format, StringComparer.Ordinal))
-        {
-            throw CliErrors.OptionInvalid(encryptOption, $"the '{format}' format cannot be password-protected",
-                $"Encrypt only spreadsheet outputs ({string.Join(", ", EncryptableIds)}).");
-        }
-    }
 
     /// <summary>Formats accepted by <c>cells convert --to</c>.</summary>
     public static IReadOnlyList<FormatInfo> Convert { get; } =

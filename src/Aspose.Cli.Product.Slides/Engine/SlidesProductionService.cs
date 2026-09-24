@@ -105,7 +105,6 @@ internal sealed class SlidesProductionService
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
-        EnsureEncryptionSupported(request.EncryptPassword, request.TargetFormatId);
         IReadOnlyList<int>? slides = request.Slides is null
             ? null
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);

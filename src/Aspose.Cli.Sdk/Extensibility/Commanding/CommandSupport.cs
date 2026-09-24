@@ -393,6 +393,28 @@ public sealed class PasswordOptions
             : null;
     }
 
+    /// <summary>
+    /// Rejects a password given for an output format that cannot carry one, naming the option
+    /// the caller actually passed. Nothing is checked when no password was given.
+    /// </summary>
+    /// <param name="parseResult">The parsed command line.</param>
+    /// <param name="format">The output format id.</param>
+    /// <param name="protectableFormats">The output format ids that can carry a password.</param>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> for a format outside <paramref name="protectableFormats"/>.</exception>
+    public void EnsureProtectable(ParseResult parseResult, string format, IReadOnlyList<string> protectableFormats)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(format);
+        ArgumentNullException.ThrowIfNull(protectableFormats);
+        if (SelectedOption(parseResult) is { } option
+            && !protectableFormats.Contains(format, StringComparer.Ordinal))
+        {
+            throw CliErrors.OptionInvalid(
+                option,
+                $"the '{format}' format cannot be password-protected",
+                $"Protect only {string.Join(", ", protectableFormats)} outputs, or drop {option}.");
+        }
+    }
+
     /// <summary>Resolves the selected secret without serializing it.</summary>
     public string? Resolve(
         ParseResult parseResult,

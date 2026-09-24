@@ -36,6 +36,7 @@ internal static class ConvertCommand
                 throw CliErrors.OptionInvalid("--pages", $"'{format}' is a flow format", "Use --pages only with PDF, XPS, OpenXPS, PS or PCL.");
             }
 
+            encrypt.EnsureProtectable(parse, format, WordsFormats.EncryptIds);
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Convert(input, new WordsConvertRequest

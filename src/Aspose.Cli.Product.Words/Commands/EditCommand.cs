@@ -52,6 +52,7 @@ internal static class EditCommand
         {
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             BoundedEditInvocation<WordsOpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
+            encrypt.EnsureProtectable(parse, WordsFormats.ForOutput(invocation.Target.OutputPath), WordsFormats.EncryptIds);
             using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.ApplyOps(input, invocation.Batch, new WordsEditRequest
             {

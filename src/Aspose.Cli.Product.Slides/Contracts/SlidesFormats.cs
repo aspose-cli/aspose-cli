@@ -40,4 +40,7 @@ public static class SlidesFormats
         Definitions.IdsFor(FormatUse.Convert);
 
     public static IReadOnlyList<string> WriteIds { get; } = ["pptx", "pptm"];
+
+    /// <summary>Output formats that can carry a password.</summary>
+    public static IReadOnlyList<string> EncryptIds { get; } = ["pptx", "pptm"];
 }

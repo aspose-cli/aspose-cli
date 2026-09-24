@@ -55,6 +55,24 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.True(File.Exists(_workspace.File("slide.png")));
     }
 
+    [Theory]
+    [InlineData("--encrypt", "deck-secret")]
+    [InlineData("--encrypt-env", "DECK_PASSWORD")]
+    public void Convert_NamesTheEncryptionOptionAFormatCannotCarry(string option, string value)
+    {
+        CreateDeck(_workspace.File("deck.pptx"));
+
+        CliResult result = _workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["DECK_PASSWORD"] = "deck-secret" },
+            "slides", "convert", "deck.pptx", "--to", "pdf", option, value, "--output", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File("deck.pdf")));
+    }
+
     private static void CreateDeck(string path)
     {
         using var presentation = new Presentation();

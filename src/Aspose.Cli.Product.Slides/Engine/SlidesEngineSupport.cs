@@ -540,16 +540,6 @@ internal static class SlidesEngineSupport
             SlideSizeScaleType.EnsureFit);
     }
 
-    internal static void EnsureEncryptionSupported(string? password, string targetFormat)
-    {
-        if (password is not null && targetFormat is not ("pptx" or "pptm"))
-        {
-            throw new CliException(
-                ErrorCodes.FeatureUnsupported,
-                $"Slides output encryption is not supported for {targetFormat}.",
-                hint: "Write PPTX or PPTM when --encrypt is required.");
-        }
-    }
 
     internal static void Encrypt(Presentation presentation, string? password)
     {

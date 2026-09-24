@@ -13,7 +13,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
 {
     /// <remarks>
     /// The commands reject an output password for a format that cannot carry one, naming the
-    /// option the caller passed (<see cref="CellsFormats.RequireEncryptable"/>).
+    /// option the caller passed (<see cref="Sdk.Extensibility.Commanding.PasswordOptions.EnsureProtectable"/>).
     /// </remarks>
     internal static WorkbookSavePlan Create(string formatId, string outputPath, LicenseState licenseState,
         string? encryptPassword = null, string? inputPassword = null, int? selectedSheet = null)

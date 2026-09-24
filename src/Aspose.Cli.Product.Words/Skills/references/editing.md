@@ -15,7 +15,8 @@ Targets accept one of `block`, `blocks`, `bookmark`, `heading`, or `find`, with 
 An edit preserves an encrypted input's password when the selected output format
 supports encryption. `--encrypt-env` explicitly replaces that password. Choosing
 a non-encryptable output format produces `DOCUMENT_ENCRYPTION_REMOVED`; supplying
-`--encrypt-env` for such a format is an error. A read password supplied for a
+`--encrypt-env` for such a format is `OPTION_INVALID` naming that option, as it
+is for `convert` and `create`. A read password supplied for a
 plaintext input does not encrypt its output.
 
 Reloadable document outputs are reopened before publication, even without

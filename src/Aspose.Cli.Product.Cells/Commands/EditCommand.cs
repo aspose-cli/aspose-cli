@@ -55,7 +55,7 @@ internal static class EditCommand
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             BoundedEditInvocation<OpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
             string? encryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment);
-            CellsFormats.RequireEncryptable(invocation.Target.OutputPath, encrypt.SelectedOption(parse));
+            encrypt.EnsureProtectable(parse, CellsFormats.ForOutputPath(invocation.Target.OutputPath), CellsFormats.EncryptableIds);
             using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.ApplyOps(input, invocation.Batch, new EditRequest
             {

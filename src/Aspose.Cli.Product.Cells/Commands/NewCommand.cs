@@ -34,7 +34,7 @@ internal static class NewCommand
             IReadOnlyList<string> sheetNames = ParseSheetNames(parseResult.GetValue(sheetsOption));
             string outputPath = context.Paths.ResolveOutput(parseResult.GetRequiredValue(fileArgument));
             string? encryptPassword = encrypt.Resolve(parseResult, context.Inputs, context.ReadEnvironment);
-            CellsFormats.RequireEncryptable(outputPath, encrypt.SelectedOption(parseResult));
+            encrypt.EnsureProtectable(parseResult, CellsFormats.ForOutputPath(outputPath), CellsFormats.EncryptableIds);
 
             return context.Port.CreateWorkbook(new NewWorkbookRequest
             {

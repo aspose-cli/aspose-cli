@@ -48,6 +48,7 @@ internal static class NewCommand
             string? templatePath = templateValue is null ? null : context.Paths.ResolveInput(templateValue);
             string outputPath = OutputFileOptions.ResolveExplicit(
                 context.Paths, parse.GetRequiredValue(output), output.Name, markdownPath, textPath, templatePath);
+            encrypt.EnsureProtectable(parse, WordsFormats.ForOutput(outputPath), WordsFormats.EncryptIds);
             using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.CreateDocument(new NewDocumentRequest
             {

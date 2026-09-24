@@ -32,6 +32,7 @@ internal static class ConvertCommand
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             string format = parse.GetRequiredValue(to);
             string? range = parse.GetValue(slides);
+            encrypt.EnsureProtectable(parse, format, SlidesFormats.EncryptIds);
             using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Convert(input, new PresentationConvertRequest
             {

@@ -84,7 +84,8 @@ disclose that with every delivered file. Install a license with
 `slides` entry of `aspose-cli license status --output json`.
 
 Passwords come from `--password-env`, `--password-stdin` or `--encrypt-env`;
-never put secrets in ops JSON.
+never put secrets in ops JSON. Only PPTX and PPTM outputs can carry a password:
+`--encrypt-env` for another `convert` target is `OPTION_INVALID`.
 
 ## References
 
