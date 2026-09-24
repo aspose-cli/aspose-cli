@@ -56,38 +56,25 @@ public static class PrivateUserStorage
     /// identity suffix prevents one local user from claiming or hardening the
     /// path needed by another user.
     /// </summary>
-    public static string TemporaryRoot()
+    public static string TemporaryRoot() =>
+        EnsureDirectory(Path.Combine(Path.GetTempPath(), DistributionInfo.Id + "-" + CurrentUserSuffix()));
+
+    /// <summary>Neutral per-user namespace for cross-application document publication locks.</summary>
+    internal static string PublicationLockRoot() =>
+        EnsureDirectory(Path.Combine(Path.GetTempPath(), "aspose-document-publication-" + CurrentUserSuffix()));
+
+    private static string CurrentUserSuffix()
     {
         string identity = OperatingSystem.IsWindows()
             ? CurrentUserSid().Value
-            : GetEffectiveUserId()
-                .ToString(
-                    System.Globalization.CultureInfo.InvariantCulture);
-        string suffix = Convert.ToHexString(
-                SHA256.HashData(
-                    Encoding.UTF8.GetBytes(identity))
-                    .AsSpan(0, 8))
-            .ToLowerInvariant();
-        return EnsureDirectory(Path.Combine(
-            Path.GetTempPath(),
-            DistributionInfo.Id + "-" + suffix));
+            : GetEffectiveUserId().ToString(System.Globalization.CultureInfo.InvariantCulture);
+        return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)).AsSpan(0, 8)).ToLowerInvariant();
     }
 
     /// <summary>
     /// Ensures one directory exists with a private ACL/mode and rejects any
     /// symbolic-link or reparse-point component.
     /// </summary>
-
-    /// <summary>Neutral per-user namespace for cross-application document publication locks.</summary>
-    internal static string PublicationLockRoot()
-    {
-        string identity = OperatingSystem.IsWindows()
-            ? CurrentUserSid().Value
-            : GetEffectiveUserId().ToString(System.Globalization.CultureInfo.InvariantCulture);
-        string suffix = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(identity)).AsSpan(0, 8)).ToLowerInvariant();
-        return EnsureDirectory(Path.Combine(Path.GetTempPath(), "aspose-document-publication-" + suffix));
-    }
-
     public static string EnsureDirectory(string path)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(path);
