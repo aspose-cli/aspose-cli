@@ -534,15 +534,14 @@ internal static class ReleaseErrors
         details: new JsonObject { ["reason"] = reason });
 
     /// <summary>The feed could not be read; nothing was verified or installed.</summary>
-    public static CliException FeedUnreachable(Uri feed, string reason) => new(
-        ErrorCodes.ReleaseVerificationFailed,
+    public static CliException FeedUnavailable(Uri feed, string reason) => new(
+        ErrorCodes.ReleaseFeedUnavailable,
         $"The release feed could not be reached: {reason}",
         hint: "Check the network connection, proxy settings (HTTPS_PROXY) and the feed URL, then retry. A downloaded feed directory also works as a local feed path.",
         details: new JsonObject
         {
-            ["reason"] = "feed-unreachable",
+            ["reason"] = reason,
             // Feed URLs are validated to carry no credentials, query or fragment.
             ["feed"] = feed.AbsoluteUri,
-            ["error"] = reason,
         });
 }

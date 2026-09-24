@@ -394,7 +394,7 @@ internal static class UpdateClient
                 using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, deadline.Token).GetAwaiter().GetResult();
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    throw ReleaseErrors.FeedUnreachable(uri, $"the feed answered HTTP {(int)response.StatusCode}"
+                    throw ReleaseErrors.FeedUnavailable(uri, $"the feed answered HTTP {(int)response.StatusCode}"
                         + ((int)response.StatusCode is >= 300 and < 400 ? "; redirects are not followed, so use the final HTTPS URL" : string.Empty));
                 }
                 if (response.Content.Headers.ContentLength is > 0 and var length && length > maximum)
@@ -411,18 +411,18 @@ internal static class UpdateClient
             }
             catch (HttpRequestException exception)
             {
-                throw ReleaseErrors.FeedUnreachable(uri, exception.Message);
+                throw ReleaseErrors.FeedUnavailable(uri, exception.Message);
             }
             catch (IOException exception) when (!deadline.Token.IsCancellationRequested
                 && (exception is HttpIOException || exception.InnerException is System.Net.Sockets.SocketException))
             {
                 // The connection broke while the response body was being read.
-                throw ReleaseErrors.FeedUnreachable(uri, exception.Message);
+                throw ReleaseErrors.FeedUnavailable(uri, exception.Message);
             }
             catch (OperationCanceledException) when (!deadline.Token.IsCancellationRequested)
             {
                 // Only the connection timeout cancels without the deadline or the caller.
-                throw ReleaseErrors.FeedUnreachable(uri, "the connection was not established within 30 seconds");
+                throw ReleaseErrors.FeedUnavailable(uri, "the connection was not established within 30 seconds");
             }
         }
 

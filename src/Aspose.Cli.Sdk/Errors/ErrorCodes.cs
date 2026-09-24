@@ -116,6 +116,10 @@ public static partial class ErrorCodes
     public static readonly ErrorCode ReleaseTrustUnavailable =
         new("RELEASE_TRUST_UNAVAILABLE", ExitCode.OutputError);
 
+    /// <summary>The release feed could not be read, so nothing was verified or installed; retrying later can succeed.</summary>
+    public static readonly ErrorCode ReleaseFeedUnavailable =
+        new("RELEASE_FEED_UNAVAILABLE", ExitCode.OutputError);
+
     /// <summary>The requested live-preview port is already bound by another process.</summary>
     public static readonly ErrorCode LoopbackPortInUse = new("LOOPBACK_PORT_IN_USE", ExitCode.OutputError);
 
@@ -216,6 +220,7 @@ public static partial class ErrorCodes
         UnexpectedPackageMutation,
         ReleaseVerificationFailed,
         ReleaseTrustUnavailable,
+        ReleaseFeedUnavailable,
         LoopbackPortInUse,
         LoopbackListenerUnavailable,
         AppStartupFailed,

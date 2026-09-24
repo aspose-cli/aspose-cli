@@ -103,7 +103,7 @@ public sealed class UpdateClientStatusTests : IDisposable
         Assert.NotEqual(130, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
         Assert.Contains("could not be reached", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal("feed-unreachable", error["details"]!["reason"]!.GetValue<string>());
+        Assert.Equal("RELEASE_FEED_UNAVAILABLE", error["code"]!.GetValue<string>());
         Assert.Contains("proxy", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
