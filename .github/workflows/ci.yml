@@ -64,7 +64,6 @@ jobs:
           $path = Join-Path $env:RUNNER_TEMP 'Aspose.Total.lic'
           [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:LICENSE_BASE64))
           "ASPOSE_CLI_TEST_LICENSE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "ASPOSE_LICENSE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
       - run: ./scripts/test.ps1 -Configuration Release -RequireLicense
       - name: Remove the test license
         if: always()
