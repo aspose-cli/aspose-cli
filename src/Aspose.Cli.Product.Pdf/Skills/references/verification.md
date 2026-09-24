@@ -51,10 +51,12 @@ report any remaining defects.
 
 A font the PDF uses without embedding it is drawn from the fonts installed
 here. For fonts delivered beside the document, pass the same `--font-dir` to
-`fonts check`, `review`, and `pdf render`, `convert`, `edit` and `sign`; it
-adds to the system fonts. PDF/A conversion must embed every font, so it fails
-with `PDFA_CONVERSION_FAILED` while one is missing here. Text operations that
-name a `font`, and the appearance of a visible signature, need that font here.
+`fonts check`, `review`, and `pdf create`, `render`, `convert`, `edit` and
+`sign`; it adds to the system fonts. HTML and text sources draw their fonts from
+it too, so a CSS `font-family` resolves to the delivered font. PDF/A conversion
+must embed every font, so it fails with `PDFA_CONVERSION_FAILED` while one is
+missing here. Text operations that name a `font`, and the appearance of a
+visible signature, need that font here.
 
 ```powershell
 aspose-cli fonts check report.pdf --font-dir fonts --output json

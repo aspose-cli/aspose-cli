@@ -25,6 +25,7 @@ internal static class NewCommand
         pageSize.AcceptOnlyFromAmong(PdfPageSizes.Names);
         var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
+        var fonts = new FontDirectoryOptions();
         var command = new Command("create", "Create a PDF from exactly one source family.");
         command.Arguments.Add(file);
         command.Options.Add(images);
@@ -34,6 +35,7 @@ internal static class NewCommand
         command.Options.Add(pageSize);
         command.Options.Add(margins);
         command.Options.Add(overwrite);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string[] imageValues = parse.GetValue(images) ?? [];
@@ -47,15 +49,18 @@ internal static class NewCommand
                 throw CliErrors.Usage(["Choose exactly one of --from-images, --from-html or --from-text."]);
             }
 
+            string[]? imagePaths = imageValues.Length == 0 ? null : imageValues.Select(context.Paths.ResolveInput).ToArray();
+            string? htmlPath = htmlValue is null ? null : context.Paths.ResolveInput(htmlValue);
             string? textPath = textValue is null ? null : context.Paths.ResolveInput(textValue);
+            string outputPath = OutputFileOptions.ResolveExplicit(
+                context.Paths, parse.GetRequiredValue(file), file.Name, [.. imagePaths ?? [], htmlPath, textPath]);
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Create(new NewPdfRequest
             {
-                OutputPath = context.Paths.ResolveOutput(parse.GetRequiredValue(file)),
+                OutputPath = outputPath,
                 Overwrite = parse.GetValue(overwrite),
-                ImagePaths = imageValues.Length == 0
-                    ? null
-                    : imageValues.Select(context.Paths.ResolveInput).ToArray(),
-                HtmlPath = htmlValue is null ? null : context.Paths.ResolveInput(htmlValue),
+                ImagePaths = imagePaths,
+                HtmlPath = htmlPath,
                 AllowNetworkResources = parse.GetValue(allowNetwork),
                 TextPath = textPath,
                 Markdown = textPath is not null

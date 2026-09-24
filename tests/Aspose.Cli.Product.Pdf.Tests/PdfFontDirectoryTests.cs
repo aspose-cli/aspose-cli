@@ -61,6 +61,19 @@ public sealed class PdfFontDirectoryTests
         Assert.True(fontsEdit.ExitCode == 0, fontsEdit.StdErr);
     }
 
+    [Fact]
+    public void Cli_CreateFromHtmlLaysOutWithTheFontDirectory()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(
+            workspace.File("brand.html"),
+            $"<html><body><p style=\"font-family:'{FontFixtures.UniqueFamily}'\">Brand text.</p></body></html>");
+
+        FontDirectoryContract.VerifyPdfOutput(
+            workspace, "create", output => ["pdf", "create", output, "--from-html", "brand.html"]);
+    }
+
     private static bool FixtureAvailable(IFontEnvironment environment, string input) =>
         environment.CheckFonts(input, new FontCheckRequest()).Fonts
             .Single(static font => font.Name.StartsWith("AsposeCLIFixtureSans", StringComparison.Ordinal))

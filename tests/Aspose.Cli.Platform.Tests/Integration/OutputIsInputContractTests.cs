@@ -17,12 +17,6 @@ namespace Aspose.Cli.IntegrationTests;
 /// </summary>
 public sealed class OutputIsInputContractTests
 {
-    /// <summary>
-    /// <c>pdf create</c> is being reworked with the HTML and text import path; its file
-    /// argument still resolves without the rule. Remove the entry when that change routes
-    /// the argument through <c>OutputFileOptions.ResolveExplicit</c>.
-    /// </summary>
-    private static readonly string[] Pending = ["pdf create"];
 
     /// <summary>
     /// One invocation per writing command whose named output is spelled differently from,
@@ -38,6 +32,7 @@ public sealed class OutputIsInputContractTests
         ["pdf edit"] = (["pdf", "edit", "doc.pdf", "--ops", """{"ops":[]}""", "--out", "./DOC.pdf"], "--out"),
         ["pdf sign"] = (["pdf", "sign", "doc.pdf", "--certificate", "certificate.pfx", "--certificate-password-env", "CERTIFICATE_PASSWORD", "--out", "./DOC.pdf"], "--out"),
         ["pdf merge"] = (["pdf", "merge", "doc.pdf", "other.pdf", "--out", "./OTHER.pdf"], "--out"),
+        ["pdf create"] = (["pdf", "create", "./PAGE.png", "--from-images", "page.png", "--overwrite"], "file"),
         ["pdf extract"] = (["pdf", "extract", "doc.pdf", "--what", "forms", "--to", "json", "--out", "./DOC.pdf"], "--out"),
         ["slides convert"] = (["slides", "convert", "deck.pptx", "--to", "pdf", "--out", "./DECK.pptx"], "--out"),
         ["slides render"] = (["slides", "render", "deck.pptx", "--out", "./DECK.pptx"], "--out"),
@@ -53,7 +48,7 @@ public sealed class OutputIsInputContractTests
     [Fact]
     public void EveryWritingCommandHasACase()
     {
-        string[] writing = WritingCommands().Except(Pending, StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+        string[] writing = WritingCommands().Order(StringComparer.Ordinal).ToArray();
 
         Assert.Equal(writing, Cases.Keys.Order(StringComparer.Ordinal));
     }
@@ -65,7 +60,7 @@ public sealed class OutputIsInputContractTests
     public void AnOutputThatResolvesToAnInputIsRefused(string command)
     {
         using var workspace = new TempWorkspace();
-        string[] inputs = ["book.xlsx", "doc.pdf", "other.pdf", "deck.pptx", "doc.docx", "other.docx", "certificate.pfx"];
+        string[] inputs = ["book.xlsx", "doc.pdf", "other.pdf", "page.png", "deck.pptx", "doc.docx", "other.docx", "certificate.pfx"];
         foreach (string input in inputs)
         {
             File.WriteAllText(workspace.File(input), "input");
