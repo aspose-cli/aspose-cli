@@ -33,13 +33,15 @@ internal static class NewCommand
         {
             IReadOnlyList<string> sheetNames = ParseSheetNames(parseResult.GetValue(sheetsOption));
             string outputPath = context.Paths.ResolveOutput(parseResult.GetRequiredValue(fileArgument));
+            string? encryptPassword = encrypt.Resolve(parseResult, context.Inputs, context.ReadEnvironment);
+            CellsFormats.RequireEncryptable(outputPath, encrypt.SelectedOption(parseResult));
 
             return context.Port.CreateWorkbook(new NewWorkbookRequest
             {
                 OutputPath = outputPath,
                 Overwrite = parseResult.GetValue(overwriteOption),
                 SheetNames = sheetNames,
-                EncryptPassword = encrypt.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
+                EncryptPassword = encryptPassword,
             });
         }));
 

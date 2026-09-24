@@ -329,6 +329,19 @@ public sealed class PasswordOptions
         }
     }
 
+    /// <summary>
+    /// Returns the option that supplies the secret, or null when none was given, so an error
+    /// about the secret's use names the option the caller actually passed.
+    /// </summary>
+    public string? SelectedOption(ParseResult parseResult)
+    {
+        ArgumentNullException.ThrowIfNull(parseResult);
+        return parseResult.GetValue(_literal) is not null ? _prefix
+            : parseResult.GetValue(_fromEnvironment) is not null ? $"{_prefix}-env"
+            : _fromStandardInput is not null && parseResult.GetValue(_fromStandardInput) ? $"{_prefix}-stdin"
+            : null;
+    }
+
     /// <summary>Resolves the selected secret without serializing it.</summary>
     public string? Resolve(
         ParseResult parseResult,

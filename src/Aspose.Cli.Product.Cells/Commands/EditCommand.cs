@@ -52,6 +52,8 @@ internal static class EditCommand
 
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             BoundedEditInvocation<OpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
+            string? encryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment);
+            CellsFormats.RequireEncryptable(invocation.Target.OutputPath, encrypt.SelectedOption(parse));
             return context.Port.ApplyOps(input, invocation.Batch, new EditRequest
             {
                 OutputPath = invocation.Target.OutputPath,
@@ -61,7 +63,7 @@ internal static class EditCommand
                 Recalculate = recalculate,
                 OpSecrets = ResolveSecrets(invocation.Batch, context.ReadEnvironment),
                 Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: !invocation.OpsFromStandardInput),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                EncryptPassword = encryptPassword,
                 Verify = invocation.Verify,
             });
         }));

@@ -65,6 +65,29 @@ public sealed class CellsMutationBoundaryTests
         Assert.DoesNotContain("test-password", edit.StdOut + edit.StdErr, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("create", "--encrypt-env")]
+    [InlineData("edit", "--encrypt-env")]
+    [InlineData("edit", "--encrypt")]
+    public void EncryptingATextOutputNamesTheOptionThatWasPassed(string verb, string option)
+    {
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
+        var environment = new Dictionary<string, string?> { ["OUTPUT_PASSWORD"] = "test-output-secret" };
+        string secret = option == "--encrypt" ? "test-output-secret" : "OUTPUT_PASSWORD";
+        string[] arguments = verb == "create"
+            ? ["cells", "create", "result.csv", option, secret, "--output", "json"]
+            : ["cells", "edit", "source.xlsx", "--set", "Data!A1=7", "--out", "result.csv", option, secret, "--output", "json"];
+
+        CliResult result = workspace.RunWithEnv(environment, arguments);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
+        Assert.False(File.Exists(workspace.File("result.csv")));
+    }
+
     [Fact]
     public void ExportingEncryptedInputToTextDisclosesTheLostProtection()
     {

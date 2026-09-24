@@ -25,7 +25,7 @@ internal sealed class WorkbookSaveService(SafeFileWriter writer, WorkbookLoadSer
         string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
         bool verifyReopen = false, string? inputPassword = null)
     {
-        WorkbookSavePlan plan = WorkbookSavePlan.Create(WorkbookSavePlan.FormatForPath(outputPath), outputPath, licenseState, encryptPassword, inputPassword);
+        WorkbookSavePlan plan = WorkbookSavePlan.Create(CellsFormats.ForOutputPath(outputPath), outputPath, licenseState, encryptPassword, inputPassword);
         using AtomicOutputSetWriter transaction = CreateOutputSet([Path.GetDirectoryName(outputPath)!], "cells-save", backupPath);
         WorkbookStagedSave saved = Stage(transaction, workbook, plan, outputPath, overwrite, backupPath, inputPrecondition, verifyReopen);
         transaction.Commit();

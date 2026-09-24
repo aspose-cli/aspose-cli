@@ -38,6 +38,39 @@ public static class CellsFormats
     public static IReadOnlyList<string> EditIds { get; } = Array.AsReadOnly(new[]
     { "xlsx", "xlsm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml" });
 
+    /// <summary>Workbook formats that can carry a password.</summary>
+    public static IReadOnlyList<string> EncryptableIds { get; } = Array.AsReadOnly(new[]
+    { "xlsx", "xlsm", "xlsb", "xls", "ods" });
+
+    /// <summary>The convert format whose id, alias or declared extension a path carries; xlsx without one.</summary>
+    /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when the extension names no format.</exception>
+    public static string ForOutputPath(string path)
+    {
+        string extension = Path.GetExtension(path);
+        return extension.Length > 1 ? ResolveConvert(extension).Id : "xlsx";
+    }
+
+    /// <summary>
+    /// Rejects an output password for a format that cannot carry one, naming the option that
+    /// supplied it (<c>--encrypt</c> or <c>--encrypt-env</c>).
+    /// </summary>
+    /// <param name="outputPath">The resolved output path.</param>
+    /// <param name="encryptOption">The option that supplied the password, or null for none.</param>
+    internal static void RequireEncryptable(string outputPath, string? encryptOption)
+    {
+        if (encryptOption is null)
+        {
+            return;
+        }
+
+        string format = ForOutputPath(outputPath);
+        if (!EncryptableIds.Contains(format, StringComparer.Ordinal))
+        {
+            throw CliErrors.OptionInvalid(encryptOption, $"the '{format}' format cannot be password-protected",
+                $"Encrypt only spreadsheet outputs ({string.Join(", ", EncryptableIds)}).");
+        }
+    }
+
     /// <summary>Formats accepted by <c>cells convert --to</c>.</summary>
     public static IReadOnlyList<FormatInfo> Convert { get; } =
         Create(FormatUse.Convert);

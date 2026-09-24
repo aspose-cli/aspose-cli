@@ -44,7 +44,7 @@ internal sealed class CellsMutationService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(batch);
         ArgumentNullException.ThrowIfNull(options);
-        string format = WorkbookSavePlan.FormatForPath(options.OutputPath);
+        string format = CellsFormats.ForOutputPath(options.OutputPath);
         if (!CellsFormats.EditIds.Contains(format, StringComparer.Ordinal))
         { throw CliErrors.FormatUnsupported(format, CellsFormats.EditIds); }
         batch = CellsOps.Catalog.Prepare(batch);

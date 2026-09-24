@@ -11,14 +11,19 @@ namespace Aspose.Cli.Product.Cells.Engine;
 /// <summary>Product-owned format and encryption decisions for one workbook output.</summary>
 internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, SaveOptions? Options, string? OutputPassword, Warning? EncryptionWarning, bool IsEvaluation)
 {
-    private static readonly HashSet<string> EncryptableFormats = new(StringComparer.Ordinal)
-    { "xlsx", "xlsm", "xlsb", "xls", "ods" };
-
+    /// <remarks>
+    /// The commands reject an output password for a format that cannot carry one, naming the
+    /// option the caller passed (<see cref="CellsFormats.RequireEncryptable"/>).
+    /// </remarks>
     internal static WorkbookSavePlan Create(string formatId, string outputPath, LicenseState licenseState,
         string? encryptPassword = null, string? inputPassword = null, int? selectedSheet = null)
     {
-        if (encryptPassword is not null && !EncryptableFormats.Contains(formatId))
-        { throw CliErrors.OptionInvalid("--encrypt", $"the '{formatId}' format cannot be password-protected", "Encrypt only spreadsheet outputs (xlsx, xlsm, xlsb, xls, ods)."); }
+        bool encryptable = CellsFormats.EncryptableIds.Contains(formatId, StringComparer.Ordinal);
+        if (encryptPassword is not null && !encryptable)
+        {
+            throw new InvalidOperationException($"An output password reached the '{formatId}' format, which cannot carry one.");
+        }
+
         SaveFormat format = FormatMapper.ToSaveFormat(formatId, outputPath);
         SaveOptions? options = formatId switch
         {
@@ -29,7 +34,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             "pdf" when selectedSheet is { } sheet => new PdfSaveOptions { SheetSet = new SheetSet([sheet]) },
             _ => null,
         };
-        string? password = encryptPassword ?? (EncryptableFormats.Contains(formatId) ? inputPassword : null);
+        string? password = encryptPassword ?? (encryptable ? inputPassword : null);
         Warning? warning = inputPassword is not null && password is null ? new Warning
         {
             Code = CellsDiagnostics.EncryptionRemoved,
@@ -37,13 +42,6 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             Hint = "Use an encryption-capable spreadsheet output to keep password protection.",
         } : null;
         return new WorkbookSavePlan(formatId, format, options, password, warning, licenseState == LicenseState.Evaluation);
-    }
-
-    /// <summary>The convert format whose id, alias or declared extension the path carries; xlsx without one.</summary>
-    internal static string FormatForPath(string path)
-    {
-        string extension = Path.GetExtension(path);
-        return extension.Length > 1 ? CellsFormats.ResolveConvert(extension).Id : "xlsx";
     }
 
     internal Warning? DetectSheetLoss(Workbook workbook) =>
