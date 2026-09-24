@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -117,6 +118,7 @@ public sealed class OperationCatalog<TOp>
             throw Invalid("the document is empty");
         }
 
+        using JsonDocument document = ParseJson(json);
         TBatch batch;
         try
         {
@@ -125,11 +127,59 @@ public sealed class OperationCatalog<TOp>
         catch (Exception exception) when (
             exception is JsonException or InvalidOperationException or NotSupportedException)
         {
-            throw Invalid(exception.Message);
+            throw Rejected(document.RootElement, typeof(TBatch), contracts.LocalOptions, exception as JsonException);
         }
 
         return Prepare(batch);
     }
+
+    private JsonDocument ParseJson(string json)
+    {
+        try
+        {
+            return JsonDocument.Parse(json);
+        }
+        catch (JsonException exception)
+        {
+            throw Invalid($"the document is not valid JSON: {exception.Message}");
+        }
+    }
+
+    /// <summary>
+    /// Restates a serializer rejection for the agent. The operation converter already words its
+    /// failures in wire terms and the serializer records the failing operation's position, so
+    /// such a failure keeps its text and gains the index and name; any other failure is
+    /// explained from the document against the envelope contract.
+    /// </summary>
+    private CliException Rejected(JsonElement root, Type batchType, JsonSerializerOptions options, JsonException? rejection)
+    {
+        if (OperationIndex(rejection?.Path) is { } index)
+        {
+            return OperationErrors.InvalidAt(index, RegisteredNameAt(root, index), rejection!.Message, DefaultHint);
+        }
+
+        return Invalid(JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path));
+    }
+
+    private static int? OperationIndex(string? path)
+    {
+        const string Prefix = "$.ops[";
+        return path is not null && path.StartsWith(Prefix, StringComparison.Ordinal) && path.EndsWith(']')
+            && int.TryParse(path.AsSpan(Prefix.Length, path.Length - Prefix.Length - 1),
+                NumberStyles.None, CultureInfo.InvariantCulture, out int index)
+                ? index
+                : null;
+    }
+
+    private string? RegisteredNameAt(JsonElement root, int index) =>
+        root.ValueKind == JsonValueKind.Object
+        && root.TryGetProperty("ops", out JsonElement ops) && ops.ValueKind == JsonValueKind.Array
+        && index < ops.GetArrayLength()
+        && ops[index] is { ValueKind: JsonValueKind.Object } operation
+        && operation.TryGetProperty("op", out JsonElement name) && name.ValueKind == JsonValueKind.String
+        && _types.ContainsKey(name.GetString()!)
+            ? name.GetString()
+            : null;
 
     /// <summary>
     /// Validates a parsed or composed document once and assigns deterministic ids to

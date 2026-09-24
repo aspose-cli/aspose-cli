@@ -36,6 +36,18 @@ public sealed class CellsModuleTests
     }
 
     [Fact]
+    public void JsonRejections_NameTheOperationAndFieldWithoutClrTypes()
+    {
+        var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() => ParseOps(
+            """{"ops":[{"op":"set_values","range":"A1","values":[[1]]},{"op":"format_range","range":"A1","style":{"bold":true,"shiny":1}}]}"""));
+
+        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("format_range", error.Details["op"]!.GetValue<string>());
+        Assert.Equal("unknown field 'style.shiny'", error.Details["reason"]!.GetValue<string>());
+        Assert.DoesNotContain("Aspose.Cli", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void OperationObjects_RejectUnknownNestedFields() =>
         AssertOperationObjectIsStrict<Op>(
             """{"op":"format_range","range":"A1","style":{"bold":true}}""", "style");

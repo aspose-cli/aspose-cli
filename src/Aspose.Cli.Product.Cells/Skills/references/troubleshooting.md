@@ -38,6 +38,9 @@ most likely fix. Read the hint first; this page adds background.
   zero-based position, `details.op` its name and `details.reason` the rule
   it broke. A failure found while applying an op keeps its own code (for
   example SHEET_NOT_FOUND) and carries the same `index` and `op` details.
+  A JSON shape problem names the field path in `details.reason`, such as
+  `unknown field 'style.shiny'` or `'at' must be a whole number`; `details.op`
+  is absent when the entry names no known op.
   The batch was atomic: fix that one op and re-run the whole document.
 
 ## Output problems (exit 5)

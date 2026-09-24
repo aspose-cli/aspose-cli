@@ -37,16 +37,22 @@ public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperat
             || discriminator.ValueKind != JsonValueKind.String)
         {
             throw new JsonException(
-                $"Every op must be an object with a string 'op' field. Valid ops: {string.Join(", ", operations.Keys)}");
+                $"every op must be an object with a string 'op' field; valid ops: {string.Join(", ", operations.Keys)}");
         }
 
         string name = discriminator.GetString()!;
         if (!operations.TryGetValue(name, out Type? type))
         {
-            throw new JsonException($"Unknown op '{name}'. Valid ops: {string.Join(", ", operations.Keys)}");
+            throw new JsonException($"unknown op '{name}'; valid ops: {string.Join(", ", operations.Keys)}");
         }
 
-        BoundedJsonValidation.ValidateNoDuplicateProperties(root, static reason => new JsonException(reason));
+        // The payload below omits the discriminator, so only its duplicates need a check here;
+        // the serializer rejects every other duplicate and the diagnostics name it.
+        if (root.EnumerateObject().Count(static property => property.NameEquals("op")) > 1)
+        {
+            throw new JsonException("'op' is duplicated");
+        }
+
         using var payload = new MemoryStream();
         using (var writer = new Utf8JsonWriter(payload))
         {
@@ -55,7 +61,7 @@ public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperat
             {
                 if (property.NameEquals("opName"))
                 {
-                    throw new JsonException("Unknown field 'opName'. Use the 'op' discriminator.");
+                    throw new JsonException("unknown field 'opName'; use the 'op' discriminator");
                 }
                 if (!property.NameEquals("op"))
                 {
@@ -74,8 +80,21 @@ public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperat
             value.MakeReadOnly();
             return value;
         });
-        var operation = (TOperation)(JsonSerializer.Deserialize(payload.ToArray(), type, strict)
-            ?? throw new JsonException($"Op '{name}' deserialized to null."));
+        byte[] fields = payload.ToArray();
+        TOperation operation;
+        try
+        {
+            operation = (TOperation)JsonSerializer.Deserialize(fields, type, strict)!;
+        }
+        catch (JsonException rejection)
+        {
+            // The serializer's own text names CLR types; restate the failure in wire terms.
+            // A fresh exception has no path, so the enclosing read records the op's position.
+            using JsonDocument rejected = JsonDocument.Parse(fields);
+            throw new JsonException(
+                JsonContractDiagnostics.Explain(rejected.RootElement, type, strict, rejection.Path), rejection);
+        }
+
         return ApplyDefaults(operation, root);
     }
 

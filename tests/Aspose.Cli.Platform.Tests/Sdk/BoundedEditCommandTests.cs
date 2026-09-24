@@ -129,6 +129,47 @@ public sealed class BoundedEditCommandTests : IDisposable
         Assert.DoesNotContain("--set", plain.Hint, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'")]
+    [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "'value' must be a whole number")]
+    [InlineData("""{"ops":[{"op":"set","value":1,"value":2}]}""", 0, "set", "'value' is duplicated")]
+    [InlineData("""{"ops":[{"op":"link","path":null}]}""", 0, "link", "'path' must not be null")]
+    public void Read_ExplainsARejectedOperationInWireTerms(string document, int index, string op, string reason)
+    {
+        CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(index, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal(op, error.Details["op"]!.GetValue<string>());
+        Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.DoesNotContain(nameof(BoundedEditCommandTests), error.Message, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""{"ops":[{"op":"sett","value":1}]}""", "unknown op 'sett'")]
+    [InlineData("""{"ops":[5]}""", "every op must be an object")]
+    public void Read_NamesOnlyTheIndexOfAnEntryWithoutAKnownOperation(string document, string reason)
+    {
+        CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
+
+        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Null(error.Details["op"]);
+        Assert.StartsWith(reason, error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("""[{"op":"set","value":1}]""", "the document must be an object")]
+    [InlineData("""{"ops":{"op":"set","value":1}}""", "'ops' must be an array")]
+    [InlineData("""{"schemaVersion":2}""", "the required field 'ops' is missing")]
+    public void Read_ExplainsARejectedEnvelopeInWireTerms(string document, string reason)
+    {
+        CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(reason, error.Details!["reason"]!.GetValue<string>());
+        Assert.DoesNotContain(nameof(TestBatch), error.Message, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Read_NormalizesOperationPathsAgainstTheInvocationDirectory()
     {
