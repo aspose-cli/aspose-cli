@@ -83,6 +83,8 @@ public sealed class CrossProcessLockTests
         CliResult accepted = workspace.Run("skill", "install", Skill, "--target", target, "--output", "json");
         Assert.True(accepted.ExitCode == 0, accepted.StdErr);
         Assert.Equal(Tree(Path.Combine(reference, Skill)), Tree(installed));
+        // The released lock leaves no lock file beside the installed Skill.
+        Assert.Equal([Skill], Entries(target));
     }
 
     [Fact]

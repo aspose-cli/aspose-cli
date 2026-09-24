@@ -148,7 +148,7 @@ public sealed class LocalServiceRuntimeTests
                 deadline.ThrowIfExpired("test");
             }
             return new LocalServiceControlResponse(0, "", "", "", "", true);
-        }, stageTimeout: TimeSpan.FromMilliseconds(500), operationTimeout: TimeSpan.FromSeconds(10));
+        }, stageTimeout: TimeSpan.FromSeconds(2), operationTimeout: TimeSpan.FromSeconds(10));
         server.Start();
         await Task.Delay(30);
         Task<LocalServiceControlResponse> opening = Task.Run(() =>
@@ -157,7 +157,7 @@ public sealed class LocalServiceRuntimeTests
         {
             Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
             // The open operation outlives the frame budget; a new request is still served.
-            await Task.Delay(750);
+            await Task.Delay(3_000);
             Assert.True(LocalServiceControlServer.Send(endpoint, nonce, token, "ping", timeout: TimeSpan.FromSeconds(10)).Ok);
         }
         finally { resume.Set(); }
@@ -304,7 +304,8 @@ public sealed class LocalServiceRuntimeTests
                 string.Empty,
                 string.Empty,
                 true),
-            TimeSpan.FromMilliseconds(150));
+            // A budget far above scheduling delays under load, which the partial frame outlives.
+            TimeSpan.FromSeconds(1));
         server.Start();
 
         using (Stream partial = await ConnectRaw(endpoint))
@@ -313,7 +314,7 @@ public sealed class LocalServiceRuntimeTests
             BinaryPrimitives.WriteInt32LittleEndian(header, 32);
             await partial.WriteAsync(header);
             await partial.FlushAsync();
-            await Task.Delay(250);
+            await Task.Delay(1_500);
         }
 
         Assert.True(LocalServiceControlServer.Send(
