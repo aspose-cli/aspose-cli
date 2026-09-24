@@ -8,20 +8,21 @@ internal enum CommandExecutionOwnership { Worker, Service, ParentHandoff }
 
 /// <param name="ProductId">The product whose document commands the command belongs to.</param>
 /// <param name="Execution">Who owns the process that runs the command.</param>
-/// <param name="McpReadOnly">
+/// <param name="McpAllowed">
 /// Whether MCP <c>execute</c> may run this host command. Every product command
-/// is available through MCP; of the host commands, only those that neither
-/// change user state nor start or stop anything are: <c>doctor</c>,
+/// is available through MCP; of the host commands, only those that change no
+/// user or service state beyond publishing new outputs are: <c>doctor</c>,
 /// <c>schema</c>, <c>docs</c>, <c>fonts list</c>, <c>fonts check</c>,
-/// <c>license status</c>, <c>skill list</c>, <c>preview status</c> and
-/// <c>app status</c>. <c>capabilities</c> has its own MCP tool.
+/// <c>license status</c>, <c>skill list</c>, <c>preview status</c>,
+/// <c>app status</c> and <c>review</c>, which publishes a new evidence
+/// directory. <c>capabilities</c> has its own MCP tool.
 /// </param>
 /// <param name="EnvironmentVariables">Extra environment variables a supervised worker receives.</param>
 /// <param name="OutputBytesLimit">A command-specific output byte limit.</param>
 internal sealed record CommandInvocationPolicy(
     string? ProductId = null,
     CommandExecutionOwnership Execution = CommandExecutionOwnership.Worker,
-    bool McpReadOnly = false,
+    bool McpAllowed = false,
     IReadOnlyList<string>? EnvironmentVariables = null,
     long? OutputBytesLimit = null);
 

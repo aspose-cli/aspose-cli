@@ -120,7 +120,7 @@ internal static class PreviewCommand
                     .ToArray(),
             };
         }));
-        return status.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
+        return status.WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true));
     }
 
     private static Command CreateStop(CommandExecutor executor, GlobalOptions globals)

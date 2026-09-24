@@ -39,7 +39,7 @@ internal static class SkillCommandGroup
                 Hosts = [Codex, ClaudeCode, OpenCode],
             }).ToArray(),
         }));
-        return list.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
+        return list.WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true));
     }
 
     private static Command CreateInstall(

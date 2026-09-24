@@ -23,7 +23,7 @@ internal sealed class ParsedInvocation
         ProductId = path.Select(static command => command.Policy().ProductId).FirstOrDefault(static id => id is not null);
         Execution = path.Select(static command => command.Policy().Execution)
             .FirstOrDefault(static value => value != CommandExecutionOwnership.Worker);
-        McpAllowed = ProductId is not null || parse.CommandResult.Command.Policy().McpReadOnly;
+        McpAllowed = ProductId is not null || parse.CommandResult.Command.Policy().McpAllowed;
     }
 
     public ParseResult ParseResult { get; }
@@ -57,4 +57,23 @@ internal sealed class InvocationParser(RootCommand root, GlobalOptions globals)
 
     internal (OutputMode Output, bool Quiet) ResolveErrorOutput(IReadOnlyList<string> args) =>
         globals.ResolveForErrorReporting(root.Parse(args, Configuration));
+
+    /// <summary>The host commands MCP <c>execute</c> may run, as command paths in tree order.</summary>
+    internal IReadOnlyList<string> McpHostCommands()
+    {
+        var paths = new List<string>();
+        Collect(root, prefix: null);
+        return paths;
+
+        void Collect(Command command, string? prefix)
+        {
+            foreach (Command child in command.Subcommands)
+            {
+                if (child.Policy().ProductId is not null) { continue; }
+                string path = prefix is null ? child.Name : prefix + " " + child.Name;
+                if (child.Policy().McpAllowed) { paths.Add(path); }
+                Collect(child, path);
+            }
+        }
+    }
 }

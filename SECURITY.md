@@ -14,8 +14,9 @@ own origin (`frame-ancestors 'self'`, `SAMEORIGIN`). Rendered document parts run
 The App control endpoint is a per-user
 singleton; selecting another configuration directory does not create an independent endpoint.
 
-MCP `execute` runs product commands and only the read-only host commands; it cannot install,
-update, change licenses or start and stop services.
+MCP `execute` runs product commands and only the host commands that change no user or service
+state beyond publishing new outputs (`review` publishes a new evidence directory); it cannot
+install, update, change licenses or start and stop services.
 
 File routing is content-driven. Publication, extraction, ownership and resource budgets are
 checked. File publication and shared per-user install and PATH state are guarded by

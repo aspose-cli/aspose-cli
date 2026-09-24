@@ -50,7 +50,8 @@ internal static class RootCommandFactory
             executor,
             catalog,
             host.ContractJson.Serializer,
-            globals));
+            globals)
+            .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         var productHostFactory = new ProductCommandHostFactory(executor, globals);
         foreach (ProductDefinition product in catalog.Products)
         {
@@ -71,12 +72,12 @@ internal static class RootCommandFactory
             globals,
             capabilitySnapshot));
         root.Subcommands.Add(DoctorCommand.Create(executor, catalog, globals)
-            .WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true)));
+            .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         root.Subcommands.Add(SkillCommandGroup.Create(executor, host.Skills, globals));
         root.Subcommands.Add(SchemaCommand.Create(executor, host.Schemas, globals)
-            .WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true)));
+            .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         root.Subcommands.Add(DocsCommand.Create(executor, host.Docs, globals)
-            .WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true)));
+            .WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true)));
         if (catalog.Products.Any(
                 static product => product.Manifest.Engine.SupportsFontDiagnostics))
         {

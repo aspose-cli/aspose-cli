@@ -124,7 +124,7 @@ internal sealed class McpCommandRunner
         {
             throw new McpCommandException(
                 "The requested command or arguments are not available through MCP. "
-                + "Use a compiled product command or an allowlisted read-only host command.");
+                + $"Use a product command or one of these host commands: {string.Join(", ", _parser.McpHostCommands())}.");
         }
         return invocation;
     }

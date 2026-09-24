@@ -62,7 +62,7 @@ internal static class FontsCommandGroup
             return context.Activate(definition).FontEnvironment!.ListFonts();
         }));
 
-        return list.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
+        return list.WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true));
     }
 
     private static Command CreateCheck(
@@ -113,7 +113,7 @@ internal static class FontsCommandGroup
                 });
         }));
 
-        return check.WithInvocationPolicy(new CommandInvocationPolicy(McpReadOnly: true));
+        return check.WithInvocationPolicy(new CommandInvocationPolicy(McpAllowed: true));
     }
 
     private static ProductDefinition[] Providers(ProductCatalog catalog) =>

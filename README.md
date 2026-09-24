@@ -66,10 +66,11 @@ aspose-cli mcp serve
 App and Preview are loopback browser views for a human on `http://127.0.0.1:<port>`; they
 enforce the exact Host `127.0.0.1:<port>`, same-origin, CSRF and current-user controls. The MCP
 registration is named `aspose-cli`: its `capabilities` tool is read-only, and its `execute` tool
-runs bounded product commands and the read-only host commands `doctor`, `schema`, `docs`,
-`fonts list`, `fonts check`, `license status`, `skill list`, `preview status` and `app status`
-with the same parser as the CLI. `review`, installation, update, license changes and service
-lifecycle commands are not available through MCP.
+runs bounded product commands and the host commands that change no user or service state
+beyond publishing new outputs: `doctor`, `schema`, `docs`, `fonts list`, `fonts check`,
+`license status`, `skill list`, `preview status`, `app status` and `review`, with the same
+parser as the CLI. Installation, update, license changes and service lifecycle commands are
+not available through MCP.
 
 ## Commercial SDK licensing
 

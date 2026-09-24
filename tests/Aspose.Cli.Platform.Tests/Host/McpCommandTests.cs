@@ -42,7 +42,8 @@ public sealed class McpCommandTests
     [InlineData("app", "status")]
     [InlineData("license", "status")]
     [InlineData("skill", "list")]
-    public void Execute_AllowsOnlyDocumentAndReadOnlyHostCommands(
+    [InlineData("review", "input.xlsx", "--out", "evidence")]
+    public void Execute_AllowsDocumentCommandsAndHostCommandsThatOnlyPublishOutputs(
         params string[] args)
     {
         var runner = new McpCommandRunner(ActualCommandTree.Host);
@@ -67,6 +68,23 @@ public sealed class McpCommandTests
     {
         var runner = new McpCommandRunner(ActualCommandTree.Host);
         Assert.Throws<McpCommandException>(() => runner.EnsureAllowed(args));
+    }
+
+    [Fact]
+    public void Execute_AllowsExactlyTheseHostCommandsAndNamesThemWhenRejecting()
+    {
+        // Widening MCP access is a security decision: a new entry must change this list.
+        string[] expected =
+        [
+            "review", "doctor", "schema", "docs", "fonts list", "fonts check",
+            "license status", "skill list", "preview status", "app status",
+        ];
+        IReadOnlyList<string> allowed = ActualCommandTree.Host.Parser.McpHostCommands();
+        Assert.Equal(expected.Order(StringComparer.Ordinal), allowed.Order(StringComparer.Ordinal));
+
+        var runner = new McpCommandRunner(ActualCommandTree.Host);
+        McpCommandException rejected = Assert.Throws<McpCommandException>(() => runner.EnsureAllowed(["app", "stop"]));
+        Assert.All(expected, command => Assert.Contains(command, rejected.Message, StringComparison.Ordinal));
     }
 
     [Fact]
