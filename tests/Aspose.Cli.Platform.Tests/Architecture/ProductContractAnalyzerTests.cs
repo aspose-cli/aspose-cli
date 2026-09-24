@@ -427,6 +427,21 @@ public sealed class ProductContractAnalyzerTests
     }
 
     [Fact]
+    public void Apcli008_ReservesEveryNameTheRootCommandAlreadyAccepts()
+    {
+        var root = new System.CommandLine.RootCommand();
+        new Aspose.Cli.Host.Invocation.GlobalOptions(licensingApplicable: true).AddTo(root);
+
+        string[] accepted = root.Options
+            .SelectMany(static option => option.Aliases.Prepend(option.Name))
+            .ToArray();
+
+        Assert.Equal(
+            accepted.Order(StringComparer.Ordinal),
+            Aspose.Cli.Sdk.Extensibility.Commanding.GlobalOptionNames.Reserved.Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public async Task Apcli008_ReportsDynamicAlias()
     {
         string source = ProductSource(

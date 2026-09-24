@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.Invocation;
@@ -15,7 +16,7 @@ internal sealed class GlobalOptions
     public GlobalOptions(bool licensingApplicable)
     {
         License = null;
-        Output = new Option<string?>("--output", "-f")
+        Output = new Option<string?>(GlobalOptionNames.Output, GlobalOptionNames.OutputAlias)
         {
             Description = "Output format: json (contract envelopes), table (human text) or markdown. " +
                           "Default: table on a terminal, json when redirected.",
@@ -23,13 +24,13 @@ internal sealed class GlobalOptions
         }.WithInput(InputKind.None);
         Output.AcceptOnlyFromAmong("json", "table", "markdown");
 
-        Quiet = new Option<bool>("--quiet", "-q")
+        Quiet = new Option<bool>(GlobalOptionNames.Quiet, GlobalOptionNames.QuietAlias)
         {
             Description = "Suppress warnings and notices on stderr (errors still print).",
             Recursive = true,
         };
 
-        Verbose = new Option<bool>("--verbose", "-v")
+        Verbose = new Option<bool>(GlobalOptionNames.Verbose, GlobalOptionNames.VerboseAlias)
         {
             Description = "Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.",
             Recursive = true,
@@ -37,26 +38,26 @@ internal sealed class GlobalOptions
 
         if (licensingApplicable)
         {
-            License = new Option<string?>("--license")
+            License = new Option<string?>(GlobalOptionNames.License)
             {
                 Description = "Path to an Aspose license file; overrides every other license source.",
                 Recursive = true,
             }.WithInput(InputKind.None);
         }
 
-        WorkDir = new Option<string?>("--workdir")
+        WorkDir = new Option<string?>(GlobalOptionNames.WorkDir)
         {
             Description = "Base directory for relative paths. Default: the current directory.",
             Recursive = true,
         }.WithInput(InputKind.None);
 
-        Timeout = new Option<int?>("--timeout")
+        Timeout = new Option<int?>(GlobalOptionNames.Timeout)
         {
             Description = "Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.",
             Recursive = true,
         };
 
-        MaxInputBytes = new Option<long?>("--max-input-bytes")
+        MaxInputBytes = new Option<long?>(GlobalOptionNames.MaxInputBytes)
         {
             Description =
                 $"Maximum bytes admitted for one input before product runtime initialization (default {InputSizeGuard.DefaultMaxBytes}; hard maximum {InputSizeGuard.MaximumBytes}).",
@@ -181,27 +182,27 @@ internal sealed class GlobalOptions
                 break;
             }
 
-            if (argument is "--quiet" or "-q")
+            if (argument is GlobalOptionNames.Quiet or GlobalOptionNames.QuietAlias)
             {
                 quiet = true;
                 continue;
             }
 
             string? candidate = null;
-            if (argument is "--output" or "-f")
+            if (argument is GlobalOptionNames.Output or GlobalOptionNames.OutputAlias)
             {
                 if (index + 1 < args.Count)
                 {
                     candidate = args[++index];
                 }
             }
-            else if (argument.StartsWith("--output=", StringComparison.Ordinal))
+            else if (argument.StartsWith(GlobalOptionNames.Output + "=", StringComparison.Ordinal))
             {
-                candidate = argument["--output=".Length..];
+                candidate = argument[(GlobalOptionNames.Output.Length + 1)..];
             }
-            else if (argument.StartsWith("-f=", StringComparison.Ordinal))
+            else if (argument.StartsWith(GlobalOptionNames.OutputAlias + "=", StringComparison.Ordinal))
             {
-                candidate = argument["-f=".Length..];
+                candidate = argument[(GlobalOptionNames.OutputAlias.Length + 1)..];
             }
 
             if (candidate is "json" or "table" or "markdown")

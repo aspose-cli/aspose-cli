@@ -8,7 +8,13 @@
     <IsRoslynComponent>true</IsRoslynComponent>
     <EnforceExtendedAnalyzerRules>true</EnforceExtendedAnalyzerRules>
     <IsPackable>false</IsPackable>
+    <DefineConstants>$(DefineConstants);ASPOSE_CLI_ANALYZER</DefineConstants>
   </PropertyGroup>
+
+  <ItemGroup>
+    <!-- The host's global option names, compiled here so the analyzer reserves exactly them. -->
+    <Compile Include="..\Aspose.Cli.Sdk\Extensibility\Commanding\GlobalOptionNames.cs" Link="GlobalOptionNames.cs" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.CodeAnalysis.Common" PrivateAssets="all" />

@@ -9,10 +9,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         "Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute";
 
     private static readonly ImmutableHashSet<string> ReservedAliases =
-        ImmutableHashSet.Create(
-            StringComparer.Ordinal,
-            "--output", "-f", "--quiet", "-q", "--verbose", "-v",
-            "--license", "--workdir", "--timeout");
+        ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.Extensibility.Commanding.GlobalOptionNames.Reserved);
 
     private static readonly ImmutableHashSet<string> ProductLayers =
         ImmutableHashSet.Create(
