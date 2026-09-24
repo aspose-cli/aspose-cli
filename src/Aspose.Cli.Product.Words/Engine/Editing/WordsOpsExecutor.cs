@@ -132,9 +132,7 @@ internal static class WordsOpsExecutor
                 try
                 {
                     WordsAnchorResolver.EnsureAttached(document, item);
-                    string? secret = WordsOps.PasswordVariable(op) is { } variable
-                        ? request.OpSecrets?.GetValueOrDefault(variable)
-                        : null;
+                    string? secret = OperationSecrets.Resolve(request.OpSecrets, WordsOps.PasswordVariable(op));
                     long affected = op switch
                     {
                         InsertImageOp image => WordsObjectOpHandlers.InsertImage(document, item.Nodes[0], image, operationInputs),

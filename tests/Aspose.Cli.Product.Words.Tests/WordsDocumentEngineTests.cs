@@ -574,13 +574,14 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
         string existing = Path.Combine(directory, "document.txt");
         File.WriteAllText(existing, "kept");
 
-        string kept = Assert.Single(_fixture.Engine.Extract(input, new WordsExtractRequest
+        CliException refused = Assert.Throws<CliException>(() => _fixture.Engine.Extract(input, new WordsExtractRequest
         {
             What = "text",
             OutputDirectory = directory,
-        }).Items).Path;
-        Assert.Equal(Path.Combine(directory, "document-2.txt"), kept);
+        }));
+        Assert.Equal(ErrorCodes.OutputExists, refused.Code);
         Assert.Equal("kept", File.ReadAllText(existing));
+        Assert.Equal([existing], Directory.GetFiles(directory));
 
         string replaced = Assert.Single(_fixture.Engine.Extract(input, new WordsExtractRequest
         {

@@ -243,7 +243,7 @@ public sealed class BoundedEditCommandTests : IDisposable
         {
             SecretVariables = static op => op is SecretOp secret ? [secret.PasswordEnv] : [],
         });
-        const string document = """{"ops":[{"op":"secret","passwordEnv":"OWNER"},{"op":"secret","passwordEnv":"OWNER"},{"op":"secret"}]}""";
+        const string document = """{"ops":[{"op":"secret","passwordEnv":"OWNER"},{"op":"secret","passwordEnv":"OWNER"},{"op":"secret"},{"op":"secret","passwordEnv":"ABSENT"},{"op":"secret","passwordEnv":"ABSENT"}]}""";
         var reads = new List<string>();
 
         IReadOnlyDictionary<string, string> secrets = ReadWithEnvironment(command, name =>
@@ -251,14 +251,24 @@ public sealed class BoundedEditCommandTests : IDisposable
             reads.Add(name);
             return name == "OWNER" ? "owner-secret" : null;
         }, "--ops", document).Secrets;
-        CliException missing = Assert.Throws<CliException>(() => ReadWithEnvironment(
-            command, static _ => null, "--ops", """{"ops":[{"op":"secret","passwordEnv":"ABSENT"}]}"""));
 
         Assert.Equal("owner-secret", Assert.Single(secrets).Value);
-        Assert.Equal(["OWNER"], reads);
-        Assert.Equal(ErrorCodes.OptionInvalid, missing.Code);
-        Assert.Equal("passwordEnv", missing.Details!["option"]!.GetValue<string>());
+        Assert.Equal(["OWNER", "ABSENT"], reads);
         Assert.Empty(Read(Plain(), "--ops", document).Secrets);
+    }
+
+    [Fact]
+    public void OperationSecrets_FailOnlyTheOperationThatNamesAMissingVariable()
+    {
+        var secrets = new Dictionary<string, string> { ["OWNER"] = "owner-secret" };
+
+        OperationInvalidException missing = Assert.Throws<OperationInvalidException>(
+            () => OperationSecrets.Resolve(secrets, "ABSENT"));
+
+        Assert.Equal("owner-secret", OperationSecrets.Resolve(secrets, "OWNER"));
+        Assert.Null(OperationSecrets.Resolve(secrets, null));
+        Assert.Contains("'ABSENT'", missing.Message, StringComparison.Ordinal);
+        Assert.Throws<OperationInvalidException>(() => OperationSecrets.Resolve(null, "OWNER"));
     }
 
     [Fact]

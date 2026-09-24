@@ -84,6 +84,8 @@ Options:
   --password <password>                Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>        Name of an environment variable holding the password for the workbook.
   --password-stdin                     Read the password for the workbook from the first line of stdin.
+  --encrypt <encrypt>                  Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>          Name of an environment variable holding the password for the output file.
   --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
   -?, -h, --help                       Show help and usage information
   -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.

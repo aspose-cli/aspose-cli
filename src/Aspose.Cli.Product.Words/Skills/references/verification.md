@@ -38,6 +38,9 @@ its evidence but exits 8 when coverage is incomplete or a finding has `error`
 severity, such as `FONTS_MISSING_OR_SUBSTITUTED`. Fix and review again into a
 new directory, for at most three rounds, then report any remaining defects.
 
+`words render` exports page images for delivery. It takes the format from
+`--to`, or from the `--out` extension when `--to` is omitted.
+
 ```powershell
 aspose-cli fonts check output.docx --output json
 ```

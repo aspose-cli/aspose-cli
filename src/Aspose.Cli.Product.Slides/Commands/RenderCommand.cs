@@ -42,7 +42,7 @@ internal static class RenderCommand
                     OptionGuards.EnsureInRange("--width", pixelWidth.Value, 64, 20_000, "Use 64-20000 pixels.");
                 }
 
-                string format = parse.GetValue(to) ?? "png";
+                string format = standard.RenderFormat(to, SlidesFormats.Definitions);
                 if (format == "svg" && (explicitDpi || pixelWidth is not null))
                 {
                     throw CliErrors.Usage(["SVG is vector output; omit --dpi and --width."]);

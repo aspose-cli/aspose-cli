@@ -1,7 +1,6 @@
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -13,7 +12,7 @@ internal static class ProtectOps
 {
     public static long? ProtectSheet(Worksheet sheet, ProtectSheetOp op, IReadOnlyDictionary<string, string>? secrets)
     {
-        string? password = ResolvePassword(op.PasswordEnv, secrets);
+        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
         if (password is null)
         {
             sheet.Protect(ProtectionType.All);
@@ -34,7 +33,7 @@ internal static class ProtectOps
 
     public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, string>? secrets)
     {
-        string? password = ResolvePassword(op.PasswordEnv, secrets);
+        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
         if (password is null)
         {
             sheet.Unprotect();
@@ -49,13 +48,13 @@ internal static class ProtectOps
 
     public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
     {
-        workbook.Protect(ProtectionType.Structure, ResolvePassword(op.PasswordEnv, secrets));
+        workbook.Protect(ProtectionType.Structure, OperationSecrets.Resolve(secrets, op.PasswordEnv));
         return null;
     }
 
     public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
     {
-        workbook.Unprotect(ResolvePassword(op.PasswordEnv, secrets) ?? string.Empty);
+        workbook.Unprotect(OperationSecrets.Resolve(secrets, op.PasswordEnv) ?? string.Empty);
         return null;
     }
 
@@ -87,22 +86,5 @@ internal static class ProtectOps
             default:
                 break; // the parser guarantees a known action
         }
-    }
-
-    private static string? ResolvePassword(string? envVar, IReadOnlyDictionary<string, string>? secrets)
-    {
-        if (envVar is null)
-        {
-            return null;
-        }
-
-        string? value = secrets?.GetValueOrDefault(envVar);
-        if (string.IsNullOrEmpty(value))
-        {
-            // Names the variable, never a value. The executor attaches the op index.
-            throw new OperationInvalidException($"passwordEnv '{envVar}' is not set");
-        }
-
-        return value;
     }
 }

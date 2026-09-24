@@ -14,6 +14,9 @@
   fetched; only ordinary files beneath the presentation's directory are read.
   Embed the media, or place the file beside the deck and link it by relative
   path, then review the incomplete render.
+- `OUTPUT_EXISTS` from `slides extract`: a file the command would write already
+  exists in `--out-dir`, and nothing was published. `--overwrite` replaces the
+  files the command writes; other files in the directory stay.
 - If preview reload fails, fix or restore the source file. The browser keeps
   serving the last good snapshot until a valid save succeeds.
 

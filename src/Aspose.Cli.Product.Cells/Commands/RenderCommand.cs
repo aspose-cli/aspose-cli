@@ -47,7 +47,7 @@ internal static class RenderCommand
             [to, sheet, rangeOption, allSheetsOption, .. dpi.Options],
             (parse, standard) =>
             {
-                FormatInfo format = ResolveFormat(parse, to, standard.RequestedOutputExtension);
+                FormatInfo format = CellsFormats.ResolveRender(standard.RenderFormat(to, CellsFormats.Definitions));
                 int resolution = dpi.Read(parse);
                 bool allSheets = parse.GetValue(allSheetsOption);
                 if (allSheets && parse.GetValue(sheet) is not null)
@@ -86,25 +86,5 @@ internal static class RenderCommand
                 "cells render book.xlsx --sheet Dashboard --out dashboard.png",
                 "cells render book.xlsx --all-sheets --out check.png",
             ]);
-    }
-
-    /// <summary>
-    /// An explicit <c>--to</c> wins; otherwise an explicit <c>--out</c> picks the
-    /// format from its extension, exactly as the mutating verbs do. Without this
-    /// the png default silently wins and <c>--out chart.svg</c> writes PNG bytes
-    /// into a file named .svg — the result even reports "format": "png", so
-    /// nothing about it looks wrong until something tries to read the SVG. An
-    /// extension that names no render format (say .dat) still gets the default.
-    /// </summary>
-    private static FormatInfo ResolveFormat(ParseResult parse, Option<string> to, string? outputExtension)
-    {
-        if (parse.GetResult(to) is not { Implicit: false }
-            && outputExtension is { } extension
-            && CellsFormats.TryResolveRender(extension) is { } fromExtension)
-        {
-            return fromExtension;
-        }
-
-        return CellsFormats.ResolveRender(parse.GetRequiredValue(to));
     }
 }

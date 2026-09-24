@@ -348,12 +348,12 @@ internal sealed class SlidesProductionService
         IReadOnlyList<int> slides = request.Slides is null
             ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        using var transaction = new AtomicOutputSetWriter(_writer, request.OutputDirectory, "slides-extract");
-        var items = new List<(string Path, string Kind, int? Slide, uint? SlideId, int? Index, string? Name, string? ContentType)>();
+        using var guard = new ExtractionGuard(_resourceBudgets, request.OutputDirectory, request.Overwrite);
+        var items = new List<SlidesExtractedItem>();
 
         if (request.What == PresentationExtractKinds.Media)
         {
-            StageMedia(loaded.Presentation, request.Slides is null ? null : slides, request, transaction, items);
+            ExtractMedia(loaded.Presentation, request.Slides is null ? null : slides, guard, items);
         }
         else
         {
@@ -371,32 +371,27 @@ internal sealed class SlidesProductionService
                 }
 
                 string suffix = request.What == PresentationExtractKinds.Notes ? "notes" : "text";
-                string path = Path.Combine(request.OutputDirectory, $"slide.s{number}.{suffix}.txt");
-                transaction.Stage(
-                    path,
-                    request.Overwrite,
-                    temp => File.WriteAllText(temp, text, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false)));
-                items.Add((path, suffix, number, slide.SlideId, null, slide.Name, "text/plain"));
+                byte[] bytes = Encoding.UTF8.GetBytes(text);
+                items.Add(new SlidesExtractedItem
+                {
+                    Path = guard.WriteAllBytes($"slide.s{number}.{suffix}.txt", bytes),
+                    Kind = suffix,
+                    SizeBytes = bytes.LongLength,
+                    Slide = number,
+                    SlideId = slide.SlideId,
+                    Name = EmptyToNull(slide.Name),
+                    ContentType = "text/plain",
+                });
             }
         }
 
         loaded.Resources.ThrowIfFailed();
-        IReadOnlyList<long> sizes = transaction.Commit();
+        guard.Commit();
         return new SlidesExtractResult
         {
             Input = Source(filePath, loaded.FormatId),
             What = request.What,
-            Items = items.Select((item, index) => new SlidesExtractedItem
-            {
-                Path = item.Path,
-                Kind = item.Kind,
-                SizeBytes = sizes[index],
-                Slide = item.Slide,
-                SlideId = item.SlideId,
-                Index = item.Index,
-                Name = EmptyToNull(item.Name),
-                ContentType = item.ContentType,
-            }).ToArray(),
+            Items = items,
             License = EnvelopeParts.License(state),
             Warnings = OutputWarnings(state, loaded),
         };

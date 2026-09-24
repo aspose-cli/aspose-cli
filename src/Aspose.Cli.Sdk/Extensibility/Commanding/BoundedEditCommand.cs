@@ -53,7 +53,10 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 /// <param name="Target">Where and how the result is published.</param>
 /// <param name="Options">Precondition, dry-run and best-effort semantics.</param>
 /// <param name="Verify">Whether staged verification was requested.</param>
-/// <param name="Secrets">The operations' secrets by environment variable name.</param>
+/// <param name="Secrets">
+/// The operations' secrets by environment variable name; a missing or empty variable is absent,
+/// and the operation that names it fails through <see cref="OperationSecrets.Resolve"/>.
+/// </param>
 public sealed record BoundedEditInvocation<TBatch>(
     TBatch Batch,
     MutationTarget Target,
@@ -276,20 +279,14 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             return secrets;
         }
 
-        foreach (string variable in batch.Ops.SelectMany(variables).OfType<string>())
+        // A missing or empty variable is left out: it fails only the operation that names it,
+        // through OperationSecrets.Resolve.
+        foreach (string variable in batch.Ops.SelectMany(variables).OfType<string>().Distinct(StringComparer.Ordinal))
         {
-            if (secrets.ContainsKey(variable))
+            if (readEnvironment(variable) is { Length: > 0 } secret)
             {
-                continue;
+                secrets[variable] = secret;
             }
-
-            string? secret = readEnvironment(variable);
-            secrets[variable] = !string.IsNullOrEmpty(secret)
-                ? secret
-                : throw CliErrors.OptionInvalid(
-                    "passwordEnv",
-                    $"environment variable '{variable}' is missing or empty",
-                    "Set it before running the edit.");
         }
 
         return secrets;

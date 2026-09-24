@@ -663,6 +663,36 @@
           "hidden": false,
           "options": [
             {
+              "name": "--encrypt",
+              "aliases": [],
+              "type": "string",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": false,
+              "allowedValues": [],
+              "secret": true,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env."
+            },
+            {
+              "name": "--encrypt-env",
+              "aliases": [],
+              "type": "string",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": false,
+              "allowedValues": [],
+              "secret": true,
+              "valueSource": "environment-variable-name",
+              "inputKind": "none",
+              "description": "Name of an environment variable holding the password for the output file."
+            },
+            {
               "name": "--font-dir",
               "aliases": [],
               "type": "string[]",
@@ -3837,7 +3867,7 @@
               "allowedValues": [],
               "secret": false,
               "valueSource": "command-line",
-              "inputKind": "none",
+              "inputKind": "file",
               "description": "PKCS#12 certificate path (.pfx or .p12)."
             },
             {
@@ -5126,6 +5156,21 @@
               "description": "Name of an environment variable holding the password for the output presentation."
             },
             {
+              "name": "--font-dir",
+              "aliases": [],
+              "type": "string[]",
+              "minimumArity": 1,
+              "maximumArity": 16,
+              "required": false,
+              "recursive": false,
+              "hasDefault": false,
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Local font directory searched in addition to the system fonts; repeat for more."
+            },
+            {
               "name": "--from-markdown",
               "aliases": [
                 "--markdown"
@@ -5304,6 +5349,21 @@
               "valueSource": "environment-variable-name",
               "inputKind": "none",
               "description": "Name of an environment variable holding the password for the output presentation."
+            },
+            {
+              "name": "--font-dir",
+              "aliases": [],
+              "type": "string[]",
+              "minimumArity": 1,
+              "maximumArity": 16,
+              "required": false,
+              "recursive": false,
+              "hasDefault": false,
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Local font directory searched in addition to the system fonts; repeat for more."
             },
             {
               "name": "--if-match",
@@ -9905,6 +9965,36 @@
       "hidden": false,
       "options": [
         {
+          "name": "--encrypt",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env."
+        },
+        {
+          "name": "--encrypt-env",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": true,
+          "valueSource": "environment-variable-name",
+          "inputKind": "none",
+          "description": "Name of an environment variable holding the password for the output file."
+        },
+        {
           "name": "--font-dir",
           "aliases": [],
           "type": "string[]",
@@ -12969,7 +13059,7 @@
           "allowedValues": [],
           "secret": false,
           "valueSource": "command-line",
-          "inputKind": "none",
+          "inputKind": "file",
           "description": "PKCS#12 certificate path (.pfx or .p12)."
         },
         {
@@ -14260,6 +14350,21 @@
           "description": "Name of an environment variable holding the password for the output presentation."
         },
         {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
           "name": "--from-markdown",
           "aliases": [
             "--markdown"
@@ -14438,6 +14543,21 @@
           "valueSource": "environment-variable-name",
           "inputKind": "none",
           "description": "Name of an environment variable holding the password for the output presentation."
+        },
+        {
+          "name": "--font-dir",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 16,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Local font directory searched in addition to the system fonts; repeat for more."
         },
         {
           "name": "--if-match",

@@ -33,8 +33,9 @@ report any remaining defects.
 Fonts delivered beside the deck, such as brand fonts on a machine without
 them, reach the engine only through `--font-dir`, which adds to the system
 fonts. Pass the same directories to `fonts check`, `review`, and
-`slides render` and `convert`, so the delivered output uses the fonts the check
-saw:
+`slides render`, `convert`, `create` and `edit` (saving shrinks text that
+auto-fits its shape with the fonts' metrics), so the delivered output uses the
+fonts the check saw:
 
 ```powershell
 aspose-cli fonts check deck.revised.pptx --font-dir fonts --output json
@@ -47,7 +48,9 @@ Evaluation output carries `EVAL_MODE` and may replace or truncate text. Claim
 licensed results only when the CLI reports Slides as licensed.
 
 `slides render` and PNG/JPEG conversion export images for delivery (192 DPI by
-default; a 720-by-405-point slide becomes 1920 by 1080 pixels).
+default; a 720-by-405-point slide becomes 1920 by 1080 pixels). `slides render`
+takes the format from `--to`, or from the `--out` extension when `--to` is
+omitted.
 
 ## Existing chart fidelity
 

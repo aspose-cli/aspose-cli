@@ -29,6 +29,7 @@ internal static class ConvertCommand
                 Input = CellsCommands.Workbook("Workbook to convert."),
                 Output = OutputTarget.File("Output path. Default: the input path with the target extension "
                     + "(with '.out' inserted when that would overwrite the input)."),
+                Encrypt = CellsCommands.EncryptedWorkbook,
                 UsesFonts = true,
             },
             [to, sheet],
@@ -52,6 +53,7 @@ internal static class ConvertCommand
                     Overwrite = standard.Overwrite,
                     SheetName = sheetName,
                     Password = standard.InputPassword,
+                    EncryptPassword = standard.EncryptPassword(format.Id),
                 });
             }).WithExamples(
             [

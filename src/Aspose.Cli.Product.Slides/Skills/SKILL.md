@@ -85,7 +85,8 @@ disclose that with every delivered file. Install a license with
 
 Passwords come from `--password-env`, `--password-stdin` or `--encrypt-env`;
 never put secrets in ops JSON. Only PPTX and PPTM outputs can carry a password:
-`--encrypt-env` for another `convert` target is `OPTION_INVALID`.
+`--encrypt-env` with any other `create`, `edit` or `convert` output is
+`OPTION_INVALID`.
 
 ## References
 

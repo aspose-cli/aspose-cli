@@ -152,8 +152,10 @@ aspose-cli cells convert book.xlsx --to csv --sheet Sales    # csv/tsv/md/pdf ta
 aspose-cli cells render book.xlsx --all-sheets --out book.png   # one PNG per visible sheet
 ```
 
-`aspose-cli capabilities --output json` lists every format. Existing files are
-protected; pass `--overwrite` deliberately.
+`aspose-cli capabilities --output json` lists every format. `cells render`
+takes the format from `--to`, or from the `--out` extension when `--to` is
+omitted.
+Existing files are protected; pass `--overwrite` deliberately.
 
 ## 7. Licensing and evaluation mode
 

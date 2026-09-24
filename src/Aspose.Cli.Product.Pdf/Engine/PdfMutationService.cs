@@ -108,7 +108,7 @@ internal sealed class PdfMutationService
                 touched.UnionWith(operationPages);
                 if (op is EncryptPdfOp encrypt)
                 {
-                    outputPassword = Secret(request.OpSecrets, encrypt.UserPasswordEnv);
+                    outputPassword = OperationSecrets.Resolve(request.OpSecrets, encrypt.UserPasswordEnv);
                 }
                 else if (op is DecryptPdfOp)
                 {

@@ -82,13 +82,6 @@ public static class CellsFormats
     /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when unknown.</exception>
     public static FormatInfo ResolveRender(string requested) => Resolve(Render, RenderIds, FormatUse.Render, requested);
 
-    /// <summary>
-    /// Resolves a render format id, alias or file extension, or <c>null</c> when
-    /// it names none — for callers inferring a format from a path, where an
-    /// unrecognized extension is a reason to fall back, not to fail.
-    /// </summary>
-    public static FormatInfo? TryResolveRender(string requested) => Find(Render, FormatUse.Render, requested);
-
     private static FormatInfo Resolve(IReadOnlyList<FormatInfo> formats, IReadOnlyList<string> ids, FormatUse use, string requested)
     {
         ArgumentException.ThrowIfNullOrEmpty(requested);

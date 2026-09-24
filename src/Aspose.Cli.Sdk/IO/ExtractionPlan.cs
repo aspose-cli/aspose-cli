@@ -1,6 +1,10 @@
 namespace Aspose.Cli.Sdk.IO;
 
-/// <summary>Plans collision-free names and tracks newly created extraction directories.</summary>
+/// <summary>
+/// Plans names that are distinct within one extraction and tracks newly created extraction
+/// directories. A file already on disk keeps its name: publication replaces it only with
+/// <c>--overwrite</c> and refuses it otherwise.
+/// </summary>
 internal sealed class ExtractionPlan(string root)
 {
     private readonly HashSet<string> _reserved = new(StringComparer.OrdinalIgnoreCase);
@@ -8,13 +12,13 @@ internal sealed class ExtractionPlan(string root)
     public IEnumerable<string> Directories => _directories.Declared;
     public void EnsureRoot() => EnsureDirectory(root);
 
-    public string ReserveFile(string relativePath, string suggestedPath, bool overwrite)
+    public string ReserveFile(string relativePath, string suggestedPath)
     {
         string candidate = Path.Combine(root, relativePath);
         string stem = Path.GetFileNameWithoutExtension(candidate);
         string extension = Path.GetExtension(candidate);
         int suffix = 2;
-        while (_reserved.Contains(candidate) || (!overwrite && File.Exists(candidate)))
+        while (_reserved.Contains(candidate))
         {
             candidate = Path.Combine(Path.GetDirectoryName(candidate)!, $"{stem}-{suffix++}{extension}");
         }

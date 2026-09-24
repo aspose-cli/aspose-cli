@@ -14,7 +14,7 @@ internal static class SignCommand
         {
             Required = true,
             Description = "PKCS#12 certificate path (.pfx or .p12).",
-        }.WithInput(InputKind.None);
+        }.WithInput(InputKind.File);
         var certificatePasswordEnv = new Option<string>("--certificate-password-env")
         {
             Required = true,
@@ -63,6 +63,7 @@ internal static class SignCommand
                 OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue, "Use a 1-based page number.");
                 string input = standard.Input;
                 string certificatePath = standard.Paths.ResolveInput(parse.GetRequiredValue(certificate));
+                string output = standard.OutputPath(".signed.pdf");
                 string variable = parse.GetRequiredValue(certificatePasswordEnv);
                 string? certificatePassword = standard.ReadEnvironment(variable);
                 if (string.IsNullOrEmpty(certificatePassword))
@@ -77,7 +78,7 @@ internal static class SignCommand
                 {
                     CertificatePath = certificatePath,
                     CertificatePassword = certificatePassword,
-                    OutputPath = standard.OutputPath(".signed.pdf"),
+                    OutputPath = output,
                     Overwrite = standard.Overwrite,
                     Password = standard.InputPassword,
                     Page = pageNumber,

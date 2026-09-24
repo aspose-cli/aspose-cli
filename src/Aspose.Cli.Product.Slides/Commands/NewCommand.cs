@@ -21,6 +21,7 @@ internal static class NewCommand
             {
                 Output = OutputTarget.CreatedFile("PPTX or PPTM path to create."),
                 Encrypt = SlidesCommands.EncryptedPresentation,
+                UsesFonts = true,
             },
             [markdown, template, size],
             (parse, standard) =>

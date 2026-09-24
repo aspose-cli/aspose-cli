@@ -234,6 +234,46 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
+    public void Convert_EncryptsAProtectableOutputAndNamesTheOptionForAnyOther()
+    {
+        File.WriteAllText(_workspace.File("sales.csv"), "Region,Revenue\nEast,1200\n");
+        var variables = new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_PASSWORD"] = Secret };
+
+        CliResult converted = _workspace.RunWithEnv(
+            variables,
+            "cells", "convert", "sales.csv", "--to", "xlsx", "--encrypt-env", "ASPOSE_CLI_TEST_PASSWORD", "--output", "json");
+        CliResult locked = _workspace.Run("cells", "inspect", "sales.xlsx", "--output", "json");
+        CliResult opened = _workspace.RunWithEnv(
+            variables, "cells", "inspect", "sales.xlsx", "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output", "json");
+        CliResult refused = _workspace.Run(
+            "cells", "convert", "sales.csv", "--to", "pdf", "--encrypt-env", "ASPOSE_CLI_TEST_UNSET", "--output", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.True(opened.ExitCode == 0, opened.StdErr);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("--encrypt-env", error["details"]!["option"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File("sales.pdf")));
+        Assert.DoesNotContain(Secret, converted.StdOut + converted.StdErr + opened.StdOut, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Edit_ResolvesOperationFilesLikeEveryInputBeforeEditing()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "images.xlsx", "--sheets", "Data").ExitCode);
+
+        CliResult missing = _workspace.Run(
+            "cells", "edit", "images.xlsx", "--out", "images.out.xlsx", "--best-effort", "--output", "json",
+            "--ops", """{"ops":[{"op":"insert_image","sheet":"Data","at":"B2","path":"missing.png"}]}""");
+
+        JsonNode error = JsonNode.Parse(missing.StdErr)!["error"]!;
+        Assert.Equal("FILE_NOT_FOUND", error["code"]!.GetValue<string>());
+        Assert.Contains("missing.png", error["message"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
+        Assert.False(File.Exists(_workspace.File("images.out.xlsx")));
+    }
+
+    [Fact]
     public void PreviewStatusAndStop_FormARealCliLifecycle()
     {
         File.WriteAllText(

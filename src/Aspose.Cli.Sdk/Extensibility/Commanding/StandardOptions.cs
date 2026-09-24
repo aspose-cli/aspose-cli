@@ -368,9 +368,27 @@ public sealed class StandardInvocation<TPort> : IDisposable
     public string? RequestedOutputPath() =>
         Declared(_options.OutputFile, "output file").Resolve(_parse, _context.Paths, DeclaredInputs());
 
-    /// <summary>The extension of the file named by <c>--out</c>, such as <c>.svg</c>, or null.</summary>
-    public string? RequestedOutputExtension =>
-        Declared(_options.OutputFile, "output file").RequestedExtension(_parse);
+    /// <summary>
+    /// The render format: an explicit <paramref name="to"/> wins; otherwise the render format
+    /// whose extension <c>--out</c> carries, so <c>--out page.svg</c> writes SVG rather than the
+    /// default's bytes under an .svg name; otherwise the default of <paramref name="to"/>. An
+    /// extension that names no render format keeps the default.
+    /// </summary>
+    /// <param name="to">The command's <c>--to</c> option, which has a default.</param>
+    /// <param name="formats">The product's format declarations.</param>
+    public string RenderFormat(Option<string> to, IEnumerable<FormatDescriptor> formats)
+    {
+        ArgumentNullException.ThrowIfNull(to);
+        ArgumentNullException.ThrowIfNull(formats);
+        if (_parse.GetResult(to) is not { Implicit: false }
+            && Declared(_options.OutputFile, "output file").RequestedExtension(_parse) is { } extension
+            && formats.WithExtension(FormatUse.Render, extension).FirstOrDefault() is { } inferred)
+        {
+            return inferred.Id;
+        }
+
+        return _parse.GetRequiredValue(to);
+    }
 
     /// <summary>The file a creating command writes, named by its <c>file</c> argument.</summary>
     /// <exception cref="Errors.CliException"><c>OPTION_INVALID</c> when the file is one of the inputs.</exception>

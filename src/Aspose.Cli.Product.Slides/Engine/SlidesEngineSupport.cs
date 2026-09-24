@@ -370,62 +370,50 @@ internal static class SlidesEngineSupport
         };
 
     /// <summary>
-    /// Stages embedded media. With a slide selection only the media those slides show
-    /// (pictures, picture fills, backgrounds, audio and video) is staged; indexes stay the
+    /// Extracts embedded media. With a slide selection only the media those slides show
+    /// (pictures, picture fills, backgrounds, audio and video) is extracted; indexes stay the
     /// presentation-wide positions.
     /// </summary>
-    internal static void StageMedia(
+    internal static void ExtractMedia(
         Presentation presentation,
         IReadOnlyList<int>? slides,
-        PresentationExtractRequest request,
-        AtomicOutputSetWriter transaction,
-        List<(string Path, string Kind, int? Slide, uint? SlideId, int? Index, string? Name, string? ContentType)> items)
+        ExtractionGuard guard,
+        List<SlidesExtractedItem> items)
     {
         HashSet<object>? shown = slides is null ? null : ShownMedia(presentation, slides);
         int index = 0;
-        foreach (IPPImage image in presentation.Images)
+        void Add(object media, string kind, string? contentType, Func<byte[]> read)
         {
             index++;
-            if (shown?.Contains(image) == false)
+            if (shown?.Contains(media) == false)
             {
-                continue;
+                return;
             }
 
-            string path = Path.Combine(
-                request.OutputDirectory,
-                $"media.image.{index}{ContentExtension(image.ContentType, ".bin")}");
-            transaction.Stage(path, request.Overwrite, temp => File.WriteAllBytes(temp, image.BinaryData));
-            items.Add((path, "image", null, null, index, null, EmptyToNull(image.ContentType)));
+            byte[] bytes = read();
+            items.Add(new SlidesExtractedItem
+            {
+                Path = guard.WriteAllBytes($"media.{kind}.{index}{ContentExtension(contentType, ".bin")}", bytes),
+                Kind = kind,
+                SizeBytes = bytes.LongLength,
+                Index = index,
+                ContentType = EmptyToNull(contentType),
+            });
+        }
+
+        foreach (IPPImage image in presentation.Images)
+        {
+            Add(image, "image", image.ContentType, () => image.BinaryData);
         }
 
         foreach (IAudio audio in presentation.Audios)
         {
-            index++;
-            if (shown?.Contains(audio) == false)
-            {
-                continue;
-            }
-
-            string path = Path.Combine(
-                request.OutputDirectory,
-                $"media.audio.{index}{ContentExtension(audio.ContentType, ".bin")}");
-            transaction.Stage(path, request.Overwrite, temp => File.WriteAllBytes(temp, audio.BinaryData));
-            items.Add((path, "audio", null, null, index, null, EmptyToNull(audio.ContentType)));
+            Add(audio, "audio", audio.ContentType, () => audio.BinaryData);
         }
 
         foreach (IVideo video in presentation.Videos)
         {
-            index++;
-            if (shown?.Contains(video) == false)
-            {
-                continue;
-            }
-
-            string path = Path.Combine(
-                request.OutputDirectory,
-                $"media.video.{index}{ContentExtension(video.ContentType, ".bin")}");
-            transaction.Stage(path, request.Overwrite, temp => File.WriteAllBytes(temp, video.BinaryData));
-            items.Add((path, "video", null, null, index, null, EmptyToNull(video.ContentType)));
+            Add(video, "video", video.ContentType, () => video.BinaryData);
         }
     }
 

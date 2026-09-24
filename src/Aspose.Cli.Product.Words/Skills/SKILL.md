@@ -97,7 +97,10 @@ document, so the result is incomplete. Install a license with
 `words` entry of `aspose-cli license status --output json`.
 
 Passwords come from `--password-env` or `--password-stdin`; operation
-passwords are environment variable names in `passwordEnv`.
+passwords are environment variable names in `passwordEnv`. A missing or empty
+variable fails only the operation that names it, with `OPS_INVALID` naming the
+variable; `--best-effort` still applies the other operations (exit 8) and
+`--dry-run` reports every outcome.
 
 ## References
 

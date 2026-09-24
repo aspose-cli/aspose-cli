@@ -1,5 +1,4 @@
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Words;
 
@@ -27,11 +26,6 @@ internal sealed class WordsSplitWriter : IDisposable
     {
         string name = $"part-{index:000}.docx";
         string target = Path.Combine(_outputDirectory, name);
-        if (!_overwrite && File.Exists(target))
-        {
-            throw CliErrors.OutputExists(target);
-        }
-
         _transaction.Stage(
             target,
             _overwrite,

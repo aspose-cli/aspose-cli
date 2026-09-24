@@ -32,6 +32,7 @@ internal static class EditCommand
             {
                 Input = SlidesCommands.Presentation,
                 Encrypt = SlidesCommands.EncryptedPresentation,
+                UsesFonts = true,
             },
             [],
             (parse, edit, standard) => standard.Port.ApplyOps(standard.Input, edit.Batch, new PresentationEditRequest

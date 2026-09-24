@@ -25,7 +25,7 @@ internal static class EditCommand
             static ops => new OpsBatch { Ops = ops }),
         VerifyDescription = "Verify the staged output and report its cell changes and formula errors.",
         NormalizePaths = static (op, paths) => op is InsertImageOp image
-            ? image with { Path = Path.GetFullPath(image.Path, paths.BaseDirectory) }
+            ? image with { Path = paths.ResolveInput(image.Path) }
             : op,
         SecretVariables = static op => op switch
         {

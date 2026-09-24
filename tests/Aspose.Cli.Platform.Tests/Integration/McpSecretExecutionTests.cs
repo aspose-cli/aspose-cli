@@ -155,6 +155,43 @@ public sealed class McpSecretExecutionTests
     }
 
     [Theory]
+    [InlineData("cells")]
+    [InlineData("pdf")]
+    [InlineData("words")]
+    public void MissingSecret_FailsOnlyTheOperationThatNamesIt(string product)
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("content.txt"), "Secret fixture");
+        string name = "MISSING_" + Guid.NewGuid().ToString("N");
+        (string extension, string[] create, string ops) = product switch
+        {
+            "cells" => ("xlsx", new[] { "--sheets", "Data" },
+                $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{name}}"},{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}"""),
+            "pdf" => ("pdf", ["--from-text", "content.txt"],
+                $$"""{"ops":[{"op":"encrypt","ownerPasswordEnv":"{{name}}"},{"op":"set_metadata","title":"Kept"}]}"""),
+            _ => ("docx", ["--text", "content.txt"],
+                $$"""{"ops":[{"op":"protect","mode":"readOnly","passwordEnv":"{{name}}"},{"op":"set_text","at":{"block":1},"text":"Kept"}]}"""),
+        };
+        string input = "input." + extension;
+        CliResult created = workspace.Run([product, "create", input, .. create]);
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        string[] edit = [product, "edit", input, "--ops", ops, "--out", "result." + extension, "--output=json"];
+
+        CliResult partial = workspace.Run([.. edit, "--best-effort", "--dry-run"]);
+        CliResult failed = workspace.Run(edit);
+
+        Assert.True(partial.ExitCode == 8, partial.StdErr);
+        JsonNode outcomes = JsonNode.Parse(partial.StdOut)!["applied"]!;
+        Assert.Equal("failed", outcomes[0]!["status"]!.GetValue<string>());
+        Assert.Contains(name, outcomes[0]!["error"]!["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal("ok", outcomes[1]!["status"]!.GetValue<string>());
+        JsonNode error = JsonNode.Parse(failed.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains(name, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(workspace.File("result." + extension)));
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public async Task CellsMissingSecret_PreservesBestEffortAndDryRunOutcomes(bool supervised)

@@ -32,7 +32,10 @@
 - Relative HTML image and stylesheet paths resolve against the original HTML
   directory, including during supervised execution. Keep permitted resources
   beneath that directory; do not widen access to work around an omitted resource.
-- `OUTPUT_EXISTS`: choose another path or explicitly pass `--overwrite`.
+- `OUTPUT_EXISTS`: choose another path or explicitly pass `--overwrite`. For
+  `split` and `extract --out-dir`, one existing file refuses the whole run and
+  nothing is published; `--overwrite` replaces the files the command writes, and
+  other files in the directory stay.
 - `EVAL_MODE`: disclose evaluation limits and the visible watermark. After a
   license change, start the matching preview again to select the new license.
 - PDF/A validation issues: inspect `valid`, `issues` and `truncated`; command

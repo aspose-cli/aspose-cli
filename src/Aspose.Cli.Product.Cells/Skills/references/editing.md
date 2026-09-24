@@ -336,7 +336,10 @@ Workbook-scoped named ranges — the backbone of a maintainable model.
   autoFilter.
 - **Passwords are never written into the ops file.** `passwordEnv` names an
   environment variable the CLI reads at run time; the value never appears in
-  output, logs or errors. Set it first, e.g. `export SHEET_PWD=…`.
+  output, logs or errors. Set it first, e.g. `export SHEET_PWD=…`. A missing
+  or empty variable fails only the operation that names it, with `OPS_INVALID`
+  naming the variable; `--best-effort` still applies the other operations
+  (exit 8) and `--dry-run` reports every outcome.
 - `protect_workbook` / `unprotect_workbook` (both take an optional
   `passwordEnv`) lock the **structure** — adding, deleting, moving or hiding
   sheets — rather than a sheet's cells.
@@ -468,7 +471,8 @@ Use `cells convert` for other export formats. HTML output is self-contained and
 embeds its images. Editing encrypted input keeps the password in xlsx, xlsm,
 xlsb, xls and ods output; `--encrypt-env` changes it. Other outputs cannot be
 encrypted: they drop the source encryption with a `WORKBOOK_ENCRYPTION_REMOVED`
-warning, and `--encrypt-env` on them is OPTION_INVALID.
+warning, and `--encrypt-env` on them is OPTION_INVALID. `cells convert` follows
+the same rule for its output.
 
 `--verify` checks the staged candidate before publication, including when
 `--timeout` or MCP is used. Semantic findings are returned with

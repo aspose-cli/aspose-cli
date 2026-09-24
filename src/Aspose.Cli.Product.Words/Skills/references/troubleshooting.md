@@ -11,6 +11,7 @@
 - `PAGE_RANGE_INVALID`: use ranges such as `1-3,7,9-`.
 - `RENDER_TOO_LARGE`: lower DPI or render fewer pages.
 - `REMOTE_RESOURCES_BLOCKED`: external access is denied; use guarded local resources beside the document.
+- `OUTPUT_EXISTS`: choose another path or pass `--overwrite`. For `split` and `extract`, one existing file in `--out-dir` refuses the whole run and nothing is published; `--overwrite` replaces the files the command writes, and other files in the directory stay.
 - `EVAL_MODE`: disclose watermark and evaluation limits.
 
 Use `aspose-cli doctor`, `aspose-cli license status`, and `aspose-cli capabilities --output json` for environment diagnosis.

@@ -59,6 +59,9 @@ public sealed record ConvertRequest
 
     /// <summary>Password for encrypted files.</summary>
     public string? Password { get; init; }
+
+    /// <summary>New output password; null preserves source encryption where the target format supports it.</summary>
+    public string? EncryptPassword { get; init; }
 }
 
 /// <summary>Options of <c>cells render</c>.</summary>

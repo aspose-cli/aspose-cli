@@ -178,13 +178,36 @@ public sealed class StandardCommandTests : IDisposable
             },
             (_, standard) => Result(standard.RequestedOutputDirectory is { } directory
                 ? directory
-                : standard.OutputPath(".form") + "|" + standard.RequestedOutputExtension + "|" + standard.Overwrite));
+                : standard.OutputPath(".form") + "|" + standard.Overwrite));
 
         Assert.Equal(["--mode", "--out-dir", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
             command.Options.Select(static option => option.Name));
         Assert.Equal(_temp.File("parts"), Run(command, "report.test", "--out-dir", "parts"));
-        Assert.Equal(_temp.File("report.form") + "||False", Run(command, "report.test"));
-        Assert.Equal(_temp.File("data.xfdf") + "|.xfdf|True", Run(command, "report.test", "--out", "data.xfdf", "--overwrite"));
+        Assert.Equal(_temp.File("report.form") + "|False", Run(command, "report.test"));
+        Assert.Equal(_temp.File("data.xfdf") + "|True", Run(command, "report.test", "--out", "data.xfdf", "--overwrite"));
+    }
+
+    [Fact]
+    public void RenderFormat_TakesAnExplicitToThenTheOutputExtensionThenTheDefault()
+    {
+        var to = new Option<string>("--to") { DefaultValueFactory = _ => "png" }.WithInput(InputKind.None);
+        FormatDescriptor[] formats =
+        [
+            FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
+            FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 1, false, ".svg"),
+        ];
+        Command command = StandardCommand.Create(
+            _host,
+            "render",
+            "Renders.",
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.") },
+            [to],
+            (_, standard) => Result(standard.RenderFormat(to, formats)));
+
+        Assert.Equal("png", Run(command, "report.test"));
+        Assert.Equal("svg", Run(command, "report.test", "--out", "page.SVG"));
+        Assert.Equal("png", Run(command, "report.test", "--out", "page.dat"));
+        Assert.Equal("png", Run(command, "report.test", "--to", "png", "--out", "page.svg"));
     }
 
     [Theory]

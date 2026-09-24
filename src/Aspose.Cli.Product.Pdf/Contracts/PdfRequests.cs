@@ -92,6 +92,7 @@ public sealed record PdfExtractRequest
     public required string What { get; init; }
     public required string OutputDirectory { get; init; }
     public PageRange? Pages { get; init; }
+    public bool Overwrite { get; init; }
     public string? Password { get; init; }
 }
 

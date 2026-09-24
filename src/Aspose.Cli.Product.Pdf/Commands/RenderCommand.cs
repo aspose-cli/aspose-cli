@@ -27,7 +27,7 @@ internal static class RenderCommand
             {
                 PartSelection selection = pages.Read(parse);
                 int resolution = dpi.Read(parse);
-                string format = parse.GetValue(to) ?? "png";
+                string format = standard.RenderFormat(to, PdfFormats.Definitions);
                 return standard.Port.Render(standard.Input, new PdfRenderRequest
                 {
                     TargetFormatId = format,

@@ -103,21 +103,14 @@ internal sealed class PdfExtractionService
                 "Use images, attachments, text or tables.");
         }
 
-        if (request.What == "attachments" && request.Pages is not null)
-        {
-            throw CliErrors.OptionInvalid(
-                "--pages",
-                "attachments belong to the document rather than individual pages",
-                "Omit --pages when extracting attachments.");
-        }
-
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         using var guard = new ExtractionGuard(
             _resourceBudgets,
-            request.OutputDirectory);
+            request.OutputDirectory,
+            request.Overwrite);
         IReadOnlyList<PdfExtractedItem> items = request.What switch
         {
             "images" => ExtractImages(loaded.Document, pages, guard, _resourceBudgets),

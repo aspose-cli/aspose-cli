@@ -29,10 +29,10 @@ internal static class ExtractCommand
             [what, pages, to],
             (parse, standard) =>
             {
+                // Every usage check runs before the input is resolved or read.
                 string kind = parse.GetRequiredValue(what);
                 string? pageText = parse.GetValue(pages);
                 string? format = parse.GetValue(to);
-                string input = standard.Input;
                 if (string.Equals(kind, "forms", StringComparison.Ordinal))
                 {
                     if (pageText is not null || standard.RequestedOutputDirectory is not null)
@@ -45,7 +45,7 @@ internal static class ExtractCommand
                         throw CliErrors.OptionInvalid("--to", "is required with --what forms", "Use --to json, --to fdf or --to xfdf.");
                     }
 
-                    return standard.Port.ExportForm(input, new PdfFormExportRequest
+                    return standard.Port.ExportForm(standard.Input, new PdfFormExportRequest
                     {
                         TargetFormatId = format,
                         OutputPath = standard.OutputPath("." + format),
@@ -54,16 +54,24 @@ internal static class ExtractCommand
                     });
                 }
 
-                if (format is not null || standard.Overwrite || standard.RequestedOutputPath() is not null)
+                if (format is not null || standard.RequestedOutputPath() is not null)
                 {
-                    throw CliErrors.OptionInvalid("--to/--out/--overwrite", "form-output options are only valid with --what forms", "Remove them or use --what forms.");
+                    throw CliErrors.OptionInvalid("--to/--out", "form-output options are only valid with --what forms", "Remove them or use --what forms.");
                 }
 
-                return standard.Port.Extract(input, new PdfExtractRequest
+                if (string.Equals(kind, "attachments", StringComparison.Ordinal) && pageText is not null)
+                {
+                    throw CliErrors.OptionInvalid("--pages", "attachments belong to the document rather than individual pages", "Omit --pages when extracting attachments.");
+                }
+
+                PageRange? range = pageText is null ? null : PageRange.Parse(pageText);
+                string directory = standard.OutputDirectory;
+                return standard.Port.Extract(standard.Input, new PdfExtractRequest
                 {
                     What = kind,
-                    OutputDirectory = standard.OutputDirectory,
-                    Pages = pageText is null ? null : PageRange.Parse(pageText),
+                    OutputDirectory = directory,
+                    Pages = range,
+                    Overwrite = standard.Overwrite,
                     Password = standard.InputPassword,
                 });
             });

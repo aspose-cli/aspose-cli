@@ -46,7 +46,8 @@ public sealed class ExtractionGuardTests
             FilePublicationSnapshot.Capture(external);
         using var extraction = new ExtractionGuard(
             TestBudgets.Create(),
-            temp.Path);
+            temp.Path,
+            overwrite: true);
 
         CliException error = Assert.Throws<CliException>(() =>
             extraction.Write(
@@ -56,8 +57,7 @@ public sealed class ExtractionGuardTests
                 {
                     output.Write(Encoding.UTF8.GetBytes("replacement"));
                     File.Move(external, target, overwrite: true);
-                },
-                overwrite: true));
+                }));
         Assert.Equal(ErrorCodes.OutputConflict, error.Code);
         Assert.Equal("same-content", File.ReadAllText(target));
         Assert.True(expectedExternal.VersionEquals(

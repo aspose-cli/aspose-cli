@@ -211,8 +211,8 @@ internal static class PdfDocumentMutationHandlers
         EncryptPdfOp op,
         IReadOnlyDictionary<string, string>? secrets)
     {
-        string owner = Secret(secrets, op.OwnerPasswordEnv)!;
-        string user = Secret(secrets, op.UserPasswordEnv) ?? string.Empty;
+        string owner = OperationSecrets.Resolve(secrets, op.OwnerPasswordEnv)!;
+        string user = OperationSecrets.Resolve(secrets, op.UserPasswordEnv) ?? string.Empty;
         Permissions permissions = (Permissions)0;
         if (op.Permissions.Print)
         {

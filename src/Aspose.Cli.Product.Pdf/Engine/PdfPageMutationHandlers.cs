@@ -89,7 +89,7 @@ internal static class PdfPageMutationHandlers
             throw PageNotFound(op.At, document.Pages.Count + 1);
         }
 
-        string? password = Secret(secrets, op.PasswordEnv);
+        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
         using LoadedPdf source = loader.Open(op.Path, password);
         IReadOnlyList<int> pages = op.Pages is null
             ? Enumerable.Range(1, source.Document.Pages.Count).ToArray()

@@ -74,7 +74,10 @@ disclose that with every delivered file. Install a license with
 entry of `aspose-cli license status --output json`.
 
 Passwords come from `--password-env`, `--password-stdin` or operation
-`*PasswordEnv` fields; never put secrets in ops JSON.
+`*PasswordEnv` fields; never put secrets in ops JSON. A missing or empty variable
+fails only the operation that names it, with `OPS_INVALID` naming the variable;
+`--best-effort` still applies the other operations (exit 8) and `--dry-run`
+reports every outcome.
 
 ## References
 
