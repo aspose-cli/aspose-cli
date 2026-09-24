@@ -2,7 +2,7 @@
 
 This layer is for formula-driven analytical models: budgets, forecasts,
 3-statement models, DCF-style valuations, scenario analysis. For trackers,
-CSV reports and dashboards go back to `aspose-cli docs workbook-standards` —
+CSV reports and dashboards go back to `aspose-cli docs cells/workbook-standards` —
 and everything taught there (widths, number formats, the color language,
 print delivery) is inherited here, not repeated. Recipes below build a
 small 3-statement model — `model.xlsx`, sheets `Assumptions` / `PnL` /
@@ -15,7 +15,7 @@ Every model separates Inputs (assumption sheets), Calc (statement sheets)
 and Outputs (summary sheets). The convention is carried by sheet NAMES and
 tab colors, plus the cell color language from workbook-standards — the
 ink tokens (blue input / black formula / green cross-sheet) are
-standardized in `aspose-cli docs design-system`, Design tokens:
+standardized in `aspose-cli docs cells/design-system`, Design tokens:
 
 ```sh
 aspose-cli cells create model.xlsx --sheets "Assumptions,PnL,Summary"
@@ -39,7 +39,7 @@ Adopt ONE sign convention up front, FAST-style, and state it on the
 Assumptions sheet: either all flows positive with labeled deductions, or
 costs negative throughout — never mixed, so a reader never guesses whether
 to add or subtract a line. The negative-parentheses number formats
-(`aspose-cli docs design-system`, Number and unit discipline) then read
+(`aspose-cli docs cells/design-system`, Number and unit discipline) then read
 unambiguously.
 
 A cell with `v` but no `f` is a hardcode: move it to Assumptions. To catch
@@ -248,13 +248,13 @@ aspose-cli cells render model.xlsx --sheet Summary --range A1:G20 --out summary-
 5. LOOK at the render with your image tool (truncation, layout, checks
    visibly OK). Keep `--dpi 192` and window with `--range`: a full-sheet
    render runs ~5% wide and hides truncation, and non-Latin labels below
-   150 DPI change identity (`aspose-cli docs verification`).
+   150 DPI change identity (`aspose-cli docs cells/verification`).
 6. Editing a user's model? The backup diff shows only intended changes — a
    formula replaced by a hardcode is visible as left-`f` / right-value-only.
    It compares values and formula text only, so a styling or chart pass on
    the model is expected to diff as `identical: true`.
 
-The full protocol, tier by tier: `aspose-cli docs verification`.
+The full protocol, tier by tier: `aspose-cli docs cells/verification`.
 
 ## Limits
 
@@ -265,4 +265,4 @@ The full protocol, tier by tier: `aspose-cli docs verification`.
   and the delivery gates.
 - Every function this document names evaluates correctly in the real
   engine; nothing in this layer had to be faked or approximated.
-- Cosmetic limits are inherited — see `aspose-cli docs workbook-standards`.
+- Cosmetic limits are inherited — see `aspose-cli docs cells/workbook-standards`.

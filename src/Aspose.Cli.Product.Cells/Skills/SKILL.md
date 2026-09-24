@@ -40,7 +40,7 @@ A `license` check of `warn` means some product is in evaluation mode; read the
    `aspose-cli docs`) instead of guessing.
 9. An open-ended request ("make me a sales sheet") gets the full deliverable:
    designed synthetic data, a Detail sheet and a designed Dashboard sheet
-   (`aspose-cli docs design-system`).
+   (`aspose-cli docs cells/design-system`).
 
 ## 3. Reading: the projection ladder
 
@@ -109,7 +109,7 @@ aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==
 - The result's `applied` array has one entry per op with `status`,
   `itemsAffected` and `targets`.
 
-Full vocabulary and recipes: `aspose-cli docs editing` and
+Full vocabulary and recipes: `aspose-cli docs cells/editing` and
 `aspose-cli schema v2/cells/ops`.
 
 ### Editing a user's file
@@ -142,7 +142,7 @@ invisible to it. Tell the user the backup path.
 
 Fix, then review again into a fresh directory; stop after three rounds and
 report what remains. Never claim a visual pass for sheets you did not open.
-Full protocol: `aspose-cli docs verification`.
+Full protocol: `aspose-cli docs cells/verification`.
 
 ## 6. Converting and rendering
 
@@ -162,13 +162,13 @@ Without a license, produced files carry an evaluation watermark and an extra
 Markdown exports are limited to the first worksheet. Tell the user when you
 deliver evaluation output. Install a license with
 `aspose-cli license install Aspose.Cells.lic --product cells`; details in
-`aspose-cli docs licensing`.
+`aspose-cli docs cells/licensing`.
 
 ## 8. Errors and pitfalls
 
 Exit codes: 0 ok, 1 internal, 2 usage, 3 input file, 4 validation, 5 output,
 6 format, 7 license, 8 partial, 9 timeout. Recovery for every code:
-`aspose-cli docs troubleshooting`.
+`aspose-cli docs cells/troubleshooting`.
 
 | pitfall | do this instead |
 |---------|-----------------|
@@ -182,13 +182,13 @@ Exit codes: 0 ok, 1 internal, 2 usage, 3 input file, 4 validation, 5 output,
 
 | task | read first |
 |------|------------|
-| The ops vocabulary and recipes | `aspose-cli docs editing` |
-| The delivery floor: widths, number formats, validation, print | `aspose-cli docs workbook-standards` |
-| A professionally designed workbook: dashboards, colors, charts, KPI cards | `aspose-cli docs design-system` |
-| A financial model | `aspose-cli docs financial-models` |
-| Verification and QA | `aspose-cli docs verification` |
-| Live preview for the user | `aspose-cli docs preview` |
-| An error you cannot recover from | `aspose-cli docs troubleshooting` |
+| The ops vocabulary and recipes | `aspose-cli docs cells/editing` |
+| The delivery floor: widths, number formats, validation, print | `aspose-cli docs cells/workbook-standards` |
+| A professionally designed workbook: dashboards, colors, charts, KPI cards | `aspose-cli docs cells/design-system` |
+| A financial model | `aspose-cli docs cells/financial-models` |
+| Verification and QA | `aspose-cli docs cells/verification` |
+| Live preview for the user | `aspose-cli docs cells/preview` |
+| An error you cannot recover from | `aspose-cli docs cells/troubleshooting` |
 
 Worked examples:
 [report from CSV](examples/report-from-csv/README.md),

@@ -111,7 +111,7 @@ aspose-cli cells edit dashboard.xlsx --ops ops-dashboard.json --in-place --outpu
 
 The region block is listed ASCENDING (West 22,700 → North 67,535) because a
 bar chart plots the first source row at the bottom — that order is what makes
-the ranking read largest-first top-down (`aspose-cli docs design-system`, Charts).
+the ranking read largest-first top-down (`aspose-cli docs cells/design-system`, Charts).
 
 ```powershell
 # 5. Verify values: every reported number comes from the engine.
@@ -176,5 +176,5 @@ header, print-ready. Report to the user: what was built, the engine-read
 KPI values, and — in evaluation mode — that every produced file carries
 the Aspose evaluation watermark.
 
-Learn more: `aspose-cli docs design-system` (tokens, recipes, the finishing
-checklist), `aspose-cli docs verification` (the verification tiers).
+Learn more: `aspose-cli docs cells/design-system` (tokens, recipes, the finishing
+checklist), `aspose-cli docs cells/verification` (the verification tiers).

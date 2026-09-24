@@ -85,7 +85,7 @@ aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out zoom.png --
   section).
 - Then OPEN the PNGs with your image-reading tool and actually look.
 - For a deliverable a human opens, the look includes the design self-grade:
-  the finishing-pass checklist in `aspose-cli docs design-system` (title band,
+  the finishing-pass checklist in `aspose-cli docs cells/design-system` (title band,
   header contrast, number discipline, chart hygiene). This tier owns the
   render mechanics — DPI floors, the strict `--range` view — and that
   checklist owns the design bar; fix and review again until both pass, for at
@@ -148,7 +148,7 @@ Checklist while looking:
 - No clipped or truncated text (a value wider than its column) — from a
   `--range` render, the only view whose widths match Excel.
 - No glyph tops shaved off a title row: enlarging a font does not re-fit its
-  row (`aspose-cli docs workbook-standards`).
+  row (`aspose-cli docs cells/workbook-standards`).
 - No overlapping labels.
 - Chart series, legend and axes plausible and matching the source data.
 - No placeholder tokens surviving (TBD, TODO, `{{...}}`, xxx).
@@ -260,7 +260,7 @@ aspose-cli fonts check book.xlsx
   roughly be, by hand.
 
 When a check fails and the fix is not obvious:
-`aspose-cli docs troubleshooting` maps every error code to its recovery.
+`aspose-cli docs cells/troubleshooting` maps every error code to its recovery.
 
 ### Stored-value comparison
 

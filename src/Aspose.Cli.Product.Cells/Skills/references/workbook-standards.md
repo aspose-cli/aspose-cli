@@ -4,7 +4,7 @@ These are delivery standards, not decoration: the floor between a data dump
 and a workbook a professional can use. When a file already has a look,
 match its existing conventions instead of imposing these. The design pass
 on top of this floor — tokens, title bands, the border hierarchy, charts,
-dashboards — is `aspose-cli docs design-system`.
+dashboards — is `aspose-cli docs cells/design-system`.
 
 Recipes below assume a report book (`Sales` summary, `Config` assumptions,
 `Data` dataset); adjust names and ranges. Each is one atomic `edit` batch —
@@ -167,7 +167,7 @@ instead of a downstream `#N/A` hunt.
 It does not protect you. Validation is a rule stored in the file, not a
 write-time check — the CLI's own writes ignore it. `--set "Sales!B2=Bogus"`
 on a list-validated cell exits 0 and stores `Bogus`, rule still intact. Your
-own writes stay yours to verify (`aspose-cli docs verification`).
+own writes stay yours to verify (`aspose-cli docs cells/verification`).
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
@@ -214,7 +214,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 highlight should cover the whole ROW rather than the compared cell, use the
 `formula` rule kind over the full-width range with the tested column
 `$`-anchored (`{"kind":"formula","value1":"=$F2=\"OVERDUE\""}` over
-`A2:F100`) — the recipe is in `aspose-cli docs editing`. Render and look before
+`A2:F100`) — the recipe is in `aspose-cli docs cells/editing`. Render and look before
 trusting the anchors: a stray `$` on the row number silently pins every
 comparison to one cell, and the rule still applies cleanly — it just
 answers a different question than you asked.
@@ -320,4 +320,4 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 A standards pass is only done when verified: `render` each changed sheet
 and look at the image, `query range` back computed cells, and run
 `cells inspect --detail errors` for formula errors — the full loop is
-`aspose-cli docs verification`.
+`aspose-cli docs cells/verification`.

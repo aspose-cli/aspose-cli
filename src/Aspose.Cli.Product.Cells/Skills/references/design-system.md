@@ -1,6 +1,6 @@
 # The design system
 
-Workbook standards (`aspose-cli docs workbook-standards`) are the floor: widths,
+Workbook standards (`aspose-cli docs cells/workbook-standards`) are the floor: widths,
 number formats, formulas-not-hardcodes, validation, print. This document is
 the design pass on top — the difference between a functional workbook and a
 deliverable that reads as professional work the moment it opens. Run it for
@@ -109,7 +109,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ```
 
 The `resize_rows` with no `height` auto-fits row 1 to the 16pt title —
-forgetting it ships shaved glyph tops (`aspose-cli docs workbook-standards`,
+forgetting it ships shaved glyph tops (`aspose-cli docs cells/workbook-standards`,
 Fonts). For a heavier, document-like opening, swap the title's style for a
 full-width band: `{"bg":"#1F3864","color":"#FFFFFF","bold":true,"size":16}`
 over `A1:Q1` — fill and text color as a pair, per the next section.
@@ -221,7 +221,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 ## 7. Number and unit discipline
 
-`aspose-cli docs workbook-standards` carries the base table (money with decimals,
+`aspose-cli docs cells/workbook-standards` carries the base table (money with decimals,
 counts, percentages, dates, years). The design pass adds the report-grade
 codes and the consistency rules:
 
@@ -451,7 +451,7 @@ structure → formats → charts → polish. Each save updates the preview in
 place: the changed cells flash where they are, and `--fx demo` adds a
 pointer that travels to them — the batch sequence narrates the build.
 End with the delivery summary. Section 12 still applies: the preview is the
-user's view, the render+LOOK is yours. Details: `aspose-cli docs preview`.
+user's view, the render+LOOK is yours. Details: `aspose-cli docs cells/preview`.
 
 ## 12. The finishing pass (the eyes loop)
 
@@ -499,6 +499,6 @@ Self-grade against this checklist while looking at the PNGs:
 
 The render mechanics — DPI floors, the strict `--range` view that exposes
 truncation a full-sheet render hides, review coverage — are Tier 2 of
-`aspose-cli docs verification`; this checklist is the design bar layered on top
+`aspose-cli docs cells/verification`; this checklist is the design bar layered on top
 of those tiers, not a replacement. `cells inspect --detail errors` must report zero
 formula errors before anything ships.

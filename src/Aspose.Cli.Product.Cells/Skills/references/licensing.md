@@ -122,5 +122,5 @@ aspose-cli license status --product cells --license missing.lic --output json
 
 ## See also
 
-`aspose-cli docs troubleshooting` — the exit-7 recovery table and every other error
+`aspose-cli docs cells/troubleshooting` — the exit-7 recovery table and every other error
 code's fix.

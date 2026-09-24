@@ -10,9 +10,9 @@ internal static class CellsHelpMetadata
         root.WithExamples(
             ["aspose-cli cells inspect book.xlsx --output json"],
             [
-                new("aspose-cli docs editing", "the edit-operation vocabulary and recipes"),
-                new("aspose-cli docs workbook-standards", "professional workbook construction guidance"),
-                new("aspose-cli docs verification", "the spreadsheet delivery verification protocol"),
+                new("aspose-cli docs cells/editing", "the edit-operation vocabulary and recipes"),
+                new("aspose-cli docs cells/workbook-standards", "professional workbook construction guidance"),
+                new("aspose-cli docs cells/verification", "the spreadsheet delivery verification protocol"),
                 new("aspose-cli schema v2/cells/ops", "the operations JSON Schema"),
             ]);
 
@@ -52,9 +52,9 @@ internal static class CellsHelpMetadata
                 "aspose-cli cells edit book.xlsx --in-place --backup --verify --ops ops.json",
             ],
             [
-                new("aspose-cli docs editing", "recipes for every operation family"),
+                new("aspose-cli docs cells/editing", "recipes for every operation family"),
                 new("aspose-cli schema v2/cells/ops", "the operations JSON vocabulary"),
-                new("aspose-cli docs verification", "verification before delivering the file"),
+                new("aspose-cli docs cells/verification", "verification before delivering the file"),
             ]);
         Find(root, "compare").WithExamples(
             [

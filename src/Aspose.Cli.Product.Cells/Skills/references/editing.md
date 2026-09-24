@@ -35,7 +35,7 @@ General rules:
 - Editing a user-supplied file? Add `--backup --verify` to the first in-place
   edit. The CLI creates `book.backup.xlsx` once and never overwrites it.
   Read the result's `verification`, review the file, then diff against the
-  stable backup at the end of the session (`aspose-cli docs verification`).
+  stable backup at the end of the session (`aspose-cli docs cells/verification`).
 
 ## Op index
 
