@@ -1,0 +1,678 @@
+## aspose-cli --help
+Description:
+  Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. Structured commands support --output json for stable, machine-readable results; explicit schema and docs documents remain raw.
+
+Usage:
+  aspose-cli [command] [options]
+
+Options:
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  -?, -h, --help                       Show help and usage information
+  --version                            Show version information
+
+Commands:
+  app <file>                        Open the local file workspace in a browser.
+  preview <file>                    Watch a file in the local viewer and follow every change.
+  review <file>                     Create a portable static evidence directory for visual inspection.
+  cells                             Spreadsheet operations (Excel and friends) with engine-grade fidelity.
+  pdf                               PDF automation with page, security and fixed-layout semantics.
+  slides                            Presentation automation with slide, layout and notes semantics.
+  words                             Word-processing document automation with layout fidelity.
+  license                           Inspect and manage the Aspose license used by the CLI.
+  capabilities <product> <command>  Describe everything this build supports (products, verbs, formats), as data.
+  doctor                            Diagnose the environment: runtime, resource budgets and output writability.
+  skill                             List or install Agent Skills bundled with this binary.
+  schema <id>                       List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.
+  docs <topic>                      Print an offline reference document bundled with this binary.
+  fonts                             Diagnose the font environment used for rendering.
+  mcp                               Expose this CLI to a local MCP client over stdio.
+  update                            Check or install a verified CLI release; no background checks are performed.
+
+Examples:
+  aspose-cli app
+  aspose-cli capabilities --output json
+  aspose-cli review <file> --max-items 50
+  aspose-cli schema
+
+Learn more:
+  aspose-cli docs                        offline documentation bundled in this binary
+  aspose-cli schema                      the available JSON Schema identifiers
+  aspose-cli capabilities --output json  verbs, formats and operations as data
+
+
+## aspose-cli __render-worker --help
+
+## aspose-cli __viewer-service --help
+
+## aspose-cli app --help
+Description:
+  Open the local file workspace in a browser.
+
+Usage:
+  aspose-cli app [<file>] [command] [options]
+
+Arguments:
+  <file>  File to open directly in the local App.
+
+Options:
+  --welcome                            Open the first-run workspace guide.
+  --foreground                         Keep the App in this process for debugging, containers and tests.
+  --port <port>                        Loopback port; 0 chooses a free port. [default: 0]
+  --no-open                            Start or activate the App without opening a browser.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  status  Show whether the local App is running.
+  stop    Stop the local App, its documents and the viewer service.
+
+Examples:
+  aspose-cli app
+  aspose-cli app --welcome
+  aspose-cli app --foreground --port 4680
+  aspose-cli app status --output json
+
+Learn more:
+  aspose-cli docs app  welcome, files, preview, settings and lifecycle
+
+
+## aspose-cli app status --help
+Description:
+  Show whether the local App is running.
+
+Usage:
+  aspose-cli app [<file>] status [options]
+
+Arguments:
+  <file>  File to open directly in the local App.
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli app stop --help
+Description:
+  Stop the local App, its documents and the viewer service.
+
+Usage:
+  aspose-cli app [<file>] stop [options]
+
+Arguments:
+  <file>  File to open directly in the local App.
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli capabilities --help
+Description:
+  Describe everything this build supports (products, verbs, formats), as data.
+
+Usage:
+  aspose-cli capabilities [<product> [<command>]] [options]
+
+Arguments:
+  <product>  Optional product id to select.
+  <command>  Optional product-relative command path to select.
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Examples:
+  aspose-cli capabilities --output json
+  aspose-cli capabilities <product> --output json
+  aspose-cli capabilities <product> <verb> --output json
+
+
+## aspose-cli docs --help
+Description:
+  Print an offline reference document bundled with this binary.
+
+Usage:
+  aspose-cli docs [<topic>] [options]
+
+Arguments:
+  <topic>  Doc topic to print; omit to list the available topics.
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Examples:
+  aspose-cli docs
+
+
+## aspose-cli doctor --help
+Description:
+  Diagnose the environment: runtime, resource budgets and output writability.
+
+Usage:
+  aspose-cli doctor [options]
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Examples:
+  aspose-cli doctor --output json
+
+
+## aspose-cli fonts --help
+Description:
+  Diagnose the font environment used for rendering.
+
+Usage:
+  aspose-cli fonts [command] [options]
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  list          List the engine's font sources and its default fallback font.
+  check <file>  Check whether a document's fonts are available here, and what they substitute to.
+
+Examples:
+  aspose-cli fonts list --output json
+
+
+## aspose-cli fonts check --help
+Description:
+  Check whether a document's fonts are available here, and what they substitute to.
+
+Usage:
+  aspose-cli fonts check <file> [options]
+
+Arguments:
+  <file>  Supported document whose fonts to check.
+
+Options:
+  --password <password>                Password for the document. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>        Name of an environment variable holding the password for the document.
+  --password-stdin                     Read the password for the document from the first line of stdin.
+  --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli fonts list --help
+Description:
+  List the engine's font sources and its default fallback font.
+
+Usage:
+  aspose-cli fonts list [options]
+
+Options:
+  --product <cells|pdf|slides|words>   Product font engine to inspect. Default: cells. [default: cells]
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli license --help
+Description:
+  Inspect and manage the Aspose license used by the CLI.
+
+Usage:
+  aspose-cli license [command] [options]
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  status          Show whether licensing applies and which license source and mode are in effect.
+  install <file>  Validate a license file and install it for every compatible product.
+  remove          Remove saved user licenses; env and project sources are left untouched.
+
+Examples:
+  aspose-cli license status --output json
+  aspose-cli license install Aspose.Total.lic
+
+
+## aspose-cli license install --help
+Description:
+  Validate a license file and install it for every compatible product.
+
+Usage:
+  aspose-cli license install <file> [options]
+
+Arguments:
+  <file>  Path to an Aspose license file (.lic) to install as this user's default.
+
+Options:
+  --product <cells|pdf|slides|words>   Install only for this product instead of detecting compatible products.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli license remove --help
+Description:
+  Remove saved user licenses; env and project sources are left untouched.
+
+Usage:
+  aspose-cli license remove [options]
+
+Options:
+  --product <cells|pdf|slides|words>   Remove only this product's saved user license.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli license status --help
+Description:
+  Show whether licensing applies and which license source and mode are in effect.
+
+Usage:
+  aspose-cli license status [options]
+
+Options:
+  --product <cells|pdf|slides|words>   Inspect only this product.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli mcp --help
+Description:
+  Expose this CLI to a local MCP client over stdio.
+
+Usage:
+  aspose-cli mcp [command] [options]
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  serve  Run the single-session MCP stdio server.
+
+
+## aspose-cli mcp serve --help
+Description:
+  Run the single-session MCP stdio server.
+
+Usage:
+  aspose-cli mcp serve [options]
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli preview --help
+Description:
+  Watch a file in the local viewer and follow every change.
+
+Usage:
+  aspose-cli preview [<file>] [command] [options]
+
+Arguments:
+  <file>  File to preview; content detection selects the product unless --product is supplied.
+
+Options:
+  --port <port>                               Loopback port of the viewer service when it starts; 0 chooses a free port. [default: 0]
+  --product <cells|pdf|slides|words>          Explicit product selection; normally determined by bounded content detection.
+  --view <auto|pages|sheets|slides|workbook>  Product view; auto uses the product's live view. [default: auto]
+  --open                                      Open the viewer in the default browser.
+  --fx <fx>                                   Presentation effect for live demonstrations (for example 'demo').
+  --password <password>                       Password for the file. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the file.
+  --password-stdin                            Read the password for the file from the first line of stdin.
+  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <json|markdown|table>          Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  status <id>  List the documents the local viewer has open.
+  stop <id>    Close one document, or stop the local viewer service.
+
+Examples:
+  aspose-cli preview status --output json
+  aspose-cli preview stop --all --output json
+
+
+## aspose-cli preview status --help
+Description:
+  List the documents the local viewer has open.
+
+Usage:
+  aspose-cli preview [<file>] status [<id>] [options]
+
+Arguments:
+  <file>  File to preview; content detection selects the product unless --product is supplied.
+  <id>    Optional document id.
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli preview stop --help
+Description:
+  Close one document, or stop the local viewer service.
+
+Usage:
+  aspose-cli preview [<file>] stop [<id>] [options]
+
+Arguments:
+  <file>  File to preview; content detection selects the product unless --product is supplied.
+  <id>    Document id to close.
+
+Options:
+  --all                                Close every document and stop the viewer service.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli review --help
+Description:
+  Create a portable static evidence directory for visual inspection.
+
+Usage:
+  aspose-cli review <file> [options]
+
+Arguments:
+  <file>  Source file to review; bounded content evidence selects the product.
+
+Options:
+  -o, --out <out>                      New evidence directory; defaults to <filename>.review beside the source.
+  --max-items <max-items>              Maximum visual units rendered and listed in review.json. [default: 256]
+  --product <cells|pdf|slides|words>   Explicit product override; normally inferred from bounded content evidence.
+  --view <auto|pages|sheets|slides>    Review view; auto uses the product default. [default: auto]
+  --password <password>                Password for the review source. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>        Name of an environment variable holding the password for the review source.
+  --password-stdin                     Read the password for the review source from the first line of stdin.
+  --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Examples:
+  aspose-cli review <file>
+  aspose-cli review <file> --out evidence --max-items 50 --output json
+
+Learn more:
+  aspose-cli docs <product>/verification  the verification protocol of the file's product, e.g. pdf/verification
+
+
+## aspose-cli schema --help
+Description:
+  List schema ids as an envelope, or print one raw JSON Schema document when an id is supplied.
+
+Usage:
+  aspose-cli schema [<id>] [options]
+
+Arguments:
+  <id>  Schema id to print; omit it to return the available ids.
+
+Options:
+  --operation <operation>              Narrow an ops schema to one exact operation id.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Examples:
+  aspose-cli schema
+
+
+## aspose-cli skill --help
+Description:
+  List or install Agent Skills bundled with this binary.
+
+Usage:
+  aspose-cli skill [command] [options]
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  list             List bundled Agent Skills and supported hosts.
+  install <skill>  Install a bundled Agent Skill for Codex, Claude Code, or OpenCode.
+
+Examples:
+  aspose-cli skill list
+  aspose-cli skill install <skill> --host codex --scope project
+
+
+## aspose-cli skill install --help
+Description:
+  Install a bundled Agent Skill for Codex, Claude Code, or OpenCode.
+
+Usage:
+  aspose-cli skill install <skill> [options]
+
+Arguments:
+  <skill>  Bundled skill to install: aspose-cli-cells, aspose-cli-pdf, aspose-cli-slides, aspose-cli-words.
+
+Options:
+  --host <claude-code|codex|opencode>  Agent host whose standard skills directory should be used.
+  --scope <project|user>               Install for the current project or the current user. [default: project]
+  --dir <dir>                          Project root used with --scope project. Default: current working directory.
+  --target <target>                    Advanced: explicit parent directory; the selected Skill folder is created there.
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli skill list --help
+Description:
+  List bundled Agent Skills and supported hosts.
+
+Usage:
+  aspose-cli skill list [options]
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli update --help
+Description:
+  Check or install a verified CLI release; no background checks are performed.
+
+Usage:
+  aspose-cli update [command] [options]
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+Commands:
+  check <feed>    Check one signed local or HTTPS release feed.
+  install <feed>  Install a verified release from one signed local or HTTPS feed.
+
+
+## aspose-cli update _prepare --help
+
+## aspose-cli update check --help
+Description:
+  Check one signed local or HTTPS release feed.
+
+Usage:
+  aspose-cli update check <feed> [options]
+
+Arguments:
+  <feed>  Path to RELEASE-MANIFEST.json or an HTTPS manifest URL.
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+
+## aspose-cli update install --help
+Description:
+  Install a verified release from one signed local or HTTPS feed.
+
+Usage:
+  aspose-cli update install <feed> [options]
+
+Arguments:
+  <feed>  Path to RELEASE-MANIFEST.json or an HTTPS manifest URL.
+
+Options:
+  -?, -h, --help                       Show help and usage information
+  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                  Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+
+

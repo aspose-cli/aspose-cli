@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.RegularExpressions;
 using System.Xml.Linq;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.TestKit;
@@ -138,6 +139,78 @@ public sealed class CliContractTests : IDisposable
         string declaredVersion = XDocument.Load(Path.Combine(RepositoryPaths.Root, "Directory.Build.props"))
             .Descendants("Version").Single().Value;
         Assert.Equal(declaredVersion, capabilities.RootElement.GetProperty("cliVersion").GetString());
+    }
+
+    /// <summary>
+    /// Pins the complete capabilities document, including every command's option metadata.
+    /// Only the build identity is normalized: the CLI version, source revision, dirty flag and
+    /// engine package versions change with releases and SDK updates, not with command
+    /// definitions, and <see cref="Capabilities_ExposeTheCurrentDeterministicSourceRevision"/>
+    /// checks them.
+    /// </summary>
+    [Fact]
+    public void Capabilities_MatchTheSnapshot()
+    {
+        CliResult result = _workspace.Run("capabilities", "--output", "json");
+
+        Assert.Equal(0, result.ExitCode);
+        string normalized = BuildIdentity.Replace(
+            result.StdOut,
+            static match => match.Groups["key"].Value + "\"<build>\"");
+        AssertSnapshot("capabilities.json", normalized);
+    }
+
+    /// <summary>
+    /// Pins the help text of a product group and of every command under it, byte for byte.
+    /// The command list comes from the capabilities document, whose snapshot pins that list.
+    /// </summary>
+    [Theory]
+    [InlineData("cells")]
+    [InlineData("pdf")]
+    [InlineData("slides")]
+    [InlineData("words")]
+    public void ProductHelp_MatchesTheSnapshot(string product)
+    {
+        CliResult capabilities = _workspace.Run("capabilities", product, "--output", "json");
+        Assert.Equal(0, capabilities.ExitCode);
+        IEnumerable<string[]> paths = Assert.Single(Parse(capabilities.StdOut)["products"]!.AsArray())!["commands"]!.AsArray()
+            .Select(static command => command!["path"]!.GetValue<string>().Split(' '));
+        AssertSnapshot($"{product}.help.txt", CollectHelp(paths));
+    }
+
+    /// <summary>
+    /// Pins the help text of the root command and of every Host command, including hidden ones,
+    /// byte for byte. The command list is every capabilities command outside a product group.
+    /// </summary>
+    [Fact]
+    public void HostHelp_MatchesTheSnapshot()
+    {
+        CliResult capabilities = _workspace.Run("capabilities", "--output", "json");
+        Assert.Equal(0, capabilities.ExitCode);
+        JsonNode json = Parse(capabilities.StdOut);
+        HashSet<string> products = json["products"]!.AsArray()
+            .Select(static product => product!["id"]!.GetValue<string>())
+            .ToHashSet(StringComparer.Ordinal);
+        IEnumerable<string[]> paths = json["commands"]!.AsArray()
+            .Select(static command => command!["path"]!.GetValue<string>().Split(' ').Skip(1).ToArray())
+            .Where(path => path.Length == 0 || !products.Contains(path[0]));
+        AssertSnapshot("host.help.txt", CollectHelp(paths));
+    }
+
+    /// <summary>Runs <c>--help</c> for each command path, relative to the root, and joins the outputs.</summary>
+    private string CollectHelp(IEnumerable<string[]> paths)
+    {
+        var help = new StringBuilder();
+        foreach (string[] path in paths)
+        {
+            CliResult result = _workspace.Run([.. path, "--help"]);
+            string command = string.Join(' ', ["aspose-cli", .. path]);
+            Assert.True(result.ExitCode == 0, $"{command} --help exited {result.ExitCode}: {result.StdErr}");
+            help.Append("## ").Append(command).Append(" --help\n")
+                .Append(result.StdOut)
+                .Append('\n');
+        }
+        return help.ToString();
     }
 
     [Theory]
@@ -465,6 +538,51 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal(5, result.ExitCode);
         Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
         Assert.False(File.Exists(escaped));
+    }
+
+    /// <summary>Set to 1 to rewrite the snapshots under Integration/Snapshots from the current build.</summary>
+    private const string UpdateSnapshotsVariable = Aspose.Cli.Sdk.DistributionInfo.EnvironmentVariablePrefix + "TEST_UPDATE_SNAPSHOTS";
+
+    private static readonly Regex BuildIdentity = new(
+        """(?<key>"(?:cliVersion|sourceRevision|buildDirty|version|sdkVersion)": )(?:"[^"]*"|true|false)""",
+        RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// Compares output with its committed snapshot exactly. Line endings are compared as LF
+    /// because Git may check the snapshot out with CRLF.
+    /// </summary>
+    private static void AssertSnapshot(string name, string actual)
+    {
+        string path = Path.Combine(
+            RepositoryPaths.Root, "tests", "Aspose.Cli.Platform.Tests", "Integration", "Snapshots", name);
+        actual = actual.ReplaceLineEndings("\n");
+        if (Environment.GetEnvironmentVariable(UpdateSnapshotsVariable) == "1")
+        {
+            Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+            File.WriteAllText(path, actual, new UTF8Encoding(false));
+            return;
+        }
+
+        Assert.True(File.Exists(path), $"Snapshot {name} is missing; set {UpdateSnapshotsVariable}=1 to create it.");
+        string expected = File.ReadAllText(path, Encoding.UTF8).ReplaceLineEndings("\n");
+        if (string.Equals(expected, actual, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        string[] expectedLines = expected.Split('\n');
+        string[] actualLines = actual.Split('\n');
+        int line = 0;
+        while (line < expectedLines.Length && line < actualLines.Length &&
+            string.Equals(expectedLines[line], actualLines[line], StringComparison.Ordinal))
+        {
+            line++;
+        }
+        Assert.Fail(
+            $"Output differs from snapshot {name} at line {line + 1}.\n" +
+            $"expected: {(line < expectedLines.Length ? expectedLines[line] : "<end of snapshot>")}\n" +
+            $"actual:   {(line < actualLines.Length ? actualLines[line] : "<end of output>")}\n" +
+            $"If the change is intended, set {UpdateSnapshotsVariable}=1, rerun and review the diff.");
     }
 
     private static JsonNode Parse(string json) =>

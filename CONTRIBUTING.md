@@ -47,6 +47,11 @@ and `-HangTimeout` (default `15m`) dumps a test that stays silent that long. Eac
 TRX and browser failure traces are written to `artifacts/TestResults/<run-id>/<project>/`. Never
 weaken a check or remove a supported operation to make a test pass.
 
+Help and capabilities output is pinned by snapshots in
+`tests/Aspose.Cli.Platform.Tests/Integration/Snapshots`; after an intended change, rerun
+`CliContractTests` with `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review the regenerated files in
+the diff.
+
 `Affected` runs a test project in full when the change touches it or a project it references,
 adds the installer tests when `install.ps1` or `scripts/install-local.ps1` changes, adds nothing
 for documentation, and runs everything for any other change, such as `eng/`, `scripts/` or
