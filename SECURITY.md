@@ -6,17 +6,27 @@ Do not attach customer documents, passwords, tokens or license contents.
 
 ## Boundaries
 
-App and Preview bind only to loopback. Exact Host, same-origin, CSRF, bounded bodies and authenticated
-current-user lifecycle controls remain enforced. File routing is content-driven.
-Publication, extraction, ownership and resource budgets are checked.
-Product license files are separate, and configuration files use the selected CLI configuration directory.
-The App control endpoint is a per-user singleton; selecting another configuration directory does not
-create an independently runnable App endpoint. Shared OS publication/PATH resources use interprocess locks.
+App and Preview listen only on `127.0.0.1`. They enforce the exact Host header, same-origin
+requests, CSRF tokens, bounded bodies and authenticated current-user lifecycle control. Their
+pages send `object-src 'none'` and `Cross-Origin-Resource-Policy: same-origin`; the App shell
+cannot be framed (`frame-ancestors 'none'`, `X-Frame-Options: DENY`) and the viewer only by its
+own origin (`frame-ancestors 'self'`, `SAMEORIGIN`). Rendered document parts run no scripts.
+The App control endpoint is a per-user
+singleton; selecting another configuration directory does not create an independent endpoint.
 
-Customer installation and updates require applicable Authenticode and detached package signatures.
-The explicit development-package path does not establish customer release trust.
-Different products cannot substitute each other's signed manifests.
+MCP `execute` runs product commands and only the read-only host commands; it cannot install,
+update, change licenses or start and stop services.
 
-License contents and encryption secrets must not enter logs or results. SDK evaluation behavior is disclosed honestly.
+File routing is content-driven. Publication, extraction, ownership and resource budgets are
+checked. File publication and shared per-user install and PATH state are guarded by
+interprocess locks. Product license files are separate, and configuration files use the
+selected CLI configuration directory. License contents and passwords must not enter logs or
+results. SDK evaluation behavior is disclosed honestly.
 
-This project is pre-release and maintains its current development contract.
+## Releases
+
+Customer installation and updates require the installer's Authenticode signature and a
+detached package signature from a key in the configured `ASPOSE_CLI_RELEASE_TRUSTED_KEYS` ring.
+A release signed for another distribution is rejected, and a downgrade or a different build
+with the same version is refused. The explicit development-package path does not establish
+customer release trust.
