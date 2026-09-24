@@ -1,13 +1,12 @@
-using System.Diagnostics;
 using System.Text;
-using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
 using Xunit;
+using static Aspose.Cli.Platform.Tests.Integration.McpTestServer;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
 
-public sealed partial class McpProtocolTests
+public sealed class McpProtocolTests
 {
     [Fact]
     public async Task Execute_UsesActualSyntaxPreservesHostDefaultsAndRejectsUnauthorizedCommands()
@@ -17,7 +16,7 @@ public sealed partial class McpProtocolTests
         Directory.CreateDirectory(work);
         File.WriteAllBytes(Path.Combine(work, "Data"), new byte[2 * 1024 * 1024]);
         File.WriteAllText(Path.Combine(work, "input.csv"), "Name,Value\nA,42\n");
-        await using var server = await Server.Start(temp.Path, work);
+        await using var server = await McpTestServer.Start(temp.Path, work);
 
         JsonNode tools = await server.Request("tools/list", new { });
         JsonArray listed = tools["result"]!["tools"]!.AsArray();
@@ -65,12 +64,8 @@ public sealed partial class McpProtocolTests
         Assert.Equal(2 * 1024 * 1024, new FileInfo(Path.Combine(work, "Data")).Length);
     }
 
-    [Theory]
-    [InlineData("ASPOSE_CELLS_LICENSE_PATH")]
-    [InlineData("ASPOSE_CELLS_LICENSE_B64")]
-    [InlineData("ASPOSE_LICENSE_PATH")]
-    [InlineData("ASPOSE_LICENSE_B64")]
-    public async Task Execute_InheritedExplicitLicenseKeepsItsSourceAndAnchoredPath(string variable)
+    [Fact]
+    public async Task Execute_InheritedExplicitLicenseKeepsItsSourceAndAnchoredPath()
     {
         using var temp = new TempDirectory();
         string work = temp.File("work");
@@ -79,13 +74,12 @@ public sealed partial class McpProtocolTests
         Directory.CreateDirectory(other);
         File.WriteAllText(Path.Combine(other, "input.csv"), "Name,Value\nA,42\n");
         File.WriteAllText(Path.Combine(work, "selected.lic"), "<License>synthetic invalid fixture</License>");
+        // The explicit license outranks every environment source; the resolver tests cover that order.
         var variables = new Dictionary<string, string?>
         {
-            [variable] = variable.EndsWith("_B64", StringComparison.Ordinal)
-                ? Convert.ToBase64String(Encoding.UTF8.GetBytes("synthetic environment fixture"))
-                : temp.File("missing-environment.lic"),
+            ["ASPOSE_CELLS_LICENSE_B64"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("synthetic environment fixture")),
         };
-        await using var server = await Server.Start(temp.Path, work, variables, ["--license", "selected.lic"]);
+        await using var server = await McpTestServer.Start(temp.Path, work, variables, ["--license", "selected.lic"]);
         foreach (bool supervised in new[] { false, true })
         {
             string[] args = ["cells", "inspect", "input.csv", "--workdir", other, "--output=json"];
@@ -110,7 +104,7 @@ public sealed partial class McpProtocolTests
         string input = temp.File("malformed.docx");
         byte[] bytes = "PK\x03\x04invalid synthetic docx"u8.ToArray();
         File.WriteAllBytes(input, bytes);
-        await using var server = await Server.Start(temp.Path, temp.Path);
+        await using var server = await McpTestServer.Start(temp.Path, temp.Path);
         string[] args = ["words", "inspect", "malformed.docx", "--output", "json"];
         if (supervised) { args = ["--timeout", "15", .. args]; }
 
@@ -135,105 +129,5 @@ public sealed partial class McpProtocolTests
         JsonNode execution = reply["result"]!["structuredContent"]!;
         Assert.Equal(7, execution["exitCode"]!.GetValue<int>());
         return JsonNode.Parse(execution["stderr"]!.GetValue<string>())!["error"]!;
-    }
-
-    private static void AssertSuccess(JsonNode reply)
-    {
-        Assert.Null(reply["error"]);
-        Assert.False(reply["result"]?["isError"]?.GetValue<bool>() ?? false, reply.ToJsonString());
-        Assert.True(reply["result"]!["structuredContent"]!["exitCode"]!.GetValue<int>() == 0, reply.ToJsonString());
-    }
-
-    private sealed class Server : IAsyncDisposable
-    {
-        private readonly Process _process;
-        private readonly Task<string> _stderr;
-        private int _id;
-
-        internal Task<string> StandardError => _stderr;
-
-        private Server(Process process)
-        {
-            _process = process;
-            _stderr = process.StandardError.ReadToEndAsync();
-        }
-
-        internal static async Task<Server> Start(string directory, string work,
-            IReadOnlyDictionary<string, string?>? variables = null, string[]? options = null)
-        {
-            var start = new ProcessStartInfo(CliRunner.ExecutablePath)
-            {
-                WorkingDirectory = directory, UseShellExecute = false, CreateNoWindow = true,
-                RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
-                StandardInputEncoding = new UTF8Encoding(false),
-            };
-            CliEnvironment.Evaluation(Path.Combine(directory, "config")).Apply(start.Environment);
-            foreach (string argument in new[] { "--workdir", work, "--max-input-bytes", "1048576", "mcp", "serve" })
-            {
-                start.ArgumentList.Add(argument);
-            }
-            foreach (var (name, value) in variables ?? new Dictionary<string, string?>())
-            {
-                start.Environment[name] = value;
-            }
-            foreach (string argument in options ?? []) { start.ArgumentList.Add(argument); }
-            var server = new Server(Process.Start(start)!);
-            try
-            {
-                JsonNode initialized = await server.Request("initialize", new
-                {
-                    protocolVersion = "2025-03-26", capabilities = new { },
-                    clientInfo = new { name = "repository-regression", version = "1.0" },
-                });
-                Assert.Null(initialized["error"]);
-                await server._process.StandardInput.WriteLineAsync(
-                    """{"jsonrpc":"2.0","method":"notifications/initialized"}""");
-                await server._process.StandardInput.FlushAsync();
-                return server;
-            }
-            catch
-            {
-                await server.DisposeAsync();
-                throw;
-            }
-        }
-
-        internal Task<JsonNode> Execute(string[] args, string? stdin = null) =>
-            Request("tools/call", new { name = "execute", arguments = new { args, stdin, timeoutSeconds = 30 } });
-
-        internal async Task<JsonNode> Request(string method, object parameters)
-        {
-            int id = ++_id;
-            await _process.StandardInput.WriteLineAsync(
-                JsonSerializer.Serialize(new { jsonrpc = "2.0", id, method, @params = parameters }));
-            await _process.StandardInput.FlushAsync();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(40));
-            while (true)
-            {
-                string? line = await _process.StandardOutput.ReadLineAsync(timeout.Token);
-                Assert.NotNull(line);
-                JsonNode reply = JsonNode.Parse(line)!;
-                if (reply["id"]?.GetValue<int>() == id) { return reply; }
-            }
-        }
-
-        public async ValueTask DisposeAsync()
-        {
-            try
-            {
-                _process.StandardInput.Close();
-                await _process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(5));
-            }
-            catch (TimeoutException)
-            {
-                _process.Kill(entireProcessTree: true);
-                await _process.WaitForExitAsync();
-            }
-            finally
-            {
-                await _stderr;
-                _process.Dispose();
-            }
-        }
     }
 }

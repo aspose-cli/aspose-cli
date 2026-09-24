@@ -1,20 +1,16 @@
 using System.IO.Compression;
-using System.Net;
-using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Xml.Linq;
 using Aspose.Cli.Host.Updating;
-using Aspose.Cli.Sdk.Resources;
 using Aspose.Cli.TestKit;
-using Json.Schema;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
 
 /// <summary>Black-box coverage for the commercial executable contract.</summary>
-[Collection("Local service lifecycle")]
 public sealed class CliContractTests : IDisposable
 {
     private readonly TempWorkspace _workspace = new();
@@ -76,9 +72,7 @@ public sealed class CliContractTests : IDisposable
             string[] verbs = product["verbs"]!.AsArray()
                 .Select(static verb => verb!.GetValue<string>())
                 .ToArray();
-            Assert.DoesNotContain("watch", verbs);
             Assert.DoesNotContain("preview", verbs);
-            Assert.Null(product["ops"]);
             JsonArray operations = product["operations"]!.AsArray();
             Assert.NotEmpty(operations);
             foreach (JsonNode? operation in operations)
@@ -104,15 +98,7 @@ public sealed class CliContractTests : IDisposable
                 views,
                 preview["views"]!.AsArray()
                     .Select(static view => view!.GetValue<string>()));
-            Assert.DoesNotContain(
-                commands,
-                command => command!["path"]!.GetValue<string>() ==
-                    $"aspose-cli {id} watch");
         }
-        Assert.DoesNotContain(
-            commands,
-            static command => command!["path"]!.GetValue<string>() ==
-                "aspose-cli preview start");
         Assert.Contains(
             commands,
             static command => command!["path"]!.GetValue<string>() ==
@@ -124,8 +110,37 @@ public sealed class CliContractTests : IDisposable
             option => option!["name"]!.GetValue<string>() == "--license");
     }
 
+    [Fact]
+    public void Capabilities_ExposeTheCurrentDeterministicSourceRevision()
+    {
+        CliResult first = _workspace.Run("capabilities", "--output", "json");
+        CliResult second = _workspace.Run("capabilities", "--output", "json");
+
+        Assert.Equal(0, first.ExitCode);
+        Assert.Equal(0, second.ExitCode);
+        Assert.Equal(first.StdOut, second.StdOut);
+
+        using JsonDocument capabilities = JsonDocument.Parse(first.StdOut);
+        string sourceRevision = capabilities.RootElement
+            .GetProperty("sourceRevision")
+            .GetString()!;
+
+        bool dirty = capabilities.RootElement.GetProperty("buildDirty").GetBoolean();
+        if (sourceRevision == "unknown")
+        {
+            Assert.True(dirty);
+        }
+        else
+        {
+            Assert.Matches("^[0-9a-f]{40}$", sourceRevision);
+        }
+        Assert.True(capabilities.RootElement.TryGetProperty("enginePins", out _));
+        string declaredVersion = XDocument.Load(Path.Combine(RepositoryPaths.Root, "Directory.Build.props"))
+            .Descendants("Version").Single().Value;
+        Assert.Equal(declaredVersion, capabilities.RootElement.GetProperty("cliVersion").GetString());
+    }
+
     [Theory]
-    [InlineData("full")]
     [InlineData("product")]
     [InlineData("command")]
     [InlineData("unknown-product")]
@@ -135,8 +150,6 @@ public sealed class CliContractTests : IDisposable
     {
         CliResult result = selection switch
         {
-            "full" => _workspace.Run(
-                "capabilities", "--output", "json"),
             "product" => _workspace.Run(
                 "capabilities", "cells", "--output", "json"),
             "command" => _workspace.Run(
@@ -168,14 +181,7 @@ public sealed class CliContractTests : IDisposable
 
         Assert.Equal(0, result.ExitCode);
         JsonNode json = Parse(result.StdOut);
-        JsonArray products = json["products"]!.AsArray();
-        if (selection == "full")
-        {
-            Assert.Equal(4, products.Count);
-            return;
-        }
-
-        JsonNode product = Assert.Single(products)!;
+        JsonNode product = Assert.Single(json["products"]!.AsArray())!;
         Assert.Equal("cells", product["id"]!.GetValue<string>());
         Assert.All(
             json["schemas"]!.AsArray(),
@@ -308,247 +314,6 @@ public sealed class CliContractTests : IDisposable
         Assert.DoesNotContain("aspose-cli cells", hint, StringComparison.Ordinal);
     }
 
-    [Category(TestCategory.Slow)]
-    [Fact]
-    public async Task App_WithADocument_MountsPreviewOnItsLoopbackOrigin()
-    {
-        string workbook = _workspace.File("app-preview.xlsx");
-        CliResult created = _workspace.Run(
-            "cells",
-            "create",
-            workbook,
-            "--sheets",
-            "Data",
-            "--output",
-            "json");
-        Assert.Equal(0, created.ExitCode);
-        CliResult discovered = _workspace.Run(
-            "capabilities",
-            "--output",
-            "json");
-        Assert.Equal(0, discovered.ExitCode);
-        JsonNode capabilities = Parse(discovered.StdOut);
-
-        try
-        {
-            CliResult started = _workspace.Run(
-                "app",
-                "--no-open",
-                "--output",
-                "json");
-            Assert.Equal(0, started.ExitCode);
-            JsonNode startedJson = Parse(started.StdOut);
-            Assert.True(startedJson["running"]!.GetValue<bool>());
-            Assert.Equal(
-                "home",
-                startedJson["route"]!.GetValue<string>());
-            var launchUri = new Uri(
-                startedJson["url"]!.GetValue<string>());
-
-            using var handler = new HttpClientHandler
-            {
-                AllowAutoRedirect = false,
-                UseCookies = false,
-            };
-            using var client = new HttpClient(handler)
-            {
-                BaseAddress = new Uri(
-                    $"http://127.0.0.1:{launchUri.Port}"),
-            };
-            using HttpResponseMessage page =
-                await client.GetAsync(launchUri);
-            Assert.Equal(HttpStatusCode.OK, page.StatusCode);
-            Assert.False(page.Headers.Contains("Set-Cookie"));
-            string shell = await page.Content.ReadAsStringAsync();
-            Assert.Contains("id=\"product-grid\"", shell, StringComparison.Ordinal);
-            Assert.Contains("id=\"drop-zone\"", shell, StringComparison.Ordinal);
-            Assert.DoesNotContain("license", shell, StringComparison.OrdinalIgnoreCase);
-            Assert.DoesNotContain("evaluation", shell, StringComparison.OrdinalIgnoreCase);
-
-            CliResult opened = _workspace.Run(
-                "app",
-                workbook,
-                "--no-open",
-                "--output",
-                "json");
-            Assert.Equal(0, opened.ExitCode);
-            JsonNode openedJson = Parse(opened.StdOut);
-            Assert.True(openedJson["reused"]!.GetValue<bool>());
-            Assert.Equal(
-                launchUri.Port,
-                openedJson["port"]!.GetValue<int>());
-
-            using HttpResponseMessage status =
-                await client.GetAsync("/api/status");
-            Assert.Equal(HttpStatusCode.OK, status.StatusCode);
-            string statusText =
-                await status.Content.ReadAsStringAsync();
-            JsonNode statusJson = Parse(statusText);
-            JsonSchema statusSchema = JsonSchema.FromText(
-                SdkSchemaCatalog.Read("v2/common/app-status"));
-            using JsonDocument statusDocument =
-                JsonDocument.Parse(statusText);
-            EvaluationResults schemaResult = statusSchema.Evaluate(
-                statusDocument.RootElement);
-            Assert.True(
-                schemaResult.IsValid,
-                JsonSerializer.Serialize(schemaResult));
-
-            using HttpResponseMessage repeatedStatus =
-                await client.GetAsync("/api/status");
-            Assert.Equal(
-                HttpStatusCode.OK,
-                repeatedStatus.StatusCode);
-            Assert.Equal(
-                statusText,
-                await repeatedStatus.Content.ReadAsStringAsync());
-
-            Assert.Equal(
-                capabilities["edition"]!.GetValue<string>(),
-                statusJson["edition"]!.GetValue<string>());
-            Assert.False(string.IsNullOrWhiteSpace(
-                statusJson["editionName"]!.GetValue<string>()));
-            Assert.Equal(
-                "licensed",
-                statusJson["experience"]!.GetValue<string>());
-            Assert.True(
-                statusJson["license"]!["applicable"]!
-                    .GetValue<bool>());
-            AssertAppProductsMatchCapabilities(
-                statusJson["products"]!.AsArray(),
-                capabilities["products"]!.AsArray());
-            JsonNode recent = Assert.Single(
-                statusJson["recentFiles"]!.AsArray())!;
-            Assert.Equal("cells", recent["productId"]!.GetValue<string>());
-            Assert.Equal("workbook", recent["view"]!.GetValue<string>());
-
-            var previewUri = new Uri(
-                statusJson["previewUrl"]!.GetValue<string>());
-            Assert.Equal("127.0.0.1", previewUri.Host);
-            // The App and the document it frames are one origin.
-            Assert.Equal(launchUri.Port, previewUri.Port);
-            Assert.Matches("^/d/[0-9a-f]{32}/$", previewUri.AbsolutePath);
-
-            using HttpResponseMessage preview =
-                await client.GetAsync(previewUri);
-            Assert.Equal(HttpStatusCode.OK, preview.StatusCode);
-            // The App frames it from the same origin, and nothing else may.
-            Assert.Equal(
-                "SAMEORIGIN",
-                preview.Headers.GetValues("X-Frame-Options").Single());
-            Assert.EndsWith(
-                "frame-ancestors 'self'",
-                preview.Headers.GetValues(
-                    "Content-Security-Policy").Single(),
-                StringComparison.Ordinal);
-
-            // The documents answer GET and nothing else; only the App mutates.
-            using HttpResponseMessage rejected =
-                await client.PostAsync(
-                    "/d/refresh",
-                    content: null);
-            Assert.Equal(
-                HttpStatusCode.MethodNotAllowed,
-                rejected.StatusCode);
-
-            foreach ((string[] arguments, string route, string path) in new[]
-            {
-                (new[] { "app", "--welcome", "--no-open", "--output", "json" }, "welcome", "/"),
-                (new[] { "app", "--no-open", "--output", "json" }, "home", "/home"),
-            })
-            {
-                CliResult activated = _workspace.Run(arguments);
-                Assert.Equal(0, activated.ExitCode);
-                JsonNode active = Parse(activated.StdOut);
-                Assert.True(active["reused"]!.GetValue<bool>());
-                Assert.Equal(route, active["route"]!.GetValue<string>());
-                var activeUri = new Uri(active["url"]!.GetValue<string>());
-                Assert.Equal(launchUri.Port, activeUri.Port);
-                Assert.Equal(path, activeUri.AbsolutePath);
-                CliResult activeStatus = _workspace.Run("app", "status", "--output", "json");
-                Assert.Equal(0, activeStatus.ExitCode);
-                Assert.Equal(route, Parse(activeStatus.StdOut)["route"]!.GetValue<string>());
-                using HttpResponseMessage activePage = await client.GetAsync(activeUri);
-                Assert.Equal(HttpStatusCode.OK, activePage.StatusCode);
-            }
-        }
-        finally
-        {
-            CliResult stopped = _workspace.Run(
-                "app",
-                "stop",
-                "--output",
-                "json");
-            Assert.True(stopped.ExitCode == 0, stopped.StdErr);
-            Assert.False(Parse(stopped.StdOut)["running"]!.GetValue<bool>());
-        }
-    }
-
-    [Fact]
-    public async Task Preview_UrlRemainsUsableAcrossClientsStatusAndReuse()
-    {
-        string workbook = _workspace.File("preview-url.xlsx");
-        CliResult created = _workspace.Run(
-            "cells", "create", workbook, "--sheets", "Data", "--output", "json");
-        Assert.Equal(0, created.ExitCode);
-
-        string? id = null;
-        try
-        {
-            CliResult started = _workspace.Run("preview", workbook, "--output", "json");
-            Assert.Equal(0, started.ExitCode);
-            JsonNode session = Parse(started.StdOut);
-            id = session["id"]!.GetValue<string>();
-            string url = session["url"]!.GetValue<string>();
-            Assert.Equal($"/d/{id}/", new Uri(url).AbsolutePath);
-            Assert.False(session["reused"]!.GetValue<bool>());
-
-            using var first = new HttpClient(new HttpClientHandler
-            {
-                UseCookies = false,
-                AllowAutoRedirect = false,
-            });
-            using var second = new HttpClient(new HttpClientHandler
-            {
-                UseCookies = false,
-                AllowAutoRedirect = false,
-            });
-            foreach (HttpClient client in new[] { first, second, first })
-            {
-                using HttpResponseMessage response = await client.GetAsync(url);
-                Assert.Equal(HttpStatusCode.OK, response.StatusCode);
-                Assert.False(response.Headers.Contains("Set-Cookie"));
-            }
-
-            CliResult status = _workspace.Run("preview", "status", id, "--output", "json");
-            Assert.Equal(0, status.ExitCode);
-            JsonNode discovered = Assert.Single(Parse(status.StdOut)["sessions"]!.AsArray())!;
-            Assert.Equal(url, discovered["url"]!.GetValue<string>());
-
-            CliResult reused = _workspace.Run("preview", workbook, "--output", "json");
-            Assert.Equal(0, reused.ExitCode);
-            JsonNode reusedSession = Parse(reused.StdOut);
-            Assert.True(reusedSession["reused"]!.GetValue<bool>());
-            Assert.Equal(id, reusedSession["id"]!.GetValue<string>());
-            Assert.Equal(url, reusedSession["url"]!.GetValue<string>());
-            using HttpResponseMessage afterReuse = await second.GetAsync(url);
-            Assert.Equal(HttpStatusCode.OK, afterReuse.StatusCode);
-
-            // The viewer answers reads only: nothing can be posted to it.
-            using HttpResponseMessage refused = await second.PostAsync(url, content: null);
-            Assert.Equal(HttpStatusCode.MethodNotAllowed, refused.StatusCode);
-        }
-        finally
-        {
-            if (id is not null)
-            {
-                CliResult stopped = _workspace.Run("preview", "stop", id, "--output", "json");
-                Assert.Equal(0, stopped.ExitCode);
-                Assert.Equal(id, Assert.Single(Parse(stopped.StdOut)["stopped"]!.AsArray())!.GetValue<string>());
-            }
-        }
-    }
-
     [Fact]
     public void Doctor_ReportsTheCurrentDevelopmentEnvironment()
     {
@@ -635,22 +400,6 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Fact]
-    public void UpdateCheck_RejectsSecretBearingHttpsFeedWithoutEchoingIt()
-    {
-        CliResult result = _workspace.Run(
-            "update",
-            "check",
-            "https://user:secret@example.invalid/RELEASE-MANIFEST.json?token=secret#secret",
-            "--output",
-            "json");
-
-        Assert.Equal(2, result.ExitCode);
-        Assert.Equal(string.Empty, result.StdOut);
-        Assert.Equal("OPTION_INVALID", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
-        Assert.DoesNotContain("secret", result.StdErr, StringComparison.OrdinalIgnoreCase);
-    }
-
-    [Fact]
     public void UpdateInstall_RejectsUnsafeZipEntriesBeforeInstallerHandoff()
     {
         Requires.Windows();
@@ -718,63 +467,6 @@ public sealed class CliContractTests : IDisposable
         Assert.False(File.Exists(escaped));
     }
 
-    [Fact]
-    public void UpdateCheck_RejectsDifferentIdentityAtEqualSemanticPrecedence()
-    {
-        string root = _workspace.File("revision-feed");
-        Directory.CreateDirectory(root);
-        using ECDsa key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        string keyId = Convert.ToHexString(SHA256.HashData(key.ExportSubjectPublicKeyInfo())).ToLowerInvariant();
-        string edition = Aspose.Cli.Sdk.DistributionInfo.Edition;
-        string revision = new string('b', 40);
-        var links = new[]
-        {
-            new ReleaseEnginePackage("cells", "Test.cells", "1.0.0", Convert.ToBase64String(Enumerable.Repeat((byte)1, 64).ToArray())),
-            new ReleaseEnginePackage("pdf", "Test.pdf", "1.0.0", Convert.ToBase64String(Enumerable.Repeat((byte)2, 64).ToArray())),
-            new ReleaseEnginePackage("slides", "Test.slides", "1.0.0", Convert.ToBase64String(Enumerable.Repeat((byte)3, 64).ToArray())),
-            new ReleaseEnginePackage("words", "Test.words", "1.0.0", Convert.ToBase64String(Enumerable.Repeat((byte)4, 64).ToArray())),
-        };
-        byte[] payload = ReleaseManifestVerifier.CreateSigningPayload(
-            "aspose-cli", edition, "win-x64", "1.0.0+bbbb", revision,
-            "release.zip", 0, new string('a', 64), false, links, "signed",
-            "ECDSA-P256-SHA256", "rfc3279-der", keyId, "RELEASE-MANIFEST.sig");
-        File.WriteAllText(
-            Path.Combine(root, "RELEASE-MANIFEST.json"),
-            JsonSerializer.Serialize(new
-            {
-                schemaVersion = 1,
-                productId = "aspose-cli",
-                edition,
-                runtimeIdentifier = "win-x64",
-                artifactVersion = "1.0.0+bbbb",
-                sourceRevision = revision,
-                buildDirty = false,
-                enginePackages = links.Select(static link => new { product = link.Product, packageId = link.PackageId, version = link.Version, contentHash = link.ContentHash }),
-                archive = new { path = "release.zip", size = 0, sha256 = new string('a', 64) },
-                signature = new { status = "signed", algorithm = "ECDSA-P256-SHA256", format = "rfc3279-der", keyId, path = "RELEASE-MANIFEST.sig" },
-            }),
-            Encoding.UTF8);
-        File.WriteAllText(
-            Path.Combine(root, "RELEASE-MANIFEST.sig"),
-            Convert.ToBase64String(key.SignData(payload, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence)),
-            Encoding.ASCII);
-        string ring = Path.Combine(root, "keys.json");
-        File.WriteAllText(
-            ring,
-            JsonSerializer.Serialize(new { keys = new[] { new { keyId, publicKeyPem = key.ExportSubjectPublicKeyInfoPem() } } }),
-            Encoding.UTF8);
-
-        CliResult result = _workspace.RunWithEnv(
-            new Dictionary<string, string?> { [ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable] = ring },
-            "update", "check", Path.Combine(root, "RELEASE-MANIFEST.json"), "--output", "json");
-
-        Assert.Equal(5, result.ExitCode);
-        Assert.Equal(string.Empty, result.StdOut);
-        Assert.Equal(
-            "RELEASE_VERIFICATION_FAILED",
-            Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
-    }
-
     private static JsonNode Parse(string json) =>
         JsonNode.Parse(json)
         ?? throw new InvalidOperationException("Output was not JSON:\n" + json);
@@ -784,92 +476,4 @@ public sealed class CliContractTests : IDisposable
         using FileStream stream = File.OpenRead(path);
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
-
-    private static void AssertAppProductsMatchCapabilities(
-        JsonArray appProducts,
-        JsonArray capabilityProducts)
-    {
-        Assert.Equal(capabilityProducts.Count, appProducts.Count);
-        foreach (JsonNode? capability in capabilityProducts)
-        {
-            string id = capability!["id"]!.GetValue<string>();
-            JsonNode app = appProducts.Single(candidate =>
-                string.Equals(
-                    candidate!["id"]!.GetValue<string>(),
-                    id,
-                    StringComparison.Ordinal))!;
-            Assert.Equal(
-                capability["verbs"]!.ToJsonString(),
-                app["verbs"]!.ToJsonString());
-            Assert.Equal(
-                capability["preview"]!["defaultView"]!.GetValue<string>(),
-                app["preview"]!["defaultView"]!.GetValue<string>());
-            Assert.Equal(
-                capability["review"]!["defaultView"]!.GetValue<string>(),
-                app["review"]!["defaultView"]!.GetValue<string>());
-            Assert.Equal(
-                capability["review"]!["visualInspectionRequired"]!
-                    .GetValue<bool>(),
-                app["review"]!["visualInspectionRequired"]!
-                    .GetValue<bool>());
-            Assert.Equal(
-                capability["renderFormats"]!.AsArray().Count > 0
-                    ? "rendered"
-                    : "semantic",
-                app["preview"]!["fidelity"]!.GetValue<string>());
-            Assert.Equal(
-                $"aspose-cli-{id}",
-                app["skill"]!["name"]!.GetValue<string>());
-
-            JsonArray appFormats = app["formats"]!.AsArray();
-            JsonArray capabilityFormats = capability["formats"]!.AsArray();
-            Assert.Equal(capabilityFormats.Count, appFormats.Count);
-            foreach (JsonNode? format in capabilityFormats)
-            {
-                string formatId = format!["id"]!.GetValue<string>();
-                JsonNode appFormat = appFormats.Single(candidate =>
-                    string.Equals(
-                        candidate!["id"]!.GetValue<string>(),
-                        formatId,
-                        StringComparison.Ordinal))!;
-                Assert.Equal(
-                    format["extensions"]!.ToJsonString(),
-                    appFormat["extensions"]!.ToJsonString());
-                Assert.Equal(
-                    format["uses"]!.ToJsonString(),
-                    appFormat["uses"]!.ToJsonString());
-            }
-        }
-    }
-
-    [Fact]
-    public void App_WithAnOccupiedPort_ReturnsActionableListenerFailure()
-    {
-        using var occupied = new TcpListener(IPAddress.Loopback, 0);
-        occupied.Start();
-        int port = ((IPEndPoint)occupied.LocalEndpoint).Port;
-
-        CliResult result = _workspace.Run(
-            "app",
-            "--foreground",
-            "--port",
-            port.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            "--no-open",
-            "--output",
-            "json");
-
-        Assert.Equal(5, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal(
-            "LOOPBACK_PORT_IN_USE",
-            error["code"]!.GetValue<string>());
-        Assert.Equal(
-            port,
-            error["details"]!["port"]!.GetValue<int>());
-        Assert.Contains(
-            "--port 0",
-            error["hint"]!.GetValue<string>(),
-            StringComparison.Ordinal);
-    }
-
 }

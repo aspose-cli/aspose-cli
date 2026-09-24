@@ -68,31 +68,6 @@ public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
         });
 
     [Fact]
-    public Task SavedViewWithFailedRefresh_RetainsTheVisiblePreviewAndRetriesTheSameValue() =>
-        BrowserApp.Run("refresh-retry", output, async ui =>
-        {
-            string originalUrl = (await ui.App.Status())["previewUrl"]!.GetValue<string>();
-            await ui.Settings();
-            await ui.Page.Locator("#default-view").SelectOptionAsync("sheets");
-            using (var locked = new FileStream(ui.App.Workspace.File("first.csv"),
-                FileMode.Open, FileAccess.Read, FileShare.None))
-            {
-                JsonNode saved = await ui.Save();
-                Assert.True(saved["ok"]!.GetValue<bool>());
-                Assert.Equal("PREVIEW_REFRESH_FAILED", saved["code"]!.GetValue<string>());
-                Assert.Equal("sheets", (await ui.App.Status())["defaultView"]!.GetValue<string>());
-                Assert.Equal(originalUrl, (await ui.App.Status())["previewUrl"]!.GetValue<string>());
-                await ui.WaitForPreview("first.csv", "workbook");
-                await Assertions.Expect(ui.Page.Locator("#toast")).ToContainTextAsync("Preferences were saved");
-            }
-            JsonNode retry = await ui.Save();
-            Assert.True(retry["ok"]!.GetValue<bool>());
-            Assert.Null(retry["code"]);
-            await ui.WaitForPreview("first.csv", "sheets");
-            Assert.NotEqual(originalUrl, (await ui.App.Status())["previewUrl"]!.GetValue<string>());
-        });
-
-    [Fact]
     public Task StatusCapturedBeforeSaving_CannotUndoTheCommittedPreview() =>
         BrowserApp.Run("stale-status", output, async ui =>
         {

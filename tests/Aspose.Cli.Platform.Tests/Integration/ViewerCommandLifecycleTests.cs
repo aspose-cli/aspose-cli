@@ -15,7 +15,7 @@ public sealed class ViewerCommandLifecycleTests
 {
     [Category(TestCategory.Slow)]
     [Fact]
-    public void Preview_StartsOneServiceAndJoinsItForEveryDocument()
+    public async Task Preview_StartsOneServiceAndJoinsItForEveryDocument()
     {
         using var workspace = new TempWorkspace();
         CreateWorkbook(workspace, "book.xlsx");
@@ -23,47 +23,61 @@ public sealed class ViewerCommandLifecycleTests
         try
         {
             JsonNode first = Start(workspace, "book.xlsx");
-            JsonNode again = Start(workspace, "book.xlsx");
-            JsonNode other = Start(workspace, "report.docx");
-
+            string id = first["id"]!.GetValue<string>();
+            string url = first["url"]!.GetValue<string>();
             Assert.False(first["reused"]!.GetValue<bool>());
-            Assert.True(again["reused"]!.GetValue<bool>());
-            Assert.Equal(first["id"]!.GetValue<string>(), again["id"]!.GetValue<string>());
             Assert.Equal("cells", first["product"]!.GetValue<string>());
+            Assert.Equal($"/d/{id}/", new Uri(url).AbsolutePath);
+
+            // Every client reads the same address; the viewer sets no cookie to tell them apart.
+            using var firstClient = new HttpClient(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false })
+            {
+                Timeout = TimeSpan.FromSeconds(30),
+            };
+            using var secondClient = new HttpClient(new HttpClientHandler { UseCookies = false, AllowAutoRedirect = false })
+            {
+                Timeout = TimeSpan.FromSeconds(30),
+            };
+            foreach (HttpClient client in new[] { firstClient, secondClient, firstClient })
+            {
+                using HttpResponseMessage page = await client.GetAsync(url);
+                Assert.Equal(HttpStatusCode.OK, page.StatusCode);
+                Assert.False(page.Headers.Contains("Set-Cookie"));
+                Assert.Contains("definePresenter('cells'", await page.Content.ReadAsStringAsync(), StringComparison.Ordinal);
+            }
+
+            JsonNode discovered = Assert.Single(
+                workspace.Run("preview", "status", id, "--output", "json").Json()["sessions"]!.AsArray())!;
+            Assert.Equal(url, discovered["url"]!.GetValue<string>());
+
+            JsonNode again = Start(workspace, "book.xlsx");
+            Assert.True(again["reused"]!.GetValue<bool>());
+            Assert.Equal(id, again["id"]!.GetValue<string>());
+            Assert.Equal(url, again["url"]!.GetValue<string>());
+            using (HttpResponseMessage afterReuse = await secondClient.GetAsync(url))
+            {
+                Assert.Equal(HttpStatusCode.OK, afterReuse.StatusCode);
+            }
+            // The viewer answers reads only: nothing can be posted to it.
+            using (HttpResponseMessage refused = await secondClient.PostAsync(url, content: null))
+            {
+                Assert.Equal(HttpStatusCode.MethodNotAllowed, refused.StatusCode);
+            }
+
+            JsonNode other = Start(workspace, "report.docx");
             Assert.Equal("words", other["product"]!.GetValue<string>());
             // One service, one process: only the document changes.
             Assert.Equal(first["pid"]!.GetValue<int>(), other["pid"]!.GetValue<int>());
-            Assert.NotEqual(first["url"]!.GetValue<string>(), other["url"]!.GetValue<string>());
-
+            Assert.NotEqual(url, other["url"]!.GetValue<string>());
             JsonNode status = workspace.Run("preview", "status", "--output", "json").Json();
             Assert.Equal(2, status["sessions"]!.AsArray().Count);
-        }
-        finally
-        {
-            workspace.Run("preview", "stop", "--all", "--output", "json");
-        }
-    }
 
-    [Fact]
-    public async Task Preview_ServesTheDocumentPageAndStopEndsTheService()
-    {
-        using var workspace = new TempWorkspace();
-        CreateWorkbook(workspace, "book.xlsx");
-        try
-        {
-            JsonNode started = Start(workspace, "book.xlsx");
-            using var client = new HttpClient { Timeout = TimeSpan.FromSeconds(30) };
-            HttpResponseMessage page = await client.GetAsync(started["url"]!.GetValue<string>());
-            string html = await page.Content.ReadAsStringAsync();
-
-            Assert.Equal(HttpStatusCode.OK, page.StatusCode);
-            Assert.Contains("definePresenter('cells'", html, StringComparison.Ordinal);
-
-            JsonNode stopped = workspace.Run("preview", "stop", "--all", "--output", "json").Json();
-            Assert.Single(stopped["stopped"]!.AsArray());
-            Assert.Empty(stopped["sessions"]!.AsArray());
-            JsonNode status = workspace.Run("preview", "status", "--output", "json").Json();
-            Assert.Empty(status["sessions"]!.AsArray());
+            JsonNode stoppedOne = workspace.Run("preview", "stop", id, "--output", "json").Json();
+            Assert.Equal(id, Assert.Single(stoppedOne["stopped"]!.AsArray())!.GetValue<string>());
+            JsonNode stoppedAll = workspace.Run("preview", "stop", "--all", "--output", "json").Json();
+            Assert.Single(stoppedAll["stopped"]!.AsArray());
+            Assert.Empty(stoppedAll["sessions"]!.AsArray());
+            Assert.Empty(workspace.Run("preview", "status", "--output", "json").Json()["sessions"]!.AsArray());
         }
         finally
         {

@@ -27,22 +27,19 @@ public sealed class InvocationWorkDirectoryTests
         Assert.Equal("LICENSE_FILE_NOT_FOUND", error["code"]!.GetValue<string>());
         Assert.Equal(Path.Combine(nested, "missing.lic"), error["details"]!["path"]!.GetValue<string>());
     }
-}
 
-public sealed partial class McpProtocolTests
-{
     [Fact]
-    public async Task Execute_RelativeOverrideUsesInheritedWorkDirectoryOnce()
+    public async Task McpExecute_RelativeOverrideUsesInheritedWorkDirectoryOnce()
     {
         using var temp = new TempDirectory();
         string work = temp.File("work");
         string selected = Path.Combine(work, "child");
         Directory.CreateDirectory(selected);
         File.WriteAllText(Path.Combine(selected, "input.csv"), "Name,Value\nA,42\n");
-        await using var server = await Server.Start(temp.Path, work);
+        await using var server = await McpTestServer.Start(temp.Path, work);
         JsonNode reply = await server.Execute(["cells", "convert", "input.csv", "--to", "xlsx", "--out", "result.xlsx",
             "--workdir", "child", "--output", "json"]);
-        AssertSuccess(reply);
+        McpTestServer.AssertSuccess(reply);
         Assert.True(File.Exists(Path.Combine(selected, "result.xlsx")));
         Assert.False(Directory.Exists(Path.Combine(selected, "child")));
     }

@@ -34,6 +34,9 @@ internal sealed class DocumentationCommandValidator
         return new DocumentationCommandValidator(JsonNode.Parse(capabilities.StdOut)!, topics.StdOut);
     }
 
+    /// <summary>Whether <c>docs</c> lists the topic.</summary>
+    public bool HasTopic(string topic) => _topics.Contains(topic);
+
     public void AssertMarkdown(string source, string content)
     {
         foreach (string command in CommandsInMarkdown(content))

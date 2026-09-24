@@ -26,12 +26,11 @@ public sealed class ViewerStateBrowserTests(ITestOutputHelper output)
         });
 
     [Theory]
-    [InlineData("deck", false)]
     [InlineData("deck", true)]
-    [InlineData("tabs", false)]
     [InlineData("tabs", true)]
-    [InlineData("pages", false)]
     [InlineData("pages", true)]
+    // Following decides only whether a change navigates, the same way in every layout.
+    [InlineData("pages", false)]
     public Task RevisionsKeepSelectionConsistentThroughReorderDeletionAndEmpty(string layout, bool follow) =>
         InBrowser("selection-" + layout + "-" + follow, layout, ["A", "B", "C", "D"], "licensed", async page =>
         {

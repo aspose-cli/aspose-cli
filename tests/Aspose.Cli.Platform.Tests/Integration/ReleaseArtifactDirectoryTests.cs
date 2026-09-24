@@ -9,18 +9,16 @@ namespace Aspose.Cli.IntegrationTests;
 public sealed class ReleaseArtifactDirectoryTests
 {
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void FreshNestedParent_CreatesAnOwnedEmptyOutput(bool legacy, bool trailingSeparator)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void FreshNestedParent_CreatesAnOwnedEmptyOutput(bool trailingSeparator)
     {
         Requires.Windows();
         using var directory = new TempDirectory();
         string allowed = directory.File("workspace/artifacts/publish/free");
         string target = Path.Combine(allowed, "portable");
 
-        Initialize(legacy, directory,
+        Initialize(directory,
             trailingSeparator ? target + Path.DirectorySeparatorChar : target, allowed).Succeeded();
 
         Assert.True(Directory.Exists(target));
@@ -33,18 +31,16 @@ public sealed class ReleaseArtifactDirectoryTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void OwnedReinitialization_DeletesOnlyTheOwnedContents(bool legacy, bool trailingSeparator)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OwnedReinitialization_DeletesOnlyTheOwnedContents(bool trailingSeparator)
     {
         Requires.Windows();
         using var directory = new TempDirectory();
         string allowed = directory.File("publish");
         string target = Path.Combine(allowed, "portable");
         Directory.CreateDirectory(allowed);
-        Initialize(legacy, directory, target, allowed).Succeeded();
+        Initialize(directory, target, allowed).Succeeded();
         string nested = Path.Combine(target, "nested");
         Directory.CreateDirectory(nested);
         File.WriteAllText(Path.Combine(nested, "old.dll"), "generated output");
@@ -52,7 +48,7 @@ public sealed class ReleaseArtifactDirectoryTests
         File.WriteAllText(sibling, "preserve sibling");
         byte[] marker = File.ReadAllBytes(Marker(target));
 
-        Initialize(legacy, directory,
+        Initialize(directory,
             trailingSeparator ? target + Path.DirectorySeparatorChar : target, allowed).Succeeded();
 
         Assert.Empty(Directory.EnumerateFileSystemEntries(target));
@@ -60,10 +56,8 @@ public sealed class ReleaseArtifactDirectoryTests
         Assert.Equal(marker, File.ReadAllBytes(Marker(target)));
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void UnownedExistingOutput_IsPreservedWithoutClaimingOwnership(bool legacy)
+    [Fact]
+    public void UnownedExistingOutput_IsPreservedWithoutClaimingOwnership()
     {
         Requires.Windows();
         using var directory = new TempDirectory();
@@ -73,7 +67,7 @@ public sealed class ReleaseArtifactDirectoryTests
         string sentinel = Path.Combine(target, "user.txt");
         File.WriteAllText(sentinel, "preserve user output");
 
-        CliResult result = Initialize(legacy, directory, target, allowed);
+        CliResult result = Initialize(directory, target, allowed);
 
         AssertRefused(result, "exists without its ownership marker");
         Assert.Equal("preserve user output", File.ReadAllText(sentinel));
@@ -81,15 +75,11 @@ public sealed class ReleaseArtifactDirectoryTests
     }
 
     [Theory]
-    [InlineData(false, "root")]
-    [InlineData(true, "root")]
-    [InlineData(false, "root-trailing")]
-    [InlineData(true, "root-trailing")]
-    [InlineData(false, "sibling-prefix")]
-    [InlineData(true, "sibling-prefix")]
-    [InlineData(false, "parent-traversal")]
-    [InlineData(true, "parent-traversal")]
-    public void BoundaryEscape_IsRefusedBeforeWriting(bool legacy, string kind)
+    [InlineData("root")]
+    [InlineData("root-trailing")]
+    [InlineData("sibling-prefix")]
+    [InlineData("parent-traversal")]
+    public void BoundaryEscape_IsRefusedBeforeWriting(string kind)
     {
         Requires.Windows();
         using var directory = new TempDirectory();
@@ -105,7 +95,7 @@ public sealed class ReleaseArtifactDirectoryTests
             _ => Path.Combine(allowed, "..", "outside", "portable"),
         };
 
-        CliResult result = Initialize(legacy, directory, target, allowed);
+        CliResult result = Initialize(directory, target, allowed);
 
         AssertRefused(result, "escaped its allowed root");
         Assert.Equal("preserve allowed root", File.ReadAllText(sentinel));
@@ -115,11 +105,9 @@ public sealed class ReleaseArtifactDirectoryTests
     }
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    [InlineData(true, true)]
-    public void AncestorJunction_IsRefusedBeforeCreatingOrDeletingOutput(bool legacy, bool ownedOutput)
+    [InlineData(false)]
+    [InlineData(true)]
+    public void AncestorJunction_IsRefusedBeforeCreatingOrDeletingOutput(bool ownedOutput)
     {
         Requires.Windows();
         using var directory = new TempDirectory();
@@ -142,7 +130,7 @@ public sealed class ReleaseArtifactDirectoryTests
         {
             Assert.True((File.GetAttributes(junction) & FileAttributes.ReparsePoint) != 0);
 
-            CliResult result = Initialize(legacy, directory, target, allowed);
+            CliResult result = Initialize(directory, target, allowed);
 
             AssertRefused(result, "reparse point");
             Assert.Equal("preserve external tree", File.ReadAllText(unrelated));
@@ -159,19 +147,60 @@ public sealed class ReleaseArtifactDirectoryTests
         finally { Directory.Delete(junction); }
     }
 
-    private static CliResult Initialize(bool legacy, TempDirectory directory, string target, string allowed) =>
-        Run(legacy, directory,
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Publish_RefusesToDeleteAnUnownedOutputTree()
+    {
+        Requires.Windows();
+        string parent = Path.Combine(
+            RepositoryPaths.Root,
+            "artifacts",
+            "publish",
+            "unowned-" + Guid.NewGuid().ToString("N"));
+        string output = Path.Combine(parent, "win-x64");
+        string sentinel = Path.Combine(output, "customer-owned.txt");
+        Directory.CreateDirectory(output);
+        File.WriteAllText(sentinel, "must survive", Encoding.UTF8);
+        string[] before = Directory.GetFileSystemEntries(parent, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal).ToArray();
+
+        try
+        {
+            using var workspace = new TempWorkspace();
+            CliResult result = new CliProcess(
+                ToolPath.Require("pwsh"),
+                CliEnvironment.Evaluation(workspace.Path),
+                TimeSpan.FromSeconds(120)).Run(
+                workspace.Path,
+                "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
+                "-File", Path.Combine(RepositoryPaths.Root, "scripts", "publish.ps1"),
+                "-Configuration", "Release",
+                "-RuntimeIdentifier", "win-x64",
+                "-OutputRoot", output);
+
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains("exists without its ownership marker", result.StdErr, StringComparison.Ordinal);
+            Assert.DoesNotContain("NamedParameterNotFound", result.StdErr, StringComparison.Ordinal);
+            Assert.False(File.Exists(output + ".aspose-owner.json"));
+            Assert.Equal(before, Directory.GetFileSystemEntries(parent, "*", SearchOption.AllDirectories).Order(StringComparer.Ordinal));
+            Assert.True(File.Exists(sentinel), result.StdOut + result.StdErr);
+            Assert.Equal("must survive", File.ReadAllText(sentinel));
+        }
+        finally
+        {
+            if (Directory.Exists(parent)) { Directory.Delete(parent, recursive: true); }
+        }
+    }
+
+    private static CliResult Initialize(TempDirectory directory, string target, string allowed) =>
+        Run(directory,
             $"Initialize-OwnedArtifactDirectory -Path {Literal(target)} -AllowedRoot {Literal(allowed)} -Kind publish");
 
-    private static CliResult Run(bool legacy, TempDirectory directory, string command)
+    private static CliResult Run(TempDirectory directory, string command)
     {
-        string shell = legacy
-            ? Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe")
-            : ToolPath.Require("pwsh");
         string helper = Path.Combine(RepositoryPaths.Root, "scripts", "release-common.ps1");
         string script = "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); $ErrorActionPreference = 'Stop'; "
             + $"try {{ . {Literal(helper)}; {command} }} catch {{ [Console]::Error.WriteLine($_.Exception.Message); exit 17 }}";
-        return new CliProcess(shell, CliEnvironment.Evaluation(directory.File("config")), TimeSpan.FromSeconds(30))
+        return new CliProcess(ToolPath.Require("pwsh"), CliEnvironment.Evaluation(directory.File("config")), TimeSpan.FromSeconds(30))
             .Run(directory.Path, "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                 "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(script)));
     }

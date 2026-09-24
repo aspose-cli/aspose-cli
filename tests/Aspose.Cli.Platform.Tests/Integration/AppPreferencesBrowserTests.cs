@@ -108,16 +108,21 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
         });
 
     [Fact]
-    public Task SavedButUnrefreshedFeedback_SurvivesPollingAndAllowsAnUnchangedRetry() =>
+    public Task SavedButUnrefreshedView_KeepsThePreviewAndFeedbackAndRetriesTheSameValue() =>
         BrowserApp.Run("preference-refresh-feedback", output, async ui =>
         {
+            string originalUrl = (await ui.App.Status())["previewUrl"]!.GetValue<string>();
             await ui.Settings();
             await ui.Page.Locator("#default-view").SelectOptionAsync("sheets");
             using (var held = new FileStream(ui.App.Workspace.File("first.csv"),
                 FileMode.Open, FileAccess.Read, FileShare.None))
             {
                 JsonNode saved = await ui.Save();
+                Assert.True(saved["ok"]!.GetValue<bool>());
                 Assert.Equal("PREVIEW_REFRESH_FAILED", saved["code"]!.GetValue<string>());
+                Assert.Equal("sheets", (await ui.App.Status())["defaultView"]!.GetValue<string>());
+                Assert.Equal(originalUrl, (await ui.App.Status())["previewUrl"]!.GetValue<string>());
+                await Assertions.Expect(ui.Page.Locator("#toast")).ToContainTextAsync("Preferences were saved");
                 await ui.Poll();
                 await ExpectDraft(ui, "sheets", true);
                 await Assertions.Expect(ui.Page.Locator("#preferences-feedback")).ToContainTextAsync("Preferences were saved");
@@ -128,6 +133,7 @@ public sealed class AppPreferencesBrowserTests(ITestOutputHelper output)
             Assert.True(retry["ok"]!.GetValue<bool>());
             Assert.Null(retry["code"]);
             await ui.WaitForPreview("first.csv", "sheets");
+            Assert.NotEqual(originalUrl, (await ui.App.Status())["previewUrl"]!.GetValue<string>());
             await Assertions.Expect(ui.Page.Locator("#preferences-feedback")).ToHaveTextAsync("Preferences saved.");
         });
 

@@ -1,10 +1,12 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
 using Xunit;
+using static Aspose.Cli.Platform.Tests.Integration.McpTestServer;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
 
-public sealed partial class McpProtocolTests
+/// <summary>Operation secrets and their budgets behave alike directly, under a timeout and through MCP.</summary>
+public sealed class McpSecretExecutionTests
 {
     [Fact]
     public async Task Timeout_InterruptsUnfinishedOpsStdinWithoutPublishingOutput()
@@ -57,7 +59,7 @@ public sealed partial class McpProtocolTests
         string[] args = ["cells", "edit", "input.xlsx", "--ops", ops, "--out", "never.xlsx", "--output=json"];
         if (supervised) { args = ["--timeout=10", .. args]; }
         CliResult direct = workspace.RunWithEnv(variables, args);
-        await using var server = await Server.Start(workspace.Path, workspace.Path, variables);
+        await using var server = await McpTestServer.Start(workspace.Path, workspace.Path, variables);
         JsonNode remote = (await server.Execute(args))["result"]!["structuredContent"]!;
         Assert.Equal(direct.ExitCode, remote["exitCode"]!.GetValue<int>());
         JsonNode expected = JsonNode.Parse(direct.StdErr)!["error"]!;
@@ -76,12 +78,9 @@ public sealed partial class McpProtocolTests
     [InlineData("cells", "xlsx", "file")]
     [InlineData("cells", "xlsx", "inline")]
     [InlineData("cells", "xlsx", "stdin")]
-    [InlineData("pdf", "pdf", "file")]
+    // Every product reads --ops through the same SDK source; each product resolves its own secrets.
     [InlineData("pdf", "pdf", "inline")]
-    [InlineData("pdf", "pdf", "stdin")]
-    [InlineData("words", "docx", "file")]
     [InlineData("words", "docx", "inline")]
-    [InlineData("words", "docx", "stdin")]
     public async Task OperationSecrets_AreIdenticalForDirectTimeoutAndMcpExecution(
         string product, string extension, string source)
     {
@@ -112,7 +111,7 @@ public sealed partial class McpProtocolTests
         };
         var cli = new CliProcess(CliRunner.ExecutablePath,
             CliEnvironment.Evaluation(workspace.ConfigDirectory, variables), TimeSpan.FromSeconds(30));
-        await using var server = await Server.Start(workspace.Path, workspace.Path, variables);
+        await using var server = await McpTestServer.Start(workspace.Path, workspace.Path, variables);
         for (int mode = 0; mode < 4; mode++)
         {
             string output = $"result-{mode}.{extension}";
@@ -164,7 +163,7 @@ public sealed partial class McpProtocolTests
         Assert.Equal(0, workspace.Run("cells", "create", "input.xlsx", "--sheets", "Data").ExitCode);
         string name = "MISSING_" + Guid.NewGuid().ToString("N");
         string ops = $$"""{"ops":[{"op":"protect_sheet","sheet":"Data","passwordEnv":"{{name}}"},{"op":"set_values","sheet":"Data","range":"A1","values":[[42]]}]}""";
-        await using var server = await Server.Start(workspace.Path, workspace.Path);
+        await using var server = await McpTestServer.Start(workspace.Path, workspace.Path);
         string[] args = ["cells", "edit", "input.xlsx", "--ops", ops, "--out", "partial.xlsx",
             "--best-effort", "--dry-run", "--output=json"];
         if (supervised) { args = ["--timeout=10", .. args]; }

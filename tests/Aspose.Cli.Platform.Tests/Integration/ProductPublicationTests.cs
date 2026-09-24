@@ -94,17 +94,15 @@ public sealed class ProductPublicationTests
         Assert.True(signature["valid"]!.GetValue<bool>());
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void SkillInstallPublishesItsTreeInBothExecutionModes(bool supervised)
+    // SkillInstallTests cover the install of every Skill without a timeout.
+    [Fact]
+    public void SkillInstallPublishesItsTreeUnderATimeout()
     {
         using var workspace = new TempWorkspace();
         string target = workspace.File("skills");
 
         CliResult installed = workspace.Run(["skill", "install", "aspose-cli-pdf",
-            "--target", target, "--output", "json",
-            .. (supervised ? new[] { "--timeout", "60" } : Array.Empty<string>())]);
+            "--target", target, "--output", "json", "--timeout", "60"]);
 
         installed.Succeeded();
         string tree = Path.Combine(target, "aspose-cli-pdf");

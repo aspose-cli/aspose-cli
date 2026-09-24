@@ -13,24 +13,6 @@ public sealed class SkillInstallTests : IDisposable
     public void Dispose() => _workspace.Dispose();
 
     [Fact]
-    public void SkillListAndInstall_WorkForEveryCompiledProduct()
-    {
-        CliResult listed = _workspace.Run("skill", "list", "--output", "json");
-
-        Assert.Equal(0, listed.ExitCode);
-        JsonArray skills = Parse(listed.StdOut)["skills"]!.AsArray();
-        Assert.NotEmpty(skills);
-        foreach (string name in skills.Select(static item => item!["name"]!.GetValue<string>()))
-        {
-            string target = "installed-" + name;
-            CliResult installed = _workspace.Run(
-                "skill", "install", name, "--target", target, "--output", "json");
-            Assert.True(installed.ExitCode == 0, installed.StdErr);
-            Assert.True(File.Exists(_workspace.File(Path.Combine(target, name, "SKILL.md"))));
-        }
-    }
-
-    [Fact]
     public void SkillInstallationSupportsLongLocalPathsThroughTheRealExecutable()
     {
         string skill = FirstSkill();
@@ -56,6 +38,7 @@ public sealed class SkillInstallTests : IDisposable
             .AsArray()
             .Select(static skill => skill!["name"]!.GetValue<string>())
             .ToArray();
+        Assert.NotEmpty(skills);
 
         foreach (string skill in skills)
         {
@@ -66,6 +49,12 @@ public sealed class SkillInstallTests : IDisposable
             Assert.True(installed.ExitCode == 0, installed.StdErr);
 
             string root = _workspace.File(Path.Combine(target, skill));
+            string skillFile = Path.Combine(root, "SKILL.md");
+            Assert.True(File.Exists(skillFile));
+            Assert.True(File.Exists(Path.Combine(root, ".aspose-skill-manifest.json")));
+            Assert.Equal(
+                Parse(installed.StdOut)["files"]!.GetValue<int>(),
+                Directory.GetFiles(root, "*", SearchOption.AllDirectories).Length);
             string[] markdownFiles = Directory.GetFiles(
                 root,
                 "*.md",
@@ -77,6 +66,9 @@ public sealed class SkillInstallTests : IDisposable
                 markdownFiles,
                 path => IsUnder(path, Path.Combine(root, "examples")));
 
+            // docs reads the resources the install extracted, so a document is its docs
+            // topic exactly when docs lists the topic and no other document claims it.
+            var topics = new Dictionary<string, string>(StringComparer.Ordinal);
             foreach (string markdown in markdownFiles)
             {
                 string content = File.ReadAllText(markdown);
@@ -89,12 +81,18 @@ public sealed class SkillInstallTests : IDisposable
                     continue;
                 }
 
-                CliResult docs = _workspace.Run("docs", topic);
-                Assert.True(docs.ExitCode == 0, docs.StdErr);
-                Assert.Equal(
-                    NormalizeNewLines(content).TrimEnd(),
-                    NormalizeNewLines(docs.StdOut).TrimEnd());
+                Assert.True(commands.HasTopic(topic), $"docs does not list '{topic}' for {markdown}");
+                Assert.True(
+                    topics.TryAdd(topic, markdown),
+                    $"{markdown} and {topics[topic]} share the docs topic '{topic}'");
             }
+
+            // docs prints the document itself, without an envelope or other changes.
+            CliResult docs = _workspace.Run("docs", DocsTopic(skill, root, skillFile)!);
+            Assert.True(docs.ExitCode == 0, docs.StdErr);
+            Assert.Equal(
+                NormalizeNewLines(File.ReadAllText(skillFile)).TrimEnd(),
+                NormalizeNewLines(docs.StdOut).TrimEnd());
         }
     }
 
@@ -126,7 +124,7 @@ public sealed class SkillInstallTests : IDisposable
     }
 
     [Fact]
-    public void Install_WritesOwnershipAndRefusesUnsupportedOldManifests()
+    public void Install_WritesOwnershipAndRefusesAnUnrecognizedManifestWithoutOverwritingIt()
     {
         string skill = FirstSkill();
         string parent = "managed-skill";
@@ -136,10 +134,10 @@ public sealed class SkillInstallTests : IDisposable
 
         string root = _workspace.File(Path.Combine(parent, skill));
         string manifestPath = Path.Combine(root, ".aspose-skill-manifest.json");
-        JsonObject version2 = Parse(File.ReadAllText(manifestPath)).AsObject();
-        Assert.Equal(2, version2["schemaVersion"]!.GetValue<int>());
-        Assert.Equal("aspose-cli-skill", version2["productId"]!.GetValue<string>());
-        JsonArray files = version2["files"]!.AsArray();
+        JsonObject manifest = Parse(File.ReadAllText(manifestPath)).AsObject();
+        Assert.Equal(2, manifest["schemaVersion"]!.GetValue<int>());
+        Assert.Equal("aspose-cli-skill", manifest["productId"]!.GetValue<string>());
+        JsonArray files = manifest["files"]!.AsArray();
         Assert.NotEmpty(files);
         Assert.All(files, item =>
         {
@@ -147,22 +145,22 @@ public sealed class SkillInstallTests : IDisposable
             Assert.Equal(64, item["sha256"]!.GetValue<string>().Length);
         });
 
-        var version1 = new JsonObject
+        // A manifest of another schema does not prove that this CLI owns the tree.
+        var unrecognized = new JsonObject
         {
             ["schemaVersion"] = 1,
             ["skill"] = skill,
-            ["cliVersion"] = version2["cliVersion"]!.GetValue<string>(),
-            ["executable"] = version2["executable"]!.GetValue<string>(),
-            ["executableSha256"] = version2["executableSha256"]!.GetValue<string>(),
-            ["contentSha256"] = version2["contentSha256"]!.GetValue<string>(),
+            ["cliVersion"] = manifest["cliVersion"]!.GetValue<string>(),
+            ["executable"] = manifest["executable"]!.GetValue<string>(),
+            ["executableSha256"] = manifest["executableSha256"]!.GetValue<string>(),
+            ["contentSha256"] = manifest["contentSha256"]!.GetValue<string>(),
         };
-        File.WriteAllText(manifestPath, version1.ToJsonString());
+        File.WriteAllText(manifestPath, unrecognized.ToJsonString());
 
-        CliResult migrated = _workspace.Run(
+        CliResult refused = _workspace.Run(
             "skill", "install", skill, "--target", parent, "--output", "json");
-        Assert.NotEqual(0, migrated.ExitCode);
-        Assert.Equal(1, Parse(File.ReadAllText(manifestPath))["schemaVersion"]!.GetValue<int>());
-        Assert.Equal(version1.ToJsonString(), File.ReadAllText(manifestPath));
+        Assert.NotEqual(0, refused.ExitCode);
+        Assert.Equal(unrecognized.ToJsonString(), File.ReadAllText(manifestPath));
     }
 
     [Theory]
@@ -242,12 +240,9 @@ public sealed class SkillInstallTests : IDisposable
             "skill", "install", "--target", "installed", "--output", "json");
 
         Assert.Equal(2, result.ExitCode);
-        JsonNode error = Parse(result.StdErr)["error"]!;
-        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
-        string problem = Assert.Single(
-            error["details"]!["errors"]!.AsArray())!.GetValue<string>();
-        Assert.Contains("Required argument missing", problem, StringComparison.Ordinal);
-        Assert.Contains("'install'", problem, StringComparison.Ordinal);
+        Assert.Equal(string.Empty, result.StdOut);
+        Assert.Equal("USAGE_ERROR", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
+        Assert.False(Directory.Exists(_workspace.File("installed")));
     }
 
     private string FirstSkill()

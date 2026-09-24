@@ -6,13 +6,12 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 
 public sealed class StartupLicenseNoticeTests
 {
-    [Theory]
-    [InlineData("table")]
-    [InlineData("markdown")]
-    public void RootHelp_HumanOutputReportsEveryNativeEngineOnStderr(string output)
+    [Fact]
+    public void RootHelp_HumanOutputReportsEveryNativeEngineOnStderr()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("--help", "--output", output);
+        // The notice does not depend on which human format is chosen; the other tests use table.
+        CliResult result = workspace.Run("--help", "--output", "markdown");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Contains("Usage:", result.StdOut);
@@ -62,13 +61,11 @@ public sealed class StartupLicenseNoticeTests
         Assert.Contains("Usage:", result.StdOut);
     }
 
-    [Theory]
-    [InlineData("table")]
-    [InlineData("markdown")]
-    public void Quiet_SuppressesTheStartupNotice(string output)
+    [Fact]
+    public void Quiet_SuppressesTheStartupNotice()
     {
         using var workspace = new TempWorkspace();
-        CliResult result = workspace.Run("--help", "--output", output, "--quiet");
+        CliResult result = workspace.Run("--help", "--output", "table", "--quiet");
 
         Assert.Equal(0, result.ExitCode);
         Assert.Empty(result.StdErr);

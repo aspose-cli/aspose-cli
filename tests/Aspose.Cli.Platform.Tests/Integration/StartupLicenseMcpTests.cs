@@ -1,10 +1,11 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.TestKit;
 using Xunit;
+using static Aspose.Cli.Platform.Tests.Integration.McpTestServer;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
 
-public sealed partial class McpProtocolTests
+public sealed class StartupLicenseMcpTests
 {
     [Fact]
     public async Task StartupLicenseNotice_IsAbsentFromMcpAndItsHumanFormatChildren()
@@ -13,7 +14,7 @@ public sealed partial class McpProtocolTests
         string work = temp.File("work");
         Directory.CreateDirectory(work);
         File.WriteAllText(Path.Combine(work, "source.md"), "# Client project\n\nConfirmed delivery scope.\n");
-        Server server = await Server.Start(temp.Path, work, options: ["--output", "table"]);
+        McpTestServer server = await McpTestServer.Start(temp.Path, work, options: ["--output", "table"]);
         try
         {
             JsonNode schema = await server.Execute(["schema", "v2/common/license-status", "--output", "table"]);

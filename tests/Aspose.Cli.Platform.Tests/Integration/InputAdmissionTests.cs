@@ -18,7 +18,7 @@ public sealed class InputAdmissionTests
     [Category(TestCategory.Slow)]
     [Theory]
     [MemberData(nameof(CreateCases))]
-    public void Create_ExcludesExistingOutputsRegardlessOfPathOrOptionOrder(
+    public void Create_ExcludesExistingOutputsRegardlessOfOptionOrder(
         string product, string extension, string[] sourceOptions)
     {
         using var workspace = new TempWorkspace();
@@ -27,38 +27,32 @@ public sealed class InputAdmissionTests
         File.WriteAllText(Path.Combine(work, "source.md"), "# Audit");
         string name = "output." + extension;
         string output = Path.Combine(work, name);
+        byte[] original = new byte[4096];
+        File.WriteAllBytes(output, original);
+        // Admission charges declared inputs only; the host tests cover absolute and relative input paths.
+        string[] command =
+        [
+            "--workdir", work, "--max-input-bytes=64",
+            product, "create", .. sourceOptions, name, "--output", "json",
+        ];
 
-        foreach (bool absolute in new[] { false, true })
-        {
-            byte[] original = new byte[4096];
-            File.WriteAllBytes(output, original);
-            string argument = absolute ? output : name;
-            string[] command =
-            [
-                "--workdir", work, "--max-input-bytes=64",
-                product, "create", .. sourceOptions, argument, "--output", "json",
-            ];
+        CliResult refused = workspace.Run(command);
+        Assert.Equal(5, refused.ExitCode);
+        Assert.Equal("OUTPUT_EXISTS", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(original, File.ReadAllBytes(output));
 
-            CliResult refused = workspace.Run(command);
-            Assert.Equal(5, refused.ExitCode);
-            Assert.Equal("OUTPUT_EXISTS", JsonNode.Parse(refused.StdErr)!["error"]!["code"]!.GetValue<string>());
-            Assert.Equal(original, File.ReadAllBytes(output));
+        CliResult created = workspace.Run([.. command, "--overwrite"]);
+        Assert.True(created.ExitCode == 0, created.StdErr);
+        Assert.True(new FileInfo(output).Length > 64);
 
-            CliResult created = workspace.Run([.. command, "--overwrite"]);
-            Assert.True(created.ExitCode == 0, created.StdErr);
-            Assert.True(new FileInfo(output).Length > 64);
-            CliResult inspected = workspace.Run(product, "inspect", output, "--output", "json");
-            Assert.True(inspected.ExitCode == 0, inspected.StdErr);
-
-            CliResult tooLarge = workspace.Run(
-                "--workdir", work, product, "inspect", argument,
-                "--max-input-bytes", "64", "--output", "json");
-            Assert.Equal(3, tooLarge.ExitCode);
-            Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(tooLarge.StdErr)!["error"]!["code"]!.GetValue<string>());
-            Assert.Equal(
-                "pre-runtime-metadata",
-                JsonNode.Parse(tooLarge.StdErr)!["error"]!["details"]!["phase"]!.GetValue<string>());
-        }
+        CliResult tooLarge = workspace.Run(
+            "--workdir", work, product, "inspect", name,
+            "--max-input-bytes", "64", "--output", "json");
+        Assert.Equal(3, tooLarge.ExitCode);
+        Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(tooLarge.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(
+            "pre-runtime-metadata",
+            JsonNode.Parse(tooLarge.StdErr)!["error"]!["details"]!["phase"]!.GetValue<string>());
     }
 
     [Theory]
@@ -83,22 +77,18 @@ public sealed class InputAdmissionTests
         }
     }
 
-    [Theory]
-    [InlineData("--out", false)]
-    [InlineData("--out", true)]
-    [InlineData("-o", false)]
-    [InlineData("-o", true)]
-    public void Convert_ExcludesOutputOptionAliasesAndEqualsSyntax(string option, bool equals)
+    [Fact]
+    public void Convert_ExcludesTheOutputOptionFromAdmission()
     {
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("source.csv"), "Value\n1\n");
         byte[] original = new byte[4096];
         string output = workspace.File("result.xlsx");
         File.WriteAllBytes(output, original);
-        string[] outputOption = equals ? [option + "=result.xlsx"] : [option, "result.xlsx"];
 
+        // The host tests cover every alias and the '=' spelling of an output option.
         CliResult result = workspace.Run(
-            ["cells", "convert", "source.csv", "--to", "xlsx", .. outputOption,
+            ["cells", "convert", "source.csv", "--to", "xlsx", "-o=result.xlsx",
              "--overwrite", "--max-input-bytes", "64", "--output", "json"]);
 
         Assert.True(result.ExitCode == 0, result.StdErr);
