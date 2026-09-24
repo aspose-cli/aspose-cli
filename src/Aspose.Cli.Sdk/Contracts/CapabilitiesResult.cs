@@ -167,7 +167,6 @@ public sealed record ProductEngineCapabilities
     public required bool LicenseApplicable { get; init; }
     public required bool LicenseRequired { get; init; }
     public required bool SupportsFontDiagnostics { get; init; }
-    public bool SupportsExplicitFontProfiles { get; init; }
 
     /// <summary>Creates the invariant descriptor used by a license-aware engine.</summary>
     public static ProductEngineCapabilities LicenseAware(
@@ -175,8 +174,7 @@ public sealed record ProductEngineCapabilities
         string sdk,
         string sdkVersion,
         bool licenseRequired = false,
-        bool supportsFontDiagnostics = true,
-        bool supportsExplicitFontProfiles = false) => new()
+        bool supportsFontDiagnostics = true) => new()
         {
             Id = id,
             Sdk = sdk,
@@ -184,7 +182,6 @@ public sealed record ProductEngineCapabilities
             LicenseApplicable = true,
             LicenseRequired = licenseRequired,
             SupportsFontDiagnostics = supportsFontDiagnostics,
-            SupportsExplicitFontProfiles = supportsExplicitFontProfiles,
         };
 }
 

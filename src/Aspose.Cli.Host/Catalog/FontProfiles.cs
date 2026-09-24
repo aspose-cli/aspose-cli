@@ -15,7 +15,7 @@ internal static class FontProfiles
 {
     /// <exception cref="CliException">
     /// <c>FEATURE_UNSUPPORTED</c> when the profile adds directories and the
-    /// product does not advertise <c>supportsExplicitFontProfiles</c>.
+    /// product does not advertise <c>supportsFontDiagnostics</c>.
     /// </exception>
     public static IDisposable Use(
         ProductCatalog catalog,
@@ -27,13 +27,13 @@ internal static class FontProfiles
         ArgumentNullException.ThrowIfNull(product);
         ArgumentNullException.ThrowIfNull(binding);
         ArgumentNullException.ThrowIfNull(profile);
-        if (!profile.IsAmbient && !product.Manifest.Engine.SupportsExplicitFontProfiles)
+        if (!profile.IsAmbient && !product.Manifest.Engine.SupportsFontDiagnostics)
         {
             throw CliErrors.FeatureUnsupported(
                 "font directories",
                 product.Manifest.Id,
                 catalog.Products
-                    .Where(static item => item.Manifest.Engine.SupportsExplicitFontProfiles)
+                    .Where(static item => item.Manifest.Engine.SupportsFontDiagnostics)
                     .Select(static item => item.Manifest.Id)
                     .ToArray());
         }

@@ -95,8 +95,7 @@ public sealed class ProductDefinition
             throw new InvalidOperationException(
                 $"Product '{Manifest.Id}' license binding does not match its manifest.");
         }
-        if (binding.HasFontEnvironment != Manifest.Engine.SupportsFontDiagnostics
-            || (Manifest.Engine.SupportsExplicitFontProfiles && !binding.HasFontEnvironment))
+        if (binding.HasFontEnvironment != Manifest.Engine.SupportsFontDiagnostics)
         {
             throw new InvalidOperationException(
                 $"Product '{Manifest.Id}' font binding does not match its manifest.");

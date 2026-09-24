@@ -23,7 +23,7 @@ public sealed class WordsModule : IProductModule
             Engine = ProductEngineCapabilities.LicenseAware(
                 "aspose",
                 ProductBuildMetadata.EngineName,
-                ProductBuildMetadata.SdkVersion, supportsExplicitFontProfiles: true),
+                ProductBuildMetadata.SdkVersion),
             AvailableEngines = ["aspose"],
     };
 

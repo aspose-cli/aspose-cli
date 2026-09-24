@@ -124,8 +124,7 @@
         "sdkVersion",
         "licenseRequired",
         "licenseApplicable",
-        "supportsFontDiagnostics",
-        "supportsExplicitFontProfiles"
+        "supportsFontDiagnostics"
       ],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
@@ -133,8 +132,7 @@
         "sdkVersion": { "type": "string", "minLength": 1 },
         "licenseRequired": { "type": "boolean" },
         "licenseApplicable": { "type": "boolean" },
-        "supportsFontDiagnostics": { "type": "boolean" },
-        "supportsExplicitFontProfiles": { "type": "boolean" }
+        "supportsFontDiagnostics": { "type": "boolean" }
       },
       "additionalProperties": false
     },
