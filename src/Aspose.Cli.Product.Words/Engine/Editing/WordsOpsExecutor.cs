@@ -147,7 +147,7 @@ internal static class WordsOpsExecutor
                             document, item.Sections, footer.Kind, footer.Paragraphs,
                             footer.Markdown is null ? null : loader.OpenMarkdown(footer.Markdown, loaded), isHeader: false),
                         AppendDocumentOp append => WordsStructureOpHandlers.AppendDocument(loaded, append, loader),
-                        MailMergeOp merge => WordsObjectOpHandlers.MailMerge(document, merge, inputs, loader),
+                        MailMergeOp merge => WordsObjectOpHandlers.MailMerge(loaded, merge, inputs, loader),
                         InsertTableOp table => WordsTableOpHandlers.InsertTable(document, item.Nodes[0], table, loader),
                         AddWatermarkOp watermark => WordsObjectOpHandlers.AddWatermark(document, watermark, inputs, loader.ResourceBudgets),
                         _ => WordsOpHandlers.Apply(document, item, secret),

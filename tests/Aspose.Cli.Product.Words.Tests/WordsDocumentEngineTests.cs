@@ -119,6 +119,36 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void AppendAndMerge_LeaveNoEvaluationBannerAmongTheBlocks()
+    {
+        // Under evaluation every saved input starts with the banner; appending one document to
+        // another must not carry that banner into the middle of the result as a block.
+        string input = _fixture.CreateReport("banner-source.docx");
+        string[] original = BlockTexts(input);
+        string appended = _fixture.Temp.File("banner-appended.docx");
+        string merged = _fixture.Temp.File("banner-merged.docx");
+
+        _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new AppendDocumentOp { Path = input }] },
+            new WordsEditRequest { OutputPath = appended });
+        _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch
+            {
+                Ops = [new MailMergeOp { Inline = [new Dictionary<string, string?>(), new Dictionary<string, string?>()] }],
+            },
+            new WordsEditRequest { OutputPath = merged });
+
+        Assert.Equal([.. original, .. original], BlockTexts(appended));
+        Assert.Equal([.. original, .. original], BlockTexts(merged));
+    }
+
+    private string[] BlockTexts(string path) =>
+        _fixture.Engine.Read(path, new DocumentReadRequest { MaxBlocks = 1000 })
+            .Blocks.Select(static block => block.Text ?? $"table {block.Rows}x{block.Columns}").ToArray();
+
+    [Fact]
     public void ConvertRenderAndExtract_ProduceRealOutputs()
     {
         string input = _fixture.CreateReport();

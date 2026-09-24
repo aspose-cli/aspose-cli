@@ -1,4 +1,5 @@
 using Aspose.Words;
+using Aspose.Words.Tables;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
@@ -16,6 +17,30 @@ internal static class WordsEvaluation
         string text = paragraph.GetText().Trim();
         return text.StartsWith("Created with an evaluation copy of Aspose.Words.", StringComparison.Ordinal)
             && text.Contains("https://products.aspose.com/words/temporary-license/", StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The banner paragraphs an evaluation-saved document carries before its first block.
+    /// Evaluation mode writes one at the start of every document it saves, unless one is there.
+    /// </summary>
+    internal static IReadOnlyList<Paragraph> LeadingBanners(Document document) =>
+        document.FirstSection?.Body.GetChildNodes(NodeType.Any, false).Cast<Node>()
+            .Where(static node => node is Paragraph or Table)
+            .TakeWhile(static node => node is Paragraph paragraph && IsBanner(paragraph))
+            .Cast<Paragraph>()
+            .ToArray() ?? [];
+
+    /// <summary>
+    /// Removes the leading banners of a document about to be appended to another, where they
+    /// would otherwise stand mid-document as ordinary blocks. The saved result still starts
+    /// with the one banner evaluation mode writes.
+    /// </summary>
+    internal static void RemoveLeadingBanners(Document document)
+    {
+        foreach (Paragraph banner in LeadingBanners(document))
+        {
+            banner.Remove();
+        }
     }
 
     /// <summary>Whether evaluation mode cut the loaded document short.</summary>

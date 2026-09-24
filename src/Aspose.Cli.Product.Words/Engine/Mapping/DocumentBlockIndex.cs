@@ -10,23 +10,19 @@ internal sealed class DocumentBlockIndex
     private readonly Dictionary<Node, BlockEntry> _byNode;
 
     /// <summary>
-    /// Indexes the top-level blocks. Under evaluation the banner paragraph that evaluation
-    /// mode inserts before the first block is not a block.
+    /// Indexes the top-level blocks. Under evaluation the banner paragraphs that evaluation
+    /// mode inserts before the first block are not blocks.
     /// </summary>
     public DocumentBlockIndex(Document document, bool evaluation)
     {
         var entries = new List<BlockEntry>();
+        HashSet<Node> banners = evaluation ? [.. WordsEvaluation.LeadingBanners(document)] : [];
         for (int sectionIndex = 0; sectionIndex < document.Sections.Count; sectionIndex++)
         {
             Section section = document.Sections[sectionIndex];
             foreach (Node node in section.Body.GetChildNodes(NodeType.Any, false))
             {
-                if (evaluation && entries.Count == 0 && node is Paragraph paragraph && WordsEvaluation.IsBanner(paragraph))
-                {
-                    continue;
-                }
-
-                if (node is Paragraph or Table)
+                if (node is Paragraph or Table && !banners.Contains(node))
                 {
                     entries.Add(new BlockEntry(entries.Count + 1, sectionIndex + 1, node));
                 }

@@ -222,6 +222,11 @@ internal static class WordsStructureOpHandlers
         Document document = destination.Document;
         using LoadedDocument loaded = loader.Open(op.Path, null);
         destination.Imported(loaded);
+        if (loaded.Evaluation)
+        {
+            WordsEvaluation.RemoveLeadingBanners(loaded.Document);
+        }
+
         ImportFormatMode mode = op.ImportFormatMode == "useDestination"
             ? ImportFormatMode.UseDestinationStyles
             : ImportFormatMode.KeepSourceFormatting;

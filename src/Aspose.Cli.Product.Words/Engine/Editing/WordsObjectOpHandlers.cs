@@ -270,11 +270,12 @@ internal static class WordsObjectOpHandlers
     }
 
     internal static long MailMerge(
-        Document document,
+        LoadedDocument loaded,
         MailMergeOp op,
         InputSource inputs,
         WordsDocumentLoader loader)
     {
+        Document document = loaded.Document;
         IReadOnlyList<IReadOnlyDictionary<string, string?>> rows =
             op.Inline ?? ReadMergeRows(op.Path!, inputs);
         if (rows.Count == 0)
@@ -293,6 +294,11 @@ internal static class WordsObjectOpHandlers
         // Every further row appends one copy of the whole template.
         loader.EnsureNodeCapacity(document, (rows.Count - 1L) * document.GetChildNodes(NodeType.Any, true).Count);
         Document template = document.Clone();
+        if (loaded.Evaluation)
+        {
+            WordsEvaluation.RemoveLeadingBanners(template);
+        }
+
         ExecuteMergeRow(document, rows[0]);
         for (int index = 1; index < rows.Count; index++)
         {
