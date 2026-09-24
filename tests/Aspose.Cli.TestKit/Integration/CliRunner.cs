@@ -82,14 +82,59 @@ public static class CliRunner
         }
     }
 
-    private static void EnsureCurrentBuild(string root, string executable)
+    /// <summary>
+    /// Rejects a launcher output older than its sources. An incremental build rewrites only the
+    /// assemblies whose projects changed, not the apphost, so each project's sources are compared
+    /// with its own assembly in the launcher output. Inputs shared by every project are compared
+    /// with the newest assembly there, since a change to them rebuilds the projects.
+    /// </summary>
+    internal static void EnsureCurrentBuild(string root, string executable)
     {
-        DateTime built = File.GetLastWriteTimeUtc(executable);
-        IEnumerable<string> inputs = GetSourceRoots(root).Where(Directory.Exists)
-            .SelectMany(path => Directory.EnumerateFiles(path, "*", SearchOption.AllDirectories))
-            .Where(path => !Path.GetRelativePath(root, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
-                .Any(segment => segment is "bin" or "obj"))
+        string output = Path.GetDirectoryName(Path.GetFullPath(executable))!;
+        var projectDirectories = new List<string>();
+        DateTime newestAssembly = DateTime.MinValue;
+        foreach (string sourceRoot in GetSourceRoots(root).Where(Directory.Exists))
+        {
+            foreach (string project in Directory.EnumerateFiles(sourceRoot, "*.csproj", SearchOption.AllDirectories).Where(path => !IsBuildOutput(root, path)))
+            {
+                string directory = Path.GetDirectoryName(project)!;
+                projectDirectories.Add(directory);
+                // The launcher project owns the executable; any other project ships as its own assembly.
+                string assembly = IsWithin(directory, executable)
+                    ? Path.ChangeExtension(Path.GetFullPath(executable), ".dll")
+                    : Path.Combine(output, Path.GetFileNameWithoutExtension(project) + ".dll");
+                if (!File.Exists(assembly))
+                {
+                    continue; // Build-time projects such as analyzers never reach the launcher output.
+                }
+
+                DateTime built = File.GetLastWriteTimeUtc(assembly);
+                newestAssembly = built > newestAssembly ? built : newestAssembly;
+                ThrowIfNewer(root, SourceFiles(root, directory), built);
+            }
+        }
+
+        IEnumerable<string> shared = GetSourceRoots(root).Where(Directory.Exists)
+            .SelectMany(sourceRoot => SourceFiles(root, sourceRoot))
+            .Where(path => !projectDirectories.Any(directory => IsWithin(directory, path)))
             .Concat(GetBuildConfigurationInputs(root));
+        ThrowIfNewer(root, shared, newestAssembly);
+    }
+
+    private static IEnumerable<string> SourceFiles(string root, string directory) =>
+        Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories).Where(path => !IsBuildOutput(root, path));
+
+    private static bool IsBuildOutput(string root, string path) =>
+        Path.GetRelativePath(root, path).Split(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .Any(segment => segment is "bin" or "obj");
+
+    private static bool IsWithin(string directory, string path) =>
+        Path.GetFullPath(path).StartsWith(
+            Path.TrimEndingDirectorySeparator(Path.GetFullPath(directory)) + Path.DirectorySeparatorChar,
+            OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
+
+    private static void ThrowIfNewer(string root, IEnumerable<string> inputs, DateTime built)
+    {
         string? newer = inputs.FirstOrDefault(path => File.Exists(path) && File.GetLastWriteTimeUtc(path) > built);
         if (newer is not null)
         {
