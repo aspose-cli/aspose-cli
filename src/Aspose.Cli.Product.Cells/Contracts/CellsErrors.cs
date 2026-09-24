@@ -56,7 +56,7 @@ public static class CellsErrors
         string engineMessage) => new(
         ErrorCodes.RenderFailed,
         $"Sheet '{sheetName}' could not be rendered: the engine failed while rasterizing its content ({engineMessage}).",
-        hint: "An embedded chart or picture on this sheet defeats the renderer. Render another sheet, or deliver the sheet's data with 'read' or 'convert'.",
+        hint: "An embedded chart or picture on this sheet defeats the renderer. Render another sheet, or deliver the sheet's data with 'aspose-cli cells query range' or 'aspose-cli cells convert'.",
         details: new JsonObject
         {
             ["sheet"] = sheetName,
