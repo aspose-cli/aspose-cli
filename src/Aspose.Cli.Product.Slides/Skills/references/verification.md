@@ -41,8 +41,9 @@ default; a 720-by-405-point slide becomes 1920 by 1080 pixels).
 ## Existing chart fidelity
 
 An unrelated edit still passes the presentation through the native SDK's full
-save path. The current Aspose.Slides 26.9 SDK can change an untouched chart's
-implicit title layout and color behavior during a plain load/save. Inspect
+save path. The pinned Aspose.Slides SDK can change an untouched chart's
+automatic title layout, axis scale and color behavior during a plain load/save
+(a known SDK defect). Inspect
 existing native charts independently in PowerPoint before publishing a revised
 template. Successful reopen and review coverage do not establish unchanged
 appearance. The CLI does not rewrite imported chart defaults to hide this SDK
