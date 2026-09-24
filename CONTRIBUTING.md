@@ -74,7 +74,7 @@ account.
 ## Acceptance gates
 
 `eng/acceptance-gates.json` lists the SDK acceptance gates under `tests/acceptance`, currently
-`PDF-MOVE-BOOKMARK` and `SLD-003`. `scripts/acceptance.ps1` runs them against the built CLI and
+`CELLS-SVG-EGRESS`, `PDF-HTML-EGRESS`, `PDF-MOVE-BOOKMARK` and `SLD-003`. `scripts/acceptance.ps1` runs them against the built CLI and
 SDK assemblies with licensed SDKs (set `ASPOSE_LICENSE_PATH` or the product license variable
 each gate's README names); `-Plan` only validates the gate list and waivers. A failing gate
 blocks the release unless [KNOWN-ISSUES.md](KNOWN-ISSUES.md) waives it for the version in
