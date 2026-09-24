@@ -31,13 +31,16 @@ each includes references and reproducible examples. `skill install` supports the
   then published, or nothing changes. `--in-place` rewrites the input, `--backup` keeps a
   copy of it first, `--if-match` rejects a file that changed since it was read, and
   `--dry-run` applies the batch without writing. Only `--in-place` replaces the input:
-  `edit`, `convert`, `render` and `pdf sign` reject an `--out` that resolves to the input file.
+  every command that writes a file you name (`--out`, or a `create` command's file) refuses
+  one that resolves to any of its inputs.
 - Cells and Words `edit --verify` report semantic evidence (cell changes, formula errors,
   field, revision and protection state) before publication.
 - `aspose-cli review <file>` writes a static evidence directory with an image of every sheet,
   slide or page and layout findings. It is the visual check for every product.
-- `review`, `preview` and `fonts check` accept `--font-dir`, repeatable, to search local font
-  directories in addition to the system fonts; relative paths resolve against `--workdir`.
+- `--font-dir`, repeatable, adds local font directories to the system fonts; relative paths
+  resolve against `--workdir`. It is accepted by `review`, `preview`, `fonts check` and every
+  product command whose output depends on fonts: `render` and `convert` in every product,
+  `cells edit`, `pdf create`/`edit`/`sign`, and `words create`/`edit`/`compare`/`split`/`inspect`.
 - In JSON mode a successful command writes one result to stdout; a failure writes one error
   envelope to stderr. `--verbose` adds structured diagnostics.
 - One input is admitted up to `--max-input-bytes` (default 1 GiB, at most 4 GiB); the other
