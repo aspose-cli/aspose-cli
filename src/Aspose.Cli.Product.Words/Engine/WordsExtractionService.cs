@@ -160,8 +160,10 @@ internal sealed class WordsExtractionService
     }
 
     /// <summary>
-    /// Writes one part per Heading 1. Each part is a copy of the whole document with the other
-    /// blocks removed, so it keeps its sections' page setup, headers, footers and styles.
+    /// Writes one part per Heading 1, and a leading part for the blocks before the first one
+    /// (a title page or table of contents), so no block is left out. Each part is a copy of
+    /// the whole document with the other blocks removed, so it keeps its sections' page
+    /// setup, headers, footers and styles.
     /// </summary>
     private static void SplitByHeading(LoadedDocument loaded, WordsSplitWriter writer)
     {
@@ -171,6 +173,11 @@ internal sealed class WordsExtractionService
         if (starts.Count == 0)
         {
             throw new CliException(WordsDiagnostics.AnchorNotFound, "No Heading 1 paragraph was found.", hint: "Use --by section/pages, or apply Heading 1 styles first.");
+        }
+
+        if (starts[0] > 1)
+        {
+            starts.Insert(0, 1);
         }
 
         for (int group = 0; group < starts.Count; group++)

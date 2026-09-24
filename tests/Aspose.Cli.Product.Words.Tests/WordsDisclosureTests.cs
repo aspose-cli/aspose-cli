@@ -98,6 +98,42 @@ public sealed class WordsDisclosureTests
         Assert.DoesNotContain("Body Two", new Document(result.Outputs[0].Output.Path).GetText(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void SplitByHeading_KeepsTheBlocksBeforeTheFirstHeadingInALeadingPart()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Contents");
+        foreach (string title in new[] { "One", "Two" })
+        {
+            builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+            builder.Writeln(title);
+            builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+            builder.Write($"Body {title}");
+            if (title == "One")
+            {
+                builder.Writeln();
+            }
+        }
+
+        string input = fixture.Temp.File("preamble.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        WordsSplitResult result = fixture.Engine.Split(input, new WordsSplitRequest
+        {
+            By = "heading1",
+            OutputDirectory = fixture.Temp.File("preamble-parts"),
+        });
+
+        Assert.Equal(["blocks-1-1", "blocks-2-3", "blocks-4-5"], result.Outputs.Select(static part => part.Source));
+        string[] texts = result.Outputs
+            .Select(part => string.Join("|", fixture.Engine.Read(part.Output.Path, new DocumentReadRequest())
+                .Blocks.Select(static block => block.Text)))
+            .ToArray();
+        Assert.Equal(["Contents", "One|Body One", "Two|Body Two"], texts);
+    }
+
     // Reports a fixed license state; the real gate has already applied the SDK license.
     private sealed class FixedGate(LicenseState state) : ILicenseGate
     {

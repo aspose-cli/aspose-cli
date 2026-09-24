@@ -11,7 +11,7 @@ internal static class SplitCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File();
-        var by = new Option<string>("--by") { Required = true, Description = "section, heading1 or pages." }.WithInput(InputKind.None);
+        var by = new Option<string>("--by") { Required = true, Description = "section, heading1 (one part per Heading 1, after a leading part for any blocks before the first) or pages." }.WithInput(InputKind.None);
         by.AcceptOnlyFromAmong("section", "heading1", "pages");
         var pages = new Option<string?>("--pages") { Description = "Page range when --by pages." }.WithInput(InputKind.None);
         var outDirectory = new OutputDirectoryOption("Directory that receives the parts.", required: true);
