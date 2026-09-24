@@ -21,13 +21,6 @@ public sealed class DpiOption
     /// <summary>The option, for a product command's option list.</summary>
     public IReadOnlyList<Option> Options { get; }
 
-    /// <summary>Adds the option to one product command.</summary>
-    public void AddTo(Command command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        command.Options.Add(_dpi);
-    }
-
     /// <summary>Whether the caller typed <c>--dpi</c> rather than accepting the default.</summary>
     public bool IsExplicit(ParseResult parse)
     {
@@ -74,16 +67,6 @@ public sealed class PartSelectionOptions
 
     /// <summary>Both options, for a product command's option list.</summary>
     public IReadOnlyList<Option> Options { get; }
-
-    /// <summary>Adds both options to one product command.</summary>
-    public void AddTo(Command command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        foreach (Option option in Options)
-        {
-            command.Options.Add(option);
-        }
-    }
 
     /// <summary>Returns the validated selection.</summary>
     /// <exception cref="CliException">

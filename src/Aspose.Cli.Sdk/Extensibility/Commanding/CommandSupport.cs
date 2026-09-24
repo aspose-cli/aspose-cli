@@ -43,10 +43,10 @@ public static class OptionGuards
 }
 
 /// <summary>Factories for common output options.</summary>
-public static class OutputOptions
+internal static class OutputOptions
 {
     /// <summary>Creates the standard non-destructive overwrite switch.</summary>
-    public static Option<bool> Overwrite() => new("--overwrite")
+    public static Option<bool> Overwrite() => new(StandardOptionNames.Overwrite)
     {
         Description = "Replace the output file if it already exists.",
     };
@@ -59,7 +59,7 @@ public enum JsonSourceKind { File, Inline, StandardInput }
 public static class JsonInputSource
 {
     /// <summary>Reads and resolves one document source.</summary>
-    public static string Read(
+    internal static string Read(
         string source,
         PathResolver paths,
         InputSource inputs,
@@ -114,16 +114,16 @@ public static class JsonInputSource
 /// The standard output path and overwrite option pair, and the one rule for every output
 /// file a caller names: it resolves against the working directory and never names an input.
 /// </summary>
-public sealed class OutputFileOptions
+internal sealed class OutputFileOptions
 {
-    private const string OutOption = "--out";
+    private const string OutOption = StandardOptionNames.Out;
     private readonly Option<string?> _out;
     private readonly Option<bool> _overwrite;
 
     /// <summary>Creates an output option pair with product-specific help.</summary>
     public OutputFileOptions(string description, bool required = false)
     {
-        _out = new Option<string?>(OutOption, "-o")
+        _out = new Option<string?>(OutOption, StandardOptionNames.OutAlias)
         {
             Description = description,
             Required = required,
@@ -131,16 +131,15 @@ public sealed class OutputFileOptions
         _overwrite = OutputOptions.Overwrite();
     }
 
+    /// <summary>Whether the command cannot run without <c>--out</c>.</summary>
+    public bool Required => _out.Required;
+
     /// <summary>Adds both options to a command.</summary>
     public void AddTo(Command command)
     {
         command.Options.Add(_out);
         command.Options.Add(_overwrite);
     }
-
-    /// <summary>Whether the caller gave <c>--out</c>.</summary>
-    public bool IsGiven(ParseResult parseResult) =>
-        parseResult.GetValue(_out) is not null;
 
     /// <summary>Returns whether replacement was explicitly allowed.</summary>
     public bool Overwrite(ParseResult parseResult) =>
@@ -152,17 +151,6 @@ public sealed class OutputFileOptions
             && Path.GetExtension(path) is { Length: > 1 } extension
                 ? extension
                 : null;
-
-    /// <summary>
-    /// Resolves an explicit path, which must not be the input, or derives a sibling output path.
-    /// </summary>
-    public string ResolvePath(
-        ParseResult parseResult,
-        PathResolver paths,
-        string inputPath,
-        string targetExtension) =>
-        Resolve(parseResult, paths, inputPath)
-            ?? DerivePath(inputPath, targetExtension);
 
     /// <summary>Resolves <c>--out</c>, which must name none of the inputs, or returns null when it was omitted.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> when the output resolves to an input.</exception>
@@ -240,7 +228,7 @@ public sealed record MutationTarget(
     string? BackupPath);
 
 /// <summary>Standard output, in-place, overwrite, and backup mutation options.</summary>
-public sealed class MutationFileOptions
+internal sealed class MutationFileOptions
 {
     private readonly Option<string?> _out;
     private readonly Option<bool> _inPlace;
@@ -255,16 +243,16 @@ public sealed class MutationFileOptions
         string backupDescription =
             "Create a non-overwriting backup before an in-place write.")
     {
-        _out = new Option<string?>("--out", "-o")
+        _out = new Option<string?>(StandardOptionNames.Out, StandardOptionNames.OutAlias)
         {
             Description = outputDescription,
         }.WithInput(InputKind.None);
-        _inPlace = new Option<bool>("--in-place")
+        _inPlace = new Option<bool>(StandardOptionNames.InPlace)
         {
             Description = inPlaceDescription,
         };
         _overwrite = OutputOptions.Overwrite();
-        _backup = new Option<bool>("--backup")
+        _backup = new Option<bool>(StandardOptionNames.Backup)
         {
             Description = backupDescription,
         };
@@ -273,16 +261,6 @@ public sealed class MutationFileOptions
 
     /// <summary>The mutation options in help order.</summary>
     internal IReadOnlyList<Option> Options { get; }
-
-    /// <summary>Adds all mutation options to a command.</summary>
-    public void AddTo(Command command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        foreach (Option option in Options)
-        {
-            command.Options.Add(option);
-        }
-    }
 
     /// <summary>
     /// Resolves and validates the mutation destination. A backup is made only when
@@ -360,13 +338,13 @@ public sealed class PasswordOptions
             Description =
                 $"Password for {subject}. Discouraged: visible in the process list; prefer {prefix}-env.",
         }.WithInput(InputKind.None, secret: true);
-        _fromEnvironment = new Option<string?>($"{prefix}-env")
+        _fromEnvironment = new Option<string?>(prefix + StandardOptionNames.EnvironmentSuffix)
         {
             Description =
                 $"Name of an environment variable holding the password for {subject}.",
         }.WithInput(InputKind.None, ParameterValueSource.EnvironmentVariableName, secret: true);
         _fromStandardInput = allowStdin
-            ? new Option<bool>($"{prefix}-stdin")
+            ? new Option<bool>(prefix + StandardOptionNames.StandardInputSuffix)
             {
                 Description =
                     $"Read the password for {subject} from the first line of stdin.",
@@ -389,7 +367,7 @@ public sealed class PasswordOptions
     /// Returns the option that supplies the secret, or null when none was given, so an error
     /// about the secret's use names the option the caller actually passed.
     /// </summary>
-    public string? SelectedOption(ParseResult parseResult)
+    internal string? SelectedOption(ParseResult parseResult)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
         return parseResult.GetValue(_literal) is not null ? _prefix
@@ -406,7 +384,7 @@ public sealed class PasswordOptions
     /// <param name="format">The output format id.</param>
     /// <param name="protectableFormats">The output format ids that can carry a password.</param>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a format outside <paramref name="protectableFormats"/>.</exception>
-    public void EnsureProtectable(ParseResult parseResult, string format, IReadOnlyList<string> protectableFormats)
+    internal void EnsureProtectable(ParseResult parseResult, string format, IReadOnlyList<string> protectableFormats)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(format);
         ArgumentNullException.ThrowIfNull(protectableFormats);
@@ -425,26 +403,11 @@ public sealed class PasswordOptions
         ParseResult parseResult,
         InputSource inputs,
         Func<string, string?> readEnvironment,
-        bool stdinAvailable = true) =>
-        Resolve(
-            parseResult,
-            inputs,
-            stdinAvailable,
-            readEnvironment,
-            Console.In);
-
-    /// <summary>Injected resolution core used by host and product tests.</summary>
-    public string? Resolve(
-        ParseResult parseResult,
-        InputSource inputs,
-        bool stdinAvailable,
-        Func<string, string?> readEnvironment,
-        TextReader standardInput)
+        bool stdinAvailable = true)
     {
         ArgumentNullException.ThrowIfNull(parseResult);
         ArgumentNullException.ThrowIfNull(inputs);
         ArgumentNullException.ThrowIfNull(readEnvironment);
-        ArgumentNullException.ThrowIfNull(standardInput);
         string? literal = parseResult.GetValue(_literal);
         string? environmentName = parseResult.GetValue(_fromEnvironment);
         bool fromStandardInput = _fromStandardInput is not null
@@ -494,7 +457,7 @@ public sealed class PasswordOptions
                 $"Pass the password via {_prefix}-env instead when the document comes from stdin.");
         }
 
-        string line = inputs.ReadSecretLine(standardInput);
+        string line = inputs.ReadSecretLine(Console.In);
         return !string.IsNullOrEmpty(line)
             ? line
             : throw CliErrors.OptionInvalid(

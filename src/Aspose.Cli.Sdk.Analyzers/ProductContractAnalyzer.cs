@@ -8,8 +8,11 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
     private const string ProductModuleAttribute =
         "Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute";
 
-    private static readonly ImmutableHashSet<string> ReservedAliases =
+    private static readonly ImmutableHashSet<string> HostAliases =
         ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.Extensibility.Commanding.GlobalOptionNames.Reserved);
+
+    private static readonly ImmutableHashSet<string> TemplateAliases =
+        ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.Extensibility.Commanding.StandardOptionNames.Reserved);
 
     private static readonly ImmutableHashSet<string> ProductLayers =
         ImmutableHashSet.Create(
@@ -175,14 +178,16 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
                         "must be a compile-time constant");
                     continue;
                 }
-                foreach (string alias in aliases
-                    .Where(ReservedAliases.Contains))
+                foreach (string alias in aliases)
                 {
-                    ReportAlias(
-                        context,
-                        argument,
-                        alias,
-                        "is reserved by the CLI host");
+                    if (HostAliases.Contains(alias))
+                    {
+                        ReportAlias(context, argument, alias, "is reserved by the CLI host");
+                    }
+                    else if (TemplateAliases.Contains(alias))
+                    {
+                        ReportAlias(context, argument, alias, "is owned by the command template; declare it through CommandTraits");
+                    }
                 }
             }
         }

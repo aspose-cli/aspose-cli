@@ -8,9 +8,9 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// The one <c>--out-dir</c> option of commands that publish a set of files. It has no
 /// alias: <c>--out</c> always names a single output file.
 /// </summary>
-public sealed class OutputDirectoryOption
+internal sealed class OutputDirectoryOption
 {
-    private const string Name = "--out-dir";
+    private const string Name = StandardOptionNames.OutDir;
     private readonly Option<string?> _directory;
 
     /// <summary>Creates the option with command-specific help.</summary>
@@ -29,13 +29,6 @@ public sealed class OutputDirectoryOption
     {
         ArgumentNullException.ThrowIfNull(command);
         command.Options.Add(_directory);
-    }
-
-    /// <summary>Whether the caller gave the option.</summary>
-    public bool IsGiven(ParseResult parse)
-    {
-        ArgumentNullException.ThrowIfNull(parse);
-        return parse.GetValue(_directory) is not null;
     }
 
     /// <summary>

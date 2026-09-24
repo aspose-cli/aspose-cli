@@ -12,7 +12,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 public sealed class FontDirectoryOptions
 {
     private const int MaximumDirectories = 16;
-    private readonly Option<string[]> _directories = new Option<string[]>("--font-dir")
+    private readonly Option<string[]> _directories = new Option<string[]>(StandardOptionNames.FontDir)
     {
         Description = "Local font directory searched in addition to the system fonts; repeat for more.",
         Arity = new ArgumentArity(1, MaximumDirectories),
@@ -30,7 +30,7 @@ public sealed class FontDirectoryOptions
     /// returned scope is disposed. A product command enters the scope before its port opens
     /// the document, so layout, rendering and save all see the same fonts.
     /// </summary>
-    public IDisposable Use<TPort>(ParseResult parse, ProductCommandContext<TPort> context)
+    internal IDisposable Use<TPort>(ParseResult parse, ProductCommandContext<TPort> context)
         where TPort : class
     {
         ArgumentNullException.ThrowIfNull(context);

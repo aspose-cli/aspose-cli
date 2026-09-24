@@ -105,7 +105,10 @@ public sealed class SearchOptionsTests
     private static ParseResult Parse(SearchOptions options, params string[] arguments)
     {
         var command = new Command("search");
-        options.AddTo(command);
+        foreach (Option option in options.Options)
+        {
+            command.Options.Add(option);
+        }
         return command.Parse(arguments);
     }
 }

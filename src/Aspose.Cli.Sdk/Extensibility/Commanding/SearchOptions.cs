@@ -26,10 +26,10 @@ public sealed record SearchQuery(TextSearch Text, int MaxHits, string? Scope);
 public sealed class SearchOptions
 {
     /// <summary>Hits returned when <c>--max-hits</c> is omitted.</summary>
-    public const int DefaultMaxHits = 100;
+    internal const int DefaultMaxHits = 100;
 
     /// <summary>The largest accepted <c>--max-hits</c>.</summary>
-    public const int MaximumHits = 10_000;
+    internal const int MaximumHits = 10_000;
 
     private readonly Option<string> _pattern;
     private readonly Option<bool> _regex;
@@ -81,16 +81,6 @@ public sealed class SearchOptions
 
     /// <summary>The search options in help order, for a product command's option list.</summary>
     public IReadOnlyList<Option> Options { get; }
-
-    /// <summary>Adds the search options to one product command.</summary>
-    public void AddTo(Command command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        foreach (Option option in Options)
-        {
-            command.Options.Add(option);
-        }
-    }
 
     /// <summary>Validates the pattern and hit budget before any document is opened.</summary>
     public SearchQuery Read(ParseResult parse)

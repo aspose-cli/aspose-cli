@@ -12,8 +12,9 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <!-- The host's global option names, compiled here so the analyzer reserves exactly them. -->
+    <!-- The global and template option names, compiled here so the analyzer reserves exactly them. -->
     <Compile Include="..\Aspose.Cli.Sdk\Extensibility\Commanding\GlobalOptionNames.cs" Link="GlobalOptionNames.cs" />
+    <Compile Include="..\Aspose.Cli.Sdk\Extensibility\Commanding\StandardOptionNames.cs" Link="StandardOptionNames.cs" />
   </ItemGroup>
 
   <ItemGroup>

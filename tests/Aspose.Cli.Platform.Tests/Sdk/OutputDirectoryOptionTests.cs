@@ -30,7 +30,6 @@ public sealed class OutputDirectoryOptionTests
         ParseResult omitted = command.Parse([]);
 
         Assert.Empty(omitted.Errors);
-        Assert.False(option.IsGiven(omitted));
         Assert.Null(option.Resolve(omitted, new PathResolver(Path.GetTempPath())));
         Assert.NotEmpty(command.Parse(["--out", "parts"]).Errors);
         Assert.NotEmpty(Create(required: true).Command.Parse([]).Errors);

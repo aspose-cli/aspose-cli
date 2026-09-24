@@ -40,7 +40,8 @@ internal static class EditCommand
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
-        return new BoundedEditCommand<Op, OpsBatch>(Definition).Create(
+        var bounded = new BoundedEditCommand<Op, OpsBatch>(Definition);
+        return bounded.Create(
             host,
             "edit",
             $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.",
@@ -53,12 +54,6 @@ internal static class EditCommand
             [noRecalc],
             (parse, edit, standard) =>
             {
-                bool recalculate = !parse.GetValue(noRecalc);
-                if (!recalculate && edit.Verify)
-                {
-                    throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc", "Remove --no-recalc so formula-result verification is reliable.");
-                }
-
                 string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(edit.Target.OutputPath));
                 return standard.Port.ApplyOps(standard.Input, edit.Batch, new EditRequest
                 {
@@ -66,12 +61,19 @@ internal static class EditCommand
                     Overwrite = edit.Target.Overwrite,
                     BackupPath = edit.Target.BackupPath,
                     Options = edit.Options,
-                    Recalculate = recalculate,
+                    Recalculate = !parse.GetValue(noRecalc),
                     OpSecrets = edit.Secrets,
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
                     Verify = edit.Verify,
                 });
+            },
+            checkUsage: parse =>
+            {
+                if (parse.GetValue(noRecalc) && bounded.IsVerifyRequested(parse))
+                {
+                    throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc", "Remove --no-recalc so formula-result verification is reliable.");
+                }
             }).WithExamples(
             [
                 "cells edit book.xlsx --in-place --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\"",

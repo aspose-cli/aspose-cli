@@ -4,28 +4,21 @@ using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
 
-/// <summary>Real CLI coverage for input budgets without charging output paths.</summary>
+/// <summary>
+/// Real CLI coverage for input budgets without charging output paths. The command template
+/// declares the document and created-file parameters of every product the same way, so one
+/// product runs them end to end; each product's own source options run here too.
+/// </summary>
 public sealed class InputAdmissionTests
 {
-    public static TheoryData<string, string, string[]> CreateCases => new()
-    {
-        { "cells", "xlsx", [] },
-        { "pdf", "pdf", ["--from-text", "source.txt"] },
-        { "slides", "pptx", ["--from-markdown", "source.md"] },
-        { "words", "docx", ["--text", "source.txt"] },
-    };
-
     [Category(TestCategory.Slow)]
-    [Theory]
-    [MemberData(nameof(CreateCases))]
-    public void Create_ExcludesExistingOutputsRegardlessOfOptionOrder(
-        string product, string extension, string[] sourceOptions)
+    [Fact]
+    public void Create_ExcludesTheExistingOutputRegardlessOfOptionOrder()
     {
         using var workspace = new TempWorkspace();
         string work = Directory.CreateDirectory(workspace.File("work with spaces")).FullName;
         File.WriteAllText(Path.Combine(work, "source.txt"), "Audit");
-        File.WriteAllText(Path.Combine(work, "source.md"), "# Audit");
-        string name = "output." + extension;
+        const string name = "output.pdf";
         string output = Path.Combine(work, name);
         byte[] original = new byte[4096];
         File.WriteAllBytes(output, original);
@@ -33,7 +26,7 @@ public sealed class InputAdmissionTests
         string[] command =
         [
             "--workdir", work, "--max-input-bytes=64",
-            product, "create", .. sourceOptions, name, "--output", "json",
+            "pdf", "create", "--from-text", "source.txt", name, "--output", "json",
         ];
 
         CliResult refused = workspace.Run(command);
@@ -46,7 +39,7 @@ public sealed class InputAdmissionTests
         Assert.True(new FileInfo(output).Length > 64);
 
         CliResult tooLarge = workspace.Run(
-            "--workdir", work, product, "inspect", name,
+            "--workdir", work, "pdf", "inspect", name,
             "--max-input-bytes", "64", "--output", "json");
         Assert.Equal(3, tooLarge.ExitCode);
         Assert.Equal("FILE_TOO_LARGE", JsonNode.Parse(tooLarge.StdErr)!["error"]!["code"]!.GetValue<string>());

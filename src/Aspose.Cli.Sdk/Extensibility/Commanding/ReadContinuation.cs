@@ -13,7 +13,7 @@ public readonly record struct ReadPart(int Number, bool Truncated);
 public sealed record ReadContinuation(string Parts, int MaxCharacters)
 {
     /// <summary>The largest character budget a read accepts.</summary>
-    public const int MaximumCharacters = 10_000_000;
+    internal const int MaximumCharacters = 10_000_000;
 
     /// <summary>
     /// Computes the unread remainder of a read over numbered parts, or null when the read

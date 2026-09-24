@@ -426,6 +426,28 @@ public sealed class ProductContractAnalyzerTests
         Assert.Single(diagnostics, static item => item.Id == "APCLI008");
     }
 
+    [Theory]
+    [InlineData("--out-dir")]
+    [InlineData("-o")]
+    [InlineData("--password-env")]
+    [InlineData("--font-dir")]
+    public async Task Apcli008_ReportsAnOptionTheCommandTemplateOwns(string name)
+    {
+        string source = ProductSource(
+            $$"""
+            public sealed class Commands
+            {
+                public System.CommandLine.Option<string> Create() =>
+                    new("--input", "{{name}}");
+            }
+            """);
+
+        ImmutableArray<Diagnostic> diagnostics = await Analyze(source);
+
+        Diagnostic diagnostic = Assert.Single(diagnostics, static item => item.Id == "APCLI008");
+        Assert.Contains("command template", diagnostic.GetMessage(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Apcli008_ReservesEveryNameTheRootCommandAlreadyAccepts()
     {

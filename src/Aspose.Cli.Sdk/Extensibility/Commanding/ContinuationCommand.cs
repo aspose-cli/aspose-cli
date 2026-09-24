@@ -70,7 +70,7 @@ public sealed class ContinuationCommand
     /// Leaves a token bare when it holds only characters no common shell treats specially;
     /// otherwise wraps it in double quotes and escapes the characters that stay special there.
     /// </summary>
-    public static string Quote(string value)
+    internal static string Quote(string value)
     {
         ArgumentNullException.ThrowIfNull(value);
         if (value.Length > 0 && value.All(IsSafe))

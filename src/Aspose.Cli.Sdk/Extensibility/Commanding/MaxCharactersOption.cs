@@ -13,7 +13,7 @@ public sealed class MaxCharactersOption
     public const string Name = "--max-chars";
 
     /// <summary>The budget used when the option is omitted.</summary>
-    public const int DefaultCharacters = 20_000;
+    internal const int DefaultCharacters = 20_000;
 
     private readonly Option<int> _maxCharacters;
 

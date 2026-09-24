@@ -75,7 +75,10 @@ public sealed class RenderPixelGuardTests
     {
         var selection = new PartSelectionOptions("page");
         var command = new Command("render");
-        selection.AddTo(command);
+        foreach (Option option in selection.Options)
+        {
+            command.Options.Add(option);
+        }
 
         PartSelection range = selection.Read(command.Parse(["--pages", "2-3"]));
         CliException error = Assert.Throws<CliException>(
@@ -100,7 +103,10 @@ public sealed class RenderPixelGuardTests
     {
         var dpi = new DpiOption();
         var command = new Command("render");
-        dpi.AddTo(command);
+        foreach (Option option in dpi.Options)
+        {
+            command.Options.Add(option);
+        }
         return (dpi, command.Parse(arguments));
     }
 }

@@ -63,6 +63,16 @@ public static class StandardCommand
         }
 
         standard.AddOptions(command);
+        if (command.Options
+                .SelectMany(static option => option.Aliases.Prepend(option.Name))
+                .GroupBy(static name => name, StringComparer.Ordinal)
+                .FirstOrDefault(static names => names.Count() > 1) is { } repeated)
+        {
+            throw new ArgumentException(
+                $"Option '{repeated.Key}' is declared more than once; the command template owns the common options.",
+                nameof(parameters));
+        }
+
         command.SetAction(parse => host.Run(parse, context =>
         {
             using var invocation = new StandardInvocation<TPort>(

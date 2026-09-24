@@ -53,14 +53,12 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 /// <param name="Target">Where and how the result is published.</param>
 /// <param name="Options">Precondition, dry-run and best-effort semantics.</param>
 /// <param name="Verify">Whether staged verification was requested.</param>
-/// <param name="OpsFromStandardInput">Whether the document consumed standard input.</param>
 /// <param name="Secrets">The operations' secrets by environment variable name.</param>
 public sealed record BoundedEditInvocation<TBatch>(
     TBatch Batch,
     MutationTarget Target,
     EditCommandOptions Options,
     bool Verify,
-    bool OpsFromStandardInput,
     IReadOnlyDictionary<string, string> Secrets);
 
 /// <summary>
@@ -76,7 +74,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     where TOp : BoundedOperation
     where TBatch : BoundedOperationEnvelope<TOp>
 {
-    private const string OpsOption = "--ops";
+    private const string OpsOption = StandardOptionNames.Ops;
     private const string StandardInputSource = "-";
     private readonly BoundedEditDefinition<TOp, TBatch> _definition;
     private readonly Option<string?> _ops;
@@ -107,28 +105,28 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         if (definition.SetDirectives is { } grammar)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(grammar.Description);
-            _set = new Option<string[]>("--set")
+            _set = new Option<string[]>(StandardOptionNames.Set)
             {
                 Description = grammar.Description,
             }.WithInput(InputKind.None);
         }
 
-        _ifMatch = new Option<string?>("--if-match")
+        _ifMatch = new Option<string?>(StandardOptionNames.IfMatch)
         {
             Description = "Require the current input SHA-256 fingerprint before editing.",
         }.WithInput(InputKind.None);
-        _dryRun = new Option<bool>("--dry-run")
+        _dryRun = new Option<bool>(StandardOptionNames.DryRun)
         {
             Description = "Resolve and apply operations in memory without writing.",
         };
-        _bestEffort = new Option<bool>("--best-effort")
+        _bestEffort = new Option<bool>(StandardOptionNames.BestEffort)
         {
             Description = "Keep successful operations, report failures, and exit 8.",
         };
         if (definition.VerifyDescription is { } verify)
         {
             ArgumentException.ThrowIfNullOrWhiteSpace(verify);
-            _verify = new Option<bool>("--verify") { Description = verify };
+            _verify = new Option<bool>(StandardOptionNames.Verify) { Description = verify };
         }
 
         _options =
@@ -156,13 +154,18 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     /// </param>
     /// <param name="parameters">The product's own arguments and options, each kind in help order.</param>
     /// <param name="handler">Maps the invocation to the product port call.</param>
+    /// <param name="checkUsage">
+    /// Rejects a combination of the product's own options that needs no input; it runs before
+    /// the document, the operation document, standard input or any secret is read.
+    /// </param>
     public Command Create<TPort>(
         IProductCommandHost<TPort> host,
         string name,
         string description,
         CommandTraits traits,
         IReadOnlyList<Symbol> parameters,
-        Func<ParseResult, BoundedEditInvocation<TBatch>, StandardInvocation<TPort>, ResultEnvelope> handler)
+        Func<ParseResult, BoundedEditInvocation<TBatch>, StandardInvocation<TPort>, ResultEnvelope> handler,
+        Action<ParseResult>? checkUsage = null)
         where TPort : class
     {
         ArgumentNullException.ThrowIfNull(traits);
@@ -182,10 +185,14 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             traits,
             [.. _options, .. parameters],
             parse => parse.GetValue(_ops) == StandardInputSource,
-            (parse, standard) => handler(
-                parse,
-                Read(parse, standard.Paths, standard.Inputs, standard.Input, standard.ReadEnvironment),
-                standard));
+            (parse, standard) =>
+            {
+                checkUsage?.Invoke(parse);
+                return handler(
+                    parse,
+                    Read(parse, standard.Paths, standard.Inputs, standard.Input, standard.ReadEnvironment),
+                    standard);
+            });
     }
 
     /// <summary>Whether <c>--verify</c> was requested; false when the product has no verification.</summary>
@@ -195,42 +202,28 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         return _verify is not null && parse.GetValue(_verify);
     }
 
-    /// <summary>Adds every shared edit option to one product command.</summary>
-    public void AddTo(Command command)
-    {
-        ArgumentNullException.ThrowIfNull(command);
-        foreach (Option option in _options)
-        {
-            command.Options.Add(option);
-        }
-    }
-
     /// <summary>
-    /// Validates the option combination, then reads and composes the operation document.
-    /// Every check that needs no input runs before <c>--ops -</c> consumes standard input.
+    /// Validates the option combination, then reads and composes the operation document and
+    /// resolves its secrets. Every check that needs no input runs before <c>--ops -</c>
+    /// consumes standard input.
     /// </summary>
     /// <param name="parse">The parsed command line.</param>
     /// <param name="paths">The invocation path resolver.</param>
     /// <param name="inputs">The invocation's bounded input reader.</param>
     /// <param name="inputPath">The resolved document to edit.</param>
-    public BoundedEditInvocation<TBatch> Read(
-        ParseResult parse,
-        PathResolver paths,
-        InputSource inputs,
-        string inputPath) =>
-        Read(parse, paths, inputs, inputPath, readEnvironment: null);
-
+    /// <param name="readEnvironment">Reads the operations' secrets by variable name.</param>
     internal BoundedEditInvocation<TBatch> Read(
         ParseResult parse,
         PathResolver paths,
         InputSource inputs,
         string inputPath,
-        Func<string, string?>? readEnvironment)
+        Func<string, string?> readEnvironment)
     {
         ArgumentNullException.ThrowIfNull(parse);
         ArgumentNullException.ThrowIfNull(paths);
         ArgumentNullException.ThrowIfNull(inputs);
         ArgumentException.ThrowIfNullOrWhiteSpace(inputPath);
+        ArgumentNullException.ThrowIfNull(readEnvironment);
 
         string? source = parse.GetValue(_ops);
         string[] directives = _set is null ? [] : parse.GetValue(_set) ?? [];
@@ -272,11 +265,10 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 BestEffort = parse.GetValue(_bestEffort),
             },
             verify,
-            source == StandardInputSource,
             ResolveSecrets(batch, readEnvironment));
     }
 
-    private IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?>? readEnvironment)
+    private IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)
     {
         var secrets = new Dictionary<string, string>(StringComparer.Ordinal);
         if (_definition.SecretVariables is not { } variables)
@@ -284,7 +276,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             return secrets;
         }
 
-        ArgumentNullException.ThrowIfNull(readEnvironment);
         foreach (string variable in batch.Ops.SelectMany(variables).OfType<string>())
         {
             if (secrets.ContainsKey(variable))

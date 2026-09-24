@@ -43,8 +43,7 @@ public static class CommandHelpExtensions
     /// Attaches examples and optional learning links to a command. Metadata is
     /// owned by the assembly that defines the command and can be read by any
     /// host without knowing the product. An example is written after the executable
-    /// name, which is prepended here; a line that already starts with it is kept as
-    /// written until every command tree uses the shorter form.
+    /// name, which is prepended here.
     /// </summary>
     /// <param name="command">The command receiving the metadata.</param>
     /// <param name="examples">Copyable command lines after the executable name.</param>
@@ -60,11 +59,7 @@ public static class CommandHelpExtensions
 
         string executable = DistributionInfo.CommandName + " ";
         var value = new CommandHelpMetadata(
-            examples
-                .Select(example => example.StartsWith(executable, StringComparison.Ordinal)
-                    ? example
-                    : executable + example)
-                .ToArray(),
+            examples.Select(example => executable + example).ToArray(),
             learnMore?.ToArray() ?? []);
         Metadata.Remove(command);
         Metadata.Add(command, value);

@@ -132,14 +132,14 @@ internal sealed class StandardOptions
 
         if (traits.PasswordSubject is { } subject)
         {
-            InputPassword = new PasswordOptions("--password", subject);
+            InputPassword = new PasswordOptions(StandardOptionNames.Password, subject);
         }
 
         if (traits.Input is { } input)
         {
             Input = Argument(input);
             InputPassword = traits.Other is null
-                ? new PasswordOptions("--password", input.PasswordSubject)
+                ? new PasswordOptions(StandardOptionNames.Password, input.PasswordSubject)
                 : PairedPassword(input);
         }
 
@@ -179,7 +179,7 @@ internal sealed class StandardOptions
         if (traits.Encrypt is { } encrypt)
         {
             ArgumentNullException.ThrowIfNull(encrypt.ProtectableFormats);
-            Encrypt = new PasswordOptions("--encrypt", encrypt.Subject, allowStdin: false);
+            Encrypt = new PasswordOptions(StandardOptionNames.Encrypt, encrypt.Subject, allowStdin: false);
             ProtectableFormats = encrypt.ProtectableFormats;
         }
 
@@ -351,6 +351,16 @@ public sealed class StandardInvocation<TPort> : IDisposable
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(targetExtension);
         return RequestedOutputPath() ?? OutputFileOptions.DerivePath(Input, targetExtension);
+    }
+
+    /// <summary>The output file named by a required <c>--out</c>.</summary>
+    /// <exception cref="Errors.CliException"><c>OPTION_INVALID</c> when <c>--out</c> names an input.</exception>
+    public string OutputPath()
+    {
+        OutputFileOptions output = Declared(_options.OutputFile, "output file");
+        return output.Required
+            ? output.ResolveRequired(_parse, _context.Paths, DeclaredInputs())
+            : throw new InvalidOperationException("The command's --out is optional; derive the output with OutputPath(targetExtension).");
     }
 
     /// <summary>The output file named by <c>--out</c>, or null when it was omitted.</summary>

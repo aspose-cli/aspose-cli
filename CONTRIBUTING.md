@@ -94,8 +94,9 @@ waives it for the version in `Directory.Build.props`.
   `WithInput` (`InputKind.File`, `InputKind.JsonSource` or `InputKind.None`), and its value
   sources and secret handling on the symbol. The Host reads these declarations, never token
   order, option spelling or file existence; command-tree construction rejects missing or
-  conflicting declarations. `GlobalOptionNames` is the one list of reserved global options, and
-  analyzer `APCLI008` rejects a product option that reuses one.
+  conflicting declarations. `GlobalOptionNames` is the one list of reserved global options and
+  `StandardOptionNames` the one list of options the command template owns; analyzer `APCLI008`
+  rejects a product option that reuses either.
 
 ## Releases
 

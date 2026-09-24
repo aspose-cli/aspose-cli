@@ -3,6 +3,7 @@ using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
@@ -44,7 +45,6 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         Assert.Equal([1, 2, 3], invocation.Batch.Ops.Cast<SetOp>().Select(static op => op.Value));
         Assert.Equal(["op-0001", "op-0002", "op-0003"], invocation.Batch.Ops.Select(static op => op.Id));
-        Assert.False(invocation.OpsFromStandardInput);
     }
 
     [Fact]
@@ -149,13 +149,11 @@ public sealed class BoundedEditCommandTests : IDisposable
         var command = new Command("convert");
         output.AddTo(command);
 
-        CliException error = Assert.Throws<CliException>(() => output.ResolvePath(
-            command.Parse(["--out", "BOOK.TEST"]), new PathResolver(_temp.Path), _input, ".test"));
+        CliException error = Assert.Throws<CliException>(() => output.Resolve(
+            command.Parse(["--out", "BOOK.TEST"]), new PathResolver(_temp.Path), _input));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.DoesNotContain("--in-place", error.Hint, StringComparison.Ordinal);
-        Assert.Equal(_temp.File("book.out.test"), output.ResolvePath(
-            command.Parse([]), new PathResolver(_temp.Path), _input, ".test"));
     }
 
     [Fact]
@@ -248,13 +246,13 @@ public sealed class BoundedEditCommandTests : IDisposable
         const string document = """{"ops":[{"op":"secret","passwordEnv":"OWNER"},{"op":"secret","passwordEnv":"OWNER"},{"op":"secret"}]}""";
         var reads = new List<string>();
 
-        IReadOnlyDictionary<string, string> secrets = ReadWithEnvironment(command, document, name =>
+        IReadOnlyDictionary<string, string> secrets = ReadWithEnvironment(command, name =>
         {
             reads.Add(name);
             return name == "OWNER" ? "owner-secret" : null;
-        }).Secrets;
+        }, "--ops", document).Secrets;
         CliException missing = Assert.Throws<CliException>(() => ReadWithEnvironment(
-            command, """{"ops":[{"op":"secret","passwordEnv":"ABSENT"}]}""", static _ => null));
+            command, static _ => null, "--ops", """{"ops":[{"op":"secret","passwordEnv":"ABSENT"}]}"""));
 
         Assert.Equal("owner-secret", Assert.Single(secrets).Value);
         Assert.Equal(["OWNER"], reads);
@@ -264,18 +262,47 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Fact]
+    public void Create_ChecksProductUsageBeforeReadingAnyInput()
+    {
+        var fast = new Option<bool>("--fast");
+        var host = new TestHost(_temp.Path);
+        Command command = Plain().Create<object>(
+            host,
+            "edit",
+            "Edits.",
+            new CommandTraits { Input = Book },
+            [fast],
+            static (_, _, _) => throw new InvalidOperationException("The handler is never reached."),
+            checkUsage: parse =>
+            {
+                if (parse.GetValue(fast))
+                {
+                    throw CliErrors.OptionInvalid("--fast", "is refused", "Drop --fast.");
+                }
+            });
+
+        command.Parse(["missing.test", "--ops", "-", "--fast"]).Invoke();
+        CliException refused = Assert.IsType<CliException>(host.Error);
+        command.Parse(["missing.test", "--ops", "-"]).Invoke();
+        CliException missing = Assert.IsType<CliException>(host.Error);
+
+        Assert.Equal("--fast", refused.Details!["option"]!.GetValue<string>());
+        Assert.Equal(ErrorCodes.FileNotFound, missing.Code);
+    }
+
+    [Fact]
     public void Create_PutsTheEditOptionsBeforeTheProductAndCommonOptions()
     {
         var edit = new BoundedEditCommand<TestOp, TestBatch>(Definition() with { VerifyDescription = "Verify." });
         var traits = new CommandTraits
         {
-            Input = new InputDocument("Book to edit.", "the book"),
+            Input = Book,
             Encrypt = new EncryptedOutput("the output book", ["test"]),
             UsesFonts = true,
         };
 
         Command command = edit.Create<object>(
-            new UnusedHost(), "edit", "Edits.", traits, [new Option<bool>("--fast")], static (_, _, _) => throw new InvalidOperationException());
+            new TestHost(_temp.Path), "edit", "Edits.", traits, [new Option<bool>("--fast")], static (_, _, _) => throw new InvalidOperationException());
 
         Assert.Equal(
             [
@@ -284,11 +311,53 @@ public sealed class BoundedEditCommandTests : IDisposable
             ],
             command.Options.Select(static option => option.Name));
         Assert.Throws<ArgumentException>(() => edit.Create<object>(
-            new UnusedHost(), "edit", "Edits.", traits with { Output = OutputTarget.File("Out.") }, [],
+            new TestHost(_temp.Path), "edit", "Edits.", traits with { Output = OutputTarget.File("Out.") }, [],
             static (_, _, _) => throw new InvalidOperationException()));
     }
 
+    [Fact]
+    public void TheTemplateReservesExactlyTheOptionNamesItDeclares()
+    {
+        var host = new TestHost(_temp.Path);
+        var edit = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
+        {
+            VerifyDescription = "Verify.",
+            SetDirectives = new("Set a value.", static _ => new SetOp(0), static ops => new TestBatch { Ops = ops }),
+        });
+        Command edited = edit.Create<object>(
+            host, "edit", "Edits.",
+            new CommandTraits { Input = Book, Encrypt = new EncryptedOutput("the output book", ["test"]), UsesFonts = true },
+            [], static (_, _, _) => throw new InvalidOperationException());
+        Command published = StandardCommand.Create<object>(
+            host, "split", "Splits.",
+            new CommandTraits { Input = Book, Output = OutputTarget.FileOrDirectory("Form file.", "Parts.") },
+            [], static (_, _) => throw new InvalidOperationException());
+
+        string[] declared = edited.Options.Concat(published.Options)
+            .SelectMany(static option => option.Aliases.Prepend(option.Name))
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+
+        Assert.Equal(StandardOptionNames.Reserved.Order(StringComparer.Ordinal), declared);
+    }
+
+    [Fact]
+    public void Create_RejectsAProductOptionThatRepeatsACommonOption()
+    {
+        var traits = new CommandTraits { Input = Book, Other = new InputDocument("Other book.", "the other book", "right") };
+
+        ArgumentException error = Assert.Throws<ArgumentException>(() => StandardCommand.Create<object>(
+            new TestHost(_temp.Path), "compare", "Compares.", traits,
+            [new Option<string>("--right-password").WithInput(InputKind.None)],
+            static (_, _) => throw new InvalidOperationException()));
+
+        Assert.Contains("--right-password", error.Message, StringComparison.Ordinal);
+    }
+
     private const string Document = """{"ops":[{"op":"set","value":1}]}""";
+
+    private static readonly InputDocument Book = new("Book to edit.", "the book");
 
     private static BoundedEditDefinition<TestOp, TestBatch> Definition() => new()
     {
@@ -311,21 +380,20 @@ public sealed class BoundedEditCommandTests : IDisposable
     private BoundedEditInvocation<TestBatch> Read(
         BoundedEditCommand<TestOp, TestBatch> command,
         params string[] arguments) =>
-        command.Read(Parse(command, arguments), new PathResolver(_temp.Path), TestBudgets.Create().Inputs, _input);
+        ReadWithEnvironment(command, static _ => null, arguments);
 
     private BoundedEditInvocation<TestBatch> ReadWithEnvironment(
         BoundedEditCommand<TestOp, TestBatch> command,
-        string document,
-        Func<string, string?> readEnvironment) =>
+        Func<string, string?> readEnvironment,
+        params string[] arguments) =>
         command.Read(
-            Parse(command, "--ops", document), new PathResolver(_temp.Path), TestBudgets.Create().Inputs, _input, readEnvironment);
+            Parse(command, arguments), new PathResolver(_temp.Path), TestBudgets.Create().Inputs, _input, readEnvironment);
 
-    private static ParseResult Parse(BoundedEditCommand<TestOp, TestBatch> edit, params string[] arguments)
-    {
-        var command = new Command("edit");
-        edit.AddTo(command);
-        return command.Parse(arguments);
-    }
+    private ParseResult Parse(BoundedEditCommand<TestOp, TestBatch> edit, params string[] arguments) =>
+        edit.Create<object>(
+            new TestHost(_temp.Path), "edit", "Edits.", new CommandTraits { Input = Book }, [],
+            static (_, _, _) => throw new InvalidOperationException("Only parsed."))
+            .Parse([Path.GetFileName(_input), .. arguments]);
 
     public abstract record TestOp : BoundedOperation;
 
@@ -339,9 +407,29 @@ public sealed class BoundedEditCommandTests : IDisposable
 
     private sealed class TestOpConverter() : OperationJsonConverter<TestOp>(Catalog);
 
-    private sealed class UnusedHost : Aspose.Cli.Sdk.Extensibility.IProductCommandHost<object>
+    private sealed class TestHost(string workDirectory) : IProductCommandHost<object>
     {
-        public int Run(ParseResult parseResult, Func<Aspose.Cli.Sdk.Extensibility.ProductCommandContext<object>, ResultEnvelope> handler) =>
-            throw new InvalidOperationException("The command is only built.");
+        public Exception? Error { get; private set; }
+
+        public int Run(ParseResult parseResult, Func<ProductCommandContext<object>, ResultEnvelope> handler)
+        {
+            Error = null;
+            try
+            {
+                handler(new ProductCommandContext<object>
+                {
+                    Binding = ProductBinding.CreateLicenseFree<object>("test", static _ => new object()),
+                    Paths = new PathResolver(workDirectory),
+                    Inputs = TestBudgets.Create().Inputs,
+                    ReadEnvironment = static _ => null,
+                });
+            }
+            catch (Exception exception)
+            {
+                Error = exception;
+            }
+
+            return 0;
+        }
     }
 }

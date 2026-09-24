@@ -35,7 +35,7 @@ internal static class MergeCommand
                 return standard.Port.Merge(new PdfMergeRequest
                 {
                     InputPaths = inputPaths,
-                    OutputPath = standard.RequestedOutputPath()!,
+                    OutputPath = standard.OutputPath(),
                     Overwrite = standard.Overwrite,
                     PreserveBookmarks = (parse.GetValue(bookmarks) ?? "preserve") == "preserve",
                     Password = standard.InputPassword,

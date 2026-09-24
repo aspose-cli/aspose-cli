@@ -32,7 +32,7 @@ public sealed class CommandHelpExampleTests
     [Fact]
     public void WithExamples_WritesEachExampleAfterTheExecutableName()
     {
-        var command = new Command("run").WithExamples(["run --fast", $"{DistributionInfo.CommandName} run"]);
+        var command = new Command("run").WithExamples(["run --fast", "run"]);
 
         Assert.True(command.TryGetHelpMetadata(out CommandHelpMetadata? metadata));
         Assert.Equal([$"{DistributionInfo.CommandName} run --fast", $"{DistributionInfo.CommandName} run"], metadata!.Examples);
