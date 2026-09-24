@@ -15,6 +15,9 @@ most likely fix. Read the hint first; this page adds background.
   signature. Check the real file type; renaming a `.docx` to `.xlsx` does
   not make it a workbook. Plain-text data must use a text extension
   (.csv, .tsv, .txt, .json) to be imported as text.
+- **INPUT_CHANGED** — the file no longer matches the `--if-match` (or
+  `ifMatch`) fingerprint, or changed while it was being read. Re-read it,
+  review what changed, and retry with the new `source.fingerprint.sha256`.
 - **PASSWORD_REQUIRED / PASSWORD_INVALID** — ask the user for the
   password (never guess); prefer `--password-env VAR` when retrying. The distinction is
   reliable: `_REQUIRED` means none was given, `_INVALID` means the given

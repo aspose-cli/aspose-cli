@@ -4,8 +4,7 @@ This layer is for formula-driven analytical models: budgets, forecasts,
 3-statement models, DCF-style valuations, scenario analysis. For trackers,
 CSV reports and dashboards go back to `aspose-cli docs workbook-standards` —
 and everything taught there (widths, number formats, the color language,
-print delivery) is inherited here, not repeated. (This document is also
-served offline as `aspose-cli docs financial-models`.) Recipes below build a
+print delivery) is inherited here, not repeated. Recipes below build a
 small 3-statement model — `model.xlsx`, sheets `Assumptions` / `PnL` /
 `Summary`; every recipe ran against the real engine, and every quoted
 number is an engine read-back, not arithmetic.
@@ -196,8 +195,10 @@ aspose-cli cells edit model.xlsx --in-place --ops '{"ops":[
 ```
 
 Read the grid back and check opposite corners against expectation — here
-Y3 revenue over Y1 revenue × growth: 882 / 1058 / 1323 / 1587, all exact,
-and `--scope formulas` shows each cell holding its own shifted anchors.
+Y3 revenue over Y1 revenue × growth: 882 / 1058 / 1323 / 1587 (the raw
+values carry floating-point noise such as `1057.9999999999998`; round with a
+number format), and `--scope formulas` shows each cell holding its own
+shifted anchors.
 
 ## Functions that behave
 
@@ -264,5 +265,4 @@ The full protocol, tier by tier: `aspose-cli docs verification`.
   and the delivery gates.
 - Every function this document names evaluates correctly in the real
   engine; nothing in this layer had to be faked or approximated.
-- Tab colors are no longer a limit (`set_tab_color`); the remaining
-  cosmetic limits are inherited — see `aspose-cli docs workbook-standards`.
+- Cosmetic limits are inherited — see `aspose-cli docs workbook-standards`.

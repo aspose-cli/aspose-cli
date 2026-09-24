@@ -126,7 +126,7 @@ The full header treatment — the medium rule under the header, wrap plus a
 row auto-fit for long names, the type scale above 11pt body — is `aspose-cli
 docs design-system`, Header treatment.
 
-"One font per workbook" now has a real lever: the Normal style is Arial 10
+"One font per workbook" has a real lever: the Normal style is Arial 10
 until `set_default_font` changes it, and every cell without an explicit
 font follows the new default — verify with a render, where the letterforms
 change. What you cannot chase to zero is the *declared* list: the file
@@ -277,40 +277,21 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 What the v2 ops cannot express — say so rather than faking it:
 
-- Borders are no longer a limit: `set_borders` draws outline, inside-grid
-  and single-edge borders per range — see `aspose-cli docs editing`; the
-  L0-L4 hierarchy that gives each line weight a meaning (thin top over
-  subtotals, double bottom under grand totals) is `aspose-cli docs
-  design-system`, Border hierarchy.
 - No per-cell lock: `protect_sheet` locks every cell (with verb-level
   `allow` exceptions), so "locked sheet except the input cells" is not
   expressible.
-- Underline, strikethrough and indent are no longer limits: they are
-  `format_range` style fields — see `aspose-cli docs editing`.
 - Page `header`/`footer` set the center section only; left/right sections
   are not expressible.
-- Sheet cosmetics are no longer a limit: `set_tab_color` and
-  `set_sheet_view` (gridlines, zoom, headings) cover them — see
-  `aspose-cli docs editing`. Note `set_sheet_view` gridlines are a VIEW
-  setting: Excel and the live preview honor them, PNG renders never do
-  (draw `set_borders` when a grid must appear in a render).
+- `set_sheet_view` gridlines are a VIEW setting: Excel and the live preview
+  honor them, PNG renders never do (draw `set_borders` when a grid must
+  appear in a render).
 - No calculation settings (iterative calculation, manual mode).
-- Conditional-format kinds are no longer the old short list: `formula`
-  (whole-row highlighting via a `$`-anchored column), `topBottom` and
-  `iconSet` join `cellValue`, `colorScale`, `dataBar`, `duplicates` — see
-  `aspose-cli docs editing`. Still not expressible: text-contains /
-  date-period / above-average rules, rule priority and stop-if-true, and
-  custom icon thresholds or reversed icon order (iconSet thresholds are
-  automatic).
-- Chart cosmetics are no longer the old dead end: `create_chart` and
-  `update_chart` take `legend` (visibility, right/bottom/top/left),
-  `axisTitles` (rejected on `pie` — it has no axes), `seriesColors` and
-  `dataLabels` (visibility + number format); `create_chart` applies a
-  modern default look by itself (white plot, bottom legend, series
-  palette), and `delete_chart` removes a chart — see `aspose-cli docs editing`.
-  Still not expressible: fonts inside charts (title/axis/label typefaces
-  and sizes), axis scale and bounds, and label content beyond the value
-  (no category/percentage labels). Unknown operation or style fields are
+- Conditional formats: no text-contains, date-period or above-average
+  rules, no rule priority or stop-if-true, and no custom icon thresholds or
+  reversed icon order (iconSet thresholds are automatic).
+- Charts: no fonts inside charts (title/axis/label typefaces and sizes), no
+  axis scale or bounds, and no label content beyond the value (no
+  category/percentage labels). Unknown operation or style fields are
   rejected with `OPS_INVALID`; use the schema's field names.
 - `create_chart` plots ONE contiguous `dataRange`. A multi-area reference
   fails `OPS_INVALID` ("a range has at most one ':' separator"), so
@@ -331,11 +312,6 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   The helper block is visible on the sheet — park it below the data or on a
   side sheet, and never hand-copy the values, or the chart silently stops
   tracking the model.
-- The default (Normal) style is no longer immutable: `set_default_font`
-  changes its font (and size) workbook-wide. Call it FIRST — column width
-  units are measured in the Normal font, so a later swap rescales rendered
-  widths (Arial 10 → Calibri 11 is the one probe-measured metric-neutral
-  pair).
 - `set_validation` constrains a human typing in Excel, not the CLI: an ops
   batch or `--set` writes any value into a validated cell and exits 0.
 

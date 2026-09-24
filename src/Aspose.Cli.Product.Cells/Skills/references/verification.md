@@ -189,16 +189,16 @@ For an edit, `--verify` performs the value/formula diff and the workbook-wide
 formula scan in one call. Use the stable backup below for the final
 multi-edit session inventory.
 
-When you edited a user's file under the backup protocol (SKILL.md
-section 5), the backup is the pre-session state — diff against it:
+When you edited a user's file under the backup protocol (the Skill's
+"Editing a user's file"), the backup is the pre-session state — diff against it:
 
 ```
 aspose-cli cells compare book.backup.xlsx book.xlsx --output json
 ```
 
 - What it compares: cell VALUES and formula TEXT. Nothing else. `--compare`
-  accepts only `values` or `formulas` (the default is both); `--compare
-  styles` is a usage error.
+  accepts only `values` or `formulas` (the default: values plus formula
+  text); any other value is USAGE_ERROR.
 - What it cannot see: styling (fonts, fills, number formats), column widths
   and row heights, charts and their titles, images, page setup, validation,
   freeze panes. A formatting-only session reports `identical: true,

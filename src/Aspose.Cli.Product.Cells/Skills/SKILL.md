@@ -93,17 +93,18 @@ aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==
 - `--ops` takes a path, `-` (stdin) or inline JSON. Without `--in-place` or
   `--out`, the result goes to `book.out.xlsx`.
 - Batches are atomic: if any op fails, nothing is written and the error names
-  the op `index`. `--best-effort` keeps successful ops and exits 8;
-  `--dry-run` validates in memory and writes nothing.
+  the op `index`. `--best-effort` keeps successful ops and exits 8 when any
+  op fails; `--dry-run` validates in memory and writes nothing.
 - Formulas recalculate once after the whole batch; `--no-recalc` opts out.
-  Chart and pivot ops calculate their own inputs first.
+  Auto-fit, sort, duplicate-removal and pivot ops calculate earlier edits first.
 - `set_formula` over a range uses Excel fill semantics; formatting ops touch
   only the style fields you set.
 - Charts and pivots are ops (`create_chart`, `update_chart`, `delete_chart`,
   `create_pivot`, `refresh_pivot`). `create_chart` plots one contiguous
   `dataRange` and applies a modern look by itself.
 - `inspect`, `query range`, `query search` and `compare` report SHA-256
-  fingerprints; pass one as `--if-match` to reject a concurrently changed file.
+  fingerprints; pass one as `--if-match` to reject a concurrently changed file
+  (a mismatch fails with INPUT_CHANGED, exit 3).
 - The result's `applied` array has one entry per op with `status`,
   `itemsAffected` and `targets`.
 
@@ -112,8 +113,8 @@ Full vocabulary and recipes: `aspose-cli docs editing` and
 
 ### Editing a user's file
 
-`--backup` creates `book.backup.xlsx` once and never overwrites it; `--verify`
-enables it for in-place edits. `--verify` compares the staged output with a
+`--backup` (only with `--in-place`) creates `book.backup.xlsx` once and never
+overwrites it. `--verify` compares the staged output with a
 private pre-edit snapshot before publishing and reports `directChanges`,
 `formulaResultChanges`, `otherChanges` and `formulaErrors`. Formula errors or
 incomplete checks keep the edited file and exit 8 with `verification.issues`.
@@ -159,7 +160,8 @@ Without a license, produced files carry an evaluation watermark and an extra
 "Evaluation Warning" sheet, results carry `EVAL_MODE`, and CSV, TSV and
 Markdown exports are limited to the first worksheet. Tell the user when you
 deliver evaluation output. Install a license with
-`aspose-cli license install Aspose.Cells.lic --product cells`.
+`aspose-cli license install Aspose.Cells.lic --product cells`; details in
+`aspose-cli docs licensing`.
 
 ## 8. Errors and pitfalls
 
@@ -172,7 +174,7 @@ Exit codes: 0 ok, 1 internal, 2 usage, 3 input file, 4 validation, 5 output,
 | Windows PowerShell strips inner quotes from inline `--ops` JSON | Escape them as `\"`, pipe via `--ops -`, or use `--set` |
 | Windows PowerShell `>` re-encodes stdout as UTF-16 | Parse stdout directly |
 | A workbook open in Excel | Reads work; the in-place save fails with OUTPUT_UNWRITABLE — ask the user to close it |
-| Evaluation adds a sheet | Sheet names match case-insensitively; take them from `error.details.available` and never rely on sheet order |
+| Evaluation adds a sheet and makes it the active one | Always pass `--sheet`; names match case-insensitively; take them from `error.details.available` and never rely on sheet order |
 | Passwords | Prefer `--password-env VAR`; protect outputs with `--encrypt-env` |
 
 ## 9. Task routing

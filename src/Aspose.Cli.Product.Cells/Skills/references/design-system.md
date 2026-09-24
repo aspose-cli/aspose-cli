@@ -274,7 +274,7 @@ Selection is by data shape, not preference:
 | single KPI now | KPI card + sparkline (section 9) | gauge |
 
 `create_chart` already applies a modern default — the outer chart border is
-removed, the plot area is white with a light-gray outline, gridlines are
+removed, the plot area has no fill, gridlines are
 `#D9D9D9` and value-axis only (horizontal on a column/line chart, vertical
 on a bar), the value-axis line and tick marks are gone, the legend sits at
 the bottom, bars are tighter, and series fall on a navy ramp (`#1F4E79`,
@@ -447,10 +447,9 @@ aspose-cli preview deliverable.xlsx --open --output json
 
 The command returns immediately; the startup envelope carries the `url` —
 hand it over immediately. Then build in 3-5 `edit` batches, not one: data →
-structure → formats → charts → polish. Each save refreshes the browser, and
-because the changes come from `cells edit`, the preview jumps to the edited
-sheet and flashes a spotlight around the changed ranges — the batch sequence
-narrates the build.
+structure → formats → charts → polish. Each save updates the preview in
+place: the changed cells flash where they are, and `--fx demo` adds a
+pointer that travels to them — the batch sequence narrates the build.
 End with the delivery summary. Section 12 still applies: the preview is the
 user's view, the render+LOOK is yours. Details: `aspose-cli docs preview`.
 

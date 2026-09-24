@@ -150,8 +150,9 @@ aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-2.pn
 `dash-2.png` ticks every box: `156,460` fully drawn, the title whole, the
 sparklines showing the April dip the charts also show (also render `Data` —
 `--range A1:I12` — for the register's banded table, ISO dates, formatted
-money and data bars). The workbook also saves `Dashboard` as the active sheet,
-so both Excel and the Cells Preview open on the summary. Then the semantic
+money and data bars). A licensed save also keeps `Dashboard` as the active
+sheet, so both Excel and the Cells Preview open on the summary; an evaluation
+save activates its own warning sheet instead. Then the semantic
 gate and the print delivery:
 
 ```powershell
@@ -162,9 +163,10 @@ aspose-cli cells inspect dashboard.xlsx --detail errors --output json
 aspose-cli cells convert dashboard.xlsx --to pdf --out dashboard.pdf --overwrite --output json
 ```
 
-Measured outcome: `workbook.formulaErrors` is empty; the PDF is three A4
-landscape pages — the Dashboard fitted to one, the 36-row register flowing
-across two with the header row repeated by `titleRows`. `Dashboard` (tab
+Measured outcome: `workbook.formulaErrors` is empty; the PDF pages are A4
+landscape — the Dashboard fitted to one, the 36-row register flowing across
+two with the header row repeated by `titleRows` (evaluation mode appends
+pages for its warning sheets). `Dashboard` (tab
 `#1F3864`, first) opens on a title band, four KPI cards whose numbers are
 engine-computed formulas (spot-check: B5 `156,460` equals the region
 block's sum), deltas colored by sign, two token-styled charts with the

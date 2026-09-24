@@ -28,9 +28,11 @@ machine-readable. Use the result envelope and `license status` for automation.
 For an interactive local setup, run `aspose-cli app --welcome`, choose the `.lic`
 file in the browser, and manage it later under Settings. The file is validated
 from one private snapshot of at most 1 MiB before an atomic user-level install;
-license content is never displayed or logged. CLI and App use the same source precedence; installing a user file does not
-override an explicit or environment source. The App restarts after a change so
-SDK state matches saved configuration. The CLI workflow remains available for agents and CI.
+license content is never displayed or logged. CLI and App use the same source
+precedence; installing a user file does not override an explicit or environment
+source. After a change the viewer service recycles its renderer, so the next
+render applies the new license (`aspose-cli docs app`). The CLI workflow remains
+available for agents and CI.
 
 Resolution order — the first that resolves wins:
 
@@ -41,11 +43,12 @@ Resolution order — the first that resolves wins:
 licenses in the user config directory.
 
 For document operations, a broken configured license is a hard error (exit 7),
-never a silent fallback to evaluation — see the diagnostic distinction above. `aspose-cli license install <file>`
+never a silent fallback to evaluation — see the diagnostic distinction above.
+`aspose-cli license install <file>`
 validates a file and installs it as this user's default; `aspose-cli license
 remove` atomically removes saved user files (env and project sources are left untouched).
 An unchanged validated license can reuse a preview; a changed source or content
-restarts its process. A rejected license leaves an existing preview untouched.
+recycles its renderer. A rejected license leaves an existing preview untouched.
 
 ## Evaluation mode — what you must handle
 

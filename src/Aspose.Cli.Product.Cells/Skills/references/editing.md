@@ -34,8 +34,8 @@ General rules:
 - Rows are 1-based numbers; columns are letters — exactly as in A1.
 - Editing a user-supplied file? Add `--backup --verify` to the first in-place
   edit. The CLI creates `book.backup.xlsx` once and never overwrites it.
-- Read `verification`, review the result, then use the stable backup for the
-  final session diff. The full protocol is in the Skill's Editing section.
+  Read the result's `verification`, review the file, then diff against the
+  stable backup at the end of the session (`aspose-cli docs verification`).
 
 ## Op index
 
@@ -180,7 +180,8 @@ on its highest-value sheet:
     { "op": "set_active_sheet", "sheet": "Dashboard" }
 
 The target must be visible. The active-sheet choice is saved in the workbook
-and is also honored by the Cells browser Preview.
+and is also honored by the Cells browser Preview. An evaluation-mode save
+activates its own "Evaluation Warning" sheet instead.
 
 ## Charts
 
@@ -272,7 +273,7 @@ applied; the rest of the page setup is preserved.
 
 | op | fields | notes |
 |----|--------|-------|
-| `create_table` | `range` (includes headers), `name?`, `style?` (`TableStyleMedium2`), `totalsRow?` | A native table with its own filter dropdowns. `style` is a built-in name (`TableStyleLight1`–`21`, `TableStyleMedium1`–`28`, `TableStyleDark1`–`11`) or a custom style the workbook defines; any other name is rejected. Do **not** also `set_autofilter` the same range. |
+| `create_table` | `range` (includes headers), `name?`, `style?` (`TableStyleMedium2`), `totalsRow?` | A native table with its own filter dropdowns. A `name` that reads as a cell address (`T1`) is refused by the engine. `style` is a built-in name (`TableStyleLight1`–`21`, `TableStyleMedium1`–`28`, `TableStyleDark1`–`11`) or a custom style the workbook defines; any other name is rejected. Do **not** also `set_autofilter` the same range. |
 | `set_autofilter` | `range`, `off?` | `{"off": true}` removes the sheet filter. |
 | `sort_range` | `range`, `by`, `hasHeader?` | `by` is `[{ "column": "B", "order": "desc" }]` (asc default); sorts in place by one or more columns. |
 | `remove_duplicates` | `range`, `columns?`, `hasHeader?` | Drops duplicate rows. `columns` (letters) restricts the comparison to a subset; omit to compare all columns. |
@@ -438,7 +439,7 @@ Two caveats, both measured:
   every column's rendered width. The one metric-neutral upgrade is the
   default Arial 10 → Calibri 11 (probe-measured pixel-identical column
   edges); any other target font rescales, so re-check widths after the swap.
-- **`gridlines` is a view setting.** It affects Excel and the live preview
+- **`gridlines` is a view setting.** It affects Excel and the live
   preview, NOT the PNG `render` output — renders follow print semantics and
   are byte-identical either way (probe-measured), and print gridlines are
   not expressible in the v2 ops. When a grid must appear in a render or PDF,
@@ -461,9 +462,10 @@ Use `--dry-run` first when the batch is large or destructive
 
 Editable output formats are xlsx, xlsm, xlsb, xls, ods, csv, tsv, html and mhtml.
 Use `cells convert` for other export formats. HTML output is self-contained and
-embeds its images. Editing encrypted input preserves encryption when the target
-format supports it; `--encrypt-env` changes the password. Text and HTML exports
-do not support workbook encryption.
+embeds its images. Editing encrypted input keeps the password in xlsx, xlsm,
+xlsb, xls and ods output; `--encrypt-env` changes it. Other outputs cannot be
+encrypted: they drop the source encryption with a `WORKBOOK_ENCRYPTION_REMOVED`
+warning, and `--encrypt-env` on them is OPTION_INVALID.
 
 `--verify` checks the staged candidate before publication, including when
 `--timeout` or MCP is used. Semantic findings are returned with
