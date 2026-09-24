@@ -205,9 +205,10 @@ public sealed class McpCommandTests
                 timeoutSeconds,
                 cancellation.Token);
 
-            // Two cold interpreters must be ready before this test can exercise descendant cleanup.
+            // Two cold interpreters must be ready before this test can exercise descendant cleanup;
+            // a loaded machine can take several seconds to start them.
             Assert.True(
-                await WaitForFileAsync(pidFile, TimeSpan.FromSeconds(5)),
+                await WaitForFileAsync(pidFile, TimeSpan.FromSeconds(30)),
                 "The adversarial descendant did not become ready within its startup budget.");
             string[] identity = (await File.ReadAllTextAsync(pidFile)).Split('|');
             Process candidate = Process.GetProcessById(int.Parse(identity[0]));

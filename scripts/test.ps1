@@ -267,6 +267,9 @@ function Read-Trx {
 $runId = [DateTime]::UtcNow.ToString('yyyyMMddTHHmmssfffZ') + '-' + [Guid]::NewGuid().ToString('N')
 $resultsRoot = Join-Path $repoRoot "artifacts/TestResults/$runId"
 $markedFilter = ($categories | ForEach-Object { "Category=$_" }) -join '|'
+# Concurrent projects share the processor: each runs at most its share of 1.5 test threads
+# per core, so tests with process-start and I/O budgets are not starved.
+$threadsPerProject = [Math]::Max(2, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5 / $testProjects.Count))
 $runs = foreach ($project in $testProjects) {
     $projectName = [IO.Path]::GetFileNameWithoutExtension($project)
     $resultsDirectory = Join-Path $resultsRoot $projectName
@@ -280,6 +283,7 @@ $runs = foreach ($project in $testProjects) {
         '--logger', 'trx;LogFileName=results.trx',
         '--results-directory', $resultsDirectory)
     if ($null -ne $filter) { $arguments += @('--filter', $filter) }
+    $arguments += @('--', "xUnit.MaxParallelThreads=$threadsPerProject")
     Write-Host "TEST $projectName $(if ($null -eq $filter) { '(all tests)' } else { "($filter)" })"
     $test = Start-Dotnet $arguments (Join-Path $resultsDirectory 'test.log') @{ ASPOSE_CLI_TEST_ARTIFACTS = $resultsDirectory }
     # A project that runs marked tests lists them, so the slow-test report can leave them out.
