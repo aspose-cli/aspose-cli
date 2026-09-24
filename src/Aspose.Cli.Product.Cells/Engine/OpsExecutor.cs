@@ -15,7 +15,7 @@ namespace Aspose.Cli.Product.Cells.Engine;
 internal static class OpsExecutor
 {
     public static IReadOnlyList<BoundedOperationOutcome> Execute(Workbook workbook, OpsBatch batch, bool bestEffort,
-        IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs, ResourceBudgetLedger budgets) =>
+        IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs, ResourceBudgetLedger budgets) =>
         BoundedOperationRunner.Run(
             CellsOps.Catalog,
             batch.Ops,
@@ -35,7 +35,7 @@ internal static class OpsExecutor
     /// Core-visible <see cref="EngineOpException"/>; a mapper's own
     /// <c>CliException</c> propagates untouched for the runner to normalize.
     /// </summary>
-    private static long? Apply(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs)
+    private static long? Apply(Workbook workbook, Op op, IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs)
     {
         try
         {
@@ -66,7 +66,7 @@ internal static class OpsExecutor
     };
 
     /// <summary>Routes one op to its mapper; returns the touched cell count where meaningful.</summary>
-    private static long? Dispatch(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets, InputResourceScope inputs) => op switch
+    private static long? Dispatch(Workbook workbook, Op op, IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs) => op switch
     {
         SetValuesOp or SetFormulaOp or ClearRangeOp or CopyRangeOp or FormatRangeOp
             or MergeCellsOp or UnmergeCellsOp => DispatchCell(workbook, op),
@@ -151,7 +151,7 @@ internal static class OpsExecutor
         _ => throw new InvalidOperationException(),
     };
 
-    private static long? DispatchReview(Workbook workbook, Op op, IReadOnlyDictionary<string, string?>? secrets) => op switch
+    private static long? DispatchReview(Workbook workbook, Op op, IReadOnlyDictionary<string, string>? secrets) => op switch
     {
         AddCommentOp addComment => CommentOps.AddComment(Sheets.Resolve(workbook, op), addComment),
         EditCommentOp editComment => CommentOps.EditComment(Sheets.Resolve(workbook, op), editComment),

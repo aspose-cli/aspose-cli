@@ -11,7 +11,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal static class ProtectOps
 {
-    public static long? ProtectSheet(Worksheet sheet, ProtectSheetOp op, IReadOnlyDictionary<string, string?>? secrets)
+    public static long? ProtectSheet(Worksheet sheet, ProtectSheetOp op, IReadOnlyDictionary<string, string>? secrets)
     {
         string? password = ResolvePassword(op.PasswordEnv, secrets);
         if (password is null)
@@ -32,7 +32,7 @@ internal static class ProtectOps
         return null;
     }
 
-    public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, string?>? secrets)
+    public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, string>? secrets)
     {
         string? password = ResolvePassword(op.PasswordEnv, secrets);
         if (password is null)
@@ -47,13 +47,13 @@ internal static class ProtectOps
         return null;
     }
 
-    public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, string?>? secrets)
+    public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
     {
         workbook.Protect(ProtectionType.Structure, ResolvePassword(op.PasswordEnv, secrets));
         return null;
     }
 
-    public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, string?>? secrets)
+    public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
     {
         workbook.Unprotect(ResolvePassword(op.PasswordEnv, secrets) ?? string.Empty);
         return null;
@@ -89,7 +89,7 @@ internal static class ProtectOps
         }
     }
 
-    private static string? ResolvePassword(string? envVar, IReadOnlyDictionary<string, string?>? secrets)
+    private static string? ResolvePassword(string? envVar, IReadOnlyDictionary<string, string>? secrets)
     {
         if (envVar is null)
         {

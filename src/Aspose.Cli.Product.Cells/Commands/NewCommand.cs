@@ -2,50 +2,42 @@ using System.CommandLine;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
-/// <summary><c>aspose-cli cells create</c> — create a blank workbook.</summary>
+/// <summary><c>cells create</c> — create a blank workbook.</summary>
 internal static class NewCommand
 {
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
-        var fileArgument = new Argument<string>("file")
-        {
-            Description = "Path of the workbook to create, e.g. report.xlsx.",
-        }.WithInput(InputKind.None);
-
-        var sheetsOption = new Option<string?>("--sheets")
+        var sheets = new Option<string?>("--sheets")
         {
             Description = "Comma-separated sheet names, e.g. \"Data,Summary\". Default: one sheet named Sheet1.",
         }.WithInput(InputKind.None);
-
-        var overwriteOption = OutputOptions.Overwrite();
-        var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);
-
-        var create = new Command("create", "Create a new workbook.");
-        create.Arguments.Add(fileArgument);
-        create.Options.Add(sheetsOption);
-        create.Options.Add(overwriteOption);
-        encrypt.AddTo(create);
-
-        create.SetAction(parseResult => host.Run(parseResult, context =>
-        {
-            IReadOnlyList<string> sheetNames = ParseSheetNames(parseResult.GetValue(sheetsOption));
-            string outputPath = context.Paths.ResolveOutput(parseResult.GetRequiredValue(fileArgument));
-            string? encryptPassword = encrypt.Resolve(parseResult, context.Inputs, context.ReadEnvironment);
-            encrypt.EnsureProtectable(parseResult, CellsFormats.ForOutputPath(outputPath), CellsFormats.EncryptableIds);
-
-            return context.Port.CreateWorkbook(new NewWorkbookRequest
+        return StandardCommand.Create(
+            host,
+            "create",
+            "Create a new workbook.",
+            new CommandTraits
             {
-                OutputPath = outputPath,
-                Overwrite = parseResult.GetValue(overwriteOption),
-                SheetNames = sheetNames,
-                EncryptPassword = encryptPassword,
-            });
-        }));
-
-        return create;
+                Output = OutputTarget.CreatedFile("Path of the workbook to create, e.g. report.xlsx."),
+                Encrypt = CellsCommands.EncryptedWorkbook,
+            },
+            [sheets],
+            (parse, standard) =>
+            {
+                IReadOnlyList<string> sheetNames = ParseSheetNames(parse.GetValue(sheets));
+                string outputPath = standard.CreatedPath;
+                string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(outputPath));
+                return standard.Port.CreateWorkbook(new NewWorkbookRequest
+                {
+                    OutputPath = outputPath,
+                    Overwrite = standard.Overwrite,
+                    SheetNames = sheetNames,
+                    EncryptPassword = encryptPassword,
+                });
+            }).WithExamples(["cells create book.xlsx --sheets \"Data,Summary\""]);
     }
 
     private static IReadOnlyList<string> ParseSheetNames(string? sheets)

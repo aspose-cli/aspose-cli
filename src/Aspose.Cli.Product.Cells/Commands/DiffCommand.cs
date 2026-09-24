@@ -1,11 +1,12 @@
 using System.CommandLine;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary>
-/// <c>aspose-cli cells compare</c> — compares two workbooks. The exit code is 0 even
+/// <c>cells compare</c> — compares two workbooks. The exit code is 0 even
 /// when they differ; the payload's <c>identical</c> flag carries the verdict,
 /// so diff doubles as a verifier in scripts and evaluation harnesses.
 /// </summary>
@@ -18,57 +19,43 @@ internal static class DiffCommand
 
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
-        var leftArgument = new Argument<string>("left") { Description = "Baseline workbook." }.WithInput(InputKind.File);
-        var rightArgument = new Argument<string>("right")
-        {
-            Description = "Candidate workbook to compare against the baseline.",
-        }.WithInput(InputKind.File);
-
-        var compareOption = new Option<string>("--compare")
+        var compare = new Option<string>("--compare")
         {
             Description = "What to compare: values, or formulas (values + formulas, the default).",
             DefaultValueFactory = _ => CompareFormulas,
         }.WithInput(InputKind.None);
-        compareOption.AcceptOnlyFromAmong(CompareValues, CompareFormulas);
-
+        compare.AcceptOnlyFromAmong(CompareValues, CompareFormulas);
         var maxDiffsOption = new Option<int>("--max-diffs")
         {
             Description = $"Maximum differing cells to list across the entire workbook ({MinMaxDiffs}-{MaxMaxDiffs}).",
             DefaultValueFactory = _ => 1000,
         };
-
-        var leftPassword = new PasswordOptions("--left-password", "the baseline file", allowStdin: false);
-        var rightPassword = new PasswordOptions("--right-password", "the candidate file", allowStdin: false);
-
-        var diff = new Command("compare", "Compare stored workbook values and optional formula text; dates use raw serial numbers.");
-        diff.Arguments.Add(leftArgument);
-        diff.Arguments.Add(rightArgument);
-        diff.Options.Add(compareOption);
-        diff.Options.Add(maxDiffsOption);
-        leftPassword.AddTo(diff);
-        rightPassword.AddTo(diff);
-
-        diff.SetAction(parseResult => host.Run(parseResult, context =>
-        {
-            int maxDiffs = parseResult.GetValue(maxDiffsOption);
-            OptionGuards.EnsureInRange("--max-diffs", maxDiffs, MinMaxDiffs, MaxMaxDiffs,
-                "Lower the budget, or narrow the comparison to the sheets that matter.");
-
-            DiffScope scope = parseResult.GetValue(compareOption) == CompareValues
-                ? DiffScope.Values
-                : DiffScope.Formulas;
-
-            string leftPath = context.Paths.ResolveInput(parseResult.GetRequiredValue(leftArgument));
-            string rightPath = context.Paths.ResolveInput(parseResult.GetRequiredValue(rightArgument));
-            return context.Port.Diff(leftPath, rightPath, new DiffRequest
+        return StandardCommand.Create(
+            host,
+            "compare",
+            "Compare stored workbook values and optional formula text; dates use raw serial numbers.",
+            new CommandTraits
             {
-                Scope = scope,
-                MaxDiffs = maxDiffs,
-                LeftPassword = leftPassword.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
-                RightPassword = rightPassword.Resolve(parseResult, context.Inputs, context.ReadEnvironment),
-            });
-        }));
-
-        return diff;
+                Input = new InputDocument("Baseline workbook.", "the baseline file", "left"),
+                Other = new InputDocument("Candidate workbook to compare against the baseline.", "the candidate file", "right"),
+            },
+            [compare, maxDiffsOption],
+            (parse, standard) =>
+            {
+                int maxDiffs = parse.GetValue(maxDiffsOption);
+                OptionGuards.EnsureInRange("--max-diffs", maxDiffs, MinMaxDiffs, MaxMaxDiffs,
+                    "Lower the budget, or narrow the comparison to the sheets that matter.");
+                return standard.Port.Diff(standard.Input, standard.Other, new DiffRequest
+                {
+                    Scope = parse.GetValue(compare) == CompareValues ? DiffScope.Values : DiffScope.Formulas,
+                    MaxDiffs = maxDiffs,
+                    LeftPassword = standard.InputPassword,
+                    RightPassword = standard.OtherPassword,
+                });
+            }).WithExamples(
+            [
+                "cells compare old.xlsx new.xlsx --output json",
+                "cells compare old.xlsx new.xlsx --compare values --max-diffs 50",
+            ]);
     }
 }

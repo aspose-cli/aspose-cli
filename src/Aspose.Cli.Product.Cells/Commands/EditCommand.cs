@@ -2,11 +2,12 @@ using System.CommandLine;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary>
-/// <c>aspose-cli cells edit</c>: applies one atomic batch from an <c>--ops</c> document
+/// <c>cells edit</c>: applies one atomic batch from an <c>--ops</c> document
 /// and/or one-cell <c>--set</c> directives through the shared bounded-edit skeleton.
 /// </summary>
 internal static class EditCommand
@@ -26,63 +27,61 @@ internal static class EditCommand
         NormalizePaths = static (op, paths) => op is InsertImageOp image
             ? image with { Path = Path.GetFullPath(image.Path, paths.BaseDirectory) }
             : op,
+        SecretVariables = static op => op switch
+        {
+            ProtectSheetOp value => [value.PasswordEnv],
+            UnprotectSheetOp value => [value.PasswordEnv],
+            ProtectWorkbookOp value => [value.PasswordEnv],
+            UnprotectWorkbookOp value => [value.PasswordEnv],
+            _ => [],
+        },
     };
 
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
-        var file = new Argument<string>("file") { Description = "Workbook to edit." }.WithInput(InputKind.File);
-        var edit = new BoundedEditCommand<Op, OpsBatch>(Definition);
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
-        var password = new PasswordOptions("--password", "the workbook");
-        var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);
-        var fonts = new FontDirectoryOptions();
-        var command = new Command("edit", $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.");
-        command.Arguments.Add(file);
-        edit.AddTo(command);
-        command.Options.Add(noRecalc);
-        password.AddTo(command);
-        encrypt.AddTo(command);
-        fonts.AddTo(command);
-
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            bool recalculate = !parse.GetValue(noRecalc);
-            if (!recalculate && edit.IsVerifyRequested(parse))
+        return new BoundedEditCommand<Op, OpsBatch>(Definition).Create(
+            host,
+            "edit",
+            $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.",
+            new CommandTraits
             {
-                throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc", "Remove --no-recalc so formula-result verification is reliable.");
-            }
-
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            BoundedEditInvocation<OpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
-            string? encryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment);
-            encrypt.EnsureProtectable(parse, CellsFormats.ForOutputPath(invocation.Target.OutputPath), CellsFormats.EncryptableIds);
-            using IDisposable fontScope = fonts.Use(parse, context);
-            return context.Port.ApplyOps(input, invocation.Batch, new EditRequest
+                Input = CellsCommands.Workbook("Workbook to edit."),
+                Encrypt = CellsCommands.EncryptedWorkbook,
+                UsesFonts = true,
+            },
+            [noRecalc],
+            (parse, edit, standard) =>
             {
-                OutputPath = invocation.Target.OutputPath,
-                Overwrite = invocation.Target.Overwrite,
-                BackupPath = invocation.Target.BackupPath,
-                Options = invocation.Options,
-                Recalculate = recalculate,
-                OpSecrets = ResolveSecrets(invocation.Batch, context.ReadEnvironment),
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: !invocation.OpsFromStandardInput),
-                EncryptPassword = encryptPassword,
-                Verify = invocation.Verify,
-            });
-        }));
+                bool recalculate = !parse.GetValue(noRecalc);
+                if (!recalculate && edit.Verify)
+                {
+                    throw CliErrors.OptionInvalid("--verify", "cannot be combined with --no-recalc", "Remove --no-recalc so formula-result verification is reliable.");
+                }
 
-        return command;
+                string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(edit.Target.OutputPath));
+                return standard.Port.ApplyOps(standard.Input, edit.Batch, new EditRequest
+                {
+                    OutputPath = edit.Target.OutputPath,
+                    Overwrite = edit.Target.Overwrite,
+                    BackupPath = edit.Target.BackupPath,
+                    Options = edit.Options,
+                    Recalculate = recalculate,
+                    OpSecrets = edit.Secrets,
+                    Password = standard.InputPassword,
+                    EncryptPassword = encryptPassword,
+                    Verify = edit.Verify,
+                });
+            }).WithExamples(
+            [
+                "cells edit book.xlsx --in-place --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\"",
+                "cells edit book.xlsx --in-place --ops '{\"ops\":[{\"op\":\"set_values\",\"sheet\":\"Sales\",\"range\":\"A1\",\"values\":[[1]]}]}'",
+                "cells edit book.xlsx --in-place --backup --verify --ops ops.json",
+            ],
+            [
+                CellsCommands.Docs("editing", "recipes for every operation family"),
+                CellsCommands.Schema("the operations JSON vocabulary"),
+                CellsCommands.Docs("verification", "verification before delivering the file"),
+            ]);
     }
-
-    private static IReadOnlyDictionary<string, string?> ResolveSecrets(
-        OpsBatch batch, Func<string, string?> readEnvironment) =>
-        batch.Ops.Select(static op => op switch
-        {
-            ProtectSheetOp value => value.PasswordEnv,
-            UnprotectSheetOp value => value.PasswordEnv,
-            ProtectWorkbookOp value => value.PasswordEnv,
-            UnprotectWorkbookOp value => value.PasswordEnv,
-            _ => null,
-        }).OfType<string>().Distinct(StringComparer.Ordinal)
-            .ToDictionary(static name => name, readEnvironment, StringComparer.Ordinal);
 }

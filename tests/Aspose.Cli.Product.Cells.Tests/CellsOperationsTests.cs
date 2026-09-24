@@ -21,7 +21,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     public CellsOperationsTests(CellsFixture fixture) => _fixture = fixture;
 
     private EditResult Apply(string path, string operations, string output,
-        IReadOnlyDictionary<string, string?>? secrets = null) =>
+        IReadOnlyDictionary<string, string>? secrets = null) =>
         _fixture.Engine.ApplyOps(
             path,
             ParseOps(operations),
@@ -175,7 +175,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             source,
             """{ "ops": [ { "op": "protect_sheet", "sheet": "Data", "passwordEnv": "ASPOSE_CLI_TEST_SHEET_PASSWORD", "allow": ["sort"] } ] }""",
             "protected.out.xlsx",
-            new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_SHEET_PASSWORD"] = secret });
+            new Dictionary<string, string> { ["ASPOSE_CLI_TEST_SHEET_PASSWORD"] = secret });
 
         using var workbook = new Workbook(result.Output!.Path);
         Assert.True(workbook.Worksheets["Data"].Protection.AllowSorting);

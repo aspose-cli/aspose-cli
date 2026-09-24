@@ -189,10 +189,10 @@ Arguments:
 Options:
   --preview                                                      Include a small sample of display values for each sheet.
   --preview-rows <preview-rows>                                  Number of preview rows per sheet (1-100). [default: 5]
+  --detail <charts|errors|fonts|names|pivots|tables|validation>  Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation. Repeatable.
   --password <password>                                          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>                                  Name of an environment variable holding the password for the workbook.
   --password-stdin                                               Read the password for the workbook from the first line of stdin.
-  --detail <charts|errors|fonts|names|pivots|tables|validation>  Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation. Repeatable.
   -?, -h, --help                                                 Show help and usage information
   -f, --output <json|markdown|table>                             Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                                    Suppress warnings and notices on stderr (errors still print).
