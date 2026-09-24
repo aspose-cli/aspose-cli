@@ -178,6 +178,54 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
         Assert.False(File.Exists(output));
     }
 
+    [Theory]
+    [InlineData("T1")]
+    [InlineData("xfd1048576")]
+    [InlineData("R1C1")]
+    [InlineData("rc")]
+    [InlineData("C")]
+    [InlineData("Sales Data")]
+    [InlineData("1Sales")]
+    [InlineData("Sales-2")]
+    public void CreateTable_RejectsANameExcelRefusesBeforeAnyWorkbookOpens(string name)
+    {
+        CliException error = AssertInvalid(
+            $$"""{ "op": "create_table", "sheet": "Data", "range": "A1:C2", "name": "{{name}}" }""");
+
+        Assert.Equal("create_table", error.Details!["op"]!.GetValue<string>());
+        Assert.Contains(name, error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("XFE1")]
+    [InlineData("A0")]
+    [InlineData("_2024")]
+    [InlineData("\\\\Totals")]
+    [InlineData("Sales.Q1?")]
+    [InlineData("Übersicht")]
+    public void CreateTable_AcceptsANameExcelAllows(string name) =>
+        Assert.Single(Parse(
+            $$"""{ "ops": [ { "op": "create_table", "sheet": "Data", "range": "A1:C2", "name": "{{name}}" } ] }""").Ops);
+
+    [Theory]
+    [InlineData("""{ "op": "create_table", "sheet": "Data", "range": "A1:C2", "name": "Sales" }""")]
+    [InlineData("""{ "op": "define_name", "name": "Sales", "refersTo": "=Data!$A$1" }""")]
+    public void CreateTable_RejectsANameTheWorkbookAlreadyUses(string first)
+    {
+        string source = _fixture.CreateSalesWorkbook("table-taken.xlsx");
+        string output = _fixture.Temp.File("table-taken.out.xlsx");
+        File.Delete(output);
+
+        CliException error = Assert.Throws<CliException>(() => Apply(
+            source,
+            $$"""{ "ops": [ {{first}}, { "op": "create_table", "sheet": "Data", "range": "E1:F2", "name": "sales" } ] }""",
+            "table-taken.out.xlsx"));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.False(File.Exists(output));
+    }
+
     private static CliException AssertInvalid(string operation)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{ "ops": [ {{operation}} ] }"""));

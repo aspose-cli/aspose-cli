@@ -273,7 +273,7 @@ applied; the rest of the page setup is preserved.
 
 | op | fields | notes |
 |----|--------|-------|
-| `create_table` | `range` (includes headers), `name?`, `style?` (`TableStyleMedium2`), `totalsRow?` | A native table with its own filter dropdowns. A `name` that reads as a cell address (`T1`) is refused by the engine. `style` is a built-in name (`TableStyleLight1`–`21`, `TableStyleMedium1`–`28`, `TableStyleDark1`–`11`) or a custom style the workbook defines; any other name is rejected. Do **not** also `set_autofilter` the same range. |
+| `create_table` | `range` (includes headers), `name?`, `style?` (`TableStyleMedium2`), `totalsRow?` | A native table with its own filter dropdowns. A `name` follows Excel's rules and is unique among the workbook's tables and defined names; one that reads as a cell reference (`T1`, `R1C1`), contains a space or other punctuation, or is taken fails as `OPS_INVALID` before anything changes. `style` is a built-in name (`TableStyleLight1`–`21`, `TableStyleMedium1`–`28`, `TableStyleDark1`–`11`) or a custom style the workbook defines; any other name is rejected. Do **not** also `set_autofilter` the same range. |
 | `set_autofilter` | `range`, `off?` | `{"off": true}` removes the sheet filter. |
 | `sort_range` | `range`, `by`, `hasHeader?` | `by` is `[{ "column": "B", "order": "desc" }]` (asc default); sorts in place by one or more columns. |
 | `remove_duplicates` | `range`, `columns?`, `hasHeader?` | Drops duplicate rows. `columns` (letters) restricts the comparison to a subset; omit to compare all columns. |

@@ -350,7 +350,7 @@
             "required": ["range"],
             "properties": {
               "range": { "$ref": "#/$defs/range" },
-              "name": { "type": "string" },
+              "name": { "type": "string", "minLength": 1, "maxLength": 255, "description": "Table name, unique among the workbook's tables and defined names: a letter, '_' or '\\' first, then letters, digits, '.', '_', '\\' or '?'; never text that reads as a cell reference such as T1 or R1C1. Generated when omitted." },
               "style": { "type": "string", "minLength": 1, "description": "Built-in table style (TableStyleLight1-21, TableStyleMedium1-28, TableStyleDark1-11), e.g. TableStyleMedium2, or a custom table style the workbook defines." },
               "totalsRow": { "type": "boolean" }
             }

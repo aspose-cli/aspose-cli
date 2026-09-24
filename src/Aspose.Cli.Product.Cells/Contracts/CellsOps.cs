@@ -35,7 +35,7 @@ public static class CellsOps
         .Add<SetPrintAreaOp>("set_print_area", static op => Core.ValidatePrintArea(op))
         .Add<InsertImageOp>("insert_image", static op => Core.ValidateInsertImage(op))
         .Add<RefreshPivotOp>("refresh_pivot")
-        .Add<CreateTableOp>("create_table", static op => Core.ValidateRange(op, op.Range))
+        .Add<CreateTableOp>("create_table", static op => Core.ValidateCreateTable(op))
         .Add<SetAutoFilterOp>("set_autofilter", static op => Core.ValidateAutoFilter(op))
         .Add<SortRangeOp>("sort_range", static op => Core.ValidateSort(op))
         .Add<SetValidationOp>("set_validation", static op => Core.ValidateValidation(op))

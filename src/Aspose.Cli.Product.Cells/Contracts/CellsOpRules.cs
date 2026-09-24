@@ -1,3 +1,5 @@
+using System.Globalization;
+using System.Text;
 using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Sdk.Operations;
 using Advanced = Aspose.Cli.Product.Cells.Contracts.CellsAdvancedOpValidator;
@@ -227,6 +229,73 @@ internal static class CellsCoreOpValidator
         }
 
         return op;
+    }
+
+    internal static CreateTableOp ValidateCreateTable(CreateTableOp op) =>
+        ValidateRangeOf(op, op.Range, () =>
+        {
+            if (op.Name is { } name)
+            {
+                RequireTableName(name);
+            }
+        });
+
+    /// <summary>
+    /// Excel's table-name rules: 1-255 characters; a letter, '_' or '\' first, then letters,
+    /// digits, '.', '_', '\' or '?'; and no text that reads as a cell reference in A1
+    /// (<c>T1</c>) or R1C1 (<c>R</c>, <c>C2</c>, <c>R1C1</c>) notation.
+    /// </summary>
+    private static void RequireTableName(string name)
+    {
+        const string Hint = "Use a descriptive name such as SalesTable or tbl_Sales.";
+        Require(name.Length is >= 1 and <= 255, "the table 'name' must have 1-255 characters", Hint);
+        Rune[] runes = name.EnumerateRunes().ToArray();
+        Require(
+            (Rune.IsLetter(runes[0]) || runes[0].Value is '_' or '\\')
+                && runes.Skip(1).All(static rune => Rune.IsLetterOrDigit(rune) || IsCombiningMark(rune) || rune.Value is '.' or '_' or '\\' or '?'),
+            $"table name '{name}' must start with a letter, '_' or '\\' and continue with letters, digits, '.', '_', '\\' or '?'",
+            Hint);
+        Require(!ReadsAsCellReference(name), $"table name '{name}' reads as a cell reference", Hint);
+
+        static bool IsCombiningMark(Rune rune) =>
+            Rune.GetUnicodeCategory(rune) is UnicodeCategory.NonSpacingMark or UnicodeCategory.SpacingCombiningMark;
+    }
+
+    private static bool ReadsAsCellReference(string name)
+    {
+        // R1C1: R or C alone, R<n>, C<n>, R<n>C<n> and their row- or column-only forms.
+        int index = 0;
+        bool row = TryTake(name, ref index, 'R');
+        bool column = TryTake(name, ref index, 'C');
+        if ((row || column) && index == name.Length)
+        {
+            return true;
+        }
+
+        // A1: one to three column letters within XFD, then a row number within the sheet.
+        int letters = name.TakeWhile(char.IsAsciiLetter).Count();
+        string digits = name[letters..];
+        return letters is >= 1 and <= 3
+            && digits.Length is >= 1 and <= 7
+            && digits.All(char.IsAsciiDigit)
+            && name[..letters].Aggregate(0, static (column, letter) => column * 26 + char.ToUpperInvariant(letter) - 'A' + 1) <= A1.MaxColumns
+            && int.Parse(digits, CultureInfo.InvariantCulture) is >= 1 and <= A1.MaxRows;
+
+        static bool TryTake(string text, ref int position, char marker)
+        {
+            if (position >= text.Length || char.ToUpperInvariant(text[position]) != marker)
+            {
+                return false;
+            }
+
+            position++;
+            while (position < text.Length && char.IsAsciiDigit(text[position]))
+            {
+                position++;
+            }
+
+            return true;
+        }
     }
 
     internal static DefineNameOp ValidateDefineName(DefineNameOp op)

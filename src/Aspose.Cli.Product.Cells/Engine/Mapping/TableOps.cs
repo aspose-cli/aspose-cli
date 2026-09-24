@@ -13,6 +13,11 @@ internal static class TableOps
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
         Action<ListObject>? applyStyle = op.Style is { } style ? ResolveStyle(sheet.Workbook, style) : null;
+        if (op.Name is { } requested)
+        {
+            RequireUnusedName(sheet.Workbook, requested);
+        }
+
         int index = sheet.ListObjects.Add(
             range.Start.Row, range.Start.Column, range.End.Row, range.End.Column, hasHeaders: true);
 
@@ -29,6 +34,24 @@ internal static class TableOps
         }
 
         return range.CellCount;
+    }
+
+    /// <summary>
+    /// Excel requires a table name to be unique among the workbook's tables and defined names.
+    /// The engine stores a second table with a taken name without complaint (probed on 26.9.0),
+    /// so the check runs before the table exists.
+    /// </summary>
+    private static void RequireUnusedName(Workbook workbook, string name)
+    {
+        bool taken = workbook.Worksheets.Any(worksheet => worksheet.ListObjects.Any(
+                table => string.Equals(table.DisplayName, name, StringComparison.OrdinalIgnoreCase)))
+            || workbook.Worksheets.Names.Any(defined => string.Equals(defined.Text, name, StringComparison.OrdinalIgnoreCase));
+        if (taken)
+        {
+            throw new OperationInvalidException(
+                $"a table or defined name '{name}' already exists in the workbook",
+                hint: "Choose a name that no table or defined name in the workbook uses.");
+        }
     }
 
     /// <summary>
