@@ -78,6 +78,9 @@ public sealed class WordsAllocationBudgetTests
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
         Assert.Contains("People", error.Message, StringComparison.Ordinal);
+        // The template, not the data, is at fault; the hint must not send the caller to the data.
+        Assert.Contains("one region", error.Hint!, StringComparison.Ordinal);
+        Assert.DoesNotContain("JSON", error.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

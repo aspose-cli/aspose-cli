@@ -279,7 +279,7 @@ internal static class WordsObjectOpHandlers
             op.Inline ?? ReadMergeRows(op.Path!, inputs);
         if (rows.Count == 0)
         {
-            throw MergeInvalid("merge data has no rows");
+            throw MergeDataInvalid("merge data has no rows", MergeDataShape);
         }
 
         if (op.Regions)
@@ -321,11 +321,16 @@ internal static class WordsObjectOpHandlers
             .ToArray();
         return regions switch
         {
-            [] => throw MergeInvalid("regions was requested but the template has no TableStart merge field"),
+            [] => throw MergeRegionInvalid(
+                "it has no TableStart merge field",
+                "Put TableStart:Name and TableEnd:Name merge fields around the content to repeat, or set regions to false to merge one copy of the document per row."),
             [var region] when !string.IsNullOrWhiteSpace(region) => region,
-            [_] => throw MergeInvalid("the template's TableStart merge field has no region name"),
-            _ => throw MergeInvalid(
-                $"the template has {regions.Length} merge regions ({string.Join(", ", regions)}) but mail_merge rows feed exactly one; split the template or merge each region separately"),
+            [_] => throw MergeRegionInvalid(
+                "its TableStart merge field has no region name",
+                "Name the region in both fields, such as TableStart:Items and TableEnd:Items."),
+            _ => throw MergeRegionInvalid(
+                $"it has {regions.Length} merge regions ({string.Join(", ", regions)}) but flat merge rows feed exactly one",
+                "Split the template so each copy has one region, and merge each copy with its own rows."),
         };
     }
 
@@ -337,7 +342,9 @@ internal static class WordsObjectOpHandlers
             string.Equals(field.FieldName, TableStart + region, StringComparison.OrdinalIgnoreCase));
         FieldMergeField end = fields.FirstOrDefault(field =>
                 string.Equals(field.FieldName, "TableEnd:" + region, StringComparison.OrdinalIgnoreCase))
-            ?? throw MergeInvalid($"region '{region}' has no TableEnd:{region} merge field");
+            ?? throw MergeRegionInvalid(
+                $"region '{region}' has no TableEnd:{region} merge field",
+                $"Add a TableEnd:{region} merge field after the content the region repeats.");
         if (start.Start.GetAncestor(NodeType.Row) is Row first
             && end.End.GetAncestor(NodeType.Row) is Row last
             && ReferenceEquals(first.ParentTable, last.ParentTable))
@@ -447,7 +454,7 @@ internal static class WordsObjectOpHandlers
             IReadOnlyList<string[]> lines = ReadCsv(inputs.ReadTextFile(path));
             if (lines.Count < 2)
             {
-                throw MergeInvalid("CSV needs a header and at least one data row");
+                throw MergeDataInvalid("CSV needs a header and at least one data row", MergeDataShape);
             }
 
             return lines.Skip(1).Select(row => (IReadOnlyDictionary<string, string?>)lines[0]
@@ -460,14 +467,14 @@ internal static class WordsObjectOpHandlers
             using JsonDocument json = JsonDocument.Parse(inputs.ReadTextFile(path));
             if (json.RootElement.ValueKind != JsonValueKind.Array)
             {
-                throw MergeInvalid("JSON merge data must be an array of objects");
+                throw MergeDataInvalid("JSON merge data must be an array of objects", MergeDataShape);
             }
 
             return json.RootElement.EnumerateArray().Select(ReadMergeObject).ToArray();
         }
         catch (JsonException exception)
         {
-            throw MergeInvalid(exception.Message);
+            throw MergeDataInvalid(exception.Message, "Fix the JSON syntax at the reported position; merge data is an array of flat objects.");
         }
     }
 
@@ -547,7 +554,7 @@ internal static class WordsObjectOpHandlers
 
         if (quoted)
         {
-            throw MergeInvalid("the CSV ends inside a quoted field");
+            throw MergeDataInvalid("the CSV ends inside a quoted field", "Close every quoted CSV field, and double each quote inside one.");
         }
 
         if (field.Length > 0 || fields.Count > 0)
@@ -562,7 +569,7 @@ internal static class WordsObjectOpHandlers
     {
         if (element.ValueKind != JsonValueKind.Object)
         {
-            throw MergeInvalid("each merge row must be an object");
+            throw MergeDataInvalid("each merge row must be an object", MergeDataShape);
         }
 
         return element.EnumerateObject().ToDictionary(

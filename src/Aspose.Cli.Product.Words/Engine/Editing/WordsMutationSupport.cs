@@ -141,10 +141,21 @@ internal static class WordsMutationSupport
         $"Style '{style}' was not found.",
         hint: "Run 'words inspect --detail styles' or define the style earlier in the same batch.");
 
-    internal static CliException MergeInvalid(string reason) => new(
+    /// <summary>The hint for merge data whose shape is wrong.</summary>
+    internal const string MergeDataShape =
+        "Use a JSON array of flat objects, or a CSV file with a header row and at least one data row.";
+
+    /// <summary>The merge data cannot feed a merge.</summary>
+    internal static CliException MergeDataInvalid(string reason, string hint) => new(
         WordsDiagnostics.MergeDataInvalid,
         $"Mail merge data is invalid: {reason}.",
-        hint: "Use a JSON array of flat objects or a CSV file with a header row.");
+        hint: hint);
+
+    /// <summary>The template's merge regions cannot take the flat merge rows.</summary>
+    internal static CliException MergeRegionInvalid(string reason, string hint) => new(
+        WordsDiagnostics.MergeDataInvalid,
+        $"The mail merge template cannot be merged with regions: {reason}.",
+        hint: hint);
 
     internal static OperationInvalidException Invalid(string reason) => new(reason);
 }
