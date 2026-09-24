@@ -8,6 +8,7 @@ internal static class WordsOpRules
     // Word's own table limits.
     private const int MaximumTableRows = 32_767;
     private const int MaximumTableColumns = 63;
+    private const int MaximumWatermarkText = 200;
 
     internal static void ReplaceText(ReplaceTextOp op)
     {
@@ -162,6 +163,10 @@ internal static class WordsOpRules
     internal static void AddWatermark(AddWatermarkOp op)
     {
         Require((op.Text is null) != (op.ImagePath is null), "give exactly one of text or imagePath");
+        // Word's text watermark holds 1-200 characters.
+        Require(op.Text is null or { Length: >= 1 and <= MaximumWatermarkText },
+            $"watermark 'text' must be 1-{MaximumWatermarkText} characters");
+        Require(op.ImagePath is null or { Length: > 0 }, "'imagePath' must not be empty");
         Require(op.Color is null || op.Text is not null, "'color' applies to text watermarks only");
     }
 

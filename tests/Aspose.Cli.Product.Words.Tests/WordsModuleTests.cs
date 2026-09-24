@@ -124,6 +124,23 @@ public sealed class WordsModuleTests
         Assert.Equal(Aspose.Cli.Sdk.Errors.ErrorCodes.OpsInvalid, error.Code);
     }
 
+    [Theory]
+    [InlineData("text", 0)]
+    [InlineData("text", 201)]
+    [InlineData("imagePath", 0)]
+    public void Watermark_OutsideTheSchemaLimitsIsAnInvalidOperation(string field, int length)
+    {
+        var error = Assert.Throws<CliException>(() => Parse(Watermark(field, length)));
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+    }
+
+    [Fact]
+    public void Watermark_AcceptsTheLongestTextTheSchemaAllows() =>
+        Assert.Equal(200, Assert.IsType<AddWatermarkOp>(Parse(Watermark("text", 200)).Ops[0]).Text!.Length);
+
+    private static string Watermark(string field, int length) =>
+        $$"""{"ops":[{"op":"add_watermark","{{field}}":"{{new string('x', length)}}"}]}""";
+
     private static WordsOpsBatch Parse(string json) =>
         WordsOps.Catalog.Parse<WordsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }
