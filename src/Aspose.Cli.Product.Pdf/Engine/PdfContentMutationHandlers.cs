@@ -55,13 +55,10 @@ internal static class PdfContentMutationHandlers
     {
         EnsureFile(op.Path);
         IReadOnlyList<int> pages = ResolveOptional(document, op.Pages);
-        // Read (and charge) the image once; every page stamps its own view of the bytes.
-        byte[] image;
-        using (var buffer = new MemoryStream())
-        {
-            inputs.OpenFile(op.Path).CopyTo(buffer);
-            image = buffer.ToArray();
-        }
+        // Read (and charge) the image once; every page stamps its own view of the bytes. An SVG
+        // stamp fetches its external images with no resource hook (KNOWN-ISSUES.md), so the
+        // read refuses an SVG that names a network address.
+        byte[] image = NetworkReferenceGuard.ReadImage(inputs, op.Path);
 
         foreach (int number in pages)
         {
@@ -132,7 +129,7 @@ internal static class PdfContentMutationHandlers
         Page page = PageAt(document, op.Page);
         EnsureFile(op.Path);
         Rectangle rectangle = ToPdfRect(page, op.Rect);
-        var stamp = new ImageStamp(inputs.OpenFile(op.Path))
+        var stamp = new ImageStamp(new MemoryStream(NetworkReferenceGuard.ReadImage(inputs, op.Path), writable: false))
         {
             XIndent = rectangle.LLX,
             YIndent = rectangle.LLY,

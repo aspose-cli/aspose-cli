@@ -123,6 +123,51 @@ public sealed class CellsResourceLoadingTests
         Assert.Equal(0, server.RequestCount);
     }
 
+    // Adding an SVG picture makes Aspose.Cells fetch the SVG's external images, and no resource
+    // provider governs that request (gate CELLS-SVG-EGRESS), so the CLI refuses such an image.
+    [Theory]
+    [InlineData("remote.svg", true)]
+    [InlineData("remote.svgz", true)]
+    [InlineData("local.svg", false)]
+    public async Task InsertImage_RefusesAnSvgThatNamesANetworkAddressWithoutARequest(string name, bool refused)
+    {
+        using var workspace = new TempWorkspace();
+        await using var server = new ResourceHttpServer();
+        Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
+        string svg = name == "local.svg"
+            ? """<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20"><rect width="10" height="10"/></svg>"""
+            : $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"><image xlink:href="{server.Url}/svg.png" width="10" height="10"/></svg>""";
+        byte[] content = System.Text.Encoding.UTF8.GetBytes(svg);
+        if (name.EndsWith(".svgz", StringComparison.Ordinal))
+        {
+            using var compressed = new MemoryStream();
+            using (var gzip = new System.IO.Compression.GZipStream(compressed, System.IO.Compression.CompressionLevel.Fastest, leaveOpen: true))
+            {
+                gzip.Write(content);
+            }
+            content = compressed.ToArray();
+        }
+        File.WriteAllBytes(workspace.File(name), content);
+        string ops = System.Text.Json.JsonSerializer.Serialize(new
+        {
+            ops = new[] { new { op = "insert_image", sheet = "Data", at = "B2", path = workspace.File(name) } },
+        });
+
+        CliResult edited = workspace.Run("cells", "edit", "source.xlsx", "--ops", ops, "--out", "result.xlsx", "--output", "json");
+
+        if (refused)
+        {
+            Assert.NotEqual(0, edited.ExitCode);
+            Assert.Contains(ErrorCodes.FeatureUnsupported.Name, edited.StdOut + edited.StdErr, StringComparison.Ordinal);
+            Assert.False(File.Exists(workspace.File("result.xlsx")));
+        }
+        else
+        {
+            Assert.True(edited.ExitCode == 0, edited.StdErr);
+        }
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
+    }
+
     private static void AssertOmission(IReadOnlyList<Warning>? warnings) =>
         Assert.Contains(warnings ?? [], warning =>
             (warning.Code == WarningCodes.RemoteResourcesBlocked

@@ -2,6 +2,14 @@
   "schemaVersion": 1,
   "gates": [
     {
+      "id": "CELLS-SVG-EGRESS",
+      "directory": "tests/acceptance/cells-svg-egress",
+      "arguments": {
+        "SdkDir": "{buildOutput}",
+        "OutputDirectory": "{output}"
+      }
+    },
+    {
       "id": "PDF-MOVE-BOOKMARK",
       "directory": "tests/acceptance/pdf-page-navigation",
       "arguments": {

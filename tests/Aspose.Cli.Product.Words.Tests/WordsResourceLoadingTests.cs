@@ -66,6 +66,38 @@ public sealed class WordsResourceLoadingTests
     }
 
     [Fact]
+    public async Task RemoteFieldsLinkedImagesAndSvgImages_AreNeverFetched()
+    {
+        using var fixture = new WordsFixture();
+        await using var server = new ResourceHttpServer();
+        string input = fixture.Temp.File("fields.docx");
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Remote resources");
+        builder.InsertField($"INCLUDEPICTURE \"{server.Url}/include-picture.png\" \\d", "");
+        builder.InsertField($"INCLUDETEXT \"{server.Url}/include-text.docx\"", "placeholder");
+        builder.InsertImage(ResourceHttpServer.Image).ImageData.SourceFullName = $"{server.Url}/linked.png";
+        source.Save(input);
+        string svg = fixture.Temp.File("remote.svg");
+        File.WriteAllText(svg, $"""<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20"><style>@import url('{server.Url}/svg.css');</style><image xlink:href="{server.Url}/svg.png" width="10" height="10"/></svg>""");
+        string edited = fixture.Temp.File("edited.docx");
+
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new InsertImageOp { At = new WordsTarget { Block = 1 }, Position = "after", Path = svg },
+                new UpdateFieldsOp(),
+            ],
+        }, new WordsEditRequest { OutputPath = edited });
+        fixture.Engine.Read(edited, new DocumentReadRequest());
+        fixture.Engine.Render(edited, new WordsRenderRequest { TargetFormatId = "png", OutputPath = fixture.Temp.File("page.png") });
+        fixture.Engine.Convert(edited, new WordsConvertRequest { TargetFormatId = "pdf", OutputPath = fixture.Temp.File("edited.pdf") });
+
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
+    }
+
+    [Fact]
     public async Task Html_PreservesLocalImageAndReportsRemoteOmissionsWithoutHttp()
     {
         Requires.Windows();

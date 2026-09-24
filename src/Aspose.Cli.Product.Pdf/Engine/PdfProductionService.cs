@@ -630,11 +630,17 @@ internal sealed class PdfProductionService
         // The importers reach the network before any resource policy applies; refuse first.
         if (request.HtmlPath is { } html)
         {
-            PdfNetworkReferenceGuard.Ensure(resourceBudgets.Inputs.ReadAllBytes(html), "HTML", html);
+            NetworkReferenceGuard.EnsureNone(resourceBudgets.Inputs.ReadAllBytes(html), "HTML input", html);
         }
         else if (request.Markdown && request.TextPath is { } markdown)
         {
-            PdfNetworkReferenceGuard.Ensure(resourceBudgets.Inputs.ReadAllBytes(markdown), "Markdown", markdown);
+            NetworkReferenceGuard.EnsureNone(resourceBudgets.Inputs.ReadAllBytes(markdown), "Markdown input", markdown);
+        }
+
+        foreach (string image in request.ImagePaths ?? [])
+        {
+            using Stream content = resourceBudgets.Inputs.OpenFile(image);
+            NetworkReferenceGuard.EnsureNoneInImage(content, image);
         }
     }
 

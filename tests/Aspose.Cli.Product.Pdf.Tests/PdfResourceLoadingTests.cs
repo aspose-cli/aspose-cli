@@ -121,6 +121,43 @@ public sealed class PdfResourceLoadingTests
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
     }
 
+    // An SVG image fetches its external images with no resource hook in Aspose.PDF, whether it
+    // is placed as a page image or stamped, so an SVG that names a network address is refused.
+    [Theory]
+    [InlineData("create")]
+    [InlineData("stamp")]
+    [InlineData("watermark")]
+    public async Task SvgImage_NamingANetworkAddressIsRefusedWithoutARequest(string use)
+    {
+        using var fixture = new PdfEngineFixture();
+        await using var server = new ResourceHttpServer();
+        string image = fixture.File("remote.svg");
+        File.WriteAllText(image, $"""
+            <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="20" height="20">
+            <image xlink:href="{server.Url}/svg.png" width="10" height="10"/></svg>
+            """);
+        string output = fixture.File("output.pdf");
+
+        CliException refused = Assert.ThrowsAny<CliException>(() =>
+        {
+            if (use == "create")
+            {
+                fixture.Engine.Create(new NewPdfRequest { ImagePaths = [image], OutputPath = output });
+                return;
+            }
+            PdfOp op = use == "stamp"
+                ? new AddStampImageOp { Page = 1, Path = image, Rect = new PdfRectInput { X = 20, Y = 20, Width = 40, Height = 40 } }
+                : new AddWatermarkImageOp { Path = image };
+            fixture.Engine.ApplyOps(fixture.CreateDocument(), new PdfOpsBatch { Ops = [op] },
+                new PdfEditRequest { OutputPath = output });
+        });
+
+        Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
+        Assert.Contains("network address", refused.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
+    }
+
     [Fact]
     public void HtmlCreation_ReportsOmittedLocalResourcesAndKeepsPermittedOnes()
     {

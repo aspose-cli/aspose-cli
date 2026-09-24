@@ -8,9 +8,9 @@
 - `RENDER_TOO_LARGE`: lower DPI or render fewer pages.
 - `REMOTE_RESOURCES_BLOCKED`: a local HTML image or stylesheet was missing or
   outside the HTML directory and was left out; review the incomplete output.
-- `FEATURE_UNSUPPORTED` naming a network address: HTML and Markdown inputs may
-  not name any network address, including hyperlinks and addresses in text,
-  because the pinned PDF importer requests them before the CLI can refuse them.
+- `FEATURE_UNSUPPORTED` naming a network address: HTML, Markdown and SVG image
+  inputs may not name any network address, including hyperlinks and addresses in
+  text, because the pinned PDF engine requests them before the CLI can refuse them.
   Remove the address, or save the resource beside the input and reference it by
   relative path.
 - Relative HTML image and stylesheet paths resolve against the original HTML

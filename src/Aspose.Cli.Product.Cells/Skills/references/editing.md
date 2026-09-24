@@ -304,6 +304,9 @@ applied; the rest of the page setup is preserved.
       "at": "H1", "width": 180, "height": 60 }
 
 `width`/`height` are pixels; omit them for the image's natural size.
+An SVG image that names any network address, and a compressed SVG (SVGZ), is
+refused with `FEATURE_UNSUPPORTED`, because the engine would fetch the address
+while adding the picture. Embed its images in the SVG or supply a raster image.
 
 ## Defined names
 

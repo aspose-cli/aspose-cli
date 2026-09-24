@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 /// <summary>
 /// Adapts the document resource policy to the Aspose.PDF HTML importer: verified files beneath
 /// the HTML directory are supplied and every other reference is omitted. The importer requests
-/// a network resource before it calls this loader (see <see cref="PdfNetworkReferenceGuard"/>),
+/// a network resource before it calls this loader (see <see cref="NetworkReferenceGuard"/>),
 /// so a network address that reaches the loader may already have been requested. The import
 /// then fails and says so, instead of reporting the resource as blocked.
 /// </summary>

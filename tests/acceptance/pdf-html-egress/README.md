@@ -47,14 +47,17 @@ loading. Local `file:` references do go through the loader first, and anchors (`
 XML namespace names and document type identifiers are never requested.
 
 The Markdown importer (`MdLoadOptions`) has no resource hook at all: it requests remote
-images and reads local image files outside the input directory directly.
+images and reads local image files outside the input directory directly. SVG images placed
+with `Image.File` or stamped with `ImageStamp` likewise request their external stylesheets
+and images, with no hook.
 
 ## Ownership and release boundary
 
 This is an upstream SDK defect: the documented resource-loading callback does not govern
 network access. The CLI does not rewrite or sanitize HTML. Until a fixed SDK passes this
-gate, `pdf create --from-html` and Markdown `--from-text` refuse any input that names a
-network address, with `FEATURE_UNSUPPORTED`, before the importer runs; and an HTML import
+gate, `pdf create --from-html`, Markdown `--from-text` and SVG image inputs refuse any
+input that names a network address, with `FEATURE_UNSUPPORTED`, before the engine reads
+it; and an HTML import
 whose loader nevertheless sees a network address fails without publishing output instead
 of reporting the resource as blocked. When this gate passes, remove the refusal and keep
 the loader as the only policy.

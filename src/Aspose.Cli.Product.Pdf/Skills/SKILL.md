@@ -33,10 +33,12 @@ positions; rectangles are points with a top-left origin.
 5. Sign only the final, verified artifact with `pdf sign`, passing the
    certificate password through `--certificate-password-env`.
 
-`pdf create --from-html` and Markdown `--from-text` refuse any input that names a
-network address, hyperlinks included, with `FEATURE_UNSUPPORTED`: the PDF importer
-requests network resources before the CLI can refuse them. Save required images
-and CSS beside the input and reference them by relative path. The Markdown
+`pdf create --from-html`, Markdown `--from-text` and SVG images (`--from-images`,
+`add_stamp_image`, `add_watermark_image`) refuse any input that names a network
+address, hyperlinks included, with `FEATURE_UNSUPPORTED`: the PDF engine requests
+network resources before the CLI can refuse them. Compressed SVG images are refused
+too. Save required images and CSS beside the input and reference them by relative
+path. The Markdown
 importer reads local images without the CLI's local-resource guard, so use
 trusted Markdown only.
 
