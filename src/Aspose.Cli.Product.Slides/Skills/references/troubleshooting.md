@@ -9,6 +9,11 @@
   retained and whether append operations used `keep-source` or `use-dest`.
 - If evaluation text is replaced, do not treat inspection or conversion as
   complete; apply a valid Slides or Total license and retry.
+- `REMOTE_RESOURCES_BLOCKED`: a linked picture, linked media file or external
+  chart workbook was left out of the output. Network addresses are never
+  fetched; only ordinary files beneath the presentation's directory are read.
+  Embed the media, or place the file beside the deck and link it by relative
+  path, then review the incomplete render.
 - If preview reload fails, fix or restore the source file. The browser keeps
   serving the last good snapshot until a valid save succeeds.
 

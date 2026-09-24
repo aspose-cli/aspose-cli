@@ -97,7 +97,7 @@ internal sealed class SlidesProductionService
             SourceSizeBytes = new FileInfo(filePath).Length,
             TotalParts = total,
             Parts = parts,
-            Warnings = EvaluationInputWarnings(state, presentation),
+            Warnings = InputWarnings(state, loaded),
         };
     }
 
@@ -109,8 +109,8 @@ internal sealed class SlidesProductionService
         IReadOnlyList<int>? slides = request.Slides is null
             ? null
             : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        IReadOnlyList<OutputInfo> outputs = ConvertOutputs(loaded.Presentation, request, slides);
-        List<Warning> warnings = BuildConvertWarnings(state, loaded.Presentation, request.TargetFormatId);
+        IReadOnlyList<OutputInfo> outputs = ConvertOutputs(loaded, request, slides);
+        List<Warning> warnings = BuildConvertWarnings(state, loaded, request.TargetFormatId);
         return new SlidesConvertResult
         {
             Input = Source(filePath, loaded.FormatId),
@@ -122,14 +122,15 @@ internal sealed class SlidesProductionService
     }
 
     private IReadOnlyList<OutputInfo> ConvertOutputs(
-        Presentation presentation,
+        LoadedPresentation loaded,
         PresentationConvertRequest request,
         IReadOnlyList<int>? slides)
     {
+        Presentation presentation = loaded.Presentation;
         if (request.TargetFormatId is "png" or "jpeg" or "svg")
         {
             IReadOnlyList<int> selected = slides ?? AllSlides(presentation.Slides.Count);
-            return RenderImages(presentation, new PresentationRenderRequest
+            return RenderImages(loaded, new PresentationRenderRequest
             {
                 TargetFormatId = request.TargetFormatId,
                 OutputPath = request.OutputPath,
@@ -140,6 +141,21 @@ internal sealed class SlidesProductionService
         {
             SaveFormat format = SaveFormatFor(request.TargetFormatId);
             long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
+            {
+                Save(temp);
+                loaded.Resources.ThrowIfFailed();
+            });
+            return
+            [
+                new OutputInfo
+                {
+                    Path = request.OutputPath,
+                    Format = request.TargetFormatId,
+                    SizeBytes = size,
+                },
+            ];
+
+            void Save(string temp)
             {
                 if (slides is null)
                 {
@@ -160,35 +176,16 @@ internal sealed class SlidesProductionService
                 RemoveUnselectedSlides(presentation, slides);
                 Encrypt(presentation, request.EncryptPassword);
                 presentation.Save(temp, format);
-            });
-            return
-            [
-                new OutputInfo
-                {
-                    Path = request.OutputPath,
-                    Format = request.TargetFormatId,
-                    SizeBytes = size,
-                },
-            ];
+            }
         }
     }
 
     private static List<Warning> BuildConvertWarnings(
         LicenseState state,
-        Presentation presentation,
+        LoadedPresentation loaded,
         string targetFormatId)
     {
-        var warnings = new List<Warning>();
-        if (state == LicenseState.Evaluation)
-        {
-            warnings.Add(EnvelopeParts.EvaluationWatermark);
-        }
-
-        if (state == LicenseState.Evaluation && EvaluationInputTruncated(presentation))
-        {
-            warnings.Add(EvaluationInputWarning);
-        }
-
+        var warnings = OutputWarnings(state, loaded)?.ToList() ?? [];
         if (targetFormatId is "html" or "html5" or "md")
         {
             warnings.Add(new Warning
@@ -209,8 +206,7 @@ internal sealed class SlidesProductionService
         IReadOnlyList<int> slides = request.AllSlides
             ? AllSlides(loaded.Presentation.Slides.Count)
             : ResolveSlideRange(request.Slides ?? PageRange.Parse("1"), loaded.Presentation.Slides.Count);
-        IReadOnlyList<SlideRenderOutput> outputs = RenderImages(
-            loaded.Presentation, request, slides, "slides-render");
+        IReadOnlyList<SlideRenderOutput> outputs = RenderImages(loaded, request, slides, "slides-render");
         return new SlidesRenderResult
         {
             Input = Source(filePath, loaded.FormatId),
@@ -220,16 +216,17 @@ internal sealed class SlidesProductionService
                 : request.Dpi ?? DefaultRasterDpi,
             Width = request.TargetFormatId == "svg" ? null : request.Width,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded.Presentation),
+            Warnings = OutputWarnings(state, loaded),
         };
     }
 
     private IReadOnlyList<SlideRenderOutput> RenderImages(
-        Presentation presentation,
+        LoadedPresentation loaded,
         PresentationRenderRequest request,
         IReadOnlyList<int> slides,
         string transactionName)
     {
+        Presentation presentation = loaded.Presentation;
         float scale = RenderScale(presentation, request);
         if (request.TargetFormatId != "svg")
         {
@@ -270,6 +267,7 @@ internal sealed class SlidesProductionService
             });
         }
 
+        loaded.Resources.ThrowIfFailed();
         IReadOnlyList<long> sizes = transaction.Commit();
         return targets.Select((target, index) => new SlideRenderOutput
         {
@@ -314,7 +312,11 @@ internal sealed class SlidesProductionService
         long size = _writer.Write(
             request.OutputPath,
             request.Overwrite,
-            temp => presentation.Save(temp, SaveFormatFor(format)));
+            temp =>
+            {
+                presentation.Save(temp, SaveFormatFor(format));
+                template.Resources.ThrowIfFailed();
+            });
         return new SlidesCreateResult
         {
             Output = new OutputInfo
@@ -336,7 +338,7 @@ internal sealed class SlidesProductionService
                     SizeBytes = new FileInfo(request.MarkdownPath).Length,
                 },
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, presentation),
+            Warnings = OutputWarnings(state, template),
         };
     }
 
@@ -379,6 +381,7 @@ internal sealed class SlidesProductionService
             }
         }
 
+        loaded.Resources.ThrowIfFailed();
         IReadOnlyList<long> sizes = transaction.Commit();
         return new SlidesExtractResult
         {
@@ -396,7 +399,7 @@ internal sealed class SlidesProductionService
                 ContentType = item.ContentType,
             }).ToArray(),
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded.Presentation),
+            Warnings = OutputWarnings(state, loaded),
         };
     }
 

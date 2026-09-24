@@ -108,7 +108,7 @@ internal sealed class SlidesReadService
                 : null,
             Properties = Details("properties") ? Properties(presentation.DocumentProperties) : null,
             License = EnvelopeParts.License(state),
-            Warnings = EvaluationInputWarnings(state, presentation),
+            Warnings = InputWarnings(state, loaded),
         };
     }
 
@@ -155,7 +155,7 @@ internal sealed class SlidesReadService
             },
             Slides = slides,
             License = EnvelopeParts.License(state),
-            Warnings = EvaluationInputWarnings(state, presentation),
+            Warnings = InputWarnings(state, loaded),
         };
     }
 
@@ -234,7 +234,7 @@ internal sealed class SlidesReadService
             Hits = hits,
             Truncated = truncated,
             License = EnvelopeParts.License(state),
-            Warnings = EvaluationInputWarnings(state, loaded.Presentation),
+            Warnings = InputWarnings(state, loaded),
         };
     }
 

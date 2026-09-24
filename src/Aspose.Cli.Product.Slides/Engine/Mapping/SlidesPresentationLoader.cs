@@ -16,19 +16,23 @@ internal sealed class SlidesPresentationLoader(
     // Generated candidates are bounded by publication, not a second user-input admission.
     internal LoadedPresentation OpenPublishedCandidate(string path, string? password) => OpenCore(path, password);
 
-    /// <summary>Opens the built-in 16:9 design that new presentations use without a template.</summary>
+    /// <summary>
+    /// Opens the built-in 16:9 design that new presentations use without a template. It has no
+    /// source directory, so it loads under a policy that denies every external resource.
+    /// </summary>
     internal static LoadedPresentation OpenDefaultTemplate()
     {
         using Stream stream = typeof(SlidesPresentationLoader).Assembly.GetManifestResourceStream(DefaultTemplateResource)
             ?? throw new InvalidOperationException($"The built-in resource {DefaultTemplateResource} is missing.");
-        return new LoadedPresentation(new Presentation(stream), "pptx");
+        var resources = SlidesResourcePolicy.DenyAll();
+        return new LoadedPresentation(
+            new Presentation(stream, new LoadOptions { ResourceLoadingCallback = resources }), "pptx", resources);
     }
 
     private const string DefaultTemplateResource = "Templates/default-16x9.pptx";
 
     private LoadedPresentation OpenCore(string path, string? password)
     {
-
         try
         {
             IPresentationInfo info = PresentationFactory.Instance.GetPresentationInfo(path);
@@ -51,8 +55,19 @@ internal sealed class SlidesPresentationLoader(
                 }
             }
 
-            var options = new LoadOptions { Password = password };
-            var presentation = new Presentation(path, options);
+            // Engine code creates presentations only here or from the default template: without a
+            // resource policy, rendering or saving fetches linked media from any address.
+            var resources = SlidesResourcePolicy.Beside(path, resourceBudgets);
+            Presentation presentation;
+            try
+            {
+                presentation = new Presentation(path, new LoadOptions { Password = password, ResourceLoadingCallback = resources });
+            }
+            catch
+            {
+                resources.Dispose();
+                throw;
+            }
             try
             {
                 resourceBudgets.EnsureWithin(
@@ -70,9 +85,10 @@ internal sealed class SlidesPresentationLoader(
             catch
             {
                 presentation.Dispose();
+                resources.Dispose();
                 throw;
             }
-            return new LoadedPresentation(presentation, format);
+            return new LoadedPresentation(presentation, format, resources);
         }
         catch (CliException)
         {
@@ -139,7 +155,12 @@ internal sealed class SlidesPresentationLoader(
         innerException: inner);
 }
 
-internal sealed record LoadedPresentation(Presentation Presentation, string FormatId) : IDisposable
+internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)
+    : IDisposable
 {
-    public void Dispose() => Presentation.Dispose();
+    public void Dispose()
+    {
+        try { Presentation.Dispose(); }
+        finally { Resources.Dispose(); }
+    }
 }

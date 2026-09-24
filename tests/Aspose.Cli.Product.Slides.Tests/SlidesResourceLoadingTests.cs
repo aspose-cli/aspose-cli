@@ -13,10 +13,7 @@ public sealed class SlidesResourceLoadingTests
     // nothing listens on and only its saved relationships are pointed at the counting server.
     private const string Unreachable = "http://127.0.0.1:9";
 
-    // Known product defect, kept failing on purpose: the Slides adapter installs no resource-loading
-    // callback, so Aspose.Slides fetches a linked picture over HTTP on read, render, convert and view.
     [Fact]
-    [Trait("ProductDefect", "slides-linked-media-egress")]
     public async Task LinkedPictureAndVideo_AreNeverFetchedWhileReadingRenderingOrConverting()
     {
         using var fixture = new SlidesEngineFixture();
@@ -54,7 +51,51 @@ public sealed class SlidesResourceLoadingTests
         Assert.All(rendered.Outputs, static item => Assert.True(item.Output.SizeBytes > 0));
         Assert.All(converted.Outputs, static output => Assert.True(new FileInfo(output.Path).Length > 0));
         Assert.Equal(1, view.TotalParts);
+        // Output that needed the linked picture discloses that it was left out.
+        Assert.Contains(rendered.Warnings!, IsOmission);
+        Assert.Contains(converted.Warnings!, IsOmission);
+        Assert.Contains(view.Warnings!, IsOmission);
     }
+
+    [Fact]
+    public void LinkedPictureBesideTheDeck_IsSuppliedAndOneOutsideItIsOmitted()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string directory = Directory.CreateDirectory(fixture.File("deck")).FullName;
+        string input = Path.Combine(directory, "local.pptx");
+        File.WriteAllBytes(Path.Combine(directory, "beside.png"), ResourceHttpServer.Image);
+        File.WriteAllBytes(fixture.File("outside.png"), ResourceHttpServer.Image);
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            IPPImage image = presentation.Images.AddImage(ResourceHttpServer.Image);
+            slide.Shapes.AddPictureFrame(ShapeType.Rectangle, 20, 20, 120, 120, image)
+                .PictureFormat.Picture.LinkPathLong = "beside.png";
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        SlidesRenderResult beside = fixture.Engine.Render(input, new PresentationRenderRequest
+        {
+            TargetFormatId = "png",
+            OutputPath = fixture.File("beside.png"),
+        });
+        Assert.DoesNotContain(beside.Warnings ?? [], IsOmission);
+
+        using (var presentation = new Presentation(input))
+        {
+            ((IPictureFrame)presentation.Slides[0].Shapes[0]).PictureFormat.Picture.LinkPathLong = "../outside.png";
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+        SlidesRenderResult outside = fixture.Engine.Render(input, new PresentationRenderRequest
+        {
+            TargetFormatId = "png",
+            OutputPath = fixture.File("outside-render.png"),
+        });
+        Assert.Contains(outside.Warnings!, IsOmission);
+    }
+
+    private static bool IsOmission(Warning warning) =>
+        warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness;
 
     /// <summary>Points the external relationships of a package at another origin; returns how many changed.</summary>
     private static int Relink(string package, string from, string to)

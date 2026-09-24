@@ -55,7 +55,7 @@ internal sealed class SlidesMutationService
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
         IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched);
-        EditPublication publication = Publish(presentation, request, format, precondition);
+        EditPublication publication = Publish(loaded, request, format, precondition);
 
         return new SlidesEditResult
         {
@@ -67,8 +67,8 @@ internal sealed class SlidesMutationService
             SlidesTouched = touched.Count == 0 ? null : touched.Order().ToArray(),
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
-                ? EvaluationInputWarnings(state, presentation)
-                : OutputWarnings(state, presentation),
+                ? InputWarnings(state, loaded)
+                : OutputWarnings(state, loaded),
         };
     }
 
@@ -119,7 +119,7 @@ internal sealed class SlidesMutationService
     }
 
     private EditPublication Publish(
-        Presentation presentation,
+        LoadedPresentation loaded,
         PresentationEditRequest request,
         string format,
         FileWritePrecondition precondition)
@@ -128,6 +128,7 @@ internal sealed class SlidesMutationService
         BackupInfo? backup = null;
         if (!request.Options.DryRun)
         {
+            Presentation presentation = loaded.Presentation;
             Encrypt(presentation, request.EncryptPassword);
             using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "slides-edit");
             StagedOutput write = transaction.Stage(
@@ -138,6 +139,7 @@ internal sealed class SlidesMutationService
                 temp =>
                 {
                     presentation.Save(temp, SaveFormatFor(format));
+                    loaded.Resources.ThrowIfFailed();
                     using LoadedPresentation reopened = _loader.OpenPublishedCandidate(
                         temp,
                         request.EncryptPassword ?? request.Password);

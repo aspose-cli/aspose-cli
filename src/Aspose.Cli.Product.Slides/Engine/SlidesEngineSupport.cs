@@ -210,12 +210,9 @@ internal static class SlidesEngineSupport
         }
     }
 
-    internal static IReadOnlyList<Warning>? EvaluationInputWarnings(
-        LicenseState state,
-        Presentation presentation) =>
-        state == LicenseState.Evaluation && EvaluationInputTruncated(presentation)
-            ? [EvaluationInputWarning]
-            : null;
+    /// <summary>Warnings about what a result read from the loaded presentation may be missing.</summary>
+    internal static IReadOnlyList<Warning>? InputWarnings(LicenseState state, LoadedPresentation loaded) =>
+        Warnings(state, loaded, output: false);
 
     internal static bool EvaluationInputTruncated(Presentation presentation) =>
         presentation.Slides.Any(slide =>
@@ -562,21 +559,26 @@ internal static class SlidesEngineSupport
         }
     }
 
-    internal static IReadOnlyList<Warning>? OutputWarnings(
-        LicenseState state,
-        Presentation? presentation)
+    /// <summary>Input warnings plus the evaluation watermark of an output produced from the presentation.</summary>
+    internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedPresentation loaded) =>
+        Warnings(state, loaded, output: true);
+
+    private static IReadOnlyList<Warning>? Warnings(LicenseState state, LoadedPresentation loaded, bool output)
     {
         var warnings = new List<Warning>();
-        if (state == LicenseState.Evaluation)
+        if (output && state == LicenseState.Evaluation)
         {
             warnings.Add(EnvelopeParts.EvaluationWatermark);
         }
 
-        if (presentation is not null
-            && state == LicenseState.Evaluation
-            && EvaluationInputTruncated(presentation))
+        if (state == LicenseState.Evaluation && EvaluationInputTruncated(loaded.Presentation))
         {
             warnings.Add(EvaluationInputWarning);
+        }
+
+        if (loaded.Resources.Warning is { } omitted)
+        {
+            warnings.Add(omitted);
         }
 
         return warnings.Count == 0 ? null : warnings;
