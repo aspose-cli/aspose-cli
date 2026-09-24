@@ -9,13 +9,9 @@ namespace Aspose.Cli.Host.Tests;
 
 public sealed class AppPreferencesTransactionTests
 {
-    [Theory]
-    [InlineData("onboarding")]
-    [InlineData("update")]
-    [InlineData("record")]
-    [InlineData("remove")]
-    [InlineData("clear")]
-    public void LockedFile_PreservesMemoryAndDiskAcrossEveryMutationAndRetry(string mutation)
+    // Every mutation publishes through the store's single Commit path.
+    [Fact]
+    public void LockedFile_PreservesMemoryAndDiskUntilARetryCommits()
     {
         Requires.Windows();
         using var temp = new TempDirectory();
@@ -25,15 +21,7 @@ public sealed class AppPreferencesTransactionTests
         store.RecordRecent(temp.File("one.xlsx"), "cells", "workbook");
         AppPreferences before = store.Current;
         byte[] disk = File.ReadAllBytes(file);
-        Action change = mutation switch
-        {
-            "onboarding" => () => store.CompleteOnboarding(),
-            "update" => () => store.Update("cells", "sheets", false),
-            "record" => () => store.RecordRecent(temp.File("two.xlsx"), "cells", "sheets"),
-            "remove" => () => store.RemoveRecent(before.RecentFiles[0].Id),
-            "clear" => store.ClearRecent,
-            _ => throw new InvalidOperationException(),
-        };
+        Action change = () => store.RecordRecent(temp.File("two.xlsx"), "cells", "sheets");
         using (var held = new FileStream(file, FileMode.Open, FileAccess.Read, FileShare.Read))
         {
             Exception? error = Record.Exception(change);

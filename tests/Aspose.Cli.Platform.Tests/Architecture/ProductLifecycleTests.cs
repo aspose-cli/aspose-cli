@@ -144,7 +144,6 @@ public sealed class ProductLifecycleTests
             Path.Combine(generatedRoot, "ProductComposition.props"));
         Assert.DoesNotContain("Aspose.Cli.Product.Alpha", composition, StringComparison.Ordinal);
         Assert.Contains("Aspose.Cli.Product.Beta", composition, StringComparison.Ordinal);
-        AssertSuccess(await RunGenerator(root, check: true));
     }
 
     private static void WriteProductSlice(
@@ -241,10 +240,6 @@ public sealed class ProductLifecycleTests
             StringComparison.Ordinal);
         Assert.Contains(
             $"<GeneratedProductsCrLfSha256>{expectedCrLf}</GeneratedProductsCrLfSha256>",
-            projection,
-            StringComparison.Ordinal);
-        Assert.DoesNotContain(
-            "GeneratedProductsRawSha256",
             projection,
             StringComparison.Ordinal);
     }

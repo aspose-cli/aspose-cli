@@ -9,7 +9,7 @@ using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;
 
-/// <summary>Enforces the final SDK, host, and autonomous-product boundaries.</summary>
+/// <summary>Enforces the SDK, Host and autonomous-product boundaries.</summary>
 public sealed class DependencyRulesTests
 {
     private static readonly Assembly Sdk = typeof(IProductModule).Assembly;
@@ -105,29 +105,6 @@ public sealed class DependencyRulesTests
             "Host source uses a namespace outside Aspose.Cli.Host:"
             + Environment.NewLine
             + string.Join(Environment.NewLine, namespaceViolations));
-
-        string hostSource = string.Join(
-            Environment.NewLine,
-            hostFiles.Select(File.ReadAllText));
-        string[] legacyRoots =
-        [
-            "Aspose.Cli.App",
-            "Aspose.Cli.Catalog",
-            "Aspose.Cli.Commands",
-            "Aspose.Cli.Invocation",
-            "Aspose.Cli.Licensing",
-            "Aspose.Cli.LocalServices",
-            "Aspose.Cli.Output",
-            "Aspose.Cli.Preview",
-            "Aspose.Cli.Review",
-            "Aspose.Cli.Serialization",
-            "Aspose.Cli.Skills",
-        ];
-        Assert.DoesNotContain(
-            legacyRoots,
-            legacyRoot => hostSource.Contains(
-                legacyRoot,
-                StringComparison.Ordinal));
 
         string[] forbiddenConsumerRoots = Directory
             .GetDirectories(

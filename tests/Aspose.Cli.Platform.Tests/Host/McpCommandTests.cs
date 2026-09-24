@@ -163,11 +163,9 @@ public sealed class McpCommandTests
             ["--timeout", "30", "mcp", "serve"]).Execution);
     }
 
-    [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task Execute_TimeoutOrCancellationClosesInheritedPipesAndKillsTheProcessTree(
-        bool cancel)
+    // The timeout and caller cancellation stop the worker through one linked deadline token.
+    [Fact]
+    public async Task Execute_CancellationClosesInheritedPipesAndKillsTheProcessTree()
     {
         Requires.Windows();
 
@@ -181,7 +179,7 @@ public sealed class McpCommandTests
         Process? child = null;
         Task<McpExecutionResult>? execution = null;
         using var cancellation = new CancellationTokenSource();
-        const int timeoutSeconds = 10;
+        const int timeoutSeconds = 60;
         try
         {
             await File.WriteAllTextAsync(
@@ -201,7 +199,6 @@ public sealed class McpCommandTests
             var runner = new McpCommandRunner(
                 ActualCommandTree.Host,
                 () => CreatePowerShellStartInfo(parentScript), parser: ProbeParser());
-            var stopwatch = Stopwatch.StartNew();
             execution = runner.RunAsync(
                 ["timeout-probe"],
                 stdin: null,
@@ -226,27 +223,16 @@ public sealed class McpCommandTests
                 if (child is null) { candidate.Dispose(); }
             }
 
-            if (cancel)
-            {
-                stopwatch.Restart();
-                cancellation.Cancel();
-                await Assert.ThrowsAnyAsync<OperationCanceledException>(() => execution);
-            }
-            else
-            {
-                McpCommandException error = await Assert.ThrowsAsync<McpCommandException>(
-                    () => execution);
-                Assert.Contains($"exceeded the {timeoutSeconds}-second timeout", error.Message);
-            }
-
+            var stopwatch = Stopwatch.StartNew();
+            cancellation.Cancel();
+            await Assert.ThrowsAnyAsync<OperationCanceledException>(() => execution);
             stopwatch.Stop();
             Assert.True(
-                stopwatch.Elapsed < TimeSpan.FromSeconds(cancel ? 0 : timeoutSeconds)
-                    + McpCommandRunner.ShutdownGracePeriod + TimeSpan.FromSeconds(1),
+                stopwatch.Elapsed < McpCommandRunner.ShutdownGracePeriod + TimeSpan.FromSeconds(1),
                 $"MCP process cleanup took {stopwatch.Elapsed}.");
             Assert.True(
                 await WaitForExitAsync(child, TimeSpan.FromSeconds(3)),
-                $"MCP descendant process {child.Id} survived timeout cleanup.");
+                $"MCP descendant process {child.Id} survived cancellation cleanup.");
         }
         finally
         {

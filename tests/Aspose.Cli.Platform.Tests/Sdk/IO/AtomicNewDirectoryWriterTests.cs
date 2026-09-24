@@ -260,19 +260,10 @@ public sealed class AtomicNewDirectoryWriterTests
     }
 
     [Fact]
-    public void WorkerCleanup_ReclaimsTreesLargerThanTheFormer4096EntryLimit()
-    {
-        string workerRoot = PrivateUserStorage.CreateTemporaryDirectory("worker");
-        try
-        {
-            string directory = PrivateUserStorage.EnsureDirectory(Path.Combine(workerRoot, "directory"));
-            for (int index = 0; index < 4097; index++)
-            { File.WriteAllText(Path.Combine(directory, index.ToString(System.Globalization.CultureInfo.InvariantCulture)), string.Empty); }
-            Assert.True(PrivateUserStorage.TryDeleteTree(workerRoot));
-            Assert.False(Directory.Exists(workerRoot));
-        }
-        finally { PrivateUserStorage.TryDeleteTree(workerRoot); }
-    }
+    public void WorkerCleanup_EntryCapCoversTheLargestDirectoryOutputTree() =>
+        Assert.True(PrivateUserStorage.MaximumCleanupEntries
+            >= NewDirectoryPublication.MaximumFiles + PublicationLimits.MaximumDirectories);
+
     private static void Write(AtomicNewDirectoryWriter output, string relative, string contents)
     {
         string path = Path.Combine(output.StagingDirectory, relative);

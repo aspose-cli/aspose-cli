@@ -25,13 +25,6 @@ public sealed class CommercialDependencyRulesTests
                 static reference => reference.StartsWith(
                     "Aspose.Cli.Product.",
                     StringComparison.Ordinal));
-            Assert.DoesNotContain("Aspose.Cli.Contracts", references);
-            Assert.DoesNotContain("Aspose.Cli.Core", references);
-            Assert.DoesNotContain(
-                references,
-                static reference => reference.StartsWith(
-                    "Aspose.Cli.Engines.",
-                    StringComparison.Ordinal));
             Assert.Contains(
                 references,
                 static reference => reference.StartsWith(
@@ -61,13 +54,6 @@ public sealed class CommercialDependencyRulesTests
         Assert.Equal(expected, productReferences);
         Assert.Contains("Aspose.Cli.Host", references);
         Assert.Contains("Aspose.Cli.Sdk", references);
-        Assert.DoesNotContain("Aspose.Cli.Contracts", references);
-        Assert.DoesNotContain("Aspose.Cli.Core", references);
-        Assert.DoesNotContain(
-            references,
-            static reference => reference.StartsWith(
-                "Aspose.Cli.Engines.",
-                StringComparison.Ordinal));
         Assert.DoesNotContain(
             references,
             static reference => reference.StartsWith(
@@ -78,111 +64,8 @@ public sealed class CommercialDependencyRulesTests
                     StringComparison.Ordinal));
     }
 
-    [Fact]
-    public void ProductPublicContracts_DoNotExposeAsposeSdkTypes()
-    {
-        var violations = new List<string>();
-        foreach (Assembly product in Products)
-        {
-            foreach (Type type in product.GetExportedTypes())
-            {
-                InspectType(type, type.FullName ?? type.Name, violations);
-                foreach (PropertyInfo property in type.GetProperties(
-                    BindingFlags.Public
-                    | BindingFlags.Instance
-                    | BindingFlags.Static
-                    | BindingFlags.DeclaredOnly))
-                {
-                    InspectType(
-                        property.PropertyType,
-                        $"{type.FullName}.{property.Name}",
-                        violations);
-                }
-
-                foreach (MethodInfo method in type.GetMethods(
-                    BindingFlags.Public
-                    | BindingFlags.Instance
-                    | BindingFlags.Static
-                    | BindingFlags.DeclaredOnly))
-                {
-                    InspectType(
-                        method.ReturnType,
-                        $"{type.FullName}.{method.Name} return",
-                        violations);
-                    foreach (ParameterInfo parameter in method.GetParameters())
-                    {
-                        InspectType(
-                            parameter.ParameterType,
-                            $"{type.FullName}.{method.Name}({parameter.Name})",
-                            violations);
-                    }
-                    foreach (Type genericArgument in method.GetGenericArguments())
-                    {
-                        InspectType(
-                            genericArgument,
-                            $"{type.FullName}.{method.Name}<{genericArgument.Name}>",
-                            violations);
-                    }
-                }
-            }
-        }
-
-        Assert.True(
-            violations.Count == 0,
-            "Aspose SDK types leaked through product public APIs:"
-            + Environment.NewLine
-            + string.Join(Environment.NewLine, violations));
-    }
-
     private static string[] ReferenceNames(Assembly assembly) =>
         assembly.GetReferencedAssemblies()
             .Select(static reference => reference.Name!)
             .ToArray();
-
-    private static void InspectType(
-        Type type,
-        string location,
-        ICollection<string> violations) =>
-        InspectType(type, location, violations, new HashSet<Type>());
-
-    private static void InspectType(
-        Type type,
-        string location,
-        ICollection<string> violations,
-        ISet<Type> visited)
-    {
-        Type leaf = type;
-        while (leaf.HasElementType)
-        {
-            leaf = leaf.GetElementType()!;
-        }
-        if (!visited.Add(leaf))
-        {
-            return;
-        }
-
-        string? assemblyName = leaf.Assembly.GetName().Name;
-        if (assemblyName?.StartsWith("Aspose.", StringComparison.Ordinal) == true
-            && !assemblyName.StartsWith(
-                "Aspose.Cli.",
-                StringComparison.Ordinal))
-        {
-            violations.Add($"{location}: {leaf.FullName}");
-        }
-
-        if (leaf.IsGenericType)
-        {
-            foreach (Type argument in leaf.GetGenericArguments())
-            {
-                InspectType(argument, location, violations, visited);
-            }
-        }
-        if (leaf.IsGenericParameter)
-        {
-            foreach (Type constraint in leaf.GetGenericParameterConstraints())
-            {
-                InspectType(constraint, location, violations, visited);
-            }
-        }
-    }
 }

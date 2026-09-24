@@ -480,7 +480,7 @@ public sealed class AtomicOutputSetWriterTests
                 },
             ],
         };
-        journal.Write(Path.Combine(transaction, "publication-journal.v1.json"));
+        journal.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
 
         int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
 

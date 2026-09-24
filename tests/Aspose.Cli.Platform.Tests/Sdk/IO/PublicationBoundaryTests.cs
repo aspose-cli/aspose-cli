@@ -355,9 +355,11 @@ public sealed class PublicationBoundaryTests
     {
         using var temp = new TempDirectory();
         bool produced = false;
-        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "capacity"))
+        var writer = new SafeFileWriter(TestBudgets.Create(
+            new Dictionary<string, long> { [ResourceBudgetKinds.OutputSetEntries] = 3 }));
+        using (var outputs = new AtomicOutputSetWriter(writer, temp.Path, "capacity"))
         {
-            for (int i = 0; i < 1000; i++) { outputs.Stage(temp.File($"item-{i}.txt"), false, file => File.WriteAllText(file, "x")); }
+            for (int i = 0; i < 3; i++) { outputs.Stage(temp.File($"item-{i}.txt"), false, file => File.WriteAllText(file, "x")); }
             Assert.Throws<CliException>(() => outputs.Stage(temp.File("overflow.txt"), false, _ => produced = true));
         }
         Assert.False(produced);

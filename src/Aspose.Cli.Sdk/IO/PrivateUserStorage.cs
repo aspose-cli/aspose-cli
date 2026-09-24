@@ -16,7 +16,7 @@ namespace Aspose.Cli.Sdk.IO;
 public static class PrivateUserStorage
 {
     // A worker can retain a bounded directory tree plus scratch and file transactions.
-    private const int MaximumCleanupEntries = 2 * (PublicationLimits.MaximumDirectoryFiles + PublicationLimits.MaximumDirectories);
+    internal const int MaximumCleanupEntries = 2 * (PublicationLimits.MaximumDirectoryFiles + PublicationLimits.MaximumDirectories);
     private const UnixFileMode PrivateDirectoryMode =
         UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.UserExecute;
     private const UnixFileMode PrivateFileMode =

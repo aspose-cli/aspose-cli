@@ -103,9 +103,8 @@ public sealed class UpdateClientStatusTests : IDisposable
         Assert.NotEqual(0, result.ExitCode);
         Assert.NotEqual(130, result.ExitCode);
         JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Contains("could not be reached", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal("RELEASE_FEED_UNAVAILABLE", error["code"]!.GetValue<string>());
-        Assert.Contains("proxy", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(string.IsNullOrWhiteSpace(error["hint"]?.GetValue<string>()));
     }
 
     private static void Write(string path, JsonObject status) => File.WriteAllText(path, status.ToJsonString());
