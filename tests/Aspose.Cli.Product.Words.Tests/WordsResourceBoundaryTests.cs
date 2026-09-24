@@ -76,16 +76,14 @@ public sealed class WordsResourceBoundaryTests
         Assert.False(File.Exists(output));
     }
 
+    // Supervised runs publish from a worker whose staging directory is removed afterwards;
+    // direct runs save with the same options and have no such cleanup to survive.
     [Theory]
-    [InlineData("html", false)]
-    [InlineData("html", true)]
-    [InlineData("html-fixed", false)]
-    [InlineData("html-fixed", true)]
-    [InlineData("md", false)]
-    [InlineData("md", true)]
-    [InlineData("svg", false)]
-    [InlineData("svg", true)]
-    public void SingleFileExports_KeepImagesAfterWorkerCleanup(string format, bool supervised)
+    [InlineData("html")]
+    [InlineData("html-fixed")]
+    [InlineData("md")]
+    [InlineData("svg")]
+    public void SingleFileExports_KeepImagesAfterWorkerCleanup(string format)
     {
         using var workspace = new TempWorkspace();
         File.WriteAllBytes(workspace.File("local.png"), ResourceHttpServer.Image);
@@ -94,8 +92,7 @@ public sealed class WordsResourceBoundaryTests
         string extension = format == "html-fixed" ? "html" : format;
         string output = workspace.File($"export/result.{extension}");
         string[] args = ["words", format == "svg" ? "render" : "convert", workspace.File("source.html"),
-            "--to", format, "--out", output, "--output", "json",
-            .. supervised ? new[] { "--timeout", "30" } : Array.Empty<string>()];
+            "--to", format, "--out", output, "--output", "json", "--timeout", "30"];
         CliResult result = workspace.Run(args);
 
         Assert.True(result.ExitCode == 0, result.StdErr);

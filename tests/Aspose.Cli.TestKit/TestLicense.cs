@@ -1,3 +1,4 @@
+using System.Collections.Concurrent;
 using System.Runtime.CompilerServices;
 using Aspose.Cli.Sdk.Licensing;
 using Xunit;
@@ -12,6 +13,7 @@ namespace Aspose.Cli.TestKit;
 public static class TestLicense
 {
     public const string PathVariable = "ASPOSE_CLI_TEST_LICENSE_PATH";
+    private static readonly ConcurrentDictionary<Type, Lazy<ILicenseGate>> Gates = new();
 
     /// <summary>The explicit test license, or null for an evaluation run.</summary>
     /// <exception cref="FileNotFoundException">The variable names a missing file.</exception>
@@ -39,19 +41,24 @@ public static class TestLicense
         Assert.SkipWhen(Path is null, $"{evaluationLimit} Set {PathVariable} to run it.");
 
     /// <summary>
-    /// Creates a product license gate over the test license and applies it at once, so every
-    /// document a test authors through the SDK is written in the state the engine later reads.
+    /// The product license gate over the test license, applied at once, so every document a
+    /// test authors through the SDK is written in the state the engine later reads. Like the
+    /// CLI, a process applies each product's license once: tests running in parallel share the
+    /// gate instead of applying the license again at the same time.
     /// </summary>
     public static TGate Apply<TGate>(Func<LicenseResolution, Func<string, string?>, TGate> create)
         where TGate : ILicenseGate
     {
         ArgumentNullException.ThrowIfNull(create);
-        LicenseResolution resolution = Path is { } path
-            ? new LicenseResolution(LicenseSourceKind.Flag, path)
-            : LicenseResolution.None;
-        TGate gate = create(resolution, static _ => null);
-        gate.EnsureApplied();
-        return gate;
+        return (TGate)Gates.GetOrAdd(typeof(TGate), _ => new Lazy<ILicenseGate>(() =>
+        {
+            LicenseResolution resolution = Path is { } path
+                ? new LicenseResolution(LicenseSourceKind.Flag, path)
+                : LicenseResolution.None;
+            TGate gate = create(resolution, static _ => null);
+            gate.EnsureApplied();
+            return gate;
+        })).Value;
     }
 }
 

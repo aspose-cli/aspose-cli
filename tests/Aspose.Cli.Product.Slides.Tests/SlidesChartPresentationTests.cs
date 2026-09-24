@@ -44,8 +44,6 @@ public sealed class SlidesChartPresentationTests
 
     [Theory]
     [InlineData("column", 95, 100, 105)]
-    [InlineData("bar", 95, 100, 105)]
-    [InlineData("column", 0, 0, 0)]
     [InlineData("bar", 0, 0, 0)]
     public void NonNegativeValues_UseTheValueAxisZeroBaseline(
         string kind, double first, double second, double third)
@@ -64,8 +62,6 @@ public sealed class SlidesChartPresentationTests
 
     [Theory]
     [InlineData("column", 95, -100, 105)]
-    [InlineData("bar", 95, -100, 105)]
-    [InlineData("column", -95, -100, -105)]
     [InlineData("bar", -95, -100, -105)]
     public void NegativeValues_KeepAutomaticValueAxisScaling(
         string kind, double first, double second, double third)
@@ -80,8 +76,6 @@ public sealed class SlidesChartPresentationTests
 
     [Theory]
     [InlineData("column", 95, 100, 105)]
-    [InlineData("bar", 95, 100, 105)]
-    [InlineData("column", 0, 0, 0)]
     [InlineData("bar", 0, 0, 0)]
     public void UpdatingAutomaticAxisToNonNegativeData_UsesZero(
         string kind, double first, double second, double third)

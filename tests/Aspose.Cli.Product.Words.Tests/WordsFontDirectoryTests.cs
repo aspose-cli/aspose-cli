@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
+[Collection(ProcessFontSourcesCollection.Name)]
 public sealed class WordsFontDirectoryTests
 {
     [Fact]

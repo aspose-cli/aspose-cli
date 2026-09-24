@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Pdf.Tests;
 
+[Collection(ProcessFontSourcesCollection.Name)]
 public sealed class PdfFontDirectoryTests
 {
     [Fact]

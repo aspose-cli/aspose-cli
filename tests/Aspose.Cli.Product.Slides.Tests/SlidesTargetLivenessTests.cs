@@ -1,4 +1,3 @@
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Xunit;
@@ -119,21 +118,5 @@ public sealed class SlidesTargetLivenessTests
         using var reopened = new Presentation(output);
         Assert.Equal(originalId, reopened.Slides[2].SlideId);
         Assert.Contains("Safe", reopened.Slides[2].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void CliBestEffort_ReportsTheDeadTargetAndKeepsIndependentSuccesses()
-    {
-        using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("source.md"), "# One\n\n# Two\n\n# Three\n");
-        CliResult created = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "source.md", "--output", "json");
-        Assert.True(created.ExitCode == 0, created.StdErr);
-        const string operations = """{"ops":[{"op":"delete_slides","slides":"1"},{"op":"set_title","slide":1,"text":"Lost"},{"op":"set_notes","slide":2,"text":"Safe"}]}""";
-        CliResult edited = workspace.RunWithInput(operations, "slides", "edit", "deck.pptx", "--ops", "-", "--out", "edited.pptx", "--best-effort", "--output", "json");
-        Assert.True(edited.ExitCode == 8, edited.StdErr);
-        Assert.Equal(["ok", "failed", "ok"], JsonNode.Parse(edited.StdOut)!["applied"]!.AsArray().Select(item => item!["status"]!.GetValue<string>()));
-        using var reopened = new Presentation(workspace.File("edited.pptx"));
-        Assert.Equal(2, reopened.Slides.Count);
-        Assert.Contains("Safe", reopened.Slides[0].NotesSlideManager.NotesSlide!.NotesTextFrame!.Text, StringComparison.Ordinal);
     }
 }

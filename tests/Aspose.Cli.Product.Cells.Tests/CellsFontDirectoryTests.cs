@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
 
+[Collection(ProcessFontSourcesCollection.Name)]
 public sealed class CellsFontDirectoryTests
 {
     [Fact]

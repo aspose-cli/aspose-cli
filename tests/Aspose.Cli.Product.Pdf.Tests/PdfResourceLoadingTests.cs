@@ -317,14 +317,14 @@ public sealed class PdfResourceLoadingTests
         listener.Start();
         int port = ((System.Net.IPEndPoint)listener.LocalEndpoint).Port;
         using var stop = new CancellationTokenSource();
-        var accepted = new List<System.Net.Sockets.TcpClient>();
+        var accepted = new System.Collections.Concurrent.ConcurrentQueue<System.Net.Sockets.TcpClient>();
         Task silent = Task.Run(async () =>
         {
             try
             {
                 while (!stop.IsCancellationRequested)
                 {
-                    accepted.Add(await listener.AcceptTcpClientAsync(stop.Token));
+                    accepted.Enqueue(await listener.AcceptTcpClientAsync(stop.Token));
                 }
             }
             catch (OperationCanceledException) { }
@@ -334,14 +334,15 @@ public sealed class PdfResourceLoadingTests
         File.WriteAllText(input, $"<html><body><p>x</p><img src=\"http://127.0.0.1:{port}/never.png\"></body></html>");
         var watch = System.Diagnostics.Stopwatch.StartNew();
 
+        // The deadline leaves a loaded machine time to start the worker and reach the silent server.
         CliResult result = workspace.Run(
-            ["pdf", "create", output, "--from-html", input, "--allow-network-resources", "--timeout", "5", "--output", "json"]);
+            ["pdf", "create", output, "--from-html", input, "--allow-network-resources", "--timeout", "15", "--output", "json"]);
 
         watch.Stop();
         await stop.CancelAsync();
         listener.Stop();
         await silent;
-        accepted.ForEach(static client => client.Dispose());
+        foreach (System.Net.Sockets.TcpClient client in accepted) { client.Dispose(); }
         Assert.Equal("OPERATION_TIMEOUT", JsonNode.Parse(result.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.NotEmpty(accepted);
         Assert.True(watch.Elapsed < TimeSpan.FromSeconds(60), $"The import ran {watch.Elapsed}.");

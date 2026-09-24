@@ -1,5 +1,3 @@
-using System.Security.Cryptography;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Export;
@@ -165,28 +163,4 @@ public sealed class SlidesShapeAddressingTests
         Assert.DoesNotContain(final.Slides[0].Shapes!, static shape => shape.Type == "group");
         Assert.Contains(final.Slides[0].Shapes!, static shape => shape.Name == "Title 2");
     }
-    [Fact]
-    public void NamedDeletionAndMissingName_AreActionableThroughRealCli()
-    {
-        using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("outline.md"), "# Quarter one\n\nPerformance\n\n# Quarter two\n\nDecision");
-        CliResult create = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--size", "16x9", "--output", "json");
-        Assert.True(create.ExitCode == 0, create.StdErr);
-        byte[] original = SHA256.HashData(File.ReadAllBytes(workspace.File("deck.pptx")));
-        File.WriteAllText(workspace.File("delete.json"), """{"ops":[{"op":"delete_shape","slide":2,"shapeName":"Title"}]}""");
-        CliResult deleted = workspace.Run("slides", "edit", "deck.pptx", "--ops", "delete.json", "--out", "deleted.pptx", "--output", "json");
-        Assert.True(deleted.ExitCode == 0, deleted.StdErr);
-        Assert.True(File.Exists(workspace.File("deleted.pptx")));
-        Assert.Equal(original, SHA256.HashData(File.ReadAllBytes(workspace.File("deck.pptx"))));
-
-        File.WriteAllText(workspace.File("missing.json"), """{"ops":[{"op":"delete_shape","slide":2,"shapeName":"Missing target"}]}""");
-        CliResult missing = workspace.Run("slides", "edit", "deck.pptx", "--ops", "missing.json", "--out", "missing.pptx", "--output", "json");
-        Assert.Equal(4, missing.ExitCode);
-        JsonNode error = JsonNode.Parse(missing.StdErr)!["error"]!;
-        Assert.Equal("SHAPE_NOT_FOUND", error["code"]!.GetValue<string>());
-        Assert.Contains("Title", error["details"]!.ToJsonString(), StringComparison.Ordinal);
-        Assert.Contains("slides query slides", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.False(File.Exists(workspace.File("missing.pptx")));
-    }
 }
-

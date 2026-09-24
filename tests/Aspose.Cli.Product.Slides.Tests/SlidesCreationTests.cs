@@ -120,4 +120,42 @@ public sealed class SlidesCreationTests
             static error => Assert.Equal(SlidesDiagnostics.SlideNotFound, error.Code));
         Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "*.png"));
     }
+
+    [Fact]
+    public void Markdown_FillsTheBuiltInDesignLayoutsWithoutOwnStyling()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("outline.md");
+        File.WriteAllText(
+            markdown,
+            "# Review\nFor the board\n\n## Results\n- Revenue up\n  - Enterprise\nPlain note\n\n## Close\n");
+        string output = fixture.File("outline.pptx");
+
+        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = output });
+
+        using var deck = new Presentation(output);
+        Assert.Equal(
+            ["Title Slide", "Title and Content", "Title Only"],
+            deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+        // Evaluation mode may add watermark shapes; the authored shapes are the placeholders.
+        IAutoShape[] authored = deck.Slides
+            .SelectMany(static slide => slide.Shapes.OfType<IAutoShape>())
+            .Where(static shape => shape.Name is "Title" or "Body")
+            .ToArray();
+        Assert.Equal(5, authored.Length);
+        Assert.All(authored, static shape => Assert.NotNull(shape.Placeholder));
+        IAutoShape body = deck.Slides[1].Shapes.OfType<IAutoShape>()
+            .Single(static shape => shape.Placeholder?.Type == PlaceholderType.Object);
+        Assert.Equal([0, 1, 0], body.TextFrame.Paragraphs.Select(static paragraph => (int)paragraph.ParagraphFormat.Depth));
+        Assert.Equal(BulletType.None, body.TextFrame.Paragraphs[2].ParagraphFormat.Bullet.Type);
+        Assert.All(
+            authored.SelectMany(static shape => shape.TextFrame.Paragraphs)
+                .SelectMany(static paragraph => paragraph.Portions),
+            static portion =>
+            {
+                Assert.Null(portion.PortionFormat.LatinFont);
+                Assert.True(float.IsNaN(portion.PortionFormat.FontHeight));
+                Assert.Equal(FillType.NotDefined, portion.PortionFormat.FillFormat.FillType);
+            });
+    }
 }

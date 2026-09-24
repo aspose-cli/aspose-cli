@@ -4,5 +4,3 @@ global using Aspose.Cli.Product.Pdf.Engine.Mapping;
 global using Aspose.Cli.Sdk.Operations;
 global using Aspose.Cli.Product.Pdf.Ports;
 global using Aspose.Cli.Sdk.Contracts;
-
-[assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]

@@ -6,5 +6,3 @@ global using Aspose.Cli.Product.Cells.Operations;
 global using Aspose.Cli.Product.Cells.Ports;
 global using Aspose.Cli.Product.Cells.Reading;
 global using Aspose.Cli.Sdk.Contracts;
-
-[assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]

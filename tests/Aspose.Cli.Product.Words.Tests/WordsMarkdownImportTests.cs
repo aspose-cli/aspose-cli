@@ -8,22 +8,32 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsMarkdownImportTests
 {
     [Fact]
-    public void Create_WithoutTemplate_UsesTheBuiltInA4Design()
+    public void Create_WithoutTemplate_TakesStylesPageSetupAndFooterFromTheBuiltInDesign()
     {
         using var fixture = new WordsFixture();
-        string markdown = fixture.Temp.File("report.md");
-        File.WriteAllText(markdown, "# Title\n\nBody with **bold** text.\n");
-        string output = fixture.Temp.File("report.docx");
+        string markdown = fixture.Temp.File("brief.md");
+        File.WriteAllText(markdown, "# Brief\n\nPlain **bold** and `code`.\n");
+        string output = fixture.Temp.File("brief.docx");
 
         fixture.Engine.CreateDocument(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
 
         var document = new Document(output);
-        Assert.Equal(PaperSize.A4, document.FirstSection.PageSetup.PaperSize);
-        Paragraph heading = Body(document).First(static paragraph => paragraph.GetText().Contains("Title", StringComparison.Ordinal));
+        Section section = Assert.Single(document.Sections.Cast<Section>());
+        Assert.Equal(PaperSize.A4, section.PageSetup.PaperSize);
+        Assert.Contains(
+            section.HeadersFooters[HeaderFooterType.FooterPrimary].Range.Fields.Cast<Aspose.Words.Fields.Field>(),
+            static field => field.Type == Aspose.Words.Fields.FieldType.FieldPage);
+        // Evaluation mode may add a banner paragraph; select the authored paragraphs by text.
+        Paragraph[] paragraphs = section.Body.Paragraphs.Cast<Paragraph>().ToArray();
+        Paragraph heading = Assert.Single(paragraphs, static paragraph => paragraph.GetText().Trim() == "Brief");
         Assert.Equal(StyleIdentifier.Heading1, heading.ParagraphFormat.StyleIdentifier);
-        Assert.NotNull(document.FirstSection.HeadersFooters[HeaderFooterType.FooterPrimary]);
+        Assert.True(heading.Runs[0].Font.Bold);
+        Run[] runs = Assert.Single(paragraphs, static paragraph => paragraph.GetText().StartsWith("Plain", StringComparison.Ordinal))
+            .Runs.Cast<Run>().ToArray();
+        Assert.Equal(["bold"], runs.Where(static run => run.Font.Bold).Select(static run => run.Text));
+        Assert.Equal("InlineCode", Assert.Single(runs, static run => run.Text == "code").Font.StyleName);
+        Assert.DoesNotContain(paragraphs, static paragraph => !paragraph.HasChildNodes);
     }
-
     [Fact]
     public void InspectFonts_ReportsTheFontsTheTextUses()
     {

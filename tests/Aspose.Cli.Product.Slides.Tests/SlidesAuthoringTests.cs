@@ -114,4 +114,38 @@ public sealed class SlidesAuthoringTests
             body.TextFrame.Paragraphs,
             static paragraph => Assert.Equal(BulletType.NotDefined, paragraph.ParagraphFormat.Bullet.Type));
     }
+
+    [Fact]
+    public void BodyPlaceholder_IsFilledInPlaceAndAddressedByItsRole()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("outline.md");
+        File.WriteAllText(markdown, "## Results\n- Draft\n");
+        string input = fixture.File("outline.pptx");
+        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = input });
+        string filled = fixture.File("filled.pptx");
+        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        {
+            Ops = [new SetBodyOp { Slide = 1, Paragraphs = [new SlidesParagraphInput { Text = "Final" }] }],
+        }, new PresentationEditRequest { OutputPath = filled });
+        string addressed = fixture.File("addressed.pptx");
+        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        {
+            Ops = [new SetTextOp { Slide = 1, Placeholder = "body", Text = "Final" }],
+        }, new PresentationEditRequest { OutputPath = addressed });
+
+        foreach (string output in new[] { filled, addressed })
+        {
+            using var deck = new Presentation(output);
+            IAutoShape body = Assert.Single(SlidesPlaceholders.Content(deck.Slides[0]));
+            Assert.Equal("Final", body.TextFrame.Text);
+            // The layout's content placeholder takes the text; no second shape carries it.
+            Assert.Single(deck.Slides[0].Shapes.OfType<IAutoShape>(), static shape => shape.TextFrame?.Text == "Final");
+        }
+        PresentationReadResult read = fixture.Engine.Read(addressed, new PresentationReadRequest
+        {
+            Slides = PageRange.Parse("1"), Scope = PresentationReadScopes.Shapes,
+        });
+        Assert.Contains(read.Slides[0].Shapes!, static shape => shape.Role == "body" && shape.Text == "Final");
+    }
 }

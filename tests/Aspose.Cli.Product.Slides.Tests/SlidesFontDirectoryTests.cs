@@ -7,6 +7,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
 
+[Collection(ProcessFontSourcesCollection.Name)]
 public sealed class SlidesFontDirectoryTests
 {
     [Fact]

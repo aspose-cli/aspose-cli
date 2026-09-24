@@ -146,11 +146,11 @@ public sealed class SlidesRasterConversionTests
         Assert.Equal(1600, image.Width);
         Assert.Equal(900, image.Height);
     }
-    [Theory]
-    [InlineData("png")]
-    [InlineData("jpeg")]
-    public void ConvertImages_ProducesUsefulDimensionsThroughRealCli(string format)
+    // The encoders and their dimensions are covered in-process; this proves the CLI route once.
+    [Fact]
+    public void ConvertImages_ProducesUsefulDimensionsThroughRealCli()
     {
+        const string format = "png";
         using var workspace = new TempWorkspace();
         File.WriteAllText(workspace.File("outline.md"), "# Quarterly review\n\nGrowth and retention");
         CliResult create = workspace.Run("slides", "create", "deck.pptx", "--from-markdown", "outline.md", "--size", "16x9", "--output", "json");

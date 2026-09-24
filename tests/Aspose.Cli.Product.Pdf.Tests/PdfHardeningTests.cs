@@ -11,17 +11,12 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfHardeningTests
 {
     [Fact]
-    public void RegexTimeout_IsEnforcedByTheSdkAndPreventsPublication()
+    public void RegexTimeout_StopsTheRedactionWithoutPublishing()
     {
         using var fixture = new PdfEngineFixture();
         using var document = new Document();
-        Page page = document.Pages.Add();
-        page.Paragraphs.Add(new TextFragment(new string('a', 4096) + "!"));
-        document.ProcessParagraphs();
+        document.Pages.Add().Paragraphs.Add(new TextFragment(new string('a', 4096) + "!"));
         const string pattern = "(a+)+$";
-        var absorber = new TextFragmentAbsorber(
-            Sdk.Text.SafeRegex.Create(pattern, caseSensitive: true), new TextSearchOptions(true));
-        Assert.Throws<System.Text.RegularExpressions.RegexMatchTimeoutException>(() => page.Accept(absorber));
         string input = fixture.File("regex-timeout.pdf");
         document.Save(input);
         string output = fixture.File("regex-timeout.out.pdf");
