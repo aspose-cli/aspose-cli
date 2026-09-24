@@ -17,7 +17,7 @@ public sealed class PdfModule : IProductModule
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),
-                ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Objects, 1_000_000, 5_000_000, "items", "projection"),
+                ResourceBudgetCapabilities.Domain(PdfBudgetDomains.Objects, 1_000_000, 5_000_000, "items", "post-load"),
             ],
             Engine = ProductEngineCapabilities.LicenseAware(
                 "aspose",
