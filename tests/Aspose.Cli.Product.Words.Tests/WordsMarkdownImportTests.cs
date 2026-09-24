@@ -39,6 +39,21 @@ public sealed class WordsMarkdownImportTests
     }
 
     [Fact]
+    public void BuiltInDesign_FontTableNamesExactlyTheFontsItsStylesUse()
+    {
+        Document template = Engine.Mapping.WordsDocumentLoader.OpenDefaultTemplate();
+
+        string[] styleFonts = template.Styles.Cast<Style>()
+            .Where(static style => style.Type is StyleType.Paragraph or StyleType.Character)
+            .SelectMany(static style => new[] { style.Font.Name, style.Font.NameFarEast, style.Font.NameBi, style.Font.NameOther })
+            .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
+
+        Assert.Equal(["Calibri", "Microsoft YaHei"], styleFonts);
+        Assert.Equal(styleFonts, template.FontInfos.Cast<Aspose.Words.Fonts.FontInfo>()
+            .Select(static font => font.Name).Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void BuiltInDesign_CarriesNoGeneratorMetadata()
     {
         using Stream stream = typeof(WordsDocumentEngine).Assembly.GetManifestResourceStream("Templates/default-a4.docx")!;
