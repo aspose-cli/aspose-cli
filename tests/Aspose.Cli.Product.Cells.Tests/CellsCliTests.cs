@@ -153,6 +153,40 @@ public sealed class CellsCliTests : IDisposable
         return [.. tokens.Skip(1)];
     }
 
+    /// <summary>
+    /// Every CLI child runs in evaluation mode, the only place Cells evaluation is tested:
+    /// the in-process engine suite needs a license.
+    /// </summary>
+    [Fact]
+    public void Evaluation_DisclosesTheWatermarkAndRefusesASilentSheetSubstitution()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Dashboard,Detail").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
+            "--set", "Dashboard!A1=Overview", "--set", "Detail!A1=SO-001").ExitCode);
+        File.WriteAllText(_workspace.File("report.csv"), "existing report");
+
+        CliResult refused = _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv",
+            "--sheet", "Detail", "--out", "report.csv", "--overwrite", "--output", "json");
+        CliResult converted = _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv",
+            "--out", "first.csv", "--output", "json");
+        CliResult inspected = _workspace.Run("cells", "inspect", "book.xlsx", "--output", "json");
+
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
+        Assert.Equal("Dashboard", error["details"]!["firstSheet"]!.GetValue<string>());
+        Assert.Contains("license", error["hint"]!.GetValue<string>(), StringComparison.OrdinalIgnoreCase);
+        Assert.Empty(refused.StdOut);
+        Assert.Equal("existing report", File.ReadAllText(_workspace.File("report.csv")));
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        JsonNode result = JsonNode.Parse(converted.StdOut)!;
+        Assert.Equal("evaluation", result["license"]!["mode"]!.GetValue<string>());
+        JsonNode watermark = Assert.Single(result["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "EVAL_MODE")!;
+        Assert.False(string.IsNullOrWhiteSpace(watermark["hint"]?.GetValue<string>()));
+        Assert.True(inspected.ExitCode == 0, inspected.StdErr);
+        Assert.Equal("evaluation", JsonNode.Parse(inspected.StdOut)!["license"]!["mode"]!.GetValue<string>());
+    }
+
     [Fact]
     public void PasswordEnvironmentAndStdin_RoundTripEncryptedOutputWithoutLeaks()
     {

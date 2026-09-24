@@ -30,8 +30,13 @@ public sealed class WordsPageNumberTests : IClassFixture<WordsFixture>
         builder.Write("Second section");
         for (int index = 0; index < document.Sections.Count; index++)
         {
-            var container = new HeaderFooter(document, type);
-            document.Sections[index].HeadersFooters.Add(container);
+            // Evaluation mode has already written a header holding its banner.
+            HeaderFooter? container = document.Sections[index].HeadersFooters[type];
+            if (container is null)
+            {
+                container = new HeaderFooter(document, type);
+                document.Sections[index].HeadersFooters.Add(container);
+            }
             var label = new Paragraph(document);
             var run = new Run(document, $"CLIENT CONFIDENTIAL | SECTION {index + 1}");
             run.Font.Name = "Arial";

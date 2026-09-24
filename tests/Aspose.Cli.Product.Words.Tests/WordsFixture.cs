@@ -1,7 +1,9 @@
+using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Words;
 using Aspose.Words.Saving;
 using Aspose.Words.Tables;
+using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
@@ -26,6 +28,26 @@ public sealed class WordsFixture : IDisposable
     public TempDirectory Temp { get; } = new();
 
     public LicenseState LicenseState => Gate.EnsureApplied();
+
+    /// <summary>
+    /// Asserts that a section has no primary header of its own and so continues the previous
+    /// one. Evaluation mode writes a header holding only its banner into every section.
+    /// </summary>
+    internal void AssertNoOwnHeader(Section section)
+    {
+        HeaderFooter? header = section.HeadersFooters[HeaderFooterType.HeaderPrimary];
+        if (LicenseState == LicenseState.Licensed)
+        {
+            Assert.Null(header);
+            return;
+        }
+        Assert.All(header?.Paragraphs.Cast<Paragraph>() ?? [], static paragraph =>
+            Assert.True(WordsEvaluation.IsBanner(paragraph) || paragraph.GetText().Trim().Length == 0, paragraph.GetText()));
+    }
+
+    /// <summary>The first paragraph a test or the engine wrote, after any evaluation banner.</summary>
+    internal static Paragraph FirstAuthoredParagraph(HeaderFooter header) =>
+        header.Paragraphs.Cast<Paragraph>().First(static paragraph => !WordsEvaluation.IsBanner(paragraph));
 
     public string CreateReport(string fileName = "report.docx")
     {

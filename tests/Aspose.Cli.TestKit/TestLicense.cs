@@ -32,6 +32,13 @@ public static class TestLicense
     }
 
     /// <summary>
+    /// Skips a test that evaluation mode cannot run, naming <see cref="PathVariable"/> so the run
+    /// reports it as a licensed case (scripts/test.ps1 -RequireLicense fails when one is skipped).
+    /// </summary>
+    public static void Require(string evaluationLimit) =>
+        Assert.SkipWhen(Path is null, $"{evaluationLimit} Set {PathVariable} to run it.");
+
+    /// <summary>
     /// Creates a product license gate over the test license and applies it at once, so every
     /// document a test authors through the SDK is written in the state the engine later reads.
     /// </summary>

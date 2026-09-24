@@ -6,7 +6,8 @@ using Xunit;
 namespace Aspose.Cli.Product.Slides.Tests;
 
 // Evaluation mode truncates any text longer than five characters when it is read,
-// so every text in these decks is at most five characters long.
+// so every text in these decks is at most five characters long, and the searched letter
+// 'q' never occurs in the watermark evaluation mode saves into every slide.
 public sealed class SlidesTextCoverageTests
 {
     [Fact]
@@ -44,7 +45,7 @@ public sealed class SlidesTextCoverageTests
             {
                 Ops =
                 [
-                    new SlidesReplaceTextOp { Find = "x", Replace = "z", MatchCase = true },
+                    new SlidesReplaceTextOp { Find = "q", Replace = "z", MatchCase = true },
                     new SlidesReplaceTextOp { Find = "(t)y", Replace = "$1Y", Regex = true },
                 ],
             },
@@ -74,21 +75,21 @@ public sealed class SlidesTextCoverageTests
             new PresentationReadRequest { Scope = PresentationReadScopes.Full });
         SlidesSearchResult search = fixture.Engine.Search(
             input,
-            new PresentationSearchRequest { Pattern = "x", CaseSensitive = true, Scope = PresentationSearchScopes.Shapes });
+            new PresentationSearchRequest { Pattern = "q", CaseSensitive = true, Scope = PresentationSearchScopes.Shapes });
         SlidesExtractResult extract = fixture.Engine.Extract(
             input,
             new PresentationExtractRequest { What = PresentationExtractKinds.Text, OutputDirectory = fixture.File("text") });
 
         SlideShapeData[] shapes = Assert.Single(read.Slides).Shapes.ToArray();
-        Assert.Contains(shapes, static shape => shape.Type == "table" && shape.Text == "tx ty");
-        Assert.Contains(shapes, static shape => shape.Type == "group" && shape.Text == "gx");
-        Assert.Contains(shapes, static shape => shape.Text == "sx");
+        Assert.Contains(shapes, static shape => shape.Type == "table" && shape.Text == "tq ty");
+        Assert.Contains(shapes, static shape => shape.Type == "group" && shape.Text == "gq");
+        Assert.Contains(shapes, static shape => shape.Text == "sq");
         Assert.Contains(shapes, static shape => shape.Type == "table" && shape.Runs?.Count == 2);
         Assert.Equal(3, search.Hits.Count);
         string text = File.ReadAllText(Assert.Single(extract.Items).Path);
-        Assert.Contains("tx", text, StringComparison.Ordinal);
-        Assert.Contains("gx", text, StringComparison.Ordinal);
-        Assert.Contains("sx", text, StringComparison.Ordinal);
+        Assert.Contains("tq", text, StringComparison.Ordinal);
+        Assert.Contains("gq", text, StringComparison.Ordinal);
+        Assert.Contains("sq", text, StringComparison.Ordinal);
     }
 
     private static IAutoShape Styled(Presentation deck) =>
@@ -114,11 +115,11 @@ public sealed class SlidesTextCoverageTests
         styled.TextFrame.Paragraphs.Add(paragraph);
 
         ITable table = slide.Shapes.AddTable(20, 80, [100, 100], [30]);
-        table[0, 0].TextFrame.Text = "tx";
+        table[0, 0].TextFrame.Text = "tq";
         table[1, 0].TextFrame.Text = "ty";
 
         IGroupShape group = slide.Shapes.AddGroupShape();
-        group.Shapes.AddAutoShape(ShapeType.Rectangle, 20, 140, 100, 30).TextFrame.Text = "gx";
+        group.Shapes.AddAutoShape(ShapeType.Rectangle, 20, 140, 100, 30).TextFrame.Text = "gq";
 
         ISmartArt smartArt = slide.Shapes.AddSmartArt(260, 20, 200, 150, SmartArtLayoutType.BasicBlockList);
         foreach (ISmartArtNode node in smartArt.AllNodes.ToArray().Skip(1))
@@ -126,8 +127,8 @@ public sealed class SlidesTextCoverageTests
             smartArt.AllNodes.RemoveNode(node);
         }
 
-        smartArt.AllNodes[0].TextFrame.Text = "sx";
-        slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "nx";
+        smartArt.AllNodes[0].TextFrame.Text = "sq";
+        slide.NotesSlideManager.AddNotesSlide().NotesTextFrame.Text = "nq";
         presentation.Save(path, SaveFormat.Pptx);
         return path;
     }

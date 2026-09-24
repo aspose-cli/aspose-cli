@@ -7,14 +7,28 @@ namespace Aspose.Cli.Product.Cells.Tests;
 /// Shared real-engine setup. The test license state is applied before any test
 /// authors a workbook, so inputs are written in the state the engine reads them in.
 /// </summary>
+/// <remarks>
+/// Aspose.Cells evaluation mode refuses to open more files once one process has opened
+/// 100, so the in-process engine suite runs licensed only. The CLI suites cover
+/// evaluation mode, where every command is a fresh process.
+/// </remarks>
 public sealed class CellsFixture : IDisposable
 {
+    private const string EvaluationLimit =
+        "Aspose.Cells evaluation mode opens at most 100 files per process, too few for the in-process engine suite.";
+
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new CellsLicenseGate(resolution, environment));
 
-    internal CellsWorkbookEngine Engine =>
-        ProductTestBudgets.StartEngine<CellsModule, CellsWorkbookEngine>(
-            (budgets, writer) => new CellsWorkbookEngine(Gate, budgets, writer));
+    internal CellsWorkbookEngine Engine
+    {
+        get
+        {
+            TestLicense.Require(EvaluationLimit);
+            return ProductTestBudgets.StartEngine<CellsModule, CellsWorkbookEngine>(
+                (budgets, writer) => new CellsWorkbookEngine(Gate, budgets, writer));
+        }
+    }
 
     public TempDirectory Temp { get; } = new();
 

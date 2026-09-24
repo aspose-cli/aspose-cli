@@ -21,14 +21,15 @@ public sealed class SlidesViewLayoutTests
         ViewPart slide = Assert.Single(Render(fixture, path).Parts);
 
         double scale = 960d / widthPoints;
-        Assert.Equal(3, slide.Elements!.Count);
+        Assert.NotNull(slide.Elements);
+        Assert.Equal(3, slide.Elements.Count(static element => !SlidesEngineFixture.IsEvaluationWatermark(element.Label)));
         Assert.All(slide.Elements, static element => Assert.Matches("^shape-[0-9]+$", element.Id));
-        ViewElement title = Assert.Single(slide.Elements, static element => element.Label == "Quarterly results");
+        ViewElement title = Assert.Single(slide.Elements, static element => element.Label == "Q3");
         Assert.Equal(40 * scale, title.Box.X, 1);
         Assert.Equal(30 * scale, title.Box.Y, 1);
         Assert.Equal(600 * scale, title.Box.Width, 1);
         Assert.Equal(70 * scale, title.Box.Height, 1);
-        Assert.Equal("Speaker note", slide.Properties!["notes"]);
+        Assert.Equal("Note", slide.Properties!["notes"]);
     }
 
     [Fact]
@@ -60,17 +61,18 @@ public sealed class SlidesViewLayoutTests
         string name,
         Color boxColor)
     {
+        // Evaluation mode truncates text longer than five characters when it is read.
         string path = fixture.File(name);
         using var presentation = new Presentation();
         ISlide slide = presentation.Slides[0];
         IAutoShape title = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 30, 600, 70);
-        title.TextFrame.Text = "Quarterly results";
+        title.TextFrame.Text = "Q3";
         IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 150, 200, 100);
         box.FillFormat.FillType = FillType.Solid;
         box.FillFormat.SolidFillColor.Color = boxColor;
         IAutoShape caption = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 340, 150, 280, 100);
-        caption.TextFrame.Text = "Revenue grew";
-        slide.NotesSlideManager.AddNotesSlide().NotesTextFrame!.Text = "Speaker note";
+        caption.TextFrame.Text = "Up";
+        slide.NotesSlideManager.AddNotesSlide().NotesTextFrame!.Text = "Note";
         presentation.Save(path, SaveFormat.Pptx);
         return (path, presentation.SlideSize.Size.Width);
     }

@@ -125,7 +125,7 @@ public sealed class WordsSectionIdentityTests
         }, new WordsEditRequest { OutputPath = output });
         var reopened = new Document(output);
         Assert.Equal(4, reopened.Sections.Count);
-        Assert.Null(reopened.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary]);
+        fixture.AssertNoOwnHeader(reopened.FirstSection);
         Assert.All(reopened.Sections.Cast<Section>().Skip(1), section =>
             Assert.Contains("All", section.HeadersFooters[HeaderFooterType.HeaderPrimary].GetText(), StringComparison.Ordinal));
     }

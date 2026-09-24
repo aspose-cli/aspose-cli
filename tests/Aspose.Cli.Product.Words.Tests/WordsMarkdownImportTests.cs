@@ -66,7 +66,7 @@ public sealed class WordsMarkdownImportTests
         Run emphasis = Body(document).SelectMany(static paragraph => paragraph.Runs.Cast<Run>())
             .Single(static run => run.Text == "emphasis");
         Assert.True(emphasis.Font.Italic);
-        Paragraph header = document.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary].FirstParagraph;
+        Paragraph header = WordsFixture.FirstAuthoredParagraph(document.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary]);
         Assert.Equal("Confidential", header.GetText().Trim());
         Assert.Equal("Heading 2", header.ParagraphFormat.StyleName);
     }

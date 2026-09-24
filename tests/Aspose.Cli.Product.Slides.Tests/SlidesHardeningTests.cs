@@ -16,6 +16,7 @@ public sealed class SlidesHardeningTests
     [InlineData("full", 35, false)]
     public void Read_AccountsForEveryContentProjectionAndExactBoundaries(string scope, int budget, bool truncated)
     {
+        TestLicense.Require("Aspose.Slides evaluation mode saves a watermark text box into every slide, which exact budget accounting would count.");
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File($"read-budget-{scope}-{budget}.pptx");
         using (var presentation = new Aspose.Slides.Presentation())

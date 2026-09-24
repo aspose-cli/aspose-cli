@@ -30,8 +30,7 @@ public sealed class WordsSectionBreakTests
             Assert.Equal(PaperSize.A4, section.PageSetup.PaperSize);
             Assert.Equal(Orientation.Landscape, section.PageSetup.Orientation);
         });
-        // Without its own header the new section continues the first section's.
-        Assert.Null(document.Sections[1].HeadersFooters[HeaderFooterType.HeaderPrimary]);
+        fixture.AssertNoOwnHeader(document.Sections[1]);
     }
 
     [Fact]

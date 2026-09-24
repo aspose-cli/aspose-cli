@@ -2,16 +2,14 @@ using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Licensing;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
 /// Tests against the real Aspose.Cells engine (never mocked, per the team
-/// rule). Fixtures are saved through the same license gate as the engine, so
-/// the suite passes in both evaluation and licensed environments; assertions
-/// that depend on the mode branch on the actual state.
+/// rule). The in-process engine runs licensed only (see <see cref="CellsFixture"/>);
+/// CellsCliTests covers what evaluation mode discloses.
 /// </summary>
 public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
 {
@@ -176,16 +174,13 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void GetInfo_LicenseModeMatchesGateState()
+    public void GetInfo_ReportsTheLicensedMode()
     {
         string path = _fixture.CreateSalesWorkbook("license.xlsx");
 
         WorkbookInfoResult result = _fixture.Engine.GetInfo(path, new InfoRequest());
 
-        string expected = _fixture.LicenseState == LicenseState.Licensed
-            ? LicenseModes.Licensed
-            : LicenseModes.Evaluation;
-        Assert.Equal(expected, result.License?.Mode);
+        Assert.Equal(LicenseModes.Licensed, result.License?.Mode);
         // Read-only operations never carry the evaluation warning.
         Assert.Null(result.Warnings);
     }
@@ -226,7 +221,7 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void Convert_EvaluationWarning_TracksLicenseState()
+    public void Convert_LicensedOutput_CarriesNoEvaluationWarning()
     {
         string path = _fixture.CreateSalesWorkbook("warnings.xlsx");
         string output = _fixture.Temp.File("warnings.csv");
@@ -238,17 +233,8 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
         });
 
         // The sales fixture is multi-sheet, so a csv export also carries a
-        // SHEETS_DROPPED warning; isolate the evaluation warning by its code.
-        Warning? evalWarning = result.Warnings?.FirstOrDefault(w => w.Code == WarningCodes.EvalMode);
-        if (_fixture.LicenseState == LicenseState.Licensed)
-        {
-            Assert.Null(evalWarning);
-        }
-        else
-        {
-            Assert.NotNull(evalWarning);
-            Assert.NotNull(evalWarning!.Hint);
-        }
+        // SHEETS_DROPPED warning; only the evaluation warning must be absent.
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalMode);
     }
 
     [Fact]

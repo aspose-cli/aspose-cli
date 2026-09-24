@@ -18,6 +18,14 @@ public sealed class SlidesEngineFixture : IDisposable
         ProductTestBudgets.StartEngine<SlidesModule, SlidesPresentationEngine>(
             (budgets, writer) => new SlidesPresentationEngine(Gate, budgets, writer));
     public LicenseState LicenseState => Gate.EnsureApplied();
+
+    /// <summary>
+    /// Whether shape text is the watermark evaluation mode saves into every slide: a text box
+    /// whose text the SDK itself cuts short with its truncation marker.
+    /// </summary>
+    internal static bool IsEvaluationWatermark(string? text) =>
+        text?.StartsWith("Evalu...", StringComparison.Ordinal) == true
+        && text.Contains(SlidesEngineSupport.EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase);
     public TempDirectory Temp { get; } = new();
     public string File(string name) => Temp.File(name);
 

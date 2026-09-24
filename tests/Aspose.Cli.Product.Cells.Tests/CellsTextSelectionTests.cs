@@ -1,7 +1,5 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Licensing;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -23,7 +21,7 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
     [InlineData("csv")]
     [InlineData("tsv")]
     [InlineData("md")]
-    public void Convert_SelectedNonFirstSheet_ExportsItOrRefusesEvaluationBeforePublication(string format)
+    public void Convert_SelectedNonFirstSheet_ExportsIt(string format)
     {
         string source = _sources.DashboardActive;
         string output = _fixture.Temp.File($"text-selection.{format}");
@@ -38,26 +36,11 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
             Overwrite = true,
         };
 
-        if (_fixture.LicenseState == LicenseState.Evaluation)
-        {
-            CliException error = Assert.Throws<CliException>(() => _fixture.Engine.Convert(source, request));
-            Assert.Equal(ErrorCodes.EvaluationLimit, error.Code);
-            Assert.Contains("Detail", error.Message, StringComparison.Ordinal);
-            Assert.Contains("Dashboard", error.Message, StringComparison.Ordinal);
-            Assert.Contains("license", error.Hint!, StringComparison.OrdinalIgnoreCase);
-            Assert.Equal(sentinel, File.ReadAllBytes(output));
-            string missingOutput = _fixture.Temp.File($"not-published.{format}");
-            Assert.Throws<CliException>(() => _fixture.Engine.Convert(source, request with { OutputPath = missingOutput }));
-            Assert.False(File.Exists(missingOutput));
-        }
-        else
-        {
-            ConvertResult result = _fixture.Engine.Convert(source, request);
-            Assert.Equal("Detail", result.Sheet);
-            string text = File.ReadAllText(output);
-            Assert.Contains("SO-001", text, StringComparison.Ordinal);
-            Assert.DoesNotContain("Executive overview", text, StringComparison.Ordinal);
-        }
+        ConvertResult result = _fixture.Engine.Convert(source, request);
+        Assert.Equal("Detail", result.Sheet);
+        string text = File.ReadAllText(output);
+        Assert.Contains("SO-001", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Executive overview", text, StringComparison.Ordinal);
 
         Assert.Equal(sourceBytes, File.ReadAllBytes(source));
     }
@@ -99,13 +82,11 @@ public sealed class CellsTextSelectionTests : IClassFixture<CellsTextSelectionFi
             Overwrite = true,
         });
 
-        bool evaluation = _fixture.LicenseState == LicenseState.Evaluation;
-        string expectedSheet = evaluation ? "Dashboard" : "Detail";
         string text = File.ReadAllText(output);
-        Assert.Contains(evaluation ? "Executive overview" : "SO-001", text, StringComparison.Ordinal);
-        Assert.DoesNotContain(evaluation ? "SO-001" : "Executive overview", text, StringComparison.Ordinal);
-        Assert.Contains(result.Warnings!, warning => warning.Code == "SHEETS_DROPPED"
-            && warning.Message.Contains($"'{expectedSheet}'", StringComparison.Ordinal));
+        Assert.Contains("SO-001", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("Executive overview", text, StringComparison.Ordinal);
+        Assert.Contains(result.Warnings!, static warning => warning.Code == "SHEETS_DROPPED"
+            && warning.Message.Contains("'Detail'", StringComparison.Ordinal));
     }
 }
 

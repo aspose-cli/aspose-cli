@@ -17,6 +17,10 @@ public sealed class WordsDisclosureTests
     [InlineData(LicenseState.Licensed, 3)]
     public void EvaluationArtifacts_AreRecognizedOnlyUnderEvaluation(LicenseState state, int blocks)
     {
+        if (state == LicenseState.Licensed)
+        {
+            TestLicense.Require("Only a licensed SDK writes the quoted banner without adding its own.");
+        }
         using var fixture = new WordsFixture();
         var source = new Document();
         var builder = new DocumentBuilder(source);
