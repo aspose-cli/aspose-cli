@@ -45,6 +45,5 @@ Before changing code around a commercial SDK, verify the official API usage and 
 suspected engine behavior with a minimal SDK-only case. Correct our misuse in the owning
 adapter. Keep confirmed SDK defects as upstream issues and release blockers, recorded in
 [KNOWN-ISSUES.md](KNOWN-ISSUES.md) and, where it can be reproduced, guarded by an acceptance
-gate or a `ProductDefect` test; never
-hide them with implicit default rewrites, file-format patches, or product, producer or version
-special cases.
+gate or a `ProductDefect` test; never hide them with implicit default rewrites, file-format
+patches, or product, producer or version special cases.
