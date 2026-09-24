@@ -1,9 +1,11 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.TestKit;
 using Microsoft.Playwright;
 using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Integration;
 
+[Category(TestCategory.Browser)]
 [Collection("Local service lifecycle")]
 public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
 {

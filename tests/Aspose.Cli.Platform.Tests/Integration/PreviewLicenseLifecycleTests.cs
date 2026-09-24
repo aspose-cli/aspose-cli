@@ -25,6 +25,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         _workspace.Dispose();
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void RefusedLicense_FailsItsOwnDocumentAndLeavesTheOpenOneRendering()
     {

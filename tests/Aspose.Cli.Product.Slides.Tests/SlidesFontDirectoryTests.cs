@@ -26,6 +26,7 @@ public sealed class SlidesFontDirectoryTests
         Assert.False(FixtureAvailable(environment, input));
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_FontsCheckAndReviewUseTheFontDirectory()
     {
@@ -36,6 +37,7 @@ public sealed class SlidesFontDirectoryTests
         FontDirectoryContract.Verify(workspace, "fixture.pptx");
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_ConvertLaysOutWithTheFontDirectory()
     {

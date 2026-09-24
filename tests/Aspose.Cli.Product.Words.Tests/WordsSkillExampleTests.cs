@@ -5,6 +5,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
+[Category(TestCategory.Slow)]
 public sealed class WordsSkillExampleTests
 {
     [Fact]

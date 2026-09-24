@@ -33,7 +33,7 @@ public static class TestLicense
 
     /// <summary>
     /// Skips a test that evaluation mode cannot run, naming <see cref="PathVariable"/> so the run
-    /// reports it as a licensed case (scripts/test.ps1 -RequireLicense fails when one is skipped).
+    /// reports it as a licensed case (the Full scope of scripts/test.ps1 fails when one is skipped).
     /// </summary>
     public static void Require(string evaluationLimit) =>
         Assert.SkipWhen(Path is null, $"{evaluationLimit} Set {PathVariable} to run it.");

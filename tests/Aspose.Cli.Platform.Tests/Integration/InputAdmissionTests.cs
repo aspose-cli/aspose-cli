@@ -15,6 +15,7 @@ public sealed class InputAdmissionTests
         { "words", "docx", ["--text", "source.txt"] },
     };
 
+    [Category(TestCategory.Slow)]
     [Theory]
     [MemberData(nameof(CreateCases))]
     public void Create_ExcludesExistingOutputsRegardlessOfPathOrOptionOrder(

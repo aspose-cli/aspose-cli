@@ -26,6 +26,7 @@ public sealed class PdfFontDirectoryTests
         Assert.False(FixtureAvailable(environment, input));
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_FontsCheckAndReviewUseTheFontDirectory()
     {
@@ -37,6 +38,7 @@ public sealed class PdfFontDirectoryTests
         FontDirectoryContract.Verify(workspace, "fixture.pdf");
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_ConvertAndEditResolveTheFontDirectoryFont()
     {
@@ -61,6 +63,7 @@ public sealed class PdfFontDirectoryTests
         Assert.True(fontsEdit.ExitCode == 0, fontsEdit.StdErr);
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_CreateFromHtmlLaysOutWithTheFontDirectory()
     {

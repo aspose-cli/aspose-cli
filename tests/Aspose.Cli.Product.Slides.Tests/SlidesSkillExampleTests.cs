@@ -6,6 +6,7 @@ using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
 
+[Category(TestCategory.Slow)]
 public sealed class SlidesSkillExampleTests
 {
     [Fact]

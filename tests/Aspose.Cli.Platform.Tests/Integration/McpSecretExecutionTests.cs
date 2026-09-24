@@ -71,6 +71,7 @@ public sealed partial class McpProtocolTests
     private const string OperationSecret = "synthetic-operation-password";
     private const string Variable = "ASPOSE_TEST.Password_\u53d8\u91cf";
 
+    [Category(TestCategory.Slow)]
     [Theory]
     [InlineData("cells", "xlsx", "file")]
     [InlineData("cells", "xlsx", "inline")]

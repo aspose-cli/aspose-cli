@@ -4,6 +4,7 @@ permissions:
   contents: read
 jobs:
   # Evaluation mode: no license reaches this job, so every commercial SDK runs as evaluation.
+  # It runs the Fast scope; the licensed job runs every test.
   verify:
     runs-on: windows-latest
     timeout-minutes: 60
@@ -21,7 +22,7 @@ jobs:
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
-      - run: ./scripts/test.ps1 -Configuration Release
+      - run: ./scripts/test.ps1 -Configuration Release -Scope Fast
       - run: ./scripts/publish.ps1 -Configuration Release
       - run: ./scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64 -PrepareOnly
       - run: ./scripts/acceptance.ps1 -Plan
@@ -31,11 +32,13 @@ jobs:
           name: verification-evidence
           path: |
             artifacts/TestResults/**/*.trx
+            artifacts/TestResults/**/*.log
             artifacts/TestResults/**/browser/**
           if-no-files-found: warn
 
-  # Licensed mode: the same suite with a real license, so LicensedFact cases run instead of
-  # being skipped. Evaluation-contract subprocesses strip license variables themselves.
+  # Licensed mode: the Full scope, so LicensedFact cases run instead of being skipped and the
+  # acceptance gates follow; an unwaived failing gate fails this job as it blocks a release.
+  # Evaluation-contract subprocesses strip license variables themselves.
   # Secrets are not available to pull requests from forks, so those runs skip this job.
   licensed:
     if: github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository
@@ -64,7 +67,7 @@ jobs:
           $path = Join-Path $env:RUNNER_TEMP 'Aspose.Total.lic'
           [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:LICENSE_BASE64))
           "ASPOSE_CLI_TEST_LICENSE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - run: ./scripts/test.ps1 -Configuration Release -RequireLicense
+      - run: ./scripts/test.ps1 -Configuration Release -Scope Full
       - name: Remove the test license
         if: always()
         run: Remove-Item -LiteralPath (Join-Path $env:RUNNER_TEMP 'Aspose.Total.lic') -Force -ErrorAction SilentlyContinue
@@ -74,5 +77,6 @@ jobs:
           name: licensed-verification-evidence
           path: |
             artifacts/TestResults/**/*.trx
+            artifacts/TestResults/**/*.log
             artifacts/TestResults/**/browser/**
           if-no-files-found: warn

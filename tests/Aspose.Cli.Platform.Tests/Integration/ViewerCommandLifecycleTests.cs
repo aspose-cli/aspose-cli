@@ -13,6 +13,7 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 [Collection("Local service lifecycle")]
 public sealed class ViewerCommandLifecycleTests
 {
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Preview_StartsOneServiceAndJoinsItForEveryDocument()
     {

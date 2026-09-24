@@ -25,6 +25,7 @@ public sealed class CellsFontDirectoryTests
         Assert.False(FixtureAvailable(environment, input));
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_FontsCheckAndReviewUseTheFontDirectory()
     {
@@ -35,6 +36,7 @@ public sealed class CellsFontDirectoryTests
         FontDirectoryContract.Verify(workspace, "fixture.xlsx");
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_ConvertLaysOutWithTheFontDirectory()
     {

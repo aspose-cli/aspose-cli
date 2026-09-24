@@ -26,6 +26,7 @@ public sealed class RenderWorkerTests : IDisposable
         try { Directory.Delete(_storage, recursive: true); } catch (IOException) { }
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Render_ServesEveryProductFromOneWarmWorker()
     {

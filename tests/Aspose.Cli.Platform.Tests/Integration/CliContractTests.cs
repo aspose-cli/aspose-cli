@@ -308,6 +308,7 @@ public sealed class CliContractTests : IDisposable
         Assert.DoesNotContain("aspose-cli cells", hint, StringComparison.Ordinal);
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public async Task App_WithADocument_MountsPreviewOnItsLoopbackOrigin()
     {

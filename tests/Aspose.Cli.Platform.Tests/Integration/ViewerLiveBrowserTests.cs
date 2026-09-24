@@ -12,6 +12,7 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// place. The shell, the reading position and everything the edit did not
 /// touch stay as they were, and what changed is marked where it is.
 /// </summary>
+[Category(TestCategory.Browser)]
 public sealed class ViewerLiveBrowserTests : IDisposable
 {
     private readonly ITestOutputHelper _output;

@@ -44,10 +44,9 @@ jobs:
           $path = Join-Path $env:RUNNER_TEMP 'Aspose.Total.lic'
           [IO.File]::WriteAllBytes($path, [Convert]::FromBase64String($env:LICENSE_BASE64))
           "ASPOSE_CLI_TEST_LICENSE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-          "ASPOSE_LICENSE_PATH=$path" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
-      - run: ./scripts/test.ps1 -Configuration Release -RequireLicense
-      # Known-failing SDK gates block the release unless KNOWN-ISSUES.md waives them for this version.
-      - run: ./scripts/acceptance.ps1 -Configuration Release
+      # Every test with the license, then the acceptance gates: a failing SDK gate blocks the
+      # release unless KNOWN-ISSUES.md waives it for this version.
+      - run: ./scripts/test.ps1 -Configuration Release -Scope Full
       - name: Remove the test license
         if: always()
         run: Remove-Item -LiteralPath (Join-Path $env:RUNNER_TEMP 'Aspose.Total.lic') -Force -ErrorAction SilentlyContinue

@@ -15,6 +15,7 @@ public sealed class ProductPublicationTests
         { "pdf", "pdf", ["--from-text", "source.txt"], """{"ops":[{"op":"set_metadata","title":"Edited"}]}""" },
     };
 
+    [Category(TestCategory.Slow)]
     [Theory]
     [MemberData(nameof(EditCases))]
     public void EditPublishesTheCandidateInBothExecutionModes(string product, string extension,
@@ -34,6 +35,7 @@ public sealed class ProductPublicationTests
         }
     }
 
+    [Category(TestCategory.Slow)]
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

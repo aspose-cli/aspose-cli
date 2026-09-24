@@ -13,6 +13,7 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// a schema-valid view.json whose parts are the evidence, in document order,
 /// each stamped with the digest of its bytes.
 /// </summary>
+[Category(TestCategory.Slow)]
 public sealed class ReviewViewManifestTests
 {
     [Theory]

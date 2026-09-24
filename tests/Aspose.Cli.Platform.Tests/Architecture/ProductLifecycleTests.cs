@@ -10,6 +10,7 @@ namespace Aspose.Cli.Architecture.Tests;
 public sealed class ProductLifecycleTests
 {
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public async Task CatalogRowAndProductSlice_AreTheCompleteProductLifecycle()
     {

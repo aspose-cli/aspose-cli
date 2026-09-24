@@ -25,6 +25,7 @@ public sealed class WordsFontDirectoryTests
         Assert.False(FixtureAvailable(environment, input));
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_FontsCheckAndReviewUseTheFontDirectory()
     {
@@ -35,6 +36,7 @@ public sealed class WordsFontDirectoryTests
         FontDirectoryContract.Verify(workspace, "fixture.docx");
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_ConvertAndCompareLayOutWithTheFontDirectory()
     {
@@ -49,6 +51,7 @@ public sealed class WordsFontDirectoryTests
             workspace, "compare", output => ["words", "compare", "fixture.docx", "changed.docx", "--out", output]);
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_RenderDrawsTheFontDirectoryFont()
     {

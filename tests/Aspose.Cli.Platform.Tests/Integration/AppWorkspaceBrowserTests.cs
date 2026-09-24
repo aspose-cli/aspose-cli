@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.TestKit;
 using Microsoft.Playwright;
 using Xunit;
 
@@ -9,6 +10,7 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// by side, look at one in another view, and pick the theme everything is
 /// drawn in.
 /// </summary>
+[Category(TestCategory.Browser)]
 [Collection("Local service lifecycle")]
 public sealed class AppWorkspaceBrowserTests(ITestOutputHelper output)
 {

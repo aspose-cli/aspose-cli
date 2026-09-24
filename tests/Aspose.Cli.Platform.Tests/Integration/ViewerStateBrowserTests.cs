@@ -7,6 +7,7 @@ using static Microsoft.Playwright.Assertions;
 namespace Aspose.Cli.Platform.Tests.Integration;
 
 /// <summary>Exercises the production viewer in Chromium with deterministic revision transport.</summary>
+[Category(TestCategory.Browser)]
 public sealed class ViewerStateBrowserTests(ITestOutputHelper output)
 {
     [Fact]

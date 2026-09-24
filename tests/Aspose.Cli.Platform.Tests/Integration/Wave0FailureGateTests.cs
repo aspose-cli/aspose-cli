@@ -9,7 +9,6 @@ namespace Aspose.Cli.IntegrationTests;
 public sealed class Wave0FailureGateTests
 {
     [Fact]
-    [Trait("Tier", "Release")]
     public void Capabilities_ExposeTheCurrentDeterministicSourceRevision()
     {
         using var workspace = new TempWorkspace();
@@ -41,7 +40,6 @@ public sealed class Wave0FailureGateTests
     }
 
     [Fact]
-    [Trait("Tier", "Release")]
     public void UnsignedCustomerInstaller_StopsBeforeResolvingThePackage()
     {
         Requires.Windows();
@@ -73,8 +71,8 @@ public sealed class Wave0FailureGateTests
         }
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
-    [Trait("Tier", "Release")]
     public void Publish_RefusesToDeleteAnUnownedOutputTree()
     {
         Requires.Windows();

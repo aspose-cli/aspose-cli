@@ -308,6 +308,7 @@ public sealed class PdfResourceLoadingTests
 
     // The importer waits up to 100 seconds for each unanswered request and cannot be cancelled
     // in-process; the supervised worker ends at the operation deadline without publishing.
+    [Category(TestCategory.Slow)]
     [Fact]
     public async Task HtmlCreation_AllowNetworkResources_StopsAtTheOperationDeadline()
     {

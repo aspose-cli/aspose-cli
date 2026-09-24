@@ -68,6 +68,7 @@ public sealed class DocumentationContractTests(DocumentationContractFixture fixt
         Assert.All(commands, command => Assert.NotNull(fixture.Validator.ValidateCommand(command)));
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void ReadmeQuickStart_RunsInAnIsolatedWorkspace()
     {

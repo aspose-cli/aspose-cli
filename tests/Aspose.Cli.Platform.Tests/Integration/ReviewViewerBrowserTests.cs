@@ -17,6 +17,7 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// presents its evidence with its own navigation, entirely offline and
 /// without script errors.
 /// </summary>
+[Category(TestCategory.Browser)]
 public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
 {
     private static readonly byte[] Png = Convert.FromBase64String(

@@ -11,6 +11,7 @@ namespace Aspose.Cli.Platform.Tests.Integration;
 /// resource-based interprocess locks, so a second process waits or refuses and never
 /// leaves a target half written.
 /// </summary>
+[Category(TestCategory.Slow)]
 public sealed class CrossProcessLockTests
 {
     private const string Skill = "aspose-cli-cells";

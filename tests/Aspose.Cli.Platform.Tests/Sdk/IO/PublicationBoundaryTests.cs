@@ -338,6 +338,7 @@ public sealed class PublicationBoundaryTests
         Assert.Equal(34, Directory.EnumerateFiles(temp.Path, "*.tmp", SearchOption.AllDirectories).Count());
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void ExtractionSupportsOneThousandFiles()
     {

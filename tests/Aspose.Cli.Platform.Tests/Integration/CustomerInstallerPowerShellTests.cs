@@ -12,6 +12,7 @@ namespace Aspose.Cli.IntegrationTests;
 public sealed class CustomerInstallerUserStateCollection;
 
 /// <summary>Real Windows PowerShell black-box coverage for customer installation ownership and recovery.</summary>
+[Category(TestCategory.Installer)]
 [Collection("Customer installer user state")]
 public sealed partial class CustomerInstallerPowerShellTests : IDisposable, IClassFixture<CustomerInstallerPackageFixture>
 {

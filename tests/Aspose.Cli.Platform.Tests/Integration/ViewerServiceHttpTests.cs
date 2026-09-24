@@ -90,6 +90,7 @@ public sealed class ViewerServiceHttpTests : IDisposable
         Assert.True((await part.Content.ReadAsByteArrayAsync()).Length > 0);
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public async Task Edit_ReachesTheViewerAsOneUpdateNamingTheChangedParts()
     {
@@ -132,6 +133,7 @@ public sealed class ViewerServiceHttpTests : IDisposable
         Assert.Equal(HttpStatusCode.NotFound, retired.StatusCode);
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Opening_TheSameFileTheSameWay_ReusesTheOpenDocument()
     {
@@ -144,6 +146,7 @@ public sealed class ViewerServiceHttpTests : IDisposable
         Assert.Equal(2, _documents.All.Count);
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void Release_ClosesADocumentOnlyWhenItsLastHolderLetsGo()
     {

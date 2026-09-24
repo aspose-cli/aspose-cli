@@ -11,6 +11,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
 {
     private readonly TempWorkspace _workspace = new();
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void InspectQueryEditExtractAndConvert_RoundTripsThroughTheBuiltCli()
     {

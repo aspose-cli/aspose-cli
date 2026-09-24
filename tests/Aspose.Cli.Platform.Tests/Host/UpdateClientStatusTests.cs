@@ -87,6 +87,7 @@ public sealed class UpdateClientStatusTests : IDisposable
         Assert.NotEqual(UpdateStatus.PathFor(root), UpdateStatus.PathFor(root + "-other"));
     }
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void UnreachableHttpsFeed_IsAnActionableNetworkError()
     {

@@ -5,6 +5,7 @@ using Xunit;
 namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>Every bundled Cells example runs as written and produces what its README promises.</summary>
+[Category(TestCategory.Slow)]
 public sealed class CellsSkillExampleTests
 {
     private const string Skill = "aspose-cli-cells";
