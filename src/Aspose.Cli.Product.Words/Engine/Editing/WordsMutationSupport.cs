@@ -99,10 +99,7 @@ internal static class WordsMutationSupport
     {
         if (number < 1 || number > document.Sections.Count)
         {
-            throw new CliException(
-                WordsDiagnostics.SectionNotFound,
-                $"Section {number} was not found; document has {document.Sections.Count} section(s).",
-                hint: "Run 'words inspect --detail sections' and use a valid 1-based section.");
+            throw WordsErrors.SectionNotFound(number, document.Sections.Count);
         }
 
         return document.Sections[number - 1];

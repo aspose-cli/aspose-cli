@@ -11,6 +11,13 @@ internal static class WordsErrors
         hint: "Run 'aspose-cli words query blocks' and use a returned block number.",
         details: new JsonObject { ["block"] = block, ["of"] = available });
 
+    public static CliException BlockRangeNotFound(PageRange range, int available, Exception? inner = null) => new(
+        WordsDiagnostics.BlockNotFound,
+        $"Block range '{range.Text}' goes past the document's {available} block(s).",
+        hint: "Run 'aspose-cli words query blocks' and use a returned block number.",
+        details: new JsonObject { ["range"] = range.Text, ["of"] = available },
+        innerException: inner);
+
     public static CliException SectionNotFound(int section, int available) => new(
         WordsDiagnostics.SectionNotFound,
         $"Section {section} does not exist; the document has {available} section(s).",

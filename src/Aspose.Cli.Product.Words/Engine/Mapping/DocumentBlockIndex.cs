@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Tables;
 
@@ -47,6 +48,24 @@ internal sealed class DocumentBlockIndex
         }
 
         return _entries[index - 1];
+    }
+
+    /// <summary>The blocks a 1-based range names, in order; a range past the last block is BLOCK_NOT_FOUND.</summary>
+    public IReadOnlyList<BlockEntry> Select(PageRange range)
+    {
+        if (_entries.Count == 0)
+        {
+            throw WordsErrors.BlockRangeNotFound(range, 0);
+        }
+
+        try
+        {
+            return range.Resolve(_entries.Count).Select(Get).ToArray();
+        }
+        catch (CliException exception) when (exception.Code == ErrorCodes.PageNotFound)
+        {
+            throw WordsErrors.BlockRangeNotFound(range, _entries.Count, exception);
+        }
     }
 
     public int? FindBlock(Node node)

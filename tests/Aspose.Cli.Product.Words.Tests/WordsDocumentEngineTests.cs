@@ -74,6 +74,23 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void BlockRangesPastTheLastBlock_AreBlockNotFound()
+    {
+        string input = _fixture.CreateReport();
+
+        CliException read = Assert.Throws<CliException>(() =>
+            _fixture.Engine.Read(input, new DocumentReadRequest { Blocks = PageRange.Parse("99") }));
+        CliException edit = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new DeleteBlocksOp { Target = new WordsTarget { Blocks = "2-99" } }] },
+            new WordsEditRequest { OutputPath = _fixture.Temp.File("past-the-end.docx") }));
+
+        Assert.Equal(WordsDiagnostics.BlockNotFound, read.Code);
+        Assert.Equal("99", read.Details!["range"]!.GetValue<string>());
+        Assert.Equal(WordsDiagnostics.BlockNotFound, edit.Code);
+    }
+
+    [Fact]
     public void Read_ExcludesTheEvaluationBannerOnlyUnderEvaluation()
     {
         string input = _fixture.Temp.File("evaluation-banner.docx");

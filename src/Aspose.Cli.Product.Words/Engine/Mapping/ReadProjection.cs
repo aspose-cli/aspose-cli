@@ -11,7 +11,7 @@ internal static class ReadProjection
     {
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         IReadOnlyList<BlockEntry> candidates = request.Blocks is { } range
-            ? range.Resolve(index.Count).Select(index.Get).ToArray()
+            ? index.Select(range)
             : index.Entries;
         if (request.Section is { } section)
         {

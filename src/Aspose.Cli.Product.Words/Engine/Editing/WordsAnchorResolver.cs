@@ -61,7 +61,7 @@ internal static class WordsAnchorResolver
 
         if (target.Blocks is not null)
         {
-            return PageRange.Parse(target.Blocks).Resolve(index.Count).Select(value => index.Get(value).Node).ToArray();
+            return index.Select(PageRange.Parse(target.Blocks)).Select(static entry => entry.Node).ToArray();
         }
 
         if (target.Bookmark is not null)
