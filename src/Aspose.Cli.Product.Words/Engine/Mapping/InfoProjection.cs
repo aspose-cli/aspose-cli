@@ -88,7 +88,7 @@ internal static class InfoProjection
                 {
                     Block = entry.Index,
                     Level = HeadingLevel(paragraph)!.Value,
-                    Text = Clean(paragraph.GetText()),
+                    Text = WordsText.Of(paragraph),
                 };
             }).Take(1000).ToArray();
 
@@ -105,7 +105,7 @@ internal static class InfoProjection
         document.GetChildNodes(NodeType.Comment, true).Cast<Comment>().Select(comment => new CommentData
         {
             Author = comment.Author,
-            Text = Clean(comment.GetText()),
+            Text = WordsText.Of(comment),
             Block = index.FindBlock(comment),
         }).Take(1000).ToArray();
 
@@ -145,6 +145,4 @@ internal static class InfoProjection
         int level = (int)paragraph.ParagraphFormat.OutlineLevel;
         return level is >= 0 and <= 8 ? level + 1 : null;
     }
-
-    internal static string Clean(string value) => value.TrimEnd('\r', '\a', '\f').Replace("\u0007", string.Empty, StringComparison.Ordinal);
 }

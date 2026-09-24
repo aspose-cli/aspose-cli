@@ -93,7 +93,7 @@ internal static class WordsAnchorResolver
         }
 
         BlockEntry[] matches = candidates
-            .Where(entry => InfoProjection.Clean(entry.Node.GetText()).Contains(needle!, StringComparison.OrdinalIgnoreCase))
+            .Where(entry => WordsText.Of(entry.Node).Contains(needle!, StringComparison.OrdinalIgnoreCase))
             .ToArray();
         int nth = target.Nth ?? 1;
         if (matches.Length < nth)

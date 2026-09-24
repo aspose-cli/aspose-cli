@@ -65,7 +65,7 @@ internal static class ReadProjection
         bool truncated = false;
         if (entry.Node is Paragraph paragraph)
         {
-            string text = Take(InfoProjection.Clean(paragraph.GetText()), ref remaining, ref truncated);
+            string text = Take(WordsText.Of(paragraph), ref remaining, ref truncated);
             var runs = scope == "full" ? new List<RunData>() : null;
             if (runs is not null)
             {
@@ -126,7 +126,7 @@ internal static class ReadProjection
                     truncated = true;
                     break;
                 }
-                cells.Add(Take(InfoProjection.Clean(cell.GetText()), ref remaining, ref truncated));
+                cells.Add(Take(WordsText.Of(cell), ref remaining, ref truncated));
             }
             rows.Add(cells);
         }

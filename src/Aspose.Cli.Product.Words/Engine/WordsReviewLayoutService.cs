@@ -152,7 +152,7 @@ internal sealed class WordsReviewLayoutService
         || string.IsNullOrWhiteSpace(run.Text)
         || evaluation
             && run.GetAncestor(NodeType.Paragraph) is Paragraph paragraph
-            && WordsEvaluation.IsLayoutMark(InfoProjection.Clean(paragraph.GetText()));
+            && WordsEvaluation.IsLayoutMark(paragraph.GetText());
 
     private static void CollectPageBreakFacts(
         Document document,
@@ -218,7 +218,7 @@ internal sealed class WordsReviewLayoutService
         {
             return true;
         }
-        string shapeText = InfoProjection.Clean(shape.GetText());
+        string shapeText = shape.GetText();
         return evaluation && !string.IsNullOrEmpty(shapeText) && WordsEvaluation.IsLayoutMark(shapeText);
     }
 
@@ -261,7 +261,7 @@ internal sealed class WordsReviewLayoutService
             if (entry.Node is not Paragraph heading
                 || InfoProjection.HeadingLevel(heading) is not int level
                 || level < 2
-                || string.IsNullOrWhiteSpace(InfoProjection.Clean(heading.GetText())))
+                || string.IsNullOrWhiteSpace(WordsText.Of(heading)))
             {
                 continue;
             }
@@ -284,7 +284,7 @@ internal sealed class WordsReviewLayoutService
                     entry.Index,
                     page,
                     level,
-                    InfoProjection.Clean(heading.GetText())));
+                    WordsText.Of(heading)));
             }
         }
         return findings;
@@ -292,7 +292,7 @@ internal sealed class WordsReviewLayoutService
 
     private static bool HasVisibleBodyContent(BlockEntry entry) => entry.Node switch
     {
-        Paragraph paragraph => !string.IsNullOrWhiteSpace(InfoProjection.Clean(paragraph.GetText())),
+        Paragraph paragraph => !string.IsNullOrWhiteSpace(WordsText.Of(paragraph)),
         Table table => table.Rows.Count > 0,
         _ => false,
     };

@@ -7,7 +7,10 @@ description: Create, inspect, edit, compare, convert and review Word documents w
 
 Use `aspose-cli words` for DOC/DOCX, RTF, ODT, HTML, Markdown, PDF and related
 document workflows. A block is a top-level body paragraph or table, numbered
-from 1.
+from 1. Block text, search snippets and `find`/`heading` addresses use the
+text a reader sees: field results rather than field codes, without text a
+tracked change deletes, and without the comments and footnotes a paragraph
+anchors (read those with `inspect --detail comments` or `query search`).
 
 `query blocks --max-chars` bounds the sum of returned paragraph, table-cell and
 run text. Full scope counts repeated text/run projections separately; addressing

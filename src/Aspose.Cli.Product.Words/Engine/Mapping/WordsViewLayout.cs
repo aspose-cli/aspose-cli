@@ -205,7 +205,7 @@ internal static class WordsViewLayout
     {
         string text = string.Join(
             ' ',
-            InfoProjection.Clean(node.GetText().Replace(ControlChar.CellChar, ' '))
+            WordsText.Of(node)
                 .Split((char[]?)null, StringSplitOptions.RemoveEmptyEntries));
         return text.Length switch
         {

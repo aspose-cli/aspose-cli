@@ -73,7 +73,7 @@ internal sealed class WordsInspectionService
             Samples = revisions.Take(50).Select(static revision => new RevisionSample
             {
                 Type = revision.RevisionType.ToString(),
-                Text = Truncate(InfoProjection.Clean(revision.ParentNode?.GetText() ?? string.Empty), 300),
+                Text = Truncate(WordsText.Clean(revision.ParentNode?.GetText() ?? string.Empty), 300),
             }).ToArray(),
             Output = output,
             License = EnvelopeParts.License(state),
@@ -93,7 +93,7 @@ internal sealed class WordsInspectionService
         IEnumerable<(Node Node, string Scope)> nodes = SearchNodes(loaded.Document, request.Scope);
         foreach ((Node node, string scope) in nodes)
         {
-            string text = InfoProjection.Clean(node.GetText());
+            string text = WordsText.Of(node);
             if (!query.IsMatch(text))
             {
                 continue;

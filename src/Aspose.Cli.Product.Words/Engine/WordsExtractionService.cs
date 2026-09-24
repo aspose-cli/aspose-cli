@@ -129,7 +129,7 @@ internal sealed class WordsExtractionService
         else if (request.What == "comments")
         {
             IReadOnlyList<ContractCommentData> comments = loaded.Document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
-                .Select(comment => new ContractCommentData { Author = comment.Author, Text = InfoProjection.Clean(comment.GetText()), Block = index.FindBlock(comment) }).ToArray();
+                .Select(comment => new ContractCommentData { Author = comment.Author, Text = WordsText.Of(comment), Block = index.FindBlock(comment) }).ToArray();
             string json = JsonSerializer.Serialize(
                 comments,
                 ProductJsonContext.Definition.LocalOptions);
@@ -139,7 +139,7 @@ internal sealed class WordsExtractionService
         }
         else if (request.What == "text")
         {
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(InfoProjection.Clean(loaded.Document.GetText()));
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Clean(loaded.Document.GetText()));
             string path = guard.WriteAllBytes("document.txt", bytes);
             items.Add(new ExtractedItem { Path = path, Kind = "text", SizeBytes = bytes.LongLength });
         }
