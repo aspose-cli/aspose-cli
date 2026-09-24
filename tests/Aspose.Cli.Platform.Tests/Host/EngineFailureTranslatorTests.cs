@@ -15,12 +15,12 @@ public sealed class EngineFailureTranslatorTests
         new Dictionary<Assembly, string> { [typeof(EngineFailureTranslatorTests).Assembly] = "Sample" });
 
     [Fact]
-    public void FailureRaisedByAThirdPartyEngine_IsAnUnsupportedDocumentFeature()
+    public void FailureRaisedByAThirdPartyEngine_IsAnEngineFailure()
     {
         CliException? error = Translator.Translate(Caught(static () => Assert.Fail("engine choked")));
 
         Assert.Equal(ErrorCodes.FeatureUnsupported, error?.Code);
-        Assert.StartsWith("Sample could not process this document feature", error!.Message, StringComparison.Ordinal);
+        Assert.StartsWith("Sample failed inside its document engine", error!.Message, StringComparison.Ordinal);
     }
 
     [Fact]
