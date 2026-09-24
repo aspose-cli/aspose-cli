@@ -10,7 +10,7 @@ internal static class CompareCommand
     {
         var left = new Argument<string>("left") { Description = "Original document." }.WithInput(InputKind.File);
         var right = new Argument<string>("right") { Description = "Changed document." }.WithInput(InputKind.File);
-        var outOption = new Option<string?>("--out", "-o") { Description = "Optional DOCX redline output." }.WithInput(InputKind.None);
+        var outOption = new Option<string?>("--out", "-o") { Description = "Optional redline output; its extension selects the format, such as .docx or .pdf." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var ignoreFormatting = new Option<bool>("--ignore-formatting") { Description = "Ignore formatting-only changes." };
         var leftPassword = new PasswordOptions("--left-password", "the original document", allowStdin: false);

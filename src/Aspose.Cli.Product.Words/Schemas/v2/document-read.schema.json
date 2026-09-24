@@ -35,7 +35,7 @@
           "headingLevel": { "type": "integer", "minimum": 1 },
           "runs": { "type": "array", "items": { "type": "object" } },
           "images": { "type": "array", "items": { "type": "object" } },
-          "breakAfter": { "type": "string" },
+          "breakAfter": { "enum": ["page", "section"], "description": "The break that follows this block: a page break, or a section break after the last block of a section." },
           "rows": { "type": "integer", "minimum": 0 },
           "columns": { "type": "integer", "minimum": 0 },
           "cells": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } },
