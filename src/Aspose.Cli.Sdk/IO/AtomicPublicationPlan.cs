@@ -55,11 +55,11 @@ internal sealed class AtomicPublicationPlan
 
     public string StagedPath(string target, int index) => StagedPath(StagingDirectory, target, index);
 
+    public string BackupPath(int index) =>
+        Path.Combine(StagingDirectory, "backups", $"{index + 1:000000}.backup");
+
     public string DisplacedPath(int index) =>
-        Path.Combine(
-            StagingDirectory,
-            "backups",
-            $"{index + 1:000000}.displaced");
+        Path.Combine(StagingDirectory, "backups", $"{index + 1:000000}.displaced");
 
     public bool IsTerminal =>
         Journal.State is PublicationTransactionState.Committed

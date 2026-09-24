@@ -550,7 +550,7 @@ internal sealed class PublicationJournal
             throw CliErrors.OutputConflict(path, expected, current);
         }
         deadline?.ThrowIfExpired("publication-journal-write");
-        File.Move(tempPath, path, overwrite: expected.Exists);
+        PrivateFileRename.Move(tempPath, path, overwrite: expected.Exists, deadline);
         temporary.MarkPublished();
         if (!staged.VersionEquals(FilePublicationSnapshot.Capture(path)))
         {

@@ -49,6 +49,46 @@ public sealed class PublicationBoundaryTests
     }
 
     [Fact]
+    public void RecoveryOfAPublicationIntentRestoresSwappedTargetsAndLeavesUntouchedOnes()
+    {
+        using var temp = new TempDirectory();
+        string transaction = PrivateUserStorage.EnsureDirectory(temp.File(".aspose-publication-interrupted-intent"));
+        string backups = PrivateUserStorage.EnsureDirectory(Path.Combine(transaction, "backups"));
+        PublicationJournalEntry Entry(int index, string name, bool swap)
+        {
+            string target = temp.File(name);
+            File.WriteAllText(target, $"original {index}");
+            FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
+            string staged = AtomicPublicationPlan.StagedPath(transaction, target, index);
+            Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
+            File.WriteAllText(staged, $"candidate {index}");
+            FilePublicationSnapshot candidate = FilePublicationSnapshot.Capture(staged);
+            string displaced = Path.Combine(backups, $"{index + 1:000000}.displaced");
+            if (swap) { File.Replace(staged, target, displaced); }
+            return new PublicationJournalEntry
+            {
+                Index = index, Target = target, Staged = staged, Overwrite = true,
+                Original = original, StagedSnapshot = candidate, Size = candidate.Length,
+                Backup = Path.Combine(backups, $"{index + 1:000000}.backup"), Displaced = displaced,
+                TargetParentIdentity = OutputPathValidator.CaptureParentIdentity(target),
+                State = PublicationEntryState.Publishing,
+            };
+        }
+        new PublicationJournal
+        {
+            Operation = "interrupted-intent", OwnerProcessId = int.MaxValue, OwnerProcessStartUtcTicks = 1,
+            State = PublicationTransactionState.Publishing,
+            Entries = [Entry(0, "swapped.txt", swap: true), Entry(1, "untouched.txt", swap: false)],
+        }.Write(Path.Combine(transaction, AtomicPublicationPlan.JournalName));
+        File.WriteAllText(temp.File("untouched.txt"), "edited after the crash");
+
+        Assert.Equal(1, AtomicOutputSetWriter.RecoverPending(temp.Path));
+        Assert.Equal("original 0", File.ReadAllText(temp.File("swapped.txt")));
+        Assert.Equal("edited after the crash", File.ReadAllText(temp.File("untouched.txt")));
+        Assert.False(Directory.Exists(transaction));
+    }
+
+    [Fact]
     public void UnfinishedWorkerCannotPublishEvenAfterAnOutputSetWasStaged()
     {
         using var temp = new TempDirectory();
@@ -200,17 +240,53 @@ public sealed class PublicationBoundaryTests
         Assert.Equal("original", File.ReadAllText(target));
     }
 
+    /// <summary>Fails the rollback's terminal record: its first write records RollingBack, its second the outcome.</summary>
     private sealed class TerminalRollbackFault : IPublicationFaultInjector
     {
+        private int _rollbackWrites = -1;
+
         public void Hit(PublicationFaultPoint point)
         {
             if (point.Kind == PublicationFaultKind.Publish && point.EntryIndex == 1)
-            { throw new IOException("Injected publication failure."); }
-            if (point.Kind != PublicationFaultKind.JournalWrite || !File.Exists(point.Path)) { return; }
-            PublicationJournal journal = PublicationJournal.Read(point.Path);
-            if (journal.State == PublicationTransactionState.RollingBack && journal.Entries.Count != 0
-                && journal.Entries.All(entry => entry.State is PublicationEntryState.Restored or PublicationEntryState.Unchanged))
+            {
+                _rollbackWrites = 0;
+                throw new IOException("Injected publication failure.");
+            }
+            if (point.Kind == PublicationFaultKind.JournalWrite && _rollbackWrites >= 0 && ++_rollbackWrites == 2)
             { throw new IOException("Injected terminal journal failure."); }
+        }
+    }
+
+    [Fact]
+    public void TransientJournalLockIsWaitedOutWithoutRollingBack()
+    {
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        File.WriteAllText(target, "original");
+        var locker = new TransientJournalLock(TimeSpan.FromMilliseconds(300));
+        using (var outputs = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "transient-lock", locker))
+        {
+            outputs.Stage(target, true, path => File.WriteAllText(path, "replacement"));
+            outputs.Stage(temp.File("new.txt"), false, path => File.WriteAllText(path, "new"));
+            outputs.Commit();
+        }
+        Assert.True(locker.Locked);
+        Assert.Equal("replacement", File.ReadAllText(target));
+        Assert.Equal("new", File.ReadAllText(temp.File("new.txt")));
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-publication-*"));
+    }
+
+    /// <summary>Holds the existing journal open without delete sharing, as a scanner does, then releases it.</summary>
+    private sealed class TransientJournalLock(TimeSpan duration) : IPublicationFaultInjector
+    {
+        public bool Locked { get; private set; }
+
+        public void Hit(PublicationFaultPoint point)
+        {
+            if (Locked || point.Kind != PublicationFaultKind.JournalWrite || !File.Exists(point.Path)) { return; }
+            var handle = new FileStream(point.Path, FileMode.Open, FileAccess.Read, FileShare.Read);
+            Locked = true;
+            _ = Task.Delay(duration).ContinueWith(_ => handle.Dispose(), TaskScheduler.Default);
         }
     }
 

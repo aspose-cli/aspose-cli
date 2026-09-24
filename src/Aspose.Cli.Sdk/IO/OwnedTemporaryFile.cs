@@ -196,7 +196,7 @@ public sealed class OwnedTemporaryFile : IDisposable
     {
         BindProducedFile();
         string full = System.IO.Path.GetFullPath(destination);
-        File.Move(Path, full);
+        PrivateFileRename.Move(Path, full, overwrite: false);
         Path = full;
         BindProducedFile();
     }

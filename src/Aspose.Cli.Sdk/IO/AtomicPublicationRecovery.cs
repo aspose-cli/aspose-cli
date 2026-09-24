@@ -15,12 +15,13 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         using OperationDeadline cleanup = OperationDeadline.Start(TimeSpan.FromSeconds(30));
         plan.Journal.State = PublicationTransactionState.RollingBack;
         plan.TryPersist(cleanup);
+        // Restoring an entry is idempotent and decided by evidence on disk, so an interrupted
+        // rollback is repeated from this record rather than from a record per entry.
         var items = new List<PublicationRecoveryItem>();
         foreach (PublicationJournalEntry entry in plan.Journal.Entries
                      .OrderByDescending(static item => item.Index))
         {
             items.Add(RestoreOrReport(entry));
-            plan.TryPersist(cleanup);
         }
 
         items.Reverse();
@@ -217,7 +218,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
     {
         FilePublicationSnapshot current =
             FilePublicationSnapshot.Capture(entry.Target);
-        if (!publicationAttempted)
+        if (!publicationAttempted || SwapNeverStarted(entry))
         {
             entry.State = PublicationEntryState.Unchanged;
             return RecoveryItem(
@@ -269,6 +270,16 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             restoredMetadata,
             restored ? null : "verification-failed");
     }
+
+    /// <summary>
+    /// Every swap first moves the target to its displaced path or moves the staged file onto
+    /// the target. A staged file that is still the admitted one, with no displaced file,
+    /// proves the target was never touched by this transaction.
+    /// </summary>
+    private static bool SwapNeverStarted(PublicationJournalEntry entry) =>
+        (entry.Displaced is null || FilePublicationOwnedDelete.TryGetAttributesNoFollow(entry.Displaced) is null)
+        && File.Exists(entry.Staged)
+        && entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged));
 
     private static FilePublicationSnapshot RecognizeInterruptedPublication(
         PublicationJournalEntry entry,

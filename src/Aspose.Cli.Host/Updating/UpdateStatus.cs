@@ -43,22 +43,7 @@ internal static class UpdateStatus
             ["log"] = Path.ChangeExtension(path, ".log"),
             ["updatedAt"] = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
         };
-        string temporary = path + "." + Guid.NewGuid().ToString("N") + ".tmp";
-        try
-        {
-            using (FileStream stream = PrivateUserStorage.CreateFile(temporary))
-            {
-                stream.Write(Encoding.UTF8.GetBytes(status.ToJsonString()));
-            }
-            File.Move(temporary, path, overwrite: true);
-        }
-        finally
-        {
-            if (File.Exists(temporary))
-            {
-                File.Delete(temporary);
-            }
-        }
+        PrivateUserStorage.WriteAllText(path, status.ToJsonString());
     }
 
     /// <summary>A warning about the last installer run, or null when it succeeded or never ran.</summary>

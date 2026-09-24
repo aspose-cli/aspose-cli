@@ -25,7 +25,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         else
         {
             Prepare();
-            plan.Transition(PublicationTransactionState.Publishing);
+            RecordPublicationIntent();
             foreach (PublicationJournalEntry entry in plan.Journal.Entries)
             {
                 Publish(entry);
@@ -46,9 +46,24 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
     private void PublishToWorker() => plan.Worker!.RegisterBatch(
         plan.Journal.Entries, plan.OutputDirectories, plan.ResourceBudgets!.Deadline);
 
+    /// <summary>
+    /// Writes one write-ahead record naming every target as possibly published before the
+    /// first swap. Recovery tells a target that was never swapped from one that was by the
+    /// staged and displaced files, so a record per target would only make an output set's
+    /// journal writes quadratic in its size.
+    /// </summary>
+    private void RecordPublicationIntent()
+    {
+        foreach (PublicationJournalEntry entry in plan.Journal.Entries)
+        {
+            entry.State = PublicationEntryState.Publishing;
+        }
+        plan.Transition(PublicationTransactionState.Publishing);
+    }
+
     private void Prepare()
     {
-        string backups = CreateBackupDirectory();
+        CreateBackupDirectory();
         foreach (PublicationJournalEntry entry in plan.Journal.Entries)
         {
             if (entry.InputPath is { } input && entry.InputSnapshot is { } expectedInput)
@@ -66,18 +81,19 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             }
             if (entry.Original.Exists)
             {
-                PrepareBackup(entry, backups);
+                PrepareBackup(entry);
                 PrepareRequestedBackup(entry);
             }
 
+            // Backup paths were recorded when the set was sealed; recovery verifies a backup
+            // against the original, so one record after every backup exists is enough.
             entry.State = PublicationEntryState.Prepared;
-            plan.Persist();
         }
 
         plan.Transition(PublicationTransactionState.Prepared);
     }
 
-    private string CreateBackupDirectory()
+    private void CreateBackupDirectory()
     {
         string backups = Path.Combine(plan.StagingDirectory, "backups");
         Directory.CreateDirectory(backups);
@@ -89,29 +105,25 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                     | UnixFileMode.UserWrite
                     | UnixFileMode.UserExecute);
         }
-        return backups;
     }
 
-    private void PrepareBackup(
-        PublicationJournalEntry entry,
-        string backups)
+    private void PrepareBackup(PublicationJournalEntry entry)
     {
         plan.Faults.Hit(new PublicationFaultPoint(
             PublicationFaultKind.Backup,
             entry.Index,
             entry.Target));
-        entry.Backup = Path.Combine(
-            backups,
-            $"{entry.Index + 1:000000}.backup");
-        File.Copy(entry.Target, entry.Backup, overwrite: false);
-        FilePublicationDurabilityAdapter.FlushFile(entry.Backup);
-        entry.Original.Metadata?.ApplyContentAttributes(entry.Backup);
-        if (!entry.Original.ContentMatches(entry.Backup))
+        string backup = entry.Backup
+            ?? throw new InvalidOperationException($"Publication entry '{entry.Target}' has no backup path.");
+        File.Copy(entry.Target, backup, overwrite: false);
+        FilePublicationDurabilityAdapter.FlushFile(backup);
+        entry.Original.Metadata?.ApplyContentAttributes(backup);
+        if (!entry.Original.ContentMatches(backup))
         {
             throw new IOException(
                 $"Backup verification failed for '{entry.Target}'.");
         }
-        entry.BackupSnapshot = FilePublicationSnapshot.Capture(entry.Backup);
+        entry.BackupSnapshot = FilePublicationSnapshot.Capture(backup);
     }
 
     private static void PrepareRequestedBackup(PublicationJournalEntry entry)
@@ -143,8 +155,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
     private void Publish(PublicationJournalEntry entry)
     {
         plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-file");
-        entry.State = PublicationEntryState.Publishing;
-        plan.Persist();
         plan.Faults.Hit(new PublicationFaultPoint(
             PublicationFaultKind.Publish,
             entry.Index,
@@ -181,8 +191,8 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
                 $"Published target '{entry.Target}' did not match its staged content.");
         }
 
+        // Recorded durably with the commit; until then recovery recognizes the swap by evidence.
         entry.State = PublicationEntryState.Published;
-        plan.Persist();
     }
 
     private void PublishDeletion(PublicationJournalEntry entry)
@@ -224,7 +234,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         entry.DisplacedSnapshot = displaced;
         entry.PublishedSnapshot = FilePublicationSnapshot.Missing;
         entry.State = PublicationEntryState.Published;
-        plan.Persist();
     }
 
     private static void CaptureDisplaced(PublicationJournalEntry entry)

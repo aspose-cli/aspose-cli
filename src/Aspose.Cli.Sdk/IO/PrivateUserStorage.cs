@@ -207,7 +207,7 @@ public static class PrivateUserStorage
             // Creation established the private ACL. Verify it before the sole commit point.
             ValidateFile(temporary);
             RejectLinkedComponents(full, includeLeaf: true);
-            File.Move(temporary, full, overwrite);
+            PrivateFileRename.Move(temporary, full, overwrite);
         }
         finally
         {
