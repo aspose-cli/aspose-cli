@@ -1,12 +1,13 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 
-namespace Aspose.Cli.Sdk.Extensibility.Commanding;
+namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>Declared parameter values from the actual parser result, including aliases and defaults.</summary>
-public sealed record ParsedParameter(Symbol Symbol, ParameterMetadata Metadata, object? Value);
+internal sealed record ParsedParameter(Symbol Symbol, ParameterMetadata Metadata, object? Value);
 
-public static class ParsedParameterExtensions
+internal static class ParsedParameterExtensions
 {
     public static IEnumerable<ParsedParameter> DeclaredParameters(this ParseResult parse)
     {

@@ -1,9 +1,10 @@
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
 using Xunit;
 
-namespace Aspose.Cli.Sdk.Tests;
+namespace Aspose.Cli.Host.Tests;
 
 public sealed class EnvironmentSecretsTests
 {

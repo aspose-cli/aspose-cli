@@ -1,10 +1,10 @@
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
-namespace Aspose.Cli.Sdk.Execution;
+namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>Invocation-scoped, bounded secret lookup through an explicitly supplied environment source.</summary>
-public sealed class EnvironmentSecrets(Func<string, string?> source, ResourceBudgetLedger budgets)
+internal sealed class EnvironmentSecrets(Func<string, string?> source, ResourceBudgetLedger budgets)
 {
     private readonly Func<string, string?> _source = source ?? throw new ArgumentNullException(nameof(source));
     private readonly ResourceBudgetLedger _budgets = budgets ?? throw new ArgumentNullException(nameof(budgets));
