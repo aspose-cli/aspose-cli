@@ -17,6 +17,7 @@ internal static class ConvertCommand
         var output = new OutputFileOptions("Output path; defaults to a sibling using the target extension.");
         var password = new PasswordOptions("--password", "the document");
         var encrypt = new PasswordOptions("--encrypt", "the output document", allowStdin: false);
+        var fonts = new FontDirectoryOptions();
 
         var command = new Command("convert", "Convert a document using the detected input format.");
         command.Arguments.Add(file);
@@ -25,6 +26,7 @@ internal static class ConvertCommand
         output.AddTo(command);
         password.AddTo(command);
         encrypt.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string format = parse.GetRequiredValue(to);
@@ -35,6 +37,7 @@ internal static class ConvertCommand
             }
 
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Convert(input, new WordsConvertRequest
             {
                 TargetFormatId = format,

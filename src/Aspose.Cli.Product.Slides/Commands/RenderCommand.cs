@@ -19,6 +19,7 @@ internal static class RenderCommand
         var output = new OutputFileOptions(
             "Output path; multi-slide output adds .sN before the extension.");
         var password = new PasswordOptions("--password", "the presentation");
+        var fonts = new FontDirectoryOptions();
         var command = new Command("render", "Render one or more slides for visual verification.");
         command.Arguments.Add(file);
         command.Options.Add(to);
@@ -27,6 +28,7 @@ internal static class RenderCommand
         command.Options.Add(width);
         output.AddTo(command);
         password.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             PartSelection selection = slides.Read(parse);
@@ -50,6 +52,7 @@ internal static class RenderCommand
             }
 
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Render(input, new PresentationRenderRequest
             {
                 TargetFormatId = format,

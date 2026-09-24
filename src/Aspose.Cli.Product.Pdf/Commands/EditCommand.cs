@@ -27,14 +27,17 @@ internal static class EditCommand
         Argument<string> file = PdfOptions.File();
         var edit = new BoundedEditCommand<PdfOp, PdfOpsBatch>(Definition);
         var password = new PasswordOptions("--password", "the PDF");
+        var fonts = new FontDirectoryOptions();
         var command = new Command("edit", "Apply one validated, atomic PDF operation batch.");
         command.Arguments.Add(file);
         edit.AddTo(command);
         password.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             BoundedEditInvocation<PdfOpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.ApplyOps(input, invocation.Batch, new PdfEditRequest
             {
                 OutputPath = invocation.Target.OutputPath,

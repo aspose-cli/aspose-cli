@@ -1,6 +1,7 @@
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;
+using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -89,6 +90,38 @@ public abstract class ProductBinding
     internal Lazy<IFontEnvironment>? FontEnvironmentFactory { get; }
 
     internal object UntypedPort => _port();
+
+    /// <summary>
+    /// The one entry through which a command applies a font profile to this product's engine:
+    /// the profile's directories, in addition to the system fonts, reach every layout, render
+    /// and save of the engine until the returned scope is disposed, and the engine's previous
+    /// fonts are restored then. A product without a font environment has nothing to scope.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">
+    /// The profile adds directories and the product has no font environment; callers accept
+    /// <c>--font-dir</c> only for products that advertise explicit font profiles.
+    /// </exception>
+    public IDisposable UseFonts(FontSearchProfile profile)
+    {
+        ArgumentNullException.ThrowIfNull(profile);
+        if (FontEnvironment is { } fonts)
+        {
+            return fonts.UseFonts(profile);
+        }
+        return profile.IsAmbient
+            ? NoFontScope.Instance
+            : throw new InvalidOperationException(
+                $"Product '{ProductId}' has no font environment for explicit font directories.");
+    }
+
+    private sealed class NoFontScope : IDisposable
+    {
+        public static readonly NoFontScope Instance = new();
+
+        public void Dispose()
+        {
+        }
+    }
 
     /// <summary>
     /// Creates a binding whose concrete port implementation also supplies the

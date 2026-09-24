@@ -15,6 +15,7 @@ internal static class RenderCommand
         var dpi = new DpiOption();
         var output = new OutputFileOptions("Output path; multi-page output adds .pN before the extension.");
         var password = new PasswordOptions("--password", "the document");
+        var fonts = new FontDirectoryOptions();
 
         var command = new Command("render", "Render one or more document pages.");
         command.Arguments.Add(file);
@@ -23,12 +24,14 @@ internal static class RenderCommand
         dpi.AddTo(command);
         output.AddTo(command);
         password.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             PartSelection selection = pages.Read(parse);
             int resolution = dpi.Read(parse);
             string format = parse.GetValue(to) ?? "png";
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Render(input, new WordsRenderRequest
             {
                 TargetFormatId = format,

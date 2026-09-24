@@ -18,6 +18,7 @@ internal static class ConvertCommand
             "Output path; defaults to a sibling using the target extension.");
         var password = new PasswordOptions("--password", "the presentation");
         var encrypt = new PasswordOptions("--encrypt", "the output presentation", allowStdin: false);
+        var fonts = new FontDirectoryOptions();
         var command = new Command("convert", "Convert a presentation or selected slides.");
         command.Arguments.Add(file);
         command.Options.Add(to);
@@ -25,11 +26,13 @@ internal static class ConvertCommand
         output.AddTo(command);
         password.AddTo(command);
         encrypt.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             string format = parse.GetRequiredValue(to);
             string? range = parse.GetValue(slides);
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Convert(input, new PresentationConvertRequest
             {
                 TargetFormatId = format,

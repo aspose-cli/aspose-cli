@@ -36,6 +36,7 @@ internal static class CellsHelpMetadata
             [
                 "aspose-cli cells convert sales.csv --to xlsx",
                 "aspose-cli cells convert book.xlsx --to pdf --out report.pdf",
+                "aspose-cli cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf",
             ]);
         Find(root, "render").WithExamples(
             [

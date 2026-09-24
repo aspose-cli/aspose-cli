@@ -15,17 +15,20 @@ internal static class ConvertCommand
         var pages = new Option<string?>("--pages") { Description = "Optional 1-based page range." }.WithInput(InputKind.None);
         var output = new OutputFileOptions("Output path; defaults to a sibling using the target extension.");
         var password = new PasswordOptions("--password", "the PDF");
+        var fonts = new FontDirectoryOptions();
         var command = new Command("convert", "Convert selected PDF pages to a supported format.");
         command.Arguments.Add(file);
         command.Options.Add(to);
         command.Options.Add(pages);
         output.AddTo(command);
         password.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             string format = parse.GetRequiredValue(to);
             string? range = parse.GetValue(pages);
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Convert(input, new PdfConvertRequest
             {
                 TargetFormatId = format,

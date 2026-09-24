@@ -17,6 +17,7 @@ internal static class SplitCommand
         var outDirectory = new OutputDirectoryOption("Directory that receives the parts.", required: true);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var password = new PasswordOptions("--password", "the document");
+        var fonts = new FontDirectoryOptions();
 
         var command = new Command("split", "Split a document into safe, deterministically named DOCX files.");
         command.Arguments.Add(file);
@@ -25,6 +26,7 @@ internal static class SplitCommand
         outDirectory.AddTo(command);
         command.Options.Add(overwrite);
         password.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string mode = parse.GetRequiredValue(by);
@@ -34,8 +36,10 @@ internal static class SplitCommand
                 throw CliErrors.OptionInvalid("--pages", $"cannot be used with --by {mode}", "Use --by pages or omit the range.");
             }
 
+            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Split(
-                context.Paths.ResolveInput(parse.GetRequiredValue(file)),
+                input,
                 new WordsSplitRequest
                 {
                     By = mode,

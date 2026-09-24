@@ -20,21 +20,25 @@ internal static class InfoCommand
         }.WithInput(InputKind.None);
         detail.AcceptOnlyFromAmong(Details);
         var password = new PasswordOptions("--password", "the document");
+        var fonts = new FontDirectoryOptions();
 
         var command = new Command("inspect", "Show document structure, safety state and metadata.");
         command.Arguments.Add(file);
         command.Options.Add(preview);
         command.Options.Add(detail);
         password.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
-            context.Port.GetInfo(
-                context.Paths.ResolveInput(parse.GetRequiredValue(file)),
-                new DocumentInfoRequest
-                {
-                    IncludePreview = parse.GetValue(preview),
-                    Details = parse.GetValue(detail),
-                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
-                })));
+        {
+            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            using IDisposable fontScope = fonts.Use(parse, context);
+            return context.Port.GetInfo(input, new DocumentInfoRequest
+            {
+                IncludePreview = parse.GetValue(preview),
+                Details = parse.GetValue(detail),
+                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
+            });
+        }));
         return command;
     }
 }

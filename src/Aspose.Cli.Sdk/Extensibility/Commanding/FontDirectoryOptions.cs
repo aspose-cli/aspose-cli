@@ -5,7 +5,10 @@ using Aspose.Cli.Sdk.Rendering;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
-/// <summary>Repeatable font-directory option for visual commands.</summary>
+/// <summary>
+/// The one repeatable <c>--font-dir</c> option of every command whose result depends on
+/// the fonts available to the engine: rendering, conversion, layout and font checks.
+/// </summary>
 public sealed class FontDirectoryOptions
 {
     private const int MaximumDirectories = 16;
@@ -20,6 +23,18 @@ public sealed class FontDirectoryOptions
     {
         ArgumentNullException.ThrowIfNull(command);
         command.Options.Add(_directories);
+    }
+
+    /// <summary>
+    /// Reads the directories and applies them to the command's product engine until the
+    /// returned scope is disposed. A product command enters the scope before its port opens
+    /// the document, so layout, rendering and save all see the same fonts.
+    /// </summary>
+    public IDisposable Use<TPort>(ParseResult parse, ProductCommandContext<TPort> context)
+        where TPort : class
+    {
+        ArgumentNullException.ThrowIfNull(context);
+        return context.Binding.UseFonts(Read(parse, context.Paths));
     }
 
     /// <summary>Reads the directories, resolving relative paths against <paramref name="paths"/>.</summary>

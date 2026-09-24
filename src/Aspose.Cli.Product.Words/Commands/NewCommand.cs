@@ -17,6 +17,7 @@ internal static class NewCommand
         var title = new Option<string?>("--title") { Description = "Set the built-in title property." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var encrypt = new PasswordOptions("--encrypt", "the output document", allowStdin: false);
+        var fonts = new FontDirectoryOptions();
 
         var command = new Command("create", "Create a document from one content source, optionally inside a template.");
         command.Arguments.Add(output);
@@ -27,6 +28,7 @@ internal static class NewCommand
         command.Options.Add(title);
         command.Options.Add(overwrite);
         encrypt.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string? markdownValue = parse.GetValue(markdown);
@@ -41,6 +43,7 @@ internal static class NewCommand
                 throw CliErrors.Usage(["Choose --blank, --template, or one of --markdown or --text with an optional --template."]);
             }
 
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.CreateDocument(new NewDocumentRequest
             {
                 OutputPath = context.Paths.ResolveOutput(parse.GetRequiredValue(output)),

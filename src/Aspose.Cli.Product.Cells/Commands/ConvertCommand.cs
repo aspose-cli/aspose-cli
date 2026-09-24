@@ -31,6 +31,7 @@ internal static class ConvertCommand
         }.WithInput(InputKind.None);
 
         var password = new PasswordOptions("--password", "the workbook");
+        var fonts = new FontDirectoryOptions();
 
         var convert = new Command("convert", "Convert a workbook to another format.");
         convert.Arguments.Add(fileArgument);
@@ -38,6 +39,7 @@ internal static class ConvertCommand
         convert.Options.Add(sheetOption);
         output.AddTo(convert);
         password.AddTo(convert);
+        fonts.AddTo(convert);
 
         convert.SetAction(parseResult => host.Run(parseResult, context =>
         {
@@ -55,6 +57,7 @@ internal static class ConvertCommand
             string inputPath = context.Paths.ResolveInput(parseResult.GetRequiredValue(fileArgument));
             string outputPath = output.ResolvePath(parseResult, context.Paths, inputPath, format.Extension);
 
+            using IDisposable fontScope = fonts.Use(parseResult, context);
             return context.Port.Convert(inputPath, new ConvertRequest
             {
                 TargetFormatId = format.Id,

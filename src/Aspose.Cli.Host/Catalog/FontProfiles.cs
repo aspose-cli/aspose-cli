@@ -5,9 +5,10 @@ using Aspose.Cli.Sdk.Rendering;
 namespace Aspose.Cli.Host.Catalog;
 
 /// <summary>
-/// Applies a font profile to one product for the length of a visual
-/// operation: review, preview rendering and <c>fonts check</c> all enter the
-/// product's font scope here, so every render, layout and font check of that
+/// Applies a font profile to the product a product-neutral command routed to:
+/// review, preview rendering and <c>fonts check</c> refuse explicit
+/// directories for a product that does not advertise them, then enter the
+/// product's font scope, so every render, layout and font check of that
 /// operation sees the same fonts.
 /// </summary>
 internal static class FontProfiles
@@ -36,15 +37,6 @@ internal static class FontProfiles
                     .Select(static item => item.Manifest.Id)
                     .ToArray());
         }
-        return binding.FontEnvironment?.UseFonts(profile) ?? NoScope.Instance;
-    }
-
-    private sealed class NoScope : IDisposable
-    {
-        public static readonly NoScope Instance = new();
-
-        public void Dispose()
-        {
-        }
+        return binding.UseFonts(profile);
     }
 }

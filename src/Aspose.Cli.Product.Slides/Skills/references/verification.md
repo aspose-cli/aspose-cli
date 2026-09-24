@@ -30,6 +30,17 @@ legibility, footer placement, hidden slides and ordering.
 Fix and review again into a new directory, for at most three rounds, then
 report any remaining defects.
 
+Fonts delivered beside the deck, such as brand fonts on a machine without
+them, reach the engine only through `--font-dir`, which adds to the system
+fonts. Pass the same directories to `fonts check`, `review`, and
+`slides render` and `convert`, so the delivered output uses the fonts the check
+saw:
+
+```powershell
+aspose-cli fonts check deck.revised.pptx --font-dir fonts --output json
+aspose-cli slides convert deck.revised.pptx --to pdf --font-dir fonts --output json
+```
+
 ## Evaluation
 
 Evaluation output carries `EVAL_MODE` and may replace or truncate text. Claim

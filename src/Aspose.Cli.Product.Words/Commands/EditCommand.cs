@@ -38,6 +38,7 @@ internal static class EditCommand
         var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
         var password = new PasswordOptions("--password", "the document");
         var encrypt = new PasswordOptions("--encrypt", "the output document", allowStdin: false);
+        var fonts = new FontDirectoryOptions();
 
         var command = new Command("edit", "Apply one validated, atomic Words operation batch.");
         command.Arguments.Add(file);
@@ -46,10 +47,12 @@ internal static class EditCommand
         command.Options.Add(author);
         password.AddTo(command);
         encrypt.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             BoundedEditInvocation<WordsOpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.ApplyOps(input, invocation.Batch, new WordsEditRequest
             {
                 OutputPath = invocation.Target.OutputPath,

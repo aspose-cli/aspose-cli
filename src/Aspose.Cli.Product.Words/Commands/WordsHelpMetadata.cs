@@ -32,6 +32,7 @@ internal static class WordsHelpMetadata
             [
                 "aspose-cli words convert contract.docx --to pdf",
                 "aspose-cli words convert contract.docx --to pdf --pages 1-3 --out excerpt.pdf",
+                "aspose-cli words convert contract.docx --to pdf --font-dir fonts",
             ]);
         Find(root, "render").WithExamples(
             [

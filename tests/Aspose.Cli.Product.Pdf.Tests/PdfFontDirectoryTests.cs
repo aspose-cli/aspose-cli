@@ -37,6 +37,30 @@ public sealed class PdfFontDirectoryTests
         FontDirectoryContract.Verify(workspace, "fixture.pdf");
     }
 
+    [Fact]
+    public void Cli_ConvertAndEditResolveTheFontDirectoryFont()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        using var source = new TempDirectory();
+        CreateDocument(fixture, workspace.File("fixture.pdf"), FontFixtures.WriteUniqueFont(source.Path));
+        FontFixtures.WriteUniqueFont(workspace.File("fonts"));
+        string watermark = $$"""{"ops":[{"op":"add_watermark_text","text":"Draft","font":"{{FontFixtures.UniqueFamily}}"}]}""";
+
+        CliResult ambientConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--out", "ambient-a.pdf", "--output", "json");
+        CliResult fontsConvert = workspace.Run("pdf", "convert", "fixture.pdf", "--to", "pdfa-2b", "--out", "fonts-a.pdf", "--font-dir", "fonts", "--output", "json");
+        CliResult ambientEdit = workspace.Run("pdf", "edit", "fixture.pdf", "--ops", watermark, "--out", "ambient-edit.pdf", "--output", "json");
+        CliResult fontsEdit = workspace.Run("pdf", "edit", "fixture.pdf", "--ops", watermark, "--out", "fonts-edit.pdf", "--font-dir", "fonts", "--output", "json");
+
+        Assert.NotEqual(0, ambientConvert.ExitCode);
+        Assert.Contains("AsposeCLIFixtureSans", ambientConvert.StdErr, StringComparison.Ordinal);
+        Assert.True(fontsConvert.ExitCode == 0, fontsConvert.StdErr);
+        Assert.True(FontDirectoryContract.EmbedsFixture(workspace, "fonts-a.pdf"));
+        Assert.NotEqual(0, ambientEdit.ExitCode);
+        Assert.Contains(FontFixtures.UniqueFamily, ambientEdit.StdErr, StringComparison.Ordinal);
+        Assert.True(fontsEdit.ExitCode == 0, fontsEdit.StdErr);
+    }
+
     private static bool FixtureAvailable(IFontEnvironment environment, string input) =>
         environment.CheckFonts(input, new FontCheckRequest()).Fonts
             .Single(static font => font.Name.StartsWith("AsposeCLIFixtureSans", StringComparison.Ordinal))

@@ -1,4 +1,6 @@
 using System.CommandLine;
+using Aspose.Cli.Host.Invocation;
+using Aspose.Cli.Host.Tests;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.IO;
@@ -11,6 +13,21 @@ namespace Aspose.Cli.Platform.Tests.Architecture;
 public sealed class FontDirectoryOptionsTests
 {
     private static readonly PathResolver Paths = new(Path.GetTempPath());
+
+    [Fact]
+    public void EveryProductRendersAndConvertsWithFontDirectories()
+    {
+        Command root = ActualCommandTree.Parser.Parse([]).ParseResult.RootCommandResult.Command;
+        Command[] drawing = root.Subcommands
+            .Where(static group => group.Policy().ProductId is not null)
+            .SelectMany(static group => group.Subcommands)
+            .Where(static command => command.Name is "render" or "convert")
+            .ToArray();
+
+        Assert.NotEmpty(drawing);
+        Assert.All(drawing, static command =>
+            Assert.Contains(command.Options, static option => option.Name == "--font-dir"));
+    }
 
     [Fact]
     public void Read_UsesAmbientFontsWhenNoDirectoryIsGiven()

@@ -251,6 +251,16 @@ aspose-cli fonts check book.xlsx
   substitution. For anything non-Latin, `allAvailable: true` means nothing on
   its own — Tier 2's render-and-LOOK is the only real check.
 
+  Fonts delivered beside the workbook, such as brand fonts on a machine
+  without them, reach the engine only through `--font-dir`, which adds to the
+  system fonts. Pass the same directories to `fonts check`, `review`, and
+  `cells render`, `convert` and `edit` (auto-fit measures text with them):
+
+```
+aspose-cli fonts check book.xlsx --font-dir fonts
+aspose-cli cells render book.xlsx --font-dir fonts --out book.png
+```
+
 - In evaluation mode, produced files gain an "Evaluation Warning" sheet
   and a watermark: expect the extra sheet in `inspect` output and in renders
   of files you created. Do not try to delete it; disclose it instead.

@@ -43,6 +43,14 @@ aspose-cli fonts check output.docx --output json
 ```
 
 `fonts check` lists the fonts the document's text uses, marks those unavailable
-here, and names in `substitutedBy` the font the layout draws instead. Pass
-`--font-dir` to `fonts check` and `review` for fonts delivered beside the
-document; it adds to the system fonts.
+here, and names in `substitutedBy` the font the layout draws instead. For fonts
+delivered beside the document, such as brand fonts on a machine without them,
+pass the same `--font-dir` to every command whose result depends on layout:
+`fonts check`, `review`, and `words render`, `convert`, `create`, `edit`,
+`compare`, `split` and `inspect` (its page count). It adds to the system fonts,
+so the output uses the fonts the check saw.
+
+```powershell
+aspose-cli fonts check output.docx --font-dir fonts --output json
+aspose-cli words convert output.docx --to pdf --font-dir fonts --output json
+```

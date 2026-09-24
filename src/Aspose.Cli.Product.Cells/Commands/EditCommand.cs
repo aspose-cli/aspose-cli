@@ -35,12 +35,14 @@ internal static class EditCommand
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
         var password = new PasswordOptions("--password", "the workbook");
         var encrypt = new PasswordOptions("--encrypt", "the output file", allowStdin: false);
+        var fonts = new FontDirectoryOptions();
         var command = new Command("edit", $"Apply a batch of edit ops atomically. Editable outputs: {string.Join(", ", CellsFormats.EditIds)}.");
         command.Arguments.Add(file);
         edit.AddTo(command);
         command.Options.Add(noRecalc);
         password.AddTo(command);
         encrypt.AddTo(command);
+        fonts.AddTo(command);
 
         command.SetAction(parse => host.Run(parse, context =>
         {
@@ -54,6 +56,7 @@ internal static class EditCommand
             BoundedEditInvocation<OpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
             string? encryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment);
             CellsFormats.RequireEncryptable(invocation.Target.OutputPath, encrypt.SelectedOption(parse));
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.ApplyOps(input, invocation.Batch, new EditRequest
             {
                 OutputPath = invocation.Target.OutputPath,

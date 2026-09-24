@@ -46,6 +46,7 @@ internal static class RenderCommand
         var dpiOption = new DpiOption();
 
         var password = new PasswordOptions("--password", "the workbook");
+        var fonts = new FontDirectoryOptions();
 
         var render = new Command("render", "Render a sheet, a range, or every visible sheet to images.");
         render.Arguments.Add(fileArgument);
@@ -56,6 +57,7 @@ internal static class RenderCommand
         dpiOption.AddTo(render);
         output.AddTo(render);
         password.AddTo(render);
+        fonts.AddTo(render);
 
         render.SetAction(parseResult => host.Run(parseResult, context =>
         {
@@ -86,6 +88,7 @@ internal static class RenderCommand
             string inputPath = context.Paths.ResolveInput(parseResult.GetRequiredValue(fileArgument));
             string outputPath = output.ResolvePath(parseResult, context.Paths, inputPath, format.Extension);
 
+            using IDisposable fontScope = fonts.Use(parseResult, context);
             return context.Port.Render(inputPath, new RenderRequest
             {
                 TargetFormatId = format.Id,

@@ -36,6 +36,17 @@ public sealed class SlidesFontDirectoryTests
         FontDirectoryContract.Verify(workspace, "fixture.pptx");
     }
 
+    [Fact]
+    public void Cli_ConvertLaysOutWithTheFontDirectory()
+    {
+        using var fixture = new SlidesEngineFixture();
+        using var workspace = new TempWorkspace();
+        CreatePresentation(fixture, workspace.File("fixture.pptx"));
+
+        FontDirectoryContract.VerifyPdfOutput(
+            workspace, "convert", output => ["slides", "convert", "fixture.pptx", "--to", "pdf", "--out", output]);
+    }
+
     private static bool FixtureAvailable(IFontEnvironment environment, string input) =>
         environment.CheckFonts(input, new FontCheckRequest()).Fonts
             .Single(static font => font.Name == FontFixtures.UniqueFamily)

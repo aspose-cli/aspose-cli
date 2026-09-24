@@ -35,6 +35,17 @@ public sealed class CellsFontDirectoryTests
         FontDirectoryContract.Verify(workspace, "fixture.xlsx");
     }
 
+    [Fact]
+    public void Cli_ConvertLaysOutWithTheFontDirectory()
+    {
+        using var fixture = new CellsFixture();
+        using var workspace = new TempWorkspace();
+        CreateWorkbook(fixture, workspace.File("fixture.xlsx"));
+
+        FontDirectoryContract.VerifyPdfOutput(
+            workspace, "convert", output => ["cells", "convert", "fixture.xlsx", "--to", "pdf", "--out", output]);
+    }
+
     private static bool FixtureAvailable(IFontEnvironment environment, string input) =>
         environment.CheckFonts(input, new FontCheckRequest()).Fonts
             .Single(static font => font.Name == FontFixtures.UniqueFamily)

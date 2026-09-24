@@ -38,6 +38,7 @@ internal static class SignCommand
         var contact = new Option<string?>("--contact") { Description = "Signer contact stored in the signature." }.WithInput(InputKind.None);
         var output = new OutputFileOptions("Signed PDF path. Default: <input>.signed.pdf.");
         var password = new PasswordOptions("--password", "the input PDF");
+        var fonts = new FontDirectoryOptions();
 
         var command = new Command("sign", "Apply a PKCS#7 signature and verify the saved signature field.");
         command.Arguments.Add(file);
@@ -51,6 +52,7 @@ internal static class SignCommand
         command.Options.Add(contact);
         output.AddTo(command);
         password.AddTo(command);
+        fonts.AddTo(command);
         command.SetAction(parse => host.Run(parse, context =>
         {
             bool isVisible = parse.GetValue(visible);
@@ -77,6 +79,7 @@ internal static class SignCommand
                     "Set the variable to the PKCS#12 password and run the command again.");
             }
 
+            using IDisposable fontScope = fonts.Use(parse, context);
             return context.Port.Sign(input, new PdfSignRequest
             {
                 CertificatePath = certificatePath,

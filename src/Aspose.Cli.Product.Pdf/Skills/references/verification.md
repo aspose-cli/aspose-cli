@@ -49,6 +49,18 @@ headers and footers, fields, annotations, redaction appearance and contrast.
 Fix and review again into a new directory, for at most three rounds, then
 report any remaining defects.
 
+A font the PDF uses without embedding it is drawn from the fonts installed
+here. For fonts delivered beside the document, pass the same `--font-dir` to
+`fonts check`, `review`, and `pdf render`, `convert`, `edit` and `sign`; it
+adds to the system fonts. PDF/A conversion must embed every font, so it fails
+with `PDFA_CONVERSION_FAILED` while one is missing here. Text operations that
+name a `font`, and the appearance of a visible signature, need that font here.
+
+```powershell
+aspose-cli fonts check report.pdf --font-dir fonts --output json
+aspose-cli pdf convert report.pdf --to pdfa-2b --font-dir fonts --output json
+```
+
 A valid blank or image-only page may have no font resources. Font checking then
 returns an empty fonts array. Review still renders every selected page and
 reports PDF_PAGE_WITHOUT_READABLE_CONTENT for an unscanned page without text;
