@@ -12,7 +12,8 @@ public sealed class PdfModule : IProductModule
     {
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
-        DisplayOrder = 900,
+        DisplayOrder = ProductBuildMetadata.DisplayOrder,
+        IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
         Operations = [PdfOps.Catalog.Describe("edit")],
             ResourceBudgets =
             [

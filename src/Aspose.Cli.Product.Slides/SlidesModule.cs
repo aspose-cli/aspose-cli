@@ -12,7 +12,8 @@ public sealed class SlidesModule : IProductModule
     {
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
-        DisplayOrder = 1200,
+        DisplayOrder = ProductBuildMetadata.DisplayOrder,
+        IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
         Operations = [SlidesOps.Catalog.Describe("edit")],
             ResourceBudgets =
             [

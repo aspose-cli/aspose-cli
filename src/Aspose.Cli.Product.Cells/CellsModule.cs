@@ -12,8 +12,8 @@ public sealed class CellsModule : IProductModule
     {
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
-        DisplayOrder = 100,
-        IsDefaultCandidate = true,
+        DisplayOrder = ProductBuildMetadata.DisplayOrder,
+        IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
         Operations = [CellsOps.Catalog.Describe("edit")],
             ResourceBudgets =
             [

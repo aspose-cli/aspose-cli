@@ -40,7 +40,9 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
             Value(options, "AsposeProductDisplayName"),
             Value(options, "AsposeProductEngineName"),
             Value(options, "AsposeProductSdkPackageId"),
-            Value(options, "AsposeProductSdkVersion"));
+            Value(options, "AsposeProductSdkVersion"),
+            Value(options, "AsposeProductDisplayOrder"),
+            Value(options, "AsposeProductDefaultCandidate"));
     }
 
     private static void Emit(
@@ -77,6 +79,8 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
                 internal const string EngineName = {{Literal(product.EngineName)}};
                 internal const string SdkPackageId = {{Literal(product.SdkPackageId)}};
                 internal const string SdkVersion = {{Literal(product.SdkVersion)}};
+                internal const int DisplayOrder = {{int.Parse(product.DisplayOrder, System.Globalization.CultureInfo.InvariantCulture)}};
+                internal const bool IsDefaultCandidate = {{(product.DefaultCandidate == "true" ? "true" : "false")}};
             }
             """;
         context.AddSource(
@@ -102,7 +106,9 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
         string displayName,
         string engineName,
         string sdkPackageId,
-        string sdkVersion)
+        string sdkVersion,
+        string displayOrder,
+        string defaultCandidate)
     {
         public string Id { get; } = id;
 
@@ -116,12 +122,19 @@ public sealed class ProductBuildMetadataGenerator : IIncrementalGenerator
 
         public string SdkVersion { get; } = sdkVersion;
 
+        public string DisplayOrder { get; } = displayOrder;
+
+        public string DefaultCandidate { get; } = defaultCandidate;
+
         public IEnumerable<(string Name, string Value)> RequiredProperties()
         {
             yield return ("AsposeProductNamespace", Namespace);
             yield return ("AsposeProductDisplayName", DisplayName);
             yield return ("AsposeProductEngineName", EngineName);
             yield return ("AsposeProductSdkVersion", SdkVersion);
+            yield return ("AsposeProductDisplayOrder", int.TryParse(DisplayOrder, System.Globalization.NumberStyles.None,
+                System.Globalization.CultureInfo.InvariantCulture, out _) ? DisplayOrder : string.Empty);
+            yield return ("AsposeProductDefaultCandidate", DefaultCandidate is "true" or "false" ? DefaultCandidate : string.Empty);
         }
     }
 }

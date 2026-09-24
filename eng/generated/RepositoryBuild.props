@@ -10,6 +10,8 @@
     <AsposeProductModuleType>Aspose.Cli.Product.Cells.CellsModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Cells</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/cells</AsposeProductResourceNamespace>
+    <AsposeProductDisplayOrder>1</AsposeProductDisplayOrder>
+    <AsposeProductDefaultCandidate>true</AsposeProductDefaultCandidate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Pdf'">
     <AsposeProductId>pdf</AsposeProductId>
@@ -21,6 +23,8 @@
     <AsposeProductModuleType>Aspose.Cli.Product.Pdf.PdfModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Pdf</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/pdf</AsposeProductResourceNamespace>
+    <AsposeProductDisplayOrder>2</AsposeProductDisplayOrder>
+    <AsposeProductDefaultCandidate>false</AsposeProductDefaultCandidate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Slides'">
     <AsposeProductId>slides</AsposeProductId>
@@ -32,6 +36,8 @@
     <AsposeProductModuleType>Aspose.Cli.Product.Slides.SlidesModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Slides</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/slides</AsposeProductResourceNamespace>
+    <AsposeProductDisplayOrder>3</AsposeProductDisplayOrder>
+    <AsposeProductDefaultCandidate>false</AsposeProductDefaultCandidate>
   </PropertyGroup>
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.Product.Words'">
     <AsposeProductId>words</AsposeProductId>
@@ -43,10 +49,12 @@
     <AsposeProductModuleType>Aspose.Cli.Product.Words.WordsModule</AsposeProductModuleType>
     <AsposeProductAssemblyName>Aspose.Cli.Product.Words</AsposeProductAssemblyName>
     <AsposeProductResourceNamespace>v2/words</AsposeProductResourceNamespace>
+    <AsposeProductDisplayOrder>4</AsposeProductDisplayOrder>
+    <AsposeProductDefaultCandidate>false</AsposeProductDefaultCandidate>
   </PropertyGroup>
   <PropertyGroup>
-    <GeneratedProductsLfSha256>C916A39B06F80243C30E13054F3AF874B0FBDEADD26137FED15157919660DCAE</GeneratedProductsLfSha256>
-    <GeneratedProductsCrLfSha256>3BF4A7100AB19F2F68C68B17541EBCB3A763B5E7C1EDB8E39A4B0C2016FD4080</GeneratedProductsCrLfSha256>
+    <GeneratedProductsLfSha256>865DED0437949EB75466B555F41616BA9B956EC3448DCD093D00896CD8AAC2B2</GeneratedProductsLfSha256>
+    <GeneratedProductsCrLfSha256>E20218ADD069130BF59404A45CB16FB669BDD126D187F29E01BF82603C61AC86</GeneratedProductsCrLfSha256>
     <GeneratedDistributionLfSha256>8377BE9CA189ACF72F264F2FA766D8A8137A423A9620C9DE8DFBB7E1085F7384</GeneratedDistributionLfSha256>
     <GeneratedDistributionCrLfSha256>E1D24305511D3786C8C1060D7CDE541CA4DE383CE3E37B7F8C3413A5767CB46E</GeneratedDistributionCrLfSha256>
   </PropertyGroup>

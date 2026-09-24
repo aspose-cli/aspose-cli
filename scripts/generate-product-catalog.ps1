@@ -227,7 +227,7 @@ if (-not (Test-Path -LiteralPath $catalogPath -PathType Leaf)) {
 $source = Get-Content -LiteralPath $catalogPath -Raw | ConvertFrom-Json
 Assert-ExactProperties `
     $source `
-    @('schemaVersion', 'products') `
+    @('schemaVersion', 'defaultProduct', 'products') `
     @('schemaVersion', 'products') `
     'Product catalog'
 Assert-JsonArrayProperty $source 'products' 'Product catalog'
@@ -246,10 +246,15 @@ $allowedFields = @(
         'displayName',
         'sdkPackageId',
         'supplementalPackages'))
+# Row order is display order; the optional defaultProduct names the product that owns
+# unprefixed commands.
+$defaultProduct = [string] (Get-OptionalValue $source 'defaultProduct' '')
+$displayOrder = 0
 $products = @(
     @($source.products) |
         ForEach-Object {
             $row = $_
+            $displayOrder++
             $unknownFields = @(
                 $row.PSObject.Properties.Name |
                     Where-Object { $_ -notin $allowedFields })
@@ -304,7 +309,9 @@ $products = @(
                 'Id = ProductBuildMetadata.ProductId',
                 'DisplayName = ProductBuildMetadata.DisplayName',
                 'ProductBuildMetadata.EngineName',
-                'ProductBuildMetadata.SdkVersion')) {
+                'ProductBuildMetadata.SdkVersion',
+                'DisplayOrder = ProductBuildMetadata.DisplayOrder',
+                'IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate')) {
                 if (-not $moduleText.Contains($requiredUse)) {
                     throw "Product '$id' module does not consume generated metadata '$requiredUse'."
                 }
@@ -360,11 +367,16 @@ $products = @(
                 sdkVersion = [string] $row.sdkVersion
                 supplementalPackageVersions = $supplemental
                 resourceNamespace = "v2/$id"
+                displayOrder = $displayOrder
+                isDefault = $id -ceq $defaultProduct
             }
         } |
         Sort-Object id)
 if ($products.Count -eq 0) {
     throw 'The active product catalog is empty.'
+}
+if ($defaultProduct -and @($products | Where-Object { $_.isDefault }).Count -ne 1) {
+    throw "Product catalog defaultProduct '$defaultProduct' is not a catalog product id."
 }
 foreach ($field in @(
     'id', 'projectName', 'projectPath', 'testProjectPath', 'assemblyName',
@@ -458,6 +470,11 @@ foreach ($name in @('id','commandName','displayName','edition','environmentVaria
     $literal = ConvertTo-Json -InputObject $value -Compress
     [void]$distributionCode.AppendLine("    public const string $propertyName = $literal;")
 }
+# File names and ids derived from the identity are spelled once, in the layout resolver.
+foreach ($name in @('ExecutableName', 'ConfigurationOwnerName', 'SkillManifestProductId')) {
+    $literal = ConvertTo-Json -InputObject ([string]$layout.Names.$name) -Compress
+    [void]$distributionCode.AppendLine("    public const string $name = $literal;")
+}
 [void]$distributionProps.AppendLine('</PropertyGroup></Project>')
 [void]$distributionCode.AppendLine('}')
 Write-Generated 'eng/generated/DistributionBuild.props' $distributionProps.ToString()
@@ -522,6 +539,8 @@ foreach ($product in $products) {
     [void] $repositoryBuild.AppendLine("    <AsposeProductModuleType>$($product.moduleType)</AsposeProductModuleType>")
     [void] $repositoryBuild.AppendLine("    <AsposeProductAssemblyName>$($product.assemblyName)</AsposeProductAssemblyName>")
     [void] $repositoryBuild.AppendLine("    <AsposeProductResourceNamespace>$($product.resourceNamespace)</AsposeProductResourceNamespace>")
+    [void] $repositoryBuild.AppendLine("    <AsposeProductDisplayOrder>$($product.displayOrder)</AsposeProductDisplayOrder>")
+    [void] $repositoryBuild.AppendLine("    <AsposeProductDefaultCandidate>$(([string] $product.isDefault).ToLowerInvariant())</AsposeProductDefaultCandidate>")
     [void] $repositoryBuild.AppendLine('  </PropertyGroup>')
 }
 [void] $repositoryBuild.AppendLine('  <PropertyGroup>')

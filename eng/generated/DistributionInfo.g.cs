@@ -12,4 +12,7 @@ public static class DistributionInfo
     public const string SchemaBaseUri = "https://schemas.aspose.dev/aspose-cli/v2/";
     public const string ConfigurationDirectoryName = "aspose-cli";
     public const string InstallDirectory = "Aspose/CLI";
+    public const string ExecutableName = "aspose-cli.exe";
+    public const string ConfigurationOwnerName = ".aspose-cli-config.json";
+    public const string SkillManifestProductId = "aspose-cli-skill";
 }

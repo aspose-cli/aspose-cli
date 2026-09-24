@@ -12,7 +12,8 @@ public sealed class WordsModule : IProductModule
     {
         Id = ProductBuildMetadata.ProductId,
         DisplayName = ProductBuildMetadata.DisplayName,
-        DisplayOrder = 1700,
+        DisplayOrder = ProductBuildMetadata.DisplayOrder,
+        IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
         Operations = [WordsOps.Catalog.Describe("edit")],
             ResourceBudgets =
             [

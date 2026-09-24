@@ -81,6 +81,8 @@ public sealed class ProductLifecycleTests
             "<AsposeProductSdkPackageId></AsposeProductSdkPackageId>",
             repositoryBuild,
             StringComparison.Ordinal);
+        Assert.Contains("<AsposeProductDisplayOrder>1</AsposeProductDisplayOrder>", repositoryBuild, StringComparison.Ordinal);
+        Assert.Contains("<AsposeProductDefaultCandidate>false</AsposeProductDefaultCandidate>", repositoryBuild, StringComparison.Ordinal);
 
         string protectedFile = Path.Combine(generatedRoot, "notes.txt");
         File.WriteAllText(protectedFile, "authored", Encoding.UTF8);
@@ -169,6 +171,8 @@ public sealed class ProductLifecycleTests
                     DisplayName = ProductBuildMetadata.DisplayName,
                     Sdk = ProductBuildMetadata.EngineName,
                     SdkVersion = ProductBuildMetadata.SdkVersion,
+                    DisplayOrder = ProductBuildMetadata.DisplayOrder,
+                    IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
                 };
             }
             """,
