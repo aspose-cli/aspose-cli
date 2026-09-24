@@ -17,7 +17,7 @@ public sealed class AppPreferencesTransactionTests
     [InlineData("clear")]
     public void LockedFile_PreservesMemoryAndDiskAcrossEveryMutationAndRetry(string mutation)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string file = temp.File("settings.json");
         var store = new AppPreferencesStore(ActualCommandTree.Host.Catalog, file);
@@ -52,7 +52,7 @@ public sealed class AppPreferencesTransactionTests
     [Fact]
     public void ReadOnlyDestination_PreservesTheCommittedSnapshot()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string file = temp.File("settings.json");
         var store = new AppPreferencesStore(ActualCommandTree.Host.Catalog, file);

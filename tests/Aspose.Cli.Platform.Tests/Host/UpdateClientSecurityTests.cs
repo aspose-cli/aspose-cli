@@ -1,5 +1,6 @@
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
@@ -116,10 +117,7 @@ public sealed class UpdateClientSecurityTests
     [Fact]
     public void WindowsPowerShell_IsResolvedFromTheSystemDirectory()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string expected = Path.GetFullPath(Path.Combine(
             Environment.SystemDirectory,
@@ -133,7 +131,7 @@ public sealed class UpdateClientSecurityTests
     [Fact]
     public void ExpiredHandoff_DoesNotStartAnInstallerAndCleansItsOwnedPackage()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string root = Aspose.Cli.Sdk.IO.PrivateUserStorage.CreateTemporaryDirectory("update-test");
         File.WriteAllText(Path.Combine(root, "install.ps1"), "throw 'This installer must never start.'");
         using var deadline = Aspose.Cli.Sdk.Execution.OperationDeadline.FromAbsoluteTick(

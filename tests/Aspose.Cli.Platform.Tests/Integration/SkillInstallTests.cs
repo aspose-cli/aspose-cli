@@ -201,10 +201,7 @@ public sealed class SkillInstallTests : IDisposable
     [Fact]
     public async Task Install_RejectsAReparsePointInTheTargetAncestorChain()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string skill = FirstSkill();
         string actual = _workspace.File("junction-target");

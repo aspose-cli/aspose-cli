@@ -5,6 +5,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
@@ -15,7 +16,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void Update_ReplaysTheChoicesRecordedByTheInstallation()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "update-replay");
         string skills = Path.Combine(_root, "update-replay-skills");
         UserState before = CaptureUserState();
@@ -40,7 +41,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void Update_RequiresAnInstallationAndRejectsChoiceSwitches()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "update-requirements");
         PowerShellResult missing = RunInstaller(_package.Path, install, arguments: ["-Update"],
             skipPath: false, skipSkills: false, skipMcp: false);
@@ -63,7 +64,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void InstallDirectorySpellings_ShareOneTransaction()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "one-spelling");
         // The helper derives the configuration directory from the install path's last segment.
         var configuration = new Dictionary<string, string?> { ["ASPOSE_CLI_CONFIG_DIR"] = Path.Combine(_root, ".config-one-spelling") };
@@ -88,7 +89,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void StatusFile_ReportsEveryOutcomeToTheCli()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "status-install");
         string status = Path.Combine(_root, "status-" + Guid.NewGuid().ToString("N") + ".json");
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
@@ -124,7 +125,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void Uninstall_RemovesTheInstallationAndOnlyPristineOwnedSkills()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "uninstall");
         string skills = Path.Combine(_root, "uninstall-skills");
         UserState before = CaptureUserState();
@@ -160,7 +161,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [InlineData("committedCleanup")]
     public void Uninstall_FailureRestoresTheInstallationAndSkills(string phase)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "uninstall-fault-" + phase);
         string skills = Path.Combine(_root, "uninstall-fault-skills-" + phase);
         Assert.Equal(0, RunInstaller(_package.Path, install, arguments: ["-SkillsRoot", skills], skipSkills: false).ExitCode);
@@ -192,7 +193,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [InlineData("committed")]
     public void Uninstall_InterruptedRunIsCompletedByTheNextRun(string phase)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "uninstall-crash-" + phase);
         string skills = Path.Combine(_root, "uninstall-crash-skills-" + phase);
         Assert.Equal(0, RunInstaller(_package.Path, install, arguments: ["-SkillsRoot", skills], skipSkills: false).ExitCode);
@@ -211,7 +212,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void Uninstall_RemovesConfigurationOnlyOnRequestAndOnlyWhenOwned()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "uninstall-config");
         string configuration = Path.Combine(_root, ".config-uninstall-config");
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
@@ -246,7 +247,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     public void PathRecovery_KeepsAnExternalChangeAndRestoresOnlyTheInstallEntry(
         string original, string applied, string external, string expected)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         const string root = @"C:\Isolated\Aspose CLI";
         static string Expand(string value) => value.Replace("{root}", root, StringComparison.Ordinal);
         PowerShellResult result = RunInstallerFunctions(
@@ -263,7 +264,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void PathComposition_UninstallRemovesOnlyTheInstallEntry()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string installRoot = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "Aspose", "CLI");
         string current = string.Join(';', @"%USERPROFILE%\AppData\Local\Microsoft\WindowsApps", installRoot + "\\", @"C:\Tools", @"%LOCALAPPDATA%\Aspose\CLI");
         PowerShellResult result = RunInstallerFunctions(
@@ -282,7 +283,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [InlineData("1.2.0-rc.1", "b", "ok")]
     public void VersionRule_RefusesDowngradesAndSameVersionRebuilds(string version, string revision, string expected)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         PowerShellResult result = RunInstallerFunctions(
             "$installed = [pscustomobject]@{ CliVersion = '1.1.0'; SourceRevision = ('a' * 40) }; "
             + $"try {{ Assert-InstallationUpgrade $installed {PowerShellLiteral(version)} ({PowerShellLiteral(revision)} * 40); 'ok' }} "
@@ -296,7 +297,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [InlineData("pwsh")]
     public void ClaudeVerification_ReadsLargeConfigurationsWithCaseDistinctKeys(string shell)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string? executable = shell == "pwsh" ? FindOnPath("pwsh.exe") : "powershell.exe";
         if (executable is null) { return; }
         string configDirectory = Path.Combine(_root, "claude-large-" + shell);
@@ -327,7 +328,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void McpRegistration_RollsBackOrRecordsAnAddThatCannotBeVerified()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         PowerShellResult result = RunInstallerFunctions("""
             $script:entries = @{}
             function Get-Command { [CmdletBinding()] param([string] $Name, [string] $CommandType) if ($Name -in @('codex','opencode')) { [pscustomobject]@{ Source = "C:\hosts\$Name.cmd" } } }
@@ -351,7 +352,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     [Fact]
     public void McpUnregistration_RemovesOnlyOwnedEntriesThatStillPointAtTheInstallation()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         PowerShellResult result = RunInstallerFunctions("""
             $script:entries = @{ codex = $true; claude = $false; opencode = $true }
             $script:removed = @()

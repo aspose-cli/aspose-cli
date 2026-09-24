@@ -65,7 +65,7 @@ public sealed class UpdateClientStatusTests : IDisposable
     [Fact]
     public void RunningInstaller_IsReportedAsInProgress()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using Process installer = Process.Start(new ProcessStartInfo(
             Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"),
             "-NoLogo -NoProfile -NonInteractive -Command Start-Sleep -Seconds 60")

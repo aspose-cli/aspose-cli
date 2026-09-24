@@ -13,7 +13,7 @@ public sealed class WordsResourceLoadingTests
     [Fact]
     public async Task CreateFromHtmlTemplate_KeepsResourcesAliveThroughPublication()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var fixture = new WordsFixture();
         await using var server = new ResourceHttpServer();
         string input = fixture.Temp.File("template.html");
@@ -68,7 +68,7 @@ public sealed class WordsResourceLoadingTests
     [Fact]
     public async Task Html_PreservesLocalImageAndReportsRemoteOmissionsWithoutHttp()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var fixture = new WordsFixture();
         await using var server = new ResourceHttpServer();
         string input = fixture.Temp.File("input.html");

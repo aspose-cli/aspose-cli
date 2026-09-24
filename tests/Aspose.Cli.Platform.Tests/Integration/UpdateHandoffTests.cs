@@ -21,7 +21,7 @@ public sealed class UpdateHandoffTests
     [InlineData(true)]
     public async Task InstallerSurvivesPreparationAndParentExitWithoutHoldingResultPipes(bool timed)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var workspace = new TempWorkspace();
         string ready = workspace.File("ready.json");
         string release = workspace.File("release.txt");
@@ -85,7 +85,7 @@ public sealed class UpdateHandoffTests
     [Fact]
     public async Task StalledHttpsPreparation_TimesOutAndReclaimsWorkerScratch()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var workspace = new TempWorkspace();
         string scratch = workspace.File("temp");
         Directory.CreateDirectory(scratch);

@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.CommandLine;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Mcp;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
@@ -150,10 +151,7 @@ public sealed class McpCommandTests
     public async Task Execute_TimeoutOrCancellationClosesInheritedPipesAndKillsTheProcessTree(
         bool cancel)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string root = Path.Combine(
             Path.GetTempPath(),
@@ -247,7 +245,7 @@ public sealed class McpCommandTests
     [Fact]
     public async Task Execute_OneSecondTimeoutDoesNotRequireAReadyDescendant()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string root = Path.Combine(Path.GetTempPath(), $"aspose-mcp-timeout-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
         string script = Path.Combine(root, "single-worker.ps1");

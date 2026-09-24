@@ -38,7 +38,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [InlineData(3, true, true, "transport")]
     public void McpRegistration_SelectsOneExecutableAndPreservesOwnership(int availableHosts, bool existing, bool owned, string variation)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
         string command = $$"""
             $ErrorActionPreference = 'Stop'
@@ -111,7 +111,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void OfficialMcpCommandShim_PreservesArgumentsWithoutShellExpansion()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string receiver = Path.Combine(_root, "receive.ps1");
         File.WriteAllText(receiver, "ConvertTo-Json -InputObject @($args) -Compress", new UTF8Encoding(false));
         string powerShell = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell/v1.0/powershell.exe");
@@ -129,7 +129,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void DefaultMcpPathWithoutHostExecutablesCompletesCleanInstall()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "default-mcp");
         string emptyPath = Path.Combine(_root, "empty-command-path");
         Directory.CreateDirectory(emptyPath);
@@ -144,7 +144,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CrashAfterOptionalMcpMetadataDoesNotInvalidateCommittedRecovery()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "mcp-metadata-recovery");
         PowerShellResult initial = RunInstaller(_package.Path, install);
         Assert.True(initial.ExitCode == 0, initial.StdErr);
@@ -166,7 +166,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CommittedCleanupFailureKeepsInstallValidAndDefersMcpMetadata()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         string install = Path.Combine(_root, "pending-cleanup");
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
         string markerPath = Path.Combine(install, ".aspose-cli-install.json");
@@ -188,10 +188,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CleanInstallAndSameVersionUpgrade_PublishVerifiedV2Ownership()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string package = _package.Path;
         string install = Path.Combine(_root, "install with spaces");
         string? originalPath = Environment.GetEnvironmentVariable("Path", EnvironmentVariableTarget.User);
@@ -211,10 +208,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CleanInstall_WorksWithoutPowerShellHashModuleOrNormalPath()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string install = Path.Combine(_root, "minimal-environment");
         string systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
@@ -234,10 +228,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CustomSkillsRoot_InstallsAndUpdatesOnlyTheIsolatedTree()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string install = Path.Combine(_root, "custom-root-install");
         string skills = Path.Combine(_root, "isolated skills");
@@ -272,10 +263,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CustomSkillsRoot_RejectsConflictAndUnsafePathsWithoutUserMutation()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string install = Path.Combine(_root, "unsafe-root-install");
         string valid = Path.Combine(_root, "safe-skills");
@@ -331,10 +319,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [InlineData(true)]
     public void CustomSkillsRoot_FailureRestoresTheCliAndEntireSkillTree(bool existingSkillTree)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string install = Path.Combine(_root, "custom-root-rollback");
         string skills = Path.Combine(_root, "rollback-skills");
@@ -367,10 +352,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CustomSkillsRoot_RecoveryUsesTheJournalRootWhateverTheNewRequest()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string install = Path.Combine(_root, "custom-root-recovery");
         string originalRoot = Path.Combine(_root, "original-skills");
@@ -415,10 +397,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CustomSkillsRoot_RecoveryRejectsAJunctionSubstitution()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string install = Path.Combine(_root, "junction-swap-install");
         string skills = Path.Combine(_root, "junction-swap-skills");
@@ -484,10 +463,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         bool writeOccurred,
         bool originalNull)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         PowerShellResult result = RunPathTransactionValidation(phase, originalNull);
 
@@ -499,10 +475,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void PathComposition_KeepsRawEntriesAndLeavesExactlyOneInstallEntry()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
         string installRoot = Path.Combine(localAppData, "Aspose", "CLI");
@@ -530,10 +503,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void UnsupportedOldInstallIsRejectedWithoutExecutingOrChangingIt()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string source = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.System), "where.exe");
         string old = CreateV1Install("unsupported-old", source);
         string before = Snapshot(old);
@@ -551,10 +521,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void InstallerOwnershipValidator_AcceptsCurrentAndRejectsOldSkillManifests()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string parent = Path.Combine(_root, "skill ownership");
         PowerShellResult installed = RunExecutable(
             Path.Combine(_package.Path, "aspose-cli.exe"),
@@ -588,10 +555,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void InvalidMarkerAndUnknownSentinel_AreRejectedWithoutDeletingAnything()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string package = _package.Path;
         string install = Path.Combine(_root, "owned");
         Assert.Equal(0, RunInstaller(package, install).ExitCode);
@@ -614,10 +578,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CustomerInstall_RejectsUnsignedPackagesUnlessDevelopmentModeIsExplicit()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string customerInstall = Path.Combine(_root, "unsigned-customer");
         PowerShellResult rejected = RunInstaller(
             _package.Path,
@@ -637,10 +598,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CustomerInstall_VerifiesTrustedSignatureBeforeExecutingPayload()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         (string package, string trustRing) = CreateSignedPackage("signed-package");
         string install = Path.Combine(_root, "signed-install");
         var environment = new Dictionary<string, string?>
@@ -679,10 +637,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [InlineData("choices")]
     public void Marker_MissingRequiredPropertyRefusesOwnership(string property)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string install = Path.Combine(_root, "missing-marker-" + property);
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
         string executable = Path.Combine(install, "aspose-cli.exe");
@@ -702,10 +657,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CurrentMarker_RequiresExplicitMcpOwnership()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string install = Path.Combine(_root, "marker-without-mcp");
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
         string markerPath = Path.Combine(install, ".aspose-cli-install.json");
@@ -722,18 +674,12 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void CurrentMarker_PowerShellSevenRejectsMissingMcpOwnership()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string? powerShell = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
             .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
             .Select(path => Path.Combine(path.Trim('"'), "pwsh.exe"))
             .FirstOrDefault(File.Exists);
-        if (powerShell is null)
-        {
-            return;
-        }
+        Assert.SkipWhen(powerShell is null, "Requires PowerShell 7 (pwsh.exe) on PATH.");
         string install = Path.Combine(_root, "pwsh7-marker");
 
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
@@ -756,10 +702,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void Marker_RejectsWrongTypesChoicesAndDuplicateMcpOwnership()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         foreach ((string name, Action<JsonObject> mutate) in new (string, Action<JsonObject>)[]
         {
             ("schema-type", marker => marker["schemaVersion"] = "2"),
@@ -792,10 +735,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void OfficialMcpCapture_BoundsOutputAndTerminatesTheProcessTree()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string pidFile = Path.Combine(_root, "mcp-child.pid");
         string producer = Path.Combine(_root, "mcp-output.ps1");
         File.WriteAllText(
@@ -821,10 +761,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void ValidOwnedInstallWithUnknownFile_IsPreservedAndRejected()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string package = _package.Path;
         string install = Path.Combine(_root, "unknown-file");
         Assert.Equal(0, RunInstaller(package, install).ExitCode);
@@ -845,10 +782,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [InlineData("newPublished")]
     public void InjectedTransactionFailure_RestoresOriginalInstall(string phase)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string package = _package.Path;
         string install = Path.Combine(_root, "rollback-" + phase);
         Assert.Equal(0, RunInstaller(package, install).ExitCode);
@@ -867,10 +801,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void InterruptedOldMove_IsRecoveredOnRetryWithoutAUserInterface()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string package = _package.Path;
         string install = Path.Combine(_root, "crash-retry");
         Assert.Equal(0, RunInstaller(package, install).ExitCode);
@@ -895,10 +826,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     public void DirectoryMoveBeforePhaseWrite_IsRecoveredFromVerifiedSnapshots(
         string phase)
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string package = _package.Path;
         string install = Path.Combine(_root, "pre-journal-" + phase);
         Assert.Equal(0, RunInstaller(package, install).ExitCode);
@@ -921,10 +849,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void InterruptedAfterCommit_CleansVerifiedBackupsOnRetryWithoutRollback()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string package = _package.Path;
         string install = Path.Combine(_root, "committed-crash");
 
@@ -946,10 +871,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void PackageAndInstallDirectoriesMayNotOverlap()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string package = _package.Path;
 
         PowerShellResult result = RunInstaller(package, Path.Combine(package, "installed"));
@@ -961,10 +883,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     [Fact]
     public void InvalidCommercialLicense_IsRejectedBeforeExistingInstallChanges()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
         string install = Path.Combine(_root, "invalid-license");
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
         string before = Snapshot(install);

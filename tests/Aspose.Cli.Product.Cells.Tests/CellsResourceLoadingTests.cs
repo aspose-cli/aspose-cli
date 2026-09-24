@@ -18,7 +18,7 @@ public sealed class CellsResourceLoadingTests
     [InlineData("mht")]
     public async Task HtmlInputs_UseLocalResourcesAndNeverFetchRemoteResources(string extension)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var fixture = new CellsFixture();
         await using var server = new ResourceHttpServer();
         string input = fixture.Temp.File("input." + extension);
@@ -60,7 +60,7 @@ public sealed class CellsResourceLoadingTests
     [Fact]
     public async Task Review_OmissionsMakeEvidenceIncomplete()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var fixture = new CellsFixture();
         await using var server = new ResourceHttpServer();
         string input = fixture.Temp.File("review.html");
@@ -83,7 +83,7 @@ public sealed class CellsResourceLoadingTests
     [Fact]
     public void Mhtml_EmbeddedImageNeedsNoExternalFile()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var fixture = new CellsFixture();
         string input = fixture.Temp.File("embedded.mht");
         File.WriteAllText(input, Mhtml("<html><body><table><tr><td>Embedded</td><td><img src='local.png'></td></tr></table></body></html>"));
@@ -98,7 +98,7 @@ public sealed class CellsResourceLoadingTests
     [Fact]
     public async Task EditVerification_ReportsSourceResourceOmissions()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var workspace = new TempWorkspace();
         await using var server = new ResourceHttpServer();
         File.WriteAllText(workspace.File("input.html"),

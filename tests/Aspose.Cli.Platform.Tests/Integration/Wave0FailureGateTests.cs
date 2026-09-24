@@ -45,7 +45,7 @@ public sealed class Wave0FailureGateTests
     [Trait("Tier", "Release")]
     public void UnsignedCustomerInstaller_StopsBeforeResolvingThePackage()
     {
-        RequireWindows();
+        Requires.Windows();
         string installRoot = Path.Combine(
             Path.GetTempPath(),
             "aspose-unsigned-installer-" + Guid.NewGuid().ToString("N"));
@@ -78,7 +78,7 @@ public sealed class Wave0FailureGateTests
     [Trait("Tier", "Release")]
     public void Publish_RefusesToDeleteAnUnownedOutputTree()
     {
-        RequireWindows();
+        Requires.Windows();
         string parent = Path.Combine(
             RepositoryPaths.Root,
             "artifacts",
@@ -126,15 +126,6 @@ public sealed class Wave0FailureGateTests
         Assert.Contains("resolve-project-layout.ps1", script, StringComparison.Ordinal);
         Assert.Contains("DevelopmentPackage = $true", script, StringComparison.Ordinal);
         Assert.Contains("install.ps1", script, StringComparison.Ordinal);
-    }
-
-    private static void RequireWindows()
-    {
-        if (!OperatingSystem.IsWindows())
-        {
-            throw Xunit.Sdk.SkipException.ForSkip(
-                "Environment-blocked: Wave 0 release gates require Windows x64.");
-        }
     }
 
     private static CliResult RunPowerShell(

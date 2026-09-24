@@ -83,17 +83,7 @@ public sealed class FontDirectoryOptionsTests
         string fonts = Path.Combine(actual, "fonts");
         string linked = Path.Combine(temp.Path, "linked");
         Directory.CreateDirectory(fonts);
-        try
-        {
-            Directory.CreateSymbolicLink(linked, actual);
-        }
-        catch (Exception exception) when (
-            exception is UnauthorizedAccessException
-                or IOException
-                or PlatformNotSupportedException)
-        {
-            return;
-        }
+        FileSystemLinks.CreateDirectoryLink(linked, actual);
 
         try
         {

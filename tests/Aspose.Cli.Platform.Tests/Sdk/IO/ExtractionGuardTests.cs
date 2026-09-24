@@ -35,10 +35,7 @@ public sealed class ExtractionGuardTests
     [Fact]
     public void Write_TargetIdentityChangesDuringProduction_PreservesExternalFile()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         using var temp = new TempDirectory();
         string target = temp.File("report.txt");

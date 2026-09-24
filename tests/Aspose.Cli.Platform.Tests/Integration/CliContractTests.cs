@@ -652,10 +652,7 @@ public sealed class CliContractTests : IDisposable
     [Fact]
     public void UpdateInstall_RejectsUnsafeZipEntriesBeforeInstallerHandoff()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string root = _workspace.File("signed-feed");
         Directory.CreateDirectory(root);

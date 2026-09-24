@@ -53,7 +53,7 @@ public sealed class PdfResourceLoadingTests
     [Fact]
     public async Task HtmlCreation_PreservesLocalImageAndReportsCallbackDecisions()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var fixture = new PdfEngineFixture();
         await using var server = new ResourceHttpServer();
         string input = fixture.File("input.html");

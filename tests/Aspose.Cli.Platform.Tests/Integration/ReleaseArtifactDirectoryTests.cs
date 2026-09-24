@@ -16,7 +16,7 @@ public sealed class ReleaseArtifactDirectoryTests
     [InlineData(true, true)]
     public void FreshNestedParent_CreatesAnOwnedEmptyOutput(bool legacy, bool trailingSeparator)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var directory = new TempDirectory();
         string allowed = directory.File("workspace/artifacts/publish/free");
         string target = Path.Combine(allowed, "portable");
@@ -40,7 +40,7 @@ public sealed class ReleaseArtifactDirectoryTests
     [InlineData(true, true)]
     public void OwnedReinitialization_DeletesOnlyTheOwnedContents(bool legacy, bool trailingSeparator)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var directory = new TempDirectory();
         string allowed = directory.File("publish");
         string target = Path.Combine(allowed, "portable");
@@ -66,7 +66,7 @@ public sealed class ReleaseArtifactDirectoryTests
     [InlineData(true)]
     public void UnownedExistingOutput_IsPreservedWithoutClaimingOwnership(bool legacy)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var directory = new TempDirectory();
         string allowed = directory.File("publish");
         string target = Path.Combine(allowed, "portable");
@@ -92,7 +92,7 @@ public sealed class ReleaseArtifactDirectoryTests
     [InlineData(true, "parent-traversal")]
     public void BoundaryEscape_IsRefusedBeforeWriting(bool legacy, string kind)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var directory = new TempDirectory();
         string allowed = directory.File("publish");
         Directory.CreateDirectory(allowed);
@@ -122,7 +122,7 @@ public sealed class ReleaseArtifactDirectoryTests
     [InlineData(true, true)]
     public void AncestorJunction_IsRefusedBeforeCreatingOrDeletingOutput(bool legacy, bool ownedOutput)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var directory = new TempDirectory();
         string outside = directory.File("outside");
         string junction = directory.File("workspace");

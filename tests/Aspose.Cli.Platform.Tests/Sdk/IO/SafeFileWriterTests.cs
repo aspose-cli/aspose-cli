@@ -165,10 +165,7 @@ public sealed class SafeFileWriterTests : IDisposable
     [Fact]
     public void OwnedTemporaryFile_RejectsIdentityChangesAfterTheProducedFileIsBound()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string path = _temp.File("stage.tmp");
         string replacement = _temp.File("replacement.tmp");
@@ -259,17 +256,7 @@ public sealed class SafeFileWriterTests : IDisposable
         string actual = _temp.File("actual");
         string linked = _temp.File("linked");
         Directory.CreateDirectory(actual);
-        try
-        {
-            Directory.CreateSymbolicLink(linked, actual);
-        }
-        catch (Exception exception) when (
-            exception is UnauthorizedAccessException
-                or IOException
-                or PlatformNotSupportedException)
-        {
-            return;
-        }
+        FileSystemLinks.CreateDirectoryLink(linked, actual);
 
         try
         {
@@ -290,24 +277,11 @@ public sealed class SafeFileWriterTests : IDisposable
     [Fact]
     public void Write_DanglingLinkedOutputDirectory_IsRejected()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string missing = _temp.File("missing-target");
         string linked = _temp.File("dangling-link");
-        try
-        {
-            Directory.CreateSymbolicLink(linked, missing);
-        }
-        catch (Exception exception) when (
-            exception is UnauthorizedAccessException
-                or IOException
-                or PlatformNotSupportedException)
-        {
-            return;
-        }
+        FileSystemLinks.CreateDirectoryLink(linked, missing);
 
         try
         {
@@ -329,25 +303,10 @@ public sealed class SafeFileWriterTests : IDisposable
     [Fact]
     public void OwnedDelete_PreservesADanglingFileLink()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string link = _temp.File("dangling-file-link.txt");
-        try
-        {
-            File.CreateSymbolicLink(
-                link,
-                _temp.File("missing-file.txt"));
-        }
-        catch (Exception exception) when (
-            exception is UnauthorizedAccessException
-                or IOException
-                or PlatformNotSupportedException)
-        {
-            return;
-        }
+        FileSystemLinks.CreateFileSymbolicLink(link, _temp.File("missing-file.txt"));
 
         try
         {
@@ -386,10 +345,7 @@ public sealed class SafeFileWriterTests : IDisposable
     [Fact]
     public void Write_CallbackReplaceOnSaveBindsTheProducedFile()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string target = _temp.File("out.txt");
         string? reserved = null;

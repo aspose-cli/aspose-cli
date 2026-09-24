@@ -74,7 +74,7 @@ public sealed class CellsLinkedPictureTests
     [InlineData(false)]
     public void UncachedPicture_UsesOnlyAvailableLocalData(bool available)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var fixture = new CellsFixture();
         string reference = fixture.Temp.File("local.png");
         if (available) { File.WriteAllBytes(reference, ResourceHttpServer.Image); }

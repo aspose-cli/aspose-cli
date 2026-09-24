@@ -687,10 +687,7 @@ public sealed class AtomicOutputSetWriterTests
     [Fact]
     public void RecoveryRejectsAReplacedLeasedDirectoryBeforeScanning()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         using var temp = new TempDirectory();
         string output = temp.File("output");
@@ -776,10 +773,7 @@ public sealed class AtomicOutputSetWriterTests
     [Fact]
     public void AbandonedRecoveryRejectsSameContentExternalReplacement()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         using var temp = new TempDirectory();
         string target = temp.File("target.txt");
@@ -1010,10 +1004,7 @@ public sealed class AtomicOutputSetWriterTests
     [Fact]
     public void ConcurrentDirectoryPublicationsRemainIsolated()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         using var temp = new TempDirectory();
         const int count = 20;
@@ -1105,10 +1096,7 @@ public sealed class AtomicOutputSetWriterTests
     [Fact]
     public void AtomicSwapRestoresSameContentExternalReplacementByIdentity()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         using var temp = new TempDirectory();
         string target = temp.File("target.txt");
@@ -1157,23 +1145,19 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
+    [SupportedOSPlatform("windows")]
     public void NewWindowsOutputsInheritDestinationAclInsteadOfPrivateStagingAcl()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         VerifyNewWindowsOutputsInheritDestinationAcl();
     }
 
     [Fact]
+    [SupportedOSPlatform("windows")]
     public void ExistingWindowsTargetWithModifyOnlyAclCanBeSavedAndReopened()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         VerifyExistingWindowsTargetWithModifyOnlyAclCanBeSavedAndReopened();
     }

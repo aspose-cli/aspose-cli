@@ -1,3 +1,4 @@
+using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Aspose.Cli.Sdk.IO;
@@ -11,9 +12,10 @@ public sealed class PrivateDirectoryPermissionTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
+    [SupportedOSPlatform("windows")]
     public void EnsureDirectory_NormalizesPrivateButIncompleteWindowsPermissions(bool inherit)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string path = PrivateUserStorage.EnsureDirectory(temp.File("private"));
         SecurityIdentifier user = WindowsIdentity.GetCurrent().User!;
@@ -46,9 +48,10 @@ public sealed class PrivateDirectoryPermissionTests
     }
 
     [Fact]
+    [UnsupportedOSPlatform("windows")]
     public void EnsureDirectory_NormalizesRestrictiveUnixOwnerPermissions()
     {
-        if (OperatingSystem.IsWindows()) { return; }
+        Requires.Unix();
         using var temp = new TempDirectory();
         string path = PrivateUserStorage.EnsureDirectory(temp.File("private"));
         File.SetUnixFileMode(path, UnixFileMode.UserRead | UnixFileMode.UserExecute);
@@ -62,8 +65,7 @@ public sealed class PrivateDirectoryPermissionTests
         using var temp = new TempDirectory();
         string actual = PrivateUserStorage.EnsureDirectory(temp.File("actual"));
         string link = temp.File("link");
-        try { Directory.CreateSymbolicLink(link, actual); }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or PlatformNotSupportedException) { return; }
+        FileSystemLinks.CreateDirectoryLink(link, actual);
         Assert.Throws<UnauthorizedAccessException>(() => PrivateUserStorage.EnsureDirectory(link));
         Assert.True(Directory.Exists(actual));
     }

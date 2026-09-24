@@ -80,25 +80,10 @@ public sealed class WorkerOutputPublicationTests : IDisposable
     [Fact]
     public void PrivateCleanup_PreservesADanglingRootLink()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         string link = _temp.File("dangling-private-root");
-        try
-        {
-            Directory.CreateSymbolicLink(
-                link,
-                _temp.File("missing-private-root"));
-        }
-        catch (Exception exception) when (
-            exception is UnauthorizedAccessException
-                or IOException
-                or PlatformNotSupportedException)
-        {
-            return;
-        }
+        FileSystemLinks.CreateDirectoryLink(link, _temp.File("missing-private-root"));
 
         try
         {

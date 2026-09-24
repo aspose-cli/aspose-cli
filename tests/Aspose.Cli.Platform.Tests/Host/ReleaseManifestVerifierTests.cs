@@ -3,6 +3,7 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Host.Updating;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
@@ -112,12 +113,11 @@ public sealed class ReleaseManifestVerifierTests
     [Fact]
     public void OpenSslDerSignature_IsAcceptedByTheVerifier()
     {
+        string openssl = ToolPath.Require("openssl");
         using ECDsa key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
         string root = Directory.CreateTempSubdirectory("aspose-release-openssl-").FullName;
         try
         {
-            string? openssl = Environment.GetEnvironmentVariable("ASPOSE_CLI_OPENSSL_PATH")
-                ?? "openssl.exe";
             string privateKey = Path.Combine(root, "key.pem");
             string payload = Path.Combine(root, "payload.txt");
             string signature = Path.Combine(root, "signature.bin");
@@ -163,10 +163,6 @@ public sealed class ReleaseManifestVerifierTests
                 manifest,
                 new TrustedReleaseKeyRing([new TrustedReleaseKey(keyId, key.ExportSubjectPublicKeyInfoPem())]),
                 archivePath: archive);
-        }
-        catch (System.ComponentModel.Win32Exception)
-        {
-            return;
         }
         finally
         {

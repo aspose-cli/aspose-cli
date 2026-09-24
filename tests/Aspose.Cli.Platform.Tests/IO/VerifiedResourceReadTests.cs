@@ -56,7 +56,7 @@ public sealed class VerifiedResourceReadTests
     [InlineData(true)]
     public void ReplacedRootOrAncestor_CannotReuseAuthorization(bool ancestor)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string parent = temp.File("parent");
         string root = Path.Combine(parent, "root");
@@ -73,7 +73,7 @@ public sealed class VerifiedResourceReadTests
     [Fact]
     public void Lease_PinsDirectoriesAndFileUntilDisposed()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string root = temp.File("root");
         Directory.CreateDirectory(root);
@@ -96,7 +96,7 @@ public sealed class VerifiedResourceReadTests
     [Fact]
     public void ExistingWriter_DeniesReadInsteadOfObservingUnstableBytes()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string file = temp.File("data");
         File.WriteAllBytes(file, [1, 2]);
@@ -108,7 +108,7 @@ public sealed class VerifiedResourceReadTests
     [Fact]
     public void HardLink_IsRejectedEvenWhenBothNamesAreInsideRoot()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string file = temp.File("data");
         File.WriteAllText(file, "content");
@@ -122,7 +122,7 @@ public sealed class VerifiedResourceReadTests
     [Fact]
     public async Task JunctionAtRootOrBelow_IsRejected()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string root = temp.File("root");
         string outside = temp.File("outside");
@@ -169,7 +169,7 @@ public sealed class VerifiedResourceReadTests
     [InlineData(ResourceBudgetKinds.MemoryBufferBytes)]
     public void SharedBudgetFailure_PropagatesAndRemainsFatal(string kind)
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         File.WriteAllBytes(temp.File("data"), [1, 2, 3]);
         using var deadline = OperationDeadline.Start(null);
@@ -188,7 +188,7 @@ public sealed class VerifiedResourceReadTests
     [Fact]
     public async Task ConcurrentRequests_RespectAggregateLimit()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         File.WriteAllBytes(temp.File("data"), [1, 2]);
         using var deadline = OperationDeadline.Start(null);

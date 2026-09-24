@@ -46,10 +46,7 @@ public sealed class ProcessFailureBoundaryTests
     [Fact]
     public async Task WindowsErrorMode_InheritedFailFastChildTerminatesWithoutBlockingOnCrashUi()
     {
-        if (!OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Windows();
 
         WindowsProcessErrorMode.SuppressNativeErrorUi();
         var start = new ProcessStartInfo("powershell.exe")

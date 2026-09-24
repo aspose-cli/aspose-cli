@@ -1,6 +1,7 @@
 using System.Buffers.Binary;
 using System.IO.Pipes;
 using System.Net.Sockets;
+using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
@@ -8,6 +9,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Serialization;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Host.Tests;
@@ -18,7 +20,7 @@ public sealed class LocalServiceRuntimeTests
     [Fact]
     public void ControlProtocol_StartFailsWhenItsWindowsPipeIsAlreadyOwned()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         LocalServiceControlEndpoint endpoint = Endpoint();
         using var occupied = new NamedPipeServerStream(endpoint.PipeName, PipeDirection.InOut, 1,
             PipeTransmissionMode.Byte, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
@@ -337,12 +339,10 @@ public sealed class LocalServiceRuntimeTests
     }
 
     [Fact]
+    [UnsupportedOSPlatform("windows")]
     public void UnixControlSocket_IsPrivateAndOwnedByTheEffectiveUser()
     {
-        if (OperatingSystem.IsWindows())
-        {
-            return;
-        }
+        Requires.Unix();
 
         LocalServiceControlEndpoint endpoint = Endpoint();
         using var server = new LocalServiceControlServer(

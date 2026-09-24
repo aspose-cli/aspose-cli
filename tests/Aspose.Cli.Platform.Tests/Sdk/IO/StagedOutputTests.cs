@@ -26,7 +26,7 @@ public sealed class StagedOutputTests
     [Fact]
     public void ReplacingACandidateWithTheSameBytesIsRejectedAndPreserved()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var temp = new TempDirectory();
         string target = temp.File("output.txt");
         using var transaction = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "candidate");

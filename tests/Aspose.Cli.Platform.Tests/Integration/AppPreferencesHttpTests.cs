@@ -13,7 +13,7 @@ public sealed class AppPreferencesHttpTests
     [Fact]
     public async Task SavedPreferences_WithLockedInput_KeepTheOldPreviewAndRetryTheSameView()
     {
-        if (!OperatingSystem.IsWindows()) { return; }
+        Requires.Windows();
         using var workspace = new TempWorkspace();
         string input = workspace.File("data.csv");
         File.WriteAllText(input, "Heading,Value\nA,42\n");

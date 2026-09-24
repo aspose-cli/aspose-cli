@@ -253,8 +253,7 @@ public sealed class AtomicNewDirectoryWriterTests
         File.WriteAllText(source, "preserve");
         using var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), temp.File("result"), "test");
         string link = Path.Combine(output.StagingDirectory, "link.txt");
-        try { File.CreateSymbolicLink(link, source); }
-        catch (Exception error) when (error is IOException or UnauthorizedAccessException or PlatformNotSupportedException) { return; }
+        FileSystemLinks.CreateFileSymbolicLink(link, source);
         Assert.Throws<InvalidDataException>(output.Commit);
         Assert.False(Directory.Exists(output.TargetDirectory));
         Assert.Equal("preserve", File.ReadAllText(source));
