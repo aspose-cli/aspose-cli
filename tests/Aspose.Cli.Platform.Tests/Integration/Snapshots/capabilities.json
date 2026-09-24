@@ -7867,6 +7867,25 @@
               "description": "Safe extraction directory."
             },
             {
+              "name": "--overwrite",
+              "aliases": [],
+              "type": "boolean",
+              "minimumArity": 0,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": true,
+              "default": "false",
+              "allowedValues": [
+                "False",
+                "True"
+              ],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Replace the output file if it already exists."
+            },
+            {
               "name": "--password",
               "aliases": [],
               "type": "string",
@@ -16333,6 +16352,25 @@
           "valueSource": "command-line",
           "inputKind": "none",
           "description": "Safe extraction directory."
+        },
+        {
+          "name": "--overwrite",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Replace the output file if it already exists."
         },
         {
           "name": "--password",

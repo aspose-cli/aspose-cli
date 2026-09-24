@@ -380,4 +380,12 @@ public static class WordsOps
         .Add<SetTextOp>("set_text", WordsOpRules.SetText)
         .Add<UnprotectOp>("unprotect")
         .Add<UpdateFieldsOp>("update_fields", WordsOpRules.UpdateFields);
+
+    /// <summary>The environment variable whose password an operation reads, or null when it reads none.</summary>
+    public static string? PasswordVariable(WordsOp op) => op switch
+    {
+        ProtectOp value => value.PasswordEnv,
+        UnprotectOp value => value.PasswordEnv,
+        _ => null,
+    };
 }

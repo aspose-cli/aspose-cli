@@ -9,7 +9,6 @@ internal static class ReadCommand
 {
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
-        Argument<string> file = WordsOptions.File();
         var blocks = new Option<string?>("--blocks") { Description = "1-based block range, e.g. 1-20,25." }.WithInput(InputKind.None);
         var section = new Option<int?>("--section") { Description = "Read one 1-based section; with --blocks, only its blocks in that range." };
         var scope = new Option<string>("--scope")
@@ -18,39 +17,38 @@ internal static class ReadCommand
             DefaultValueFactory = _ => "text",
         }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. DocumentReadScopes.All]);
-        var maxChars = new Option<int>("--max-chars") { DefaultValueFactory = _ => 20_000, Description = "Maximum returned content characters, including repeated text/run projections." };
+        var maxChars = new MaxCharactersOption("Maximum returned content characters, including repeated text/run projections.");
         var maxBlocks = new Option<int>("--max-blocks") { DefaultValueFactory = _ => 200, Description = "Maximum projected blocks." };
-        var password = new PasswordOptions("--password", "the document");
-
-        var command = new Command("blocks", "Read a bounded, stable window of document blocks.");
-        command.Arguments.Add(file);
-        command.Options.Add(blocks);
-        command.Options.Add(section);
-        command.Options.Add(scope);
-        command.Options.Add(maxChars);
-        command.Options.Add(maxBlocks);
-        password.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            string? range = parse.GetValue(blocks);
-            int characters = parse.GetValue(maxChars);
-            int count = parse.GetValue(maxBlocks);
-            OptionGuards.EnsureInRange("--max-chars", characters, 1, ReadContinuation.MaximumCharacters, "Use a positive bounded character budget.");
-            OptionGuards.EnsureInRange("--max-blocks", count, 1, 100_000, "Use a positive bounded block budget.");
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            var request = new DocumentReadRequest
+        return StandardCommand.Create(
+            host,
+            "blocks",
+            "Read a bounded, stable window of document blocks.",
+            new CommandTraits { Input = WordsCommands.Document },
+            [blocks, section, scope, .. maxChars.Options, maxBlocks],
+            (parse, standard) =>
             {
-                Blocks = range is null ? null : PageRange.Parse(range),
-                Section = parse.GetValue(section),
-                Scope = parse.GetValue(scope) ?? "text",
-                MaxCharacters = characters,
-                MaxBlocks = count,
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
-            };
-            DocumentReadResult result = context.Port.Read(input, request);
-            return result with { Next = Next(input, request, result) };
-        }));
-        return command;
+                string? range = parse.GetValue(blocks);
+                int characters = maxChars.Read(parse);
+                int count = parse.GetValue(maxBlocks);
+                OptionGuards.EnsureInRange("--max-blocks", count, 1, 100_000, "Use a positive bounded block budget.");
+                string input = standard.Input;
+                var request = new DocumentReadRequest
+                {
+                    Blocks = range is null ? null : PageRange.Parse(range),
+                    Section = parse.GetValue(section),
+                    Scope = parse.GetValue(scope) ?? "text",
+                    MaxCharacters = characters,
+                    MaxBlocks = count,
+                    Password = standard.InputPassword,
+                };
+                DocumentReadResult result = standard.Port.Read(input, request);
+                return result with { Next = Next(input, request, result) };
+            })
+            .WithExamples(
+            [
+                "words query blocks contract.docx --blocks 1-30 --scope full --output json",
+                "words query blocks contract.docx --section 2 --scope text",
+            ]);
     }
 
     /// <summary>
@@ -85,7 +83,7 @@ internal static class ReadCommand
 
         return next
             .Option("--scope", request.Scope)
-            .Option("--max-chars", continuation.MaxCharacters)
+            .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
             .Option("--max-blocks", request.MaxBlocks)
             .ToString();
     }

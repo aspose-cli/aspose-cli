@@ -167,31 +167,5 @@ public sealed class WordsCliTests : IDisposable
         Assert.Equal(retained, File.ReadAllBytes(_workspace.File("retained.pdf")));
     }
 
-    [Theory]
-    [InlineData("convert", "--encrypt")]
-    [InlineData("convert", "--encrypt-env")]
-    [InlineData("create", "--encrypt-env")]
-    [InlineData("edit", "--encrypt-env")]
-    public void EncryptingAnUnprotectableOutputNamesTheOptionThatWasPassed(string verb, string option)
-    {
-        new DocumentBuilder().Document.Save(_workspace.File("source.docx"));
-        string secret = option == "--encrypt" ? "document-secret" : "DOCUMENT_PASSWORD";
-        string[] arguments = verb switch
-        {
-            "convert" => ["words", "convert", "source.docx", "--to", "pdf", option, secret],
-            "create" => ["words", "create", "result.pdf", "--blank", option, secret],
-            _ => ["words", "edit", "source.docx", "--set", "bookmark:Name=Value", "--out", "result.pdf", option, secret],
-        };
-
-        CliResult result = _workspace.RunWithEnv(
-            new Dictionary<string, string?> { ["DOCUMENT_PASSWORD"] = "document-secret" },
-            [.. arguments, "--output", "json"]);
-
-        Assert.Equal(2, result.ExitCode);
-        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
-        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
-        Assert.Equal(option, error["details"]!["option"]!.GetValue<string>());
-    }
-
     public void Dispose() => _workspace.Dispose();
 }

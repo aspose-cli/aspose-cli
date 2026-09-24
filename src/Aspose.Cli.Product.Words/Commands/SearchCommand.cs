@@ -8,33 +8,34 @@ internal static class SearchCommand
 {
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
-        Argument<string> file = WordsOptions.File();
         var search = new SearchOptions(new SearchScopeGrammar(
             "Search scope: body (the main text, without the comments and footnotes it anchors), "
                 + "headersFooters, footnotes (with endnotes), comments or all.",
             WordsTextScopes.Names,
             WordsTextScopes.Body));
-        var password = new PasswordOptions("--password", "the document");
-
-        var command = new Command("search", "Search bounded document scopes with regex timeout protection.");
-        command.Arguments.Add(file);
-        search.AddTo(command);
-        password.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            SearchQuery query = search.Read(parse);
-            return context.Port.Search(
-                context.Paths.ResolveInput(parse.GetRequiredValue(file)),
-                new WordsSearchRequest
+        return StandardCommand.Create(
+            host,
+            "search",
+            "Search bounded document scopes with regex timeout protection.",
+            new CommandTraits { Input = WordsCommands.Document },
+            search.Options,
+            (parse, standard) =>
+            {
+                SearchQuery query = search.Read(parse);
+                return standard.Port.Search(standard.Input, new WordsSearchRequest
                 {
                     Pattern = query.Text.Pattern,
                     Regex = query.Text.Expression is not null,
                     CaseSensitive = query.Text.CaseSensitive,
                     Scope = query.Scope!,
                     MaxHits = query.MaxHits,
-                    Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                    Password = standard.InputPassword,
                 });
-        }));
-        return command;
+            })
+            .WithExamples(
+            [
+                "words query search contract.docx --pattern TODO --scope all",
+                "words query search contract.docx --pattern \"Section\\s+\\d+\" --regex --max-hits 20",
+            ]);
     }
 }

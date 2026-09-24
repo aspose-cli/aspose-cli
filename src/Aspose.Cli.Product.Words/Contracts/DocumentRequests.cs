@@ -71,7 +71,7 @@ public sealed record WordsEditRequest
     public string? Author { get; init; }
     public string? Password { get; init; }
     public string? EncryptPassword { get; init; }
-    public IReadOnlyDictionary<int, string>? OpSecrets { get; init; }
+    public IReadOnlyDictionary<string, string>? OpSecrets { get; init; }
 }
 
 /// <summary>Options for semantic document comparison.</summary>
@@ -110,6 +110,7 @@ public sealed record WordsExtractRequest
 {
     public required string What { get; init; }
     public required string OutputDirectory { get; init; }
+    public bool Overwrite { get; init; }
     public string? Password { get; init; }
 }
 

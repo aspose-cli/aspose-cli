@@ -562,6 +562,36 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
         Assert.Contains(extracted.Warnings!, warning => warning.Code == "LINKED_IMAGES_SKIPPED");
     }
 
+    [Fact]
+    public void Extract_ReplacesAnExistingFileOnlyWithOverwrite()
+    {
+        string input = _fixture.Temp.File("extract-overwrite.docx");
+        var builder = new DocumentBuilder();
+        builder.Writeln("Extracted text");
+        builder.Document.Save(input);
+        string directory = _fixture.Temp.File("extract-overwrite");
+        Directory.CreateDirectory(directory);
+        string existing = Path.Combine(directory, "document.txt");
+        File.WriteAllText(existing, "kept");
+
+        string kept = Assert.Single(_fixture.Engine.Extract(input, new WordsExtractRequest
+        {
+            What = "text",
+            OutputDirectory = directory,
+        }).Items).Path;
+        Assert.Equal(Path.Combine(directory, "document-2.txt"), kept);
+        Assert.Equal("kept", File.ReadAllText(existing));
+
+        string replaced = Assert.Single(_fixture.Engine.Extract(input, new WordsExtractRequest
+        {
+            What = "text",
+            OutputDirectory = directory,
+            Overwrite = true,
+        }).Items).Path;
+        Assert.Equal(existing, replaced);
+        Assert.Contains("Extracted text", File.ReadAllText(existing), StringComparison.Ordinal);
+    }
+
     private static bool HasHeader(string path, byte[] expected)
     {
         byte[] actual = new byte[expected.Length];

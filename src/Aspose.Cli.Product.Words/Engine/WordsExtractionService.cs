@@ -93,6 +93,8 @@ internal sealed class WordsExtractionService
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         using var guard = new ExtractionGuard(_resourceBudgets, request.OutputDirectory);
+        string Write(string name, byte[] bytes) =>
+            guard.Write(name, bytes.LongLength, stream => stream.Write(bytes), flatten: true, overwrite: request.Overwrite);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
         var items = new List<ExtractedItem>();
         var warnings = new List<Warning>();
@@ -111,7 +113,7 @@ internal sealed class WordsExtractionService
 
                 byte[] bytes = shape.ImageData.ImageBytes;
                 string extension = FileFormatUtil.ImageTypeToExtension(shape.ImageData.ImageType);
-                string path = guard.WriteAllBytes($"image-{++number:000}{extension}", bytes);
+                string path = Write($"image-{++number:000}{extension}", bytes);
                 items.Add(new ExtractedItem { Path = path, Kind = "image", SizeBytes = bytes.LongLength, Block = index.FindBlock(shape) });
             }
 
@@ -134,13 +136,13 @@ internal sealed class WordsExtractionService
                 comments,
                 ProductJsonContext.Definition.LocalOptions);
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(json);
-            string path = guard.WriteAllBytes("comments.json", bytes);
+            string path = Write("comments.json", bytes);
             items.Add(new ExtractedItem { Path = path, Kind = "comments", SizeBytes = bytes.LongLength });
         }
         else if (request.What == "text")
         {
             byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Lines(index.Entries.Select(static entry => entry.Node)));
-            string path = guard.WriteAllBytes("document.txt", bytes);
+            string path = Write("document.txt", bytes);
             items.Add(new ExtractedItem { Path = path, Kind = "text", SizeBytes = bytes.LongLength });
         }
         else

@@ -11,7 +11,6 @@ internal static class InfoCommand
 
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
-        Argument<string> file = WordsOptions.File();
         var preview = new Option<bool>("--preview") { Description = "Include a bounded outline preview." };
         var detail = new Option<string[]>("--detail")
         {
@@ -19,26 +18,22 @@ internal static class InfoCommand
             AllowMultipleArgumentsPerToken = true,
         }.WithInput(InputKind.None);
         detail.AcceptOnlyFromAmong(Details);
-        var password = new PasswordOptions("--password", "the document");
-        var fonts = new FontDirectoryOptions();
-
-        var command = new Command("inspect", "Show document structure, safety state and metadata.");
-        command.Arguments.Add(file);
-        command.Options.Add(preview);
-        command.Options.Add(detail);
-        password.AddTo(command);
-        fonts.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            using IDisposable fontScope = fonts.Use(parse, context);
-            return context.Port.GetInfo(input, new DocumentInfoRequest
+        return StandardCommand.Create(
+            host,
+            "inspect",
+            "Show document structure, safety state and metadata.",
+            new CommandTraits { Input = WordsCommands.Document, UsesFonts = true },
+            [preview, detail],
+            (parse, standard) => standard.Port.GetInfo(standard.Input, new DocumentInfoRequest
             {
                 IncludePreview = parse.GetValue(preview),
                 Details = parse.GetValue(detail),
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
-            });
-        }));
-        return command;
+                Password = standard.InputPassword,
+            }))
+            .WithExamples(
+            [
+                "words inspect contract.docx --output json",
+                "words inspect contract.docx --detail outline sections fields bookmarks --preview",
+            ]);
     }
 }

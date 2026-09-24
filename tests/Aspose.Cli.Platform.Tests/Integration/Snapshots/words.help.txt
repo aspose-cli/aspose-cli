@@ -48,9 +48,9 @@ Arguments:
   <right>  Changed document.
 
 Options:
+  --ignore-formatting                        Ignore formatting-only changes.
   -o, --out <out>                            Optional redline output; its extension selects the format, such as .docx or .pdf.
   --overwrite                                Replace the output file if it already exists.
-  --ignore-formatting                        Ignore formatting-only changes.
   --left-password <left-password>            Password for the original document. Discouraged: visible in the process list; prefer --left-password-env.
   --left-password-env <left-password-env>    Name of an environment variable holding the password for the original document.
   --right-password <right-password>          Password for the changed document. Discouraged: visible in the process list; prefer --right-password-env.
@@ -200,6 +200,7 @@ Arguments:
 Options:
   --what <comments|images|text> (REQUIRED)  images, comments or text (the visible block text, one line per paragraph).
   --out-dir <out-dir> (REQUIRED)            Safe extraction directory.
+  --overwrite                               Replace the output file if it already exists.
   --password <password>                     Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>             Name of an environment variable holding the password for the document.
   --password-stdin                          Read the password for the document from the first line of stdin.

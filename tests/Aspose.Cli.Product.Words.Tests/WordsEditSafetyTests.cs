@@ -73,6 +73,35 @@ public sealed class WordsEditSafetyTests
         Assert.False(FileFormatUtil.DetectFileFormat(output).IsEncrypted);
     }
 
+    [Fact]
+    public void ProtectionOperations_UseTheSecretOfTheVariableTheyName()
+    {
+        using var fixture = new WordsFixture();
+        string protectedPath = fixture.Temp.File("protected.docx");
+        string output = fixture.Temp.File("unprotected.docx");
+        var secrets = new Dictionary<string, string>
+        {
+            ["PROTECT_PASSWORD"] = OriginalPassword,
+            ["OTHER_PASSWORD"] = ReplacementPassword,
+        };
+        fixture.Engine.ApplyOps(
+            fixture.CreateReport(),
+            new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly", PasswordEnv = "PROTECT_PASSWORD" }] },
+            new WordsEditRequest { OutputPath = protectedPath, OpSecrets = secrets });
+
+        CliException wrong = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            protectedPath, Unprotect("OTHER_PASSWORD"),
+            new WordsEditRequest { OutputPath = fixture.Temp.File("wrong.docx"), OpSecrets = secrets }));
+        Assert.Equal(WordsDiagnostics.DocumentProtected, wrong.Code);
+        fixture.Engine.ApplyOps(
+            protectedPath, Unprotect("PROTECT_PASSWORD"),
+            new WordsEditRequest { OutputPath = output, OpSecrets = secrets });
+        Assert.Equal(ProtectionType.NoProtection, new Document(output).ProtectionType);
+
+        static WordsOpsBatch Unprotect(string variable) =>
+            new() { Ops = [new UnprotectOp { PasswordEnv = variable }] };
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

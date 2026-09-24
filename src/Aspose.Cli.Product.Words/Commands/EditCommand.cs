@@ -2,7 +2,6 @@ using System.CommandLine;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.Extensibility.Commanding;
 
 namespace Aspose.Cli.Product.Words.Commands;
 
@@ -28,47 +27,46 @@ internal static class EditCommand
             MailMergeOp { Path: not null } value => value with { Path = paths.ResolveInput(value.Path) },
             _ => op,
         },
+        SecretVariables = static op => [WordsOps.PasswordVariable(op)],
     };
 
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
-        Argument<string> file = WordsOptions.File("Document to edit.");
-        var edit = new BoundedEditCommand<WordsOp, WordsOpsBatch>(Definition);
         var trackChanges = new Option<bool>("--track-changes") { Description = "Track this batch as revisions." };
         var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);
-        var password = new PasswordOptions("--password", "the document");
-        var encrypt = new PasswordOptions("--encrypt", "the output document", allowStdin: false);
-        var fonts = new FontDirectoryOptions();
-
-        var command = new Command("edit", "Apply one validated, atomic Words operation batch.");
-        command.Arguments.Add(file);
-        edit.AddTo(command);
-        command.Options.Add(trackChanges);
-        command.Options.Add(author);
-        password.AddTo(command);
-        encrypt.AddTo(command);
-        fonts.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            BoundedEditInvocation<WordsOpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
-            encrypt.EnsureProtectable(parse, WordsFormats.ForOutput(invocation.Target.OutputPath), WordsFormats.EncryptIds);
-            using IDisposable fontScope = fonts.Use(parse, context);
-            return context.Port.ApplyOps(input, invocation.Batch, new WordsEditRequest
+        return new BoundedEditCommand<WordsOp, WordsOpsBatch>(Definition).Create(
+            host,
+            "edit",
+            "Apply one validated, atomic Words operation batch.",
+            new CommandTraits
             {
-                OutputPath = invocation.Target.OutputPath,
-                Overwrite = invocation.Target.Overwrite,
-                BackupPath = invocation.Target.BackupPath,
-                Options = invocation.Options,
-                Verify = invocation.Verify,
+                Input = WordsCommands.Document with { Description = "Document to edit." },
+                Encrypt = WordsCommands.EncryptedDocument,
+                UsesFonts = true,
+            },
+            [trackChanges, author],
+            (parse, edit, standard) => standard.Port.ApplyOps(standard.Input, edit.Batch, new WordsEditRequest
+            {
+                OutputPath = edit.Target.OutputPath,
+                Overwrite = edit.Target.Overwrite,
+                BackupPath = edit.Target.BackupPath,
+                Options = edit.Options,
+                Verify = edit.Verify,
                 TrackChanges = parse.GetValue(trackChanges),
                 Author = parse.GetValue(author),
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: !invocation.OpsFromStandardInput),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
-                OpSecrets = ResolveSecrets(invocation.Batch, context.ReadEnvironment),
-            });
-        }));
-        return command;
+                Password = standard.InputPassword,
+                EncryptPassword = standard.EncryptPassword(WordsFormats.ForOutput(edit.Target.OutputPath)),
+                OpSecrets = edit.Secrets,
+            }))
+            .WithExamples(
+            [
+                "words edit contract.docx --in-place --backup --verify --set \"bookmark:Client=Contoso\"",
+                "words edit contract.docx --in-place --backup --ops ops.json --verify",
+            ],
+            [
+                CommandHelpLink.Docs($"{WordsModule.Manifest.Id}/editing", "addressing and operation recipes"),
+                CommandHelpLink.Schema(WordsModule.Manifest.Operations.Single(), "the exact edit-batch contract"),
+            ]);
     }
 
     private static WordsOp ParseSet(string value)
@@ -84,33 +82,5 @@ internal static class EditCommand
             At = new WordsTarget { Bookmark = value[BookmarkPrefix.Length..equals] },
             Text = value[(equals + 1)..],
         };
-    }
-
-    private static IReadOnlyDictionary<int, string>? ResolveSecrets(WordsOpsBatch batch, Func<string, string?> readEnvironment)
-    {
-        var values = new Dictionary<int, string>();
-        for (int index = 0; index < batch.Ops.Count; index++)
-        {
-            string? variable = batch.Ops[index] switch
-            {
-                ProtectOp value => value.PasswordEnv,
-                UnprotectOp value => value.PasswordEnv,
-                _ => null,
-            };
-            if (variable is null)
-            {
-                continue;
-            }
-
-            string? secret = readEnvironment(variable);
-            if (string.IsNullOrEmpty(secret))
-            {
-                throw CliErrors.OptionInvalid("passwordEnv", $"environment variable '{variable}' is missing or empty", "Set it before running the edit.");
-            }
-
-            values[index] = secret;
-        }
-
-        return values.Count == 0 ? null : values;
     }
 }
