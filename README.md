@@ -42,11 +42,15 @@ each includes references and reproducible examples. `skill install` supports the
   envelope to stderr. `--verbose` adds structured diagnostics.
 - One input is admitted up to `--max-input-bytes` (default 1 GiB, at most 4 GiB); the other
   budgets are listed by `capabilities`.
-- A document never causes a network request. External resources are read only from ordinary
-  local files beneath the input directory, and each omitted resource is disclosed with
-  `REMOTE_RESOURCES_BLOCKED`. PDF HTML and Markdown input, and SVG images for PDF and Cells,
-  that name a network address are refused with `FEATURE_UNSUPPORTED`, because those SDK
-  importers fetch before any policy can stop them (see [KNOWN-ISSUES.md](KNOWN-ISSUES.md)).
+- A document never causes a network request unless you opt in. External resources are read
+  only from ordinary local files beneath the input directory, and each omitted resource is
+  disclosed with `REMOTE_RESOURCES_BLOCKED`. The PDF HTML and Markdown importers and SVG images
+  for PDF and Cells fetch before any policy can stop them (see [KNOWN-ISSUES.md](KNOWN-ISSUES.md)),
+  so input that names a network address or contains script is refused with
+  `FEATURE_UNSUPPORTED`. For trusted HTML, `pdf create --from-html --allow-network-resources`
+  lets the importer fetch and lists every address in `NETWORK_RESOURCES_REQUESTED`; combine it
+  with `--timeout`. `words convert page.html --to pdf` makes no request. Markdown for PDF may
+  reference only ordinary files beneath its own directory.
 
 ## App, Preview and MCP
 
