@@ -7,8 +7,9 @@ margins, headers, footers and page numbers. Without `--template`,
 `words create` uses the built-in A4 design: A4 pages, Calibri body text with
 Microsoft YaHei for CJK text, navy and teal headings with a rule under
 Heading 1, a teal-barred Quote style and a centered page number.
-`words create base.docx` writes that design as a starting point for a brand
-template.
+`words create base.docx --blank` writes that design as a starting point for a
+brand template. With `--template` and no content option, `words create` keeps
+the template's own body.
 
 To change the look, edit the template in Word once and reuse it. Do not
 correct a design paragraph by paragraph.

@@ -2,7 +2,7 @@
 
 Open the document in the local viewer and keep it live:
 
-```
+```powershell
 aspose-cli preview contract.docx --open --output json
 aspose-cli preview status --output json
 aspose-cli preview stop <id> --output json
@@ -21,8 +21,8 @@ closes everything and ends the service, which also ends itself once nothing
 has been rendered or looked at for a while.
 
 Opening the same file the same way returns the document already open
-(`reused: true`); a different view, license, password or font profile opens
-its own. A license the engine refuses fails that document alone and leaves
+(`reused: true`); a different view, effect, license, password or font profile
+opens its own. A license the engine refuses fails that document alone and leaves
 what is already open rendering.
 
 The page is for people: pages, an outline of the document's headings, zoom,

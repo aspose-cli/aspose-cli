@@ -2,9 +2,9 @@
 
 - `FILE_CORRUPT`: the input could not be parsed as a supported document. Verify its format and obtain an intact copy; truncated document containers require repair or replacement.
 - `FILE_LOCKED`: another application holds an exclusive file lock. Close that application and retry; this code does not mean the document is corrupt.
-
+- `FEATURE_UNSUPPORTED`: the document engine failed. Retry with a simplified copy or another output format; when other documents fail the same way, the local environment (for example its fonts) is the cause.
 - `PASSWORD_REQUIRED` / `PASSWORD_INVALID`: use `--password-env` or `--password-stdin`.
-- `DOCUMENT_PROTECTED`: inspect protection and explicitly unprotect using an environment-backed password.
+- `DOCUMENT_PROTECTED`: the `unprotect` password was wrong. Editing restrictions alone never block an edit; they report `PROTECTION_NOT_ENFORCED`.
 - `DOCUMENT_HAS_REVISIONS`: comparison inputs must be revision-free.
 - `BLOCK_NOT_FOUND`: run `words query blocks` again; block numbers are 1-based.
 - `ANCHOR_NOT_FOUND`: inspect headings/bookmarks or use a current block.

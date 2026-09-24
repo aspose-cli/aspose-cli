@@ -73,14 +73,17 @@ More: [document standards](references/document-standards.md).
    report what remains.
 4. Never claim a visual pass for pages you did not open. State the exact page
    coverage, and disclose tracked changes, signatures, macro loss, font
-   substitution and lossy conversion.
+   substitution (`aspose-cli fonts check output.docx --output json`) and
+   lossy conversion.
 
 Details: [verification](references/verification.md).
 
 ## Licensing
 
-Without a Words license, output carries `EVAL_MODE` and may contain evaluation
-text; disclose that with every delivered file. Install a license with
+Without a Words license, results carry `EVAL_MODE` and produced files carry
+evaluation text or watermarks; disclose that with every delivered file. `EVAL_INPUT_TRUNCATED`
+means evaluation mode loaded only part of an input, template or appended
+document, so the result is incomplete. Install a license with
 `aspose-cli license install Aspose.Words.lic --product words` and check the
 `words` entry of `aspose-cli license status --output json`.
 

@@ -10,7 +10,7 @@ Inline Markdown uses the same guarded local-resource policy as file loading. Rel
 
 Targets accept one of `block`, `blocks`, `bookmark`, `heading`, or `find`, with optional 1-based `nth`. Prefer bookmarks and headings for durable automation; inspect current block numbers immediately before using numeric targets.
 
-`set_text` accepts paragraphs only and preserves the paragraph style while replacing inline runs. Use `set_table_cell` for tables. With a `bookmark` target (or `--set bookmark:Name=text`), `set_text` replaces only the text the bookmark encloses, anywhere including table cells; the bookmark and the rest of its paragraph remain, and the new text takes the format of the bookmark's first run. A bookmark spanning several paragraphs becomes one paragraph. Insertion ops require `position: before|after`; v2 deliberately has no character-offset addressing.
+`set_text` accepts paragraphs only and preserves the paragraph style while replacing inline runs. Use `set_table_cell` for tables. With a `bookmark` target (or `--set bookmark:Name=text`), `set_text` replaces only the text the bookmark encloses, anywhere including table cells; the bookmark and the rest of its paragraph remain, and the new text takes the format of the bookmark's first run. A bookmark spanning several paragraphs becomes one paragraph. Insertion ops require `position: before|after`; there is no character-offset addressing.
 
 An edit preserves an encrypted input's password when the selected output format
 supports encryption. `--encrypt-env` explicitly replaces that password. Choosing
@@ -66,7 +66,7 @@ aspose-cli schema v2/words/ops
 
 | Op | Purpose |
 |---|---|
-| `replace_text` | Replace literal or timeout-bounded regex matches in body, headers/footers, comments or all content; supports `maxReplacements`. A regex replacement honors `$1` and `${name}`; write `$$` for a literal `$`. |
+| `replace_text` | Replace literal or timeout-bounded regex matches in `scope` `body` (default), `headersFooters`, `comments` or `all`; supports `maxReplacements`. A regex replacement honors `$1` and `${name}`; write `$$` for a literal `$`. |
 | `set_text` | Replace one or more paragraph bodies while keeping paragraph style. |
 | `insert_paragraphs` | Insert structured paragraphs before or after an original block; `listLevel` makes a paragraph a list item (in the anchor's list, or one new bullet list). |
 | `insert_markdown` | Import Markdown blocks before or after an original block. |

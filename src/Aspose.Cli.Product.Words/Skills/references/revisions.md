@@ -2,6 +2,8 @@
 
 Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
 `document.protection` and `document.signed` in the `words inspect` result.
+Editing a document that already has revisions reports `TRACKED_CHANGES_PRESENT`;
+disclose them.
 
 Use `--track-changes --author "Name"` when the requested edit must remain reviewable.
 `set_table_cell` supports tracked replacement while retaining the cell's structure;

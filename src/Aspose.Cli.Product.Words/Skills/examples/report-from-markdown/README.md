@@ -6,10 +6,11 @@ examples/report-from-markdown. The bundled
 
 ```powershell
 aspose-cli words create report.docx --markdown report.md --title "Quarterly Report" --output json
-aspose-cli words inspect report.docx --detail outline properties fonts --output json
+aspose-cli words inspect report.docx --detail outline properties sections --output json
 aspose-cli review report.docx --out report.review --output json
 ```
 
-The document contains a Summary heading and a two-row metrics table, using
-the built-in design's styles and A4 page setup. Open every image listed by
-the review before delivery and disclose evaluation output when applicable.
+The document contains a Summary heading and a metrics table with a header
+row and two data rows, using the built-in design's styles and A4 page setup.
+Open every image listed by the review before delivery and disclose evaluation
+output when applicable.

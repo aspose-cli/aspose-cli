@@ -33,6 +33,15 @@ aspose-cli review output.docx --out output.review-1 --output json
 
 Open every page image under the review directory, one by one; JSON success
 alone does not prove layout quality. `review.json` lists findings and
-`coverage.complete`; when coverage is incomplete, say so. Fix and review again
-into a new directory, for at most three rounds, then report any remaining
-defects.
+`coverage.complete`; when coverage is incomplete, say so. Review still writes
+its evidence but exits 8 when coverage is incomplete or a finding has `error`
+severity, such as `FONTS_MISSING_OR_SUBSTITUTED`. Fix and review again into a
+new directory, for at most three rounds, then report any remaining defects.
+
+```powershell
+aspose-cli fonts check output.docx --output json
+```
+
+`fonts check` lists the document's fonts that are unavailable here. Pass
+`--font-dir` to `fonts check` and `review` for fonts delivered beside the
+document; it adds to the system fonts.
