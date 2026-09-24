@@ -81,7 +81,7 @@
             "regex": { "type": "boolean" },
             "matchCase": { "type": "boolean" },
             "wholeWord": { "type": "boolean" },
-            "scope": { "enum": ["body", "headersFooters", "comments", "all"] },
+            "scope": { "enum": ["body", "headersFooters", "footnotes", "comments", "all"], "description": "body is the main text without the comments and footnotes it anchors; footnotes include endnotes. Field codes and text a tracked change deletes are never replaced." },
             "maxReplacements": { "type": "integer", "minimum": 1 }
           }
         },

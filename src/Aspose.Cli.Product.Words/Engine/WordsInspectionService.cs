@@ -90,8 +90,9 @@ internal sealed class WordsInspectionService
         TextSearch query = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
         var hits = new List<WordsSearchHit>();
         bool truncated = false;
-        IEnumerable<(Node Node, string Scope)> nodes = SearchNodes(loaded.Document, request.Scope);
-        foreach ((Node node, string scope) in nodes)
+        IEnumerable<(Node Node, string Scope)> units = WordsStories.In(loaded.Document, request.Scope)
+            .SelectMany(static story => WordsStories.Units(story.Story).Select(unit => (unit, story.Scope)));
+        foreach ((Node node, string scope) in units)
         {
             string text = WordsText.Of(node);
             if (!query.IsMatch(text))
@@ -124,53 +125,5 @@ internal sealed class WordsInspectionService
             License = EnvelopeParts.License(state),
             Warnings = InputWarnings(loaded),
         };
-    }
-
-    private static IEnumerable<(Node Node, string Scope)> SearchNodes(Document document, string scope)
-    {
-        if (scope is "body" or "all")
-        {
-            foreach (Section section in document.Sections)
-            {
-                foreach (Node node in section.Body.GetChildNodes(NodeType.Paragraph, true))
-                {
-                    // Comments and footnotes anchored in the body have their own scopes.
-                    if (node.GetAncestor(NodeType.Comment) is null && node.GetAncestor(NodeType.Footnote) is null)
-                    {
-                        yield return (node, "body");
-                    }
-                }
-            }
-        }
-
-        if (scope is "headers" or "all")
-        {
-            foreach (Section section in document.Sections)
-            {
-                foreach (HeaderFooter header in section.HeadersFooters)
-                {
-                    foreach (Node node in header.GetChildNodes(NodeType.Paragraph, true))
-                    {
-                        yield return (node, "headers");
-                    }
-                }
-            }
-        }
-
-        if (scope is "footnotes" or "all")
-        {
-            foreach (Node node in document.GetChildNodes(NodeType.Footnote, true))
-            {
-                yield return (node, "footnotes");
-            }
-        }
-
-        if (scope is "comments" or "all")
-        {
-            foreach (Node node in document.GetChildNodes(NodeType.Comment, true))
-            {
-                yield return (node, "comments");
-            }
-        }
     }
 }

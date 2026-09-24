@@ -19,28 +19,34 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// <summary>Owns text and block-content mutations.</summary>
 internal static class WordsContentOpHandlers
 {
+    /// <summary>
+    /// Replaces matches in the stories of the op's scope, as search reads them: field codes
+    /// and text a tracked change deletes are not text, and a match in a comment or footnote
+    /// belongs to that note's scope, not to the body or header that anchors it.
+    /// </summary>
     internal static long ReplaceText(Document document, ReplaceTextOp op)
     {
-        LimitedReplacingCallback? limiter = op.MaxReplacements is int maximum
-            ? new LimitedReplacingCallback(maximum)
-            : null;
+        var callback = new ScopedReplacingCallback(op.MaxReplacements);
         var options = new FindReplaceOptions
         {
             MatchCase = op.MatchCase,
             FindWholeWordsOnly = op.WholeWord,
             // A regex replacement honors $1 and ${name}; a literal one is inserted verbatim.
             UseSubstitutions = op.Regex,
-            ReplacingCallback = limiter,
+            IgnoreFieldCodes = true,
+            IgnoreDeleted = true,
+            ReplacingCallback = callback,
         };
         Regex pattern = op.Regex
             ? SafeRegex.Create(op.Find, op.MatchCase)
             : new Regex(Regex.Escape(op.Find), op.MatchCase ? RegexOptions.CultureInvariant : RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, SafeRegex.DefaultTimeout);
 
         long replaced = 0;
-        foreach (Aspose.Words.Range range in ReplacementRanges(document, op.Scope))
+        foreach ((CompositeNode story, _) in WordsStories.In(document, op.Scope).ToArray())
         {
-            replaced += range.Replace(pattern, op.Replace, options);
-            if (limiter?.LimitReached == true)
+            callback.Story = story;
+            replaced += story.Range.Replace(pattern, op.Replace, options);
+            if (callback.LimitReached)
             {
                 break;
             }
@@ -49,37 +55,18 @@ internal static class WordsContentOpHandlers
         return replaced;
     }
 
-    internal static IEnumerable<Aspose.Words.Range> ReplacementRanges(Document document, string scope)
-    {
-        switch (scope)
-        {
-            case "body":
-                return document.Sections.Cast<Section>().Select(static section => section.Body.Range);
-            case "headersFooters":
-                return document.Sections.Cast<Section>()
-                    .SelectMany(static section => section.HeadersFooters.Cast<HeaderFooter>())
-                    .Select(static headerFooter => headerFooter.Range);
-            case "comments":
-                return document.GetChildNodes(NodeType.Comment, true)
-                    .Cast<Comment>()
-                    .Select(static comment => comment.Range);
-            case "all":
-                return [document.Range];
-            default:
-                throw Invalid("replace_text scope must be body, headersFooters, comments, or all");
-        }
-    }
-
-    private sealed class LimitedReplacingCallback(int maximum) : IReplacingCallback
+    private sealed class ScopedReplacingCallback(int? maximum) : IReplacingCallback
     {
         private int _accepted;
+
+        public CompositeNode? Story { get; set; }
 
         public bool LimitReached => _accepted >= maximum;
 
         public ReplaceAction Replacing(ReplacingArgs args)
         {
             ArgumentNullException.ThrowIfNull(args);
-            if (_accepted >= maximum)
+            if (_accepted >= maximum || !ReferenceEquals(WordsStories.Of(args.MatchNode), Story))
             {
                 return ReplaceAction.Skip;
             }

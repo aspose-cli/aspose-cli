@@ -10,9 +10,10 @@ internal static class SearchCommand
     {
         Argument<string> file = WordsOptions.File();
         var search = new SearchOptions(new SearchScopeGrammar(
-            "Search scope: body, headers, footnotes, comments or all.",
-            ["body", "headers", "footnotes", "comments", "all"],
-            "body"));
+            "Search scope: body (the main text, without the comments and footnotes it anchors), "
+                + "headersFooters, footnotes (with endnotes), comments or all.",
+            WordsTextScopes.Names,
+            WordsTextScopes.Body));
         var password = new PasswordOptions("--password", "the document");
 
         var command = new Command("search", "Search bounded document scopes with regex timeout protection.");

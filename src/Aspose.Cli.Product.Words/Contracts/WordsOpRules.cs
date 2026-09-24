@@ -13,6 +13,8 @@ internal static class WordsOpRules
     internal static void ReplaceText(ReplaceTextOp op)
     {
         Require(op.Find.Length > 0, "'find' must not be empty");
+        Require(WordsTextScopes.Names.Contains(op.Scope, StringComparer.Ordinal),
+            $"'scope' must be one of {string.Join(", ", WordsTextScopes.Names)}");
         Require(op.MaxReplacements is null or > 0, "'maxReplacements' must be positive");
     }
 

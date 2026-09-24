@@ -37,7 +37,7 @@ public sealed record WordsTarget
 }
 
 /// <summary>Replace literal or regex text within a bounded document scope.</summary>
-public sealed record ReplaceTextOp(string Scope = "body") : WordsOp
+public sealed record ReplaceTextOp(string Scope = WordsTextScopes.Body) : WordsOp
 {
     public required string Find { get; init; }
     public required string Replace { get; init; }

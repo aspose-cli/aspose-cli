@@ -90,7 +90,7 @@ public sealed record WordsSearchRequest
     public required string Pattern { get; init; }
     public bool Regex { get; init; }
     public bool CaseSensitive { get; init; }
-    public string Scope { get; init; } = "body";
+    public string Scope { get; init; } = WordsTextScopes.Body;
     public int MaxHits { get; init; } = 100;
     public string? Password { get; init; }
 }
@@ -117,4 +117,21 @@ public sealed record WordsExtractRequest
 public static class DocumentReadScopes
 {
     public static IReadOnlyList<string> All { get; } = ["text", "outline", "full"];
+}
+
+/// <summary>
+/// The text scopes <c>query search</c> and <c>replace_text</c> share: <c>body</c> is the main
+/// text without the comments and footnotes it anchors, <c>headersFooters</c> every header and
+/// footer, <c>footnotes</c> every footnote and endnote, <c>comments</c> every comment, and
+/// <c>all</c> all of them.
+/// </summary>
+public static class WordsTextScopes
+{
+    public const string Body = "body";
+    public const string HeadersFooters = "headersFooters";
+    public const string Footnotes = "footnotes";
+    public const string Comments = "comments";
+    public const string All = "all";
+
+    public static IReadOnlyList<string> Names { get; } = [Body, HeadersFooters, Footnotes, Comments, All];
 }

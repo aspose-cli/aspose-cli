@@ -18,7 +18,7 @@
         "properties": {
           "block": { "type": "integer", "minimum": 0 },
           "section": { "type": "integer", "minimum": 0 },
-          "scope": { "type": "string" },
+          "scope": { "enum": ["body", "headersFooters", "footnotes", "comments"] },
           "snippet": { "type": "string" }
         }
       }

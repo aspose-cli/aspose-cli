@@ -66,7 +66,7 @@ aspose-cli schema v2/words/ops
 
 | Op | Purpose |
 |---|---|
-| `replace_text` | Replace literal or timeout-bounded regex matches in `scope` `body` (default), `headersFooters`, `comments` or `all`; supports `maxReplacements`. A regex replacement honors `$1` and `${name}`; write `$$` for a literal `$`. |
+| `replace_text` | Replace literal or timeout-bounded regex matches in `scope` `body` (default), `headersFooters`, `footnotes`, `comments` or `all`, the scopes of `query search`; supports `maxReplacements`. It changes the text a reader sees: field results but never field codes, and never text a tracked change deletes. A regex replacement honors `$1` and `${name}`; write `$$` for a literal `$`. |
 | `set_text` | Replace one or more paragraph bodies while keeping paragraph style. |
 | `insert_paragraphs` | Insert structured paragraphs before or after an original block; `listLevel` makes a paragraph a list item (in the anchor's list, or one new bullet list). |
 | `insert_markdown` | Import Markdown blocks before or after an original block. |

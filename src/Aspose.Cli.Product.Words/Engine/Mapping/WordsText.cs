@@ -48,6 +48,12 @@ internal static class WordsText
 
                     return;
                 case CompositeNode composite:
+                    // A nested paragraph, such as a text box's, starts on a line of its own.
+                    if (current is Paragraph && text.Length > 0 && text[^1] != ControlChar.ParagraphBreakChar)
+                    {
+                        text.Append(ControlChar.ParagraphBreakChar);
+                    }
+
                     for (Node? child = composite.FirstChild; child is not null; child = child.NextSibling)
                     {
                         Append(child, isRoot: false);
