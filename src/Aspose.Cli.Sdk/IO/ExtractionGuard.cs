@@ -47,13 +47,6 @@ public sealed class ExtractionGuard : IDisposable
     public string WriteAllBytes(string suggestedName, byte[] bytes) =>
         Write(suggestedName, bytes.LongLength, stream => stream.Write(bytes), flatten: true);
 
-    public string CopyFile(string suggestedName, string sourcePath) =>
-        Write(suggestedName, new FileInfo(sourcePath).Length, output =>
-        {
-            using var input = File.OpenRead(sourcePath);
-            input.CopyTo(output);
-        }, flatten: true);
-
     public string Write(string suggestedPath, long sizeBytes, Action<Stream> write, bool flatten = false, bool overwrite = false)
     {
         ArgumentNullException.ThrowIfNull(write);

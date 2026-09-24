@@ -10,13 +10,6 @@ using Microsoft.Win32.SafeHandles;
 
 namespace Aspose.Cli.Sdk.IO;
 
-internal enum FilePublicationDurability
-{
-    None,
-    File,
-    FileAndDirectory,
-}
-
 internal enum PublicationTransactionState
 {
     Created,
@@ -323,9 +316,10 @@ internal sealed record FilePublicationSnapshot(
                 && PhysicalIdentity is null;
 }
 
-internal static class FilePublicationDurabilityAdapter
+/// <summary>Flushes a written file's data to disk before the CLI relies on it.</summary>
+internal static class DurableFile
 {
-    public static void FlushFile(string path)
+    public static void Flush(string path)
     {
         using FileStream stream = new(
             path,
@@ -333,42 +327,6 @@ internal static class FilePublicationDurabilityAdapter
             FileAccess.Read,
             FileShare.Read | FileShare.Delete);
         stream.Flush(flushToDisk: true);
-    }
-
-    public static void FlushDirectory(string directory)
-    {
-        try
-        {
-            using SafeFileHandle handle = File.OpenHandle(
-                directory,
-                FileMode.Open,
-                FileAccess.Read,
-                FileShare.ReadWrite | FileShare.Delete,
-                FileOptions.None);
-            RandomAccess.FlushToDisk(handle);
-        }
-        catch (Exception exception) when (
-            exception is UnauthorizedAccessException
-                or IOException
-                or PlatformNotSupportedException)
-        {
-            throw new PlatformNotSupportedException(
-                $"Directory durability is not available for '{directory}' on this file system.",
-                exception);
-        }
-    }
-
-    public static void Flush(string file, FilePublicationDurability durability)
-    {
-        if (durability is FilePublicationDurability.File or FilePublicationDurability.FileAndDirectory)
-        {
-            FlushFile(file);
-        }
-
-        if (durability == FilePublicationDurability.FileAndDirectory)
-        {
-            FlushDirectory(Path.GetDirectoryName(file)!);
-        }
     }
 }
 
@@ -540,7 +498,7 @@ internal sealed class PublicationJournal
         using var temporary = OwnedTemporaryFile.Create(tempPath);
         File.WriteAllText(tempPath, contents);
         temporary.BindProducedFile();
-        FilePublicationDurabilityAdapter.FlushFile(tempPath);
+        DurableFile.Flush(tempPath);
         FilePublicationSnapshot staged =
             FilePublicationSnapshot.Capture(tempPath);
         FilePublicationSnapshot current =
@@ -557,7 +515,7 @@ internal sealed class PublicationJournal
             throw new IOException(
                 $"Publication journal '{path}' changed during atomic replacement.");
         }
-        FilePublicationDurabilityAdapter.FlushFile(path);
+        DurableFile.Flush(path);
     }
 }
 

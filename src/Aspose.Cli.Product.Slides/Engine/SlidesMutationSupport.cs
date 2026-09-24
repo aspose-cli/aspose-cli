@@ -54,7 +54,7 @@ internal static class SlidesMutationSupport
         string[] available = slide.Shapes.Take(30)
             .Select(item => $"{item.OfficeInteropShapeId}:{item.Name}")
             .ToArray();
-        ErrorCode code = op.Placeholder is null ? ErrorCodes.ShapeNotFound : SlidesDiagnostics.PlaceholderNotFound;
+        ErrorCode code = op.Placeholder is null ? SlidesDiagnostics.ShapeNotFound : SlidesDiagnostics.PlaceholderNotFound;
         throw new CliException(
             code,
             op.Placeholder is null
@@ -73,7 +73,7 @@ internal static class SlidesMutationSupport
         ILayoutSlide? layout = presentation.LayoutSlides.FirstOrDefault(item =>
             string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
         return layout ?? throw new CliException(
-            ErrorCodes.LayoutNotFound,
+            SlidesDiagnostics.LayoutNotFound,
             $"Layout '{name}' was not found.",
             hint: "Run 'slides inspect --detail layouts' and use an available layout name.",
             details: new JsonObject

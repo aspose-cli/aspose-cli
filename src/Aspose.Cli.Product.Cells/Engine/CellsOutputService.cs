@@ -298,7 +298,7 @@ internal sealed class CellsOutputService
                 });
             }
             catch (CliException ex) when (
-                ex.Code == ErrorCodes.RenderEmpty || ex.Code == ErrorCodes.RenderFailed)
+                ex.Code == CellsDiagnostics.RenderEmpty || ex.Code == ErrorCodes.RenderFailed)
             {
                 // Only this sheet's own content is at fault; its siblings can
                 // still render. Record the reason and carry on.

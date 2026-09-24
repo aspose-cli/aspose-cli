@@ -63,7 +63,7 @@ public sealed class SlidesShapeAddressingTests
             },
             new PresentationEditRequest { OutputPath = output }));
 
-        Assert.Equal(ErrorCodes.ShapeNotFound, error.Code);
+        Assert.Equal(SlidesDiagnostics.ShapeNotFound, error.Code);
         Assert.Contains("slides query slides", error.Hint!, StringComparison.Ordinal);
         Assert.Contains("Title 2", error.Details!.ToJsonString(), StringComparison.Ordinal);
         Assert.Equal(original, File.ReadAllBytes(input));

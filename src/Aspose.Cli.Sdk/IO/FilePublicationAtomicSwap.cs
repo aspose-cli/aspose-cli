@@ -5,30 +5,6 @@ namespace Aspose.Cli.Sdk.IO;
 /// <summary>Publishes one staged file while preserving the exact displaced target.</summary>
 internal static class FilePublicationAtomicSwap
 {
-    public static FilePublicationSnapshot RestoreFromBackup(
-        string backup,
-        string target,
-        FilePublicationSnapshot expectedTarget,
-        FilePublicationSnapshot original)
-    {
-        string restore = CreateSiblingPath(target, "restore");
-        using var temporary = OwnedTemporaryFile.Create(restore);
-        File.Copy(backup, restore, overwrite: true);
-        temporary.BindProducedFile();
-        temporary.FlushBound();
-        FilePublicationSnapshot verifiedStage =
-            temporary.CaptureBoundSnapshot();
-        FilePublicationSnapshot published = Publish(
-            restore,
-            target,
-            overwrite: true,
-            expectedTarget,
-            original,
-            expectedStage: verifiedStage);
-        temporary.MarkPublished();
-        return published;
-    }
-
     public static FilePublicationSnapshot Publish(
         string temporary,
         string target,

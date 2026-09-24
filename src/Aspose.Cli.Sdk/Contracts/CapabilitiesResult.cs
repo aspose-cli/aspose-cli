@@ -169,23 +169,6 @@ public sealed record ProductEngineCapabilities
     public required bool SupportsFontDiagnostics { get; init; }
     public bool SupportsExplicitFontProfiles { get; init; }
 
-    /// <summary>Creates the invariant descriptor used by a license-free engine.</summary>
-    public static ProductEngineCapabilities LicenseFree(
-        string id,
-        string sdk,
-        string sdkVersion,
-        bool supportsFontDiagnostics = false,
-        bool supportsExplicitFontProfiles = false) => new()
-        {
-            Id = id,
-            Sdk = sdk,
-            SdkVersion = sdkVersion,
-            LicenseApplicable = false,
-            LicenseRequired = false,
-            SupportsFontDiagnostics = supportsFontDiagnostics,
-            SupportsExplicitFontProfiles = supportsExplicitFontProfiles,
-        };
-
     /// <summary>Creates the invariant descriptor used by a license-aware engine.</summary>
     public static ProductEngineCapabilities LicenseAware(
         string id,

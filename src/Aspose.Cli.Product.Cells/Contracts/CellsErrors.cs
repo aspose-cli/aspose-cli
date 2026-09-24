@@ -36,7 +36,7 @@ public static class CellsErrors
         long requestedCells,
         int maxCells,
         string suggestion) => new(
-        ErrorCodes.RangeTooLarge,
+        CellsDiagnostics.RangeTooLarge,
         $"The request covers {requestedCells} cells which exceeds the limit of {maxCells}.",
         hint: suggestion,
         details: new JsonObject
@@ -46,7 +46,7 @@ public static class CellsErrors
         });
 
     internal static CliException RenderEmpty(string sheetName) => new(
-        ErrorCodes.RenderEmpty,
+        CellsDiagnostics.RenderEmpty,
         $"Sheet '{sheetName}' has no content to render.",
         hint: "Choose a sheet that has data with --sheet; 'aspose-cli cells inspect' lists each sheet's used range.",
         details: new JsonObject { ["sheet"] = sheetName });

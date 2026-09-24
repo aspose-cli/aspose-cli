@@ -116,7 +116,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         string backup = entry.Backup
             ?? throw new InvalidOperationException($"Publication entry '{entry.Target}' has no backup path.");
         File.Copy(entry.Target, backup, overwrite: false);
-        FilePublicationDurabilityAdapter.FlushFile(backup);
+        DurableFile.Flush(backup);
         entry.Original.Metadata?.ApplyContentAttributes(backup);
         if (!entry.Original.ContentMatches(backup))
         {
@@ -145,7 +145,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
         }
 
         File.Copy(entry.Target, requestedBackup, overwrite: false);
-        FilePublicationDurabilityAdapter.FlushFile(requestedBackup);
+        DurableFile.Flush(requestedBackup);
         entry.Original.Metadata?.ApplyContentAttributes(requestedBackup);
         OutputPathValidator.EnsureParentUnchanged(
             requestedBackup,

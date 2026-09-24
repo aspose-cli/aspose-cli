@@ -265,7 +265,6 @@ public sealed record SlidesEditResult() : ResultEnvelope(SlidesSchemaIds.EditRes
     public bool HasFailures => Applied.Any(static op => op.Status == "failed");
 }
 
-/// <summary>Outcome of one operation in an edit batch.</summary>
 /// <summary>Bounded presentation search result.</summary>
 public sealed record SlidesSearchResult() : ResultEnvelope(SlidesSchemaIds.SearchResult, 2)
 {

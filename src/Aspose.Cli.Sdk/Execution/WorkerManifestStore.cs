@@ -44,7 +44,7 @@ internal static class WorkerManifestStore
         _ = ValidateSessionPaths(Path.GetDirectoryName(manifestPath)!, manifestPath, false);
         string contents = CheckCapacity(manifest);
         PrivateUserStorage.WriteAllText(manifestPath, contents);
-        FilePublicationDurabilityAdapter.FlushFile(manifestPath);
+        DurableFile.Flush(manifestPath);
     }
 
     internal static string CheckCapacity(WorkerOutputManifest manifest)

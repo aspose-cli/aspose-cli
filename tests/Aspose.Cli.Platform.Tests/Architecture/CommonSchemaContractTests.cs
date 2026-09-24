@@ -164,9 +164,6 @@ public sealed class CommonSchemaContractTests
                 "v2/common/file-fingerprint",
                 """{"sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}"""),
             (
-                "v2/common/product-issue",
-                """{"code":"SHEET_NOT_FOUND","severity":"error","message":"Worksheet was not found.","hint":"Use an existing worksheet name."}"""),
-            (
                 "v2/common/mutation-receipt",
                 """{"verification":"reopened"}"""),
             (

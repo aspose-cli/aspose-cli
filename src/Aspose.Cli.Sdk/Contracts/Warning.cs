@@ -37,28 +37,18 @@ public static partial class WarningCodes
     /// </summary>
     public const string EvalMode = "EVAL_MODE";
 
-    public const string FontSubstituted = "FONT_SUBSTITUTED";
     public const string RemoteResourcesBlocked = "REMOTE_RESOURCES_BLOCKED";
-    public const string ResourceOutsideRoot = "RESOURCE_OUTSIDE_ROOT";
-    public const string ResourceNotFound = "RESOURCE_NOT_FOUND";
     public const string LossyConversion = "LOSSY_CONVERSION";
     public const string SignatureInvalidated = "SIGNATURE_INVALIDATED";
     public const string EvalInputTruncated = "EVAL_INPUT_TRUNCATED";
-    public const string LowConfidence = "LOW_CONFIDENCE";
-    public const string PreviewStateUnavailable = "PREVIEW_STATE_UNAVAILABLE";
 
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
         EvalMode,
-        FontSubstituted,
         RemoteResourcesBlocked,
-        ResourceOutsideRoot,
-        ResourceNotFound,
         LossyConversion,
         SignatureInvalidated,
         EvalInputTruncated,
-        LowConfidence,
-        PreviewStateUnavailable,
     ];
 }

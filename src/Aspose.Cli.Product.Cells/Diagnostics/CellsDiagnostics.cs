@@ -9,6 +9,12 @@ internal static class CellsDiagnostics
         new("SHEET_NOT_FOUND", ExitCode.ValidationError);
     internal static readonly ErrorCode RangeInvalid =
         new("RANGE_INVALID", ExitCode.ValidationError);
+    /// <summary>An explicit read range exceeds the --max-cells budget.</summary>
+    internal static readonly ErrorCode RangeTooLarge =
+        new("RANGE_TOO_LARGE", ExitCode.ValidationError);
+    /// <summary>The selected sheet has no content to render.</summary>
+    internal static readonly ErrorCode RenderEmpty =
+        new("RENDER_EMPTY", ExitCode.ValidationError);
 
     internal const string SheetsDropped = "SHEETS_DROPPED";
     internal const string SheetsSkipped = "SHEETS_SKIPPED";
@@ -22,6 +28,8 @@ internal static class CellsDiagnostics
     [
         Error(SheetNotFound),
         Error(RangeInvalid),
+        Error(RangeTooLarge),
+        Error(RenderEmpty),
         Warning(SheetsDropped),
         Warning(SheetsSkipped),
         Warning(DataTruncated),

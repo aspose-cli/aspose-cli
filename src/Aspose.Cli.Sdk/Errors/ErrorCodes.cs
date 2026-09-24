@@ -51,21 +51,12 @@ public static partial class ErrorCodes
 
     // -- Domain validation (exit 4) ------------------------------------------
 
-    /// <summary>The requested range exceeds the configured cell budget.</summary>
-    public static readonly ErrorCode RangeTooLarge = new("RANGE_TOO_LARGE", ExitCode.ValidationError);
-
     /// <summary>
-    /// The image a render would produce is too large to rasterize. Distinct
-    /// from <see cref="RangeTooLarge"/>: this is about output pixels, so a
-    /// small range at a high dpi can trip it while a big one at 96 does not.
+    /// The image a render would produce is too large to rasterize. This is about
+    /// output pixels, so a small selection at a high dpi can trip it while a big
+    /// one at 96 does not.
     /// </summary>
     public static readonly ErrorCode RenderTooLarge = new("RENDER_TOO_LARGE", ExitCode.ValidationError);
-
-    /// <summary>
-    /// The selected document or region contains no renderable pages, slides,
-    /// sheets, or objects.
-    /// </summary>
-    public static readonly ErrorCode RenderEmpty = new("RENDER_EMPTY", ExitCode.ValidationError);
 
     /// <summary>
     /// The engine failed while rasterizing selected content. The input can
@@ -80,15 +71,10 @@ public static partial class ErrorCodes
     public static readonly ErrorCode PageRangeInvalid = new("PAGE_RANGE_INVALID", ExitCode.ValidationError);
     public static readonly ErrorCode PageNotFound = new("PAGE_NOT_FOUND", ExitCode.ValidationError);
     public static readonly ErrorCode ExtractBudgetExceeded = new("EXTRACT_BUDGET_EXCEEDED", ExitCode.ValidationError);
-    public static readonly ErrorCode ShapeNotFound = new("SHAPE_NOT_FOUND", ExitCode.ValidationError);
-    public static readonly ErrorCode LayerNotFound = new("LAYER_NOT_FOUND", ExitCode.ValidationError);
-    public static readonly ErrorCode LayoutNotFound = new("LAYOUT_NOT_FOUND", ExitCode.ValidationError);
     public static readonly ErrorCode PreviewBudgetExceeded =
         new("PREVIEW_BUDGET_EXCEEDED", ExitCode.ValidationError);
     public static readonly ErrorCode UploadBudgetExceeded =
         new("UPLOAD_BUDGET_EXCEEDED", ExitCode.ValidationError);
-    public static readonly ErrorCode RectInvalid = new("RECT_INVALID", ExitCode.ValidationError);
-    public static readonly ErrorCode RegionInvalid = new("REGION_INVALID", ExitCode.ValidationError);
     /// <summary>The selected distribution or product does not use Aspose licensing.</summary>
     public static readonly ErrorCode LicenseNotApplicable =
         new("LICENSE_NOT_APPLICABLE", ExitCode.ValidationError);
@@ -106,10 +92,6 @@ public static partial class ErrorCodes
     /// <summary>A multi-file publication failed but verified recovery completed.</summary>
     public static readonly ErrorCode OutputPublicationFailed = new("OUTPUT_PUBLICATION_FAILED", ExitCode.OutputError);
 
-    /// <summary>An Office engine changed a package part outside the operation's proven closure.</summary>
-    public static readonly ErrorCode UnexpectedPackageMutation =
-        new("UNEXPECTED_PACKAGE_MUTATION", ExitCode.OutputError);
-
     public static readonly ErrorCode ReleaseVerificationFailed =
         new("RELEASE_VERIFICATION_FAILED", ExitCode.OutputError);
 
@@ -126,9 +108,6 @@ public static partial class ErrorCodes
     /// <summary>The platform refused or could not create a loopback HTTP listener.</summary>
     public static readonly ErrorCode LoopbackListenerUnavailable = new("LOOPBACK_LISTENER_UNAVAILABLE", ExitCode.OutputError);
 
-    /// <summary>An expected local App startup stage could not be completed.</summary>
-    public static readonly ErrorCode AppStartupFailed = new("APP_STARTUP_FAILED", ExitCode.OutputError);
-
     /// <summary>
     /// The App, or the per-user service that hosts it and live previews, is
     /// transitioning or held by another instance and cannot take the request.
@@ -144,7 +123,6 @@ public static partial class ErrorCodes
     /// <summary>Multiple products strongly recognize the same unowned input.</summary>
     public static readonly ErrorCode FormatAmbiguous = new("FORMAT_AMBIGUOUS", ExitCode.FormatError);
     public static readonly ErrorCode FeatureUnsupported = new("FEATURE_UNSUPPORTED", ExitCode.FormatError);
-    public static readonly ErrorCode EngineUnknown = new("ENGINE_UNKNOWN", ExitCode.Usage);
 
     // -- License problems (exit 7) -------------------------------------------
 
@@ -197,39 +175,29 @@ public static partial class ErrorCodes
         InputChanged,
         InputEncodingInvalid,
         FileAccessDenied,
-        RangeTooLarge,
         RenderTooLarge,
-        RenderEmpty,
         RenderFailed,
         OpsInvalid,
         PageRangeInvalid,
         PageNotFound,
         ExtractBudgetExceeded,
-        ShapeNotFound,
-        LayerNotFound,
-        LayoutNotFound,
         PreviewBudgetExceeded,
         UploadBudgetExceeded,
-        RectInvalid,
-        RegionInvalid,
         LicenseNotApplicable,
         OutputExists,
         OutputUnwritable,
         OutputConflict,
         OutputPublicationFailed,
-        UnexpectedPackageMutation,
         ReleaseVerificationFailed,
         ReleaseTrustUnavailable,
         ReleaseFeedUnavailable,
         LoopbackPortInUse,
         LoopbackListenerUnavailable,
-        AppStartupFailed,
         AppBusy,
         FormatUnsupported,
         FormatMismatch,
         FormatAmbiguous,
         FeatureUnsupported,
-        EngineUnknown,
         LicenseFileNotFound,
         LicenseInvalid,
         EvaluationLimit,

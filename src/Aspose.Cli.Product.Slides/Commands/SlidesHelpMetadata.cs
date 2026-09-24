@@ -21,8 +21,4 @@ internal static class SlidesHelpMetadata
                 new("aspose-cli schema v2/slides/ops", "the operation JSON schema"),
             ]);
     }
-
-    private static Command Find(Command root, string name) =>
-        root.Subcommands.Single(command =>
-            string.Equals(command.Name, name, StringComparison.Ordinal));
 }

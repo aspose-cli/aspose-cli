@@ -136,25 +136,6 @@ public sealed class InputSource
             "stdin-decode");
     }
 
-    /// <summary>
-    /// Reads derived user-controlled content (for example a package part)
-    /// through both the shared memory-byte and decoded-character budgets.
-    /// </summary>
-    public string ReadDerivedText(Stream stream, string phase)
-    {
-        ArgumentNullException.ThrowIfNull(stream);
-        ArgumentException.ThrowIfNullOrWhiteSpace(phase);
-        var bounded = new BoundedReadStream(
-            stream,
-            _budgets,
-            ResourceBudgetKinds.MemoryBufferBytes,
-            phase);
-        return ReadText(
-            bounded,
-            ResourceBudgetKinds.DecodedTextCharacters,
-            phase);
-    }
-
     public string ReadSecretLine(TextReader reader)
     {
         ArgumentNullException.ThrowIfNull(reader);
