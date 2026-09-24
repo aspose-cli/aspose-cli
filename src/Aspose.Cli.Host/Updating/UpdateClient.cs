@@ -236,7 +236,7 @@ internal static class UpdateClient
             }
         }
 
-        foreach (string required in new[] { "aspose-cli.exe", "install.ps1", "SHA256SUMS" })
+        foreach (string required in new[] { DistributionInfo.ExecutableName, "install.ps1", "SHA256SUMS" })
         {
             if (!File.Exists(Path.Combine(root, required)))
             {

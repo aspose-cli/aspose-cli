@@ -1,5 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Host.Output;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Host.Invocation;
@@ -10,9 +11,9 @@ namespace Aspose.Cli.Host.Invocation;
 /// </summary>
 internal static class ProcessFailureBoundary
 {
-    private const string BootstrapFailureEnvelope = """
+    private const string BootstrapFailureEnvelope = $$"""
         {
-          "schema": "https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json",
+          "schema": "{{CommonSchemaIds.Error}}",
           "schemaVersion": 2,
           "error": {
             "code": "INTERNAL_ERROR",

@@ -4,6 +4,7 @@ using System.Net.Sockets;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Execution;
 
@@ -36,7 +37,7 @@ internal sealed record LocalServiceControlEndpoint(
     string InstanceId)
 {
     public string PipeName =>
-        $"aspose-cli-{Service}-{Digest()}";
+        $"{DistributionInfo.Id}-{Service}-{Digest()}";
 
     public string UnixSocketPath => Path.Combine(
         PrivateUserStorage.EnsureDirectory(Path.Combine(

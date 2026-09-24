@@ -1,9 +1,11 @@
+using Aspose.Cli.Sdk;
+
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>Stable schema identifiers owned by the PDF product.</summary>
 public static class PdfSchemaIds
 {
-    private const string BaseUri = "https://schemas.aspose.dev/aspose-cli/v2/pdf/";
+    private const string BaseUri = DistributionInfo.SchemaBaseUri + ProductBuildMetadata.ProductId + "/";
     public const string PdfInfo = BaseUri + "pdf-info.schema.json";
     public const string PdfRead = BaseUri + "pdf-read.schema.json";
     public const string ConvertResult = BaseUri + "convert-result.schema.json";

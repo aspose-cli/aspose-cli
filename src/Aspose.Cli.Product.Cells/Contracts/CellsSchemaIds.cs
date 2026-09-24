@@ -1,9 +1,11 @@
+using Aspose.Cli.Sdk;
+
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>Canonical schema identifiers owned by the Cells product.</summary>
 public static class CellsSchemaIds
 {
-    private const string Base = "https://schemas.aspose.dev/aspose-cli/v2/cells/";
+    private const string Base = DistributionInfo.SchemaBaseUri + ProductBuildMetadata.ProductId + "/";
 
     public const string WorkbookInfo = Base + "workbook-info.schema.json";
     public const string WorkbookRead = Base + "workbook-read.schema.json";

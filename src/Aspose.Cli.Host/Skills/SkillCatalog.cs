@@ -3,6 +3,7 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Host.LocalServices;
@@ -55,7 +56,7 @@ internal sealed record BundledSkill(
     IReadOnlyList<string> ResourceNames)
 {
     private const string ManifestName = ".aspose-skill-manifest.json";
-    private const string ManifestProductId = "aspose-cli-skill";
+    private const string ManifestProductId = DistributionInfo.SkillManifestProductId;
     private static readonly TimeSpan InstallLockTimeout = TimeSpan.FromSeconds(5);
 
     /// <summary>

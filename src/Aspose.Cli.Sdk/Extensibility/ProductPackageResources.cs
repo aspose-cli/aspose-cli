@@ -16,7 +16,7 @@ public sealed class ProductPackageResources
         ArgumentNullException.ThrowIfNull(assembly);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
         string[] names = assembly.GetManifestResourceNames();
-        string expectedSkill = "aspose-cli-" + productId;
+        string expectedSkill = DistributionInfo.SkillPrefix + productId;
         string skillResource = $"skill/{expectedSkill}/SKILL.md";
         string? skillName = null;
         string? skillDescription = null;

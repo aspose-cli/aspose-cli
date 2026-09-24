@@ -1,9 +1,11 @@
+using Aspose.Cli.Sdk;
+
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>Canonical schema identifiers owned by the Words product.</summary>
 public static class WordsSchemaIds
 {
-    private const string Base = "https://schemas.aspose.dev/aspose-cli/v2/words/";
+    private const string Base = DistributionInfo.SchemaBaseUri + ProductBuildMetadata.ProductId + "/";
 
     public const string DocumentInfo = Base + "document-info.schema.json";
     public const string DocumentRead = Base + "document-read.schema.json";

@@ -9,7 +9,7 @@ namespace Aspose.Cli.Sdk.Configuration;
 public static class ConfigurationPaths
 {
     public const string EnvironmentVariableName = DistributionInfo.EnvironmentVariablePrefix + "CONFIG_DIR";
-    private const string OwnerFileName = ".aspose-cli-config.json";
+    private const string OwnerFileName = DistributionInfo.ConfigurationOwnerName;
 
     public static string UserDirectory()
     {

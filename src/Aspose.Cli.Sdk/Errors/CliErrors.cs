@@ -23,7 +23,7 @@ public static partial class CliErrors
         return new CliException(
             ErrorCodes.UsageError,
             string.Join("; ", problems),
-            hint: "Run the command again with --help for usage; 'aspose-cli --help' lists the commands and 'aspose-cli docs' the documentation topics.",
+            hint: $"Run the command again with --help for usage; '{DistributionInfo.CommandName} --help' lists the commands and '{DistributionInfo.CommandName} docs' the documentation topics.",
             details: new JsonObject { ["errors"] = errors });
     }
 
@@ -351,7 +351,7 @@ public static partial class CliErrors
             : "The platform could not create the loopback HTTP listener.",
         hint: permissionDenied
             ? "Allow the current user to bind loopback HTTP listeners, then retry."
-            : "Run 'aspose-cli doctor', verify loopback networking, and retry.",
+            : $"Run '{DistributionInfo.CommandName} doctor', verify loopback networking, and retry.",
         details: new JsonObject
         {
             ["stage"] = "listener",
@@ -372,7 +372,7 @@ public static partial class CliErrors
         return new CliException(
             ErrorCodes.FormatUnsupported,
             $"Unsupported format '{requested}'. Supported formats: {string.Join(", ", supported)}",
-            hint: "Use one of the supported format ids, or run 'aspose-cli capabilities' to list everything this build supports.",
+            hint: $"Use one of the supported format ids, or run '{DistributionInfo.CommandName} capabilities' to list everything this build supports.",
             details: new JsonObject { ["requested"] = requested, ["supported"] = ids });
     }
 

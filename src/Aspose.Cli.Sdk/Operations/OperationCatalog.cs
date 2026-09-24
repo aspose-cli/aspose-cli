@@ -31,7 +31,7 @@ public sealed class OperationCatalog<TOp>
             ? schemaId[DistributionInfo.SchemaBaseUri.Length..]
             : schemaId;
         SchemaCommandId = "v2/" + relative.Replace(".schema.json", string.Empty, StringComparison.Ordinal);
-        DefaultHint = $"Fix the named operation; 'aspose-cli schema {SchemaCommandId}' documents every operation.";
+        DefaultHint = $"Fix the named operation; '{DistributionInfo.CommandName} schema {SchemaCommandId}' documents every operation.";
     }
 
     /// <summary>Canonical schema identifier of the operation document.</summary>
