@@ -43,10 +43,12 @@ internal static class OperationErrors
             hint: cause.Hint, details: details, innerException: cause);
     }
 
-    internal static CliException EngineFailedAt(int index, string name, EngineOpException failure) => new(
-        ErrorCodes.FeatureUnsupported,
-        $"Operation {index} ({name}) could not be applied by the document engine: {failure.Message}",
-        hint: "Nothing was written. Simplify or remove this operation, or try a standard copy of the document.",
-        details: new JsonObject { ["index"] = index, ["op"] = name },
-        innerException: failure);
+    /// <summary>
+    /// An engine failure can leave the document half changed, so the batch stops in every mode
+    /// and publishes nothing; the message says so because best-effort otherwise continues.
+    /// </summary>
+    internal static CliException EngineFailedAt(int index, string name, EngineOpException failure) => CliErrors.EngineFailed(
+        $"Operation {index} ({name}) failed inside the document engine, so the batch stopped and nothing was written: {failure.Message}",
+        failure,
+        new JsonObject { ["index"] = index, ["op"] = name });
 }

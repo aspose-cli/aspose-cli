@@ -84,6 +84,8 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
         Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
         Assert.Equal(2, applied);
+        Assert.Contains("the batch stopped and nothing was written", error.Message, StringComparison.Ordinal);
+        Assert.Equal(CliErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
     [Fact]

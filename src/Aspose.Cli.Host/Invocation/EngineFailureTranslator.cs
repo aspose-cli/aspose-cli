@@ -9,10 +9,9 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>
 /// The one boundary for failures that escape a product without a <see cref="CliException"/>.
 /// The stack says who failed: when the first frame owned by neither .NET nor this CLI
-/// belongs to a third-party library (a document engine, its imaging stack), the engine failed:
-/// usually on a document feature it cannot process, sometimes on the local environment it
-/// reads (fonts, imaging libraries), so the error names both. A failure first raised by CLI code stays
-/// an internal error, so our own defects are never reported as document problems.
+/// belongs to a third-party library (a document engine, its imaging stack), the engine failed,
+/// reported with the shared <see cref="CliErrors.EngineFailed"/> wording. A failure first raised
+/// by CLI code stays an internal error, so our own defects are never reported as document problems.
 /// </summary>
 internal sealed class EngineFailureTranslator
 {
@@ -75,13 +74,7 @@ internal sealed class EngineFailureTranslator
         Assembly? owner = frames.FirstOrDefault(assembly => !IsRuntime(assembly));
         if (exception is EngineOpException || owner is not null && !_own.Contains(owner))
         {
-            return new CliException(
-                ErrorCodes.FeatureUnsupported,
-                $"{product} failed inside its document engine: {exception.Message}",
-                hint: "The engine may not support a feature this document uses: retry with a simplified copy or another "
-                    + "output format. If other documents fail the same way, the local environment (for example its installed "
-                    + "fonts) is the cause, not the document.",
-                innerException: exception);
+            return CliErrors.EngineFailed($"{product} failed inside its document engine: {exception.Message}", exception);
         }
 
         if (exception is UnauthorizedAccessException
