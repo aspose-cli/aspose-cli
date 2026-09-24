@@ -10,7 +10,6 @@ internal static class ReadCommand
 {
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
-        Argument<string> file = SlidesOptions.File();
         var slides = new Option<string?>("--slides") { Description = "1-based slide range, e.g. 1-3,7,9-. Default: the first 10 slides." }.WithInput(InputKind.None);
         var scope = new Option<string>("--scope")
         {
@@ -18,40 +17,31 @@ internal static class ReadCommand
             DefaultValueFactory = _ => PresentationReadScopes.Shapes,
         }.WithInput(InputKind.None);
         scope.AcceptOnlyFromAmong([.. PresentationReadScopes.All]);
-        var maxChars = new Option<int>("--max-chars")
-        {
-            Description = "Maximum returned title/text/run/notes/comment characters, including repeated projections.",
-            DefaultValueFactory = _ => 20_000,
-        };
+        var maxChars = new MaxCharactersOption(
+            "Maximum returned title/text/run/notes/comment characters, including repeated projections.");
         var notes = new Option<bool>("--notes") { Description = "Include speaker notes for returned slides." };
-        var password = new PasswordOptions("--password", "the presentation");
-        var command = new Command("slides", "Read a bounded slide-content window.");
-        command.Arguments.Add(file);
-        command.Options.Add(slides);
-        command.Options.Add(scope);
-        command.Options.Add(maxChars);
-        command.Options.Add(notes);
-        password.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            int characters = parse.GetValue(maxChars);
-            OptionGuards.EnsureInRange(
-                "--max-chars", characters, 1, ReadContinuation.MaximumCharacters,
-                "Use a positive bounded character budget.");
-            string? range = parse.GetValue(slides);
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            var request = new PresentationReadRequest
+        return StandardCommand.Create(
+            host,
+            "slides",
+            "Read a bounded slide-content window.",
+            new CommandTraits { Input = SlidesCommands.Presentation },
+            [slides, scope, .. maxChars.Options, notes],
+            (parse, standard) =>
             {
-                Slides = range is null ? null : PageRange.Parse(range),
-                Scope = parse.GetValue(scope) ?? PresentationReadScopes.Shapes,
-                IncludeNotes = parse.GetValue(notes),
-                MaxCharacters = characters,
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
-            };
-            PresentationReadResult result = context.Port.Read(input, request);
-            return result with { Next = Next(input, request, result) };
-        }));
-        return command;
+                int characters = maxChars.Read(parse);
+                string? range = parse.GetValue(slides);
+                string input = standard.Input;
+                var request = new PresentationReadRequest
+                {
+                    Slides = range is null ? null : PageRange.Parse(range),
+                    Scope = parse.GetValue(scope) ?? PresentationReadScopes.Shapes,
+                    IncludeNotes = parse.GetValue(notes),
+                    MaxCharacters = characters,
+                    Password = standard.InputPassword,
+                };
+                PresentationReadResult result = standard.Port.Read(input, request);
+                return result with { Next = Next(input, request, result) };
+            });
     }
 
     /// <summary>
@@ -76,7 +66,7 @@ internal static class ReadCommand
                 .Option("--slides", continuation.Parts)
                 .Option("--scope", request.Scope)
                 .Flag("--notes", request.IncludeNotes)
-                .Option("--max-chars", continuation.MaxCharacters)
+                .Option(MaxCharactersOption.Name, continuation.MaxCharacters)
                 .ToString()
             : null;
     }

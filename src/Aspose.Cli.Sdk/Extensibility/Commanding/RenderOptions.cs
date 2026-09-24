@@ -15,6 +15,12 @@ public sealed class DpiOption
         DefaultValueFactory = _ => RenderPixelGuard.DefaultDpi,
     };
 
+    /// <summary>Creates the option.</summary>
+    public DpiOption() => Options = [_dpi];
+
+    /// <summary>The option, for a product command's option list.</summary>
+    public IReadOnlyList<Option> Options { get; }
+
     /// <summary>Adds the option to one product command.</summary>
     public void AddTo(Command command)
     {
@@ -46,16 +52,15 @@ public sealed class DpiOption
 public sealed record PartSelection(PageRange? Range, bool All);
 
 /// <summary>
-/// The shared page or slide selection of a render command: <c>--pages</c> with
-/// <c>--all-pages</c>, or <c>--slides</c> with <c>--all-slides</c>. Omitting both
-/// renders the first part.
+/// The shared part selection of a render command: <c>--{part}s</c> with
+/// <c>--all-{part}s</c> for a product-supplied part noun. Omitting both renders the first part.
 /// </summary>
 public sealed class PartSelectionOptions
 {
     private readonly Option<string?> _range;
     private readonly Option<bool> _all;
 
-    /// <summary>Creates the options for a part noun such as <c>page</c> or <c>slide</c>.</summary>
+    /// <summary>Creates the options for a product-supplied part noun, such as <c>page</c>.</summary>
     public PartSelectionOptions(string part)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(part);
@@ -64,14 +69,20 @@ public sealed class PartSelectionOptions
             Description = $"1-based {part} range, e.g. 1-3,7,9-. Default: {part} 1.",
         }.WithInput(InputKind.None);
         _all = new Option<bool>($"--all-{part}s") { Description = $"Render every {part}." };
+        Options = [_range, _all];
     }
+
+    /// <summary>Both options, for a product command's option list.</summary>
+    public IReadOnlyList<Option> Options { get; }
 
     /// <summary>Adds both options to one product command.</summary>
     public void AddTo(Command command)
     {
         ArgumentNullException.ThrowIfNull(command);
-        command.Options.Add(_range);
-        command.Options.Add(_all);
+        foreach (Option option in Options)
+        {
+            command.Options.Add(option);
+        }
     }
 
     /// <summary>Returns the validated selection.</summary>

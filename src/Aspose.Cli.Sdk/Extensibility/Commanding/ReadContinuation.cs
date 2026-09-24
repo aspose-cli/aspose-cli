@@ -3,7 +3,7 @@ using Aspose.Cli.Sdk.Addressing;
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>One part a character-budgeted read returned, in reading order.</summary>
-/// <param name="Number">The 1-based page, slide or block number.</param>
+/// <param name="Number">The 1-based number of the part.</param>
 /// <param name="Truncated">Whether the budget cut the part's content short.</param>
 public readonly record struct ReadPart(int Number, bool Truncated);
 

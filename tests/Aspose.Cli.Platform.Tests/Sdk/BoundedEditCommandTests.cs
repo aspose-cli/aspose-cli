@@ -18,7 +18,8 @@ public sealed class BoundedEditCommandTests : IDisposable
     private static readonly OperationCatalog<TestOp> Catalog =
         new OperationCatalog<TestOp>(DistributionInfo.SchemaBaseUri + "test/ops.schema.json", maximumOperations: 10)
             .Add<SetOp>("set", static op => OperationInvalidException.Require(op.Value >= 0, "value must not be negative"))
-            .Add<LinkOp>("link");
+            .Add<LinkOp>("link")
+            .Add<SecretOp>("secret");
 
     private static readonly ProductJsonDefinition Contracts =
         new("test", new DefaultJsonTypeInfoResolver(), [new TestOpConverter()]);
@@ -237,6 +238,56 @@ public sealed class BoundedEditCommandTests : IDisposable
         Assert.Equal(_temp.File("image.png"), link.Path);
     }
 
+    [Fact]
+    public void Read_ResolvesEachOperationSecretOnceByVariableName()
+    {
+        var command = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
+        {
+            SecretVariables = static op => op is SecretOp secret ? [secret.PasswordEnv] : [],
+        });
+        const string document = """{"ops":[{"op":"secret","passwordEnv":"OWNER"},{"op":"secret","passwordEnv":"OWNER"},{"op":"secret"}]}""";
+        var reads = new List<string>();
+
+        IReadOnlyDictionary<string, string> secrets = ReadWithEnvironment(command, document, name =>
+        {
+            reads.Add(name);
+            return name == "OWNER" ? "owner-secret" : null;
+        }).Secrets;
+        CliException missing = Assert.Throws<CliException>(() => ReadWithEnvironment(
+            command, """{"ops":[{"op":"secret","passwordEnv":"ABSENT"}]}""", static _ => null));
+
+        Assert.Equal("owner-secret", Assert.Single(secrets).Value);
+        Assert.Equal(["OWNER"], reads);
+        Assert.Equal(ErrorCodes.OptionInvalid, missing.Code);
+        Assert.Equal("passwordEnv", missing.Details!["option"]!.GetValue<string>());
+        Assert.Empty(Read(Plain(), "--ops", document).Secrets);
+    }
+
+    [Fact]
+    public void Create_PutsTheEditOptionsBeforeTheProductAndCommonOptions()
+    {
+        var edit = new BoundedEditCommand<TestOp, TestBatch>(Definition() with { VerifyDescription = "Verify." });
+        var traits = new CommandTraits
+        {
+            Input = new InputDocument("Book to edit.", "the book"),
+            Encrypt = new EncryptedOutput("the output book", ["test"]),
+            UsesFonts = true,
+        };
+
+        Command command = edit.Create<object>(
+            new UnusedHost(), "edit", "Edits.", traits, [new Option<bool>("--fast")], static (_, _, _) => throw new InvalidOperationException());
+
+        Assert.Equal(
+            [
+                "--ops", "--out", "--in-place", "--overwrite", "--backup", "--if-match", "--dry-run", "--best-effort", "--verify",
+                "--fast", "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--font-dir",
+            ],
+            command.Options.Select(static option => option.Name));
+        Assert.Throws<ArgumentException>(() => edit.Create<object>(
+            new UnusedHost(), "edit", "Edits.", traits with { Output = OutputTarget.File("Out.") }, [],
+            static (_, _, _) => throw new InvalidOperationException()));
+    }
+
     private const string Document = """{"ops":[{"op":"set","value":1}]}""";
 
     private static BoundedEditDefinition<TestOp, TestBatch> Definition() => new()
@@ -262,6 +313,13 @@ public sealed class BoundedEditCommandTests : IDisposable
         params string[] arguments) =>
         command.Read(Parse(command, arguments), new PathResolver(_temp.Path), TestBudgets.Create().Inputs, _input);
 
+    private BoundedEditInvocation<TestBatch> ReadWithEnvironment(
+        BoundedEditCommand<TestOp, TestBatch> command,
+        string document,
+        Func<string, string?> readEnvironment) =>
+        command.Read(
+            Parse(command, "--ops", document), new PathResolver(_temp.Path), TestBudgets.Create().Inputs, _input, readEnvironment);
+
     private static ParseResult Parse(BoundedEditCommand<TestOp, TestBatch> edit, params string[] arguments)
     {
         var command = new Command("edit");
@@ -275,7 +333,15 @@ public sealed class BoundedEditCommandTests : IDisposable
 
     public sealed record LinkOp(string Path) : TestOp;
 
+    public sealed record SecretOp(string? PasswordEnv = null) : TestOp;
+
     public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 
     private sealed class TestOpConverter() : OperationJsonConverter<TestOp>(Catalog);
+
+    private sealed class UnusedHost : Aspose.Cli.Sdk.Extensibility.IProductCommandHost<object>
+    {
+        public int Run(ParseResult parseResult, Func<Aspose.Cli.Sdk.Extensibility.ProductCommandContext<object>, ResultEnvelope> handler) =>
+            throw new InvalidOperationException("The command is only built.");
+    }
 }

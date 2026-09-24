@@ -23,31 +23,24 @@ internal static class EditCommand
         },
     };
 
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
-    {
-        Argument<string> file = SlidesOptions.File();
-        var edit = new BoundedEditCommand<SlidesOp, SlidesOpsBatch>(Definition);
-        var password = new PasswordOptions("--password", "the presentation");
-        var encrypt = new PasswordOptions("--encrypt", "the output presentation", allowStdin: false);
-        var command = new Command("edit", "Apply one validated, atomic presentation operation batch.");
-        command.Arguments.Add(file);
-        edit.AddTo(command);
-        password.AddTo(command);
-        encrypt.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            BoundedEditInvocation<SlidesOpsBatch> invocation = edit.Read(parse, context.Paths, context.Inputs, input);
-            return context.Port.ApplyOps(input, invocation.Batch, new PresentationEditRequest
+    public static Command Create(IProductCommandHost<IPresentationEngine> host) =>
+        new BoundedEditCommand<SlidesOp, SlidesOpsBatch>(Definition).Create(
+            host,
+            "edit",
+            "Apply one validated, atomic presentation operation batch.",
+            new CommandTraits
             {
-                OutputPath = invocation.Target.OutputPath,
-                Overwrite = invocation.Target.Overwrite,
-                BackupPath = invocation.Target.BackupPath,
-                Options = invocation.Options,
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment, stdinAvailable: !invocation.OpsFromStandardInput),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
-            });
-        }));
-        return command;
-    }
+                Input = SlidesCommands.Presentation,
+                Encrypt = SlidesCommands.EncryptedPresentation,
+            },
+            [],
+            (parse, edit, standard) => standard.Port.ApplyOps(standard.Input, edit.Batch, new PresentationEditRequest
+            {
+                OutputPath = edit.Target.OutputPath,
+                Overwrite = edit.Target.Overwrite,
+                BackupPath = edit.Target.BackupPath,
+                Options = edit.Options,
+                Password = standard.InputPassword,
+                EncryptPassword = standard.EncryptPassword(SlidesFormats.ForOutput(edit.Target.OutputPath)),
+            }));
 }

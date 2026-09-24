@@ -40,6 +40,12 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 
     /// <summary>Resolves file paths carried by an operation against the invocation directory.</summary>
     public Func<TOp, PathResolver, TOp>? NormalizePaths { get; init; }
+
+    /// <summary>
+    /// Names the environment variables whose secrets an operation reads, such as its
+    /// <c>passwordEnv</c> fields; a null entry is an omitted optional field.
+    /// </summary>
+    public Func<TOp, IEnumerable<string?>>? SecretVariables { get; init; }
 }
 
 /// <summary>One fully resolved bounded-edit invocation, ready for the product port.</summary>
@@ -48,25 +54,30 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 /// <param name="Options">Precondition, dry-run and best-effort semantics.</param>
 /// <param name="Verify">Whether staged verification was requested.</param>
 /// <param name="OpsFromStandardInput">Whether the document consumed standard input.</param>
+/// <param name="Secrets">The operations' secrets by environment variable name.</param>
 public sealed record BoundedEditInvocation<TBatch>(
     TBatch Batch,
     MutationTarget Target,
     EditCommandOptions Options,
     bool Verify,
-    bool OpsFromStandardInput);
+    bool OpsFromStandardInput,
+    IReadOnlyDictionary<string, string> Secrets);
 
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
 /// document (<c>--ops</c>) and its composition with <c>--set</c> directives, the publication
 /// target (<c>--out</c>, <c>--in-place</c>, <c>--overwrite</c>, <c>--backup</c>) and the
 /// execution semantics (<c>--if-match</c>, <c>--dry-run</c>, <c>--best-effort</c>,
-/// <c>--verify</c>), so every product accepts and rejects the same combinations.
+/// <c>--verify</c>), so every product accepts and rejects the same combinations. Its
+/// command reads the document through <see cref="StandardCommand"/>, whose input password
+/// refuses standard input when the operation document comes from it.
 /// </summary>
 public sealed class BoundedEditCommand<TOp, TBatch>
     where TOp : BoundedOperation
     where TBatch : BoundedOperationEnvelope<TOp>
 {
     private const string OpsOption = "--ops";
+    private const string StandardInputSource = "-";
     private readonly BoundedEditDefinition<TOp, TBatch> _definition;
     private readonly Option<string?> _ops;
     private readonly Option<string[]>? _set;
@@ -75,6 +86,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     private readonly Option<bool> _dryRun;
     private readonly Option<bool> _bestEffort;
     private readonly Option<bool>? _verify;
+    private readonly IReadOnlyList<Option> _options;
 
     /// <summary>Creates the option surface for one product edit command.</summary>
     public BoundedEditCommand(BoundedEditDefinition<TOp, TBatch> definition)
@@ -118,6 +130,62 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             ArgumentException.ThrowIfNullOrWhiteSpace(verify);
             _verify = new Option<bool>("--verify") { Description = verify };
         }
+
+        _options =
+        [
+            _ops,
+            .. _set is null ? [] : new Option[] { _set },
+            .. _target.Options,
+            _ifMatch,
+            _dryRun,
+            _bestEffort,
+            .. _verify is null ? [] : new Option[] { _verify },
+        ];
+    }
+
+    /// <summary>
+    /// Creates the product's edit command: the document argument, the shared edit options,
+    /// the product's own parameters, then the common options its traits select. The handler
+    /// receives the composed, path-normalized batch with its resolved secrets.
+    /// </summary>
+    /// <param name="host">The product's command host.</param>
+    /// <param name="name">The command name.</param>
+    /// <param name="description">The command help.</param>
+    /// <param name="traits">
+    /// The edited document, its output password and fonts; the mutation options own the output.
+    /// </param>
+    /// <param name="parameters">The product's own arguments and options, each kind in help order.</param>
+    /// <param name="handler">Maps the invocation to the product port call.</param>
+    public Command Create<TPort>(
+        IProductCommandHost<TPort> host,
+        string name,
+        string description,
+        CommandTraits traits,
+        IReadOnlyList<Symbol> parameters,
+        Func<ParseResult, BoundedEditInvocation<TBatch>, StandardInvocation<TPort>, ResultEnvelope> handler)
+        where TPort : class
+    {
+        ArgumentNullException.ThrowIfNull(traits);
+        ArgumentNullException.ThrowIfNull(parameters);
+        ArgumentNullException.ThrowIfNull(handler);
+        if (traits.Input is null || traits.Other is not null || traits.Output is not null)
+        {
+            throw new ArgumentException(
+                "An edit reads one input document and publishes it through the mutation options.",
+                nameof(traits));
+        }
+
+        return StandardCommand.Create(
+            host,
+            name,
+            description,
+            traits,
+            [.. _options, .. parameters],
+            parse => parse.GetValue(_ops) == StandardInputSource,
+            (parse, standard) => handler(
+                parse,
+                Read(parse, standard.Paths, standard.Inputs, standard.Input, standard.ReadEnvironment),
+                standard));
     }
 
     /// <summary>Whether <c>--verify</c> was requested; false when the product has no verification.</summary>
@@ -131,19 +199,9 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     public void AddTo(Command command)
     {
         ArgumentNullException.ThrowIfNull(command);
-        command.Options.Add(_ops);
-        if (_set is not null)
+        foreach (Option option in _options)
         {
-            command.Options.Add(_set);
-        }
-
-        _target.AddTo(command);
-        command.Options.Add(_ifMatch);
-        command.Options.Add(_dryRun);
-        command.Options.Add(_bestEffort);
-        if (_verify is not null)
-        {
-            command.Options.Add(_verify);
+            command.Options.Add(option);
         }
     }
 
@@ -159,7 +217,15 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         ParseResult parse,
         PathResolver paths,
         InputSource inputs,
-        string inputPath)
+        string inputPath) =>
+        Read(parse, paths, inputs, inputPath, readEnvironment: null);
+
+    internal BoundedEditInvocation<TBatch> Read(
+        ParseResult parse,
+        PathResolver paths,
+        InputSource inputs,
+        string inputPath,
+        Func<string, string?>? readEnvironment)
     {
         ArgumentNullException.ThrowIfNull(parse);
         ArgumentNullException.ThrowIfNull(paths);
@@ -206,7 +272,36 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 BestEffort = parse.GetValue(_bestEffort),
             },
             verify,
-            source == "-");
+            source == StandardInputSource,
+            ResolveSecrets(batch, readEnvironment));
+    }
+
+    private IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?>? readEnvironment)
+    {
+        var secrets = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (_definition.SecretVariables is not { } variables)
+        {
+            return secrets;
+        }
+
+        ArgumentNullException.ThrowIfNull(readEnvironment);
+        foreach (string variable in batch.Ops.SelectMany(variables).OfType<string>())
+        {
+            if (secrets.ContainsKey(variable))
+            {
+                continue;
+            }
+
+            string? secret = readEnvironment(variable);
+            secrets[variable] = !string.IsNullOrEmpty(secret)
+                ? secret
+                : throw CliErrors.OptionInvalid(
+                    "passwordEnv",
+                    $"environment variable '{variable}' is missing or empty",
+                    "Set it before running the edit.");
+        }
+
+        return secrets;
     }
 
     private TBatch Compose(TBatch? document, TOp[] compiled)

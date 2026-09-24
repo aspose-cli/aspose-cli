@@ -13,7 +13,7 @@ public sealed class ContinuationCommand
 {
     private readonly List<string> _tokens = [DistributionInfo.CommandName];
 
-    /// <summary>Starts a command from its path, such as <c>pdf query pages</c>.</summary>
+    /// <summary>Starts a command from its path, such as <c>product query parts</c>.</summary>
     public ContinuationCommand(params string[] commandPath)
     {
         ArgumentNullException.ThrowIfNull(commandPath);

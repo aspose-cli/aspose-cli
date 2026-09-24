@@ -9,37 +9,34 @@ internal static class NewCommand
 {
     public static Command Create(IProductCommandHost<IPresentationEngine> host)
     {
-        var file = new Argument<string>("file") { Description = "PPTX or PPTM path to create." }.WithInput(InputKind.None);
         var markdown = new Option<string?>("--from-markdown", "--markdown") { Description = "Markdown outline to author." }.WithInput(InputKind.File);
         var template = new Option<string?>("--template") { Description = "Presentation whose masters, layouts and theme are reused." }.WithInput(InputKind.File);
         var size = new Option<string?>("--size") { Description = "16x9 or 4x3; template size is preserved when omitted." }.WithInput(InputKind.None);
         size.AcceptOnlyFromAmong("16x9", "4x3");
-        Option<bool> overwrite = OutputOptions.Overwrite();
-        var encrypt = new PasswordOptions("--encrypt", "the output presentation", allowStdin: false);
-        var command = new Command("create", "Create a blank, template-based or Markdown-authored presentation.");
-        command.Arguments.Add(file);
-        command.Options.Add(markdown);
-        command.Options.Add(template);
-        command.Options.Add(size);
-        command.Options.Add(overwrite);
-        encrypt.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            string? markdownValue = parse.GetValue(markdown);
-            string? templateValue = parse.GetValue(template);
-            string? markdownPath = markdownValue is null ? null : context.Paths.ResolveInput(markdownValue);
-            string? templatePath = templateValue is null ? null : context.Paths.ResolveInput(templateValue);
-            return context.Port.Create(new NewPresentationRequest
+        return StandardCommand.Create(
+            host,
+            "create",
+            "Create a blank, template-based or Markdown-authored presentation.",
+            new CommandTraits
             {
-                OutputPath = OutputFileOptions.ResolveExplicit(
-                    context.Paths, parse.GetRequiredValue(file), file.Name, markdownPath, templatePath),
-                Overwrite = parse.GetValue(overwrite),
-                MarkdownPath = markdownPath,
-                TemplatePath = templatePath,
-                Size = parse.GetValue(size),
-                EncryptPassword = encrypt.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                Output = OutputTarget.CreatedFile("PPTX or PPTM path to create."),
+                Encrypt = SlidesCommands.EncryptedPresentation,
+            },
+            [markdown, template, size],
+            (parse, standard) =>
+            {
+                string? markdownPath = parse.GetValue(markdown) is { } markdownValue ? standard.Paths.ResolveInput(markdownValue) : null;
+                string? templatePath = parse.GetValue(template) is { } templateValue ? standard.Paths.ResolveInput(templateValue) : null;
+                string outputPath = standard.CreatedPath;
+                return standard.Port.Create(new NewPresentationRequest
+                {
+                    OutputPath = outputPath,
+                    Overwrite = standard.Overwrite,
+                    MarkdownPath = markdownPath,
+                    TemplatePath = templatePath,
+                    Size = parse.GetValue(size),
+                    EncryptPassword = standard.EncryptPassword(SlidesFormats.ForOutput(outputPath)),
+                });
             });
-        }));
-        return command;
     }
 }

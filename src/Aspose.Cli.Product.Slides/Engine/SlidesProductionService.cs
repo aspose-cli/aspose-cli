@@ -283,7 +283,7 @@ internal sealed class SlidesProductionService
     internal SlidesCreateResult Create(NewPresentationRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        string format = Path.GetExtension(request.OutputPath).TrimStart('.').ToLowerInvariant();
+        string format = SlidesFormats.ForOutput(request.OutputPath);
         if (!SlidesFormats.WriteIds.Contains(format, StringComparer.Ordinal))
         {
             throw Sdk.Errors.CliErrors.FormatUnsupported(format, SlidesFormats.WriteIds);

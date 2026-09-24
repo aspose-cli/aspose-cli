@@ -268,15 +268,20 @@ public sealed class MutationFileOptions
         {
             Description = backupDescription,
         };
+        Options = [_out, _inPlace, _overwrite, _backup];
     }
+
+    /// <summary>The mutation options in help order.</summary>
+    internal IReadOnlyList<Option> Options { get; }
 
     /// <summary>Adds all mutation options to a command.</summary>
     public void AddTo(Command command)
     {
-        command.Options.Add(_out);
-        command.Options.Add(_inPlace);
-        command.Options.Add(_overwrite);
-        command.Options.Add(_backup);
+        ArgumentNullException.ThrowIfNull(command);
+        foreach (Option option in Options)
+        {
+            command.Options.Add(option);
+        }
     }
 
     /// <summary>

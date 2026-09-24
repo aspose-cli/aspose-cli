@@ -39,7 +39,7 @@ internal sealed class SlidesMutationService
         PresentationEditRequest request)
     {
         batch = SlidesOps.Catalog.Prepare(batch);
-        string format = Path.GetExtension(request.OutputPath).TrimStart('.').ToLowerInvariant();
+        string format = SlidesFormats.ForOutput(request.OutputPath);
         if (!SlidesFormats.WriteIds.Contains(format, StringComparer.Ordinal))
         {
             throw CliErrors.FormatUnsupported(format, SlidesFormats.WriteIds);

@@ -1,5 +1,6 @@
 using System.CommandLine;
 using System.Runtime.CompilerServices;
+using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
@@ -8,7 +9,22 @@ namespace Aspose.Cli.Sdk.Extensibility;
 /// <param name="Description">A short description of the referenced material.</param>
 public sealed record CommandHelpLink(
     string Command,
-    string Description);
+    string Description)
+{
+    /// <summary>Links a documentation topic, such as <c>product/editing</c>.</summary>
+    public static CommandHelpLink Docs(string topic, string description)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(topic);
+        return new($"{DistributionInfo.CommandName} docs {topic}", description);
+    }
+
+    /// <summary>Links the JSON schema of a product's operation vocabulary.</summary>
+    public static CommandHelpLink Schema(ProductOperationDescriptor operations, string description)
+    {
+        ArgumentNullException.ThrowIfNull(operations);
+        return new($"{DistributionInfo.CommandName} schema {operations.InputSchema}", description);
+    }
+}
 
 /// <summary>Product-owned additions to the standard command help output.</summary>
 /// <param name="Examples">Complete command lines shown as examples.</param>
@@ -26,10 +42,12 @@ public static class CommandHelpExtensions
     /// <summary>
     /// Attaches examples and optional learning links to a command. Metadata is
     /// owned by the assembly that defines the command and can be read by any
-    /// host without knowing the product.
+    /// host without knowing the product. An example is written after the executable
+    /// name, which is prepended here; a line that already starts with it is kept as
+    /// written until every command tree uses the shorter form.
     /// </summary>
     /// <param name="command">The command receiving the metadata.</param>
-    /// <param name="examples">Complete, copyable command lines.</param>
+    /// <param name="examples">Copyable command lines after the executable name.</param>
     /// <param name="learnMore">Optional documentation and schema links.</param>
     /// <returns>The same command instance.</returns>
     public static Command WithExamples(
@@ -40,8 +58,13 @@ public static class CommandHelpExtensions
         ArgumentNullException.ThrowIfNull(command);
         ArgumentNullException.ThrowIfNull(examples);
 
+        string executable = DistributionInfo.CommandName + " ";
         var value = new CommandHelpMetadata(
-            examples.ToArray(),
+            examples
+                .Select(example => example.StartsWith(executable, StringComparison.Ordinal)
+                    ? example
+                    : executable + example)
+                .ToArray(),
             learnMore?.ToArray() ?? []);
         Metadata.Remove(command);
         Metadata.Add(command, value);

@@ -73,21 +73,23 @@ public sealed class SearchOptions
             }.WithInput(InputKind.None);
             _scope.AcceptOnlyFromAmong([.. scope.Values]);
         }
+
+        Options = _scope is null
+            ? [_pattern, _regex, _caseSensitive, _maxHits]
+            : [_pattern, _regex, _caseSensitive, _scope, _maxHits];
     }
+
+    /// <summary>The search options in help order, for a product command's option list.</summary>
+    public IReadOnlyList<Option> Options { get; }
 
     /// <summary>Adds the search options to one product command.</summary>
     public void AddTo(Command command)
     {
         ArgumentNullException.ThrowIfNull(command);
-        command.Options.Add(_pattern);
-        command.Options.Add(_regex);
-        command.Options.Add(_caseSensitive);
-        if (_scope is not null)
+        foreach (Option option in Options)
         {
-            command.Options.Add(_scope);
+            command.Options.Add(option);
         }
-
-        command.Options.Add(_maxHits);
     }
 
     /// <summary>Validates the pattern and hit budget before any document is opened.</summary>

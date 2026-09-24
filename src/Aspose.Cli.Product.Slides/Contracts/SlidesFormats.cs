@@ -43,4 +43,8 @@ public static class SlidesFormats
 
     /// <summary>Output formats that can carry a password.</summary>
     public static IReadOnlyList<string> EncryptIds { get; } = ["pptx", "pptm"];
+
+    /// <summary>The format id of a written presentation: its lowercase extension.</summary>
+    internal static string ForOutput(string path) =>
+        Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
 }
