@@ -36,7 +36,7 @@
     "images": { "type": "array", "items": { "type": "object" } },
     "tables": { "type": "array", "items": { "type": "object" } },
     "properties": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
-    "fonts": { "type": "array", "items": { "type": "string" } },
+    "fonts": { "type": "array", "items": { "type": "string" }, "description": "The fonts the document's text is drawn with, per character script; not the font table." },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

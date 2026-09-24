@@ -25,6 +25,20 @@ public sealed class WordsMarkdownImportTests
     }
 
     [Fact]
+    public void InspectFonts_ReportsTheFontsTheTextUses()
+    {
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("fonts.md");
+        File.WriteAllText(markdown, "# Title\n\nHello 你好\n");
+        string output = fixture.Temp.File("fonts.docx");
+        fixture.Engine.CreateDocument(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+
+        DocumentInfoResult info = fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["fonts"] });
+
+        Assert.Equal(["Calibri", "Microsoft YaHei"], info.Fonts);
+    }
+
+    [Fact]
     public void BuiltInDesign_CarriesNoGeneratorMetadata()
     {
         using Stream stream = typeof(WordsDocumentEngine).Assembly.GetManifestResourceStream("Templates/default-a4.docx")!;

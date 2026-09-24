@@ -3,7 +3,6 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
-using Aspose.Words.Fonts;
 using Aspose.Words.Tables;
 using ContractFieldData = Aspose.Cli.Product.Words.Contracts.FieldData;
 using ContractImageData = Aspose.Cli.Product.Words.Contracts.ImageData;
@@ -50,8 +49,7 @@ internal static class InfoProjection
             Images = details.Contains("images") ? Images(document, index) : null,
             Tables = details.Contains("tables") ? Tables(index) : null,
             Properties = details.Contains("properties") ? Properties(document) : null,
-            Fonts = details.Contains("fonts") ? document.FontInfos.Cast<FontInfo>()
-                .Select(static f => f.Name).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray() : null,
+            Fonts = details.Contains("fonts") ? WordsFonts.Used(document) : null,
         };
     }
 
