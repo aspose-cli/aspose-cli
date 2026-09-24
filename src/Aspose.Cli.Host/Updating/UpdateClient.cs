@@ -40,7 +40,7 @@ internal static class UpdateClient
         bool current = CompareVersions(manifest) == 0;
         if (!current)
         {
-            string package = files.DownloadArchive(manifest);
+            using FileStream package = files.DownloadArchive(manifest);
             using var publication = new AtomicNewDirectoryWriter(context.ResourceBudgets, outputDirectory, "update-package");
             ExtractPackage(package, publication.StagingDirectory, context.Deadline);
             publication.Commit();
@@ -154,6 +154,15 @@ internal static class UpdateClient
                 UseShellExecute = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
             };
+            // Bypass skips only the machine's script policy; the signed release manifest is the
+            // trust root. It pins the archive's SHA-256, the preparation worker hashes the archive
+            // and extracts it from one handle that denies writers, and this install.ps1 is an
+            // entry of that archive. From download to this launch every file stays in the current
+            // user's private storage, which grants access to no other account (LocalSystem
+            // aside), and the parent validates the package directory before handing it off. Only
+            // code already running as this user could swap the script between extraction and
+            // PowerShell reading it, and such code can equally replace the installed CLI itself,
+            // so the remaining window crosses no privilege boundary.
             foreach (string argument in new[]
             {
                 "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
@@ -193,9 +202,9 @@ internal static class UpdateClient
         }
     }
 
-    private static void ExtractPackage(string archive, string root, OperationDeadline deadline)
+    private static void ExtractPackage(FileStream archive, string root, OperationDeadline deadline)
     {
-        using var zip = ZipFile.OpenRead(archive);
+        using var zip = new ZipArchive(archive, ZipArchiveMode.Read, leaveOpen: true);
         if (zip.Entries.Count is 0 or > MaximumZipEntries)
         {
             throw ReleaseErrors.VerificationFailed("the update archive has an invalid entry count");
@@ -346,9 +355,15 @@ internal static class UpdateClient
             catch { DeleteTree(root); throw; }
         }
 
-        public string DownloadArchive(ReleaseManifestInfo manifest)
+        /// <summary>
+        /// Returns the archive open for reading, with writes and deletion denied, after its bytes
+        /// matched the signed manifest; extraction reads the same handle, so the verified bytes
+        /// are the extracted bytes.
+        /// </summary>
+        public FileStream DownloadArchive(ReleaseManifestInfo manifest)
         {
             string target = Path.Combine(_temporaryRoot, "archive.zip");
+            FileStream? stream = null;
             try
             {
                 if (_remoteBase is not null)
@@ -365,15 +380,16 @@ internal static class UpdateClient
                     using FileStream output = PrivateUserStorage.CreateFile(target);
                     CopyBounded(input, output, Math.Min(manifest.ArchiveSize, MaximumArchiveBytes), _deadline);
                 }
-                using var stream = File.OpenRead(target);
+                stream = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read);
                 if (stream.Length != manifest.ArchiveSize || !string.Equals(
                     Convert.ToHexString(SHA256.HashDataAsync(stream, _deadline.Token).GetAwaiter().GetResult()),
                     manifest.ArchiveSha256, StringComparison.OrdinalIgnoreCase))
                 { throw ReleaseErrors.VerificationFailed("the downloaded archive hash does not match the signed manifest"); }
                 _deadline.ThrowIfExpired("update-archive-verified");
-                return target;
+                stream.Position = 0;
+                return stream;
             }
-            catch { TryDeleteFile(target); throw; }
+            catch { stream?.Dispose(); TryDeleteFile(target); throw; }
         }
 
         public void Dispose() => DeleteTree(_temporaryRoot);
