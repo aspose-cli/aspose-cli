@@ -86,9 +86,8 @@ internal sealed partial class AppHost
 
     /// <summary>
     /// Saves a license change and tells the browser where to continue. The
-    /// App holds no engine of its own any more, so nothing restarts: the
-    /// viewer service recycles its renderer and the next render applies the
-    /// license.
+    /// App holds no engine of its own, so nothing restarts: the viewer
+    /// service recycles its renderer and the next render applies the license.
     /// </summary>
     /// <remarks>
     /// The license child publishes under the SDK's own storage locks, so the

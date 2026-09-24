@@ -183,8 +183,7 @@ internal static class OpsFootprint
         UnprotectWorkbookOp => null,
         SetDefaultFontOp => null,
 
-        // Forward-compatibility: an op added after this mapping still yields
-        // a sheet-level hint when it names a sheet.
+        // An op without an entry here yields a sheet-level hint when it names a sheet.
         _ => SheetLevelOrNone(op),
     };
 

@@ -13,12 +13,11 @@ internal static class RowColumnOps
 {
     // Structural inserts/deletes must update references ACROSS the whole
     // workbook, not just the edited sheet. The default InsertRows/DeleteRows
-    // overloads adjust only same-sheet formulas, so a =SUM(Data!A1:A4) on
-    // another sheet silently kept its old bounds after a row was inserted into
-    // Data's span — a same-sheet SUM expanded, the cross-sheet one did not, and
-    // the summary a human reads under-counted with no error (probed on 26.9.0).
-    // DeleteColumns already passed updateReference:true; the other three now
-    // match it.
+    // overloads adjust only same-sheet formulas: a =SUM(Data!A1:A4) on another
+    // sheet keeps its bounds after a row is inserted into Data's span, so a
+    // same-sheet SUM expands, the cross-sheet one does not, and the summary a
+    // human reads under-counts with no error (probed on 26.9.0). All four
+    // structural operations therefore ask the engine to update references.
     private static readonly InsertOptions UpdateAll = new() { UpdateReference = true };
 
     public static long? InsertRows(Worksheet sheet, InsertRowsOp op)

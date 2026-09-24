@@ -112,7 +112,7 @@ internal sealed record AppApiResult(
 internal sealed record AppHealthResult(bool Ok, int Pid);
 
 /// <summary>
-/// A saved license change. Nothing restarts any more, so the address is
-/// simply where the browser continues: the settings it came from.
+/// A saved license change. Nothing restarts, so the address is simply where
+/// the browser continues: the settings it came from.
 /// </summary>
 internal sealed record AppLicenseSavedResult(bool Ok, string ContinueUrl);

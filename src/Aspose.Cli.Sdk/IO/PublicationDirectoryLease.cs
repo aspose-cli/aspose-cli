@@ -58,7 +58,8 @@ internal sealed class PublicationDirectoryLease : IDisposable
         var handles = new List<FileStream>();
         try
         {
-            // The existing neutral volume key remains a shared compatibility barrier.
+            // Every lease holds the volume key shared, so it waits for any publisher that locks
+            // the whole volume exclusively.
             foreach (string volume in volumes) { handles.Add(AcquireFile(lockRoot, volume, exclusive: false, wait)); }
             foreach ((string path, bool write) in requests.OrderBy(item => item.Key, Comparer))
             {
