@@ -8,11 +8,20 @@
 - `RENDER_TOO_LARGE`: lower DPI or render fewer pages.
 - `REMOTE_RESOURCES_BLOCKED`: a local HTML image or stylesheet was missing or
   outside the HTML directory and was left out; review the incomplete output.
-- `FEATURE_UNSUPPORTED` naming a network address: HTML, Markdown and SVG image
-  inputs may not name any network address, including hyperlinks and addresses in
-  text, because the pinned PDF engine requests them before the CLI can refuse them.
-  Remove the address, or save the resource beside the input and reference it by
-  relative path.
+- `FEATURE_UNSUPPORTED` naming a network address or script: HTML, Markdown and SVG
+  image inputs, and the stylesheets and SVG files they load, may not name any
+  network address, including hyperlinks and addresses in text, or contain script,
+  event-handler attributes or `javascript:` URLs, because the pinned PDF engine
+  requests them, or runs the script, before the CLI can refuse them. Remove the
+  address, or save the resource beside the input and reference it by relative path.
+- `FEATURE_UNSUPPORTED` naming a Markdown reference: the PDF Markdown importer reads
+  files with no resource policy, so every image, stylesheet and SVG file it could
+  load, and those they reference, must be an existing ordinary file beneath the
+  Markdown file's directory. Absolute paths, `file:` URIs, `..` escapes (also
+  percent- or entity-encoded), links and junctions, missing files and non-raster
+  `data:` URIs are refused, including in code examples. The importer resolves the
+  Markdown's relative paths against the working directory: run the command from the
+  Markdown file's directory.
 - Relative HTML image and stylesheet paths resolve against the original HTML
   directory, including during supervised execution. Keep permitted resources
   beneath that directory; do not widen access to work around an omitted resource.

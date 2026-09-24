@@ -21,7 +21,7 @@ try {
 
     # The loopback server and the refusing loader run on SDK threads, so they are compiled
     # rather than PowerShell script blocks.
-    Add-Type -ReferencedAssemblies $assembly, 'System.Net.Primitives', 'System.Net.Sockets', 'System.Collections.Concurrent' -TypeDefinition @'
+    Add-Type -ReferencedAssemblies $assembly, 'System.Net.Primitives', 'System.Net.Sockets', 'System.Collections', 'System.Collections.Concurrent' -TypeDefinition @'
 using System;
 using System.Collections.Concurrent;
 using System.Net;
@@ -48,6 +48,15 @@ public sealed class PdfHtmlEgressGate : IDisposable
     }
 
     public string Url { get; private set; }
+
+    /// <summary>Takes the requests received so far, so each import is counted on its own.</summary>
+    public string[] TakeRequests()
+    {
+        var taken = new System.Collections.Generic.List<string>();
+        string request;
+        while (Requests.TryDequeue(out request)) { taken.Add(request); }
+        return taken.ToArray();
+    }
 
     /// <summary>Installs the documented custom loader, which refuses every external resource.</summary>
     public void RefuseEveryResource(HtmlLoadOptions options)
@@ -107,12 +116,21 @@ public sealed class PdfHtmlEgressGate : IDisposable
         $document = [Aspose.Pdf.Document]::new($html, $options)
         try { $document.Save((Join-Path $output 'output.pdf')) } finally { $document.Dispose() }
         Start-Sleep -Milliseconds 500
+        $htmlRequests = @($gate.TakeRequests())
+
+        # The documented Markdown import. MdLoadOptions offers no resource hook to install.
+        $markdown = Join-Path $output 'input.md'
+        [IO.File]::WriteAllText($markdown, "# Local content`n`n![image]($($gate.Url)/markdown.png)`n", [Text.UTF8Encoding]::new($false))
+        $document = [Aspose.Pdf.Document]::new($markdown, [Aspose.Pdf.MdLoadOptions]::new())
+        try { $document.Save((Join-Path $output 'markdown.pdf')) } finally { $document.Dispose() }
+        Start-Sleep -Milliseconds 500
         $result = [ordered]@{
             SdkVersion = $pdf.GetName().Version.ToString()
             SdkSha256 = (Get-FileHash -LiteralPath $assembly -Algorithm SHA256).Hash
             Licensed = -not [string]::IsNullOrWhiteSpace($LicensePath)
             LoaderCalls = @($gate.LoaderCalls.ToArray())
-            NetworkRequests = @($gate.Requests.ToArray())
+            NetworkRequests = $htmlRequests
+            MarkdownNetworkRequests = @($gate.TakeRequests())
         }
     } finally { $gate.Dispose() }
     $result | ConvertTo-Json -Depth 4 | Set-Content -LiteralPath (Join-Path $output 'result.json') -Encoding utf8
@@ -125,8 +143,14 @@ if ($result.LoaderCalls.Count -eq 0) {
     [Console]::Error.WriteLine('The importer never consulted the custom loader; the reproduction did not exercise the defect.')
     exit 2
 }
+$failed = $false
 if ($result.NetworkRequests.Count -ne 0) {
-    [Console]::Error.WriteLine("The importer made $($result.NetworkRequests.Count) network request(s) although the custom loader refused every resource: $($result.NetworkRequests -join '; ')")
-    exit 1
+    [Console]::Error.WriteLine("The HTML importer made $($result.NetworkRequests.Count) network request(s) although the custom loader refused every resource: $($result.NetworkRequests -join '; ')")
+    $failed = $true
 }
+if ($result.MarkdownNetworkRequests.Count -ne 0) {
+    [Console]::Error.WriteLine("The Markdown importer, which has no resource hook, made $($result.MarkdownNetworkRequests.Count) network request(s): $($result.MarkdownNetworkRequests -join '; ')")
+    $failed = $true
+}
+if ($failed) { exit 1 }
 exit 0

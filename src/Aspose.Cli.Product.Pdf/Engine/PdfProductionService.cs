@@ -198,6 +198,10 @@ internal sealed class PdfProductionService
         }
 
         EnsureCreationInputs(_resourceBudgets, request);
+        // The Markdown importer resolves the Markdown's relative references against the
+        // working directory and reads files itself; the check holds them until the save.
+        using MarkdownImportResources? markdown = request.Markdown && request.TextPath is { } markdownPath
+            ? new MarkdownImportResources(markdownPath, _resourceBudgets, Environment.CurrentDirectory) : null;
         LicenseState state = _licenseGate.EnsureApplied();
         using HtmlImportResources? resources = request.HtmlPath is { } htmlPath
             ? new HtmlImportResources(htmlPath, _resourceBudgets) : null;
@@ -627,14 +631,11 @@ internal sealed class PdfProductionService
             InputSizeGuard.Ensure(resourceBudgets, path);
         }
 
-        // The importers reach the network before any resource policy applies; refuse first.
+        // The HTML importer reaches the network before any resource policy applies; refuse
+        // first. Markdown is checked with its local references.
         if (request.HtmlPath is { } html)
         {
             NetworkReferenceGuard.EnsureNone(resourceBudgets.Inputs.ReadAllBytes(html), "HTML input", html);
-        }
-        else if (request.Markdown && request.TextPath is { } markdown)
-        {
-            NetworkReferenceGuard.EnsureNone(resourceBudgets.Inputs.ReadAllBytes(markdown), "Markdown input", markdown);
         }
 
         foreach (string image in request.ImagePaths ?? [])

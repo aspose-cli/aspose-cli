@@ -35,12 +35,16 @@ positions; rectangles are points with a top-left origin.
 
 `pdf create --from-html`, Markdown `--from-text` and SVG images (`--from-images`,
 `add_stamp_image`, `add_watermark_image`) refuse any input that names a network
-address, hyperlinks included, with `FEATURE_UNSUPPORTED`: the PDF engine requests
-network resources before the CLI can refuse them. Compressed SVG images are refused
-too. Save required images and CSS beside the input and reference them by relative
-path. The Markdown
-importer reads local images without the CLI's local-resource guard, so use
-trusted Markdown only.
+address, hyperlinks included, or contains script, with `FEATURE_UNSUPPORTED`: the
+PDF engine requests network resources before the CLI can refuse them. Compressed
+SVG images are refused too. Save required images and CSS beside the input and
+reference them by relative path.
+
+Markdown may reference only ordinary files beneath its own directory, including
+the images, stylesheets and SVG files that raw HTML and CSS load; anything else is
+refused before the import. The PDF Markdown importer resolves relative paths against
+the working directory, so run `pdf create --from-text` from the Markdown file's
+directory.
 
 ## Verify before delivery
 
