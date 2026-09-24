@@ -63,45 +63,36 @@ public static class CellsFormats
 
     /// <summary>Resolves a user-supplied convert format id or alias.</summary>
     /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when unknown.</exception>
-    public static FormatInfo ResolveConvert(string requested) => Resolve(Convert, ConvertIds, requested);
+    public static FormatInfo ResolveConvert(string requested) => Resolve(Convert, ConvertIds, FormatUse.Convert, requested);
 
     /// <summary>Resolves a user-supplied render format id or alias.</summary>
     /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when unknown.</exception>
-    public static FormatInfo ResolveRender(string requested) => Resolve(Render, RenderIds, requested);
+    public static FormatInfo ResolveRender(string requested) => Resolve(Render, RenderIds, FormatUse.Render, requested);
 
     /// <summary>
     /// Resolves a render format id, alias or file extension, or <c>null</c> when
     /// it names none — for callers inferring a format from a path, where an
     /// unrecognized extension is a reason to fall back, not to fail.
     /// </summary>
-    public static FormatInfo? TryResolveRender(string requested) => Find(Render, requested);
+    public static FormatInfo? TryResolveRender(string requested) => Find(Render, FormatUse.Render, requested);
 
-    private static FormatInfo Resolve(IReadOnlyList<FormatInfo> formats, IReadOnlyList<string> ids, string requested)
+    private static FormatInfo Resolve(IReadOnlyList<FormatInfo> formats, IReadOnlyList<string> ids, FormatUse use, string requested)
     {
         ArgumentException.ThrowIfNullOrEmpty(requested);
-        return Find(formats, requested) ?? throw CliErrors.FormatUnsupported(requested, ids);
+        return Find(formats, use, requested) ?? throw CliErrors.FormatUnsupported(requested, ids);
     }
 
-    /// <summary>Finds a format by id, alias or any extension it declares (<c>.htm</c>, <c>.xltx</c>).</summary>
-    private static FormatInfo? Find(IReadOnlyList<FormatInfo> formats, string requested)
+    /// <summary>Finds a format by id or alias, then by any extension it declares (<c>.htm</c>, <c>.xltx</c>).</summary>
+    private static FormatInfo? Find(IReadOnlyList<FormatInfo> formats, FormatUse use, string requested)
     {
         ArgumentException.ThrowIfNullOrEmpty(requested);
         string normalized = requested.Trim().TrimStart('.');
-
-        foreach (FormatInfo format in formats)
-        {
-            IReadOnlyList<string> extensions = Definitions
-                .Single(definition => string.Equals(definition.Id, format.Id, StringComparison.Ordinal))
-                .Extensions;
-            if (string.Equals(format.Id, normalized, StringComparison.OrdinalIgnoreCase)
-                || format.Aliases.Any(alias => string.Equals(alias, normalized, StringComparison.OrdinalIgnoreCase))
-                || extensions.Any(extension => string.Equals(extension[1..], normalized, StringComparison.OrdinalIgnoreCase)))
-            {
-                return format;
-            }
-        }
-
-        return null;
+        return formats.FirstOrDefault(format =>
+                string.Equals(format.Id, normalized, StringComparison.OrdinalIgnoreCase)
+                || format.Aliases.Any(alias => string.Equals(alias, normalized, StringComparison.OrdinalIgnoreCase)))
+            ?? Definitions.WithExtension(use, "." + normalized)
+                .Select(descriptor => formats.First(format => string.Equals(format.Id, descriptor.Id, StringComparison.Ordinal)))
+                .FirstOrDefault();
     }
 
     private static IReadOnlyList<FormatInfo> Create(FormatUse use) =>

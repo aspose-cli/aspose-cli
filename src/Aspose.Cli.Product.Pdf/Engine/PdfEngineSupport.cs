@@ -123,15 +123,6 @@ internal static class PdfEngineSupport
         }
     }
 
-    internal static (double Width, double Height) PageDimensions(string id) => id.ToUpperInvariant() switch
-    {
-        "A3" => (841.89, 1190.55),
-        "A4" => (595.28, 841.89),
-        "LETTER" => (612, 792),
-        "LEGAL" => (612, 1008),
-        _ => throw CliErrors.OptionInvalid("--page-size", $"unknown size '{id}'", "Use A3, A4, Letter or Legal."),
-    };
-
     internal static void EnsurePdfOutput(string path)
     {
         if (!string.Equals(Path.GetExtension(path), ".pdf", StringComparison.OrdinalIgnoreCase))

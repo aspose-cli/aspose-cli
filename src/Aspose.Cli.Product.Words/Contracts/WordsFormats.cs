@@ -61,11 +61,7 @@ public static class WordsFormats
     public static string ForOutput(string path, string? sourceFormatId = null)
     {
         string extension = Path.GetExtension(path);
-        FormatDescriptor[] candidates = Definitions
-            .Where(static format => format.Uses.HasFlag(FormatUse.Convert))
-            .Where(format => format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
-            .OrderBy(static format => format.ConvertOrder)
-            .ToArray();
+        IReadOnlyList<FormatDescriptor> candidates = Definitions.WithExtension(FormatUse.Convert, extension);
         return candidates.FirstOrDefault(format => string.Equals(format.Id, sourceFormatId, StringComparison.Ordinal))?.Id
             ?? candidates.FirstOrDefault()?.Id
             ?? throw Sdk.Errors.CliErrors.FormatUnsupported(extension.TrimStart('.').ToLowerInvariant(), ConvertIds);

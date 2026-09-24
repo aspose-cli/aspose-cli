@@ -207,7 +207,28 @@ public static class FormatDescriptorExtensions
     /// <summary>Returns format ids for one use in declared stable order.</summary>
     public static IReadOnlyList<string> IdsFor(
         this IEnumerable<FormatDescriptor> descriptors,
-        FormatUse use)
+        FormatUse use) =>
+        Array.AsReadOnly(Ordered(descriptors, use, extension: null)
+            .Select(static format => format.Id)
+            .ToArray());
+
+    /// <summary>
+    /// Returns the formats for one use that declare a file extension such as <c>.htm</c>,
+    /// in that use's declared stable order. Extensions compare case-insensitively.
+    /// </summary>
+    public static IReadOnlyList<FormatDescriptor> WithExtension(
+        this IEnumerable<FormatDescriptor> descriptors,
+        FormatUse use,
+        string extension)
+    {
+        ArgumentNullException.ThrowIfNull(extension);
+        return Array.AsReadOnly(Ordered(descriptors, use, extension).ToArray());
+    }
+
+    private static IEnumerable<FormatDescriptor> Ordered(
+        IEnumerable<FormatDescriptor> descriptors,
+        FormatUse use,
+        string? extension)
     {
         ArgumentNullException.ThrowIfNull(descriptors);
         if (use is not (FormatUse.Input or FormatUse.Convert or FormatUse.Render))
@@ -218,12 +239,11 @@ public static class FormatDescriptorExtensions
                 "Select exactly one format use.");
         }
 
-        return Array.AsReadOnly(descriptors
-            .Where(format => format.Uses.HasFlag(use))
+        return descriptors
+            .Where(format => format.Uses.HasFlag(use)
+                && (extension is null || format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase)))
             .OrderBy(format => Order(format, use))
-            .ThenBy(static format => format.Id, StringComparer.Ordinal)
-            .Select(static format => format.Id)
-            .ToArray());
+            .ThenBy(static format => format.Id, StringComparer.Ordinal);
     }
 
     /// <summary>Returns the preferred output extension for one format id.</summary>

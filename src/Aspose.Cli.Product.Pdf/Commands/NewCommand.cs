@@ -18,7 +18,7 @@ internal static class NewCommand
         var html = new Option<string?>("--from-html") { Description = "HTML input file." }.WithInput(InputKind.File);
         var text = new Option<string?>("--from-text") { Description = "UTF-8 text or Markdown input file." }.WithInput(InputKind.File);
         var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => "A4", Description = "A3, A4, Letter or Legal." }.WithInput(InputKind.None);
-        pageSize.AcceptOnlyFromAmong("A3", "A4", "Letter", "Legal");
+        pageSize.AcceptOnlyFromAmong(PdfPageSizes.Names);
         var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
         Option<bool> overwrite = OutputOptions.Overwrite();
         var command = new Command("create", "Create a PDF from exactly one source family.");

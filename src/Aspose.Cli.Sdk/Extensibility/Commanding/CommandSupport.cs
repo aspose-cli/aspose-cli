@@ -144,47 +144,6 @@ public sealed class OutputFileOptions
                 ? extension
                 : null;
 
-    /// <summary>
-    /// Rejects an explicit output extension that names a different format.
-    /// This prevents successfully writing content whose filename advertises
-    /// an incompatible decoder.
-    /// </summary>
-    public void EnsureExtension(
-        ParseResult parseResult,
-        IEnumerable<FormatDescriptor> formats,
-        string formatId)
-    {
-        ArgumentNullException.ThrowIfNull(parseResult);
-        ArgumentNullException.ThrowIfNull(formats);
-        ArgumentException.ThrowIfNullOrWhiteSpace(formatId);
-        string? requested = RequestedExtension(parseResult);
-        if (requested is null)
-        {
-            return;
-        }
-
-        FormatDescriptor format = formats.SingleOrDefault(candidate =>
-                string.Equals(candidate.Id, formatId, StringComparison.Ordinal))
-            ?? throw new ArgumentException(
-                $"Format '{formatId}' is not declared.",
-                nameof(formatId));
-        IReadOnlyList<string> extensions = format.Extensions
-            .Concat(format.OutputExtension is null
-                ? []
-                : [format.OutputExtension])
-            .Distinct(StringComparer.OrdinalIgnoreCase)
-            .ToArray();
-        if (extensions.Contains(requested, StringComparer.OrdinalIgnoreCase))
-        {
-            return;
-        }
-
-        throw CliErrors.OptionInvalid(
-            "--out",
-            $"extension '{requested}' does not match format '{formatId}'",
-            $"Use one of: {string.Join(", ", extensions)}.");
-    }
-
     /// <summary>Resolves an explicit path or derives a sibling output path.</summary>
     public string ResolvePath(
         ParseResult parseResult,

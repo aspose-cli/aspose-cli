@@ -240,7 +240,7 @@ internal sealed class PdfProductionService
         var document = new Document();
         try
         {
-            (double width, double height) = PageDimensions(request.PageSize);
+            (double width, double height) = PdfPageSizes.Dimensions(request.PageSize);
             ValidateMargins(request.Margins, width, height);
             foreach (string path in paths)
             {
@@ -279,7 +279,7 @@ internal sealed class PdfProductionService
         }
 
         var loader = new HtmlResourceLoader(resources);
-        (double width, double height) = PageDimensions(request.PageSize);
+        (double width, double height) = PdfPageSizes.Dimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
         // Use the native directory form of the verified origin, retaining its trailing separator.
         var options = new HtmlLoadOptions(new Uri(resources.BaseUri).LocalPath)
@@ -315,7 +315,7 @@ internal sealed class PdfProductionService
             throw CliErrors.FileNotFound(fullPath);
         }
 
-        (double width, double height) = PageDimensions(request.PageSize);
+        (double width, double height) = PdfPageSizes.Dimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
         var pageInfo = new PageInfo { Width = width, Height = height, Margin = Margin(request.Margins) };
         return markdown

@@ -183,7 +183,7 @@ internal static class PdfOpRules
     }
 
     private static void PageSize(string value) =>
-        Require(value is "A3" or "A4" or "Letter" or "Legal", "size must be one of: A3, A4, Letter, Legal");
+        Require(PdfPageSizes.IsKnown(value), $"size must be one of: {string.Join(", ", PdfPageSizes.Names)}");
 
     private static void Rect(PdfRectInput value) =>
         Require(value.X >= 0 && value.Y >= 0 && value.Width > 0 && value.Height > 0,

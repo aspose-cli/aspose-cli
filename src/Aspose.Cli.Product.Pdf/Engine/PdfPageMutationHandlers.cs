@@ -112,7 +112,7 @@ internal static class PdfPageMutationHandlers
         }
 
         Page page = document.Pages.Insert(op.At);
-        (double width, double height) = PageDimensions(op.Size);
+        (double width, double height) = PdfPageSizes.Dimensions(op.Size);
         page.SetPageSize(width, height);
         touched.Add(op.At);
         return 1;
@@ -142,7 +142,7 @@ internal static class PdfPageMutationHandlers
 
     internal static long SetPageSize(Document document, SetPageSizeOp op, ISet<int> touched)
     {
-        (double width, double height) = PageDimensions(op.Size);
+        (double width, double height) = PdfPageSizes.Dimensions(op.Size);
         IReadOnlyList<int> pages = Resolve(document, op.Pages);
         foreach (int number in pages)
         {
