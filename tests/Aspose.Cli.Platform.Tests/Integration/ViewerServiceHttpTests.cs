@@ -116,14 +116,17 @@ public sealed class ViewerServiceHttpTests : IDisposable
     {
         LiveDocument document = OpenWorkbook();
 
-        var foreignHost = new HttpRequestMessage(HttpMethod.Get, Url($"/d/{document.Id}/"));
-        foreignHost.Headers.Host = "example.com";
-        HttpResponseMessage rejected = await _client.SendAsync(foreignHost);
+        foreach (string host in new[] { "example.com", $"localhost:{_server.Port}", $"[::1]:{_server.Port}" })
+        {
+            using var foreignHost = new HttpRequestMessage(HttpMethod.Get, Url($"/d/{document.Id}/"));
+            foreignHost.Headers.Host = host;
+            using HttpResponseMessage refused = await _client.SendAsync(foreignHost);
+            Assert.True(refused.StatusCode is HttpStatusCode.Forbidden or HttpStatusCode.BadRequest, $"Host '{host}' was answered with {refused.StatusCode}.");
+        }
         HttpResponseMessage posted = await _client.PostAsync(Url($"/d/{document.Id}/"), new StringContent(""));
         HttpResponseMessage unknown = await Get("/d/unknown-document/");
         HttpResponseMessage retired = await Get($"/d/{document.Id}/r/99/view.json");
 
-        Assert.Equal(HttpStatusCode.Forbidden, rejected.StatusCode);
         Assert.Equal(HttpStatusCode.MethodNotAllowed, posted.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, unknown.StatusCode);
         Assert.Equal(HttpStatusCode.NotFound, retired.StatusCode);

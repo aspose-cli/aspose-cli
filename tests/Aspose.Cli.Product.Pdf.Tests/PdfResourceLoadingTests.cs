@@ -50,8 +50,11 @@ public sealed class PdfResourceLoadingTests
         Assert.Equal(original, File.ReadAllBytes(input));
     }
 
+    // Known product defect, kept failing on purpose: HTML creation reports the remote resources as
+    // blocked, yet Aspose.PDF still requests them over HTTP despite CustomLoaderOfExternalResources.
     [Fact]
-    public async Task HtmlCreation_PreservesLocalImageAndReportsCallbackDecisions()
+    [Trait("ProductDefect", "pdf-html-egress")]
+    public async Task HtmlCreation_NeverRequestsRemoteResourcesAndReportsThemBlocked()
     {
         Requires.Windows();
         using var fixture = new PdfEngineFixture();
@@ -72,12 +75,7 @@ public sealed class PdfResourceLoadingTests
             Assert.Contains(document.Pages[1].Resources.Images.Cast<XImage>(),
                 image => image.Width == 1 && image.Height == 1);
         }
-        Assert.True(new Uri(server.Url).IsLoopback);
-        Assert.All(server.Requests, request => Assert.Contains(request, new[]
-        {
-            "GET /style.css HTTP/1.1",
-            "GET /image.png HTTP/1.1",
-        }));
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
         File.WriteAllBytes(fixture.File("local.png"), []);
     }
 }

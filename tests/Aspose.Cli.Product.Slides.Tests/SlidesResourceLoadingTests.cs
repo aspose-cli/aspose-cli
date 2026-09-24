@@ -1,0 +1,83 @@
+using System.IO.Compression;
+using Aspose.Cli.Sdk.Views;
+using Aspose.Slides;
+using Aspose.Slides.Export;
+using Xunit;
+
+namespace Aspose.Cli.Product.Slides.Tests;
+
+/// <summary>A presentation that links external media never makes the CLI reach the network.</summary>
+public sealed class SlidesResourceLoadingTests
+{
+    // Authoring a link makes the SDK itself try the address, so the deck names an address
+    // nothing listens on and only its saved relationships are pointed at the counting server.
+    private const string Unreachable = "http://127.0.0.1:9";
+
+    // Known product defect, kept failing on purpose: the Slides adapter installs no resource-loading
+    // callback, so Aspose.Slides fetches a linked picture over HTTP on read, render, convert and view.
+    [Fact]
+    [Trait("ProductDefect", "slides-linked-media-egress")]
+    public async Task LinkedPictureAndVideo_AreNeverFetchedWhileReadingRenderingOrConverting()
+    {
+        using var fixture = new SlidesEngineFixture();
+        await using var server = new ResourceHttpServer();
+        string input = fixture.File("linked.pptx");
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            IPPImage image = presentation.Images.AddImage(ResourceHttpServer.Image);
+            IPictureFrame picture = slide.Shapes.AddPictureFrame(ShapeType.Rectangle, 20, 20, 120, 120, image);
+            picture.PictureFormat.Picture.LinkPathLong = $"{Unreachable}/linked.png";
+            slide.Shapes.AddVideoFrame(200, 20, 160, 120, $"{Unreachable}/clip.mp4");
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+        Assert.True(Relink(input, Unreachable, server.Url) >= 2, "The deck must keep both external links.");
+
+        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+        SlidesRenderResult rendered = fixture.Engine.Render(input, new PresentationRenderRequest
+        {
+            TargetFormatId = "png",
+            OutputPath = fixture.File("slide.png"),
+        });
+        SlidesConvertResult converted = fixture.Engine.Convert(input, new PresentationConvertRequest
+        {
+            TargetFormatId = "pdf",
+            OutputPath = fixture.File("linked.pdf"),
+        });
+        ViewManifest view = fixture.Engine.RenderView(
+            input,
+            new ViewRenderRequest { View = SlidesViews.Slides, MaxParts = 1, Purpose = ViewPurpose.Display },
+            new MemoryArtifactSink());
+
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
+        Assert.NotEmpty(Assert.Single(read.Slides).Shapes);
+        Assert.All(rendered.Outputs, static item => Assert.True(item.Output.SizeBytes > 0));
+        Assert.All(converted.Outputs, static output => Assert.True(new FileInfo(output.Path).Length > 0));
+        Assert.Equal(1, view.TotalParts);
+    }
+
+    /// <summary>Points the external relationships of a package at another origin; returns how many changed.</summary>
+    private static int Relink(string package, string from, string to)
+    {
+        int changed = 0;
+        using ZipArchive archive = ZipFile.Open(package, ZipArchiveMode.Update);
+        foreach (ZipArchiveEntry entry in archive.Entries.Where(static entry => entry.FullName.EndsWith(".rels", StringComparison.Ordinal)).ToArray())
+        {
+            string xml;
+            using (var reader = new StreamReader(entry.Open()))
+            {
+                xml = reader.ReadToEnd();
+            }
+            int count = (xml.Length - xml.Replace(from, string.Empty, StringComparison.Ordinal).Length) / from.Length;
+            if (count == 0)
+            {
+                continue;
+            }
+            changed += count;
+            using var writer = new StreamWriter(entry.Open());
+            writer.BaseStream.SetLength(0);
+            writer.Write(xml.Replace(from, to, StringComparison.Ordinal));
+        }
+        return changed;
+    }
+}
