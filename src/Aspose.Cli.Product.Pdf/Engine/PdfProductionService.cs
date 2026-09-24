@@ -199,8 +199,8 @@ internal sealed class PdfProductionService
 
         EnsureCreationInputs(_resourceBudgets, request);
         LicenseState state = _licenseGate.EnsureApplied();
-        using LocalDocumentResourceLoader? resources = request.HtmlPath is { } htmlPath
-            ? new LocalDocumentResourceLoader(htmlPath, _resourceBudgets) : null;
+        using HtmlImportResources? resources = request.HtmlPath is { } htmlPath
+            ? new HtmlImportResources(htmlPath, _resourceBudgets) : null;
         using Document document = request.ImagePaths is { Count: > 0 } images
             ? CreateFromImages(images, request)
             : request.HtmlPath is not null
@@ -263,7 +263,7 @@ internal sealed class PdfProductionService
     }
 
     private static Document CreateFromHtml(
-        string path, NewPdfRequest request, LocalDocumentResourceLoader resources)
+        string path, NewPdfRequest request, HtmlImportResources resources)
     {
         string fullPath = Path.GetFullPath(path);
         if (!File.Exists(fullPath))
@@ -271,11 +271,9 @@ internal sealed class PdfProductionService
             throw CliErrors.FileNotFound(fullPath);
         }
 
-        var loader = new HtmlResourceLoader(resources);
         (double width, double height) = PdfPageSizes.Dimensions(request.PageSize);
         ValidateMargins(request.Margins, width, height);
-        // Use the native directory form of the verified origin, retaining its trailing separator.
-        var options = new HtmlLoadOptions(new Uri(resources.BaseUri).LocalPath)
+        var options = new HtmlLoadOptions(resources.BaseDirectory)
         {
             PageInfo = new PageInfo
             {
@@ -283,7 +281,7 @@ internal sealed class PdfProductionService
                 Height = height,
                 Margin = Margin(request.Margins),
             },
-            CustomLoaderOfExternalResources = loader.Load,
+            CustomLoaderOfExternalResources = resources.Load,
         };
         Document? document = null;
         try
@@ -628,6 +626,16 @@ internal sealed class PdfProductionService
         {
             InputSizeGuard.Ensure(resourceBudgets, path);
         }
+
+        // The importers reach the network before any resource policy applies; refuse first.
+        if (request.HtmlPath is { } html)
+        {
+            PdfNetworkReferenceGuard.Ensure(resourceBudgets.Inputs.ReadAllBytes(html), "HTML", html);
+        }
+        else if (request.Markdown && request.TextPath is { } markdown)
+        {
+            PdfNetworkReferenceGuard.Ensure(resourceBudgets.Inputs.ReadAllBytes(markdown), "Markdown", markdown);
+        }
     }
 
     /// <summary>
@@ -672,20 +680,4 @@ internal sealed class PdfProductionService
         return degraded;
     }
 
-    private sealed class HtmlResourceLoader(LocalDocumentResourceLoader resources)
-    {
-        public LoadOptions.ResourceLoadingResult Load(string resourceUri)
-        {
-            if (resources.TryRead(resourceUri, out byte[] data))
-            {
-                return new LoadOptions.ResourceLoadingResult(data);
-            }
-
-            return new LoadOptions.ResourceLoadingResult(Array.Empty<byte>())
-            {
-                // Cancelling the custom loader would enable the SDK default loader.
-                LoadingCancelled = false,
-            };
-        }
-    }
 }

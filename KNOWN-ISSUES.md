@@ -37,6 +37,16 @@ the `NAVIGATION_DEGRADED` warning with the number of bookmarks, links and named
 destinations that an edit or merge left unresolved. See
 [tests/acceptance/pdf-page-navigation](tests/acceptance/pdf-page-navigation/README.md).
 
+### Aspose.PDF.Drawing 26.8.0: HTML import requests network resources despite the custom loader (gate `PDF-HTML-EGRESS`)
+
+The HTML importer requests every http(s) stylesheet and image before it calls
+`HtmlLoadOptions.CustomLoaderOfExternalResources`, so the loader cannot prevent the request,
+and the Markdown importer has no resource hook at all. The CLI refuses HTML and Markdown input
+that names any network address, hyperlinks included, with `FEATURE_UNSUPPORTED`, and fails an
+HTML import whose loader still sees one. The Markdown importer also reads local images outside
+the input directory without the CLI's guard. See
+[tests/acceptance/pdf-html-egress](tests/acceptance/pdf-html-egress/README.md).
+
 ### Aspose.Cells 26.9.0: sparklines cannot reference a sheet whose name contains an apostrophe
 
 - **Symptom:** `SparklineGroups.Add` throws `Invalid "'"` whenever the data range is on a

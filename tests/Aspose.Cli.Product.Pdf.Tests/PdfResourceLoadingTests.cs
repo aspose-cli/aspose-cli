@@ -50,32 +50,115 @@ public sealed class PdfResourceLoadingTests
         Assert.Equal(original, File.ReadAllBytes(input));
     }
 
-    // Known product defect, kept failing on purpose: HTML creation reports the remote resources as
-    // blocked, yet Aspose.PDF still requests them over HTTP despite CustomLoaderOfExternalResources.
+    // Aspose.PDF.Drawing 26.8 requests http(s) resources before it consults
+    // CustomLoaderOfExternalResources (gate PDF-HTML-EGRESS), so the CLI refuses any HTML that
+    // names a network address before the importer runs.
+    [Theory]
+    [InlineData("""<link rel="stylesheet" href="{0}/style.css">""")]
+    [InlineData("""<img src="{0}/image.png">""")]
+    [InlineData("""<style>@import url('{0}/import.css');</style>""")]
+    [InlineData("""<p style="background: url({0}/background.png)">styled</p>""")]
+    [InlineData("""<img src="{1}/scheme-relative.png">""")]
+    [InlineData("""<img src="{2}/entity.png">""")]
+    [InlineData("""<style>p {{ background: url('\68\74\74\70\3a\2f\2f {3}/escaped.png'); }}</style>""")]
+    [InlineData("""<base href="{0}/"><img src="relative.png">""")]
+    [InlineData("""<a href="{0}/page.html">a hyperlink is refused too</a>""")]
+    public async Task HtmlCreation_RefusesNetworkAddressesBeforeTheImporterRuns(string reference)
+    {
+        using var fixture = new PdfEngineFixture();
+        await using var server = new ResourceHttpServer();
+        string host = server.Url["http://".Length..];
+        string input = fixture.File("input.html");
+        string output = fixture.File("output.pdf");
+        File.WriteAllText(input, "<html><head></head><body><p>Local content</p>"
+            + string.Format(System.Globalization.CultureInfo.InvariantCulture, reference,
+                server.Url, "//" + host, "http&#58;&#47;&#47;" + host, host)
+            + "</body></html>");
+
+        CliException refused = Assert.Throws<CliException>(() =>
+            fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = output }));
+
+        Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
+        Assert.Contains("network address", refused.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
+    }
+
     [Fact]
-    [Trait("ProductDefect", "pdf-html-egress")]
-    public async Task HtmlCreation_NeverRequestsRemoteResourcesAndReportsThemBlocked()
+    public async Task HtmlCreation_AcceptsNamespaceAndDocumentTypeIdentifiersWithoutRequestingThem()
+    {
+        using var fixture = new PdfEngineFixture();
+        await using var server = new ResourceHttpServer();
+        string input = fixture.File("input.xhtml.html");
+        string output = fixture.File("output.pdf");
+        File.WriteAllText(input, $"""
+            <!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "{server.Url}/xhtml1-strict.dtd">
+            <html xmlns="{server.Url}/xhtml"><body><p>Local content</p>
+            <svg xmlns="{server.Url}/svg" xmlns:xlink='{server.Url}/xlink' width="10" height="10"><rect width="5" height="5"/></svg>
+            </body></html>
+            """);
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = output });
+
+        Assert.True(result.Output.SizeBytes > 0);
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
+    }
+
+    [Fact]
+    public async Task MarkdownCreation_RefusesNetworkAddressesBeforeTheImporterRuns()
+    {
+        using var fixture = new PdfEngineFixture();
+        await using var server = new ResourceHttpServer();
+        string input = fixture.File("input.md");
+        string output = fixture.File("output.pdf");
+        File.WriteAllText(input, $"# Report\n\n![chart]({server.Url}/chart.png)\n");
+
+        CliException refused = Assert.Throws<CliException>(() =>
+            fixture.Engine.Create(new NewPdfRequest { TextPath = input, Markdown = true, OutputPath = output }));
+
+        Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
+        Assert.False(File.Exists(output));
+        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
+    }
+
+    [Fact]
+    public void HtmlCreation_ReportsOmittedLocalResourcesAndKeepsPermittedOnes()
     {
         Requires.Windows();
         using var fixture = new PdfEngineFixture();
-        await using var server = new ResourceHttpServer();
-        string input = fixture.File("input.html");
+        string directory = Directory.CreateDirectory(fixture.File("site")).FullName;
+        string input = Path.Combine(directory, "input.html");
         string output = fixture.File("output.pdf");
-        File.WriteAllBytes(fixture.File("local.png"), ResourceHttpServer.Image);
-        File.WriteAllText(input, $"""
-            <html><head><link rel="stylesheet" href="{server.Url}/style.css"></head>
-            <body><p>Local content</p><img src="local.png" width="30" height="30">
-            <img src="{server.Url}/image.png"></body></html>
+        File.WriteAllBytes(Path.Combine(directory, "local.png"), ResourceHttpServer.Image);
+        File.WriteAllBytes(fixture.File("outside.png"), ResourceHttpServer.Image);
+        File.WriteAllText(input, """
+            <html><body><p>Local content</p><img src="local.png" width="30" height="30">
+            <img src="../outside.png" width="30" height="30"></body></html>
             """);
-        var result = fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = output });
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = output });
+
         Assert.Contains(result.Warnings!, warning =>
             warning.Code == WarningCodes.RemoteResourcesBlocked && warning.AffectsCompleteness);
-        using (var document = new Document(output))
-        {
-            Assert.Contains(document.Pages[1].Resources.Images.Cast<XImage>(),
-                image => image.Width == 1 && image.Height == 1);
-        }
-        Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
-        File.WriteAllBytes(fixture.File("local.png"), []);
+        using var document = new Document(output);
+        Assert.Contains(document.Pages[1].Resources.Images.Cast<XImage>(),
+            image => image.Width == 1 && image.Height == 1);
+    }
+
+    [Fact]
+    public void HtmlImport_NetworkAddressThatReachesTheLoaderFailsInsteadOfReportingItBlocked()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("input.html");
+        File.WriteAllText(input, "<html><body>Local</body></html>");
+        using var resources = new HtmlImportResources(input, ProductTestBudgets.Create<PdfModule>());
+
+        Aspose.Pdf.LoadOptions.ResourceLoadingResult result = resources.Load("http://127.0.0.1:9/late.png");
+
+        Assert.Empty(result.Data);
+        Assert.False(result.LoadingCancelled);
+        CliException failure = Assert.Throws<CliException>(() => resources.Warning);
+        Assert.Equal(ErrorCodes.FeatureUnsupported, failure.Code);
+        Assert.Contains("http://127.0.0.1:9/late.png", failure.Message, StringComparison.Ordinal);
     }
 }

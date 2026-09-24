@@ -33,8 +33,12 @@ positions; rectangles are points with a top-left origin.
 5. Sign only the final, verified artifact with `pdf sign`, passing the
    certificate password through `--certificate-password-env`.
 
-Create PDFs from HTML only when the HTML is trusted: the PDF importer can fetch
-linked images and CSS outside the CLI's local-resource guard.
+`pdf create --from-html` and Markdown `--from-text` refuse any input that names a
+network address, hyperlinks included, with `FEATURE_UNSUPPORTED`: the PDF importer
+requests network resources before the CLI can refuse them. Save required images
+and CSS beside the input and reference them by relative path. The Markdown
+importer reads local images without the CLI's local-resource guard, so use
+trusted Markdown only.
 
 ## Verify before delivery
 
