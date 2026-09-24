@@ -11,6 +11,7 @@ public sealed class CatalogPackageDriftTests : IDisposable
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void GeneratorRejectsProjectPackagesThatTheCatalogDoesNotDeclare()
     {
