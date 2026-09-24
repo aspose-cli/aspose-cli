@@ -629,4 +629,28 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
 
         Assert.Contains(fonts, font => font.Name == "Microsoft YaHei");
     }
+
+    [Fact]
+    public void CheckFonts_ReportsTheFontTheLayoutSubstitutesForAMissingOne()
+    {
+        const string missing = "Fictional Missing Font 987";
+        string input = _fixture.Temp.File("fonts-missing.docx");
+        var builder = new DocumentBuilder();
+        builder.Font.Name = missing;
+        builder.Writeln("Text drawn with a font this machine lacks.");
+        builder.Font.Name = "Arial";
+        builder.Writeln("Text drawn with an installed font.");
+        builder.Document.Save(input);
+
+        IReadOnlyList<FontAvailability> fonts =
+            _fixture.Fonts.CheckFonts(input, new FontCheckRequest()).Fonts;
+
+        FontAvailability substituted = Assert.Single(fonts, font => font.Name == missing);
+        Assert.False(substituted.Available);
+        Assert.False(string.IsNullOrWhiteSpace(substituted.SubstitutedBy));
+        Assert.NotEqual(missing, substituted.SubstitutedBy);
+        FontAvailability installed = Assert.Single(fonts, font => font.Name == "Arial");
+        Assert.True(installed.Available);
+        Assert.Null(installed.SubstitutedBy);
+    }
 }

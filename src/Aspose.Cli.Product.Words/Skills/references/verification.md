@@ -42,6 +42,7 @@ new directory, for at most three rounds, then report any remaining defects.
 aspose-cli fonts check output.docx --output json
 ```
 
-`fonts check` lists the document's fonts that are unavailable here. Pass
+`fonts check` lists the fonts the document's text uses, marks those unavailable
+here, and names in `substitutedBy` the font the layout draws instead. Pass
 `--font-dir` to `fonts check` and `review` for fonts delivered beside the
 document; it adds to the system fonts.

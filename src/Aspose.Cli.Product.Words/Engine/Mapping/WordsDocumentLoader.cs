@@ -44,16 +44,20 @@ internal sealed class WordsDocumentLoader
 
     private const string DefaultTemplateResource = "Templates/default-a4.docx";
 
-    public LoadedDocument Open(string path, string? password)
+    /// <summary>
+    /// Opens an admitted input. <paramref name="warnings"/> receives what the SDK reports while
+    /// it loads and first lays out the document, such as font substitutions.
+    /// </summary>
+    public LoadedDocument Open(string path, string? password, IWarningCallback? warnings = null)
     {
         InputSizeGuard.Ensure(_resourceBudgets, path);
-        return OpenCore(path, password);
+        return OpenCore(path, password, warnings);
     }
 
     // Generated candidates are bounded by publication, not a second user-input admission.
-    internal LoadedDocument OpenPublishedCandidate(string path, string? password) => OpenCore(path, password);
+    internal LoadedDocument OpenPublishedCandidate(string path, string? password) => OpenCore(path, password, warnings: null);
 
-    private LoadedDocument OpenCore(string path, string? password)
+    private LoadedDocument OpenCore(string path, string? password, IWarningCallback? warnings)
     {
         FileFormatInfo detected;
         try
@@ -93,7 +97,7 @@ internal sealed class WordsDocumentLoader
         try
         {
             Document document = Load(options => new Document(path, options),
-                detected.LoadFormat, resources, path, password);
+                detected.LoadFormat, resources, path, password, warnings);
             return new LoadedDocument(document, detected, id, resources,
                 _licenseGate?.EnsureApplied() == LicenseState.Evaluation);
         }
@@ -113,7 +117,7 @@ internal sealed class WordsDocumentLoader
             Encoding.UTF8.GetByteCount(markdown), "bytes", "markdown-buffer");
         using var input = new MemoryStream(Encoding.UTF8.GetBytes(markdown), writable: false);
         Document document = Load(options => new Document(input, options),
-            LoadFormat.Markdown, owner.Resources, "inline Markdown", password: null);
+            LoadFormat.Markdown, owner.Resources, "inline Markdown", password: null, warnings: null);
         owner.Retain(document);
         return document;
     }
@@ -145,7 +149,7 @@ internal sealed class WordsDocumentLoader
             "pre-allocation");
 
     private Document Load(Func<LoadOptions, Document> open, LoadFormat format,
-        LocalDocumentResourceLoader resources, string path, string? password)
+        LocalDocumentResourceLoader resources, string path, string? password, IWarningCallback? warnings)
     {
         Document? document = null;
         try
@@ -157,6 +161,7 @@ internal sealed class WordsDocumentLoader
                 BaseUri = resources.BaseUri,
                 ResourceLoadingCallback = new BlockingResourceCallback(resources),
                 PreserveIncludePictureField = true,
+                WarningCallback = warnings,
             });
             EnsureWithinBudgets(document, resources);
             return document;
