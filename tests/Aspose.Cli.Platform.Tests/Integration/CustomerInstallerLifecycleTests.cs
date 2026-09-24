@@ -19,8 +19,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         string install = Path.Combine(_root, "update-replay");
         string skills = Path.Combine(_root, "update-replay-skills");
         UserState before = CaptureUserState();
-        PowerShellResult installed = RunInstaller(_package.Path, install, arguments: ["-SkillsRoot", skills], skipSkills: false);
-        Assert.True(installed.ExitCode == 0, installed.StdErr + installed.StdOut);
+        _package.CopySkillsInstallation(install, skills);
         string choices = MarkerChoices(install);
         string stale = AddManagedStaleFile(Path.Combine(skills, "aspose-cli-cells"));
 
@@ -48,7 +47,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         Assert.Contains("-Update requires one", Flat(missing), StringComparison.Ordinal);
         Assert.False(Directory.Exists(install));
 
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
+        _package.CopyInstallation(install);
         string before = Snapshot(install);
         foreach (string[] conflict in new[] { new[] { "-SkipPath" }, new[] { "-SkillsRoot", Path.Combine(_root, "other") } })
         {
@@ -67,15 +66,17 @@ public sealed partial class CustomerInstallerPowerShellTests
         string install = Path.Combine(_root, "one-spelling");
         // The helper derives the configuration directory from the install path's last segment.
         var configuration = new Dictionary<string, string?> { ["ASPOSE_CLI_CONFIG_DIR"] = Path.Combine(_root, ".config-one-spelling") };
-        Assert.Equal(0, RunInstaller(_package.Path, install + Path.DirectorySeparatorChar, configuration).ExitCode);
+        _package.CopyInstallation(install);
         string before = Snapshot(install);
 
         PowerShellResult interrupted = RunInstaller(_package.Path, install,
             new Dictionary<string, string?>(configuration) { ["ASPOSE_CLI_INSTALL_CRASH"] = "oldMoved" });
         Assert.Equal(97, interrupted.ExitCode);
-        // The spelling with a trailing separator finds and recovers the same journal.
+        // The next run, with nobody to answer a prompt and the spelling with a trailing
+        // separator, finds the same journal, recovers and completes its own installation.
         PowerShellResult recovered = RunInstaller(_package.Path, install + Path.DirectorySeparatorChar, configuration);
         Assert.True(recovered.ExitCode == 0, recovered.StdErr + recovered.StdOut);
+        AssertInstall(install);
         Assert.Equal(before, Snapshot(install));
         Assert.Empty(Directory.GetFiles(_root, ".aspose-cli-transaction-*.json"));
         Assert.Empty(Directory.GetDirectories(_root, ".aspose-cli-backup-*"));
@@ -91,18 +92,26 @@ public sealed partial class CustomerInstallerPowerShellTests
         Requires.Windows();
         string install = Path.Combine(_root, "status-install");
         string status = Path.Combine(_root, "status-" + Guid.NewGuid().ToString("N") + ".json");
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
+        _package.CopyInstallation(install);
+        string before = Snapshot(install);
 
         PowerShellResult succeeded = RunInstaller(_package.Path, install, arguments: ["-Update", "-StatusPath", status],
             skipPath: false, skipSkills: false, skipMcp: false);
         Assert.True(succeeded.ExitCode == 0, succeeded.StdErr + succeeded.StdOut);
         Assert.Equal("succeeded", JsonNode.Parse(File.ReadAllText(status))!["state"]!.GetValue<string>());
         Assert.Null(UpdateStatus.ReadWarning(status));
+        // The same build replaying the same choices publishes an identical tree...
+        Assert.Equal(before, Snapshot(install));
 
+        // ...so the rollback finds the original already in place and removes the verified
+        // duplicate backup.
         PowerShellResult failed = RunInstaller(_package.Path, install,
             new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_FAULT"] = "newPublished" },
             arguments: ["-Update", "-StatusPath", status], skipPath: false, skipSkills: false, skipMcp: false);
         Assert.NotEqual(0, failed.ExitCode);
+        Assert.Equal(before, Snapshot(install));
+        Assert.Empty(Directory.GetFiles(_root, ".aspose-cli-transaction-*.json"));
+        Assert.Empty(Directory.GetDirectories(_root, ".aspose-cli-backup-*"));
         JsonNode record = JsonNode.Parse(File.ReadAllText(status))!;
         Assert.Equal("failed", record["state"]!.GetValue<string>());
         string log = record["log"]!.GetValue<string>();
@@ -118,7 +127,6 @@ public sealed partial class CustomerInstallerPowerShellTests
         Assert.Equal(97, crashed.ExitCode);
         Assert.Equal("running", JsonNode.Parse(File.ReadAllText(status))!["state"]!.GetValue<string>());
         Assert.Contains("stopped before", UpdateStatus.ReadWarning(status)!.Message, StringComparison.Ordinal);
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
     }
 
     [Fact]
@@ -128,7 +136,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         string install = Path.Combine(_root, "uninstall");
         string skills = Path.Combine(_root, "uninstall-skills");
         UserState before = CaptureUserState();
-        Assert.Equal(0, RunInstaller(_package.Path, install, arguments: ["-SkillsRoot", skills], skipSkills: false).ExitCode);
+        _package.CopySkillsInstallation(install, skills);
         string customized = Path.Combine(skills, "aspose-cli-pdf", "customer-notes.md");
         File.WriteAllText(customized, "preserve me", Encoding.UTF8);
         string unrelated = Path.Combine(skills, "customer-skill", "SKILL.md");
@@ -163,7 +171,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         Requires.Windows();
         string install = Path.Combine(_root, "uninstall-fault-" + phase);
         string skills = Path.Combine(_root, "uninstall-fault-skills-" + phase);
-        Assert.Equal(0, RunInstaller(_package.Path, install, arguments: ["-SkillsRoot", skills], skipSkills: false).ExitCode);
+        _package.CopySkillsInstallation(install, skills);
         string beforeInstall = Snapshot(install);
         string beforeSkills = Snapshot(skills);
 
@@ -172,11 +180,17 @@ public sealed partial class CustomerInstallerPowerShellTests
 
         if (phase == "committedCleanup")
         {
-            // After the commit point nothing is rolled back; cleanup finishes on the next run.
+            // After the commit point nothing is rolled back. The committed journal and the
+            // verified backups stay exactly as a process killed at the commit point leaves
+            // them, and the next run finishes them.
             Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
             Assert.Contains("remains pending", Flat(result), StringComparison.Ordinal);
             Assert.False(Directory.Exists(install));
-            Assert.Equal(0, RunUninstaller(install).ExitCode);
+            Assert.Single(Directory.GetFiles(_root, ".aspose-cli-transaction-*.json"));
+            PowerShellResult finished = RunUninstaller(install);
+            Assert.True(finished.ExitCode == 0, finished.StdErr + finished.StdOut);
+            Assert.False(Directory.Exists(install));
+            Assert.Empty(Directory.GetDirectories(skills));
             AssertNoTransactionLeftovers();
             return;
         }
@@ -186,19 +200,18 @@ public sealed partial class CustomerInstallerPowerShellTests
         AssertNoTransactionLeftovers();
     }
 
-    [Theory]
-    [InlineData("oldMoved")]
-    [InlineData("skillUpdated")]
-    [InlineData("committed")]
-    public void Uninstall_InterruptedRunIsCompletedByTheNextRun(string phase)
+    [Fact]
+    public void Uninstall_InterruptedRunIsCompletedByTheNextRun()
     {
         Requires.Windows();
-        string install = Path.Combine(_root, "uninstall-crash-" + phase);
-        string skills = Path.Combine(_root, "uninstall-crash-skills-" + phase);
-        Assert.Equal(0, RunInstaller(_package.Path, install, arguments: ["-SkillsRoot", skills], skipSkills: false).ExitCode);
+        string install = Path.Combine(_root, "uninstall-crash");
+        string skills = Path.Combine(_root, "uninstall-crash-skills");
+        _package.CopySkillsInstallation(install, skills);
 
+        // Killed with the installation and one Skill moved to their backups: the next run
+        // restores both from the journal, then removes them again as its own transaction.
         PowerShellResult interrupted = RunUninstaller(install,
-            new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_CRASH"] = phase });
+            new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_CRASH"] = "skillUpdated" });
         Assert.Equal(97, interrupted.ExitCode);
 
         PowerShellResult finished = RunUninstaller(install);
@@ -239,7 +252,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         Requires.Windows();
         string install = Path.Combine(_root, "uninstall-config");
         string configuration = Path.Combine(_root, ".config-uninstall-config");
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
+        _package.CopyInstallation(install);
         Directory.CreateDirectory(configuration);
         string license = Path.Combine(configuration, "licenses", "Aspose.Total.lic");
         Directory.CreateDirectory(Path.GetDirectoryName(license)!);
@@ -425,6 +438,13 @@ public sealed partial class CustomerInstallerPowerShellTests
             "-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command",
             $". {PowerShellLiteral(Path.Combine(RepositoryPaths.Root, "install.ps1"))}; {script}",
         ]);
+
+    // What every install, update and uninstall run does first under its locks, without the
+    // package verification and the new transaction that follow.
+    private static PowerShellResult RunPendingRecovery(string install) =>
+        RunInstallerFunctions(
+            $"$lock = Enter-InstallLock (Resolve-InstallRoot {PowerShellLiteral(install)}); "
+            + "try { Invoke-PendingRecovery $lock } finally { Exit-InstallLock $lock }");
 
     private void AssertNoTransactionLeftovers()
     {

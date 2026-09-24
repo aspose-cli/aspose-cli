@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -127,31 +128,12 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     }
 
     [Fact]
-    public void DefaultMcpPathWithoutHostExecutablesCompletesCleanInstall()
-    {
-        Requires.Windows();
-        string install = Path.Combine(_root, "default-mcp");
-        string emptyPath = Path.Combine(_root, "empty-command-path");
-        Directory.CreateDirectory(emptyPath);
-        PowerShellResult result = RunInstaller(_package.Path, install,
-            new Dictionary<string, string?> { ["Path"] = emptyPath }, skipMcp: false);
-        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
-        AssertInstall(install);
-        using JsonDocument marker = JsonDocument.Parse(File.ReadAllText(Path.Combine(install, ".aspose-cli-install.json")));
-        Assert.Equal(0, marker.RootElement.GetProperty("mcpRegistrations").GetArrayLength());
-    }
-
-    [Fact]
     public void CrashAfterOptionalMcpMetadataDoesNotInvalidateCommittedRecovery()
     {
         Requires.Windows();
         string install = Path.Combine(_root, "mcp-metadata-recovery");
-        PowerShellResult initial = RunInstaller(_package.Path, install);
-        Assert.True(initial.ExitCode == 0, initial.StdErr);
-        string markerPath = Path.Combine(install, ".aspose-cli-install.json");
-        JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath))!.AsObject();
-        marker["mcpRegistrations"] = new JsonArray("codex");
-        File.WriteAllText(markerPath, marker.ToJsonString());
+        _package.CopyInstallation(install);
+        RewriteMarker(install, marker => marker["mcpRegistrations"] = new JsonArray("codex"));
         string emptyPath = Path.Combine(_root, "mcp-empty-path");
         Directory.CreateDirectory(emptyPath);
         PowerShellResult interrupted = RunInstaller(_package.Path, install,
@@ -168,11 +150,9 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     {
         Requires.Windows();
         string install = Path.Combine(_root, "pending-cleanup");
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
+        _package.CopyInstallation(install);
+        RewriteMarker(install, marker => marker["mcpRegistrations"] = new JsonArray("codex"));
         string markerPath = Path.Combine(install, ".aspose-cli-install.json");
-        JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath))!.AsObject();
-        marker["mcpRegistrations"] = new JsonArray("codex");
-        File.WriteAllText(markerPath, marker.ToJsonString());
         string emptyPath = Path.Combine(_root, "cleanup-empty-path");
         Directory.CreateDirectory(emptyPath);
         PowerShellResult committed = RunInstaller(_package.Path, install,
@@ -181,8 +161,19 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Assert.Contains("cleanup remains pending", committed.StdErr + committed.StdOut, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("codex", JsonNode.Parse(File.ReadAllText(markerPath))!["mcpRegistrations"]![0]!.GetValue<string>());
         AssertInstall(install);
+        // The committed journal and the verified backup stay exactly as a process killed at the
+        // commit point leaves them, and the next run must finish them without a rollback.
+        Assert.Single(Directory.GetFiles(_root, ".aspose-cli-transaction-*.json"));
+        Assert.Single(Directory.GetDirectories(_root, ".aspose-cli-backup-*"));
+        string committedPayload = Snapshot(install, except: ".aspose-cli-install.json");
+
         PowerShellResult retry = RunInstaller(_package.Path, install);
+
         Assert.True(retry.ExitCode == 0, retry.StdErr + retry.StdOut);
+        AssertInstall(install);
+        // The retry records its own choices in the marker; the payload stays the committed one.
+        Assert.Equal(committedPayload, Snapshot(install, except: ".aspose-cli-install.json"));
+        AssertNoTransactionLeftovers();
     }
 
     [Fact]
@@ -206,23 +197,30 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     }
 
     [Fact]
-    public void CleanInstall_WorksWithoutPowerShellHashModuleOrNormalPath()
+    public void CleanInstall_WorksWithoutPowerShellModulesCommandPathOrMcpHosts()
     {
         Requires.Windows();
 
         string install = Path.Combine(_root, "minimal-environment");
-        string systemDirectory = Environment.GetFolderPath(Environment.SpecialFolder.System);
+        // An empty directory as the whole command path: nothing the installer or an MCP host
+        // lookup could find, while the child processes it starts are named by full path.
+        string emptyPath = Path.Combine(_root, "empty-command-path");
+        Directory.CreateDirectory(emptyPath);
         PowerShellResult result = RunInstaller(
             _package.Path,
             install,
             new Dictionary<string, string?>
             {
-                ["Path"] = systemDirectory,
+                ["Path"] = emptyPath,
                 ["PSModulePath"] = string.Empty,
-            });
+            },
+            skipMcp: false);
 
-        Assert.True(result.ExitCode == 0, result.StdErr);
+        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
         AssertInstall(install);
+        using JsonDocument marker = JsonDocument.Parse(File.ReadAllText(Path.Combine(install, ".aspose-cli-install.json")));
+        Assert.Equal(0, marker.RootElement.GetProperty("mcpRegistrations").GetArrayLength());
+        Assert.True(marker.RootElement.GetProperty("choices").GetProperty("mcp").GetBoolean());
     }
 
     [Fact]
@@ -320,14 +318,14 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         string install = Path.Combine(_root, "custom-root-rollback");
         string skills = Path.Combine(_root, "rollback-skills");
         UserState beforeUser = CaptureUserState();
-        PowerShellResult installed = existingSkillTree
-            ? RunInstaller(
-                _package.Path,
-                install,
-                arguments: ["-SkillsRoot", skills],
-                skipSkills: false)
-            : RunInstaller(_package.Path, install);
-        Assert.Equal(0, installed.ExitCode);
+        if (existingSkillTree)
+        {
+            _package.CopySkillsInstallation(install, skills);
+        }
+        else
+        {
+            _package.CopyInstallation(install);
+        }
         string beforeInstall = Snapshot(install);
         string beforeSkills = SnapshotOptional(skills);
 
@@ -354,11 +352,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         string originalRoot = Path.Combine(_root, "original-skills");
         string otherRoot = Path.Combine(_root, "other-skills");
         UserState beforeUser = CaptureUserState();
-        Assert.Equal(0, RunInstaller(
-            _package.Path,
-            install,
-            arguments: ["-SkillsRoot", originalRoot],
-            skipSkills: false).ExitCode);
+        _package.CopySkillsInstallation(install, originalRoot);
         // The marker records the Skills root, so compare the payload without it.
         string beforeInstall = Snapshot(install, except: ".aspose-cli-install.json");
         string beforeSkills = Snapshot(originalRoot);
@@ -399,11 +393,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         string skills = Path.Combine(_root, "junction-swap-skills");
         string parked = Path.Combine(_root, "junction-swap-parked");
         string attacker = Path.Combine(_root, "junction-swap-attacker");
-        Assert.Equal(0, RunInstaller(
-            _package.Path,
-            install,
-            arguments: ["-SkillsRoot", skills],
-            skipSkills: false).ExitCode);
+        _package.CopySkillsInstallation(install, skills);
         string beforeInstall = Snapshot(install);
         string beforeSkills = Snapshot(skills);
 
@@ -419,14 +409,13 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         FileSystemLinks.CreateDirectoryLink(skills, attacker);
         try
         {
-            PowerShellResult rejected = RunInstaller(
-                _package.Path,
-                install,
-                arguments: ["-SkillsRoot", skills],
-                skipSkills: false);
+            // Recovery itself meets the junction: an installer run would refuse its own
+            // -SkillsRoot argument before it reached the journal.
+            PowerShellResult rejected = RunPendingRecovery(install);
             Assert.NotEqual(0, rejected.ExitCode);
-            Assert.Contains("reparse point", rejected.StdErr + rejected.StdOut, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains("reparse point", Flat(rejected), StringComparison.OrdinalIgnoreCase);
             Assert.Empty(Directory.EnumerateFileSystemEntries(attacker));
+            Assert.Single(Directory.GetFiles(_root, ".aspose-cli-transaction-*.json"));
         }
         finally
         {
@@ -438,14 +427,11 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
             Directory.Move(parked, skills);
         }
 
-        PowerShellResult recovered = RunInstaller(
-            _package.Path,
-            install,
-            arguments: ["-SkillsRoot", skills],
-            skipSkills: false);
-        Assert.True(recovered.ExitCode == 0, recovered.StdErr);
+        PowerShellResult recovered = RunPendingRecovery(install);
+        Assert.True(recovered.ExitCode == 0, recovered.StdErr + recovered.StdOut);
         Assert.Equal(beforeInstall, Snapshot(install));
         Assert.Equal(beforeSkills, Snapshot(skills));
+        AssertNoTransactionLeftovers();
     }
 
     [Theory]
@@ -551,23 +537,23 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     public void InvalidMarkerAndUnknownSentinel_AreRejectedWithoutDeletingAnything()
     {
         Requires.Windows();
-        string package = _package.Path;
         string install = Path.Combine(_root, "owned");
-        Assert.Equal(0, RunInstaller(package, install).ExitCode);
-        string executable = Path.Combine(install, "aspose-cli.exe");
-        string executableHash = FileHashes.Sha256(executable);
+        _package.CopyInstallation(install);
         string marker = Path.Combine(install, ".aspose-cli-install.json");
         File.WriteAllText(marker, "{\"schemaVersion\":2,\"schemaVersion\":2}", Encoding.UTF8);
         string sentinel = Path.Combine(install, "CUSTOMER-DO-NOT-DELETE.txt");
         File.WriteAllText(sentinel, "customer-owned", Encoding.UTF8);
+        string before = Snapshot(install);
 
-        PowerShellResult result = RunInstaller(package, install);
+        PowerShellResult result = RunInstaller(_package.Path, install);
 
+        // Every ownership rule rejects through the same check (see the marker table below);
+        // this run shows that a rejected installation is left exactly as it was.
         Assert.NotEqual(0, result.ExitCode);
-        Assert.True(File.Exists(sentinel));
-        Assert.Equal("customer-owned", File.ReadAllText(sentinel, Encoding.UTF8));
-        Assert.Equal(executableHash, FileHashes.Sha256(executable));
         Assert.Contains("duplicate JSON property", result.StdErr + result.StdOut, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal("customer-owned", File.ReadAllText(sentinel, Encoding.UTF8));
+        Assert.Equal(before, Snapshot(install));
+        AssertNoTransactionLeftovers();
     }
 
     [Fact]
@@ -583,11 +569,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Assert.NotEqual(0, rejected.ExitCode);
         Assert.Contains("Authenticode signature", rejected.StdErr + rejected.StdOut, StringComparison.Ordinal);
         Assert.False(Directory.Exists(customerInstall));
-
-        string developmentInstall = Path.Combine(_root, "unsigned-development");
-        PowerShellResult accepted = RunInstaller(_package.Path, developmentInstall);
-        Assert.True(accepted.ExitCode == 0, accepted.StdErr);
-        AssertInstall(developmentInstall);
+        // Every other test installs this unsigned package with an explicit -DevelopmentPackage.
     }
 
     [Fact]
@@ -595,19 +577,14 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     {
         Requires.Windows();
         (string package, string trustRing) = CreateSignedPackage("signed-package");
-        string install = Path.Combine(_root, "signed-install");
         var environment = new Dictionary<string, string?>
         {
             ["ASPOSE_CLI_RELEASE_TRUSTED_KEYS"] = trustRing,
         };
 
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
-        string installed = Snapshot(install);
-
         PowerShellResult untrusted = RunCustomerPackageTrustValidation(package);
         Assert.NotEqual(0, untrusted.ExitCode);
         Assert.Contains("ASPOSE_CLI_RELEASE_TRUSTED_KEYS", untrusted.StdErr + untrusted.StdOut, StringComparison.Ordinal);
-        Assert.Equal(installed, Snapshot(install));
 
         PowerShellResult accepted = RunCustomerPackageTrustValidation(package, environment);
         Assert.True(accepted.ExitCode == 0, accepted.StdErr);
@@ -618,108 +595,45 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
 
         Assert.NotEqual(0, rejected.ExitCode);
         Assert.Contains("signature", rejected.StdErr + rejected.StdOut, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(installed, Snapshot(install));
     }
 
     [Theory]
-    [InlineData("schemaVersion")]
-    [InlineData("productId")]
-    [InlineData("edition")]
-    [InlineData("cliVersion")]
-    [InlineData("payloadManifest")]
-    [InlineData("payloadManifestSha256")]
-    [InlineData("sourceRevision")]
-    [InlineData("choices")]
-    public void Marker_MissingRequiredPropertyRefusesOwnership(string property)
+    [InlineData("powershell")]
+    [InlineData("pwsh")]
+    public void Marker_EveryOwnershipRuleRefusesTheInstallationForItsOwnReason(string shell)
     {
         Requires.Windows();
-        string install = Path.Combine(_root, "missing-marker-" + property);
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
-        string executable = Path.Combine(install, "aspose-cli.exe");
-        string executableHash = FileHashes.Sha256(executable);
-        string markerPath = Path.Combine(install, ".aspose-cli-install.json");
-        JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath, Encoding.UTF8))!.AsObject();
-        Assert.True(marker.Remove(property));
-        File.WriteAllText(markerPath, marker.ToJsonString(), new UTF8Encoding(false));
-
-        PowerShellResult result = RunInstaller(_package.Path, install);
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("missing", result.StdErr + result.StdOut, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(executableHash, FileHashes.Sha256(executable));
-    }
-
-    [Fact]
-    public void CurrentMarker_RequiresExplicitMcpOwnership()
-    {
-        Requires.Windows();
-        string install = Path.Combine(_root, "marker-without-mcp");
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
-        string markerPath = Path.Combine(install, ".aspose-cli-install.json");
-        JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath, Encoding.UTF8))!.AsObject();
-        Assert.True(marker.Remove("mcpRegistrations"));
-        File.WriteAllText(markerPath, marker.ToJsonString(), new UTF8Encoding(false));
-
-        PowerShellResult result = RunInstaller(_package.Path, install);
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("mcpRegistrations", result.StdErr + result.StdOut, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void CurrentMarker_PowerShellSevenRejectsMissingMcpOwnership()
-    {
-        Requires.Windows();
-        string powerShell = ToolPath.Require("pwsh");
-        string install = Path.Combine(_root, "pwsh7-marker");
-
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
-        string markerPath = Path.Combine(install, ".aspose-cli-install.json");
-        JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath, Encoding.UTF8))!.AsObject();
-        Assert.True(marker.Remove("mcpRegistrations"));
-        File.WriteAllText(markerPath, marker.ToJsonString(), new UTF8Encoding(false));
-        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
-        string command = $". {PowerShellLiteral(installer)}; "
-            + $"$state = Get-ManagedInstallState {PowerShellLiteral(install)}; "
-            + "Write-Output \"$($state.SchemaVersion)|$(@($state.McpRegistrations).Count)\"";
-        PowerShellResult result = RunExecutable(
-            powerShell,
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command", command]);
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.Contains("mcpRegistrations", result.StdErr + result.StdOut, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void Marker_RejectsWrongTypesChoicesAndDuplicateMcpOwnership()
-    {
-        Requires.Windows();
-        foreach ((string name, Action<JsonObject> mutate) in new (string, Action<JsonObject>)[]
+        string executable = shell == "pwsh" ? ToolPath.Require("pwsh") : "powershell.exe";
+        string cases = Path.Combine(_root, "marker-cases");
+        var expected = new Dictionary<string, string?>(StringComparer.Ordinal);
+        foreach ((string name, Action<string> damage, string? reason) in MarkerCases())
         {
-            ("schema-type", marker => marker["schemaVersion"] = "2"),
-            ("schema-fraction", marker => marker["schemaVersion"] = 2.5),
-            ("empty-version", marker => marker["cliVersion"] = ""),
-            ("mcp-type", marker => marker["mcpRegistrations"] = "codex"),
-            ("mcp-duplicate", marker => marker["mcpRegistrations"] = new JsonArray("codex", "codex")),
-            ("revision", marker => marker["sourceRevision"] = "abc"),
-            ("choices-type", marker => marker["choices"] = "detected-hosts"),
-            ("choices-skills", marker => marker["choices"]!["skills"] = "everywhere"),
-            ("choices-root", marker => marker["choices"]!["skillsRoot"] = @"C:\skills"),
-            ("choices-path", marker => marker["choices"]!["path"] = "yes"),
-            ("choices-extra", marker => marker["choices"]!["license"] = true),
-        })
+            string install = Path.Combine(cases, name);
+            _package.CopyInstallation(install);
+            damage(install);
+            expected.Add(name, reason);
+        }
+        // The installer decides ownership with this one check before it changes anything.
+        string command = $". {PowerShellLiteral(Path.Combine(RepositoryPaths.Root, "install.ps1"))}; "
+            + $"foreach ($case in @(Get-ChildItem -LiteralPath {PowerShellLiteral(cases)} -Directory)) {{ "
+            + "try { [void](Get-ManagedInstallState $case.FullName); \"$($case.Name)|accepted\" } "
+            + "catch { \"$($case.Name)|$($_.Exception.Message)\" } }";
+
+        PowerShellResult result = RunExecutable(executable,
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
+
+        Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
+        Dictionary<string, string> outcomes = result.StdOut
+            .Split('\n', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Select(line => line.Split('|', 2))
+            .ToDictionary(parts => parts[0], parts => parts[1], StringComparer.Ordinal);
+        Assert.Equal(expected.Keys.Order(StringComparer.Ordinal), outcomes.Keys.Order(StringComparer.Ordinal));
+        foreach ((string name, string? reason) in expected)
         {
-            string install = Path.Combine(_root, "invalid-marker-" + name);
-            Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
-            string markerPath = Path.Combine(install, ".aspose-cli-install.json");
-            JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath, Encoding.UTF8))!.AsObject();
-            mutate(marker);
-            File.WriteAllText(markerPath, marker.ToJsonString(), new UTF8Encoding(false));
-
-            PowerShellResult result = RunInstaller(_package.Path, install);
-
-            Assert.NotEqual(0, result.ExitCode);
-            Assert.Contains("marker", result.StdErr + result.StdOut, StringComparison.OrdinalIgnoreCase);
+            string outcome = outcomes[name];
+            Assert.True(
+                reason is null ? outcome == "accepted" : outcome.Contains(reason, StringComparison.Ordinal),
+                $"{name}: {outcome}");
         }
     }
 
@@ -749,38 +663,18 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Assert.True(SpinWait.SpinUntil(() => !IsProcessRunning(childId), TimeSpan.FromSeconds(10)));
     }
 
-    [Fact]
-    public void ValidOwnedInstallWithUnknownFile_IsPreservedAndRejected()
-    {
-        Requires.Windows();
-        string package = _package.Path;
-        string install = Path.Combine(_root, "unknown-file");
-        Assert.Equal(0, RunInstaller(package, install).ExitCode);
-        string before = Snapshot(install);
-        string sentinel = Path.Combine(install, "unknown.bin");
-        File.WriteAllText(sentinel, "sentinel", Encoding.UTF8);
-
-        PowerShellResult result = RunInstaller(package, install);
-
-        Assert.NotEqual(0, result.ExitCode);
-        Assert.True(File.Exists(sentinel));
-        Assert.Equal(before, Snapshot(install, except: "unknown.bin"));
-    }
-
     [Theory]
     [InlineData("prepared")]
     [InlineData("oldMoved")]
-    [InlineData("newPublished")]
     public void InjectedTransactionFailure_RestoresOriginalInstall(string phase)
     {
         Requires.Windows();
-        string package = _package.Path;
         string install = Path.Combine(_root, "rollback-" + phase);
-        Assert.Equal(0, RunInstaller(package, install).ExitCode);
+        _package.CopyInstallation(install);
         string before = Snapshot(install);
 
         PowerShellResult result = RunInstaller(
-            package,
+            _package.Path,
             install,
             new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_FAULT"] = phase });
 
@@ -789,74 +683,38 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(install)!, ".aspose-cli-transaction-*.json"));
     }
 
-    [Fact]
-    public void InterruptedOldMove_IsRecoveredOnRetryWithoutAUserInterface()
-    {
-        Requires.Windows();
-        string package = _package.Path;
-        string install = Path.Combine(_root, "crash-retry");
-        Assert.Equal(0, RunInstaller(package, install).ExitCode);
-        string before = Snapshot(install);
-
-        PowerShellResult interrupted = RunInstaller(
-            package,
-            install,
-            new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_CRASH"] = "oldMoved" });
-        Assert.Equal(97, interrupted.ExitCode);
-
-        PowerShellResult retry = RunInstaller(package, install);
-        Assert.True(retry.ExitCode == 0, retry.StdErr);
-        AssertInstall(install);
-        Assert.Equal(before, Snapshot(install));
-        Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(install)!, ".aspose-cli-transaction-*.json"));
-    }
-
     [Theory]
-    [InlineData("oldMovedBeforeJournal")]
-    [InlineData("newPublishedBeforeJournal")]
-    public void DirectoryMoveBeforePhaseWrite_IsRecoveredFromVerifiedSnapshots(
-        string phase)
+    [InlineData("oldMovedBeforeJournal", false)]
+    [InlineData("newPublishedBeforeJournal", true)]
+    public void DirectoryMoveBeforePhaseWrite_IsRecoveredFromVerifiedSnapshots(string phase, bool newTreePublished)
     {
         Requires.Windows();
-        string package = _package.Path;
         string install = Path.Combine(_root, "pre-journal-" + phase);
-        Assert.Equal(0, RunInstaller(package, install).ExitCode);
+        _package.CopyInstallation(install);
+        // The package publishes a tree that differs from this one, so recovery has to tell the
+        // published tree from the backup instead of finding the original already in place.
+        RecordAnotherBuild(install);
         string before = Snapshot(install);
 
         PowerShellResult interrupted = RunInstaller(
-            package,
+            _package.Path,
             install,
             new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_CRASH"] = phase });
         Assert.Equal(97, interrupted.ExitCode);
+        if (newTreePublished)
+        {
+            Assert.NotEqual(before, Snapshot(install));
+        }
+        else
+        {
+            Assert.False(Directory.Exists(install));
+        }
 
-        PowerShellResult retry = RunInstaller(package, install);
-        Assert.True(retry.ExitCode == 0, retry.StdErr);
+        PowerShellResult recovered = RunPendingRecovery(install);
+
+        Assert.True(recovered.ExitCode == 0, recovered.StdErr + recovered.StdOut);
         Assert.Equal(before, Snapshot(install));
-        Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(install)!, ".aspose-cli-transaction-*.json"));
-        Assert.Empty(Directory.GetDirectories(Path.GetDirectoryName(install)!, ".aspose-cli-backup-*"));
-        Assert.Empty(Directory.GetDirectories(Path.GetDirectoryName(install)!, ".aspose-cli-stage-*"));
-    }
-
-    [Fact]
-    public void InterruptedAfterCommit_CleansVerifiedBackupsOnRetryWithoutRollback()
-    {
-        Requires.Windows();
-        string package = _package.Path;
-        string install = Path.Combine(_root, "committed-crash");
-
-        PowerShellResult interrupted = RunInstaller(
-            package,
-            install,
-            new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_CRASH"] = "committed" });
-        Assert.Equal(97, interrupted.ExitCode);
-        AssertInstall(install);
-        string committed = Snapshot(install);
-
-        PowerShellResult retry = RunInstaller(package, install);
-        Assert.True(retry.ExitCode == 0, retry.StdErr);
-        Assert.Equal(committed, Snapshot(install));
-        Assert.Empty(Directory.GetFiles(Path.GetDirectoryName(install)!, ".aspose-cli-transaction-*.json"));
-        Assert.Empty(Directory.GetDirectories(Path.GetDirectoryName(install)!, ".aspose-cli-backup-*"));
+        AssertNoTransactionLeftovers();
     }
 
     [Fact]
@@ -876,7 +734,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     {
         Requires.Windows();
         string install = Path.Combine(_root, "invalid-license");
-        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
+        _package.CopyInstallation(install);
         string before = Snapshot(install);
         string invalidLicense = Path.Combine(_root, "invalid.lic");
         File.WriteAllText(invalidLicense, "not a license", Encoding.UTF8);
@@ -895,7 +753,66 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Assert.False(Directory.Exists(Path.Combine(_root, "config")));
     }
 
-    private static PowerShellResult RunInstaller(
+    // Each case damages one copy of the baseline installation; a null reason marks the
+    // unchanged control, which must be accepted.
+    private static IEnumerable<(string Name, Action<string> Damage, string? Reason)> MarkerCases()
+    {
+        yield return ("valid", _ => { }, null);
+        yield return ("duplicate-property",
+            install => File.WriteAllText(MarkerPath(install), "{\"schemaVersion\":3,\"schemaVersion\":3}", new UTF8Encoding(false)),
+            "duplicate JSON property 'schemaVersion'");
+        yield return ("missing-schemaVersion", Remove("schemaVersion"), "missing required property schemaVersion");
+        foreach (string property in new[] { "productId", "edition", "cliVersion", "payloadManifest", "payloadManifestSha256", "sourceRevision", "choices" })
+        {
+            yield return ("missing-" + property, Remove(property), $"missing: [{property}]");
+        }
+        yield return ("missing-mcpRegistrations", Remove("mcpRegistrations"), "missing mcpRegistrations");
+        // The supported schema version, in a JSON type other than an integer.
+        yield return ("schema-string", Change(marker => marker["schemaVersion"] = "3"), "schemaVersion must be an integer");
+        yield return ("schema-fraction", Change(marker => marker["schemaVersion"] = 3.5), "schemaVersion must be an integer");
+        yield return ("empty-version", Change(marker => marker["cliVersion"] = ""), "invalid ownership fields");
+        yield return ("revision", Change(marker => marker["sourceRevision"] = "abc"), "invalid ownership fields");
+        yield return ("mcp-type", Change(marker => marker["mcpRegistrations"] = "codex"), "invalid ownership fields");
+        yield return ("mcp-duplicate", Change(marker => marker["mcpRegistrations"] = new JsonArray("codex", "codex")), "invalid or duplicate MCP registration");
+        yield return ("choices-type", Change(marker => marker["choices"] = "detected-hosts"), "invalid installation choices");
+        yield return ("choices-skills", Change(marker => marker["choices"]!["skills"] = "everywhere"), "invalid installation choices");
+        yield return ("choices-root", Change(marker => marker["choices"]!["skillsRoot"] = @"C:\skills"), "invalid installation choices");
+        yield return ("choices-path", Change(marker => marker["choices"]!["path"] = "yes"), "invalid installation choices");
+        yield return ("choices-extra", Change(marker => marker["choices"]!["license"] = true), "unknown: [license]");
+        yield return ("unknown-file",
+            install => File.WriteAllText(Path.Combine(install, "unknown.bin"), "sentinel", Encoding.UTF8),
+            "unknown: [unknown.bin]");
+        yield return ("modified-payload", ModifyExecutableKeepingItsSize, "Installed payload 'aspose-cli.exe' was modified");
+
+        static Action<string> Remove(string property) => install => RewriteMarker(install, marker => marker.Remove(property));
+        static Action<string> Change(Action<JsonObject> change) => install => RewriteMarker(install, change);
+    }
+
+    private static void ModifyExecutableKeepingItsSize(string install)
+    {
+        string executable = Path.Combine(install, "aspose-cli.exe");
+        byte[] content = File.ReadAllBytes(executable);
+        content[^1] ^= 0xFF;
+        // The payload is a hard link to the baseline: replace the link, never write through it.
+        File.Delete(executable);
+        File.WriteAllBytes(executable, content);
+    }
+
+    private static string MarkerPath(string install) => Path.Combine(install, ".aspose-cli-install.json");
+
+    private static void RewriteMarker(string install, Action<JsonObject> change)
+    {
+        JsonObject marker = JsonNode.Parse(File.ReadAllText(MarkerPath(install), Encoding.UTF8))!.AsObject();
+        change(marker);
+        File.WriteAllText(MarkerPath(install), marker.ToJsonString(), new UTF8Encoding(false));
+    }
+
+    // A different build of the same version, so a tree the package publishes over this
+    // installation differs from it.
+    private static void RecordAnotherBuild(string install) =>
+        RewriteMarker(install, marker => marker["sourceRevision"] = new string('a', 40));
+
+    internal static PowerShellResult RunInstaller(
         string package,
         string install,
         IReadOnlyDictionary<string, string?>? environment = null,
@@ -1259,17 +1176,33 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         }
     }
 
-    private sealed record PowerShellResult(int ExitCode, string StdOut, string StdErr);
+    internal sealed record PowerShellResult(int ExitCode, string StdOut, string StdErr);
 
     private sealed record UserState(string? Path, string Codex, string Claude, string OpenCode);
 }
 
+/// <summary>
+/// The package every installer test installs, and installations of it that the installer made
+/// and verified once for the class. A test whose starting state is an existing installation
+/// copies one instead of installing it again.
+/// </summary>
 public sealed class CustomerInstallerPackageFixture : IDisposable
 {
+    private const string MarkerName = ".aspose-cli-install.json";
+    private const string PayloadManifestName = ".aspose-cli-payload.json";
+
     private readonly string _root = Directory.CreateTempSubdirectory("aspose-installer-package-").FullName;
+    private readonly Lazy<string> _installation;
+    private readonly Lazy<(string Installation, string SkillsRoot)> _skillsInstallation;
 
     public CustomerInstallerPackageFixture()
     {
+        _installation = new(() => Install("installation", skillsRoot: null));
+        _skillsInstallation = new(() =>
+        {
+            string skillsRoot = System.IO.Path.Combine(_root, "skills");
+            return (Install("skills-installation", skillsRoot), skillsRoot);
+        });
         Path = System.IO.Path.Combine(_root, "package");
         Directory.CreateDirectory(Path);
         string sourceDirectory = System.IO.Path.GetDirectoryName(CliRunner.ExecutablePath)!;
@@ -1290,6 +1223,64 @@ public sealed class CustomerInstallerPackageFixture : IDisposable
     }
 
     public string Path { get; }
+
+    /// <summary>Copies the installation made with -SkipPath -SkipSkills -SkipMcp to <paramref name="install"/>.</summary>
+    public void CopyInstallation(string install) => CopyInstallationTree(_installation.Value, install);
+
+    /// <summary>
+    /// Copies the installation made with -SkillsRoot -SkipPath -SkipMcp to <paramref name="install"/>
+    /// and its Skills to <paramref name="skillsRoot"/>, which the copied marker records.
+    /// </summary>
+    public void CopySkillsInstallation(string install, string skillsRoot)
+    {
+        (string installation, string skills) = _skillsInstallation.Value;
+        CopyInstallationTree(installation, install);
+        foreach (string file in Directory.GetFiles(skills, "*", SearchOption.AllDirectories))
+        {
+            string target = System.IO.Path.Combine(skillsRoot, System.IO.Path.GetRelativePath(skills, file));
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target)!);
+            File.Copy(file, target);
+        }
+        string markerPath = System.IO.Path.Combine(install, MarkerName);
+        JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath, Encoding.UTF8))!.AsObject();
+        marker["choices"]!["skillsRoot"] = skillsRoot;
+        File.WriteAllText(markerPath, marker.ToJsonString(), new UTF8Encoding(false));
+    }
+
+    private string Install(string name, string? skillsRoot)
+    {
+        string install = System.IO.Path.Combine(_root, name);
+        CustomerInstallerPowerShellTests.PowerShellResult result = CustomerInstallerPowerShellTests.RunInstaller(
+            Path,
+            install,
+            arguments: skillsRoot is null ? null : new[] { "-SkillsRoot", skillsRoot },
+            skipSkills: skillsRoot is null);
+        if (result.ExitCode != 0)
+        {
+            throw new InvalidOperationException($"The installer could not create the '{name}' installation: {result.StdErr}{result.StdOut}");
+        }
+        return install;
+    }
+
+    // Payload files become hard links, since neither a test nor the installer writes one in
+    // place. The marker and the payload manifest, which tests rewrite, are copied.
+    private static void CopyInstallationTree(string source, string destination)
+    {
+        foreach (string file in Directory.GetFiles(source, "*", SearchOption.AllDirectories))
+        {
+            string relative = System.IO.Path.GetRelativePath(source, file);
+            string target = System.IO.Path.Combine(destination, relative);
+            Directory.CreateDirectory(System.IO.Path.GetDirectoryName(target)!);
+            if (relative is MarkerName or PayloadManifestName)
+            {
+                File.Copy(file, target);
+            }
+            else if (!CreateHardLink(target, file, IntPtr.Zero))
+            {
+                throw new IOException($"CreateHardLink failed with {Marshal.GetLastWin32Error()}: {target}");
+            }
+        }
+    }
 
     public void Dispose()
     {
@@ -1319,4 +1310,8 @@ public sealed class CustomerInstallerPackageFixture : IDisposable
         using FileStream input = File.OpenRead(path);
         return Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
     }
+
+    [DllImport("kernel32.dll", CharSet = CharSet.Unicode, SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool CreateHardLink(string name, string existing, IntPtr security);
 }
