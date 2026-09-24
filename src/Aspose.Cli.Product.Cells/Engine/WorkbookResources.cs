@@ -81,30 +81,14 @@ internal sealed class WorkbookResources(string path, ResourceBudgetLedger budget
 
     internal void ThrowIfFailed() => _loader.ThrowIfFailed();
 
-    internal Warning? CoverageWarning
-    {
-        get
+    internal Warning? CoverageWarning =>
+        _loader.Warning ?? (embeddedContainer ? new Warning
         {
-            ThrowIfFailed();
-            if (_loader.OmittedCount == 0)
-            {
-                return embeddedContainer ? new Warning
-                {
-                    Code = CellsDiagnostics.MhtmlResourceCoverageUnverified,
-                    Message = "The SDK resolves embedded MHTML resources internally without reporting unresolved references.",
-                    Hint = "Inspect every required image and style; external resource completeness cannot be confirmed.",
-                    AffectsCompleteness = true,
-                } : null;
-            }
-            return new Warning
-            {
-                Code = WarningCodes.RemoteResourcesBlocked,
-                Message = $"{_loader.OmittedCount} external workbook resource(s) were omitted.",
-                Hint = "Use ordinary local resources beneath the input directory and review the incomplete visual output.",
-                AffectsCompleteness = true,
-            };
-        }
-    }
+            Code = CellsDiagnostics.MhtmlResourceCoverageUnverified,
+            Message = "The SDK resolves embedded MHTML resources internally without reporting unresolved references.",
+            Hint = "Inspect every required image and style; external resource completeness cannot be confirmed.",
+            AffectsCompleteness = true,
+        } : null);
 
     public void Dispose()
     {

@@ -251,9 +251,9 @@ internal sealed class WordsProductionService
         string format)
     {
         var extra = new List<Warning>();
-        if (created.RemoteResourcesBlocked > 0)
+        if (LocalDocumentResourceLoader.OmissionWarning(created.RemoteResourcesBlocked) is { } omitted)
         {
-            extra.Add(RemoteWarning(created.RemoteResourcesBlocked));
+            extra.Add(omitted);
         }
 
         if (created.Sources.Any(static source => source.EvaluationInputTruncated))

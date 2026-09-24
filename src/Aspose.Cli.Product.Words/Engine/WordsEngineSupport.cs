@@ -1,5 +1,6 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 
@@ -8,15 +9,12 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Provides stateless result, warning and text helpers shared by Words services.</summary>
 internal static class WordsEngineSupport
 {
-    internal static Warning RemoteWarning(int blocked) =>
-        new() { Code = WarningCodes.RemoteResourcesBlocked, AffectsCompleteness = true, Message = $"{blocked} external resource(s) were blocked.", Hint = "Use guarded local resources beside the document, or a separately verified local cache." };
-
     internal static IReadOnlyList<Warning>? InputWarnings(LoadedDocument loaded)
     {
         var warnings = new List<Warning>();
-        if (loaded.RemoteResourcesBlocked > 0)
+        if (LocalDocumentResourceLoader.OmissionWarning(loaded.RemoteResourcesBlocked) is { } omitted)
         {
-            warnings.Add(RemoteWarning(loaded.RemoteResourcesBlocked));
+            warnings.Add(omitted);
         }
 
         if (loaded.EvaluationInputTruncated)

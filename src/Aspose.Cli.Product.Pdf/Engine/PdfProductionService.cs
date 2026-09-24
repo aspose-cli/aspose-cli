@@ -212,17 +212,10 @@ internal sealed class PdfProductionService
             try { document.Save(path); }
             finally { resources?.ThrowIfFailed(); }
         });
-        int blocked = resources?.OmittedCount ?? 0;
         var warnings = EnvelopeParts.OutputWarnings(state)?.ToList() ?? [];
-        if (blocked > 0)
+        if (resources?.Warning is { } omitted)
         {
-            warnings.Add(new Warning
-            {
-                Code = WarningCodes.RemoteResourcesBlocked,
-                AffectsCompleteness = true,
-                Message = $"{blocked} external HTML resource(s) were omitted.",
-                Hint = "Copy the resource beside the HTML input, or use a separately verified local cache.",
-            });
+            warnings.Add(omitted);
         }
 
         return new PdfWriteResult

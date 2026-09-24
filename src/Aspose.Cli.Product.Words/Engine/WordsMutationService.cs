@@ -91,9 +91,9 @@ internal sealed class WordsMutationService
             });
         }
 
-        if (remoteResourcesBlocked > 0)
+        if (LocalDocumentResourceLoader.OmissionWarning(remoteResourcesBlocked) is { } omitted)
         {
-            extra.Add(RemoteWarning(remoteResourcesBlocked));
+            extra.Add(omitted);
         }
 
         if (evaluationInputTruncated)

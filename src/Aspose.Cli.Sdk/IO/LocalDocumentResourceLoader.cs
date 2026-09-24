@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using System.Runtime.ExceptionServices;
 
@@ -46,6 +47,28 @@ public sealed class LocalDocumentResourceLoader : IDisposable
     public string BaseUri => _baseUri.AbsoluteUri;
 
     public int OmittedCount { get { lock (_gate) { return _omitted; } } }
+
+    /// <summary>
+    /// The completeness warning for external resources a document engine was denied, or null
+    /// when none were. Every product reports omitted resources through this one warning.
+    /// </summary>
+    public static Warning? OmissionWarning(int omitted) => omitted <= 0 ? null : new Warning
+    {
+        Code = WarningCodes.RemoteResourcesBlocked,
+        Message = $"{omitted} external resource(s) were omitted.",
+        Hint = "Place required resources beside the input and reference them by relative path, then review the incomplete output.",
+        AffectsCompleteness = true,
+    };
+
+    /// <summary>The completeness warning for this document's omitted resources, after any fatal callback failure.</summary>
+    public Warning? Warning
+    {
+        get
+        {
+            ThrowIfFailed();
+            return OmissionWarning(OmittedCount);
+        }
+    }
 
     /// <summary>Propagates a fatal callback failure even if an engine caught it internally.</summary>
     public void ThrowIfFailed()
