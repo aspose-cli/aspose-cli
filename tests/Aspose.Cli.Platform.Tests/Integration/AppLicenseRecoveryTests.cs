@@ -1,7 +1,6 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http.Headers;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -24,7 +23,7 @@ public sealed class AppLicenseRecoveryTests
         PreviewSnapshot before = await ReadPreview(app);
         Assert.Equal("evaluation", before.License);
         Assert.Contains("FIRST_DOCUMENT", before.Html, StringComparison.Ordinal);
-        string sourceHash = Hash(LicensePath);
+        string sourceHash = FileHashes.Sha256(LicensePath);
 
         using var events = await PreviewEvents.Open(app, before.Url);
         _ = await events.Next("hello");
@@ -39,8 +38,8 @@ public sealed class AppLicenseRecoveryTests
         Assert.Equal(before, await ReadPreview(app));
         Assert.Equal("licensed", Mode((await app.Status())["license"]!));
         string installed = Path.Combine(app.Workspace.ConfigDirectory, "licenses", "cells.lic");
-        Assert.Equal(sourceHash, Hash(installed));
-        Assert.Equal(sourceHash, Hash(LicensePath));
+        Assert.Equal(sourceHash, FileHashes.Sha256(installed));
+        Assert.Equal(sourceHash, FileHashes.Sha256(LicensePath));
         Assert.Equal("licensed", Mode(RunCli(app, "license", "status")));
         Assert.Equal(pid, RunCli(app, "app", "status")["pid"]!.GetValue<int>());
         Assert.False(process.HasExited);
@@ -80,12 +79,6 @@ public sealed class AppLicenseRecoveryTests
         Assert.Equal(pid, RunCli(app, "app", "status")["pid"]!.GetValue<int>());
         Assert.False(process.HasExited);
         await Stop(app, process);
-    }
-
-    private static string Hash(string path)
-    {
-        using FileStream stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream));
     }
 
     private static async Task Stop(AppTestSession app, Process process)

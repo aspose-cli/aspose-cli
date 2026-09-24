@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
@@ -120,7 +119,7 @@ public sealed class VerifiedResourceReadTests
     }
 
     [Fact]
-    public async Task JunctionAtRootOrBelow_IsRejected()
+    public void JunctionAtRootOrBelow_IsRejected()
     {
         Requires.Windows();
         using var temp = new TempDirectory();
@@ -130,28 +129,7 @@ public sealed class VerifiedResourceReadTests
         Directory.CreateDirectory(outside);
         File.WriteAllText(Path.Combine(outside, "data"), "outside");
         string junction = Path.Combine(root, "linked");
-        var start = new ProcessStartInfo("powershell.exe")
-        {
-            UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true,
-        };
-        foreach (string argument in new[] { "-NoProfile", "-NonInteractive", "-Command",
-            "$ErrorActionPreference='Stop'; New-Item -ItemType Junction -Path '"
-            + junction.Replace("'", "''", StringComparison.Ordinal) + "' -Target '"
-            + outside.Replace("'", "''", StringComparison.Ordinal) + "' | Out-Null" })
-        {
-            start.ArgumentList.Add(argument);
-        }
-        using var process = Process.Start(start)!;
-        Task<string> stdout = process.StandardOutput.ReadToEndAsync();
-        Task<string> stderr = process.StandardError.ReadToEndAsync();
-        if (!process.WaitForExit(30_000))
-        {
-            process.Kill(entireProcessTree: true);
-            Assert.Fail("Junction creation timed out.");
-        }
-        Assert.True(process.ExitCode == 0, await stderr);
-        _ = await stdout;
+        FileSystemLinks.CreateDirectoryLink(junction, outside);
         try
         {
             Assert.Null(new VerifiedFileBoundary(root).TryOpenRead(Path.Combine(junction, "data")));

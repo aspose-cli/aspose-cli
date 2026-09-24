@@ -36,6 +36,22 @@ public sealed class TempWorkspace : IDisposable
     public CliResult RunWithEnv(IReadOnlyDictionary<string, string?> variables, params string[] args)
         => Execute(standardInput: null, variables, args);
 
+    /// <summary>
+    /// A start of the tested CLI in this workspace, under the same isolated evaluation
+    /// environment as <see cref="Run"/>, for tests that supervise the process themselves.
+    /// </summary>
+    public System.Diagnostics.ProcessStartInfo StartInfo(IReadOnlyDictionary<string, string?>? variables = null)
+    {
+        var start = new System.Diagnostics.ProcessStartInfo(CliRunner.ExecutablePath)
+        {
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            WorkingDirectory = Path,
+        };
+        CliEnvironment.Evaluation(_configDirectory.Path, variables).Apply(start.Environment);
+        return start;
+    }
+
     public void Dispose()
     {
         _directory.Dispose();

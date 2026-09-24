@@ -28,7 +28,7 @@ public sealed class ProductPublicationTests
             CliResult edited = workspace.Run([product, "edit", input, "--ops", ops, "--out", output,
                 "--output", "json", "--max-input-bytes", new FileInfo(input).Length.ToString(),
                 .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
-            AssertSuccess(edited);
+            edited.Succeeded();
             Assert.True(File.Exists(output));
             Assert.Equal([output], Directory.GetFiles(workspace.File("."), "edited.*").Select(Path.GetFullPath));
         }
@@ -45,7 +45,7 @@ public sealed class ProductPublicationTests
             "--ops", """{"ops":[{"op":"set_text","at":{"find":"Anchor"},"text":"Edited"}]}""",
             "--out", workspace.File("edited.docx"), "--verify", "--output", "json",
             .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
-        AssertSuccess(edited);
+        edited.Succeeded();
         JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;
         Assert.True(verification["ok"]!.GetValue<bool>());
         Assert.True(verification["semanticChangesDetected"]!.GetValue<bool>());
@@ -57,8 +57,8 @@ public sealed class ProductPublicationTests
     public void AllSheetsFailureDoesNotLeaveEarlierOutputFiles(bool supervised)
     {
         using var workspace = new TempWorkspace();
-        AssertSuccess(workspace.Run("cells", "create", "input.xlsx", "--sheets", "First,Second"));
-        AssertSuccess(workspace.Run("cells", "edit", "input.xlsx", "--set", "First!A1=1", "--set", "Second!A1=2", "--in-place"));
+        workspace.Run("cells", "create", "input.xlsx", "--sheets", "First,Second").Succeeded();
+        workspace.Run("cells", "edit", "input.xlsx", "--set", "First!A1=1", "--set", "Second!A1=2", "--in-place").Succeeded();
         File.WriteAllText(workspace.File("render.Second.png"), "existing second sheet");
         CliResult result = workspace.Run(["cells", "render", "input.xlsx", "--all-sheets", "--out", "render.png", "--output", "json",
             .. (supervised ? new[] { "--timeout", "30" } : Array.Empty<string>())]);
@@ -85,7 +85,7 @@ public sealed class ProductPublicationTests
              "--out", output, "--output", "json",
              .. (supervised ? new[] { "--timeout", "60" } : Array.Empty<string>())]);
 
-        AssertSuccess(signed);
+        signed.Succeeded();
         Assert.True(File.Exists(output));
         JsonNode signature = JsonNode.Parse(signed.StdOut)!["signature"]!;
         Assert.True(signature["signed"]!.GetValue<bool>());
@@ -104,7 +104,7 @@ public sealed class ProductPublicationTests
             "--target", target, "--output", "json",
             .. (supervised ? new[] { "--timeout", "60" } : Array.Empty<string>())]);
 
-        AssertSuccess(installed);
+        installed.Succeeded();
         string tree = Path.Combine(target, "aspose-cli-pdf");
         Assert.True(File.Exists(Path.Combine(tree, "SKILL.md")));
         Assert.True(File.Exists(Path.Combine(tree, ".aspose-skill-manifest.json")));
@@ -132,9 +132,7 @@ public sealed class ProductPublicationTests
         File.WriteAllText(workspace.File("source.txt"), "Anchor");
         File.WriteAllText(workspace.File("source.md"), "# Anchor\n\nBody");
         string input = workspace.File("input." + extension);
-        AssertSuccess(workspace.Run([product, "create", input, .. sourceOptions]));
+        workspace.Run([product, "create", input, .. sourceOptions]).Succeeded();
         return input;
     }
-
-    private static void AssertSuccess(CliResult result) => Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
 }

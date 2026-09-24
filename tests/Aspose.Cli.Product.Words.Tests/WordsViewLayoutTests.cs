@@ -75,7 +75,7 @@ public sealed class WordsViewLayoutTests : IClassFixture<WordsFixture>
             MaxParts = 10,
             Purpose = ViewPurpose.Evidence,
         },
-        new DiscardingSink());
+        new MemoryArtifactSink());
 
     private static string[] Digests(ViewManifest view) => view.Parts
         .SelectMany(static part => part.Elements ?? [])
@@ -111,18 +111,5 @@ public sealed class WordsViewLayoutTests : IClassFixture<WordsFixture>
         string path = _fixture.Temp.File(fileName);
         document.Save(path, SaveFormat.Docx);
         return path;
-    }
-
-    private sealed class DiscardingSink : IViewArtifactSink
-    {
-        public void Write(string relativePath, Action<Stream> contentWriter)
-        {
-            using var stream = new MemoryStream();
-            contentWriter(stream);
-        }
-
-        public void WriteText(string relativePath, string content)
-        {
-        }
     }
 }

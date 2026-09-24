@@ -10,6 +10,20 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
     internal IPage Page => page;
     internal IFrameLocator Preview => page.FrameLocator("#preview-frame");
 
+    /// <summary>
+    /// A new directory for one failed browser test's evidence, beside the run's TRX when
+    /// scripts/test.ps1 names ASPOSE_CLI_TEST_ARTIFACTS.
+    /// </summary>
+    internal static string EvidenceDirectory(string name, ITestOutputHelper output)
+    {
+        string root = Environment.GetEnvironmentVariable("ASPOSE_CLI_TEST_ARTIFACTS")
+            ?? Path.Combine(Path.GetTempPath(), "aspose-cli-browser-evidence");
+        string evidence = Path.Combine(root, "browser", name + "-" + Guid.NewGuid().ToString("N"));
+        Directory.CreateDirectory(evidence);
+        output.WriteLine("Browser evidence: " + evidence);
+        return evidence;
+    }
+
     internal static async Task Run(string name, ITestOutputHelper output, Func<BrowserApp, Task> test)
     {
         await using var app = await AppTestSession.Start();
@@ -38,11 +52,7 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
         }
         catch
         {
-            string root = Environment.GetEnvironmentVariable("ASPOSE_CLI_TEST_ARTIFACTS")
-                ?? Path.Combine(Path.GetTempPath(), "aspose-cli-browser-evidence");
-            string evidence = Path.Combine(root, "browser", name + "-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(evidence);
-            output.WriteLine("Browser evidence: " + evidence);
+            string evidence = BrowserApp.EvidenceDirectory(name, output);
             foreach (string log in Directory.EnumerateFiles(app.Workspace.ConfigDirectory, "*", SearchOption.AllDirectories)
                 .Where(path => path.EndsWith(".log", StringComparison.OrdinalIgnoreCase)
                     || path.EndsWith(".jsonl", StringComparison.OrdinalIgnoreCase)))

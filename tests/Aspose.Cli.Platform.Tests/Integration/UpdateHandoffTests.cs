@@ -132,16 +132,13 @@ public sealed class UpdateHandoffTests
 
     private static ProcessStartInfo StartInfo(TempWorkspace workspace, string scratch, string? ring, string[] args)
     {
-        var start = new ProcessStartInfo(CliRunner.ExecutablePath)
-        {
-            WorkingDirectory = workspace.Path, UseShellExecute = false, CreateNoWindow = true,
-            RedirectStandardOutput = true, RedirectStandardError = true,
-        };
-        CliEnvironment.Evaluation(workspace.ConfigDirectory, new Dictionary<string, string?>
+        ProcessStartInfo start = workspace.StartInfo(new Dictionary<string, string?>
         {
             [ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable] = ring,
             ["TEMP"] = scratch, ["TMP"] = scratch,
-        }).Apply(start.Environment);
+        });
+        start.RedirectStandardOutput = true;
+        start.RedirectStandardError = true;
         foreach (string argument in args) { start.ArgumentList.Add(argument); }
         return start;
     }

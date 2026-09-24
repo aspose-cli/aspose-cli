@@ -1,4 +1,3 @@
-using System.Text;
 using Aspose.Cells;
 using Aspose.Cells.Drawing;
 using Aspose.Cli.Product.Cells.Contracts;
@@ -49,7 +48,7 @@ public sealed class CellsLinkedPictureTests
         Assert.False(actual.IsLink);
         Assert.True(string.IsNullOrEmpty(actual.SourceFullName));
 
-        var sink = new HtmlSink();
+        var sink = new MemoryArtifactSink();
         fixture.Engine.RenderView(
             input,
             new ViewRenderRequest
@@ -59,8 +58,9 @@ public sealed class CellsLinkedPictureTests
                 Purpose = ViewPurpose.Display,
             },
             sink);
-        Assert.Contains("data:image/png;base64,", sink.Html, StringComparison.Ordinal);
-        Assert.Contains(System.Convert.ToBase64String(ResourceHttpServer.Image), sink.Html, StringComparison.Ordinal);
+        string html = string.Concat(sink.Paths.Select(sink.Text));
+        Assert.Contains("data:image/png;base64,", html, StringComparison.Ordinal);
+        Assert.Contains(System.Convert.ToBase64String(ResourceHttpServer.Image), html, StringComparison.Ordinal);
         Assert.Equal(original, File.ReadAllBytes(input));
         Assert.Equal(0, server.RequestCount);
         if (source == "local")
@@ -110,17 +110,5 @@ public sealed class CellsLinkedPictureTests
         picture.SourceFullName = reference;
         if (cached) { picture.Data = ResourceHttpServer.Image; }
         workbook.Save(path, SaveFormat.Xlsx);
-    }
-
-    private sealed class HtmlSink : IViewArtifactSink
-    {
-        public string Html { get; private set; } = string.Empty;
-        public void Write(string relativePath, Action<Stream> contentWriter)
-        {
-            using var output = new MemoryStream();
-            contentWriter(output);
-            Html += Encoding.UTF8.GetString(output.ToArray());
-        }
-        public void WriteText(string relativePath, string content) => Html += content;
     }
 }

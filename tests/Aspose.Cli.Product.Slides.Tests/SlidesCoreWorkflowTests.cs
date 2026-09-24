@@ -1,4 +1,3 @@
-using System.Text;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
@@ -143,30 +142,6 @@ public sealed class SlidesCoreWorkflowTests
     private static bool IsPng(byte[] content) =>
         content.AsSpan().StartsWith(
             new byte[] { 0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a });
-
-    private sealed class MemoryArtifactSink : IViewArtifactSink
-    {
-        private readonly Dictionary<string, byte[]> _artifacts =
-            new(StringComparer.Ordinal);
-
-        public IReadOnlyList<string> Paths =>
-            _artifacts.Keys.Order(StringComparer.Ordinal).ToArray();
-
-        public void Write(string relativePath, Action<Stream> contentWriter)
-        {
-            using var stream = new MemoryStream();
-            contentWriter(stream);
-            _artifacts.Add(relativePath, stream.ToArray());
-        }
-
-        public void WriteText(string relativePath, string content) =>
-            _artifacts.Add(relativePath, Encoding.UTF8.GetBytes(content));
-
-        public byte[] Bytes(string relativePath) => _artifacts[relativePath];
-
-        public string Text(string relativePath) =>
-            Encoding.UTF8.GetString(Bytes(relativePath));
-    }
 
     private static SlidesOpsBatch ParseOps(string json) =>
         SlidesOps.Catalog.Parse<SlidesOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);

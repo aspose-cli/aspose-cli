@@ -43,7 +43,7 @@ public sealed class CellsResourceLoadingTests
         {
             TargetFormatId = "xlsx", OutputPath = output,
         }).Warnings);
-        var sink = new ArtifactSink();
+        var sink = new MemoryArtifactSink();
         AssertOmission(fixture.Engine.RenderView(
             input,
             new ViewRenderRequest
@@ -53,6 +53,7 @@ public sealed class CellsResourceLoadingTests
                 Purpose = ViewPurpose.Display,
             },
             sink).Warnings);
+        Assert.All(sink.Paths, path => Assert.NotEmpty(sink.Bytes(path)));
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
         File.WriteAllBytes(fixture.Temp.File("local.png"), []);
     }
@@ -72,7 +73,9 @@ public sealed class CellsResourceLoadingTests
             MaxParts = 10,
             Purpose = ViewPurpose.Evidence,
         };
-        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new ArtifactSink());
+        var sink = new MemoryArtifactSink();
+        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, sink);
+        Assert.All(sink.Paths, path => Assert.NotEmpty(sink.Bytes(path)));
         ProductReviewAssessment assessment = adapter.Assess(fixture.Engine, input, request, rendered);
         Assert.False(assessment.Complete);
         AssertOmission(rendered.Warnings);
@@ -132,15 +135,4 @@ public sealed class CellsResourceLoadingTests
         + "\r\n--resource-test\r\nContent-Type: image/png\r\nContent-Location: local.png\r\n"
         + "Content-Transfer-Encoding: base64\r\n\r\n" + Convert.ToBase64String(ResourceHttpServer.Image)
         + "\r\n--resource-test--\r\n";
-
-    private sealed class ArtifactSink : IViewArtifactSink
-    {
-        public void Write(string relativePath, Action<Stream> contentWriter)
-        {
-            using var stream = new MemoryStream();
-            contentWriter(stream);
-            Assert.True(stream.Length > 0);
-        }
-        public void WriteText(string relativePath, string content) => Assert.NotEmpty(content);
-    }
 }

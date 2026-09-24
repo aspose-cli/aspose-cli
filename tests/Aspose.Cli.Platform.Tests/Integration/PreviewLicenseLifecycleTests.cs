@@ -17,7 +17,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     private readonly TempWorkspace _workspace = new();
 
     public PreviewLicenseLifecycleTests() =>
-        Succeed(_workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data", "--output", "json"));
+        _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data", "--output", "json").Succeeded();
 
     public void Dispose()
     {
@@ -52,10 +52,10 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     {
         using var license = new PrivateLicense();
         JsonNode evaluation = Start();
-        Succeed(_workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output", "json"));
+        _workspace.Run("cells", "create", "second.xlsx", "--sheets", "Data", "--output", "json").Succeeded();
 
-        JsonNode licensed = Json(Succeed(_workspace.Run(
-            "preview", "second.xlsx", "--license", license.Path, "--output", "json")));
+        JsonNode licensed = _workspace.Run(
+            "preview", "second.xlsx", "--license", license.Path, "--output", "json").Json();
 
         Assert.Equal("licensed", licensed["license"]!["mode"]!.GetValue<string>());
         Assert.Equal("evaluation", evaluation["license"]!["mode"]!.GetValue<string>());
@@ -66,21 +66,13 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     }
 
     private JsonNode Start() =>
-        Json(Succeed(_workspace.Run("preview", "book.xlsx", "--output", "json")));
+        _workspace.Run("preview", "book.xlsx", "--output", "json").Json();
 
     private string[] DocumentIds() =>
-        Json(Succeed(_workspace.Run("preview", "status", "--output", "json")))["sessions"]!
+        _workspace.Run("preview", "status", "--output", "json").Json()["sessions"]!
             .AsArray()
             .Select(static session => session!["id"]!.GetValue<string>())
             .ToArray();
-
-    private static JsonNode Json(CliResult result) => JsonNode.Parse(result.StdOut)!;
-
-    private static CliResult Succeed(CliResult result)
-    {
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        return result;
-    }
 
     /// <summary>A private copy of the test license, removed with the test.</summary>
     private sealed class PrivateLicense : IDisposable

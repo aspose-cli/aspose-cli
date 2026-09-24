@@ -1,4 +1,3 @@
-using System.Security.Cryptography;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.IO;
@@ -58,7 +57,7 @@ public sealed class CrossProcessLockTests
         Assert.Empty(loser.StdOut);
         Assert.Equal("INPUT_CHANGED", ErrorCode(loser));
         string written = JsonNode.Parse(winner.StdOut)!["output"]!["fingerprint"]!["sha256"]!.GetValue<string>();
-        Assert.Equal(written, Sha256(workspace.File("book.xlsx")));
+        Assert.Equal(written, FileHashes.Sha256(workspace.File("book.xlsx")));
         Assert.Equal(["book.xlsx"], Entries(workspace.Path));
     }
 
@@ -115,13 +114,7 @@ public sealed class CrossProcessLockTests
     /// <summary>Every file below a directory with its content hash.</summary>
     private static string[] Tree(string directory) =>
         Directory.EnumerateFiles(directory, "*", SearchOption.AllDirectories)
-            .Select(path => Path.GetRelativePath(directory, path) + ":" + Sha256(path))
+            .Select(path => Path.GetRelativePath(directory, path) + ":" + FileHashes.Sha256(path))
             .Order(StringComparer.Ordinal)
             .ToArray();
-
-    private static string Sha256(string path)
-    {
-        using FileStream stream = File.OpenRead(path);
-        return Convert.ToHexStringLower(SHA256.HashData(stream));
-    }
 }

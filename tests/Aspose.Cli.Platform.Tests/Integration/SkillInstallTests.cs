@@ -1,6 +1,5 @@
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
-using System.Diagnostics;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -199,7 +198,7 @@ public sealed class SkillInstallTests : IDisposable
     }
 
     [Fact]
-    public async Task Install_RejectsAReparsePointInTheTargetAncestorChain()
+    public void Install_RejectsAReparsePointInTheTargetAncestorChain()
     {
         Requires.Windows();
 
@@ -207,36 +206,7 @@ public sealed class SkillInstallTests : IDisposable
         string actual = _workspace.File("junction-target");
         string junction = _workspace.File("junction-parent");
         Directory.CreateDirectory(actual);
-        var start = new ProcessStartInfo("powershell.exe")
-        {
-            UseShellExecute = false,
-            RedirectStandardOutput = true,
-            RedirectStandardError = true,
-            CreateNoWindow = true,
-            ErrorDialog = false,
-        };
-        string createJunction =
-            $"New-Item -ItemType Junction -Path '{junction.Replace("'", "''", StringComparison.Ordinal)}' "
-            + $"-Target '{actual.Replace("'", "''", StringComparison.Ordinal)}' | Out-Null";
-        foreach (string argument in new[]
-        {
-            "-NoLogo",
-            "-NoProfile",
-            "-NonInteractive",
-            "-Command",
-            createJunction,
-        })
-        {
-            start.ArgumentList.Add(argument);
-        }
-
-        using (Process process = Process.Start(start)!)
-        {
-            string output = await process.StandardOutput.ReadToEndAsync();
-            string error = await process.StandardError.ReadToEndAsync();
-            await process.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15));
-            Assert.True(process.ExitCode == 0, output + error);
-        }
+        FileSystemLinks.CreateDirectoryLink(junction, actual);
 
         try
         {

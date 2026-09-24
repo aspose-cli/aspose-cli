@@ -1,4 +1,3 @@
-using System.Text;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
@@ -582,25 +581,5 @@ public sealed class WordsDocumentEngineTests : IClassFixture<WordsFixture>
             _fixture.Fonts.CheckFonts(input, new FontCheckRequest()).Fonts;
 
         Assert.Contains(fonts, font => font.Name == "Microsoft YaHei");
-    }
-
-    private sealed class MemoryArtifactSink : IViewArtifactSink
-    {
-        private readonly Dictionary<string, byte[]> _files = new(StringComparer.Ordinal);
-
-        public void Write(string relativePath, Action<Stream> contentWriter)
-        {
-            using var stream = new MemoryStream();
-            contentWriter(stream);
-            _files.Add(relativePath, stream.ToArray());
-        }
-
-        public void WriteText(string relativePath, string content) =>
-            _files.Add(relativePath, Encoding.UTF8.GetBytes(content));
-
-        public byte[] Bytes(string relativePath) => _files[relativePath];
-
-        public string Text(string relativePath) =>
-            Encoding.UTF8.GetString(Bytes(relativePath));
     }
 }

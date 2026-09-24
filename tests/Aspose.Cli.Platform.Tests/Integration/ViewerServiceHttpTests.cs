@@ -28,7 +28,7 @@ public sealed class ViewerServiceHttpTests : IDisposable
     public ViewerServiceHttpTests()
     {
         LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
-        _worker = new RenderWorkerSupervisor(StartInfo, TimeSpan.FromMinutes(2));
+        _worker = new RenderWorkerSupervisor(() => _workspace.StartInfo(), TimeSpan.FromMinutes(2));
         _documents = new ViewerDocuments(_worker, ViewerStorage.Create(), limits);
         _server = new ViewerHttpServer(_documents, requestedPort: 0, limits);
         _server.Start();
@@ -100,8 +100,8 @@ public sealed class ViewerServiceHttpTests : IDisposable
         JsonNode hello = await events.Next("hello");
 
         Assert.Equal(1, hello["revision"]!.GetValue<int>());
-        Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-            "--set", "Second!A1=Changed", "--output", "json"));
+        _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
+            "--set", "Second!A1=Changed", "--output", "json").Succeeded();
 
         JsonNode update = await events.Next("update");
         Assert.Equal(2, update["revision"]!.GetValue<int>());
@@ -179,9 +179,9 @@ public sealed class ViewerServiceHttpTests : IDisposable
 
     private LiveDocument OpenWorkbook(string? view = null)
     {
-        Succeed(_workspace.Run("cells", "create", "book.xlsx", "--sheets", "First,Second", "--output", "json"));
-        Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-            "--set", "First!A1=Region", "--set", "Second!A1=Raw", "--output", "json"));
+        _workspace.Run("cells", "create", "book.xlsx", "--sheets", "First,Second", "--output", "json").Succeeded();
+        _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
+            "--set", "First!A1=Region", "--set", "Second!A1=Raw", "--output", "json").Succeeded();
         return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions { View = view }, ViewerDocuments.PreviewHolder);
     }
 
@@ -197,8 +197,6 @@ public sealed class ViewerServiceHttpTests : IDisposable
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         return await response.Content.ReadAsStreamAsync();
     }
-
-    private static void Succeed(CliResult result) => Assert.True(result.ExitCode == 0, result.StdErr);
 
     /// <summary>Reads named events off one server-sent event stream.</summary>
     private sealed class EventStream(Stream stream) : IDisposable
@@ -229,18 +227,5 @@ public sealed class ViewerServiceHttpTests : IDisposable
             }
             throw new TimeoutException($"The '{name}' event did not arrive.");
         }
-    }
-
-    private ProcessStartInfo StartInfo()
-    {
-        var start = new ProcessStartInfo(CliRunner.ExecutablePath)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WorkingDirectory = _workspace.Path,
-        };
-        CliEnvironment.Evaluation(Directory.GetParent(_workspace.ConfigDirectory)!.FullName)
-            .Apply(start.Environment);
-        return start;
     }
 }

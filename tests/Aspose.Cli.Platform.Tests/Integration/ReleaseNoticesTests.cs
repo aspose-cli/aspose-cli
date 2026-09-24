@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -113,10 +112,7 @@ public sealed class ReleaseNoticesTests
                 + $"Write-ReleaseNotices -RepositoryRoot {Literal(RepositoryPaths.Root)} -OutputRoot {Literal(target)} -DependenciesPath {Literal(deps)} -AssetsPath {Literal(assets)} "
                 + $"-PackagesLockPath {Literal(packagesLock)} -RuntimePacksLockPath {Literal(runtimeLock)} }} "
                 + "catch { [Console]::Out.WriteLine($_.Exception.Message); exit 1 }";
-            string shell = (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)
-                .Where(static path => !string.IsNullOrWhiteSpace(path))
-                .Select(static path => Path.GetFullPath(Path.Combine(path.Trim('"'), OperatingSystem.IsWindows() ? "pwsh.exe" : "pwsh")))
-                .First(File.Exists);
+            string shell = ToolPath.Require("pwsh");
             return new CliProcess(shell, CliEnvironment.Evaluation(directory.File("config")), TimeSpan.FromSeconds(30))
                 .Run(directory.Path, args: ["-NoLogo", "-NoProfile", "-NonInteractive", "-EncodedCommand", Convert.ToBase64String(Encoding.Unicode.GetBytes(script))]);
         }

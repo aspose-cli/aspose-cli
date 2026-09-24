@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 
@@ -7,7 +6,7 @@ namespace Aspose.Cli.Tests;
 /// <summary>Keeps eng/distribution.json the only author of the distribution identity.</summary>
 public sealed class DistributionIdentityTests
 {
-    private static readonly string Root = FindRoot();
+    private static readonly string Root = RepositoryPaths.Root;
 
     [Fact]
     public void InstallerAndReleaseScriptsReadTheIdentityInsteadOfSpellingIt()
@@ -51,17 +50,5 @@ public sealed class DistributionIdentityTests
         string projection = File.ReadAllText(Path.Combine(Root, "eng", "generated", "RepositoryBuild.props"));
         Assert.Contains("GeneratedDistributionLfSha256", projection, StringComparison.Ordinal);
         Assert.Contains(@"..\distribution.json", projection, StringComparison.Ordinal);
-    }
-
-    private static string FindRoot([CallerFilePath] string file = "")
-    {
-        for (DirectoryInfo? directory = new(Path.GetDirectoryName(file)!); directory is not null; directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "eng", "distribution.json")))
-            {
-                return directory.FullName;
-            }
-        }
-        throw new DirectoryNotFoundException("Independent project root not found.");
     }
 }

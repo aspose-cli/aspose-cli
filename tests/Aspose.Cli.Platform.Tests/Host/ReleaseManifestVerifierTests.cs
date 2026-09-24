@@ -19,7 +19,7 @@ public sealed class ReleaseManifestVerifierTests
         {
             string archive = Path.Combine(root, "release.zip");
             File.WriteAllBytes(archive, Encoding.UTF8.GetBytes("release"));
-            string archiveHash = Hash(archive);
+            string archiveHash = FileHashes.Sha256(archive);
             byte[] publicKey = key.ExportSubjectPublicKeyInfo();
             string keyId = Convert.ToHexString(SHA256.HashData(publicKey)).ToLowerInvariant();
             byte[] payload = ReleaseManifestVerifier.CreateSigningPayload(
@@ -85,7 +85,7 @@ public sealed class ReleaseManifestVerifierTests
         {
             string archive = Path.Combine(root, "release.zip");
             File.WriteAllText(archive, "release", new UTF8Encoding(false));
-            string hash = Hash(archive);
+            string hash = FileHashes.Sha256(archive);
             string keyId = Convert.ToHexString(SHA256.HashData(key.ExportSubjectPublicKeyInfo())).ToLowerInvariant();
             string manifest = Path.Combine(root, "RELEASE-MANIFEST.json");
             File.WriteAllText(manifest, Manifest(key, keyId, hash), Encoding.UTF8);
@@ -124,7 +124,7 @@ public sealed class ReleaseManifestVerifierTests
             string archive = Path.Combine(root, "release.zip");
             string manifest = Path.Combine(root, "RELEASE-MANIFEST.json");
             File.WriteAllText(archive, "release", new UTF8Encoding(false));
-            string archiveHash = Hash(archive);
+            string archiveHash = FileHashes.Sha256(archive);
             string keyId = KeyId(key);
             File.WriteAllText(privateKey, key.ExportPkcs8PrivateKeyPem(), Encoding.ASCII);
             byte[] signed = ReleaseManifestVerifier.CreateSigningPayload(
@@ -319,12 +319,6 @@ public sealed class ReleaseManifestVerifierTests
                 false, Links, "signed", "ECDSA-P256-SHA256", "rfc3279-der", keyId, "RELEASE-MANIFEST.sig"),
             HashAlgorithmName.SHA256,
             DSASignatureFormat.Rfc3279DerSequence));
-
-    private static string Hash(string path)
-    {
-        using FileStream stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
-    }
 
     private static string KeyId(ECDsa key) =>
         Convert.ToHexString(SHA256.HashData(key.ExportSubjectPublicKeyInfo())).ToLowerInvariant();

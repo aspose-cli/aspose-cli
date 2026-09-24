@@ -1,4 +1,3 @@
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Xml.Linq;
 
@@ -7,7 +6,7 @@ namespace Aspose.Cli.Tests;
 /// <summary>Checks the first-party graph of this independent project.</summary>
 public sealed class RepositoryProjectGraphTests
 {
-    private static readonly string Root = FindRoot();
+    private static readonly string Root = RepositoryPaths.Root;
 
     [Fact]
     public void ProjectReferencesAndBuildInputsAreSelfContained()
@@ -69,16 +68,4 @@ public sealed class RepositoryProjectGraphTests
     private static bool IsUnder(string path, string root) =>
         Path.GetFullPath(path).StartsWith(Path.GetFullPath(root).TrimEnd(Path.DirectorySeparatorChar) + Path.DirectorySeparatorChar,
             OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal);
-
-    private static string FindRoot([CallerFilePath] string file = "")
-    {
-        for (DirectoryInfo? directory = new(Path.GetDirectoryName(file)!); directory is not null; directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "eng", "distribution.json")))
-            {
-                return directory.FullName;
-            }
-        }
-        throw new DirectoryNotFoundException("Independent project root not found.");
-    }
 }

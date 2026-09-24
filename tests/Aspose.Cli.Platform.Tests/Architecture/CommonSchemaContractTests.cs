@@ -8,6 +8,7 @@ using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Sdk.Resources;
 using Aspose.Cli.Host.Serialization;
 using Json.Schema;
+using Aspose.Cli.TestKit;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
 

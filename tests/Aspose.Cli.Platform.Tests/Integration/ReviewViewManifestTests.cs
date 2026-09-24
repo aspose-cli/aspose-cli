@@ -64,23 +64,20 @@ public sealed class ReviewViewManifestTests
         switch (Path.GetExtension(file))
         {
             case ".xlsx":
-                Succeed(workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json"));
-                Succeed(workspace.Run("cells", "edit", file, "--in-place", "--set", "Data!A1=Hello", "--output", "json"));
+                workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json").Succeeded();
+                workspace.Run("cells", "edit", file, "--in-place", "--set", "Data!A1=Hello", "--output", "json").Succeeded();
                 break;
             case ".pptx":
-                Succeed(workspace.Run("slides", "create", file, "--output", "json"));
+                workspace.Run("slides", "create", file, "--output", "json").Succeeded();
                 break;
             default:
                 File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-                Succeed(workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json"));
+                workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json").Succeeded();
                 if (file.EndsWith(".pdf", StringComparison.Ordinal))
                 {
-                    Succeed(workspace.Run("words", "convert", "doc.docx", "--to", "pdf", "--out", file, "--output", "json"));
+                    workspace.Run("words", "convert", "doc.docx", "--to", "pdf", "--out", file, "--output", "json").Succeeded();
                 }
                 break;
         }
     }
-
-    private static void Succeed(CliResult result) =>
-        Assert.True(result.ExitCode == 0, result.StdErr);
 }

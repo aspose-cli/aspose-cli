@@ -1,5 +1,4 @@
 using System.Diagnostics;
-using System.Runtime.CompilerServices;
 using System.Text;
 
 namespace Aspose.Cli.Tests;
@@ -7,7 +6,7 @@ namespace Aspose.Cli.Tests;
 /// <summary>eng/products.json is the only roster of each product's packages.</summary>
 public sealed class CatalogPackageDriftTests : IDisposable
 {
-    private static readonly string Root = FindRoot();
+    private static readonly string Root = RepositoryPaths.Root;
     private readonly string _root = Directory.CreateTempSubdirectory("aspose-catalog-drift-").FullName;
 
     public void Dispose() => Directory.Delete(_root, recursive: true);
@@ -77,17 +76,5 @@ public sealed class CatalogPackageDriftTests : IDisposable
             .Replace("\r", string.Empty, StringComparison.Ordinal)
             .Replace("\n", string.Empty, StringComparison.Ordinal);
         return (process.ExitCode, text);
-    }
-
-    private static string FindRoot([CallerFilePath] string file = "")
-    {
-        for (DirectoryInfo? directory = new(Path.GetDirectoryName(file)!); directory is not null; directory = directory.Parent)
-        {
-            if (File.Exists(Path.Combine(directory.FullName, "eng", "distribution.json")))
-            {
-                return directory.FullName;
-            }
-        }
-        throw new DirectoryNotFoundException("Independent project root not found.");
     }
 }

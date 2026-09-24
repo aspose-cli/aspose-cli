@@ -4,6 +4,7 @@ using Aspose.Cli.Host.Commands;
 using Aspose.Cli.Sdk.Extensibility;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using Aspose.Cli.TestKit;
 using Xunit;
 
 namespace Aspose.Cli.Architecture.Tests;

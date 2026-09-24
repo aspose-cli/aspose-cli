@@ -1,5 +1,5 @@
 using System.Text.Json;
-using Aspose.Cli.Architecture.Tests;
+using Aspose.Cli.TestKit;
 using Microsoft.Playwright;
 using Xunit;
 using static Microsoft.Playwright.Assertions;
@@ -209,11 +209,7 @@ public sealed class ViewerStateBrowserTests(ITestOutputHelper output)
         }
         catch
         {
-            string root = Environment.GetEnvironmentVariable("ASPOSE_CLI_TEST_ARTIFACTS")
-                ?? Path.Combine(Path.GetTempPath(), "aspose-cli-browser-evidence");
-            string evidence = Path.Combine(root, "browser", name + "-" + Guid.NewGuid().ToString("N"));
-            Directory.CreateDirectory(evidence);
-            output.WriteLine("Browser evidence: " + evidence);
+            string evidence = BrowserApp.EvidenceDirectory(name, output);
             await page.ScreenshotAsync(new() { Path = Path.Combine(evidence, "page.png"), FullPage = true });
             await context.Tracing.StopAsync(new() { Path = Path.Combine(evidence, "trace.zip") });
             throw;

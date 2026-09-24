@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.TestKit;
@@ -25,7 +24,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
     {
         _output = output;
         LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
-        _worker = new RenderWorkerSupervisor(StartInfo, TimeSpan.FromMinutes(2));
+        _worker = new RenderWorkerSupervisor(() => _workspace.StartInfo(), TimeSpan.FromMinutes(2));
         _documents = new ViewerDocuments(_worker, ViewerStorage.Create(), limits);
         _server = new ViewerHttpServer(_documents, requestedPort: 0, limits);
         _server.Start();
@@ -45,7 +44,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         {
             File.WriteAllText(_workspace.File("report.md"), string.Join("\n\n",
                 Enumerable.Range(1, 120).Select(index => $"Paragraph {index} of the report.")));
-            Succeed(_workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output", "json"));
+            _workspace.Run("words", "create", "report.docx", "--markdown", "report.md", "--output", "json").Succeeded();
             return _documents.Open(_workspace.File("report.docx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, document) =>
@@ -55,9 +54,9 @@ public sealed class ViewerLiveBrowserTests : IDisposable
                 "() => { document.querySelector('.av-app').dataset.probe = 'shell';"
                 + " document.querySelector(\"[data-part-id='page-1']\").dataset.probe = 'page'; }");
 
-            Succeed(_workspace.RunWithInput(
+            _workspace.RunWithInput(
                 """{"ops":[{"op":"set_text","at":{"block":100},"text":"EDITED_PARAGRAPH"}]}""",
-                "words", "edit", "report.docx", "--ops", "-", "--in-place", "--output", "json"));
+                "words", "edit", "report.docx", "--ops", "-", "--in-place", "--output", "json").Succeeded();
 
             await Expect(page.Locator(".av-part[data-changed='true']")).ToHaveCountAsync(1);
             await Expect(page.Locator(".av-status-note")).ToContainTextAsync("revision 2");
@@ -71,9 +70,9 @@ public sealed class ViewerLiveBrowserTests : IDisposable
     public Task Cells_AnEditLandsOnTheCellInTheProductGrid() =>
         InBrowser("cells-live", () =>
         {
-            Succeed(_workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Notes", "--output", "json"));
-            Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-                "--set", "Data!A1=Region", "--set", "Data!B1=Revenue", "--set", "Data!B2=120", "--output", "json"));
+            _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data,Notes", "--output", "json").Succeeded();
+            _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
+                "--set", "Data!A1=Region", "--set", "Data!B1=Revenue", "--set", "Data!B2=120", "--output", "json").Succeeded();
             return _documents.Open(_workspace.File("book.xlsx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, _) =>
@@ -86,8 +85,8 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             // as it happens rather than looked for afterwards.
             await RecordMarks(grid);
 
-            Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-                "--set", "Data!B2=999", "--output", "json"));
+            _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
+                "--set", "Data!B2=999", "--output", "json").Succeeded();
 
             await Expect(grid.Locator("td[data-cell='B2']").First).ToContainTextAsync("999");
             // Replacing the exported content keeps the same frame.
@@ -101,23 +100,22 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             // The first mark is given time to fade so the next one stands alone.
             await Expect(grid.Locator(".aspose-cell-changed")).ToHaveCountAsync(0, new() { Timeout = 10_000 });
             await RecordMarks(grid);
-            Succeed(_workspace.Run("cells", "edit", "book.xlsx", "--in-place",
-                "--set", "Data!D4=Later", "--output", "json"));
+            _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
+                "--set", "Data!D4=Later", "--output", "json").Succeeded();
 
             await Expect(grid.Locator("td[data-cell='D4']").First).ToContainTextAsync("Later");
             Assert.Equal(["D4"], await Marks(grid));
 
             await RecordMarks(grid);
-            Succeed(_workspace.RunWithInput(
+            _workspace.RunWithInput(
                 """{"ops":[{"op":"insert_rows","sheet":"Data","at":2},{"op":"set_values","sheet":"Data","range":"A2","values":[["Inserted"]]}]}""",
-                "cells", "edit", "book.xlsx", "--ops", "-", "--in-place", "--output", "json"));
+                "cells", "edit", "book.xlsx", "--ops", "-", "--in-place", "--output", "json").Succeeded();
 
             await Expect(grid.Locator("td[data-cell='A2']").First).ToHaveTextAsync("Inserted");
             await Expect(grid.Locator("td[data-cell='B3']").First).ToContainTextAsync("999");
             await Expect(grid.Locator("td[data-cell='D5']").First).ToContainTextAsync("Later");
             Assert.Equal(["A2"], await Marks(grid));
         });
-
 
     [Fact]
     public Task Cells_OnlyTheNewestCompleteRevisionCommitsAndFailedLoadsCanRetry() =>
@@ -307,7 +305,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         InBrowser("slides-live", () =>
         {
             File.WriteAllText(_workspace.File("deck.md"), "# First slide\n\n- One\n\n# Second slide\n\n- Two\n");
-            Succeed(_workspace.Run("slides", "create", "deck.pptx", "--markdown", "deck.md", "--output", "json"));
+            _workspace.Run("slides", "create", "deck.pptx", "--markdown", "deck.md", "--output", "json").Succeeded();
             return _documents.Open(_workspace.File("deck.pptx"), new LiveDocumentOptions(), ViewerDocuments.PreviewHolder);
         },
         async (page, document) =>
@@ -355,11 +353,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
 
     private async Task CaptureEvidence(string name, IPage page)
     {
-        string root = Environment.GetEnvironmentVariable("ASPOSE_CLI_TEST_ARTIFACTS")
-            ?? Path.Combine(Path.GetTempPath(), "aspose-cli-browser-evidence");
-        string evidence = Path.Combine(root, "browser", name + "-" + Guid.NewGuid().ToString("N"));
-        Directory.CreateDirectory(evidence);
-        _output.WriteLine("Browser evidence: " + evidence);
+        string evidence = BrowserApp.EvidenceDirectory(name, _output);
         try
         {
             await page.ScreenshotAsync(new() { Path = Path.Combine(evidence, "page.png"), FullPage = true });
@@ -367,19 +361,4 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         }
         catch (Exception exception) { _output.WriteLine("Evidence collection: " + exception.GetType().Name); }
     }
-
-    private ProcessStartInfo StartInfo()
-    {
-        var start = new ProcessStartInfo(CliRunner.ExecutablePath)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WorkingDirectory = _workspace.Path,
-        };
-        CliEnvironment.Evaluation(Directory.GetParent(_workspace.ConfigDirectory)!.FullName)
-            .Apply(start.Environment);
-        return start;
-    }
-
-    private static void Succeed(CliResult result) => Assert.True(result.ExitCode == 0, result.StdErr);
 }

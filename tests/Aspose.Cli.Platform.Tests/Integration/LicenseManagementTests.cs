@@ -1,5 +1,4 @@
 using Aspose.Cli.TestKit;
-using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json.Nodes;
 using Xunit;
@@ -50,7 +49,7 @@ public sealed class LicenseManagementTests
     {
         using var workspace = new TempWorkspace();
         string source = TestLicense.Path!;
-        string sourceHash = Hash(source);
+        string sourceHash = FileHashes.Sha256(source);
         DateTime sourceTime = File.GetLastWriteTimeUtc(source);
         CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--timeout", "20", "--output", "json");
         Assert.True(selected.ExitCode == 0, selected.StdErr);
@@ -65,9 +64,9 @@ public sealed class LicenseManagementTests
         {
             Assert.Equal("licensed", product!["mode"]!.GetValue<string>());
             Assert.True(product["userLicenseInstalled"]!.GetValue<bool>());
-            Assert.Equal(sourceHash, Hash(product["path"]!.GetValue<string>()));
+            Assert.Equal(sourceHash, FileHashes.Sha256(product["path"]!.GetValue<string>()));
         });
-        Assert.Equal(sourceHash, Hash(source));
+        Assert.Equal(sourceHash, FileHashes.Sha256(source));
         Assert.Equal(sourceTime, File.GetLastWriteTimeUtc(source));
 
         string invalid = workspace.File("invalid.lic");
@@ -75,7 +74,7 @@ public sealed class LicenseManagementTests
         CliResult rejected = workspace.Run("license", "install", invalid, "--timeout", "20", "--output", "json");
         Assert.Equal(7, rejected.ExitCode);
         Assert.All(Directory.GetFiles(Path.Combine(workspace.ConfigDirectory, "licenses")), path =>
-            Assert.Equal(sourceHash, Hash(path)));
+            Assert.Equal(sourceHash, FileHashes.Sha256(path)));
 
         CliResult removed = workspace.Run("license", "remove", "--timeout", "20", "--output", "json");
         Assert.True(removed.ExitCode == 0, removed.StdErr);
@@ -86,11 +85,5 @@ public sealed class LicenseManagementTests
         });
         Assert.Empty(Directory.GetFiles(Path.Combine(workspace.ConfigDirectory, "licenses"), "*.lic"));
         Assert.Equal(0, workspace.Run("license", "remove", "--output", "json").ExitCode);
-    }
-
-    private static string Hash(string path)
-    {
-        using FileStream stream = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(stream));
     }
 }

@@ -1,6 +1,5 @@
 using System.Text.Json;
 using System.Xml.Linq;
-using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -134,10 +133,7 @@ public sealed class Wave0FailureGateTests
         bool developmentShell = false)
     {
         string executable = developmentShell
-            ? (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)
-                .Where(static directory => !string.IsNullOrWhiteSpace(directory))
-                .Select(static directory => Path.Combine(directory, "pwsh.exe"))
-                .First(File.Exists)
+            ? ToolPath.Require("pwsh")
             : Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe");
         using var workspace = new TempWorkspace();
         return new CliProcess(

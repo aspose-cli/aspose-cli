@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Host.LocalServices;
@@ -32,7 +31,7 @@ public sealed class RenderWorkerTests : IDisposable
     {
         CreateDocument("report.docx");
         CreateWorkbook("book.xlsx");
-        using var supervisor = new RenderWorkerSupervisor(StartInfo, RenderTimeout);
+        using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), RenderTimeout);
 
         (RenderWorkerResponse document, string documentOutput) = Render(supervisor, "report.docx", presentation: true);
         int worker = supervisor.ProcessId!.Value;
@@ -64,7 +63,7 @@ public sealed class RenderWorkerTests : IDisposable
             @"{\rtf1\ansi{\fonttbl{\f0 " + FontFixtures.UniqueFamily + @";}}\f0\fs48 Fixture text WWW mmm\par}");
         string fonts = _workspace.File("fonts");
         FontFixtures.WriteUniqueFont(fonts);
-        using var supervisor = new RenderWorkerSupervisor(StartInfo, RenderTimeout);
+        using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), RenderTimeout);
 
         string before = PartDigest(Render(supervisor, "fixture.rtf"));
         string withFonts = PartDigest(Render(supervisor, "fixture.rtf", fontDirectories: [fonts]));
@@ -80,7 +79,7 @@ public sealed class RenderWorkerTests : IDisposable
         File.WriteAllBytes(_workspace.File("local.png"), Convert.FromBase64String(
             "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII="));
         File.WriteAllText(_workspace.File("relative.md"), "# Relative image\n\n![local](local.png)");
-        using var supervisor = new RenderWorkerSupervisor(StartInfo, RenderTimeout);
+        using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), RenderTimeout);
         var direct = Render(supervisor, "relative.md");
         Assert.True(direct.Response.Ok, direct.Response.Message);
         using var documents = new ViewerDocuments(supervisor, ViewerStorage.Create(), LocalServiceResourceLimits.Resolve());
@@ -94,7 +93,7 @@ public sealed class RenderWorkerTests : IDisposable
     public void Render_WhenTheDocumentIsUnreadable_ReportsTheProductError()
     {
         File.WriteAllText(_workspace.File("broken.docx"), "not a document");
-        using var supervisor = new RenderWorkerSupervisor(StartInfo, RenderTimeout);
+        using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), RenderTimeout);
 
         (RenderWorkerResponse response, string output) = Render(supervisor, "broken.docx");
 
@@ -108,7 +107,7 @@ public sealed class RenderWorkerTests : IDisposable
     public void Render_WhenTheLicenseChanges_RecyclesTheWorker()
     {
         CreateDocument("report.docx");
-        using var supervisor = new RenderWorkerSupervisor(StartInfo, RenderTimeout);
+        using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), RenderTimeout);
         Assert.True(Render(supervisor, "report.docx").Response.Ok);
         int evaluationWorker = supervisor.ProcessId!.Value;
 
@@ -125,7 +124,7 @@ public sealed class RenderWorkerTests : IDisposable
     public void Render_WhenTheWorkerRunsPastItsBound_KillsItAndReportsTheTimeout()
     {
         CreateDocument("report.docx");
-        using var supervisor = new RenderWorkerSupervisor(StartInfo, TimeSpan.FromMilliseconds(250));
+        using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), TimeSpan.FromMilliseconds(250));
 
         (RenderWorkerResponse response, _) = Render(supervisor, "report.docx");
 
@@ -162,30 +161,15 @@ public sealed class RenderWorkerTests : IDisposable
         return view["parts"]![0]!["digest"]!.GetValue<string>();
     }
 
-    private ProcessStartInfo StartInfo()
-    {
-        var start = new ProcessStartInfo(CliRunner.ExecutablePath)
-        {
-            UseShellExecute = false,
-            CreateNoWindow = true,
-            WorkingDirectory = _workspace.Path,
-        };
-        CliEnvironment.Evaluation(Directory.GetParent(_workspace.ConfigDirectory)!.FullName)
-            .Apply(start.Environment);
-        return start;
-    }
-
     private void CreateDocument(string file)
     {
         File.WriteAllText(_workspace.File("report.md"), "# Report\n\nOne paragraph of prose.\n");
-        Succeed(_workspace.Run("words", "create", file, "--markdown", "report.md", "--output", "json"));
+        _workspace.Run("words", "create", file, "--markdown", "report.md", "--output", "json").Succeeded();
     }
 
     private void CreateWorkbook(string file)
     {
-        Succeed(_workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json"));
-        Succeed(_workspace.Run("cells", "edit", file, "--in-place", "--set", "Data!A1=Region", "--output", "json"));
+        _workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json").Succeeded();
+        _workspace.Run("cells", "edit", file, "--in-place", "--set", "Data!A1=Region", "--output", "json").Succeeded();
     }
-
-    private static void Succeed(CliResult result) => Assert.True(result.ExitCode == 0, result.StdErr);
 }

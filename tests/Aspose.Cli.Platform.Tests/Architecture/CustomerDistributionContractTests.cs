@@ -23,11 +23,9 @@ public sealed class CustomerDistributionContractTests
     public void SlidesProject_SelectsOnlyItsWindowsX64NativeAssetBeforeBundling()
     {
         using var directory = new TempDirectory();
-        string dotnet = new[] { Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") }
-            .Concat((Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)
-                .Where(static path => !string.IsNullOrWhiteSpace(path))
-                .Select(static path => Path.GetFullPath(Path.Combine(path.Trim('"'), OperatingSystem.IsWindows() ? "dotnet.exe" : "dotnet"))))
-            .First(static path => !string.IsNullOrWhiteSpace(path) && File.Exists(path))!;
+        string dotnet = Environment.GetEnvironmentVariable("DOTNET_HOST_PATH") is { Length: > 0 } host && File.Exists(host)
+            ? host
+            : ToolPath.Require("dotnet");
         foreach (string projectName in new[] { "Aspose.Cli.Product.Slides", "Aspose.Cli" })
         {
             string project = Path.Combine(RepositoryPaths.Root, "src", projectName, projectName + ".csproj");

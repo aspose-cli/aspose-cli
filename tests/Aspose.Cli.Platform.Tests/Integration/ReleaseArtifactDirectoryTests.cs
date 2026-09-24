@@ -1,6 +1,5 @@
 using System.Text;
 using System.Text.Json;
-using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -21,8 +20,8 @@ public sealed class ReleaseArtifactDirectoryTests
         string allowed = directory.File("workspace/artifacts/publish/free");
         string target = Path.Combine(allowed, "portable");
 
-        AssertSuccess(Initialize(legacy, directory,
-            trailingSeparator ? target + Path.DirectorySeparatorChar : target, allowed));
+        Initialize(legacy, directory,
+            trailingSeparator ? target + Path.DirectorySeparatorChar : target, allowed).Succeeded();
 
         Assert.True(Directory.Exists(target));
         Assert.Empty(Directory.EnumerateFileSystemEntries(target));
@@ -45,7 +44,7 @@ public sealed class ReleaseArtifactDirectoryTests
         string allowed = directory.File("publish");
         string target = Path.Combine(allowed, "portable");
         Directory.CreateDirectory(allowed);
-        AssertSuccess(Initialize(legacy, directory, target, allowed));
+        Initialize(legacy, directory, target, allowed).Succeeded();
         string nested = Path.Combine(target, "nested");
         Directory.CreateDirectory(nested);
         File.WriteAllText(Path.Combine(nested, "old.dll"), "generated output");
@@ -53,8 +52,8 @@ public sealed class ReleaseArtifactDirectoryTests
         File.WriteAllText(sibling, "preserve sibling");
         byte[] marker = File.ReadAllBytes(Marker(target));
 
-        AssertSuccess(Initialize(legacy, directory,
-            trailingSeparator ? target + Path.DirectorySeparatorChar : target, allowed));
+        Initialize(legacy, directory,
+            trailingSeparator ? target + Path.DirectorySeparatorChar : target, allowed).Succeeded();
 
         Assert.Empty(Directory.EnumerateFileSystemEntries(target));
         Assert.Equal("preserve sibling", File.ReadAllText(sibling));
@@ -138,8 +137,7 @@ public sealed class ReleaseArtifactDirectoryTests
             File.WriteAllText(Path.Combine(actualTarget, "keep.dll"), "preserve owned tree through link");
             WriteMarker(Marker(actualTarget), target);
         }
-        AssertSuccess(Run(legacy, directory,
-            $"New-Item -ItemType Junction -Path {Literal(junction)} -Target {Literal(outside)} | Out-Null"));
+        FileSystemLinks.CreateDirectoryLink(junction, outside);
         try
         {
             Assert.True((File.GetAttributes(junction) & FileAttributes.ReparsePoint) != 0);
@@ -169,9 +167,7 @@ public sealed class ReleaseArtifactDirectoryTests
     {
         string shell = legacy
             ? Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe")
-            : (Environment.GetEnvironmentVariable("PATH") ?? "").Split(Path.PathSeparator)
-                .Where(static path => !string.IsNullOrWhiteSpace(path))
-                .Select(static path => Path.Combine(path, "pwsh.exe")).First(File.Exists);
+            : ToolPath.Require("pwsh");
         string helper = Path.Combine(RepositoryPaths.Root, "scripts", "release-common.ps1");
         string script = "[Console]::OutputEncoding = [Text.UTF8Encoding]::new($false); $ErrorActionPreference = 'Stop'; "
             + $"try {{ . {Literal(helper)}; {command} }} catch {{ [Console]::Error.WriteLine($_.Exception.Message); exit 17 }}";
@@ -187,9 +183,6 @@ public sealed class ReleaseArtifactDirectoryTests
         kind = "publish",
         target = Path.GetFullPath(target),
     }));
-
-    private static void AssertSuccess(CliResult result) =>
-        Assert.True(result.ExitCode == 0, result.StdOut + result.StdErr);
 
     private static void AssertRefused(CliResult result, string message)
     {

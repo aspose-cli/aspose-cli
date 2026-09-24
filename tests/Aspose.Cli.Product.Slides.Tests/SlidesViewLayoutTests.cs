@@ -54,7 +54,7 @@ public sealed class SlidesViewLayoutTests
                 MaxParts = 5,
                 Purpose = ViewPurpose.Evidence,
             },
-            new DiscardingSink());
+            new MemoryArtifactSink());
 
     private static (string Path, double WidthPoints) CreateDeck(
         SlidesEngineFixture fixture,
@@ -75,18 +75,5 @@ public sealed class SlidesViewLayoutTests
         slide.NotesSlideManager.AddNotesSlide().NotesTextFrame!.Text = "Note";
         presentation.Save(path, SaveFormat.Pptx);
         return (path, presentation.SlideSize.Size.Width);
-    }
-
-    private sealed class DiscardingSink : IViewArtifactSink
-    {
-        public void Write(string relativePath, Action<Stream> contentWriter)
-        {
-            using var stream = new MemoryStream();
-            contentWriter(stream);
-        }
-
-        public void WriteText(string relativePath, string content)
-        {
-        }
     }
 }

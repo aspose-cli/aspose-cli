@@ -39,22 +39,14 @@ public static class CliRunner
             return full;
         }
         string configuration = new DirectoryInfo(AppContext.BaseDirectory.TrimEnd(Path.DirectorySeparatorChar)).Parent?.Name ?? "Debug";
-        for (DirectoryInfo? directory = new(AppContext.BaseDirectory); directory is not null; directory = directory.Parent)
+        string executable = GetExecutablePath(RepositoryPaths.Root, configuration);
+        if (!File.Exists(executable))
         {
-            if (!File.Exists(Path.Combine(directory.FullName, "eng", "distribution.json")))
-            {
-                continue;
-            }
-            string executable = GetExecutablePath(directory.FullName, configuration);
-            if (!File.Exists(executable))
-            {
-                break;
-            }
-            ValidateExecutable(executable);
-            EnsureCurrentBuild(directory.FullName, executable);
-            return executable;
+            throw new InvalidOperationException($"Build this project's launcher or set {ExecutableEnvironmentVariable}.");
         }
-        throw new InvalidOperationException($"Build this project's launcher or set {ExecutableEnvironmentVariable}.");
+        ValidateExecutable(executable);
+        EnsureCurrentBuild(RepositoryPaths.Root, executable);
+        return executable;
     }
 
     internal static string GetExecutablePath(string root, string configuration) =>

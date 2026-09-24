@@ -2,7 +2,6 @@ using System.Diagnostics;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;
@@ -323,8 +322,7 @@ public sealed partial class CustomerInstallerPowerShellTests
     public void ClaudeVerification_ReadsLargeConfigurationsWithCaseDistinctKeys(string shell)
     {
         Requires.Windows();
-        string? executable = shell == "pwsh" ? FindOnPath("pwsh.exe") : "powershell.exe";
-        if (executable is null) { return; }
+        string executable = shell == "pwsh" ? ToolPath.Require("pwsh") : "powershell.exe";
         string configDirectory = Path.Combine(_root, "claude-large-" + shell);
         Directory.CreateDirectory(configDirectory);
         const string installation = @"C:\isolated path\aspose-cli.exe";
@@ -447,10 +445,4 @@ public sealed partial class CustomerInstallerPowerShellTests
 
     private static string MarkerChoices(string install) =>
         JsonNode.Parse(File.ReadAllText(Path.Combine(install, ".aspose-cli-install.json")))!["choices"]!.ToJsonString();
-
-    private static string? FindOnPath(string name) =>
-        (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Select(path => Path.Combine(path.Trim('"'), name))
-            .FirstOrDefault(File.Exists);
 }

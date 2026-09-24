@@ -3,7 +3,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -290,11 +289,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         string junctionTarget = Path.Combine(_root, "junction-target");
         string junction = Path.Combine(_root, "junction-skills");
         Directory.CreateDirectory(junctionTarget);
-        PowerShellResult linked = RunExecutable(
-            "powershell.exe",
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command",
-             $"New-Item -ItemType Junction -Path {PowerShellLiteral(junction)} -Target {PowerShellLiteral(junctionTarget)} | Out-Null"]);
-        Assert.True(linked.ExitCode == 0, linked.StdErr);
+        FileSystemLinks.CreateDirectoryLink(junction, junctionTarget);
         try
         {
             PowerShellResult rejected = RunInstaller(
@@ -420,8 +415,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Assert.Equal(97, interrupted.ExitCode);
         Directory.Move(skills, parked);
         Directory.CreateDirectory(attacker);
-        PowerShellResult linked = CreateJunction(skills, attacker);
-        Assert.True(linked.ExitCode == 0, linked.StdErr);
+        FileSystemLinks.CreateDirectoryLink(skills, attacker);
         try
         {
             PowerShellResult rejected = RunInstaller(
@@ -560,7 +554,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         string install = Path.Combine(_root, "owned");
         Assert.Equal(0, RunInstaller(package, install).ExitCode);
         string executable = Path.Combine(install, "aspose-cli.exe");
-        string executableHash = Sha256(executable);
+        string executableHash = FileHashes.Sha256(executable);
         string marker = Path.Combine(install, ".aspose-cli-install.json");
         File.WriteAllText(marker, "{\"schemaVersion\":2,\"schemaVersion\":2}", Encoding.UTF8);
         string sentinel = Path.Combine(install, "CUSTOMER-DO-NOT-DELETE.txt");
@@ -571,7 +565,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Assert.NotEqual(0, result.ExitCode);
         Assert.True(File.Exists(sentinel));
         Assert.Equal("customer-owned", File.ReadAllText(sentinel, Encoding.UTF8));
-        Assert.Equal(executableHash, Sha256(executable));
+        Assert.Equal(executableHash, FileHashes.Sha256(executable));
         Assert.Contains("duplicate JSON property", result.StdErr + result.StdOut, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -641,7 +635,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         string install = Path.Combine(_root, "missing-marker-" + property);
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
         string executable = Path.Combine(install, "aspose-cli.exe");
-        string executableHash = Sha256(executable);
+        string executableHash = FileHashes.Sha256(executable);
         string markerPath = Path.Combine(install, ".aspose-cli-install.json");
         JsonObject marker = JsonNode.Parse(File.ReadAllText(markerPath, Encoding.UTF8))!.AsObject();
         Assert.True(marker.Remove(property));
@@ -651,7 +645,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
 
         Assert.NotEqual(0, result.ExitCode);
         Assert.Contains("missing", result.StdErr + result.StdOut, StringComparison.OrdinalIgnoreCase);
-        Assert.Equal(executableHash, Sha256(executable));
+        Assert.Equal(executableHash, FileHashes.Sha256(executable));
     }
 
     [Fact]
@@ -675,11 +669,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     public void CurrentMarker_PowerShellSevenRejectsMissingMcpOwnership()
     {
         Requires.Windows();
-        string? powerShell = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Select(path => Path.Combine(path.Trim('"'), "pwsh.exe"))
-            .FirstOrDefault(File.Exists);
-        Assert.SkipWhen(powerShell is null, "Requires PowerShell 7 (pwsh.exe) on PATH.");
+        string powerShell = ToolPath.Require("pwsh");
         string install = Path.Combine(_root, "pwsh7-marker");
 
         Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
@@ -1028,7 +1018,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
             .ToArray();
         File.WriteAllText(
             Path.Combine(package, "SHA256SUMS"),
-            string.Join(Environment.NewLine, files.Select(path => $"{Sha256(path)}  {Path.GetFileName(path)}")) + Environment.NewLine,
+            string.Join(Environment.NewLine, files.Select(path => $"{FileHashes.Sha256(path)}  {Path.GetFileName(path)}")) + Environment.NewLine,
             new UTF8Encoding(false));
     }
 
@@ -1123,14 +1113,8 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Assert.True(marker.RootElement.GetProperty("mcpRegistrations").GetArrayLength() >= 0);
         string manifestName = marker.RootElement.GetProperty("payloadManifest").GetString()!;
         string manifest = Path.Combine(install, manifestName);
-        Assert.Equal(Sha256(manifest), marker.RootElement.GetProperty("payloadManifestSha256").GetString());
+        Assert.Equal(FileHashes.Sha256(manifest), marker.RootElement.GetProperty("payloadManifestSha256").GetString());
     }
-
-    private static PowerShellResult CreateJunction(string junction, string target) =>
-        RunExecutable(
-            "powershell.exe",
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-Command",
-             $"New-Item -ItemType Junction -Path {PowerShellLiteral(junction)} -Target {PowerShellLiteral(target)} | Out-Null"]);
 
     private string CreateV1Install(string name, string executable)
     {
@@ -1216,7 +1200,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
                 {
                     path = relative,
                     size = new FileInfo(Path.Combine(root, relative)).Length,
-                    sha256 = Sha256(Path.Combine(root, relative)),
+                    sha256 = FileHashes.Sha256(Path.Combine(root, relative)),
                 }),
             }),
             new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
@@ -1242,19 +1226,13 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
             .Select(path => new
             {
                 Path = Path.GetRelativePath(directory, path).Replace('\\', '/'),
-                Hash = Sha256(path),
+                Hash = FileHashes.Sha256(path),
             })
             .Where(item => !string.Equals(item.Path, except, StringComparison.Ordinal))
             .OrderBy(static item => item.Path, StringComparer.Ordinal)
             .Select(static item => item.Path + "|" + item.Hash);
         return Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(string.Join('\n', lines))))
             .ToLowerInvariant();
-    }
-
-    private static string Sha256(string path)
-    {
-        using FileStream input = File.OpenRead(path);
-        return Convert.ToHexString(SHA256.HashData(input)).ToLowerInvariant();
     }
 
     private static void DeleteDirectoryWithRetry(string root)

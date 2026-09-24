@@ -34,7 +34,7 @@ public sealed class ViewerCommandLifecycleTests
             Assert.Equal(first["pid"]!.GetValue<int>(), other["pid"]!.GetValue<int>());
             Assert.NotEqual(first["url"]!.GetValue<string>(), other["url"]!.GetValue<string>());
 
-            JsonNode status = Json(Succeed(workspace.Run("preview", "status", "--output", "json")));
+            JsonNode status = workspace.Run("preview", "status", "--output", "json").Json();
             Assert.Equal(2, status["sessions"]!.AsArray().Count);
         }
         finally
@@ -58,10 +58,10 @@ public sealed class ViewerCommandLifecycleTests
             Assert.Equal(HttpStatusCode.OK, page.StatusCode);
             Assert.Contains("definePresenter('cells'", html, StringComparison.Ordinal);
 
-            JsonNode stopped = Json(Succeed(workspace.Run("preview", "stop", "--all", "--output", "json")));
+            JsonNode stopped = workspace.Run("preview", "stop", "--all", "--output", "json").Json();
             Assert.Single(stopped["stopped"]!.AsArray());
             Assert.Empty(stopped["sessions"]!.AsArray());
-            JsonNode status = Json(Succeed(workspace.Run("preview", "status", "--output", "json")));
+            JsonNode status = workspace.Run("preview", "status", "--output", "json").Json();
             Assert.Empty(status["sessions"]!.AsArray());
         }
         finally
@@ -76,7 +76,7 @@ public sealed class ViewerCommandLifecycleTests
         using var workspace = new TempWorkspace();
         using var documents = new TempDirectory();
         string book = documents.File("book.xlsx");
-        Succeed(workspace.Run("cells", "create", book, "--sheets", "Data", "--output", "json"));
+        workspace.Run("cells", "create", book, "--sheets", "Data", "--output", "json").Succeeded();
         string moved = workspace.Path + "-moved";
         try
         {
@@ -118,22 +118,14 @@ public sealed class ViewerCommandLifecycleTests
     }
 
     private static JsonNode Start(TempWorkspace workspace, string file) =>
-        Json(Succeed(workspace.Run("preview", file, "--output", "json")));
+        workspace.Run("preview", file, "--output", "json").Json();
 
     private static void CreateWorkbook(TempWorkspace workspace, string file) =>
-        Succeed(workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json"));
+        workspace.Run("cells", "create", file, "--sheets", "Data", "--output", "json").Succeeded();
 
     private static void CreateDocument(TempWorkspace workspace, string file)
     {
         File.WriteAllText(workspace.File("report.md"), "# Report\n\nOne paragraph.\n");
-        Succeed(workspace.Run("words", "create", file, "--markdown", "report.md", "--output", "json"));
-    }
-
-    private static JsonNode Json(CliResult result) => JsonNode.Parse(result.StdOut)!;
-
-    private static CliResult Succeed(CliResult result)
-    {
-        Assert.True(result.ExitCode == 0, result.StdErr);
-        return result;
+        workspace.Run("words", "create", file, "--markdown", "report.md", "--output", "json").Succeeded();
     }
 }

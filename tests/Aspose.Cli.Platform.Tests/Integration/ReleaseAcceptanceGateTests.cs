@@ -1,7 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
 using System.Xml.Linq;
-using Aspose.Cli.Architecture.Tests;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -90,10 +89,7 @@ public sealed class ReleaseAcceptanceGateTests : IDisposable
 
     private CliResult Plan(string knownIssues)
     {
-        string shell = (Environment.GetEnvironmentVariable("PATH") ?? string.Empty)
-            .Split(Path.PathSeparator, StringSplitOptions.RemoveEmptyEntries)
-            .Select(path => Path.Combine(path.Trim('"'), OperatingSystem.IsWindows() ? "pwsh.exe" : "pwsh"))
-            .First(File.Exists);
+        string shell = ToolPath.Require("pwsh");
         return new CliProcess(shell, CliEnvironment.Evaluation(_directory.File("config")), TimeSpan.FromSeconds(60))
             .Run(_directory.Path,
             [
