@@ -3,8 +3,8 @@ namespace Aspose.Cli.Host.ViewerService;
 
 /// <summary>
 /// Polls a file until it can be opened for shared reading. Right after a
-/// change event the writer often still holds the file (Excel keeps it open
-/// for a moment after the replace dance); probing with exponential backoff
+/// change event the writer often still holds the file (desktop editors keep
+/// it open for a moment after the replace dance); probing with exponential backoff
 /// bridges the gap between the event and readability. The probe is advisory:
 /// <c>false</c> means "still not readable within the budget", and the caller
 /// decides whether to attempt the operation anyway.

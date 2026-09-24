@@ -137,6 +137,25 @@ public sealed class PdfArtifactWorkflowTests
     }
 
     [Fact]
+    public void Split_RejectsANameTemplateThatRepeatsANameBeforeWriting()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("pages.pdf", pages: 2);
+        string parts = fixture.File("parts");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Split(input, new PdfSplitRequest
+        {
+            Every = 1,
+            OutputDirectory = parts,
+            NameTemplate = "{stem}.pdf",
+        }));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Contains("--name-template", error.Message, StringComparison.Ordinal);
+        Assert.False(Directory.Exists(parts) && Directory.EnumerateFiles(parts).Any());
+    }
+
+    [Fact]
     public void ExtractAttachments_PublishesOriginalBytesAndMeasuredLengths()
     {
         using var fixture = new PdfEngineFixture();

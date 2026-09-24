@@ -57,9 +57,17 @@ internal sealed class PdfExtractionService
         using var writer = new AtomicOutputSetWriter(_writer, root, "pdf-split");
         string stem = Path.GetFileNameWithoutExtension(filePath);
         var targets = new List<(SplitPart Part, string Path)>();
+        var names = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
         foreach (SplitPart part in parts)
         {
             string name = SplitName(request.NameTemplate, stem, part);
+            if (!names.Add(name))
+            {
+                throw CliErrors.OptionInvalid(
+                    "--name-template",
+                    $"produces duplicate output '{name}'",
+                    "Include {n}, {pages} or {bookmark} so every output name is unique.");
+            }
             string target = Path.Combine(root, name);
             writer.Stage(target, request.Overwrite, staged =>
             {

@@ -19,7 +19,7 @@
         "code": {
           "type": "string",
           "pattern": "^[A-Z][A-Z0-9_]*$",
-          "description": "SCREAMING_SNAKE_CASE error code for the current CLI surface, e.g. SHEET_NOT_FOUND."
+          "description": "SCREAMING_SNAKE_CASE error code for the current CLI surface, e.g. FILE_NOT_FOUND."
         },
         "message": {
           "type": "string",

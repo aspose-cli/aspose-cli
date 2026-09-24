@@ -18,7 +18,7 @@ public enum ExitCode
     /// <summary>The input file is missing, locked, corrupt or password-protected.</summary>
     InputError = 3,
 
-    /// <summary>Domain validation failed (unknown sheet, invalid range, invalid ops).</summary>
+    /// <summary>Domain validation failed (unknown part, invalid range, invalid ops).</summary>
     ValidationError = 4,
 
     /// <summary>The output file could not be produced (exists, unwritable).</summary>

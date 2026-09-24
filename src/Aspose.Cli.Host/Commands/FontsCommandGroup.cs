@@ -11,8 +11,8 @@ namespace Aspose.Cli.Host.Commands;
 /// The <c>aspose-cli fonts</c> command group: diagnose the font environment that
 /// drives rendering fidelity. <c>list</c> reports what the engine can see;
 /// <c>check &lt;file&gt;</c> routes by product and reports whether its fonts are available here and
-/// what they will be substituted with — the P-5 "renders wrong on the server"
-/// diagnostic that <c>cells inspect --detail fonts</c> cannot give.
+/// what they will be substituted with — the "renders wrong on the server"
+/// diagnostic that a product listing of the used fonts cannot give.
 /// </summary>
 internal static class FontsCommandGroup
 {

@@ -5,8 +5,8 @@ namespace Aspose.Cli.Host.ViewerService;
 /// Watches one file and raises a single debounced <see cref="Changed"/> per
 /// burst of file-system events. Editors and this CLI alike replace files
 /// atomically (write a temp sibling, then move it over the target — the
-/// <see cref="IO.SafeFileWriter"/> pattern; Excel performs a similar replace
-/// dance), which surfaces as several raw events in quick succession, often a
+/// <see cref="IO.SafeFileWriter"/> pattern; desktop editors perform a similar
+/// replace dance), which surfaces as several raw events in quick succession, often a
 /// Renamed whose <em>old</em> name is the temp file. The monitor therefore
 /// watches the whole parent directory, filters by the exact file name itself
 /// (a rename counts when either side matches), and only raises once the file
@@ -102,7 +102,7 @@ internal sealed class FileChangeMonitor : IDisposable
     private void OnRenamed(object sender, RenamedEventArgs e)
     {
         // Either side matching counts: temp-file -> target covers atomic
-        // replacement, target -> backup covers Excel's save-replace dance.
+        // replacement, target -> backup covers a desktop editor's save-replace dance.
         if (Matches(e.Name) || Matches(e.OldName))
         {
             RecordHit();

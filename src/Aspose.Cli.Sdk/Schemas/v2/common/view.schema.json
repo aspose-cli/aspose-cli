@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/view.schema.json",
   "title": "Rendered product view",
-  "description": "The view.json manifest beside the parts of one rendered product view: ordered pages, slides or sheets with the semantic layout of each part. Review evidence and live display share it.",
+  "description": "The view.json manifest beside the parts of one rendered product view: its ordered parts with the semantic layout of each. Review evidence and live display share it.",
   "type": "object",
   "required": ["schema", "schemaVersion", "view", "sourceFormat", "sourceSizeBytes", "totalParts", "parts"],
   "properties": {

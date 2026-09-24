@@ -22,7 +22,7 @@ public sealed class AtomicOutputSetWriterTests
         CliException exception = Assert.Throws<CliException>(() =>
             set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "second")));
 
-        Assert.Equal(ErrorCodes.OptionInvalid, exception.Code);
+        Assert.Equal(ErrorCodes.UsageError, exception.Code);
         Assert.False(File.Exists(target));
     }
 

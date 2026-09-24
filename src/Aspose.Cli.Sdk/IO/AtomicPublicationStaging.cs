@@ -182,10 +182,7 @@ internal sealed class AtomicPublicationStaging(
                         || item.RequestedBackup is not null && comparer.Equals(item.RequestedBackup, backup)))
             || backup is not null && comparer.Equals(target, backup))
         {
-            throw CliErrors.OptionInvalid(
-                "--name-template",
-                $"produces duplicate output '{target}'",
-                "Include {n}, {pages} or {bookmark} so every output name is unique.");
+            throw CliErrors.DuplicateOutput(target);
         }
     }
 }

@@ -136,7 +136,7 @@ public sealed class PageRange
 
     private static CliException Invalid(string text, string reason) => new(
         ErrorCodes.PageRangeInvalid,
-        $"Invalid page range '{text}': {reason}.",
+        $"Invalid item range '{text}': {reason}.",
         hint: "Use 1-based ranges such as '1-3,7,9-'.",
         details: new System.Text.Json.Nodes.JsonObject { ["range"] = text, ["reason"] = reason });
 

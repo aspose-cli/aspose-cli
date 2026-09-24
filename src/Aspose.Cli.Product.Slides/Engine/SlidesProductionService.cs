@@ -17,6 +17,9 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Owns conversion, rendering, creation, extraction, and preview output.</summary>
 internal sealed class SlidesProductionService
 {
+    /// <summary>Marks the slide number in a multi-slide output name: <c>deck.s3.png</c>.</summary>
+    private const string SlidePartMarker = "s";
+
     private readonly ILicenseGate _licenseGate;
     private readonly ResourceBudgetLedger _resourceBudgets;
     private readonly SafeFileWriter _writer;
@@ -247,7 +250,7 @@ internal sealed class SlidesProductionService
             ISlide slide = presentation.Slides[number - 1];
             string path = slides.Count == 1
                 ? request.OutputPath
-                : PartOutputPath.For(request.OutputPath, PartOutputPath.Slide, number);
+                : PartOutputPath.For(request.OutputPath, SlidePartMarker, number);
             targets.Add((number, slide.SlideId, path));
             transaction.Stage(path, request.Overwrite, temp =>
             {

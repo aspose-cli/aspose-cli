@@ -166,26 +166,6 @@ public static partial class CliErrors
             ["limit"] = limit,
         });
 
-    public static CliException RectInvalid(
-        int x,
-        int y,
-        int width,
-        int height,
-        int imageWidth,
-        int imageHeight) => new(
-        ErrorCodes.RectInvalid,
-        $"Crop rectangle ({x},{y},{width},{height}) is outside the {imageWidth}x{imageHeight} image.",
-        hint: "Use non-negative coordinates and keep the entire rectangle inside the current image bounds.",
-        details: new JsonObject
-        {
-            ["x"] = x,
-            ["y"] = y,
-            ["width"] = width,
-            ["height"] = height,
-            ["imageWidth"] = imageWidth,
-            ["imageHeight"] = imageHeight,
-        });
-
     public static CliException RenderTooLarge(long width, long height, int? dpi, long maxPixels, string hint)
     {
         string megabytes = ((double)width * height * 4d / 1_048_576d)
@@ -238,6 +218,13 @@ public static partial class CliErrors
         hint: "Pass --overwrite to replace it, or choose a different path with --out.",
         details: new JsonObject { ["path"] = path });
 
+    /// <summary>Two outputs of one operation, including a backup, resolve to the same path.</summary>
+    internal static CliException DuplicateOutput(string path) => new(
+        ErrorCodes.UsageError,
+        $"Two outputs of this operation resolve to the same path: {path}",
+        hint: "Give every output, including a backup, its own path.",
+        details: new JsonObject { ["path"] = path });
+
     public static CliException OutputUnwritable(
         string path,
         string reason,
@@ -247,9 +234,7 @@ public static partial class CliErrors
         $"Output file could not be written: {path} ({reason})",
         hint: phase switch
         {
-            "replace" => "Close the file in Excel or any other program that has it open, then retry. "
-                + "To keep the open file untouched, write a new copy with --out instead of --in-place.",
-            "backup" => "The safety backup could not be created, so the workbook was not replaced. "
+            "backup" => "The safety backup could not be created, so the file was not replaced. "
                 + "Check the directory permissions and available disk space, then retry.",
             "write" => "Check that the output directory is writable and has enough free disk space.",
             _ => "Check that the directory exists and the process has write permission.",
