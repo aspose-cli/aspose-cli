@@ -30,7 +30,6 @@ internal sealed class CellsQueryService
         _loader = loader;
     }
 
-    /// <inheritdoc />
     internal WorkbookInfoResult GetInfo(string filePath, InfoRequest request)
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);
@@ -65,7 +64,6 @@ internal sealed class CellsQueryService
         return ReviewLayoutProjection.Inspect(workbook) with { Warnings = loaded.Warnings() };
     }
 
-    /// <inheritdoc />
     internal WorkbookReadResult Read(string filePath, ReadRequest request)
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);
@@ -83,15 +81,13 @@ internal sealed class CellsQueryService
             Scope = request.Scope.ToContractName(),
             Sheet = sheet,
             Styles = styles,
-            // Next is left unset: the CLI assembles the follow-up command from
-            // this projection (its own spelling), keeping the engine free of any
-            // CLI syntax. See Commands/Cells/NextReadCommand.
+            // Next is left unset: the read command assembles the follow-up command
+            // from this projection, keeping the engine free of CLI syntax.
             License = EnvelopeParts.License(licenseState),
             Warnings = loaded.Warnings(),
         };
     }
 
-    /// <inheritdoc />
     internal DiffResult Diff(string leftPath, string rightPath, DiffRequest request)
     {
         ArgumentException.ThrowIfNullOrEmpty(leftPath);
@@ -120,7 +116,6 @@ internal sealed class CellsQueryService
         };
     }
 
-    /// <inheritdoc />
     internal SearchResult Search(string filePath, SearchRequest request)
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);
@@ -148,12 +143,10 @@ internal sealed class CellsQueryService
         };
     }
 
-    /// <inheritdoc />
     // Font configuration is global to the engine and license-independent, so
     // this neither opens a workbook nor touches the license gate.
     internal FontListResult ListFonts() => FontOps.BuildFontList();
 
-    /// <inheritdoc />
     internal FontCheckResult CheckFonts(string filePath, FontCheckRequest request)
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);

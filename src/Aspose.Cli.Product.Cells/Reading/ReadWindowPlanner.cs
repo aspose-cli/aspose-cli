@@ -1,6 +1,4 @@
 using Aspose.Cli.Product.Cells.Addressing;
-using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Reading;
 
@@ -13,29 +11,20 @@ namespace Aspose.Cli.Product.Cells.Reading;
 internal static class ReadWindowPlanner
 {
     /// <summary>
-    /// Applies the cell budget to a read. An explicit over-budget range is an
-    /// honest error; an over-budget default read degrades to a summary (no
-    /// window) the caller pages through, instead of flooding it.
+    /// Applies the cell budget to a read. The read command refuses an explicit
+    /// over-budget range before the engine opens the workbook; an over-budget
+    /// default read degrades to a summary (no window) the caller pages through,
+    /// instead of flooding it.
     /// </summary>
     /// <returns>
     /// The window to read — null for a summary-only response — and whether the
     /// read was truncated to a summary.
     /// </returns>
-    /// <exception cref="CliException"><c>RANGE_TOO_LARGE</c> when an explicit range exceeds the budget.</exception>
     public static (RangeRef? Window, bool Truncated) DecideWindow(
         RangeRef? explicitRange, int maxCells, RangeRef? usedRange)
     {
         if (explicitRange is { } range)
         {
-            if (range.CellCount > maxCells)
-            {
-                RangeRef suggested = FirstWindow(range, maxCells);
-                throw CellsErrors.RangeTooLarge(
-                    range.CellCount,
-                    maxCells,
-                    $"Request at most {maxCells} cells per call, such as --range {A1.FormatRange(suggested)}, or raise --max-cells.");
-            }
-
             return (range, false);
         }
 

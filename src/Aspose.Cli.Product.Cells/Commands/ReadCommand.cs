@@ -77,7 +77,7 @@ internal static class ReadCommand
             RangeRef? scan = parseResult.GetValue(scanOption) is { } region ? A1.ParseRange(region).Range : null;
 
             string inputPath = context.Paths.ResolveInput(parseResult.GetRequiredValue(fileArgument));
-            if (range is { } explicitRange && scan is null && explicitRange.CellCount > maxCells)
+            if (range is { } explicitRange && explicitRange.CellCount > maxCells)
             {
                 throw CellsErrors.RangeTooLarge(
                     explicitRange.CellCount,
