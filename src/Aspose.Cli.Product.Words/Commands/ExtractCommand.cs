@@ -9,7 +9,7 @@ internal static class ExtractCommand
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
         Argument<string> file = WordsOptions.File();
-        var what = new Option<string>("--what") { Required = true, Description = "images, comments or text." }.WithInput(InputKind.None);
+        var what = new Option<string>("--what") { Required = true, Description = "images, comments or text (the visible block text, one line per paragraph)." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong("images", "comments", "text");
         var outDirectory = new OutputDirectoryOption("Safe extraction directory.", required: true);
         var password = new PasswordOptions("--password", "the document");

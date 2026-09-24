@@ -139,7 +139,7 @@ internal sealed class WordsExtractionService
         }
         else if (request.What == "text")
         {
-            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Clean(loaded.Document.GetText()));
+            byte[] bytes = System.Text.Encoding.UTF8.GetBytes(WordsText.Lines(index.Entries.Select(static entry => entry.Node)));
             string path = guard.WriteAllBytes("document.txt", bytes);
             items.Add(new ExtractedItem { Path = path, Kind = "text", SizeBytes = bytes.LongLength });
         }

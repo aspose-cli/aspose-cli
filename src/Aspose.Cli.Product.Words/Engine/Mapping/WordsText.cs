@@ -69,6 +69,16 @@ internal static class WordsText
         }
     }
 
+    /// <summary>
+    /// The visible text of blocks as plain text: one line per paragraph, including each
+    /// paragraph of a table cell or text box, with manual line and page breaks as line ends.
+    /// </summary>
+    internal static string Lines(IEnumerable<Node> blocks) =>
+        string.Join('\n', blocks.Select(static block => Of(block)
+            .Replace(ControlChar.ParagraphBreakChar, '\n')
+            .Replace(ControlChar.LineBreakChar, '\n')
+            .Replace(ControlChar.PageBreakChar, '\n')));
+
     /// <summary>Drops the trailing paragraph, cell and page marks and the cell marks inside raw SDK text.</summary>
     internal static string Clean(string value) =>
         value.TrimEnd('\r', '\a', '\f').Replace("\a", string.Empty, StringComparison.Ordinal);

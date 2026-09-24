@@ -11,6 +11,8 @@ from 1. Block text, search snippets and `find`/`heading` addresses use the
 text a reader sees: field results rather than field codes, without text a
 tracked change deletes, and without the comments and footnotes a paragraph
 anchors (read those with `inspect --detail comments` or `query search`).
+`extract --what text` writes that same text for every block to one file, one
+line per paragraph.
 `query search --scope` and the `replace_text` op share one scope vocabulary:
 `body` (the main text), `headersFooters`, `footnotes` (with endnotes),
 `comments` and `all`.

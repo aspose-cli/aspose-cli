@@ -49,6 +49,20 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void ExtractedText_IsTheVisibleText()
+    {
+        string input = CreateAnnotatedParagraph();
+
+        WordsExtractResult result = _fixture.Engine.Extract(input, new WordsExtractRequest
+        {
+            What = "text",
+            OutputDirectory = _fixture.Temp.File($"text-{Guid.NewGuid():N}"),
+        });
+
+        Assert.Equal(Visible, File.ReadAllText(Assert.Single(result.Items).Path));
+    }
+
+    [Fact]
     public void CommentText_ShowsFieldResults()
     {
         var document = new Document();
