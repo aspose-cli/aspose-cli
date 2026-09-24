@@ -29,8 +29,56 @@ public sealed class NetworkReferenceGuardTests
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
     }
 
+    // Script computes addresses no static scan can see, so any script refuses the markup.
+    [Theory]
+    [InlineData("<script>var i = new Image(); i.src = 'ht' + 'tp:/' + '/example.test/a.png';</script>")]
+    [InlineData("<SCRIPT src=\"local.js\"></SCRIPT>")]
+    [InlineData("<svg:script>fetch(location)</svg:script>")]
+    [InlineData("<img src=\"a.png\" onerror=\"load()\">")]
+    [InlineData("<img src=\"a.png\"\nonload=\"load()\">")]
+    [InlineData("<body onload='load()'>")]
+    [InlineData("<a href=\"java\nscript:load()\">x</a>")]
+    [InlineData("<a href=\"&#106;avascript:load()\">x</a>")]
+    [InlineData("<iframe src=\"vbscript:load\"></iframe>")]
+    public void EnsureNone_RefusesScript(string markup)
+    {
+        CliException refused = Assert.Throws<CliException>(() =>
+            NetworkReferenceGuard.EnsureNone(Encoding.UTF8.GetBytes(markup), "HTML input", "input.html"));
+
+        Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
+        Assert.Contains("script", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void EnsureNone_RefusesCompressedMarkup()
+    {
+        using var compressed = new MemoryStream();
+        using (var gzip = new GZipStream(compressed, CompressionLevel.Fastest, leaveOpen: true))
+        {
+            gzip.Write(Encoding.UTF8.GetBytes("p { background: url(https://example.test/a.png) }"));
+        }
+
+        CliException refused = Assert.Throws<CliException>(() =>
+            NetworkReferenceGuard.EnsureNone(compressed.ToArray(), "resource", "style.css"));
+        Assert.Contains("compressed", refused.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void IsSelfContained_RecognizesRasterImagesAndFontsOnly()
+    {
+        Assert.True(NetworkReferenceGuard.IsSelfContained([0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A]));
+        Assert.True(NetworkReferenceGuard.IsSelfContained([0xFF, 0xD8, 0xFF, 0xE0]));
+        Assert.True(NetworkReferenceGuard.IsSelfContained("GIF89a"u8));
+        Assert.True(NetworkReferenceGuard.IsSelfContained("RIFF\0\0\0\0WEBPVP8 "u8));
+        Assert.True(NetworkReferenceGuard.IsSelfContained("wOF2"u8));
+        Assert.False(NetworkReferenceGuard.IsSelfContained("<svg/>"u8));
+        Assert.False(NetworkReferenceGuard.IsSelfContained("p { color: red }"u8));
+        Assert.False(NetworkReferenceGuard.IsSelfContained([0x1F, 0x8B, 0x08]));
+    }
+
     [Theory]
     [InlineData("<img src=\"local.png\"><img src=\"images/a%20b.png\">")]
+    [InlineData("<p>Written in JavaScript; the <code>onload</code> event and the donation=true field.</p>")]
     [InlineData("<img src=\"file:///C:/work/local.png\">")]
     [InlineData("<img src=\"data:image/png;base64,iVBORw0KGgo=\">")]
     [InlineData("<a href=\"mailto:someone@example.test\">mail</a> 1/2 and a/b")]

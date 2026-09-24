@@ -13,8 +13,9 @@ namespace Aspose.Cli.Sdk.IO;
 /// <see cref="LocalDocumentResourceLoader"/> instead. The check is deliberately conservative:
 /// any network address refuses the input, including a hyperlink or an address in plain text,
 /// because a narrower HTML, CSS or SVG parser could disagree with the engine about what it will
-/// fetch. Only XML namespace names and document type identifiers, which engines never request,
-/// are exempt.
+/// fetch. Script is refused too, because an engine that runs it requests addresses the script
+/// computes, and compressed content, which cannot be read. Only XML namespace names and
+/// document type identifiers, which engines never request, are exempt.
 /// </summary>
 public static class NetworkReferenceGuard
 {
@@ -39,27 +40,62 @@ public static class NetworkReferenceGuard
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.IgnorePatternWhitespace,
         TimeSpan.FromSeconds(10));
 
+    // A script element, including a prefixed SVG one; an event-handler attribute; or a script URL.
+    private static readonly Regex Script = new(
+        """
+        <\s*(?:[a-z][a-z0-9_.\-]*:)?script(?![a-z0-9_.\-])
+        |<[a-z][^<>]*?[\s/"']on[a-z]+\s*=
+        |(?<![a-z0-9+.\-])(?:java|vb)script:
+        """,
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.IgnorePatternWhitespace,
+        TimeSpan.FromSeconds(10));
+
     private static readonly Regex CssEscape = new(
         @"\\(?:([0-9a-f]{1,6})\s?|(.))",
         RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Singleline,
         TimeSpan.FromSeconds(10));
 
-    /// <summary>Throws <c>FEATURE_UNSUPPORTED</c> when markup such as HTML, Markdown or SVG names a network address.</summary>
+    /// <summary>
+    /// Throws <c>FEATURE_UNSUPPORTED</c> when markup such as HTML, Markdown, CSS or SVG names a
+    /// network address, contains script, or is compressed.
+    /// </summary>
     public static void EnsureNone(byte[] content, string kind, string path)
     {
         ArgumentNullException.ThrowIfNull(content);
-        string text = Normalize(content);
-        string decoded = WebUtility.HtmlDecode(text);
-        foreach (string candidate in new[] { text, decoded, UnescapeCss(decoded) })
+        if (IsCompressed(content))
         {
+            throw new CliException(
+                ErrorCodes.FeatureUnsupported,
+                $"The {kind} is compressed and cannot be checked for network addresses: {path}.",
+                hint: $"Decompress the {kind}.");
+        }
+
+        string text = Decode(content);
+        string decoded = WebUtility.HtmlDecode(text);
+        foreach (string markup in new[] { text, decoded, UnescapeCss(decoded) })
+        {
+            // URL parsers ignore tabs and line breaks inside an address; markup separates
+            // attributes with them.
+            string candidate = RemoveLineBreaks(markup);
+            foreach (string scripted in new[] { markup, candidate })
+            {
+                Match script = Script.Match(scripted);
+                if (script.Success)
+                {
+                    throw new CliException(
+                        ErrorCodes.FeatureUnsupported,
+                        $"The {kind} contains script ('{Excerpt(scripted, script.Index)}'), which the document engine runs and which can request network addresses the CLI cannot check: {path}.",
+                        hint: $"Remove script elements, event-handler attributes and script URLs from the {kind}.");
+                }
+            }
+
             string scanned = Identifiers.Replace(candidate, " ");
             Match match = NetworkReference.Match(scanned);
             if (match.Success)
             {
-                string excerpt = scanned.Substring(match.Index, Math.Min(80, scanned.Length - match.Index));
                 throw new CliException(
                     ErrorCodes.FeatureUnsupported,
-                    $"The {kind} names a network address ('{excerpt}'), which the document engine would request before the CLI's resource policy applies: {path}.",
+                    $"The {kind} names a network address ('{Excerpt(scanned, match.Index)}'), which the document engine would request before the CLI's resource policy applies: {path}.",
                     hint: $"Remove every network address from the {kind}, including hyperlinks and addresses in text, or save the resources beside it and reference them by relative path.");
             }
         }
@@ -74,7 +110,7 @@ public static class NetworkReferenceGuard
         ArgumentNullException.ThrowIfNull(content);
         var head = new byte[1024];
         int length = content.ReadAtLeast(head, head.Length, throwOnEndOfStream: false);
-        if (length >= 2 && head[0] == 0x1F && head[1] == 0x8B)
+        if (IsCompressed(head.AsSpan(0, length)))
         {
             throw new CliException(
                 ErrorCodes.FeatureUnsupported,
@@ -108,6 +144,33 @@ public static class NetworkReferenceGuard
         return image;
     }
 
+    /// <summary>
+    /// Whether content is a raster image or a font, identified from its first bytes: formats
+    /// that name no other resource, so an engine reading them requests nothing further.
+    /// </summary>
+    public static bool IsSelfContained(ReadOnlySpan<byte> head) =>
+        head.StartsWith((ReadOnlySpan<byte>)[0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A])
+        || head.StartsWith((ReadOnlySpan<byte>)[0xFF, 0xD8, 0xFF])
+        || head.StartsWith("GIF87a"u8)
+        || head.StartsWith("GIF89a"u8)
+        || (head.StartsWith("BM"u8) && head.Length >= 10 && head[6..10].IndexOfAnyExcept((byte)0) < 0)
+        || head.StartsWith((ReadOnlySpan<byte>)[(byte)'I', (byte)'I', 0x2A, 0x00])
+        || head.StartsWith((ReadOnlySpan<byte>)[(byte)'M', (byte)'M', 0x00, 0x2A])
+        || (head.StartsWith("RIFF"u8) && head.Length >= 12 && head[8..12].SequenceEqual("WEBP"u8))
+        || head.StartsWith((ReadOnlySpan<byte>)[0x00, 0x00, 0x01, 0x00])
+        || head.StartsWith((ReadOnlySpan<byte>)[0x00, 0x01, 0x00, 0x00])
+        || head.StartsWith("OTTO"u8)
+        || head.StartsWith("true"u8)
+        || head.StartsWith("ttcf"u8)
+        || head.StartsWith("wOFF"u8)
+        || head.StartsWith("wOF2"u8);
+
+    private static bool IsCompressed(ReadOnlySpan<byte> head) =>
+        head.Length >= 2 && head[0] == 0x1F && head[1] == 0x8B;
+
+    private static string Excerpt(string text, int index) =>
+        text.Substring(index, Math.Min(80, text.Length - index));
+
     // Markup starts with '<' after an optional byte order mark, whitespace and, for unmarked
     // UTF-16, NUL bytes. No raster image format starts that way.
     private static bool IsMarkup(ReadOnlySpan<byte> head)
@@ -127,16 +190,18 @@ public static class NetworkReferenceGuard
 
     // Byte order marks select UTF-8, UTF-16 or UTF-32; otherwise Latin-1 keeps every ASCII
     // token of an ASCII-compatible encoding intact. Removing NUL exposes the ASCII tokens of
-    // unmarked UTF-16, and URL parsers ignore tabs and line breaks inside an address.
-    private static string Normalize(byte[] content)
+    // unmarked UTF-16.
+    private static string Decode(byte[] content)
     {
         using var reader = new StreamReader(new MemoryStream(content, writable: false), Encoding.Latin1,
             detectEncodingFromByteOrderMarks: true);
-        return reader.ReadToEnd().Replace("\0", "", StringComparison.Ordinal)
-            .Replace("\t", "", StringComparison.Ordinal)
+        return reader.ReadToEnd().Replace("\0", "", StringComparison.Ordinal);
+    }
+
+    private static string RemoveLineBreaks(string text) =>
+        text.Replace("\t", "", StringComparison.Ordinal)
             .Replace("\r", "", StringComparison.Ordinal)
             .Replace("\n", "", StringComparison.Ordinal);
-    }
 
     private static string UnescapeCss(string text) =>
         CssEscape.Replace(text, static match => match.Groups[1].Success
