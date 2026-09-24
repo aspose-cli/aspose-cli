@@ -1,13 +1,14 @@
 # Aspose CLI
 
-Open-source, local-first automation for spreadsheets, PDFs, presentations and Word documents.
-`aspose-cli` provides a CLI, a loopback browser workspace and a local MCP endpoint.
-Document processing runs on your machine. Windows x64 is the supported platform.
+Local-first automation of spreadsheets, PDFs, presentations and Word documents for people and
+AI agents. `aspose-cli` provides a CLI, a loopback browser workspace and a local MCP endpoint;
+documents are processed on your machine. Windows x64 is the supported platform.
 
-The CLI source is Apache-2.0. Commercial Aspose SDK dependencies have their own licensing terms.
-Licensed and SDK evaluation behavior are supported; evaluation output is disclosed.
+The CLI source is Apache-2.0. The commercial Aspose SDKs it runs on have their own license
+terms; without a license they run in evaluation mode, and the CLI discloses every evaluation
+effect on its output.
 
-## Capabilities and Skills
+## Quick start
 
 ```powershell
 aspose-cli capabilities --output json
@@ -17,43 +18,32 @@ aspose-cli docs cells/editing
 aspose-cli skill install aspose-cli-cells --host codex --scope project
 ```
 
-The executable is authoritative for formats, operations, budgets and limitations:
-`capabilities` lists every command, each product's operation vocabulary with its maximum
-batch size, the resource budgets and every diagnostic code with its exit code. `schema`
-prints the JSON Schemas and `docs` the bundled references.
-Skills are `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-slides` and `aspose-cli-words`;
-each includes references and reproducible examples. `skill install` supports the `codex`,
+The executable is the reference for what it supports: `capabilities` lists every command,
+each product's operations and batch limits, the resource budgets and every diagnostic code with
+its exit code; `--help` describes each command, `schema` prints the JSON Schemas and `docs` the
+bundled guides. The Skills `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-slides` and
+`aspose-cli-words` teach agents the workflows; `skill install` supports the `codex`,
 `claude-code` and `opencode` hosts at project or user scope.
 
-## Working with documents
+## What you can rely on
 
-- `edit` applies one batch of operations atomically: the output is staged and validated,
-  then published, or nothing changes. `--in-place` rewrites the input, `--backup` keeps a
-  copy of it first, `--if-match` rejects a file that changed since it was read, and
-  `--dry-run` applies the batch without writing. Only `--in-place` replaces the input:
-  every command that writes a file you name (`--out`, or a `create` command's file) refuses
-  one that resolves to any of its inputs.
-- Cells and Words `edit --verify` report semantic evidence (cell changes, formula errors,
-  field, revision and protection state) before publication.
-- `aspose-cli review <file>` writes a static evidence directory with an image of every sheet,
-  slide or page and layout findings. It is the visual check for every product.
-- `--font-dir`, repeatable, adds local font directories to the system fonts; relative paths
-  resolve against `--workdir`. It is accepted by `review`, `preview`, `fonts check` and every
-  product command whose output depends on fonts: `render` and `convert` in every product,
-  `cells edit`, `pdf create`/`edit`/`sign`, and `words create`/`edit`/`compare`/`split`/`inspect`.
-- In JSON mode a successful command writes one result to stdout; a failure writes one error
-  envelope to stderr. `--verbose` adds structured diagnostics.
-- One input is admitted up to `--max-input-bytes` (default 1 GiB, at most 4 GiB); the other
-  budgets are listed by `capabilities`.
-- A document never causes a network request unless you opt in. External resources are read
-  only from ordinary local files beneath the input directory, and each omitted resource is
-  disclosed with `REMOTE_RESOURCES_BLOCKED`. The PDF HTML and Markdown importers and SVG images
-  for PDF and Cells fetch before any policy can stop them (see [KNOWN-ISSUES.md](KNOWN-ISSUES.md)),
-  so input that names a network address or contains script is refused with
-  `FEATURE_UNSUPPORTED`. For trusted HTML, `pdf create --from-html --allow-network-resources`
-  lets the importer fetch and lists every address in `NETWORK_RESOURCES_REQUESTED`; combine it
-  with `--timeout`. `words convert page.html --to pdf` makes no request. Markdown for PDF may
-  reference only ordinary files beneath its own directory.
+- **Atomic edits.** `edit` applies one batch of operations: the result is staged, validated and
+  published, or nothing changes. `--in-place` replaces the input (`--backup` keeps a copy first),
+  `--if-match` refuses a file that changed since it was read, and `--dry-run` writes nothing.
+  No other command writes over one of its inputs.
+- **Verification.** `aspose-cli review <file>` writes an evidence directory with an image of
+  every sheet, slide or page and its layout findings; Cells and Words `edit --verify` report
+  semantic evidence before publication.
+- **A stable contract.** In JSON mode a command writes one result to stdout or one error to
+  stderr, with a stable code and exit code.
+- **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`
+  lists; `--timeout` sets a deadline for the whole command.
+- **No network access.** A document never causes a network request unless you opt in; external
+  resources are read only from local files beneath the input directory, and each omitted
+  resource is reported. [KNOWN-ISSUES.md](KNOWN-ISSUES.md) lists the inputs that are refused
+  instead, because an SDK importer would fetch them.
+- **Your fonts.** Commands whose output depends on fonts accept `--font-dir` to add local font
+  directories to the system fonts.
 
 ## App, Preview and MCP
 
@@ -63,50 +53,40 @@ aspose-cli preview document.pdf --open
 aspose-cli mcp serve
 ```
 
-App and Preview are loopback browser views for a human on `http://127.0.0.1:<port>`; they
-enforce the exact Host `127.0.0.1:<port>`, same-origin, CSRF and current-user controls. The MCP
-registration is named `aspose-cli`: its `capabilities` tool is read-only, and its `execute` tool
-runs bounded product commands and the host commands that change no user or service state
-beyond publishing new outputs: `doctor`, `schema`, `docs`, `fonts list`, `fonts check`,
-`license status`, `skill list`, `preview status`, `app status` and `review`, with the same
-parser as the CLI. Installation, update, license changes and service lifecycle commands are
-not available through MCP.
+App and Preview are browser views for a person, served only on `127.0.0.1`. The MCP server
+`aspose-cli` offers a read-only `capabilities` tool and an `execute` tool that runs product
+commands and the host commands that only read or publish new outputs; a rejected call lists
+them. The security boundary is described in [SECURITY.md](SECURITY.md).
 
-## Commercial SDK licensing
+## Licensing
 
 ```powershell
 aspose-cli license install Aspose.Total.lic
 aspose-cli license status --output json
 ```
 
-`license status` reports each product in `products[]` with its effective source and mode.
 A license is taken from `--license`, then `ASPOSE_<PRODUCT>_LICENSE_B64` or
 `ASPOSE_<PRODUCT>_LICENSE_PATH`, then `ASPOSE_LICENSE_B64` or `ASPOSE_LICENSE_PATH`, then
 `.aspose/licenses/<product>.lic` or `.aspose/license.lic` in the working directory, then the
-licenses installed for the user.
-Document operations reject an invalid configured license instead of falling back to
-evaluation. Human-readable output prints a compact license notice on stderr; `--quiet`
-suppresses it. The source license does not grant SDK rights or remove evaluation
-restrictions. See [Aspose EULA](https://about.aspose.com/legal/eula/).
+licenses installed for the user. An invalid configured license is an error, not a silent fall
+back to evaluation. The CLI source license grants no SDK rights; see the
+[Aspose EULA](https://about.aspose.com/legal/eula/).
 
-## Install a released build
+## Install
 
-The release archive holds the Authenticode-signed payload, its `SHA256SUMS` and detached
-package signature, the CLI `LICENSE` and the original dependency notices under `notices/`.
-Save the approved key ring,
-`{"keys":[{"keyId":"<SHA-256 of the public key>","publicKeyPem":"<PEM>"}]}`, set
-`ASPOSE_CLI_RELEASE_TRUSTED_KEYS` to the path of that file, extract the archive and run:
+A release archive contains the Authenticode-signed payload, its `SHA256SUMS` with a detached
+signature, `LICENSE` and the dependency notices. Save the approved key ring
+(`{"keys":[{"keyId":"<SHA-256 of the public key>","publicKeyPem":"<PEM>"}]}`), set
+`ASPOSE_CLI_RELEASE_TRUSTED_KEYS` to its path, extract the archive and run:
 
 ```powershell
 & "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy AllSigned -File .\install.ps1
 ```
 
-The installer verifies its own signature, the package signature and the payload hashes, then
-installs per user into `%LOCALAPPDATA%\Aspose\CLI` in one transaction. By default it adds the
-directory to the user PATH, installs the Skills for the Codex, Claude Code and OpenCode homes it
-finds, asks for an optional license and registers the MCP server with each of those hosts whose
-CLI is on PATH. Existing user-owned registrations are preserved, and a host that cannot be
-registered only produces a warning.
+The installer verifies the signatures and hashes, then installs per user into
+`%LOCALAPPDATA%\Aspose\CLI` in one transaction. It adds the directory to the user PATH,
+installs the Skills and registers the MCP server for the Codex, Claude Code and OpenCode setups
+it finds, and offers to install a license; a host it cannot register produces only a warning.
 
 | Switch | Effect |
 | --- | --- |
@@ -115,7 +95,7 @@ registered only produces a warning.
 | `-SkillsRoot <path>` | Install the Skills into this directory instead of the detected hosts. |
 | `-LicensePath <file>`, `-LicenseProduct <id>` | Install a license, optionally for one product. |
 | `-SkipLicensePrompt` | Do not ask for a license. |
-| `-Update` | Replace an existing installation, replaying the choices it was made with. |
+| `-Update` | Replace an installation, keeping the choices it was made with. |
 | `-Uninstall` [`-RemoveConfiguration`] | Remove the installation, its PATH entry, Skills and MCP registrations, and optionally the configuration. |
 | `-PackageRoot <path>` | Install from an extracted package elsewhere. |
 | `-DevelopmentPackage` | Accept an unsigned development package; no release trust is claimed. |
@@ -127,20 +107,13 @@ Configuration lives in `%APPDATA%\aspose-cli`, or in the absolute directory name
 powershell -NoProfile -ExecutionPolicy AllSigned -File "$env:LOCALAPPDATA\Aspose\CLI\install.ps1" -Uninstall
 ```
 
-## Update
-
 `aspose-cli update check <feed>` and `aspose-cli update install <feed>` read a local
-`RELEASE-MANIFEST.json` or an HTTPS manifest URL, verify it against the same key ring and
-never run in the background. An update installs only a higher semantic version, or the
-identical build again; a downgrade, or a different build with the same version, is refused.
-`update install` hands off to the release's installer after the CLI exits; the outcome is
-recorded in `%TEMP%\aspose-cli-<user-hash>\updates\status-<hash>.json` with its log beside it,
-and a later `update` command reports a failed or unfinished run as `UPDATE_FAILED` or
-`UPDATE_IN_PROGRESS`.
+`RELEASE-MANIFEST.json` or an HTTPS manifest URL and verify it against the same key ring. An
+update installs only a higher version, or the identical build again, and runs the release's
+installer after the CLI exits; a later `update` command reports a failed or unfinished run.
 
-## Build from source
+## Development
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) to build, test, package and release the CLI;
-`.\scripts\install-local.ps1` installs a local unsigned development build.
-See also [SECURITY.md](SECURITY.md), [KNOWN-ISSUES.md](KNOWN-ISSUES.md), [AGENTS.md](AGENTS.md)
-and [LICENSE](LICENSE).
+[CONTRIBUTING.md](CONTRIBUTING.md) covers building, testing and releasing;
+[AGENTS.md](AGENTS.md) holds the architecture rules; [SECURITY.md](SECURITY.md) explains how to
+report a vulnerability.
