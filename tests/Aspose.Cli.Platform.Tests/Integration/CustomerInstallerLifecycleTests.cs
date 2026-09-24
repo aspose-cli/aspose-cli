@@ -210,6 +210,31 @@ public sealed partial class CustomerInstallerPowerShellTests
     }
 
     [Fact]
+    public void Install_WhileAnotherProcessHoldsTheDirectoryLock_ChangesNothingUntilItIsReleased()
+    {
+        Requires.Windows();
+        string install = Path.Combine(_root, "contended");
+        string key = Convert.ToHexStringLower(System.Security.Cryptography.SHA256.HashData(
+            Encoding.UTF8.GetBytes(install.ToUpperInvariant())))[..16];
+        string lockPath = Path.Combine(_root, $".aspose-cli-install-{key}.lock");
+
+        PowerShellResult refused;
+        using (new FileStream(lockPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
+        {
+            refused = RunInstaller(_package.Path, install);
+        }
+        File.Delete(lockPath);
+
+        Assert.NotEqual(0, refused.ExitCode);
+        Assert.Contains($"Another installation is using '{install}'", Flat(refused), StringComparison.Ordinal);
+        Assert.False(Directory.Exists(install));
+        AssertNoTransactionLeftovers();
+        Assert.Equal(0, RunInstaller(_package.Path, install).ExitCode);
+        Assert.True(File.Exists(Path.Combine(install, "aspose-cli.exe")));
+        AssertNoTransactionLeftovers();
+    }
+
+    [Fact]
     public void Uninstall_RemovesConfigurationOnlyOnRequestAndOnlyWhenOwned()
     {
         Requires.Windows();
