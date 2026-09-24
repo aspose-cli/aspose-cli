@@ -18,6 +18,9 @@ public sealed class WordsFixture : IDisposable
             Directory.GetCurrentDirectory(),
             ConfigurationPaths.UserDirectory());
         Gate = new WordsLicenseGate(resolution, Environment.GetEnvironmentVariable);
+        // Documents a test authors directly must be written in the license state the engine
+        // later reads them in; otherwise an evaluation banner becomes the first block.
+        Gate.EnsureApplied();
     }
 
     public ILicenseGate Gate { get; }
