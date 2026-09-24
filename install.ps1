@@ -229,6 +229,102 @@ namespace AsposeFileInstaller {
             return value[offset++];
         }
     }
+
+    // Strict JSON with unique object keys, compared as PowerShell compares property names.
+    public static class StrictJson {
+        private const int MaximumLength = 4 * 1024 * 1024;
+        private const int MaximumTokens = 200000;
+        private const int MaximumDepth = 64;
+        private static readonly System.Text.RegularExpressions.Regex Tokenizer = new System.Text.RegularExpressions.Regex(
+            @"\G(?:(?<ws>\s+)|(?<string>""(?:\\[""\\/bfnrt]|\\u[0-9A-Fa-f]{4}|[^""\\\x00-\x1F])*"")|(?<number>-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)|(?<literal>true|false|null)|(?<punct>[{}\[\],:]))",
+            System.Text.RegularExpressions.RegexOptions.CultureInvariant,
+            System.TimeSpan.FromSeconds(2));
+
+        public static void AssertNoDuplicateProperties(string text, string context) {
+            if (text.Length > MaximumLength) { throw Invalid(context, " exceeds the 4 MiB JSON limit."); }
+            var tokens = new System.Collections.Generic.List<string>();
+            int offset = 0;
+            while (offset < text.Length) {
+                System.Text.RegularExpressions.Match match = Tokenizer.Match(text, offset);
+                if (!match.Success || match.Index != offset) { throw Invalid(context, " is not strict JSON near character " + offset + "."); }
+                offset += match.Length;
+                if (match.Groups["ws"].Success) { continue; }
+                tokens.Add(match.Value);
+                if (tokens.Count > MaximumTokens) { throw Invalid(context, " exceeds the JSON token limit."); }
+            }
+            int position = 0;
+            ParseValue(tokens, ref position, 0, context);
+            if (position != tokens.Count) { throw Invalid(context, " has trailing JSON tokens."); }
+        }
+
+        private static void ParseValue(System.Collections.Generic.List<string> tokens, ref int position, int depth, string context) {
+            string token = Next(tokens, ref position, context);
+            if (token == "{") { ParseObject(tokens, ref position, depth, context); return; }
+            if (token == "[") { ParseArray(tokens, ref position, depth, context); return; }
+            if (IsPunctuation(token)) { throw Invalid(context, " contains an invalid JSON value."); }
+        }
+
+        private static void ParseObject(System.Collections.Generic.List<string> tokens, ref int position, int depth, string context) {
+            if (depth > MaximumDepth) { throw Invalid(context, " exceeds the JSON depth limit."); }
+            var names = new System.Collections.Generic.HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+            if (position < tokens.Count && tokens[position] == "}") { position++; return; }
+            while (true) {
+                string keyToken = Next(tokens, ref position, context);
+                if (keyToken[0] != '"') { throw Invalid(context, " contains a non-string object key."); }
+                string key = Unescape(keyToken);
+                if (!names.Add(key)) { throw Invalid(context, " contains duplicate JSON property '" + key + "'."); }
+                if (Next(tokens, ref position, context) != ":") { throw Invalid(context, " is missing ':' after '" + key + "'."); }
+                ParseValue(tokens, ref position, depth + 1, context);
+                string separator = Next(tokens, ref position, context);
+                if (separator == "}") { return; }
+                if (separator != ",") { throw Invalid(context, " is missing ',' between object properties."); }
+            }
+        }
+
+        private static void ParseArray(System.Collections.Generic.List<string> tokens, ref int position, int depth, string context) {
+            if (depth > MaximumDepth) { throw Invalid(context, " exceeds the JSON depth limit."); }
+            if (position < tokens.Count && tokens[position] == "]") { position++; return; }
+            while (true) {
+                ParseValue(tokens, ref position, depth + 1, context);
+                string separator = Next(tokens, ref position, context);
+                if (separator == "]") { return; }
+                if (separator != ",") { throw Invalid(context, " is missing ',' between array items."); }
+            }
+        }
+
+        private static string Next(System.Collections.Generic.List<string> tokens, ref int position, string context) {
+            if (position >= tokens.Count) { throw Invalid(context, " ended unexpectedly."); }
+            return tokens[position++];
+        }
+
+        private static bool IsPunctuation(string token) {
+            return token.Length == 1 && "{}[],:".IndexOf(token[0]) >= 0;
+        }
+
+        // The tokenizer admitted only valid escapes, so each one decodes directly.
+        private static string Unescape(string token) {
+            var builder = new System.Text.StringBuilder(token.Length);
+            for (int i = 1; i < token.Length - 1; i++) {
+                char value = token[i];
+                if (value != '\\') { builder.Append(value); continue; }
+                char escape = token[++i];
+                switch (escape) {
+                    case 'b': builder.Append('\b'); break;
+                    case 'f': builder.Append('\f'); break;
+                    case 'n': builder.Append('\n'); break;
+                    case 'r': builder.Append('\r'); break;
+                    case 't': builder.Append('\t'); break;
+                    case 'u': builder.Append((char)System.Convert.ToInt32(token.Substring(i + 1, 4), 16)); i += 4; break;
+                    default: builder.Append(escape); break;
+                }
+            }
+            return builder.ToString();
+        }
+
+        private static System.IO.InvalidDataException Invalid(string context, string problem) {
+            return new System.IO.InvalidDataException(context + problem);
+        }
+    }
 }
 '@
 }
@@ -450,88 +546,8 @@ function Assert-JsonHasNoDuplicateProperties {
         [Parameter(Mandatory)][string] $Text,
         [Parameter(Mandatory)][string] $Context
     )
-    if ($Text.Length -gt 4MB) {
-        throw "$Context exceeds the 4 MiB JSON limit."
-    }
-    $pattern = '\G(?:(?<ws>\s+)|(?<string>"(?:\\["\\/bfnrt]|\\u[0-9A-Fa-f]{4}|[^"\\\x00-\x1F])*")|(?<number>-?(?:0|[1-9][0-9]*)(?:\.[0-9]+)?(?:[eE][+-]?[0-9]+)?)|(?<literal>true|false|null)|(?<punct>[{}\[\],:]))'
-    $tokenizer = [Text.RegularExpressions.Regex]::new(
-        $pattern,
-        [Text.RegularExpressions.RegexOptions]::CultureInvariant,
-        [TimeSpan]::FromSeconds(2))
-    $tokens = [Collections.Generic.List[object]]::new()
-    $offset = 0
-    while ($offset -lt $Text.Length) {
-        $match = $tokenizer.Match($Text, $offset)
-        if (-not $match.Success -or $match.Index -ne $offset) {
-            throw "$Context is not strict JSON near character $offset."
-        }
-        $offset += $match.Length
-        if (-not $match.Groups['ws'].Success) {
-            $kind = if ($match.Groups['string'].Success) { 'string' }
-                elseif ($match.Groups['number'].Success) { 'scalar' }
-                elseif ($match.Groups['literal'].Success) { 'scalar' }
-                else { 'punct' }
-            $tokens.Add([pscustomobject]@{ Kind = $kind; Text = $match.Value })
-            if ($tokens.Count -gt 200000) {
-                throw "$Context exceeds the JSON token limit."
-            }
-        }
-    }
-
-    $state = [pscustomobject]@{ Position = 0 }
-    $parseValue = $null
-    $parseObject = $null
-    $parseArray = $null
-    $next = {
-        if ($state.Position -ge $tokens.Count) { throw "$Context ended unexpectedly." }
-        $token = $tokens[$state.Position]
-        $state.Position++
-        return $token
-    }
-    $peek = {
-        if ($state.Position -ge $tokens.Count) { return $null }
-        return $tokens[$state.Position]
-    }
-    $parseObject = {
-        param([int] $Depth)
-        if ($Depth -gt 64) { throw "$Context exceeds the JSON depth limit." }
-        $names = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-        $candidate = & $peek
-        if ($null -ne $candidate -and $candidate.Text -ceq '}') { [void](& $next); return }
-        while ($true) {
-            $keyToken = & $next
-            if ($keyToken.Kind -cne 'string') { throw "$Context contains a non-string object key." }
-            $key = $keyToken.Text | ConvertFrom-Json
-            if (-not $names.Add([string]$key)) { throw "$Context contains duplicate JSON property '$key'." }
-            if ((& $next).Text -cne ':') { throw "$Context is missing ':' after '$key'." }
-            & $parseValue ($Depth + 1)
-            $separator = & $next
-            if ($separator.Text -ceq '}') { return }
-            if ($separator.Text -cne ',') { throw "$Context is missing ',' between object properties." }
-        }
-    }
-    $parseArray = {
-        param([int] $Depth)
-        if ($Depth -gt 64) { throw "$Context exceeds the JSON depth limit." }
-        $candidate = & $peek
-        if ($null -ne $candidate -and $candidate.Text -ceq ']') { [void](& $next); return }
-        while ($true) {
-            & $parseValue ($Depth + 1)
-            $separator = & $next
-            if ($separator.Text -ceq ']') { return }
-            if ($separator.Text -cne ',') { throw "$Context is missing ',' between array items." }
-        }
-    }
-    $parseValue = {
-        param([int] $Depth)
-        $token = & $next
-        if ($token.Text -ceq '{') { & $parseObject $Depth; return }
-        if ($token.Text -ceq '[') { & $parseArray $Depth; return }
-        if ($token.Kind -in @('string', 'scalar')) { return }
-        throw "$Context contains an invalid JSON value."
-    }
-    & $parseValue 0
-    if ($state.Position -ne $tokens.Count) { throw "$Context has trailing JSON tokens." }
+    try { [AsposeFileInstaller.StrictJson]::AssertNoDuplicateProperties($Text, $Context) }
+    catch { throw $_.Exception.GetBaseException().Message }
 }
 
 function Read-StrictJson {
