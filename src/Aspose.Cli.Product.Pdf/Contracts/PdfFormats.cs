@@ -23,7 +23,8 @@ public static class PdfFormats
         FormatDescriptor.Routed("pdfa-2b", FormatUse.Convert, null, 10, null, ".pdf"),
         FormatDescriptor.Routed("pdfa-3b", FormatUse.Convert, null, 11, null, ".pdf"),
         FormatDescriptor.Routed("png", FormatUse.Convert | FormatUse.Render, null, 12, 0, ".png"),
-        FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 13, 1, ".jpg", ".jpeg"),
+        FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 13, 1, ".jpg", ".jpeg")
+            with { Aliases = ["jpg"] },
         FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 14, null, ".tiff"),
     ], PdfFormatRecognition.Rules);
 

@@ -26,7 +26,8 @@ public static class SlidesFormats
         FormatDescriptor.Routed("html", FormatUse.Convert, null, 6, null, ".html"),
         FormatDescriptor.Routed("html5", FormatUse.Convert, null, 7, null, ".html"),
         FormatDescriptor.Routed("png", FormatUse.Convert | FormatUse.Render, null, 8, 0, ".png"),
-        FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 9, 1, ".jpg", ".jpeg"),
+        FormatDescriptor.Routed("jpeg", FormatUse.Convert | FormatUse.Render, null, 9, 1, ".jpg", ".jpeg")
+            with { Aliases = ["jpg"] },
         FormatDescriptor.Routed("tiff", FormatUse.Convert, null, 10, null, ".tiff"),
         FormatDescriptor.Routed("gif", FormatUse.Convert, null, 11, null, ".gif"),
         FormatDescriptor.Routed("svg", FormatUse.Convert | FormatUse.Render, null, 12, 2, ".svg"),

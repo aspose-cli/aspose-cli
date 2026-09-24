@@ -143,9 +143,9 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Fact]
-    public void OutputFileOptions_NeverResolveToTheInput()
+    public void OutputFileOption_NeverResolvesToTheInput()
     {
-        var output = new OutputFileOptions("Output path.");
+        var output = new OutputFileOption("Output path.", required: false);
         var command = new Command("convert");
         output.AddTo(command);
 
@@ -157,9 +157,9 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Fact]
-    public void OutputFileOptions_NeverResolveToAnyInput()
+    public void OutputFileOption_NeverResolvesToAnyInput()
     {
-        var output = new OutputFileOptions("Output path.");
+        var output = new OutputFileOption("Output path.", required: false);
         var command = new Command("merge");
         output.AddTo(command);
         var paths = new PathResolver(_temp.Path);
@@ -168,7 +168,7 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         CliException error = Assert.Throws<CliException>(() => output.Resolve(
             command.Parse(["--out", "OTHER.test"]), paths, _input, null, other));
-        CliException argument = Assert.Throws<CliException>(() => OutputFileOptions.ResolveExplicit(
+        CliException argument = Assert.Throws<CliException>(() => OutputFileOption.ResolveExplicit(
             paths, "BOOK.TEST", "file", null, _input));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
@@ -226,14 +226,46 @@ public sealed class BoundedEditCommandTests : IDisposable
         var command = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
         {
             NormalizePaths = static (op, paths) => op is LinkOp link
-                ? link with { Path = paths.ResolveOutput(link.Path) }
+                ? link with { Path = paths.ResolveInput(link.Path) }
                 : op,
         });
+        File.WriteAllText(_temp.File("image.png"), "image");
 
         LinkOp link = Assert.IsType<LinkOp>(Assert.Single(
             Read(command, "--ops", """{"ops":[{"op":"link","path":"image.png"}]}""").Batch.Ops));
 
         Assert.Equal(_temp.File("image.png"), link.Path);
+    }
+
+    [Fact]
+    public void Read_NeverPublishesToTheOperationDocumentOrAFileAnOperationReads()
+    {
+        var linking = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
+        {
+            NormalizePaths = static (op, paths) => op is LinkOp link
+                ? link with { Path = paths.ResolveInput(link.Path) }
+                : op,
+        });
+        File.WriteAllText(_temp.File("ops.json"), Document);
+        File.WriteAllText(_temp.File("image.png"), "image");
+        File.WriteAllText(_temp.File("book.out.test"), "earlier output");
+        const string image = """{"ops":[{"op":"link","path":"image.png"}]}""";
+
+        CliException[] errors =
+        [
+            Assert.Throws<CliException>(() => Read(Plain(), "--ops", "ops.json", "--out", "OPS.json", "--overwrite")),
+            Assert.Throws<CliException>(() => Read(linking, "--ops", image, "--out", "IMAGE.png", "--overwrite")),
+            Assert.Throws<CliException>(() => Read(linking, "--ops", """{"ops":[{"op":"link","path":"book.out.test"}]}""")),
+        ];
+
+        Assert.All(errors, static error =>
+        {
+            Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+            Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
+            Assert.Contains("--in-place", error.Hint, StringComparison.Ordinal);
+        });
+        Assert.Equal(_input, Read(linking, "--ops", image, "--in-place").Target.OutputPath);
+        Assert.Equal(_temp.File("copy.test"), Read(linking, "--ops", image, "--out", "copy.test").Target.OutputPath);
     }
 
     [Fact]
@@ -301,6 +333,24 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Fact]
+    public void Read_NeverPublishesToAFileAProductOptionReads()
+    {
+        var edit = Plain();
+        var source = new Option<string?>("--source").WithInput(InputKind.File);
+        var host = new TestHost(_temp.Path, static _ => null);
+        Command command = edit.Create<object>(
+            host, "edit", "Edits.", new CommandTraits { Input = Book }, [source],
+            static (_, _, _) => throw new InvalidOperationException("The output is refused first."));
+        File.WriteAllText(_temp.File("source.test"), "source");
+
+        command.Parse([Path.GetFileName(_input), "--ops", Document, "--source", "source.test", "--out", "SOURCE.test"]).Invoke();
+
+        CliException error = Assert.IsType<CliException>(host.Error);
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Create_PutsTheEditOptionsBeforeTheProductAndCommonOptions()
     {
         var edit = new BoundedEditCommand<TestOp, TestBatch>(Definition() with { VerifyDescription = "Verify." });
@@ -316,8 +366,9 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         Assert.Equal(
             [
-                "--ops", "--out", "--in-place", "--overwrite", "--backup", "--if-match", "--dry-run", "--best-effort", "--verify",
-                "--fast", "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--font-dir",
+                "--ops", "--if-match", "--dry-run", "--best-effort", "--verify", "--fast",
+                "--out", "--overwrite", "--in-place", "--backup",
+                "--password", "--password-env", "--password-stdin", "--encrypt", "--encrypt-env", "--font-dir",
             ],
             command.Options.Select(static option => option.Name));
         Assert.Throws<ArgumentException>(() => edit.Create<object>(
@@ -395,9 +446,22 @@ public sealed class BoundedEditCommandTests : IDisposable
     private BoundedEditInvocation<TestBatch> ReadWithEnvironment(
         BoundedEditCommand<TestOp, TestBatch> command,
         Func<string, string?> readEnvironment,
-        params string[] arguments) =>
-        command.Read(
-            Parse(command, arguments), new PathResolver(_temp.Path), TestBudgets.Create().Inputs, _input, readEnvironment);
+        params string[] arguments)
+    {
+        BoundedEditInvocation<TestBatch>? read = null;
+        var host = new TestHost(_temp.Path, readEnvironment);
+        ParseResult parse = command.Create<object>(
+            host, "edit", "Edits.", new CommandTraits { Input = Book }, [],
+            (_, edit, _) =>
+            {
+                read = edit;
+                return new TestResult();
+            })
+            .Parse([Path.GetFileName(_input), .. arguments]);
+        Assert.Empty(parse.Errors);
+        parse.Invoke();
+        return host.Error is { } error ? throw error : read!;
+    }
 
     private ParseResult Parse(BoundedEditCommand<TestOp, TestBatch> edit, params string[] arguments) =>
         edit.Create<object>(
@@ -415,9 +479,11 @@ public sealed class BoundedEditCommandTests : IDisposable
 
     public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 
+    private sealed record TestResult() : ResultEnvelope("test/result", 1);
+
     private sealed class TestOpConverter() : OperationJsonConverter<TestOp>(Catalog);
 
-    private sealed class TestHost(string workDirectory) : IProductCommandHost<object>
+    private sealed class TestHost(string workDirectory, Func<string, string?>? readEnvironment = null) : IProductCommandHost<object>
     {
         public Exception? Error { get; private set; }
 
@@ -431,7 +497,7 @@ public sealed class BoundedEditCommandTests : IDisposable
                     Binding = ProductBinding.CreateLicenseFree<object>("test", static _ => new object()),
                     Paths = new PathResolver(workDirectory),
                     Inputs = TestBudgets.Create().Inputs,
-                    ReadEnvironment = static _ => null,
+                    ReadEnvironment = readEnvironment ?? (static _ => null),
                 });
             }
             catch (Exception exception)

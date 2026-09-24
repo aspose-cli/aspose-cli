@@ -15,11 +15,6 @@ internal static class RenderCommand
 {
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
-        var to = new Option<string>("--to")
-        {
-            Description = $"Image format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Render))}.",
-            DefaultValueFactory = _ => "png",
-        }.WithInput(InputKind.None);
         var sheet = new Option<string?>("--sheet")
         {
             Description = "Sheet to render. Default: the active sheet.",
@@ -43,11 +38,14 @@ internal static class RenderCommand
                 Output = OutputTarget.File("Output path. Default: the input path with the image extension. "
                     + "With --all-sheets it is the naming template: <base>.<Sheet><ext>."),
                 UsesFonts = true,
+                Target = TargetFormat.Render(
+                    $"Image format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Render))}.",
+                    CellsFormats.Definitions),
             },
-            [to, sheet, rangeOption, allSheetsOption, .. dpi.Options],
+            [sheet, rangeOption, allSheetsOption, .. dpi.Options],
             (parse, standard) =>
             {
-                FormatInfo format = CellsFormats.ResolveRender(standard.RenderFormat(to, CellsFormats.Definitions));
+                string format = standard.TargetFormat();
                 int resolution = dpi.Read(parse);
                 bool allSheets = parse.GetValue(allSheetsOption);
                 if (allSheets && parse.GetValue(sheet) is not null)
@@ -68,10 +66,10 @@ internal static class RenderCommand
 
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
-                string output = standard.OutputPath(format.Extension);
-                return standard.Port.Render(standard.Input, new RenderRequest
+                string output = standard.OutputPath(CellsFormats.Definitions.ExtensionFor(format));
+                return standard.OpenEngine().Render(standard.Input, new RenderRequest
                 {
-                    TargetFormatId = format.Id,
+                    TargetFormatId = format,
                     OutputPath = output,
                     Overwrite = standard.Overwrite,
                     SheetName = sheetName,

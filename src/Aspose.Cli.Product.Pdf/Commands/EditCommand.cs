@@ -37,7 +37,7 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [],
-            (_, edit, standard) => standard.Port.ApplyOps(standard.Input, edit.Batch, new PdfEditRequest
+            (_, edit, standard) => standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new PdfEditRequest
             {
                 OutputPath = edit.Target.OutputPath,
                 Overwrite = edit.Target.Overwrite,

@@ -26,17 +26,18 @@ internal static class NewCommand
             [markdown, template, size],
             (parse, standard) =>
             {
-                string? markdownPath = parse.GetValue(markdown) is { } markdownValue ? standard.Paths.ResolveInput(markdownValue) : null;
-                string? templatePath = parse.GetValue(template) is { } templateValue ? standard.Paths.ResolveInput(templateValue) : null;
+                string? markdownPath = standard.InputFile(markdown);
+                string? templatePath = standard.InputFile(template);
                 string outputPath = standard.CreatedPath;
-                return standard.Port.Create(new NewPresentationRequest
+                string? encryptPassword = standard.EncryptPassword(SlidesFormats.ForOutput(outputPath));
+                return standard.OpenEngine().Create(new NewPresentationRequest
                 {
                     OutputPath = outputPath,
                     Overwrite = standard.Overwrite,
                     MarkdownPath = markdownPath,
                     TemplatePath = templatePath,
                     Size = parse.GetValue(size),
-                    EncryptPassword = standard.EncryptPassword(SlidesFormats.ForOutput(outputPath)),
+                    EncryptPassword = encryptPassword,
                 });
             });
     }

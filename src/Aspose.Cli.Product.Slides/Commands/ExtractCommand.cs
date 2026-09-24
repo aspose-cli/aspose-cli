@@ -25,7 +25,7 @@ internal static class ExtractCommand
             (parse, standard) =>
             {
                 string? range = parse.GetValue(slides);
-                return standard.Port.Extract(standard.Input, new PresentationExtractRequest
+                return standard.OpenEngine().Extract(standard.Input, new PresentationExtractRequest
                 {
                     What = parse.GetRequiredValue(what),
                     OutputDirectory = standard.OutputDirectory,

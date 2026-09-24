@@ -31,9 +31,9 @@ internal static class WordsCommands
                 "words query blocks contract.docx --blocks 1-30 --scope full",
             ],
             [
-                CommandHelpLink.Docs($"{WordsModule.Manifest.Id}/editing", "the document block model and edit operations"),
-                CommandHelpLink.Docs($"{WordsModule.Manifest.Id}/verification", "read-back, semantic and visual verification"),
-                CommandHelpLink.Schema(WordsModule.Manifest.Operations.Single(), "the operation JSON schema"),
+                CommandHelpLink.Docs(WordsModule.Manifest, "editing", "the document block model and edit operations"),
+                CommandHelpLink.Docs(WordsModule.Manifest, "verification", "read-back, semantic and visual verification"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "the operation JSON schema"),
             ]);
     }
 }

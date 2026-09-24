@@ -7,7 +7,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Rendering;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Host.Commands;
@@ -23,10 +22,6 @@ internal static class ReviewCommand
         Aspose.Cli.Sdk.Serialization.ContractJsonSerializer serializer,
         GlobalOptions globals)
     {
-        var file = new Argument<string>("file")
-        {
-            Description = "Source file to review; bounded content evidence selects the product.",
-        }.WithInput(InputKind.File);
         var output = new Option<string?>("--out", "-o")
         {
             Description = "New evidence directory; defaults to <filename>.review beside the source.",
@@ -56,23 +51,20 @@ internal static class ReviewCommand
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal)
                 .ToArray());
-        var password = new PasswordOptions(
-            "--password",
-            "the review source",
-            allowStdin: true);
-        var fonts = new FontDirectoryOptions();
-        var command = new Command(
+        var standard = new StandardOptions(new CommandTraits
+        {
+            Input = new InputDocument(
+                "Source file to review; bounded content evidence selects the product.", "the review source"),
+            UsesFonts = true,
+        });
+        Command command = standard.CreateCommand(
             "review",
-            "Create a portable static evidence directory for visual inspection.");
-        command.Arguments.Add(file);
-        command.Options.Add(output);
-        command.Options.Add(maxItems);
-        command.Options.Add(product);
-        command.Options.Add(view);
-        password.AddTo(command);
-        fonts.AddTo(command);
+            "Create a portable static evidence directory for visual inspection.",
+            [output, maxItems, product, view]);
         command.SetAction(parse => executor.Run(parse, globals, context =>
         {
+            StandardInvocation invocation = standard.Bind(
+                parse, context.Paths, context.ResourceBudgets.Inputs, context.ReadEnvironment);
             int maximum = parse.GetValue(maxItems);
             OptionGuards.EnsureInRange(
                 "--max-items",
@@ -80,7 +72,7 @@ internal static class ReviewCommand
                 1,
                 ReviewEvidenceWriter.MaximumMaxItems,
                 $"Pass a value from 1 to {ReviewEvidenceWriter.MaximumMaxItems}.");
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
+            string input = invocation.Input;
             ProductDefinition definition = catalog
                 .ResolveExistingFile(
                     input,
@@ -105,15 +97,14 @@ internal static class ReviewCommand
                 ? context.Paths.ResolveOutput(requestedOutput)
                 : input + ".review";
             ProductBinding binding = context.Activate(definition);
-            FontSearchProfile fontProfile = fonts.Read(parse, context.Paths);
-            using IDisposable fontScope = FontProfiles.Use(catalog, definition, binding, fontProfile);
+            using IDisposable fontScope = FontProfiles.Use(catalog, definition, binding, invocation.FontDirectories);
             LicenseState license = binding.LicenseGate.EnsureApplied();
             var request = new ViewRenderRequest
             {
                 View = selectedView,
                 MaxParts = maximum,
                 Purpose = ViewPurpose.Evidence,
-                Password = password.Resolve(parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
+                Password = invocation.InputPassword,
             };
             return ReviewEvidenceWriter.Write(
                 input,

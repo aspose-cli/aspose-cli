@@ -45,7 +45,7 @@ internal static class ExtractCommand
                         throw CliErrors.OptionInvalid("--to", "is required with --what forms", "Use --to json, --to fdf or --to xfdf.");
                     }
 
-                    return standard.Port.ExportForm(standard.Input, new PdfFormExportRequest
+                    return standard.OpenEngine().ExportForm(standard.Input, new PdfFormExportRequest
                     {
                         TargetFormatId = format,
                         OutputPath = standard.OutputPath("." + format),
@@ -66,7 +66,7 @@ internal static class ExtractCommand
 
                 PageRange? range = pageText is null ? null : PageRange.Parse(pageText);
                 string directory = standard.OutputDirectory;
-                return standard.Port.Extract(standard.Input, new PdfExtractRequest
+                return standard.OpenEngine().Extract(standard.Input, new PdfExtractRequest
                 {
                     What = kind,
                     OutputDirectory = directory,

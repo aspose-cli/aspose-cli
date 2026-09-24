@@ -11,11 +11,6 @@ internal static class ConvertCommand
 {
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)
     {
-        var to = new Option<string>("--to")
-        {
-            Description = $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",
-            Required = true,
-        }.WithInput(InputKind.None);
         var sheet = new Option<string?>("--sheet")
         {
             Description = $"Convert only this sheet (supported for {string.Join(", ", CellsFormats.SheetScopedConvertIds)}).",
@@ -31,29 +26,33 @@ internal static class ConvertCommand
                     + "(with '.out' inserted when that would overwrite the input)."),
                 Encrypt = CellsCommands.EncryptedWorkbook,
                 UsesFonts = true,
+                Target = TargetFormat.Convert(
+                    $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",
+                    CellsFormats.Definitions),
             },
-            [to, sheet],
+            [sheet],
             (parse, standard) =>
             {
-                FormatInfo format = CellsFormats.ResolveConvert(parse.GetRequiredValue(to));
+                string format = standard.TargetFormat();
                 string? sheetName = parse.GetValue(sheet);
-                if (sheetName is not null && !CellsFormats.SheetScopedConvertIds.Contains(format.Id))
+                if (sheetName is not null && !CellsFormats.SheetScopedConvertIds.Contains(format))
                 {
                     throw CliErrors.OptionInvalid(
                         "--sheet",
-                        $"the '{format.Id}' format always converts the whole workbook",
+                        $"the '{format}' format always converts the whole workbook",
                         $"Drop --sheet, or use one of: {string.Join(", ", CellsFormats.SheetScopedConvertIds)}.");
                 }
 
-                string output = standard.OutputPath(format.Extension);
-                return standard.Port.Convert(standard.Input, new ConvertRequest
+                string? encryptPassword = standard.EncryptPassword(format);
+                string output = standard.OutputPath(CellsFormats.Definitions.ExtensionFor(format));
+                return standard.OpenEngine().Convert(standard.Input, new ConvertRequest
                 {
-                    TargetFormatId = format.Id,
+                    TargetFormatId = format,
                     OutputPath = output,
                     Overwrite = standard.Overwrite,
                     SheetName = sheetName,
                     Password = standard.InputPassword,
-                    EncryptPassword = standard.EncryptPassword(format.Id),
+                    EncryptPassword = encryptPassword,
                 });
             }).WithExamples(
             [

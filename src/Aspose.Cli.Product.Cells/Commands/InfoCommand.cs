@@ -42,7 +42,7 @@ internal static class InfoCommand
                 int rows = parse.GetValue(previewRows);
                 OptionGuards.EnsureInRange("--preview-rows", rows, 1, MaxPreviewRows,
                     "Pass a smaller sample size; previews are meant to be cheap to read.");
-                return standard.Port.GetInfo(standard.Input, new InfoRequest
+                return standard.OpenEngine().GetInfo(standard.Input, new InfoRequest
                 {
                     IncludePreview = parse.GetValue(preview),
                     PreviewRows = rows,

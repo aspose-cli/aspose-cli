@@ -602,6 +602,47 @@ public sealed class ProductContractAnalyzerTests
             static item => item.Id == "APCLI010");
     }
 
+    [Fact]
+    public async Task Apcli011_ReportsAProductThatBuildsACommandThroughTheHostSeam()
+    {
+        string source = ProductSource(
+            """
+            public sealed class Commands
+            {
+                private Aspose.Cli.Sdk.Extensibility.Commanding.StandardOptions? _options;
+
+                public System.CommandLine.Command Create() =>
+                    new Aspose.Cli.Sdk.Extensibility.Commanding.StandardOptions(
+                        new Aspose.Cli.Sdk.Extensibility.Commanding.CommandTraits())
+                        .CreateCommand("run", "Runs.", []);
+
+                public bool Built => _options is not null;
+            }
+            """);
+
+        Diagnostic[] diagnostics = [.. (await Analyze(source)).Where(static item => item.Id == "APCLI011")];
+
+        Assert.True(diagnostics.Length >= 2, string.Join(Environment.NewLine, diagnostics));
+        Assert.All(diagnostics, static diagnostic =>
+            Assert.Contains("StandardOptions", diagnostic.GetMessage(), StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task Apcli011_AllowsTheCommandTraits()
+    {
+        string source = ProductSource(
+            """
+            public sealed class Commands
+            {
+                public Aspose.Cli.Sdk.Extensibility.Commanding.CommandTraits Traits() => new() { UsesFonts = true };
+            }
+            """);
+
+        ImmutableArray<Diagnostic> diagnostics = await Analyze(source);
+
+        Assert.DoesNotContain(diagnostics, static item => item.Id == "APCLI011");
+    }
+
     private static async Task<ImmutableArray<Diagnostic>> Analyze(
         string source,
         params MetadataReference[] additionalReferences)

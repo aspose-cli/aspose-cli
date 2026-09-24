@@ -38,14 +38,42 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
     /// <summary>Help for <c>--verify</c>, or null when the product has no staged verification.</summary>
     public string? VerifyDescription { get; init; }
 
-    /// <summary>Resolves file paths carried by an operation against the invocation directory.</summary>
-    public Func<TOp, PathResolver, TOp>? NormalizePaths { get; init; }
+    /// <summary>
+    /// Resolves the file paths an operation reads, such as a document it appends or an image it
+    /// inserts, through <see cref="OperationPaths.ResolveInput"/>, which records each one so the
+    /// edit never publishes over a file it reads.
+    /// </summary>
+    public Func<TOp, OperationPaths, TOp>? NormalizePaths { get; init; }
 
     /// <summary>
     /// Names the environment variables whose secrets an operation reads, such as its
     /// <c>passwordEnv</c> fields; a null entry is an omitted optional field.
     /// </summary>
     public Func<TOp, IEnumerable<string?>>? SecretVariables { get; init; }
+}
+
+/// <summary>
+/// Resolves the files that operations read against the invocation directory and records each
+/// resolved path.
+/// </summary>
+public sealed class OperationPaths
+{
+    private readonly PathResolver _paths;
+    private readonly List<string> _inputs = [];
+
+    internal OperationPaths(PathResolver paths) => _paths = paths;
+
+    /// <summary>The files resolved so far, which the edit never publishes over.</summary>
+    internal IReadOnlyList<string> Inputs => _inputs;
+
+    /// <summary>Resolves a file an operation reads, which must exist, and records it.</summary>
+    /// <exception cref="CliException"><c>FILE_NOT_FOUND</c> when the file does not exist.</exception>
+    public string ResolveInput(string path)
+    {
+        string resolved = _paths.ResolveInput(path);
+        _inputs.Add(resolved);
+        return resolved;
+    }
 }
 
 /// <summary>One fully resolved bounded-edit invocation, ready for the product port.</summary>
@@ -66,12 +94,12 @@ public sealed record BoundedEditInvocation<TBatch>(
 
 /// <summary>
 /// The one command skeleton of every bounded, atomic product edit. It owns the operation
-/// document (<c>--ops</c>) and its composition with <c>--set</c> directives, the publication
-/// target (<c>--out</c>, <c>--in-place</c>, <c>--overwrite</c>, <c>--backup</c>) and the
+/// document (<c>--ops</c>) and its composition with <c>--set</c> directives and the
 /// execution semantics (<c>--if-match</c>, <c>--dry-run</c>, <c>--best-effort</c>,
 /// <c>--verify</c>), so every product accepts and rejects the same combinations. Its
-/// command reads the document through <see cref="StandardCommand"/>, whose input password
-/// refuses standard input when the operation document comes from it.
+/// command is a <see cref="StandardCommand"/> that publishes the edited document as a
+/// mutation output (<c>--out</c>, <c>--overwrite</c>, <c>--in-place</c>, <c>--backup</c>),
+/// and whose input password refuses standard input when the operation document comes from it.
 /// </summary>
 public sealed class BoundedEditCommand<TOp, TBatch>
     where TOp : BoundedOperation
@@ -82,7 +110,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     private readonly BoundedEditDefinition<TOp, TBatch> _definition;
     private readonly Option<string?> _ops;
     private readonly Option<string[]>? _set;
-    private readonly MutationFileOptions _target = new();
     private readonly Option<string?> _ifMatch;
     private readonly Option<bool> _dryRun;
     private readonly Option<bool> _bestEffort;
@@ -136,7 +163,6 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         [
             _ops,
             .. _set is null ? [] : new Option[] { _set },
-            .. _target.Options,
             _ifMatch,
             _dryRun,
             _bestEffort,
@@ -146,14 +172,15 @@ public sealed class BoundedEditCommand<TOp, TBatch>
 
     /// <summary>
     /// Creates the product's edit command: the document argument, the shared edit options,
-    /// the product's own parameters, then the common options its traits select. The handler
-    /// receives the composed, path-normalized batch with its resolved secrets.
+    /// the product's own parameters, then the mutation output and the common options its
+    /// traits select. The handler receives the composed, path-normalized batch with its
+    /// resolved secrets.
     /// </summary>
     /// <param name="host">The product's command host.</param>
     /// <param name="name">The command name.</param>
     /// <param name="description">The command help.</param>
     /// <param name="traits">
-    /// The edited document, its output password and fonts; the mutation options own the output.
+    /// The edited document, its output password and fonts; the edit publishes to a mutation output.
     /// </param>
     /// <param name="parameters">The product's own arguments and options, each kind in help order.</param>
     /// <param name="handler">Maps the invocation to the product port call.</param>
@@ -174,10 +201,10 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         ArgumentNullException.ThrowIfNull(traits);
         ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(handler);
-        if (traits.Input is null || traits.Other is not null || traits.Output is not null)
+        if (traits.Other is not null || traits.Output is not null)
         {
             throw new ArgumentException(
-                "An edit reads one input document and publishes it through the mutation options.",
+                "An edit reads one input document and publishes it as its mutation output.",
                 nameof(traits));
         }
 
@@ -185,7 +212,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             host,
             name,
             description,
-            traits,
+            traits with { Output = OutputTarget.Mutation },
             [.. _options, .. parameters],
             parse => parse.GetValue(_ops) == StandardInputSource,
             (parse, standard) =>
@@ -193,7 +220,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 checkUsage?.Invoke(parse);
                 return handler(
                     parse,
-                    Read(parse, standard.Paths, standard.Inputs, standard.Input, standard.ReadEnvironment),
+                    Read(parse, standard),
                     standard);
             });
     }
@@ -211,23 +238,9 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     /// consumes standard input.
     /// </summary>
     /// <param name="parse">The parsed command line.</param>
-    /// <param name="paths">The invocation path resolver.</param>
-    /// <param name="inputs">The invocation's bounded input reader.</param>
-    /// <param name="inputPath">The resolved document to edit.</param>
-    /// <param name="readEnvironment">Reads the operations' secrets by variable name.</param>
-    internal BoundedEditInvocation<TBatch> Read(
-        ParseResult parse,
-        PathResolver paths,
-        InputSource inputs,
-        string inputPath,
-        Func<string, string?> readEnvironment)
+    /// <param name="standard">The invocation's common values.</param>
+    private BoundedEditInvocation<TBatch> Read(ParseResult parse, StandardInvocation standard)
     {
-        ArgumentNullException.ThrowIfNull(parse);
-        ArgumentNullException.ThrowIfNull(paths);
-        ArgumentNullException.ThrowIfNull(inputs);
-        ArgumentException.ThrowIfNullOrWhiteSpace(inputPath);
-        ArgumentNullException.ThrowIfNull(readEnvironment);
-
         string? source = parse.GetValue(_ops);
         string[] directives = _set is null ? [] : parse.GetValue(_set) ?? [];
         if (source is null && directives.Length == 0)
@@ -240,22 +253,30 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         if (verify && dryRun)
         {
             throw CliErrors.OptionInvalid(
-                "--verify",
-                "cannot be combined with --dry-run",
+                StandardOptionNames.Verify,
+                $"cannot be combined with {StandardOptionNames.DryRun}",
                 "Run the dry run first, then edit with --verify.");
         }
 
-        MutationTarget target = _target.Resolve(parse, paths, inputPath);
+        MutationTarget target = standard.MutationTarget();
+        PathResolver paths = standard.Paths;
         TOp[] compiled = _definition.SetDirectives is { } grammar
             ? directives.Select(grammar.Parse).ToArray()
             : [];
-        TBatch batch = Compose(source is null ? null : ParseDocument(source, paths, inputs), compiled);
+        TBatch batch = Compose(source is null ? null : ParseDocument(source, paths, standard.Inputs), compiled);
         if (_definition.NormalizePaths is { } normalize)
         {
+            var read = new OperationPaths(paths);
             batch = (TBatch)((BoundedOperationEnvelope<TOp>)batch with
             {
-                Ops = batch.Ops.Select(op => normalize(op, paths)).ToArray(),
+                Ops = batch.Ops.Select(op => normalize(op, read)).ToArray(),
             });
+            if (!target.InPlace)
+            {
+                // The target was resolved before the operations were read; it must not name
+                // a file they read either.
+                OutputFileOption.EnsureNotInput(target.OutputPath, StandardOptionNames.Out, inPlaceAvailable: true, read.Inputs);
+            }
         }
 
         return new BoundedEditInvocation<TBatch>(
@@ -268,7 +289,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
                 BestEffort = parse.GetValue(_bestEffort),
             },
             verify,
-            ResolveSecrets(batch, readEnvironment));
+            ResolveSecrets(batch, standard.ReadEnvironment));
     }
 
     private IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)
@@ -341,7 +362,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             && !string.Equals(command.Trim(), document.Trim(), StringComparison.OrdinalIgnoreCase))
         {
             throw CliErrors.OptionInvalid(
-                "--if-match",
+                StandardOptionNames.IfMatch,
                 "the command value differs from the operations document ifMatch value",
                 "Use one current source fingerprint in either location, or the same value in both.");
         }

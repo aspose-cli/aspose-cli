@@ -31,10 +31,11 @@ internal static class PreviewCommand
             Description = "File to preview; content detection selects the product unless --product is supplied.",
             Arity = ArgumentArity.ZeroOrOne,
         }.WithInput(InputKind.File);
-        StartSymbols symbols = StartSymbols.Create(catalog, "the file");
-        var preview = new Command("preview", "Watch a file in the local viewer and follow every change.");
-        preview.Arguments.Add(file);
-        symbols.AddTo(preview);
+        StartSymbols symbols = StartSymbols.Create(catalog);
+        Command preview = symbols.Standard.CreateCommand(
+            "preview",
+            "Watch a file in the local viewer and follow every change.",
+            [file, symbols.Port, symbols.Product, symbols.View, symbols.Open, symbols.Effect]);
         preview.Subcommands.Add(CreateStatus(executor, globals));
         preview.Subcommands.Add(CreateStop(executor, globals));
         preview.SetAction(parse => executor.Run(parse, globals, context =>
@@ -61,7 +62,9 @@ internal static class PreviewCommand
             "Pass --port 0 for a system-assigned port, or a port from 1 to 65535.");
         string input = context.Paths.ResolveInput(requested);
         string view = parse.GetValue(symbols.View) ?? AutoView;
-        FontSearchProfile fonts = symbols.Fonts.Read(parse, context.Paths);
+        StandardInvocation standard = symbols.Standard.Bind(
+            parse, context.Paths, context.ResourceBudgets.Inputs, context.ReadEnvironment);
+        FontSearchProfile fonts = standard.FontDirectories;
         ViewerOpenResponse opened = new ViewerServiceClient().Open(
             context.Globals,
             new ViewerOpenRequest
@@ -71,8 +74,7 @@ internal static class PreviewCommand
                 Product = parse.GetValue(symbols.Product),
                 View = view == AutoView ? null : view,
                 Effect = parse.GetValue(symbols.Effect),
-                Password = symbols.Password.Resolve(
-                    parse, context.ResourceBudgets.Inputs, context.ReadEnvironment),
+                Password = standard.InputPassword,
                 License = context.Globals.LicensePath is { } license
                     ? Path.GetFullPath(license, context.Paths.BaseDirectory)
                     : null,
@@ -168,12 +170,9 @@ internal static class PreviewCommand
         Option<string> View,
         Option<bool> Open,
         Option<string?> Effect,
-        PasswordOptions Password,
-        FontDirectoryOptions Fonts)
+        StandardOptions Standard)
     {
-        public static StartSymbols Create(
-            ProductCatalog catalog,
-            string passwordTarget)
+        public static StartSymbols Create(ProductCatalog catalog)
         {
             var port = new Option<int>("--port")
             {
@@ -210,19 +209,7 @@ internal static class PreviewCommand
                 view,
                 open,
                 effect,
-                new PasswordOptions("--password", passwordTarget),
-                new FontDirectoryOptions());
-        }
-
-        public void AddTo(Command command)
-        {
-            command.Options.Add(Port);
-            command.Options.Add(Product);
-            command.Options.Add(View);
-            command.Options.Add(Open);
-            command.Options.Add(Effect);
-            Password.AddTo(command);
-            Fonts.AddTo(command);
+                new StandardOptions(new CommandTraits { PasswordSubject = "the file", UsesFonts = true }));
         }
     }
 }

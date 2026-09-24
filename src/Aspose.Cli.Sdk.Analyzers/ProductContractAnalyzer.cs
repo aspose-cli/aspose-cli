@@ -8,6 +8,9 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
     private const string ProductModuleAttribute =
         "Aspose.Cli.Sdk.Extensibility.ProductModuleAttribute";
 
+    private const string CommandingNamespace =
+        "Aspose.Cli.Sdk.Extensibility.Commanding";
+
     private static readonly ImmutableHashSet<string> HostAliases =
         ImmutableHashSet.Create(StringComparer.Ordinal, Aspose.Cli.Sdk.Extensibility.Commanding.GlobalOptionNames.Reserved);
 
@@ -72,6 +75,13 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
             + "wire contracts through Contracts, ports through Ports, and "
             + "composition through the product module only");
 
+    private static readonly DiagnosticDescriptor HostSeam = Rule(
+        "APCLI011",
+        "Product builds a command outside the host pipeline",
+        "Product code references '{0}', the Host seam that builds and binds a command "
+            + "outside the host pipeline and its admission, budgets and licensing; build "
+            + "product commands with StandardCommand or BoundedEditCommand");
+
     public override ImmutableArray<DiagnosticDescriptor> SupportedDiagnostics =>
         [
             ApiIsolation,
@@ -79,6 +89,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
             OptionAlias,
             LayerDependency,
             ImplementationVisibility,
+            HostSeam,
         ];
 
     public override void Initialize(AnalysisContext context)
@@ -109,6 +120,13 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
             SymbolKind.Field,
             SymbolKind.Event);
         context.RegisterSymbolAction(
+            AnalyzeHostSeamSymbol,
+            SymbolKind.NamedType,
+            SymbolKind.Method,
+            SymbolKind.Property,
+            SymbolKind.Field,
+            SymbolKind.Event);
+        context.RegisterSymbolAction(
             AnalyzeLayerSymbol,
             SymbolKind.NamedType,
             SymbolKind.Method,
@@ -127,6 +145,7 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
                 (_, current) =>
                     current.AddRange(operation.OperationBlocks));
             AnalyzeLayerOperations(operation);
+            AnalyzeHostSeamOperations(operation);
         });
         context.RegisterCompilationEndAction(end =>
             DefinitionPurityWalker.Analyze(end, blocks));
@@ -193,6 +212,37 @@ public sealed class ProductContractAnalyzer : DiagnosticAnalyzer
         }
 
     }
+
+    private static void AnalyzeHostSeamSymbol(SymbolAnalysisContext context)
+    {
+        if (!context.Symbol.IsImplicitlyDeclared
+            && ExposedTypes(context.Symbol).SelectMany(Flatten).FirstOrDefault(IsHostSeam) is { } seam)
+        {
+            context.ReportDiagnostic(Diagnostic.Create(
+                HostSeam,
+                SourceLocation(context.Symbol),
+                seam.Name));
+        }
+    }
+
+    private static void AnalyzeHostSeamOperations(OperationBlockAnalysisContext context)
+    {
+        foreach (IOperation operation in context.OperationBlocks.SelectMany(static root => root.DescendantsAndSelf()))
+        {
+            if (ReferencedTypes(operation).SelectMany(Flatten).FirstOrDefault(IsHostSeam) is { } seam)
+            {
+                context.ReportDiagnostic(Diagnostic.Create(
+                    HostSeam,
+                    operation.Syntax.GetLocation(),
+                    seam.Name));
+                return;
+            }
+        }
+    }
+
+    private static bool IsHostSeam(ITypeSymbol type) =>
+        type is INamedTypeSymbol { Name: "StandardOptions" } named
+        && named.ContainingNamespace.ToDisplayString() == CommandingNamespace;
 
     private static void AnalyzeLayerSymbol(SymbolAnalysisContext context)
     {

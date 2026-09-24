@@ -39,7 +39,8 @@ severity, such as `FONTS_MISSING_OR_SUBSTITUTED`. Fix and review again into a
 new directory, for at most three rounds, then report any remaining defects.
 
 `words render` exports page images for delivery. It takes the format from
-`--to`, or from the `--out` extension when `--to` is omitted.
+`--to`, or from the `--out` extension when `--to` is omitted, and refuses a
+`--to` that disagrees with the `--out` extension.
 
 ```powershell
 aspose-cli fonts check output.docx --output json

@@ -10,8 +10,6 @@ internal static class ConvertCommand
 {
     public static Command Create(IProductCommandHost<IDocumentEngine> host)
     {
-        var to = new Option<string>("--to") { Required = true, Description = "Target document format." }.WithInput(InputKind.None);
-        to.AcceptOnlyFromAmong([.. WordsFormats.Definitions.IdsFor(FormatUse.Convert)]);
         var pages = new Option<string?>("--pages") { Description = "1-based pages for fixed-page targets only." }.WithInput(InputKind.None);
         return StandardCommand.Create(
             host,
@@ -23,25 +21,27 @@ internal static class ConvertCommand
                 Output = OutputTarget.File("Output path; defaults to a sibling using the target extension."),
                 Encrypt = WordsCommands.EncryptedDocument,
                 UsesFonts = true,
+                Target = TargetFormat.Convert("Target document format.", WordsFormats.Definitions),
             },
-            [to, pages],
+            [pages],
             (parse, standard) =>
             {
-                string format = parse.GetRequiredValue(to);
+                string format = standard.TargetFormat();
                 string? pageText = parse.GetValue(pages);
                 if (pageText is not null && !WordsFormats.FixedPageConvertIds.Contains(format, StringComparer.Ordinal))
                 {
                     throw CliErrors.OptionInvalid("--pages", $"'{format}' is a flow format", "Use --pages only with PDF, XPS, OpenXPS, PS or PCL.");
                 }
 
-                return standard.Port.Convert(standard.Input, new WordsConvertRequest
+                string? encryptPassword = standard.EncryptPassword(format);
+                return standard.OpenEngine().Convert(standard.Input, new WordsConvertRequest
                 {
                     TargetFormatId = format,
                     OutputPath = standard.OutputPath(WordsFormats.Definitions.ExtensionFor(format)),
                     Overwrite = standard.Overwrite,
                     Pages = pageText is null ? null : PageRange.Parse(pageText),
                     Password = standard.InputPassword,
-                    EncryptPassword = standard.EncryptPassword(format),
+                    EncryptPassword = encryptPassword,
                 });
             })
             .WithExamples(

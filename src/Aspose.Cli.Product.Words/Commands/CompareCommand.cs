@@ -21,7 +21,7 @@ internal static class CompareCommand
                 UsesFonts = true,
             },
             [ignoreFormatting],
-            (parse, standard) => standard.Port.Compare(standard.Input, standard.Other, new WordsCompareRequest
+            (parse, standard) => standard.OpenEngine().Compare(standard.Input, standard.Other, new WordsCompareRequest
             {
                 IgnoreFormatting = parse.GetValue(ignoreFormatting),
                 OutputPath = standard.RequestedOutputPath(),

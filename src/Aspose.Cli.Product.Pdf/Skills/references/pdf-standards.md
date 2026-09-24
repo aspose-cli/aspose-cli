@@ -24,7 +24,8 @@ The exact `--to` ids for `pdf convert` are `docx`, `xlsx`, `pptx`, `html`,
 SVG exports produce one file per selected page; TIFF produces one multipage
 file. Read the result's `outputs` for the actual paths. `pdf render` supports
 only `png`, `jpeg`, and `svg`; use `pdf convert --to tiff` for TIFF. It takes
-the format from `--to`, or from the `--out` extension when `--to` is omitted.
+the format from `--to`, or from the `--out` extension when `--to` is omitted,
+and refuses a `--to` that disagrees with the `--out` extension.
 
 Conversions to document, text and HTML formats are structurally lossy: PDF
 has fixed pages while those formats have different semantic models. Review

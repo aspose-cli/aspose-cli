@@ -23,7 +23,7 @@ internal static class QueryCommand
             "List PDF form fields and current values.",
             new CommandTraits { Input = PdfCommands.Document },
             [],
-            (_, standard) => standard.Port.ReadForm(
+            (_, standard) => standard.OpenEngine().ReadForm(
                 standard.Input,
                 new PdfFormReadRequest { Password = standard.InputPassword }));
 }

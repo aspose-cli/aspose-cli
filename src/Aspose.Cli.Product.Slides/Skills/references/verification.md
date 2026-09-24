@@ -50,7 +50,7 @@ licensed results only when the CLI reports Slides as licensed.
 `slides render` and PNG/JPEG conversion export images for delivery (192 DPI by
 default; a 720-by-405-point slide becomes 1920 by 1080 pixels). `slides render`
 takes the format from `--to`, or from the `--out` extension when `--to` is
-omitted.
+omitted, and refuses a `--to` that disagrees with the `--out` extension.
 
 ## Existing chart fidelity
 

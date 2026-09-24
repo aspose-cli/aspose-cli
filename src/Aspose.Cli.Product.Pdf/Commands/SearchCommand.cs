@@ -21,7 +21,7 @@ internal static class SearchCommand
             {
                 SearchQuery query = search.Read(parse);
                 string? range = parse.GetValue(pages);
-                return standard.Port.Search(standard.Input, new PdfSearchRequest
+                return standard.OpenEngine().Search(standard.Input, new PdfSearchRequest
                 {
                     Pattern = query.Text.Pattern,
                     Regex = query.Text.Expression is not null,

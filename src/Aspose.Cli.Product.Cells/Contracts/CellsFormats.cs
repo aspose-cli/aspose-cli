@@ -47,17 +47,15 @@ public static class CellsFormats
     public static string ForOutputPath(string path)
     {
         string extension = Path.GetExtension(path);
-        return extension.Length > 1 ? ResolveConvert(extension).Id : "xlsx";
+        if (extension.Length <= 1)
+        {
+            return "xlsx";
+        }
+
+        return (Definitions.Named(FormatUse.Convert, extension[1..])
+                ?? Definitions.WithExtension(FormatUse.Convert, extension).FirstOrDefault())?.Id
+            ?? throw CliErrors.FormatUnsupported(extension[1..], Definitions.IdsFor(FormatUse.Convert));
     }
-
-
-    /// <summary>Formats accepted by <c>cells convert --to</c>.</summary>
-    public static IReadOnlyList<FormatInfo> Convert { get; } =
-        Create(FormatUse.Convert);
-
-    /// <summary>Formats accepted by <c>cells render --to</c>.</summary>
-    public static IReadOnlyList<FormatInfo> Render { get; } =
-        Create(FormatUse.Render);
 
     /// <summary>
     /// Convert formats that can be limited to a single sheet with
@@ -67,51 +65,4 @@ public static class CellsFormats
     /// other one.
     /// </summary>
     public static IReadOnlyList<string> SheetScopedConvertIds { get; } = ["csv", "tsv", "md", "pdf"];
-
-    /// <summary>Canonical convert format ids, in declaration order.</summary>
-    public static IReadOnlyList<string> ConvertIds { get; } = Convert.Select(static f => f.Id).ToArray();
-
-    /// <summary>Canonical render format ids, in declaration order.</summary>
-    public static IReadOnlyList<string> RenderIds { get; } = Render.Select(static f => f.Id).ToArray();
-
-    /// <summary>Resolves a user-supplied convert format id or alias.</summary>
-    /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when unknown.</exception>
-    public static FormatInfo ResolveConvert(string requested) => Resolve(Convert, ConvertIds, FormatUse.Convert, requested);
-
-    /// <summary>Resolves a user-supplied render format id or alias.</summary>
-    /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when unknown.</exception>
-    public static FormatInfo ResolveRender(string requested) => Resolve(Render, RenderIds, FormatUse.Render, requested);
-
-    private static FormatInfo Resolve(IReadOnlyList<FormatInfo> formats, IReadOnlyList<string> ids, FormatUse use, string requested)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(requested);
-        return Find(formats, use, requested) ?? throw CliErrors.FormatUnsupported(requested, ids);
-    }
-
-    /// <summary>Finds a format by id or alias, then by any extension it declares (<c>.htm</c>, <c>.xltx</c>).</summary>
-    private static FormatInfo? Find(IReadOnlyList<FormatInfo> formats, FormatUse use, string requested)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(requested);
-        string normalized = requested.Trim().TrimStart('.');
-        return formats.FirstOrDefault(format =>
-                string.Equals(format.Id, normalized, StringComparison.OrdinalIgnoreCase)
-                || format.Aliases.Any(alias => string.Equals(alias, normalized, StringComparison.OrdinalIgnoreCase)))
-            ?? Definitions.WithExtension(use, "." + normalized)
-                .Select(descriptor => formats.First(format => string.Equals(format.Id, descriptor.Id, StringComparison.Ordinal)))
-                .FirstOrDefault();
-    }
-
-    private static IReadOnlyList<FormatInfo> Create(FormatUse use) =>
-        CellsFormats.Definitions
-            .IdsFor(use)
-            .Select(id =>
-            {
-                FormatDescriptor descriptor = CellsFormats.Definitions.Single(
-                    format => string.Equals(format.Id, id, StringComparison.Ordinal));
-                return new FormatInfo(
-                    descriptor.Id,
-                    descriptor.OutputExtension ?? descriptor.Extensions[0],
-                    [.. descriptor.Aliases]);
-            })
-            .ToArray();
 }

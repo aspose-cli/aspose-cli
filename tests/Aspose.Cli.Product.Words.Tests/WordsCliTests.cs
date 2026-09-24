@@ -141,6 +141,22 @@ public sealed class WordsCliTests : IDisposable
         Assert.Contains("--set", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Edit_RejectsTrackChangesWithoutAnAuthorBeforeReadingOpsFromStdin()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "# Contract\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "contract.docx", "--markdown", "source.md").ExitCode);
+
+        CliResult edited = _workspace.RunWithInput(
+            "not json",
+            "words", "edit", "contract.docx", "--ops", "-", "--track-changes", "--output", "json");
+
+        Assert.Equal(2, edited.ExitCode);
+        JsonNode error = JsonNode.Parse(edited.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("--author", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]

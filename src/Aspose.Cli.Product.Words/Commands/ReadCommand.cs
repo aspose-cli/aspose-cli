@@ -41,7 +41,7 @@ internal static class ReadCommand
                     MaxBlocks = count,
                     Password = standard.InputPassword,
                 };
-                DocumentReadResult result = standard.Port.Read(input, request);
+                DocumentReadResult result = standard.OpenEngine().Read(input, request);
                 return result with { Next = Next(input, request, result) };
             })
             .WithExamples(

@@ -91,14 +91,6 @@ internal static class WordsOpsExecutor
             return;
         }
 
-        if (string.IsNullOrWhiteSpace(request.Author))
-        {
-            throw CliErrors.OptionInvalid(
-                "--author",
-                "--track-changes requires a non-empty author",
-                "Pass --author with the person or agent responsible for the edit.");
-        }
-
         string[] untracked = batch.Ops
             .Where(static op => !WordsOpRules.IsTrackable(op))
             .Select(static op => WordsOps.Catalog.NameOf(op))

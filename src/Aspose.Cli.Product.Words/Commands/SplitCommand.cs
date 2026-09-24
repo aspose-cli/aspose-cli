@@ -33,7 +33,7 @@ internal static class SplitCommand
                     throw CliErrors.OptionInvalid("--pages", $"cannot be used with --by {mode}", "Use --by pages or omit the range.");
                 }
 
-                return standard.Port.Split(standard.Input, new WordsSplitRequest
+                return standard.OpenEngine().Split(standard.Input, new WordsSplitRequest
                 {
                     By = mode,
                     Pages = pageText is null ? null : PageRange.Parse(pageText),

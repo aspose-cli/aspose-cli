@@ -34,9 +34,10 @@ public sealed class ExtractionGuard : IDisposable
         _overwrite = overwrite;
         _budget = new ExtractionBudgetLedger(maxItems,
             Math.Min(maxBytes, resourceBudgets.Remaining(ResourceBudgetKinds.OutputBytes)));
-        _plan = new ExtractionPlan(Path.GetFullPath(root));
+        string fullRoot = Path.GetFullPath(root);
+        _plan = new ExtractionPlan(fullRoot);
         _plan.EnsureRoot();
-        _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), Path.GetFullPath(root), "extraction", faults);
+        _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), fullRoot, "extraction", faults);
     }
 
     private string ReserveRelativePath(string suggestedPath, long sizeBytes, bool flatten)

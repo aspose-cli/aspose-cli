@@ -24,7 +24,7 @@ internal static class InfoCommand
             "Show document structure, safety state and metadata.",
             new CommandTraits { Input = WordsCommands.Document, UsesFonts = true },
             [preview, detail],
-            (parse, standard) => standard.Port.GetInfo(standard.Input, new DocumentInfoRequest
+            (parse, standard) => standard.OpenEngine().GetInfo(standard.Input, new DocumentInfoRequest
             {
                 IncludePreview = parse.GetValue(preview),
                 Details = parse.GetValue(detail),

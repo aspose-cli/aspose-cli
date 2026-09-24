@@ -32,9 +32,9 @@ internal static class PdfCommands
                 "pdf sign reviewed.pdf --certificate signer.pfx --certificate-password-env PDF_SIGNING_PASSWORD --out approved.pdf",
             ],
             [
-                CommandHelpLink.Docs($"{PdfModule.Manifest.Id}/editing", "fixed-layout operations and safe mutation"),
-                CommandHelpLink.Docs($"{PdfModule.Manifest.Id}/verification", "read-back, rendering and PDF/A evidence"),
-                CommandHelpLink.Schema(PdfModule.Manifest.Operations.Single(), "the operation JSON schema"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "editing", "fixed-layout operations and safe mutation"),
+                CommandHelpLink.Docs(PdfModule.Manifest, "verification", "read-back, rendering and PDF/A evidence"),
+                CommandHelpLink.Schema(PdfModule.Manifest, "the operation JSON schema"),
             ]);
     }
 }

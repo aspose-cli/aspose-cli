@@ -31,13 +31,13 @@ internal static class MergeCommand
             [inputs, bookmarks],
             (parse, standard) =>
             {
-                string[] inputPaths = parse.GetRequiredValue(inputs).Select(standard.Paths.ResolveInput).ToArray();
-                return standard.Port.Merge(new PdfMergeRequest
+                string[] inputPaths = standard.InputFiles(inputs);
+                return standard.OpenEngine().Merge(new PdfMergeRequest
                 {
                     InputPaths = inputPaths,
                     OutputPath = standard.OutputPath(),
                     Overwrite = standard.Overwrite,
-                    PreserveBookmarks = (parse.GetValue(bookmarks) ?? "preserve") == "preserve",
+                    PreserveBookmarks = parse.GetRequiredValue(bookmarks) == "preserve",
                     Password = standard.InputPassword,
                 });
             });

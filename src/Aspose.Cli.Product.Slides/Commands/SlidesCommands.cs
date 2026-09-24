@@ -33,9 +33,9 @@ internal static class SlidesCommands
                 "review revised.pptx --out revised.review",
             ],
             [
-                CommandHelpLink.Docs($"{SlidesModule.Manifest.Id}/editing", "atomic presentation operations"),
-                CommandHelpLink.Docs($"{SlidesModule.Manifest.Id}/verification", "slide read-back and visual review"),
-                CommandHelpLink.Schema(SlidesModule.Manifest.Operations.Single(), "the operation JSON schema"),
+                CommandHelpLink.Docs(SlidesModule.Manifest, "editing", "atomic presentation operations"),
+                CommandHelpLink.Docs(SlidesModule.Manifest, "verification", "slide read-back and visual review"),
+                CommandHelpLink.Schema(SlidesModule.Manifest, "the operation JSON schema"),
             ]);
     }
 }

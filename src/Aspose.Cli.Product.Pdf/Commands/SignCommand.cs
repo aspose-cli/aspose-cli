@@ -62,7 +62,7 @@ internal static class SignCommand
                 int pageNumber = parse.GetValue(page);
                 OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue, "Use a 1-based page number.");
                 string input = standard.Input;
-                string certificatePath = standard.Paths.ResolveInput(parse.GetRequiredValue(certificate));
+                string certificatePath = standard.RequiredInputFile(certificate);
                 string output = standard.OutputPath(".signed.pdf");
                 string variable = parse.GetRequiredValue(certificatePasswordEnv);
                 string? certificatePassword = standard.ReadEnvironment(variable);
@@ -74,7 +74,7 @@ internal static class SignCommand
                         "Set the variable to the PKCS#12 password and run the command again.");
                 }
 
-                return standard.Port.Sign(input, new PdfSignRequest
+                return standard.OpenEngine().Sign(input, new PdfSignRequest
                 {
                     CertificatePath = certificatePath,
                     CertificatePassword = certificatePassword,

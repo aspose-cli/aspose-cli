@@ -35,7 +35,8 @@ public static class WordsFormats
         FormatDescriptor.Declare("pcl", FormatUse.Convert, null, 13, null, false, ".pcl"),
         FormatDescriptor.Declare("html-fixed", FormatUse.Convert, null, 16, null, false, ".html"),
         FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
-        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg"),
+        FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg")
+            with { Aliases = ["jpg"] },
         FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
     ], WordsFormatRecognition.Rules);
 

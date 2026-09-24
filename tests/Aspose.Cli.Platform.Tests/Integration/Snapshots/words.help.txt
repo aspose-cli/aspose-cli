@@ -153,16 +153,16 @@ Arguments:
 Options:
   --ops <ops>                          The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/words/ops.
   --set <set>                          Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. Example: --set "bookmark:ClientName=Contoso Ltd.".
-  -o, --out <out>                      Output path. Default: the input path with '.out' inserted before the extension.
-  --in-place                           Modify the input file itself atomically.
-  --overwrite                          Replace the output file if it already exists.
-  --backup                             Create a non-overwriting backup before an in-place write.
   --if-match <if-match>                Require the current input SHA-256 fingerprint before editing.
   --dry-run                            Resolve and apply operations in memory without writing.
   --best-effort                        Keep successful operations, report failures, and exit 8.
   --verify                             Compare the staged document after save and reopen to report semantic verification.
   --track-changes                      Track this batch as revisions.
   --author <author>                    Revision author; required with --track-changes.
+  -o, --out <out>                      Output path. Default: the input path with '.out' inserted before the extension.
+  --overwrite                          Replace the output file if it already exists.
+  --in-place                           Modify the input file itself atomically.
+  --backup                             Create a non-overwriting backup before an in-place write.
   --password <password>                Password for the document. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>        Name of an environment variable holding the password for the document.
   --password-stdin                     Read the password for the document from the first line of stdin.

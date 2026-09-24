@@ -45,27 +45,41 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [trackChanges, author],
-            (parse, edit, standard) => standard.Port.ApplyOps(standard.Input, edit.Batch, new WordsEditRequest
+            (parse, edit, standard) =>
             {
-                OutputPath = edit.Target.OutputPath,
-                Overwrite = edit.Target.Overwrite,
-                BackupPath = edit.Target.BackupPath,
-                Options = edit.Options,
-                Verify = edit.Verify,
-                TrackChanges = parse.GetValue(trackChanges),
-                Author = parse.GetValue(author),
-                Password = standard.InputPassword,
-                EncryptPassword = standard.EncryptPassword(WordsFormats.ForOutput(edit.Target.OutputPath)),
-                OpSecrets = edit.Secrets,
-            }))
+                string? encryptPassword = standard.EncryptPassword(WordsFormats.ForOutput(edit.Target.OutputPath));
+                return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new WordsEditRequest
+                {
+                    OutputPath = edit.Target.OutputPath,
+                    Overwrite = edit.Target.Overwrite,
+                    BackupPath = edit.Target.BackupPath,
+                    Options = edit.Options,
+                    Verify = edit.Verify,
+                    TrackChanges = parse.GetValue(trackChanges),
+                    Author = parse.GetValue(author),
+                    Password = standard.InputPassword,
+                    EncryptPassword = encryptPassword,
+                    OpSecrets = edit.Secrets,
+                });
+            },
+            checkUsage: parse =>
+            {
+                if (parse.GetValue(trackChanges) && string.IsNullOrWhiteSpace(parse.GetValue(author)))
+                {
+                    throw CliErrors.OptionInvalid(
+                        "--author",
+                        "--track-changes requires a non-empty author",
+                        "Pass --author with the person or agent responsible for the edit.");
+                }
+            })
             .WithExamples(
             [
                 "words edit contract.docx --in-place --backup --verify --set \"bookmark:Client=Contoso\"",
                 "words edit contract.docx --in-place --backup --ops ops.json --verify",
             ],
             [
-                CommandHelpLink.Docs($"{WordsModule.Manifest.Id}/editing", "addressing and operation recipes"),
-                CommandHelpLink.Schema(WordsModule.Manifest.Operations.Single(), "the exact edit-batch contract"),
+                CommandHelpLink.Docs(WordsModule.Manifest, "editing", "addressing and operation recipes"),
+                CommandHelpLink.Schema(WordsModule.Manifest, "the exact edit-batch contract"),
             ]);
     }
 

@@ -72,7 +72,7 @@ internal static class ReadCommand
                             + " and follow each 'next' command, or raise --max-cells.");
                 }
 
-                WorkbookReadResult result = standard.Port.Read(input, new ReadRequest
+                WorkbookReadResult result = standard.OpenEngine().Read(input, new ReadRequest
                 {
                     SheetName = sheetName,
                     Range = range,

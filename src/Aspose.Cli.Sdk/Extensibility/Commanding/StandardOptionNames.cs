@@ -25,6 +25,13 @@ internal static class StandardOptionNames
     public const string BestEffort = "--best-effort";
     public const string Verify = "--verify";
 
+    /// <summary>
+    /// The target format of a convert or render command. A product may still name another
+    /// format with it, such as an export format, so it is not reserved; the template rejects a
+    /// command that declares a target format and repeats it.
+    /// </summary>
+    public const string To = "--to";
+
     /// <summary>Appended to a password option to name the environment variable that holds it.</summary>
     public const string EnvironmentSuffix = "-env";
 

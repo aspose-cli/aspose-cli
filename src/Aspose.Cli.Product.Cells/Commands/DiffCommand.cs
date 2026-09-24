@@ -45,7 +45,7 @@ internal static class DiffCommand
                 int maxDiffs = parse.GetValue(maxDiffsOption);
                 OptionGuards.EnsureInRange("--max-diffs", maxDiffs, MinMaxDiffs, MaxMaxDiffs,
                     "Lower the budget, or narrow the comparison to the sheets that matter.");
-                return standard.Port.Diff(standard.Input, standard.Other, new DiffRequest
+                return standard.OpenEngine().Diff(standard.Input, standard.Other, new DiffRequest
                 {
                     Scope = parse.GetValue(compare) == CompareValues ? DiffScope.Values : DiffScope.Formulas,
                     MaxDiffs = maxDiffs,

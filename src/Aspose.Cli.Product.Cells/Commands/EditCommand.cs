@@ -55,7 +55,7 @@ internal static class EditCommand
             (parse, edit, standard) =>
             {
                 string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(edit.Target.OutputPath));
-                return standard.Port.ApplyOps(standard.Input, edit.Batch, new EditRequest
+                return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new EditRequest
                 {
                     OutputPath = edit.Target.OutputPath,
                     Overwrite = edit.Target.Overwrite,
@@ -81,9 +81,9 @@ internal static class EditCommand
                 "cells edit book.xlsx --in-place --backup --verify --ops ops.json",
             ],
             [
-                CellsCommands.Docs("editing", "recipes for every operation family"),
-                CellsCommands.Schema("the operations JSON vocabulary"),
-                CellsCommands.Docs("verification", "verification before delivering the file"),
+                CommandHelpLink.Docs(CellsModule.Manifest, "editing", "recipes for every operation family"),
+                CommandHelpLink.Schema(CellsModule.Manifest, "the operations JSON vocabulary"),
+                CommandHelpLink.Docs(CellsModule.Manifest, "verification", "verification before delivering the file"),
             ]);
     }
 }

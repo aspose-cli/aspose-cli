@@ -20,7 +20,7 @@ internal static class ExtractCommand
                 Output = OutputTarget.Directory("Safe extraction directory."),
             },
             [what],
-            (parse, standard) => standard.Port.Extract(standard.Input, new WordsExtractRequest
+            (parse, standard) => standard.OpenEngine().Extract(standard.Input, new WordsExtractRequest
             {
                 What = parse.GetRequiredValue(what),
                 OutputDirectory = standard.OutputDirectory,

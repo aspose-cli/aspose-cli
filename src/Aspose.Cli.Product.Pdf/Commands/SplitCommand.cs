@@ -34,7 +34,7 @@ internal static class SplitCommand
             (parse, standard) =>
             {
                 string[] groupTexts = parse.GetValue(pages) ?? [];
-                return standard.Port.Split(standard.Input, new PdfSplitRequest
+                return standard.OpenEngine().Split(standard.Input, new PdfSplitRequest
                 {
                     PageGroups = groupTexts.Length == 0 ? null : groupTexts.Select(PageRange.Parse).ToArray(),
                     Every = parse.GetValue(every),

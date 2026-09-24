@@ -30,7 +30,7 @@ internal static class NewCommand
                 IReadOnlyList<string> sheetNames = ParseSheetNames(parse.GetValue(sheets));
                 string outputPath = standard.CreatedPath;
                 string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(outputPath));
-                return standard.Port.CreateWorkbook(new NewWorkbookRequest
+                return standard.OpenEngine().CreateWorkbook(new NewWorkbookRequest
                 {
                     OutputPath = outputPath,
                     Overwrite = standard.Overwrite,

@@ -2106,7 +2106,9 @@
             ".jpeg",
             ".jpg"
           ],
-          "aliases": [],
+          "aliases": [
+            "jpg"
+          ],
           "uses": [
             "convert",
             "render"
@@ -4554,7 +4556,9 @@
             ".jpeg",
             ".jpg"
           ],
-          "aliases": [],
+          "aliases": [
+            "jpg"
+          ],
           "uses": [
             "convert",
             "render"
@@ -6723,7 +6727,9 @@
             ".jpeg",
             ".jpg"
           ],
-          "aliases": [],
+          "aliases": [
+            "jpg"
+          ],
           "uses": [
             "render"
           ],
@@ -10117,7 +10123,21 @@
           "required": true,
           "recursive": false,
           "hasDefault": false,
-          "allowedValues": [],
+          "allowedValues": [
+            "csv",
+            "html",
+            "json",
+            "md",
+            "mhtml",
+            "ods",
+            "pdf",
+            "tsv",
+            "xls",
+            "xlsb",
+            "xlsm",
+            "xlsx",
+            "xps"
+          ],
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
@@ -11189,7 +11209,11 @@
           "recursive": false,
           "hasDefault": true,
           "default": "png",
-          "allowedValues": [],
+          "allowedValues": [
+            "jpeg",
+            "png",
+            "svg"
+          ],
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",

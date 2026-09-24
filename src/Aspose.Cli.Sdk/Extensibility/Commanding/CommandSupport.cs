@@ -42,16 +42,6 @@ public static class OptionGuards
     }
 }
 
-/// <summary>Factories for common output options.</summary>
-internal static class OutputOptions
-{
-    /// <summary>Creates the standard non-destructive overwrite switch.</summary>
-    public static Option<bool> Overwrite() => new(StandardOptionNames.Overwrite)
-    {
-        Description = "Replace the output file if it already exists.",
-    };
-}
-
 /// <summary>The transport selected by a JSON source value.</summary>
 public enum JsonSourceKind { File, Inline, StandardInput }
 
@@ -111,43 +101,36 @@ public static class JsonInputSource
 }
 
 /// <summary>
-/// The standard output path and overwrite option pair, and the one rule for every output
-/// file a caller names: it resolves against the working directory and never names an input.
+/// The standard <c>--out</c> option of commands that publish one file, and the one rule for
+/// every output file a caller names: it resolves against the working directory and never
+/// names an input.
 /// </summary>
-internal sealed class OutputFileOptions
+internal sealed class OutputFileOption
 {
     private const string OutOption = StandardOptionNames.Out;
-    private readonly Option<string?> _out;
-    private readonly Option<bool> _overwrite;
 
-    /// <summary>Creates an output option pair with product-specific help.</summary>
-    public OutputFileOptions(string description, bool required = false)
+    /// <summary>Creates the option with command-specific help.</summary>
+    public OutputFileOption(string description, bool required)
     {
-        _out = new Option<string?>(OutOption, StandardOptionNames.OutAlias)
+        Option = new Option<string?>(OutOption, StandardOptionNames.OutAlias)
         {
             Description = description,
             Required = required,
         }.WithInput(InputKind.None);
-        _overwrite = OutputOptions.Overwrite();
     }
+
+    /// <summary>The <c>--out</c> option.</summary>
+    public Option<string?> Option { get; }
 
     /// <summary>Whether the command cannot run without <c>--out</c>.</summary>
-    public bool Required => _out.Required;
+    public bool Required => Option.Required;
 
-    /// <summary>Adds both options to a command.</summary>
-    public void AddTo(Command command)
-    {
-        command.Options.Add(_out);
-        command.Options.Add(_overwrite);
-    }
-
-    /// <summary>Returns whether replacement was explicitly allowed.</summary>
-    public bool Overwrite(ParseResult parseResult) =>
-        parseResult.GetValue(_overwrite);
+    /// <summary>Adds the option to a command.</summary>
+    public void AddTo(Command command) => command.Options.Add(Option);
 
     /// <summary>Returns an explicitly requested output extension, if any.</summary>
     public string? RequestedExtension(ParseResult parseResult) =>
-        parseResult.GetValue(_out) is { } path
+        parseResult.GetValue(Option) is { } path
             && Path.GetExtension(path) is { Length: > 1 } extension
                 ? extension
                 : null;
@@ -158,7 +141,7 @@ internal sealed class OutputFileOptions
         ParseResult parseResult,
         PathResolver paths,
         params IReadOnlyList<string?> inputPaths) =>
-        parseResult.GetValue(_out) is { } explicitOut
+        parseResult.GetValue(Option) is { } explicitOut
             ? ResolveExplicit(paths, explicitOut, OutOption, inputPaths)
             : null;
 
@@ -196,12 +179,29 @@ internal sealed class OutputFileOptions
         IReadOnlyList<string?> inputPaths)
     {
         ArgumentNullException.ThrowIfNull(paths);
+        string resolved = paths.ResolveOutput(output);
+        EnsureNotInput(resolved, parameter, inPlaceAvailable, inputPaths);
+        return resolved;
+    }
+
+    /// <summary>Rejects a resolved output, named by the caller or derived, that is one of the inputs.</summary>
+    /// <param name="output">The resolved output path.</param>
+    /// <param name="parameter">The option or argument that names the output, or would name it, for the error.</param>
+    /// <param name="inPlaceAvailable">Whether the command can replace its input in place instead.</param>
+    /// <param name="inputPaths">The resolved input files; an absent optional input is null.</param>
+    /// <exception cref="CliException"><c>OPTION_INVALID</c> when the output resolves to an input.</exception>
+    internal static void EnsureNotInput(
+        string output,
+        string parameter,
+        bool inPlaceAvailable,
+        IReadOnlyList<string?> inputPaths)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(parameter);
         ArgumentNullException.ThrowIfNull(inputPaths);
-        string resolved = paths.ResolveOutput(output);
-        return inputPaths.Any(input => input is not null && OutputPathValidator.IsSameFile(resolved, input))
-            ? throw CliErrors.OutputIsInput(parameter, resolved, inPlaceAvailable)
-            : resolved;
+        if (inputPaths.Any(input => input is not null && OutputPathValidator.IsSameFile(output, input)))
+        {
+            throw CliErrors.OutputIsInput(parameter, output, inPlaceAvailable);
+        }
     }
 
     internal static string DerivePath(
@@ -227,99 +227,8 @@ public sealed record MutationTarget(
     bool InPlace,
     string? BackupPath);
 
-/// <summary>Standard output, in-place, overwrite, and backup mutation options.</summary>
-internal sealed class MutationFileOptions
-{
-    private readonly Option<string?> _out;
-    private readonly Option<bool> _inPlace;
-    private readonly Option<bool> _overwrite;
-    private readonly Option<bool> _backup;
-
-    /// <summary>Creates the standard atomic mutation option set.</summary>
-    public MutationFileOptions(
-        string outputDescription =
-            "Output path. Default: the input path with '.out' inserted before the extension.",
-        string inPlaceDescription = "Modify the input file itself atomically.",
-        string backupDescription =
-            "Create a non-overwriting backup before an in-place write.")
-    {
-        _out = new Option<string?>(StandardOptionNames.Out, StandardOptionNames.OutAlias)
-        {
-            Description = outputDescription,
-        }.WithInput(InputKind.None);
-        _inPlace = new Option<bool>(StandardOptionNames.InPlace)
-        {
-            Description = inPlaceDescription,
-        };
-        _overwrite = OutputOptions.Overwrite();
-        _backup = new Option<bool>(StandardOptionNames.Backup)
-        {
-            Description = backupDescription,
-        };
-        Options = [_out, _inPlace, _overwrite, _backup];
-    }
-
-    /// <summary>The mutation options in help order.</summary>
-    internal IReadOnlyList<Option> Options { get; }
-
-    /// <summary>
-    /// Resolves and validates the mutation destination. A backup is made only when
-    /// <c>--backup</c> is given.
-    /// </summary>
-    public MutationTarget Resolve(
-        ParseResult parseResult,
-        PathResolver paths,
-        string inputPath)
-    {
-        string? explicitOut = parseResult.GetValue(_out);
-        bool inPlace = parseResult.GetValue(_inPlace);
-        bool overwrite = parseResult.GetValue(_overwrite);
-        bool backup = parseResult.GetValue(_backup);
-
-        if (explicitOut is not null && inPlace)
-        {
-            throw CliErrors.OptionInvalid(
-                "--in-place",
-                "cannot be combined with --out",
-                "Choose --out or --in-place.");
-        }
-
-        if (backup && !inPlace)
-        {
-            throw CliErrors.OptionInvalid(
-                "--backup",
-                "a backup is only meaningful with --in-place",
-                "Pass --in-place or omit --backup.");
-        }
-
-        if (inPlace)
-        {
-            return new MutationTarget(
-                inputPath,
-                true,
-                true,
-                backup ? DeriveBackupPath(inputPath) : null);
-        }
-
-        string output = explicitOut is not null
-            ? OutputFileOptions.ResolveExplicit(paths, explicitOut, "--out", inPlaceAvailable: true, [inputPath])
-            : OutputFileOptions.DerivePath(
-                inputPath,
-                Path.GetExtension(inputPath));
-        return new MutationTarget(output, overwrite, false, null);
-    }
-
-    private static string DeriveBackupPath(string inputPath)
-    {
-        string? directory = Path.GetDirectoryName(inputPath);
-        string extension = Path.GetExtension(inputPath);
-        string stem = Path.GetFileNameWithoutExtension(inputPath);
-        return Path.Combine(directory ?? string.Empty, $"{stem}.backup{extension}");
-    }
-}
-
 /// <summary>Mutually exclusive literal, environment, and stdin password options.</summary>
-public sealed class PasswordOptions
+internal sealed class PasswordOptions
 {
     private readonly string _prefix;
     private readonly Option<string?> _literal;

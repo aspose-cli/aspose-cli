@@ -188,26 +188,83 @@ public sealed class StandardCommandTests : IDisposable
     }
 
     [Fact]
-    public void RenderFormat_TakesAnExplicitToThenTheOutputExtensionThenTheDefault()
+    public void OutputPath_RefusesADerivedSiblingThatAProductOptionReads()
     {
-        var to = new Option<string>("--to") { DefaultValueFactory = _ => "png" }.WithInput(InputKind.None);
+        var template = new Option<string?>("--template").WithInput(InputKind.File);
+        File.WriteAllText(_temp.File("report.out"), "template");
+        Command command = StandardCommand.Create(
+            _host,
+            "convert",
+            "Converts.",
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.") },
+            [template],
+            (_, standard) => Result(standard.OutputPath(".out")));
+
+        CliException error = RunFailing(command, "report.test", "--template", "report.out");
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
+        Assert.Equal(_temp.File("copy.out"), Run(command, "report.test", "--template", "report.out", "--out", "copy.out"));
+    }
+
+    [Fact]
+    public void TargetFormat_RendersTheExplicitToThenTheOutputExtensionThenTheDefault()
+    {
         FormatDescriptor[] formats =
         [
             FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
-            FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 1, false, ".svg"),
+            FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg") with { Aliases = ["jpg"] },
+            FormatDescriptor.Declare("svg", FormatUse.Render, null, null, 2, false, ".svg"),
+            FormatDescriptor.Declare("doc", FormatUse.Convert, null, 0, null, false, ".doc"),
         ];
-        Command command = StandardCommand.Create(
-            _host,
-            "render",
-            "Renders.",
-            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path.") },
-            [to],
-            (_, standard) => Result(standard.RenderFormat(to, formats)));
+        var traits = new CommandTraits
+        {
+            Input = Report,
+            Output = OutputTarget.File("Output path."),
+            Target = TargetFormat.Render("Image format.", formats),
+        };
+        Command command = Create(traits, (_, standard) => Result(standard.TargetFormat()));
 
+        Assert.Equal(["--to", "--mode", "--out", "--overwrite", "--password", "--password-env", "--password-stdin"],
+            command.Options.Select(static option => option.Name));
         Assert.Equal("png", Run(command, "report.test"));
         Assert.Equal("svg", Run(command, "report.test", "--out", "page.SVG"));
         Assert.Equal("png", Run(command, "report.test", "--out", "page.dat"));
-        Assert.Equal("png", Run(command, "report.test", "--to", "png", "--out", "page.svg"));
+        Assert.Equal("svg", Run(command, "report.test", "--to", "SVG", "--out", "page.svg"));
+        Assert.Equal("jpeg", Run(command, "report.test", "--to", "JPG", "--out", "page.jpeg"));
+        Assert.Equal("png", Run(command, "report.test", "--to", "png", "--out", "page.dat"));
+        Assert.NotEmpty(command.Parse(["report.test", "--to", "doc"]).Errors);
+        CliException conflict = RunFailing(command, "report.test", "--to", "png", "--out", "page.svg");
+        Assert.Equal(ErrorCodes.UsageError, conflict.Code);
+        Assert.Contains("--to png", conflict.Message, StringComparison.Ordinal);
+        Assert.Contains("--out 'page.svg'", conflict.Message, StringComparison.Ordinal);
+        Assert.Throws<ArgumentException>(() => Create(traits with { Output = null }, (_, _) => Result()));
+        Assert.Throws<ArgumentException>(() => Create(
+            traits with { Target = TargetFormat.Render("Image format.", formats, "doc") }, (_, _) => Result()));
+    }
+
+    [Fact]
+    public void TargetFormat_ConvertsToARequiredFormatNamedByItsIdOrAlias()
+    {
+        FormatDescriptor[] formats =
+        [
+            FormatDescriptor.Declare("docx", FormatUse.Convert, null, 0, null, false, ".docx"),
+            FormatDescriptor.Declare("md", FormatUse.Convert, null, 1, null, false, ".md") with { Aliases = ["markdown"] },
+            FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
+        ];
+        Command command = Create(
+            new CommandTraits
+            {
+                Input = Report,
+                Output = OutputTarget.File("Output path."),
+                Target = TargetFormat.Convert("Target format.", formats),
+            },
+            (_, standard) => Result(standard.TargetFormat()));
+
+        Assert.Equal("md", Run(command, "report.test", "--to", "Markdown", "--out", "page.docx"));
+        Assert.Equal("docx", Run(command, "report.test", "--to", "DOCX"));
+        Assert.NotEmpty(command.Parse(["report.test"]).Errors);
+        Assert.NotEmpty(command.Parse(["report.test", "--to", "png"]).Errors);
     }
 
     [Theory]
@@ -249,12 +306,12 @@ public sealed class StandardCommandTests : IDisposable
     }
 
     [Fact]
-    public void Port_ResolvesTheInputAndAppliesTheFontsUntilTheInvocationEnds()
+    public void OpenEngine_ResolvesTheInputAndAppliesTheFontsUntilTheInvocationEnds()
     {
         string fonts = Directory.CreateDirectory(_temp.File("fonts")).FullName;
         Command command = Create(
             new CommandTraits { Input = Report, UsesFonts = true },
-            (_, standard) => Result(standard.Port.ActiveDirectories()));
+            (_, standard) => Result(standard.OpenEngine().ActiveDirectories()));
 
         Assert.Equal(fonts, Run(command, "report.test", "--font-dir", "fonts"));
         Assert.Equal(1, _host.Engine.ScopesEntered);
@@ -263,6 +320,58 @@ public sealed class StandardCommandTests : IDisposable
         CliException missing = RunFailing(command, "missing.test", "--font-dir", "fonts");
         Assert.Equal(ErrorCodes.FileNotFound, missing.Code);
         Assert.Equal(1, _host.Engine.ScopesEntered);
+    }
+
+    [Fact]
+    public void InputFile_ResolvesOnlyTheCommandsOwnExistingInputFiles()
+    {
+        var template = new Option<string?>("--template").WithInput(InputKind.File);
+        var images = new Option<string[]>("--image").WithInput(InputKind.File);
+        var title = new Option<string?>("--title").WithInput(InputKind.None);
+        Command command = StandardCommand.Create(
+            _host,
+            "create",
+            "Creates.",
+            new CommandTraits { Output = OutputTarget.CreatedFile("File to create.") },
+            [template, images, title],
+            (_, standard) => Result(standard.InputFile(template) + "|" + string.Join(';', standard.InputFiles(images))));
+        Command undeclared = StandardCommand.Create(
+            _host, "create", "Creates.", new CommandTraits { Output = OutputTarget.CreatedFile("File to create.") }, [title],
+            (_, standard) => Result(standard.InputFile(title)));
+
+        Assert.Equal(
+            _temp.File("report.test") + "|" + _temp.File("other.test"),
+            Run(command, "new.test", "--template", "report.test", "--image", "other.test"));
+        Assert.Equal("|", Run(command, "new.test"));
+        var certificate = new Option<string>("--certificate") { Required = true }.WithInput(InputKind.File);
+        Command required = StandardCommand.Create(
+            _host, "sign", "Signs.", new CommandTraits { Input = Report }, [certificate],
+            (_, standard) => Result(standard.RequiredInputFile(certificate)));
+        Assert.Equal(_temp.File("other.test"), Run(required, "report.test", "--certificate", "other.test"));
+        Assert.Equal(ErrorCodes.FileNotFound, RunFailing(command, "new.test", "--template", "missing.test").Code);
+        _host.Error = null;
+        undeclared.Parse(["new.test", "--title", "x"]).Invoke();
+        Assert.IsType<InvalidOperationException>(_host.Error);
+    }
+
+    [Fact]
+    public void Bind_ReadsTheCommonValuesOfACommandOutsideTheProductPipeline()
+    {
+        var standard = new StandardOptions(new CommandTraits { Input = Report, UsesFonts = true });
+        Command command = standard.CreateCommand("check", "Checks.", [Mode()]);
+        string fonts = Directory.CreateDirectory(_temp.File("fonts")).FullName;
+
+        StandardInvocation invocation = standard.Bind(
+            command.Parse(["report.test", "--password-env", "LEFT", "--font-dir", "fonts"]),
+            new PathResolver(_temp.Path),
+            TestBudgets.Create().Inputs,
+            static name => name == "LEFT" ? "a" : null);
+
+        Assert.Equal(["--mode", "--password", "--password-env", "--password-stdin", "--font-dir"],
+            command.Options.Select(static option => option.Name));
+        Assert.Equal(_temp.File("report.test"), invocation.Input);
+        Assert.Equal("a", invocation.InputPassword);
+        Assert.Equal(fonts, Assert.Single(invocation.FontDirectories.Directories));
     }
 
     [Fact]

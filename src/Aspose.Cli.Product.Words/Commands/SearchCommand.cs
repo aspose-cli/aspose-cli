@@ -22,7 +22,7 @@ internal static class SearchCommand
             (parse, standard) =>
             {
                 SearchQuery query = search.Read(parse);
-                return standard.Port.Search(standard.Input, new WordsSearchRequest
+                return standard.OpenEngine().Search(standard.Input, new WordsSearchRequest
                 {
                     Pattern = query.Text.Pattern,
                     Regex = query.Text.Expression is not null,

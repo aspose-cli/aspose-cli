@@ -96,7 +96,9 @@ waives it for the version in `Directory.Build.props`.
   order, option spelling or file existence; command-tree construction rejects missing or
   conflicting declarations. `GlobalOptionNames` is the one list of reserved global options and
   `StandardOptionNames` the one list of options the command template owns; analyzer `APCLI008`
-  rejects a product option that reuses either.
+  rejects a product option that reuses either. Products build commands with
+  `StandardCommand` or `BoundedEditCommand`, which run through the host pipeline; analyzer
+  `APCLI011` rejects a product that references the Host seam `StandardOptions`.
 
 ## Releases
 

@@ -47,11 +47,11 @@ internal static class NewCommand
                     throw CliErrors.Usage(["Choose exactly one of --from-images, --from-html or --from-text."]);
                 }
 
-                string[]? imagePaths = imageValues.Length == 0 ? null : imageValues.Select(standard.Paths.ResolveInput).ToArray();
-                string? htmlPath = htmlValue is null ? null : standard.Paths.ResolveInput(htmlValue);
-                string? textPath = textValue is null ? null : standard.Paths.ResolveInput(textValue);
+                string[]? imagePaths = imageValues.Length == 0 ? null : standard.InputFiles(images);
+                string? htmlPath = standard.InputFile(html);
+                string? textPath = standard.InputFile(text);
                 string outputPath = standard.CreatedPath;
-                return standard.Port.Create(new NewPdfRequest
+                return standard.OpenEngine().Create(new NewPdfRequest
                 {
                     OutputPath = outputPath,
                     Overwrite = standard.Overwrite,

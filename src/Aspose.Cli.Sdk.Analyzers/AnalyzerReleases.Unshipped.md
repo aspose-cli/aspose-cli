@@ -14,3 +14,4 @@ APCLI007 | Aspose.Cli.ProductIsolation | Error | Product module definitions cann
 APCLI008 | Aspose.Cli.ProductIsolation | Error | Product option aliases must be static and cannot reuse host-reserved or command-template aliases.
 APCLI009 | Aspose.Cli.ProductIsolation | Error | Product implementation layers cannot introduce reverse, lateral, or cross-product dependencies.
 APCLI010 | Aspose.Cli.ProductIsolation | Error | Commands, Engine, Output, and Preview implementation types cannot be publicly visible.
+APCLI011 | Aspose.Cli.ProductIsolation | Error | Product code cannot build or bind commands through the host command seam StandardOptions.

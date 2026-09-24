@@ -11,18 +11,24 @@ public sealed record CommandHelpLink(
     string Command,
     string Description)
 {
-    /// <summary>Links a documentation topic, such as <c>product/editing</c>.</summary>
-    public static CommandHelpLink Docs(string topic, string description)
+    /// <summary>Links one of a product's documentation topics, such as its <c>editing</c> topic.</summary>
+    /// <param name="product">The product whose topic is linked.</param>
+    /// <param name="topic">The topic name within the product.</param>
+    /// <param name="description">A short description of the topic.</param>
+    public static CommandHelpLink Docs(ProductManifest product, string topic, string description)
     {
+        ArgumentNullException.ThrowIfNull(product);
         ArgumentException.ThrowIfNullOrWhiteSpace(topic);
-        return new($"{DistributionInfo.CommandName} docs {topic}", description);
+        return new($"{DistributionInfo.CommandName} docs {product.Id}/{topic}", description);
     }
 
     /// <summary>Links the JSON schema of a product's operation vocabulary.</summary>
-    public static CommandHelpLink Schema(ProductOperationDescriptor operations, string description)
+    /// <param name="product">The product, which declares exactly one operation vocabulary.</param>
+    /// <param name="description">A short description of the schema.</param>
+    public static CommandHelpLink Schema(ProductManifest product, string description)
     {
-        ArgumentNullException.ThrowIfNull(operations);
-        return new($"{DistributionInfo.CommandName} schema {operations.InputSchema}", description);
+        ArgumentNullException.ThrowIfNull(product);
+        return new($"{DistributionInfo.CommandName} schema {product.Operations.Single().InputSchema}", description);
     }
 }
 

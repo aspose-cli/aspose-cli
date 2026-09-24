@@ -24,7 +24,7 @@ internal static class InfoCommand
             "Show PDF structure, security state and metadata.",
             new CommandTraits { Input = PdfCommands.Document },
             [preview, detail],
-            (parse, standard) => standard.Port.GetInfo(standard.Input, new PdfInfoRequest
+            (parse, standard) => standard.OpenEngine().GetInfo(standard.Input, new PdfInfoRequest
             {
                 IncludePreview = parse.GetValue(preview),
                 Details = parse.GetValue(detail),

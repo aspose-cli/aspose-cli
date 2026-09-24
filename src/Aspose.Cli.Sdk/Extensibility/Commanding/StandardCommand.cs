@@ -42,37 +42,9 @@ public static class StandardCommand
         where TPort : class
     {
         ArgumentNullException.ThrowIfNull(host);
-        ArgumentNullException.ThrowIfNull(parameters);
         ArgumentNullException.ThrowIfNull(handler);
         var standard = new StandardOptions(traits);
-        var command = new Command(name, description);
-        standard.AddArguments(command);
-        foreach (Symbol parameter in parameters)
-        {
-            switch (parameter)
-            {
-                case Argument argument:
-                    command.Arguments.Add(argument);
-                    break;
-                case Option option:
-                    command.Options.Add(option);
-                    break;
-                default:
-                    throw new ArgumentException($"'{parameter.Name}' is neither an argument nor an option.", nameof(parameters));
-            }
-        }
-
-        standard.AddOptions(command);
-        if (command.Options
-                .SelectMany(static option => option.Aliases.Prepend(option.Name))
-                .GroupBy(static name => name, StringComparer.Ordinal)
-                .FirstOrDefault(static names => names.Count() > 1) is { } repeated)
-        {
-            throw new ArgumentException(
-                $"Option '{repeated.Key}' is declared more than once; the command template owns the common options.",
-                nameof(parameters));
-        }
-
+        Command command = standard.CreateCommand(name, description, parameters);
         command.SetAction(parse => host.Run(parse, context =>
         {
             using var invocation = new StandardInvocation<TPort>(

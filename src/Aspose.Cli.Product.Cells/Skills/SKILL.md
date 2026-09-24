@@ -154,7 +154,7 @@ aspose-cli cells render book.xlsx --all-sheets --out book.png   # one PNG per vi
 
 `aspose-cli capabilities --output json` lists every format. `cells render`
 takes the format from `--to`, or from the `--out` extension when `--to` is
-omitted.
+omitted, and refuses a `--to` that disagrees with the `--out` extension.
 Existing files are protected; pass `--overwrite` deliberately.
 
 ## 7. Licensing and evaluation mode

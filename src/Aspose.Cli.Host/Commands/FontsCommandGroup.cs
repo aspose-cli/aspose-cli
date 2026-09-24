@@ -70,23 +70,19 @@ internal static class FontsCommandGroup
         ProductCatalog catalog,
         GlobalOptions globals)
     {
-        var fileArgument = new Argument<string>("file")
+        var standard = new StandardOptions(new CommandTraits
         {
-            Description = "Supported document whose fonts to check.",
-        }.WithInput(InputKind.File);
-
-        var password = new PasswordOptions("--password", "the document");
-        var fontDirectories = new FontDirectoryOptions();
-
-        var check = new Command(
-            "check", "Check whether a document's fonts are available here, and what they substitute to.");
-        check.Arguments.Add(fileArgument);
-        password.AddTo(check);
-        fontDirectories.AddTo(check);
+            Input = new InputDocument("Supported document whose fonts to check.", "the document"),
+            UsesFonts = true,
+        });
+        Command check = standard.CreateCommand(
+            "check", "Check whether a document's fonts are available here, and what they substitute to.", []);
 
         check.SetAction(parseResult => executor.Run(parseResult, globals, context =>
         {
-            string path = context.Paths.ResolveInput(parseResult.GetRequiredValue(fileArgument));
+            StandardInvocation invocation = standard.Bind(
+                parseResult, context.Paths, context.ResourceBudgets.Inputs, context.ReadEnvironment);
+            string path = invocation.Input;
             ProductDefinition product = catalog.ResolveExistingFile(
                 path,
                 operation: "fonts",
@@ -102,14 +98,12 @@ internal static class FontsCommandGroup
             }
             ProductBinding binding = context.Activate(product);
             using IDisposable fontScope = FontProfiles.Use(
-                catalog, product, binding, fontDirectories.Read(parseResult, context.Paths));
+                catalog, product, binding, invocation.FontDirectories);
             return binding.FontEnvironment!.CheckFonts(
                 path,
                 new FontCheckRequest
                 {
-                    Password = password.Resolve(
-                        parseResult,
-                        context.ResourceBudgets.Inputs, context.ReadEnvironment),
+                    Password = invocation.InputPassword,
                 });
         }));
 

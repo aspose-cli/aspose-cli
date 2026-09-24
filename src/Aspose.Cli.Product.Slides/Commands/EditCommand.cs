@@ -35,13 +35,17 @@ internal static class EditCommand
                 UsesFonts = true,
             },
             [],
-            (parse, edit, standard) => standard.Port.ApplyOps(standard.Input, edit.Batch, new PresentationEditRequest
+            (parse, edit, standard) =>
             {
-                OutputPath = edit.Target.OutputPath,
-                Overwrite = edit.Target.Overwrite,
-                BackupPath = edit.Target.BackupPath,
-                Options = edit.Options,
-                Password = standard.InputPassword,
-                EncryptPassword = standard.EncryptPassword(SlidesFormats.ForOutput(edit.Target.OutputPath)),
-            }));
+                string? encryptPassword = standard.EncryptPassword(SlidesFormats.ForOutput(edit.Target.OutputPath));
+                return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new PresentationEditRequest
+                {
+                    OutputPath = edit.Target.OutputPath,
+                    Overwrite = edit.Target.Overwrite,
+                    BackupPath = edit.Target.BackupPath,
+                    Options = edit.Options,
+                    Password = standard.InputPassword,
+                    EncryptPassword = encryptPassword,
+                });
+            });
 }

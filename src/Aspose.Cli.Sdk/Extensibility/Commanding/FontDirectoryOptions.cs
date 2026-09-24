@@ -9,7 +9,7 @@ namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 /// The one repeatable <c>--font-dir</c> option of every command whose result depends on
 /// the fonts available to the engine: rendering, conversion, layout and font checks.
 /// </summary>
-public sealed class FontDirectoryOptions
+internal sealed class FontDirectoryOptions
 {
     private const int MaximumDirectories = 16;
     private readonly Option<string[]> _directories = new Option<string[]>(StandardOptionNames.FontDir)
@@ -23,18 +23,6 @@ public sealed class FontDirectoryOptions
     {
         ArgumentNullException.ThrowIfNull(command);
         command.Options.Add(_directories);
-    }
-
-    /// <summary>
-    /// Reads the directories and applies them to the command's product engine until the
-    /// returned scope is disposed. A product command enters the scope before its port opens
-    /// the document, so layout, rendering and save all see the same fonts.
-    /// </summary>
-    internal IDisposable Use<TPort>(ParseResult parse, ProductCommandContext<TPort> context)
-        where TPort : class
-    {
-        ArgumentNullException.ThrowIfNull(context);
-        return context.Binding.UseFonts(Read(parse, context.Paths));
     }
 
     /// <summary>Reads the directories, resolving relative paths against <paramref name="paths"/>.</summary>

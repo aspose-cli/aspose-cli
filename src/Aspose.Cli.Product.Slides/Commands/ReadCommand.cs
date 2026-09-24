@@ -39,7 +39,7 @@ internal static class ReadCommand
                     MaxCharacters = characters,
                     Password = standard.InputPassword,
                 };
-                PresentationReadResult result = standard.Port.Read(input, request);
+                PresentationReadResult result = standard.OpenEngine().Read(input, request);
                 return result with { Next = Next(input, request, result) };
             });
     }

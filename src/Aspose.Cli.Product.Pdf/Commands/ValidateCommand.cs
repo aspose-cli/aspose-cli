@@ -16,7 +16,7 @@ internal static class ValidateCommand
             "Validate a PDF against a PDF/A profile.",
             new CommandTraits { Input = PdfCommands.Document },
             [profile],
-            (parse, standard) => standard.Port.Validate(standard.Input, new PdfValidateRequest
+            (parse, standard) => standard.OpenEngine().Validate(standard.Input, new PdfValidateRequest
             {
                 Profile = parse.GetRequiredValue(profile),
                 Password = standard.InputPassword,

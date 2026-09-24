@@ -39,11 +39,12 @@ internal static class NewCommand
                     throw CliErrors.Usage(["Choose --blank, --template, or one of --markdown or --text with an optional --template."]);
                 }
 
-                string? markdownPath = markdownValue is null ? null : standard.Paths.ResolveInput(markdownValue);
-                string? textPath = textValue is null ? null : standard.Paths.ResolveInput(textValue);
-                string? templatePath = templateValue is null ? null : standard.Paths.ResolveInput(templateValue);
+                string? markdownPath = standard.InputFile(markdown);
+                string? textPath = standard.InputFile(text);
+                string? templatePath = standard.InputFile(template);
                 string outputPath = standard.CreatedPath;
-                return standard.Port.CreateDocument(new NewDocumentRequest
+                string? encryptPassword = standard.EncryptPassword(WordsFormats.ForOutput(outputPath));
+                return standard.OpenEngine().CreateDocument(new NewDocumentRequest
                 {
                     OutputPath = outputPath,
                     Overwrite = standard.Overwrite,
@@ -51,7 +52,7 @@ internal static class NewCommand
                     TextPath = textPath,
                     TemplatePath = templatePath,
                     Title = parse.GetValue(title),
-                    EncryptPassword = standard.EncryptPassword(WordsFormats.ForOutput(outputPath)),
+                    EncryptPassword = encryptPassword,
                 });
             })
             .WithExamples(

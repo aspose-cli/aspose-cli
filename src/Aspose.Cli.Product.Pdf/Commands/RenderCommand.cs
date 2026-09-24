@@ -8,8 +8,6 @@ internal static class RenderCommand
 {
     public static Command Create(IProductCommandHost<IPdfEngine> host)
     {
-        var to = new Option<string>("--to") { DefaultValueFactory = _ => "png", Description = "png, jpeg or svg." }.WithInput(InputKind.None);
-        to.AcceptOnlyFromAmong([.. PdfFormats.Definitions.IdsFor(FormatUse.Render)]);
         var pages = new PartSelectionOptions("page");
         var dpi = new DpiOption();
         return StandardCommand.Create(
@@ -21,14 +19,15 @@ internal static class RenderCommand
                 Input = PdfCommands.Document,
                 Output = OutputTarget.File("Output path; multi-page output adds .pN before the extension."),
                 UsesFonts = true,
+                Target = TargetFormat.Render("png, jpeg or svg.", PdfFormats.Definitions),
             },
-            [to, .. pages.Options, .. dpi.Options],
+            [.. pages.Options, .. dpi.Options],
             (parse, standard) =>
             {
                 PartSelection selection = pages.Read(parse);
                 int resolution = dpi.Read(parse);
-                string format = standard.RenderFormat(to, PdfFormats.Definitions);
-                return standard.Port.Render(standard.Input, new PdfRenderRequest
+                string format = standard.TargetFormat();
+                return standard.OpenEngine().Render(standard.Input, new PdfRenderRequest
                 {
                     TargetFormatId = format,
                     OutputPath = standard.OutputPath(PdfFormats.Definitions.ExtensionFor(format)),

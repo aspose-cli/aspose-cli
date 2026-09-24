@@ -213,6 +213,21 @@ public static class FormatDescriptorExtensions
             .ToArray());
 
     /// <summary>
+    /// Returns the format for one use whose id or alias is <paramref name="name"/>, ignoring
+    /// case, or null when none is.
+    /// </summary>
+    public static FormatDescriptor? Named(
+        this IEnumerable<FormatDescriptor> descriptors,
+        FormatUse use,
+        string name)
+    {
+        ArgumentNullException.ThrowIfNull(name);
+        return Ordered(descriptors, use, extension: null).FirstOrDefault(format =>
+            string.Equals(format.Id, name, StringComparison.OrdinalIgnoreCase)
+            || format.Aliases.Contains(name, StringComparer.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
     /// Returns the formats for one use that declare a file extension such as <c>.htm</c>,
     /// in that use's declared stable order. Extensions compare case-insensitively.
     /// </summary>

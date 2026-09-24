@@ -25,7 +25,7 @@ internal static class InfoCommand
             "Show presentation structure, stable slide ids and metadata.",
             new CommandTraits { Input = SlidesCommands.Presentation },
             [preview, detail],
-            (parse, standard) => standard.Port.GetInfo(standard.Input, new PresentationInfoRequest
+            (parse, standard) => standard.OpenEngine().GetInfo(standard.Input, new PresentationInfoRequest
             {
                 IncludePreview = parse.GetValue(preview),
                 Details = parse.GetValue(detail),
