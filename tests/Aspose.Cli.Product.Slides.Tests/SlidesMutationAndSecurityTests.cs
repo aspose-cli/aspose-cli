@@ -231,7 +231,6 @@ public sealed class SlidesMutationAndSecurityTests
         const float originalWidth = 220;
         const float originalHeight = 24;
 
-        fixture.Gate.EnsureApplied();
         using (var presentation = new Presentation())
         {
             presentation.SlideSize.SetSize(

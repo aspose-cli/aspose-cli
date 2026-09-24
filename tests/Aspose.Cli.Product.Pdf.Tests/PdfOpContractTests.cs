@@ -62,7 +62,6 @@ public sealed class PdfOpContractTests
     public void ReadForm_ReportsProductFieldTypes()
     {
         using var fixture = new PdfEngineFixture();
-        fixture.Gate.EnsureApplied();
         string path = fixture.File("form.pdf");
         using (var document = new Document())
         {

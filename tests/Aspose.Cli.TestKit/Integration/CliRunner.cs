@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.TestKit;
@@ -8,6 +9,21 @@ public static class CliRunner
     public const string ExecutableEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "TEST_EXECUTABLE";
     private static readonly Lazy<string> Executable = new(ResolveExecutable);
     public static string ExecutablePath => Executable.Value;
+
+    /// <summary>The current CLI executable, or false when this run has none to test.</summary>
+    public static bool TryGetExecutablePath([NotNullWhen(true)] out string? path)
+    {
+        try
+        {
+            path = Executable.Value;
+            return true;
+        }
+        catch (Exception exception) when (exception is InvalidOperationException or FileNotFoundException)
+        {
+            path = null;
+            return false;
+        }
+    }
 
     private static string ResolveExecutable()
     {

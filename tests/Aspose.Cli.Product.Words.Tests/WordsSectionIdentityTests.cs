@@ -153,7 +153,6 @@ public sealed class WordsSectionIdentityTests
 
     private static string CreateSections(WordsFixture fixture)
     {
-        fixture.Gate.EnsureApplied();
         var document = new Document();
         var builder = new DocumentBuilder(document);
         builder.Write("First");

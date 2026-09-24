@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Configuration;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Words;
 using Aspose.Words.Saving;
@@ -6,24 +5,15 @@ using Aspose.Words.Tables;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
-/// <summary>Shared real-engine setup for Words tests.</summary>
+/// <summary>
+/// Shared real-engine setup for Words tests. The test license state is applied before any
+/// test authors a document; otherwise an evaluation banner written into an input would
+/// become its first block.
+/// </summary>
 public sealed class WordsFixture : IDisposable
 {
-    public WordsFixture()
-    {
-        LicenseResolution resolution = LicenseResolver.Resolve(
-            flagPath: null,
-            productId: "words",
-            Environment.GetEnvironmentVariable,
-            Directory.GetCurrentDirectory(),
-            ConfigurationPaths.UserDirectory());
-        Gate = new WordsLicenseGate(resolution, Environment.GetEnvironmentVariable);
-        // Documents a test authors directly must be written in the license state the engine
-        // later reads them in; otherwise an evaluation banner becomes the first block.
-        Gate.EnsureApplied();
-    }
-
-    public ILicenseGate Gate { get; }
+    public ILicenseGate Gate { get; } = TestLicense.Apply(
+        static (resolution, environment) => new WordsLicenseGate(resolution, environment));
 
     internal WordsDocumentEngine Engine =>
         ProductTestBudgets.StartEngine<WordsModule, WordsDocumentEngine>(
@@ -39,7 +29,6 @@ public sealed class WordsFixture : IDisposable
 
     public string CreateReport(string fileName = "report.docx")
     {
-        Gate.EnsureApplied();
         var document = new Document();
         var builder = new DocumentBuilder(document);
         builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
@@ -70,7 +59,6 @@ public sealed class WordsFixture : IDisposable
 
     public string CreateEncryptedDocument(string password, string fileName = "secret.docx")
     {
-        Gate.EnsureApplied();
         var document = new Document();
         new DocumentBuilder(document).Write("Encrypted portable document");
         string path = Temp.File(fileName);
@@ -80,7 +68,6 @@ public sealed class WordsFixture : IDisposable
 
     public string CreateTwoSectionDocument(string fileName = "sections.docx")
     {
-        Gate.EnsureApplied();
         var document = new Document();
         var builder = new DocumentBuilder(document);
         builder.Writeln("First section");

@@ -45,7 +45,6 @@ public sealed class PdfFontDirectoryTests
     /// <summary>A page whose text uses the fixture font without embedding it.</summary>
     private static string CreateDocument(PdfEngineFixture fixture, string path, string font)
     {
-        fixture.Gate.EnsureApplied();
         using var document = new Document();
         var text = new TextFragment("Fixture text drawn with a font from an explicit directory.");
         text.TextState.Font = FontRepository.OpenFont(font);

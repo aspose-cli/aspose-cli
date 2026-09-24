@@ -159,7 +159,6 @@ public sealed class PdfArtifactWorkflowTests
     public void ExtractAttachments_PublishesOriginalBytesAndMeasuredLengths()
     {
         using var fixture = new PdfEngineFixture();
-        fixture.Gate.EnsureApplied();
         string input = fixture.File("attachments.pdf");
         byte[] payload = [0, 255, 4, 17, 0, 128];
         using (var document = new Document())
@@ -191,7 +190,6 @@ public sealed class PdfArtifactWorkflowTests
     public void ExtractAttachments_LaterBudgetFailureRollsBackTheWholeSet()
     {
         using var fixture = new PdfEngineFixture();
-        fixture.Gate.EnsureApplied();
         string input = fixture.File("attachment-budget.pdf");
         using (var document = new Document())
         using (var first = new MemoryStream([1]))

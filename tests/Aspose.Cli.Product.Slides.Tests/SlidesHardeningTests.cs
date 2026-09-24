@@ -17,7 +17,6 @@ public sealed class SlidesHardeningTests
     public void Read_AccountsForEveryContentProjectionAndExactBoundaries(string scope, int budget, bool truncated)
     {
         using var fixture = new SlidesEngineFixture();
-        fixture.Gate.EnsureApplied();
         string input = fixture.File($"read-budget-{scope}-{budget}.pptx");
         using (var presentation = new Aspose.Slides.Presentation())
         {

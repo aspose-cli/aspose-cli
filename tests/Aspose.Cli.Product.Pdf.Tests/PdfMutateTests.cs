@@ -20,7 +20,6 @@ public sealed class PdfMutateTests
     public void CroppedPageCoordinates_SearchAndRedactionAgreeAfterRotation(int angle)
     {
         using var fixture = new PdfEngineFixture();
-        fixture.Gate.EnsureApplied();
         string input = fixture.File($"coordinates-{angle}.pdf");
         using (var document = new Document())
         {
@@ -61,7 +60,6 @@ public sealed class PdfMutateTests
     public void SearchAndRedaction_PreserveContextAcrossTextSegments(string pattern, bool regex)
     {
         using var fixture = new PdfEngineFixture();
-        fixture.Gate.EnsureApplied();
         string input = fixture.File("context.pdf");
         using (var document = new Document())
         {

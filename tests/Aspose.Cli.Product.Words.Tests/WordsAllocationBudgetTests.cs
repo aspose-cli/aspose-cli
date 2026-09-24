@@ -54,7 +54,6 @@ public sealed class WordsAllocationBudgetTests
     public void RegionMerge_WithSeveralRegions_IsRejectedInsteadOfHalfMerged()
     {
         using var fixture = new WordsFixture();
-        fixture.Gate.EnsureApplied();
         var template = new Document();
         var builder = new DocumentBuilder(template);
         foreach (string region in new[] { "People", "Orders" })

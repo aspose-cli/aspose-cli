@@ -96,7 +96,6 @@ public sealed class SlidesTextCoverageTests
 
     private static string CreateDeck(SlidesEngineFixture fixture)
     {
-        fixture.Gate.EnsureApplied();
         string path = fixture.File("text-coverage.pptx");
         using var presentation = new Presentation();
         ISlide slide = presentation.Slides[0];

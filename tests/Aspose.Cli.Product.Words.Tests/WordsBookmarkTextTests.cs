@@ -52,7 +52,6 @@ public sealed class WordsBookmarkTextTests
 
     private static string CreateDocument(WordsFixture fixture)
     {
-        fixture.Gate.EnsureApplied();
         var document = new Document();
         var builder = new DocumentBuilder(document);
         builder.Write("Party: ");

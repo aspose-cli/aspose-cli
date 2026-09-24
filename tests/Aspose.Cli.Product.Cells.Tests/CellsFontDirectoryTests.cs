@@ -42,7 +42,6 @@ public sealed class CellsFontDirectoryTests
 
     private static string CreateWorkbook(CellsFixture fixture, string path)
     {
-        fixture.Gate.EnsureApplied();
         using var workbook = new Workbook();
         Cell cell = workbook.Worksheets[0].Cells["A1"];
         cell.PutValue("Fixture text drawn with a font from an explicit directory.");

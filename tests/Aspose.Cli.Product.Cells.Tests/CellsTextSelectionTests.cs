@@ -118,7 +118,6 @@ public sealed class CellsTextSelectionFixture : IDisposable
 
     public CellsTextSelectionFixture()
     {
-        Runtime.Gate.EnsureApplied();
         using var workbook = new Workbook();
         Worksheet dashboard = workbook.Worksheets[0];
         dashboard.Name = "Dashboard";

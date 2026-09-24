@@ -3,7 +3,6 @@ using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.TestKit;
-using Aspose.Cli.Sdk.Configuration;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
 using Aspose.Pdf.Facades;
@@ -11,20 +10,14 @@ using Aspose.Pdf.Text;
 
 namespace Aspose.Cli.Product.Pdf.Tests;
 
+/// <summary>
+/// Shared real-engine setup. The test license state is applied before any test authors a
+/// document, so inputs are written in the state the engine reads them in.
+/// </summary>
 public sealed class PdfEngineFixture : IDisposable
 {
-    public PdfEngineFixture()
-    {
-        LicenseResolution resolution = LicenseResolver.Resolve(
-            flagPath: null,
-            productId: "pdf",
-            Environment.GetEnvironmentVariable,
-            Directory.GetCurrentDirectory(),
-            ConfigurationPaths.UserDirectory());
-        Gate = new PdfLicenseGate(resolution, Environment.GetEnvironmentVariable);
-    }
-
-    public ILicenseGate Gate { get; }
+    public ILicenseGate Gate { get; } = TestLicense.Apply(
+        static (resolution, environment) => new PdfLicenseGate(resolution, environment));
     internal PdfDocumentEngine Engine =>
         ProductTestBudgets.StartEngine<PdfModule, PdfDocumentEngine>(
             (budgets, writer) => new PdfDocumentEngine(Gate, budgets, writer));
@@ -37,7 +30,6 @@ public sealed class PdfEngineFixture : IDisposable
 
     public string CreateDocument(string fileName = "document.pdf", int pages = 2)
     {
-        Gate.EnsureApplied();
         string path = File(fileName);
         using var document = new Document();
         for (int pageNumber = 1; pageNumber <= pages; pageNumber++)

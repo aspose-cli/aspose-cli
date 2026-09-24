@@ -164,7 +164,6 @@ public sealed class SlidesChartUpdateTests
     // three categories and three series, laid out with series in columns.
     private static string SeedChart(SlidesEngineFixture fixture, ChartType type, Action<IChart> style)
     {
-        fixture.Gate.EnsureApplied();
         string path = fixture.File($"seed-{type}.pptx");
         using var presentation = new Presentation();
         IChart chart = presentation.Slides[0].Shapes.AddChart(type, 40, 40, 500, 300, initWithSample: true);

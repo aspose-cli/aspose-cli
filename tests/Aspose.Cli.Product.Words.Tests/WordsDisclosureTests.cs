@@ -18,7 +18,6 @@ public sealed class WordsDisclosureTests
     public void EvaluationArtifacts_AreRecognizedOnlyUnderEvaluation(LicenseState state, int blocks)
     {
         using var fixture = new WordsFixture();
-        fixture.Gate.EnsureApplied();
         var source = new Document();
         var builder = new DocumentBuilder(source);
         builder.Writeln(BannerText);
@@ -41,7 +40,6 @@ public sealed class WordsDisclosureTests
     public void EditingARestrictedDocument_DisclosesThatTheRestrictionWasNotEnforced()
     {
         using var fixture = new WordsFixture();
-        fixture.Gate.EnsureApplied();
         var source = new Document();
         new DocumentBuilder(source).Write("Locked text");
         source.Protect(ProtectionType.ReadOnly, "owner");
@@ -62,7 +60,6 @@ public sealed class WordsDisclosureTests
     public void SplitByHeading_KeepsPageSetupAndHeaders()
     {
         using var fixture = new WordsFixture();
-        fixture.Gate.EnsureApplied();
         var source = new Document();
         var builder = new DocumentBuilder(source);
         builder.PageSetup.PaperSize = PaperSize.A5;

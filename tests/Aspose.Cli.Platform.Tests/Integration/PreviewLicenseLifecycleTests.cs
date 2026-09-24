@@ -90,7 +90,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         public PrivateLicense()
         {
             Path = System.IO.Path.Combine(_directory, "test.lic");
-            string original = Environment.GetEnvironmentVariable("ASPOSE_CLI_TEST_LICENSE_PATH")!;
+            string original = TestLicense.Path!;
             try
             {
                 using FileStream input = System.IO.File.OpenRead(original);

@@ -53,7 +53,6 @@ public sealed class SlidesAuthoringTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.File("no-title.pptx");
-        fixture.Gate.EnsureApplied();
         using (var source = new Presentation())
         {
             ISlide slide = source.Slides[0];

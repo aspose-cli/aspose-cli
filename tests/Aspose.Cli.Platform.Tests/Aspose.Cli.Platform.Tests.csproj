@@ -8,7 +8,6 @@
     <ProjectReference Include="..\..\src\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
     <ProjectReference Include="..\..\src\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj" />
     <ProjectReference Include="..\..\src\Aspose.Cli.Host\Aspose.Cli.Host.csproj" />
-    <ProjectReference Include="..\Aspose.Cli.TestKit\Aspose.Cli.TestKit.csproj" />
   </ItemGroup>
 
   <ItemGroup>

@@ -11,7 +11,6 @@ public sealed class WordsFieldAndReviewTests
     public void InsertToc_UpdatesOnlyTheInsertedTableOfContents()
     {
         using var fixture = new WordsFixture();
-        fixture.Gate.EnsureApplied();
         var source = new Document();
         var builder = new DocumentBuilder(source);
         builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
@@ -67,7 +66,6 @@ public sealed class WordsFieldAndReviewTests
     public void AcceptRevisions_AcceptsAllOrOneAuthorsRevisions(string? author, int remaining)
     {
         using var fixture = new WordsFixture();
-        fixture.Gate.EnsureApplied();
         var source = new Document();
         var builder = new DocumentBuilder(source);
         builder.Writeln("Base");

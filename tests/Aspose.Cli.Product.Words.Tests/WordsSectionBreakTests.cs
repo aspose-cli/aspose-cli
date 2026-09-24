@@ -58,7 +58,6 @@ public sealed class WordsSectionBreakTests
 
     private static string CreateA4(WordsFixture fixture)
     {
-        fixture.Gate.EnsureApplied();
         var document = new Document();
         var builder = new DocumentBuilder(document);
         builder.PageSetup.PaperSize = PaperSize.A4;

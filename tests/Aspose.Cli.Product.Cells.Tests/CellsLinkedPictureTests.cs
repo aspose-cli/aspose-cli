@@ -98,7 +98,6 @@ public sealed class CellsLinkedPictureTests
 
     private static void CreateWorkbook(CellsFixture fixture, string path, string reference, bool cached)
     {
-        fixture.Gate.EnsureApplied();
         using var workbook = new Workbook();
         Worksheet sheet = workbook.Worksheets[0];
         sheet.Name = "Data";

@@ -20,7 +20,6 @@ public sealed class WordsPageNumberTests : IClassFixture<WordsFixture>
     [InlineData("footer", true)]
     public void SetPageNumbers_PreservesContentAndReusesPageField(string location, bool existingPage)
     {
-        _fixture.Gate.EnsureApplied();
         string input = _fixture.Temp.File($"numbering-{location}-{existingPage}.docx");
         string output = _fixture.Temp.File($"numbering-{location}-{existingPage}-changed.docx");
         HeaderFooterType type = location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;

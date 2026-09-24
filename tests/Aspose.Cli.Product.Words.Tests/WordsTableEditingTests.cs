@@ -24,7 +24,6 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
     [InlineData("successive", true)]
     public void SetTableCell_PreservesExistingFormatting(string content, bool trackChanges)
     {
-        _fixture.Gate.EnsureApplied();
         string input = _fixture.Temp.File($"cell-{content}-{trackChanges}.docx");
         string output = _fixture.Temp.File($"cell-{content}-{trackChanges}-changed.docx");
         var document = new Document();

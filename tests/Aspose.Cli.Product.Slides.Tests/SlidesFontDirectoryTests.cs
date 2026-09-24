@@ -43,7 +43,6 @@ public sealed class SlidesFontDirectoryTests
 
     private static string CreatePresentation(SlidesEngineFixture fixture, string path)
     {
-        fixture.Gate.EnsureApplied();
         using var presentation = new Presentation();
         IAutoShape shape = presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 600, 80);
         shape.TextFrame.Text = "Fixture text drawn with a font from an explicit directory.";

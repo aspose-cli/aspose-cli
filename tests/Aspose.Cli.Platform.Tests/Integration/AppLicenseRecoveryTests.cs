@@ -100,7 +100,7 @@ public sealed class AppLicenseRecoveryTests
 /// <summary>License assertions over the shared App fixture and the current live-view contract.</summary>
 internal static class AppLicenseChecks
 {
-    internal static string LicensePath => Environment.GetEnvironmentVariable("ASPOSE_CLI_TEST_LICENSE_PATH")!;
+    internal static string LicensePath => TestLicense.Path!;
 
     internal static JsonNode RunCli(AppTestSession app, params string[] arguments)
     {

@@ -14,7 +14,6 @@ public sealed class PdfHardeningTests
     public void RegexTimeout_IsEnforcedByTheSdkAndPreventsPublication()
     {
         using var fixture = new PdfEngineFixture();
-        fixture.Gate.EnsureApplied();
         using var document = new Document();
         Page page = document.Pages.Add();
         page.Paragraphs.Add(new TextFragment(new string('a', 4096) + "!"));
@@ -54,7 +53,6 @@ public sealed class PdfHardeningTests
     public void ConvertToRaster_RejectsAnOversizedPageBeforePublishing(string format)
     {
         using var fixture = new PdfEngineFixture();
-        fixture.Gate.EnsureApplied();
         string input = fixture.File("poster.pdf");
         using (var document = new Document())
         {

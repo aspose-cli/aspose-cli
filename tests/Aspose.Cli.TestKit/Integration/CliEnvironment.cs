@@ -1,3 +1,6 @@
+using Aspose.Cli.Sdk;
+using Aspose.Cli.Sdk.Configuration;
+
 namespace Aspose.Cli.TestKit;
 
 /// <summary>
@@ -25,18 +28,22 @@ public sealed class CliEnvironment
         string configRoot, IReadOnlyDictionary<string, string?>? variables = null) =>
         new(configRoot, variables);
 
-    /// <summary>Applies the config isolation, license policy and extra variables.</summary>
+    /// <summary>
+    /// Drops inherited CLI settings, then applies the extra variables, the config isolation
+    /// and the license policy.
+    /// </summary>
     public void Apply(IDictionary<string, string?> environment)
     {
         ArgumentNullException.ThrowIfNull(environment);
+        Remove(environment, TestEnvironment.IsIsolated);
         foreach ((string key, string? value) in _variables)
         {
             environment[key] = value;
         }
         environment["APPDATA"] = _configRoot;
         environment["XDG_CONFIG_HOME"] = _configRoot;
-        environment["ASPOSE_CLI_CONFIG_DIR"] = Path.Combine(_configRoot, "aspose-cli");
-        StripLicenseSources(environment);
+        environment[ConfigurationPaths.EnvironmentVariableName] = Path.Combine(_configRoot, DistributionInfo.ConfigurationDirectoryName);
+        Remove(environment, IsLicenseSource);
     }
 
     private static bool IsLicenseSource(string key) =>
@@ -44,12 +51,9 @@ public sealed class CliEnvironment
         && (key.EndsWith("_LICENSE_B64", StringComparison.OrdinalIgnoreCase)
             || key.EndsWith("_LICENSE_PATH", StringComparison.OrdinalIgnoreCase));
 
-    private static void StripLicenseSources(IDictionary<string, string?> environment)
+    private static void Remove(IDictionary<string, string?> environment, Func<string, bool> selected)
     {
-        string[] asposeLicenseKeys = environment.Keys
-            .Where(IsLicenseSource)
-            .ToArray();
-        foreach (string key in asposeLicenseKeys)
+        foreach (string key in environment.Keys.Where(selected).ToArray())
         {
             environment.Remove(key);
         }

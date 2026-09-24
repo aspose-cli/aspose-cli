@@ -49,7 +49,7 @@ public sealed class LicenseManagementTests
     public void ValidatedTotalLicense_InstallsAndRemovesAtomicallyThroughWorkers()
     {
         using var workspace = new TempWorkspace();
-        string source = Environment.GetEnvironmentVariable("ASPOSE_CLI_TEST_LICENSE_PATH")!;
+        string source = TestLicense.Path!;
         string sourceHash = Hash(source);
         DateTime sourceTime = File.GetLastWriteTimeUtc(source);
         CliResult selected = workspace.Run("license", "install", source, "--product", "words", "--timeout", "20", "--output", "json");

@@ -68,7 +68,6 @@ public sealed class PdfNavigationTests
     /// </summary>
     private static string CreateNavigationDocument(PdfEngineFixture fixture, string name)
     {
-        fixture.Gate.EnsureApplied();
         string path = fixture.File(name);
         using var document = new Document();
         for (int number = 1; number <= 3; number++)

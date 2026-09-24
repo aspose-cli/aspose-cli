@@ -1,27 +1,16 @@
 using Aspose.Cells;
-using Aspose.Cli.Sdk.Configuration;
 using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Product.Cells.Tests;
 
 /// <summary>
-/// Shared real-engine setup. Fixtures are saved through the same license gate
-/// as the engine so every test remains valid in licensed and evaluation modes.
+/// Shared real-engine setup. The test license state is applied before any test
+/// authors a workbook, so inputs are written in the state the engine reads them in.
 /// </summary>
 public sealed class CellsFixture : IDisposable
 {
-    public CellsFixture()
-    {
-        LicenseResolution resolution = LicenseResolver.Resolve(
-            flagPath: null,
-            productId: "cells",
-            Environment.GetEnvironmentVariable,
-            Directory.GetCurrentDirectory(),
-            ConfigurationPaths.UserDirectory());
-        Gate = new CellsLicenseGate(resolution, Environment.GetEnvironmentVariable);
-    }
-
-    public ILicenseGate Gate { get; }
+    public ILicenseGate Gate { get; } = TestLicense.Apply(
+        static (resolution, environment) => new CellsLicenseGate(resolution, environment));
 
     internal CellsWorkbookEngine Engine =>
         ProductTestBudgets.StartEngine<CellsModule, CellsWorkbookEngine>(
@@ -33,8 +22,6 @@ public sealed class CellsFixture : IDisposable
 
     public string CreateSalesWorkbook(string fileName = "sales.xlsx")
     {
-        Gate.EnsureApplied();
-
         using var workbook = new Workbook();
         Worksheet data = workbook.Worksheets[0];
         data.Name = "Data";
@@ -70,8 +57,6 @@ public sealed class CellsFixture : IDisposable
 
     public string CreateWorkbookWithDetails(string fileName = "details.xlsx")
     {
-        Gate.EnsureApplied();
-
         using var workbook = new Workbook();
         Worksheet sheet = workbook.Worksheets[0];
         sheet.Name = "Data";
@@ -90,8 +75,6 @@ public sealed class CellsFixture : IDisposable
 
     public string CreateEncryptedWorkbook(string password, string fileName = "secret.xlsx")
     {
-        Gate.EnsureApplied();
-
         using var workbook = new Workbook();
         workbook.Worksheets[0].Cells["A1"].PutValue("classified");
         workbook.Settings.Password = password;

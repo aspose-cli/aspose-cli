@@ -60,7 +60,6 @@ public sealed class SlidesViewLayoutTests
         string name,
         Color boxColor)
     {
-        fixture.Gate.EnsureApplied();
         string path = fixture.File(name);
         using var presentation = new Presentation();
         ISlide slide = presentation.Slides[0];

@@ -30,7 +30,6 @@ public sealed class WordsFontDirectoryTests
     {
         using var fixture = new WordsFixture();
         using var workspace = new TempWorkspace();
-        fixture.Gate.EnsureApplied();
         CreateDocument(workspace.File("fixture.docx"));
 
         FontDirectoryContract.Verify(workspace, "fixture.docx");

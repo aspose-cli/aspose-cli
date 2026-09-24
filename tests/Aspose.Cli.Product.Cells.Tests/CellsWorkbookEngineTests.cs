@@ -140,7 +140,6 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void GetInfo_WithErrorsDetail_PastTheCap_WarnsWithTheHonestTotal()
     {
-        _fixture.Gate.EnsureApplied();
         string path = _fixture.Temp.File("many-errors.xlsx");
         using (var workbook = new Aspose.Cells.Workbook())
         {
@@ -275,7 +274,6 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void Convert_ToXls_RowsBeyondTheGrid_WarnsDataTruncated()
     {
-        _fixture.Gate.EnsureApplied();
         string src = _fixture.Temp.File("tall.xlsx");
         using (var workbook = new Aspose.Cells.Workbook())
         {
@@ -300,7 +298,6 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void Convert_ToXls_ColumnsBeyondTheGrid_WarnsDataTruncated()
     {
-        _fixture.Gate.EnsureApplied();
         string src = _fixture.Temp.File("wide.xlsx");
         using (var workbook = new Aspose.Cells.Workbook())
         {
@@ -341,7 +338,6 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     public void Convert_ToXlsb_RowsBeyondTheXlsGrid_DoesNotWarn()
     {
         // xlsb keeps the modern 1,048,576-row grid, so a 65,537-row sheet fits.
-        _fixture.Gate.EnsureApplied();
         string src = _fixture.Temp.File("tall2.xlsx");
         using (var workbook = new Aspose.Cells.Workbook())
         {
@@ -365,7 +361,6 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void Edit_ToXls_RowsBeyondTheGrid_WarnsDataTruncated()
     {
-        _fixture.Gate.EnsureApplied();
         string src = _fixture.Temp.File("edit-tall.xlsx");
         using (var workbook = new Aspose.Cells.Workbook())
         {
@@ -384,7 +379,6 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void FormulaOnlyEdit_ToXls_RowsBeyondTheGrid_WarnsDataTruncated()
     {
-        _fixture.Gate.EnsureApplied();
         string src = _fixture.Temp.File("calc-tall.xlsx");
         using (var workbook = new Aspose.Cells.Workbook())
         {
@@ -407,7 +401,6 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void Convert_ToXls_FormulaReferencingBeyondTheGrid_WarnsFormulasBroken()
     {
-        _fixture.Gate.EnsureApplied();
         string src = _fixture.Temp.File("wholecol.xlsx");
         using (var workbook = new Aspose.Cells.Workbook())
         {
@@ -435,7 +428,6 @@ public sealed class CellsWorkbookEngineTests : IClassFixture<CellsFixture>
     [Fact]
     public void Convert_ToXlsb_FormulaReferencingBeyondTheXlsGrid_DoesNotWarnBroken()
     {
-        _fixture.Gate.EnsureApplied();
         string src = _fixture.Temp.File("wholecol2.xlsx");
         using (var workbook = new Aspose.Cells.Workbook())
         {

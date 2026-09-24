@@ -84,7 +84,6 @@ public sealed class WordsViewLayoutTests : IClassFixture<WordsFixture>
 
     private string CreateDocument(string fileName, string middle, bool bold)
     {
-        _fixture.Gate.EnsureApplied();
         var document = new Document();
         var builder = new DocumentBuilder(document);
         builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;

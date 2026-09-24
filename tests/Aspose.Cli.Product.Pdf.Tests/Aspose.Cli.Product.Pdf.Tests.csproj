@@ -2,7 +2,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aspose.Cli.Product.Pdf\Aspose.Cli.Product.Pdf.csproj" />
     <ProjectReference Include="..\..\src\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
-    <ProjectReference Include="..\Aspose.Cli.TestKit\Aspose.Cli.TestKit.csproj" />
   </ItemGroup>
   <ItemGroup>
     <Using Include="Aspose.Cli.TestKit" />

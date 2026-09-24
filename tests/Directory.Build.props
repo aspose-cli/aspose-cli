@@ -16,10 +16,13 @@
     <NoWarn>$(NoWarn);xUnit1051</NoWarn>
   </PropertyGroup>
 
+  <!-- Every test project runs isolated from the developer's environment (TestKit TestEnvironment). -->
   <ItemGroup Condition="'$(IsTestKit)' != 'true'">
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit.v3" />
     <PackageReference Include="xunit.runner.visualstudio" />
+    <ProjectReference Include="$(MSBuildThisFileDirectory)Aspose.Cli.TestKit\Aspose.Cli.TestKit.csproj" />
+    <Compile Include="$(MSBuildThisFileDirectory)TestAssemblyFixture.cs" Link="TestAssemblyFixture.cs" />
   </ItemGroup>
 
   <ItemGroup Condition="'$(IsTestKit)' == 'true'">

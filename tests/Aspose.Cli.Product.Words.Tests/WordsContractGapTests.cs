@@ -61,7 +61,6 @@ public sealed class WordsContractGapTests
     public void BodySearch_ExcludesCommentsAndFootnotesAndAllReportsEachHitOnce()
     {
         using var fixture = new WordsFixture();
-        fixture.Gate.EnsureApplied();
         var source = new Document();
         var builder = new DocumentBuilder(source);
         builder.Write("Body needle");
@@ -84,7 +83,6 @@ public sealed class WordsContractGapTests
     public void Read_ReportsTheBreakThatFollowsABlock()
     {
         using var fixture = new WordsFixture();
-        fixture.Gate.EnsureApplied();
         var source = new Document();
         var builder = new DocumentBuilder(source);
         builder.Writeln("Before page");
