@@ -218,7 +218,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
     {
         FilePublicationSnapshot current =
             FilePublicationSnapshot.Capture(entry.Target);
-        if (!publicationAttempted || SwapNeverStarted(entry))
+        if (!publicationAttempted || SwapNeverStarted(entry, current))
         {
             entry.State = PublicationEntryState.Unchanged;
             return RecoveryItem(
@@ -273,13 +273,16 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
     /// <summary>
     /// Every swap first moves the target to its displaced path or moves the staged file onto
-    /// the target. A staged file that is still the admitted one, with no displaced file,
-    /// proves the target was never touched by this transaction.
+    /// the target. A staged file that is still the admitted one, with no displaced file and a
+    /// target that does not hold the staged content, proves the target was never touched by
+    /// this transaction. The content check keeps a copying move that was interrupted before
+    /// it removed its source from passing for an untouched target.
     /// </summary>
-    private static bool SwapNeverStarted(PublicationJournalEntry entry) =>
+    private static bool SwapNeverStarted(PublicationJournalEntry entry, FilePublicationSnapshot current) =>
         (entry.Displaced is null || FilePublicationOwnedDelete.TryGetAttributesNoFollow(entry.Displaced) is null)
         && File.Exists(entry.Staged)
-        && entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged));
+        && entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(entry.Staged))
+        && !entry.StagedSnapshot.ContentEquals(current);
 
     private static FilePublicationSnapshot RecognizeInterruptedPublication(
         PublicationJournalEntry entry,
