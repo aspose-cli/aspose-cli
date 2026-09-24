@@ -14,6 +14,13 @@
   event-handler attributes or `javascript:` URLs, because the pinned PDF engine
   requests them, or runs the script, before the CLI can refuse them. Remove the
   address, or save the resource beside the input and reference it by relative path.
+  For trusted HTML, `--allow-network-resources` lets the import fetch them, and
+  `aspose-cli words convert page.html --to pdf` converts without any request.
+- `NETWORK_RESOURCES_REQUESTED`: `--allow-network-resources` let the HTML importer
+  request the listed addresses, and the output contains what they returned. Review
+  it. Combine the option with `--timeout`: each unanswered request can hold the
+  import for up to 100 seconds. Markdown input refuses the option with
+  `OPTION_INVALID`.
 - `FEATURE_UNSUPPORTED` naming a Markdown reference: the PDF Markdown importer reads
   files with no resource policy, so every image, stylesheet and SVG file it could
   load, and those they reference, must be an existing ordinary file beneath the

@@ -49,6 +49,9 @@ public sealed record NewPdfRequest
     public bool Overwrite { get; init; }
     public IReadOnlyList<string>? ImagePaths { get; init; }
     public string? HtmlPath { get; init; }
+
+    /// <summary>Lets the HTML importer request the network resources the HTML names; each is disclosed.</summary>
+    public bool AllowNetworkResources { get; init; }
     public string? TextPath { get; init; }
     public bool Markdown { get; init; }
     public string PageSize { get; init; } = "A4";

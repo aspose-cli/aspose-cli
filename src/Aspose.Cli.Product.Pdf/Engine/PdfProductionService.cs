@@ -197,6 +197,14 @@ internal sealed class PdfProductionService
             throw CliErrors.Usage(["Choose exactly one image list, HTML file, text file or Markdown file."]);
         }
 
+        if (request.AllowNetworkResources && request.HtmlPath is null)
+        {
+            throw CliErrors.OptionInvalid(
+                "--allow-network-resources",
+                "it applies only to --from-html",
+                "The Markdown importer follows local file references inside fetched resources without any resource hook, so network resources stay refused for Markdown; convert the Markdown to HTML first.");
+        }
+
         EnsureCreationInputs(_resourceBudgets, request);
         // The Markdown importer resolves the Markdown's relative references against the
         // working directory and reads files itself; the check holds them until the save.
@@ -204,7 +212,7 @@ internal sealed class PdfProductionService
             ? new MarkdownImportResources(markdownPath, _resourceBudgets, Environment.CurrentDirectory) : null;
         LicenseState state = _licenseGate.EnsureApplied();
         using HtmlImportResources? resources = request.HtmlPath is { } htmlPath
-            ? new HtmlImportResources(htmlPath, _resourceBudgets) : null;
+            ? new HtmlImportResources(htmlPath, _resourceBudgets, request.AllowNetworkResources) : null;
         using Document document = request.ImagePaths is { Count: > 0 } images
             ? CreateFromImages(images, request)
             : request.HtmlPath is not null
@@ -217,10 +225,7 @@ internal sealed class PdfProductionService
             finally { resources?.ThrowIfFailed(); }
         });
         var warnings = EnvelopeParts.OutputWarnings(state)?.ToList() ?? [];
-        if (resources?.Warning is { } omitted)
-        {
-            warnings.Add(omitted);
-        }
+        warnings.AddRange(resources?.Warnings ?? []);
 
         return new PdfWriteResult
         {
@@ -632,8 +637,8 @@ internal sealed class PdfProductionService
         }
 
         // The HTML importer reaches the network before any resource policy applies; refuse
-        // first. Markdown is checked with its local references.
-        if (request.HtmlPath is { } html)
+        // first unless the caller allowed it. Markdown is checked with its local references.
+        if (request.HtmlPath is { } html && !request.AllowNetworkResources)
         {
             NetworkReferenceGuard.EnsureNone(resourceBudgets.Inputs.ReadAllBytes(html), "HTML input", html);
         }

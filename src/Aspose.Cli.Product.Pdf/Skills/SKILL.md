@@ -38,7 +38,11 @@ positions; rectangles are points with a top-left origin.
 address, hyperlinks included, or contains script, with `FEATURE_UNSUPPORTED`: the
 PDF engine requests network resources before the CLI can refuse them. Compressed
 SVG images are refused too. Save required images and CSS beside the input and
-reference them by relative path.
+reference them by relative path. For trusted HTML only, `--allow-network-resources`
+lets the importer fetch what the HTML names; the result lists every address in a
+`NETWORK_RESOURCES_REQUESTED` warning, local references still stay beneath the HTML
+directory, and `--timeout` bounds the fetches. `aspose-cli words convert page.html --to pdf`
+makes no network request at all.
 
 Markdown may reference only ordinary files beneath its own directory, including
 the images, stylesheets and SVG files that raw HTML and CSS load; anything else is

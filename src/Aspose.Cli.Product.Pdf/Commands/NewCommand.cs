@@ -16,6 +16,10 @@ internal static class NewCommand
             AllowMultipleArgumentsPerToken = true,
         }.WithInput(InputKind.File);
         var html = new Option<string?>("--from-html") { Description = "HTML input file." }.WithInput(InputKind.File);
+        var allowNetwork = new Option<bool>("--allow-network-resources")
+        {
+            Description = "Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.",
+        };
         var text = new Option<string?>("--from-text") { Description = "UTF-8 text or Markdown input file." }.WithInput(InputKind.File);
         var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => "A4", Description = "A3, A4, Letter or Legal." }.WithInput(InputKind.None);
         pageSize.AcceptOnlyFromAmong(PdfPageSizes.Names);
@@ -25,6 +29,7 @@ internal static class NewCommand
         command.Arguments.Add(file);
         command.Options.Add(images);
         command.Options.Add(html);
+        command.Options.Add(allowNetwork);
         command.Options.Add(text);
         command.Options.Add(pageSize);
         command.Options.Add(margins);
@@ -51,6 +56,7 @@ internal static class NewCommand
                     ? null
                     : imageValues.Select(context.Paths.ResolveInput).ToArray(),
                 HtmlPath = htmlValue is null ? null : context.Paths.ResolveInput(htmlValue),
+                AllowNetworkResources = parse.GetValue(allowNetwork),
                 TextPath = textPath,
                 Markdown = textPath is not null
                     && string.Equals(Path.GetExtension(textPath), ".md", StringComparison.OrdinalIgnoreCase),

@@ -39,14 +39,34 @@ destinations that an edit or merge left unresolved. See
 
 ### Aspose.PDF.Drawing 26.8.0: HTML import requests network resources despite the custom loader (gate `PDF-HTML-EGRESS`)
 
-The HTML importer requests every http(s) stylesheet and image before it calls
-`HtmlLoadOptions.CustomLoaderOfExternalResources`, so the loader cannot prevent the request.
-The Markdown importer and SVG images (`Image.File`, `ImageStamp`) have no resource hook at
-all. The CLI refuses HTML, Markdown and SVG image input that names any network address,
-hyperlinks included, and compressed SVG images, with `FEATURE_UNSUPPORTED`, and fails an HTML
-import whose loader still sees one. The Markdown importer also reads local images outside the
-input directory without the CLI's guard. See
-[tests/acceptance/pdf-html-egress](tests/acceptance/pdf-html-egress/README.md).
+The HTML importer requests every http(s) stylesheet and image, including those named by
+stylesheets, SVG files and script it loads, before it calls
+`HtmlLoadOptions.CustomLoaderOfExternalResources`, so the loader cannot prevent the request;
+it also runs script. The Markdown importer and SVG images (`Image.File`, `ImageStamp`) have
+no resource hook at all: the Markdown importer requests remote images, stylesheets and
+scripts, reads any local file a reference names, including absolute paths, `..` escapes and
+`file:` addresses inside fetched resources, and resolves the Markdown's relative paths
+against the process working directory rather than the Markdown file's directory.
+
+- **Default CLI behavior:** HTML, Markdown and SVG image input that names any network
+  address, hyperlinks included, or contains script, and compressed SVG images, are refused
+  with `FEATURE_UNSUPPORTED` before the engine reads them, as are local stylesheets and SVG
+  files that do; an HTML import whose loader still sees a network address fails without
+  output. Before a Markdown import, the CLI resolves every image, raw HTML and CSS reference
+  as the importer does, and the references inside the files those load, and refuses the
+  import unless each names an existing ordinary file beneath the Markdown file's directory.
+  Accepted files are charged to the input budget and held open until the save.
+- **Opt-in:** `pdf create --from-html --allow-network-resources` lets the importer fetch for
+  trusted HTML and lists every address it requested in a `NETWORK_RESOURCES_REQUESTED`
+  warning. Local references still pass through the loader and stay beneath the HTML
+  directory. The importer waits up to 100 seconds for an unanswered request and cannot be
+  cancelled; with `--timeout`, the supervised worker stops at the deadline and nothing is
+  published. The option is refused for Markdown, whose importer would read the local files
+  that fetched resources name.
+- **Workaround for users:** `aspose-cli words convert page.html --to pdf` makes no network
+  request. Run a Markdown import from the Markdown file's directory.
+
+See [tests/acceptance/pdf-html-egress](tests/acceptance/pdf-html-egress/README.md).
 
 ### Aspose.Cells 26.9.0: adding an SVG picture fetches its external images (gate `CELLS-SVG-EGRESS`)
 

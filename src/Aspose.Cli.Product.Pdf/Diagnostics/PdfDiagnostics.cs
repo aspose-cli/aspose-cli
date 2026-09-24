@@ -19,6 +19,9 @@ internal static class PdfDiagnostics
     /// <summary>Bookmarks, links or named destinations that no longer lead to their page.</summary>
     internal const string NavigationDegraded = "NAVIGATION_DEGRADED";
 
+    /// <summary>An HTML import allowed network resources and the importer requested them.</summary>
+    internal const string NetworkResourcesRequested = "NETWORK_RESOURCES_REQUESTED";
+
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         DiagnosticDescriptor.Error(SignCertInvalid, "pdf", "input"),
@@ -26,5 +29,6 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Error(PdfaConversionFailed, "pdf", "format"),
         DiagnosticDescriptor.Warning(ScannedPagesSuspected, "pdf", "warning"),
         DiagnosticDescriptor.Warning(NavigationDegraded, "pdf", "warning"),
+        DiagnosticDescriptor.Warning(NetworkResourcesRequested, "pdf", "warning"),
     ];
 }

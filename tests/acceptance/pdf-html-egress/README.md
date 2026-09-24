@@ -1,8 +1,9 @@
 # PDF HTML import egress acceptance: PDF-HTML-EGRESS
 
 This explicitly invoked gate asserts that the Aspose.PDF HTML importer makes no network
-request when the documented custom resource loader refuses every resource. It **fails on
-Aspose.PDF.Drawing 26.8.0** in both licensed and evaluation modes. It is outside normal
+request when the documented custom resource loader refuses every resource, and that the
+Markdown importer makes none either. It **fails on Aspose.PDF.Drawing 26.8.0** in both
+licensed and evaluation modes. It is outside normal
 regression discovery under `tests/acceptance`, adds no project or dependency, and neither
 skips failures nor accepts the broken result as its baseline.
 
@@ -30,10 +31,15 @@ using var document = new Document(htmlPath, options);
 document.Save(pdfPath);
 ```
 
+It then imports a synthetic Markdown file whose image points at the server, with
+`new Document(markdownPath, new MdLoadOptions())`; `MdLoadOptions` has no resource hook to
+install. When an SDK release adds one, install a refusing hook here as the HTML case does.
+
 No CLI assembly or product engine is loaded. `result.json` records the SDK version and
-hash, every loader call and every request line the server received. The script returns
-**0 when no request was made**, **1 when the importer made a request** and **2 when the
-check could not run**, including when the importer never consulted the loader.
+hash, every loader call and the request lines the server received for each import. The
+script returns **0 when no request was made**, **1 when either importer made a request**
+and **2 when the check could not run**, including when the HTML importer never consulted
+the loader.
 
 ## Observed behavior
 
@@ -43,24 +49,40 @@ what is embedded, but it cannot prevent the request. The same happens with every
 variant tried: empty or non-empty data, `LoadingCancelled` true or false, an exception in
 `ExceptionOfLoadingIfAny`, a MIME type, a null result, with or without a base path, and
 from a file or a stream. `HtmlLoadOptions` exposes no other public switch for external
-loading. Local `file:` references do go through the loader first, and anchors (`<a href>`),
-XML namespace names and document type identifiers are never requested.
+loading. Local `file:` references do go through the loader first, including those named
+inside fetched resources, and anchors (`<a href>`), XML namespace names and document type
+identifiers are never requested. Addresses named by a stylesheet or SVG file the loader
+supplies are requested before the loader sees them too. The importer runs script: an
+address that script computes is requested. With a
+`LoadingCancelled` result the importer keeps what it fetched, without a second request.
+An unanswered request holds the import for about 100 seconds before the loader is called.
 
-The Markdown importer (`MdLoadOptions`) has no resource hook at all: it requests remote
-images and reads local image files outside the input directory directly. SVG images placed
-with `Image.File` or stamped with `ImageStamp` likewise request their external stylesheets
-and images, with no hook.
+The Markdown importer (`MdLoadOptions`) has no resource hook at all. It passes raw HTML to
+the HTML engine: it requests remote images (inline and reference-style), stylesheets,
+`@import`s, CSS images and fonts, SVG, `<object>`, `<iframe>` and `<script>` sources, and
+runs script. It reads every local file those name, with no boundary: absolute paths,
+`file:` URIs, `..` escapes after percent and character-reference decoding, and `file:`
+addresses inside fetched stylesheets, SVG and HTML. It resolves the Markdown's relative
+paths against the process working directory, not the Markdown file's directory, and has no
+base-path option; a loaded file's references resolve against that file. Hyperlinks,
+autolinks and references inside code are not loaded. SVG images placed with `Image.File` or
+stamped with `ImageStamp` likewise request their external stylesheets and images, with no
+hook.
 
 ## Ownership and release boundary
 
 This is an upstream SDK defect: the documented resource-loading callback does not govern
-network access. The CLI does not rewrite or sanitize HTML. Until a fixed SDK passes this
-gate, `pdf create --from-html`, Markdown `--from-text` and SVG image inputs refuse any
-input that names a network address, with `FEATURE_UNSUPPORTED`, before the engine reads
-it; and an HTML import
-whose loader nevertheless sees a network address fails without publishing output instead
-of reporting the resource as blocked. When this gate passes, remove the refusal and keep
-the loader as the only policy.
+network access, and the Markdown importer has none. The CLI does not rewrite or sanitize
+HTML or Markdown. Until a fixed SDK passes this gate, `pdf create --from-html`, Markdown
+`--from-text` and SVG image inputs refuse any input that names a network address or
+contains script, with `FEATURE_UNSUPPORTED`, before the engine reads it, as does a local
+stylesheet or SVG file the HTML loader would supply; and an HTML import whose loader
+nevertheless sees a network address fails without publishing output instead of reporting
+the resource as blocked. A Markdown import is refused unless every file the importer could
+read, resolved as the importer does, is an ordinary file beneath the Markdown file's
+directory. `--allow-network-resources` lets trusted HTML, never Markdown, fetch, and
+discloses each address. When this gate passes, remove the refusals and keep the loader as
+the only policy.
 
 Official references:
 
