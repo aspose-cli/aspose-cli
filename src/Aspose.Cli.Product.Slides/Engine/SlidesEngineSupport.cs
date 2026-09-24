@@ -598,19 +598,11 @@ internal static class SlidesEngineSupport
     internal static IReadOnlyList<int> ResolveSlideRange(PageRange range, int slideCount)
     {
         EnsureHasSlides(slideCount);
-        try
-        {
-            return range.Resolve(slideCount);
-        }
-        catch (CliException exception) when (exception.Code == ErrorCodes.PageNotFound)
-        {
-            throw new CliException(
-                SlidesDiagnostics.SlideNotFound,
-                $"The requested slide selection is outside the presentation's {slideCount} slide(s).",
-                hint: $"Use slide numbers from 1 to {slideCount}.",
-                details: exception.Details,
-                innerException: exception);
-        }
+        return range.Resolve(slideCount, static (selection, available) => new CliException(
+            SlidesDiagnostics.SlideNotFound,
+            $"The requested slide selection is outside the presentation's {available} slide(s).",
+            hint: $"Use slide numbers from 1 to {available}.",
+            details: new JsonObject { ["available"] = available, ["range"] = selection.Text }));
     }
 
     /// <summary>Every slide number; a presentation without slides has nothing to select.</summary>
