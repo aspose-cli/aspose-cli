@@ -47,8 +47,6 @@ internal sealed class CellsMutationService
         string format = WorkbookSavePlan.FormatForPath(options.OutputPath);
         if (!CellsFormats.EditIds.Contains(format, StringComparer.Ordinal))
         { throw CliErrors.FormatUnsupported(format, CellsFormats.EditIds); }
-        if (options.Verify && (options.Options.DryRun || !options.Recalculate))
-        { throw CliErrors.OptionInvalid("--verify", "requires publication and final recalculation", "Omit --dry-run and --no-recalc when verifying an edit."); }
         batch = CellsOps.Catalog.Prepare(batch);
         using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
             : _saver.CreateOutputSet([Path.GetDirectoryName(options.OutputPath)!], "cells-edit", options.BackupPath);

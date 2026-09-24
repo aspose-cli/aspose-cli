@@ -112,7 +112,10 @@ public sealed record EditRequest
     /// <summary>Shared stale-input, dry-run, and best-effort semantics.</summary>
     public EditCommandOptions Options { get; init; } = new();
 
-    /// <summary>Verify the staged workbook and publish its render evidence with the edit.</summary>
+    /// <summary>
+    /// Verify the staged workbook and publish its render evidence with the edit. The edit
+    /// command admits it only for a published, recalculated edit.
+    /// </summary>
     public bool Verify { get; init; }
 
     /// <summary>Recalculate formulas after applying the ops.</summary>
