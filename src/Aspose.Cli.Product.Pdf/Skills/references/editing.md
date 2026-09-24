@@ -31,8 +31,10 @@ MediaBox when uncropped). Search rectangles use the same coordinates.
 Coordinates must
 be non-negative, dimensions positive, and the rectangle within page bounds.
 Reinspect geometry and review after changing crop, size or rotation. The
-`rotate_pages` angle sets the rotation; `set_page_size` scales content only
-with `scaleContent: true`. Cropping changes the visible box; use redaction
+`rotate_pages` angle sets the rotation in degrees (`90`, `180` or `270`).
+`set_page_size` takes the exact names `A3`, `A4`, `Letter` or `Legal` and
+scales content only with `scaleContent: true`. `add_link` requires an absolute
+`http`, `https` or `mailto` URL. Cropping changes the visible box; use redaction
 operations when content must be removed.
 
 Create one ops file and apply it atomically:
