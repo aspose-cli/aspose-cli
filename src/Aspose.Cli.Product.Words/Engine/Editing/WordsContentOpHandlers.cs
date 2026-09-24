@@ -150,7 +150,7 @@ internal static class WordsContentOpHandlers
     {
         foreach (Node node in nodes)
         {
-            node.Remove();
+            DocumentBlockIndex.Remove(node);
         }
 
         return nodes.Count;

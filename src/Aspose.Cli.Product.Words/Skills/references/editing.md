@@ -42,8 +42,11 @@ aspose-cli schema v2/words/ops
 
 ## Address and batch semantics
 
-- A block is only a top-level paragraph or table in a section body. Images,
-  fields, hyperlinks and breaks belong to their paragraph.
+- A block is only a paragraph or table in a section body. A block-level content
+  control is a container: its paragraphs and tables are blocks, content inserted
+  beside one of them stays inside the control, deleting all of them removes the
+  control, and a section break cannot be placed inside it. Images, fields,
+  hyperlinks and breaks belong to their paragraph.
 - All addresses are resolved to original node identities before the first op
   runs, including numbered sections and `add_section.after`. Omitted section
   selections mean all original sections. Inserted content and sections cannot

@@ -75,13 +75,13 @@ internal static class WordsAnchorResolver
                     hint: "Run 'words inspect --detail bookmarks' and use an available bookmark.");
             }
 
-            Node? node = TopLevelBlock(bookmark.BookmarkStart);
-            if (node is null)
+            BlockEntry? entry = index.Find(bookmark.BookmarkStart);
+            if (entry is null)
             {
                 throw AnchorNotFound($"bookmark '{target.Bookmark}' is not inside a body block");
             }
 
-            return [node];
+            return [entry.Node];
         }
 
         string? needle = target.Heading ?? target.Find;
@@ -128,22 +128,6 @@ internal static class WordsAnchorResolver
             : ["document"];
     }
 
-    private static Node? TopLevelBlock(Node node)
-    {
-        Node? current = node;
-        while (current is not null)
-        {
-            if (current is Paragraph or Aspose.Words.Tables.Table
-                && current.ParentNode is Body)
-            {
-                return current;
-            }
-
-            current = current.ParentNode;
-        }
-
-        return null;
-    }
 
     private static WordsTarget? TargetOf(WordsOp op) => op switch
     {

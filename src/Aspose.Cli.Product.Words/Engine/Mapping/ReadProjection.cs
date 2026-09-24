@@ -162,6 +162,6 @@ internal static class ReadProjection
             return "page";
         }
 
-        return paragraph.NextSibling is null && paragraph.ParentSection?.NextSibling is Section ? "section" : null;
+        return paragraph.IsEndOfSection && paragraph.ParentSection?.NextSibling is Section ? "section" : null;
     }
 }

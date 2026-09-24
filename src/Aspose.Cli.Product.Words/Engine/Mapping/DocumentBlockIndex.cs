@@ -1,4 +1,5 @@
 using Aspose.Words;
+using Aspose.Words.Markup;
 using Aspose.Words.Tables;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
@@ -9,8 +10,8 @@ internal sealed class DocumentBlockIndex
     private readonly Dictionary<Node, BlockEntry> _byNode;
 
     /// <summary>
-    /// Indexes the top-level blocks. Under evaluation the banner paragraphs that evaluation
-    /// mode inserts before the first block are not blocks.
+    /// Indexes the blocks of every section body. Under evaluation the banner paragraphs that
+    /// evaluation mode inserts before the first block are not blocks.
     /// </summary>
     public DocumentBlockIndex(Document document, bool evaluation)
     {
@@ -18,10 +19,9 @@ internal sealed class DocumentBlockIndex
         HashSet<Node> banners = evaluation ? [.. WordsEvaluation.LeadingBanners(document)] : [];
         for (int sectionIndex = 0; sectionIndex < document.Sections.Count; sectionIndex++)
         {
-            Section section = document.Sections[sectionIndex];
-            foreach (Node node in section.Body.GetChildNodes(NodeType.Any, false))
+            foreach (Node node in BodyBlocks(document.Sections[sectionIndex].Body))
             {
-                if (node is Paragraph or Table && !banners.Contains(node))
+                if (!banners.Contains(node))
                 {
                     entries.Add(new BlockEntry(entries.Count + 1, sectionIndex + 1, node));
                 }
@@ -34,6 +34,49 @@ internal sealed class DocumentBlockIndex
 
     public IReadOnlyList<BlockEntry> Entries => _entries;
     public int Count => _entries.Count;
+
+    /// <summary>
+    /// The paragraphs and tables of a body in document order. A block-level content control
+    /// is a container, not a block: its paragraphs and tables, including those of nested
+    /// controls, are blocks in their own right, so a table of contents or a form region
+    /// wrapped in a control is addressable.
+    /// </summary>
+    public static IReadOnlyList<Node> BodyBlocks(Body body)
+    {
+        ArgumentNullException.ThrowIfNull(body);
+        var blocks = new List<Node>();
+        Collect(body);
+        return blocks;
+
+        void Collect(CompositeNode container)
+        {
+            for (Node? child = container.FirstChild; child is not null; child = child.NextSibling)
+            {
+                if (child is Paragraph or Table)
+                {
+                    blocks.Add(child);
+                }
+                else if (child is StructuredDocumentTag control)
+                {
+                    Collect(control);
+                }
+            }
+        }
+    }
+
+    /// <summary>Removes a block and every content control it leaves empty.</summary>
+    public static void Remove(Node block)
+    {
+        ArgumentNullException.ThrowIfNull(block);
+        CompositeNode? container = block.ParentNode;
+        block.Remove();
+        while (container is StructuredDocumentTag { HasChildNodes: false })
+        {
+            CompositeNode? parent = container.ParentNode;
+            container.Remove();
+            container = parent;
+        }
+    }
 
     public BlockEntry Get(int index)
     {
@@ -49,22 +92,21 @@ internal sealed class DocumentBlockIndex
     public IReadOnlyList<BlockEntry> Select(PageRange range) =>
         range.Resolve(_entries.Count, WordsErrors.BlockRangeNotFound).Select(Get).ToArray();
 
-    public int? FindBlock(Node node)
+    /// <summary>The block that contains a node, or null outside every block.</summary>
+    public BlockEntry? Find(Node node)
     {
-        Node? current = node;
-        while (current is not null)
+        for (Node? current = node; current is not null; current = current.ParentNode)
         {
             if (_byNode.TryGetValue(current, out BlockEntry? entry))
             {
-                return entry.Index;
+                return entry;
             }
-
-            current = current.ParentNode;
         }
 
         return null;
     }
 
+    public int? FindBlock(Node node) => Find(node)?.Index;
 }
 
 internal sealed record BlockEntry(int Index, int Section, Node Node);

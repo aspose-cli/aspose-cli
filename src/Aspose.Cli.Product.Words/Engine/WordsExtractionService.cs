@@ -188,7 +188,7 @@ internal sealed class WordsExtractionService
             var partIndex = new DocumentBlockIndex(part, loaded.Evaluation);
             foreach (BlockEntry entry in partIndex.Entries.Where(entry => entry.Index < start || entry.Index > end))
             {
-                entry.Node.Remove();
+                DocumentBlockIndex.Remove(entry.Node);
             }
 
             foreach (Section section in part.Sections.Cast<Section>().ToArray())

@@ -80,8 +80,7 @@ internal static class WordsViewLayout
         var blocks = new List<Node>();
         foreach (Section section in document.Sections)
         {
-            blocks.AddRange(section.Body.GetChildNodes(NodeType.Any, false)
-                .Where(static node => node is Paragraph or Table));
+            blocks.AddRange(DocumentBlockIndex.BodyBlocks(section.Body));
         }
         return blocks;
     }

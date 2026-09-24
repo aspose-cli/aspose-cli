@@ -59,6 +59,11 @@ internal static class WordsStructureOpHandlers
     /// </summary>
     internal static long InsertSectionBreak(Node anchor, string position)
     {
+        if (anchor.ParentNode is not Body)
+        {
+            throw Invalid("a section break cannot split a content control; target a block before or after the control");
+        }
+
         var owner = (Section)anchor.GetAncestor(NodeType.Section);
         Section section = EmptyLike(owner);
         owner.ParentNode!.InsertAfter(section, owner);
