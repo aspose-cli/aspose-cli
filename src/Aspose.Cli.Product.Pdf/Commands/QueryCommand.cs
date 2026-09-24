@@ -16,17 +16,14 @@ internal static class QueryCommand
         return query;
     }
 
-    private static Command Forms(IProductCommandHost<IPdfEngine> host)
-    {
-        Argument<string> file = PdfOptions.File();
-        var password = new PasswordOptions("--password", "the PDF");
-        var command = new Command("forms", "List PDF form fields and current values.");
-        command.Arguments.Add(file);
-        password.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-            context.Port.ReadForm(
-                context.Paths.ResolveInput(parse.GetRequiredValue(file)),
-                new PdfFormReadRequest { Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment) })));
-        return command;
-    }
+    private static Command Forms(IProductCommandHost<IPdfEngine> host) =>
+        StandardCommand.Create(
+            host,
+            "forms",
+            "List PDF form fields and current values.",
+            new CommandTraits { Input = PdfCommands.Document },
+            [],
+            (_, standard) => standard.Port.ReadForm(
+                standard.Input,
+                new PdfFormReadRequest { Password = standard.InputPassword }));
 }

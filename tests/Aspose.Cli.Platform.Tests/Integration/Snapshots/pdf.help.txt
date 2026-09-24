@@ -144,8 +144,8 @@ Arguments:
 Options:
   --what <attachments|forms|images|tables|text> (REQUIRED)  images, attachments, text, tables or forms.
   --pages <pages>                                           Optional page range for images, text or tables.
-  --out-dir <out-dir>                                       Safe extraction directory; required unless --what forms.
   --to <fdf|json|xfdf>                                      Form export format: json, fdf or xfdf; only with --what forms.
+  --out-dir <out-dir>                                       Safe extraction directory; required unless --what forms.
   -o, --out <out>                                           Form-data output file; only with --what forms. Default extension follows --to.
   --overwrite                                               Replace the output file if it already exists.
   --password <password>                                     Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
@@ -198,9 +198,9 @@ Arguments:
   <files>  Two or more PDF inputs in merge order.
 
 Options:
+  --bookmarks <drop|preserve>          preserve or drop input bookmarks. [default: preserve]
   -o, --out <out> (REQUIRED)           Merged PDF output path.
   --overwrite                          Replace the output file if it already exists.
-  --bookmarks <drop|preserve>          preserve or drop input bookmarks. [default: preserve]
   --password <password>                Password for all input PDFs. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>        Name of an environment variable holding the password for all input PDFs.
   --password-stdin                     Read the password for all input PDFs from the first line of stdin.
@@ -397,8 +397,8 @@ Options:
   --pages <pages>                      One or more page groups, for example --pages 1-3 4-6.
   --every <every>                      Pages per output part.
   --by-bookmarks                       Split at top-level bookmark destinations.
-  --out-dir <out-dir> (REQUIRED)       Directory that receives the parts.
   --name-template <name-template>      File name using {stem}, {n}, {pages} or {bookmark}. [default: {stem}.{n}.pdf]
+  --out-dir <out-dir> (REQUIRED)       Directory that receives the parts.
   --overwrite                          Replace the output file if it already exists.
   --password <password>                Password for the PDF. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>        Name of an environment variable holding the password for the PDF.

@@ -9,35 +9,32 @@ internal static class ConvertCommand
 {
     public static Command Create(IProductCommandHost<IPdfEngine> host)
     {
-        Argument<string> file = PdfOptions.File();
         var to = new Option<string>("--to") { Required = true, Description = "Target PDF export format." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong([.. PdfFormats.Definitions.IdsFor(FormatUse.Convert)]);
         var pages = new Option<string?>("--pages") { Description = "Optional 1-based page range." }.WithInput(InputKind.None);
-        var output = new OutputFileOptions("Output path; defaults to a sibling using the target extension.");
-        var password = new PasswordOptions("--password", "the PDF");
-        var fonts = new FontDirectoryOptions();
-        var command = new Command("convert", "Convert selected PDF pages to a supported format.");
-        command.Arguments.Add(file);
-        command.Options.Add(to);
-        command.Options.Add(pages);
-        output.AddTo(command);
-        password.AddTo(command);
-        fonts.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            string format = parse.GetRequiredValue(to);
-            string? range = parse.GetValue(pages);
-            using IDisposable fontScope = fonts.Use(parse, context);
-            return context.Port.Convert(input, new PdfConvertRequest
+        return StandardCommand.Create(
+            host,
+            "convert",
+            "Convert selected PDF pages to a supported format.",
+            new CommandTraits
             {
-                TargetFormatId = format,
-                OutputPath = output.ResolvePath(parse, context.Paths, input, PdfFormats.Definitions.ExtensionFor(format)),
-                Overwrite = output.Overwrite(parse),
-                Pages = range is null ? null : PageRange.Parse(range),
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
+                Input = PdfCommands.Document,
+                Output = OutputTarget.File("Output path; defaults to a sibling using the target extension."),
+                UsesFonts = true,
+            },
+            [to, pages],
+            (parse, standard) =>
+            {
+                string format = parse.GetRequiredValue(to);
+                string? range = parse.GetValue(pages);
+                return standard.Port.Convert(standard.Input, new PdfConvertRequest
+                {
+                    TargetFormatId = format,
+                    OutputPath = standard.OutputPath(PdfFormats.Definitions.ExtensionFor(format)),
+                    Overwrite = standard.Overwrite,
+                    Pages = range is null ? null : PageRange.Parse(range),
+                    Password = standard.InputPassword,
+                });
             });
-        }));
-        return command;
     }
 }

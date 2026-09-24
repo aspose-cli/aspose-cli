@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
@@ -9,7 +10,6 @@ internal static class NewCommand
 {
     public static Command Create(IProductCommandHost<IPdfEngine> host)
     {
-        var file = new Argument<string>("file") { Description = "PDF path to create." }.WithInput(InputKind.None);
         var images = new Option<string[]>("--from-images")
         {
             Description = "One or more image files, one per output page.",
@@ -24,51 +24,75 @@ internal static class NewCommand
         var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => "A4", Description = "A3, A4, Letter or Legal." }.WithInput(InputKind.None);
         pageSize.AcceptOnlyFromAmong(PdfPageSizes.Names);
         var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
-        Option<bool> overwrite = OutputOptions.Overwrite();
-        var fonts = new FontDirectoryOptions();
-        var command = new Command("create", "Create a PDF from exactly one source family.");
-        command.Arguments.Add(file);
-        command.Options.Add(images);
-        command.Options.Add(html);
-        command.Options.Add(allowNetwork);
-        command.Options.Add(text);
-        command.Options.Add(pageSize);
-        command.Options.Add(margins);
-        command.Options.Add(overwrite);
-        fonts.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            string[] imageValues = parse.GetValue(images) ?? [];
-            string? htmlValue = parse.GetValue(html);
-            string? textValue = parse.GetValue(text);
-            int sources = imageValues.Length > 0 ? 1 : 0;
-            sources += htmlValue is null ? 0 : 1;
-            sources += textValue is null ? 0 : 1;
-            if (sources != 1)
+        return StandardCommand.Create(
+            host,
+            "create",
+            "Create a PDF from exactly one source family.",
+            new CommandTraits
             {
-                throw CliErrors.Usage(["Choose exactly one of --from-images, --from-html or --from-text."]);
-            }
+                Output = OutputTarget.CreatedFile("PDF path to create."),
+                UsesFonts = true,
+            },
+            [images, html, allowNetwork, text, pageSize, margins],
+            (parse, standard) =>
+            {
+                string[] imageValues = parse.GetValue(images) ?? [];
+                string? htmlValue = parse.GetValue(html);
+                string? textValue = parse.GetValue(text);
+                int sources = imageValues.Length > 0 ? 1 : 0;
+                sources += htmlValue is null ? 0 : 1;
+                sources += textValue is null ? 0 : 1;
+                if (sources != 1)
+                {
+                    throw CliErrors.Usage(["Choose exactly one of --from-images, --from-html or --from-text."]);
+                }
 
-            string[]? imagePaths = imageValues.Length == 0 ? null : imageValues.Select(context.Paths.ResolveInput).ToArray();
-            string? htmlPath = htmlValue is null ? null : context.Paths.ResolveInput(htmlValue);
-            string? textPath = textValue is null ? null : context.Paths.ResolveInput(textValue);
-            string outputPath = OutputFileOptions.ResolveExplicit(
-                context.Paths, parse.GetRequiredValue(file), file.Name, [.. imagePaths ?? [], htmlPath, textPath]);
-            using IDisposable fontScope = fonts.Use(parse, context);
-            return context.Port.Create(new NewPdfRequest
-            {
-                OutputPath = outputPath,
-                Overwrite = parse.GetValue(overwrite),
-                ImagePaths = imagePaths,
-                HtmlPath = htmlPath,
-                AllowNetworkResources = parse.GetValue(allowNetwork),
-                TextPath = textPath,
-                Markdown = textPath is not null
-                    && string.Equals(Path.GetExtension(textPath), ".md", StringComparison.OrdinalIgnoreCase),
-                PageSize = parse.GetValue(pageSize) ?? "A4",
-                Margins = PdfOptions.ParseMargins(parse.GetValue(margins) ?? "36"),
+                string[]? imagePaths = imageValues.Length == 0 ? null : imageValues.Select(standard.Paths.ResolveInput).ToArray();
+                string? htmlPath = htmlValue is null ? null : standard.Paths.ResolveInput(htmlValue);
+                string? textPath = textValue is null ? null : standard.Paths.ResolveInput(textValue);
+                string outputPath = standard.CreatedPath;
+                return standard.Port.Create(new NewPdfRequest
+                {
+                    OutputPath = outputPath,
+                    Overwrite = standard.Overwrite,
+                    ImagePaths = imagePaths,
+                    HtmlPath = htmlPath,
+                    AllowNetworkResources = parse.GetValue(allowNetwork),
+                    TextPath = textPath,
+                    Markdown = textPath is not null
+                        && string.Equals(Path.GetExtension(textPath), ".md", StringComparison.OrdinalIgnoreCase),
+                    PageSize = parse.GetValue(pageSize) ?? "A4",
+                    Margins = ParseMargins(parse.GetValue(margins) ?? "36"),
+                });
             });
-        }));
-        return command;
+    }
+
+    private static PdfMargins ParseMargins(string text)
+    {
+        string[] tokens = text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        double[] values;
+        try
+        {
+            values = tokens.Select(token => double.Parse(token, NumberStyles.Float, CultureInfo.InvariantCulture)).ToArray();
+        }
+        catch (FormatException)
+        {
+            throw CliErrors.OptionInvalid("--margins", $"'{text}' is not numeric", "Use one value or top,right,bottom,left in points.");
+        }
+
+        if (values.Length == 1 && values[0] >= 0)
+        {
+            return new PdfMargins(values[0], values[0], values[0], values[0]);
+        }
+
+        if (values.Length == 4 && values.All(static value => value >= 0))
+        {
+            return new PdfMargins(values[0], values[1], values[2], values[3]);
+        }
+
+        throw CliErrors.OptionInvalid(
+            "--margins",
+            $"'{text}' must contain one or four non-negative values",
+            "Use one value or top,right,bottom,left in points.");
     }
 }

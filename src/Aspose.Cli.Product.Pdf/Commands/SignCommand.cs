@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Globalization;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
@@ -9,7 +10,6 @@ internal static class SignCommand
 {
     public static Command Create(IProductCommandHost<IPdfEngine> host)
     {
-        Argument<string> file = PdfOptions.File();
         var certificate = new Option<string>("--certificate")
         {
             Required = true,
@@ -36,65 +36,83 @@ internal static class SignCommand
         var reason = new Option<string?>("--reason") { Description = "Signing reason stored in the signature." }.WithInput(InputKind.None);
         var location = new Option<string?>("--location") { Description = "Signing location stored in the signature." }.WithInput(InputKind.None);
         var contact = new Option<string?>("--contact") { Description = "Signer contact stored in the signature." }.WithInput(InputKind.None);
-        var output = new OutputFileOptions("Signed PDF path. Default: <input>.signed.pdf.");
-        var password = new PasswordOptions("--password", "the input PDF");
-        var fonts = new FontDirectoryOptions();
-
-        var command = new Command("sign", "Apply a PKCS#7 signature and verify the saved signature field.");
-        command.Arguments.Add(file);
-        command.Options.Add(certificate);
-        command.Options.Add(certificatePasswordEnv);
-        command.Options.Add(visible);
-        command.Options.Add(page);
-        command.Options.Add(rect);
-        command.Options.Add(reason);
-        command.Options.Add(location);
-        command.Options.Add(contact);
-        output.AddTo(command);
-        password.AddTo(command);
-        fonts.AddTo(command);
-        command.SetAction(parse => host.Run(parse, context =>
-        {
-            bool isVisible = parse.GetValue(visible);
-            string? rectangleText = parse.GetValue(rect);
-            if (!isVisible && rectangleText is not null)
+        return StandardCommand.Create(
+            host,
+            "sign",
+            "Apply a PKCS#7 signature and verify the saved signature field.",
+            new CommandTraits
             {
-                throw CliErrors.OptionInvalid(
-                    "--rect",
-                    "a rectangle has no effect on an invisible signature",
-                    "Pass --visible with --rect, or omit --rect.");
-            }
-
-            int pageNumber = parse.GetValue(page);
-            OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue, "Use a 1-based page number.");
-            string input = context.Paths.ResolveInput(parse.GetRequiredValue(file));
-            string certificatePath = context.Paths.ResolveInput(parse.GetRequiredValue(certificate));
-            string variable = parse.GetRequiredValue(certificatePasswordEnv);
-            string? certificatePassword = context.ReadEnvironment(variable);
-            if (string.IsNullOrEmpty(certificatePassword))
+                Input = PdfCommands.Document with { PasswordSubject = "the input PDF" },
+                Output = OutputTarget.File("Signed PDF path. Default: <input>.signed.pdf."),
+                UsesFonts = true,
+            },
+            [certificate, certificatePasswordEnv, visible, page, rect, reason, location, contact],
+            (parse, standard) =>
             {
-                throw CliErrors.OptionInvalid(
-                    "--certificate-password-env",
-                    $"environment variable '{variable}' is missing or empty",
-                    "Set the variable to the PKCS#12 password and run the command again.");
-            }
+                bool isVisible = parse.GetValue(visible);
+                string? rectangleText = parse.GetValue(rect);
+                if (!isVisible && rectangleText is not null)
+                {
+                    throw CliErrors.OptionInvalid(
+                        "--rect",
+                        "a rectangle has no effect on an invisible signature",
+                        "Pass --visible with --rect, or omit --rect.");
+                }
 
-            using IDisposable fontScope = fonts.Use(parse, context);
-            return context.Port.Sign(input, new PdfSignRequest
-            {
-                CertificatePath = certificatePath,
-                CertificatePassword = certificatePassword,
-                OutputPath = output.ResolvePath(parse, context.Paths, input, ".signed.pdf"),
-                Overwrite = output.Overwrite(parse),
-                Password = password.Resolve(parse, context.Inputs, context.ReadEnvironment),
-                Page = pageNumber,
-                Visible = isVisible,
-                Rect = rectangleText is null ? null : PdfOptions.ParseSignatureRect(rectangleText),
-                Reason = parse.GetValue(reason),
-                Location = parse.GetValue(location),
-                Contact = parse.GetValue(contact),
+                int pageNumber = parse.GetValue(page);
+                OptionGuards.EnsureInRange("--page", pageNumber, 1, int.MaxValue, "Use a 1-based page number.");
+                string input = standard.Input;
+                string certificatePath = standard.Paths.ResolveInput(parse.GetRequiredValue(certificate));
+                string variable = parse.GetRequiredValue(certificatePasswordEnv);
+                string? certificatePassword = standard.ReadEnvironment(variable);
+                if (string.IsNullOrEmpty(certificatePassword))
+                {
+                    throw CliErrors.OptionInvalid(
+                        "--certificate-password-env",
+                        $"environment variable '{variable}' is missing or empty",
+                        "Set the variable to the PKCS#12 password and run the command again.");
+                }
+
+                return standard.Port.Sign(input, new PdfSignRequest
+                {
+                    CertificatePath = certificatePath,
+                    CertificatePassword = certificatePassword,
+                    OutputPath = standard.OutputPath(".signed.pdf"),
+                    Overwrite = standard.Overwrite,
+                    Password = standard.InputPassword,
+                    Page = pageNumber,
+                    Visible = isVisible,
+                    Rect = rectangleText is null ? null : ParseRect(rectangleText),
+                    Reason = parse.GetValue(reason),
+                    Location = parse.GetValue(location),
+                    Contact = parse.GetValue(contact),
+                });
             });
-        }));
-        return command;
+    }
+
+    private static PdfSignatureRect ParseRect(string text)
+    {
+        string[] tokens = text.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        double[] values;
+        try
+        {
+            values = tokens.Select(token =>
+                double.Parse(token, NumberStyles.Float, CultureInfo.InvariantCulture)).ToArray();
+        }
+        catch (FormatException)
+        {
+            throw CliErrors.OptionInvalid(
+                "--rect", $"'{text}' is not numeric", "Use x,y,width,height in PDF points.");
+        }
+
+        if (values.Length != 4 || values[2] <= 0 || values[3] <= 0)
+        {
+            throw CliErrors.OptionInvalid(
+                "--rect",
+                $"'{text}' must contain x,y and positive width,height",
+                "Use x,y,width,height in PDF points, for example 36,36,180,60.");
+        }
+
+        return new PdfSignatureRect(values[0], values[1], values[2], values[3]);
     }
 }

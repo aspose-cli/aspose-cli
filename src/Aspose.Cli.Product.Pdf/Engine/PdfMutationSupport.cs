@@ -113,22 +113,24 @@ internal static class PdfMutationSupport
         }
     }
 
+    /// <summary>
+    /// The secret an operation names by environment variable, or null when it names none.
+    /// </summary>
     internal static string? Secret(
         IReadOnlyDictionary<string, string>? secrets,
-        string name,
-        bool required)
+        string? variable)
     {
-        if (secrets is not null && secrets.TryGetValue(name, out string? value) && !string.IsNullOrEmpty(value))
+        if (variable is null)
+        {
+            return null;
+        }
+
+        if (secrets is not null && secrets.TryGetValue(variable, out string? value) && !string.IsNullOrEmpty(value))
         {
             return value;
         }
 
-        if (required)
-        {
-            throw new OperationInvalidException($"The required {name} environment variable is missing or empty.");
-        }
-
-        return null;
+        throw new OperationInvalidException($"The required {variable} environment variable is missing or empty.");
     }
 
     internal static void EnsureFile(string path)

@@ -116,7 +116,8 @@ public sealed record PdfEditRequest
     public string? BackupPath { get; init; }
     public EditCommandOptions Options { get; init; } = new();
     public string? Password { get; init; }
-    public IReadOnlyDictionary<int, IReadOnlyDictionary<string, string>>? OpSecrets { get; init; }
+    /// <summary>The operations' secrets by the environment variable their <c>*Env</c> fields name.</summary>
+    public IReadOnlyDictionary<string, string>? OpSecrets { get; init; }
 }
 
 public sealed record PdfFormReadRequest { public string? Password { get; init; } }

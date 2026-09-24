@@ -101,16 +101,14 @@ internal sealed class PdfMutationService
             batch.Ops,
             request.Options.BestEffort,
             deadline: null,
-            (op, index) =>
+            (op, _) =>
             {
-                IReadOnlyDictionary<string, string>? secrets = null;
-                _ = request.OpSecrets?.TryGetValue(index, out secrets);
                 var operationPages = new SortedSet<int>();
-                long affected = PdfMutationHandlers.ApplyOp(_loader, operationInputs, document, op, secrets, operationPages);
+                long affected = PdfMutationHandlers.ApplyOp(_loader, operationInputs, document, op, request.OpSecrets, operationPages);
                 touched.UnionWith(operationPages);
-                if (op is EncryptPdfOp)
+                if (op is EncryptPdfOp encrypt)
                 {
-                    outputPassword = Secret(secrets, "userPassword", required: false);
+                    outputPassword = Secret(request.OpSecrets, encrypt.UserPasswordEnv);
                 }
                 else if (op is DecryptPdfOp)
                 {

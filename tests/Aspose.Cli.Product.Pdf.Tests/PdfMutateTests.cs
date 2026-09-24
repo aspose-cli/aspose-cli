@@ -322,13 +322,10 @@ public sealed class PdfMutateTests
         using var fixture = new PdfEngineFixture();
         string input = fixture.CreateDocument("plain.pdf", pages: 1);
         string encrypted = fixture.File("encrypted.pdf");
-        var secrets = new Dictionary<int, IReadOnlyDictionary<string, string>>
+        var secrets = new Dictionary<string, string>
         {
-            [0] = new Dictionary<string, string>
-            {
-                ["userPassword"] = "reader",
-                ["ownerPassword"] = "owner",
-            },
+            ["PDF_USER"] = "reader",
+            ["PDF_OWNER"] = "owner",
         };
 
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
