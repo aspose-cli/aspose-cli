@@ -2,7 +2,6 @@
 
   <PropertyGroup>
     <Description>Reusable filesystem, real CLI, and product contract test kit.</Description>
-    <IsTestKit>true</IsTestKit>
     <IsTestProject>false</IsTestProject>
     <IsPackable>false</IsPackable>
   </PropertyGroup>

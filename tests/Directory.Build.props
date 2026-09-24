@@ -5,12 +5,26 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
+    <IsTestKit Condition="'$(MSBuildProjectName)' == 'Aspose.Cli.TestKit'">true</IsTestKit>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Condition="'$(IsTestKit)' != 'true'" />
-    <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" Condition="'$(IsTestKit)' != 'true'" />
+  <!-- xUnit.net v3 test projects are executables run through VSTest. -->
+  <PropertyGroup Condition="'$(IsTestKit)' != 'true'">
+    <OutputType>Exe</OutputType>
+    <!-- Tests bound their own waits and scripts/test.ps1 reports a hung test by name, so
+         threading TestContext cancellation through every awaited call adds no signal. -->
+    <NoWarn>$(NoWarn);xUnit1051</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(IsTestKit)' != 'true'">
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="xunit.v3" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+  </ItemGroup>
+
+  <ItemGroup Condition="'$(IsTestKit)' == 'true'">
+    <PackageReference Include="xunit.v3.assert" />
+    <PackageReference Include="xunit.v3.extensibility.core" />
   </ItemGroup>
 
 </Project>
