@@ -42,14 +42,19 @@ public static partial class CliErrors
     public static CliException PasswordRequired(string path) => new(
         ErrorCodes.PasswordRequired,
         $"File is encrypted and requires a password: {path}",
-        hint: "Ask the user for the password and retry with --password.",
+        hint: PasswordHint("Ask the user for the password"),
         details: new JsonObject { ["path"] = path });
 
     public static CliException PasswordInvalid(string path) => new(
         ErrorCodes.PasswordInvalid,
         $"The provided password does not open the file: {path}",
-        hint: "Ask the user to double-check the password and retry with --password.",
+        hint: PasswordHint("Ask the user to double-check the password"),
         details: new JsonObject { ["path"] = path });
+
+    // The environment form keeps the password out of the process list, unlike the literal option.
+    private static string PasswordHint(string lead) =>
+        $"{lead}, store it in an environment variable and retry with --password-env <NAME>; a command with "
+        + "several inputs names the option per input, such as --left-password-env.";
 
     public static CliException FileAccessDenied(string path) => new(
         ErrorCodes.FileAccessDenied,
