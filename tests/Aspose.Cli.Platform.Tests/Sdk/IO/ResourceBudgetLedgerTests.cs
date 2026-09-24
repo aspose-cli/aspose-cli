@@ -250,7 +250,7 @@ public sealed class ResourceBudgetLedgerTests
         ResourceBudgetLedger budgets = Create(
             deadline,
             (ResourceBudgetKinds.StandardInputBytes, 1));
-        Thread.Sleep(25);
+        Assert.True(deadline.Token.WaitHandle.WaitOne(TimeSpan.FromSeconds(30)), "The deadline never expired.");
 
         CliException error = Assert.Throws<CliException>(() =>
             budgets.Consume(

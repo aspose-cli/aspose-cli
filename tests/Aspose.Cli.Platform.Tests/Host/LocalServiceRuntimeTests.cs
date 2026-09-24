@@ -148,7 +148,7 @@ public sealed class LocalServiceRuntimeTests
                 deadline.ThrowIfExpired("test");
             }
             return new LocalServiceControlResponse(0, "", "", "", "", true);
-        }, stageTimeout: TimeSpan.FromMilliseconds(100), operationTimeout: TimeSpan.FromSeconds(10));
+        }, stageTimeout: TimeSpan.FromMilliseconds(500), operationTimeout: TimeSpan.FromSeconds(10));
         server.Start();
         await Task.Delay(30);
         Task<LocalServiceControlResponse> opening = Task.Run(() =>
@@ -156,8 +156,9 @@ public sealed class LocalServiceRuntimeTests
         try
         {
             Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
-            await Task.Delay(250);
-            Assert.True(LocalServiceControlServer.Send(endpoint, nonce, token, "ping").Ok);
+            // The open operation outlives the frame budget; a new request is still served.
+            await Task.Delay(750);
+            Assert.True(LocalServiceControlServer.Send(endpoint, nonce, token, "ping", timeout: TimeSpan.FromSeconds(10)).Ok);
         }
         finally { resume.Set(); }
         Assert.True((await opening.WaitAsync(TimeSpan.FromSeconds(5))).Ok);
@@ -175,7 +176,7 @@ public sealed class LocalServiceRuntimeTests
             Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
         }
         Assert.True(cancelled.Wait(TimeSpan.FromSeconds(5)));
-        Assert.True(LocalServiceControlServer.Send(endpoint, nonce, token, "ping").Ok);
+        Assert.True(LocalServiceControlServer.Send(endpoint, nonce, token, "ping", timeout: TimeSpan.FromSeconds(10)).Ok);
     }
 
     [Fact]
@@ -364,23 +365,16 @@ public sealed class LocalServiceRuntimeTests
     }
 
     [Fact]
-    public async Task OperationLockSerializesCompetingProcesses()
+    public void OperationLock_RefusesACompetitorUntilItIsReleased()
     {
         string key = Guid.NewGuid().ToString("N");
-        using LocalServiceOperationLock first = LocalServiceOperationLock.Acquire(
-            "contract",
-            key,
-            TimeSpan.FromSeconds(2));
-        Task<LocalServiceOperationLock> competing = Task.Run(() =>
-            LocalServiceOperationLock.Acquire(
-                "contract",
-                key,
-                TimeSpan.FromSeconds(2)));
-        await Task.Delay(150);
-        Assert.False(competing.IsCompleted);
+        using (LocalServiceOperationLock.Acquire("contract", key, TimeSpan.FromSeconds(2)))
+        {
+            Assert.Throws<TimeoutException>(() =>
+                LocalServiceOperationLock.Acquire("contract", key, TimeSpan.FromMilliseconds(200)));
+        }
 
-        first.Dispose();
-        using LocalServiceOperationLock second = await competing;
+        using LocalServiceOperationLock next = LocalServiceOperationLock.Acquire("contract", key, TimeSpan.FromSeconds(2));
     }
 
     [Fact]

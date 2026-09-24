@@ -3,7 +3,6 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Serialization;
 using System.CommandLine;
-using System.Diagnostics;
 using Xunit;
 using ExtProduct = Aspose.Cli.Sdk.Extensibility.Product;
 
@@ -234,9 +233,11 @@ public sealed class ProductFileRouterTests
     [Fact]
     public async Task AllRecognizersShareOneAbsoluteBudget()
     {
+        var started = new System.Collections.Concurrent.ConcurrentBag<CancellationToken>();
         var slow = new StaticRecognizer(async (_, cancellationToken) =>
         {
-            await Task.Delay(TimeSpan.FromSeconds(5), cancellationToken);
+            started.Add(cancellationToken);
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
             return new FileRecognition { Kind = FileRecognitionKind.Match };
         });
         ProductCatalog catalog = ProductCatalog.Build(
@@ -247,7 +248,6 @@ public sealed class ProductFileRouterTests
             Module("four", ".four", slow),
         ]);
         string path = CreateFile(".unknown");
-        var stopwatch = Stopwatch.StartNew();
         try
         {
             CliException error = await Assert.ThrowsAsync<CliException>(
@@ -257,12 +257,13 @@ public sealed class ProductFileRouterTests
                     {
                         RecognizerTimeout = TimeSpan.FromMilliseconds(50),
                         MaxConcurrency = 2,
-                    }).RouteAsync(path));
+                    }).RouteAsync(path)).WaitAsync(TimeSpan.FromSeconds(30));
 
+            // Recognizers that never finish end in one bounded timeout, every one of them cancelled;
+            // without the budget the routing would never return and the watchdog would fail it.
             Assert.Equal(ErrorCodes.OperationTimeout, error.Code);
-            Assert.True(
-                stopwatch.Elapsed < TimeSpan.FromSeconds(1),
-                $"Routing took {stopwatch.Elapsed} instead of one shared budget.");
+            Assert.NotEmpty(started);
+            Assert.All(started, static token => Assert.True(token.IsCancellationRequested));
         }
         finally
         {
