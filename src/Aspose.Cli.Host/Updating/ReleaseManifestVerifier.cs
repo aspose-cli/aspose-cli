@@ -12,7 +12,7 @@ namespace Aspose.Cli.Host.Updating;
 internal static class ReleaseManifestVerifier
 {
     public const string TrustedKeyRingEnvironmentVariable =
-        "ASPOSE_CLI_RELEASE_TRUSTED_KEYS";
+        DistributionInfo.EnvironmentVariablePrefix + "RELEASE_TRUSTED_KEYS";
 
     private const int MaximumManifestBytes = 64 * 1024;
     private const int MaximumSignatureBytes = 16 * 1024;

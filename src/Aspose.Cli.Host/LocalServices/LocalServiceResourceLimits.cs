@@ -1,3 +1,5 @@
+using Aspose.Cli.Sdk;
+
 namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
@@ -25,58 +27,58 @@ internal sealed record LocalServiceResourceLimits(
         return new LocalServiceResourceLimits(
             Integer(
                 environment,
-                "ASPOSE_CLI_LOCAL_HTTP_MAX_REQUESTS",
+                DistributionInfo.EnvironmentVariablePrefix + "LOCAL_HTTP_MAX_REQUESTS",
                 defaultValue: 32,
                 maximum: 128),
             Integer(
                 environment,
-                "ASPOSE_CLI_LOCAL_SSE_MAX_CLIENTS",
+                DistributionInfo.EnvironmentVariablePrefix + "LOCAL_SSE_MAX_CLIENTS",
                 defaultValue: 16,
                 maximum: 64),
             Integer(
                 environment,
-                "ASPOSE_CLI_LOCAL_SSE_QUEUE_CAPACITY",
+                DistributionInfo.EnvironmentVariablePrefix + "LOCAL_SSE_QUEUE_CAPACITY",
                 defaultValue: 16,
                 maximum: 128),
             TimeSpan.FromMilliseconds(Integer(
                 environment,
-                "ASPOSE_CLI_LOCAL_SSE_WRITE_TIMEOUT_MS",
+                DistributionInfo.EnvironmentVariablePrefix + "LOCAL_SSE_WRITE_TIMEOUT_MS",
                 defaultValue: 5_000,
                 maximum: 30_000,
                 minimum: 100)),
             Integer(
                 environment,
-                "ASPOSE_CLI_PREVIEW_MAX_FILES",
+                DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_FILES",
                 defaultValue: 2_048,
                 maximum: 8_192),
             Bytes(
                 environment,
-                "ASPOSE_CLI_PREVIEW_MAX_FILE_BYTES",
+                DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_FILE_BYTES",
                 defaultValue: 64L * 1024 * 1024,
                 maximum: 256L * 1024 * 1024),
             Bytes(
                 environment,
-                "ASPOSE_CLI_PREVIEW_MAX_SNAPSHOT_BYTES",
+                DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_SNAPSHOT_BYTES",
                 defaultValue: 256L * 1024 * 1024,
                 maximum: 1024L * 1024 * 1024),
             Bytes(
                 environment,
-                "ASPOSE_CLI_PREVIEW_MAX_INLINE_HTML_BYTES",
+                DistributionInfo.EnvironmentVariablePrefix + "PREVIEW_MAX_INLINE_HTML_BYTES",
                 defaultValue: 8L * 1024 * 1024,
                 maximum: 32L * 1024 * 1024),
             Integer(
                 environment,
-                "ASPOSE_CLI_APP_MAX_UPLOAD_FILES",
+                DistributionInfo.EnvironmentVariablePrefix + "APP_MAX_UPLOAD_FILES",
                 defaultValue: 16,
                 maximum: 128),
             Bytes(
                 environment,
-                "ASPOSE_CLI_APP_MAX_UPLOAD_SESSION_BYTES",
+                DistributionInfo.EnvironmentVariablePrefix + "APP_MAX_UPLOAD_SESSION_BYTES",
                 defaultValue: 512L * 1024 * 1024,
                 maximum: 2L * 1024 * 1024 * 1024),
             TimeSpan.FromMilliseconds(Integer(
                 environment,
-                "ASPOSE_CLI_VIEWER_RENDER_TIMEOUT_MS",
+                DistributionInfo.EnvironmentVariablePrefix + "VIEWER_RENDER_TIMEOUT_MS",
                 defaultValue: 60_000,
                 maximum: 600_000,
                 minimum: 1_000)));

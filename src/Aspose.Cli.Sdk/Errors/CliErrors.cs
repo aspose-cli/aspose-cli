@@ -143,7 +143,7 @@ public static partial class CliErrors
         ErrorCodes.PreviewBudgetExceeded,
         $"The preview {resource} exceeds its resource budget.",
         hint:
-            "Reduce the rendered document or raise the matching ASPOSE_CLI_PREVIEW_MAX_* limit within its safety maximum.",
+            $"Reduce the rendered document or raise the matching {DistributionInfo.EnvironmentVariablePrefix}PREVIEW_MAX_* limit within its safety maximum.",
         details: new JsonObject
         {
             ["resource"] = resource,
@@ -158,7 +158,7 @@ public static partial class CliErrors
         ErrorCodes.UploadBudgetExceeded,
         $"The App upload {resource} exceeds its session budget.",
         hint:
-            "Remove prior uploads, upload a smaller file, or raise the matching ASPOSE_CLI_APP_MAX_UPLOAD_* limit within its safety maximum.",
+            $"Remove prior uploads, upload a smaller file, or raise the matching {DistributionInfo.EnvironmentVariablePrefix}APP_MAX_UPLOAD_* limit within its safety maximum.",
         details: new JsonObject
         {
             ["resource"] = resource,

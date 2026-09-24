@@ -5,11 +5,11 @@ namespace Aspose.Cli.Sdk.Execution;
 /// <summary>Explicit invocation-owned collection of files awaiting parent publication.</summary>
 public sealed class WorkerOutputSession
 {
-    public const string RootEnvironmentVariable = "ASPOSE_CLI_WORKER_OUTPUT_ROOT";
-    public const string ManifestEnvironmentVariable = "ASPOSE_CLI_WORKER_OUTPUT_MANIFEST";
-    public const string DeadlineEnvironmentVariable = "ASPOSE_CLI_WORKER_DEADLINE_TICK";
-    public const string BudgetEnvironmentVariable = "ASPOSE_CLI_WORKER_BUDGET_MS";
-    public const string WorkerEnvironmentVariable = "ASPOSE_CLI_TIMEOUT_WORKER";
+    public const string RootEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "WORKER_OUTPUT_ROOT";
+    public const string ManifestEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "WORKER_OUTPUT_MANIFEST";
+    public const string DeadlineEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "WORKER_DEADLINE_TICK";
+    public const string BudgetEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "WORKER_BUDGET_MS";
+    public const string WorkerEnvironmentVariable = DistributionInfo.EnvironmentVariablePrefix + "TIMEOUT_WORKER";
     public const string ManifestName = "output-manifest.v5.json";
     private readonly object _gate = new();
     private readonly List<WorkerOutputEntry> _entries = [];

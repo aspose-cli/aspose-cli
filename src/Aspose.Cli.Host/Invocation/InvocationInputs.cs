@@ -1,6 +1,7 @@
 using System.IO.Pipes;
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Host.Output;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.Invocation;
@@ -8,8 +9,8 @@ namespace Aspose.Cli.Host.Invocation;
 /// <summary>Inherited options and named environment access for one owned child invocation.</summary>
 internal sealed class InvocationInputs : IDisposable
 {
-    internal const string HandleVariable = "ASPOSE_CLI_INVOCATION_INPUT_HANDLE";
-    internal const string RequestHandleVariable = "ASPOSE_CLI_INVOCATION_REQUEST_HANDLE";
+    internal const string HandleVariable = DistributionInfo.EnvironmentVariablePrefix + "INVOCATION_INPUT_HANDLE";
+    internal const string RequestHandleVariable = DistributionInfo.EnvironmentVariablePrefix + "INVOCATION_REQUEST_HANDLE";
     internal const int MaximumMessageBytes = 256 * 1024;
     private static readonly AsyncLocal<InvocationInputs?> Ambient = new();
     private readonly InvocationInputs? _previous;

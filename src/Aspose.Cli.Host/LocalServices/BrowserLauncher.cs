@@ -1,4 +1,5 @@
 using System.Diagnostics;
+using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -31,7 +32,7 @@ internal static class BrowserLauncher
     }
 
     private static bool IsInteractive() =>
-        Environment.GetEnvironmentVariable("ASPOSE_CLI_NO_OPEN") != "1"
+        Environment.GetEnvironmentVariable(DistributionInfo.EnvironmentVariablePrefix + "NO_OPEN") != "1"
         && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("CI"))
         && string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable("GITHUB_ACTIONS"))
         && Environment.UserInteractive;

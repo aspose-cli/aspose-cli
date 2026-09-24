@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.IO.Pipes;
 using System.Runtime.InteropServices;
+using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.LocalServices;
 
@@ -13,7 +14,7 @@ namespace Aspose.Cli.Host.LocalServices;
 internal static class ServiceStartSecretChannel
 {
     private const string HandleVariable =
-        "ASPOSE_CLI_SERVICE_START_HANDLE";
+        DistributionInfo.EnvironmentVariablePrefix + "SERVICE_START_HANDLE";
     private static readonly AsyncLocal<ServiceStartSecrets?> CurrentValue =
         new();
 
