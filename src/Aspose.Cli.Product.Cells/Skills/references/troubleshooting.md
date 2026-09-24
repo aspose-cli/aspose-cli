@@ -46,7 +46,10 @@ most likely fix. Read the hint first; this page adds background.
 ## Output problems (exit 5)
 
 - **OUTPUT_EXISTS** — deliberate safety default. `--overwrite` replaces;
-  `--in-place` (on mutating commands) edits the input atomically.
+  `--in-place` (on mutating commands) edits the input atomically. An `--out`
+  that resolves to the input itself is OPTION_INVALID (exit 2), even with
+  `--overwrite`: only `--in-place` replaces the input, with its `--backup`
+  and `--if-match` safeguards.
 - **OUTPUT_UNWRITABLE** — check directory existence and permissions;
   the CLI creates missing parent directories itself, so this usually
   means an OS-level denial.

@@ -104,12 +104,12 @@ public sealed class CellsMutationBoundaryTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void VerificationExaminesTheCandidateInSupervisedExecution(bool overwrite)
+    public void VerificationExaminesTheCandidateInSupervisedExecution(bool inPlace)
     {
         using var workspace = new TempWorkspace();
         Assert.Equal(0, workspace.Run("cells", "create", "source.xlsx", "--sheets", "Data").ExitCode);
-        var args = new List<string> { "cells", "edit", "source.xlsx", "--set", "Data!A1==1/0", "--out", overwrite ? "source.xlsx" : "edited.xlsx", "--verify", "--timeout", "60", "--output", "json" };
-        if (overwrite) { args.Add("--overwrite"); }
+        var args = new List<string> { "cells", "edit", "source.xlsx", "--set", "Data!A1==1/0", "--verify", "--timeout", "60", "--output", "json" };
+        args.AddRange(inPlace ? ["--in-place"] : ["--out", "edited.xlsx"]);
         CliResult edited = workspace.Run(args.ToArray());
         Assert.True(edited.ExitCode == 8, edited.StdErr + edited.StdOut);
         JsonNode verification = JsonNode.Parse(edited.StdOut)!["verification"]!;

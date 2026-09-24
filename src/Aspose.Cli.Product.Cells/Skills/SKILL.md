@@ -91,7 +91,8 @@ aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==
 ```
 
 - `--ops` takes a path, `-` (stdin) or inline JSON. Without `--in-place` or
-  `--out`, the result goes to `book.out.xlsx`.
+  `--out`, the result goes to `book.out.xlsx`. An `--out` naming the input itself
+  is rejected (OPTION_INVALID): use `--in-place` to change the input.
 - Batches are atomic: if any op fails, nothing is written and the error names
   the op `index`. `--best-effort` keeps successful ops and exits 8 when any
   op fails; `--dry-run` validates in memory and writes nothing.

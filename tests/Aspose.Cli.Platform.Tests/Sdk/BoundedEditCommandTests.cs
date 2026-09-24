@@ -129,6 +129,34 @@ public sealed class BoundedEditCommandTests : IDisposable
         Assert.DoesNotContain("--set", plain.Hint, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Read_ReplacesTheInputOnlyInPlace()
+    {
+        CliException error = Assert.Throws<CliException>(() => Read(
+            Plain(), "--ops", Document, "--out", Path.Combine("missing", "..", "BOOK.TEST"), "--overwrite"));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
+        Assert.Contains("--in-place", error.Hint, StringComparison.Ordinal);
+        Assert.Equal(_input, Read(Plain(), "--ops", Document, "--in-place").Target.OutputPath);
+    }
+
+    [Fact]
+    public void OutputFileOptions_NeverResolveToTheInput()
+    {
+        var output = new OutputFileOptions("Output path.");
+        var command = new Command("convert");
+        output.AddTo(command);
+
+        CliException error = Assert.Throws<CliException>(() => output.ResolvePath(
+            command.Parse(["--out", "BOOK.TEST"]), new PathResolver(_temp.Path), _input, ".test"));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.DoesNotContain("--in-place", error.Hint, StringComparison.Ordinal);
+        Assert.Equal(_temp.File("book.out.test"), output.ResolvePath(
+            command.Parse([]), new PathResolver(_temp.Path), _input, ".test"));
+    }
+
     [Theory]
     [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'")]
     [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "'value' must be a whole number")]

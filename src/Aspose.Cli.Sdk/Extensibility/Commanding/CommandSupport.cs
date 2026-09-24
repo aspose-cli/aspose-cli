@@ -144,15 +144,26 @@ public sealed class OutputFileOptions
                 ? extension
                 : null;
 
-    /// <summary>Resolves an explicit path or derives a sibling output path.</summary>
+    /// <summary>
+    /// Resolves an explicit path, which must not be the input, or derives a sibling output path.
+    /// </summary>
     public string ResolvePath(
         ParseResult parseResult,
         PathResolver paths,
         string inputPath,
         string targetExtension) =>
         parseResult.GetValue(_out) is { } explicitOut
-            ? paths.ResolveOutput(explicitOut)
+            ? ResolveExplicit(paths, explicitOut, inputPath, inPlaceAvailable: false)
             : DerivePath(inputPath, targetExtension);
+
+    /// <summary>Resolves an explicit <c>--out</c> path and rejects one that names the input.</summary>
+    internal static string ResolveExplicit(PathResolver paths, string explicitOut, string inputPath, bool inPlaceAvailable)
+    {
+        string output = paths.ResolveOutput(explicitOut);
+        return OutputPathValidator.IsSameFile(output, inputPath)
+            ? throw CliErrors.OutputIsInput(output, inPlaceAvailable)
+            : output;
+    }
 
     internal static string DerivePath(
         string inputPath,
@@ -257,7 +268,7 @@ public sealed class MutationFileOptions
         }
 
         string output = explicitOut is not null
-            ? paths.ResolveOutput(explicitOut)
+            ? OutputFileOptions.ResolveExplicit(paths, explicitOut, inputPath, inPlaceAvailable: true)
             : OutputFileOptions.DerivePath(
                 inputPath,
                 Path.GetExtension(inputPath));

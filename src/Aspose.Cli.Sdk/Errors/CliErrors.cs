@@ -235,6 +235,18 @@ public static partial class CliErrors
         hint: "Pass --overwrite to replace it, or choose a different path with --out.",
         details: new JsonObject { ["path"] = path });
 
+    /// <summary>
+    /// An explicit output resolves to the input document. Replacing the input is the in-place
+    /// mode's job, which alone carries its backup and fingerprint precondition.
+    /// </summary>
+    internal static CliException OutputIsInput(string path, bool inPlaceAvailable) => new(
+        ErrorCodes.OptionInvalid,
+        $"Invalid use of --out: the output resolves to the input file: {path}",
+        hint: inPlaceAvailable
+            ? "Pass --in-place instead of --out to modify the input, with --backup or --if-match as needed; or choose another output path."
+            : "Choose another output path; this command never replaces its input.",
+        details: new JsonObject { ["option"] = "--out", ["path"] = path });
+
     /// <summary>Two outputs of one operation, including a backup, resolve to the same path.</summary>
     internal static CliException DuplicateOutput(string path) => new(
         ErrorCodes.UsageError,

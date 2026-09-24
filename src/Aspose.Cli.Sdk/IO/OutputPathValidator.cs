@@ -1,4 +1,5 @@
 using Aspose.Cli.Sdk.Errors;
+using Microsoft.Win32.SafeHandles;
 
 namespace Aspose.Cli.Sdk.IO;
 
@@ -16,6 +17,31 @@ internal static class OutputPathValidator
             : Path.GetFullPath(path, baseDirectory);
         EnsureSafeFile(full, phase);
         return full;
+    }
+
+    /// <summary>
+    /// Whether two paths name one file: equal after full resolution (ignoring case on
+    /// Windows), or both existing and one physical file reached through another spelling,
+    /// such as a short 8.3 name or a hard link.
+    /// </summary>
+    public static bool IsSameFile(string first, string second)
+    {
+        string left = Path.TrimEndingDirectorySeparator(Path.GetFullPath(first));
+        string right = Path.TrimEndingDirectorySeparator(Path.GetFullPath(second));
+        if (string.Equals(left, right, OperatingSystem.IsWindows() ? StringComparison.OrdinalIgnoreCase : StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (!OperatingSystem.IsWindows() || !File.Exists(left) || !File.Exists(right))
+        {
+            return false;
+        }
+
+        using SafeFileHandle leftHandle = FilePublicationOwnedDelete.OpenIdentityHandle(left);
+        using SafeFileHandle rightHandle = FilePublicationOwnedDelete.OpenIdentityHandle(right);
+        return FilePublicationOwnedDelete.TryGetIdentity(leftHandle) is { } identity
+            && identity == FilePublicationOwnedDelete.TryGetIdentity(rightHandle);
     }
 
     public static void EnsureSafeFile(string path, string phase = "path")

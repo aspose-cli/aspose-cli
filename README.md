@@ -30,7 +30,8 @@ each includes references and reproducible examples. `skill install` supports the
 - `edit` applies one batch of operations atomically: the output is staged and validated,
   then published, or nothing changes. `--in-place` rewrites the input, `--backup` keeps a
   copy of it first, `--if-match` rejects a file that changed since it was read, and
-  `--dry-run` applies the batch without writing.
+  `--dry-run` applies the batch without writing. Only `--in-place` replaces the input:
+  `edit`, `convert`, `render` and `pdf sign` reject an `--out` that resolves to the input file.
 - Cells and Words `edit --verify` report semantic evidence (cell changes, formula errors,
   field, revision and protection state) before publication.
 - `aspose-cli review <file>` writes a static evidence directory with an image of every sheet,
