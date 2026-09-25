@@ -1,135 +1,117 @@
 using System.Drawing;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Slides.Contracts;
-using Aspose.Cli.Product.Slides.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.SlidesMutationSupport;
-using static Aspose.Cli.Product.Slides.Engine.SlidesStyleHandlers;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Applies image, shape, table, and chart operations.</summary>
-internal static class SlidesObjectHandlers
+// Pictures, shapes, tables and charts.
+internal sealed partial class SlidesMutationHandlers
 {
-    internal static long InsertImage(
-        InputSource inputs,
-        Presentation presentation,
-        ISlide slide,
-        SlidesInsertImageOp op,
-        ISet<uint> touched)
+    public long Apply(SlidesInsertImageOp operation)
     {
-        EnsureFile(op.Path);
-        IPPImage image = presentation.Images.AddImage(
-            inputs.ReadAllBytes(op.Path));
+        EnsureFile(operation.Path);
+        IPPImage image = _presentation.Images.AddImage(_inputs.ReadAllBytes(operation.Path));
         // Without a rectangle the picture keeps its aspect ratio, centered in 80% x 75% of the slide.
-        RectangleF rect = op.Rect is { } given
+        RectangleF rect = operation.Rect is { } given
             ? new RectangleF((float)given.X, (float)given.Y, (float)given.Width, (float)given.Height)
-            : SlidesAuthoring.Fit(image, SlidesAuthoring.Canvas(slide, new RectangleF(0.1f, 0.125f, 0.8f, 0.75f)));
-        slide.Shapes.AddPictureFrame(ShapeType.Rectangle, rect.X, rect.Y, rect.Width, rect.Height, image);
-        touched.Add(slide.SlideId);
+            : SlidesAuthoring.Fit(image, SlidesAuthoring.Canvas(Slide, new RectangleF(0.1f, 0.125f, 0.8f, 0.75f)));
+        Slide.Shapes.AddPictureFrame(ShapeType.Rectangle, rect.X, rect.Y, rect.Width, rect.Height, image);
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
-    internal static long InsertShape(ISlide slide, InsertShapeOp op, ISet<uint> touched)
+    public long Apply(InsertShapeOp operation)
     {
-        ShapeType type = op.Kind switch
+        ShapeType type = operation.Kind switch
         {
-            "rectangle" => ShapeType.Rectangle,
-            "rounded-rectangle" => ShapeType.RoundCornerRectangle,
-            "ellipse" => ShapeType.Ellipse,
-            "line" => ShapeType.Line,
-            "chevron" => ShapeType.Chevron,
-            _ => throw new OperationInvalidException($"Unknown shape kind '{op.Kind}'."),
+            SlidesShapeKinds.Rectangle => ShapeType.Rectangle,
+            SlidesShapeKinds.RoundedRectangle => ShapeType.RoundCornerRectangle,
+            SlidesShapeKinds.Ellipse => ShapeType.Ellipse,
+            SlidesShapeKinds.Line => ShapeType.Line,
+            SlidesShapeKinds.Chevron => ShapeType.Chevron,
+            _ => throw new OperationInvalidException($"Unknown shape kind '{operation.Kind}'."),
         };
-        IAutoShape shape = slide.Shapes.AddAutoShape(
+        IAutoShape shape = Slide.Shapes.AddAutoShape(
             type,
-            (float)op.Rect.X,
-            (float)op.Rect.Y,
-            (float)op.Rect.Width,
-            (float)op.Rect.Height);
-        if (op.Text is not null)
+            (float)operation.Rect.X,
+            (float)operation.Rect.Y,
+            (float)operation.Rect.Width,
+            (float)operation.Rect.Height);
+        if (operation.Text is not null)
         {
-            shape.TextFrame!.Text = op.Text;
+            shape.TextFrame!.Text = operation.Text;
         }
 
-        if (op.Style is not null)
+        if (operation.Style is not null)
         {
-            ApplyStyle(shape, op.Style);
+            ApplyStyle(shape, operation.Style);
         }
-        touched.Add(slide.SlideId);
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
-    internal static long InsertTable(ISlide slide, SlidesInsertTableOp op, ISet<uint> touched)
+    public long Apply(SlidesInsertTableOp operation)
     {
-        double[] columns = Enumerable.Repeat(op.Rect.Width / op.Cols, op.Cols).ToArray();
-        double[] rows = Enumerable.Repeat(op.Rect.Height / op.Rows, op.Rows).ToArray();
-        ITable table = slide.Shapes.AddTable(
-            (float)op.Rect.X,
-            (float)op.Rect.Y,
+        double[] columns = Enumerable.Repeat(operation.Rect.Width / operation.Cols, operation.Cols).ToArray();
+        double[] rows = Enumerable.Repeat(operation.Rect.Height / operation.Rows, operation.Rows).ToArray();
+        ITable table = Slide.Shapes.AddTable(
+            (float)operation.Rect.X,
+            (float)operation.Rect.Y,
             columns,
             rows);
-        if (op.Data is not null)
+        if (operation.Data is not null)
         {
-            for (int row = 0; row < op.Data.Count; row++)
+            for (int row = 0; row < operation.Data.Count; row++)
             {
-                for (int column = 0; column < op.Data[row].Count; column++)
+                for (int column = 0; column < operation.Data[row].Count; column++)
                 {
-                    table[column, row].TextFrame.Text = op.Data[row][column];
+                    table[column, row].TextFrame.Text = operation.Data[row][column];
                 }
             }
         }
 
-        touched.Add(slide.SlideId);
-        return op.Rows * op.Cols;
+        _touched.Add(Slide.SlideId);
+        return operation.Rows * operation.Cols;
     }
 
-    internal static long SetTableCell(
-        ISlide slide,
-        IShape shape,
-        SlidesSetTableCellOp op,
-        ISet<uint> touched)
+    public long Apply(SlidesSetTableCellOp operation)
     {
-        if (shape is not ITable table)
+        if (Shape is not ITable table)
         {
-            throw new OperationInvalidException($"Shape {shape.OfficeInteropShapeId} is not a table.");
+            throw new OperationInvalidException($"Shape {Shape.OfficeInteropShapeId} is not a table.");
         }
 
-        if (op.Row > table.Rows.Count || op.Col > table.Columns.Count)
+        if (operation.Row > table.Rows.Count || operation.Col > table.Columns.Count)
         {
             throw new OperationInvalidException(
-                $"Table cell ({op.Row},{op.Col}) exceeds {table.Rows.Count} rows and {table.Columns.Count} columns.");
+                $"Table cell ({operation.Row},{operation.Col}) exceeds {table.Rows.Count} rows and {table.Columns.Count} columns.");
         }
 
-        table[op.Col - 1, op.Row - 1].TextFrame.Text = op.Text;
-        touched.Add(slide.SlideId);
+        table[operation.Col - 1, operation.Row - 1].TextFrame.Text = operation.Text;
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
-    internal static long InsertChart(ISlide slide, InsertChartOp op, ISet<uint> touched)
+    public long Apply(InsertChartOp operation)
     {
-        ChartType type = ChartTypeFor(op.Kind);
-        IChart chart = slide.Shapes.AddChart(
+        ChartType type = ChartTypeFor(operation.Kind);
+        IChart chart = Slide.Shapes.AddChart(
             type,
-            (float)op.Rect.X,
-            (float)op.Rect.Y,
-            (float)op.Rect.Width,
-            (float)op.Rect.Height,
+            (float)operation.Rect.X,
+            (float)operation.Rect.Y,
+            (float)operation.Rect.Width,
+            (float)operation.Rect.Height,
             true);
-        PopulateChart(chart, type, op.Categories, op.Series);
-        chart.HasTitle = op.Title is not null;
-        if (op.Title is not null)
+        PopulateChart(chart, type, operation.Categories, operation.Series);
+        chart.HasTitle = operation.Title is not null;
+        if (operation.Title is not null)
         {
             chart.ChartTitle.Overlay = false;
-            chart.ChartTitle.AddTextFrameForOverriding(op.Title);
+            chart.ChartTitle.AddTextFrameForOverriding(operation.Title);
             chart.ChartTitle.TextFormat.TextBlockFormat.TextVerticalType = TextVerticalType.Horizontal;
         }
-        chart.HasLegend = op.Series.Count > 1;
+        chart.HasLegend = operation.Series.Count > 1;
         chart.Legend.Position = LegendPositionType.Bottom;
         chart.Legend.Overlay = false;
         chart.LineFormat.FillFormat.FillType = FillType.NoFill;
@@ -145,24 +127,20 @@ internal static class SlidesObjectHandlers
             }
         }
 
-        touched.Add(slide.SlideId);
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
-    internal static long UpdateChart(
-        ISlide slide,
-        IShape shape,
-        UpdateChartDataOp op,
-        ISet<uint> touched)
+    public long Apply(UpdateChartDataOp operation)
     {
-        if (shape is not IChart chart)
+        if (Shape is not IChart chart)
         {
-            throw new OperationInvalidException($"Shape {shape.OfficeInteropShapeId} is not a chart.");
+            throw new OperationInvalidException($"Shape {Shape.OfficeInteropShapeId} is not a chart.");
         }
 
-        SlidesChartData.Update(chart, op);
+        SlidesChartData.Update(chart, operation);
         ApplyDataDrivenPresentation(chart, chart.Type, SlidesChartData.Values(chart));
-        touched.Add(slide.SlideId);
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 

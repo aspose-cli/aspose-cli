@@ -1,280 +1,1635 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/slides/ops.schema.json",
+  "description": "The operation document of slides edit --ops. Every slide and shape target resolves against the presentation as it was before the first operation, so content inserted earlier in the batch cannot be targeted, and a target deleted earlier fails the operation. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.",
   "type": "object",
-  "required": ["ops"],
+  "required": [
+    "ops"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/ops.schema.json" },
-    "schemaVersion": { "const": 2 },
-    "ifMatch": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+    "schema": {
+      "description": "Optional; checked when present.",
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/ops.schema.json"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "ifMatch": {
+      "description": "The SHA-256 fingerprint the input must still have; the edit fails when it changed.",
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
     "ops": {
+      "description": "Operations applied in order.",
       "type": "array",
       "minItems": 1,
       "maxItems": 256,
       "items": {
         "oneOf": [
-          { "$ref": "#/$defs/addSlide" },
-          { "$ref": "#/$defs/deleteSlides" },
-          { "$ref": "#/$defs/moveSlide" },
-          { "$ref": "#/$defs/duplicateSlide" },
-          { "$ref": "#/$defs/setSlideHidden" },
-          { "$ref": "#/$defs/applyLayout" },
-          { "$ref": "#/$defs/setBackground" },
-          { "$ref": "#/$defs/addSection" },
-          { "$ref": "#/$defs/appendPresentation" },
-          { "$ref": "#/$defs/setTitle" },
-          { "$ref": "#/$defs/setBody" },
-          { "$ref": "#/$defs/setText" },
-          { "$ref": "#/$defs/replaceText" },
-          { "$ref": "#/$defs/setNotes" },
-          { "$ref": "#/$defs/insertImage" },
-          { "$ref": "#/$defs/insertShape" },
-          { "$ref": "#/$defs/insertTable" },
-          { "$ref": "#/$defs/setTableCell" },
-          { "$ref": "#/$defs/insertChart" },
-          { "$ref": "#/$defs/updateChartData" },
-          { "$ref": "#/$defs/deleteShape" },
-          { "$ref": "#/$defs/setShapeStyle" },
-          { "$ref": "#/$defs/setFooter" },
-          { "$ref": "#/$defs/setTransition" },
-          { "$ref": "#/$defs/setProperties" },
-          { "$ref": "#/$defs/setSlideSize" }
+          {
+            "$ref": "#/$defs/add_section"
+          },
+          {
+            "$ref": "#/$defs/add_slide"
+          },
+          {
+            "$ref": "#/$defs/append_presentation"
+          },
+          {
+            "$ref": "#/$defs/apply_layout"
+          },
+          {
+            "$ref": "#/$defs/delete_shape"
+          },
+          {
+            "$ref": "#/$defs/delete_slides"
+          },
+          {
+            "$ref": "#/$defs/duplicate_slide"
+          },
+          {
+            "$ref": "#/$defs/insert_chart"
+          },
+          {
+            "$ref": "#/$defs/insert_image"
+          },
+          {
+            "$ref": "#/$defs/insert_shape"
+          },
+          {
+            "$ref": "#/$defs/insert_table"
+          },
+          {
+            "$ref": "#/$defs/move_slide"
+          },
+          {
+            "$ref": "#/$defs/replace_text"
+          },
+          {
+            "$ref": "#/$defs/set_background"
+          },
+          {
+            "$ref": "#/$defs/set_body"
+          },
+          {
+            "$ref": "#/$defs/set_footer"
+          },
+          {
+            "$ref": "#/$defs/set_notes"
+          },
+          {
+            "$ref": "#/$defs/set_properties"
+          },
+          {
+            "$ref": "#/$defs/set_shape_style"
+          },
+          {
+            "$ref": "#/$defs/set_slide_hidden"
+          },
+          {
+            "$ref": "#/$defs/set_slide_size"
+          },
+          {
+            "$ref": "#/$defs/set_table_cell"
+          },
+          {
+            "$ref": "#/$defs/set_text"
+          },
+          {
+            "$ref": "#/$defs/set_title"
+          },
+          {
+            "$ref": "#/$defs/set_transition"
+          },
+          {
+            "$ref": "#/$defs/update_chart_data"
+          }
         ]
       }
     }
   },
   "$defs": {
-    "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$" },
-    "slide": { "type": "integer", "minimum": 1 },
-    "slideId": { "type": "integer", "minimum": 1 },
-    "slides": { "type": "string", "minLength": 1 },
-    "shape": { "type": "integer", "minimum": 1, "description": "Persistent slide-scoped shapeId returned by query slides; not a shape position." },
-    "placeholder": { "enum": ["title", "body", "subtitle", "footer"] },
-    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
-    "rect": {
+    "id": {
+      "description": "A correlation id echoed in the result; op-0001 style ids are assigned when omitted.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
+    },
+    "add_section": {
+      "description": "Starts a new section at a slide; section names are unique.",
       "type": "object",
-      "required": ["x", "y", "width", "height"],
+      "required": [
+        "op",
+        "name",
+        "atSlide"
+      ],
       "additionalProperties": false,
       "properties": {
-        "x": { "type": "number", "minimum": 0 },
-        "y": { "type": "number", "minimum": 0 },
-        "width": { "type": "number", "exclusiveMinimum": 0 },
-        "height": { "type": "number", "exclusiveMinimum": 0 }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_section"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "atSlide": {
+          "description": "The 1-based number of the section's first slide.",
+          "type": "integer",
+          "minimum": 1
+        }
       }
     },
-    "style": {
+    "add_slide": {
+      "description": "Adds an empty slide.",
       "type": "object",
-      "minProperties": 1,
+      "required": [
+        "op"
+      ],
       "additionalProperties": false,
       "properties": {
-        "fill": { "$ref": "#/$defs/color" },
-        "line": { "$ref": "#/$defs/color" },
-        "font": { "type": "string" },
-        "size": { "type": "number", "exclusiveMinimum": 0, "maximum": 400 },
-        "color": { "$ref": "#/$defs/color" },
-        "bold": { "type": "boolean" }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_slide"
+        },
+        "layout": {
+          "description": "The layout name, matched case-insensitively; the first layout when omitted.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "at": {
+          "description": "The 1-based position of the new slide, at most the slide count plus one; the end when omitted.",
+          "type": "integer",
+          "minimum": 1
+        }
       }
     },
-    "series": {
+    "append_presentation": {
+      "description": "Appends every slide of another presentation.",
       "type": "object",
-      "required": ["name", "values"],
+      "required": [
+        "op",
+        "path"
+      ],
       "additionalProperties": false,
       "properties": {
-        "name": { "type": "string" },
-        "values": { "type": "array", "minItems": 1, "maxItems": 1000, "items": { "type": "number" } },
-        "xValues": { "type": "array", "minItems": 1, "items": { "type": "number" } }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "append_presentation"
+        },
+        "path": {
+          "description": "The source presentation, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "masterPolicy": {
+          "description": "Whether appended slides keep their own masters or take the destination's first master.",
+          "type": "string",
+          "enum": [
+            "keep-source",
+            "use-dest"
+          ],
+          "default": "keep-source"
+        }
       }
     },
-    "addSlide": {
-      "type": "object", "required": ["op"], "additionalProperties": false,
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_slide" }, "layout": { "type": "string" }, "at": { "$ref": "#/$defs/slide" } }
-    },
-    "deleteSlides": {
-      "type": "object", "required": ["op", "slides"], "additionalProperties": false,
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "delete_slides" }, "slides": { "$ref": "#/$defs/slides" } }
-    },
-    "moveSlide": {
-      "type": "object", "required": ["op", "to"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "move_slide" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" }, "to": { "$ref": "#/$defs/slide" } }
-    },
-    "duplicateSlide": {
-      "type": "object", "required": ["op"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "duplicate_slide" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" }, "at": { "$ref": "#/$defs/slide" } }
-    },
-    "setSlideHidden": {
-      "type": "object", "required": ["op", "slides", "hidden"], "additionalProperties": false,
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_slide_hidden" }, "slides": { "$ref": "#/$defs/slides" }, "hidden": { "type": "boolean" } }
-    },
-    "applyLayout": {
-      "type": "object", "required": ["op", "slides", "layout"], "additionalProperties": false,
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "apply_layout" }, "slides": { "$ref": "#/$defs/slides" }, "layout": { "type": "string", "minLength": 1 } }
-    },
-    "setBackground": {
-      "type": "object", "required": ["op"], "additionalProperties": false,
-      "oneOf": [{ "required": ["color"] }, { "required": ["imagePath"] }],
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_background" }, "slides": { "$ref": "#/$defs/slides" }, "color": { "$ref": "#/$defs/color" }, "imagePath": { "type": "string", "minLength": 1 } }
-    },
-    "addSection": {
-      "type": "object", "required": ["op", "name", "atSlide"], "additionalProperties": false,
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_section" }, "name": { "type": "string", "minLength": 1 }, "atSlide": { "$ref": "#/$defs/slide" } }
-    },
-    "appendPresentation": {
-      "type": "object", "required": ["op", "path"], "additionalProperties": false,
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "append_presentation" }, "path": { "type": "string", "minLength": 1 }, "masterPolicy": { "enum": ["keep-source", "use-dest"], "default": "keep-source" } }
-    },
-    "setTitle": {
-      "type": "object", "required": ["op", "text"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_title" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" }, "text": { "type": "string" } }
-    },
-    "setBody": {
-      "type": "object", "required": ["op", "paragraphs"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
+    "apply_layout": {
+      "description": "Applies a layout to slides.",
+      "type": "object",
+      "required": [
+        "op",
+        "slides",
+        "layout"
+      ],
+      "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_body" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "paragraphs": {
-          "type": "array", "minItems": 1,
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "apply_layout"
+        },
+        "slides": {
+          "$ref": "#/$defs/pages"
+        },
+        "layout": {
+          "description": "The layout name, matched case-insensitively.",
+          "type": "string",
+          "pattern": "\\S"
+        }
+      }
+    },
+    "delete_shape": {
+      "description": "Deletes one shape.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "delete_shape"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shape": {
+          "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shapeName": {
+          "description": "The shape name, matched case-sensitively.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "placeholder": {
+          "description": "The placeholder role, as query slides reports it.",
+          "type": "string",
+          "enum": [
+            "title",
+            "body",
+            "subtitle",
+            "footer"
+          ]
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "shape"
+              ]
+            },
+            {
+              "required": [
+                "shapeName"
+              ]
+            },
+            {
+              "required": [
+                "placeholder"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "delete_slides": {
+      "description": "Deletes slides; a presentation must keep at least one slide.",
+      "type": "object",
+      "required": [
+        "op",
+        "slides"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "delete_slides"
+        },
+        "slides": {
+          "$ref": "#/$defs/pages"
+        }
+      }
+    },
+    "duplicate_slide": {
+      "description": "Inserts a copy of one slide.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "duplicate_slide"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "at": {
+          "description": "The 1-based position of the copy, at most the slide count plus one; the end when omitted.",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "insert_chart": {
+      "description": "Inserts a chart. Every series has one value per category, and a scatter series has one x value per value.",
+      "type": "object",
+      "required": [
+        "op",
+        "kind",
+        "rect",
+        "categories",
+        "series"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_chart"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "bar",
+            "column",
+            "line",
+            "pie",
+            "scatter"
+          ]
+        },
+        "rect": {
+          "$ref": "#/$defs/slidesRectInput"
+        },
+        "categories": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
           "items": {
-            "type": "object", "required": ["text"], "additionalProperties": false,
-            "properties": { "text": { "type": "string" }, "level": { "type": "integer", "minimum": 0, "maximum": 8, "default": 0 } }
+            "type": "string"
+          }
+        },
+        "series": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/slidesChartSeriesInput"
+          }
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "insert_image": {
+      "description": "Inserts a picture.",
+      "type": "object",
+      "required": [
+        "op",
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_image"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "path": {
+          "description": "The picture, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "rect": {
+          "description": "Where the picture goes; when omitted it keeps its aspect ratio, centered in 80% by 75% of the slide.",
+          "$ref": "#/$defs/slidesRectInput"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "insert_shape": {
+      "description": "Inserts a shape.",
+      "type": "object",
+      "required": [
+        "op",
+        "kind",
+        "rect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_shape"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "rectangle",
+            "rounded-rectangle",
+            "ellipse",
+            "line",
+            "chevron"
+          ]
+        },
+        "rect": {
+          "$ref": "#/$defs/slidesRectInput"
+        },
+        "text": {
+          "type": "string"
+        },
+        "style": {
+          "$ref": "#/$defs/slidesShapeStyleInput"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "insert_table": {
+      "description": "Inserts a table with equal rows and columns; data fills it from the top-left cell.",
+      "type": "object",
+      "required": [
+        "op",
+        "rect",
+        "rows",
+        "cols"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_table"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "rect": {
+          "$ref": "#/$defs/slidesRectInput"
+        },
+        "rows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "cols": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 50
+        },
+        "data": {
+          "description": "Cell text by row, at most rows rows of at most cols cells each.",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "move_slide": {
+      "description": "Moves one slide to a position; it keeps its slide id.",
+      "type": "object",
+      "required": [
+        "op",
+        "to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "move_slide"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "to": {
+          "description": "The 1-based position, at most the slide count.",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "replace_text": {
+      "description": "Replaces text within each paragraph of every slide's shapes (including table cells, group children and SmartArt nodes) and speaker notes. A regular expression runs with a one-second timeout and must compile.",
+      "type": "object",
+      "required": [
+        "op",
+        "find",
+        "replace"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "replace_text"
+        },
+        "find": {
+          "type": "string",
+          "minLength": 1
+        },
+        "replace": {
+          "description": "The replacement; with regex it honors .NET substitutions such as $1, and $$ is a literal $.",
+          "type": "string"
+        },
+        "regex": {
+          "description": "Whether find is a .NET regular expression rather than literal text.",
+          "type": "boolean",
+          "default": false
+        },
+        "matchCase": {
+          "type": "boolean",
+          "default": false
+        },
+        "scope": {
+          "type": "string",
+          "enum": [
+            "shapes",
+            "notes",
+            "all"
+          ],
+          "default": "all"
+        }
+      }
+    },
+    "set_background": {
+      "description": "Gives slides their own solid-color or stretched-picture background.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_background"
+        },
+        "slides": {
+          "description": "The slides to change; every slide when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "color": {
+          "$ref": "#/$defs/color"
+        },
+        "imagePath": {
+          "description": "The picture, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "color"
+              ]
+            },
+            {
+              "required": [
+                "imagePath"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_body": {
+      "description": "Replaces the paragraphs of a slide's body placeholder.",
+      "type": "object",
+      "required": [
+        "op",
+        "paragraphs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_body"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "paragraphs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/slidesParagraphInput"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_footer": {
+      "description": "Shows footer text, slide numbers or dates through the layout's own placeholders; it must set at least one of text, showNumber and showDate.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_footer"
+        },
+        "slides": {
+          "description": "The slides to change; every slide when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "text": {
+          "type": "string"
+        },
+        "showNumber": {
+          "type": "boolean"
+        },
+        "showDate": {
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "anyOf": [
+            {
+              "required": [
+                "text"
+              ]
+            },
+            {
+              "required": [
+                "showNumber"
+              ]
+            },
+            {
+              "required": [
+                "showDate"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_notes": {
+      "description": "Replaces a slide's speaker-note text.",
+      "type": "object",
+      "required": [
+        "op",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_notes"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_properties": {
+      "description": "Sets document properties; omitted properties keep their values.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_properties"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "keywords": {
+          "type": "string"
+        },
+        "company": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "anyOf": [
+            {
+              "required": [
+                "title"
+              ]
+            },
+            {
+              "required": [
+                "author"
+              ]
+            },
+            {
+              "required": [
+                "subject"
+              ]
+            },
+            {
+              "required": [
+                "keywords"
+              ]
+            },
+            {
+              "required": [
+                "company"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_shape_style": {
+      "description": "Styles one shape and every run of its text.",
+      "type": "object",
+      "required": [
+        "op",
+        "style"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_shape_style"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shape": {
+          "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shapeName": {
+          "description": "The shape name, matched case-sensitively.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "placeholder": {
+          "description": "The placeholder role, as query slides reports it.",
+          "type": "string",
+          "enum": [
+            "title",
+            "body",
+            "subtitle",
+            "footer"
+          ]
+        },
+        "style": {
+          "$ref": "#/$defs/slidesShapeStyleInput"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "shape"
+              ]
+            },
+            {
+              "required": [
+                "shapeName"
+              ]
+            },
+            {
+              "required": [
+                "placeholder"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_slide_hidden": {
+      "description": "Hides or shows slides in a slide show.",
+      "type": "object",
+      "required": [
+        "op",
+        "slides",
+        "hidden"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_slide_hidden"
+        },
+        "slides": {
+          "$ref": "#/$defs/pages"
+        },
+        "hidden": {
+          "type": "boolean"
+        }
+      }
+    },
+    "set_slide_size": {
+      "description": "Sets the slide size of the whole presentation.",
+      "type": "object",
+      "required": [
+        "op",
+        "size"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_slide_size"
+        },
+        "size": {
+          "description": "16x9, 4x3, or WxHpt such as 800x450pt; each side is 72 through 7200 points.",
+          "type": "string",
+          "pattern": "^(16x9|4x3|[0-9]+(?:\\.[0-9]+)?x[0-9]+(?:\\.[0-9]+)?pt)$"
+        },
+        "scaleContent": {
+          "description": "Whether the content is scaled to fit the new size rather than kept at its position.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "set_table_cell": {
+      "description": "Sets the text of one cell of a table shape.",
+      "type": "object",
+      "required": [
+        "op",
+        "row",
+        "col",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_table_cell"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shape": {
+          "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shapeName": {
+          "description": "The shape name, matched case-sensitively.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "placeholder": {
+          "description": "The placeholder role, as query slides reports it.",
+          "type": "string",
+          "enum": [
+            "title",
+            "body",
+            "subtitle",
+            "footer"
+          ]
+        },
+        "row": {
+          "description": "The 1-based row.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "col": {
+          "description": "The 1-based column.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "shape"
+              ]
+            },
+            {
+              "required": [
+                "shapeName"
+              ]
+            },
+            {
+              "required": [
+                "placeholder"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_text": {
+      "description": "Replaces the text of one shape that has a text frame.",
+      "type": "object",
+      "required": [
+        "op",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_text"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shape": {
+          "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shapeName": {
+          "description": "The shape name, matched case-sensitively.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "placeholder": {
+          "description": "The placeholder role, as query slides reports it.",
+          "type": "string",
+          "enum": [
+            "title",
+            "body",
+            "subtitle",
+            "footer"
+          ]
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "shape"
+              ]
+            },
+            {
+              "required": [
+                "shapeName"
+              ]
+            },
+            {
+              "required": [
+                "placeholder"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_title": {
+      "description": "Sets the text of a slide's title placeholder.",
+      "type": "object",
+      "required": [
+        "op",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_title"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "text": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_transition": {
+      "description": "Sets the slide-show transition of slides.",
+      "type": "object",
+      "required": [
+        "op",
+        "slides"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_transition"
+        },
+        "slides": {
+          "$ref": "#/$defs/pages"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "none",
+            "fade",
+            "push",
+            "wipe",
+            "split",
+            "cover"
+          ]
+        },
+        "durationMs": {
+          "description": "The transition duration in milliseconds.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 60000
+        }
+      },
+      "allOf": [
+        {
+          "anyOf": [
+            {
+              "required": [
+                "kind"
+              ]
+            },
+            {
+              "required": [
+                "durationMs"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "update_chart_data": {
+      "description": "Replaces the categories or series of a chart in its embedded workbook. When both are given, every series has one value per category.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "update_chart_data"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shape": {
+          "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shapeName": {
+          "description": "The shape name, matched case-sensitively.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "placeholder": {
+          "description": "The placeholder role, as query slides reports it.",
+          "type": "string",
+          "enum": [
+            "title",
+            "body",
+            "subtitle",
+            "footer"
+          ]
+        },
+        "categories": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "type": "string"
+          }
+        },
+        "series": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": {
+            "$ref": "#/$defs/slidesChartSeriesInput"
+          }
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "shape"
+              ]
+            },
+            {
+              "required": [
+                "shapeName"
+              ]
+            },
+            {
+              "required": [
+                "placeholder"
+              ]
+            }
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "categories"
+              ]
+            },
+            {
+              "required": [
+                "series"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "pages": {
+      "type": "string",
+      "description": "1-based pages and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last page, and a range must not end before it starts.",
+      "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
+    },
+    "slidesChartSeriesInput": {
+      "description": "One chart series.",
+      "type": "object",
+      "required": [
+        "name",
+        "values"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "name": {
+          "type": "string"
+        },
+        "values": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 1000,
+          "items": {
+            "type": "number"
+          }
+        },
+        "xValues": {
+          "description": "The x value of each point of a scatter series, one per value.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "number"
           }
         }
       }
     },
-    "setText": {
-      "type": "object", "required": ["op", "text"], "additionalProperties": false,
-      "allOf": [{ "$ref": "#/$defs/slideAndShapeChoice" }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_text" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "shape": { "$ref": "#/$defs/shape" }, "shapeName": { "type": "string" }, "placeholder": { "$ref": "#/$defs/placeholder" }, "text": { "type": "string" }
-      }
-    },
-    "replaceText": {
-      "type": "object", "required": ["op", "find", "replace"], "additionalProperties": false,
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "replace_text" }, "find": { "type": "string", "minLength": 1 }, "replace": { "type": "string" },
-        "regex": { "type": "boolean", "default": false }, "matchCase": { "type": "boolean", "default": false },
-        "scope": { "enum": ["shapes", "notes", "all"], "default": "all" }
-      }
-    },
-    "setNotes": {
-      "type": "object", "required": ["op", "text"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_notes" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" }, "text": { "type": "string" } }
-    },
-    "insertImage": {
-      "type": "object", "required": ["op", "path"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
-      "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_image" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" }, "path": { "type": "string", "minLength": 1 }, "rect": { "$ref": "#/$defs/rect" } }
-    },
-    "insertShape": {
-      "type": "object", "required": ["op", "kind", "rect"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_shape" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "kind": { "enum": ["rectangle", "rounded-rectangle", "ellipse", "line", "chevron"] }, "rect": { "$ref": "#/$defs/rect" },
-        "text": { "type": "string" }, "style": { "$ref": "#/$defs/style" }
-      }
-    },
-    "insertTable": {
-      "type": "object", "required": ["op", "rect", "rows", "cols"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_table" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "rect": { "$ref": "#/$defs/rect" }, "rows": { "type": "integer", "minimum": 1, "maximum": 100 },
-        "cols": { "type": "integer", "minimum": 1, "maximum": 50 },
-        "data": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } }
-      }
-    },
-    "setTableCell": {
-      "type": "object", "required": ["op", "row", "col", "text"], "additionalProperties": false,
-      "allOf": [{ "$ref": "#/$defs/slideAndShapeChoice" }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_table_cell" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "shape": { "$ref": "#/$defs/shape" }, "shapeName": { "type": "string" }, "placeholder": { "$ref": "#/$defs/placeholder" },
-        "row": { "type": "integer", "minimum": 1 }, "col": { "type": "integer", "minimum": 1 }, "text": { "type": "string" }
-      }
-    },
-    "insertChart": {
-      "type": "object", "required": ["op", "kind", "rect", "categories", "series"], "additionalProperties": false,
-      "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_chart" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "kind": { "enum": ["bar", "column", "line", "pie", "scatter"] }, "rect": { "$ref": "#/$defs/rect" },
-        "categories": { "type": "array", "minItems": 1, "maxItems": 1000, "items": { "type": "string" } },
-        "series": { "type": "array", "minItems": 1, "maxItems": 50, "items": { "$ref": "#/$defs/series" } }, "title": { "type": "string" }
-      }
-    },
-    "updateChartData": {
-      "type": "object", "required": ["op"], "additionalProperties": false,
-      "allOf": [{ "$ref": "#/$defs/slideAndShapeChoice" }],
-      "anyOf": [{ "required": ["categories"] }, { "required": ["series"] }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "update_chart_data" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "shape": { "$ref": "#/$defs/shape" }, "shapeName": { "type": "string" }, "placeholder": { "$ref": "#/$defs/placeholder" },
-        "categories": { "type": "array", "minItems": 1, "maxItems": 1000, "items": { "type": "string" } },
-        "series": { "type": "array", "minItems": 1, "maxItems": 50, "items": { "$ref": "#/$defs/series" } }
-      }
-    },
-    "deleteShape": {
-      "type": "object", "required": ["op"], "additionalProperties": false,
-      "allOf": [{ "$ref": "#/$defs/slideAndShapeChoice" }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "delete_shape" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "shape": { "$ref": "#/$defs/shape" }, "shapeName": { "type": "string" }, "placeholder": { "$ref": "#/$defs/placeholder" }
-      }
-    },
-    "setShapeStyle": {
-      "type": "object", "required": ["op", "style"], "additionalProperties": false,
-      "allOf": [{ "$ref": "#/$defs/slideAndShapeChoice" }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_shape_style" }, "slide": { "$ref": "#/$defs/slide" }, "slideId": { "$ref": "#/$defs/slideId" },
-        "shape": { "$ref": "#/$defs/shape" }, "shapeName": { "type": "string" }, "placeholder": { "$ref": "#/$defs/placeholder" },
-        "style": { "$ref": "#/$defs/style" }
-      }
-    },
-    "setFooter": {
-      "type": "object", "required": ["op"], "additionalProperties": false,
-      "anyOf": [{ "required": ["text"] }, { "required": ["showNumber"] }, { "required": ["showDate"] }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_footer" }, "slides": { "$ref": "#/$defs/slides" }, "text": { "type": "string" },
-        "showNumber": { "type": "boolean" }, "showDate": { "type": "boolean" }
-      }
-    },
-    "setTransition": {
-      "type": "object", "required": ["op", "slides"], "additionalProperties": false,
-      "anyOf": [{ "required": ["kind"] }, { "required": ["durationMs"] }],
-      "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_transition" }, "slides": { "$ref": "#/$defs/slides" },
-        "kind": { "enum": ["none", "fade", "push", "wipe", "split", "cover"] },
-        "durationMs": { "type": "integer", "minimum": 0, "maximum": 60000 }
-      }
-    },
-    "setProperties": {
-      "type": "object", "required": ["op"], "additionalProperties": false,
-      "anyOf": [
-        { "required": ["title"] }, { "required": ["author"] }, { "required": ["subject"] },
-        { "required": ["keywords"] }, { "required": ["company"] }
+    "slidesParagraphInput": {
+      "description": "One body paragraph; its bullets and spacing come from the placeholder's level.",
+      "type": "object",
+      "required": [
+        "text"
       ],
+      "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_properties" }, "title": { "type": "string" }, "author": { "type": "string" },
-        "subject": { "type": "string" }, "keywords": { "type": "string" }, "company": { "type": "string" }
+        "text": {
+          "type": "string"
+        },
+        "level": {
+          "description": "The outline level, 0 for a top-level paragraph.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8,
+          "default": 0
+        }
       }
     },
-    "setSlideSize": {
-      "type": "object", "required": ["op", "size"], "additionalProperties": false,
+    "slidesRectInput": {
+      "description": "A rectangle in presentation points from the top-left origin.",
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
       "properties": {
-        "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_slide_size" }, "size": { "type": "string", "pattern": "^(16x9|4x3|[0-9]+(?:\\.[0-9]+)?x[0-9]+(?:\\.[0-9]+)?pt)$", "description": "16x9, 4x3, or WxHpt such as 800x450pt; each side is 72 through 7200 points." },
-        "scaleContent": { "type": "boolean", "default": true }
+        "x": {
+          "type": "number",
+          "minimum": 0
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
       }
     },
-    "slideAndShapeChoice": {
+    "slidesShapeStyleInput": {
+      "description": "Visual styling of a slide shape and its text; it must set at least one property.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "fill": {
+          "$ref": "#/$defs/color"
+        },
+        "line": {
+          "$ref": "#/$defs/color"
+        },
+        "font": {
+          "description": "A font name, applied to Latin, East Asian and complex-script text.",
+          "type": "string"
+        },
+        "size": {
+          "description": "The font size in points.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "maximum": 400
+        },
+        "color": {
+          "description": "The text color.",
+          "$ref": "#/$defs/color"
+        },
+        "bold": {
+          "type": "boolean"
+        }
+      },
       "allOf": [
-        { "oneOf": [{ "required": ["slide"] }, { "required": ["slideId"] }] },
-        { "oneOf": [{ "required": ["shape"] }, { "required": ["shapeName"] }, { "required": ["placeholder"] }] }
+        {
+          "minProperties": 1
+        }
       ]
     }
   }

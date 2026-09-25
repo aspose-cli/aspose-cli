@@ -22,11 +22,11 @@ public sealed class SlidesContractDriftTests
 
         if (valid)
         {
-            Assert.Single(SlidesOps.Catalog.Prepare(batch).Ops);
+            Assert.Single(SlidesOp.Catalog.Prepare(batch).Ops);
         }
         else
         {
-            Assert.Equal(ErrorCodes.OpsInvalid, Assert.Throws<CliException>(() => SlidesOps.Catalog.Prepare(batch)).Code);
+            Assert.Equal(ErrorCodes.OpsInvalid, Assert.Throws<CliException>(() => SlidesOp.Catalog.Prepare(batch)).Code);
         }
     }
 

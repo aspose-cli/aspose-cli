@@ -1,41 +1,27 @@
-using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Slides.Contracts;
-using Aspose.Cli.Product.Slides.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Operations;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
 using Aspose.Slides.SlideShow;
 using static Aspose.Cli.Product.Slides.Engine.SlidesMutationSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Applies shape, footer, transition, property, and size operations.</summary>
-internal static class SlidesStyleHandlers
+// Shape styles, footers, transitions, document properties and slide size.
+internal sealed partial class SlidesMutationHandlers
 {
-    internal static long DeleteShape(ISlide slide, IShape shape, ISet<uint> touched)
+    public long Apply(DeleteShapeOp operation)
     {
-        slide.Shapes.Remove(shape);
-        touched.Add(slide.SlideId);
+        Slide.Shapes.Remove(Shape);
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
-    internal static long SetShapeStyle(
-        ISlide slide,
-        IShape shape,
-        SlidesShapeStyleInput style,
-        ISet<uint> touched)
+    public long Apply(SetShapeStyleOp operation)
     {
-        ApplyStyle(shape, style);
-        touched.Add(slide.SlideId);
+        ApplyStyle(Shape, operation.Style);
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
-    internal static void ApplyStyle(IShape shape, SlidesShapeStyleInput style)
+    private static void ApplyStyle(IShape shape, SlidesShapeStyleInput style)
     {
         if (style.Fill is not null)
         {
@@ -84,35 +70,32 @@ internal static class SlidesStyleHandlers
         }
     }
 
-    internal static long SetFooter(
-        IReadOnlyList<ISlide> slides,
-        SetFooterOp op,
-        ISet<uint> touched)
+    public long Apply(SetFooterOp operation)
     {
-        foreach (ISlide slide in slides)
+        foreach (ISlide slide in Slides)
         {
             IBaseSlideHeaderFooterManager manager = slide.HeaderFooterManager.AsIBaseSlideHeaderFooterManager;
-            if (op.Text is not null)
+            if (operation.Text is not null)
             {
-                manager.SetFooterText(op.Text);
+                manager.SetFooterText(operation.Text);
                 manager.SetFooterVisibility(true);
             }
 
-            if (op.ShowNumber is not null)
+            if (operation.ShowNumber is not null)
             {
-                manager.SetSlideNumberVisibility(op.ShowNumber.Value);
+                manager.SetSlideNumberVisibility(operation.ShowNumber.Value);
             }
 
-            if (op.ShowDate is not null)
+            if (operation.ShowDate is not null)
             {
-                manager.SetDateTimeVisibility(op.ShowDate.Value);
+                manager.SetDateTimeVisibility(operation.ShowDate.Value);
             }
 
-            FillEmptyFooters(slide, op);
-            touched.Add(slide.SlideId);
+            FillEmptyFooters(slide, operation);
+            _touched.Add(slide.SlideId);
         }
 
-        return slides.Count;
+        return Slides.Count;
     }
 
     // A footer placeholder activated from the layout starts empty; give it the requested text.
@@ -133,95 +116,88 @@ internal static class SlidesStyleHandlers
         }
     }
 
-    internal static long SetTransition(
-        IReadOnlyList<ISlide> slides,
-        SetTransitionOp op,
-        ISet<uint> touched)
+
+    public long Apply(SetTransitionOp operation)
     {
-        foreach (ISlide slide in slides)
+        foreach (ISlide slide in Slides)
         {
-            if (op.Kind is not null)
+            if (operation.Kind is not null)
             {
-                slide.SlideShowTransition.Type = op.Kind switch
+                slide.SlideShowTransition.Type = operation.Kind switch
                 {
-                    "none" => TransitionType.None,
-                    "fade" => TransitionType.Fade,
-                    "push" => TransitionType.Push,
-                    "wipe" => TransitionType.Wipe,
-                    "split" => TransitionType.Split,
-                    "cover" => TransitionType.Cover,
-                    _ => throw new OperationInvalidException($"Unknown transition '{op.Kind}'."),
+                    SlidesTransitionKinds.None => TransitionType.None,
+                    SlidesTransitionKinds.Fade => TransitionType.Fade,
+                    SlidesTransitionKinds.Push => TransitionType.Push,
+                    SlidesTransitionKinds.Wipe => TransitionType.Wipe,
+                    SlidesTransitionKinds.Split => TransitionType.Split,
+                    SlidesTransitionKinds.Cover => TransitionType.Cover,
+                    _ => throw new OperationInvalidException($"Unknown transition '{operation.Kind}'."),
                 };
             }
 
-            if (op.DurationMs is not null)
+            if (operation.DurationMs is not null)
             {
-                slide.SlideShowTransition.Duration = op.DurationMs.Value;
+                slide.SlideShowTransition.Duration = operation.DurationMs.Value;
             }
-            touched.Add(slide.SlideId);
+            _touched.Add(slide.SlideId);
         }
 
-        return slides.Count;
+        return Slides.Count;
     }
 
-    internal static long SetProperties(Presentation presentation, SlidesSetPropertiesOp op)
+    public long Apply(SlidesSetPropertiesOp operation)
     {
-        if (op.Title is not null)
+        if (operation.Title is not null)
         {
-            presentation.DocumentProperties.Title = op.Title;
+            _presentation.DocumentProperties.Title = operation.Title;
         }
 
-        if (op.Author is not null)
+        if (operation.Author is not null)
         {
-            presentation.DocumentProperties.Author = op.Author;
+            _presentation.DocumentProperties.Author = operation.Author;
         }
 
-        if (op.Subject is not null)
+        if (operation.Subject is not null)
         {
-            presentation.DocumentProperties.Subject = op.Subject;
+            _presentation.DocumentProperties.Subject = operation.Subject;
         }
 
-        if (op.Keywords is not null)
+        if (operation.Keywords is not null)
         {
-            presentation.DocumentProperties.Keywords = op.Keywords;
+            _presentation.DocumentProperties.Keywords = operation.Keywords;
         }
 
-        if (op.Company is not null)
+        if (operation.Company is not null)
         {
-            presentation.DocumentProperties.Company = op.Company;
+            _presentation.DocumentProperties.Company = operation.Company;
         }
         return 1;
     }
 
-    internal static long SetSlideSize(
-        Presentation presentation,
-        SetSlideSizeOp op,
-        ISet<uint> touched)
+    public long Apply(SetSlideSizeOp operation)
     {
-        SlideSizeScaleType scale = op.ScaleContent
+        SlideSizeScaleType scale = operation.ScaleContent
             ? SlideSizeScaleType.EnsureFit
             : SlideSizeScaleType.DoNotScale;
-        if (op.Size is "16x9" or "4x3")
+        if (operation.Size is "16x9" or "4x3")
         {
-            presentation.SlideSize.SetSize(
-                op.Size == "16x9" ? SlideSizeType.OnScreen16x9 : SlideSizeType.OnScreen,
+            _presentation.SlideSize.SetSize(
+                operation.Size == "16x9" ? SlideSizeType.OnScreen16x9 : SlideSizeType.OnScreen,
                 scale);
         }
-        else if (SlidesOpRules.TryParseCustomSize(op.Size, out float width, out float height))
+        else if (operation.TryGetPoints(out float width, out float height))
         {
-            presentation.SlideSize.SetSize(width, height, scale);
+            _presentation.SlideSize.SetSize(width, height, scale);
         }
         else
         {
-            throw new OperationInvalidException($"Unsupported slide size '{op.Size}'.");
+            throw new OperationInvalidException($"Unsupported slide size '{operation.Size}'.");
         }
 
-        foreach (ISlide slide in presentation.Slides)
+        foreach (ISlide slide in _presentation.Slides)
         {
-            touched.Add(slide.SlideId);
+            _touched.Add(slide.SlideId);
         }
-        return presentation.Slides.Count;
+        return _presentation.Slides.Count;
     }
-
 }
-

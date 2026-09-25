@@ -85,11 +85,11 @@ internal static class SlidesMutationSupport
 
     internal static ChartType ChartTypeFor(string kind) => kind switch
     {
-        "bar" => ChartType.ClusteredBar,
-        "column" => ChartType.ClusteredColumn,
-        "line" => ChartType.LineWithMarkers,
-        "pie" => ChartType.Pie,
-        "scatter" => ChartType.ScatterWithStraightLinesAndMarkers,
+        SlidesChartKinds.Bar => ChartType.ClusteredBar,
+        SlidesChartKinds.Column => ChartType.ClusteredColumn,
+        SlidesChartKinds.Line => ChartType.LineWithMarkers,
+        SlidesChartKinds.Pie => ChartType.Pie,
+        SlidesChartKinds.Scatter => ChartType.ScatterWithStraightLinesAndMarkers,
         _ => throw ChartDataInvalid($"Unknown chart kind '{kind}'."),
     };
 

@@ -6,18 +6,18 @@ using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Applies text and notes operations.</summary>
-internal static class SlidesContentHandlers
+// Text and speaker notes.
+internal sealed partial class SlidesMutationHandlers
 {
-    internal static long SetText(ISlide slide, IShape shape, string text, ISet<uint> touched)
+    public long Apply(SetTextOp operation)
     {
-        if (shape is not IAutoShape { TextFrame: not null } auto)
+        if (Shape is not IAutoShape { TextFrame: not null } auto)
         {
-            throw new OperationInvalidException($"Shape {shape.OfficeInteropShapeId} has no editable text frame.");
+            throw new OperationInvalidException($"Shape {Shape.OfficeInteropShapeId} has no editable text frame.");
         }
 
-        auto.TextFrame.Text = text;
-        touched.Add(slide.SlideId);
+        auto.TextFrame.Text = operation.Text;
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
@@ -27,22 +27,19 @@ internal static class SlidesContentHandlers
     /// replacement text takes the formatting of the first matched character, and every
     /// other run and paragraph keeps its own formatting.
     /// </summary>
-    internal static long ReplaceText(
-        Presentation presentation,
-        SlidesReplaceTextOp op,
-        ISet<uint> touched)
+    public long Apply(SlidesReplaceTextOp operation)
     {
-        Regex? regex = op.Regex ? SafeRegex.Create(op.Find, op.MatchCase) : null;
+        Regex? regex = operation.Regex ? SafeRegex.Create(operation.Find, operation.MatchCase) : null;
         long count = 0;
-        foreach (ISlide slide in presentation.Slides)
+        foreach (ISlide slide in _presentation.Slides)
         {
             var frames = new List<ITextFrame>();
-            if (op.Scope is "shapes" or "all")
+            if (operation.Scope is PresentationSearchScopes.Shapes or PresentationSearchScopes.All)
             {
                 frames.AddRange(slide.Shapes.SelectMany(TextFrames));
             }
 
-            if (op.Scope is "notes" or "all"
+            if (operation.Scope is PresentationSearchScopes.Notes or PresentationSearchScopes.All
                 && slide.NotesSlideManager.NotesSlide?.NotesTextFrame is { } notes)
             {
                 frames.Add(notes);
@@ -50,11 +47,11 @@ internal static class SlidesContentHandlers
 
             long replaced = frames
                 .SelectMany(static frame => frame.Paragraphs)
-                .Sum(paragraph => (long)Replace(paragraph, op, regex));
+                .Sum(paragraph => (long)Replace(paragraph, operation, regex));
             if (replaced > 0)
             {
                 count += replaced;
-                touched.Add(slide.SlideId);
+                _touched.Add(slide.SlideId);
             }
         }
 
@@ -152,12 +149,12 @@ internal static class SlidesContentHandlers
         return matches;
     }
 
-    internal static long SetNotes(ISlide slide, string text, ISet<uint> touched)
+    public long Apply(SetNotesOp operation)
     {
-        INotesSlide notes = slide.NotesSlideManager.NotesSlide
-            ?? slide.NotesSlideManager.AddNotesSlide();
-        notes.NotesTextFrame!.Text = text;
-        touched.Add(slide.SlideId);
+        INotesSlide notes = Slide.NotesSlideManager.NotesSlide
+            ?? Slide.NotesSlideManager.AddNotesSlide();
+        notes.NotesTextFrame!.Text = operation.Text;
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 }

@@ -1,23 +1,56 @@
-using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Slides.Contracts;
-using Aspose.Cli.Product.Slides.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesContentHandlers;
 using static Aspose.Cli.Product.Slides.Engine.SlidesMutationSupport;
-using static Aspose.Cli.Product.Slides.Engine.SlidesObjectHandlers;
-using static Aspose.Cli.Product.Slides.Engine.SlidesStructuralHandlers;
-using static Aspose.Cli.Product.Slides.Engine.SlidesStyleHandlers;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Applies resolved presentation operations without owning batch lifecycle.</summary>
-internal static class SlidesMutationHandlers
+/// <summary>
+/// Applies one resolved presentation operation. Each operation has its handler in the
+/// structural, content, object or style part of this class, and returns the number of items
+/// it changed.
+/// </summary>
+internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
 {
+    private readonly InputSource _inputs;
+    private readonly SlidesPresentationLoader _loader;
+    private readonly Presentation _presentation;
+    private readonly ResolvedSlidesOp _target;
+    private readonly ISet<uint> _touched;
+
+    /// <summary>Creates the handlers of one operation.</summary>
+    /// <param name="inputs">Reads and charges the files that operations read.</param>
+    /// <param name="loader">Opens the presentations that operations append.</param>
+    /// <param name="presentation">The presentation being edited.</param>
+    /// <param name="target">The operation with the targets it resolved before the batch started.</param>
+    /// <param name="touched">Receives the ids of the slides the operation changes.</param>
+    internal SlidesMutationHandlers(
+        InputSource inputs,
+        SlidesPresentationLoader loader,
+        Presentation presentation,
+        ResolvedSlidesOp target,
+        ISet<uint> touched)
+    {
+        _inputs = inputs;
+        _loader = loader;
+        _presentation = presentation;
+        _target = target;
+        _touched = touched;
+    }
+
+    /// <summary>The resolved target slide of a slide or shape operation.</summary>
+    private ISlide Slide => _target.Slide!;
+
+    /// <summary>The resolved target shape of a shape operation.</summary>
+    private IShape Shape => _target.Shape!;
+
+    /// <summary>The resolved target slides of a multi-slide operation.</summary>
+    private IReadOnlyList<ISlide> Slides => _target.Slides!;
+
+    /// <summary>
+    /// Resolves every operation's targets against the presentation before the first one is
+    /// applied, so later operations address what the caller read, not what earlier ones made.
+    /// </summary>
     internal static IReadOnlyList<ResolvedSlidesOp> ResolveBatch(
         Presentation presentation,
         SlidesOpsBatch batch)
@@ -60,55 +93,25 @@ internal static class SlidesMutationHandlers
         return resolved;
     }
 
-    internal static long ApplyResolved(
-        ResourceBudgetLedger resourceBudgets,
-        SlidesPresentationLoader loader,
-        Presentation presentation,
-        ResolvedSlidesOp item,
-        ISet<uint> touched)
+    /// <summary>
+    /// Applies the operation once its targets are still part of the presentation; an
+    /// Aspose.Slides or I/O failure becomes an engine failure.
+    /// </summary>
+    internal long Run()
     {
         try
         {
-            if (item.Slide is not null && !presentation.Slides.Contains(item.Slide)
-                || item.Slides?.Any(slide => !presentation.Slides.Contains(slide)) == true)
+            if (_target.Slide is not null && !_presentation.Slides.Contains(_target.Slide)
+                || _target.Slides?.Any(slide => !_presentation.Slides.Contains(slide)) == true)
             {
                 throw new OperationInvalidException("A targeted slide was deleted by an earlier operation.");
             }
-            if (item.Shape is not null && !item.Slide!.Shapes.Any(shape => ReferenceEquals(shape, item.Shape)))
+            if (_target.Shape is not null && !_target.Slide!.Shapes.Any(shape => ReferenceEquals(shape, _target.Shape)))
             {
                 throw new OperationInvalidException("A targeted shape was deleted by an earlier operation.");
             }
 
-            return item.Op switch
-            {
-                AddSlideOp value => AddSlide(presentation, value, item.Layout, touched),
-                DeleteSlidesOp => DeleteSlides(presentation, item.Slides!),
-                MoveSlideOp value => MoveSlide(presentation, value, item.Slide!, touched),
-                DuplicateSlideOp value => DuplicateSlide(presentation, value, item.Slide!, touched),
-                SetSlideHiddenOp value => SetHidden(item.Slides!, value.Hidden, touched),
-                ApplyLayoutOp => ApplyLayout(item.Slides!, item.Layout!, touched),
-                SetBackgroundOp value => SetBackground(resourceBudgets.Inputs, presentation, item.Slides!, value, touched),
-                AddSectionOp value => AddSection(presentation, value, item.Slide!),
-                AppendPresentationOp value => AppendPresentation(loader, presentation, value, touched),
-                SetTitleOp value => SetTitle(item.Slide!, value.Text, touched),
-                SetBodyOp value => SetBody(item.Slide!, value.Paragraphs, touched),
-                SetTextOp value => SetText(item.Slide!, item.Shape!, value.Text, touched),
-                SlidesReplaceTextOp value => ReplaceText(presentation, value, touched),
-                SetNotesOp value => SetNotes(item.Slide!, value.Text, touched),
-                SlidesInsertImageOp value => InsertImage(resourceBudgets.Inputs, presentation, item.Slide!, value, touched),
-                InsertShapeOp value => InsertShape(item.Slide!, value, touched),
-                SlidesInsertTableOp value => InsertTable(item.Slide!, value, touched),
-                SlidesSetTableCellOp value => SetTableCell(item.Slide!, item.Shape!, value, touched),
-                InsertChartOp value => InsertChart(item.Slide!, value, touched),
-                UpdateChartDataOp value => UpdateChart(item.Slide!, item.Shape!, value, touched),
-                DeleteShapeOp => DeleteShape(item.Slide!, item.Shape!, touched),
-                SetShapeStyleOp value => SetShapeStyle(item.Slide!, item.Shape!, value.Style, touched),
-                SetFooterOp value => SetFooter(item.Slides!, value, touched),
-                SetTransitionOp value => SetTransition(item.Slides!, value, touched),
-                SlidesSetPropertiesOp value => SetProperties(presentation, value),
-                SetSlideSizeOp value => SetSlideSize(presentation, value, touched),
-                _ => throw new InvalidOperationException($"No Slides handler for {item.Op.GetType().Name}."),
-            };
+            return _target.Op.Accept(this);
         }
         catch (Exception exception) when (
             exception.GetType().Assembly.GetName().Name?.StartsWith("Aspose.Slides", StringComparison.Ordinal) == true

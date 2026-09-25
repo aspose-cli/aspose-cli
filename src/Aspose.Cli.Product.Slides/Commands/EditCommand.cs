@@ -9,18 +9,8 @@ internal static class EditCommand
 {
     private static readonly BoundedEditDefinition<SlidesOp, SlidesOpsBatch> Definition = new()
     {
-        Catalog = SlidesOps.Catalog,
+        Catalog = SlidesOp.Catalog,
         Contracts = ProductJsonContext.Definition,
-        NormalizePaths = static (op, paths) => op switch
-        {
-            SetBackgroundOp { ImagePath: not null } value =>
-                value with { ImagePath = paths.ResolveInput(value.ImagePath) },
-            AppendPresentationOp value =>
-                value with { Path = paths.ResolveInput(value.Path) },
-            SlidesInsertImageOp value =>
-                value with { Path = paths.ResolveInput(value.Path) },
-            _ => op,
-        },
     };
 
     public static Command Create(IProductCommandHost<IPresentationEngine> host) =>

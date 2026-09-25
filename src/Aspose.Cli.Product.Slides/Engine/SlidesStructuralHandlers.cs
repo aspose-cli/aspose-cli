@@ -1,143 +1,109 @@
-using System.Text.Json.Nodes;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Slides.Contracts;
-using Aspose.Cli.Product.Slides.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
 using Aspose.Slides;
-using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 using static Aspose.Cli.Product.Slides.Engine.SlidesMutationSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Applies slide and section structure operations.</summary>
-internal static class SlidesStructuralHandlers
+// Slide and section structure.
+internal sealed partial class SlidesMutationHandlers
 {
-    internal static long AddSlide(
-        Presentation presentation,
-        AddSlideOp op,
-        ILayoutSlide? layout,
-        ISet<uint> touched)
+    public long Apply(AddSlideOp operation)
     {
-        int at = op.At ?? presentation.Slides.Count + 1;
-        if (at > presentation.Slides.Count + 1)
+        int at = operation.At ?? _presentation.Slides.Count + 1;
+        if (at > _presentation.Slides.Count + 1)
         {
-            throw SlideNotFound(at, presentation.Slides.Count + 1);
+            throw SlideNotFound(at, _presentation.Slides.Count + 1);
         }
 
-        ISlide slide = presentation.Slides.AddEmptySlide(layout ?? presentation.LayoutSlides[0]);
-        if (at <= presentation.Slides.Count)
+        ISlide slide = _presentation.Slides.AddEmptySlide(_target.Layout ?? _presentation.LayoutSlides[0]);
+        if (at <= _presentation.Slides.Count)
         {
-            presentation.Slides.Reorder(at - 1, slide);
+            _presentation.Slides.Reorder(at - 1, slide);
         }
 
-        touched.Add(slide.SlideId);
+        _touched.Add(slide.SlideId);
         return 1;
     }
 
-    internal static long DeleteSlides(Presentation presentation, IReadOnlyList<ISlide> slides)
+    public long Apply(DeleteSlidesOp operation)
     {
-
-        if (slides.Count == presentation.Slides.Count)
+        if (Slides.Count == _presentation.Slides.Count)
         {
             throw new OperationInvalidException("A presentation must retain at least one slide.");
         }
 
-        foreach (ISlide slide in slides)
+        foreach (ISlide slide in Slides)
         {
-            presentation.Slides.Remove(slide);
+            _presentation.Slides.Remove(slide);
         }
 
-        return slides.Count;
+        return Slides.Count;
     }
 
-    internal static long MoveSlide(
-        Presentation presentation,
-        MoveSlideOp op,
-        ISlide slide,
-        ISet<uint> touched)
+    public long Apply(MoveSlideOp operation)
     {
-        if (op.To > presentation.Slides.Count)
+        if (operation.To > _presentation.Slides.Count)
         {
-            throw SlideNotFound(op.To, presentation.Slides.Count);
+            throw SlideNotFound(operation.To, _presentation.Slides.Count);
         }
 
-        presentation.Slides.Reorder(op.To - 1, slide);
-        touched.Add(slide.SlideId);
+        _presentation.Slides.Reorder(operation.To - 1, Slide);
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
-    internal static long DuplicateSlide(
-        Presentation presentation,
-        DuplicateSlideOp op,
-        ISlide slide,
-        ISet<uint> touched)
+    public long Apply(DuplicateSlideOp operation)
     {
-        int at = op.At ?? presentation.Slides.Count + 1;
-        if (at > presentation.Slides.Count + 1)
+        int at = operation.At ?? _presentation.Slides.Count + 1;
+        if (at > _presentation.Slides.Count + 1)
         {
-            throw SlideNotFound(at, presentation.Slides.Count + 1);
+            throw SlideNotFound(at, _presentation.Slides.Count + 1);
         }
 
-        ISlide clone = at == presentation.Slides.Count + 1
-            ? presentation.Slides.AddClone(slide)
-            : presentation.Slides.InsertClone(at - 1, slide);
-        touched.Add(clone.SlideId);
+        ISlide clone = at == _presentation.Slides.Count + 1
+            ? _presentation.Slides.AddClone(Slide)
+            : _presentation.Slides.InsertClone(at - 1, Slide);
+        _touched.Add(clone.SlideId);
         return 1;
     }
 
-    internal static long SetHidden(
-        IReadOnlyList<ISlide> slides,
-        bool hidden,
-        ISet<uint> touched)
+    public long Apply(SetSlideHiddenOp operation)
     {
-        foreach (ISlide slide in slides)
+        foreach (ISlide slide in Slides)
         {
-            slide.Hidden = hidden;
-            touched.Add(slide.SlideId);
+            slide.Hidden = operation.Hidden;
+            _touched.Add(slide.SlideId);
         }
 
-        return slides.Count;
+        return Slides.Count;
     }
 
-    internal static long ApplyLayout(
-        IReadOnlyList<ISlide> slides,
-        ILayoutSlide layout,
-        ISet<uint> touched)
+    public long Apply(ApplyLayoutOp operation)
     {
-        foreach (ISlide slide in slides)
+        foreach (ISlide slide in Slides)
         {
-            slide.LayoutSlide = layout;
-            touched.Add(slide.SlideId);
+            slide.LayoutSlide = _target.Layout!;
+            _touched.Add(slide.SlideId);
         }
 
-        return slides.Count;
+        return Slides.Count;
     }
 
-    internal static long SetBackground(
-        InputSource inputs,
-        Presentation presentation,
-        IReadOnlyList<ISlide> slides,
-        SetBackgroundOp op,
-        ISet<uint> touched)
+    public long Apply(SetBackgroundOp operation)
     {
         IPPImage? image = null;
-        if (op.ImagePath is not null)
+        if (operation.ImagePath is not null)
         {
-            EnsureFile(op.ImagePath);
-            image = presentation.Images.AddImage(
-                inputs.ReadAllBytes(op.ImagePath));
+            EnsureFile(operation.ImagePath);
+            image = _presentation.Images.AddImage(_inputs.ReadAllBytes(operation.ImagePath));
         }
 
-        foreach (ISlide slide in slides)
+        foreach (ISlide slide in Slides)
         {
             slide.Background.Type = BackgroundType.OwnBackground;
-            if (op.Color is not null)
+            if (operation.Color is not null)
             {
                 slide.Background.FillFormat.FillType = FillType.Solid;
-                slide.Background.FillFormat.SolidFillColor.Color = ParseColor(op.Color);
+                slide.Background.FillFormat.SolidFillColor.Color = ParseColor(operation.Color);
             }
             else
             {
@@ -146,66 +112,57 @@ internal static class SlidesStructuralHandlers
                 slide.Background.FillFormat.PictureFillFormat.Picture.Image = image;
             }
 
-            touched.Add(slide.SlideId);
+            _touched.Add(slide.SlideId);
         }
 
-        return slides.Count;
+        return Slides.Count;
     }
 
-    internal static long AddSection(Presentation presentation, AddSectionOp op, ISlide start)
+    public long Apply(AddSectionOp operation)
     {
-        if (presentation.Sections.Any(section => string.Equals(section.Name, op.Name, StringComparison.Ordinal)))
+        if (_presentation.Sections.Any(section => string.Equals(section.Name, operation.Name, StringComparison.Ordinal)))
         {
-            throw new OperationInvalidException($"Section '{op.Name}' already exists.");
+            throw new OperationInvalidException($"Section '{operation.Name}' already exists.");
         }
 
-        presentation.Sections.AddSection(op.Name, start);
+        _presentation.Sections.AddSection(operation.Name, Slide);
         return 1;
     }
 
-    internal static long AppendPresentation(
-        SlidesPresentationLoader loader,
-        Presentation destination,
-        AppendPresentationOp op,
-        ISet<uint> touched)
+    public long Apply(AppendPresentationOp operation)
     {
-        using LoadedPresentation source = loader.Open(op.Path, password: null);
+        using LoadedPresentation source = _loader.Open(operation.Path, password: null);
         long count = 0;
         foreach (ISlide slide in source.Presentation.Slides)
         {
-            ISlide clone = op.MasterPolicy == "keep-source"
-                ? destination.Slides.AddClone(slide)
-                : destination.Slides.AddClone(slide, destination.Masters[0], allowCloneMissingLayout: true);
-            touched.Add(clone.SlideId);
+            ISlide clone = operation.MasterPolicy == SlidesMasterPolicies.KeepSource
+                ? _presentation.Slides.AddClone(slide)
+                : _presentation.Slides.AddClone(slide, _presentation.Masters[0], allowCloneMissingLayout: true);
+            _touched.Add(clone.SlideId);
             count++;
         }
 
         return count;
     }
 
-    internal static long SetTitle(ISlide slide, string text, ISet<uint> touched)
+    public long Apply(SetTitleOp operation)
     {
-        SlidesAuthoring.Title(slide).TextFrame.Text = text;
-        touched.Add(slide.SlideId);
+        SlidesAuthoring.Title(Slide).TextFrame.Text = operation.Text;
+        _touched.Add(Slide.SlideId);
         return 1;
     }
 
-    internal static long SetBody(
-        ISlide slide,
-        IReadOnlyList<SlidesParagraphInput> paragraphs,
-        ISet<uint> touched)
+    public long Apply(SetBodyOp operation)
     {
         // Bullets and spacing come from the placeholder's levels, as in PowerPoint.
         SlidesAuthoring.WriteParagraphs(
-            SlidesAuthoring.Body(slide).TextFrame,
-            paragraphs.Select(static input => new AuthoredParagraph(
+            SlidesAuthoring.Body(Slide).TextFrame,
+            operation.Paragraphs.Select(static input => new AuthoredParagraph(
                 [new AuthoredRun(input.Text)],
                 input.Level,
                 ParagraphList.Inherit)));
 
-        touched.Add(slide.SlideId);
-        return paragraphs.Count;
+        _touched.Add(Slide.SlideId);
+        return operation.Paragraphs.Count;
     }
-
 }
-

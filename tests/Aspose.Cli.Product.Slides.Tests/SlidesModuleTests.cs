@@ -49,9 +49,9 @@ public sealed class SlidesModuleTests
     [Fact]
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
-            SlidesOps.Catalog.Names.Order(StringComparer.Ordinal),
+            SlidesOp.Catalog.Names.Order(StringComparer.Ordinal),
             SlidesContractSamples.SlidesOpsBatch.Ops
-                .Select(SlidesOps.Catalog.NameOf)
+                .Select(SlidesOp.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 
     private static byte[] OpenDocument() => ProductRoutingContract.ZipMarker(
@@ -93,5 +93,5 @@ public sealed class SlidesModuleTests
     }
 
     private static SlidesOpsBatch ParseOps(string json) =>
-        SlidesOps.Catalog.Parse<SlidesOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        SlidesOp.Catalog.Parse<SlidesOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

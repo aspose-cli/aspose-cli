@@ -9,7 +9,6 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
-using static Aspose.Cli.Product.Slides.Engine.SlidesMutationHandlers;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
@@ -38,7 +37,7 @@ internal sealed class SlidesMutationService
         SlidesOpsBatch batch,
         PresentationEditRequest request)
     {
-        batch = SlidesOps.Catalog.Prepare(batch);
+        batch = SlidesOp.Catalog.Prepare(batch);
         string format = SlidesFormats.ForOutput(request.OutputPath);
         if (!SlidesFormats.WriteIds.Contains(format, StringComparer.Ordinal))
         {
@@ -52,7 +51,7 @@ internal sealed class SlidesMutationService
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
         Presentation presentation = loaded.Presentation;
-        IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = ResolveBatch(presentation, batch);
+        IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = SlidesMutationHandlers.ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
         IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched);
         EditPublication publication = Publish(loaded, request, format, precondition);
@@ -78,7 +77,7 @@ internal sealed class SlidesMutationService
         bool bestEffort,
         ISet<uint> touched) =>
         BoundedOperationRunner.Run(
-            SlidesOps.Catalog,
+            SlidesOp.Catalog,
             resolved.Select(static item => item.Op).ToArray(),
             bestEffort,
             deadline: null,
@@ -86,7 +85,7 @@ internal sealed class SlidesMutationService
             {
                 SlidesMutationHandlers.ResolvedSlidesOp item = resolved[index];
                 var operationTouched = new SortedSet<uint>();
-                long affected = ApplyResolved(_resourceBudgets, _loader, presentation, item, operationTouched);
+                long affected = new SlidesMutationHandlers(_resourceBudgets.Inputs, _loader, presentation, item, operationTouched).Run();
                 touched.UnionWith(operationTouched);
                 return new AppliedOperation(affected, OperationTargets(item, operationTouched));
             },
