@@ -68,6 +68,8 @@ internal static class CommonSchemaSamples
                     {
                         Command = "edit",
                         InputSchema = "v2/test/ops",
+                        OperationSchema = "aspose-cli schema v2/test/ops --operation <op>",
+                        ContractFingerprint = "sha256:" + new string('0', 64),
                         MaximumOperations = 16,
                         Ops = ["replace_text"],
                     },

@@ -5,7 +5,7 @@ namespace Aspose.Cli.Product.Slides.Contracts.Serialization;
 
 /// <summary>Connects the Slides operation vocabulary to the shared wire protocol.</summary>
 internal sealed class SlidesOpJsonConverter()
-    : OperationJsonConverter<SlidesOp>(SlidesOps.Catalog)
+    : CatalogOperationJsonConverter<SlidesOp>(SlidesOps.Catalog)
 {
     protected override SlidesOp ApplyDefaults(SlidesOp value, JsonElement root) => value switch
     {

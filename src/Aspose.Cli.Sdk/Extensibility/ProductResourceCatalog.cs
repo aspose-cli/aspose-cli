@@ -1,24 +1,30 @@
-using System.Diagnostics.CodeAnalysis;
+using System.Collections.Concurrent;
 using System.Collections.Frozen;
-using Aspose.Cli.Sdk.Contracts;
+using System.Diagnostics.CodeAnalysis;
+using System.Security.Cryptography;
+using System.Text;
+using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
 /// <summary>
-/// Immutable aggregate of schemas and other product-owned embedded resources.
+/// Immutable aggregate of schemas and other product-owned embedded resources. A generated
+/// operation vocabulary owns its schema id here: its schema is served from the vocabulary's
+/// descriptors, not from an embedded file.
 /// </summary>
 public sealed class ProductResourceCatalog
 {
     private const string SchemaSuffix = ".schema.json";
     private readonly IReadOnlyDictionary<string, ResourceEntry> _schemas;
-    private readonly IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>>
+    private readonly IReadOnlyDictionary<string, OperationViews>
         _operationSchemas;
     private readonly IReadOnlyDictionary<string, ProductPackageResources> _byProduct;
+    private readonly ConcurrentDictionary<string, string> _fingerprints = new(StringComparer.Ordinal);
 
     private ProductResourceCatalog(
         IReadOnlyList<ProductPackageResources> products,
         IReadOnlyDictionary<string, ResourceEntry> schemas,
-        IReadOnlyDictionary<string, IReadOnlyDictionary<string, string>> operationSchemas)
+        IReadOnlyDictionary<string, OperationViews> operationSchemas)
     {
         Products = products;
         _byProduct = Products.ToFrozenDictionary(
@@ -58,32 +64,30 @@ public sealed class ProductResourceCatalog
                 {
                     continue;
                 }
-                if (!schemas.TryAdd(
-                        id,
-                        new ResourceEntry(package, name)))
-                {
-                    throw new InvalidOperationException(
-                        $"Schema '{id}' has multiple product resource owners.");
-                }
+                AddSchema(schemas, id, new ResourceEntry(package, name, null));
             }
         }
-        var operationSchemas = new Dictionary<string, IReadOnlyDictionary<string, string>>(
-            StringComparer.Ordinal);
+        // Views are built on first use: most invocations never read a schema.
+        var operationSchemas = new Dictionary<string, OperationViews>(StringComparer.Ordinal);
         foreach ((ProductPackageResources package, ProductManifest manifest) in entries)
         {
-            foreach (IGrouping<string, ProductOperationDescriptor> group in
-                manifest.Operations.GroupBy(static operation => operation.InputSchema, StringComparer.Ordinal))
+            foreach (IGrouping<string, ProductOperationCommand> group in
+                manifest.Operations.GroupBy(static operation => operation.Descriptor.InputSchema, StringComparer.Ordinal))
             {
+                string[] names = [.. group.SelectMany(static operation => operation.Descriptor.Ops).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
+                if (group.First().GeneratedSchema is { } generated)
+                {
+                    AddSchema(schemas, group.Key, new ResourceEntry(package, null, generated));
+                    operationSchemas.Add(group.Key, new OperationViews(names, new(() => generated.Operations)));
+                    continue;
+                }
                 if (!schemas.TryGetValue(group.Key, out ResourceEntry? entry))
                 {
                     continue;
                 }
-                operationSchemas.Add(
-                    group.Key,
-                    ProductOperationSchemaIndex.Build(
-                        group.Key,
-                        Read(entry),
-                        group.SelectMany(static operation => operation.Ops).ToArray()));
+                operationSchemas.Add(group.Key, new OperationViews(
+                    names,
+                    new(() => ProductOperationSchemaIndex.Build(group.Key, entry.Read(), names))));
             }
         }
         return new ProductResourceCatalog(
@@ -111,12 +115,7 @@ public sealed class ProductResourceCatalog
             return false;
         }
 
-        using Stream stream = entry.Package.ResourceAssembly.GetManifestResourceStream(
-            entry.Name)
-            ?? throw new InvalidOperationException(
-                $"Embedded schema resource '{entry.Name}' is unavailable.");
-        using var reader = new StreamReader(stream);
-        document = reader.ReadToEnd();
+        document = entry.Read();
         return true;
     }
 
@@ -130,9 +129,7 @@ public sealed class ProductResourceCatalog
 
     /// <summary>Returns operation IDs indexed for one schema.</summary>
     public IReadOnlyList<string> GetOperations(string schemaId) =>
-        _operationSchemas.TryGetValue(schemaId, out IReadOnlyDictionary<string, string>? operations)
-            ? operations.Keys.Order(StringComparer.Ordinal).ToArray()
-            : [];
+        _operationSchemas.TryGetValue(schemaId, out OperationViews? operations) ? operations.Names : [];
 
     /// <summary>Attempts to read one exact, self-contained operation schema view.</summary>
     public bool TryReadOperation(
@@ -141,11 +138,18 @@ public sealed class ProductResourceCatalog
         [NotNullWhen(true)] out string? document)
     {
         document = null;
-        return _operationSchemas.TryGetValue(
-                schemaId,
-                out IReadOnlyDictionary<string, string>? operations)
-            && operations.TryGetValue(operationId, out document);
+        return _operationSchemas.TryGetValue(schemaId, out OperationViews? operations)
+            && operations.Views.Value.TryGetValue(operationId, out document);
     }
+
+    /// <summary>
+    /// <c>sha256:</c> and the lowercase hex SHA-256 of a served schema with <c>\n</c> line
+    /// endings, so the value does not depend on how the source was checked out. It changes
+    /// whenever the schema text changes, descriptions included; it is computed once, on first use.
+    /// </summary>
+    public string ContractFingerprint(string id) =>
+        _fingerprints.GetOrAdd(id, key =>
+            "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Read(key).ReplaceLineEndings("\n")))));
 
     internal static string? TryGetSchemaId(string resourceName)
     {
@@ -166,16 +170,36 @@ public sealed class ProductResourceCatalog
         return id.Length > 0 ? id : null;
     }
 
+    private static void AddSchema(Dictionary<string, ResourceEntry> schemas, string id, ResourceEntry entry)
+    {
+        if (!schemas.TryAdd(id, entry))
+        {
+            throw new InvalidOperationException(
+                $"Schema '{id}' has multiple product resource owners.");
+        }
+    }
+
+    /// <summary>An operation schema's operation names and its views, built on first use.</summary>
+    private sealed record OperationViews(IReadOnlyList<string> Names, Lazy<IReadOnlyDictionary<string, string>> Views);
+
+    /// <summary>A schema served from an embedded resource or from a generated vocabulary.</summary>
     private sealed record ResourceEntry(
         ProductPackageResources Package,
-        string Name);
-
-    private static string Read(ResourceEntry entry)
+        string? Name,
+        GeneratedOperationSchema? Generated)
     {
-        using Stream stream = entry.Package.ResourceAssembly.GetManifestResourceStream(entry.Name)
-            ?? throw new InvalidOperationException(
-                $"Embedded schema resource '{entry.Name}' is unavailable.");
-        using var reader = new StreamReader(stream);
-        return reader.ReadToEnd();
+        public string Read()
+        {
+            if (Generated is not null)
+            {
+                return Generated.Document;
+            }
+
+            using Stream stream = Package.ResourceAssembly.GetManifestResourceStream(Name!)
+                ?? throw new InvalidOperationException(
+                    $"Embedded schema resource '{Name}' is unavailable.");
+            using var reader = new StreamReader(stream);
+            return reader.ReadToEnd();
+        }
     }
 }

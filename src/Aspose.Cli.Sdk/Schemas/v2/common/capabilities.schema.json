@@ -141,12 +141,24 @@
       "required": [
         "command",
         "inputSchema",
+        "operationSchema",
+        "contractFingerprint",
         "maximumOperations",
         "ops"
       ],
       "properties": {
         "command": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*( [a-z][a-z0-9_-]*)*$" },
         "inputSchema": { "type": "string", "pattern": "^v2/[a-z][a-z0-9_-]*/[a-z][a-z0-9_/-]*$" },
+        "operationSchema": {
+          "type": "string",
+          "pattern": " schema v2/[a-z][a-z0-9_-]*/[a-z][a-z0-9_/-]* --operation <op>$",
+          "description": "The command that prints one operation's schema; <op> stands for the operation name."
+        },
+        "contractFingerprint": {
+          "type": "string",
+          "pattern": "^sha256:[0-9a-f]{64}$",
+          "description": "SHA-256 of the served input schema with \\n line endings; it changes whenever the published schema text changes, descriptions included."
+        },
         "maximumOperations": { "type": "integer", "minimum": 1 },
         "ops": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[a-z][a-z0-9_-]*$" } }
       },

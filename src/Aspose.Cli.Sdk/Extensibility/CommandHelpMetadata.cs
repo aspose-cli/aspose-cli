@@ -28,7 +28,7 @@ public sealed record CommandHelpLink(
     public static CommandHelpLink Schema(ProductManifest product, string description)
     {
         ArgumentNullException.ThrowIfNull(product);
-        return new($"{DistributionInfo.CommandName} schema {product.Operations.Single().InputSchema}", description);
+        return new($"{DistributionInfo.CommandName} schema {product.Operations.Single().Descriptor.InputSchema}", description);
     }
 }
 

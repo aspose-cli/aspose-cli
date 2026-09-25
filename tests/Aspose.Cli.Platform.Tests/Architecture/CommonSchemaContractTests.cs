@@ -144,13 +144,15 @@ public sealed class CommonSchemaContractTests
             [
                 "command",
                 "inputSchema",
+                "operationSchema",
+                "contractFingerprint",
                 "maximumOperations",
                 "ops",
             ],
             operation.Select(static property => property.Key));
         Assert.Equal(
-            """{"command":"edit","inputSchema":"v2/test/ops","maximumOperations":16,"ops":["replace_text"]}""",
-            operation.ToJsonString());
+            """{"command":"edit","inputSchema":"v2/test/ops","operationSchema":"aspose-cli schema v2/test/ops --operation <op>","contractFingerprint":"sha256:0000000000000000000000000000000000000000000000000000000000000000","maximumOperations":16,"ops":["replace_text"]}""",
+            operation.ToJsonString(new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
     }
 
     [Fact]
@@ -249,6 +251,7 @@ public sealed class CommonSchemaContractTests
             {
                 Command = "edit",
                 InputSchema = inputSchema,
+                OperationSchema = "aspose-cli schema " + inputSchema + " --operation <op>",
                 MaximumOperations = 16,
                 Ops = ["replace_text"],
             },
@@ -319,7 +322,7 @@ public sealed class CommonSchemaContractTests
                 {
                     Id = "test",
                     DisplayName = "Test",
-                    Operations = operations ?? [],
+                    Operations = [.. (operations ?? []).Select(static operation => new ProductOperationCommand(operation))],
                     Engine = new ProductEngineCapabilities
                     {
                         Id = "test",

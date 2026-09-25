@@ -5,7 +5,7 @@ namespace Aspose.Cli.Product.Pdf.Contracts.Serialization;
 
 /// <summary>Connects the Pdf operation vocabulary to the shared wire protocol.</summary>
 internal sealed class PdfOpJsonConverter()
-    : OperationJsonConverter<PdfOp>(PdfOps.Catalog)
+    : CatalogOperationJsonConverter<PdfOp>(PdfOps.Catalog)
 {
     protected override PdfOp ApplyDefaults(PdfOp value, JsonElement root) => value switch
     {

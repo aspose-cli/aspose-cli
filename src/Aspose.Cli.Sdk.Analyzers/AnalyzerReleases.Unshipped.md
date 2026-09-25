@@ -15,3 +15,4 @@ APCLI008 | Aspose.Cli.ProductIsolation | Error | Product option aliases must be 
 APCLI009 | Aspose.Cli.ProductIsolation | Error | Product implementation layers cannot introduce reverse, lateral, or cross-product dependencies.
 APCLI010 | Aspose.Cli.ProductIsolation | Error | Commands, Engine, Output, and Preview implementation types cannot be publicly visible.
 APCLI011 | Aspose.Cli.ProductIsolation | Error | Product code cannot build or bind commands through the host command seam StandardOptions.
+APCLI012 | Aspose.Cli.OperationContracts | Error | Operation records must be listed in their camelCase JSON context and describe every member with a supported type and a requirement or default.

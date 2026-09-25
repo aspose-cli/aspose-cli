@@ -4,4 +4,4 @@ namespace Aspose.Cli.Product.Words.Contracts.Serialization;
 
 /// <summary>Connects the Words operation vocabulary to the shared wire protocol.</summary>
 internal sealed class WordsOpJsonConverter()
-    : OperationJsonConverter<WordsOp>(WordsOps.Catalog);
+    : CatalogOperationJsonConverter<WordsOp>(WordsOps.Catalog);

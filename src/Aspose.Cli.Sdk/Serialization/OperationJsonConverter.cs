@@ -1,27 +1,37 @@
 using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Serialization;
 
 /// <summary>
-/// Owns the operation discriminator protocol; each product supplies its vocabulary and defaults.
+/// The wire protocol of a generated operation vocabulary. Declare it on the vocabulary's base
+/// record with <c>[JsonConverter(typeof(OperationJsonConverter&lt;TOp&gt;))]</c>.
 /// </summary>
-public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperation>
+public sealed class OperationJsonConverter<TOp>() : CatalogOperationJsonConverter<TOp>(TOp.Catalog)
+    where TOp : BoundedOperation, IOperationVocabulary<TOp>;
+
+/// <summary>
+/// Owns the operation discriminator protocol: it reads the <c>op</c> discriminator, rejects
+/// unknown and duplicated members in wire terms, and for a generated vocabulary writes every
+/// omitted member that has a default before the payload is read, so the schema's
+/// <c>default</c> is exactly the value applied. A product whose vocabulary is still registered
+/// by hand subclasses it with its catalog and its own defaults.
+/// </summary>
+public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<TOperation>
     where TOperation : BoundedOperation
 {
-    private static readonly ConditionalWeakTable<JsonSerializerOptions, JsonSerializerOptions> StrictOptions = new();
-    private readonly IReadOnlyDictionary<string, Type> operations;
-    private readonly Func<TOperation, string> operationName;
+    private readonly ConditionalWeakTable<JsonSerializerOptions, JsonSerializerOptions> _strictOptions = new();
+    private readonly OperationCatalog<TOperation> _catalog;
 
     /// <summary>Connects a product's operation catalog to the shared wire protocol.</summary>
-    protected OperationJsonConverter(OperationCatalog<TOperation> catalog)
+    protected CatalogOperationJsonConverter(OperationCatalog<TOperation> catalog)
     {
         ArgumentNullException.ThrowIfNull(catalog);
-        operations = catalog.Registry;
-        operationName = catalog.NameOf;
+        _catalog = catalog;
     }
 
     /// <inheritdoc />
@@ -37,49 +47,29 @@ public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperat
             || discriminator.ValueKind != JsonValueKind.String)
         {
             throw new JsonException(
-                $"every op must be an object with a string 'op' field; valid ops: {string.Join(", ", operations.Keys)}");
+                $"every op must be an object with a string 'op' field; valid ops: {ValidOperations}");
         }
 
         string name = discriminator.GetString()!;
-        if (!operations.TryGetValue(name, out Type? type))
+        if (!_catalog.TryGetOperation(name, out Type type, out OperationRecord? record))
         {
-            throw new JsonException($"unknown op '{name}'; valid ops: {string.Join(", ", operations.Keys)}");
+            throw new JsonException($"unknown op '{name}'; valid ops: {ValidOperations}");
         }
 
         // The payload below omits the discriminator, so only its duplicates need a check here;
         // the serializer rejects every other duplicate and the diagnostics name it.
         if (root.EnumerateObject().Count(static property => property.NameEquals("op")) > 1)
         {
-            throw new JsonException("'op' is duplicated");
+            throw new JsonException("op is duplicated");
         }
 
         using var payload = new MemoryStream();
         using (var writer = new Utf8JsonWriter(payload))
         {
-            writer.WriteStartObject();
-            foreach (JsonProperty property in root.EnumerateObject())
-            {
-                if (property.NameEquals("opName"))
-                {
-                    throw new JsonException("unknown field 'opName'; use the 'op' discriminator");
-                }
-                if (!property.NameEquals("op"))
-                {
-                    property.WriteTo(writer);
-                }
-            }
-            writer.WriteEndObject();
+            WriteMembers(writer, root, record, string.Empty, isOperation: true);
         }
 
-        JsonSerializerOptions strict = StrictOptions.GetValue(options, static source =>
-        {
-            var value = new JsonSerializerOptions(source)
-            {
-                UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
-            };
-            value.MakeReadOnly();
-            return value;
-        });
+        JsonSerializerOptions strict = Strict(options);
         byte[] fields = payload.ToArray();
         TOperation operation;
         try
@@ -103,8 +93,8 @@ public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperat
     {
         ArgumentNullException.ThrowIfNull(value);
         writer.WriteStartObject();
-        writer.WriteString("op", operationName(value));
-        JsonElement payload = JsonSerializer.SerializeToElement(value, value.GetType(), options);
+        writer.WriteString("op", _catalog.NameOf(value));
+        JsonElement payload = JsonSerializer.SerializeToElement(value, value.GetType(), Strict(options));
         foreach (JsonProperty property in payload.EnumerateObject())
         {
             if (!property.NameEquals("opName"))
@@ -115,6 +105,128 @@ public abstract class OperationJsonConverter<TOperation> : JsonConverter<TOperat
         writer.WriteEndObject();
     }
 
-    /// <summary>Applies product-owned defaults while preserving explicitly supplied values.</summary>
+    /// <summary>
+    /// Applies the defaults of a vocabulary that is still registered by hand, preserving
+    /// explicitly supplied values. A generated vocabulary takes its defaults from its records.
+    /// </summary>
     protected virtual TOperation ApplyDefaults(TOperation operation, JsonElement payload) => operation;
+
+    private string ValidOperations => string.Join(", ", _catalog.Registry.Keys);
+
+    /// <summary>
+    /// The outer options with unknown members disallowed and, for a generated vocabulary, the
+    /// vocabulary's own operation metadata in front of the outer resolver.
+    /// </summary>
+    private JsonSerializerOptions Strict(JsonSerializerOptions options) =>
+        _strictOptions.GetValue(options, source =>
+        {
+            var value = new JsonSerializerOptions(source)
+            {
+                UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+            };
+            if (_catalog.Contracts is { } contracts)
+            {
+                value.TypeInfoResolver = JsonTypeInfoResolver.Combine(contracts, source.TypeInfoResolver);
+            }
+
+            value.MakeReadOnly();
+            return value;
+        });
+
+    /// <summary>
+    /// Copies an object's members, dropping the discriminator of an operation, and appends
+    /// every omitted member that has a default. Values of nested records, arrays and maps are
+    /// completed the same way; so is an object default such as <c>{}</c>.
+    /// </summary>
+    private static void WriteMembers(Utf8JsonWriter writer, JsonElement value, OperationRecord? record, string path, bool isOperation)
+    {
+        writer.WriteStartObject();
+        foreach (JsonProperty member in value.EnumerateObject())
+        {
+            if (isOperation && member.NameEquals("opName"))
+            {
+                throw new JsonException("unknown field 'opName'; use the 'op' discriminator");
+            }
+            if (isOperation && member.NameEquals("op"))
+            {
+                continue;
+            }
+
+            OperationProperty? property = record?.Properties.FirstOrDefault(property => member.NameEquals(property.Name));
+            if (record is not null && member.Value.ValueKind == JsonValueKind.Null && (property is not null || (isOperation && member.NameEquals("id"))))
+            {
+                // An optional member is omitted, never null, as the schema states.
+                throw new JsonException($"{Join(path, member.Name)} must not be null");
+            }
+
+            if (property is null)
+            {
+                member.WriteTo(writer);
+                continue;
+            }
+
+            writer.WritePropertyName(member.Name);
+            WriteValue(writer, member.Value, property.Value, Join(path, property.Name));
+        }
+
+        foreach (OperationProperty property in record?.Properties ?? [])
+        {
+            if (property.Default is not null && !value.TryGetProperty(property.Name, out _))
+            {
+                using JsonDocument fallback = JsonDocument.Parse(property.Default);
+                writer.WritePropertyName(property.Name);
+                WriteValue(writer, fallback.RootElement, property.Value, Join(path, property.Name));
+            }
+        }
+
+        writer.WriteEndObject();
+    }
+
+    private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)
+    {
+        switch (shape.Kind, value.ValueKind)
+        {
+            case (OperationValueKind.Record, JsonValueKind.Object):
+                WriteMembers(writer, value, shape.Record, path, isOperation: false);
+                break;
+            case (OperationValueKind.Array, JsonValueKind.Array):
+                writer.WriteStartArray();
+                int index = 0;
+                foreach (JsonElement item in value.EnumerateArray())
+                {
+                    WriteItem(writer, item, shape.Items!, $"{path}[{index++}]");
+                }
+
+                writer.WriteEndArray();
+                break;
+            case (OperationValueKind.Map, JsonValueKind.Object):
+                writer.WriteStartObject();
+                foreach (JsonProperty entry in value.EnumerateObject())
+                {
+                    writer.WritePropertyName(entry.Name);
+                    WriteItem(writer, entry.Value, shape.Items!, Join(path, entry.Name));
+                }
+
+                writer.WriteEndObject();
+                break;
+            default:
+                // Scalars and values of the wrong kind pass unchanged; the serializer then
+                // accepts or rejects them.
+                value.WriteTo(writer);
+                break;
+        }
+    }
+
+    /// <summary>Writes an array item or map value, which may be null only when its type admits null.</summary>
+    private static void WriteItem(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)
+    {
+        if (value.ValueKind == JsonValueKind.Null && !shape.Nullable && shape.Kind != OperationValueKind.Any)
+        {
+            throw new JsonException($"{path} must not be null");
+        }
+
+        WriteValue(writer, value, shape, path);
+    }
+
+    private static string Join(string path, string name) => path.Length == 0 ? name : $"{path}.{name}";
 }

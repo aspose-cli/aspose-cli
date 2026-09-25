@@ -181,9 +181,9 @@ public sealed class BoundedEditCommandTests : IDisposable
 
     [Theory]
     [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'")]
-    [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "'value' must be a whole number")]
-    [InlineData("""{"ops":[{"op":"set","value":1,"value":2}]}""", 0, "set", "'value' is duplicated")]
-    [InlineData("""{"ops":[{"op":"link","path":null}]}""", 0, "link", "'path' must not be null")]
+    [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "value must be a whole number")]
+    [InlineData("""{"ops":[{"op":"set","value":1,"value":2}]}""", 0, "set", "value is duplicated")]
+    [InlineData("""{"ops":[{"op":"link","path":null}]}""", 0, "link", "path must not be null")]
     public void Read_ExplainsARejectedOperationInWireTerms(string document, int index, string op, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => Read(Plain(), "--ops", document));
@@ -209,7 +209,7 @@ public sealed class BoundedEditCommandTests : IDisposable
 
     [Theory]
     [InlineData("""[{"op":"set","value":1}]""", "the document must be an object")]
-    [InlineData("""{"ops":{"op":"set","value":1}}""", "'ops' must be an array")]
+    [InlineData("""{"ops":{"op":"set","value":1}}""", "ops must be an array")]
     [InlineData("""{"schemaVersion":2}""", "the required field 'ops' is missing")]
     public void Read_ExplainsARejectedEnvelopeInWireTerms(string document, string reason)
     {
@@ -481,7 +481,7 @@ public sealed class BoundedEditCommandTests : IDisposable
 
     private sealed record TestResult() : ResultEnvelope("test/result", 1);
 
-    private sealed class TestOpConverter() : OperationJsonConverter<TestOp>(Catalog);
+    private sealed class TestOpConverter() : CatalogOperationJsonConverter<TestOp>(Catalog);
 
     private sealed class TestHost(string workDirectory, Func<string, string?>? readEnvironment = null) : IProductCommandHost<object>
     {

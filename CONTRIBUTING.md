@@ -85,11 +85,24 @@ waives it for the version in `Directory.Build.props`.
 ## Code conventions
 
 - **JSON input.** Test optional input defaults through the production source-generated
-  serializer, including omitted fields and explicit `false`, `0` and `null`. Give new immutable
-  input records their scalar defaults as optional constructor parameters, because the generator
-  [does not preserve init-only property initializers](https://github.com/dotnet/runtime/issues/84484).
-  The SDK's `OperationJsonConverter` owns discriminators, strict fields and duplicate rejection;
-  the owning Product owns required fields and semantic validation.
+  serializer, including omitted fields and explicit `false`, `0` and `null`. The serializer
+  [does not preserve init-only property initializers](https://github.com/dotnet/runtime/issues/84484),
+  so an input record outside an operation vocabulary takes its scalar defaults as optional
+  constructor parameters.
+- **Operation contracts.** Declare each operation once, as a record with `[Operation("name")]`
+  under the product's `[OperationVocabulary]` base record: `required` members, initializers
+  for defaults, constraint attributes such as `[Minimum]` or `[PageRange]` for every rule
+  JSON Schema can state, and a `Validated()` override for the rest, stated in the record's
+  summary. The operation generator builds the catalog, the `I{Base}Handler` interface the
+  engine implements and the `Accept` dispatch; analyzer `APCLI012` rejects an incomplete
+  contract. `OperationJsonConverter` owns the discriminator, strict fields and duplicate
+  rejection and writes omitted defaults; the catalog enforces the constraints and writes the
+  ops schema, whose committed copy the product contract tests keep current (rewrite it with
+  `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1`). Two deliberate gaps remain between the schema and
+  the parser: an integer member accepts a whole number written as `1.0` only as far as the
+  serializer does, and the schema's `integer` does not state the CLR type's range. A
+  vocabulary still registered with `OperationCatalog.Add` keeps a hand-written schema, rules
+  and converter subclass.
 - **Command parameters.** Every string argument and option declares its input role with
   `WithInput` (`InputKind.File`, `InputKind.JsonSource` or `InputKind.None`), and its value
   sources and secret handling on the symbol. The Host reads these declarations, never token

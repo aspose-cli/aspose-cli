@@ -116,15 +116,17 @@ internal sealed class ProductDefinitionValidator
     {
         string productId = definition.Manifest.Id;
         string prefix = $"v2/{productId}/";
-        foreach (ProductOperationDescriptor operation in
+        foreach (ProductOperationCommand command in
             definition.Manifest.Operations)
         {
+            ProductOperationDescriptor operation = command.Descriptor;
             if (!operation.InputSchema.StartsWith(
                     prefix,
                     StringComparison.Ordinal)
-                || !schemaIds.Contains(
-                    operation.InputSchema,
-                    StringComparer.Ordinal))
+                || (command.GeneratedSchema is null
+                    && !schemaIds.Contains(
+                        operation.InputSchema,
+                        StringComparer.Ordinal)))
             {
                 throw new InvalidOperationException(
                     $"Product '{productId}' operation command '{operation.Command}' references unowned schema '{operation.InputSchema}'.");
@@ -168,7 +170,7 @@ internal sealed class ProductDefinitionValidator
     private static void ValidateOperations(ProductManifest manifest)
     {
         var commands = new HashSet<string>(StringComparer.Ordinal);
-        foreach (ProductOperationDescriptor? operation in manifest.Operations)
+        foreach (ProductOperationDescriptor? operation in manifest.Operations.Select(static command => command?.Descriptor))
         {
             string[] command = operation?.Command.Split(' ', StringSplitOptions.RemoveEmptyEntries) ?? [];
             if (operation is null

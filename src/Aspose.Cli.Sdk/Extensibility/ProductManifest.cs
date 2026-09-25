@@ -20,8 +20,8 @@ public sealed record ProductManifest
     /// <summary>Whether this product is the preferred generic default when compiled.</summary>
     public bool IsDefaultCandidate { get; init; }
 
-    /// <summary>Stable structured edit operations owned by this product.</summary>
-    public required IReadOnlyList<ProductOperationDescriptor> Operations { get; init; }
+    /// <summary>The commands that apply this product's operation documents.</summary>
+    public required IReadOnlyList<ProductOperationCommand> Operations { get; init; }
 
     /// <summary>Default engine compiled into the product.</summary>
     public required ProductEngineCapabilities Engine { get; init; }

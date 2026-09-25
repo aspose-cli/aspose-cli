@@ -445,7 +445,7 @@ public abstract class ProductContractTests<TModule>
         ProductDefinition definition = Assert.Single(catalog.Products);
 
         foreach (IGrouping<string, ProductOperationDescriptor> group in
-            definition.Manifest.Operations.GroupBy(
+            definition.Manifest.Operations.Select(static command => command.Descriptor).GroupBy(
                 static operation => operation.InputSchema,
                 StringComparer.Ordinal))
         {
@@ -472,6 +472,40 @@ public abstract class ProductContractTests<TModule>
                     out _));
         }
     }
+
+    /// <summary>
+    /// Keeps the committed copy of every generated operation schema equal to the schema the
+    /// build serves. Set <c>ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1</c> to rewrite the copy, then review the diff.
+    /// </summary>
+    [Fact]
+    public void GeneratedOperationSchemas_MatchTheirCommittedCopies()
+    {
+        ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
+        ProductDefinition definition = Assert.Single(catalog.Products);
+        IReadOnlyList<string> embedded = catalog.Resources.GetProduct(definition.Manifest.Id).SchemaIds;
+        foreach (string schemaId in definition.Manifest.Operations
+            .Select(static operation => operation.Descriptor.InputSchema)
+            .Where(id => !embedded.Contains(id, StringComparer.Ordinal))
+            .Distinct(StringComparer.Ordinal))
+        {
+            string path = Path.Combine(
+                RepositoryPaths.Root, "src", typeof(TModule).Assembly.GetName().Name!, "Schemas", "v2",
+                schemaId[(schemaId.LastIndexOf('/') + 1)..] + ".schema.json");
+            string served = catalog.Resources.Read(schemaId);
+            if (Environment.GetEnvironmentVariable(UpdateSnapshotsVariable) == "1")
+            {
+                File.WriteAllText(path, served, new System.Text.UTF8Encoding(false));
+                continue;
+            }
+
+            Assert.True(File.Exists(path), $"{path} is missing; set {UpdateSnapshotsVariable}=1 to write it.");
+            Assert.True(
+                string.Equals(File.ReadAllText(path).ReplaceLineEndings("\n"), served, StringComparison.Ordinal),
+                $"{path} differs from the schema generated from the operation records; set {UpdateSnapshotsVariable}=1, rerun and review the diff.");
+        }
+    }
+
+    private const string UpdateSnapshotsVariable = Aspose.Cli.Sdk.DistributionInfo.EnvironmentVariablePrefix + "TEST_UPDATE_SNAPSHOTS";
 
     private static string ResourceSchemaId(string schema)
     {

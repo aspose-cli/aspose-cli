@@ -29,7 +29,7 @@ internal static class JsonContractDiagnostics
         }
 
         string field = FieldPath(failurePath);
-        return field.Length == 0 ? "the value does not match the documented contract" : $"'{field}' has an invalid value";
+        return field.Length == 0 ? "the value does not match the documented contract" : $"{field} has an invalid value";
     }
 
     /// <summary>Converts a serializer path such as <c>$.style.color</c> into a field path.</summary>
@@ -50,6 +50,7 @@ internal static class JsonContractDiagnostics
         {
             JsonTypeInfoKind.Object when info.PolymorphismOptions is null => FindInObject(value, info, options, path),
             JsonTypeInfoKind.Enumerable when info.ElementType is { } element => FindInArray(value, element, options, path),
+            JsonTypeInfoKind.Dictionary when info.ElementType is { } element => FindInMap(value, element, options, path),
             JsonTypeInfoKind.None => FindInScalar(value, type, path),
             _ => null,
         };
@@ -71,7 +72,7 @@ internal static class JsonContractDiagnostics
             string field = Join(path, member.Name);
             if (!options.AllowDuplicateProperties && !seen.Add(member.Name))
             {
-                return $"'{field}' is duplicated";
+                return $"{field} is duplicated";
             }
 
             if (!properties.TryGetValue(member.Name, out JsonPropertyInfo? property))
@@ -88,7 +89,7 @@ internal static class JsonContractDiagnostics
             {
                 if (!(property.AssociatedParameter?.IsNullable ?? property.IsSetNullable))
                 {
-                    return $"'{field}' must not be null";
+                    return $"{field} must not be null";
                 }
 
                 continue;
@@ -130,12 +131,37 @@ internal static class JsonContractDiagnostics
         return null;
     }
 
+    private static string? FindInMap(JsonElement value, Type element, JsonSerializerOptions options, string path)
+    {
+        if (value.ValueKind != JsonValueKind.Object)
+        {
+            return Expected(path, "an object");
+        }
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (JsonProperty entry in value.EnumerateObject())
+        {
+            string field = Join(path, entry.Name);
+            if (!seen.Add(entry.Name))
+            {
+                return $"{field} is duplicated";
+            }
+
+            if (entry.Value.ValueKind != JsonValueKind.Null && Find(entry.Value, element, options, field) is { } mismatch)
+            {
+                return mismatch;
+            }
+        }
+
+        return null;
+    }
+
     private static string? FindInScalar(JsonElement value, Type type, string path)
     {
         Type? underlying = Nullable.GetUnderlyingType(type);
         if (value.ValueKind == JsonValueKind.Null)
         {
-            return type.IsValueType && underlying is null ? $"'{path}' must not be null" : null;
+            return type.IsValueType && underlying is null ? $"{path} must not be null" : null;
         }
 
         Type scalar = underlying ?? type;
@@ -149,7 +175,7 @@ internal static class JsonContractDiagnostics
     }
 
     private static string Expected(string path, string kind) =>
-        path.Length == 0 ? $"the document must be {kind}" : $"'{path}' must be {kind}";
+        path.Length == 0 ? $"the document must be {kind}" : $"{path} must be {kind}";
 
     private static string Join(string path, string name) => path.Length == 0 ? name : $"{path}.{name}";
 }

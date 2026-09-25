@@ -25,4 +25,12 @@ public abstract record BoundedOperation
 {
     /// <summary>Stable correlation ID; assigned deterministically when omitted.</summary>
     public string? Id { get; init; }
+
+    /// <summary>
+    /// Applies the operation's rules that its declared constraints cannot express, after those
+    /// constraints hold, and returns the operation to run, which may be normalized. The
+    /// operation's summary states each rule, so the published schema tells agents.
+    /// </summary>
+    /// <exception cref="Operations.OperationInvalidException">A rule is broken.</exception>
+    protected internal virtual BoundedOperation Validated() => this;
 }

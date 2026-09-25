@@ -120,6 +120,16 @@ public sealed record ProductOperationDescriptor
     /// <summary>Product-owned schema id printable through <c>schema &lt;id&gt;</c>.</summary>
     public required string InputSchema { get; init; }
 
+    /// <summary>The command that prints one operation's schema, with <c>&lt;op&gt;</c> standing for its name.</summary>
+    public required string OperationSchema { get; init; }
+
+    /// <summary>
+    /// <c>sha256:</c> and the lowercase hex SHA-256 of the served input schema (UTF-8, <c>\n</c>
+    /// line endings); it changes whenever the published schema text changes, descriptions
+    /// included.
+    /// </summary>
+    public string? ContractFingerprint { get; init; }
+
     /// <summary>Largest accepted number of operations in one document.</summary>
     public required int MaximumOperations { get; init; }
 
