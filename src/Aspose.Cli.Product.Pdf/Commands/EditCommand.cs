@@ -8,7 +8,6 @@ internal static class EditCommand
 {
     private static readonly BoundedEditDefinition<PdfOp, PdfOpsBatch> Definition = new()
     {
-        Catalog = PdfOp.Catalog,
         Contracts = ProductJsonContext.Definition,
     };
 

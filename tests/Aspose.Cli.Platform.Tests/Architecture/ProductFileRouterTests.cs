@@ -693,6 +693,7 @@ public sealed class ProductFileRouterTests
 
     private interface ITestPort;
 
+#pragma warning disable APCLI003 // Test results, not product JSON roots.
     private sealed record TestResultOne() : ResultEnvelope("test/one", 1);
 
     private sealed record TestResultTwo() : ResultEnvelope("test/two", 1);
@@ -706,6 +707,7 @@ public sealed class ProductFileRouterTests
     private sealed record TestResultDetector() : ResultEnvelope("test/detector", 1);
 
     private sealed record TestResultOther() : ResultEnvelope("test/other", 1);
+#pragma warning restore APCLI003
 
     private sealed class StaticModule(ProductDefinition definition) : IProductModule
     {

@@ -1,30 +1,25 @@
-using System.Collections.Concurrent;
-using System.Collections.Frozen;
 using System.Diagnostics.CodeAnalysis;
-using System.Security.Cryptography;
-using System.Text;
+using System.Collections.Frozen;
 using Aspose.Cli.Sdk.Operations;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 
 /// <summary>
-/// Immutable aggregate of schemas and other product-owned embedded resources. A generated
-/// operation vocabulary owns its schema id here: its schema is served from the vocabulary's
-/// descriptors, not from an embedded file.
+/// Immutable aggregate of schemas and other product-owned embedded resources. An operation
+/// vocabulary owns its schema id here: its schema and per-operation views are served from the
+/// vocabulary's records, not from an embedded file.
 /// </summary>
 public sealed class ProductResourceCatalog
 {
     private const string SchemaSuffix = ".schema.json";
     private readonly IReadOnlyDictionary<string, ResourceEntry> _schemas;
-    private readonly IReadOnlyDictionary<string, OperationViews>
-        _operationSchemas;
+    private readonly IReadOnlyDictionary<string, GeneratedOperationSchema> _operationSchemas;
     private readonly IReadOnlyDictionary<string, ProductPackageResources> _byProduct;
-    private readonly ConcurrentDictionary<string, string> _fingerprints = new(StringComparer.Ordinal);
 
     private ProductResourceCatalog(
         IReadOnlyList<ProductPackageResources> products,
         IReadOnlyDictionary<string, ResourceEntry> schemas,
-        IReadOnlyDictionary<string, OperationViews> operationSchemas)
+        IReadOnlyDictionary<string, GeneratedOperationSchema> operationSchemas)
     {
         Products = products;
         _byProduct = Products.ToFrozenDictionary(
@@ -67,27 +62,17 @@ public sealed class ProductResourceCatalog
                 AddSchema(schemas, id, new ResourceEntry(package, name, null));
             }
         }
-        // Views are built on first use: most invocations never read a schema.
-        var operationSchemas = new Dictionary<string, OperationViews>(StringComparer.Ordinal);
+        // Schemas and their views are written on first use: most invocations never read one.
+        var operationSchemas = new Dictionary<string, GeneratedOperationSchema>(StringComparer.Ordinal);
         foreach ((ProductPackageResources package, ProductManifest manifest) in entries)
         {
-            foreach (IGrouping<string, ProductOperationCommand> group in
-                manifest.Operations.GroupBy(static operation => operation.Descriptor.InputSchema, StringComparer.Ordinal))
+            foreach (ProductOperationCommand command in manifest.Operations)
             {
-                string[] names = [.. group.SelectMany(static operation => operation.Descriptor.Ops).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal)];
-                if (group.First().GeneratedSchema is { } generated)
+                string id = command.Descriptor.InputSchema;
+                if (operationSchemas.TryAdd(id, command.Schema))
                 {
-                    AddSchema(schemas, group.Key, new ResourceEntry(package, null, generated));
-                    operationSchemas.Add(group.Key, new OperationViews(names, new(() => generated.Operations)));
-                    continue;
+                    AddSchema(schemas, id, new ResourceEntry(package, null, command.Schema));
                 }
-                if (!schemas.TryGetValue(group.Key, out ResourceEntry? entry))
-                {
-                    continue;
-                }
-                operationSchemas.Add(group.Key, new OperationViews(
-                    names,
-                    new(() => ProductOperationSchemaIndex.Build(group.Key, entry.Read(), names))));
             }
         }
         return new ProductResourceCatalog(
@@ -129,7 +114,7 @@ public sealed class ProductResourceCatalog
 
     /// <summary>Returns operation IDs indexed for one schema.</summary>
     public IReadOnlyList<string> GetOperations(string schemaId) =>
-        _operationSchemas.TryGetValue(schemaId, out OperationViews? operations) ? operations.Names : [];
+        _operationSchemas.TryGetValue(schemaId, out GeneratedOperationSchema? schema) ? schema.Names : [];
 
     /// <summary>Attempts to read one exact, self-contained operation schema view.</summary>
     public bool TryReadOperation(
@@ -138,18 +123,9 @@ public sealed class ProductResourceCatalog
         [NotNullWhen(true)] out string? document)
     {
         document = null;
-        return _operationSchemas.TryGetValue(schemaId, out OperationViews? operations)
-            && operations.Views.Value.TryGetValue(operationId, out document);
+        return _operationSchemas.TryGetValue(schemaId, out GeneratedOperationSchema? schema)
+            && schema.Operations.TryGetValue(operationId, out document);
     }
-
-    /// <summary>
-    /// <c>sha256:</c> and the lowercase hex SHA-256 of a served schema with <c>\n</c> line
-    /// endings, so the value does not depend on how the source was checked out. It changes
-    /// whenever the schema text changes, descriptions included; it is computed once, on first use.
-    /// </summary>
-    public string ContractFingerprint(string id) =>
-        _fingerprints.GetOrAdd(id, key =>
-            "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Read(key).ReplaceLineEndings("\n")))));
 
     internal static string? TryGetSchemaId(string resourceName)
     {
@@ -179,10 +155,7 @@ public sealed class ProductResourceCatalog
         }
     }
 
-    /// <summary>An operation schema's operation names and its views, built on first use.</summary>
-    private sealed record OperationViews(IReadOnlyList<string> Names, Lazy<IReadOnlyDictionary<string, string>> Views);
-
-    /// <summary>A schema served from an embedded resource or from a generated vocabulary.</summary>
+    /// <summary>A schema served from an embedded resource or from an operation vocabulary.</summary>
     private sealed record ResourceEntry(
         ProductPackageResources Package,
         string? Name,

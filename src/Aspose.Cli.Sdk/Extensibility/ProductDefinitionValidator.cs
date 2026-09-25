@@ -58,7 +58,7 @@ internal sealed class ProductDefinitionValidator
                     $"Product '{productId}' schema '{schemaId}' is outside resource namespace '{schemaPrefix}'.");
             }
         }
-        ValidateOperationSchemas(definition, resources.SchemaIds);
+        ValidateOperationSchemas(definition);
     }
 
     public static IReadOnlyDictionary<IProductModule, ProductModuleRegistration>
@@ -110,23 +110,14 @@ internal sealed class ProductDefinitionValidator
         }
     }
 
-    private static void ValidateOperationSchemas(
-        ProductDefinition definition,
-        IReadOnlyList<string> schemaIds)
+    private static void ValidateOperationSchemas(ProductDefinition definition)
     {
         string productId = definition.Manifest.Id;
         string prefix = $"v2/{productId}/";
-        foreach (ProductOperationCommand command in
-            definition.Manifest.Operations)
+        foreach (ProductOperationDescriptor operation in
+            definition.Manifest.Operations.Select(static command => command.Descriptor))
         {
-            ProductOperationDescriptor operation = command.Descriptor;
-            if (!operation.InputSchema.StartsWith(
-                    prefix,
-                    StringComparison.Ordinal)
-                || (command.GeneratedSchema is null
-                    && !schemaIds.Contains(
-                        operation.InputSchema,
-                        StringComparer.Ordinal)))
+            if (!operation.InputSchema.StartsWith(prefix, StringComparison.Ordinal))
             {
                 throw new InvalidOperationException(
                     $"Product '{productId}' operation command '{operation.Command}' references unowned schema '{operation.InputSchema}'.");

@@ -11,7 +11,6 @@ internal static class EditCommand
 
     private static readonly BoundedEditDefinition<WordsOp, WordsOpsBatch> Definition = new()
     {
-        Catalog = WordsOp.Catalog,
         Contracts = ProductJsonContext.Definition,
         SetDirectives = new(
             "Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. "

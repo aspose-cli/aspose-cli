@@ -8880,7 +8880,6 @@
     "v2/cells/workbook-read",
     "v2/common/app-result",
     "v2/common/app-status",
-    "v2/common/bounded-edit",
     "v2/common/capabilities",
     "v2/common/diagnostic-details",
     "v2/common/doctor",

@@ -7,6 +7,7 @@ using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Serialization;
 using Aspose.Cli.Sdk.Resources;
 using Aspose.Cli.Host.Serialization;
+using Aspose.Cli.Platform.Tests.Sdk;
 using Json.Schema;
 using Aspose.Cli.TestKit;
 using Xunit;
@@ -151,7 +152,7 @@ public sealed class CommonSchemaContractTests
             ],
             operation.Select(static property => property.Key));
         Assert.Equal(
-            """{"command":"edit","inputSchema":"v2/test/ops","operationSchema":"aspose-cli schema v2/test/ops --operation <op>","contractFingerprint":"sha256:0000000000000000000000000000000000000000000000000000000000000000","maximumOperations":16,"ops":["replace_text"]}""",
+            """{"command":"edit","inputSchema":"v2/test/ops","operationSchema":"aspose-cli schema v2/test/ops --operation <op>","contractFingerprint":"sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","maximumOperations":16,"ops":["replace_text"]}""",
             operation.ToJsonString(new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
     }
 
@@ -160,9 +161,6 @@ public sealed class CommonSchemaContractTests
     {
         (string Id, string Json)[] contracts =
         [
-            (
-                "v2/common/bounded-edit",
-                """{"schemaVersion":2,"ifMatch":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","ops":[{"id":"change-1"}]}"""),
             (
                 "v2/common/file-fingerprint",
                 """{"sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}"""),
@@ -238,29 +236,13 @@ public sealed class CommonSchemaContractTests
         }
     }
 
-    [Theory]
-    [InlineData("", "has an invalid schema, limit or operation list")]
-    [InlineData("v2/test/missing", "references unowned schema")]
-    public void ProductCatalog_RejectsIncompleteOperationDescriptors(
-        string inputSchema,
-        string expectedMessage)
+    [Fact]
+    public void ProductCatalog_RejectsAnOperationVocabularyOutsideTheProductNamespace()
     {
-        var operations = new[]
-        {
-            new ProductOperationDescriptor
-            {
-                Command = "edit",
-                InputSchema = inputSchema,
-                OperationSchema = "aspose-cli schema " + inputSchema + " --operation <op>",
-                MaximumOperations = 16,
-                Ops = ["replace_text"],
-            },
-        };
-
         InvalidOperationException error = Assert.Throws<InvalidOperationException>(
-            () => CreateCatalog(operations));
+            () => CreateCatalog("other", [TestOp.Catalog.Describe("edit")]));
 
-        Assert.Contains(expectedMessage, error.Message, StringComparison.Ordinal);
+        Assert.Contains("references unowned schema 'v2/test/ops'", error.Message, StringComparison.Ordinal);
     }
 
     private static string SchemaPath(string schema)
@@ -315,14 +297,15 @@ public sealed class CommonSchemaContractTests
     }
 
     private static ProductCatalog CreateCatalog(
-        IReadOnlyList<ProductOperationDescriptor>? operations = null)
+        string productId = "test",
+        IReadOnlyList<ProductOperationCommand>? operations = null)
     {
         ProductDefinition definition = ExtProduct.Define<ITestPort>(
                 new ProductManifest
                 {
-                    Id = "test",
+                    Id = productId,
                     DisplayName = "Test",
-                    Operations = [.. (operations ?? []).Select(static operation => new ProductOperationCommand(operation))],
+                    Operations = operations ?? [],
                     Engine = new ProductEngineCapabilities
                     {
                         Id = "test",
@@ -343,7 +326,7 @@ public sealed class CommonSchemaContractTests
                     ".test"),
             ])
             .Diagnostics([])
-            .Json(new ProductJsonDefinition("test", SdkJsonContext.Default))
+            .Json(new ProductJsonDefinition(productId, SdkJsonContext.Default))
             .View(new TestProductViewAdapter<ITestPort>())
             .Output<TestResult>(static (_, _) => { })
             .Commands(_ => new Command("test"))
@@ -356,7 +339,9 @@ public sealed class CommonSchemaContractTests
 
     private interface ITestPort;
 
+#pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult() : ResultEnvelope("test/result", 1);
+#pragma warning restore APCLI003
 
     private sealed class StaticModule(ProductDefinition definition) : IProductModule
     {

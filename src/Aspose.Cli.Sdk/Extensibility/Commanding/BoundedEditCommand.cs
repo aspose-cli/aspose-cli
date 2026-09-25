@@ -22,13 +22,11 @@ public sealed record SetDirectiveGrammar<TOp, TBatch>(
     where TBatch : BoundedOperationEnvelope<TOp>;
 
 /// <summary>What a product supplies to the shared bounded-edit command skeleton.</summary>
+/// <remarks>The operation vocabulary is the one <typeparamref name="TOp"/> declares.</remarks>
 public sealed record BoundedEditDefinition<TOp, TBatch>
-    where TOp : BoundedOperation
+    where TOp : BoundedOperation, IOperationVocabulary<TOp>
     where TBatch : BoundedOperationEnvelope<TOp>
 {
-    /// <summary>The product's operation vocabulary.</summary>
-    public required OperationCatalog<TOp> Catalog { get; init; }
-
     /// <summary>The product's source-generated contract serializer.</summary>
     public required ProductJsonDefinition Contracts { get; init; }
 
@@ -37,45 +35,6 @@ public sealed record BoundedEditDefinition<TOp, TBatch>
 
     /// <summary>Help for <c>--verify</c>, or null when the product has no staged verification.</summary>
     public string? VerifyDescription { get; init; }
-
-    /// <summary>
-    /// Resolves the file paths an operation reads, such as a document it appends or an image it
-    /// inserts, through <see cref="OperationPaths.ResolveInput"/>, which records each one so the
-    /// edit never publishes over a file it reads. When null, the catalog resolves the
-    /// <see cref="InputPathAttribute"/> members of a generated vocabulary.
-    /// </summary>
-    public Func<TOp, OperationPaths, TOp>? NormalizePaths { get; init; }
-
-    /// <summary>
-    /// Names the environment variables whose secrets an operation reads, such as its
-    /// <c>passwordEnv</c> fields; a null entry is an omitted optional field. When null, the
-    /// catalog names the <see cref="SecretEnvAttribute"/> members of a generated vocabulary.
-    /// </summary>
-    public Func<TOp, IEnumerable<string?>>? SecretVariables { get; init; }
-}
-
-/// <summary>
-/// Resolves the files that operations read against the invocation directory and records each
-/// resolved path.
-/// </summary>
-public sealed class OperationPaths
-{
-    private readonly PathResolver _paths;
-    private readonly List<string> _inputs = [];
-
-    internal OperationPaths(PathResolver paths) => _paths = paths;
-
-    /// <summary>The files resolved so far, which the edit never publishes over.</summary>
-    internal IReadOnlyList<string> Inputs => _inputs;
-
-    /// <summary>Resolves a file an operation reads, which must exist, and records it.</summary>
-    /// <exception cref="CliException"><c>FILE_NOT_FOUND</c> when the file does not exist.</exception>
-    public string ResolveInput(string path)
-    {
-        string resolved = _paths.ResolveInput(path);
-        _inputs.Add(resolved);
-        return resolved;
-    }
 }
 
 /// <summary>One fully resolved bounded-edit invocation, ready for the product port.</summary>
@@ -104,7 +63,7 @@ public sealed record BoundedEditInvocation<TBatch>(
 /// and whose input password refuses standard input when the operation document comes from it.
 /// </summary>
 public sealed class BoundedEditCommand<TOp, TBatch>
-    where TOp : BoundedOperation
+    where TOp : BoundedOperation, IOperationVocabulary<TOp>
     where TBatch : BoundedOperationEnvelope<TOp>
 {
     private const string OpsOption = StandardOptionNames.Ops;
@@ -122,10 +81,9 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     public BoundedEditCommand(BoundedEditDefinition<TOp, TBatch> definition)
     {
         ArgumentNullException.ThrowIfNull(definition);
-        ArgumentNullException.ThrowIfNull(definition.Catalog);
         ArgumentNullException.ThrowIfNull(definition.Contracts);
         _definition = definition;
-        string schema = definition.Catalog.Describe("edit").Descriptor.InputSchema;
+        string schema = TOp.Catalog.SchemaCommandId;
         _ops = new Option<string?>(OpsOption)
         {
             Required = definition.SetDirectives is null,
@@ -266,18 +224,25 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             ? directives.Select(grammar.Parse).ToArray()
             : [];
         TBatch batch = Compose(source is null ? null : ParseDocument(source, paths, standard.Inputs), compiled);
-        var read = new OperationPaths(paths);
-        Func<TOp, OperationPaths, TOp> normalize = _definition.NormalizePaths
-            ?? ((op, files) => _definition.Catalog.ResolveInputPaths(op, files.ResolveInput));
+        // Every [InputPath] member resolves against the invocation directory and must exist;
+        // the edit never publishes over a file an operation reads.
+        var read = new List<string>();
+        string ResolveInput(string path)
+        {
+            string resolved = paths.ResolveInput(path);
+            read.Add(resolved);
+            return resolved;
+        }
+
         batch = (TBatch)((BoundedOperationEnvelope<TOp>)batch with
         {
-            Ops = batch.Ops.Select(op => normalize(op, read)).ToArray(),
+            Ops = batch.Ops.Select(op => TOp.Catalog.ResolveInputPaths(op, ResolveInput)).ToArray(),
         });
         if (!target.InPlace)
         {
             // The target was resolved before the operations were read; it must not name
             // a file they read either.
-            OutputFileOption.EnsureNotInput(target.OutputPath, StandardOptionNames.Out, inPlaceAvailable: true, read.Inputs);
+            OutputFileOption.EnsureNotInput(target.OutputPath, StandardOptionNames.Out, inPlaceAvailable: true, read);
         }
 
         return new BoundedEditInvocation<TBatch>(
@@ -296,11 +261,9 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     private IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)
     {
         var secrets = new Dictionary<string, string>(StringComparer.Ordinal);
-        Func<TOp, IEnumerable<string?>> variables = _definition.SecretVariables ?? _definition.Catalog.SecretVariables;
-
-        // A missing or empty variable is left out: it fails only the operation that names it,
-        // through OperationSecrets.Resolve.
-        foreach (string variable in batch.Ops.SelectMany(variables).OfType<string>().Distinct(StringComparer.Ordinal))
+        // Each [SecretEnv] variable is read once. A missing or empty variable is left out: it
+        // fails only the operation that names it, through OperationSecrets.Resolve.
+        foreach (string variable in batch.Ops.SelectMany(TOp.Catalog.SecretVariables).OfType<string>().Distinct(StringComparer.Ordinal))
         {
             if (readEnvironment(variable) is { Length: > 0 } secret)
             {
@@ -315,12 +278,12 @@ public sealed class BoundedEditCommand<TOp, TBatch>
     {
         if (document is null)
         {
-            return _definition.Catalog.Prepare(_definition.SetDirectives!.CreateBatch(compiled));
+            return TOp.Catalog.Prepare(_definition.SetDirectives!.CreateBatch(compiled));
         }
 
         return compiled.Length == 0
             ? document
-            : _definition.Catalog.Prepare((TBatch)((BoundedOperationEnvelope<TOp>)document with
+            : TOp.Catalog.Prepare((TBatch)((BoundedOperationEnvelope<TOp>)document with
             {
                 Ops = [.. document.Ops, .. compiled],
             }));
@@ -331,7 +294,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
         string text = JsonInputSource.Read(source, paths, inputs, OpsOption);
         try
         {
-            return _definition.Catalog.Parse<TBatch>(text, _definition.Contracts);
+            return TOp.Catalog.Parse<TBatch>(text, _definition.Contracts);
         }
         catch (CliException exception) when (
             exception.Code == ErrorCodes.OpsInvalid

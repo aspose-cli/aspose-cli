@@ -361,8 +361,7 @@ public sealed class ProductDefinitionBuilder<TPort>
         manifest with
         {
             Operations = Array.AsReadOnly(
-                manifest.Operations.Select(static operation => new ProductOperationCommand(
-                    operation.Descriptor with { }, operation.GeneratedSchema)).ToArray()),
+                manifest.Operations.Select(static operation => new ProductOperationCommand(operation.Descriptor with { })).ToArray()),
             Engine = manifest.Engine with { },
             AvailableEngines = ReadOnly(manifest.AvailableEngines),
             ResourceBudgets = Array.AsReadOnly(

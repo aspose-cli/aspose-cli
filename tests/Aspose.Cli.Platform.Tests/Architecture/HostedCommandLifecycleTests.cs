@@ -65,6 +65,8 @@ public sealed class HostedCommandLifecycleTests
             wait ?? (static (_, _) => WaitOutcome.Completed),
             shutdown ?? (static () => { }));
 
+#pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult()
         : ResultEnvelope("test/hosted-lifecycle", 1);
+#pragma warning restore APCLI003
 }

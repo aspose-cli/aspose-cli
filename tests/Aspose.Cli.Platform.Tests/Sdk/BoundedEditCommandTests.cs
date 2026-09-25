@@ -16,15 +16,6 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 
 public sealed class BoundedEditCommandTests : IDisposable
 {
-    private static readonly OperationCatalog<TestOp> Catalog =
-        new OperationCatalog<TestOp>(DistributionInfo.SchemaBaseUri + "test/ops.schema.json", maximumOperations: 10)
-            .Add<SetOp>("set", static op => OperationInvalidException.Require(op.Value >= 0, "value must not be negative"))
-            .Add<LinkOp>("link")
-            .Add<SecretOp>("secret");
-
-    private static readonly ProductJsonDefinition Contracts =
-        new("test", new DefaultJsonTypeInfoResolver(), [new TestOpConverter()]);
-
     private readonly TempDirectory _temp = new();
     private readonly string _input;
 
@@ -223,16 +214,10 @@ public sealed class BoundedEditCommandTests : IDisposable
     [Fact]
     public void Read_NormalizesOperationPathsAgainstTheInvocationDirectory()
     {
-        var command = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
-        {
-            NormalizePaths = static (op, paths) => op is LinkOp link
-                ? link with { Path = paths.ResolveInput(link.Path) }
-                : op,
-        });
         File.WriteAllText(_temp.File("image.png"), "image");
 
         LinkOp link = Assert.IsType<LinkOp>(Assert.Single(
-            Read(command, "--ops", """{"ops":[{"op":"link","path":"image.png"}]}""").Batch.Ops));
+            Read(Plain(), "--ops", """{"ops":[{"op":"link","path":"image.png"}]}""").Batch.Ops));
 
         Assert.Equal(_temp.File("image.png"), link.Path);
     }
@@ -240,12 +225,7 @@ public sealed class BoundedEditCommandTests : IDisposable
     [Fact]
     public void Read_NeverPublishesToTheOperationDocumentOrAFileAnOperationReads()
     {
-        var linking = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
-        {
-            NormalizePaths = static (op, paths) => op is LinkOp link
-                ? link with { Path = paths.ResolveInput(link.Path) }
-                : op,
-        });
+        BoundedEditCommand<TestOp, TestBatch> linking = Plain();
         File.WriteAllText(_temp.File("ops.json"), Document);
         File.WriteAllText(_temp.File("image.png"), "image");
         File.WriteAllText(_temp.File("book.out.test"), "earlier output");
@@ -271,14 +251,10 @@ public sealed class BoundedEditCommandTests : IDisposable
     [Fact]
     public void Read_ResolvesEachOperationSecretOnceByVariableName()
     {
-        var command = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
-        {
-            SecretVariables = static op => op is SecretOp secret ? [secret.PasswordEnv] : [],
-        });
         const string document = """{"ops":[{"op":"secret","passwordEnv":"OWNER"},{"op":"secret","passwordEnv":"OWNER"},{"op":"secret"},{"op":"secret","passwordEnv":"ABSENT"},{"op":"secret","passwordEnv":"ABSENT"}]}""";
         var reads = new List<string>();
 
-        IReadOnlyDictionary<string, string> secrets = ReadWithEnvironment(command, name =>
+        IReadOnlyDictionary<string, string> secrets = ReadWithEnvironment(Plain(), name =>
         {
             reads.Add(name);
             return name == "OWNER" ? "owner-secret" : null;
@@ -286,7 +262,6 @@ public sealed class BoundedEditCommandTests : IDisposable
 
         Assert.Equal("owner-secret", Assert.Single(secrets).Value);
         Assert.Equal(["OWNER", "ABSENT"], reads);
-        Assert.Empty(Read(Plain(), "--ops", document).Secrets);
     }
 
     [Fact]
@@ -383,7 +358,7 @@ public sealed class BoundedEditCommandTests : IDisposable
         var edit = new BoundedEditCommand<TestOp, TestBatch>(Definition() with
         {
             VerifyDescription = "Verify.",
-            SetDirectives = new("Set a value.", static _ => new SetOp(0), static ops => new TestBatch { Ops = ops }),
+            SetDirectives = new("Set a value.", static _ => new SetOp { Value = 0 }, static ops => new TestBatch { Ops = ops }),
         });
         Command edited = edit.Create<object>(
             host, "edit", "Edits.",
@@ -422,8 +397,7 @@ public sealed class BoundedEditCommandTests : IDisposable
 
     private static BoundedEditDefinition<TestOp, TestBatch> Definition() => new()
     {
-        Catalog = Catalog,
-        Contracts = Contracts,
+        Contracts = TestContracts.Json,
     };
 
     private static BoundedEditCommand<TestOp, TestBatch> Plain() => new(Definition());
@@ -433,7 +407,7 @@ public sealed class BoundedEditCommandTests : IDisposable
         SetDirectives = new(
             "Set a value.",
             static text => int.TryParse(text, out int value)
-                ? new SetOp(value)
+                ? new SetOp { Value = value }
                 : throw CliErrors.OptionInvalid("--set", $"'{text}' is not a number", "Pass an integer."),
             static ops => new TestBatch { Ops = ops }),
     });
@@ -469,19 +443,9 @@ public sealed class BoundedEditCommandTests : IDisposable
             static (_, _, _) => throw new InvalidOperationException("Only parsed."))
             .Parse([Path.GetFileName(_input), .. arguments]);
 
-    public abstract record TestOp : BoundedOperation;
-
-    public sealed record SetOp(int Value) : TestOp;
-
-    public sealed record LinkOp(string Path) : TestOp;
-
-    public sealed record SecretOp(string? PasswordEnv = null) : TestOp;
-
-    public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
-
+#pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult() : ResultEnvelope("test/result", 1);
-
-    private sealed class TestOpConverter() : CatalogOperationJsonConverter<TestOp>(Catalog);
+#pragma warning restore APCLI003
 
     private sealed class TestHost(string workDirectory, Func<string, string?>? readEnvironment = null) : IProductCommandHost<object>
     {

@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
 
 
 namespace Aspose.Cli.Architecture.Tests.TestSupport;
@@ -69,9 +70,9 @@ internal static class CommonSchemaSamples
                         Command = "edit",
                         InputSchema = "v2/test/ops",
                         OperationSchema = "aspose-cli schema v2/test/ops --operation <op>",
-                        ContractFingerprint = "sha256:" + new string('0', 64),
                         MaximumOperations = 16,
                         Ops = ["replace_text"],
+                        Schema = new GeneratedOperationSchema(static () => "{}", ["replace_text"]),
                     },
                 ],
                 Engine = new ProductEngineCapabilities

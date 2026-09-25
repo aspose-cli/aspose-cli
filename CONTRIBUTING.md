@@ -89,20 +89,26 @@ waives it for the version in `Directory.Build.props`.
   [does not preserve init-only property initializers](https://github.com/dotnet/runtime/issues/84484),
   so an input record outside an operation vocabulary takes its scalar defaults as optional
   constructor parameters.
-- **Operation contracts.** Declare each operation once, as a record with `[Operation("name")]`
-  under the product's `[OperationVocabulary]` base record: `required` members, initializers
-  for defaults, constraint attributes such as `[Minimum]` or `[PageRange]` for every rule
-  JSON Schema can state, and a `Validated()` override for the rest, stated in the record's
-  summary. The operation generator builds the catalog, the `I{Base}Handler` interface the
-  engine implements and the `Accept` dispatch; analyzer `APCLI012` rejects an incomplete
+- **Operation contracts.** An operation is declared once, as a record with
+  `[Operation("name")]` under the product's `[OperationVocabulary]` base record. To add one,
+  write the record in the product's contract file with its `[JsonSerializable]` line in the
+  ops JSON context there, the handler method the engine's `I{Base}Handler` interface then
+  requires, and its documentation and tests. The record states the contract: `required`
+  members, initializers for defaults, `[InputPath]` and `[SecretEnv]` members, constraint
+  attributes such as `[Minimum]`, `[PageRange]` or the record rules `[ExactlyOneOf]`,
+  `[AtLeastOneOf]`, `[DependentRequired]`, `[PresentWhen]` and, on nested records,
+  `[MinProperties]` for every rule JSON Schema can state, and a `Validated()` override for the
+  rest, stated in the record's summary. An array constraint applies at its `Depth`; any
+  other constraint also reaches the items of lists and maps. The operation generator builds
+  the catalog and the handler dispatch, and analyzer `APCLI012` rejects an incomplete
   contract. `OperationJsonConverter` owns the discriminator, strict fields and duplicate
   rejection and writes omitted defaults; the catalog enforces the constraints and writes the
   ops schema, whose committed copy the product contract tests keep current (rewrite it with
-  `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1`). Two deliberate gaps remain between the schema and
+  `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1`). Three deliberate gaps remain between the schema and
   the parser: an integer member accepts a whole number written as `1.0` only as far as the
-  serializer does, and the schema's `integer` does not state the CLR type's range. A
-  vocabulary still registered with `OperationCatalog.Add` keeps a hand-written schema, rules
-  and converter subclass.
+  serializer does, the schema's `integer` does not state the CLR type's range, and a value
+  kind read by a parser, such as an A1 range, publishes a pattern that admits some values
+  the parser rejects.
 - **Command parameters.** Every string argument and option declares its input role with
   `WithInput` (`InputKind.File`, `InputKind.JsonSource` or `InputKind.None`), and its value
   sources and secret handling on the symbol. The Host reads these declarations, never token

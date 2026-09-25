@@ -113,7 +113,9 @@ public sealed class DiagnosticCatalogTests
 
     private interface ITestPort;
 
+#pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult() : ResultEnvelope("test/diagnostic", 1);
+#pragma warning restore APCLI003
 
     private sealed class StaticModule(ProductDefinition definition) : IProductModule
     {

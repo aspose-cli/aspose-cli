@@ -8,24 +8,25 @@ namespace Aspose.Cli.Platform.Tests.Sdk;
 
 public sealed class BoundedOperationPipelineTests
 {
-    private static readonly OperationCatalog<TestOp> Catalog =
-        new OperationCatalog<TestOp>(DistributionInfo.SchemaBaseUri + "test/ops.schema.json", maximumOperations: 3)
-            .Add<SetOp>("set", static op => OperationInvalidException.Require(op.Value >= 0, "value must not be negative"))
-            .Add<NoteOp>("note");
+    private static readonly OperationCatalog<TestOp> Catalog = TestOp.Catalog;
+
+    private static SetOp Set(int value) => new() { Value = value };
+
+    private static NoteOp Note() => new() { Text = "note" };
 
     [Fact]
     public void Prepare_AssignsIdsAndReportsTheFailingOperationPosition()
     {
-        var batch = new TestBatch { Ops = [new SetOp(1), new NoteOp(), new SetOp(-1)] };
+        var batch = new TestBatch { Ops = [Set(1), Note(), Set(-1)] };
 
         CliException error = Assert.Throws<CliException>(() => Catalog.Prepare(batch));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Equal(2, error.Details!["index"]!.GetValue<int>());
         Assert.Equal("set", error.Details["op"]!.GetValue<string>());
-        Assert.Equal("value must not be negative", error.Details["reason"]!.GetValue<string>());
+        Assert.Equal("value must be at least 0", error.Details["reason"]!.GetValue<string>());
         Assert.Contains("aspose-cli schema v2/test/ops", error.Hint, StringComparison.Ordinal);
-        Assert.Equal(["op-0001", "op-0002"], Catalog.Prepare(new TestBatch { Ops = [new SetOp(1), new NoteOp()] })
+        Assert.Equal(["op-0001", "op-0002"], Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] })
             .Ops.Select(static op => op.Id));
     }
 
@@ -33,15 +34,15 @@ public sealed class BoundedOperationPipelineTests
     public void Prepare_EnforcesTheDeclaredOperationLimit()
     {
         CliException error = Assert.Throws<CliException>(() => Catalog.Prepare(
-            new TestBatch { Ops = [new NoteOp(), new NoteOp(), new NoteOp(), new NoteOp()] }));
+            new TestBatch { Ops = [.. Enumerable.Range(0, 9).Select(static _ => Note())] }));
 
-        Assert.Contains("1-3 operations", error.Message, StringComparison.Ordinal);
+        Assert.Contains("1-8 operations", error.Message, StringComparison.Ordinal);
     }
 
     [Fact]
     public void Run_BestEffortRecordsRejectionsAndContinues()
     {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [new SetOp(1), new NoteOp(), new SetOp(2)] });
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note(), Set(2)] });
 
         IReadOnlyList<BoundedOperationOutcome> outcomes = Run(batch, bestEffort: true, (op, _) => op is NoteOp
             ? throw new OperationInvalidException("the note has no anchor")
@@ -55,7 +56,7 @@ public sealed class BoundedOperationPipelineTests
     [Fact]
     public void Run_KeepsADomainFailureCodeAndAddsItsPosition()
     {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [new NoteOp()] });
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
 
         CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false,
             (_, _) => throw CliErrors.FileNotFound("missing.png")));
@@ -70,7 +71,7 @@ public sealed class BoundedOperationPipelineTests
     [InlineData(true)]
     public void Run_StopsTheBatchWhenTheEngineFailsMidChange(bool bestEffort)
     {
-        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [new SetOp(1), new NoteOp()] });
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Set(1), Note()] });
         int applied = 0;
 
         CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort, (op, _) =>
@@ -88,28 +89,7 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(CliErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
-    [Fact]
-    public void Catalog_RejectsDuplicateRegistrationsAndUnregisteredTypes()
-    {
-        var catalog = new OperationCatalog<TestOp>(DistributionInfo.SchemaBaseUri + "test/ops.schema.json", 1)
-            .Add<SetOp>("set");
-
-        Assert.Throws<ArgumentException>(() => catalog.Add<SetOp>("set-again"));
-        Assert.Throws<ArgumentException>(() => catalog.Add<NoteOp>("set"));
-        Assert.Throws<InvalidOperationException>(() => catalog.NameOf(new NoteOp()));
-        Assert.Equal(["set"], catalog.Names);
-        Assert.Equal(["set"], catalog.Registry.Keys);
-    }
-
     private static IReadOnlyList<BoundedOperationOutcome> Run(
         TestBatch batch, bool bestEffort, Func<TestOp, int, AppliedOperation> apply) =>
         BoundedOperationRunner.Run(Catalog, batch.Ops, bestEffort, deadline: null, apply, static (_, _) => ["test/attempted"]);
-
-    public abstract record TestOp : BoundedOperation;
-
-    public sealed record SetOp(int Value) : TestOp;
-
-    public sealed record NoteOp : TestOp;
-
-    public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 }

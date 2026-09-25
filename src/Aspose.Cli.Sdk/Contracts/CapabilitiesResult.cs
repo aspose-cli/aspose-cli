@@ -126,15 +126,18 @@ public sealed record ProductOperationDescriptor
     /// <summary>
     /// <c>sha256:</c> and the lowercase hex SHA-256 of the served input schema (UTF-8, <c>\n</c>
     /// line endings); it changes whenever the published schema text changes, descriptions
-    /// included.
+    /// included. It is computed once, when first read.
     /// </summary>
-    public string? ContractFingerprint { get; init; }
+    public string ContractFingerprint => Schema.Fingerprint;
 
     /// <summary>Largest accepted number of operations in one document.</summary>
     public required int MaximumOperations { get; init; }
 
     /// <summary>Operation names in published order.</summary>
     public required IReadOnlyList<string> Ops { get; init; }
+
+    /// <summary>The vocabulary's schema, which the command serves and the fingerprint hashes.</summary>
+    internal Operations.GeneratedOperationSchema Schema { get; init; } = null!;
 }
 
 /// <summary>One discoverable default and hard maximum for a resource.</summary>

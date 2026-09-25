@@ -14,7 +14,6 @@ internal static class EditCommand
 {
     private static readonly BoundedEditDefinition<Op, OpsBatch> Definition = new()
     {
-        Catalog = Op.Catalog,
         Contracts = ProductJsonContext.Definition,
         SetDirectives = new(
             "Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. "

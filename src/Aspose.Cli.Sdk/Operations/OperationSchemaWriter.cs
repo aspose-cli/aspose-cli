@@ -1,4 +1,5 @@
 using System.Buffers;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Encodings.Web;
 using System.Text.Json;
@@ -14,18 +15,27 @@ internal sealed class GeneratedOperationSchema
 {
     private readonly Lazy<string> _document;
     private readonly Lazy<IReadOnlyDictionary<string, string>> _operations;
+    private readonly Lazy<string> _fingerprint;
 
     public GeneratedOperationSchema(Func<string> write, IReadOnlyList<string> operations)
     {
+        Names = operations;
         _document = new Lazy<string>(write);
         _operations = new Lazy<IReadOnlyDictionary<string, string>>(() => OperationSchemaWriter.Views(Document, operations));
+        _fingerprint = new Lazy<string>(() => "sha256:" + Convert.ToHexStringLower(SHA256.HashData(Encoding.UTF8.GetBytes(Document))));
     }
+
+    /// <summary>The operations' wire names in published order.</summary>
+    public IReadOnlyList<string> Names { get; }
 
     /// <summary>The complete schema text.</summary>
     public string Document => _document.Value;
 
     /// <summary>Each operation's self-contained view, by wire name.</summary>
     public IReadOnlyDictionary<string, string> Operations => _operations.Value;
+
+    /// <summary><c>sha256:</c> and the lowercase hex SHA-256 of the UTF-8 schema text.</summary>
+    public string Fingerprint => _fingerprint.Value;
 }
 
 /// <summary>

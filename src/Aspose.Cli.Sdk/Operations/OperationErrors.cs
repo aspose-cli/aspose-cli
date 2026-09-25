@@ -6,7 +6,7 @@ namespace Aspose.Cli.Sdk.Operations;
 /// <summary>
 /// The one shape of operation-document failures. Details always carry the operation's
 /// <c>index</c> when one operation is at fault, and its <c>op</c> name when the entry names a
-/// registered operation, so an agent can fix exactly that entry.
+/// known operation, so an agent can fix exactly that entry.
 /// </summary>
 internal static class OperationErrors
 {
@@ -16,7 +16,7 @@ internal static class OperationErrors
         hint: hint,
         details: new JsonObject { ["reason"] = reason });
 
-    /// <summary>Rejects one operation; <paramref name="name"/> is null when the entry names no registered operation.</summary>
+    /// <summary>Rejects one operation; <paramref name="name"/> is null when the entry names no known operation.</summary>
     internal static CliException InvalidAt(int index, string? name, string reason, string hint, ErrorCode? cause = null)
     {
         var details = new JsonObject { ["index"] = index };

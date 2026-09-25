@@ -23,7 +23,9 @@
       Include="$(MSBuildThisFileDirectory)..\analyzers\dotnet\cs\Aspose.Cli.Sdk.Analyzers.dll"
       Condition="Exists('$(MSBuildThisFileDirectory)..\analyzers\dotnet\cs\Aspose.Cli.Sdk.Analyzers.dll')" />
 
-    <EmbeddedResource Include="$(MSBuildProjectDirectory)\Schemas\v2\*.schema.json">
+    <!-- Every vocabulary publishes its schema, written from its records, as ops.schema.json, so only that committed copy is excluded. -->
+    <EmbeddedResource Include="$(MSBuildProjectDirectory)\Schemas\v2\*.schema.json"
+                      Exclude="$(MSBuildProjectDirectory)\Schemas\v2\ops.schema.json">
       <LogicalName>Schemas/v2/$(AsposeProductId)/%(Filename)%(Extension)</LogicalName>
     </EmbeddedResource>
     <EmbeddedResource Include="$(MSBuildProjectDirectory)\Presenter\*.*">

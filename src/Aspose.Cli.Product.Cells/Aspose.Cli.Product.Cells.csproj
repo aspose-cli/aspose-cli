@@ -14,9 +14,4 @@
   <ItemGroup>
     <InternalsVisibleTo Include="Aspose.Cli.Product.Cells.Tests" />
   </ItemGroup>
-  <ItemGroup>
-    <!-- The ops schema is generated from the operation records and served from them; the
-         committed copy is for review and external readers, and a contract test keeps it current. -->
-    <EmbeddedResource Remove="$(MSBuildProjectDirectory)\Schemas\v2\ops.schema.json" />
-  </ItemGroup>
 </Project>

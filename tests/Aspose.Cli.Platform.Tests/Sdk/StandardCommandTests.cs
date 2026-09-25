@@ -423,7 +423,9 @@ public sealed class StandardCommandTests : IDisposable
         string ActiveDirectories();
     }
 
+#pragma warning disable APCLI003 // A test result, not a product JSON root.
     private sealed record TestResult(string? Value) : ResultEnvelope("test/result", 1);
+#pragma warning restore APCLI003
 
     private sealed class TestHost(string workDirectory) : IProductCommandHost<ITestPort>
     {

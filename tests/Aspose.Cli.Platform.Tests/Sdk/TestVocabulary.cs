@@ -1,0 +1,127 @@
+using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Addressing;
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Operations;
+using Aspose.Cli.Sdk.Serialization;
+
+namespace Aspose.Cli.Platform.Tests.Sdk;
+
+// The operation vocabulary of the SDK tests, declared and generated exactly as a product's.
+
+public static class Shades
+{
+    public const string Light = "light";
+    public const string Dark = "dark";
+}
+
+/// <summary>Test operations.</summary>
+[OperationVocabulary("https://schemas.aspose.dev/aspose-cli/v2/test/ops.schema.json", MaximumOperations = 8, JsonContext = typeof(TestOpsJsonContext))]
+[JsonConverter(typeof(OperationJsonConverter<TestOp>))]
+public abstract partial record TestOp : BoundedOperation;
+
+[ExactlyOneOf("path", "all")]
+public abstract record TargetOp : TestOp
+{
+    [MinLength(1)] public string? Path { get; init; }
+
+    public bool All { get; init; }
+}
+
+public sealed record Box
+{
+    [ExclusiveMinimum(0)] public double Width { get; init; } = 1;
+}
+
+[MinProperties(1), DependentRequired("size", "font")]
+public sealed record Style
+{
+    public string? Font { get; init; }
+
+    public double? Size { get; init; }
+
+    public bool? Bold { get; init; }
+}
+
+/// <summary>Places boxes.</summary>
+[Operation("place")]
+public sealed record PlaceOp : TargetOp
+{
+    [PageRange] public required string Pages { get; init; }
+
+    public Box Box { get; init; } = new();
+
+    public Style? Style { get; init; }
+
+    [MinItems(1), HexColor] public IReadOnlyList<string>? Colors { get; init; }
+
+    [MaxItems(3), MinItems(1, Depth = 1), MaxItems(2, Depth = 1)] public IReadOnlyList<IReadOnlyList<string>>? Rows { get; init; }
+
+    [JsonScalar] public IReadOnlyList<object?>? Cells { get; init; }
+
+    public IReadOnlyDictionary<string, string>? Labels { get; init; }
+
+    [AllowedValues(typeof(Shades))] public string Shade { get; init; } = Shades.Light;
+
+    public uint Count { get; init; }
+
+    // The SDK grants these tests its internals, so the override keeps both modifiers.
+    protected internal override BoundedOperation Validated() => this with { Pages = PageRange.Parse(Pages).Text };
+}
+
+[Operation("note")]
+[AtLeastOneOf("text", "pinned")]
+public sealed record NoteOp : TestOp
+{
+    [MinLength(1)] public string? Text { get; init; }
+
+    public bool? Pinned { get; init; }
+}
+
+/// <summary>Moves by an offset or to a position.</summary>
+[Operation("shift")]
+[PresentWhen("by", "mode", "relative")]
+[PresentWhen("to", "mode", "absolute")]
+public sealed record ShiftOp : TestOp
+{
+    [AllowedValues("absolute", "relative")] public string Mode { get; init; } = "absolute";
+
+    public int? By { get; init; }
+
+    public int? To { get; init; }
+}
+
+[Operation("set")]
+public sealed record SetOp : TestOp
+{
+    [Minimum(0)] public required int Value { get; init; }
+}
+
+[Operation("link")]
+public sealed record LinkOp : TestOp
+{
+    [InputPath] public required string Path { get; init; }
+}
+
+[Operation("secret")]
+public sealed record SecretOp : TestOp
+{
+    [SecretEnv] public string? PasswordEnv { get; init; }
+}
+
+public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
+
+[JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
+[JsonSerializable(typeof(TestBatch))]
+[JsonSerializable(typeof(LinkOp))]
+[JsonSerializable(typeof(NoteOp))]
+[JsonSerializable(typeof(PlaceOp))]
+[JsonSerializable(typeof(SecretOp))]
+[JsonSerializable(typeof(SetOp))]
+[JsonSerializable(typeof(ShiftOp))]
+public sealed partial class TestOpsJsonContext : JsonSerializerContext;
+
+public static class TestContracts
+{
+    /// <summary>The vocabulary's serializer, as a product declares its own.</summary>
+    public static ProductJsonDefinition Json { get; } = new("test", TestOpsJsonContext.Default);
+}

@@ -435,41 +435,23 @@ public abstract class ProductContractTests<TModule>
     }
 
     /// <summary>
-    /// Ensures every manifest operation has one discoverable, self-contained
-    /// schema view and no operation is silently omitted from the index.
+    /// Ensures every manifest operation has a self-contained schema view that parses and is
+    /// narrowed to that operation.
     /// </summary>
     [Fact]
-    public void Operations_HaveExactDiscoverableSchemaViews()
+    public void Operations_HaveNarrowedSchemaViews()
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
-        ProductDefinition definition = Assert.Single(catalog.Products);
-
-        foreach (IGrouping<string, ProductOperationDescriptor> group in
-            definition.Manifest.Operations.Select(static command => command.Descriptor).GroupBy(
-                static operation => operation.InputSchema,
-                StringComparer.Ordinal))
+        foreach (ProductOperationDescriptor operation in Assert.Single(catalog.Products).Manifest.Operations
+            .Select(static command => command.Descriptor))
         {
-            string[] expected = group
-                .SelectMany(static operation => operation.Ops)
-                .Order(StringComparer.Ordinal)
-                .ToArray();
-            Assert.Equal(expected, catalog.Resources.GetOperations(group.Key));
-
-            foreach (string operationId in expected)
+            foreach (string name in operation.Ops)
             {
-                Assert.True(
-                    catalog.Resources.TryReadOperation(
-                        group.Key,
-                        operationId,
-                        out string? selected));
-                _ = ParseSchema(selected);
+                Assert.True(catalog.Resources.TryReadOperation(operation.InputSchema, name, out string? view));
+                _ = ParseSchema(view);
+                JsonNode oneOf = JsonNode.Parse(view)!["properties"]!["ops"]!["items"]!["oneOf"]!;
+                Assert.Equal($"#/$defs/{name}", Assert.Single(oneOf.AsArray())!["$ref"]!.GetValue<string>());
             }
-
-            Assert.False(
-                catalog.Resources.TryReadOperation(
-                    group.Key,
-                    "__unknown_operation__",
-                    out _));
         }
     }
 
@@ -482,10 +464,8 @@ public abstract class ProductContractTests<TModule>
     {
         ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
         ProductDefinition definition = Assert.Single(catalog.Products);
-        IReadOnlyList<string> embedded = catalog.Resources.GetProduct(definition.Manifest.Id).SchemaIds;
         foreach (string schemaId in definition.Manifest.Operations
             .Select(static operation => operation.Descriptor.InputSchema)
-            .Where(id => !embedded.Contains(id, StringComparer.Ordinal))
             .Distinct(StringComparer.Ordinal))
         {
             string path = Path.Combine(

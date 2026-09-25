@@ -1,108 +1,19 @@
-using System.Collections.Immutable;
-using System.Reflection;
-using System.Runtime.InteropServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Architecture.Tests;
-using Aspose.Cli.Sdk.Analyzers;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Operations;
 using Json.Schema;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.CSharp;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Xunit;
 
 namespace Aspose.Cli.Platform.Tests.Sdk;
 
 /// <summary>
-/// One declaration drives parsing, defaults, validation and the published schema. The sample
-/// vocabulary is compiled here through the operation generator and the JSON source generator,
-/// exactly as a product compiles its own.
+/// One declaration drives parsing, defaults, validation and the published schema, shown on the
+/// test vocabulary, which the operation and JSON source generators compile as a product's.
 /// </summary>
 public sealed class OperationContractTests
 {
-    private const string Sample =
-        """
-        using System.Collections.Generic;
-        using System.Text.Json;
-        using System.Text.Json.Serialization;
-        using Aspose.Cli.Sdk.Addressing;
-        using Aspose.Cli.Sdk.Contracts;
-        using Aspose.Cli.Sdk.Errors;
-        using Aspose.Cli.Sdk.Operations;
-        using Aspose.Cli.Sdk.Serialization;
-        namespace Sample;
-
-        public static class Shades { public const string Light = "light"; public const string Dark = "dark"; }
-
-        /// <summary>Test operations.</summary>
-        [OperationVocabulary("https://schemas.aspose.dev/aspose-cli/v2/test/ops.schema.json", MaximumOperations = 8, JsonContext = typeof(SampleJsonContext))]
-        [JsonConverter(typeof(OperationJsonConverter<SampleOp>))]
-        public abstract partial record SampleOp : BoundedOperation;
-
-        [ExactlyOneOf("path", "all")]
-        public abstract record TargetOp : SampleOp
-        {
-            [MinLength(1)] public string? Path { get; init; }
-            public bool All { get; init; }
-        }
-
-        public sealed record Box { [ExclusiveMinimum(0)] public double Width { get; init; } = 1; }
-
-        [MinProperties(1), DependentRequired("size", "font")]
-        public sealed record Style { public string? Font { get; init; } public double? Size { get; init; } public bool? Bold { get; init; } }
-
-        /// <summary>Places boxes.</summary>
-        [Operation("place")]
-        public sealed record PlaceOp : TargetOp
-        {
-            [PageRange] public required string Pages { get; init; }
-            public Box Box { get; init; } = new();
-            public Style? Style { get; init; }
-            [MinItems(1), HexColor] public IReadOnlyList<string>? Colors { get; init; }
-            [MaxItems(3), MinItems(1, Depth = 1), MaxItems(2, Depth = 1)] public IReadOnlyList<IReadOnlyList<string>>? Rows { get; init; }
-            [JsonScalar] public IReadOnlyList<object?>? Cells { get; init; }
-            public IReadOnlyDictionary<string, string>? Labels { get; init; }
-            [AllowedValues(typeof(Shades))] public string Shade { get; init; } = Shades.Light;
-            public uint Count { get; init; }
-
-            protected override BoundedOperation Validated() => this with { Pages = PageRange.Parse(Pages).Text };
-        }
-
-        [Operation("note")]
-        [AtLeastOneOf("text", "pinned")]
-        public sealed record NoteOp : SampleOp { [MinLength(1)] public string? Text { get; init; } public bool? Pinned { get; init; } }
-
-        public sealed record SampleBatch : BoundedOperationEnvelope<SampleOp>;
-
-        [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
-        [JsonSerializable(typeof(SampleBatch))]
-        [JsonSerializable(typeof(PlaceOp))]
-        [JsonSerializable(typeof(NoteOp))]
-        public partial class SampleJsonContext : JsonSerializerContext;
-
-        public static class Probe
-        {
-            private static readonly ProductJsonDefinition Contracts = new("test", SampleJsonContext.Default);
-
-            public static string Parse(string json)
-            {
-                try
-                {
-                    return JsonSerializer.Serialize(SampleOp.Catalog.Parse<SampleBatch>(json, Contracts).Ops[0], Contracts.LocalOptions);
-                }
-                catch (CliException error)
-                {
-                    return "error: " + error.Details!["reason"]!.GetValue<string>();
-                }
-            }
-
-            public static object Describe() => SampleOp.Catalog.Describe("edit");
-        }
-        """;
-
-    private static readonly Lazy<Type> Probe = new(Compile);
+    private static readonly Lazy<JsonSchema> Published = new(static () => JsonSchema.FromText(TestOp.Catalog.Describe("edit").Schema.Document));
 
     public static TheoryData<string, OperationValueKind, string, string> Constraints => new()
     {
@@ -118,6 +29,7 @@ public sealed class OperationContractTests
         { nameof(PageRangeAttribute), OperationValueKind.String, "\" 1-3, 7,9- \"", "\"0\"" },
         { nameof(HexColorAttribute), OperationValueKind.String, "\"#A0b1C2\"", "\"#12345\"" },
         { nameof(WebLinkAttribute), OperationValueKind.String, "\"mailto:team@example.test\"", "\"javascript:alert(1)\"" },
+        { nameof(SecretEnvAttribute), OperationValueKind.String, "\" A \"", "\" \"" },
         { nameof(JsonScalarAttribute), OperationValueKind.Any, "5", "{}" },
     };
 
@@ -153,6 +65,7 @@ public sealed class OperationContractTests
             nameof(PageRangeAttribute) => new PageRangeAttribute(),
             nameof(HexColorAttribute) => new HexColorAttribute(),
             nameof(JsonScalarAttribute) => new JsonScalarAttribute(),
+            nameof(SecretEnvAttribute) => new SecretEnvAttribute(),
             _ => new WebLinkAttribute(),
         };
         var schema = new JsonObject();
@@ -209,6 +122,11 @@ public sealed class OperationContractTests
     [InlineData("""{"op":"place","pages":"1","path":null}""", "path must not be null")]
     [InlineData("""{"op":"note","text":""}""", "text must not be empty")]
     [InlineData("""{"op":"note"}""", "the operation must set at least one of: text, pinned")]
+    [InlineData("""{"op":"place","pages":"0","all":true}""", "pages must be a 1-based page range such as 1-3,7,9-: '0' is not a positive 1-based number")]
+    [InlineData("""{"op":"link","path":" "}""", "path must not be blank")]
+    [InlineData("""{"op":"shift"}""", "the operation must set to when mode is absolute")]
+    [InlineData("""{"op":"shift","mode":"relative"}""", "the operation must set by when mode is relative")]
+    [InlineData("""{"op":"shift","to":1,"by":2}""", "the operation must not set by unless mode is relative")]
     public void Parse_RejectsABrokenRuleByItsWirePath(string operation, string reason) =>
         Assert.Equal("error: " + reason, Parse(operation));
 
@@ -222,13 +140,30 @@ public sealed class OperationContractTests
         Assert.False(JsonNode.Parse(Parse("""{"op":"note","pinned":false}"""))!["pinned"]!.GetValue<bool>());
     }
 
+    /// <summary>The schema's conditional of a present-when rule accepts exactly what the parser accepts, defaults included.</summary>
+    [Theory]
+    [InlineData("""{"op":"shift","to":1}""", true)]
+    [InlineData("""{"op":"shift","mode":"relative","by":2}""", true)]
+    [InlineData("""{"op":"shift","mode":"absolute","to":1}""", true)]
+    [InlineData("""{"op":"shift"}""", false)]
+    [InlineData("""{"op":"shift","mode":"relative"}""", false)]
+    [InlineData("""{"op":"shift","mode":"relative","by":2,"to":1}""", false)]
+    [InlineData("""{"op":"shift","to":1,"by":2}""", false)]
+    public void PresentWhen_ParserAndSchemaAgree(string operation, bool valid)
+    {
+        using JsonDocument document = JsonDocument.Parse($$"""{"ops":[{{operation}}]}""");
+
+        Assert.Equal(valid, !Parse(operation).StartsWith("error: ", StringComparison.Ordinal));
+        Assert.Equal(valid, Published.Value.Evaluate(document.RootElement).IsValid);
+    }
+
     [Fact]
     public void Schema_IsDeterministicAndStatesEveryDeclaredRule()
     {
-        GeneratedOperationSchema generated = Command().GeneratedSchema!;
+        GeneratedOperationSchema generated = TestOp.Catalog.Describe("edit").Schema;
         JsonObject place = Schema()["$defs"]!["place"]!.AsObject();
 
-        Assert.Equal(generated.Document, Command().GeneratedSchema!.Document);
+        Assert.Equal(generated.Document, TestOp.Catalog.Describe("edit").Schema.Document);
         Assert.EndsWith("}\n", generated.Document, StringComparison.Ordinal);
         Assert.DoesNotContain('\r', generated.Document);
         Assert.Equal("""["op","pages"]""", place["required"]!.ToJsonString());
@@ -243,12 +178,21 @@ public sealed class OperationContractTests
             place["allOf"]!.ToJsonString());
         Assert.Equal("""[{"anyOf":[{"required":["text"]},{"required":["pinned"]}]}]""", Schema()["$defs"]!["note"]!["allOf"]!.ToJsonString());
         Assert.Equal("""[{"minProperties":1},{"dependentRequired":{"size":["font"]}}]""", Schema()["$defs"]!["style"]!["allOf"]!.ToJsonString());
+        // The default of mode meets the second condition, so only the first requires mode.
+        Assert.Equal(
+            """[{"if":{"properties":{"mode":{"const":"relative"}},"required":["mode"]},"then":{"required":["by"]},"else":{"not":{"required":["by"]}}},"""
+            + """{"if":{"properties":{"mode":{"const":"absolute"}}},"then":{"required":["to"]},"else":{"not":{"required":["to"]}}}]""",
+            Schema()["$defs"]!["shift"]!["allOf"]!.ToJsonString());
+        Assert.Equal("""{"type":"string","minLength":1,"pattern":"\\S"}""", Schema()["$defs"]!["link"]!["properties"]!["path"]!.ToJsonString());
+        string description = Schema()["description"]!.GetValue<string>();
+        Assert.StartsWith("Test operations. Operations apply in order. Without --best-effort the batch is atomic", description, StringComparison.Ordinal);
+        Assert.EndsWith("still writes nothing.", description, StringComparison.Ordinal);
     }
 
     [Fact]
     public void OperationView_KeepsOnlyTheDefinitionsTheOperationReaches()
     {
-        JsonObject view = JsonNode.Parse(Command().GeneratedSchema!.Operations["note"])!.AsObject();
+        JsonObject view = JsonNode.Parse(TestOp.Catalog.Describe("edit").Schema.Operations["note"])!.AsObject();
 
         Assert.Equal(["id", "note"], view["$defs"]!.AsObject().Select(static entry => entry.Key));
         Assert.Equal("#/$defs/note", view["properties"]!["ops"]!["items"]!["oneOf"]![0]!["$ref"]!.GetValue<string>());
@@ -261,13 +205,20 @@ public sealed class OperationContractTests
         public const int ThreeQuarters = 270;
     }
 
-    private static string Parse(string operation) =>
-        (string)Probe.Value.GetMethod("Parse")!.Invoke(null, [$$"""{"ops":[{{operation}}]}"""])!;
+    private static string Parse(string operation)
+    {
+        try
+        {
+            TestBatch batch = TestOp.Catalog.Parse<TestBatch>($$"""{"ops":[{{operation}}]}""", TestContracts.Json);
+            return JsonSerializer.Serialize(batch.Ops[0], TestContracts.Json.LocalOptions);
+        }
+        catch (CliException error)
+        {
+            return "error: " + error.Details!["reason"]!.GetValue<string>();
+        }
+    }
 
-    private static ProductOperationCommand Command() =>
-        (ProductOperationCommand)Probe.Value.GetMethod("Describe")!.Invoke(null, null)!;
-
-    private static JsonObject Schema() => JsonNode.Parse(Command().GeneratedSchema!.Document)!.AsObject();
+    private static JsonObject Schema() => JsonNode.Parse(TestOp.Catalog.Describe("edit").Schema.Document)!.AsObject();
 
     private static object Clr(JsonElement value, OperationValueKind kind) => kind == OperationValueKind.Any
         ? value
@@ -278,40 +229,4 @@ public sealed class OperationContractTests
             JsonValueKind.Array => value.EnumerateArray().Select(item => Clr(item, kind)).ToArray(),
             _ => throw new ArgumentOutOfRangeException(nameof(value)),
         };
-
-    /// <summary>Compiles the sample with the operation and JSON source generators and loads it.</summary>
-    private static Type Compile()
-    {
-        string runtime = RuntimeEnvironment.GetRuntimeDirectory();
-        string packs = Path.GetFullPath(Path.Combine(runtime, "..", "..", "..", "packs", "Microsoft.NETCore.App.Ref"));
-        string jsonGenerator = Directory.GetDirectories(packs, $"{Environment.Version.Major}.*")
-            .OrderBy(static directory => Version.Parse(Path.GetFileName(directory)))
-            .Select(static directory => Path.Combine(directory, "analyzers", "dotnet", "cs", "System.Text.Json.SourceGeneration.dll"))
-            .Last(File.Exists);
-        CSharpCompilation compilation = CSharpCompilation.Create(
-            "Sample.Vocabulary",
-            [CSharpSyntaxTree.ParseText(Sample, new CSharpParseOptions(LanguageVersion.Preview))],
-            RoslynTestSupport.PlatformReferences().Append(MetadataReference.CreateFromFile(typeof(OperationCatalog<>).Assembly.Location)),
-            new CSharpCompilationOptions(OutputKind.DynamicallyLinkedLibrary, nullableContextOptions: NullableContextOptions.Enable));
-        ISourceGenerator[] generators =
-        [
-            new OperationContractGenerator().AsSourceGenerator(),
-            .. new AnalyzerFileReference(jsonGenerator, new AssemblyLoader()).GetGenerators(LanguageNames.CSharp),
-        ];
-        CSharpGeneratorDriver.Create(generators, parseOptions: new CSharpParseOptions(LanguageVersion.Preview))
-            .RunGeneratorsAndUpdateCompilation(compilation, out Compilation generated, out ImmutableArray<Diagnostic> _);
-        using var image = new MemoryStream();
-        Microsoft.CodeAnalysis.Emit.EmitResult emitted = generated.Emit(image);
-        Assert.True(emitted.Success, string.Join("\n", emitted.Diagnostics.Where(static diagnostic => diagnostic.Severity == DiagnosticSeverity.Error)));
-        return Assembly.Load(image.ToArray()).GetType("Sample.Probe")!;
-    }
-
-    private sealed class AssemblyLoader : IAnalyzerAssemblyLoader
-    {
-        public void AddDependencyLocation(string fullPath)
-        {
-        }
-
-        public Assembly LoadFromPath(string fullPath) => Assembly.LoadFrom(fullPath);
-    }
 }

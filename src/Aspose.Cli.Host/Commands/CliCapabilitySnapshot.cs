@@ -143,13 +143,6 @@ internal sealed class CliCapabilitySnapshot
                     Verbs = command.Subcommands
                         .Select(static child => child.Name)
                         .ToArray(),
-                    // Hashing reads each schema, so only a capabilities document pays for it.
-                    Operations = capabilities.Operations
-                        .Select(operation => operation with
-                        {
-                            ContractFingerprint = catalog.Resources.ContractFingerprint(operation.InputSchema),
-                        })
-                        .ToArray(),
                 };
             })
             .ToArray();

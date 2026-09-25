@@ -9,7 +9,6 @@ internal static class EditCommand
 {
     private static readonly BoundedEditDefinition<SlidesOp, SlidesOpsBatch> Definition = new()
     {
-        Catalog = SlidesOp.Catalog,
         Contracts = ProductJsonContext.Definition,
     };
 

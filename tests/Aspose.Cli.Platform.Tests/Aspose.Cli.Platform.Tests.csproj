@@ -6,7 +6,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Aspose.Cli.Sdk\Aspose.Cli.Sdk.csproj" />
-    <ProjectReference Include="..\..\src\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj" />
+    <!-- The analyzer tests use its types, and the SDK tests declare their operation vocabulary as products do. -->
+    <ProjectReference Include="..\..\src\Aspose.Cli.Sdk.Analyzers\Aspose.Cli.Sdk.Analyzers.csproj"
+                      OutputItemType="Analyzer"
+                      ReferenceOutputAssembly="true" />
     <ProjectReference Include="..\..\src\Aspose.Cli.Host\Aspose.Cli.Host.csproj" />
   </ItemGroup>
 

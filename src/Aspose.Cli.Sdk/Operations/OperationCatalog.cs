@@ -1,3 +1,4 @@
+using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
@@ -9,40 +10,21 @@ using Aspose.Cli.Sdk.Serialization;
 namespace Aspose.Cli.Sdk.Operations;
 
 /// <summary>
-/// A product's operation vocabulary: the only place an operation is registered. Each entry
-/// binds a wire name to its record type and its rules. The catalog feeds the discriminator
-/// converter, capabilities, the schema and the parse pipeline, so the name, type, validation
-/// and published order cannot drift apart. A vocabulary declared with
-/// <see cref="OperationVocabularyAttribute"/> gets a generated catalog built from its records'
-/// descriptors, which also owns the vocabulary's defaults, schema, input paths and secrets.
+/// A product's operation vocabulary, generated from the records of its
+/// <see cref="OperationVocabularyAttribute"/> base. It binds each wire name to its record and
+/// feeds the discriminator converter, capabilities, the schema and the parse pipeline, so the
+/// name, type, defaults, validation, input paths and secrets cannot drift apart.
 /// </summary>
 public sealed class OperationCatalog<TOp>
     where TOp : BoundedOperation
 {
-    private readonly List<string> _names = [];
-    private readonly Dictionary<string, Type> _types = new(StringComparer.Ordinal);
-    private readonly Dictionary<Type, Entry> _entries = [];
-    private readonly GeneratedOperationSchema? _schema;
-
-    /// <summary>Creates an empty vocabulary for one operation document contract.</summary>
-    /// <param name="schemaId">Canonical schema identifier of the operation document.</param>
-    /// <param name="maximumOperations">Largest accepted number of operations in one document.</param>
-    public OperationCatalog(string schemaId, int maximumOperations)
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(schemaId);
-        ArgumentOutOfRangeException.ThrowIfLessThan(maximumOperations, 1);
-        SchemaId = schemaId;
-        MaximumOperations = maximumOperations;
-        string relative = schemaId.StartsWith(DistributionInfo.SchemaBaseUri, StringComparison.Ordinal)
-            ? schemaId[DistributionInfo.SchemaBaseUri.Length..]
-            : schemaId;
-        SchemaCommandId = "v2/" + relative.Replace(".schema.json", string.Empty, StringComparison.Ordinal);
-        DefaultHint = $"Fix the named operation; '{DistributionInfo.CommandName} schema {SchemaCommandId}' documents every operation.";
-    }
+    private readonly Dictionary<string, OperationDescriptor> _byName = new(StringComparer.Ordinal);
+    private readonly Dictionary<Type, OperationDescriptor> _byType = [];
+    private readonly GeneratedOperationSchema _schema;
 
     /// <summary>
-    /// Creates a generated vocabulary from its operation descriptors, published in ordinal
-    /// order of their wire names. Only generated code calls this constructor.
+    /// Creates a vocabulary from its operation descriptors, published in ordinal order of their
+    /// wire names. Only generated code calls this constructor.
     /// </summary>
     /// <param name="schemaId">Canonical schema identifier of the operation document.</param>
     /// <param name="maximumOperations">Largest accepted number of operations in one document.</param>
@@ -55,23 +37,36 @@ public sealed class OperationCatalog<TOp>
         string? description,
         IJsonTypeInfoResolver contracts,
         IReadOnlyList<OperationDescriptor> operations)
-        : this(schemaId, maximumOperations)
     {
+        ArgumentException.ThrowIfNullOrWhiteSpace(schemaId);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maximumOperations, 1);
         ArgumentNullException.ThrowIfNull(contracts);
         ArgumentNullException.ThrowIfNull(operations);
+        SchemaId = schemaId;
+        MaximumOperations = maximumOperations;
         Contracts = contracts;
-        foreach (OperationDescriptor operation in operations.OrderBy(static operation => operation.Record.Name, StringComparer.Ordinal))
+        string relative = schemaId.StartsWith(DistributionInfo.SchemaBaseUri, StringComparison.Ordinal)
+            ? schemaId[DistributionInfo.SchemaBaseUri.Length..]
+            : schemaId;
+        SchemaCommandId = "v2/" + relative.Replace(".schema.json", string.Empty, StringComparison.Ordinal);
+        DefaultHint = $"Fix the named operation; '{DistributionInfo.CommandName} schema {SchemaCommandId}' documents every operation.";
+        OperationDescriptor[] ordered = [.. operations.OrderBy(static operation => operation.Record.Name, StringComparer.Ordinal)];
+        foreach (OperationDescriptor operation in ordered)
         {
-            if (!operation.Record.Type.IsAssignableTo(typeof(TOp)))
+            Type type = operation.Record.Type;
+            if (!type.IsAssignableTo(typeof(TOp)))
             {
-                throw new ArgumentException($"Operation type {operation.Record.Type.Name} is not a {typeof(TOp).Name}.", nameof(operations));
+                throw new ArgumentException($"Operation type {type.Name} is not a {typeof(TOp).Name}.", nameof(operations));
             }
-
-            Register(operation.Record.Name, operation.Record.Type, new Entry(operation.Record.Name, null, operation));
+            if (!_byName.TryAdd(operation.Record.Name, operation) || !_byType.TryAdd(type, operation))
+            {
+                throw new ArgumentException($"Operation '{operation.Record.Name}' ({type.Name}) is declared twice.", nameof(operations));
+            }
         }
 
-        OperationRecord[] records = [.. operations.Select(static operation => operation.Record).OrderBy(static record => record.Name, StringComparer.Ordinal)];
-        _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, MaximumOperations, description, records), _names);
+        Names = [.. ordered.Select(static operation => operation.Record.Name)];
+        OperationRecord[] records = [.. ordered.Select(static operation => operation.Record)];
+        _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, MaximumOperations, description, records), Names);
     }
 
     /// <summary>Canonical schema identifier of the operation document.</summary>
@@ -81,52 +76,19 @@ public sealed class OperationCatalog<TOp>
     public int MaximumOperations { get; }
 
     /// <summary>Wire names in published order.</summary>
-    public IReadOnlyList<string> Names => _names;
-
-    /// <summary>Wire name to record type, for the discriminator converter.</summary>
-    public IReadOnlyDictionary<string, Type> Registry => _types;
+    public IReadOnlyList<string> Names { get; }
 
     internal string DefaultHint { get; }
 
-    /// <summary>The generated vocabulary's operation metadata; null for a registered one.</summary>
-    internal IJsonTypeInfoResolver? Contracts { get; }
+    /// <summary>Source-generated JSON metadata for every operation record.</summary>
+    internal IJsonTypeInfoResolver Contracts { get; }
 
-    private string SchemaCommandId { get; }
-
-    /// <summary>Registers one operation. Append new operations: the order is published.</summary>
-    /// <param name="name">Stable wire name.</param>
-    /// <param name="validate">
-    /// Pure semantic validation that returns the normalized operation, or rejects it with
-    /// <see cref="OperationInvalidException"/>. Omitted when the contract types say everything.
-    /// </param>
-    public OperationCatalog<TOp> Add<T>(string name, Func<T, T>? validate = null)
-        where T : TOp
-    {
-        ArgumentException.ThrowIfNullOrWhiteSpace(name);
-        if (_schema is not null)
-        {
-            throw new InvalidOperationException("A generated vocabulary takes no registered operations.");
-        }
-
-        Register(name, typeof(T), new Entry(name, validate is null ? null : op => validate((T)op), null));
-        return this;
-    }
-
-    /// <summary>Registers one operation whose validation only checks and never normalizes.</summary>
-    public OperationCatalog<TOp> Add<T>(string name, Action<T> check)
-        where T : TOp
-    {
-        ArgumentNullException.ThrowIfNull(check);
-        return Add<T>(name, op =>
-        {
-            check(op);
-            return op;
-        });
-    }
+    /// <summary>The schema's id in the <c>schema</c> command, such as <c>v2/pdf/ops</c>.</summary>
+    internal string SchemaCommandId { get; }
 
     /// <summary>
     /// Declares the command that applies documents of this vocabulary, for the product manifest;
-    /// a generated vocabulary's schema travels with it to the product resources.
+    /// the vocabulary's schema travels with it to the product resources.
     /// </summary>
     public ProductOperationCommand Describe(string command)
     {
@@ -139,15 +101,15 @@ public sealed class OperationCatalog<TOp>
                 OperationSchema = $"{DistributionInfo.CommandName} schema {SchemaCommandId} --operation <op>",
                 MaximumOperations = MaximumOperations,
                 Ops = Names,
-            },
-            _schema);
+                Schema = _schema,
+            });
     }
 
-    /// <summary>Returns the wire name of a registered operation.</summary>
+    /// <summary>Returns the wire name of an operation of this vocabulary.</summary>
     public string NameOf(TOp operation)
     {
         ArgumentNullException.ThrowIfNull(operation);
-        return EntryOf(operation).Name;
+        return DescriptorOf(operation).Record.Name;
     }
 
     /// <summary>Parses, validates and identifies an operation document.</summary>
@@ -201,69 +163,43 @@ public sealed class OperationCatalog<TOp>
         for (int index = 0; index < identified.Count; index++)
         {
             TOp operation = identified[index];
-            Entry entry = EntryOf(operation);
+            OperationRecord record = DescriptorOf(operation).Record;
             try
             {
-                if (entry.Operation is { } descriptor)
-                {
-                    OperationContractValidator.Check(descriptor.Record, operation);
-                }
-
-                TOp normalized = operation.Validated() as TOp
+                OperationContractValidator.Check(record, operation);
+                validated[index] = operation.Validated() as TOp
                     ?? throw new InvalidOperationException($"{operation.GetType().Name}.Validated() must return a {typeof(TOp).Name}.");
-                validated[index] = entry.Validate?.Invoke(normalized) ?? normalized;
             }
             catch (OperationInvalidException rejection)
             {
-                throw OperationErrors.InvalidAt(index, entry.Name, rejection.Message, rejection.Hint ?? DefaultHint);
+                throw OperationErrors.InvalidAt(index, record.Name, rejection.Message, rejection.Hint ?? DefaultHint);
             }
             catch (CliException failure) when (!failure.IsInvocationFailure)
             {
                 // A shared value parser (a page range, an address) rejected a field.
-                throw OperationErrors.InvalidAt(index, entry.Name, failure.Message, failure.Hint ?? DefaultHint, failure.Code);
+                throw OperationErrors.InvalidAt(index, record.Name, failure.Message, failure.Hint ?? DefaultHint, failure.Code);
             }
         }
 
         return (TBatch)((BoundedOperationEnvelope<TOp>)batch with { SchemaVersion = 2, Ops = validated });
     }
 
-    /// <summary>Finds a named operation's record type and, for a generated vocabulary, its record.</summary>
-    internal bool TryGetOperation(string name, out Type type, out OperationRecord? record)
+    /// <summary>Finds a named operation's record.</summary>
+    internal bool TryGetOperation(string name, [NotNullWhen(true)] out OperationRecord? record)
     {
-        record = null;
-        if (!_types.TryGetValue(name, out type!))
-        {
-            return false;
-        }
-
-        record = _entries[type].Operation?.Record;
-        return true;
+        record = _byName.TryGetValue(name, out OperationDescriptor? operation) ? operation.Record : null;
+        return record is not null;
     }
 
-    /// <summary>Resolves the files a generated operation reads; any other operation is returned unchanged.</summary>
+    /// <summary>Resolves the files an operation reads; an operation that reads none is returned unchanged.</summary>
     internal TOp ResolveInputPaths(TOp operation, Func<string, string> resolve) =>
-        EntryOf(operation).Operation?.ResolveInputPaths is { } resolveInputs
+        DescriptorOf(operation).ResolveInputPaths is { } resolveInputs
             ? (TOp)resolveInputs(operation, resolve)
             : operation;
 
-    /// <summary>The environment variables whose secrets a generated operation reads; null entries are omitted fields.</summary>
+    /// <summary>The environment variables whose secrets an operation reads; null entries are omitted fields.</summary>
     internal IEnumerable<string?> SecretVariables(TOp operation) =>
-        EntryOf(operation).Operation?.SecretVariables?.Invoke(operation) ?? [];
-
-    private void Register(string name, Type type, Entry entry)
-    {
-        if (_types.ContainsKey(name))
-        {
-            throw new ArgumentException($"Operation '{name}' is registered twice.", nameof(name));
-        }
-        if (_entries.ContainsKey(type))
-        {
-            throw new ArgumentException($"Operation type {type.Name} is registered twice.", nameof(name));
-        }
-        _types.Add(name, type);
-        _entries.Add(type, entry);
-        _names.Add(name);
-    }
+        DescriptorOf(operation).SecretVariables?.Invoke(operation) ?? [];
 
     private JsonDocument ParseJson(string json)
     {
@@ -287,7 +223,7 @@ public sealed class OperationCatalog<TOp>
     {
         if (OperationIndex(rejection?.Path) is { } index)
         {
-            return OperationErrors.InvalidAt(index, RegisteredNameAt(root, index), rejection!.Message, DefaultHint);
+            return OperationErrors.InvalidAt(index, KnownNameAt(root, index), rejection!.Message, DefaultHint);
         }
 
         return Invalid(JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path));
@@ -303,23 +239,21 @@ public sealed class OperationCatalog<TOp>
                 : null;
     }
 
-    private string? RegisteredNameAt(JsonElement root, int index) =>
+    private string? KnownNameAt(JsonElement root, int index) =>
         root.ValueKind == JsonValueKind.Object
         && root.TryGetProperty("ops", out JsonElement ops) && ops.ValueKind == JsonValueKind.Array
         && index < ops.GetArrayLength()
         && ops[index] is { ValueKind: JsonValueKind.Object } operation
         && operation.TryGetProperty("op", out JsonElement name) && name.ValueKind == JsonValueKind.String
-        && _types.ContainsKey(name.GetString()!)
+        && _byName.ContainsKey(name.GetString()!)
             ? name.GetString()
             : null;
 
-    private Entry EntryOf(TOp operation) =>
-        _entries.TryGetValue(operation.GetType(), out Entry? entry)
-            ? entry
+    private OperationDescriptor DescriptorOf(TOp operation) =>
+        _byType.TryGetValue(operation.GetType(), out OperationDescriptor? descriptor)
+            ? descriptor
             : throw new InvalidOperationException(
-                $"Operation type {operation.GetType().Name} is not registered in its catalog.");
+                $"Operation type {operation.GetType().Name} is not an operation of its catalog.");
 
     private CliException Invalid(string reason) => OperationErrors.Invalid(reason, DefaultHint);
-
-    private sealed record Entry(string Name, Func<TOp, TOp>? Validate, OperationDescriptor? Operation);
 }

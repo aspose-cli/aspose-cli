@@ -8,37 +8,22 @@ using Aspose.Cli.Sdk.Operations;
 namespace Aspose.Cli.Sdk.Serialization;
 
 /// <summary>
-/// The wire protocol of a generated operation vocabulary. Declare it on the vocabulary's base
-/// record with <c>[JsonConverter(typeof(OperationJsonConverter&lt;TOp&gt;))]</c>.
+/// The wire protocol of an operation vocabulary; declare it on the vocabulary's base record
+/// with <c>[JsonConverter(typeof(OperationJsonConverter&lt;TOp&gt;))]</c>. It reads the
+/// <c>op</c> discriminator, rejects unknown, null and duplicated members in wire terms, and
+/// writes every omitted member that has a default before the payload is read, so the schema's
+/// <c>default</c> is exactly the value applied.
 /// </summary>
-public sealed class OperationJsonConverter<TOp>() : CatalogOperationJsonConverter<TOp>(TOp.Catalog)
-    where TOp : BoundedOperation, IOperationVocabulary<TOp>;
-
-/// <summary>
-/// Owns the operation discriminator protocol: it reads the <c>op</c> discriminator, rejects
-/// unknown and duplicated members in wire terms, and for a generated vocabulary writes every
-/// omitted member that has a default before the payload is read, so the schema's
-/// <c>default</c> is exactly the value applied. A product whose vocabulary is still registered
-/// by hand subclasses it with its catalog and its own defaults.
-/// </summary>
-public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<TOperation>
-    where TOperation : BoundedOperation
+public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
+    where TOp : BoundedOperation, IOperationVocabulary<TOp>
 {
     private readonly ConditionalWeakTable<JsonSerializerOptions, JsonSerializerOptions> _strictOptions = new();
-    private readonly OperationCatalog<TOperation> _catalog;
-
-    /// <summary>Connects a product's operation catalog to the shared wire protocol.</summary>
-    protected CatalogOperationJsonConverter(OperationCatalog<TOperation> catalog)
-    {
-        ArgumentNullException.ThrowIfNull(catalog);
-        _catalog = catalog;
-    }
 
     /// <inheritdoc />
     public override bool HandleNull => true;
 
     /// <inheritdoc />
-    public override TOperation Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
+    public override TOp Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options)
     {
         using JsonDocument document = JsonDocument.ParseValue(ref reader);
         JsonElement root = document.RootElement;
@@ -51,7 +36,7 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
         }
 
         string name = discriminator.GetString()!;
-        if (!_catalog.TryGetOperation(name, out Type type, out OperationRecord? record))
+        if (!TOp.Catalog.TryGetOperation(name, out OperationRecord? record))
         {
             throw new JsonException($"unknown op '{name}'; valid ops: {ValidOperations}");
         }
@@ -71,10 +56,9 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
 
         JsonSerializerOptions strict = Strict(options);
         byte[] fields = payload.ToArray();
-        TOperation operation;
         try
         {
-            operation = (TOperation)JsonSerializer.Deserialize(fields, type, strict)!;
+            return (TOp)JsonSerializer.Deserialize(fields, record.Type, strict)!;
         }
         catch (JsonException rejection)
         {
@@ -82,18 +66,16 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
             // A fresh exception has no path, so the enclosing read records the op's position.
             using JsonDocument rejected = JsonDocument.Parse(fields);
             throw new JsonException(
-                JsonContractDiagnostics.Explain(rejected.RootElement, type, strict, rejection.Path), rejection);
+                JsonContractDiagnostics.Explain(rejected.RootElement, record.Type, strict, rejection.Path), rejection);
         }
-
-        return ApplyDefaults(operation, root);
     }
 
     /// <inheritdoc />
-    public override void Write(Utf8JsonWriter writer, TOperation value, JsonSerializerOptions options)
+    public override void Write(Utf8JsonWriter writer, TOp value, JsonSerializerOptions options)
     {
         ArgumentNullException.ThrowIfNull(value);
         writer.WriteStartObject();
-        writer.WriteString("op", _catalog.NameOf(value));
+        writer.WriteString("op", TOp.Catalog.NameOf(value));
         JsonElement payload = JsonSerializer.SerializeToElement(value, value.GetType(), Strict(options));
         foreach (JsonProperty property in payload.EnumerateObject())
         {
@@ -105,17 +87,11 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
         writer.WriteEndObject();
     }
 
-    /// <summary>
-    /// Applies the defaults of a vocabulary that is still registered by hand, preserving
-    /// explicitly supplied values. A generated vocabulary takes its defaults from its records.
-    /// </summary>
-    protected virtual TOperation ApplyDefaults(TOperation operation, JsonElement payload) => operation;
-
-    private string ValidOperations => string.Join(", ", _catalog.Registry.Keys);
+    private static string ValidOperations => string.Join(", ", TOp.Catalog.Names);
 
     /// <summary>
-    /// The outer options with unknown members disallowed and, for a generated vocabulary, the
-    /// vocabulary's own operation metadata in front of the outer resolver.
+    /// The outer options with unknown members disallowed and the vocabulary's own operation
+    /// metadata in front of the outer resolver.
     /// </summary>
     private JsonSerializerOptions Strict(JsonSerializerOptions options) =>
         _strictOptions.GetValue(options, source =>
@@ -123,12 +99,8 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
             var value = new JsonSerializerOptions(source)
             {
                 UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
+                TypeInfoResolver = JsonTypeInfoResolver.Combine(TOp.Catalog.Contracts, source.TypeInfoResolver),
             };
-            if (_catalog.Contracts is { } contracts)
-            {
-                value.TypeInfoResolver = JsonTypeInfoResolver.Combine(contracts, source.TypeInfoResolver);
-            }
-
             value.MakeReadOnly();
             return value;
         });
@@ -138,7 +110,7 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
     /// every omitted member that has a default. Values of nested records, arrays and maps are
     /// completed the same way; so is an object default such as <c>{}</c>.
     /// </summary>
-    private static void WriteMembers(Utf8JsonWriter writer, JsonElement value, OperationRecord? record, string path, bool isOperation)
+    private static void WriteMembers(Utf8JsonWriter writer, JsonElement value, OperationRecord record, string path, bool isOperation)
     {
         writer.WriteStartObject();
         foreach (JsonProperty member in value.EnumerateObject())
@@ -152,8 +124,8 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
                 continue;
             }
 
-            OperationProperty? property = record?.Properties.FirstOrDefault(property => member.NameEquals(property.Name));
-            if (record is not null && member.Value.ValueKind == JsonValueKind.Null && (property is not null || (isOperation && member.NameEquals("id"))))
+            OperationProperty? property = record.Properties.FirstOrDefault(property => member.NameEquals(property.Name));
+            if (member.Value.ValueKind == JsonValueKind.Null && (property is not null || (isOperation && member.NameEquals("id"))))
             {
                 // An optional member is omitted, never null, as the schema states.
                 throw new JsonException($"{Join(path, member.Name)} must not be null");
@@ -169,7 +141,7 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
             WriteValue(writer, member.Value, property.Value, Join(path, property.Name));
         }
 
-        foreach (OperationProperty property in record?.Properties ?? [])
+        foreach (OperationProperty property in record.Properties)
         {
             if (property.Default is not null && !value.TryGetProperty(property.Name, out _))
             {
@@ -187,7 +159,7 @@ public abstract class CatalogOperationJsonConverter<TOperation> : JsonConverter<
         switch (shape.Kind, value.ValueKind)
         {
             case (OperationValueKind.Record, JsonValueKind.Object):
-                WriteMembers(writer, value, shape.Record, path, isOperation: false);
+                WriteMembers(writer, value, shape.Record!, path, isOperation: false);
                 break;
             case (OperationValueKind.Array, JsonValueKind.Array):
                 writer.WriteStartArray();
