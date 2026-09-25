@@ -121,7 +121,7 @@ public sealed class WordsMarkdownImportTests
 
         fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
-            Ops = [new SetHeaderOp(kind) { Paragraphs = ["Header"] }],
+            Ops = [new SetHeaderOp { Kind = kind, Paragraphs = ["Header"] }],
         }, new WordsEditRequest { OutputPath = output });
 
         PageSetup setup = new Document(output).FirstSection.PageSetup;

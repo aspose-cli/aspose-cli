@@ -16,36 +16,36 @@ using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
-/// <summary>Owns text and block-content mutations.</summary>
-internal static class WordsContentOpHandlers
+// Text and block content.
+internal sealed partial class WordsOpHandlers
 {
     /// <summary>
     /// Replaces matches in the stories of the op's scope, as search reads them: field codes
     /// and text a tracked change deletes are not text, and a match in a comment or footnote
     /// belongs to that note's scope, not to the body or header that anchors it.
     /// </summary>
-    internal static long ReplaceText(Document document, ReplaceTextOp op)
+    public long Apply(ReplaceTextOp operation)
     {
-        var callback = new ScopedReplacingCallback(op.MaxReplacements);
+        var callback = new ScopedReplacingCallback(operation.MaxReplacements);
         var options = new FindReplaceOptions
         {
-            MatchCase = op.MatchCase,
-            FindWholeWordsOnly = op.WholeWord,
+            MatchCase = operation.MatchCase,
+            FindWholeWordsOnly = operation.WholeWord,
             // A regex replacement honors $1 and ${name}; a literal one is inserted verbatim.
-            UseSubstitutions = op.Regex,
+            UseSubstitutions = operation.Regex,
             IgnoreFieldCodes = true,
             IgnoreDeleted = true,
             ReplacingCallback = callback,
         };
-        Regex pattern = op.Regex
-            ? SafeRegex.Create(op.Find, op.MatchCase)
-            : new Regex(Regex.Escape(op.Find), op.MatchCase ? RegexOptions.CultureInvariant : RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, SafeRegex.DefaultTimeout);
+        Regex pattern = operation.Regex
+            ? SafeRegex.Create(operation.Find, operation.MatchCase)
+            : new Regex(Regex.Escape(operation.Find), operation.MatchCase ? RegexOptions.CultureInvariant : RegexOptions.IgnoreCase | RegexOptions.CultureInvariant, SafeRegex.DefaultTimeout);
 
         long replaced = 0;
-        foreach ((CompositeNode story, _) in WordsStories.In(document, op.Scope).ToArray())
+        foreach ((CompositeNode story, _) in WordsStories.In(_document, operation.Scope).ToArray())
         {
             callback.Story = story;
-            replaced += story.Range.Replace(pattern, op.Replace, options);
+            replaced += story.Range.Replace(pattern, operation.Replace, options);
             if (callback.LimitReached)
             {
                 break;
@@ -76,31 +76,31 @@ internal static class WordsContentOpHandlers
         }
     }
 
-    internal static long SetText(Document document, IReadOnlyList<Node> nodes, SetTextOp op)
+    public long Apply(SetTextOp operation)
     {
         // A bookmark owns exactly its enclosed range, wherever it sits (mid-paragraph or in a
         // table cell). Only that range changes; the bookmark and its surroundings remain.
-        if (op.At.Bookmark is { } name)
+        if (operation.At.Bookmark is { } name)
         {
-            Bookmark bookmark = document.Range.Bookmarks[name]
+            Bookmark bookmark = _document.Range.Bookmarks[name]
                 ?? throw Invalid($"bookmark '{name}' was removed by an earlier operation");
-            bookmark.Text = op.Text;
+            bookmark.Text = operation.Text;
             return 1;
         }
 
         // Check every target before the first change: a rejected operation changes nothing.
-        if (nodes.Any(static node => node is not Paragraph))
+        if (Nodes.Any(static node => node is not Paragraph))
         {
             throw Invalid("set_text accepts paragraph blocks only; use set_table_cell for tables");
         }
 
-        foreach (Paragraph paragraph in nodes.Cast<Paragraph>())
+        foreach (Paragraph paragraph in Nodes.Cast<Paragraph>())
         {
             paragraph.RemoveAllChildren();
-            paragraph.AppendChild(new Run(document, op.Text));
+            paragraph.AppendChild(new Run(_document, operation.Text));
         }
 
-        return nodes.Count;
+        return Nodes.Count;
     }
 
     /// <summary>
@@ -108,65 +108,66 @@ internal static class WordsContentOpHandlers
     /// anchor's list when the anchor is a list paragraph, otherwise one bullet list shared by
     /// the operation's list paragraphs.
     /// </summary>
-    internal static long InsertParagraphs(Document document, Node anchor, InsertParagraphsOp op)
+    public long Apply(InsertParagraphsOp operation)
     {
-        Node cursor = anchor;
-        Aspose.Words.Lists.List? list = anchor is Paragraph { IsListItem: true } item ? item.ListFormat.List : null;
-        foreach (ParagraphInput input in op.Paragraphs)
+        Node cursor = Anchor;
+        Aspose.Words.Lists.List? list = Anchor is Paragraph { IsListItem: true } item ? item.ListFormat.List : null;
+        foreach (ParagraphInput input in operation.Paragraphs)
         {
-            var paragraph = new Paragraph(document);
-            paragraph.AppendChild(new Run(document, input.Text));
+            var paragraph = new Paragraph(_document);
+            paragraph.AppendChild(new Run(_document, input.Text));
             if (input.Style is not null)
             {
-                ApplyParagraphStyle(document, paragraph, input.Style);
+                ApplyParagraphStyle(_document, paragraph, input.Style);
             }
 
             if (input.ListLevel is int level)
             {
-                list ??= document.Lists.Add(ListTemplate.BulletDefault);
+                list ??= _document.Lists.Add(ListTemplate.BulletDefault);
                 paragraph.ListFormat.List = list;
                 paragraph.ListFormat.ListLevelNumber = level;
             }
 
-            InsertRelative(anchor, ref cursor, paragraph, op.Position);
+            InsertRelative(Anchor, ref cursor, paragraph, operation.Position);
         }
 
-        return op.Paragraphs.Count;
+        return operation.Paragraphs.Count;
     }
 
-    internal static long InsertMarkdown(Document document, Node anchor, InsertMarkdownOp op, Document markdown)
+    public long Apply(InsertMarkdownOp operation)
     {
-        Node cursor = anchor;
-        IReadOnlyList<Node> blocks = WordsMarkdownImport.Blocks(document, markdown);
+        Document markdown = _loader.OpenMarkdown(operation.Markdown, _loaded);
+        Node cursor = Anchor;
+        IReadOnlyList<Node> blocks = WordsMarkdownImport.Blocks(_document, markdown);
         foreach (Node block in blocks)
         {
-            InsertRelative(anchor, ref cursor, block, op.Position);
+            InsertRelative(Anchor, ref cursor, block, operation.Position);
         }
 
         return blocks.Count;
     }
 
-    internal static long Delete(IReadOnlyList<Node> nodes)
+    public long Apply(DeleteBlocksOp operation)
     {
-        foreach (Node node in nodes)
+        foreach (Node node in Nodes)
         {
             DocumentBlockIndex.Remove(node);
         }
 
-        return nodes.Count;
+        return Nodes.Count;
     }
 
-    internal static long InsertBreak(Document document, Node anchor, InsertBreakOp op)
+    public long Apply(InsertBreakOp operation)
     {
-        if (op.Kind == "section")
+        if (operation.Kind == "section")
         {
-            return WordsStructureOpHandlers.InsertSectionBreak(anchor, op.Position);
+            return InsertSectionBreak(Anchor, operation.Position);
         }
 
-        var paragraph = new Paragraph(document);
-        paragraph.AppendChild(new Run(document, ControlChar.PageBreak));
-        Node cursor = anchor;
-        InsertRelative(anchor, ref cursor, paragraph, op.Position);
+        var paragraph = new Paragraph(_document);
+        paragraph.AppendChild(new Run(_document, ControlChar.PageBreak));
+        Node cursor = Anchor;
+        InsertRelative(Anchor, ref cursor, paragraph, operation.Position);
         return 1;
     }
 }

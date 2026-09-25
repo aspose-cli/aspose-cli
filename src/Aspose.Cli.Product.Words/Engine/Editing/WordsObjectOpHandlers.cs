@@ -17,32 +17,32 @@ using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
-/// <summary>Owns embedded objects, fields, metadata, protection and merge mutations.</summary>
-internal static class WordsObjectOpHandlers
+// Embedded objects, fields, metadata, protection, revisions, comments and merges.
+internal sealed partial class WordsOpHandlers
 {
-    internal static long InsertImage(Document document, Node anchor, InsertImageOp op, InputResourceScope inputs)
+    public long Apply(InsertImageOp operation)
     {
-        if (!File.Exists(op.Path))
+        if (!File.Exists(operation.Path))
         {
-            throw CliErrors.FileNotFound(op.Path);
+            throw CliErrors.FileNotFound(operation.Path);
         }
 
-        var paragraph = new Paragraph(document);
-        Node cursor = anchor;
-        InsertRelative(anchor, ref cursor, paragraph, op.Position);
-        var builder = new DocumentBuilder(document);
+        var paragraph = new Paragraph(_document);
+        Node cursor = Anchor;
+        InsertRelative(Anchor, ref cursor, paragraph, operation.Position);
+        var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
-        Shape shape = builder.InsertImage(inputs.OpenFile(op.Path));
-        if (op.Width is not null)
+        Shape shape = builder.InsertImage(_operationInputs.OpenFile(operation.Path));
+        if (operation.Width is not null)
         {
-            shape.Width = op.Width.Value;
+            shape.Width = operation.Width.Value;
         }
 
-        if (op.Height is not null)
+        if (operation.Height is not null)
         {
-            shape.Height = op.Height.Value;
+            shape.Height = operation.Height.Value;
         }
-        if (!op.Inline)
+        if (!operation.Inline)
         {
             shape.WrapType = WrapType.Square;
         }
@@ -50,148 +50,146 @@ internal static class WordsObjectOpHandlers
         return 1;
     }
 
-    internal static long InsertToc(Document document, Node anchor, InsertTocOp op)
+    public long Apply(InsertTocOp operation)
     {
-        Paragraph paragraph = InsertBuilderParagraph(document, anchor, op.Position);
-        var builder = new DocumentBuilder(document);
+        Paragraph paragraph = InsertBuilderParagraph(_document, Anchor, operation.Position);
+        var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
-        var toc = (FieldToc)builder.InsertTableOfContents($"\\o \"1-{op.MaxLevel}\" \\h \\z \\u");
-        UpdateTocs(document, [toc]);
+        var toc = (FieldToc)builder.InsertTableOfContents($"\\o \"1-{operation.MaxLevel}\" \\h \\z \\u");
+        UpdateTocs(_document, [toc]);
         return 1;
     }
 
-    internal static long InsertBookmark(Document document, Node anchor, InsertBookmarkOp op)
+    public long Apply(InsertBookmarkOp operation)
     {
-        if (document.Range.Bookmarks[op.Name] is not null)
+        if (_document.Range.Bookmarks[operation.Name] is not null)
         {
-            throw Invalid($"bookmark '{op.Name}' already exists");
+            throw Invalid($"bookmark '{operation.Name}' already exists");
         }
 
-        if (anchor is not Paragraph paragraph)
+        if (Anchor is not Paragraph paragraph)
         {
             throw Invalid("insert_bookmark must target a paragraph block");
         }
 
-        paragraph.PrependChild(new BookmarkStart(document, op.Name));
-        paragraph.AppendChild(new BookmarkEnd(document, op.Name));
+        paragraph.PrependChild(new BookmarkStart(_document, operation.Name));
+        paragraph.AppendChild(new BookmarkEnd(_document, operation.Name));
         return 1;
     }
 
-    internal static long InsertHyperlink(Document document, Node anchor, InsertHyperlinkOp op)
+    public long Apply(InsertHyperlinkOp operation)
     {
-        Paragraph paragraph = InsertBuilderParagraph(document, anchor, op.Position);
-        var builder = new DocumentBuilder(document);
+        Paragraph paragraph = InsertBuilderParagraph(_document, Anchor, operation.Position);
+        var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
-        builder.InsertHyperlink(op.Text, op.Url, isBookmark: false);
+        builder.InsertHyperlink(operation.Text, operation.Url, isBookmark: false);
         return 1;
     }
 
-    internal static long InsertField(Document document, Node anchor, InsertFieldOp op)
+    public long Apply(InsertFieldOp operation)
     {
-        Paragraph paragraph = InsertBuilderParagraph(document, anchor, op.Position);
-        var builder = new DocumentBuilder(document);
+        Paragraph paragraph = InsertBuilderParagraph(_document, Anchor, operation.Position);
+        var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
-        builder.InsertField(op.Code);
+        builder.InsertField(operation.Code);
         return 1;
     }
 
-    internal static long SetProperties(Document document, SetPropertiesOp op)
+    public long Apply(SetPropertiesOp operation)
     {
-        if (op.Title is not null)
+        if (operation.Title is not null)
         {
-            document.BuiltInDocumentProperties.Title = op.Title;
+            _document.BuiltInDocumentProperties.Title = operation.Title;
         }
 
-        if (op.Author is not null)
+        if (operation.Author is not null)
         {
-            document.BuiltInDocumentProperties.Author = op.Author;
+            _document.BuiltInDocumentProperties.Author = operation.Author;
         }
 
-        if (op.Subject is not null)
+        if (operation.Subject is not null)
         {
-            document.BuiltInDocumentProperties.Subject = op.Subject;
+            _document.BuiltInDocumentProperties.Subject = operation.Subject;
         }
 
-        if (op.Keywords is not null)
+        if (operation.Keywords is not null)
         {
-            document.BuiltInDocumentProperties.Keywords = op.Keywords;
+            _document.BuiltInDocumentProperties.Keywords = operation.Keywords;
         }
 
-        foreach ((string name, string? value) in op.Custom ?? new Dictionary<string, string?>())
+        foreach ((string name, string? value) in operation.Custom ?? new Dictionary<string, string?>())
         {
-            document.CustomDocumentProperties.Remove(name);
+            _document.CustomDocumentProperties.Remove(name);
             if (value is not null)
             {
-                document.CustomDocumentProperties.Add(name, value);
+                _document.CustomDocumentProperties.Add(name, value);
             }
         }
 
         return 1;
     }
 
-    internal static long AddWatermark(
-        Document document,
-        AddWatermarkOp op,
-        InputSource inputs,
-        ResourceBudgetLedger budgets)
+    public long Apply(AddWatermarkOp operation)
     {
-        if (op.Text is not null)
+        if (operation.Text is not null)
         {
-            var options = new TextWatermarkOptions { IsSemitrasparent = op.Faded };
-            if (op.Color is not null)
+            var options = new TextWatermarkOptions { IsSemitrasparent = operation.Faded };
+            if (operation.Color is not null)
             {
-                options.Color = ParseColor(op.Color);
+                options.Color = ParseColor(operation.Color);
             }
 
-            document.Watermark.SetText(op.Text, options);
+            _document.Watermark.SetText(operation.Text, options);
             return 1;
         }
 
         // The image is an admitted, size-bounded input; its decoded pixels are charged to the
         // memory budget from the header before any pixel buffer is allocated.
-        byte[] encoded = inputs.ReadAllBytes(op.ImagePath!);
+        byte[] encoded = _inputs.ReadAllBytes(operation.ImagePath!);
         using SKCodec codec = SKCodec.Create(new SKMemoryStream(encoded))
-            ?? throw Invalid($"watermark image '{op.ImagePath}' is not a supported image");
-        budgets.Consume(
+            ?? throw Invalid($"watermark image '{operation.ImagePath}' is not a supported image");
+        _loader.ResourceBudgets.Consume(
             ResourceBudgetKinds.MemoryBufferBytes,
             (long)codec.Info.Width * codec.Info.Height * 4,
             "bytes",
             "image-decode");
         using SKBitmap bitmap = SKBitmap.Decode(codec)
-            ?? throw Invalid($"watermark image '{op.ImagePath}' could not be decoded");
-        document.Watermark.SetImage(bitmap, new ImageWatermarkOptions { IsWashout = op.Faded });
+            ?? throw Invalid($"watermark image '{operation.ImagePath}' could not be decoded");
+        _document.Watermark.SetImage(bitmap, new ImageWatermarkOptions { IsWashout = operation.Faded });
         return 1;
     }
 
-    internal static long RemoveWatermark(Document document)
+    public long Apply(RemoveWatermarkOp operation)
     {
-        document.Watermark.Remove();
+        _document.Watermark.Remove();
         return 1;
     }
 
-    internal static long Protect(Document document, ProtectOp op, string? password)
+    public long Apply(ProtectOp operation)
     {
-        ProtectionType type = op.Mode switch
+        string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
+        ProtectionType type = operation.Mode switch
         {
             "readOnly" => ProtectionType.ReadOnly,
             "forms" => ProtectionType.AllowOnlyFormFields,
             "comments" => ProtectionType.AllowOnlyComments,
             "trackedChanges" => ProtectionType.AllowOnlyRevisions,
-            _ => throw Invalid($"unknown protection mode '{op.Mode}'"),
+            _ => throw Invalid($"unknown protection mode '{operation.Mode}'"),
         };
-        document.Protect(type, password ?? string.Empty);
+        _document.Protect(type, password ?? string.Empty);
         return 1;
     }
 
-    internal static long Unprotect(Document document, string? password)
+    public long Apply(UnprotectOp operation)
     {
+        string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
         if (password is null)
         {
-            document.Unprotect();
+            _document.Unprotect();
             return 1;
         }
 
-        bool removed = document.Unprotect(password);
+        bool removed = _document.Unprotect(password);
         if (!removed)
         {
             throw new CliException(
@@ -203,22 +201,26 @@ internal static class WordsObjectOpHandlers
         return 1;
     }
 
-    internal static long ChangeRevisions(Document document, string? author, bool accept)
+    public long Apply(AcceptRevisionsOp operation) => ChangeRevisions(operation.Author, accept: true);
+
+    public long Apply(RejectRevisionsOp operation) => ChangeRevisions(operation.Author, accept: false);
+
+    private long ChangeRevisions(string? author, bool accept)
     {
         if (author is not null)
         {
             var byAuthor = new AuthorCriteria(author);
-            return accept ? document.Revisions.Accept(byAuthor) : document.Revisions.Reject(byAuthor);
+            return accept ? _document.Revisions.Accept(byAuthor) : _document.Revisions.Reject(byAuthor);
         }
 
-        int count = document.Revisions.Count;
+        int count = _document.Revisions.Count;
         if (accept)
         {
-            document.Revisions.AcceptAll();
+            _document.Revisions.AcceptAll();
         }
         else
         {
-            document.Revisions.RejectAll();
+            _document.Revisions.RejectAll();
         }
 
         return count;
@@ -230,35 +232,35 @@ internal static class WordsObjectOpHandlers
             string.Equals(revision?.Author, author, StringComparison.Ordinal);
     }
 
-    internal static long AddComment(Document document, Node anchor, AddCommentOp op)
+    public long Apply(AddCommentOp operation)
     {
-        if (anchor is not Paragraph paragraph)
+        if (Anchor is not Paragraph paragraph)
         {
             throw Invalid("add_comment must target a paragraph block");
         }
 
-        string initials = string.Concat(op.Author.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static part => char.ToUpperInvariant(part[0])));
-        var comment = new Comment(document, op.Author, initials, DateTime.Now);
-        comment.AppendChild(new Paragraph(document));
-        comment.FirstParagraph!.AppendChild(new Run(document, op.Text));
-        var start = new CommentRangeStart(document, comment.Id);
-        var end = new CommentRangeEnd(document, comment.Id);
+        string initials = string.Concat(operation.Author.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static part => char.ToUpperInvariant(part[0])));
+        var comment = new Comment(_document, operation.Author, initials, DateTime.Now);
+        comment.AppendChild(new Paragraph(_document));
+        comment.FirstParagraph!.AppendChild(new Run(_document, operation.Text));
+        var start = new CommentRangeStart(_document, comment.Id);
+        var end = new CommentRangeEnd(_document, comment.Id);
         paragraph.PrependChild(start);
         paragraph.AppendChild(end);
         paragraph.AppendChild(comment);
         return 1;
     }
 
-    internal static long RemoveComments(Document document, RemoveCommentsOp op)
+    public long Apply(RemoveCommentsOp operation)
     {
-        Comment[] comments = document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
-            .Where(comment => op.Author is null || string.Equals(comment.Author, op.Author, StringComparison.Ordinal))
+        Comment[] comments = _document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
+            .Where(comment => operation.Author is null || string.Equals(comment.Author, operation.Author, StringComparison.Ordinal))
             .ToArray();
         // Collect every node first: removing from a live node collection while enumerating it skips nodes.
         var ids = comments.Select(static comment => comment.Id).ToHashSet();
-        Node[] anchors = document.GetChildNodes(NodeType.CommentRangeStart, true).Cast<CommentRangeStart>()
+        Node[] anchors = _document.GetChildNodes(NodeType.CommentRangeStart, true).Cast<CommentRangeStart>()
             .Where(start => ids.Contains(start.Id)).Cast<Node>()
-            .Concat(document.GetChildNodes(NodeType.CommentRangeEnd, true).Cast<CommentRangeEnd>()
+            .Concat(_document.GetChildNodes(NodeType.CommentRangeEnd, true).Cast<CommentRangeEnd>()
                 .Where(end => ids.Contains(end.Id)))
             .ToArray();
         foreach (Node node in comments.Concat(anchors))
@@ -269,44 +271,39 @@ internal static class WordsObjectOpHandlers
         return comments.LongLength;
     }
 
-    internal static long MailMerge(
-        LoadedDocument loaded,
-        MailMergeOp op,
-        InputSource inputs,
-        WordsDocumentLoader loader)
+    public long Apply(MailMergeOp operation)
     {
-        Document document = loaded.Document;
         IReadOnlyList<IReadOnlyDictionary<string, string?>> rows =
-            op.Inline ?? ReadMergeRows(op.Path!, inputs);
+            operation.Inline ?? ReadMergeRows(operation.Path!, _inputs);
         if (rows.Count == 0)
         {
             throw MergeDataInvalid("merge data has no rows", MergeDataShape);
         }
 
-        if (op.Regions)
+        if (operation.Regions)
         {
-            string region = SingleRegion(document);
-            loader.EnsureNodeCapacity(document, rows.Count * RegionNodeCount(document, region));
-            ExecuteRegionMerge(document, region, rows);
+            string region = SingleRegion(_document);
+            _loader.EnsureNodeCapacity(_document, rows.Count * RegionNodeCount(_document, region));
+            ExecuteRegionMerge(_document, region, rows);
             return rows.Count;
         }
 
         // Every further row appends one copy of the whole template.
-        loader.EnsureNodeCapacity(document, (rows.Count - 1L) * document.GetChildNodes(NodeType.Any, true).Count);
-        Document template = document.Clone();
-        ExecuteMergeRow(document, rows[0]);
+        _loader.EnsureNodeCapacity(_document, (rows.Count - 1L) * _document.GetChildNodes(NodeType.Any, true).Count);
+        Document template = _document.Clone();
+        ExecuteMergeRow(_document, rows[0]);
         for (int index = 1; index < rows.Count; index++)
         {
             Document letter = template.Clone();
             ExecuteMergeRow(letter, rows[index]);
             // Under evaluation a letter starts with a banner: the template's own, or the one
             // the evaluation merge writes into it.
-            if (loaded.Evaluation)
+            if (_loaded.Evaluation)
             {
                 WordsEvaluation.RemoveLeadingBanners(letter);
             }
 
-            document.AppendDocument(letter, ImportFormatMode.KeepSourceFormatting);
+            _document.AppendDocument(letter, ImportFormatMode.KeepSourceFormatting);
         }
 
         return rows.Count;
@@ -413,21 +410,21 @@ internal static class WordsObjectOpHandlers
         document.MailMerge.ExecuteWithRegions(table);
     }
 
-    internal static long UpdateFields(Document document, UpdateFieldsOp op)
+    public long Apply(UpdateFieldsOp operation)
     {
-        if (op.What == "toc")
+        if (operation.What == "toc")
         {
             // Updating a TOC adds its own hyperlink and PAGEREF fields, so snapshot the TOCs first.
-            UpdateTocs(document, document.Range.Fields.Cast<Field>().OfType<FieldToc>().ToArray());
+            UpdateTocs(_document, _document.Range.Fields.Cast<Field>().OfType<FieldToc>().ToArray());
         }
         else
         {
-            document.NormalizeFieldTypes();
-            document.UpdateFields();
-            document.UpdatePageLayout();
+            _document.NormalizeFieldTypes();
+            _document.UpdateFields();
+            _document.UpdatePageLayout();
         }
 
-        return document.Range.Fields.Count;
+        return _document.Range.Fields.Count;
     }
 
     /// <summary>

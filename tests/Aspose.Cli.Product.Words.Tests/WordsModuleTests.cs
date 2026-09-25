@@ -59,9 +59,9 @@ public sealed class WordsModuleTests
     public void CanonicalOps_CoverEveryRegisteredOperation()
     {
         Assert.Equal(
-            WordsOps.Catalog.Names.Order(StringComparer.Ordinal),
+            WordsOp.Catalog.Names.Order(StringComparer.Ordinal),
             WordsContractSamples.Ops.Ops
-                .Select(WordsOps.Catalog.NameOf)
+                .Select(WordsOp.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
     }
 
@@ -71,7 +71,7 @@ public sealed class WordsModuleTests
         ProductResourceCatalog resources =
             ProductCatalog.Build([new WordsModule()]).Resources;
         JsonNode schema = JsonNode.Parse(resources.Read("v2/words/ops"))!;
-        string[] declaredSizes = schema["$defs"]!["pageSetup"]!["properties"]!
+        string[] declaredSizes = schema["$defs"]!["pageSetupInput"]!["properties"]!
             ["size"]!["enum"]!.AsArray()
             .Select(static value => value!.GetValue<string>())
             .ToArray();
@@ -142,5 +142,5 @@ public sealed class WordsModuleTests
         $$"""{"ops":[{"op":"add_watermark","{{field}}":"{{new string('x', length)}}"}]}""";
 
     private static WordsOpsBatch Parse(string json) =>
-        WordsOps.Catalog.Parse<WordsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        WordsOp.Catalog.Parse<WordsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

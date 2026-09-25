@@ -1,499 +1,1577 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/words/ops.schema.json",
-  "title": "Words edit operation batch",
+  "description": "The operation document of words edit --ops. Every block address resolves against the document as it was before the first operation, so an insertion does not shift a later operation's anchor. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.",
   "type": "object",
-  "required": ["ops"],
+  "required": [
+    "ops"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/words/ops.schema.json" },
-    "schemaVersion": { "const": 2 },
-    "ifMatch": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+    "schema": {
+      "description": "Optional; checked when present.",
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/words/ops.schema.json"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "ifMatch": {
+      "description": "The SHA-256 fingerprint the input must still have; the edit fails when it changed.",
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
     "ops": {
+      "description": "Operations applied in order.",
       "type": "array",
       "minItems": 1,
       "maxItems": 256,
-      "items": { "$ref": "#/$defs/op" }
+      "items": {
+        "oneOf": [
+          {
+            "$ref": "#/$defs/accept_revisions"
+          },
+          {
+            "$ref": "#/$defs/add_comment"
+          },
+          {
+            "$ref": "#/$defs/add_section"
+          },
+          {
+            "$ref": "#/$defs/add_watermark"
+          },
+          {
+            "$ref": "#/$defs/append_document"
+          },
+          {
+            "$ref": "#/$defs/apply_list"
+          },
+          {
+            "$ref": "#/$defs/define_style"
+          },
+          {
+            "$ref": "#/$defs/delete_blocks"
+          },
+          {
+            "$ref": "#/$defs/delete_section"
+          },
+          {
+            "$ref": "#/$defs/format_text"
+          },
+          {
+            "$ref": "#/$defs/insert_bookmark"
+          },
+          {
+            "$ref": "#/$defs/insert_break"
+          },
+          {
+            "$ref": "#/$defs/insert_field"
+          },
+          {
+            "$ref": "#/$defs/insert_hyperlink"
+          },
+          {
+            "$ref": "#/$defs/insert_image"
+          },
+          {
+            "$ref": "#/$defs/insert_markdown"
+          },
+          {
+            "$ref": "#/$defs/insert_paragraphs"
+          },
+          {
+            "$ref": "#/$defs/insert_table"
+          },
+          {
+            "$ref": "#/$defs/insert_toc"
+          },
+          {
+            "$ref": "#/$defs/mail_merge"
+          },
+          {
+            "$ref": "#/$defs/protect"
+          },
+          {
+            "$ref": "#/$defs/reject_revisions"
+          },
+          {
+            "$ref": "#/$defs/remove_comments"
+          },
+          {
+            "$ref": "#/$defs/remove_watermark"
+          },
+          {
+            "$ref": "#/$defs/replace_text"
+          },
+          {
+            "$ref": "#/$defs/set_default_font"
+          },
+          {
+            "$ref": "#/$defs/set_footer"
+          },
+          {
+            "$ref": "#/$defs/set_header"
+          },
+          {
+            "$ref": "#/$defs/set_page_numbers"
+          },
+          {
+            "$ref": "#/$defs/set_page_setup"
+          },
+          {
+            "$ref": "#/$defs/set_properties"
+          },
+          {
+            "$ref": "#/$defs/set_style"
+          },
+          {
+            "$ref": "#/$defs/set_table_cell"
+          },
+          {
+            "$ref": "#/$defs/set_text"
+          },
+          {
+            "$ref": "#/$defs/unprotect"
+          },
+          {
+            "$ref": "#/$defs/update_fields"
+          }
+        ]
+      }
     }
   },
   "$defs": {
-    "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$" },
-    "target": {
+    "id": {
+      "description": "A correlation id echoed in the result; op-0001 style ids are assigned when omitted.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
+    },
+    "accept_revisions": {
+      "description": "Accepts tracked revisions: all, or one author's.",
       "type": "object",
+      "required": [
+        "op"
+      ],
       "additionalProperties": false,
       "properties": {
-        "block": { "type": "integer", "minimum": 1 },
-        "blocks": { "type": "string", "minLength": 1 },
-        "bookmark": { "type": "string", "minLength": 1 },
-        "heading": { "type": "string", "minLength": 1 },
-        "find": { "type": "string", "minLength": 1 },
-        "nth": { "type": "integer", "minimum": 1 }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "accept_revisions"
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "add_comment": {
+      "description": "Adds a comment on a paragraph block.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "author",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_comment"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "add_section": {
+      "description": "Adds an empty section at the start, the end or after a section.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_section"
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "start",
+            "end",
+            "after"
+          ],
+          "default": "end"
+        },
+        "after": {
+          "description": "The 1-based section the new section follows; set exactly when position is after.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "pageSetup": {
+          "description": "Page setup applied over the neighbouring section's.",
+          "$ref": "#/$defs/pageSetupInput"
+        }
       },
-      "oneOf": [
-        { "required": ["block"] },
-        { "required": ["blocks"] },
-        { "required": ["bookmark"] },
-        { "required": ["heading"] },
-        { "required": ["find"] }
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "position": {
+                "const": "after"
+              }
+            },
+            "required": [
+              "position"
+            ]
+          },
+          "then": {
+            "required": [
+              "after"
+            ]
+          },
+          "else": {
+            "not": {
+              "required": [
+                "after"
+              ]
+            }
+          }
+        }
       ]
     },
-    "position": { "enum": ["before", "after"] },
-    "paragraph": {
+    "add_watermark": {
+      "description": "Adds a text or image watermark; color applies to a text watermark only.",
       "type": "object",
-      "required": ["text"],
+      "required": [
+        "op"
+      ],
       "additionalProperties": false,
       "properties": {
-        "text": { "type": "string" },
-        "style": { "type": "string", "minLength": 1 },
-        "listLevel": { "type": "integer", "minimum": 0, "maximum": 8, "description": "Makes the paragraph a list item at this level: in the anchor's list when the anchor is a list item, otherwise in one new bullet list." }
-      }
-    },
-    "margins": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "top": { "type": "number", "minimum": 0 },
-        "right": { "type": "number", "minimum": 0 },
-        "bottom": { "type": "number", "minimum": 0 },
-        "left": { "type": "number", "minimum": 0 }
-      }
-    },
-    "pageSetup": {
-      "type": "object",
-      "additionalProperties": false,
-      "properties": {
-        "size": { "enum": ["a3", "a4", "a5", "letter", "legal"] },
-        "orientation": { "enum": ["portrait", "landscape"] },
-        "margins": { "$ref": "#/$defs/margins" },
-        "columns": { "type": "integer", "minimum": 1 }
-      }
-    },
-    "op": {
-      "oneOf": [
-        {
-          "type": "object",
-          "required": ["op", "find", "replace"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "replace_text" },
-            "find": { "type": "string", "minLength": 1 },
-            "replace": { "type": "string", "description": "With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $." },
-            "regex": { "type": "boolean" },
-            "matchCase": { "type": "boolean" },
-            "wholeWord": { "type": "boolean" },
-            "scope": { "enum": ["body", "headersFooters", "footnotes", "comments", "all"], "description": "body is the main text without the comments and footnotes it anchors; footnotes include endnotes. Field codes and text a tracked change deletes are never replaced." },
-            "maxReplacements": { "type": "integer", "minimum": 1 }
-          }
+        "id": {
+          "$ref": "#/$defs/id"
         },
-        {
-          "type": "object",
-          "required": ["op", "at", "text"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_text" },
-            "at": { "$ref": "#/$defs/target" },
-            "text": { "type": "string" }
-          }
+        "op": {
+          "const": "add_watermark"
         },
-        {
-          "type": "object",
-          "required": ["op", "at", "position", "paragraphs"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_paragraphs" },
-            "at": { "$ref": "#/$defs/target" },
-            "position": { "$ref": "#/$defs/position" },
-            "paragraphs": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/paragraph" } }
-          }
+        "text": {
+          "description": "The watermark text; Word holds at most 200 characters.",
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 200
         },
-        {
-          "type": "object",
-          "required": ["op", "at", "position", "markdown"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_markdown" },
-            "at": { "$ref": "#/$defs/target" },
-            "position": { "$ref": "#/$defs/position" },
-            "markdown": { "type": "string" }
-          }
+        "imagePath": {
+          "description": "The watermark image, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
         },
-        {
-          "type": "object",
-          "required": ["op", "target"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "delete_blocks" },
-            "target": { "$ref": "#/$defs/target" }
-          }
+        "faded": {
+          "description": "Semi-transparent text or a washed-out image.",
+          "type": "boolean",
+          "default": true
         },
+        "color": {
+          "description": "A #RRGGBB or named text color.",
+          "type": "string"
+        }
+      },
+      "allOf": [
         {
-          "type": "object",
-          "required": ["op", "at", "position", "kind"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_break" },
-            "at": { "$ref": "#/$defs/target" },
-            "position": { "$ref": "#/$defs/position" },
-            "kind": { "enum": ["page", "section"] }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "at", "position", "path"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_image" },
-            "at": { "$ref": "#/$defs/target" },
-            "position": { "$ref": "#/$defs/position" },
-            "path": { "type": "string", "minLength": 1 },
-            "width": { "type": "number", "exclusiveMinimum": 0 },
-            "height": { "type": "number", "exclusiveMinimum": 0 },
-            "inline": { "type": "boolean" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "at", "position", "rows", "cols"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_table" },
-            "at": { "$ref": "#/$defs/target" },
-            "position": { "$ref": "#/$defs/position" },
-            "rows": { "type": "integer", "minimum": 1, "maximum": 32767 },
-            "cols": { "type": "integer", "minimum": 1, "maximum": 63 },
-            "data": {
-              "type": "array",
-              "items": { "type": "array", "items": { "type": "string" } }
+          "oneOf": [
+            {
+              "required": [
+                "text"
+              ]
             },
-            "style": { "type": "string", "minLength": 1 }
+            {
+              "required": [
+                "imagePath"
+              ]
+            }
+          ]
+        },
+        {
+          "dependentRequired": {
+            "color": [
+              "text"
+            ]
           }
+        }
+      ]
+    },
+    "append_document": {
+      "description": "Appends a local document.",
+      "type": "object",
+      "required": [
+        "op",
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
         },
-        {
-          "type": "object",
-          "required": ["op", "at", "row", "col", "text"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_table_cell" },
-            "at": { "$ref": "#/$defs/target" },
-            "row": { "type": "integer", "minimum": 1 },
-            "col": { "type": "integer", "minimum": 1 },
-            "text": { "type": "string" }
+        "op": {
+          "const": "append_document"
+        },
+        "path": {
+          "description": "The document, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "importFormatMode": {
+          "type": "string",
+          "enum": [
+            "keepSource",
+            "useDestination"
+          ],
+          "default": "keepSource"
+        }
+      }
+    },
+    "apply_list": {
+      "description": "Makes the paragraphs of target blocks one new bullet or numbered list.",
+      "type": "object",
+      "required": [
+        "op",
+        "target",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "apply_list"
+        },
+        "target": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "bullet",
+            "number"
+          ]
+        },
+        "level": {
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8,
+          "default": 0
+        }
+      }
+    },
+    "define_style": {
+      "description": "Creates or updates a named paragraph style; omitted settings keep their values.",
+      "type": "object",
+      "required": [
+        "op",
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "define_style"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "basedOn": {
+          "type": "string",
+          "minLength": 1
+        },
+        "font": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "description": "The font size in points.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "color": {
+          "description": "A #RRGGBB or named color.",
+          "type": "string"
+        },
+        "spaceBefore": {
+          "description": "Space before the paragraph, in points.",
+          "type": "number",
+          "minimum": 0
+        },
+        "spaceAfter": {
+          "description": "Space after the paragraph, in points.",
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "delete_blocks": {
+      "description": "Deletes one or more canonical blocks.",
+      "type": "object",
+      "required": [
+        "op",
+        "target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "delete_blocks"
+        },
+        "target": {
+          "$ref": "#/$defs/wordsTarget"
+        }
+      }
+    },
+    "delete_section": {
+      "description": "Deletes one section; a document keeps at least one.",
+      "type": "object",
+      "required": [
+        "op",
+        "section"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "delete_section"
+        },
+        "section": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "format_text": {
+      "description": "Applies character formatting to the runs of target blocks; omitted settings keep their values.",
+      "type": "object",
+      "required": [
+        "op",
+        "target"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "format_text"
+        },
+        "target": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "bold": {
+          "type": "boolean"
+        },
+        "italic": {
+          "type": "boolean"
+        },
+        "underline": {
+          "type": "boolean"
+        },
+        "size": {
+          "description": "The font size in points.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "color": {
+          "description": "A #RRGGBB or named color.",
+          "type": "string"
+        },
+        "font": {
+          "type": "string",
+          "minLength": 1
+        },
+        "highlight": {
+          "description": "A #RRGGBB or named highlight color.",
+          "type": "string"
+        }
+      }
+    },
+    "insert_bookmark": {
+      "description": "Bookmarks a paragraph's visible text.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_bookmark"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "insert_break": {
+      "description": "Inserts a page break, or splits the section at a block boundary.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "position",
+        "kind"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_break"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "page",
+            "section"
+          ]
+        }
+      }
+    },
+    "insert_field": {
+      "description": "Inserts a Word field in a new paragraph.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "position",
+        "code"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_field"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "code": {
+          "description": "The field code, such as DATE.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "insert_hyperlink": {
+      "description": "Inserts a hyperlink in a new paragraph.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "position",
+        "text",
+        "url"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_hyperlink"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "text": {
+          "type": "string"
+        },
+        "url": {
+          "$ref": "#/$defs/webLink"
+        }
+      }
+    },
+    "insert_image": {
+      "description": "Inserts a local image in a new paragraph.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "position",
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_image"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "path": {
+          "description": "The image, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "width": {
+          "description": "The width in points; the image's own when omitted.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "description": "The height in points; the image's own when omitted.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "inline": {
+          "description": "Whether the image sits in the text line rather than floating with square wrapping.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "insert_markdown": {
+      "description": "Imports Markdown at a block boundary.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "position",
+        "markdown"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_markdown"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "markdown": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "insert_paragraphs": {
+      "description": "Inserts structured paragraphs at a block boundary.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "position",
+        "paragraphs"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_paragraphs"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "paragraphs": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/paragraphInput"
           }
+        }
+      }
+    },
+    "insert_table": {
+      "description": "Inserts a table at a block boundary; data must fit the table's rows and columns.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "position",
+        "rows",
+        "cols"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
         },
-        {
-          "type": "object",
-          "required": ["op", "at", "position"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_toc" },
-            "at": { "$ref": "#/$defs/target" },
-            "position": { "$ref": "#/$defs/position" },
-            "maxLevel": { "type": "integer", "minimum": 1, "maximum": 9 }
-          }
+        "op": {
+          "const": "insert_table"
         },
-        {
-          "type": "object",
-          "required": ["op", "at", "name"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_bookmark" },
-            "at": { "$ref": "#/$defs/target" },
-            "name": { "type": "string", "minLength": 1 }
-          }
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
         },
-        {
-          "type": "object",
-          "required": ["op", "at", "position", "text", "url"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_hyperlink" },
-            "at": { "$ref": "#/$defs/target" },
-            "position": { "$ref": "#/$defs/position" },
-            "text": { "type": "string" },
-            "url": { "type": "string", "minLength": 1 }
-          }
+        "position": {
+          "$ref": "#/$defs/position"
         },
-        {
-          "type": "object",
-          "required": ["op", "at", "position", "code"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_field" },
-            "at": { "$ref": "#/$defs/target" },
-            "position": { "$ref": "#/$defs/position" },
-            "code": { "type": "string", "minLength": 1 }
-          }
+        "rows": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32767
         },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_section" },
-            "position": { "enum": ["start", "end", "after"] },
-            "after": { "type": "integer", "minimum": 1 },
-            "pageSetup": { "$ref": "#/$defs/pageSetup" }
-          },
-          "if": { "required": ["position"], "properties": { "position": { "const": "after" } } },
-          "then": { "required": ["after"] },
-          "else": { "not": { "required": ["after"] } }
+        "cols": {
+          "description": "The column count; Word allows at most 63.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 63
         },
-        {
-          "type": "object",
-          "required": ["op", "section"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "delete_section" },
-            "section": { "type": "integer", "minimum": 1 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "setup"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_page_setup" },
-            "section": { "type": "integer", "minimum": 1 },
-            "setup": { "$ref": "#/$defs/pageSetup" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_header" },
-            "section": { "type": "integer", "minimum": 1 },
-            "kind": { "enum": ["primary", "first", "even"] },
-            "paragraphs": { "type": "array", "items": { "type": "string" } },
-            "markdown": { "type": "string" }
-          },
-          "oneOf": [{ "required": ["paragraphs"] }, { "required": ["markdown"] }]
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_footer" },
-            "section": { "type": "integer", "minimum": 1 },
-            "kind": { "enum": ["primary", "first", "even"] },
-            "paragraphs": { "type": "array", "items": { "type": "string" } },
-            "markdown": { "type": "string" }
-          },
-          "oneOf": [{ "required": ["paragraphs"] }, { "required": ["markdown"] }]
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_page_numbers" },
-            "section": { "type": "integer", "minimum": 1 },
-            "location": { "enum": ["header", "footer"] },
-            "alignment": { "enum": ["left", "center", "right"] },
-            "format": { "enum": ["decimal", "upperRoman", "lowerRoman", "upperLetter", "lowerLetter"] },
-            "start": { "type": "integer", "minimum": 0 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "target"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "format_text" },
-            "target": { "$ref": "#/$defs/target" },
-            "bold": { "type": "boolean" },
-            "italic": { "type": "boolean" },
-            "underline": { "type": "boolean" },
-            "size": { "type": "number", "exclusiveMinimum": 0 },
-            "color": { "type": "string" },
-            "font": { "type": "string", "minLength": 1 },
-            "highlight": { "type": "string" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "target", "style"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_style" },
-            "target": { "$ref": "#/$defs/target" },
-            "style": { "type": "string", "minLength": 1 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "name"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "define_style" },
-            "name": { "type": "string", "minLength": 1 },
-            "basedOn": { "type": "string", "minLength": 1 },
-            "font": { "type": "string", "minLength": 1 },
-            "size": { "type": "number", "exclusiveMinimum": 0 },
-            "bold": { "type": "boolean" },
-            "color": { "type": "string" },
-            "spaceBefore": { "type": "number", "minimum": 0 },
-            "spaceAfter": { "type": "number", "minimum": 0 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "target", "kind"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "apply_list" },
-            "target": { "$ref": "#/$defs/target" },
-            "kind": { "enum": ["bullet", "number"] },
-            "level": { "type": "integer", "minimum": 0, "maximum": 8 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "font"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_default_font" },
-            "font": { "type": "string", "minLength": 1 },
-            "size": { "type": "number", "exclusiveMinimum": 0 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_properties" },
-            "title": { "type": "string" },
-            "author": { "type": "string" },
-            "subject": { "type": "string" },
-            "keywords": { "type": "string" },
-            "custom": {
-              "type": "object",
-              "additionalProperties": { "type": ["string", "null"] }
+        "data": {
+          "description": "Cell text by row, then column; cells beyond it stay empty.",
+          "type": "array",
+          "items": {
+            "type": "array",
+            "items": {
+              "type": "string"
             }
           }
         },
+        "style": {
+          "description": "An existing table style.",
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "insert_toc": {
+      "description": "Inserts and updates a table of contents.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "position"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_toc"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "position": {
+          "$ref": "#/$defs/position"
+        },
+        "maxLevel": {
+          "description": "The deepest heading level listed.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 9,
+          "default": 3
+        }
+      }
+    },
+    "mail_merge": {
+      "description": "Runs a mail merge from a data file or inline rows: one copy of the document per row, or one region repeated per row.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "mail_merge"
+        },
+        "path": {
+          "description": "A JSON array of flat objects, or a CSV file with a header row, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "inline": {
+          "description": "Merge rows of field values by field name.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          }
+        },
+        "regions": {
+          "description": "Whether the rows repeat the template's one TableStart/TableEnd region.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "allOf": [
         {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_watermark" },
-            "text": { "type": "string", "minLength": 1, "maxLength": 200 },
-            "imagePath": { "type": "string", "minLength": 1 },
-            "faded": { "type": "boolean", "default": true, "description": "Semi-transparent text or a washed-out image." },
-            "color": { "type": "string" }
-          },
           "oneOf": [
-            { "required": ["text"], "not": { "required": ["imagePath"] } },
-            { "required": ["imagePath"], "not": { "anyOf": [{ "required": ["text"] }, { "required": ["color"] }] } }
-          ]
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "remove_watermark" } }
-        },
-        {
-          "type": "object",
-          "required": ["op", "mode"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "protect" },
-            "mode": { "enum": ["readOnly", "comments", "trackedChanges", "forms"] },
-            "passwordEnv": { "type": "string", "minLength": 1 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "unprotect" },
-            "passwordEnv": { "type": "string", "minLength": 1 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "accept_revisions" },
-            "author": { "type": "string", "minLength": 1 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "reject_revisions" },
-            "author": { "type": "string", "minLength": 1 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "at", "author", "text"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_comment" },
-            "at": { "$ref": "#/$defs/target" },
-            "author": { "type": "string", "minLength": 1 },
-            "text": { "type": "string" }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "remove_comments" },
-            "author": { "type": "string", "minLength": 1 }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op", "path"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "append_document" },
-            "path": { "type": "string", "minLength": 1 },
-            "importFormatMode": { "enum": ["keepSource", "useDestination"] }
-          }
-        },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "mail_merge" },
-            "path": { "type": "string", "minLength": 1 },
-            "inline": {
-              "type": "array",
-              "minItems": 1,
-              "items": {
-                "type": "object",
-                "additionalProperties": { "type": ["string", "null"] }
-              }
+            {
+              "required": [
+                "path"
+              ]
             },
-            "regions": { "type": "boolean" }
-          },
-          "oneOf": [
-            { "required": ["path"], "not": { "required": ["inline"] } },
-            { "required": ["inline"], "not": { "required": ["path"] } }
+            {
+              "required": [
+                "inline"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "protect": {
+      "description": "Restricts editing of the document.",
+      "type": "object",
+      "required": [
+        "op",
+        "mode"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "protect"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "readOnly",
+            "comments",
+            "trackedChanges",
+            "forms"
           ]
         },
-        {
-          "type": "object",
-          "required": ["op"],
-          "additionalProperties": false,
-          "properties": {
-            "id": { "$ref": "#/$defs/id" }, "op": { "const": "update_fields" },
-            "what": { "enum": ["all", "toc"] }
+        "passwordEnv": {
+          "description": "The environment variable that holds the protection password; no password when omitted.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "reject_revisions": {
+      "description": "Rejects tracked revisions: all, or one author's.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "reject_revisions"
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "remove_comments": {
+      "description": "Removes comments: all, or one author's.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "remove_comments"
+        },
+        "author": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "remove_watermark": {
+      "description": "Removes the document watermark.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "remove_watermark"
+        }
+      }
+    },
+    "replace_text": {
+      "description": "Replaces literal or regular-expression text within a document scope.",
+      "type": "object",
+      "required": [
+        "op",
+        "find",
+        "replace"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "replace_text"
+        },
+        "find": {
+          "type": "string",
+          "minLength": 1
+        },
+        "replace": {
+          "description": "With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $.",
+          "type": "string"
+        },
+        "regex": {
+          "description": "Whether find is a .NET regular expression rather than literal text.",
+          "type": "boolean",
+          "default": false
+        },
+        "matchCase": {
+          "type": "boolean",
+          "default": false
+        },
+        "wholeWord": {
+          "type": "boolean",
+          "default": false
+        },
+        "scope": {
+          "description": "body is the main text without the comments and footnotes it anchors; footnotes include endnotes. Field codes and text a tracked change deletes are never replaced.",
+          "type": "string",
+          "enum": [
+            "body",
+            "headersFooters",
+            "footnotes",
+            "comments",
+            "all"
+          ],
+          "default": "body"
+        },
+        "maxReplacements": {
+          "description": "The most matches replaced; every match when omitted.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "set_default_font": {
+      "description": "Sets the font of every paragraph and character style.",
+      "type": "object",
+      "required": [
+        "op",
+        "font"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_default_font"
+        },
+        "font": {
+          "type": "string",
+          "minLength": 1
+        },
+        "size": {
+          "description": "The font size in points; sizes are kept when omitted.",
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "set_footer": {
+      "description": "Replaces one kind of section footer with paragraphs or with Markdown.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_footer"
+        },
+        "section": {
+          "description": "The 1-based section; every section when omitted.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "description": "Which pages it shows on; first and even also turn on the section setting that shows it.",
+          "type": "string",
+          "enum": [
+            "primary",
+            "first",
+            "even"
+          ],
+          "default": "primary"
+        },
+        "paragraphs": {
+          "description": "Plain paragraphs, one per item.",
+          "type": "array",
+          "items": {
+            "type": "string"
           }
+        },
+        "markdown": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "paragraphs"
+              ]
+            },
+            {
+              "required": [
+                "markdown"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_header": {
+      "description": "Replaces one kind of section header with paragraphs or with Markdown.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_header"
+        },
+        "section": {
+          "description": "The 1-based section; every section when omitted.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "kind": {
+          "description": "Which pages it shows on; first and even also turn on the section setting that shows it.",
+          "type": "string",
+          "enum": [
+            "primary",
+            "first",
+            "even"
+          ],
+          "default": "primary"
+        },
+        "paragraphs": {
+          "description": "Plain paragraphs, one per item.",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "markdown": {
+          "type": "string"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "paragraphs"
+              ]
+            },
+            {
+              "required": [
+                "markdown"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_page_numbers": {
+      "description": "Adds or aligns a PAGE field in the primary header or footer and sets page numbering.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_page_numbers"
+        },
+        "section": {
+          "description": "The 1-based section; every section when omitted.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "location": {
+          "type": "string",
+          "enum": [
+            "header",
+            "footer"
+          ],
+          "default": "footer"
+        },
+        "alignment": {
+          "type": "string",
+          "enum": [
+            "left",
+            "center",
+            "right"
+          ],
+          "default": "center"
+        },
+        "format": {
+          "type": "string",
+          "enum": [
+            "decimal",
+            "upperRoman",
+            "lowerRoman",
+            "upperLetter",
+            "lowerLetter"
+          ]
+        },
+        "start": {
+          "description": "The number of the section's first page; numbering continues when omitted.",
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "set_page_setup": {
+      "description": "Applies page setup to one section, or to every section.",
+      "type": "object",
+      "required": [
+        "op",
+        "setup"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_page_setup"
+        },
+        "section": {
+          "description": "The 1-based section; every section when omitted.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "setup": {
+          "$ref": "#/$defs/pageSetupInput"
+        }
+      }
+    },
+    "set_properties": {
+      "description": "Sets built-in and custom document properties; omitted properties keep their values.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_properties"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "keywords": {
+          "type": "string"
+        },
+        "custom": {
+          "description": "Custom properties by name; a null value removes the property.",
+          "type": "object",
+          "additionalProperties": {
+            "type": [
+              "string",
+              "null"
+            ]
+          }
+        }
+      }
+    },
+    "set_style": {
+      "description": "Applies an existing paragraph style to target blocks.",
+      "type": "object",
+      "required": [
+        "op",
+        "target",
+        "style"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_style"
+        },
+        "target": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "style": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "set_table_cell": {
+      "description": "Replaces the text of one cell of a table block.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "row",
+        "col",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_table_cell"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "row": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "col": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "set_text": {
+      "description": "Replaces the inline content of paragraph blocks, or the text a bookmark encloses.",
+      "type": "object",
+      "required": [
+        "op",
+        "at",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_text"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "text": {
+          "type": "string"
+        }
+      }
+    },
+    "unprotect": {
+      "description": "Removes document protection.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "unprotect"
+        },
+        "passwordEnv": {
+          "description": "The environment variable that holds the protection password.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "update_fields": {
+      "description": "Updates the tables of contents, or every field and the page layout.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "update_fields"
+        },
+        "what": {
+          "type": "string",
+          "enum": [
+            "all",
+            "toc"
+          ],
+          "default": "all"
+        }
+      }
+    },
+    "marginInput": {
+      "description": "Page margins in points; omitted margins keep their values.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "top": {
+          "type": "number",
+          "minimum": 0
+        },
+        "right": {
+          "type": "number",
+          "minimum": 0
+        },
+        "bottom": {
+          "type": "number",
+          "minimum": 0
+        },
+        "left": {
+          "type": "number",
+          "minimum": 0
+        }
+      }
+    },
+    "pageSetupInput": {
+      "description": "Page size, orientation, margins and column settings; omitted settings keep their values.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "size": {
+          "type": "string",
+          "enum": [
+            "a3",
+            "a4",
+            "a5",
+            "letter",
+            "legal"
+          ]
+        },
+        "orientation": {
+          "type": "string",
+          "enum": [
+            "portrait",
+            "landscape"
+          ]
+        },
+        "margins": {
+          "$ref": "#/$defs/marginInput"
+        },
+        "columns": {
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "pages": {
+      "type": "string",
+      "description": "1-based pages and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last page, and a range must not end before it starts.",
+      "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
+    },
+    "paragraphInput": {
+      "description": "One paragraph supplied to an insertion operation.",
+      "type": "object",
+      "required": [
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "text": {
+          "type": "string"
+        },
+        "style": {
+          "description": "An existing paragraph style.",
+          "type": "string",
+          "minLength": 1
+        },
+        "listLevel": {
+          "description": "Makes the paragraph a list item at this level: in the anchor's list when the anchor is a list item, otherwise in one new bullet list.",
+          "type": "integer",
+          "minimum": 0,
+          "maximum": 8
+        }
+      }
+    },
+    "position": {
+      "type": "string",
+      "enum": [
+        "before",
+        "after"
+      ]
+    },
+    "webLink": {
+      "type": "string",
+      "description": "An absolute http://, https:// or mailto: URL.",
+      "format": "uri",
+      "pattern": "^(http://|https://|mailto:)"
+    },
+    "wordsTarget": {
+      "description": "A block address: exactly one of block, blocks, bookmark, heading or find.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "block": {
+          "description": "One canonical 1-based block.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "blocks": {
+          "description": "Canonical 1-based blocks and block ranges.",
+          "$ref": "#/$defs/pages"
+        },
+        "bookmark": {
+          "description": "A bookmark name.",
+          "type": "string",
+          "minLength": 1
+        },
+        "heading": {
+          "description": "Visible heading text, matched case-insensitively.",
+          "type": "string",
+          "minLength": 1
+        },
+        "find": {
+          "description": "Visible text that locates a block, matched case-insensitively.",
+          "type": "string",
+          "minLength": 1
+        },
+        "nth": {
+          "description": "The 1-based match of a heading or find address; the first when omitted.",
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "block"
+              ]
+            },
+            {
+              "required": [
+                "blocks"
+              ]
+            },
+            {
+              "required": [
+                "bookmark"
+              ]
+            },
+            {
+              "required": [
+                "heading"
+              ]
+            },
+            {
+              "required": [
+                "find"
+              ]
+            }
+          ]
         }
       ]
     }

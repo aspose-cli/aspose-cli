@@ -19,47 +19,47 @@ using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
-/// <summary>Owns text, paragraph and style mutations.</summary>
-internal static class WordsFormattingOpHandlers
+// Character formatting and styles.
+internal sealed partial class WordsOpHandlers
 {
-    internal static long FormatText(IReadOnlyList<Node> nodes, FormatTextOp op)
+    public long Apply(FormatTextOp operation)
     {
         long count = 0;
-        foreach (Run run in nodes.SelectMany(Descendants<Run>))
+        foreach (Run run in Nodes.SelectMany(Descendants<Run>))
         {
-            if (op.Bold is not null)
+            if (operation.Bold is not null)
             {
-                run.Font.Bold = op.Bold.Value;
+                run.Font.Bold = operation.Bold.Value;
             }
 
-            if (op.Italic is not null)
+            if (operation.Italic is not null)
             {
-                run.Font.Italic = op.Italic.Value;
+                run.Font.Italic = operation.Italic.Value;
             }
 
-            if (op.Underline is not null)
+            if (operation.Underline is not null)
             {
-                run.Font.Underline = op.Underline.Value ? Underline.Single : Underline.None;
+                run.Font.Underline = operation.Underline.Value ? Underline.Single : Underline.None;
             }
 
-            if (op.Size is not null)
+            if (operation.Size is not null)
             {
-                run.Font.Size = op.Size.Value;
+                run.Font.Size = operation.Size.Value;
             }
 
-            if (op.Font is not null)
+            if (operation.Font is not null)
             {
-                run.Font.Name = op.Font;
+                run.Font.Name = operation.Font;
             }
 
-            if (op.Color is not null)
+            if (operation.Color is not null)
             {
-                run.Font.Color = ParseColor(op.Color);
+                run.Font.Color = ParseColor(operation.Color);
             }
 
-            if (op.Highlight is not null)
+            if (operation.Highlight is not null)
             {
-                run.Font.HighlightColor = ParseColor(op.Highlight);
+                run.Font.HighlightColor = ParseColor(operation.Highlight);
             }
 
             count++;
@@ -68,16 +68,16 @@ internal static class WordsFormattingOpHandlers
         return count;
     }
 
-    internal static long SetStyle(Document document, IReadOnlyList<Node> nodes, SetStyleOp op)
+    public long Apply(SetStyleOp operation)
     {
-        Style? style = document.Styles[op.Style];
+        Style? style = _document.Styles[operation.Style];
         if (style is null)
         {
-            throw StyleNotFound(op.Style);
+            throw StyleNotFound(operation.Style);
         }
 
         long count = 0;
-        foreach (Paragraph paragraph in nodes.SelectMany(Paragraphs))
+        foreach (Paragraph paragraph in Nodes.SelectMany(Paragraphs))
         {
             paragraph.ParagraphFormat.Style = style;
             count++;
@@ -86,57 +86,57 @@ internal static class WordsFormattingOpHandlers
         return count;
     }
 
-    internal static long DefineStyle(Document document, DefineStyleOp op)
+    public long Apply(DefineStyleOp operation)
     {
-        Style style = document.Styles[op.Name] ?? document.Styles.Add(StyleType.Paragraph, op.Name);
-        if (op.BasedOn is not null)
+        Style style = _document.Styles[operation.Name] ?? _document.Styles.Add(StyleType.Paragraph, operation.Name);
+        if (operation.BasedOn is not null)
         {
-            style.BaseStyleName = op.BasedOn;
+            style.BaseStyleName = operation.BasedOn;
         }
 
-        if (op.Font is not null)
+        if (operation.Font is not null)
         {
-            style.Font.Name = op.Font;
+            style.Font.Name = operation.Font;
         }
 
-        if (op.Size is not null)
+        if (operation.Size is not null)
         {
-            style.Font.Size = op.Size.Value;
+            style.Font.Size = operation.Size.Value;
         }
 
-        if (op.Bold is not null)
+        if (operation.Bold is not null)
         {
-            style.Font.Bold = op.Bold.Value;
+            style.Font.Bold = operation.Bold.Value;
         }
 
-        if (op.Color is not null)
+        if (operation.Color is not null)
         {
-            style.Font.Color = ParseColor(op.Color);
+            style.Font.Color = ParseColor(operation.Color);
         }
 
-        if (op.SpaceBefore is not null)
+        if (operation.SpaceBefore is not null)
         {
-            style.ParagraphFormat.SpaceBefore = op.SpaceBefore.Value;
+            style.ParagraphFormat.SpaceBefore = operation.SpaceBefore.Value;
         }
 
-        if (op.SpaceAfter is not null)
+        if (operation.SpaceAfter is not null)
         {
-            style.ParagraphFormat.SpaceAfter = op.SpaceAfter.Value;
+            style.ParagraphFormat.SpaceAfter = operation.SpaceAfter.Value;
         }
 
         return 1;
     }
 
-    internal static long SetDefaultFont(Document document, SetDefaultFontOp op)
+    public long Apply(SetDefaultFontOp operation)
     {
-        foreach (Style style in document.Styles)
+        foreach (Style style in _document.Styles)
         {
             if (style.Type is StyleType.Paragraph or StyleType.Character)
             {
-                style.Font.Name = op.Font;
-                if (op.Size is not null)
+                style.Font.Name = operation.Font;
+                if (operation.Size is not null)
                 {
-                    style.Font.Size = op.Size.Value;
+                    style.Font.Size = operation.Size.Value;
                 }
             }
         }

@@ -121,14 +121,14 @@ public sealed class WordsAllocationBudgetTests
     [Fact]
     public void Csv_FollowsRfc4180Quoting()
     {
-        IReadOnlyList<string[]> records = WordsObjectOpHandlers.ReadCsv(
+        IReadOnlyList<string[]> records = WordsOpHandlers.ReadCsv(
             "Name, City\r\n\"Doe, Jane\",\"He said \"\"hi\"\"\"\n\n\"Two\nlines\", Oslo \r\n");
 
         Assert.Equal(3, records.Count);
         Assert.Equal(["Name", "City"], records[0]);
         Assert.Equal(["Doe, Jane", "He said \"hi\""], records[1]);
         Assert.Equal(["Two\nlines", "Oslo"], records[2]);
-        Assert.Throws<CliException>(() => WordsObjectOpHandlers.ReadCsv("\"open"));
+        Assert.Throws<CliException>(() => WordsOpHandlers.ReadCsv("\"open"));
     }
 
     private static WordsDocumentEngine Engine(WordsFixture fixture, long? nodes = null, long? memoryBytes = null)

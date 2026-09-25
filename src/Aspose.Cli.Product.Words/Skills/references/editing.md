@@ -81,7 +81,7 @@ aspose-cli schema v2/words/ops
 | `set_table_cell` | Replace one 1-based cell in a targeted table block. |
 | `insert_toc` | Insert and update a TOC through the selected heading level. |
 | `insert_bookmark` | Bookmark the complete visible text of a paragraph. |
-| `insert_hyperlink` | Insert a hyperlink paragraph at a block boundary. |
+| `insert_hyperlink` | Insert a hyperlink paragraph at a block boundary; the URL is an absolute `http`, `https` or `mailto` URL. |
 | `insert_field` | Insert an explicit Word field code at a block boundary. |
 | `add_section` | Add an empty section at the start, end or after a numbered section, with its neighbour's page setup. |
 | `delete_section` | Delete a section, but never the document's final section. |

@@ -17,37 +17,38 @@ using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
-/// <summary>Owns section, page, header and document-structure mutations.</summary>
-internal static class WordsStructureOpHandlers
+// Sections, page setup, headers, footers and appended documents.
+internal sealed partial class WordsOpHandlers
 {
     /// <summary>
     /// Adds an empty section that starts with the page setup of its neighbour (the section it
     /// follows, or the first section for <c>start</c>), as Word does, instead of SDK defaults.
     /// Without its own headers and footers it continues its neighbour's.
     /// </summary>
-    internal static long AddSection(Document document, AddSectionOp op, Section? after)
+    public long Apply(AddSectionOp operation)
     {
-        Section reference = op.Position switch
+        Section? after = Sections.FirstOrDefault();
+        Section reference = operation.Position switch
         {
             "after" => after ?? throw Invalid("add_section position 'after' requires an original section target"),
-            "start" => document.FirstSection,
-            _ => document.LastSection,
+            "start" => _document.FirstSection,
+            _ => _document.LastSection,
         };
         Section section = EmptyLike(reference);
-        if (op.Position == "start")
+        if (operation.Position == "start")
         {
-            document.PrependChild(section);
+            _document.PrependChild(section);
         }
         else
         {
-            document.InsertAfter(section, reference);
+            _document.InsertAfter(section, reference);
         }
 
         section.EnsureMinimum();
 
-        if (op.PageSetup is not null)
+        if (operation.PageSetup is not null)
         {
-            ApplyPageSetup(section, op.PageSetup);
+            ApplyPageSetup(section, operation.PageSetup);
         }
 
         return 1;
@@ -57,7 +58,7 @@ internal static class WordsStructureOpHandlers
     /// Splits the anchor's section at a block boundary: the blocks from the boundary on move
     /// into a new section with the same page setup, which continues the headers and footers.
     /// </summary>
-    internal static long InsertSectionBreak(Node anchor, string position)
+    private static long InsertSectionBreak(Node anchor, string position)
     {
         if (anchor.ParentNode is not Body)
         {
@@ -96,9 +97,10 @@ internal static class WordsStructureOpHandlers
         }
     }
 
-    internal static long DeleteSection(Document document, Section section)
+    public long Apply(DeleteSectionOp operation)
     {
-        if (document.Sections.Count == 1)
+        Section section = Sections[0];
+        if (_document.Sections.Count == 1)
         {
             throw Invalid("the last section cannot be deleted");
         }
@@ -107,42 +109,42 @@ internal static class WordsStructureOpHandlers
         return 1;
     }
 
-    internal static long SetPageSetup(IReadOnlyList<Section> sections, SetPageSetupOp op)
+    public long Apply(SetPageSetupOp operation)
     {
-        foreach (Section current in sections)
+        foreach (Section current in Sections)
         {
-            ApplyPageSetup(current, op.Setup);
+            ApplyPageSetup(current, operation.Setup);
         }
 
-        return sections.Count;
+        return Sections.Count;
     }
+
+    public long Apply(SetHeaderOp operation) => SetHeaderFooter(operation, isHeader: true);
+
+    public long Apply(SetFooterOp operation) => SetHeaderFooter(operation, isHeader: false);
 
     /// <summary>
     /// Replaces one kind of header or footer in each section with plain paragraphs or imported
     /// Markdown. A first-page or even-page kind also turns on the section setting that shows it.
     /// </summary>
-    internal static long SetHeaderFooter(
-        Document document,
-        IReadOnlyList<Section> sections,
-        string kind,
-        IReadOnlyList<string>? paragraphs,
-        Document? markdown,
-        bool isHeader)
+    private long SetHeaderFooter(HeaderFooterOp operation, bool isHeader)
     {
+        string kind = operation.Kind;
+        Document? markdown = operation.Markdown is null ? null : _loader.OpenMarkdown(operation.Markdown, _loaded);
         HeaderFooterType type = HeaderFooterTypeOf(kind, isHeader);
-        foreach (Section section in sections)
+        foreach (Section section in Sections)
         {
             section.HeadersFooters[type]?.Remove();
-            var replacement = new HeaderFooter(document, type);
+            var replacement = new HeaderFooter(_document, type);
             section.HeadersFooters.Add(replacement);
             IEnumerable<Node> blocks = markdown is null
-                ? paragraphs!.Select(text =>
+                ? operation.Paragraphs!.Select(text =>
                 {
-                    var paragraph = new Paragraph(document);
-                    paragraph.AppendChild(new Run(document, text));
+                    var paragraph = new Paragraph(_document);
+                    paragraph.AppendChild(new Run(_document, text));
                     return (Node)paragraph;
                 })
-                : WordsMarkdownImport.Blocks(document, markdown);
+                : WordsMarkdownImport.Blocks(_document, markdown);
             foreach (Node block in blocks)
             {
                 replacement.AppendChild(block);
@@ -150,7 +152,7 @@ internal static class WordsStructureOpHandlers
 
             if (!replacement.HasChildNodes)
             {
-                replacement.AppendChild(new Paragraph(document));
+                replacement.AppendChild(new Paragraph(_document));
             }
 
             if (kind == "first")
@@ -163,18 +165,18 @@ internal static class WordsStructureOpHandlers
             }
         }
 
-        return sections.Count;
+        return Sections.Count;
     }
 
-    internal static long SetPageNumbers(Document document, IReadOnlyList<Section> sections, SetPageNumbersOp op)
+    public long Apply(SetPageNumbersOp operation)
     {
-        foreach (Section section in sections)
+        foreach (Section section in Sections)
         {
-            HeaderFooterType type = op.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
+            HeaderFooterType type = operation.Location == "header" ? HeaderFooterType.HeaderPrimary : HeaderFooterType.FooterPrimary;
             HeaderFooter? container = section.HeadersFooters[type];
             if (container is null)
             {
-                container = new HeaderFooter(document, type);
+                container = new HeaderFooter(_document, type);
                 section.HeadersFooters.Add(container);
             }
 
@@ -183,9 +185,9 @@ internal static class WordsStructureOpHandlers
             Paragraph paragraph;
             if (existingPage is null)
             {
-                paragraph = new Paragraph(document);
+                paragraph = new Paragraph(_document);
                 container.AppendChild(paragraph);
-                var builder = new DocumentBuilder(document);
+                var builder = new DocumentBuilder(_document);
                 builder.MoveTo(paragraph);
                 builder.InsertField("PAGE");
             }
@@ -194,48 +196,44 @@ internal static class WordsStructureOpHandlers
                 paragraph = (Paragraph)existingPage.Start.GetAncestor(NodeType.Paragraph);
             }
 
-            paragraph.ParagraphFormat.Alignment = AlignmentOf(op.Alignment);
-            if (op.Start is int start)
+            paragraph.ParagraphFormat.Alignment = AlignmentOf(operation.Alignment);
+            if (operation.Start is int start)
             {
                 section.PageSetup.RestartPageNumbering = true;
                 section.PageSetup.PageStartingNumber = start;
             }
 
-            if (op.Format is not null)
+            if (operation.Format is not null)
             {
-                section.PageSetup.PageNumberStyle = op.Format switch
+                section.PageSetup.PageNumberStyle = operation.Format switch
                 {
                     "decimal" => NumberStyle.Arabic,
                     "upperRoman" => NumberStyle.UppercaseRoman,
                     "lowerRoman" => NumberStyle.LowercaseRoman,
                     "upperLetter" => NumberStyle.UppercaseLetter,
                     "lowerLetter" => NumberStyle.LowercaseLetter,
-                    _ => throw Invalid($"unknown page number format '{op.Format}'"),
+                    _ => throw Invalid($"unknown page number format '{operation.Format}'"),
                 };
             }
         }
 
-        document.UpdatePageLayout();
-        return sections.Count;
+        _document.UpdatePageLayout();
+        return Sections.Count;
     }
 
-    internal static long AppendDocument(
-        LoadedDocument destination,
-        AppendDocumentOp op,
-        WordsDocumentLoader loader)
+    public long Apply(AppendDocumentOp operation)
     {
-        Document document = destination.Document;
-        using LoadedDocument loaded = loader.Open(op.Path, null);
-        destination.Imported(loaded);
+        using LoadedDocument loaded = _loader.Open(operation.Path, null);
+        _loaded.Imported(loaded);
         if (loaded.Evaluation)
         {
             WordsEvaluation.RemoveLeadingBanners(loaded.Document);
         }
 
-        ImportFormatMode mode = op.ImportFormatMode == "useDestination"
+        ImportFormatMode mode = operation.ImportFormatMode == "useDestination"
             ? ImportFormatMode.UseDestinationStyles
             : ImportFormatMode.KeepSourceFormatting;
-        document.AppendDocument(loaded.Document, mode);
+        _document.AppendDocument(loaded.Document, mode);
         return 1;
     }
 }

@@ -16,34 +16,34 @@ using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
-/// <summary>Owns table and list mutations.</summary>
-internal static class WordsTableOpHandlers
+// Tables and lists.
+internal sealed partial class WordsOpHandlers
 {
-    internal static long InsertTable(Document document, Node anchor, InsertTableOp op, WordsDocumentLoader loader)
+    public long Apply(InsertTableOp operation)
     {
         Style? style = null;
-        if (op.Style is not null)
+        if (operation.Style is not null)
         {
-            style = document.Styles[op.Style] ?? throw StyleNotFound(op.Style);
+            style = _document.Styles[operation.Style] ?? throw StyleNotFound(operation.Style);
         }
 
         // One table, then per row a row node and per cell a cell, a paragraph and a run.
-        loader.EnsureNodeCapacity(document, 1 + ((long)op.Rows * (1 + (3L * op.Cols))));
-        var table = new Table(document);
-        for (int rowIndex = 0; rowIndex < op.Rows; rowIndex++)
+        _loader.EnsureNodeCapacity(_document, 1 + ((long)operation.Rows * (1 + (3L * operation.Cols))));
+        var table = new Table(_document);
+        for (int rowIndex = 0; rowIndex < operation.Rows; rowIndex++)
         {
-            var row = new Row(document);
+            var row = new Row(_document);
             table.AppendChild(row);
-            for (int columnIndex = 0; columnIndex < op.Cols; columnIndex++)
+            for (int columnIndex = 0; columnIndex < operation.Cols; columnIndex++)
             {
-                var cell = new Cell(document);
+                var cell = new Cell(_document);
                 row.AppendChild(cell);
-                var paragraph = new Paragraph(document);
+                var paragraph = new Paragraph(_document);
                 cell.AppendChild(paragraph);
-                string text = op.Data is not null && rowIndex < op.Data.Count && columnIndex < op.Data[rowIndex].Count
-                    ? op.Data[rowIndex][columnIndex]
+                string text = operation.Data is not null && rowIndex < operation.Data.Count && columnIndex < operation.Data[rowIndex].Count
+                    ? operation.Data[rowIndex][columnIndex]
                     : string.Empty;
-                paragraph.AppendChild(new Run(document, text));
+                paragraph.AppendChild(new Run(_document, text));
             }
         }
 
@@ -52,24 +52,24 @@ internal static class WordsTableOpHandlers
             table.Style = style;
         }
 
-        Node cursor = anchor;
-        InsertRelative(anchor, ref cursor, table, op.Position);
-        return (long)op.Rows * op.Cols;
+        Node cursor = Anchor;
+        InsertRelative(Anchor, ref cursor, table, operation.Position);
+        return (long)operation.Rows * operation.Cols;
     }
 
-    internal static long SetTableCell(IReadOnlyList<Node> nodes, SetTableCellOp op)
+    public long Apply(SetTableCellOp operation)
     {
-        if (nodes.Count != 1 || nodes[0] is not Table table)
+        if (Nodes.Count != 1 || Nodes[0] is not Table table)
         {
             throw Invalid("set_table_cell must target one table block");
         }
 
-        if (op.Row > table.Rows.Count || op.Col > table.Rows[op.Row - 1].Cells.Count)
+        if (operation.Row > table.Rows.Count || operation.Col > table.Rows[operation.Row - 1].Cells.Count)
         {
-            throw Invalid($"table cell {op.Row},{op.Col} is outside the table");
+            throw Invalid($"table cell {operation.Row},{operation.Col} is outside the table");
         }
 
-        Cell cell = table.Rows[op.Row - 1].Cells[op.Col - 1];
+        Cell cell = table.Rows[operation.Row - 1].Cells[operation.Col - 1];
         // The terminal paragraph owns the cell marker and must survive tracked replacement.
         Paragraph paragraph = cell.LastParagraph;
         if (paragraph is null)
@@ -94,18 +94,18 @@ internal static class WordsTableOpHandlers
         paragraph.RemoveAllChildren();
         builder.MoveTo(paragraph);
         builder.PopFont();
-        builder.Write(op.Text);
+        builder.Write(operation.Text);
         return 1;
     }
 
-    internal static long ApplyList(Document document, IReadOnlyList<Node> nodes, ApplyListOp op)
+    public long Apply(ApplyListOp operation)
     {
-        List list = document.Lists.Add(op.Kind == "bullet" ? ListTemplate.BulletDefault : ListTemplate.NumberDefault);
+        List list = _document.Lists.Add(operation.Kind == "bullet" ? ListTemplate.BulletDefault : ListTemplate.NumberDefault);
         long count = 0;
-        foreach (Paragraph paragraph in nodes.SelectMany(Paragraphs))
+        foreach (Paragraph paragraph in Nodes.SelectMany(Paragraphs))
         {
             paragraph.ListFormat.List = list;
-            paragraph.ListFormat.ListLevelNumber = op.Level;
+            paragraph.ListFormat.ListLevelNumber = operation.Level;
             count++;
         }
 

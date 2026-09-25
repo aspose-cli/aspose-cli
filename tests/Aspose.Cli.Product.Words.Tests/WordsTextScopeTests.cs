@@ -53,7 +53,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
 
         WordsEditResult result = _fixture.Engine.ApplyOps(
             input,
-            new WordsOpsBatch { Ops = [new ReplaceTextOp(scope) { Find = "needle", Replace = "pin" }] },
+            new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = scope, Find = "needle", Replace = "pin" }] },
             new WordsEditRequest { OutputPath = output });
 
         var document = new Document(output);

@@ -32,7 +32,7 @@ internal sealed class WordsMutationService
     /// <summary>Applies a validated operation batch and commits it atomically.</summary>
     internal WordsEditResult ApplyOps(string filePath, WordsOpsBatch batch, WordsEditRequest request)
     {
-        batch = WordsOps.Catalog.Prepare(batch);
+        batch = WordsOp.Catalog.Prepare(batch);
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);

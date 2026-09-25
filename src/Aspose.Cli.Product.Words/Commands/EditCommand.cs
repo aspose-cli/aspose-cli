@@ -11,7 +11,7 @@ internal static class EditCommand
 
     private static readonly BoundedEditDefinition<WordsOp, WordsOpsBatch> Definition = new()
     {
-        Catalog = WordsOps.Catalog,
+        Catalog = WordsOp.Catalog,
         Contracts = ProductJsonContext.Definition,
         SetDirectives = new(
             "Replace a bookmark's text as bookmark:NAME=TEXT; repeatable, applied after the --ops document. "
@@ -19,15 +19,6 @@ internal static class EditCommand
             ParseSet,
             static ops => new WordsOpsBatch { Ops = ops }),
         VerifyDescription = "Compare the staged document after save and reopen to report semantic verification.",
-        NormalizePaths = static (op, paths) => op switch
-        {
-            InsertImageOp value => value with { Path = paths.ResolveInput(value.Path) },
-            AddWatermarkOp { ImagePath: not null } value => value with { ImagePath = paths.ResolveInput(value.ImagePath) },
-            AppendDocumentOp value => value with { Path = paths.ResolveInput(value.Path) },
-            MailMergeOp { Path: not null } value => value with { Path = paths.ResolveInput(value.Path) },
-            _ => op,
-        },
-        SecretVariables = static op => [WordsOps.PasswordVariable(op)],
     };
 
     public static Command Create(IProductCommandHost<IDocumentEngine> host)

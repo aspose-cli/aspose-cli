@@ -1,69 +1,65 @@
-using System.Drawing;
-using System.Globalization;
-using System.Text;
-using System.Text.Json;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
-using Aspose.Words.Fields;
-using Aspose.Words.Lists;
-using Aspose.Words.Replacing;
-using Aspose.Words.Tables;
-using SkiaSharp;
-
-using static Aspose.Cli.Product.Words.Engine.Editing.WordsMutationSupport;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
-/// <summary>Routes each resolved operation to one cohesive operation family.</summary>
-internal static class WordsOpHandlers
+/// <summary>
+/// Applies one validated Words operation at the anchors and sections resolved before the batch
+/// started. Each operation has its handler in the content, formatting, table, object or
+/// structure part of this class, and returns the number of items it changed.
+/// </summary>
+internal sealed partial class WordsOpHandlers : IWordsOpHandler<long>
 {
-    private static readonly IReadOnlyDictionary<
-        Type,
-        Func<Document, ResolvedWordsOp, string?, long>> Handlers =
-        new Dictionary<Type, Func<Document, ResolvedWordsOp, string?, long>>
-        {
-            [typeof(ReplaceTextOp)] = static (d, r, _) => WordsContentOpHandlers.ReplaceText(d, (ReplaceTextOp)r.Op),
-            [typeof(SetTextOp)] = static (d, r, _) => WordsContentOpHandlers.SetText(d, r.Nodes, (SetTextOp)r.Op),
-            [typeof(InsertParagraphsOp)] = static (d, r, _) => WordsContentOpHandlers.InsertParagraphs(d, r.Nodes[0], (InsertParagraphsOp)r.Op),
-            [typeof(DeleteBlocksOp)] = static (_, r, _) => WordsContentOpHandlers.Delete(r.Nodes),
-            [typeof(InsertBreakOp)] = static (d, r, _) => WordsContentOpHandlers.InsertBreak(d, r.Nodes[0], (InsertBreakOp)r.Op),
-            [typeof(SetTableCellOp)] = static (_, r, _) => WordsTableOpHandlers.SetTableCell(r.Nodes, (SetTableCellOp)r.Op),
-            [typeof(InsertTocOp)] = static (d, r, _) => WordsObjectOpHandlers.InsertToc(d, r.Nodes[0], (InsertTocOp)r.Op),
-            [typeof(InsertBookmarkOp)] = static (d, r, _) => WordsObjectOpHandlers.InsertBookmark(d, r.Nodes[0], (InsertBookmarkOp)r.Op),
-            [typeof(InsertHyperlinkOp)] = static (d, r, _) => WordsObjectOpHandlers.InsertHyperlink(d, r.Nodes[0], (InsertHyperlinkOp)r.Op),
-            [typeof(InsertFieldOp)] = static (d, r, _) => WordsObjectOpHandlers.InsertField(d, r.Nodes[0], (InsertFieldOp)r.Op),
-            [typeof(AddSectionOp)] = static (d, r, _) => WordsStructureOpHandlers.AddSection(d, (AddSectionOp)r.Op, r.Sections.FirstOrDefault()),
-            [typeof(DeleteSectionOp)] = static (d, r, _) => WordsStructureOpHandlers.DeleteSection(d, r.Sections[0]),
-            [typeof(SetPageSetupOp)] = static (d, r, _) => WordsStructureOpHandlers.SetPageSetup(r.Sections, (SetPageSetupOp)r.Op),
-            [typeof(SetPageNumbersOp)] = static (d, r, _) => WordsStructureOpHandlers.SetPageNumbers(d, r.Sections, (SetPageNumbersOp)r.Op),
-            [typeof(FormatTextOp)] = static (_, r, _) => WordsFormattingOpHandlers.FormatText(r.Nodes, (FormatTextOp)r.Op),
-            [typeof(SetStyleOp)] = static (d, r, _) => WordsFormattingOpHandlers.SetStyle(d, r.Nodes, (SetStyleOp)r.Op),
-            [typeof(DefineStyleOp)] = static (d, r, _) => WordsFormattingOpHandlers.DefineStyle(d, (DefineStyleOp)r.Op),
-            [typeof(ApplyListOp)] = static (d, r, _) => WordsTableOpHandlers.ApplyList(d, r.Nodes, (ApplyListOp)r.Op),
-            [typeof(SetDefaultFontOp)] = static (d, r, _) => WordsFormattingOpHandlers.SetDefaultFont(d, (SetDefaultFontOp)r.Op),
-            [typeof(SetPropertiesOp)] = static (d, r, _) => WordsObjectOpHandlers.SetProperties(d, (SetPropertiesOp)r.Op),
-            [typeof(RemoveWatermarkOp)] = static (d, _, _) => WordsObjectOpHandlers.RemoveWatermark(d),
-            [typeof(ProtectOp)] = static (d, r, s) => WordsObjectOpHandlers.Protect(d, (ProtectOp)r.Op, s),
-            [typeof(UnprotectOp)] = static (d, _, s) => WordsObjectOpHandlers.Unprotect(d, s),
-            [typeof(AcceptRevisionsOp)] = static (d, r, _) => WordsObjectOpHandlers.ChangeRevisions(d, ((AcceptRevisionsOp)r.Op).Author, accept: true),
-            [typeof(RejectRevisionsOp)] = static (d, r, _) => WordsObjectOpHandlers.ChangeRevisions(d, ((RejectRevisionsOp)r.Op).Author, accept: false),
-            [typeof(AddCommentOp)] = static (d, r, _) => WordsObjectOpHandlers.AddComment(d, r.Nodes[0], (AddCommentOp)r.Op),
-            [typeof(RemoveCommentsOp)] = static (d, r, _) => WordsObjectOpHandlers.RemoveComments(d, (RemoveCommentsOp)r.Op),
-            [typeof(UpdateFieldsOp)] = static (d, r, _) => WordsObjectOpHandlers.UpdateFields(d, (UpdateFieldsOp)r.Op),
-        };
+    private readonly LoadedDocument _loaded;
+    private readonly Document _document;
+    private readonly ResolvedWordsOp _resolved;
+    private readonly WordsDocumentLoader _loader;
+    private readonly InputSource _inputs;
+    private readonly InputResourceScope _operationInputs;
+    private readonly IReadOnlyDictionary<string, string>? _secrets;
 
-    public static long Apply(Document document, ResolvedWordsOp resolved, string? secret)
+    /// <summary>Creates the handlers of one resolved operation.</summary>
+    /// <param name="loaded">The document being edited.</param>
+    /// <param name="resolved">The operation with its original anchors and sections.</param>
+    /// <param name="loader">Opens the documents and Markdown that operations import.</param>
+    /// <param name="inputs">Reads the merge data and watermark images that operations read.</param>
+    /// <param name="operationInputs">Opens and charges the images that operations insert.</param>
+    /// <param name="secrets">The operations' secrets by environment variable name.</param>
+    internal WordsOpHandlers(
+        LoadedDocument loaded,
+        ResolvedWordsOp resolved,
+        WordsDocumentLoader loader,
+        InputSource inputs,
+        InputResourceScope operationInputs,
+        IReadOnlyDictionary<string, string>? secrets)
     {
-        if (Handlers.TryGetValue(resolved.Op.GetType(), out var handler))
+        _loaded = loaded;
+        _document = loaded.Document;
+        _resolved = resolved;
+        _loader = loader;
+        _inputs = inputs;
+        _operationInputs = operationInputs;
+        _secrets = secrets;
+    }
+
+    /// <summary>The operation's target blocks.</summary>
+    private IReadOnlyList<Node> Nodes => _resolved.Nodes;
+
+    /// <summary>The block an insertion is placed before or after.</summary>
+    private Node Anchor => _resolved.Nodes[0];
+
+    /// <summary>The operation's target sections.</summary>
+    private IReadOnlyList<Section> Sections => _resolved.Sections;
+
+    /// <summary>Applies the operation unless an earlier one removed its anchor.</summary>
+    internal long Run()
+    {
+        try
         {
-            return handler(document, resolved, secret);
+            WordsAnchorResolver.EnsureAttached(_document, _resolved);
+            return _resolved.Op.Accept(this);
         }
-        throw Invalid(
-            $"no Words handler for {resolved.Op.GetType().Name}");
+        finally { _operationInputs.ThrowIfFailed(); }
     }
 }

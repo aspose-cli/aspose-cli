@@ -80,8 +80,8 @@ public sealed class WordsPageNumberTests : IClassFixture<WordsFixture>
         {
             Ops =
             [
-                new SetPageNumbersOp(location, "right") { Section = 2, Start = 7, Format = "lowerRoman" },
-                new SetPageNumbersOp(location, "center") { Section = 2, Start = 9, Format = "upperRoman" },
+                new SetPageNumbersOp { Location = location, Alignment = "right", Section = 2, Start = 7, Format = "lowerRoman" },
+                new SetPageNumbersOp { Location = location, Alignment = "center", Section = 2, Start = 9, Format = "upperRoman" },
                 new UpdateFieldsOp(),
             ],
         }, new WordsEditRequest { OutputPath = output });

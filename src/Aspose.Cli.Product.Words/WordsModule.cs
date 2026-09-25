@@ -14,7 +14,7 @@ public sealed class WordsModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
-        Operations = [WordsOps.Catalog.Describe("edit")],
+        Operations = [WordsOp.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(WordsBudgetDomains.Pages, 10_000, 100_000, "items", "post-load"),

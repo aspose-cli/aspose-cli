@@ -92,8 +92,8 @@ internal static class WordsOpsExecutor
         }
 
         string[] untracked = batch.Ops
-            .Where(static op => !WordsOpRules.IsTrackable(op))
-            .Select(static op => WordsOps.Catalog.NameOf(op))
+            .Where(static op => !IsTrackable(op))
+            .Select(static op => WordsOp.Catalog.NameOf(op))
             .Distinct(StringComparer.Ordinal)
             .ToArray();
         if (untracked.Length > 0)
@@ -105,6 +105,17 @@ internal static class WordsOpsExecutor
         }
     }
 
+    /// <summary>
+    /// Whether Word can record the operation as tracked changes. Aspose.Words tracks the
+    /// insertion and deletion of content only; formatting, styles, lists, page setup,
+    /// properties, protection, merges, field updates, header replacement and section
+    /// structure would change silently, and resolving revisions is not itself an edit.
+    /// </summary>
+    private static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
+        or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp { Kind: "page" } or InsertImageOp or InsertTableOp
+        or SetTableCellOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
+        or AddCommentOp or RemoveCommentsOp or AppendDocumentOp;
+
     private static IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
         LoadedDocument loaded,
         IReadOnlyList<ResolvedWordsOp> resolved,
@@ -112,41 +123,14 @@ internal static class WordsOpsExecutor
         WordsDocumentLoader loader,
         InputSource inputs, InputResourceScope operationInputs)
     {
-        Document document = loaded.Document;
         return BoundedOperationRunner.Run(
-            WordsOps.Catalog,
+            WordsOp.Catalog,
             resolved.Select(static item => item.Op).ToArray(),
             request.Options.BestEffort,
             deadline: null,
-            (op, index) =>
-            {
-                ResolvedWordsOp item = resolved[index];
-                try
-                {
-                    WordsAnchorResolver.EnsureAttached(document, item);
-                    string? secret = OperationSecrets.Resolve(request.OpSecrets, WordsOps.PasswordVariable(op));
-                    long affected = op switch
-                    {
-                        InsertImageOp image => WordsObjectOpHandlers.InsertImage(document, item.Nodes[0], image, operationInputs),
-                        InsertMarkdownOp markdown =>
-                            WordsContentOpHandlers.InsertMarkdown(document, item.Nodes[0], markdown,
-                                loader.OpenMarkdown(markdown.Markdown, loaded)),
-                        SetHeaderOp header => WordsStructureOpHandlers.SetHeaderFooter(
-                            document, item.Sections, header.Kind, header.Paragraphs,
-                            header.Markdown is null ? null : loader.OpenMarkdown(header.Markdown, loaded), isHeader: true),
-                        SetFooterOp footer => WordsStructureOpHandlers.SetHeaderFooter(
-                            document, item.Sections, footer.Kind, footer.Paragraphs,
-                            footer.Markdown is null ? null : loader.OpenMarkdown(footer.Markdown, loaded), isHeader: false),
-                        AppendDocumentOp append => WordsStructureOpHandlers.AppendDocument(loaded, append, loader),
-                        MailMergeOp merge => WordsObjectOpHandlers.MailMerge(loaded, merge, inputs, loader),
-                        InsertTableOp table => WordsTableOpHandlers.InsertTable(document, item.Nodes[0], table, loader),
-                        AddWatermarkOp watermark => WordsObjectOpHandlers.AddWatermark(document, watermark, inputs, loader.ResourceBudgets),
-                        _ => WordsOpHandlers.Apply(document, item, secret),
-                    };
-                    return new AppliedOperation(affected, item.Targets);
-                }
-                finally { operationInputs.ThrowIfFailed(); }
-            },
+            (_, index) => new AppliedOperation(
+                new WordsOpHandlers(loaded, resolved[index], loader, inputs, operationInputs, request.OpSecrets).Run(),
+                resolved[index].Targets),
             (_, index) => resolved[index].Targets);
     }
 
