@@ -77,15 +77,8 @@ internal static class ConditionalFormatOps
                     int condition = conditions.AddCondition(FormatConditionType.Top10);
                     Top10 top10 = conditions[condition].Top10;
                     top10.Rank = rule.Rank!.Value; // parser-required
-                    if (rule.Percent is { } percent)
-                    {
-                        top10.IsPercent = percent;
-                    }
-
-                    if (rule.Bottom is { } bottom)
-                    {
-                        top10.IsBottom = bottom;
-                    }
+                    top10.IsPercent = rule.Percent;
+                    top10.IsBottom = rule.Bottom;
 
                     ApplyConditionStyle(conditions[condition], op.Style!);
                     break;
@@ -138,10 +131,10 @@ internal static class ConditionalFormatOps
     /// there, so a fgColor-only dxf renders the font colour but no fill.</item>
     /// </list>
     /// </summary>
-    private static void ApplyConditionStyle(FormatCondition condition, StyleData style)
+    private static void ApplyConditionStyle(FormatCondition condition, ConditionalStyle style)
     {
         Style differential = condition.Style;
-        StyleWriter.Apply(differential, style);
+        StyleWriter.Apply(differential, style.ToStyleData());
         if (differential.Pattern == BackgroundType.Solid)
         {
             differential.BackgroundColor = differential.ForegroundColor;

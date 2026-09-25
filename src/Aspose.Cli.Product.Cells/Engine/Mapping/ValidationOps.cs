@@ -14,7 +14,7 @@ internal static class ValidationOps
             range.Start.Row, range.Start.Column, range.End.Row, range.End.Column);
 
         Validation validation = sheet.Validations[sheet.Validations.Add(area)];
-        validation.IgnoreBlank = op.AllowBlank ?? true;
+        validation.IgnoreBlank = op.AllowBlank;
 
         switch (op.Type)
         {

@@ -25,12 +25,10 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"rename_sheet","to":"Archive"}""")]
     [InlineData("""{"op":"ungroup_rows","from":2,"collapse":true}""")]
     [InlineData("""{"op":"ungroup_columns","from":"B","collapse":true}""")]
-    [InlineData("""{"op":"format_range","range":"A1","style":{}}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"hAlign":"justify"}}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"size":500}}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"font":""}}""")]
     [InlineData("""{"op":"format_range","range":"A1","style":{"numberFormat":""}}""")]
-    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"size":14}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"font":"Arial","bold":true}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"hAlign":"center"}}""")]
@@ -38,13 +36,29 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"set_print_area","titleColumns":"B2"}""")]
     [InlineData("""{"op":"set_print_area","titleRows":"1:2:3"}""")]
     [InlineData("""{"op":"resize_columns","from":"B2"}""")]
+    [InlineData("""{"op":"set_autofilter"}""")]
+    [InlineData("""{"op":"set_page_setup"}""")]
+    [InlineData("""{"op":"update_chart","index":0,"name":"Sales","title":"Revised"}""")]
+    [InlineData("""{"op":"set_hyperlink","cell":"A1"}""")]
+    [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"docs/a"}""")]
+    [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"file:///c:/a.txt"}""")]
+    [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"javascript:alert(1)"}""")]
+    [InlineData("""{"op":"add_comment","cell":"A1","text":""}""")]
+    [InlineData("""{"op":"insert_image","path":"logo.png","at":"A1:B2"}""")]
+    [InlineData("""{"op":"format_range","range":"A1","style":{}}""")]
+    [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{}}""")]
+    [InlineData("""{"op":"set_page_setup","margins":{}}""")]
+    [InlineData("""{"op":"create_chart","type":"line","dataRange":"A1:B3","at":"D2:H9","legend":{}}""")]
+    [InlineData("""{"op":"set_sheet_view"}""")]
+    [InlineData("""{"op":"set_values","range":"A1","values":[[]]}""")]
+    [InlineData("""{"op":"update_chart","index":0,"seriesInRows":false}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
 
         CliException error = Assert.Throws<CliException>(() => Parse(batch));
 
-        Assert.True(error.Code == ErrorCodes.OpsInvalid || error.Code == CellsDiagnostics.RangeInvalid, error.Code.Name);
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.False(IsSchemaValid(batch), "The schema accepted an operation the parser rejects.");
     }
 
@@ -54,6 +68,12 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"format_range","range":"A1","style":{"size":10.5,"hAlign":"center","indent":2}}""")]
     [InlineData("""{"op":"add_conditional_format","range":"A1:A9","rule":{"kind":"duplicates"},"style":{"bold":true,"italic":true,"underline":true,"strikethrough":true,"color":"#C00000","bg":"#FFC7CE","numberFormat":"0.0"}}""")]
     [InlineData("""{"op":"set_print_area","titleRows":"$1:$2","titleColumns":"A"}""")]
+    [InlineData("""{"op":"set_autofilter","off":true}""")]
+    [InlineData("""{"op":"update_chart","name":"Sales","title":"Revised"}""")]
+    [InlineData("""{"op":"set_sheet_view","gridlines":false}""")]
+    [InlineData("""{"op":"create_chart","type":"line","dataRange":"A1:B3","at":"D2:H9","legend":{"visible":false}}""")]
+    [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"https://example.com/a"}""")]
+    [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"mailto:team@example.com"}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -73,6 +93,17 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","unexpected":1}]}""")]
     public void Schema_RejectsFieldsTheContractDoesNotKnow(string operation) =>
         Assert.False(IsSchemaValid($$"""{"ops":[{{operation}}]}"""));
+
+    [Fact]
+    public void A1Value_TheSchemaCannotStateIsInvalidWithTheParsersReason()
+    {
+        CliException error = Assert.Throws<CliException>(() => Parse("""{"ops":[{"op":"merge_cells","range":"B2:A"}]}"""));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("merge_cells", error.Details["op"]!.GetValue<string>());
+        Assert.StartsWith("range must be an A1 cell or range on the operation's sheet, such as B2 or B2:D10: ", error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
 
     [Theory]
     [InlineData("1", "$1:$1")]
@@ -123,7 +154,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     }
 
     private static OpsBatch Parse(string json) =>
-        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
     private string Apply(string path, string operations, string output) =>
         _fixture.Engine.ApplyOps(

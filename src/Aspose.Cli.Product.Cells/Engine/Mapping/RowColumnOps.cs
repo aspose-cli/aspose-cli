@@ -22,25 +22,25 @@ internal static class RowColumnOps
 
     public static long? InsertRows(Worksheet sheet, InsertRowsOp op)
     {
-        sheet.Cells.InsertRows(op.At - 1, op.Count ?? 1, UpdateAll);
+        sheet.Cells.InsertRows(op.At - 1, op.Count, UpdateAll);
         return null;
     }
 
     public static long? DeleteRows(Worksheet sheet, DeleteRowsOp op)
     {
-        sheet.Cells.DeleteRows(op.At - 1, op.Count ?? 1, updateReference: true);
+        sheet.Cells.DeleteRows(op.At - 1, op.Count, updateReference: true);
         return null;
     }
 
     public static long? InsertColumns(Worksheet sheet, InsertColumnsOp op)
     {
-        sheet.Cells.InsertColumns(ColumnIndex(op.At), op.Count ?? 1, UpdateAll);
+        sheet.Cells.InsertColumns(ColumnIndex(op.At), op.Count, UpdateAll);
         return null;
     }
 
     public static long? DeleteColumns(Worksheet sheet, DeleteColumnsOp op)
     {
-        sheet.Cells.DeleteColumns(ColumnIndex(op.At), op.Count ?? 1, updateReference: true);
+        sheet.Cells.DeleteColumns(ColumnIndex(op.At), op.Count, updateReference: true);
         return null;
     }
 

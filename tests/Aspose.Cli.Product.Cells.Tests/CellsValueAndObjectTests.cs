@@ -86,13 +86,6 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void UpdateChart_RejectsAnOrientationWithoutADataRange()
-    {
-        CliException error = AssertInvalid("""{ "op": "update_chart", "index": 0, "seriesInRows": true }""");
-        Assert.Contains("dataRange", error.Message, StringComparison.Ordinal);
-    }
-
-    [Fact]
     public void UpdateChart_LeavesAnExistingAutomaticValueAxisAlone()
     {
         string source = _fixture.CreateSalesWorkbook("axis-auto.xlsx");
@@ -246,7 +239,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
     }
 
     private static OpsBatch Parse(string json) =>
-        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
     private string Apply(string path, string operations, string output) =>
         _fixture.Engine.ApplyOps(

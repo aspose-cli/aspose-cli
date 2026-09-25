@@ -1,45 +1,43 @@
+using Aspose.Cli.Sdk.Operations;
+
 namespace Aspose.Cli.Product.Cells.Contracts;
 
-// Ops for sheet protection. The password is never carried literally: an op
-// names an environment variable (passwordEnv) resolved by the command and
-// supplied separately to the engine; secret values never enter ops JSON.
+// Ops for sheet and workbook protection. A password is never carried literally: an op names
+// the environment variable that holds it, and the command reads the variable.
 
-/// <summary>
-/// Protects a sheet against edits. By default every action is locked; list the
-/// still-permitted actions in <see cref="Allow"/>. Any password is read from
-/// the environment variable named by <see cref="PasswordEnv"/>.
-/// </summary>
-public sealed record ProtectSheetOp() : Op
+/// <summary>Protects a sheet against edits: every action is locked except the ones allowed.</summary>
+[Operation("protect_sheet")]
+public sealed record ProtectSheetOp : Op
 {
-    /// <summary>Name of the environment variable holding the protection password.</summary>
-    public string? PasswordEnv { get; init; }
+    /// <summary>The environment variable that holds the protection password.</summary>
+    [SecretEnv] public string? PasswordEnv { get; init; }
 
-    /// <summary>Actions the user may still perform; each one of <see cref="ProtectActions"/>.</summary>
-    public IReadOnlyList<string>? Allow { get; init; }
+    /// <summary>The actions users may still perform.</summary>
+    [AllowedValues(typeof(ProtectActions))] public IReadOnlyList<string> Allow { get; init; } = [];
 }
 
 /// <summary>Removes sheet protection.</summary>
-public sealed record UnprotectSheetOp() : Op
+[Operation("unprotect_sheet")]
+public sealed record UnprotectSheetOp : Op
 {
-    /// <summary>Name of the environment variable holding the current password, if the sheet is password-protected.</summary>
-    public string? PasswordEnv { get; init; }
+    /// <summary>The environment variable that holds the current password of a password-protected sheet.</summary>
+    [SecretEnv] public string? PasswordEnv { get; init; }
 }
 
-/// <summary>
-/// Protects the workbook structure — adding, deleting, moving and hiding sheets.
-/// Any password is read from the environment variable named by <see cref="PasswordEnv"/>.
-/// </summary>
-public sealed record ProtectWorkbookOp() : Op
+/// <summary>Protects the workbook structure: adding, deleting, moving and hiding sheets.</summary>
+[Operation("protect_workbook")]
+public sealed record ProtectWorkbookOp : Op
 {
-    /// <summary>Name of the environment variable holding the protection password.</summary>
-    public string? PasswordEnv { get; init; }
+    /// <summary>The environment variable that holds the protection password.</summary>
+    [SecretEnv] public string? PasswordEnv { get; init; }
 }
 
 /// <summary>Removes workbook structure protection.</summary>
-public sealed record UnprotectWorkbookOp() : Op
+[Operation("unprotect_workbook")]
+public sealed record UnprotectWorkbookOp : Op
 {
-    /// <summary>Name of the environment variable holding the current password, if the workbook is password-protected.</summary>
-    public string? PasswordEnv { get; init; }
+    /// <summary>The environment variable that holds the current password of a password-protected workbook.</summary>
+    [SecretEnv] public string? PasswordEnv { get; init; }
 }
 
 /// <summary>Accepted items of <see cref="ProtectSheetOp.Allow"/>.</summary>
@@ -52,8 +50,4 @@ public static class ProtectActions
     public const string DeleteColumns = "deleteColumns";
     public const string Sort = "sort";
     public const string AutoFilter = "autoFilter";
-
-    /// <summary>Every permitted action, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } =
-        [FormatCells, InsertRows, InsertColumns, DeleteRows, DeleteColumns, Sort, AutoFilter];
 }

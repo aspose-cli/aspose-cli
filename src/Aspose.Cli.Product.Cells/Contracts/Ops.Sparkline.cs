@@ -1,49 +1,49 @@
+using Aspose.Cli.Sdk.Operations;
+
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Sparklines: tiny in-cell charts summarizing a row or column of data.
 
 /// <summary>
-/// Adds a sparkline group over a data block: one sparkline per data row (or
-/// column), each drawn in one cell of <see cref="Location"/>.
+/// Adds a sparkline group over a data block: one sparkline per data row (or column), each drawn
+/// in one cell of location.
 /// </summary>
-public sealed record AddSparklineOp() : Op
+[Operation("add_sparkline")]
+public sealed record AddSparklineOp : Op
 {
     /// <summary>
-    /// The data to plot, e.g. <c>B2:E10</c>. May be sheet-qualified
-    /// (<c>Data!B2:E10</c>) so sparklines on a dashboard sheet can plot a data
-    /// sheet; otherwise the op's sheet.
+    /// The data to plot, such as B2:E10. It may name another sheet, such as Data!B2:E10, so
+    /// sparklines on a dashboard sheet can plot a data sheet.
     /// </summary>
-    public required string DataRange { get; init; }
+    [A1Reference] public required string DataRange { get; init; }
 
     /// <summary>
-    /// Where the sparklines are drawn, on the op's sheet: a single cell or a
-    /// one-row/one-column strip, e.g. <c>F2</c> or <c>F2:F10</c>. One
-    /// sparkline per data row (or column) lands in each location cell.
+    /// A single cell or a one-row or one-column strip, such as F2 or F2:F10. One sparkline per
+    /// data row (or column) lands in each location cell, so the cell count must match the data's
+    /// row count (one per row) or column count (one per column).
     /// </summary>
-    public required string Location { get; init; }
+    [A1Range] public required string Location { get; init; }
 
-    /// <summary>Sparkline type; one of <see cref="SparklineTypes"/>, <c>line</c> when omitted.</summary>
-    public string? Type { get; init; }
+    /// <summary>winloss draws equal-height columns above or below the axis by sign.</summary>
+    [AllowedValues(typeof(SparklineTypes))] public string Type { get; init; } = SparklineTypes.Line;
 
-    /// <summary>Series color as <c>#RRGGBB</c>; the engine default when omitted.</summary>
-    public string? Color { get; init; }
+    /// <summary>The series color; the engine default when omitted.</summary>
+    [HexColor] public string? Color { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        RangeRef location = A1.ParseRange(Location).Range;
+        OperationInvalidException.Require(location.RowCount == 1 || location.ColumnCount == 1,
+            "'location' must be a single cell or a one-row/one-column range, e.g. \"F2\" or \"F2:F10\"");
+        return this;
+    }
 }
 
 /// <summary>Accepted values of <see cref="AddSparklineOp.Type"/>.</summary>
 public static class SparklineTypes
 {
-    /// <summary>A line through the values.</summary>
     public const string Line = "line";
-
-    /// <summary>One column per value.</summary>
     public const string Column = "column";
-
-    /// <summary>
-    /// Win/loss columns (Excel's name for it): equal-height columns above or
-    /// below the axis by sign.
-    /// </summary>
     public const string WinLoss = "winloss";
-
-    /// <summary>Every sparkline type, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Line, Column, WinLoss];
 }

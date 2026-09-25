@@ -20,8 +20,8 @@ internal static class BorderOps
     public static long SetBorders(Workbook workbook, Worksheet sheet, SetBordersOp op)
     {
         RangeRef range = A1.ParseRange(op.Range).Range;
-        CellBorderType line = ToLineType(op.Style ?? BorderLineStyles.Thin);
-        Color color = StyleWriter.ParseHex(op.Color ?? "#000000");
+        CellBorderType line = ToLineType(op.Style);
+        Color color = StyleWriter.ParseHex(op.Color);
 
         (bool top, bool bottom, bool left, bool right, bool horizontal, bool vertical) = Expand(op.Edges);
 

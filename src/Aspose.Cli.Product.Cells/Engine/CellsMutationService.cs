@@ -47,7 +47,7 @@ internal sealed class CellsMutationService
         string format = CellsFormats.ForOutputPath(options.OutputPath);
         if (!CellsFormats.EditIds.Contains(format, StringComparer.Ordinal))
         { throw CliErrors.FormatUnsupported(format, CellsFormats.EditIds); }
-        batch = CellsOps.Catalog.Prepare(batch);
+        batch = Op.Catalog.Prepare(batch);
         using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
             : _saver.CreateOutputSet([Path.GetDirectoryName(options.OutputPath)!], "cells-edit", options.BackupPath);
 

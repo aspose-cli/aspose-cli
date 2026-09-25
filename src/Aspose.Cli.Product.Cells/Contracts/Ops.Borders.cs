@@ -1,26 +1,40 @@
+using Aspose.Cli.Sdk.Operations;
+
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Ops that draw cell borders.
 
 /// <summary>
-/// Draws borders on a range. <c>edges</c> names which boundaries to draw —
-/// outer edges, inner grid lines, or <c>all</c> for the full grid — and every
-/// named edge gets the same line style and color. Existing cell styling
-/// (fills, fonts, number formats and borders not named) is preserved.
+/// Draws borders on a range, every named edge with the same line style and color; the rest of
+/// the cells' formatting is preserved. A single cell has no inner lines, so it needs an outer edge.
 /// </summary>
-public sealed record SetBordersOp() : Op
+[Operation("set_borders")]
+public sealed record SetBordersOp : Op
 {
-    /// <summary>The range to border, e.g. <c>B2:D10</c>.</summary>
-    public required string Range { get; init; }
+    /// <summary>The range to border, such as B2:D10.</summary>
+    [A1Range] public required string Range { get; init; }
 
-    /// <summary>The edges to draw; values of <see cref="BorderEdges"/>.</summary>
-    public required IReadOnlyList<string> Edges { get; init; }
+    /// <summary>
+    /// The edges to draw: outline (the four outer edges), inside (the inner grid lines), single
+    /// edges, horizontal and vertical inner lines, or all (the full grid).
+    /// </summary>
+    [MinItems(1), AllowedValues(typeof(BorderEdges))] public required IReadOnlyList<string> Edges { get; init; }
 
-    /// <summary>Line style, one of <see cref="BorderLineStyles"/>; <c>thin</c> when omitted.</summary>
-    public string? Style { get; init; }
+    [AllowedValues(typeof(BorderLineStyles))] public string Style { get; init; } = BorderLineStyles.Thin;
 
-    /// <summary>Line color as <c>#RRGGBB</c>; black when omitted.</summary>
-    public string? Color { get; init; }
+    [HexColor] public string Color { get; init; } = "#000000";
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        // Inner edges alone on a single cell would draw nothing, a silent no-op the caller reads as success.
+        OperationInvalidException.Require(
+            A1.ParseRange(Range).Range.CellCount > 1
+                || Edges.Any(static edge => edge is not (BorderEdges.Inside or BorderEdges.Horizontal or BorderEdges.Vertical)),
+            $"a single-cell range has no inner boundaries, so edges [{string.Join(", ", Edges)}] would draw nothing",
+            "Use outline (or top/bottom/left/right) on a single cell, or a multi-cell range for inside borders.");
+        return this;
+    }
 }
 
 /// <summary>Accepted values of <see cref="SetBordersOp.Edges"/>.</summary>
@@ -32,16 +46,9 @@ public static class BorderEdges
     /// <summary>The inner grid lines between cells, in both directions.</summary>
     public const string Inside = "inside";
 
-    /// <summary>The top edge of the range.</summary>
     public const string Top = "top";
-
-    /// <summary>The bottom edge of the range.</summary>
     public const string Bottom = "bottom";
-
-    /// <summary>The left edge of the range.</summary>
     public const string Left = "left";
-
-    /// <summary>The right edge of the range.</summary>
     public const string Right = "right";
 
     /// <summary>The inner horizontal lines between rows.</summary>
@@ -52,10 +59,6 @@ public static class BorderEdges
 
     /// <summary>The full grid: the outline plus the inner lines.</summary>
     public const string Everything = "all";
-
-    /// <summary>Every edge token, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } =
-        [Outline, Inside, Top, Bottom, Left, Right, Horizontal, Vertical, Everything];
 }
 
 /// <summary>Accepted values of <see cref="SetBordersOp.Style"/>.</summary>
@@ -68,8 +71,4 @@ public static class BorderLineStyles
     public const string Double = "double";
     public const string Dashed = "dashed";
     public const string Dotted = "dotted";
-
-    /// <summary>Every line style, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } =
-        [Hair, Thin, Medium, Thick, Double, Dashed, Dotted];
 }

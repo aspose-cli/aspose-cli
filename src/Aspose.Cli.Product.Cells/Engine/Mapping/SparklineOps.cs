@@ -67,9 +67,9 @@ internal static class SparklineOps
     /// Wire name to the engine's <see cref="SparklineType"/>. Excel calls the
     /// third type "win/loss"; the engine exposes it as <c>WinLoss</c>.
     /// </summary>
-    private static SparklineType ToType(string? type) => type switch
+    private static SparklineType ToType(string type) => type switch
     {
-        null or SparklineTypes.Line => SparklineType.Line,
+        SparklineTypes.Line => SparklineType.Line,
         SparklineTypes.Column => SparklineType.Column,
         SparklineTypes.WinLoss => SparklineType.WinLoss,
         _ => throw new ArgumentOutOfRangeException(

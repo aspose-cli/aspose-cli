@@ -37,7 +37,7 @@ internal static class ChartPivotOps
         Chart chart = sheet.Charts[chartIndex];
         // Series-from-columns is the default; SetChartDataRange derives
         // series and category axes from the headers in the range.
-        chart.SetChartDataRange(dataRange, isVertical: op.SeriesInRows is not true);
+        chart.SetChartDataRange(dataRange, isVertical: !op.SeriesInRows);
 
         if (op.Title is { } title)
         {
@@ -51,14 +51,7 @@ internal static class ChartPivotOps
         return null;
     }
 
-    public static long? ApplyPivot(Worksheet sheet, Op op) => op switch
-    {
-        CreatePivotOp create => CreatePivot(sheet, create),
-        RefreshPivotOp refresh => RefreshPivot(sheet, refresh),
-        _ => throw new InvalidOperationException($"Unhandled pivot operation {op.GetType().Name}."),
-    };
-
-    private static long? CreatePivot(Worksheet sheet, CreatePivotOp op)
+    public static long? CreatePivot(Worksheet sheet, CreatePivotOp op)
     {
         // An unqualified source refers to the op's sheet; the engine API
         // requires the qualified form.
@@ -171,7 +164,7 @@ internal static class ChartPivotOps
         return index;
     }
 
-    private static long? RefreshPivot(Worksheet sheet, RefreshPivotOp op)
+    public static long? RefreshPivot(Worksheet sheet, RefreshPivotOp op)
     {
         bool refreshedAny = false;
         foreach (PivotTable pivot in sheet.PivotTables)
@@ -348,10 +341,10 @@ internal static class ChartPivotOps
     /// </summary>
     private static void ApplyCosmetics(
         Chart chart,
-        ChartLegendData? legend,
-        ChartAxisTitlesData? axisTitles,
+        ChartLegend? legend,
+        ChartAxisTitles? axisTitles,
         IReadOnlyList<string>? seriesColors,
-        ChartDataLabelsData? dataLabels)
+        ChartDataLabels? dataLabels)
     {
         if (legend is { } chartLegend)
         {
@@ -521,9 +514,9 @@ internal static class ChartPivotOps
             nameof(position), position, "Legend position is missing from the engine mapper."),
     };
 
-    private static ConsolidationFunction ToFunction(string? function) => function switch
+    private static ConsolidationFunction ToFunction(string function) => function switch
     {
-        null or PivotFunctions.Sum => ConsolidationFunction.Sum,
+        PivotFunctions.Sum => ConsolidationFunction.Sum,
         PivotFunctions.Count => ConsolidationFunction.Count,
         PivotFunctions.Average => ConsolidationFunction.Average,
         PivotFunctions.Max => ConsolidationFunction.Max,

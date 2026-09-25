@@ -13,7 +13,7 @@ internal static class OutlineOps
 {
     public static long? GroupRows(Worksheet sheet, GroupRowsOp op)
     {
-        sheet.Cells.GroupRows(op.From - 1, (op.To ?? op.From) - 1, op.Collapse ?? false);
+        sheet.Cells.GroupRows(op.From - 1, (op.To ?? op.From) - 1, op.Collapse);
         return null;
     }
 
@@ -27,7 +27,7 @@ internal static class OutlineOps
     {
         int first = ColumnIndex(op.From);
         int last = op.To is { } to ? ColumnIndex(to) : first;
-        sheet.Cells.GroupColumns(first, last, op.Collapse ?? false);
+        sheet.Cells.GroupColumns(first, last, op.Collapse);
         return null;
     }
 

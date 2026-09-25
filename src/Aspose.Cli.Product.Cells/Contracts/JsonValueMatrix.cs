@@ -9,8 +9,8 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 internal static class JsonValueMatrix
 {
     /// <summary>
-    /// Converts a raw deserialized matrix into strings, doubles, booleans and
-    /// nulls. Rejects empty and ragged matrices and non-scalar entries.
+    /// Converts a raw deserialized matrix, which the contract keeps non-empty, into strings,
+    /// doubles, booleans and nulls. Rejects ragged matrices and non-scalar entries.
     /// </summary>
     public static IReadOnlyList<IReadOnlyList<object?>> Normalize(
         IReadOnlyList<IReadOnlyList<object?>> values,
@@ -18,11 +18,6 @@ internal static class JsonValueMatrix
     {
         ArgumentNullException.ThrowIfNull(values);
         ArgumentNullException.ThrowIfNull(invalid);
-
-        if (values.Count == 0 || values[0].Count == 0)
-        {
-            throw invalid("the values matrix is empty");
-        }
 
         int width = values[0].Count;
         var rows = new List<IReadOnlyList<object?>>(values.Count);

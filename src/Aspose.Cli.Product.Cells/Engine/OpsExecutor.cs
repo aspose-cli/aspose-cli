@@ -9,15 +9,29 @@ namespace Aspose.Cli.Product.Cells.Engine;
 
 /// <summary>
 /// Applies a validated ops batch to an in-memory workbook through the SDK runner. This class
-/// supplies the engine dispatch and launders Aspose.Cells exceptions into
-/// <see cref="EngineOpException"/>; each op's work lives in a mapper.
+/// routes each operation to its mapper, which does the work and returns the count of cells it
+/// touched where that is meaningful, and launders Aspose.Cells exceptions into
+/// <see cref="EngineOpException"/>.
 /// </summary>
-internal static class OpsExecutor
+internal sealed class OpsExecutor : IOpHandler<long?>
 {
+    private readonly Workbook _workbook;
+    private readonly IReadOnlyDictionary<string, string>? _secrets;
+    private readonly InputResourceScope _inputs;
+
+    private OpsExecutor(Workbook workbook, IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs)
+    {
+        _workbook = workbook;
+        _secrets = secrets;
+        _inputs = inputs;
+    }
+
     public static IReadOnlyList<BoundedOperationOutcome> Execute(Workbook workbook, OpsBatch batch, bool bestEffort,
-        IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs, ResourceBudgetLedger budgets) =>
-        BoundedOperationRunner.Run(
-            CellsOps.Catalog,
+        IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs, ResourceBudgetLedger budgets)
+    {
+        var executor = new OpsExecutor(workbook, secrets, inputs);
+        return BoundedOperationRunner.Run(
+            Op.Catalog,
             batch.Ops,
             bestEffort,
             budgets.Deadline,
@@ -26,31 +40,32 @@ internal static class OpsExecutor
                 // Charge the cells an operation writes before it writes them: a tiny op over a
                 // whole sheet must fail on the budget, not after billions of assignments.
                 budgets.Consume(CellsBudgetDomains.Cells, OpsFootprint.CellCost(op), "items", "edit");
-                return new AppliedOperation(Apply(workbook, op, secrets, inputs) ?? 0, OpsFootprint.OutcomeTargets(op));
+                return new AppliedOperation(executor.Run(op) ?? 0, OpsFootprint.OutcomeTargets(op));
             },
             (op, _) => OpsFootprint.OutcomeTargets(op));
+    }
 
     /// <summary>
     /// Applies one op, laundering the SDK's <see cref="CellsException"/> into the
     /// Core-visible <see cref="EngineOpException"/>; a mapper's own
     /// <c>CliException</c> propagates untouched for the runner to normalize.
     /// </summary>
-    private static long? Apply(Workbook workbook, Op op, IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs)
+    private long? Run(Op op)
     {
         try
         {
             if (ReadsComputedValues(op))
             {
-                workbook.CalculateFormula();
+                _workbook.CalculateFormula();
             }
 
-            return Dispatch(workbook, op, secrets, inputs);
+            return op.Accept(this);
         }
         catch (CellsException ex)
         {
             throw new EngineOpException(ex.Message, ex);
         }
-        finally { inputs.ThrowIfFailed(); }
+        finally { _inputs.ThrowIfFailed(); }
     }
 
     /// <summary>
@@ -65,117 +80,118 @@ internal static class OpsExecutor
         _ => false,
     };
 
-    /// <summary>Routes one op to its mapper; returns the touched cell count where meaningful.</summary>
-    private static long? Dispatch(Workbook workbook, Op op, IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs) => op switch
-    {
-        SetValuesOp or SetFormulaOp or ClearRangeOp or CopyRangeOp or FormatRangeOp
-            or MergeCellsOp or UnmergeCellsOp => DispatchCell(workbook, op),
-        InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
-            or ResizeRowsOp or ResizeColumnsOp => DispatchStructure(workbook, op),
-        AddSheetOp or RenameSheetOp or DeleteSheetOp or SetSheetVisibilityOp or MoveSheetOp or FreezePanesOp
-            or SetActiveSheetOp
-            => DispatchSheet(workbook, op),
-        CreateChartOp or CreatePivotOp or InsertImageOp or RefreshPivotOp or CreateTableOp
-            or UpdateChartOp or DeleteChartOp or AddSparklineOp => DispatchObject(workbook, op, inputs),
-        SetPageSetupOp or SetPrintAreaOp or SetAutoFilterOp or SortRangeOp or SetValidationOp
-            or DefineNameOp or DeleteNameOp or ClearValidationOp or AddConditionalFormatOp
-            or ClearConditionalFormatsOp or SetBordersOp => DispatchData(workbook, op),
-        AddCommentOp or EditCommentOp or DeleteCommentOp or ProtectSheetOp or UnprotectSheetOp
-            or GroupRowsOp or UngroupRowsOp or GroupColumnsOp or UngroupColumnsOp or RemoveDuplicatesOp
-            or ProtectWorkbookOp or UnprotectWorkbookOp or SetHyperlinkOp or RemoveHyperlinkOp
-            => DispatchReview(workbook, op, secrets),
-        SetDefaultFontOp or SetTabColorOp or SetSheetViewOp => DispatchLook(workbook, op),
-        _ => throw new InvalidOperationException($"Unhandled op type {op.GetType().Name}."),
-    };
+    private Worksheet Sheet(Op op) => Sheets.Resolve(_workbook, op);
 
-    private static long? DispatchCell(Workbook workbook, Op op) => op switch
-    {
-        SetValuesOp setValues => CellOps.SetValues(Sheets.Resolve(workbook, op), setValues),
-        SetFormulaOp setFormula => CellOps.SetFormula(Sheets.Resolve(workbook, op), setFormula),
-        ClearRangeOp clear => CellOps.Clear(Sheets.Resolve(workbook, op), clear),
-        CopyRangeOp copy => CellOps.Copy(Sheets.Resolve(workbook, op), copy),
-        FormatRangeOp format => CellOps.Format(workbook, Sheets.Resolve(workbook, op), format),
-        MergeCellsOp merge => CellOps.Merge(Sheets.Resolve(workbook, op), merge.Range, merged: true),
-        UnmergeCellsOp unmerge => CellOps.Merge(Sheets.Resolve(workbook, op), unmerge.Range, merged: false),
-        _ => throw new InvalidOperationException(),
-    };
+    public long? Apply(AddCommentOp operation) => CommentOps.AddComment(Sheet(operation), operation);
 
-    private static long? DispatchStructure(Workbook workbook, Op op) => op switch
-    {
-        InsertRowsOp insertRows => RowColumnOps.InsertRows(Sheets.Resolve(workbook, op), insertRows),
-        DeleteRowsOp deleteRows => RowColumnOps.DeleteRows(Sheets.Resolve(workbook, op), deleteRows),
-        InsertColumnsOp insertColumns => RowColumnOps.InsertColumns(Sheets.Resolve(workbook, op), insertColumns),
-        DeleteColumnsOp deleteColumns => RowColumnOps.DeleteColumns(Sheets.Resolve(workbook, op), deleteColumns),
-        ResizeRowsOp resizeRows => RowColumnOps.ResizeRows(Sheets.Resolve(workbook, op), resizeRows),
-        ResizeColumnsOp resizeColumns => RowColumnOps.ResizeColumns(Sheets.Resolve(workbook, op), resizeColumns),
-        _ => throw new InvalidOperationException(),
-    };
+    public long? Apply(AddConditionalFormatOp operation) => ConditionalFormatOps.AddConditionalFormat(Sheet(operation), operation);
 
-    private static long? DispatchSheet(Workbook workbook, Op op) => op switch
-    {
-        AddSheetOp addSheet => SheetOps.AddSheet(workbook, addSheet),
-        RenameSheetOp rename => SheetOps.RenameSheet(Sheets.Resolve(workbook, op), rename),
-        DeleteSheetOp => SheetOps.DeleteSheet(workbook, Sheets.Resolve(workbook, op)),
-        SetSheetVisibilityOp visibility => SheetOps.SetVisibility(Sheets.Resolve(workbook, op), visibility),
-        MoveSheetOp move => SheetOps.MoveSheet(Sheets.Resolve(workbook, op), move),
-        FreezePanesOp freeze => SheetOps.Freeze(Sheets.Resolve(workbook, op), freeze),
-        SetActiveSheetOp => SheetOps.SetActiveSheet(workbook, Sheets.Resolve(workbook, op)),
-        _ => throw new InvalidOperationException(),
-    };
+    public long? Apply(AddSheetOp operation) => SheetOps.AddSheet(_workbook, operation);
 
-    private static long? DispatchObject(Workbook workbook, Op op, InputResourceScope inputs) => op switch
-    {
-        CreateChartOp chart => ChartPivotOps.CreateChart(Sheets.Resolve(workbook, op), chart),
-        CreatePivotOp or RefreshPivotOp => ChartPivotOps.ApplyPivot(Sheets.Resolve(workbook, op), op),
-        InsertImageOp insertImage => ImageOps.InsertImage(Sheets.Resolve(workbook, op), insertImage, inputs),
-        CreateTableOp createTable => TableOps.CreateTable(Sheets.Resolve(workbook, op), createTable),
-        UpdateChartOp updateChart => ChartPivotOps.UpdateChart(Sheets.Resolve(workbook, op), updateChart),
-        DeleteChartOp deleteChart => ChartPivotOps.DeleteChart(Sheets.Resolve(workbook, op), deleteChart),
-        AddSparklineOp addSparkline => SparklineOps.AddSparkline(workbook, Sheets.Resolve(workbook, op), addSparkline),
-        _ => throw new InvalidOperationException(),
-    };
+    public long? Apply(AddSparklineOp operation) => SparklineOps.AddSparkline(_workbook, Sheet(operation), operation);
 
-    private static long? DispatchData(Workbook workbook, Op op) => op switch
-    {
-        SetPageSetupOp pageSetup => PageSetupOps.SetPageSetup(Sheets.Resolve(workbook, op), pageSetup),
-        SetPrintAreaOp printArea => PageSetupOps.SetPrintArea(Sheets.Resolve(workbook, op), printArea),
-        SetAutoFilterOp autoFilter => SortFilterOps.SetAutoFilter(Sheets.Resolve(workbook, op), autoFilter),
-        SortRangeOp sort => SortFilterOps.SortRange(workbook, Sheets.Resolve(workbook, op), sort),
-        SetValidationOp validation => ValidationOps.SetValidation(Sheets.Resolve(workbook, op), validation),
-        DefineNameOp defineName => NameOps.DefineName(workbook, defineName),
-        DeleteNameOp deleteName => NameOps.DeleteName(workbook, deleteName),
-        ClearValidationOp clearValidation => ValidationOps.ClearValidation(Sheets.Resolve(workbook, op), clearValidation),
-        AddConditionalFormatOp addConditional => ConditionalFormatOps.AddConditionalFormat(Sheets.Resolve(workbook, op), addConditional),
-        ClearConditionalFormatsOp clearConditional => ConditionalFormatOps.ClearConditionalFormats(Sheets.Resolve(workbook, op), clearConditional),
-        SetBordersOp setBorders => BorderOps.SetBorders(workbook, Sheets.Resolve(workbook, op), setBorders),
-        _ => throw new InvalidOperationException(),
-    };
+    public long? Apply(ClearConditionalFormatsOp operation) => ConditionalFormatOps.ClearConditionalFormats(Sheet(operation), operation);
 
-    private static long? DispatchReview(Workbook workbook, Op op, IReadOnlyDictionary<string, string>? secrets) => op switch
-    {
-        AddCommentOp addComment => CommentOps.AddComment(Sheets.Resolve(workbook, op), addComment),
-        EditCommentOp editComment => CommentOps.EditComment(Sheets.Resolve(workbook, op), editComment),
-        DeleteCommentOp deleteComment => CommentOps.DeleteComment(Sheets.Resolve(workbook, op), deleteComment),
-        ProtectSheetOp protect => ProtectOps.ProtectSheet(Sheets.Resolve(workbook, op), protect, secrets),
-        UnprotectSheetOp unprotect => ProtectOps.UnprotectSheet(Sheets.Resolve(workbook, op), unprotect, secrets),
-        GroupRowsOp groupRows => OutlineOps.GroupRows(Sheets.Resolve(workbook, op), groupRows),
-        UngroupRowsOp ungroupRows => OutlineOps.UngroupRows(Sheets.Resolve(workbook, op), ungroupRows),
-        GroupColumnsOp groupColumns => OutlineOps.GroupColumns(Sheets.Resolve(workbook, op), groupColumns),
-        UngroupColumnsOp ungroupColumns => OutlineOps.UngroupColumns(Sheets.Resolve(workbook, op), ungroupColumns),
-        RemoveDuplicatesOp removeDuplicates => DedupeOps.RemoveDuplicates(Sheets.Resolve(workbook, op), removeDuplicates),
-        ProtectWorkbookOp protectWorkbook => ProtectOps.ProtectWorkbook(workbook, protectWorkbook, secrets),
-        UnprotectWorkbookOp unprotectWorkbook => ProtectOps.UnprotectWorkbook(workbook, unprotectWorkbook, secrets),
-        SetHyperlinkOp setHyperlink => HyperlinkOps.SetHyperlink(Sheets.Resolve(workbook, op), setHyperlink),
-        RemoveHyperlinkOp removeHyperlink => HyperlinkOps.RemoveHyperlink(Sheets.Resolve(workbook, op), removeHyperlink),
-        _ => throw new InvalidOperationException(),
-    };
+    public long? Apply(ClearRangeOp operation) => CellOps.Clear(Sheet(operation), operation);
 
-    private static long? DispatchLook(Workbook workbook, Op op) => op switch
-    {
-        // Workbook-scoped: sheet resolution is deliberately skipped.
-        SetDefaultFontOp setDefaultFont => LookOps.SetDefaultFont(workbook, setDefaultFont),
-        SetTabColorOp setTabColor => LookOps.SetTabColor(Sheets.Resolve(workbook, op), setTabColor),
-        SetSheetViewOp setSheetView => LookOps.SetSheetView(Sheets.Resolve(workbook, op), setSheetView),
-        _ => throw new InvalidOperationException(),
-    };
+    public long? Apply(ClearValidationOp operation) => ValidationOps.ClearValidation(Sheet(operation), operation);
+
+    public long? Apply(CopyRangeOp operation) => CellOps.Copy(Sheet(operation), operation);
+
+    public long? Apply(CreateChartOp operation) => ChartPivotOps.CreateChart(Sheet(operation), operation);
+
+    public long? Apply(CreatePivotOp operation) => ChartPivotOps.CreatePivot(Sheet(operation), operation);
+
+    public long? Apply(CreateTableOp operation) => TableOps.CreateTable(Sheet(operation), operation);
+
+    public long? Apply(DefineNameOp operation) => NameOps.DefineName(_workbook, operation);
+
+    public long? Apply(DeleteChartOp operation) => ChartPivotOps.DeleteChart(Sheet(operation), operation);
+
+    public long? Apply(DeleteColumnsOp operation) => RowColumnOps.DeleteColumns(Sheet(operation), operation);
+
+    public long? Apply(DeleteCommentOp operation) => CommentOps.DeleteComment(Sheet(operation), operation);
+
+    public long? Apply(DeleteNameOp operation) => NameOps.DeleteName(_workbook, operation);
+
+    public long? Apply(DeleteRowsOp operation) => RowColumnOps.DeleteRows(Sheet(operation), operation);
+
+    public long? Apply(DeleteSheetOp operation) => SheetOps.DeleteSheet(_workbook, Sheet(operation));
+
+    public long? Apply(EditCommentOp operation) => CommentOps.EditComment(Sheet(operation), operation);
+
+    public long? Apply(FormatRangeOp operation) => CellOps.Format(_workbook, Sheet(operation), operation);
+
+    public long? Apply(FreezePanesOp operation) => SheetOps.Freeze(Sheet(operation), operation);
+
+    public long? Apply(GroupColumnsOp operation) => OutlineOps.GroupColumns(Sheet(operation), operation);
+
+    public long? Apply(GroupRowsOp operation) => OutlineOps.GroupRows(Sheet(operation), operation);
+
+    public long? Apply(InsertColumnsOp operation) => RowColumnOps.InsertColumns(Sheet(operation), operation);
+
+    public long? Apply(InsertImageOp operation) => ImageOps.InsertImage(Sheet(operation), operation, _inputs);
+
+    public long? Apply(InsertRowsOp operation) => RowColumnOps.InsertRows(Sheet(operation), operation);
+
+    public long? Apply(MergeCellsOp operation) => CellOps.Merge(Sheet(operation), operation.Range, merged: true);
+
+    public long? Apply(MoveSheetOp operation) => SheetOps.MoveSheet(Sheet(operation), operation);
+
+    public long? Apply(ProtectSheetOp operation) => ProtectOps.ProtectSheet(Sheet(operation), operation, _secrets);
+
+    public long? Apply(ProtectWorkbookOp operation) => ProtectOps.ProtectWorkbook(_workbook, operation, _secrets);
+
+    public long? Apply(RefreshPivotOp operation) => ChartPivotOps.RefreshPivot(Sheet(operation), operation);
+
+    public long? Apply(RemoveDuplicatesOp operation) => DedupeOps.RemoveDuplicates(Sheet(operation), operation);
+
+    public long? Apply(RemoveHyperlinkOp operation) => HyperlinkOps.RemoveHyperlink(Sheet(operation), operation);
+
+    public long? Apply(RenameSheetOp operation) => SheetOps.RenameSheet(Sheet(operation), operation);
+
+    public long? Apply(ResizeColumnsOp operation) => RowColumnOps.ResizeColumns(Sheet(operation), operation);
+
+    public long? Apply(ResizeRowsOp operation) => RowColumnOps.ResizeRows(Sheet(operation), operation);
+
+    public long? Apply(SetActiveSheetOp operation) => SheetOps.SetActiveSheet(_workbook, Sheet(operation));
+
+    public long? Apply(SetAutoFilterOp operation) => SortFilterOps.SetAutoFilter(Sheet(operation), operation);
+
+    public long? Apply(SetBordersOp operation) => BorderOps.SetBorders(_workbook, Sheet(operation), operation);
+
+    // Workbook-scoped: the operation's sheet is deliberately not resolved.
+    public long? Apply(SetDefaultFontOp operation) => LookOps.SetDefaultFont(_workbook, operation);
+
+    public long? Apply(SetFormulaOp operation) => CellOps.SetFormula(Sheet(operation), operation);
+
+    public long? Apply(SetHyperlinkOp operation) => HyperlinkOps.SetHyperlink(Sheet(operation), operation);
+
+    public long? Apply(SetPageSetupOp operation) => PageSetupOps.SetPageSetup(Sheet(operation), operation);
+
+    public long? Apply(SetPrintAreaOp operation) => PageSetupOps.SetPrintArea(Sheet(operation), operation);
+
+    public long? Apply(SetSheetViewOp operation) => LookOps.SetSheetView(Sheet(operation), operation);
+
+    public long? Apply(SetSheetVisibilityOp operation) => SheetOps.SetVisibility(Sheet(operation), operation);
+
+    public long? Apply(SetTabColorOp operation) => LookOps.SetTabColor(Sheet(operation), operation);
+
+    public long? Apply(SetValidationOp operation) => ValidationOps.SetValidation(Sheet(operation), operation);
+
+    public long? Apply(SetValuesOp operation) => CellOps.SetValues(Sheet(operation), operation);
+
+    public long? Apply(SortRangeOp operation) => SortFilterOps.SortRange(_workbook, Sheet(operation), operation);
+
+    public long? Apply(UngroupColumnsOp operation) => OutlineOps.UngroupColumns(Sheet(operation), operation);
+
+    public long? Apply(UngroupRowsOp operation) => OutlineOps.UngroupRows(Sheet(operation), operation);
+
+    public long? Apply(UnmergeCellsOp operation) => CellOps.Merge(Sheet(operation), operation.Range, merged: false);
+
+    public long? Apply(UnprotectSheetOp operation) => ProtectOps.UnprotectSheet(Sheet(operation), operation, _secrets);
+
+    public long? Apply(UnprotectWorkbookOp operation) => ProtectOps.UnprotectWorkbook(_workbook, operation, _secrets);
+
+    public long? Apply(UpdateChartOp operation) => ChartPivotOps.UpdateChart(Sheet(operation), operation);
 }

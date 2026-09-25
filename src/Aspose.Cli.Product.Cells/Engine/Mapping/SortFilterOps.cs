@@ -9,7 +9,7 @@ internal static class SortFilterOps
 {
     public static long? SetAutoFilter(Worksheet sheet, SetAutoFilterOp op)
     {
-        if (op.Off is true)
+        if (op.Off)
         {
             sheet.RemoveAutoFilter();
             return null;
@@ -26,7 +26,7 @@ internal static class SortFilterOps
 
         DataSorter sorter = workbook.DataSorter;
         sorter.Clear();
-        sorter.HasHeaders = op.HasHeader is true;
+        sorter.HasHeaders = op.HasHeader;
 
         foreach (SortKey key in op.By)
         {

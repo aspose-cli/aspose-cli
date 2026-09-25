@@ -28,9 +28,11 @@ most likely fix. Read the hint first; this page adds background.
 - **SHEET_NOT_FOUND** — `error.details.available` lists every sheet,
   exactly spelled. Sheet names match case-insensitively, as in Excel
   (`data` finds `Data`); results report the stored spelling.
-- **RANGE_INVALID** — supported forms: `C5`, `B2:D10`, `Sales!A1:C10`,
-  `'My Sheet'!A1:C10`. Whole-row/column specs (`A:A`, `1:3`) are rejected
-  by design: give explicit bounds so output stays budgetable.
+- **RANGE_INVALID** — a command's range, such as `--range`; supported forms:
+  `C5`, `B2:D10`, `Sales!A1:C10`, `'My Sheet'!A1:C10`. Whole-row/column specs
+  (`A:A`, `1:3`) are rejected by design: give explicit bounds so output stays
+  budgetable. In an ops document a malformed cell, range or column is
+  `OPS_INVALID` instead, with the field and the reason in `details.reason`.
 - **RANGE_TOO_LARGE** — you asked for more cells than `--max-cells`.
   Follow the hint's suggested first window and then the `next` commands,
   or raise `--max-cells` when you truly need everything.

@@ -28,7 +28,7 @@ internal static class TableOps
         }
 
         applyStyle?.Invoke(table);
-        if (op.TotalsRow is true)
+        if (op.TotalsRow)
         {
             table.ShowTotals = true;
         }

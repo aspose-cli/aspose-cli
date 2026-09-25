@@ -1,115 +1,118 @@
+using Aspose.Cli.Sdk.Operations;
+
 namespace Aspose.Cli.Product.Cells.Contracts;
 
-// Ops that operate at the sheet level (add, rename, delete, visibility, panes).
+// Ops that operate at the sheet level (add, rename, delete, visibility, panes, page layout).
 
 /// <summary>Adds a sheet.</summary>
-public sealed record AddSheetOp() : Op
+[Operation("add_sheet")]
+public sealed record AddSheetOp : Op
 {
-    /// <summary>Name of the new sheet.</summary>
-    public required string Name { get; init; }
+    /// <summary>The name of the new sheet.</summary>
+    [Pattern(@"\S")] public required string Name { get; init; }
 
-    /// <summary>Zero-based position; appended when omitted.</summary>
-    public int? Position { get; init; }
+    /// <summary>The zero-based position; appended when omitted.</summary>
+    [Minimum(0)] public int? Position { get; init; }
 }
 
-/// <summary>Renames a sheet (the op's <c>sheet</c> field is the current name).</summary>
-public sealed record RenameSheetOp() : Op
+/// <summary>Renames the sheet the operation's sheet field names.</summary>
+[Operation("rename_sheet")]
+[AtLeastOneOf("sheet")]
+public sealed record RenameSheetOp : Op
 {
     /// <summary>The new name.</summary>
-    public required string To { get; init; }
+    [Pattern(@"\S")] public required string To { get; init; }
 }
 
-/// <summary>Deletes a sheet (the op's <c>sheet</c> field names it).</summary>
-public sealed record DeleteSheetOp() : Op;
+/// <summary>Deletes the sheet the operation's sheet field names.</summary>
+[Operation("delete_sheet")]
+[AtLeastOneOf("sheet")]
+public sealed record DeleteSheetOp : Op;
 
-/// <summary>Hides or shows a sheet (the op's <c>sheet</c> field names it).</summary>
-public sealed record SetSheetVisibilityOp() : Op
+/// <summary>Hides or shows the sheet the operation's sheet field names.</summary>
+[Operation("set_sheet_visibility")]
+[AtLeastOneOf("sheet")]
+public sealed record SetSheetVisibilityOp : Op
 {
-    /// <summary><c>true</c> hides the sheet; <c>false</c> shows it.</summary>
+    /// <summary>Whether the sheet is hidden.</summary>
     public required bool Hidden { get; init; }
 }
 
 /// <summary>
-/// Makes the explicitly named visible sheet the workbook's active sheet.
-/// The choice survives save/reopen and becomes the initial HTML preview tab.
+/// Makes the visible sheet the operation's sheet field names the active sheet. The choice
+/// survives saving and is the initial tab of the HTML preview.
 /// </summary>
-public sealed record SetActiveSheetOp() : Op;
+[Operation("set_active_sheet")]
+[AtLeastOneOf("sheet")]
+public sealed record SetActiveSheetOp : Op;
 
 /// <summary>
-/// Moves a sheet to a new position in the tab order (the op's <c>sheet</c>
-/// field names it). Cross-sheet and 3-D references re-scope to the new order
-/// exactly as they would in Excel.
+/// Moves the sheet the operation's sheet field names to a position in the tab order.
+/// Cross-sheet and 3-D references follow the new order as they would in Excel.
 /// </summary>
-public sealed record MoveSheetOp() : Op
+[Operation("move_sheet")]
+[AtLeastOneOf("sheet")]
+public sealed record MoveSheetOp : Op
 {
-    /// <summary>
-    /// Zero-based destination index in the tab order; a value past the last
-    /// sheet moves it to the end.
-    /// </summary>
-    public required int Position { get; init; }
+    /// <summary>The zero-based destination in the tab order; a value past the last sheet moves it to the end.</summary>
+    [Minimum(0)] public required int Position { get; init; }
 }
 
-/// <summary>
-/// Freezes panes above and left of a cell (<c>B2</c> freezes row 1 and
-/// column A); <c>A1</c> unfreezes.
-/// </summary>
-public sealed record FreezePanesOp() : Op
+/// <summary>Freezes the panes above and left of a cell: B2 freezes row 1 and column A, and A1 unfreezes.</summary>
+[Operation("freeze_panes")]
+public sealed record FreezePanesOp : Op
 {
     /// <summary>The anchor cell.</summary>
-    public required string Cell { get; init; }
+    [A1Cell] public required string Cell { get; init; }
 }
 
 /// <summary>
-/// Sets page layout for printing and PDF export. Only the fields present are
-/// applied; the rest of the sheet's page setup is preserved.
+/// Sets the page layout for printing and PDF export: at least one field, and margins set at
+/// least one side. Only the fields present are applied; the rest of the page setup is preserved.
 /// </summary>
-public sealed record SetPageSetupOp() : Op
+[Operation("set_page_setup")]
+[AtLeastOneOf("orientation", "paperSize", "fitToWidth", "fitToHeight", "scale", "margins", "header", "footer")]
+public sealed record SetPageSetupOp : Op
 {
-    /// <summary>Page orientation; one of <see cref="PageOrientations"/>.</summary>
-    public string? Orientation { get; init; }
+    [AllowedValues(typeof(PageOrientations))] public string? Orientation { get; init; }
 
-    /// <summary>Paper size; one of <see cref="PaperSizes"/>.</summary>
-    public string? PaperSize { get; init; }
+    [AllowedValues(typeof(PaperSizes))] public string? PaperSize { get; init; }
 
-    /// <summary>Fit the printout to this many pages wide (0 = automatic).</summary>
-    public int? FitToWidth { get; init; }
+    /// <summary>The number of pages the printout fits across; 0 is automatic.</summary>
+    [Minimum(0)] public int? FitToWidth { get; init; }
 
-    /// <summary>Fit the printout to this many pages tall (0 = automatic).</summary>
-    public int? FitToHeight { get; init; }
+    /// <summary>The number of pages the printout fits down; 0 is automatic.</summary>
+    [Minimum(0)] public int? FitToHeight { get; init; }
 
-    /// <summary>Zoom percentage (10-400); ignored when fit-to-page is set.</summary>
-    public int? Scale { get; init; }
+    /// <summary>The zoom percentage; ignored when the printout fits to pages.</summary>
+    [Minimum(10), Maximum(400)] public int? Scale { get; init; }
 
-    /// <summary>Page margins in inches.</summary>
-    public MarginsData? Margins { get; init; }
+    public Margins? Margins { get; init; }
 
-    /// <summary>Center header text, with Excel codes like <c>&amp;P</c> (page) and <c>&amp;N</c> (pages).</summary>
+    /// <summary>The center header text, with Excel codes such as &amp;P (page) and &amp;N (pages).</summary>
     public string? Header { get; init; }
 
-    /// <summary>Center footer text, with Excel codes like <c>&amp;P</c> and <c>&amp;N</c>.</summary>
+    /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N.</summary>
     public string? Footer { get; init; }
 }
 
-/// <summary>Page margins in inches; only the sides present are applied.</summary>
-public sealed record MarginsData
+/// <summary>Page margins in inches; only the sides present are applied, and at least one is set.</summary>
+[MinProperties(1)]
+public sealed record Margins
 {
-    /// <summary>Top margin in inches.</summary>
-    public double? Top { get; init; }
+    [Minimum(0)] public double? Top { get; init; }
 
-    /// <summary>Bottom margin in inches.</summary>
-    public double? Bottom { get; init; }
+    [Minimum(0)] public double? Bottom { get; init; }
 
-    /// <summary>Left margin in inches.</summary>
-    public double? Left { get; init; }
+    [Minimum(0)] public double? Left { get; init; }
 
-    /// <summary>Right margin in inches.</summary>
-    public double? Right { get; init; }
+    [Minimum(0)] public double? Right { get; init; }
 
-    /// <summary>Distance from the top of the page to the header, in inches.</summary>
-    public double? Header { get; init; }
+    /// <summary>The distance from the top of the page to the header.</summary>
+    [Minimum(0)] public double? Header { get; init; }
 
-    /// <summary>Distance from the bottom of the page to the footer, in inches.</summary>
-    public double? Footer { get; init; }
+    /// <summary>The distance from the bottom of the page to the footer.</summary>
+    [Minimum(0)] public double? Footer { get; init; }
 }
 
 /// <summary>Accepted values of <see cref="SetPageSetupOp.Orientation"/>.</summary>
@@ -117,9 +120,6 @@ public static class PageOrientations
 {
     public const string Portrait = "portrait";
     public const string Landscape = "landscape";
-
-    /// <summary>Every orientation, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Portrait, Landscape];
 }
 
 /// <summary>Accepted values of <see cref="SetPageSetupOp.PaperSize"/>.</summary>
@@ -131,23 +131,30 @@ public static class PaperSizes
     public const string A4 = "a4";
     public const string A5 = "a5";
     public const string Tabloid = "tabloid";
-
-    /// <summary>Every paper size, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Letter, Legal, A3, A4, A5, Tabloid];
 }
 
 /// <summary>
-/// Sets the print area of a sheet and its repeating titles. Titles alone keep the
-/// current print area; an op with no fields clears it.
+/// Sets the print area of a sheet and the rows and columns repeated on every printed page.
+/// Titles alone keep the current print area; an operation with no fields clears it.
 /// </summary>
-public sealed record SetPrintAreaOp() : Op
+[Operation("set_print_area")]
+public sealed record SetPrintAreaOp : Op
 {
-    /// <summary>The print area, e.g. <c>A1:H50</c>.</summary>
-    public string? Range { get; init; }
+    /// <summary>The print area, such as A1:H50.</summary>
+    [A1Range] public string? Range { get; init; }
 
-    /// <summary>Rows repeated on every printed page, e.g. <c>1:2</c> or <c>1</c>.</summary>
-    public string? TitleRows { get; init; }
+    /// <summary>The rows repeated on every printed page, such as 1:2 or 1.</summary>
+    [A1RowBand] public string? TitleRows { get; init; }
 
-    /// <summary>Columns repeated on every printed page, e.g. <c>A:B</c> or <c>A</c>.</summary>
-    public string? TitleColumns { get; init; }
+    /// <summary>The columns repeated on every printed page, such as A:B or A.</summary>
+    [A1ColumnBand] public string? TitleColumns { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated() =>
+        // Titles take Excel's absolute band form ($1:$2, $A:$B), exactly what the engine stores.
+        this with
+        {
+            TitleRows = TitleRows is { } rows ? A1.ParseRowBand(rows) : null,
+            TitleColumns = TitleColumns is { } columns ? A1.ParseColumnBand(columns) : null,
+        };
 }

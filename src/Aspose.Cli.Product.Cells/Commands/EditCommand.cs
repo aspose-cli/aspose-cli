@@ -14,7 +14,7 @@ internal static class EditCommand
 {
     private static readonly BoundedEditDefinition<Op, OpsBatch> Definition = new()
     {
-        Catalog = CellsOps.Catalog,
+        Catalog = Op.Catalog,
         Contracts = ProductJsonContext.Definition,
         SetDirectives = new(
             "Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. "
@@ -24,17 +24,6 @@ internal static class EditCommand
             SetDirectiveParser.Parse,
             static ops => new OpsBatch { Ops = ops }),
         VerifyDescription = "Verify the staged output and report its cell changes and formula errors.",
-        NormalizePaths = static (op, paths) => op is InsertImageOp image
-            ? image with { Path = paths.ResolveInput(image.Path) }
-            : op,
-        SecretVariables = static op => op switch
-        {
-            ProtectSheetOp value => [value.PasswordEnv],
-            UnprotectSheetOp value => [value.PasswordEnv],
-            ProtectWorkbookOp value => [value.PasswordEnv],
-            UnprotectWorkbookOp value => [value.PasswordEnv],
-            _ => [],
-        },
     };
 
     public static Command Create(IProductCommandHost<IWorkbookEngine> host)

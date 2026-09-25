@@ -59,7 +59,7 @@ internal static class CellOps
         CellArea area = CellArea.CreateCellArea(
             range.Start.Row, range.Start.Column, range.End.Row, range.End.Column);
 
-        switch (op.What ?? ClearTargets.Contents)
+        switch (op.What)
         {
             case ClearTargets.Formats:
                 sheet.Cells.ClearFormats(area);

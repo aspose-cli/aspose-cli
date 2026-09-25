@@ -70,9 +70,9 @@ public sealed class CellsModuleTests
     [Fact]
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
-            CellsOps.Catalog.Names.Order(StringComparer.Ordinal),
+            Op.Catalog.Names.Order(StringComparer.Ordinal),
             CellsContractSamples.Ops.Ops
-                .Select(CellsOps.Catalog.NameOf)
+                .Select(Op.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 
     [Fact]
@@ -151,5 +151,5 @@ public sealed class CellsModuleTests
     }
 
     private static OpsBatch ParseOps(string json) =>
-        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

@@ -23,7 +23,7 @@ internal static class ProtectOps
         }
 
         Protection protection = sheet.Protection;
-        foreach (string action in op.Allow ?? [])
+        foreach (string action in op.Allow)
         {
             Allow(protection, action);
         }

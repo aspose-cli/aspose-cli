@@ -395,7 +395,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
         workbook.Worksheets.Cast<Worksheet>().Select(static sheet => sheet.Name).ToArray();
 
     private static OpsBatch Parse(string json) =>
-        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
     private EditResult Apply(string path, string operations, string output) =>
         _fixture.Engine.ApplyOps(

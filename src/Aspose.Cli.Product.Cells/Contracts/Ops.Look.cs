@@ -1,45 +1,51 @@
+using Aspose.Cli.Sdk.Operations;
+
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Workbook and sheet cosmetics: default font, tab colors, on-screen view.
 
 /// <summary>
-/// Sets the workbook default font. Workbook-scoped: the op's <c>sheet</c> is
-/// ignored. This changes the Normal style that every unstyled cell derives
-/// its font from AND the unit that column widths are measured in — call it
-/// FIRST in a new workbook, before content and column widths, so later
-/// widths are chosen against the font that will actually render. Cells with
-/// an explicitly set font keep it.
+/// Sets the workbook default font; the operation's sheet is ignored. It changes the Normal
+/// style every unstyled cell derives its font from and the unit column widths are measured in,
+/// so set it first in a new workbook, before content and column widths. Cells with an explicit
+/// font keep it.
 /// </summary>
-public sealed record SetDefaultFontOp() : Op
+[Operation("set_default_font")]
+public sealed record SetDefaultFontOp : Op
 {
-    /// <summary>Font family name, e.g. <c>Calibri</c>.</summary>
-    public required string Name { get; init; }
+    /// <summary>The font family name, such as Calibri; surrounding spaces are removed.</summary>
+    [Pattern(@"\S")] public required string Name { get; init; }
 
-    /// <summary>Font size in points (1–409); unchanged when omitted.</summary>
-    public double? Size { get; init; }
+    /// <summary>The font size in points; unchanged when omitted.</summary>
+    [Minimum(1), Maximum(409)] public double? Size { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated() => this with { Name = Name.Trim() };
 }
 
-/// <summary>Sets or removes a sheet's tab color.</summary>
-public sealed record SetTabColorOp() : Op
+/// <summary>Sets a sheet's tab color, or removes it when color is omitted.</summary>
+[Operation("set_tab_color")]
+public sealed record SetTabColorOp : Op
 {
-    /// <summary>Tab color as <c>#RRGGBB</c>; omit to remove the tab color.</summary>
-    public string? Color { get; init; }
+    /// <summary>The tab color; omitted removes it.</summary>
+    [HexColor] public string? Color { get; init; }
 }
 
 /// <summary>
-/// Adjusts a sheet's on-screen view: gridline visibility, zoom and row/column
-/// headings. Only the fields present are applied. These are view settings —
-/// they affect Excel and the live preview, not the printed page or the PNG
-/// <c>render</c> output (draw borders when a grid must appear in renders).
+/// Changes a sheet's on-screen view: at least one of gridlines, zoom and headings. These are
+/// view settings for Excel and the live preview, not for the printed page or rendered images;
+/// draw borders (set_borders) when a grid must appear in renders.
 /// </summary>
-public sealed record SetSheetViewOp() : Op
+[Operation("set_sheet_view")]
+[AtLeastOneOf("gridlines", "zoom", "headings")]
+public sealed record SetSheetViewOp : Op
 {
-    /// <summary>Show the on-screen gridlines; unchanged when omitted.</summary>
+    /// <summary>Whether the on-screen gridlines show; unchanged when omitted.</summary>
     public bool? Gridlines { get; init; }
 
-    /// <summary>Zoom percentage (10–400); unchanged when omitted.</summary>
-    public int? Zoom { get; init; }
+    /// <summary>The zoom percentage; unchanged when omitted.</summary>
+    [Minimum(10), Maximum(400)] public int? Zoom { get; init; }
 
-    /// <summary>Show the row numbers and column letters; unchanged when omitted.</summary>
+    /// <summary>Whether the row numbers and column letters show; unchanged when omitted.</summary>
     public bool? Headings { get; init; }
 }

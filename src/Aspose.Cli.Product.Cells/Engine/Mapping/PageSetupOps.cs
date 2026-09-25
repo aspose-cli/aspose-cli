@@ -88,7 +88,7 @@ internal static class PageSetupOps
         return null;
     }
 
-    private static void ApplyMargins(PageSetup pageSetup, MarginsData margins)
+    private static void ApplyMargins(PageSetup pageSetup, Margins margins)
     {
         if (margins.Top is { } top)
         {

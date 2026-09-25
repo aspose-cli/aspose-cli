@@ -1,36 +1,40 @@
+using Aspose.Cli.Sdk.Operations;
+
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 // Ops for review and collaboration: cell comments.
 
 /// <summary>Adds a note (comment) to a cell.</summary>
-public sealed record AddCommentOp() : Op
+[Operation("add_comment")]
+public sealed record AddCommentOp : Op
 {
-    /// <summary>The cell to annotate, e.g. <c>B2</c>.</summary>
-    public required string Cell { get; init; }
+    /// <summary>The cell to annotate, such as B2.</summary>
+    [A1Cell] public required string Cell { get; init; }
 
-    /// <summary>The comment text.</summary>
-    public required string Text { get; init; }
+    [MinLength(1)] public required string Text { get; init; }
 
-    /// <summary>Comment author; the engine default when omitted.</summary>
+    /// <summary>The comment author; the engine default when omitted.</summary>
     public string? Author { get; init; }
 }
 
-/// <summary>Replaces the text of an existing cell comment.</summary>
-public sealed record EditCommentOp() : Op
+/// <summary>Replaces the text of a cell's comment.</summary>
+[Operation("edit_comment")]
+public sealed record EditCommentOp : Op
 {
-    /// <summary>The cell whose comment to change.</summary>
-    public required string Cell { get; init; }
+    /// <summary>The cell whose comment changes.</summary>
+    [A1Cell] public required string Cell { get; init; }
 
     /// <summary>The new comment text.</summary>
-    public required string Text { get; init; }
+    [MinLength(1)] public required string Text { get; init; }
 
-    /// <summary>New author; unchanged when omitted.</summary>
+    /// <summary>The new author; unchanged when omitted.</summary>
     public string? Author { get; init; }
 }
 
-/// <summary>Removes a cell comment.</summary>
-public sealed record DeleteCommentOp() : Op
+/// <summary>Removes a cell's comment.</summary>
+[Operation("delete_comment")]
+public sealed record DeleteCommentOp : Op
 {
-    /// <summary>The cell whose comment to remove.</summary>
-    public required string Cell { get; init; }
+    /// <summary>The cell whose comment is removed.</summary>
+    [A1Cell] public required string Cell { get; init; }
 }

@@ -383,5 +383,5 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     }
 
     private static OpsBatch ParseOps(string json) =>
-        CellsOps.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

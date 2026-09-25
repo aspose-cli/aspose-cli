@@ -350,8 +350,9 @@ Workbook-scoped named ranges — the backbone of a maintainable model.
     { "op": "set_hyperlink", "cell": "A2", "target": "Summary!B10" }
     { "op": "remove_hyperlink", "cell": "A1" }
 
-Give **either** `url` (external) **or** `target` (an internal cell or range,
-sheet-qualified when it lies on another sheet; defined names are not accepted).
+Give **either** `url` (an absolute `http`, `https` or `mailto` URL) **or** `target`
+(an internal cell or range, sheet-qualified when it lies on another sheet; defined
+names are not accepted).
 `display` sets the cell text; `remove_hyperlink` clears the link covering a cell.
 
 ## Conditional formatting
