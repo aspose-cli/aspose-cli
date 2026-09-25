@@ -1,196 +1,1172 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/ops.schema.json",
+  "description": "The operation document of pdf edit --ops. Page numbers and ranges are 1-based and resolve against the document as the earlier operations left it. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.",
   "type": "object",
-  "required": ["ops"],
+  "required": [
+    "ops"
+  ],
   "additionalProperties": false,
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/ops.schema.json" },
-    "schemaVersion": { "const": 2 },
-    "ifMatch": { "type": "string", "pattern": "^[0-9A-Fa-f]{64}$" },
+    "schema": {
+      "description": "Optional; checked when present.",
+      "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/ops.schema.json"
+    },
+    "schemaVersion": {
+      "const": 2
+    },
+    "ifMatch": {
+      "description": "The SHA-256 fingerprint the input must still have; the edit fails when it changed.",
+      "type": "string",
+      "pattern": "^[0-9A-Fa-f]{64}$"
+    },
     "ops": {
+      "description": "Operations applied in order.",
       "type": "array",
       "minItems": 1,
       "maxItems": 256,
       "items": {
         "oneOf": [
           {
-            "type": "object", "required": ["op", "pages", "angle"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "rotate_pages" }, "pages": { "$ref": "#/$defs/pages" }, "angle": { "enum": [90, 180, 270] } }
+            "$ref": "#/$defs/add_attachment"
           },
           {
-            "type": "object", "required": ["op", "pages"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "delete_pages" }, "pages": { "$ref": "#/$defs/pages" } }
+            "$ref": "#/$defs/add_bookmark"
           },
           {
-            "type": "object", "required": ["op", "pages", "to"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "move_pages" }, "pages": { "$ref": "#/$defs/pages" }, "to": { "type": "integer", "minimum": 1 } }
+            "$ref": "#/$defs/add_footer_text"
           },
           {
-            "type": "object", "required": ["op", "path", "at"], "additionalProperties": false,
-            "properties": {
-              "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_pages_from" }, "path": { "type": "string", "minLength": 1 },
-              "pages": { "$ref": "#/$defs/pages" }, "at": { "type": "integer", "minimum": 1 },
-              "passwordEnv": { "type": "string", "minLength": 1 }
-            }
+            "$ref": "#/$defs/add_header_text"
           },
           {
-            "type": "object", "required": ["op", "at"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "insert_blank_page" }, "at": { "type": "integer", "minimum": 1 }, "size": { "$ref": "#/$defs/pageSize", "default": "A4" } }
+            "$ref": "#/$defs/add_link"
           },
           {
-            "type": "object", "required": ["op", "pages", "rect"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "crop_pages" }, "pages": { "$ref": "#/$defs/pages" }, "box": { "enum": ["media", "crop"], "default": "crop" }, "rect": { "$ref": "#/$defs/rect" } }
+            "$ref": "#/$defs/add_page_numbers"
           },
           {
-            "type": "object", "required": ["op", "pages", "size"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_page_size" }, "pages": { "$ref": "#/$defs/pages" }, "size": { "$ref": "#/$defs/pageSize" }, "scaleContent": { "type": "boolean", "default": false } }
+            "$ref": "#/$defs/add_stamp_image"
           },
           {
-            "type": "object", "required": ["op", "text"], "additionalProperties": false,
-            "properties": {
-              "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_watermark_text" }, "pages": { "$ref": "#/$defs/pages" }, "text": { "type": "string", "minLength": 1 },
-              "font": { "type": "string" }, "size": { "type": "number", "exclusiveMinimum": 0, "default": 48 },
-              "color": { "$ref": "#/$defs/color" }, "opacity": { "$ref": "#/$defs/opacity" },
-              "rotation": { "type": "number", "default": 45 }, "layer": { "$ref": "#/$defs/layer" }
-            }
+            "$ref": "#/$defs/add_watermark_image"
           },
           {
-            "type": "object", "required": ["op", "path"], "additionalProperties": false,
-            "properties": {
-              "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_watermark_image" }, "pages": { "$ref": "#/$defs/pages" },
-              "path": { "type": "string", "minLength": 1 }, "opacity": { "$ref": "#/$defs/opacity" },
-              "scale": { "type": "number", "exclusiveMinimum": 0, "default": 0.5 }, "layer": { "$ref": "#/$defs/layer" }
-            }
+            "$ref": "#/$defs/add_watermark_text"
           },
           {
-            "type": "object", "required": ["op"], "additionalProperties": false,
-            "properties": {
-              "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_page_numbers" }, "pages": { "$ref": "#/$defs/pages" },
-              "format": { "type": "string", "default": "Page {n} of {N}" }, "position": { "$ref": "#/$defs/position" },
-              "start": { "type": "integer", "minimum": 0, "default": 1 }, "font": { "type": "string" }
-            }
+            "$ref": "#/$defs/crop_pages"
           },
           {
-            "type": "object", "required": ["op", "text"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_header_text" }, "pages": { "$ref": "#/$defs/pages" }, "text": { "type": "string", "minLength": 1 }, "position": { "$ref": "#/$defs/position" }, "font": { "type": "string" } }
+            "$ref": "#/$defs/decrypt"
           },
           {
-            "type": "object", "required": ["op", "text"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_footer_text" }, "pages": { "$ref": "#/$defs/pages" }, "text": { "type": "string", "minLength": 1 }, "position": { "$ref": "#/$defs/position" }, "font": { "type": "string" } }
+            "$ref": "#/$defs/delete_bookmarks"
           },
           {
-            "type": "object", "required": ["op", "page", "path", "rect"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_stamp_image" }, "page": { "$ref": "#/$defs/page" }, "path": { "type": "string", "minLength": 1 }, "rect": { "$ref": "#/$defs/rect" } }
+            "$ref": "#/$defs/delete_pages"
           },
           {
-            "type": "object", "required": ["op", "page", "rect", "url"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_link" }, "page": { "$ref": "#/$defs/page" }, "rect": { "$ref": "#/$defs/rect" }, "url": { "type": "string", "format": "uri", "pattern": "^(https?://|mailto:)", "description": "An absolute http, https or mailto URL." } }
+            "$ref": "#/$defs/encrypt"
           },
           {
-            "type": "object", "required": ["op", "pattern"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "redact_text" }, "pattern": { "type": "string", "minLength": 1 }, "regex": { "type": "boolean", "default": false }, "pages": { "$ref": "#/$defs/pages" }, "fillColor": { "$ref": "#/$defs/color" } }
+            "$ref": "#/$defs/flatten_forms"
           },
           {
-            "type": "object", "required": ["op", "page", "rect"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "redact_area" }, "page": { "$ref": "#/$defs/page" }, "rect": { "$ref": "#/$defs/rect" }, "fillColor": { "$ref": "#/$defs/color" } }
+            "$ref": "#/$defs/insert_blank_page"
           },
           {
-            "type": "object", "required": ["op"], "additionalProperties": false,
-            "properties": {
-              "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_metadata" }, "title": { "type": "string" }, "author": { "type": "string" },
-              "subject": { "type": "string" }, "keywords": { "type": "string" },
-              "custom": { "type": "object", "additionalProperties": { "type": "string" } }
-            }
+            "$ref": "#/$defs/insert_pages_from"
           },
           {
-            "type": "object", "required": ["op"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "remove_metadata" }, "xmp": { "type": "boolean", "default": true }, "documentInfo": { "type": "boolean", "default": true } }
+            "$ref": "#/$defs/move_pages"
           },
           {
-            "type": "object", "required": ["op", "title", "page"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_bookmark" }, "title": { "type": "string", "minLength": 1 }, "page": { "$ref": "#/$defs/page" }, "parent": { "type": "string", "minLength": 1 } }
+            "$ref": "#/$defs/optimize"
           },
           {
-            "type": "object", "required": ["op"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "delete_bookmarks" }, "path": { "type": "string", "minLength": 1 }, "all": { "type": "boolean", "default": false } },
-            "oneOf": [{ "required": ["path"] }, { "required": ["all"], "properties": { "all": { "const": true } } }]
+            "$ref": "#/$defs/redact_area"
           },
           {
-            "type": "object", "required": ["op", "path"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "add_attachment" }, "path": { "type": "string", "minLength": 1 }, "name": { "type": "string", "minLength": 1 }, "description": { "type": "string" } }
+            "$ref": "#/$defs/redact_text"
           },
           {
-            "type": "object", "required": ["op", "name"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "remove_attachment" }, "name": { "type": "string", "minLength": 1 } }
+            "$ref": "#/$defs/remove_attachment"
           },
           {
-            "type": "object", "required": ["op", "ranges"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_page_labels" }, "ranges": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/pageLabel" } } }
+            "$ref": "#/$defs/remove_metadata"
           },
           {
-            "type": "object", "required": ["op", "name", "value"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "set_form_field" }, "name": { "type": "string", "minLength": 1 }, "value": { "type": "string" } }
+            "$ref": "#/$defs/rotate_pages"
           },
           {
-            "type": "object", "required": ["op"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "flatten_forms" }, "fields": { "type": "array", "minItems": 1, "items": { "type": "string", "minLength": 1 } }, "all": { "type": "boolean", "default": true } },
-            "oneOf": [{ "required": ["fields"] }, { "required": ["all"], "properties": { "all": { "const": true } } }]
+            "$ref": "#/$defs/set_form_field"
           },
           {
-            "type": "object", "required": ["op", "ownerPasswordEnv"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "encrypt" }, "userPasswordEnv": { "type": "string", "minLength": 1 }, "ownerPasswordEnv": { "type": "string", "minLength": 1 }, "permissions": { "$ref": "#/$defs/permissions" } }
+            "$ref": "#/$defs/set_metadata"
           },
           {
-            "type": "object", "required": ["op"], "additionalProperties": false,
-            "properties": { "id": { "$ref": "#/$defs/id" }, "op": { "const": "decrypt" } }
+            "$ref": "#/$defs/set_page_labels"
           },
           {
-            "type": "object", "required": ["op"], "additionalProperties": false,
-            "properties": {
-              "id": { "$ref": "#/$defs/id" }, "op": { "const": "optimize" }, "downsampleImagesDpi": { "type": "integer", "minimum": 36, "maximum": 1200 },
-              "imageQuality": { "type": "integer", "minimum": 1, "maximum": 100 },
-              "unembedFonts": { "type": "boolean", "default": false }, "removeUnusedObjects": { "type": "boolean", "default": true },
-              "compressStreams": { "type": "boolean", "default": true }
-            }
+            "$ref": "#/$defs/set_page_size"
           }
         ]
       }
     }
   },
   "$defs": {
-    "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$" },
-    "page": { "type": "integer", "minimum": 1 },
-    "pages": { "type": "string", "minLength": 1 },
-    "pageSize": { "enum": ["A3", "A4", "Letter", "Legal"] },
-    "color": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$", "default": "#000000" },
-    "opacity": { "type": "number", "minimum": 0, "maximum": 1, "default": 0.35 },
-    "layer": { "enum": ["over", "under"], "default": "over" },
-    "position": { "enum": ["top-left", "top-center", "top-right", "bottom-left", "bottom-center", "bottom-right"] },
-    "rect": {
-      "description": "Points relative to the current visible rotated page box, with a top-left origin.",
-      "type": "object", "required": ["x", "y", "width", "height"], "additionalProperties": false,
+    "id": {
+      "description": "A correlation id echoed in the result; op-0001 style ids are assigned when omitted.",
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$"
+    },
+    "add_attachment": {
+      "description": "Embeds a file as a document attachment.",
+      "type": "object",
+      "required": [
+        "op",
+        "path"
+      ],
+      "additionalProperties": false,
       "properties": {
-        "x": { "type": "number", "minimum": 0 }, "y": { "type": "number", "minimum": 0 },
-        "width": { "type": "number", "exclusiveMinimum": 0 }, "height": { "type": "number", "exclusiveMinimum": 0 }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_attachment"
+        },
+        "path": {
+          "description": "The file, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "name": {
+          "description": "The stable attachment name; the file name when omitted, never its local path.",
+          "type": "string",
+          "minLength": 1
+        },
+        "description": {
+          "type": "string"
+        }
       }
     },
-    "permissions": {
-      "type": "object", "additionalProperties": false,
+    "add_bookmark": {
+      "description": "Adds a bookmark that opens a page.",
+      "type": "object",
+      "required": [
+        "op",
+        "title",
+        "page"
+      ],
+      "additionalProperties": false,
       "properties": {
-        "print": { "type": "boolean", "default": false }, "copy": { "type": "boolean", "default": false },
-        "modify": { "type": "boolean", "default": false }, "annotate": { "type": "boolean", "default": false },
-        "fillForms": { "type": "boolean", "default": false }, "extractAccessibility": { "type": "boolean", "default": false },
-        "assemble": { "type": "boolean", "default": false }, "printHighResolution": { "type": "boolean", "default": false }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_bookmark"
+        },
+        "title": {
+          "type": "string",
+          "minLength": 1
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "parent": {
+          "description": "The slash-separated title path of the parent bookmark; a top-level bookmark when omitted.",
+          "type": "string",
+          "minLength": 1
+        }
       }
     },
-    "pageLabel": {
-      "type": "object", "required": ["startPage"], "additionalProperties": false,
+    "add_footer_text": {
+      "description": "Stamps text in the bottom margin of pages.",
+      "type": "object",
+      "required": [
+        "op",
+        "text"
+      ],
+      "additionalProperties": false,
       "properties": {
-        "startPage": { "type": "integer", "minimum": 1 },
-        "style": { "enum": ["arabic", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none"], "default": "arabic" },
-        "prefix": { "type": "string" }, "startingValue": { "type": "integer", "minimum": 0, "default": 1 }
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_footer_text"
+        },
+        "pages": {
+          "description": "The pages to stamp; every page when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "top-left",
+            "top-center",
+            "top-right",
+            "bottom-left",
+            "bottom-center",
+            "bottom-right"
+          ],
+          "default": "bottom-center"
+        },
+        "font": {
+          "description": "An installed font name; the default font when omitted.",
+          "type": "string"
+        }
       }
+    },
+    "add_header_text": {
+      "description": "Stamps text in the top margin of pages.",
+      "type": "object",
+      "required": [
+        "op",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_header_text"
+        },
+        "pages": {
+          "description": "The pages to stamp; every page when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "top-left",
+            "top-center",
+            "top-right",
+            "bottom-left",
+            "bottom-center",
+            "bottom-right"
+          ],
+          "default": "top-center"
+        },
+        "font": {
+          "description": "An installed font name; the default font when omitted.",
+          "type": "string"
+        }
+      }
+    },
+    "add_link": {
+      "description": "Adds a clickable link area to one page.",
+      "type": "object",
+      "required": [
+        "op",
+        "page",
+        "rect",
+        "url"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_link"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rect": {
+          "$ref": "#/$defs/pdfRectInput"
+        },
+        "url": {
+          "$ref": "#/$defs/webLink"
+        }
+      }
+    },
+    "add_page_numbers": {
+      "description": "Stamps page numbers in a page margin.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_page_numbers"
+        },
+        "pages": {
+          "description": "The pages to number; every page when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "format": {
+          "description": "The text; {n} is the number, counted over the selected pages from start, and {N} the document's page count.",
+          "type": "string",
+          "default": "Page {n} of {N}"
+        },
+        "position": {
+          "type": "string",
+          "enum": [
+            "top-left",
+            "top-center",
+            "top-right",
+            "bottom-left",
+            "bottom-center",
+            "bottom-right"
+          ],
+          "default": "bottom-center"
+        },
+        "start": {
+          "description": "The number of the first selected page.",
+          "type": "integer",
+          "minimum": 0,
+          "default": 1
+        },
+        "font": {
+          "description": "An installed font name; the default font when omitted.",
+          "type": "string"
+        }
+      }
+    },
+    "add_stamp_image": {
+      "description": "Stamps an image into a rectangle of one page.",
+      "type": "object",
+      "required": [
+        "op",
+        "page",
+        "path",
+        "rect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_stamp_image"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "path": {
+          "description": "The image, relative to the working directory; an SVG must not reference network resources.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "rect": {
+          "$ref": "#/$defs/pdfRectInput"
+        }
+      }
+    },
+    "add_watermark_image": {
+      "description": "Stamps an image across the middle of pages.",
+      "type": "object",
+      "required": [
+        "op",
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_watermark_image"
+        },
+        "pages": {
+          "description": "The pages to stamp; every page when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "path": {
+          "description": "The image, relative to the working directory; an SVG must not reference network resources.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.35
+        },
+        "scale": {
+          "description": "The zoom factor applied to the image.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 0.5
+        },
+        "layer": {
+          "type": "string",
+          "enum": [
+            "over",
+            "under"
+          ],
+          "default": "over"
+        }
+      }
+    },
+    "add_watermark_text": {
+      "description": "Stamps text across the middle of pages.",
+      "type": "object",
+      "required": [
+        "op",
+        "text"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "add_watermark_text"
+        },
+        "pages": {
+          "description": "The pages to stamp; every page when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "text": {
+          "type": "string",
+          "minLength": 1
+        },
+        "font": {
+          "description": "An installed font name; the default font when omitted.",
+          "type": "string"
+        },
+        "size": {
+          "description": "The font size in points.",
+          "type": "number",
+          "exclusiveMinimum": 0,
+          "default": 48
+        },
+        "color": {
+          "$ref": "#/$defs/color",
+          "default": "#808080"
+        },
+        "opacity": {
+          "type": "number",
+          "minimum": 0,
+          "maximum": 1,
+          "default": 0.35
+        },
+        "rotation": {
+          "description": "The angle in degrees, counterclockwise.",
+          "type": "number",
+          "default": 45
+        },
+        "layer": {
+          "type": "string",
+          "enum": [
+            "over",
+            "under"
+          ],
+          "default": "over"
+        }
+      }
+    },
+    "crop_pages": {
+      "description": "Crops pages to a rectangle.",
+      "type": "object",
+      "required": [
+        "op",
+        "pages",
+        "rect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "crop_pages"
+        },
+        "pages": {
+          "$ref": "#/$defs/pages"
+        },
+        "box": {
+          "description": "The page box to set: the visible crop box or the physical media box.",
+          "type": "string",
+          "enum": [
+            "media",
+            "crop"
+          ],
+          "default": "crop"
+        },
+        "rect": {
+          "$ref": "#/$defs/pdfRectInput"
+        }
+      }
+    },
+    "decrypt": {
+      "description": "Removes the document's encryption; an unencrypted document is unchanged.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "decrypt"
+        }
+      }
+    },
+    "delete_bookmarks": {
+      "description": "Deletes one bookmark with its children, or every bookmark.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "delete_bookmarks"
+        },
+        "path": {
+          "description": "The slash-separated title path of the bookmark.",
+          "type": "string",
+          "minLength": 1
+        },
+        "all": {
+          "description": "Whether every bookmark is deleted.",
+          "type": "boolean",
+          "default": false
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "path"
+              ]
+            },
+            {
+              "required": [
+                "all"
+              ],
+              "properties": {
+                "all": {
+                  "const": true
+                }
+              }
+            }
+          ]
+        }
+      ]
+    },
+    "delete_pages": {
+      "description": "Deletes pages; a PDF must keep at least one page.",
+      "type": "object",
+      "required": [
+        "op",
+        "pages"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "delete_pages"
+        },
+        "pages": {
+          "$ref": "#/$defs/pages"
+        }
+      }
+    },
+    "encrypt": {
+      "description": "Encrypts the document with AES-256; the published file needs the user password to open when one is set.",
+      "type": "object",
+      "required": [
+        "op",
+        "ownerPasswordEnv"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "encrypt"
+        },
+        "userPasswordEnv": {
+          "description": "The environment variable that holds the password to open the document; anyone can open it when omitted.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "ownerPasswordEnv": {
+          "description": "The environment variable that holds the owner password, which grants every permission.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "permissions": {
+          "$ref": "#/$defs/pdfPermissionsInput",
+          "default": {}
+        }
+      }
+    },
+    "flatten_forms": {
+      "description": "Flattens form fields into page content: the named fields, or every field.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "flatten_forms"
+        },
+        "fields": {
+          "description": "The full names of the fields to flatten; every field when omitted.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "insert_blank_page": {
+      "description": "Inserts one blank page.",
+      "type": "object",
+      "required": [
+        "op",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_blank_page"
+        },
+        "at": {
+          "description": "The 1-based position of the new page, at most the page count plus one.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "size": {
+          "$ref": "#/$defs/pageSize",
+          "default": "A4"
+        }
+      }
+    },
+    "insert_pages_from": {
+      "description": "Inserts pages of another PDF.",
+      "type": "object",
+      "required": [
+        "op",
+        "path",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "insert_pages_from"
+        },
+        "path": {
+          "description": "The source PDF, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "pages": {
+          "description": "The source pages; every page when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "at": {
+          "description": "The 1-based position of the first inserted page, at most the page count plus one.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "passwordEnv": {
+          "description": "The environment variable that holds the source PDF's password.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "move_pages": {
+      "description": "Moves pages so the first of them lands at a position of the current document.",
+      "type": "object",
+      "required": [
+        "op",
+        "pages",
+        "to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "move_pages"
+        },
+        "pages": {
+          "$ref": "#/$defs/pages"
+        },
+        "to": {
+          "description": "The 1-based position, counted before the move, at most the page count plus one.",
+          "type": "integer",
+          "minimum": 1
+        }
+      }
+    },
+    "optimize": {
+      "description": "Optimizes the document's resources; image options recompress images.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "optimize"
+        },
+        "downsampleImagesDpi": {
+          "description": "The largest image resolution kept, in dots per inch.",
+          "type": "integer",
+          "minimum": 36,
+          "maximum": 1200
+        },
+        "imageQuality": {
+          "description": "The JPEG quality of recompressed images.",
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 100
+        },
+        "unembedFonts": {
+          "type": "boolean",
+          "default": false
+        },
+        "removeUnusedObjects": {
+          "type": "boolean",
+          "default": true
+        },
+        "compressStreams": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "redact_area": {
+      "description": "Redacts a rectangle of one page.",
+      "type": "object",
+      "required": [
+        "op",
+        "page",
+        "rect"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "redact_area"
+        },
+        "page": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "rect": {
+          "$ref": "#/$defs/pdfRectInput"
+        },
+        "fillColor": {
+          "$ref": "#/$defs/color",
+          "default": "#000000"
+        }
+      }
+    },
+    "redact_text": {
+      "description": "Redacts every match of a text pattern in the extractable text; it does not perform OCR. A regular expression runs with a one-second timeout and must not match an empty string.",
+      "type": "object",
+      "required": [
+        "op",
+        "pattern"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "redact_text"
+        },
+        "pattern": {
+          "description": "The text to find, matched case-sensitively.",
+          "type": "string",
+          "minLength": 1
+        },
+        "regex": {
+          "description": "Whether the pattern is a .NET regular expression rather than literal text.",
+          "type": "boolean",
+          "default": false
+        },
+        "pages": {
+          "description": "The pages to search; every page when omitted.",
+          "$ref": "#/$defs/pages"
+        },
+        "fillColor": {
+          "$ref": "#/$defs/color",
+          "default": "#000000"
+        }
+      }
+    },
+    "remove_attachment": {
+      "description": "Removes a document attachment by name.",
+      "type": "object",
+      "required": [
+        "op",
+        "name"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "remove_attachment"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "remove_metadata": {
+      "description": "Removes document metadata.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "remove_metadata"
+        },
+        "xmp": {
+          "description": "Whether the XMP metadata stream is removed.",
+          "type": "boolean",
+          "default": true
+        },
+        "documentInfo": {
+          "description": "Whether the document information dictionary is cleared.",
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "rotate_pages": {
+      "description": "Rotates pages to an absolute angle.",
+      "type": "object",
+      "required": [
+        "op",
+        "pages",
+        "angle"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "rotate_pages"
+        },
+        "pages": {
+          "$ref": "#/$defs/pages"
+        },
+        "angle": {
+          "description": "The rotation in degrees, clockwise.",
+          "type": "integer",
+          "enum": [
+            90,
+            180,
+            270
+          ]
+        }
+      }
+    },
+    "set_form_field": {
+      "description": "Sets the value of one form field, named by its full name.",
+      "type": "object",
+      "required": [
+        "op",
+        "name",
+        "value"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_form_field"
+        },
+        "name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "value": {
+          "type": "string"
+        }
+      }
+    },
+    "set_metadata": {
+      "description": "Sets document information entries; omitted entries keep their values.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_metadata"
+        },
+        "title": {
+          "type": "string"
+        },
+        "author": {
+          "type": "string"
+        },
+        "subject": {
+          "type": "string"
+        },
+        "keywords": {
+          "type": "string"
+        },
+        "custom": {
+          "description": "Custom document information entries by name.",
+          "type": "object",
+          "additionalProperties": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "set_page_labels": {
+      "description": "Sets page-label ranges, which change navigation labels, not visible page text; each start page appears once.",
+      "type": "object",
+      "required": [
+        "op",
+        "ranges"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_page_labels"
+        },
+        "ranges": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "$ref": "#/$defs/pdfPageLabelRange"
+          }
+        }
+      }
+    },
+    "set_page_size": {
+      "description": "Sets pages to a named size.",
+      "type": "object",
+      "required": [
+        "op",
+        "pages",
+        "size"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_page_size"
+        },
+        "pages": {
+          "$ref": "#/$defs/pages"
+        },
+        "size": {
+          "$ref": "#/$defs/pageSize"
+        },
+        "scaleContent": {
+          "description": "Whether the content is scaled to the new size rather than kept at its position.",
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "color": {
+      "type": "string",
+      "pattern": "^#[0-9A-Fa-f]{6}$"
+    },
+    "pageSize": {
+      "type": "string",
+      "enum": [
+        "A3",
+        "A4",
+        "Letter",
+        "Legal"
+      ]
+    },
+    "pages": {
+      "type": "string",
+      "description": "1-based pages and ranges separated by commas, such as 1-3,7,9-; a range with no end runs to the last page, and a range must not end before it starts.",
+      "pattern": "^\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?(\\s*,\\s*0*[1-9][0-9]*(-(0*[1-9][0-9]*)?)?)*\\s*$"
+    },
+    "pdfPageLabelRange": {
+      "description": "One page-label range, which applies from its start page until the next range.",
+      "type": "object",
+      "required": [
+        "startPage"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "startPage": {
+          "description": "The 1-based page where the range starts.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "style": {
+          "type": "string",
+          "enum": [
+            "arabic",
+            "roman-upper",
+            "roman-lower",
+            "letters-upper",
+            "letters-lower",
+            "none"
+          ],
+          "default": "arabic"
+        },
+        "prefix": {
+          "description": "Text placed before each label value.",
+          "type": "string"
+        },
+        "startingValue": {
+          "description": "The label value of the start page.",
+          "type": "integer",
+          "minimum": 0,
+          "default": 1
+        }
+      }
+    },
+    "pdfPermissionsInput": {
+      "description": "What a reader may do without the owner password; everything omitted is denied.",
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "print": {
+          "type": "boolean",
+          "default": false
+        },
+        "copy": {
+          "type": "boolean",
+          "default": false
+        },
+        "modify": {
+          "type": "boolean",
+          "default": false
+        },
+        "annotate": {
+          "type": "boolean",
+          "default": false
+        },
+        "fillForms": {
+          "type": "boolean",
+          "default": false
+        },
+        "extractAccessibility": {
+          "type": "boolean",
+          "default": false
+        },
+        "assemble": {
+          "type": "boolean",
+          "default": false
+        },
+        "printHighResolution": {
+          "type": "boolean",
+          "default": false
+        }
+      }
+    },
+    "pdfRectInput": {
+      "description": "A rectangle in points (72 per inch) with a top-left origin, relative to the visible, rotated page box.",
+      "type": "object",
+      "required": [
+        "x",
+        "y",
+        "width",
+        "height"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "x": {
+          "description": "Distance from the left edge.",
+          "type": "number",
+          "minimum": 0
+        },
+        "y": {
+          "description": "Distance from the top edge.",
+          "type": "number",
+          "minimum": 0
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      }
+    },
+    "webLink": {
+      "type": "string",
+      "description": "An absolute http://, https:// or mailto: URL.",
+      "format": "uri",
+      "pattern": "^(http://|https://|mailto:)"
     }
   }
 }

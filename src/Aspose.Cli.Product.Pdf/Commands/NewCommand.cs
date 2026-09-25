@@ -22,7 +22,7 @@ internal static class NewCommand
         };
         var text = new Option<string?>("--from-text") { Description = "UTF-8 text or Markdown input file." }.WithInput(InputKind.File);
         var pageSize = new Option<string>("--page-size") { DefaultValueFactory = _ => "A4", Description = "A3, A4, Letter or Legal." }.WithInput(InputKind.None);
-        pageSize.AcceptOnlyFromAmong(PdfPageSizes.Names);
+        pageSize.AcceptOnlyFromAmong([.. PdfPageSizes.Names]);
         var margins = new Option<string>("--margins") { DefaultValueFactory = _ => "36", Description = "One value or top,right,bottom,left in points." }.WithInput(InputKind.None);
         return StandardCommand.Create(
             host,

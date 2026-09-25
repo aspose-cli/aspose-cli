@@ -1,34 +1,16 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Pdf.Contracts;
-using Aspose.Cli.Product.Pdf.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Operations;
-using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Pdf;
-using Aspose.Pdf.Annotations;
-using Aspose.Pdf.Devices;
-using Aspose.Pdf.Forms;
-using Aspose.Pdf.Optimization;
-using Aspose.Pdf.Text;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfMutationSupport;
-using PdfColor = Aspose.Pdf.Color;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Owns page structure and page geometry mutations.</summary>
-internal static class PdfPageMutationHandlers
+// Page structure and page geometry.
+internal sealed partial class PdfMutationHandlers
 {
-    internal static long Rotate(Document document, RotatePagesOp op, ISet<int> touched)
+    public long Apply(RotatePagesOp operation)
     {
-        IReadOnlyList<int> pages = Resolve(document, op.Pages);
-        Rotation rotation = op.Angle switch
+        IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
+        Rotation rotation = operation.Angle switch
         {
             90 => Rotation.on90,
             180 => Rotation.on180,
@@ -37,95 +19,90 @@ internal static class PdfPageMutationHandlers
         };
         foreach (int number in pages)
         {
-            document.Pages[number].Rotate = rotation;
-            touched.Add(number);
+            _document.Pages[number].Rotate = rotation;
+            _touched.Add(number);
         }
 
         return pages.Count;
     }
 
-    internal static long DeletePages(Document document, DeletePagesOp op)
+    public long Apply(DeletePagesOp operation)
     {
-        int[] pages = Resolve(document, op.Pages).ToArray();
-        if (pages.Length == document.Pages.Count)
+        int[] pages = Resolve(_document, operation.Pages).ToArray();
+        if (pages.Length == _document.Pages.Count)
         {
             throw new OperationInvalidException("A PDF must retain at least one page.");
         }
 
-        document.Pages.Delete(pages);
+        _document.Pages.Delete(pages);
         return pages.Length;
     }
 
-    internal static long MovePages(Document document, MovePagesOp op, ISet<int> touched)
+    public long Apply(MovePagesOp operation)
     {
-        int[] pages = Resolve(document, op.Pages).ToArray();
-        if (op.To > document.Pages.Count + 1)
+        int[] pages = Resolve(_document, operation.Pages).ToArray();
+        if (operation.To > _document.Pages.Count + 1)
         {
-            throw PageNotFound(op.To, document.Pages.Count + 1);
+            throw PageNotFound(operation.To, _document.Pages.Count + 1);
         }
 
-        using Document selected = Select(document, pages);
-        int before = pages.Count(page => page < op.To);
-        document.Pages.Delete(pages);
-        int at = Math.Clamp(op.To - before, 1, document.Pages.Count + 1);
-        document.Pages.Insert(at, selected.Pages.ToArray());
+        using Document selected = Select(_document, pages);
+        int before = pages.Count(page => page < operation.To);
+        _document.Pages.Delete(pages);
+        int at = Math.Clamp(operation.To - before, 1, _document.Pages.Count + 1);
+        _document.Pages.Insert(at, selected.Pages.ToArray());
         for (int index = 0; index < pages.Length; index++)
         {
-            touched.Add(at + index);
+            _touched.Add(at + index);
         }
 
         return pages.Length;
     }
 
-    internal static long InsertPages(
-        PdfDocumentLoader loader,
-        Document document,
-        InsertPagesFromOp op,
-        IReadOnlyDictionary<string, string>? secrets,
-        ISet<int> touched)
+    public long Apply(InsertPagesFromOp operation)
     {
-        if (op.At > document.Pages.Count + 1)
+        if (operation.At > _document.Pages.Count + 1)
         {
-            throw PageNotFound(op.At, document.Pages.Count + 1);
+            throw PageNotFound(operation.At, _document.Pages.Count + 1);
         }
 
-        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
-        using LoadedPdf source = loader.Open(op.Path, password);
-        IReadOnlyList<int> pages = op.Pages is null
+        string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
+        using LoadedPdf source = _loader.Open(operation.Path, password);
+        IReadOnlyList<int> pages = operation.Pages is null
             ? Enumerable.Range(1, source.Document.Pages.Count).ToArray()
-            : Resolve(source.Document, op.Pages);
+            : Resolve(source.Document, operation.Pages);
         using Document selected = Select(source.Document, pages);
-        document.Pages.Insert(op.At, selected.Pages.ToArray());
+        _document.Pages.Insert(operation.At, selected.Pages.ToArray());
         for (int index = 0; index < pages.Count; index++)
         {
-            touched.Add(op.At + index);
+            _touched.Add(operation.At + index);
         }
 
         return pages.Count;
     }
 
-    internal static long InsertBlank(Document document, InsertBlankPageOp op, ISet<int> touched)
+    public long Apply(InsertBlankPageOp operation)
     {
-        if (op.At > document.Pages.Count + 1)
+        if (operation.At > _document.Pages.Count + 1)
         {
-            throw PageNotFound(op.At, document.Pages.Count + 1);
+            throw PageNotFound(operation.At, _document.Pages.Count + 1);
         }
 
-        Page page = document.Pages.Insert(op.At);
-        (double width, double height) = PdfPageSizes.Dimensions(op.Size);
+        Page page = _document.Pages.Insert(operation.At);
+        (double width, double height) = PdfPageSizes.Dimensions(operation.Size);
         page.SetPageSize(width, height);
-        touched.Add(op.At);
+        _touched.Add(operation.At);
         return 1;
     }
 
-    internal static long Crop(Document document, CropPagesOp op, ISet<int> touched)
+    public long Apply(CropPagesOp operation)
     {
-        IReadOnlyList<int> pages = Resolve(document, op.Pages);
+        IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
         foreach (int number in pages)
         {
-            Page page = document.Pages[number];
-            Rectangle rectangle = ToPdfRect(page, op.Rect);
-            if (op.Box == "media")
+            Page page = _document.Pages[number];
+            Rectangle rectangle = ToPdfRect(page, operation.Rect);
+            if (operation.Box == "media")
             {
                 page.MediaBox = rectangle;
             }
@@ -134,20 +111,20 @@ internal static class PdfPageMutationHandlers
                 page.CropBox = rectangle;
             }
 
-            touched.Add(number);
+            _touched.Add(number);
         }
 
         return pages.Count;
     }
 
-    internal static long SetPageSize(Document document, SetPageSizeOp op, ISet<int> touched)
+    public long Apply(SetPageSizeOp operation)
     {
-        (double width, double height) = PdfPageSizes.Dimensions(op.Size);
-        IReadOnlyList<int> pages = Resolve(document, op.Pages);
+        (double width, double height) = PdfPageSizes.Dimensions(operation.Size);
+        IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
         foreach (int number in pages)
         {
-            Page page = document.Pages[number];
-            if (op.ScaleContent)
+            Page page = _document.Pages[number];
+            if (operation.ScaleContent)
             {
                 page.Resize(new PageSize((float)width, (float)height));
             }
@@ -156,7 +133,7 @@ internal static class PdfPageMutationHandlers
                 page.SetPageSize(width, height);
             }
 
-            touched.Add(number);
+            _touched.Add(number);
         }
 
         return pages.Count;

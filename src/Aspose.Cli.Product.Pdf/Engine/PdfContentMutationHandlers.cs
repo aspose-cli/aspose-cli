@@ -1,19 +1,7 @@
 using System.Globalization;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Pdf.Contracts;
-using Aspose.Cli.Product.Pdf.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
-using Aspose.Pdf.Devices;
-using Aspose.Pdf.Forms;
-using Aspose.Pdf.Optimization;
 using Aspose.Pdf.Text;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfMutationSupport;
@@ -21,98 +9,159 @@ using PdfColor = Aspose.Pdf.Color;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Owns visible content, annotation and redaction mutations.</summary>
-internal static class PdfContentMutationHandlers
+// Visible content, annotations and redaction.
+internal sealed partial class PdfMutationHandlers
 {
-    internal static long WatermarkText(Document document, AddWatermarkTextOp op, ISet<int> touched)
+    public long Apply(AddWatermarkTextOp operation)
     {
-        IReadOnlyList<int> pages = ResolveOptional(document, op.Pages);
+        IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
         foreach (int number in pages)
         {
-            var stamp = new TextStamp(op.Text)
+            var stamp = new TextStamp(operation.Text)
             {
-                Background = op.Layer == "under",
-                Opacity = op.Opacity,
-                RotateAngle = op.Rotation,
+                Background = operation.Layer == PdfLayers.Under,
+                Opacity = operation.Opacity,
+                RotateAngle = operation.Rotation,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            stamp.TextState.FontSize = (float)op.Size;
-            stamp.TextState.ForegroundColor = ParseColor(op.Color);
-            if (op.Font is not null)
+            stamp.TextState.FontSize = (float)operation.Size;
+            stamp.TextState.ForegroundColor = ParseColor(operation.Color);
+            if (operation.Font is not null)
             {
-                stamp.TextState.Font = FontRepository.FindFont(op.Font);
+                stamp.TextState.Font = FontRepository.FindFont(operation.Font);
             }
 
-            document.Pages[number].AddStamp(stamp);
-            touched.Add(number);
+            _document.Pages[number].AddStamp(stamp);
+            _touched.Add(number);
         }
 
         return pages.Count;
     }
 
-    internal static long WatermarkImage(Document document, AddWatermarkImageOp op, ISet<int> touched, InputResourceScope inputs)
+    public long Apply(AddWatermarkImageOp operation)
     {
-        EnsureFile(op.Path);
-        IReadOnlyList<int> pages = ResolveOptional(document, op.Pages);
+        EnsureFile(operation.Path);
+        IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
         // Read (and charge) the image once; every page stamps its own view of the bytes. An SVG
         // stamp fetches its external images with no resource hook (KNOWN-ISSUES.md), so the
         // read refuses an SVG that names a network address.
-        byte[] image = NetworkReferenceGuard.ReadImage(inputs, op.Path);
+        byte[] image = NetworkReferenceGuard.ReadImage(_inputs, operation.Path);
 
         foreach (int number in pages)
         {
             var stamp = new ImageStamp(new MemoryStream(image, writable: false))
             {
-                Background = op.Layer == "under",
-                Opacity = op.Opacity,
-                Zoom = op.Scale,
+                Background = operation.Layer == PdfLayers.Under,
+                Opacity = operation.Opacity,
+                Zoom = operation.Scale,
                 HorizontalAlignment = HorizontalAlignment.Center,
                 VerticalAlignment = VerticalAlignment.Center,
             };
-            document.Pages[number].AddStamp(stamp);
-            touched.Add(number);
+            _document.Pages[number].AddStamp(stamp);
+            _touched.Add(number);
         }
 
         return pages.Count;
     }
 
-    internal static long PageNumbers(Document document, AddPageNumbersOp op, ISet<int> touched)
+    public long Apply(AddPageNumbersOp operation)
     {
-        IReadOnlyList<int> pages = ResolveOptional(document, op.Pages);
-        int ordinal = op.Start;
+        IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
+        int ordinal = operation.Start;
         foreach (int number in pages)
         {
-            string text = op.Format
+            string text = operation.Format
                 .Replace("{n}", ordinal.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal)
-                .Replace("{N}", document.Pages.Count.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
-            AddTextStamp(document.Pages[number], text, op.Position, op.Font);
-            touched.Add(number);
+                .Replace("{N}", _document.Pages.Count.ToString(CultureInfo.InvariantCulture), StringComparison.Ordinal);
+            AddTextStamp(_document.Pages[number], text, operation.Position, operation.Font);
+            _touched.Add(number);
             ordinal++;
         }
 
         return pages.Count;
     }
 
-    internal static long HeaderFooter(
-        Document document,
-        string text,
-        string? pageRange,
-        string position,
-        string? font,
-        ISet<int> touched)
+    public long Apply(AddHeaderTextOp operation) =>
+        MarginText(operation.Text, operation.Pages, operation.Position, operation.Font);
+
+    public long Apply(AddFooterTextOp operation) =>
+        MarginText(operation.Text, operation.Pages, operation.Position, operation.Font);
+
+    public long Apply(AddStampImageOp operation)
     {
-        IReadOnlyList<int> pages = ResolveOptional(document, pageRange);
+        Page page = PageAt(_document, operation.Page);
+        EnsureFile(operation.Path);
+        Rectangle rectangle = ToPdfRect(page, operation.Rect);
+        var stamp = new ImageStamp(new MemoryStream(NetworkReferenceGuard.ReadImage(_inputs, operation.Path), writable: false))
+        {
+            XIndent = rectangle.LLX,
+            YIndent = rectangle.LLY,
+            Width = rectangle.Width,
+            Height = rectangle.Height,
+        };
+        page.AddStamp(stamp);
+        _touched.Add(operation.Page);
+        return 1;
+    }
+
+    public long Apply(AddLinkOp operation)
+    {
+        Page page = PageAt(_document, operation.Page);
+        var annotation = new LinkAnnotation(page, ToPdfRect(page, operation.Rect))
+        {
+            Action = new GoToURIAction(operation.Url),
+        };
+        page.Annotations.Add(annotation);
+        _touched.Add(operation.Page);
+        return 1;
+    }
+
+    public long Apply(RedactTextOp operation)
+    {
+        IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
+        PdfColor fill = ParseColor(operation.FillColor);
+        long count = 0;
         foreach (int number in pages)
         {
-            AddTextStamp(document.Pages[number], text, position, font);
-            touched.Add(number);
+            Page page = _document.Pages[number];
+            TextFragmentCollection fragments = MatchText(page, operation.Pattern, operation.Regex, caseSensitive: true,
+                static reason => new OperationInvalidException(reason));
+            foreach (TextFragment fragment in fragments)
+            {
+                Cover(page, fragment.Rectangle, fill).Redact();
+                count++;
+            }
+            if (fragments.Count > 0)
+            {
+                _touched.Add(number);
+            }
+        }
+
+        return count;
+    }
+
+    public long Apply(RedactAreaOp operation)
+    {
+        Page page = PageAt(_document, operation.Page);
+        Cover(page, ToPdfRect(page, operation.Rect), ParseColor(operation.FillColor)).Redact();
+        _touched.Add(operation.Page);
+        return 1;
+    }
+
+    private long MarginText(string text, string? pageRange, string position, string? font)
+    {
+        IReadOnlyList<int> pages = ResolveOptional(_document, pageRange);
+        foreach (int number in pages)
+        {
+            AddTextStamp(_document.Pages[number], text, position, font);
+            _touched.Add(number);
         }
 
         return pages.Count;
     }
 
-    internal static void AddTextStamp(Page page, string text, string position, string? font)
+    private static void AddTextStamp(Page page, string text, string position, string? font)
     {
         var stamp = new TextStamp(text) { Background = false };
         if (font is not null)
@@ -122,67 +171,6 @@ internal static class PdfContentMutationHandlers
 
         ApplyPosition(page, stamp, position);
         page.AddStamp(stamp);
-    }
-
-    internal static long StampImage(Document document, AddStampImageOp op, ISet<int> touched, InputResourceScope inputs)
-    {
-        Page page = PageAt(document, op.Page);
-        EnsureFile(op.Path);
-        Rectangle rectangle = ToPdfRect(page, op.Rect);
-        var stamp = new ImageStamp(new MemoryStream(NetworkReferenceGuard.ReadImage(inputs, op.Path), writable: false))
-        {
-            XIndent = rectangle.LLX,
-            YIndent = rectangle.LLY,
-            Width = rectangle.Width,
-            Height = rectangle.Height,
-        };
-        page.AddStamp(stamp);
-        touched.Add(op.Page);
-        return 1;
-    }
-
-    internal static long AddLink(Document document, AddLinkOp op, ISet<int> touched)
-    {
-        Page page = PageAt(document, op.Page);
-        var annotation = new LinkAnnotation(page, ToPdfRect(page, op.Rect))
-        {
-            Action = new GoToURIAction(op.Url),
-        };
-        page.Annotations.Add(annotation);
-        touched.Add(op.Page);
-        return 1;
-    }
-
-    internal static long RedactText(Document document, RedactTextOp op, ISet<int> touched)
-    {
-        IReadOnlyList<int> pages = ResolveOptional(document, op.Pages);
-        PdfColor fill = ParseColor(op.FillColor);
-        long count = 0;
-        foreach (int number in pages)
-        {
-            Page page = document.Pages[number];
-            TextFragmentCollection fragments = MatchText(page, op.Pattern, op.Regex, caseSensitive: true,
-                static reason => new OperationInvalidException(reason));
-            foreach (TextFragment fragment in fragments)
-            {
-                Cover(page, fragment.Rectangle, fill).Redact();
-                count++;
-            }
-            if (fragments.Count > 0)
-            {
-                touched.Add(number);
-            }
-        }
-
-        return count;
-    }
-
-    internal static long RedactArea(Document document, RedactAreaOp op, ISet<int> touched)
-    {
-        Page page = PageAt(document, op.Page);
-        Cover(page, ToPdfRect(page, op.Rect), ParseColor(op.FillColor)).Redact();
-        touched.Add(op.Page);
-        return 1;
     }
 
     /// <summary>

@@ -14,9 +14,7 @@ internal static class PdfPageSizes
         ("Legal", 612, 1008),
     ];
 
-    internal static string[] Names { get; } = [.. Sizes.Select(static size => size.Name)];
-
-    internal static bool IsKnown(string name) => Names.Contains(name, StringComparer.Ordinal);
+    internal static System.Collections.Immutable.ImmutableArray<string> Names { get; } = [.. Sizes.Select(static size => size.Name)];
 
     /// <summary>Returns the size of a name the command line or ops validation already admitted.</summary>
     internal static (double Width, double Height) Dimensions(string name)

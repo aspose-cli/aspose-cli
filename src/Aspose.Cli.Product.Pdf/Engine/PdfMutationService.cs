@@ -46,7 +46,7 @@ internal sealed class PdfMutationService
 
     public PdfEditResult ApplyOps(string filePath, PdfOpsBatch batch, PdfEditRequest request)
     {
-        batch = PdfOps.Catalog.Prepare(batch);
+        batch = PdfOp.Catalog.Prepare(batch);
         EnsurePdfOutput(request.OutputPath);
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
@@ -97,14 +97,14 @@ internal sealed class PdfMutationService
     {
         string? outputPassword = request.Password;
         IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
-            PdfOps.Catalog,
+            PdfOp.Catalog,
             batch.Ops,
             request.Options.BestEffort,
             deadline: null,
             (op, _) =>
             {
                 var operationPages = new SortedSet<int>();
-                long affected = PdfMutationHandlers.ApplyOp(_loader, operationInputs, document, op, request.OpSecrets, operationPages);
+                long affected = new PdfMutationHandlers(_loader, operationInputs, document, request.OpSecrets, operationPages).Run(op);
                 touched.UnionWith(operationPages);
                 if (op is EncryptPdfOp encrypt)
                 {

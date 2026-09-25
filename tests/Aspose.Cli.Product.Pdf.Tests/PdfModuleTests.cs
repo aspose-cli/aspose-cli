@@ -37,9 +37,9 @@ public sealed class PdfModuleTests
     [Fact]
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
-            PdfOps.Catalog.Names.Order(StringComparer.Ordinal),
+            PdfOp.Catalog.Names.Order(StringComparer.Ordinal),
             PdfContractSamples.PdfOpsBatch.Ops
-                .Select(PdfOps.Catalog.NameOf)
+                .Select(PdfOp.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 
     [Theory]
@@ -53,8 +53,6 @@ public sealed class PdfModuleTests
     [InlineData("""{"op":"redact_text","pattern":"hidden"}""", """{"fillColor":"#000000"}""")]
     [InlineData("""{"op":"redact_area","page":1,"rect":{"x":0,"y":0,"width":10,"height":10}}""", """{"fillColor":"#000000"}""")]
     [InlineData("""{"op":"remove_metadata"}""", """{"xmp":true,"documentInfo":true}""")]
-    [InlineData("""{"op":"flatten_forms"}""", """{"all":true}""")]
-    [InlineData("""{"op":"flatten_forms","fields":["Customer"]}""", """{"all":false}""")]
     [InlineData("""{"op":"set_page_labels","ranges":[{"startPage":1}]}""", """{"ranges":[{"startPage":1,"style":"arabic","startingValue":1}]}""")]
     [InlineData("""{"op":"encrypt","ownerPasswordEnv":"OWNER"}""", """{"permissions":{"print":false,"copy":false,"modify":false,"annotate":false,"fillForms":false,"extractAccessibility":false,"assemble":false,"printHighResolution":false}}""")]
     [InlineData("""{"op":"optimize"}""", """{"removeUnusedObjects":true,"compressStreams":true}""")]
@@ -65,10 +63,11 @@ public sealed class PdfModuleTests
         AssertOperationDefaults<PdfOp>(input, expected);
 
     [Theory]
+    [InlineData("""{"op":"add_watermark_text","text":"DRAFT","pages":null}""")]
     [InlineData("""{"op":"add_page_numbers","format":null}""")]
     [InlineData("""{"op":"add_watermark_text","text":"DRAFT","color":null}""")]
     [InlineData("""{"op":"add_bookmark","title":null,"page":1}""")]
-    public void NonNullableFields_RejectExplicitNullAsInvalidOperations(string operation)
+    public void Fields_RejectExplicitNullAsInvalidOperations(string operation)
     {
         var error = Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
             Parse($$"""{"ops":[{{operation}}]}"""));
@@ -84,5 +83,5 @@ public sealed class PdfModuleTests
     }
 
     private static PdfOpsBatch Parse(string json) =>
-        PdfOps.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        PdfOp.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

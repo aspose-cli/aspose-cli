@@ -22,7 +22,15 @@ public sealed class PdfOpContractTests
     [InlineData("""{"op":"redact_area","page":1,"rect":{"x":0,"y":-5,"width":10,"height":10}}""")]
     [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"ftp://example.com/a"}""")]
     [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"file:///etc/passwd"}""")]
+    [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"javascript:alert(1)"}""")]
     [InlineData("""{"op":"redact_text","pattern":""}""")]
+    [InlineData("""{"op":"rotate_pages","pages":"0","angle":90}""")]
+    [InlineData("""{"op":"flatten_forms","fields":[""]}""")]
+    [InlineData("""{"op":"flatten_forms","fields":[]}""")]
+    [InlineData("""{"op":"flatten_forms","all":true}""")]
+    [InlineData("""{"op":"add_attachment","path":" "}""")]
+    [InlineData("""{"op":"set_metadata","custom":{"author":null}}""")]
+    [InlineData("""{"op":"add_bookmark","title":"Intro","page":1,"parent":""}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -36,7 +44,10 @@ public sealed class PdfOpContractTests
     [Theory]
     [InlineData("""{"op":"insert_blank_page","at":1,"size":"Letter"}""")]
     [InlineData("""{"op":"crop_pages","pages":"1","rect":{"x":0,"y":0,"width":10,"height":10}}""")]
+    [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"https://example.com/a"}""")]
     [InlineData("""{"op":"add_link","page":1,"rect":{"x":0,"y":0,"width":10,"height":10},"url":"mailto:team@example.com"}""")]
+    [InlineData("""{"op":"flatten_forms"}""")]
+    [InlineData("""{"op":"delete_bookmarks","path":"Intro","all":false}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -87,5 +98,5 @@ public sealed class PdfOpContractTests
     }
 
     private static PdfOpsBatch Parse(string json) =>
-        PdfOps.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+        PdfOp.Catalog.Parse<PdfOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

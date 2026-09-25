@@ -1,159 +1,144 @@
-using System.Globalization;
-using System.Text.RegularExpressions;
-using Aspose.Cli.Product.Pdf.Contracts;
-using Aspose.Cli.Product.Pdf.Engine.Mapping;
-using Aspose.Cli.Sdk.Addressing;
-using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.Operations;
-using Aspose.Cli.Sdk.IO;
-using Aspose.Cli.Sdk.Licensing;
-using Aspose.Cli.Sdk.Results;
-using Aspose.Cli.Sdk.Text;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
-using Aspose.Pdf.Devices;
 using Aspose.Pdf.Forms;
 using Aspose.Pdf.Optimization;
-using Aspose.Pdf.Text;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.PdfMutationSupport;
-using PdfColor = Aspose.Pdf.Color;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>Owns document metadata, navigation, forms and security mutations.</summary>
-internal static class PdfDocumentMutationHandlers
+// Document metadata, navigation, forms and security.
+internal sealed partial class PdfMutationHandlers
 {
-    internal static long SetMetadata(Document document, SetMetadataOp op)
+    public long Apply(SetMetadataOp operation)
     {
-        if (op.Title is not null)
+        if (operation.Title is not null)
         {
-            document.Info.Title = op.Title;
+            _document.Info.Title = operation.Title;
         }
 
-        if (op.Author is not null)
+        if (operation.Author is not null)
         {
-            document.Info.Author = op.Author;
+            _document.Info.Author = operation.Author;
         }
 
-        if (op.Subject is not null)
+        if (operation.Subject is not null)
         {
-            document.Info.Subject = op.Subject;
+            _document.Info.Subject = operation.Subject;
         }
 
-        if (op.Keywords is not null)
+        if (operation.Keywords is not null)
         {
-            document.Info.Keywords = op.Keywords;
+            _document.Info.Keywords = operation.Keywords;
         }
-        if (op.Custom is not null)
+        if (operation.Custom is not null)
         {
-            foreach ((string key, string value) in op.Custom)
+            foreach ((string key, string value) in operation.Custom)
             {
-                document.Info[key] = value;
+                _document.Info[key] = value;
             }
         }
 
         return 1;
     }
 
-    internal static long RemoveMetadata(Document document, RemoveMetadataOp op)
+    public long Apply(RemoveMetadataOp operation)
     {
-        if (op.DocumentInfo)
+        if (operation.DocumentInfo)
         {
-            document.Info.Clear();
+            _document.Info.Clear();
         }
 
-        if (op.Xmp)
+        if (operation.Xmp)
         {
-            document.Metadata.Clear();
+            _document.Metadata.Clear();
         }
 
         return 1;
     }
 
-    internal static long AddBookmark(Document document, AddBookmarkOp op)
+    public long Apply(AddBookmarkOp operation)
     {
-        _ = PageAt(document, op.Page);
-        OutlineCollection target = document.Outlines;
-        if (op.Parent is not null)
+        _ = PageAt(_document, operation.Page);
+        OutlineCollection target = _document.Outlines;
+        if (operation.Parent is not null)
         {
-            OutlineItemCollection? parent = FindOutline(document.Outlines, op.Parent.Split('/', StringSplitOptions.RemoveEmptyEntries));
+            OutlineItemCollection? parent = FindOutline(_document.Outlines, operation.Parent.Split('/', StringSplitOptions.RemoveEmptyEntries));
             if (parent is null)
             {
-                throw new OperationInvalidException($"Bookmark parent '{op.Parent}' was not found.");
+                throw new OperationInvalidException($"Bookmark parent '{operation.Parent}' was not found.");
             }
 
-            var nested = new OutlineItemCollection(document.Outlines)
+            var nested = new OutlineItemCollection(_document.Outlines)
             {
-                Title = op.Title,
-                Destination = new FitExplicitDestination(document.Pages[op.Page]),
+                Title = operation.Title,
+                Destination = new FitExplicitDestination(_document.Pages[operation.Page]),
             };
             parent.Add(nested);
             return 1;
         }
 
-        target.Add(new OutlineItemCollection(document.Outlines)
+        target.Add(new OutlineItemCollection(_document.Outlines)
         {
-            Title = op.Title,
-            Destination = new FitExplicitDestination(document.Pages[op.Page]),
+            Title = operation.Title,
+            Destination = new FitExplicitDestination(_document.Pages[operation.Page]),
         });
         return 1;
     }
 
-    internal static long DeleteBookmarks(Document document, DeleteBookmarksOp op)
+    public long Apply(DeleteBookmarksOp operation)
     {
-        if (op.All)
+        if (operation.All)
         {
-            int count = document.Outlines.Count;
-            document.Outlines.Delete();
+            int count = _document.Outlines.Count;
+            _document.Outlines.Delete();
             return count;
         }
 
-        string[] path = op.Path!.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        OutlineItemCollection? item = FindOutline(document.Outlines, path);
+        string[] path = operation.Path!.Split('/', StringSplitOptions.RemoveEmptyEntries);
+        OutlineItemCollection? item = FindOutline(_document.Outlines, path);
         if (item is null)
         {
-            throw new OperationInvalidException($"Bookmark '{op.Path}' was not found.");
+            throw new OperationInvalidException($"Bookmark '{operation.Path}' was not found.");
         }
 
         item.Delete();
         return 1;
     }
 
-    internal static long AddAttachment(Document document, AddAttachmentOp op, InputResourceScope inputs)
+    public long Apply(AddAttachmentOp operation)
     {
-        EnsureFile(op.Path);
-        string name = op.Name ?? Path.GetFileName(op.Path);
-        Stream stream = inputs.OpenFile(op.Path);
-        var specification = new FileSpecification(stream, name, op.Description ?? string.Empty)
+        EnsureFile(operation.Path);
+        string name = operation.Name ?? Path.GetFileName(operation.Path);
+        Stream stream = _inputs.OpenFile(operation.Path);
+        var specification = new FileSpecification(stream, name, operation.Description ?? string.Empty)
         {
             Name = name,
             UnicodeName = name,
         };
-        document.EmbeddedFiles.Add(name, specification);
+        _document.EmbeddedFiles.Add(name, specification);
         return 1;
     }
 
-    internal static long RemoveAttachment(Document document, RemoveAttachmentOp op)
+    public long Apply(RemoveAttachmentOp operation)
     {
         // FindByName throws an engine exception for a missing name; match the names query reports.
-        if (!document.EmbeddedFiles.Any(file => string.Equals(file.UnicodeName ?? file.Name, op.Name, StringComparison.Ordinal)))
+        if (!_document.EmbeddedFiles.Any(file => string.Equals(file.UnicodeName ?? file.Name, operation.Name, StringComparison.Ordinal)))
         {
-            throw new OperationInvalidException($"Attachment '{op.Name}' was not found.");
+            throw new OperationInvalidException($"Attachment '{operation.Name}' was not found.");
         }
 
-        document.EmbeddedFiles.Delete(op.Name);
+        _document.EmbeddedFiles.Delete(operation.Name);
         return 1;
     }
 
-    internal static long SetPageLabels(Document document, SetPageLabelsOp op)
+    public long Apply(SetPageLabelsOp operation)
     {
         int count = 0;
-        foreach (PdfPageLabelRange range in op.Ranges)
+        foreach (PdfPageLabelRange range in operation.Ranges)
         {
-            _ = PageAt(document, range.StartPage);
-            document.PageLabels.UpdateLabel(range.StartPage - 1, new PageLabel
+            _ = PageAt(_document, range.StartPage);
+            _document.PageLabels.UpdateLabel(range.StartPage - 1, new PageLabel
             {
                 Prefix = range.Prefix,
                 StartingValue = range.StartingValue,
@@ -165,37 +150,37 @@ internal static class PdfDocumentMutationHandlers
         return count;
     }
 
-    internal static long SetFormField(Document document, SetFormFieldOp op)
+    public long Apply(SetFormFieldOp operation)
     {
-        EnsureAcroForm(document);
-        Field? field = document.Form.Fields.FirstOrDefault(
-            value => string.Equals(value.FullName, op.Name, StringComparison.Ordinal));
+        EnsureAcroForm(_document);
+        Field? field = _document.Form.Fields.FirstOrDefault(
+            value => string.Equals(value.FullName, operation.Name, StringComparison.Ordinal));
         if (field is null)
         {
-            throw new OperationInvalidException($"Form field '{op.Name}' was not found.");
+            throw new OperationInvalidException($"Form field '{operation.Name}' was not found.");
         }
 
-        if (RejectedFieldValue(field, op.Value) is { } rejected)
+        if (RejectedFieldValue(field, operation.Value) is { } rejected)
         {
             throw new OperationInvalidException(rejected);
         }
 
-        field.Value = op.Value;
+        field.Value = operation.Value;
         return 1;
     }
 
-    internal static long FlattenForms(Document document, FlattenFormsOp op)
+    public long Apply(FlattenFormsOp operation)
     {
-        EnsureAcroForm(document);
-        if (op.All)
+        EnsureAcroForm(_document);
+        if (operation.Fields is null)
         {
-            int count = document.Form.Count;
-            document.Form.Flatten();
+            int count = _document.Form.Count;
+            _document.Form.Flatten();
             return count;
         }
 
         // Resolve every name first: a missing field must reject the operation before any change.
-        Field[] fields = op.Fields!.Select(name => document.Form.Fields.FirstOrDefault(
+        Field[] fields = operation.Fields.Select(name => _document.Form.Fields.FirstOrDefault(
                 value => string.Equals(value.FullName, name, StringComparison.Ordinal))
             ?? throw new OperationInvalidException($"Form field '{name}' was not found.")).ToArray();
         foreach (Field field in fields)
@@ -206,88 +191,85 @@ internal static class PdfDocumentMutationHandlers
         return fields.Length;
     }
 
-    internal static long Encrypt(
-        Document document,
-        EncryptPdfOp op,
-        IReadOnlyDictionary<string, string>? secrets)
+    public long Apply(EncryptPdfOp operation)
     {
-        string owner = OperationSecrets.Resolve(secrets, op.OwnerPasswordEnv)!;
-        string user = OperationSecrets.Resolve(secrets, op.UserPasswordEnv) ?? string.Empty;
+        string owner = OperationSecrets.Resolve(_secrets, operation.OwnerPasswordEnv)!;
+        string user = OperationSecrets.Resolve(_secrets, operation.UserPasswordEnv) ?? string.Empty;
         Permissions permissions = (Permissions)0;
-        if (op.Permissions.Print)
+        if (operation.Permissions.Print)
         {
             permissions |= Permissions.PrintDocument;
         }
 
-        if (op.Permissions.Copy)
+        if (operation.Permissions.Copy)
         {
             permissions |= Permissions.ExtractContent;
         }
 
-        if (op.Permissions.Modify)
+        if (operation.Permissions.Modify)
         {
             permissions |= Permissions.ModifyContent;
         }
 
-        if (op.Permissions.Annotate)
+        if (operation.Permissions.Annotate)
         {
             permissions |= Permissions.ModifyTextAnnotations;
         }
 
-        if (op.Permissions.FillForms)
+        if (operation.Permissions.FillForms)
         {
             permissions |= Permissions.FillForm;
         }
 
-        if (op.Permissions.ExtractAccessibility)
+        if (operation.Permissions.ExtractAccessibility)
         {
             permissions |= Permissions.ExtractContentWithDisabilities;
         }
 
-        if (op.Permissions.Assemble)
+        if (operation.Permissions.Assemble)
         {
             permissions |= Permissions.AssembleDocument;
         }
 
-        if (op.Permissions.PrintHighResolution)
+        if (operation.Permissions.PrintHighResolution)
         {
             permissions |= Permissions.PrintingQuality;
         }
-        document.Encrypt(user, owner, permissions, CryptoAlgorithm.AESx256);
+        _document.Encrypt(user, owner, permissions, CryptoAlgorithm.AESx256);
         return 1;
     }
 
-    internal static long Decrypt(Document document)
+    public long Apply(DecryptPdfOp operation)
     {
-        if (!document.IsEncrypted)
+        if (!_document.IsEncrypted)
         {
             return 0;
         }
 
-        document.Decrypt();
+        _document.Decrypt();
         return 1;
     }
 
-    internal static long Optimize(Document document, OptimizePdfOp op)
+    public long Apply(OptimizePdfOp operation)
     {
         var options = new OptimizationOptions
         {
-            RemoveUnusedObjects = op.RemoveUnusedObjects,
-            RemoveUnusedStreams = op.RemoveUnusedObjects,
-            CompressAllContentStreams = op.CompressStreams,
-            CompressObjects = op.CompressStreams,
+            RemoveUnusedObjects = operation.RemoveUnusedObjects,
+            RemoveUnusedStreams = operation.RemoveUnusedObjects,
+            CompressAllContentStreams = operation.CompressStreams,
+            CompressObjects = operation.CompressStreams,
             LinkDuplicateStreams = true,
-            UnembedFonts = op.UnembedFonts,
+            UnembedFonts = operation.UnembedFonts,
         };
-        if (op.DownsampleImagesDpi.HasValue || op.ImageQuality.HasValue)
+        if (operation.DownsampleImagesDpi.HasValue || operation.ImageQuality.HasValue)
         {
             options.ImageCompressionOptions.CompressImages = true;
-            options.ImageCompressionOptions.ResizeImages = op.DownsampleImagesDpi.HasValue;
-            options.ImageCompressionOptions.MaxResolution = op.DownsampleImagesDpi ?? 300;
-            options.ImageCompressionOptions.ImageQuality = op.ImageQuality ?? 75;
+            options.ImageCompressionOptions.ResizeImages = operation.DownsampleImagesDpi.HasValue;
+            options.ImageCompressionOptions.MaxResolution = operation.DownsampleImagesDpi ?? 300;
+            options.ImageCompressionOptions.ImageQuality = operation.ImageQuality ?? 75;
         }
 
-        document.OptimizeResources(options);
+        _document.OptimizeResources(options);
         return 1;
     }
 }

@@ -15,8 +15,8 @@ password and rich-text boxes), `checkbox`, `radio`, `radio-option`,
 `query forms` reports XFA as `type: "xfa"` and `readOnly: true`;
 filling, flattening and form export reject it with `FORM_XFA_UNSUPPORTED`.
 Flattening is an edit operation, not a `--flatten` option: use
-`{"op":"flatten_forms","all":true}` or
-`{"op":"flatten_forms","all":false,"fields":["ReportTitle"]}` only when
+`{"op":"flatten_forms"}` for every field or
+`{"op":"flatten_forms","fields":["ReportTitle"]}` for named fields, only when
 the requested fields should no longer be editable.
 
 Encryption is an edit operation. Its ops document names environment variables,

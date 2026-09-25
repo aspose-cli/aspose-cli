@@ -8,22 +8,8 @@ internal static class EditCommand
 {
     private static readonly BoundedEditDefinition<PdfOp, PdfOpsBatch> Definition = new()
     {
-        Catalog = PdfOps.Catalog,
+        Catalog = PdfOp.Catalog,
         Contracts = ProductJsonContext.Definition,
-        NormalizePaths = static (op, paths) => op switch
-        {
-            InsertPagesFromOp value => value with { Path = paths.ResolveInput(value.Path) },
-            AddWatermarkImageOp value => value with { Path = paths.ResolveInput(value.Path) },
-            AddStampImageOp value => value with { Path = paths.ResolveInput(value.Path) },
-            AddAttachmentOp value => value with { Path = paths.ResolveInput(value.Path) },
-            _ => op,
-        },
-        SecretVariables = static op => op switch
-        {
-            InsertPagesFromOp value => [value.PasswordEnv],
-            EncryptPdfOp value => [value.OwnerPasswordEnv, value.UserPasswordEnv],
-            _ => [],
-        },
     };
 
     public static Command Create(IProductCommandHost<IPdfEngine> host) =>
