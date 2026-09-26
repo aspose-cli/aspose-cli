@@ -49,6 +49,36 @@ public sealed class ProductViewDefinitionTests
                 && finding.Severity == "error");
     }
 
+    [Fact]
+    public void ViewDefinition_RequiresProductPrefixedChecksAndReportsOnlyDeclaredFindings()
+    {
+        var declared = new ReviewCheck("TEST_PAGE_BLANK", ReviewSeverities.Warning, "A page has no content.");
+        ProductBinding<ITestPort> binding = ProductBinding.CreateLicenseFree<ITestPort>(
+            "test", static _ => new FontPort(), static _ => new FontPort());
+        ViewRenderRequest request = Request("document");
+
+        Assert.Throws<InvalidOperationException>(() => ProductViewDefinition.Create(
+            new TestProductViewAdapter<ITestPort>([new ReviewCheck("OTHER_PAGE_BLANK", ReviewSeverities.Info, "x")]),
+            "test"));
+        ProductViewDefinition declaring = ProductViewDefinition.Create(
+            new TestProductViewAdapter<ITestPort>([declared], [declared.Finding("Page 2 is blank.", "page 2")]),
+            "test");
+        ProductViewDefinition undeclared = ProductViewDefinition.Create(
+            new TestProductViewAdapter<ITestPort>(
+                [declared], [declared.Finding("x") with { Severity = ReviewSeverities.Error }]),
+            "test");
+
+        Assert.Equal(
+            ["FONTS_MISSING_OR_SUBSTITUTED", "FONTS_NOT_CHECKED", "TEST_PAGE_BLANK"],
+            declaring.Checks.Select(static check => check.Code));
+        Assert.Contains(
+            declaring.Assess(binding, "file.test", request, declaring.Render(binding, "file.test", request, new RejectingSink())).Findings!,
+            static finding => finding.Code == "TEST_PAGE_BLANK");
+        Assert.Throws<InvalidOperationException>(() => undeclared.Assess(
+            binding, "file.test", request, undeclared.Render(binding, "file.test", request, new RejectingSink())));
+        Assert.Throws<ArgumentException>(() => new ReviewCheck("page blank", ReviewSeverities.Info, "x"));
+    }
+
     private static ViewRenderRequest Request(string view) => new()
     {
         View = view,

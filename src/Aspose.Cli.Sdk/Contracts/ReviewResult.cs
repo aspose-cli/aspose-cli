@@ -29,10 +29,24 @@ public sealed record ReviewResult() : ResultEnvelope(CommonSchemaIds.Review, 2),
 
     public required IReadOnlyList<ReviewFinding> Findings { get; init; }
 
-    /// <summary>Whether deterministic review checks or coverage are incomplete.</summary>
+    /// <summary>The <c>--code</c> filter applied to <see cref="Findings"/>; omitted without one.</summary>
+    public ReviewFilter? Filter { get; init; }
+
+    /// <summary>
+    /// Whether coverage is incomplete or a reported finding is an error. Findings a filter left
+    /// out do not count: the caller asked about the listed checks only.
+    /// </summary>
     [JsonIgnore]
     public bool HasFailures => !Coverage.Complete || Findings.Any(static finding =>
-        string.Equals(finding.Severity, "error", StringComparison.Ordinal));
+        string.Equals(finding.Severity, ReviewSeverities.Error, StringComparison.Ordinal));
+}
+
+/// <summary>The check codes a review reported, and how many findings of other checks it left out.</summary>
+public sealed record ReviewFilter
+{
+    public required IReadOnlyList<string> Codes { get; init; }
+
+    public required int OmittedFindings { get; init; }
 }
 
 /// <summary>Bounded coverage of the renderer-owned evidence inventory.</summary>

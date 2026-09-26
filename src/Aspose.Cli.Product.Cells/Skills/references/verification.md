@@ -74,6 +74,11 @@ aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out zoom.png --
   every image — a defect on a sheet you did not open is a defect you ship.
   Read `coverage.complete`; hidden sheets are not reviewed. Use a new
   `--out` directory for each round.
+- Each finding carries a stable `code` such as `CELLS_FORMULA_ERROR` or
+  `CELLS_POPULATED_COLUMNS_NARROW`; `aspose-cli capabilities` lists every
+  check with its severity under `review.checks`. `--code <code...>` limits
+  the findings to those checks, and only an `error` among them fails the
+  review; the images still need the full look.
 - Big files: window the sheets in question with `--sheet`/`--range`
   (e.g. `--range A1:G20`) instead of rendering thousands of rows — the
   spot check, and the strict-width view (below).

@@ -20,19 +20,17 @@ internal sealed record CellsReviewSheetLayout
 
     public required bool HasVisualObjects { get; init; }
 
-    public required int HiddenPopulatedColumns { get; init; }
+    public required CellsReviewDimensionSet HiddenPopulatedColumns { get; init; }
 
-    public required int NarrowPopulatedColumns { get; init; }
+    public required CellsReviewDimensionSet NarrowPopulatedColumns { get; init; }
 
-    public required int WidePopulatedColumns { get; init; }
+    public required CellsReviewDimensionSet WidePopulatedColumns { get; init; }
 
-    public required int HiddenPopulatedRows { get; init; }
+    public required CellsReviewDimensionSet HiddenPopulatedRows { get; init; }
 
-    public required int ShortPopulatedRows { get; init; }
+    public required CellsReviewDimensionSet ShortPopulatedRows { get; init; }
 
-    public required int TallPopulatedRows { get; init; }
-
-    public required IReadOnlyList<CellsReviewDimensionIssue> DimensionIssues { get; init; }
+    public required CellsReviewDimensionSet TallPopulatedRows { get; init; }
 
     public required string? PrintArea { get; init; }
 
@@ -45,11 +43,13 @@ internal sealed record CellsReviewSheetLayout
     public required IReadOnlyList<CellsReviewChartLayout> Charts { get; init; }
 }
 
-/// <summary>A populated row or column that is hidden, or unusually small or large.</summary>
-internal sealed record CellsReviewDimensionIssue(
-    string Kind,
-    int Index,
-    double Size);
+/// <summary>
+/// The populated rows or columns of a worksheet in one layout condition: how many there are and
+/// the zero-based indexes of the first few.
+/// </summary>
+internal sealed record CellsReviewDimensionSet(
+    int Count,
+    IReadOnlyList<int> Samples);
 
 /// <summary>Layout facts for one chart on a worksheet.</summary>
 internal sealed record CellsReviewChartLayout

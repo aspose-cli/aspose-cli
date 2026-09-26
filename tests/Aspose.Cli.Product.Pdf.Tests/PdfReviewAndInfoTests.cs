@@ -1,4 +1,5 @@
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Pdf;
 using Xunit;
 
@@ -44,8 +45,22 @@ public sealed class PdfReviewAndInfoTests
         Assert.True(review.ExitCode == 0, review.StdErr);
         JsonNode finding = Assert.Single(
             JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
-            static item => item!["code"]!.GetValue<string>() == "PDF_UNUSUAL_PAGE_SIZE")!;
+            static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_SIZE_UNUSUAL")!;
         Assert.Equal("page 2", finding["location"]!.GetValue<string>());
         Assert.Contains("60 x 40 pt", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Review_DeclaresEveryCheckItsAssessmentReports()
+    {
+        IReadOnlyList<ReviewCheck> declared = new PdfViewAdapter().Checks;
+
+        // Findings are built only from PdfReviewChecks members, so each must be declared.
+        Assert.Equal(
+            typeof(PdfReviewChecks).GetProperties()
+                .Where(static property => property.PropertyType == typeof(ReviewCheck))
+                .Select(static property => (ReviewCheck)property.GetValue(null)!)
+                .OrderBy(static check => check.Code, StringComparer.Ordinal),
+            declared.OrderBy(static check => check.Code, StringComparer.Ordinal));
     }
 }

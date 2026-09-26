@@ -38,7 +38,8 @@ internal static class ReviewEvidenceWriter
         Func<ViewManifest, ProductReviewAssessment> assess,
         LicenseState license,
         ContractJsonSerializer serializer,
-        ResourceBudgetLedger budgets)
+        ResourceBudgetLedger budgets,
+        IReadOnlyList<string>? codes = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(sourcePath);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
@@ -80,7 +81,8 @@ internal static class ReviewEvidenceWriter
                 files,
                 manifest,
                 assessment,
-                license);
+                license,
+                codes);
 
             string reviewJson = serializer.Serialize(result);
             File.WriteAllText(
@@ -119,7 +121,8 @@ internal static class ReviewEvidenceWriter
         ViewBundleManifest files,
         ViewManifest manifest,
         ProductReviewAssessment assessment,
-        LicenseState license)
+        LicenseState license,
+        IReadOnlyList<string>? codes)
     {
         int expected = manifest.TotalParts;
         int rendered = manifest.Parts.Count;
@@ -159,6 +162,10 @@ internal static class ReviewEvidenceWriter
         IReadOnlyList<Warning>? warnings = EnvelopeParts.CombineWarnings(
             EnvelopeParts.OutputWarnings(license),
             EnvelopeParts.CombineWarnings(manifest.Warnings, assessment.Warnings));
+        IReadOnlyList<ReviewFinding> findings = AssociateEvidence(assessment.Findings ?? [], artifacts);
+        IReadOnlyList<ReviewFinding> reported = codes is null
+            ? findings
+            : [.. findings.Where(finding => codes.Contains(finding.Code, StringComparer.Ordinal))];
         return new ReviewResult
         {
             Product = productId,
@@ -184,7 +191,12 @@ internal static class ReviewEvidenceWriter
                 Metrics = assessment.Coverage ?? [],
             },
             Artifacts = artifacts,
-            Findings = AssociateEvidence(assessment.Findings ?? [], artifacts),
+            Findings = reported,
+            Filter = codes is null ? null : new ReviewFilter
+            {
+                Codes = codes,
+                OmittedFindings = findings.Count - reported.Count,
+            },
             License = EnvelopeParts.License(license),
             Warnings = warnings,
         };

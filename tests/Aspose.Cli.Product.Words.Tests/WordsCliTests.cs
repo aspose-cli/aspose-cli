@@ -89,6 +89,45 @@ public sealed class WordsCliTests : IDisposable
     }
 
     [Fact]
+    public void Review_ReportsDeclaredChecksAndFiltersThemByCode()
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Font.Name = "Times New Roman";
+        builder.Font.Size = 5;
+        builder.Writeln("Fine print.");
+        builder.Font.Size = 80;
+        builder.Writeln("Banner");
+        document.StartTrackRevisions("Reviewer", DateTime.UnixEpoch);
+        builder.Font.Size = 12;
+        builder.Writeln("Tracked clause.");
+        document.StopTrackRevisions();
+        document.Save(_workspace.File("findings.docx"));
+
+        CliResult reviewed = _workspace.Run(
+            "review", "findings.docx", "--out", "evidence", "--output", "json");
+
+        Assert.True(reviewed.ExitCode is 0 or 8, reviewed.StdErr);
+        string[] codes = JsonNode.Parse(reviewed.StdOut)!["findings"]!
+            .AsArray()
+            .Select(static finding => finding!["code"]!.GetValue<string>())
+            .ToArray();
+        Assert.Contains("WORDS_TEXT_TOO_SMALL", codes);
+        Assert.Contains("WORDS_TEXT_TOO_LARGE", codes);
+        Assert.Contains("WORDS_REVISIONS_PRESENT", codes);
+
+        CliResult filtered = _workspace.Run(
+            "review", "findings.docx", "--out", "filtered", "--code", "WORDS_TEXT_TOO_SMALL", "--output", "json");
+
+        Assert.True(filtered.ExitCode is 0 or 8, filtered.StdErr);
+        JsonNode result = JsonNode.Parse(filtered.StdOut)!;
+        Assert.All(result["findings"]!.AsArray(), static finding =>
+            Assert.Equal("WORDS_TEXT_TOO_SMALL", finding!["code"]!.GetValue<string>()));
+        Assert.Equal(codes.Count(static code => code != "WORDS_TEXT_TOO_SMALL"),
+            result["filter"]!["omittedFindings"]!.GetValue<int>());
+    }
+
+    [Fact]
     public void Create_RejectsBlankWithTemplate()
     {
         File.WriteAllBytes(_workspace.File("template.docx"), []);

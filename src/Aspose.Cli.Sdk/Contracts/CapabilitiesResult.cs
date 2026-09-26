@@ -219,6 +219,9 @@ public sealed record ProductReviewCapabilities
     public required IReadOnlyList<string> Views { get; init; }
 
     public required bool VisualInspectionRequired { get; init; }
+
+    /// <summary>Every check a review can report, ordered by code; <c>review --code</c> filters by them.</summary>
+    public required IReadOnlyList<ReviewCheck> Checks { get; init; }
 }
 
 /// <summary>Resolved generic-routing contract for this distribution.</summary>

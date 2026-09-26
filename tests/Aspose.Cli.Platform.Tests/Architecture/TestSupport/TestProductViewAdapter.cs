@@ -1,10 +1,13 @@
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Views;
 
 namespace Aspose.Cli.Architecture.Tests;
 
-/// <summary>The one view a product in these tests declares and renders.</summary>
-internal sealed class TestProductViewAdapter<TPort>
+/// <summary>The one view a product in these tests declares and renders, with the given review checks and findings.</summary>
+internal sealed class TestProductViewAdapter<TPort>(
+    IReadOnlyList<ReviewCheck>? checks = null,
+    IReadOnlyList<ReviewFinding>? findings = null)
     : IProductViewAdapter<TPort>
     where TPort : class
 {
@@ -16,6 +19,8 @@ internal sealed class TestProductViewAdapter<TPort>
     public string LiveView => "document";
 
     public bool VisualInspectionRequired => true;
+
+    public IReadOnlyList<ReviewCheck> Checks => checks ?? [];
 
     public ViewManifest Render(
         TPort port,
@@ -34,5 +39,5 @@ internal sealed class TestProductViewAdapter<TPort>
         TPort port,
         string filePath,
         ViewRenderRequest request,
-        ViewManifest rendered) => new();
+        ViewManifest rendered) => new() { Findings = findings };
 }

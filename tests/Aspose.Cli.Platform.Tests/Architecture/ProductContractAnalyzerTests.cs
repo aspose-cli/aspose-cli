@@ -339,6 +339,7 @@ public sealed class ProductContractAnalyzerTests
                 public string ReviewView => "document";
                 public string LiveView => "document";
                 public bool VisualInspectionRequired => true;
+                public System.Collections.Generic.IReadOnlyList<Aspose.Cli.Sdk.Contracts.ReviewCheck> Checks => [];
                 public Aspose.Cli.Sdk.Views.ViewManifest Render(
                     IPort port,
                     string filePath,

@@ -35,8 +35,12 @@ Open every page image under the review directory, one by one; JSON success
 alone does not prove layout quality. `review.json` lists findings and
 `coverage.complete`; when coverage is incomplete, say so. Review still writes
 its evidence but exits 8 when coverage is incomplete or a finding has `error`
-severity, such as `FONTS_MISSING_OR_SUBSTITUTED`. Fix and review again into a
-new directory, for at most three rounds, then report any remaining defects.
+severity, such as `FONTS_MISSING_OR_SUBSTITUTED`. Every finding carries a
+stable check code, such as `WORDS_PAGE_BLANK` or `WORDS_TEXT_TOO_SMALL`;
+`aspose-cli capabilities words --output json` lists them under `review.checks`,
+and `review --code <code...>` reports only the named checks. Fix and review
+again into a new directory, for at most three rounds, then report any remaining
+defects.
 
 `words render` exports page images for delivery. It takes the format from
 `--to`, or from the `--out` extension when `--to` is omitted, and refuses a

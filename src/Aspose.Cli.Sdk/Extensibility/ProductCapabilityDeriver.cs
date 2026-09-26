@@ -61,6 +61,7 @@ internal static class ProductCapabilityDeriver
                 DefaultView = product.View.ReviewView,
                 Views = product.View.ReviewViews,
                 VisualInspectionRequired = product.View.VisualInspectionRequired,
+                Checks = product.View.Checks,
             },
         };
 

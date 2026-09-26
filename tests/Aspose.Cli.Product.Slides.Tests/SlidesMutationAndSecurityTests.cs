@@ -311,7 +311,7 @@ public sealed class SlidesMutationAndSecurityTests
             slideHeight);
         Assert.DoesNotContain(
             review.Findings,
-            static finding => finding.Code == "SLIDES_SHAPE_OUTSIDE_CANVAS");
+            static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);
     }
 
     private static IShape Placeholder(ISlide slide, PlaceholderType type) =>

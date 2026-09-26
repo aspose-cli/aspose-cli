@@ -70,11 +70,25 @@
           },
           "review": {
             "type": "object",
-            "required": ["defaultView", "views", "visualInspectionRequired"],
+            "required": ["defaultView", "views", "visualInspectionRequired", "checks"],
             "properties": {
               "defaultView": { "type": "string" },
               "views": { "type": "array", "items": { "type": "string" } },
-              "visualInspectionRequired": { "type": "boolean" }
+              "visualInspectionRequired": { "type": "boolean" },
+              "checks": {
+                "type": "array",
+                "description": "Every check a review can report, ordered by code; review --code filters by them.",
+                "items": {
+                  "type": "object",
+                  "required": ["code", "severity", "summary"],
+                  "properties": {
+                    "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
+                    "severity": { "enum": ["info", "warning", "error"] },
+                    "summary": { "type": "string", "minLength": 1 }
+                  },
+                  "additionalProperties": false
+                }
+              }
             },
             "additionalProperties": false
           }

@@ -12,6 +12,9 @@ namespace Aspose.Cli.Product.Cells;
 /// </summary>
 internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
 {
+    private const string Hint =
+        "Adjust only the affected worksheet layout, save, and run review again in a new directory.";
+
     public IReadOnlyList<ProductView> Views { get; } =
     [
         new(CellsViews.Sheets, "Sheets", ViewPartKinds.Image),
@@ -23,6 +26,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
     public string LiveView => CellsViews.Workbook;
 
     public bool VisualInspectionRequired => true;
+
+    public IReadOnlyList<ReviewCheck> Checks => CellsReviewChecks.All;
 
     public ViewManifest Render(
         ICellsEngine port,
@@ -65,12 +70,12 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             checked((long)sheet.RowCount * sheet.ColumnCount));
         long populatedCells = layout.Sheets.Sum(static sheet => sheet.PopulatedCells);
         int layoutIssues = layout.Sheets.Sum(static sheet =>
-            sheet.HiddenPopulatedColumns
-            + sheet.NarrowPopulatedColumns
-            + sheet.WidePopulatedColumns
-            + sheet.HiddenPopulatedRows
-            + sheet.ShortPopulatedRows
-            + sheet.TallPopulatedRows);
+            sheet.HiddenPopulatedColumns.Count
+            + sheet.NarrowPopulatedColumns.Count
+            + sheet.WidePopulatedColumns.Count
+            + sheet.HiddenPopulatedRows.Count
+            + sheet.ShortPopulatedRows.Count
+            + sheet.TallPopulatedRows.Count);
         return new ProductReviewAssessment
         {
             Findings = findings,
@@ -87,8 +92,9 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
                 Metric("sheetsWithPrintArea", layout.Sheets.Count(static sheet => sheet.PrintArea is not null), "sheets"),
                 Metric("formulaErrors", info.Workbook.FormulaErrors?.Count ?? 0, "cells"),
             ],
-            Complete = findings.All(static finding => finding.Severity != "error")
-                && !warnings.Any(static warning => warning.AffectsCompleteness),
+            // Complete says whether every check ran; an error finding is a result, which the
+            // review weighs after any --code filter.
+            Complete = !warnings.Any(static warning => warning.AffectsCompleteness),
         };
     }
 
@@ -103,21 +109,19 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             layout.Sheets.ToDictionary(static sheet => sheet.Name, StringComparer.Ordinal);
         foreach (SheetInfo sheet in info.Workbook.Sheets.Where(static sheet => sheet.Hidden))
         {
-            findings.Add(Finding(
-                "CELLS_HIDDEN_SHEET",
-                "info",
+            findings.Add(CellsReviewChecks.SheetHidden.Finding(
                 $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence.",
-                sheet.Name));
+                sheet.Name,
+                Hint));
         }
         foreach (SheetInfo sheet in visible.Where(sheet =>
                      sheet.UsedRange is null
                      && !layoutBySheet[sheet.Name].HasVisualObjects))
         {
-            findings.Add(Finding(
-                "CELLS_EMPTY_SHEET",
-                "info",
+            findings.Add(CellsReviewChecks.SheetEmpty.Finding(
                 $"Visible worksheet '{sheet.Name}' is empty; its PNG is a blank placeholder.",
-                sheet.Name));
+                sheet.Name,
+                Hint));
         }
         foreach (CellsReviewSheetLayout sheet in layout.Sheets.Where(sheet =>
                      visible.Any(visibleSheet =>
@@ -127,27 +131,22 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
         }
         foreach (CellError error in info.Workbook.FormulaErrors ?? [])
         {
-            findings.Add(Finding(
-                "CELLS_FORMULA_ERROR",
-                "error",
+            findings.Add(CellsReviewChecks.FormulaError.Finding(
                 $"Formula evaluates to {error.Error}.",
-                $"{error.Sheet}!{error.Cell}"));
+                $"{error.Sheet}!{error.Cell}",
+                Hint));
         }
         if (info.Workbook.HasVba)
         {
-            findings.Add(Finding(
-                "CELLS_VBA_PRESENT",
-                "warning",
+            findings.Add(CellsReviewChecks.VbaPresent.Finding(
                 "Workbook contains VBA; static PNG evidence does not exercise macros.",
-                null));
+                hint: Hint));
         }
         if (renderedCount < visible.Count)
         {
-            findings.Add(Finding(
-                "CELLS_REVIEW_TRUNCATED",
-                "warning",
+            findings.Add(CellsReviewChecks.ReviewTruncated.Finding(
                 $"Rendered {renderedCount} of {visible.Count} visible worksheets because of the artifact limit.",
-                null));
+                hint: Hint));
         }
         return findings;
     }
@@ -170,11 +169,10 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             && checked(sheet.PopulatedCells * 100) < sheet.UsedAreaCells)
         {
             double density = sheet.PopulatedCells * 100d / sheet.UsedAreaCells;
-            findings.Add(Finding(
-                "CELLS_SPARSE_USED_RANGE",
-                "warning",
+            findings.Add(CellsReviewChecks.UsedRangeSparse.Finding(
                 $"Only {density:0.##}% of the {sheet.UsedAreaCells} cells in the used area contain data; inspect for stray far-away content or excessive whitespace.",
-                sheet.Name));
+                sheet.Name,
+                Hint));
         }
     }
 
@@ -182,49 +180,35 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
         ICollection<ReviewFinding> findings,
         CellsReviewSheetLayout sheet)
     {
-        AddDimensionFinding(
-            findings,
-            sheet,
-            "hidden-column",
-            sheet.HiddenPopulatedColumns,
-            "CELLS_HIDDEN_POPULATED_COLUMNS",
-            "populated column(s) are hidden");
-        AddDimensionFinding(
-            findings,
-            sheet,
-            "narrow-column",
-            sheet.NarrowPopulatedColumns,
-            "CELLS_NARROW_POPULATED_COLUMNS",
-            "populated column(s) are narrower than 3 character units");
-        AddDimensionFinding(
-            findings,
-            sheet,
-            "wide-column",
-            sheet.WidePopulatedColumns,
-            "CELLS_WIDE_POPULATED_COLUMNS",
-            "populated column(s) are wider than 80 character units");
-        AddDimensionFinding(
-            findings,
-            sheet,
-            "hidden-row",
-            sheet.HiddenPopulatedRows,
-            "CELLS_HIDDEN_POPULATED_ROWS",
-            "populated row(s) are hidden");
-        AddDimensionFinding(
-            findings,
-            sheet,
-            "short-row",
-            sheet.ShortPopulatedRows,
-            "CELLS_SHORT_POPULATED_ROWS",
-            "populated row(s) are shorter than 8 points");
-        AddDimensionFinding(
-            findings,
-            sheet,
-            "tall-row",
-            sheet.TallPopulatedRows,
-            "CELLS_TALL_POPULATED_ROWS",
-            "populated row(s) are taller than 120 points");
+        (ReviewCheck Check, CellsReviewDimensionSet Set, string Description, Func<int, string> Name)[] conditions =
+        [
+            (CellsReviewChecks.PopulatedColumnsHidden, sheet.HiddenPopulatedColumns,
+                "populated column(s) are hidden", A1.ColumnName),
+            (CellsReviewChecks.PopulatedColumnsNarrow, sheet.NarrowPopulatedColumns,
+                "populated column(s) are narrower than 3 character units", A1.ColumnName),
+            (CellsReviewChecks.PopulatedColumnsWide, sheet.WidePopulatedColumns,
+                "populated column(s) are wider than 80 character units", A1.ColumnName),
+            (CellsReviewChecks.PopulatedRowsHidden, sheet.HiddenPopulatedRows,
+                "populated row(s) are hidden", RowName),
+            (CellsReviewChecks.PopulatedRowsShort, sheet.ShortPopulatedRows,
+                "populated row(s) are shorter than 8 points", RowName),
+            (CellsReviewChecks.PopulatedRowsTall, sheet.TallPopulatedRows,
+                "populated row(s) are taller than 120 points", RowName),
+        ];
+        foreach ((ReviewCheck check, CellsReviewDimensionSet set, string description, Func<int, string> name) in conditions)
+        {
+            if (set.Count > 0)
+            {
+                findings.Add(check.Finding(
+                    $"{set.Count} {description}; sample: {string.Join(", ", set.Samples.Select(name))}.",
+                    sheet.Name,
+                    Hint));
+            }
+        }
     }
+
+    private static string RowName(int row) =>
+        (row + 1).ToString(System.Globalization.CultureInfo.InvariantCulture);
 
     private static void AddPrintAreaFindings(
         ICollection<ReviewFinding> findings,
@@ -232,27 +216,24 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
     {
         if (sheet.PrintAreaInvalid)
         {
-            findings.Add(Finding(
-                "CELLS_PRINT_AREA_INVALID",
-                "warning",
+            findings.Add(CellsReviewChecks.PrintAreaInvalid.Finding(
                 $"The saved print area '{sheet.PrintArea}' could not be interpreted as bounded A1 ranges.",
-                sheet.Name));
+                sheet.Name,
+                Hint));
         }
         else if (sheet.PrintAreaExcludesContent)
         {
-            findings.Add(Finding(
-                "CELLS_PRINT_AREA_EXCLUDES_CONTENT",
-                "warning",
+            findings.Add(CellsReviewChecks.PrintAreaExcludesContent.Finding(
                 $"The print area '{sheet.PrintArea}' does not contain all populated cells ({sheet.ContentRange}).",
-                sheet.Name));
+                sheet.Name,
+                Hint));
         }
         if (sheet.PrintAreaExcessive)
         {
-            findings.Add(Finding(
-                "CELLS_PRINT_AREA_EXCESSIVE",
-                "warning",
+            findings.Add(CellsReviewChecks.PrintAreaExcessive.Finding(
                 $"The print area '{sheet.PrintArea}' is more than 20 times the populated content bounds ({sheet.ContentRange}).",
-                sheet.Name));
+                sheet.Name,
+                Hint));
         }
     }
 
@@ -274,86 +255,40 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
         string location = $"{sheet.Name} chart '{chart.Name}'";
         if (chart.Hidden)
         {
-            findings.Add(Finding(
-                "CELLS_CHART_HIDDEN",
-                "warning",
+            findings.Add(CellsReviewChecks.ChartHidden.Finding(
                 "The chart object is hidden and will not provide visible evidence.",
-                location));
+                location,
+                Hint));
         }
         if (chart.WidthPixels < 120 || chart.HeightPixels < 80)
         {
-            findings.Add(Finding(
-                "CELLS_CHART_TOO_SMALL",
-                "warning",
+            findings.Add(CellsReviewChecks.ChartTooSmall.Finding(
                 $"The chart is only {chart.WidthPixels} x {chart.HeightPixels} pixels and may be unreadable.",
-                location));
+                location,
+                Hint));
         }
         if (chart.SeriesCount == 0)
         {
-            findings.Add(Finding(
-                "CELLS_CHART_WITHOUT_SERIES",
-                "warning",
+            findings.Add(CellsReviewChecks.ChartWithoutSeries.Finding(
                 "The chart has no data series.",
-                location));
+                location,
+                Hint));
         }
         if (chart.AnchoredInHiddenCells)
         {
-            findings.Add(Finding(
-                "CELLS_CHART_ANCHORED_IN_HIDDEN_CELLS",
-                "warning",
+            findings.Add(CellsReviewChecks.ChartAnchoredInHiddenCells.Finding(
                 "A chart anchor touches hidden rows or columns; inspect whether the object remains visible after reopening.",
-                location));
+                location,
+                Hint));
         }
         if (chart.ExcludedByPrintArea)
         {
-            findings.Add(Finding(
-                "CELLS_PRINT_AREA_EXCLUDES_CHART",
-                "warning",
+            findings.Add(CellsReviewChecks.PrintAreaExcludesChart.Finding(
                 $"The print area '{sheet.PrintArea}' does not intersect this chart.",
-                location));
+                location,
+                Hint));
         }
     }
-
-    private static void AddDimensionFinding(
-        ICollection<ReviewFinding> findings,
-        CellsReviewSheetLayout sheet,
-        string kind,
-        int count,
-        string code,
-        string description)
-    {
-        if (count == 0)
-        {
-            return;
-        }
-        string samples = string.Join(
-            ", ",
-            sheet.DimensionIssues
-                .Where(issue => string.Equals(issue.Kind, kind, StringComparison.Ordinal))
-                .Take(5)
-                .Select(issue => kind.EndsWith("column", StringComparison.Ordinal)
-                    ? A1.ColumnName(issue.Index)
-                    : (issue.Index + 1).ToString(
-                        System.Globalization.CultureInfo.InvariantCulture)));
-        findings.Add(Finding(
-            code,
-            "warning",
-            $"{count} {description}; sample: {samples}.",
-            sheet.Name));
-    }
-
-    private static ReviewFinding Finding(
-        string code,
-        string severity,
-        string message,
-        string? location) => new()
-    {
-        Code = code,
-        Severity = severity,
-        Message = message,
-        Location = location,
-        Hint = "Adjust only the affected worksheet layout, save, and run review again in a new directory.",
-    };
 
     private static ReviewCoverageMetric Metric(string name, long value, string unit) => new()
     {

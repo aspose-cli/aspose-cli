@@ -18,6 +18,8 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<ISlidesEngine>
 
     public bool VisualInspectionRequired => true;
 
+    public IReadOnlyList<ReviewCheck> Checks => SlidesReviewChecks.All;
+
     public ViewManifest Render(
         ISlidesEngine port,
         string filePath,
@@ -63,7 +65,6 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<ISlidesEngine>
                 Metric("highDensitySlides", analysis.HighDensitySlides, "slides"),
                 Metric("lowDensitySlides", analysis.LowDensitySlides, "slides"),
             ],
-            Complete = analysis.Findings.All(static finding => finding.Severity != "error"),
         };
     }
 

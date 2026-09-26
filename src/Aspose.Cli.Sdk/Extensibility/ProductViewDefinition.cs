@@ -45,6 +45,12 @@ public interface IProductViewAdapter<TPort>
     /// <summary>Whether review evidence always requires human or AI visual inspection.</summary>
     bool VisualInspectionRequired { get; }
 
+    /// <summary>
+    /// Every check <see cref="Assess"/> can report, each declared once; codes start with the
+    /// product id in upper case. The SDK adds its font checks (<see cref="ReviewChecks"/>).
+    /// </summary>
+    IReadOnlyList<ReviewCheck> Checks { get; }
+
     /// <summary>Renders the parts of one view into the bounded sink, opening the source once.</summary>
     ViewManifest Render(
         TPort port,
@@ -74,6 +80,7 @@ public sealed partial class ProductViewDefinition
         string reviewView,
         string liveView,
         bool visualInspectionRequired,
+        IReadOnlyList<ReviewCheck> checks,
         Func<object, string, ViewRenderRequest, IViewArtifactSink, ViewManifest> render,
         Func<object, string, ViewRenderRequest, ViewManifest, ProductReviewAssessment> assess,
         Assembly presenterAssembly)
@@ -88,6 +95,7 @@ public sealed partial class ProductViewDefinition
             .Select(static view => view.Id)
             .ToArray());
         VisualInspectionRequired = visualInspectionRequired;
+        Checks = checks;
         _render = render;
         _assess = assess;
         _presentation = new Lazy<ViewPresentation>(() => ReadPresentation(presenterAssembly, productId));
@@ -113,6 +121,9 @@ public sealed partial class ProductViewDefinition
 
     /// <summary>Whether review evidence always requires visual inspection.</summary>
     public bool VisualInspectionRequired { get; }
+
+    /// <summary>Every check a review of this product can report, ordered by code.</summary>
+    public IReadOnlyList<ReviewCheck> Checks { get; }
 
     /// <summary>
     /// The product presenter embedded as <c>Presenter/presenter.js</c> and the
@@ -157,6 +168,7 @@ public sealed partial class ProductViewDefinition
         ProductReviewAssessment assessment = _assess(Port(binding), filePath, request, rendered)
             ?? throw new InvalidOperationException(
                 $"Product '{ProductId}' returned no review assessment.");
+        EnsureDeclared(assessment.Findings);
         IFontEnvironment? fonts = binding.FontEnvironment;
         return fonts is null
             ? AppendFontCheckUnavailable(assessment)
@@ -166,6 +178,20 @@ public sealed partial class ProductViewDefinition
                 {
                     Password = request.Password,
                 }));
+    }
+
+    // A finding must come from a declared check with that check's severity; anything else is a
+    // product defect, because callers filter and gate on the declared codes.
+    private void EnsureDeclared(IReadOnlyList<ReviewFinding>? findings)
+    {
+        foreach (ReviewFinding finding in findings ?? [])
+        {
+            if (!Checks.Any(check => check.Code == finding.Code && check.Severity == finding.Severity))
+            {
+                throw new InvalidOperationException(
+                    $"Product '{ProductId}' reported finding '{finding.Code}' ({finding.Severity}), which is not a declared check.");
+            }
+        }
     }
 
     private static ViewPresentation ReadPresentation(Assembly assembly, string productId) =>
@@ -223,14 +249,10 @@ public sealed partial class ProductViewDefinition
             Findings =
             [
                 .. assessment.Findings ?? [],
-                new ReviewFinding
-                {
-                    Code = "FONTS_NOT_CHECKED",
-                    Severity = "warning",
-                    Message = "The product engine does not expose font diagnostics, so used fonts were not checked.",
-                    Location = "document",
-                    Hint = "Verify font availability and substitution on the target system before relying on visual fidelity.",
-                },
+                ReviewChecks.FontsNotChecked.Finding(
+                    "The product engine does not expose font diagnostics, so used fonts were not checked.",
+                    "document",
+                    "Verify font availability and substitution on the target system before relying on visual fidelity."),
             ],
         };
 
@@ -255,14 +277,10 @@ public sealed partial class ProductViewDefinition
         {
             summary += $", and {unavailable.Length - 8} more";
         }
-        var finding = new ReviewFinding
-        {
-            Code = "FONTS_MISSING_OR_SUBSTITUTED",
-            Severity = "error",
-            Message = $"{unavailable.Length} used font(s) are unavailable or substituted: {summary}.",
-            Location = "document",
-            Hint = "Install the required fonts or deliberately replace them, then save and run review again in a new directory.",
-        };
+        ReviewFinding finding = ReviewChecks.FontsMissingOrSubstituted.Finding(
+            $"{unavailable.Length} used font(s) are unavailable or substituted: {summary}.",
+            "document",
+            "Install the required fonts or deliberately replace them, then save and run review again in a new directory.");
         return assessment with
         {
             Findings = [.. assessment.Findings ?? [], finding],
@@ -293,6 +311,14 @@ public sealed partial class ProductViewDefinition
             throw new InvalidOperationException(
                 $"Product '{productId}' must declare an image review view and a live view.");
         }
+        string prefix = productId.ToUpperInvariant() + "_";
+        ReviewCheck[] checks = [.. adapter.Checks, .. ReviewChecks.Shared];
+        if (adapter.Checks.Any(check => !check.Code.StartsWith(prefix, StringComparison.Ordinal))
+            || checks.Select(static check => check.Code).Distinct(StringComparer.Ordinal).Count() != checks.Length)
+        {
+            throw new InvalidOperationException(
+                $"Product '{productId}' must declare uniquely coded review checks that start with '{prefix}'.");
+        }
         return new ProductViewDefinition(
             typeof(TPort),
             productId,
@@ -300,6 +326,7 @@ public sealed partial class ProductViewDefinition
             adapter.ReviewView,
             adapter.LiveView,
             adapter.VisualInspectionRequired,
+            Array.AsReadOnly(checks.OrderBy(static check => check.Code, StringComparer.Ordinal).ToArray()),
             (port, path, request, artifacts) =>
                 adapter.Render((TPort)port, path, request, artifacts),
             (port, path, request, rendered) =>

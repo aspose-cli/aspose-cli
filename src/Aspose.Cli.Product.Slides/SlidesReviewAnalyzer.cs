@@ -9,8 +9,9 @@ namespace Aspose.Cli.Product.Slides;
 internal static class SlidesReviewAnalyzer
 {
     private const double GeometryTolerance = 0.5;
-    private const double SevereCoverage = 0.80;
-    private const double ChartCoverage = 0.30;
+    internal const double SevereCoverage = 0.80;
+    internal const double ChartCoverage = 0.30;
+    private const string Hint = "Inspect the rendered evidence, adjust only confirmed layout defects, save, and review again.";
 
     public static SlidesReviewAnalysis Analyze(
         IReadOnlyList<SlideData> slides,
@@ -41,10 +42,10 @@ internal static class SlidesReviewAnalyzer
             if (firstByFingerprint.TryGetValue(fingerprint, out int first))
             {
                 result.DuplicateSlides++;
-                result.Findings.Add(Finding(
-                    "SLIDES_DUPLICATE_SLIDE",
+                result.Findings.Add(SlidesReviewChecks.SlideDuplicate.Finding(
                     $"Slide {slide.Slide} has the same meaningful content and geometry as slide {first}; inspect both before removing either one.",
-                    slide.Slide));
+                    Location(slide.Slide),
+                    Hint));
             }
             else
             {
@@ -62,10 +63,10 @@ internal static class SlidesReviewAnalyzer
         if (IsBlank(slide))
         {
             result.BlankSlides++;
-            result.Findings.Add(Finding(
-                "SLIDES_BLANK_SLIDE",
+            result.Findings.Add(SlidesReviewChecks.SlideBlank.Finding(
                 "The slide has no visible authored content; confirm that it is intentional.",
-                slide.Slide));
+                Location(slide.Slide),
+                Hint));
         }
 
         foreach (SlideShapeData shape in slide.Shapes)
@@ -90,10 +91,10 @@ internal static class SlidesReviewAnalyzer
             || rect.Y + rect.Height > slideHeight + GeometryTolerance)
         {
             result.OutsideShapes++;
-            result.Findings.Add(Finding(
-                "SLIDES_SHAPE_OUTSIDE_CANVAS",
-                $"Shape '{Label(shape)}' extends outside the slide canvas.",
-                slideNumber));
+            result.Findings.Add(SlidesReviewChecks.ShapeOutsideSlide.Finding(
+                $"Shape '{Label(shape)}' extends outside the slide.",
+                Location(slideNumber),
+                Hint));
         }
 
         double minimum = shape.Runs?
@@ -104,10 +105,10 @@ internal static class SlidesReviewAnalyzer
         if (minimum is > 0 and < 12)
         {
             result.SmallTextShapes++;
-            result.Findings.Add(Finding(
-                "SLIDES_SMALL_TEXT",
+            result.Findings.Add(SlidesReviewChecks.TextTooSmall.Finding(
                 $"Shape '{Label(shape)}' contains text below 12 pt.",
-                slideNumber));
+                Location(slideNumber),
+                Hint));
         }
     }
 
@@ -125,10 +126,10 @@ internal static class SlidesReviewAnalyzer
         if (high)
         {
             result.HighDensitySlides++;
-            result.Findings.Add(Finding(
-                "SLIDES_CONTENT_DENSITY_HIGH",
+            result.Findings.Add(SlidesReviewChecks.ContentDensityHigh.Finding(
                 $"The slide contains {content.Length} content objects and {characters} text characters; inspect readability and consider splitting it.",
-                slide.Slide));
+                Location(slide.Slide),
+                Hint));
             return;
         }
 
@@ -140,10 +141,10 @@ internal static class SlidesReviewAnalyzer
             && occupied < 0.12)
         {
             result.LowDensitySlides++;
-            result.Findings.Add(Finding(
-                "SLIDES_CONTENT_DENSITY_LOW",
+            result.Findings.Add(SlidesReviewChecks.ContentDensityLow.Finding(
                 $"Three or more content objects occupy only {occupied:P0} of the slide with very little text; inspect for content stranded in a corner.",
-                slide.Slide));
+                Location(slide.Slide),
+                Hint));
         }
     }
 
@@ -180,19 +181,19 @@ internal static class SlidesReviewAnalyzer
                 if (lower.Type == "chart" && covered >= ChartCoverage)
                 {
                     result.CoveredCharts++;
-                    result.Findings.Add(Finding(
-                        "SLIDES_CHART_COVERED",
+                    result.Findings.Add(SlidesReviewChecks.ChartCovered.Finding(
                         $"Opaque foreground shape '{Label(upper)}' covers {covered:P0} of chart '{Label(lower)}'; verify the rendered slide before changing it.",
-                        slide.Slide));
+                        Location(slide.Slide),
+                        Hint));
                     break;
                 }
                 if (covered >= SevereCoverage)
                 {
                     result.SevereOverlaps++;
-                    result.Findings.Add(Finding(
-                        "SLIDES_SEVERE_OBJECT_OVERLAP",
+                    result.Findings.Add(SlidesReviewChecks.ShapesOverlap.Finding(
                         $"Opaque foreground shape '{Label(upper)}' covers {covered:P0} of content shape '{Label(lower)}'; verify that this is intentional.",
-                        slide.Slide));
+                        Location(slide.Slide),
+                        Hint));
                     break;
                 }
             }
@@ -293,14 +294,7 @@ internal static class SlidesReviewAnalyzer
 
     private static string Label(SlideShapeData shape) => shape.ShapeName ?? shape.ShapeId.ToString(CultureInfo.InvariantCulture);
 
-    private static ReviewFinding Finding(string code, string message, int slide) => new()
-    {
-        Code = code,
-        Severity = "warning",
-        Message = message,
-        Location = $"slide {slide}",
-        Hint = "Inspect the rendered evidence, adjust only confirmed layout defects, save, and review again.",
-    };
+    private static string Location(int slide) => string.Create(CultureInfo.InvariantCulture, $"slide {slide}");
 }
 
 internal sealed class SlidesReviewAnalysis

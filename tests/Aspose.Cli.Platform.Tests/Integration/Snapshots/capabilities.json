@@ -165,7 +165,119 @@
         "views": [
           "sheets"
         ],
-        "visualInspectionRequired": true
+        "visualInspectionRequired": true,
+        "checks": [
+          {
+            "code": "CELLS_CHART_ANCHORED_IN_HIDDEN_CELLS",
+            "severity": "warning",
+            "summary": "A chart's anchor corner lies in a hidden row or column."
+          },
+          {
+            "code": "CELLS_CHART_HIDDEN",
+            "severity": "warning",
+            "summary": "A chart object is hidden and provides no visible evidence."
+          },
+          {
+            "code": "CELLS_CHART_TOO_SMALL",
+            "severity": "warning",
+            "summary": "A chart is narrower than 120 or shorter than 80 pixels."
+          },
+          {
+            "code": "CELLS_CHART_WITHOUT_SERIES",
+            "severity": "warning",
+            "summary": "A chart has no data series."
+          },
+          {
+            "code": "CELLS_FORMULA_ERROR",
+            "severity": "error",
+            "summary": "A formula evaluates to an error value."
+          },
+          {
+            "code": "CELLS_POPULATED_COLUMNS_HIDDEN",
+            "severity": "warning",
+            "summary": "Columns that contain data are hidden."
+          },
+          {
+            "code": "CELLS_POPULATED_COLUMNS_NARROW",
+            "severity": "warning",
+            "summary": "Columns that contain data are narrower than 3 character units."
+          },
+          {
+            "code": "CELLS_POPULATED_COLUMNS_WIDE",
+            "severity": "warning",
+            "summary": "Columns that contain data are wider than 80 character units."
+          },
+          {
+            "code": "CELLS_POPULATED_ROWS_HIDDEN",
+            "severity": "warning",
+            "summary": "Rows that contain data are hidden."
+          },
+          {
+            "code": "CELLS_POPULATED_ROWS_SHORT",
+            "severity": "warning",
+            "summary": "Rows that contain data are shorter than 8 points."
+          },
+          {
+            "code": "CELLS_POPULATED_ROWS_TALL",
+            "severity": "warning",
+            "summary": "Rows that contain data are taller than 120 points."
+          },
+          {
+            "code": "CELLS_PRINT_AREA_EXCESSIVE",
+            "severity": "warning",
+            "summary": "A print area is more than 20 times the bounds of the populated content."
+          },
+          {
+            "code": "CELLS_PRINT_AREA_EXCLUDES_CHART",
+            "severity": "warning",
+            "summary": "A print area does not intersect a chart on its worksheet."
+          },
+          {
+            "code": "CELLS_PRINT_AREA_EXCLUDES_CONTENT",
+            "severity": "warning",
+            "summary": "A print area does not contain every populated cell of its worksheet."
+          },
+          {
+            "code": "CELLS_PRINT_AREA_INVALID",
+            "severity": "warning",
+            "summary": "A saved print area cannot be interpreted as bounded A1 ranges."
+          },
+          {
+            "code": "CELLS_REVIEW_TRUNCATED",
+            "severity": "warning",
+            "summary": "The artifact limit stopped rendering before every visible worksheet had an image."
+          },
+          {
+            "code": "CELLS_SHEET_EMPTY",
+            "severity": "info",
+            "summary": "A visible worksheet has no cells or drawing objects, so its image is a blank placeholder."
+          },
+          {
+            "code": "CELLS_SHEET_HIDDEN",
+            "severity": "info",
+            "summary": "A worksheet is hidden and therefore excluded from the visual evidence."
+          },
+          {
+            "code": "CELLS_USED_RANGE_SPARSE",
+            "severity": "warning",
+            "summary": "Less than 1% of a worksheet's used area of at least 100 cells contains data."
+          },
+          {
+            "code": "CELLS_VBA_PRESENT",
+            "severity": "warning",
+            "summary": "The workbook contains VBA, which static images do not exercise."
+          },
+          {
+            "code": "FONTS_MISSING_OR_SUBSTITUTED",
+            "severity": "error",
+            "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
+          },
+          {
+            "code": "FONTS_NOT_CHECKED",
+            "severity": "warning",
+            "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
+          }
+        ]
       },
       "formats": [
         {
@@ -2073,7 +2185,59 @@
         "views": [
           "pages"
         ],
-        "visualInspectionRequired": true
+        "visualInspectionRequired": true,
+        "checks": [
+          {
+            "code": "FONTS_MISSING_OR_SUBSTITUTED",
+            "severity": "error",
+            "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
+          },
+          {
+            "code": "FONTS_NOT_CHECKED",
+            "severity": "warning",
+            "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
+          },
+          {
+            "code": "PDF_FONTS_NOT_EMBEDDED",
+            "severity": "warning",
+            "summary": "Font resources other than the standard 14 PDF fonts are not embedded, so rendering can vary between machines."
+          },
+          {
+            "code": "PDF_FORM_APPEARANCE_REVIEW_REQUIRED",
+            "severity": "info",
+            "summary": "The document contains form fields whose rendered appearances must be inspected for stale, clipped or missing values."
+          },
+          {
+            "code": "PDF_FORM_FIELD_PAGE_UNRESOLVED",
+            "severity": "warning",
+            "summary": "Form fields cannot be associated with a valid page of the document."
+          },
+          {
+            "code": "PDF_PAGE_SIZE_UNUSUAL",
+            "severity": "warning",
+            "summary": "A page is narrower or shorter than 72 pt, or wider or taller than 2880 pt, and may preview poorly."
+          },
+          {
+            "code": "PDF_PAGE_UTILIZATION_LOW",
+            "severity": "warning",
+            "summary": "A page carries very little readable text, which may indicate an unintended sparse page or pagination break."
+          },
+          {
+            "code": "PDF_PAGE_WITHOUT_READABLE_CONTENT",
+            "severity": "warning",
+            "summary": "A page has no readable text and was not identified as a scanned page, so it may be unintentionally blank."
+          },
+          {
+            "code": "PDF_TEXT_ANALYSIS_TRUNCATED",
+            "severity": "warning",
+            "summary": "Text extraction reached its budget, so the structural text checks of a page are incomplete."
+          },
+          {
+            "code": "PDF_TEXT_OUTSIDE_PAGE",
+            "severity": "warning",
+            "summary": "Text fragments extend beyond the page rectangle and may be clipped."
+          }
+        ]
       },
       "formats": [
         {
@@ -4520,7 +4684,59 @@
         "views": [
           "slides"
         ],
-        "visualInspectionRequired": true
+        "visualInspectionRequired": true,
+        "checks": [
+          {
+            "code": "FONTS_MISSING_OR_SUBSTITUTED",
+            "severity": "error",
+            "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
+          },
+          {
+            "code": "FONTS_NOT_CHECKED",
+            "severity": "warning",
+            "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
+          },
+          {
+            "code": "SLIDES_CHART_COVERED",
+            "severity": "warning",
+            "summary": "An opaque foreground shape covers at least 30% of a chart."
+          },
+          {
+            "code": "SLIDES_CONTENT_DENSITY_HIGH",
+            "severity": "warning",
+            "summary": "A slide holds so many content objects or so much text that it may be hard to read."
+          },
+          {
+            "code": "SLIDES_CONTENT_DENSITY_LOW",
+            "severity": "warning",
+            "summary": "Several content objects with little text occupy only a small part of a slide."
+          },
+          {
+            "code": "SLIDES_SHAPES_OVERLAP",
+            "severity": "warning",
+            "summary": "An opaque foreground shape covers at least 80% of a content shape."
+          },
+          {
+            "code": "SLIDES_SHAPE_OUTSIDE_SLIDE",
+            "severity": "warning",
+            "summary": "A shape extends beyond the slide boundaries."
+          },
+          {
+            "code": "SLIDES_SLIDE_BLANK",
+            "severity": "warning",
+            "summary": "A slide has no visible authored content."
+          },
+          {
+            "code": "SLIDES_SLIDE_DUPLICATE",
+            "severity": "warning",
+            "summary": "A slide repeats the meaningful content and geometry of an earlier slide."
+          },
+          {
+            "code": "SLIDES_TEXT_TOO_SMALL",
+            "severity": "warning",
+            "summary": "A shape contains visible text smaller than 12 pt."
+          }
+        ]
       },
       "formats": [
         {
@@ -6502,7 +6718,64 @@
         "views": [
           "pages"
         ],
-        "visualInspectionRequired": true
+        "visualInspectionRequired": true,
+        "checks": [
+          {
+            "code": "FONTS_MISSING_OR_SUBSTITUTED",
+            "severity": "error",
+            "summary": "A font the document uses is unavailable or substituted, so the rendering may differ from the author's."
+          },
+          {
+            "code": "FONTS_NOT_CHECKED",
+            "severity": "warning",
+            "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
+          },
+          {
+            "code": "WORDS_DOCUMENT_EMPTY",
+            "severity": "warning",
+            "summary": "The document has no readable text, tables or images."
+          },
+          {
+            "code": "WORDS_HEADING_ORPHANED",
+            "severity": "warning",
+            "summary": "A heading ends a page after prior content while its body starts on the next page."
+          },
+          {
+            "code": "WORDS_OBJECT_OUTSIDE_PAGE",
+            "severity": "warning",
+            "summary": "A drawing object extends beyond the physical page boundary."
+          },
+          {
+            "code": "WORDS_PAGE_BLANK",
+            "severity": "warning",
+            "summary": "A laid-out page has no visible body text, table rows or drawing objects."
+          },
+          {
+            "code": "WORDS_PAGE_BREAKS_EXCESSIVE",
+            "severity": "warning",
+            "summary": "A page contains more than one explicit page-break control."
+          },
+          {
+            "code": "WORDS_PAGE_UTILIZATION_LOW",
+            "severity": "warning",
+            "summary": "A page after the first holds only a sliver of visible content, such as a stranded line."
+          },
+          {
+            "code": "WORDS_REVISIONS_PRESENT",
+            "severity": "info",
+            "summary": "The document contains tracked revisions, which a visual-only repair must not accept."
+          },
+          {
+            "code": "WORDS_TEXT_TOO_LARGE",
+            "severity": "warning",
+            "summary": "Visible body text on a page is larger than 72 pt."
+          },
+          {
+            "code": "WORDS_TEXT_TOO_SMALL",
+            "severity": "warning",
+            "summary": "Visible body text on a page is smaller than 7 pt."
+          }
+        ]
       },
       "formats": [
         {
@@ -13933,6 +14206,69 @@
       "description": "Create a portable static evidence directory for visual inspection.",
       "hidden": false,
       "options": [
+        {
+          "name": "--code",
+          "aliases": [],
+          "type": "string[]",
+          "minimumArity": 1,
+          "maximumArity": 100000,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [
+            "CELLS_CHART_ANCHORED_IN_HIDDEN_CELLS",
+            "CELLS_CHART_HIDDEN",
+            "CELLS_CHART_TOO_SMALL",
+            "CELLS_CHART_WITHOUT_SERIES",
+            "CELLS_FORMULA_ERROR",
+            "CELLS_POPULATED_COLUMNS_HIDDEN",
+            "CELLS_POPULATED_COLUMNS_NARROW",
+            "CELLS_POPULATED_COLUMNS_WIDE",
+            "CELLS_POPULATED_ROWS_HIDDEN",
+            "CELLS_POPULATED_ROWS_SHORT",
+            "CELLS_POPULATED_ROWS_TALL",
+            "CELLS_PRINT_AREA_EXCESSIVE",
+            "CELLS_PRINT_AREA_EXCLUDES_CHART",
+            "CELLS_PRINT_AREA_EXCLUDES_CONTENT",
+            "CELLS_PRINT_AREA_INVALID",
+            "CELLS_REVIEW_TRUNCATED",
+            "CELLS_SHEET_EMPTY",
+            "CELLS_SHEET_HIDDEN",
+            "CELLS_USED_RANGE_SPARSE",
+            "CELLS_VBA_PRESENT",
+            "FONTS_MISSING_OR_SUBSTITUTED",
+            "FONTS_NOT_CHECKED",
+            "PDF_FONTS_NOT_EMBEDDED",
+            "PDF_FORM_APPEARANCE_REVIEW_REQUIRED",
+            "PDF_FORM_FIELD_PAGE_UNRESOLVED",
+            "PDF_PAGE_SIZE_UNUSUAL",
+            "PDF_PAGE_UTILIZATION_LOW",
+            "PDF_PAGE_WITHOUT_READABLE_CONTENT",
+            "PDF_TEXT_ANALYSIS_TRUNCATED",
+            "PDF_TEXT_OUTSIDE_PAGE",
+            "SLIDES_CHART_COVERED",
+            "SLIDES_CONTENT_DENSITY_HIGH",
+            "SLIDES_CONTENT_DENSITY_LOW",
+            "SLIDES_SHAPES_OVERLAP",
+            "SLIDES_SHAPE_OUTSIDE_SLIDE",
+            "SLIDES_SLIDE_BLANK",
+            "SLIDES_SLIDE_DUPLICATE",
+            "SLIDES_TEXT_TOO_SMALL",
+            "WORDS_DOCUMENT_EMPTY",
+            "WORDS_HEADING_ORPHANED",
+            "WORDS_OBJECT_OUTSIDE_PAGE",
+            "WORDS_PAGE_BLANK",
+            "WORDS_PAGE_BREAKS_EXCESSIVE",
+            "WORDS_PAGE_UTILIZATION_LOW",
+            "WORDS_REVISIONS_PRESENT",
+            "WORDS_TEXT_TOO_LARGE",
+            "WORDS_TEXT_TOO_SMALL"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review."
+        },
         {
           "name": "--font-dir",
           "aliases": [],

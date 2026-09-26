@@ -17,7 +17,12 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
 
     public string LiveView => PdfViews.Pages;
 
+    private const string Hint =
+        "Correct the affected final PDF page, save, and run review again in a new directory.";
+
     public bool VisualInspectionRequired => true;
+
+    public IReadOnlyList<ReviewCheck> Checks => PdfReviewChecks.All;
 
     public ViewManifest Render(
         IPdfEngine port,
@@ -89,7 +94,6 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 Metric("formFields", forms.Fields, "fields"),
                 Metric("formFieldsWithoutPage", forms.FieldsWithoutPage, "fields"),
             ],
-            Complete = findings.All(static finding => finding.Severity != "error"),
         };
     }
 
@@ -103,11 +107,10 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             {
                 continue;
             }
-            findings.Add(Finding(
-                "PDF_TEXT_OUTSIDE_PAGE",
-                "warning",
+            findings.Add(PdfReviewChecks.TextOutsidePage.Finding(
                 $"{page.OutsideTextFragments} text fragment(s) extend beyond the page rectangle and may be clipped.",
-                $"page {page.Page}"));
+                $"page {page.Page}",
+                Hint));
         }
     }
 
@@ -121,12 +124,11 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             if (IsUnusualPageSize(page))
             {
                 unusualPages++;
-                findings.Add(Finding(
-                    "PDF_UNUSUAL_PAGE_SIZE",
-                    "warning",
+                findings.Add(PdfReviewChecks.PageSizeUnusual.Finding(
                     string.Create(CultureInfo.InvariantCulture,
                         $"Page size {page.WidthPoints:0.##} x {page.HeightPoints:0.##} pt is unusual and may preview poorly."),
-                    $"page {page.Page}"));
+                    $"page {page.Page}",
+                    Hint));
             }
         }
         return unusualPages;
@@ -159,11 +161,10 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 continue;
             }
             emptyPages++;
-            findings.Add(Finding(
-                "PDF_PAGE_WITHOUT_READABLE_CONTENT",
-                "warning",
+            findings.Add(PdfReviewChecks.PageWithoutReadableContent.Finding(
                 "The page has no readable text and was not identified as a scanned page; inspect it for unintended blank output.",
-                $"page {page.Page}"));
+                $"page {page.Page}",
+                Hint));
         }
         return new TextAnalysis(emptyPages, lowUtilizationPages);
     }
@@ -186,19 +187,17 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             && page.Text.Trim().Length is > 0 and < 24)
         {
             lowUtilization = 1;
-            findings.Add(Finding(
-                "PDF_LOW_PAGE_UTILIZATION",
-                "warning",
+            findings.Add(PdfReviewChecks.PageUtilizationLow.Finding(
                 "The page contains very little readable content; inspect for an unintended sparse page or pagination break.",
-                $"page {page.Page}"));
+                $"page {page.Page}",
+                Hint));
         }
         if (page.Truncated)
         {
-            findings.Add(Finding(
-                "PDF_TEXT_ANALYSIS_TRUNCATED",
-                "warning",
+            findings.Add(PdfReviewChecks.TextAnalysisTruncated.Finding(
                 "Text analysis reached its extraction budget; visual evidence remains available but structural text checks are incomplete.",
-                $"page {page.Page}"));
+                $"page {page.Page}",
+                Hint));
         }
         return lowUtilization;
     }
@@ -221,18 +220,16 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         });
         int fieldsWithoutPage = form.Fields.Count(field =>
             field.Page is null or < 1 || field.Page > pages);
-        findings.Add(Finding(
-            "PDF_FORM_APPEARANCE_REVIEW_REQUIRED",
-            "info",
+        findings.Add(PdfReviewChecks.FormAppearanceReviewRequired.Finding(
             $"The PDF contains {formFields} form field(s); inspect every rendered field appearance for stale, clipped, or missing values.",
-            "document"));
+            "document",
+            Hint));
         if (fieldsWithoutPage > 0)
         {
-            findings.Add(Finding(
-                "PDF_FORM_FIELD_PAGE_UNRESOLVED",
-                "warning",
+            findings.Add(PdfReviewChecks.FormFieldPageUnresolved.Finding(
                 $"{fieldsWithoutPage} form field(s) could not be associated with a valid page.",
-                "document"));
+                "document",
+                Hint));
         }
         return new FormAnalysis(formFields, fieldsWithoutPage);
     }
@@ -257,23 +254,13 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             !font.Embedded && !IsPortableBase14(font.Name));
         if (unembeddedFonts > 0)
         {
-            findings.Add(Finding(
-                "PDF_FONTS_NOT_EMBEDDED",
-                "warning",
+            findings.Add(PdfReviewChecks.FontsNotEmbedded.Finding(
                 $"{unembeddedFonts} font resource(s) are not embedded; rendering can vary on another machine.",
-                "document"));
+                "document",
+                Hint));
         }
         return unembeddedFonts;
     }
-
-    private static ReviewFinding Finding(string code, string severity, string message, string location) => new()
-    {
-        Code = code,
-        Severity = severity,
-        Message = message,
-        Location = location,
-        Hint = "Correct the affected final PDF page, save, and run review again in a new directory.",
-    };
 
     private static bool IsPortableBase14(string name)
     {

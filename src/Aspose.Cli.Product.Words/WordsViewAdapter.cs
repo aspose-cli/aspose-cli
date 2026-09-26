@@ -8,6 +8,9 @@ namespace Aspose.Cli.Product.Words;
 /// <summary>Product-owned page views and the structural heuristics of their review.</summary>
 internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
 {
+    private const string RepairHint =
+        "Adjust the affected page structure or pagination, save, and run review again in a new directory.";
+
     public IReadOnlyList<ProductView> Views { get; } =
         [new(WordsViews.Pages, "Pages", ViewPartKinds.Image)];
 
@@ -16,6 +19,8 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
     public string LiveView => WordsViews.Pages;
 
     public bool VisualInspectionRequired => true;
+
+    public IReadOnlyList<ReviewCheck> Checks => WordsReviewChecks.All;
 
     public ViewManifest Render(
         IWordsEngine port,
@@ -50,20 +55,18 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
             && (info.Tables?.Count ?? 0) == 0
             && (info.Images?.Count ?? 0) == 0)
         {
-            findings.Add(Finding(
-                "WORDS_DOCUMENT_EMPTY",
-                "warning",
+            findings.Add(WordsReviewChecks.DocumentEmpty.Finding(
                 "The document has no readable text, tables, or images.",
-                "document"));
+                "document",
+                RepairHint));
         }
         AddLayoutFindings(layout, findings);
         if (info.Document.RevisionsPresent)
         {
-            findings.Add(Finding(
-                "WORDS_REVISIONS_PRESENT",
-                "info",
+            findings.Add(WordsReviewChecks.RevisionsPresent.Finding(
                 "Tracked revisions are present and must not be accepted as a visual-only repair.",
-                "document"));
+                "document",
+                RepairHint));
         }
 
         return new ProductReviewAssessment
@@ -80,7 +83,6 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
                 Metric("outsideObjects", layout.Pages.Sum(static page => page.OutsideObjects), "objects"),
                 Metric("orphanedHeadings", layout.OrphanedHeadings.Count, "headings"),
             ],
-            Complete = findings.All(static finding => finding.Severity != "error"),
         };
     }
 
@@ -93,62 +95,55 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
             string location = $"page {page.Page}";
             if (!HasVisibleContent(page))
             {
-                findings.Add(Finding(
-                    "WORDS_BLANK_PAGE",
-                    "warning",
+                findings.Add(WordsReviewChecks.PageBlank.Finding(
                     "The fixed-page layout contains no visible body text, table rows, or drawing objects.",
-                    location));
+                    location,
+                    RepairHint));
             }
             else if (IsExtremelyLowUtilization(page))
             {
-                findings.Add(Finding(
-                    "WORDS_PAGE_UTILIZATION_LOW",
-                    "warning",
+                findings.Add(WordsReviewChecks.PageUtilizationLow.Finding(
                     $"Visible body content occupies only {page.ContentAreaRatio:P1} of the page bounding area.",
-                    location));
+                    location,
+                    RepairHint));
             }
             if (page.MinimumFontSize is > 0 and < 7)
             {
-                findings.Add(Finding(
-                    "WORDS_FONT_SIZE_TOO_SMALL",
-                    "warning",
+                findings.Add(WordsReviewChecks.TextTooSmall.Finding(
                     $"Visible body text uses a minimum font size of {page.MinimumFontSize:0.#} pt.",
-                    location));
+                    location,
+                    RepairHint));
             }
             if (page.MaximumFontSize is > 72)
             {
-                findings.Add(Finding(
-                    "WORDS_FONT_SIZE_UNUSUALLY_LARGE",
-                    "warning",
+                findings.Add(WordsReviewChecks.TextTooLarge.Finding(
                     $"Visible body text uses a maximum font size of {page.MaximumFontSize:0.#} pt.",
-                    location));
+                    location,
+                    RepairHint));
             }
             if (page.OutsideObjects > 0)
             {
                 string names = string.Join(", ", page.OutsideObjectNames);
-                findings.Add(Finding(
-                    "WORDS_OBJECT_OUTSIDE_PAGE",
-                    "warning",
+                findings.Add(WordsReviewChecks.ObjectOutsidePage.Finding(
                     $"{page.OutsideObjects} drawing object(s) extend beyond the physical page boundary: {names}.",
-                    location));
+                    location,
+                    RepairHint));
             }
             if (page.ExplicitPageBreaks > 1)
             {
-                findings.Add(Finding(
-                    "WORDS_PAGE_BREAKS_EXCESSIVE",
-                    "warning",
+                findings.Add(WordsReviewChecks.PageBreaksExcessive.Finding(
                     $"The page contains {page.ExplicitPageBreaks} explicit page-break controls.",
-                    location));
+                    location,
+                    RepairHint));
             }
         }
 
         foreach (WordsReviewHeadingLayout heading in layout.OrphanedHeadings)
         {
-            findings.Add(Finding(
-                "WORDS_HEADING_ORPHANED",
-                "warning",
+            findings.Add(WordsReviewChecks.HeadingOrphaned.Finding(
                 $"Heading level {heading.Level} '{heading.Text}' follows prior page content but its body starts on the next page.",
-                $"page {heading.Page}, block {heading.Block}"));
+                $"page {heading.Page}, block {heading.Block}",
+                RepairHint));
         }
     }
 
@@ -161,15 +156,6 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
         && page.ContentAreaRatio < 0.025
         && page.VisibleCharacters < 80
         && page.VisualObjects <= 1;
-
-    private static ReviewFinding Finding(string code, string severity, string message, string location) => new()
-    {
-        Code = code,
-        Severity = severity,
-        Message = message,
-        Location = location,
-        Hint = "Adjust the affected page structure or pagination, save, and run review again in a new directory.",
-    };
 
     private static ReviewCoverageMetric Metric(string name, long value, string unit) => new()
     {

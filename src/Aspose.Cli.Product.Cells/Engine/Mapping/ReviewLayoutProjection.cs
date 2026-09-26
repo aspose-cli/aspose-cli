@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>Builds bounded, SDK-neutral layout facts for visual review.</summary>
 internal static class ReviewLayoutProjection
 {
-    private const int MaxIssueSamplesPerSheet = 100;
+    private const int MaxDimensionSamples = 5;
     private const double NarrowColumnWidth = 3;
     private const double WideColumnWidth = 80;
     private const double ShortRowHeight = 8;
@@ -29,9 +29,8 @@ internal static class ReviewLayoutProjection
     private static CellsReviewSheetLayout InspectSheet(Worksheet sheet)
     {
         SheetContentScan content = ScanContent(sheet);
-        var issues = new List<CellsReviewDimensionIssue>();
-        DimensionScan columns = InspectColumns(sheet, content.OccupiedColumns, issues);
-        DimensionScan rows = InspectRows(sheet, content.OccupiedRows, issues);
+        DimensionScan columns = InspectColumns(sheet, content.OccupiedColumns);
+        DimensionScan rows = InspectRows(sheet, content.OccupiedRows);
         PrintAreaScan print = InspectPrintArea(sheet, content.ContentRange);
         IReadOnlyList<CellsReviewChartLayout> charts = InspectCharts(sheet, print.Ranges);
 
@@ -42,13 +41,12 @@ internal static class ReviewLayoutProjection
             PopulatedCells = content.PopulatedCells,
             ContentRange = content.ContentRange is { } range ? A1.FormatRange(range) : null,
             HasVisualObjects = sheet.Shapes.Count > 0,
-            HiddenPopulatedColumns = columns.Hidden,
-            NarrowPopulatedColumns = columns.Small,
-            WidePopulatedColumns = columns.Large,
-            HiddenPopulatedRows = rows.Hidden,
-            ShortPopulatedRows = rows.Small,
-            TallPopulatedRows = rows.Large,
-            DimensionIssues = issues,
+            HiddenPopulatedColumns = columns.Hidden.ToSet(),
+            NarrowPopulatedColumns = columns.Small.ToSet(),
+            WidePopulatedColumns = columns.Large.ToSet(),
+            HiddenPopulatedRows = rows.Hidden.ToSet(),
+            ShortPopulatedRows = rows.Small.ToSet(),
+            TallPopulatedRows = rows.Large.ToSet(),
             PrintArea = print.Value,
             PrintAreaInvalid = print.Invalid,
             PrintAreaExcludesContent = print.ExcludesContent,
@@ -101,12 +99,9 @@ internal static class ReviewLayoutProjection
 
     private static DimensionScan InspectColumns(
         Worksheet sheet,
-        IReadOnlyList<bool> occupied,
-        ICollection<CellsReviewDimensionIssue> issues)
+        IReadOnlyList<bool> occupied)
     {
-        int hiddenColumns = 0;
-        int narrowColumns = 0;
-        int wideColumns = 0;
+        var scan = new DimensionScan();
         for (int column = 0; column < occupied.Count; column++)
         {
             if (!occupied[column])
@@ -116,31 +111,25 @@ internal static class ReviewLayoutProjection
             double width = sheet.Cells.GetColumnWidth(column);
             if (sheet.Cells.IsColumnHidden(column))
             {
-                hiddenColumns++;
-                AddIssue(issues, "hidden-column", column, width);
+                scan.Hidden.Add(column);
             }
             else if (width < NarrowColumnWidth)
             {
-                narrowColumns++;
-                AddIssue(issues, "narrow-column", column, width);
+                scan.Small.Add(column);
             }
             else if (width > WideColumnWidth)
             {
-                wideColumns++;
-                AddIssue(issues, "wide-column", column, width);
+                scan.Large.Add(column);
             }
         }
-        return new DimensionScan(hiddenColumns, narrowColumns, wideColumns);
+        return scan;
     }
 
     private static DimensionScan InspectRows(
         Worksheet sheet,
-        IReadOnlyList<bool> occupied,
-        ICollection<CellsReviewDimensionIssue> issues)
+        IReadOnlyList<bool> occupied)
     {
-        int hiddenRows = 0;
-        int shortRows = 0;
-        int tallRows = 0;
+        var scan = new DimensionScan();
         for (int row = 0; row < occupied.Count; row++)
         {
             if (!occupied[row])
@@ -150,21 +139,18 @@ internal static class ReviewLayoutProjection
             double height = sheet.Cells.GetRowHeight(row);
             if (sheet.Cells.IsRowHidden(row))
             {
-                hiddenRows++;
-                AddIssue(issues, "hidden-row", row, height);
+                scan.Hidden.Add(row);
             }
             else if (height < ShortRowHeight)
             {
-                shortRows++;
-                AddIssue(issues, "short-row", row, height);
+                scan.Small.Add(row);
             }
             else if (height > TallRowHeight)
             {
-                tallRows++;
-                AddIssue(issues, "tall-row", row, height);
+                scan.Large.Add(row);
             }
         }
-        return new DimensionScan(hiddenRows, shortRows, tallRows);
+        return scan;
     }
 
     private static PrintAreaScan InspectPrintArea(
@@ -224,7 +210,33 @@ internal static class ReviewLayoutProjection
         RangeRef? ContentRange,
         long UsedAreaCells);
 
-    private sealed record DimensionScan(int Hidden, int Small, int Large);
+    /// <summary>The hidden, too small and too large populated dimensions of one axis.</summary>
+    private sealed class DimensionScan
+    {
+        public DimensionAccumulator Hidden { get; } = new();
+
+        public DimensionAccumulator Small { get; } = new();
+
+        public DimensionAccumulator Large { get; } = new();
+    }
+
+    /// <summary>Counts every dimension in one condition and keeps the first few indexes.</summary>
+    private sealed class DimensionAccumulator
+    {
+        private readonly List<int> _samples = [];
+        private int _count;
+
+        public void Add(int index)
+        {
+            _count++;
+            if (_samples.Count < MaxDimensionSamples)
+            {
+                _samples.Add(index);
+            }
+        }
+
+        public CellsReviewDimensionSet ToSet() => new(_count, _samples.ToArray());
+    }
 
     private sealed record PrintAreaScan(
         string? Value,
@@ -232,18 +244,6 @@ internal static class ReviewLayoutProjection
         bool Invalid,
         bool ExcludesContent,
         bool Excessive);
-
-    private static void AddIssue(
-        ICollection<CellsReviewDimensionIssue> issues,
-        string kind,
-        int index,
-        double size)
-    {
-        if (issues.Count < MaxIssueSamplesPerSheet)
-        {
-            issues.Add(new CellsReviewDimensionIssue(kind, index, size));
-        }
-    }
 
     private static (IReadOnlyList<RangeRef> Ranges, bool Invalid) ParsePrintArea(
         string? printArea)
