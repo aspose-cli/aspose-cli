@@ -1,20 +1,37 @@
-# Troubleshooting
+# Words error codes
 
-- `FILE_CORRUPT`: the input could not be parsed as a supported document. Verify its format and obtain an intact copy; truncated document containers require repair or replacement.
-- `FILE_LOCKED`: another application holds an exclusive file lock. Close that application and retry; this code does not mean the document is corrupt.
-- `FEATURE_UNSUPPORTED`: the document engine failed. Retry with a simplified copy or another output format; when other documents fail the same way, the local environment (for example its fonts) is the cause.
-- `PASSWORD_REQUIRED` / `PASSWORD_INVALID`: use `--password-env` or `--password-stdin`.
-- `DOCUMENT_PROTECTED`: the `unprotect` password was wrong. Editing restrictions alone never block an edit; they report `PROTECTION_NOT_ENFORCED`.
-- `DOCUMENT_HAS_REVISIONS`: comparison inputs must be revision-free.
-- `BLOCK_NOT_FOUND`, `SECTION_NOT_FOUND`: numbers are 1-based; `details.availableCount` says how many exist.
-- `BOOKMARK_NOT_FOUND`, `STYLE_NOT_FOUND`, `ANCHOR_NOT_FOUND`: named not-found errors list the available names in `details.available` and the closest ones in `details.suggestions`; a `find` or `nth` past the matches reports the match count in `details.availableCount`.
-- `PAGE_RANGE_INVALID`: use ranges such as `1-3,7,9-`.
-- `RENDER_TOO_LARGE`: lower DPI or render fewer pages.
-- `REMOTE_RESOURCES_BLOCKED`: external access is denied; use guarded local resources beside the document.
-- `OUTPUT_EXISTS`: choose another path or pass `--overwrite`. For `split` and `extract`, one existing file in `--out-dir` refuses the whole run and nothing is published; `--overwrite` replaces the files the command writes, and other files in the directory stay.
-- `EVAL_MODE`: disclose watermark and evaluation limits.
+The error envelope, exit codes, not-found details and shared codes such as
+`PASSWORD_REQUIRED` or `OUTPUT_EXISTS` are in `aspose-cli docs troubleshooting`.
 
-Use `aspose-cli doctor`, `aspose-cli license status`, and `aspose-cli capabilities --output json` for environment diagnosis.
-License status is per product. For Words-only setup, use
-`aspose-cli license install Aspose.Words.lic --product words` or
-`ASPOSE_WORDS_LICENSE_PATH`; a Cells-only license does not license Words.
+## Errors
+
+- `BLOCK_NOT_FOUND`, `SECTION_NOT_FOUND`: block and section numbers are
+  1-based; `details.availableCount` says how many exist. Read the numbers again
+  with `words query blocks --scope outline` or `inspect --detail sections`.
+- `ANCHOR_NOT_FOUND`: no heading contains the `heading` text (the document's
+  headings are in `details.available`), a `find` text or an `nth` goes past the
+  matches (`details.availableCount` is the match count), or
+  `words split --by heading1` found no Heading 1 paragraph.
+- `BOOKMARK_NOT_FOUND`, `STYLE_NOT_FOUND`: the document's bookmarks or styles
+  are in `details.available`; `define_style` creates a missing style.
+- `MERGE_DATA_INVALID`: the merge data is not a JSON array of flat objects or a
+  CSV file with a header and at least one data row ([mail merge](mail-merge.md)).
+- `DOCUMENT_PROTECTED`: the `unprotect` password was wrong.
+- `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free
+  ([revisions](revisions.md)).
+- `OPTION_INVALID` from a tracked batch: the batch contains an operation that
+  cannot be recorded as a revision ([editing](editing.md)).
+
+## Warnings
+
+- `PROTECTION_NOT_ENFORCED`: the document has editing restrictions; the edit
+  succeeded and the restrictions remain.
+- `TRACKED_CHANGES_PRESENT`: the edited document already had revisions;
+  disclose them.
+- `DOCUMENT_ENCRYPTION_REMOVED`: the output format cannot be encrypted.
+- `MACROS_DROPPED`: the output format does not keep macros; convert to `docm`
+  or `dotm` to keep them.
+- `LAYOUT_MAY_DIFFER`: `words split` can reflow complex layouts slightly;
+  review the split pages.
+- `LINKED_IMAGES_SKIPPED`: linked images store no bytes in the document, so
+  `extract --what images` cannot write them.

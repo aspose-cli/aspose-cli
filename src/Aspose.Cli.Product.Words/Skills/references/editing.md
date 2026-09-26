@@ -1,122 +1,120 @@
 # Editing
 
-Use one `words edit --ops` batch. The batch is validated and applied in memory before a single atomic save.
+`words edit --ops` applies one operation batch; batches, `--best-effort`,
+`--dry-run`, outputs and secrets work as `aspose-cli docs editing` describes.
+Each operation's fields, types, defaults and allowed values come from the
+generated schema:
 
 ```powershell
-aspose-cli words edit contract.docx --ops update.json --out contract.review.docx --verify --output json
+aspose-cli schema v2/words/ops --operation insert_table
 ```
 
-Inline Markdown uses the same guarded local-resource policy as file loading. Relative resources resolve beneath the edited document's directory; remote and escaping resources are omitted and reported. Shared resource-budget or cancellation failures stop the operation.
+## Addresses
 
-Targets accept one of `block`, `blocks`, `bookmark`, `heading`, or `find`, with optional 1-based `nth`. Prefer bookmarks and headings for durable automation; inspect current block numbers immediately before using numeric targets.
+- A block address (`at`, or `target` for `apply_list`, `delete_blocks`,
+  `format_text` and `set_style`) is exactly one of `block`, `blocks`,
+  `bookmark`, `heading` or `find`. `find` matches blocks whose visible text
+  contains the given text, ignoring case, and `heading` does the same among
+  heading paragraphs; `nth` picks the match (the first by default). Prefer
+  bookmarks and headings in automation; read block numbers again immediately
+  before using them.
+- Insertions take `position: before|after` at a block boundary; there is no
+  character-offset addressing.
+- A block-level content control is a container: its paragraphs and tables are
+  blocks, content inserted beside one of them stays inside the control,
+  deleting all of them removes the control, and a section break cannot be
+  placed inside it.
 
-`set_text` accepts paragraphs only and preserves the paragraph style while replacing inline runs. Use `set_table_cell` for tables. With a `bookmark` target (or `--set bookmark:Name=text`), `set_text` replaces only the text the bookmark encloses, anywhere including table cells; the bookmark and the rest of its paragraph remain, and the new text takes the format of the bookmark's first run. A bookmark spanning several paragraphs becomes one paragraph. Insertion ops require `position: before|after`; there is no character-offset addressing.
+## Batch semantics
 
-An edit preserves an encrypted input's password when the selected output format
-supports encryption. `--encrypt-env` explicitly replaces that password. Choosing
-a non-encryptable output format produces `DOCUMENT_ENCRYPTION_REMOVED`; supplying
-`--encrypt-env` for such a format is `OPTION_INVALID` naming that option, as it
-is for `convert` and `create`. A read password supplied for a
-plaintext input does not encrypt its output.
-
-Reloadable document outputs are reopened before publication, even without
-`--verify`. The optional `--verify` adds semantic checks and reports their results;
-it does not render pages. Outputs that cannot be loaded as documents do not get
-an SDK reopen check and cannot use `--verify`. A dry run publishes no output or
-backup and does not report that encryption was removed.
-
-Passwords used by `protect` and `unprotect` are environment variable names in `passwordEnv`. Never put a resolved secret into JSON.
-Word editing restrictions (`protect`) are not encryption: they guide Word's user
-interface and do not bind the CLI. Editing a restricted document succeeds and
-reports `PROTECTION_NOT_ENFORCED`; the output keeps the restrictions. `unprotect`
-with `passwordEnv` verifies the password and fails with `DOCUMENT_PROTECTED` when
-it is wrong; without `passwordEnv` it removes the restrictions regardless of their
-password, so use it only when the user owns that decision. Encrypted documents
-are different: they need `--password-env` to open at all.
-
-Discover the exact vocabulary with:
-
-```powershell
-aspose-cli schema v2/words/ops
-```
-
-## Address and batch semantics
-
-- A block is only a paragraph or table in a section body. A block-level content
-  control is a container: its paragraphs and tables are blocks, content inserted
-  beside one of them stays inside the control, deleting all of them removes the
-  control, and a section break cannot be placed inside it. Images, fields,
-  hyperlinks and breaks belong to their paragraph.
-- All addresses are resolved to original node identities before the first op
-  runs, including numbered sections and `add_section.after`. Omitted section
-  selections mean all original sections. Inserted content and sections cannot
+- Every address, including numbered sections and `add_section.after`,
+  resolves to the document as it was before the first operation. An omitted
+  section means every original section. Inserted content and sections cannot
   be targeted later in the same batch.
 - Overlapping deletes, delete-then-reference and other invalid dependencies
-  fail during preflight, including with `--best-effort`. Removing a section
-  invalidates references to its original blocks and section identity; later
-  section numbers never shift to a different original section.
-- `--best-effort` saves successful operations even when others fail; those
-  partial results exit 8. Without it, an operation failure aborts the batch.
+  fail during preflight, also with `--best-effort`. Removing a section
+  invalidates references to its original blocks; later section numbers never
+  shift to a different original section.
 - `--track-changes` requires `--author` and records content insertions and
-  deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not section breaks), `delete_blocks`,
-  `set_table_cell`, `append_document`, and the review annotations `add_comment`
-  and `remove_comments`. Other operations (formatting, styles, lists, page setup,
-  properties, protection, headers and footers, sections, watermarks, mail merge,
-  field updates, accepting or rejecting revisions) would change the document
-  without a revision, so a tracked batch containing them fails with
-  `OPTION_INVALID` before anything changes. Run them in a separate batch.
+  deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not
+  section breaks), `delete_blocks`, `set_table_cell`, `append_document`,
+  `add_comment` and `remove_comments`. Every other operation would change the
+  document without a revision, so a tracked batch that contains one fails with
+  `OPTION_INVALID` before anything changes; run it in a separate batch.
 
-## Op index
+## Text
 
-| Op | Purpose |
+- `set_text` replaces the inline content of paragraphs and keeps their style;
+  use `set_table_cell` for table cells. With a `bookmark` target, or
+  `--set bookmark:Name=text`, it replaces only the text the bookmark encloses,
+  anywhere including table cells: the bookmark and the rest of its paragraph
+  remain, the new text takes the format of the bookmark's first run, and a
+  bookmark spanning several paragraphs becomes one paragraph.
+- `replace_text` changes the text a reader sees: field results but never field
+  codes, and never text a tracked change deletes.
+- Inline Markdown loads local resources under the edited document's directory;
+  remote and escaping resources are omitted and reported.
+
+## Operation index
+
+| Task | Operations |
 |---|---|
-| `replace_text` | Replace literal or timeout-bounded regex matches in `scope` `body` (default), `headersFooters`, `footnotes`, `comments` or `all`, the scopes of `query search`; supports `maxReplacements`. It changes the text a reader sees: field results but never field codes, and never text a tracked change deletes. A regex replacement honors `$1` and `${name}`; write `$$` for a literal `$`. |
-| `set_text` | Replace one or more paragraph bodies while keeping paragraph style. |
-| `insert_paragraphs` | Insert structured paragraphs before or after an original block; `listLevel` makes a paragraph a list item (in the anchor's list, or one new bullet list). |
-| `insert_markdown` | Import Markdown blocks before or after an original block. |
-| `delete_blocks` | Delete original paragraph/table blocks after conflict validation. |
-| `insert_break` | Insert a page break, or split the section at a block boundary; the new section keeps the page setup and continues the headers and footers. |
-| `insert_image` | Insert an inline or floating local image with optional dimensions. |
-| `insert_table` | Insert a table with bounded row/column data. |
-| `set_table_cell` | Replace one 1-based cell in a targeted table block. |
-| `insert_toc` | Insert and update a TOC through the selected heading level. |
-| `insert_bookmark` | Bookmark the complete visible text of a paragraph. |
-| `insert_hyperlink` | Insert a hyperlink paragraph at a block boundary; the URL is an absolute `http`, `https` or `mailto` URL. |
-| `insert_field` | Insert an explicit Word field code at a block boundary. |
-| `add_section` | Add an empty section at the start, end or after a numbered section, with its neighbour's page setup. |
-| `delete_section` | Delete a section, but never the document's final section. |
-| `set_page_setup` | Set size (`a3`, `a4`, `a5`, `letter`, or `legal`, lowercase only), orientation, margins and columns on one or all sections. |
-| `set_header` | Replace primary, first-page or even-page header content. |
-| `set_footer` | Replace primary, first-page or even-page footer content. |
-| `set_page_numbers` | Reuse or append a PAGE field in the primary header/footer, preserving its other content; configure start/number style. |
-| `format_text` | Apply font, size, emphasis, colour and highlight to target runs. |
-| `set_style` | Apply an existing paragraph style to target paragraphs. |
-| `define_style` | Create or update a named paragraph style. |
-| `apply_list` | Apply bullet or numbered list formatting at levels 0–8. |
-| `set_default_font` | Update paragraph and character style defaults. |
-| `set_properties` | Set built-in and string custom document properties. |
-| `add_watermark` | Add a text (1-200 characters, optional `color`) or local-image watermark; `faded` (default true) draws semi-transparent text or a washed-out image. |
-| `remove_watermark` | Remove the document watermark. |
-| `protect` | Protect using an optional password read from `passwordEnv`. |
-| `unprotect` | Remove protection using an optional password read from `passwordEnv`. |
-| `accept_revisions` | Accept all revisions or only those by an author. |
-| `reject_revisions` | Reject all revisions or only those by an author. |
-| `add_comment` | Comment the complete visible text of a paragraph. |
-| `remove_comments` | Remove all comments or those by an author. |
-| `append_document` | Append a local document with source or destination styles. |
-| `mail_merge` | Merge JSON-object-array or headered CSV data, including one repeated region. |
-| `update_fields` | Update the tables of contents (`toc`, including their page numbers) or all fields (`all`). |
+| Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell) |
+| Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field`, `insert_toc`, `insert_bookmark` (a paragraph's visible text), `append_document` |
+| Remove content | `delete_blocks` |
+| Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `apply_list` (one new bullet or numbered list), `set_default_font` |
+| Sections and pages | `insert_break` (page break, or split the section), `add_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `add_watermark`, `remove_watermark` |
+| Review annotations | `add_comment`, `remove_comments`, `accept_revisions`, `reject_revisions` |
+| Fields and data | `update_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |
+| Document state | `set_properties`, `protect`, `unprotect` |
+
+## Recipe: insert several pieces in reading order
+
+Insertions at the same anchor stack against it: each `after` insertion lands
+directly after the anchor, ahead of earlier ones, and each `before` insertion
+lands directly before it, behind earlier ones. To keep the batch order as the
+reading order, anchor every piece `before` the block that should follow them.
+A table read with `query blocks` can be written back with its `rows`,
+`columns` and `cells` unchanged.
+
+```json
+{
+  "ops": [
+    { "op": "insert_paragraphs", "at": { "find": "Revenue increased" }, "position": "before",
+      "paragraphs": [ { "text": "Key figures", "style": "Heading 3" }, { "text": "Figures are in thousands." } ] },
+    { "op": "insert_table", "at": { "find": "Revenue increased" }, "position": "before",
+      "rows": 2, "columns": 2, "cells": [ [ "Metric", "Value" ], [ "Revenue", "120" ] ] }
+  ]
+}
+```
 
 ## Headers, footers and page numbers
 
 `set_header` and `set_footer` replace the selected kind, including its fields,
-in one section or all sections when `section` is omitted. Apply footer text
-before `set_page_numbers`. Page numbering targets only the primary header or
-footer, reuses its first PAGE field or appends one in a new paragraph, and
-preserves the other content. A supplied `start` restarts numbering in each
-selected section; specify `section` when only one section should restart.
+in one section or every section. Apply footer text before `set_page_numbers`.
+Page numbering targets only the primary header or footer, reuses its first
+PAGE field or appends one in a new paragraph, and keeps the other content. A
+`start` restarts numbering in each selected section; name a `section` when only
+one should restart.
 
-## Verification
+## Protection and encryption
 
-`--verify` reopens the staged file and checks its semantic state before
-publication; see [verification](verification.md). Visual checks use `review`.
+- Editing restrictions (`protect`) are not encryption: they guide Word's user
+  interface and do not bind the CLI. Editing a restricted document succeeds,
+  reports `PROTECTION_NOT_ENFORCED` and keeps the restrictions. `unprotect`
+  with `passwordEnv` checks the password and fails with `DOCUMENT_PROTECTED`
+  when it is wrong; without `passwordEnv` it removes the restrictions whatever
+  their password, so use it only when the user owns that decision.
+- An encrypted input needs `--password-env` to open. Its output keeps the
+  password when the output format supports encryption; `--encrypt-env`
+  replaces it. A format that cannot be encrypted produces
+  `DOCUMENT_ENCRYPTION_REMOVED`, and `--encrypt-env` with such a format is
+  `OPTION_INVALID`. A read password for a plaintext input does not encrypt the
+  output. A dry run does not report removed encryption.
+
+## Save and verify
+
+Every output that can be loaded as a document is reopened before publication.
+`--verify` adds the semantic checks described in
+[verification](verification.md); it does not render pages and cannot be used
+for outputs that are not documents.

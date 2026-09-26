@@ -28,7 +28,7 @@ public sealed class SlidesSkillExampleTests
     }
 
     [Fact]
-    public void EditExampleRetainsSourceAndChangesTitleAndNotes()
+    public void EditExampleRetainsSourceAndChangesTitleBodyAndNotes()
     {
         using var workspace = new TempWorkspace();
         InstalledSkillExampleResult run = InstalledSkillExample.Run(workspace, "aspose-cli-slides", "edit-deck-safely");
@@ -40,6 +40,8 @@ public sealed class SlidesSkillExampleTests
         AssertText("Delivery plan", Text(original.Slides[1]), evaluation);
         Assert.DoesNotContain("Confirmed delivery plan", Text(original.Slides[1]), StringComparison.Ordinal);
         AssertText("Confirmed delivery plan", Text(changed.Slides[1]), evaluation);
+        AssertText("Validation is complete; the release is approved.", Text(changed.Slides[1]), evaluation);
+        Assert.DoesNotContain("Publish the approved release.", Text(changed.Slides[1]), StringComparison.Ordinal);
         INotesSlide notes = changed.Slides[1].NotesSlideManager.NotesSlide;
         Assert.NotNull(notes);
         AssertText("Launch approved.", string.Join("\n", notes.Shapes.OfType<IAutoShape>()

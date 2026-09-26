@@ -19,8 +19,8 @@ internal sealed class HostContext
         });
         ContractJson = new HostContractJson(catalog);
         Schemas = new Aspose.Cli.Host.Commands.HostSchemaCatalog(catalog);
-        Docs = new DocsCatalog(catalog);
         Skills = new SkillCatalog(catalog);
+        Docs = new DocsCatalog(Skills);
         EngineFailures = EngineFailureTranslator.Create(catalog);
     }
 

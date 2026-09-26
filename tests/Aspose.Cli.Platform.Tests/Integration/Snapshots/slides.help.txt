@@ -143,7 +143,7 @@ Arguments:
 
 Options:
   --what <media|notes|text> (REQUIRED)        media, notes or text.
-  --slides <slides>                           Optional slide range for notes or text.
+  --slides <slides>                           Optional 1-based slide range; only those slides are extracted. Default: every slide.
   --out-dir <out-dir> (REQUIRED)              Safe extraction directory.
   --overwrite                                 Replace the output file if it already exists.
   --password <password>                       Password for the presentation. Discouraged: visible in the process list; prefer --password-env.

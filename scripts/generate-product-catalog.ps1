@@ -508,7 +508,8 @@ if (Test-Path -LiteralPath $installerPath -PathType Leaf) {
     }
     $settings.Add('$script:Utf8 = [Text.UTF8Encoding]::new($false)')
     $settings.Add('$script:AllowedEditions = @(' + "'" + $identity.edition + "'" + ')')
-    $skillNames = @($products | ForEach-Object { "'" + $identity.skillPrefix + $_.id + "'" })
+    # The Host ships the platform Skill; every product ships its own.
+    $skillNames = @("'" + $identity.skillPrefix + "platform'") + @($products | ForEach-Object { "'" + $identity.skillPrefix + $_.id + "'" })
     $settings.Add('$script:AllowedSkills = @(' + ($skillNames -join ', ') + ')')
     $productIds = @($products | ForEach-Object { "'" + $_.id + "'" })
     $settings.Add('$script:AllowedLicenseProducts = @(' + ($productIds -join ', ') + ')')

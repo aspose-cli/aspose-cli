@@ -504,7 +504,7 @@ try {
     if ($manifestHash -cne $marker.payloadManifestSha256) {
         throw 'Installed payload manifest does not match the marker hash.'
     }
-    $expectedSkills = @((Get-Content -LiteralPath $layout.CatalogPath -Raw | ConvertFrom-Json).products |
+    $expectedSkills = @([string]$layout.Identity.skillPrefix + 'platform') + @((Get-Content -LiteralPath $layout.CatalogPath -Raw | ConvertFrom-Json).products |
         ForEach-Object { [string]$layout.Identity.skillPrefix + [string]$_.id })
     $installedSkills = @(Get-ChildItem -LiteralPath $smokeSkills -Directory | ForEach-Object Name)
     $missingSkills = @($expectedSkills | Where-Object { $_ -cnotin $installedSkills })

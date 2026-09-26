@@ -5,10 +5,14 @@ description: Inspect, assemble, edit, fill, redact, secure, sign, convert, valid
 
 # Aspose PDF
 
-Use `aspose-cli pdf` for fixed-layout PDF work. When the goal is an editable
-word-processing document, convert explicitly with
-`aspose-cli words convert input.pdf --to docx`. Pages are 1-based physical
-positions; rectangles are points with a top-left origin.
+Use `aspose-cli pdf` for fixed-layout PDF work. The shared rules (session start,
+reading windows, operation batches, secrets, review protocol, licensing, errors)
+are in `aspose-cli docs overview`; this Skill adds only what is specific to PDF.
+When the goal is an editable word-processing document, convert explicitly with
+`aspose-cli words convert input.pdf --to docx`.
+
+Pages are 1-based physical positions. Rectangles are points (72 per inch) with a
+top-left origin against the visible, rotated page box.
 
 ## Workflow
 
@@ -20,18 +24,20 @@ positions; rectangles are points with a top-left origin.
    aspose-cli pdf query pages input.pdf --pages 1-5 --mode layout --output json
    ```
 
-3. Put all related changes in one atomic `pdf edit` batch. Write to `--out`,
-   or use `--in-place --backup` when replacing the user's file is intended.
-   Every edit reopens its output before publishing it.
+3. Put all related changes in one `pdf edit` batch
+   ([editing](references/editing.md)):
 
    ```powershell
    aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --output json
    ```
 
 4. Convert to PDF/A, then validate the result separately; conversion success
-   does not imply conformance.
-5. Sign only the final, verified artifact with `pdf sign`, passing the
-   certificate password through `--certificate-password-env`.
+   does not imply conformance ([standards](references/pdf-standards.md)).
+5. Sign only the final, verified file with `pdf sign`
+   ([forms and security](references/forms-security.md)).
+6. Verify before delivery ([verification](references/verification.md)).
+
+## Sources that can reach the network
 
 `pdf create --from-html`, Markdown `--from-text` and SVG images (`--from-images`,
 `add_stamp_image`, `add_watermark_image`) refuse any input that names a network
@@ -50,42 +56,26 @@ refused before the import. The PDF Markdown importer resolves relative paths aga
 the working directory, so run `pdf create --from-text` from the Markdown file's
 directory.
 
-## Verify before delivery
+HTML form controls become AcroForm fields. A text `<input>` keeps its `name`;
+other controls get generated names, so read them with `pdf query forms` before
+filling.
 
-1. **Content:** read changed pages back with `pdf query pages`, and use
-   `pdf query search` for expected, removed or placeholder text. For
-   redaction, search every relevant page; search is not OCR.
-2. **Standards and security:** require `valid: true` from `pdf validate`, and
-   `valid: true` for signatures from `pdf inspect --detail signatures`.
-3. **Visual:** run `aspose-cli review output.pdf --out <new-dir> --output json`,
-   then open every page image it lists, one by one. Use `review.json` findings
-   to focus, not as a substitute for looking.
-4. Fix, then review again into a fresh directory. Stop after three rounds and
-   report what remains. Never claim a visual pass for pages you did not open;
-   state the exact page coverage.
+## Preview and licensing
 
-Details: [verification](references/verification.md).
-
-## Licensing
-
-Without a PDF license, output is watermarked and results carry `EVAL_MODE`;
-disclose that with every delivered file. Install a license with
-`aspose-cli license install Aspose.PDF.lic --product pdf` and check the `pdf`
-entry of `aspose-cli license status --output json`.
-
-Passwords come from `--password-env`, `--password-stdin` or operation
-`*PasswordEnv` fields; never put secrets in ops JSON. A missing or empty variable
-fails only the operation that names it, with `OPS_INVALID` naming the variable;
-`--best-effort` still applies the other operations (exit 8) and `--dry-run`
-reports every outcome.
+`aspose-cli preview report.pdf --open` shows the `pages` view: pages, thumbnails,
+the size of the page in view, zoom and a mark on what a change touched
+(`aspose-cli docs preview`). Without a PDF license, output is watermarked and
+results carry `EVAL_MODE`; a license installed later does not remove watermarks
+already saved into a PDF, so regenerate that file from its original inputs
+(`aspose-cli docs licensing`).
 
 ## References
 
-- [Editing and the ops vocabulary](references/editing.md) (`aspose-cli schema v2/pdf/ops`)
+- [Editing](references/editing.md): operations by task, targets and ordering
+  (`aspose-cli schema v2/pdf/ops --operation <op>` for fields)
 - [Forms, encryption and signing](references/forms-security.md)
 - [PDF/A and conversion](references/pdf-standards.md)
 - [Verification](references/verification.md)
-- [Live preview for a human](references/preview.md)
 - [Troubleshooting](references/troubleshooting.md)
 
 Example: [assemble a review-ready report](examples/assemble-review-report/README.md).

@@ -368,7 +368,7 @@ $script:ConfigurationOwnerName = '.aspose-cli-config.json'
 $script:EnvironmentVariablePrefix = 'ASPOSE_CLI_'
 $script:Utf8 = [Text.UTF8Encoding]::new($false)
 $script:AllowedEditions = @('commercial')
-$script:AllowedSkills = @('aspose-cli-cells', 'aspose-cli-pdf', 'aspose-cli-slides', 'aspose-cli-words')
+$script:AllowedSkills = @('aspose-cli-platform', 'aspose-cli-cells', 'aspose-cli-pdf', 'aspose-cli-slides', 'aspose-cli-words')
 $script:AllowedLicenseProducts = @('cells', 'pdf', 'slides', 'words')
 # </generated-distribution-identity>
 

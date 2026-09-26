@@ -58,7 +58,8 @@ public sealed class CustomerDistributionContractTests
             sourceRoot,
             "SKILL.md",
             SearchOption.AllDirectories);
-        Assert.Equal(4, skills.Length);
+        // The platform Skill and one Skill per product.
+        Assert.Equal(5, skills.Length);
 
         foreach (string skill in skills)
         {

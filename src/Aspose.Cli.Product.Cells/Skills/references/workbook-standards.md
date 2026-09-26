@@ -9,7 +9,7 @@ dashboards — is `aspose-cli docs cells/design-system`.
 Recipes below assume a report book (`Sales` summary, `Config` assumptions,
 `Data` dataset); adjust names and ranges. Each is one atomic `edit` batch —
 fold them into a larger batch. In-place edits to a user-supplied file take
-the backup copy first (skill, Editing section).
+`--backup --verify` on the first edit (`aspose-cli docs cells/editing`).
 
 ## Column widths
 
@@ -43,7 +43,7 @@ Raw numbers are not deliverable. Set formats with `format_range`'s
 
 The report-grade codes layered on these (variance `+0.0%;-0.0%;0.0%`,
 multiples `0.0"x"`, summary money with `-` zeros) are `aspose-cli docs
-design-system`, Number and unit discipline.
+cells/design-system`, Number and unit discipline.
 
 Money, counts and percentages each carry an explicit negative section, and
 all three use the same one. A format code with no `;` section signs its
@@ -124,7 +124,7 @@ the font grows. Fix the row in the same batch that sets the size.
 
 The full header treatment — the medium rule under the header, wrap plus a
 row auto-fit for long names, the type scale above 11pt body — is `aspose-cli
-docs design-system`, Header treatment.
+docs cells/design-system`, Header treatment.
 
 "One font per workbook" has a real lever: the Normal style is Arial 10
 until `set_default_font` changes it, and every cell without an explicit

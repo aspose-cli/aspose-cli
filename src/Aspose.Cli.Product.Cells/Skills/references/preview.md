@@ -1,44 +1,25 @@
-# Managed workbook preview
+# Workbook preview
 
-Open the workbook in the local viewer and keep it live:
+The viewer service, its lifecycle and the App are shared by every product:
+`aspose-cli docs preview`. This page covers what a workbook shows.
 
-```powershell
-aspose-cli preview book.xlsx --output json
+```
+aspose-cli preview book.xlsx --open --output json
 ```
 
-The result contains `id`, `url`, `pid`, `file`, `view`, `license` and
-`reused`. One viewer service per user serves every open document: it binds
-loopback only, re-renders after a safe save, keeps the last good revision on
-screen when a render fails, and never modifies the workbook.
+- The default `workbook` view is the product's own grid: cell text stays
+  selectable, and each `cells edit --in-place` is patched into the grid cell by
+  cell. The edited cells light up where they are; the sheet, scroll position
+  and untouched cells stay put. `--fx demo` adds a pointer that travels to each
+  change, for a live demonstration.
+- `--view sheets` shows one rendered image per sheet instead.
+- The preview opens on the workbook's saved active sheet (`set_active_sheet`);
+  an evaluation save activates its warning sheet instead.
+- Gridlines, zoom and headings from `set_sheet_view` show here and in Excel,
+  never in `render` output.
 
-The default `workbook` view is the product's own grid, so cell text stays
-selectable and an edit is patched into the grid cell by cell: after each
-`cells edit --in-place` the edited cells light up where they are, and the
-sheet, scroll position and everything the edit did not touch stay put. For a
-live demonstration, add `--fx demo` so a pointer travels to what changed:
-
-```powershell
-aspose-cli preview book.xlsx --fx demo --open --output json
-```
-
-Inspect or close documents through the same lifecycle:
-
-```powershell
-aspose-cli preview status --output json
-aspose-cli preview status <id> --output json
-aspose-cli preview stop <id> --output json
-aspose-cli preview stop --all --output json
-```
-
-Use `--view sheets` for one rendered image per sheet instead of the grid; the
-page's own toolbar switches the theme and turns the demo pointer on or off
-while watching, so neither needs the document reopened.
-`--port` chooses the service's loopback port when it starts. `--open`
-launches the default browser unless `ASPOSE_CLI_NO_OPEN=1` is set. Opening
-the same file the same way returns the document already open
-(`reused: true`).
-
-Preview is a human review aid. Agent verification still uses deterministic
-`cells query range`, `cells compare` and `review` output. Evaluation-mode
-previews disclose the evaluation state; report any resulting output watermark
-when delivering files.
+To build in front of the user, start the preview first, hand over its `url`,
+then edit in three to five batches (data, structure, formats, charts, polish)
+so each save narrates the build (`aspose-cli docs cells/design-system`,
+section 11). The preview is the user's view; your own verification still uses
+`query range`, `review` and `render` (`aspose-cli docs cells/verification`).

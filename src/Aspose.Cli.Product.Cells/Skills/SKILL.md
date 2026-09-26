@@ -6,73 +6,49 @@ license: Apache-2.0
 
 # Aspose Cells CLI
 
-Process spreadsheets with engine-grade fidelity using the local `aspose-cli`,
-with no Python or Office dependency. Pass `--output json` when parsing results;
-each result names its `schema`.
+Read, edit, verify and deliver spreadsheets with the `aspose-cli cells`
+commands. Session start, the shared golden rules, windows, operation batches,
+review, licensing and the error envelope are in `aspose-cli docs overview`;
+this Skill adds what is specific to workbooks.
 
-## 1. Session start
+## Workbook rules
 
-Run `aspose-cli --version`; if the CLI is missing, ask the user how to install
-it. Then check the environment once per session:
-
-```
-aspose-cli doctor --output json          # license, runtime, output writability
-aspose-cli license status --output json  # per-product source and mode
-```
-
-A `license` check of `warn` means some product is in evaluation mode; read the
-`cells` entry.
-
-## 2. Golden rules
-
-1. Never dump a whole sheet. Climb the projection ladder (section 3).
-2. Batch all edits into ONE ops document; never run one command per cell.
-3. Numbers you report come from the engine (`query range`), never from your
-   own arithmetic.
-4. Before the first in-place edit of a file you did not create this session,
-   use `--in-place --backup --verify` (section 4).
-5. Verify before delivery (section 5); a clean exit code is not "done".
-6. On any error, read `error.hint` first; `error.details` usually lists the
-   valid alternatives.
-7. Serialize writes to the same file; parallel reads are safe.
-8. Unsure about a verb, op or field? Ask the CLI (`--help`,
-   `aspose-cli capabilities cells edit`, `aspose-cli schema v2/cells/ops`,
-   `aspose-cli docs`) instead of guessing.
-9. An open-ended request ("make me a sales sheet") gets the full deliverable:
-   designed synthetic data, a Detail sheet and a designed Dashboard sheet
+1. Numbers you report come from the engine (`cells query range`), never from
+   your own arithmetic.
+2. If a number can be computed from other cells, write a formula; the engine
+   recalculates after every edit.
+3. Name the sheet on every read, render and operation (`--sheet`, `"sheet"`):
+   an evaluation save makes its warning sheet the active one. Sheet names match
+   case-insensitively.
+4. Serialize writes to one file; parallel reads are safe.
+5. An open-ended request ("make me a sales sheet") gets the full deliverable:
+   realistic data, a Detail sheet and a designed Dashboard sheet
    (`aspose-cli docs cells/design-system`).
 
-## 3. Reading: the projection ladder
+## Reading
 
-Structure first, never data:
-
-```
-aspose-cli cells inspect book.xlsx --output json
-aspose-cli cells inspect book.xlsx --preview --output json          # + sample rows
-aspose-cli cells inspect book.xlsx --detail names errors --output json
-```
-
-- `--detail errors` fills `workbook.formulaErrors`, `names` fills
-  `workbook.definedNames`, `validation` fills `workbook.validations`; `fonts`,
-  `tables`, `charts` and `pivots` keep their names.
-- `--preview` shows display values for column layout only; `query range` and
-  its `t` field are the only type authority.
-
-Then a window of one sheet:
+Structure first, then windows of one sheet:
 
 ```
+aspose-cli cells inspect book.xlsx --output compact
+aspose-cli cells inspect book.xlsx --preview --detail names errors --output json
 aspose-cli cells query range book.xlsx --sheet Sales --range A1:F50 --output json
+aspose-cli cells query search book.xlsx --pattern "Total" --output json
 ```
 
-- `--scope values` (default), `formulas` (adds `f`), `styles` or `full`.
-- Whole rows or columns (`A:A`) are rejected; give explicit bounds.
-- `window` counts the cells returned and covered. An over-budget read returns
-  a summary, and `window.next` is a ready-to-run command for the next page;
-  execute it verbatim.
-- Cell types: `string`, `number`, `boolean`, `datetime` (ISO 8601), `error`,
-  `empty`.
+- `--detail` adds `names` (`workbook.definedNames`), `errors`
+  (`workbook.formulaErrors`), `validation` (`workbook.validations`),
+  `fonts`, `tables`, `charts` and `pivots`.
+- `--preview` shows display values for layout only. `query range` and its `t`
+  field (`string`, `number`, `boolean`, `datetime`, `error`, `empty`) are the
+  type authority.
+- `--scope values` (default), `formulas` (adds `f`), `styles` (a
+  deduplicated style pool) or `full`. Style fields read back under the names
+  `format_range` writes.
+- Give explicit bounds; `A:A` is refused. An over-budget read returns a
+  summary and a `window.next` command for the next page.
 
-## 4. Editing: one atomic ops batch
+## Editing
 
 ```json
 {
@@ -89,109 +65,71 @@ aspose-cli cells query range book.xlsx --sheet Sales --range A1:F50 --output jso
 ```
 aspose-cli cells edit book.xlsx --ops ops.json --in-place --backup --verify --output json
 aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==E2*F2"
+aspose-cli schema v2/cells/ops --operation format_range
 ```
 
-- `--ops` takes a path, `-` (stdin) or inline JSON. Without `--in-place` or
-  `--out`, the result goes to `book.out.xlsx`. An `--out` naming the input itself
-  is rejected (OPTION_INVALID): use `--in-place` to change the input.
-- Batches are atomic: if any op fails, nothing is written and the error names
-  the op `index`. `--best-effort` keeps successful ops and exits 8 when any
-  op fails; `--dry-run` validates in memory and writes nothing.
 - Formulas recalculate once after the whole batch; `--no-recalc` opts out.
-  Auto-fit, sort, duplicate-removal and pivot ops calculate earlier edits first.
-- `set_formula` over a range uses Excel fill semantics; formatting ops touch
-  only the style fields you set.
-- Charts and pivots are ops (`create_chart`, `update_chart`, `delete_chart`,
-  `create_pivot`, `refresh_pivot`). `create_chart` plots one contiguous
-  `dataRange` and applies a modern look by itself.
-- `inspect`, `query range`, `query search` and `compare` report SHA-256
-  fingerprints; pass one as `--if-match` to reject a concurrently changed file
-  (a mismatch fails with INPUT_CHANGED, exit 3).
-- The result's `applied` array has one entry per op with `status`,
-  `itemsAffected` and `targets`.
+- `set_formula` over a range uses Excel fill semantics.
+- `--verify` compares the staged output with the input before publishing and
+  reports cell changes and formula errors (exit 8 on findings). Use
+  `--in-place --backup --verify` for the first edit of a file you did not
+  create, and diff against `book.backup.xlsx` at the end.
+- Operations by task, ordering rules and recipes:
+  `aspose-cli docs cells/editing`.
 
-Full vocabulary and recipes: `aspose-cli docs cells/editing` and
-`aspose-cli schema v2/cells/ops`.
-
-### Editing a user's file
-
-`--backup` (only with `--in-place`) creates `book.backup.xlsx` once and never
-overwrites it. `--verify` compares the staged output with a
-private pre-edit snapshot before publishing and reports `directChanges`,
-`formulaResultChanges`, `otherChanges` and `formulaErrors`. Formula errors or
-incomplete checks keep the edited file and exit 8 with `verification.issues`.
-`--verify` cannot accompany `--dry-run` or `--no-recalc`.
-
-At the end of the session, diff against the stable backup and report it:
-
-```
-aspose-cli cells compare book.backup.xlsx book.xlsx --output json
-```
-
-It compares cell values and formula text only; styling, widths and charts are
-invisible to it. Tell the user the backup path.
-
-## 5. Verify before delivery
+## Verifying
 
 | tier | check |
 |------|-------|
-| values | `query range` every changed range; numbers come from the engine |
-| semantic | `cells inspect --detail errors` reports no formula errors; `cells query search` finds no TBD/TODO placeholders |
-| visual | `aspose-cli review book.xlsx --out <new-dir> --output json`, then open every sheet image it lists |
-| widths | `cells render --sheet S --range A1:G20` for truncation; only range renders match Excel's column widths |
-| session | the backup diff contains only intended changes |
+| values | `cells query range` every changed range |
+| visual | `aspose-cli review book.xlsx --out <new-dir> --output json`, then open every sheet image |
+| widths | `cells render --sheet S --range A1:G20`; only range renders match Excel's column widths |
+| semantic | `cells inspect --detail errors` reports no formula errors; `cells query search` finds no placeholders |
+| session | `cells compare book.backup.xlsx book.xlsx` lists only intended value and formula changes |
 
-Fix, then review again into a fresh directory; stop after three rounds and
-report what remains. Never claim a visual pass for sheets you did not open.
-Full protocol: `aspose-cli docs cells/verification`.
+Render CJK text at 150 DPI or more; below that glyphs lose strokes and read
+as other characters. Details: `aspose-cli docs cells/verification`.
 
-## 6. Converting and rendering
+## Converting and rendering
 
 ```
-aspose-cli cells convert book.xlsx --to pdf                  # print-accurate
-aspose-cli cells convert book.xlsx --to csv --sheet Sales    # csv/tsv/md/pdf take --sheet
-aspose-cli cells render book.xlsx --all-sheets --out book.png   # one PNG per visible sheet
+aspose-cli cells convert book.xlsx --to pdf
+aspose-cli cells convert book.xlsx --to csv --sheet Sales
+aspose-cli cells render book.xlsx --all-sheets --out book.png
 ```
 
-`aspose-cli capabilities --output json` lists every format. `cells render`
-takes the format from `--to`, or from the `--out` extension when `--to` is
-omitted, and refuses a `--to` that disagrees with the `--out` extension.
-Existing files are protected; pass `--overwrite` deliberately.
+`cells convert` takes `--sheet` for csv, tsv, md and pdf. `cells render`
+writes png, jpeg or svg, taken from `--to` or the `--out` extension; a `--to`
+that contradicts an image extension is a usage error.
+`aspose-cli capabilities cells` lists every format.
 
-## 7. Licensing and evaluation mode
+## Evaluation mode
 
-Without a license, produced files carry an evaluation watermark and an extra
-"Evaluation Warning" sheet, results carry `EVAL_MODE`, and CSV, TSV and
-Markdown exports are limited to the first worksheet. Tell the user when you
-deliver evaluation output. Install a license with
-`aspose-cli license install Aspose.Cells.lic --product cells`; details in
-`aspose-cli docs cells/licensing`.
+Saved workbooks gain an "Evaluation Warning" sheet that becomes the active
+sheet, and CSV, TSV and Markdown export only the first worksheet
+(`EVALUATION_LIMIT`). Effects and fixes: `aspose-cli docs cells/troubleshooting`.
 
-## 8. Errors and pitfalls
-
-Exit codes: 0 ok, 1 internal, 2 usage, 3 input file, 4 validation, 5 output,
-6 format, 7 license, 8 partial, 9 timeout. Recovery for every code:
-`aspose-cli docs cells/troubleshooting`.
+## Pitfalls
 
 | pitfall | do this instead |
 |---------|-----------------|
-| Windows PowerShell strips inner quotes from inline `--ops` JSON | Escape them as `\"`, pipe via `--ops -`, or use `--set` |
-| Windows PowerShell `>` re-encodes stdout as UTF-16 | Parse stdout directly |
-| A workbook open in Excel | Reads work; the in-place save fails with OUTPUT_UNWRITABLE — ask the user to close it |
-| Evaluation adds a sheet and makes it the active one | Always pass `--sheet`; names match case-insensitively; take them from `error.details.available` and never rely on sheet order |
-| Passwords | Prefer `--password-env VAR`; protect outputs with `--encrypt-env` |
+| Windows PowerShell strips inner quotes from inline `--ops` JSON | Escape them as `\"`, pipe the document through `--ops -`, or use `--set` |
+| A workbook open in Excel | Reads work; the in-place save fails with `OUTPUT_UNWRITABLE`. Ask the user to close it |
+| `set_values` with `"2026-04-03"` | Stored as text; write `=DATE(2026,4,3)` |
+| A bigger font on a title row | The row keeps its height; auto-fit it with `resize_rows` and no `height` |
+| `cells compare` after a formatting session | `identical: true` is correct: it compares values and formula text only |
 
-## 9. Task routing
+## Routing
 
-| task | read first |
-|------|------------|
-| The ops vocabulary and recipes | `aspose-cli docs cells/editing` |
+| task | read |
+|------|------|
+| Operations by task, recalculation and recipes | `aspose-cli docs cells/editing` |
 | The delivery floor: widths, number formats, validation, print | `aspose-cli docs cells/workbook-standards` |
-| A professionally designed workbook: dashboards, colors, charts, KPI cards | `aspose-cli docs cells/design-system` |
+| A designed workbook: dashboards, colors, charts, KPI cards | `aspose-cli docs cells/design-system` |
 | A financial model | `aspose-cli docs cells/financial-models` |
-| Verification and QA | `aspose-cli docs cells/verification` |
-| Live preview for the user | `aspose-cli docs cells/preview` |
-| An error you cannot recover from | `aspose-cli docs cells/troubleshooting` |
+| Workbook verification tiers and render facts | `aspose-cli docs cells/verification` |
+| What the workbook preview shows | `aspose-cli docs cells/preview` |
+| Cells error codes, warnings and evaluation effects | `aspose-cli docs cells/troubleshooting` |
 
 Worked examples:
 [report from CSV](examples/report-from-csv/README.md),

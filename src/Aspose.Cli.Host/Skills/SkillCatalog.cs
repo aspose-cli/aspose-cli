@@ -11,9 +11,15 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.Skills;
 
-/// <summary>Catalog of all Agent Skills embedded in the executable.</summary>
+/// <summary>
+/// Catalog of all Agent Skills embedded in the executable: the platform Skill, which covers
+/// what every product shares, followed by one Skill per product that ships one.
+/// </summary>
 internal sealed class SkillCatalog
 {
+    /// <summary>Name of the platform Skill the Host embeds.</summary>
+    public const string PlatformSkillName = DistributionInfo.SkillPrefix + "platform";
+
     private readonly IReadOnlyList<BundledSkill> _packages;
 
     public SkillCatalog(Aspose.Cli.Sdk.Extensibility.ProductCatalog catalog)
@@ -25,7 +31,20 @@ internal sealed class SkillCatalog
     private static IReadOnlyList<BundledSkill> Create(
         Aspose.Cli.Sdk.Extensibility.ProductCatalog catalog)
     {
-        var packages = new List<BundledSkill>();
+        Assembly host = typeof(SkillCatalog).Assembly;
+        Aspose.Cli.Sdk.Extensibility.SkillFrontMatter platform =
+            Aspose.Cli.Sdk.Extensibility.SkillFrontMatter.Read(host, PlatformSkillName)
+            ?? throw new InvalidOperationException($"The Host ships no '{PlatformSkillName}' Skill.");
+        var packages = new List<BundledSkill>
+        {
+            new(
+                platform.Name,
+                platform.Description,
+                host,
+                Array.AsReadOnly(host.GetManifestResourceNames()
+                    .Where(static name => name.StartsWith($"skill/{PlatformSkillName}/", StringComparison.Ordinal))
+                    .ToArray())),
+        };
         foreach (Aspose.Cli.Sdk.Extensibility.ProductPackageResources resources
             in catalog.Resources.Products
                 .Where(static resources =>

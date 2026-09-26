@@ -1,112 +1,50 @@
-# Troubleshooting
+# Cells troubleshooting
 
-The error envelope is designed for self-correction: `error.code` is
-stable, `error.details` carries the valid alternatives, `error.hint` the
-most likely fix. Read the hint first; this page adds background.
+The error envelope, exit codes, not-found details and the codes every product
+shares are in `aspose-cli docs troubleshooting`; licensing and evaluation
+disclosure in `aspose-cli docs licensing`. This page covers what is specific
+to workbooks.
 
-## Input problems (exit 3)
+## Errors
 
-- **FILE_NOT_FOUND** — relative paths resolve against `--workdir` (or the
-  process working directory). Print the resolved path from
-  `error.details.path` and list that directory.
-- **FILE_LOCKED** — Excel holds files exclusively. Ask the user to close
-  the file, then retry the identical command; nothing was written.
-- **FILE_CORRUPT** — the content matches no supported spreadsheet
-  signature. Check the real file type; renaming a `.docx` to `.xlsx` does
-  not make it a workbook. Plain-text data must use a text extension
-  (.csv, .tsv, .txt, .json) to be imported as text.
-- **INPUT_CHANGED** — the file no longer matches the `--if-match` (or
-  `ifMatch`) fingerprint, or changed while it was being read. Re-read it,
-  review what changed, and retry with the new `source.fingerprint.sha256`.
-- **PASSWORD_REQUIRED / PASSWORD_INVALID** — ask the user for the
-  password (never guess); prefer `--password-env VAR` when retrying. The distinction is
-  reliable: `_REQUIRED` means none was given, `_INVALID` means the given
-  one failed.
+| code | exit | cause and fix |
+|------|------|---------------|
+| `FILE_CORRUPT` | 3 | The content matches no spreadsheet signature; renaming a `.docx` to `.xlsx` does not make a workbook. Plain-text data needs a text extension (`.csv`, `.tsv`, `.txt`, `.json`) to import as text. |
+| `FILE_LOCKED` | 3 | Excel holds the file exclusively. Ask the user to close it and retry the identical command; nothing was written. |
+| `OUTPUT_UNWRITABLE` | 5 | Also what an in-place save of a workbook open in Excel reports: reads work, the final replace fails. The backup is untouched; ask the user to close the file. |
+| `SHEET_NOT_FOUND`, `NAME_NOT_FOUND`, `CHART_NOT_FOUND`, `PIVOT_NOT_FOUND`, `COMMENT_NOT_FOUND`, `HYPERLINK_NOT_FOUND`, `STYLE_NOT_FOUND` | 4 | `details.available` lists sheets, defined names, the sheet's charts or pivots, the cells with comments, the areas hyperlinks cover, or table styles. Sheet names match case-insensitively, as in Excel; results report the stored spelling. A chart `index` past the last chart reports only `availableCount`. |
+| `RANGE_INVALID` | 4 | A command range such as `--range`. Use `C5`, `B2:D10`, `Sales!A1:C10` or `'My Sheet'!A1:C10`; whole rows and columns (`A:A`, `1:3`) are refused so output stays bounded. In an ops document the same mistake is `OPS_INVALID` with the field in `details.reason`. |
+| `RANGE_TOO_LARGE` | 4 | The range exceeds `--max-cells`. Run the first page the hint suggests and then each `window.next`, or raise `--max-cells` when you need everything. |
+| `RENDER_EMPTY` | 4 | The selected sheet has no content. Pick a sheet with data; `cells inspect` lists each sheet's used range. |
+| `OPS_INVALID` | 4 | `details.index` and `details.op` name the operation, `details.reason` the rule or JSON path (`unknown field 'style.shiny'`). A failure while applying an operation keeps its own code, such as `SHEET_NOT_FOUND`, with the same details. Fix that operation and rerun the whole batch. |
+| `EVALUATION_LIMIT` | 7 | Evaluation mode exports only the first worksheet to CSV, TSV or Markdown, and `--sheet` named another one. Nothing was written. Apply a Cells license, or select the first sheet if that is the data you want. |
 
-## Validation problems (exit 4)
+## Warnings
 
-- **SHEET_NOT_FOUND, NAME_NOT_FOUND, CHART_NOT_FOUND, PIVOT_NOT_FOUND,
-  COMMENT_NOT_FOUND, HYPERLINK_NOT_FOUND, STYLE_NOT_FOUND** — the named
-  target does not exist. `error.details.available` lists the names that do
-  (sheets, defined names, the sheet's charts or pivots, the cells that carry a
-  comment, the areas hyperlinks cover, table styles), exactly spelled, and
-  `details.suggestions` the closest ones; `details.availableCount` is the full
-  count. A chart `index` past the sheet's charts reports only
-  `availableCount`. Sheet names match case-insensitively, as in Excel
-  (`data` finds `Data`); results report the stored spelling.
-- **RANGE_INVALID** — a command's range, such as `--range`; supported forms:
-  `C5`, `B2:D10`, `Sales!A1:C10`, `'My Sheet'!A1:C10`. Whole-row/column specs
-  (`A:A`, `1:3`) are rejected by design: give explicit bounds so output stays
-  budgetable. In an ops document a malformed cell, range or column is
-  `OPS_INVALID` instead, with the field and the reason in `details.reason`.
-- **RANGE_TOO_LARGE** — you asked for more cells than `--max-cells`.
-  Follow the hint's suggested first page and then each `window.next` command,
-  or raise `--max-cells` when you truly need everything.
-- **OPS_INVALID** — an op failed validation; `error.details.index` is its
-  zero-based position, `details.op` its name and `details.reason` the rule
-  it broke. A failure found while applying an op keeps its own code (for
-  example SHEET_NOT_FOUND) and carries the same `index` and `op` details.
-  A JSON shape problem names the field path in `details.reason`, such as
-  `unknown field 'style.shiny'` or `'at' must be a whole number`; `details.op`
-  is absent when the entry names no known op.
-  The batch was atomic: fix that one op and re-run the whole document.
+| code | meaning |
+|------|---------|
+| `SHEETS_DROPPED` | The output format holds one worksheet; it names the sheet kept. |
+| `SHEETS_SKIPPED` | `render --all-sheets` could not render some sheets; render one alone with `--sheet` for its error. |
+| `DATA_TRUNCATED` | The target grid (for example xls, 65,536 rows) is smaller than the data; save to xlsx, xlsb or ods. |
+| `FORMULAS_BROKEN` | Formulas that referenced cells beyond the target grid became `#REF!`; save to xlsx or xlsb. |
+| `WORKBOOK_ENCRYPTION_REMOVED` | The output format cannot be encrypted, so the source encryption was dropped. |
+| `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
 
-## Output problems (exit 5)
+## Evaluation mode in workbooks
 
-- **OUTPUT_EXISTS** — deliberate safety default. `--overwrite` replaces;
-  `--in-place` (on mutating commands) edits the input atomically. An `--out`
-  that resolves to the input itself is OPTION_INVALID (exit 2), even with
-  `--overwrite`: only `--in-place` replaces the input, with its `--backup`
-  and `--if-match` safeguards.
-- **OUTPUT_UNWRITABLE** — check directory existence and permissions;
-  the CLI creates missing parent directories itself, so this usually
-  means an OS-level denial.
-- **Workbook open in Excel** — reads usually still work (Excel allows
-  shared reads), but `--in-place` fails at the final atomic replace with
-  OUTPUT_UNWRITABLE; when the open itself hits the sharing violation you
-  get FILE_LOCKED (exit 3) instead. Recovery for both: have the user
-  close the file and retry — your backup copy from the safe-editing
-  protocol is untouched either way.
+Without a Cells license, results carry `EVAL_MODE` and every saved workbook
+gains an "Evaluation Warning" sheet plus watermark content. Disclose it
+(`aspose-cli docs licensing`), and handle these effects:
 
-## License problems (exit 7)
-
-- **LICENSE_FILE_NOT_FOUND / LICENSE_INVALID** — an explicitly configured
-  license is broken; document operations never silently degrade to evaluation.
-  Fix the path/file or remove the configuration. `license status` is diagnostic:
-  it exits 0 with `products[].mode: "invalid"` and `problem` for a rejected
-  source. Do not retry unchanged input in a loop.
-- Resolution order: `--license` → product-specific environment variables →
-  shared `ASPOSE_LICENSE_B64` / `ASPOSE_LICENSE_PATH` → product-specific and
-  shared `.aspose` project files → user config directory. `aspose-cli license
-  status` shows which source won.
-
-## Evaluation-mode expectations
-
-Without a license, read-only queries and inspection do not add watermarks;
-input, resource and SDK limits still apply. Saved workbooks can gain an
-"Evaluation Warning" worksheet; rendered and exported files can be watermarked.
-That extra worksheet WILL show up in `inspect` output of files you created
-in evaluation mode — it is not a bug, and you should not try to delete it.
-Always tell the user their output is watermarked and that a license
-removes SDK evaluation restrictions for newly generated output; it does not
-clean marks already saved in an existing artifact.
-
-## General moves
-
-- `aspose-cli capabilities --output json` — every verb, format, op and schema
-  id this build supports.
-- `aspose-cli schema <id>` — the exact JSON Schema of any input or output.
-- `--verbose` — emits structured JSONL diagnostics (including timings and
-  error codes) on stderr; it does not promise raw stack traces.
-- Deterministic output means a repeated command is diff-safe: when in
-  doubt, run the read again and compare.
-
-## EVALUATION_LIMIT: text export selected another worksheet
-
-In evaluation mode, CSV, TSV, and Markdown export can write only the first
-worksheet. Selecting another sheet with `--sheet` returns `EVALUATION_LIMIT`
-(exit 7) before any output is written or replaced. The error details name the
-requested sheet and the first sheet. Apply an Aspose.Cells license to export
-the requested sheet, or explicitly select the first sheet if that is the data
-you intend to export. Do not report a successful export of the requested sheet
-when the evaluation SDK would substitute another sheet.
+- The warning sheet becomes the active sheet, so `query range` and `render`
+  without `--sheet` read it. Always pass `--sheet`, and take names from
+  `inspect`, never from sheet order.
+- Each further save can add another ("Evaluation Warning (1)", ...); `inspect`
+  lists them. Do not delete them.
+- Data projections carry the marks too: a CSV gains a trailing watermark row,
+  Markdown a trailing `# Evaluation Only` heading, whole-workbook JSON the
+  warning sheets.
+- CSV, TSV and Markdown export only the first worksheet (`EVALUATION_LIMIT`
+  above).
+- A licensed re-save does not remove existing marks. Rebuild the licensed
+  deliverable from the original unmarked inputs.

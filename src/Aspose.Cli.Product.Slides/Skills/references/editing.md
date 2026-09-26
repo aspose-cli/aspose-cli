@@ -1,87 +1,72 @@
 # Slides editing
 
-All addresses resolve against the original presentation before the first
-operation is applied. Every operation validates that its original slides and
-shapes still belong to the presentation before modifying anything. A deleted
-slide or shape cannot be targeted later in the batch; multi-target operations
-validate every target before changing any. Moving a slide preserves its original
-identity. Deleting the final slide also fails. Content inserted earlier in a batch cannot be addressed
-by later operations in that same batch. Obtain stable `slideId` values from
-`slides inspect` or `slides query slides`. Obtain `shapeId` values from
-`slides query slides --scope shapes` or `--scope full`; `inspect` reports shape
-counts, not shape ids.
-
-A `shapeId` is a positive, persistent identifier within its slide, not a shape
-position or a presentation-wide counter. Pass it as the operation's `shapeId`
-and pair it with that slide's `slide` or `slideId`. `query slides` reports each
-slide's `slide` and `slideId` and each shape's `shapeId`, `shapeName` and
-`placeholder` under the names the operations accept. Reading a different slide
-window does not change these ids. Read new ids after duplicating or importing shapes.
-Shape selectors address top-level slide shapes, including a group as one shape;
-nested group children are not separately projected or addressed. `shapeName`
-matching is case-sensitive. A shape's text in `query slides`, `query search` and
-`extract --what text` includes its table cells, group children and SmartArt nodes;
-chart titles, labels and data are not text and are never searched or replaced.
-
-`replace_text` matches within one paragraph at a time, in shapes (including table
-cells, group children and SmartArt nodes) and speaker notes. Only the matched
-characters change: the replacement takes the formatting of the first matched
-character, and all other runs keep theirs. With `regex`, the replacement honors
-.NET substitutions such as `$1` and `${name}`; write `$$` for a literal `$`.
-
-`set_notes` replaces the selected slide's speaker-note text. `inspect --detail notes`
-reports only presence and character counts. Read note text with
-`query slides --notes` (also included by `--scope full`) or `extract --what notes`.
-Check `contentTruncated` on bounded slide reads.
-
-Apply one atomic batch:
+Batch semantics (atomic by default, `--best-effort`, `--dry-run`, output and backups) and field
+discovery are shared: see `aspose-cli docs editing`. Each operation's fields, types, defaults
+and allowed values come from its generated schema:
 
 ```powershell
-aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output json
+aspose-cli schema v2/slides/ops --operation insert_chart
 ```
 
-Use `--in-place --backup` only for an intentional in-place edit. An operation
-failure normally writes no document output. `--best-effort` saves successful
-operations even when others fail; those partial results exit 8. Reserve it for
-workflows that explicitly accept partial delivery. Every save reopens the
-output before it is published.
+## Addressing within a batch
 
-`set_footer` shows footer text, slide numbers or dates through the layout's own
-placeholders; their position and style come from the template.
+- Every slide and shape target resolves against the presentation as it was before the first
+  operation. Content inserted earlier in the batch cannot be addressed later in it; a slide or
+  shape deleted earlier fails the operation that targets it. Moving a slide keeps its `slideId`.
+- `shapeId` is persistent within its slide, not a position or a presentation-wide counter; pair
+  it with that slide's `slide` or `slideId`. Reading a different slide window does not change
+  ids. Read new ids after duplicating slides or appending a presentation.
+- Shape selectors address top-level shapes; a group is one shape and its children are not
+  addressed separately. A `shapeName` or `placeholder` role that several shapes on the slide
+  share is refused; use the `shapeId`.
 
-The current operation vocabulary is available offline:
+## Operations by task
 
-```powershell
-aspose-cli schema v2/slides/ops
-aspose-cli docs slides/ops
-```
+| Task | Operations |
+| --- | --- |
+| Slide order and structure | `add_slide`, `duplicate_slide`, `move_slide`, `delete_slides`, `add_section`, `append_presentation` |
+| Layout and canvas | `apply_layout`, `set_slide_size`, `set_background`, `set_footer`, `set_transition`, `set_slide_hidden` |
+| Text | `set_title`, `set_body`, `set_text`, `replace_text`, `set_table_cell`, `set_notes` |
+| Objects | `insert_image`, `insert_shape`, `insert_table`, `insert_chart`, `delete_shape`, `set_shape_style` |
+| Data | `update_chart_data` |
+| Document | `set_properties` |
 
-Video and audio insertion or MP4 rendering are not supported by this build. Existing embedded
-media can be inventoried and extracted, but must not be silently synthesized.
-`extract --what media --slides 2-3` writes only the media those slides show (pictures,
-picture fills, backgrounds, audio and video, not master or layout art); each item keeps
-its presentation-wide `index`.
+## Text and notes
 
-`update_chart_data` writes into the chart's own workbook cells. Existing series
-keep their fills, markers, data labels and number formats; added series and
-points take the chart's automatic style, and surplus categories, points and
-series are removed from the end. It supports bar, column, line, area, pie,
-doughnut, radar and scatter charts whose data lives in the embedded workbook.
-Other charts (bubble, stock, surface, mixed scatter and category series, external
-or literal data, multi-level categories) fail with `CHART_DATA_INVALID` and are
-left unchanged; recreate them with `insert_chart`. Omitted `series` keep their
-values, so a categories-only update must keep the category count. Scatter
+- `set_title`, `set_body` and `set_text` fill placeholders the layout already styles; prefer
+  them to `set_shape_style`, which overrides every run of one shape.
+- A shape's text in `query slides`, `query search` and `extract --what text` includes its table
+  cells, group children and SmartArt nodes.
+- `replace_text` matches within one paragraph at a time, in shapes and speaker notes. Only the
+  matched characters change: the replacement takes the formatting of the first matched
+  character, and other runs keep theirs.
+- `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
+  character counts; read note text with `query slides --notes` or `extract --what notes`.
+- `set_footer` uses the layout's own footer, number and date placeholders; their position and
+  style come from the template.
+
+## Charts
+
+`update_chart_data` writes into the chart's embedded workbook. Existing series keep their
+fills, markers, data labels and number formats; added series and points take the chart's
+automatic style, and surplus categories, points and series are removed from the end. Omitted
+`series` keep their values, so a categories-only update must keep the category count. Scatter
 charts have no categories: pass `series` with matching `xValues` and `values`.
 
-New charts reserve space for their title and legend. Adding a second series to a
-chart without a legend creates a legend outside the plot. Data updates preserve
-an existing chart's explicit title and legend overlay settings. For non-negative
-bar and column data, automatic value axes start at zero in the correct orientation;
-explicit value-axis limits remain unchanged.
+It supports bar, column, line, area, pie, doughnut, radar and scatter charts whose data lives
+in the embedded workbook. Other charts (bubble, stock, surface, mixed scatter and category
+series, external or literal data, multi-level categories) fail with `CHART_DATA_INVALID` and
+stay unchanged; recreate them with `insert_chart`.
 
-The CLI's zero baseline is saved as an explicit fixed minimum of `0`. Later
-data-only updates keep all stored axis limits, including that zero. New negative
-values or values outside a fixed range can therefore be clipped. Adjust the axes
-in a presentation editor or recreate the chart for the new data, then render and
-review it before delivery. A successful data update does not establish that every
-value is visible.
+New charts reserve space for their title and legend; adding a second series to a chart without
+a legend creates one outside the plot. For non-negative bar and column data, the automatic value
+axis starts at zero, saved as a fixed minimum of `0`. Later data updates keep every stored axis
+limit, so new negative values or values beyond a fixed range can be clipped: adjust the axes in
+a presentation editor or recreate the chart, then review the rendering. A successful update
+does not establish that every value is visible.
+
+## Media
+
+This build cannot insert audio or video or render MP4. `extract --what media --slides 2-3`
+writes the media those slides show (pictures, picture fills, backgrounds, audio and video, not
+master or layout art); each item keeps its presentation-wide `index`.

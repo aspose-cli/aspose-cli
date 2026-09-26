@@ -33,4 +33,11 @@
     <EmbeddedResource Include="Viewer\kit.css" LogicalName="viewer/kit.css" />
   </ItemGroup>
 
+  <ItemGroup Label="Platform Agent Skill">
+    <!-- The platform Skill: what every product shares (App, preview, review, licensing, errors). -->
+    <EmbeddedResource Include="Skills\Platform\**\*.*">
+      <LogicalName>skill/$(AsposeCliSkillPrefix)platform/%(RecursiveDir)%(Filename)%(Extension)</LogicalName>
+    </EmbeddedResource>
+  </ItemGroup>
+
 </Project>

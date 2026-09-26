@@ -8,6 +8,12 @@
       "text": "Confirmed delivery plan"
     },
     {
+      "op": "set_text",
+      "slide": 2,
+      "placeholder": "body",
+      "text": "Validation is complete; the release is approved."
+    },
+    {
       "op": "set_notes",
       "slide": 2,
       "text": "Launch approved."

@@ -5,99 +5,71 @@ description: Create, inspect, edit, convert and review PowerPoint presentations 
 
 # Aspose Slides
 
-Use `aspose-cli slides` for PPTX, PPT, ODP and related presentation formats.
-Slides are addressed by 1-based number or stable `slideId`; shapes by `shapeId`
-or case-sensitive `shapeName` within their slide.
+Use `aspose-cli slides` for PPTX, PPT, ODP and related presentation formats. The shared
+workflow, batch semantics, review protocol, licensing and error envelope are in the platform
+Skill: start with `aspose-cli docs overview`.
 
-`query slides --max-chars` bounds all returned title, text, run, requested note
-and comment text, including repeated projections. Addressing and formatting
-metadata do not consume this text budget. Inspect `window.truncated` and each
-slide's `contentTruncated`. Run `window.next` verbatim: it reads the remaining
-slides and starts again at a slide the budget cut short; when that slide alone
-exceeded the budget, it doubles `--max-chars`. A truncated `query search` also
-carries `window.next`, which repeats the search with `--skip` past the returned
-hits.
+## Addressing
+
+- A slide is addressed by its 1-based `slide` number or its stable `slideId`.
+- A shape is addressed within its slide by `shapeId` (persistent, slide-scoped), by
+  case-sensitive `shapeName`, or by `placeholder` role (`title`, `body`, `subtitle`, `footer`).
+- `slides query slides --scope shapes` reports every one of these names exactly as the
+  operations accept them; `inspect` reports slide ids and shape counts, not shape ids.
 
 ## Workflow
 
 1. Clarify audience, purpose, talk length, screen ratio and requested scope.
-2. **New deck:** write a Markdown outline and author it into a template (see
-   Design below):
+2. **New deck:** write a Markdown outline and author it into a template
+   ([outline authoring](references/outline-authoring.md)). Omit `--template` to use the
+   built-in 16:9 design.
 
    ```powershell
    aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx --output json
    ```
 
-   Omit `--template` to use the built-in 16:9 design.
-
-3. **Existing deck:** inspect structure, then read only the slides you need:
+3. **Existing deck:** inspect the structure, then read only the slides you need. A truncated
+   read reports `window.next`; run it verbatim.
 
    ```powershell
    aspose-cli slides inspect deck.pptx --preview --detail layouts fonts notes --output json
    aspose-cli slides query slides deck.pptx --slides 1-5 --scope full --notes --output json
    ```
 
-4. Put all related changes in one atomic `slides edit` batch. Write to `--out`,
-   or use `--in-place --backup` when replacing the user's file is intended:
+4. Put all related changes in one `slides edit` batch
+   ([Slides editing](references/editing.md)):
 
    ```powershell
    aspose-cli slides edit deck.pptx --ops deck-ops.json --out deck.revised.pptx --output json
    ```
 
-5. Verify before delivery (below). Every edit reopens its output before
-   publishing it, so a successful edit is a readable presentation.
+5. Verify before delivery ([Slides verification](references/verification.md), then the
+   checklist in `aspose-cli docs verification`).
 
 ## Design: the template owns the look
 
-- Fonts, colors, backgrounds and placeholder geometry come from the template's
-  theme, masters and layouts. Use the user's brand template when one exists;
-  without `--template`, `slides create` uses the built-in 16:9 design.
-- Markdown authoring fills layout placeholders: `#` becomes a Title Slide, `##`
-  a Title and Content slide, and a slide with both text and an image uses Two
-  Content. It sets no colors or fonts of its own: emphasis becomes bold or
-  italic and code uses a monospace font. See
-  [outline authoring](references/outline-authoring.md).
-- Do not restyle text run by run to fix a look; choose or correct the template.
-- One claim per slide. Keep at most six bullets and two levels; prefer a chart
-  or small table over dense prose. Split a slide rather than shrink its text.
+Fonts, colors, backgrounds and placeholder geometry come from the template's theme, masters and
+layouts. Fix a look by choosing or correcting the template, never by restyling text run by run.
+One claim per slide, at most six bullets and two levels; split a slide rather than shrink it.
+Details: [design system](references/design-system.md).
 
-More: [design system](references/design-system.md).
+## Slides-specific rules
 
-## Verify before delivery
-
-1. **Content:** read changed slides back with `slides query slides` and search
-   for leftovers such as `TODO` with `slides query search`.
-2. **Visual:** run `aspose-cli review deck.pptx --out <new-dir> --output json`,
-   then open every image it lists, one by one. Use `review.json` findings
-   (overflow, small text, overlaps, blank slides) to focus, not as a substitute
-   for looking.
-3. Fix, then run review again into a fresh directory. Stop after three rounds
-   and report what remains.
-4. Never claim a visual pass for slides you did not open. State the exact
-   coverage from `coverage.complete` and the images inspected.
-
-Details: [verification](references/verification.md).
-
-## Licensing
-
-Without a Slides license, output is watermarked and results carry `EVAL_MODE`;
-disclose that with every delivered file. Install a license with
-`aspose-cli license install Aspose.Slides.lic --product slides` and check the
-`slides` entry of `aspose-cli license status --output json`.
-
-Passwords come from `--password-env`, `--password-stdin` or `--encrypt-env`;
-never put secrets in ops JSON. Only PPTX and PPTM outputs can carry a password:
-`--encrypt-env` with any other `create`, `edit` or `convert` output is
-`OPTION_INVALID`.
+- The license product id is `slides`: `aspose-cli license install Aspose.Slides.lic --product slides`.
+  Evaluation output is watermarked and may truncate text (`aspose-cli docs licensing`).
+- Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
+  `edit` or `convert` output is `OPTION_INVALID`.
+- Chart titles, labels and data are not text: `query`, `search` and `replace_text` never see
+  them, so confirm charts in the rendered review images.
 
 ## References
 
-- [Editing and the ops vocabulary](references/editing.md) (`aspose-cli schema v2/slides/ops`)
-- [Outline authoring](references/outline-authoring.md)
-- [Design system](references/design-system.md)
-- [Verification](references/verification.md)
-- [Live preview for a human](references/preview.md)
-- [Troubleshooting](references/troubleshooting.md)
+- [Slides editing](references/editing.md): addressing, operations by task, text, notes and chart semantics
+- [Outline authoring](references/outline-authoring.md): Markdown to layouts
+- [Design system](references/design-system.md): templates and content rules
+- [Slides verification](references/verification.md): content reads, review checks, chart fidelity
+- [Slides preview](references/preview.md): what the viewer shows
+- [Slides troubleshooting](references/troubleshooting.md): Slides error codes
 
 Examples: [deck from outline](examples/deck-from-outline/README.md),
 [edit a deck safely](examples/edit-deck-safely/README.md),

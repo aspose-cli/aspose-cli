@@ -303,7 +303,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 (The source row is hardcoded here only to keep the recipe self-contained — in
 real work it is a SUMIFS block, per the worked example: `aspose-cli docs
-sales-dashboard`.) A ranking bar with direct labels instead of an axis — and
+cells/sales-dashboard`.) A ranking bar with direct labels instead of an axis — and
 note the source order: **a bar chart plots the FIRST source row at the
 BOTTOM** (measured: largest-first source order ships the largest bar at the
 bottom), so list a ranking bar's rows ASCENDING and the ranking reads

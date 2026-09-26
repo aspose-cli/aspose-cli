@@ -11,7 +11,7 @@ internal static class ExtractCommand
     {
         var what = new Option<string>("--what") { Required = true, Description = "media, notes or text." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PresentationExtractKinds.All]);
-        var slides = new Option<string?>("--slides") { Description = "Optional slide range for notes or text." }.WithInput(InputKind.None);
+        var slides = new Option<string?>("--slides") { Description = "Optional 1-based slide range; only those slides are extracted. Default: every slide." }.WithInput(InputKind.None);
         return StandardCommand.Create(
             host,
             "extract",

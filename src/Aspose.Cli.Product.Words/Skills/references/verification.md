@@ -1,21 +1,24 @@
 # Verification
 
-## Content
+The delivery checklist, the review protocol and font checks are in
+`aspose-cli docs verification`. This page covers what Words adds.
 
-`words edit --verify` reopens the exact staged file before publication and
-reports:
+## Semantic verification
+
+`words edit --verify` reopens the staged file before publication and reports
+`verification`:
 
 - `ok` and `issues`;
-- `semanticChangesDetected` from a comparison of private copies with revisions
-  accepted, so the saved document keeps its revisions;
+- `semanticChangesDetected`, from a comparison of private copies with
+  revisions accepted, so the saved document keeps its revisions;
 - `fieldCount`, `revisionCount` and `protection`, each checked against the
   in-memory result.
 
-`--verify` cannot be combined with `--dry-run`. Failed content checks are a
-partial-success report (exit 8) and still publish the output for repair;
-execution failures prevent publication.
+`--verify` cannot be combined with `--dry-run`. Failed checks are a partial
+success (exit 8) that still publishes the output for repair; execution
+failures publish nothing.
 
-Then read back what changed:
+## Read-back
 
 ```powershell
 aspose-cli words inspect output.docx --detail outline fields comments --output json
@@ -23,42 +26,27 @@ aspose-cli words query blocks output.docx --blocks 1-30 --scope full --output js
 aspose-cli words compare baseline.docx output.docx --output json
 ```
 
-`words compare` requires revision-free inputs.
+Read the blocks the batch reported in `applied[].targets`, and blocks that
+follow insertions. `words compare` needs revision-free inputs
+([revisions](revisions.md)).
 
-## Appearance
+## Visual review
+
+`aspose-cli review output.docx --out <new-dir>` renders every page. The Words
+checks are listed with `aspose-cli capabilities words --output json` under
+`review.checks`; the ones that most often need action:
+
+- `WORDS_HEADING_ORPHANED`, `WORDS_PAGE_UTILIZATION_LOW`, `WORDS_PAGE_BLANK`
+  and `WORDS_PAGE_BREAKS_EXCESSIVE`: pagination problems, usually from manual
+  breaks or empty paragraphs; remove them rather than adding more breaks.
+- `WORDS_OBJECT_OUTSIDE_PAGE`: a floating image or shape crosses the page edge.
+- `WORDS_REVISIONS_PRESENT` (info): tracked revisions are shown; never accept
+  them as a visual repair.
 
 ```powershell
-aspose-cli review output.docx --out output.review-1 --output json
+aspose-cli review output.docx --out output.review-2 --code WORDS_HEADING_ORPHANED --code WORDS_PAGE_BLANK --output json
 ```
-
-Open every page image under the review directory, one by one; JSON success
-alone does not prove layout quality. `review.json` lists findings and
-`coverage.complete`; when coverage is incomplete, say so. Review still writes
-its evidence but exits 8 when coverage is incomplete or a finding has `error`
-severity, such as `FONTS_MISSING_OR_SUBSTITUTED`. Every finding carries a
-stable check code, such as `WORDS_PAGE_BLANK` or `WORDS_TEXT_TOO_SMALL`;
-`aspose-cli capabilities words --output json` lists them under `review.checks`,
-and `review --code <code...>` reports only the named checks. Fix and review
-again into a new directory, for at most three rounds, then report any remaining
-defects.
 
 `words render` exports page images for delivery. It takes the format from
 `--to`, or from the `--out` extension when `--to` is omitted, and refuses a
 `--to` that disagrees with the `--out` extension.
-
-```powershell
-aspose-cli fonts check output.docx --output json
-```
-
-`fonts check` lists the fonts the document's text uses, marks those unavailable
-here, and names in `substitutedBy` the font the layout draws instead. For fonts
-delivered beside the document, such as brand fonts on a machine without them,
-pass the same `--font-dir` to every command whose result depends on layout:
-`fonts check`, `review`, and `words render`, `convert`, `create`, `edit`,
-`compare`, `split` and `inspect` (its page count). It adds to the system fonts,
-so the output uses the fonts the check saw.
-
-```powershell
-aspose-cli fonts check output.docx --font-dir fonts --output json
-aspose-cli words convert output.docx --to pdf --font-dir fonts --output json
-```

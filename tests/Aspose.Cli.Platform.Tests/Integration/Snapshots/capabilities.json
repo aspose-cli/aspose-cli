@@ -5875,7 +5875,7 @@
               "secret": false,
               "valueSource": "command-line",
               "inputKind": "none",
-              "description": "Optional slide range for notes or text."
+              "description": "Optional 1-based slide range; only those slides are extracted. Default: every slide."
             },
             {
               "name": "--what",
@@ -14559,7 +14559,7 @@
           "required": true,
           "hasDefault": false,
           "allowedValues": [],
-          "description": "Bundled skill to install: aspose-cli-cells, aspose-cli-pdf, aspose-cli-slides, aspose-cli-words."
+          "description": "Bundled skill to install: aspose-cli-platform, aspose-cli-cells, aspose-cli-pdf, aspose-cli-slides, aspose-cli-words."
         }
       ]
     },
@@ -15278,7 +15278,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Optional slide range for notes or text."
+          "description": "Optional 1-based slide range; only those slides are extracted. Default: every slide."
         },
         {
           "name": "--what",

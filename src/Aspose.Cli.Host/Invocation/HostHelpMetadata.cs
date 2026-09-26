@@ -38,7 +38,7 @@ internal static class HostHelpMetadata
                 "review <file>",
                 "review <file> --out evidence --max-items 50 --output json",
             ],
-            [new("aspose-cli docs <product>/verification", "the verification protocol of the file's product, e.g. pdf/verification")]);
+            [new("aspose-cli docs verification", "the delivery checklist, the review protocol and filtering by check code")]);
         FindOptional(root, "license")?.WithExamples(
             [
                 "license status --output json",

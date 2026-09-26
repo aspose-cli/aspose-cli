@@ -17,7 +17,9 @@ the fixed distribution identity; the generated projections and the solution come
 - Each Product owns its Contracts, Ports, Engine, Commands, Output, Schemas/v2, view adapter,
   Presenter, Skills and module definition, and its definitions are pure and deterministic.
   Skill names begin with `aspose-cli-`, their executable examples must match this build's
-  capabilities, and package-relative documentation links must resolve.
+  capabilities, and package-relative documentation links must resolve. What every product
+  shares lives once, in the Host's `aspose-cli-platform` Skill; a product Skill holds only
+  product knowledge and points to the generated schema instead of restating it.
 - Source, project references, build imports, tests and publishing tools stay inside this
   project. Never reference a parent workspace or another CLI project.
 

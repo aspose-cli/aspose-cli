@@ -1,7 +1,7 @@
 # Slides verification
 
-Every `slides edit` reopens its output before publishing it. Verification of
-content and appearance is a separate, explicit step.
+The delivery checklist and review protocol are shared: see `aspose-cli docs verification`.
+This page covers what is specific to presentations.
 
 ## Content
 
@@ -11,9 +11,9 @@ aspose-cli slides query slides deck.revised.pptx --slides 1- --scope full --note
 aspose-cli slides query search deck.revised.pptx --pattern TODO --scope all --output json
 ```
 
-Check `contentTruncated` on bounded reads. Table cells, group children and
-SmartArt nodes are part of their shape's text; chart titles, labels and series are
-not, so confirm them visually.
+`--max-chars` bounds all returned title, text, run, note and comment text; addressing and
+formatting metadata do not count. Check each slide's `contentTruncated`; `window.next` resumes
+at a slide the budget cut short and doubles `--max-chars` when that slide alone exceeded it.
 
 ## Appearance
 
@@ -21,44 +21,33 @@ not, so confirm them visually.
 aspose-cli review deck.revised.pptx --out deck.review-1 --output json
 ```
 
-Open every image under the review directory, one by one. `review.json` lists
-findings (outside shapes, small text, overlaps, blank or duplicate slides) and
-`coverage.complete`; when coverage is incomplete, say so. Check clipping,
-overflow, contrast, missing glyphs, distorted images, chart categories, table
-legibility, footer placement, hidden slides and ordering.
+The Slides checks (`SLIDES_*` in `capabilities` under `review.checks`) flag shapes outside the
+slide, text below 12 pt, overlapping shapes, covered charts, blank or duplicate slides and
+content density. After fixing one kind of finding, a later round can focus on it while you still
+open every image:
 
-Fix and review again into a new directory, for at most three rounds, then
-report any remaining defects.
+```powershell
+aspose-cli review deck.revised.pptx --out deck.review-2 --code SLIDES_SHAPE_OUTSIDE_SLIDE --code SLIDES_TEXT_TOO_SMALL --output json
+```
 
-Fonts delivered beside the deck, such as brand fonts on a machine without
-them, reach the engine only through `--font-dir`, which adds to the system
-fonts. Pass the same directories to `fonts check`, `review`, and
-`slides render`, `convert`, `create` and `edit` (saving shrinks text that
-auto-fits its shape with the fonts' metrics), so the delivered output uses the
-fonts the check saw:
+Checks do not see everything. In every image, look at title hierarchy, text overflowing its
+placeholder, image crops and distortion, chart categories and labels, table legibility, footer
+and slide-number placement, contrast, missing CJK glyphs, hidden slides and ordering.
+
+## Fonts
+
+Saving shrinks text that auto-fits its shape using the fonts' metrics, so pass the same
+`--font-dir` to `slides create`, `edit`, `convert` and `render` as to `fonts check` and `review`:
 
 ```powershell
 aspose-cli fonts check deck.revised.pptx --font-dir fonts --output json
 aspose-cli slides convert deck.revised.pptx --to pdf --font-dir fonts --output json
 ```
 
-## Evaluation
-
-Evaluation output carries `EVAL_MODE` and may replace or truncate text. Claim
-licensed results only when the CLI reports Slides as licensed.
-
-`slides render` and PNG/JPEG conversion export images for delivery (192 DPI by
-default; a 720-by-405-point slide becomes 1920 by 1080 pixels). `slides render`
-takes the format from `--to`, or from the `--out` extension when `--to` is
-omitted, and refuses a `--to` that disagrees with the `--out` extension.
-
 ## Existing chart fidelity
 
-An unrelated edit still passes the presentation through the native SDK's full
-save path. The pinned Aspose.Slides SDK can change an untouched chart's
-automatic title layout, axis scale and color behavior during a plain load/save
-(a known SDK defect). Inspect
-existing native charts independently in PowerPoint before publishing a revised
-template. Successful reopen and review coverage do not establish unchanged
-appearance. The CLI does not rewrite imported chart defaults to hide this SDK
-limitation.
+Every edit passes the presentation through the SDK's full save path. The pinned Aspose.Slides
+SDK can change an untouched chart's automatic title layout, axis scale and colors during a
+plain load and save (a known SDK defect). Inspect existing native charts in PowerPoint before
+publishing a revised template; a successful reopen and complete review coverage do not
+establish unchanged appearance.

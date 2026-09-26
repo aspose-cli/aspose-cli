@@ -548,6 +548,90 @@ public abstract class ProductContractTests<TModule>
         Assert.True(mismatches.Count == 0, string.Join(Environment.NewLine, mismatches));
     }
 
+    /// <summary>
+    /// Keeps every operation document a product Skill shows valid against the generated schema:
+    /// each example <c>*.json</c> file and each fenced <c>json</c> block in the Skill's Markdown
+    /// that holds an <c>ops</c> array. A Skill therefore cannot teach a field, value or shape the
+    /// build rejects.
+    /// </summary>
+    [Fact]
+    public void SkillOperationDocuments_ConformToTheGeneratedSchema()
+    {
+        ProductCatalog catalog = ProductCatalog.Build([new TModule()]);
+        ProductDefinition definition = Assert.Single(catalog.Products);
+        string[] operationSchemas = definition.Manifest.Operations
+            .Select(static operation => operation.Descriptor.InputSchema)
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        string skills = Path.Combine(RepositoryPaths.Root, "src", typeof(TModule).Assembly.GetName().Name!, "Skills");
+        if (operationSchemas.Length == 0 || !Directory.Exists(skills))
+        {
+            return;
+        }
+
+        JsonSchema[] schemas = [.. operationSchemas.Select(id => ParseSchema(catalog.Resources.Read(id)))];
+        var documents = new List<(string Source, string Json)>();
+        foreach (string file in Directory.EnumerateFiles(skills, "*", SearchOption.AllDirectories))
+        {
+            if (file.EndsWith(".json", StringComparison.OrdinalIgnoreCase))
+            {
+                documents.Add((file, File.ReadAllText(file)));
+            }
+            else if (file.EndsWith(".md", StringComparison.OrdinalIgnoreCase))
+            {
+                documents.AddRange(FencedJson(File.ReadAllText(file)).Select(block => (file, block)));
+            }
+        }
+
+        var failures = new List<string>();
+        foreach ((string source, string json) in documents)
+        {
+            JsonNode? node;
+            try
+            {
+                node = JsonNode.Parse(json);
+            }
+            catch (System.Text.Json.JsonException)
+            {
+                continue;
+            }
+
+            if (node is not JsonObject { } document || document["ops"] is not JsonArray)
+            {
+                continue;
+            }
+
+            using JsonDocument instance = JsonDocument.Parse(json);
+            if (!schemas.Any(schema => schema.Evaluate(instance.RootElement).IsValid))
+            {
+                failures.Add($"{Path.GetRelativePath(RepositoryPaths.Root, source)}: {json.ReplaceLineEndings(" ")[..Math.Min(json.Length, 160)]}");
+            }
+        }
+
+        Assert.True(failures.Count == 0, "Skill operation documents the schema rejects:" + Environment.NewLine
+            + string.Join(Environment.NewLine, failures));
+    }
+
+    private static IEnumerable<string> FencedJson(string markdown)
+    {
+        string[] lines = markdown.ReplaceLineEndings("\n").Split('\n');
+        for (int index = 0; index < lines.Length; index++)
+        {
+            if (!lines[index].TrimStart().StartsWith("```json", StringComparison.Ordinal))
+            {
+                continue;
+            }
+
+            var block = new System.Text.StringBuilder();
+            for (index++; index < lines.Length && !lines[index].TrimStart().StartsWith("```", StringComparison.Ordinal); index++)
+            {
+                block.AppendLine(lines[index]);
+            }
+
+            yield return block.ToString();
+        }
+    }
+
     /// <summary>The JSON types and allowed values one schema states for a named field.</summary>
     private sealed record FieldShape(string Types, string? Values)
     {

@@ -1,41 +1,43 @@
 # PDF standards and conversion
 
-Use `pdf convert --to pdfa-1b|pdfa-2b|pdfa-3b` to produce an archival candidate,
-then independently run `pdf validate --profile ...` on that output. Require
-`valid: true`; a completed validation command can return `valid: false`.
-The issue list holds at most 100 entries; a `LIST_TRUNCATED` warning gives the total.
+## PDF/A
+
+`pdf convert --to pdfa-1b|pdfa-2b|pdfa-3b` produces an archival candidate; then
+run `pdf validate --profile` on that output and require `valid: true`, because a
+completed validation can return `valid: false`.
 
 ```powershell
 aspose-cli pdf convert report.pdf --to pdfa-2b --out report.archive.pdf --output json
 aspose-cli pdf validate report.archive.pdf --profile pdfa-2b --output json
 ```
 
-PDF/A conversion uses the engine's delete-on-conversion-error policy, so
-unsupported content can be removed. When the engine cannot make the document
+Conversion removes content the profile does not allow, so compare the candidate
+with the original before delivery. When the engine cannot make the document
 conform at all, the command fails with `PDFA_CONVERSION_FAILED`, writes no
-output, and lists the problems it could not fix in `error.details.problems`.
-Compare the candidate with the original before delivery. `pdf validate` checks
-only the selected PDF/A profile; it is not a signature, redaction or permission
-validator. Each entry of its `issues` reads `clause (severity, page N): message`.
+output and lists what it could not fix in `error.details.problems`. PDF/A must
+embed every font, so a font missing here fails the conversion; pass the
+delivered fonts with `--font-dir`. `pdf validate` checks only the selected
+profile, not signatures, redaction or permissions. Each `issues` entry reads
+`clause (severity, page N): message`, and a `LIST_TRUNCATED` warning gives the
+total when the list is capped.
 
-The exact `--to` ids for `pdf convert` are `docx`, `xlsx`, `pptx`, `html`,
-`epub`, `txt`, `md`, `svg`, `xps`, `pdfa-1b`, `pdfa-2b`, `pdfa-3b`, `png`,
-`jpeg`, and `tiff`. Optional `--pages` selects physical pages. PNG, JPEG and
-SVG exports produce one file per selected page; TIFF produces one multipage
-file. Read the result's `outputs` for the actual paths. `pdf render` supports
-only `png`, `jpeg`, and `svg`; use `pdf convert --to tiff` for TIFF. It takes
-the format from `--to`, or from the `--out` extension when `--to` is omitted,
-and refuses a `--to` that disagrees with the `--out` extension.
+## Other formats
 
-Conversions to document, text and HTML formats are structurally lossy: PDF
-has fixed pages while those formats have different semantic models. Review
-the results before delivery. Raster outputs do not retain selectable
-text or interactive PDF features. Do not assume SVG or XPS preserves editable
-document structure, forms, annotations or signatures.
+`aspose-cli capabilities` lists the PDF `convertFormats` and `renderFormats`.
+`--pages` selects physical pages. PNG, JPEG and SVG exports write one file per
+selected page and TIFF one multipage file; read the result's `outputs` for the
+actual paths. `pdf render` takes the format from `--to`, or from the `--out`
+extension when `--to` is omitted, and refuses a `--to` that disagrees with the
+extension; use `pdf convert --to tiff` for TIFF.
 
-Table extraction is best effort. Extracted tables include page and rectangle
-context, but the current `confidence` value is a fixed 0.5, not a calibrated
-accuracy score. Verify extracted values against the source.
+Conversions to document, text and HTML formats are structurally lossy, because
+PDF has fixed pages; review the results. Raster outputs keep no selectable text
+or interactive features, and SVG or XPS keep no editable structure, forms,
+annotations or signatures.
 
-The CLI does not provide PDF linearization, and ordinary PDF delivery does
-not require it. `pdf inspect` reports an existing file's `pdf.linearized` state.
+Table extraction is best effort. Extracted tables carry page and rectangle
+context, but `confidence` is a fixed 0.5, not a calibrated score; check the
+values against the source.
+
+The CLI does not linearize PDFs; `pdf inspect` reports an existing file's
+`pdf.linearized` state.

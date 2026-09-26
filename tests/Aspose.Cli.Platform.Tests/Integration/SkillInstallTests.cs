@@ -62,9 +62,13 @@ public sealed class SkillInstallTests : IDisposable
             Assert.Contains(
                 markdownFiles,
                 path => IsUnder(path, Path.Combine(root, "references")));
-            Assert.Contains(
-                markdownFiles,
-                path => IsUnder(path, Path.Combine(root, "examples")));
+            if (skill != PlatformSkill)
+            {
+                // Product Skills teach through runnable examples; the platform Skill has none.
+                Assert.Contains(
+                    markdownFiles,
+                    path => IsUnder(path, Path.Combine(root, "examples")));
+            }
 
             // docs reads the resources the install extracted, so a document is its docs
             // topic exactly when docs lists the topic and no other document claims it.
@@ -294,27 +298,33 @@ public sealed class SkillInstallTests : IDisposable
         }
     }
 
+    private const string PlatformSkill = "aspose-cli-platform";
+
+    /// <summary>
+    /// The docs topic of a Skill document: the platform Skill's documents are unprefixed, a
+    /// product Skill's are prefixed with the product id.
+    /// </summary>
     private static string? DocsTopic(
         string skill,
         string root,
         string markdown)
     {
-        string product = skill["aspose-cli-".Length..];
+        string prefix = skill == PlatformSkill ? string.Empty : skill["aspose-cli-".Length..] + "/";
         string relative = Path.GetRelativePath(root, markdown)
             .Replace(Path.DirectorySeparatorChar, '/');
         if (string.Equals(relative, "SKILL.md", StringComparison.Ordinal))
         {
-            return product + "/overview";
+            return prefix + "overview";
         }
         if (relative.StartsWith("references/", StringComparison.Ordinal))
         {
-            return product + "/" + relative[
+            return prefix + relative[
                 "references/".Length..(relative.Length - ".md".Length)];
         }
         if (relative.StartsWith("examples/", StringComparison.Ordinal)
             && relative.EndsWith("/README.md", StringComparison.Ordinal))
         {
-            return product + "/" + relative[
+            return prefix + relative[
                 "examples/".Length..(relative.Length - "/README.md".Length)];
         }
         return null;

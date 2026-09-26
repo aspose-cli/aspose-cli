@@ -4,8 +4,7 @@
   "ops": [
     {
       "op": "mail_merge",
-      "path": "recipients.csv",
-      "regions": false
+      "path": "recipients.csv"
     },
     {
       "op": "update_fields",

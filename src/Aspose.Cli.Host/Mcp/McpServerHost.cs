@@ -28,6 +28,7 @@ internal static class McpServerHost
                 Name = Aspose.Cli.Sdk.DistributionInfo.CommandName,
                 Version = Invocation.VersionInfo.CliVersion,
             },
+            ServerInstructions = Instructions(host.Skills),
             ToolCollection = CreateTools(tools),
         };
         await using var transport = new StdioServerTransport(options, loggerFactory: null);
@@ -38,6 +39,28 @@ internal static class McpServerHost
             serviceProvider: null);
         await server.RunAsync().ConfigureAwait(false);
         return 0;
+    }
+
+    /// <summary>
+    /// What an MCP client learns before its first call: how to use the two tools and which
+    /// Skill documents to read, with each Skill's own description from its SKILL.md.
+    /// </summary>
+    internal static string Instructions(Skills.SkillCatalog skills)
+    {
+        ArgumentNullException.ThrowIfNull(skills);
+        var text = new System.Text.StringBuilder()
+            .AppendLine("Aspose CLI inspects, reads, edits, converts, renders and reviews documents with bounded commands.")
+            .AppendLine($"Call the {CapabilitiesToolName} tool for commands, options and operation schemas; run a command with {ExecuteToolName}, passing its arguments as separate values.")
+            .AppendLine("Before working on a document, read the matching guide with execute [\"docs\", \"<topic>\"]:");
+        foreach (Skills.BundledSkill skill in skills.All)
+        {
+            string topic = skill.Name == Skills.SkillCatalog.PlatformSkillName
+                ? "overview"
+                : skill.Name[Aspose.Cli.Sdk.DistributionInfo.SkillPrefix.Length..] + "/overview";
+            text.AppendLine($"- {topic}: {skill.Description}");
+        }
+
+        return text.ToString().TrimEnd();
     }
 
     internal static McpServerPrimitiveCollection<McpServerTool> CreateTools(
@@ -84,12 +107,10 @@ internal sealed class McpTools
         _runner = runner;
     }
 
-    [Description("Return the compiled CLI capability snapshot as JSON.")]
     public Task<McpExecutionResult> CapabilitiesAsync(
         CancellationToken cancellationToken = default) =>
         AsMcpResultAsync(() => _runner.RunCapabilitiesAsync(cancellationToken));
 
-    [Description("Run one bounded, allowlisted CLI command without a shell.")]
     public Task<McpExecutionResult> ExecuteAsync(
         [Description("CLI arguments as separate values; never a shell command string.")]
         string[] args,

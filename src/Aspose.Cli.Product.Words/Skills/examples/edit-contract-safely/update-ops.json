@@ -5,10 +5,7 @@
     {
       "op": "replace_text",
       "find": "thirty (30) days",
-      "replace": "forty-five (45) days",
-      "matchCase": false,
-      "wholeWord": false,
-      "scope": "body"
+      "replace": "forty-five (45) days"
     },
     {
       "op": "add_comment",

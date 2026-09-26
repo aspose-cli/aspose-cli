@@ -50,6 +50,10 @@ internal sealed class McpTestServer : IAsyncDisposable
                 clientInfo = new { name = "repository-regression", version = "1.0" },
             });
             Assert.Null(initialized["error"]);
+            // The instructions route a client to the Skill guides, from the Skills' own descriptions.
+            string instructions = initialized["result"]!["instructions"]!.GetValue<string>();
+            Assert.Contains("- overview: ", instructions, StringComparison.Ordinal);
+            Assert.Contains("- cells/overview: ", instructions, StringComparison.Ordinal);
             await server._process.StandardInput.WriteLineAsync(
                 """{"jsonrpc":"2.0","method":"notifications/initialized"}""");
             await server._process.StandardInput.FlushAsync();

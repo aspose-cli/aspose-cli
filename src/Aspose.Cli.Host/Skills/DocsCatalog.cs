@@ -1,18 +1,23 @@
 using System.Reflection;
-using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk;
 
 namespace Aspose.Cli.Host.Skills;
 
-/// <summary>Serves every embedded product skill as offline documentation.</summary>
+/// <summary>
+/// Serves every embedded Agent Skill as offline documentation. The platform Skill's documents
+/// are the unprefixed topics (<c>overview</c>, <c>licensing</c>, ...); a product Skill's are
+/// <c>&lt;product&gt;/&lt;topic&gt;</c>. A reference is named after its file and an example after its
+/// directory; <c>overview</c> is the Skill's SKILL.md.
+/// </summary>
 internal sealed class DocsCatalog
 {
     private const string MarkdownExtension = ".md";
     private readonly IReadOnlyDictionary<string, DocResource> _resourceByTopic;
 
-    public DocsCatalog(ProductCatalog catalog)
+    public DocsCatalog(SkillCatalog skills)
     {
-        ArgumentNullException.ThrowIfNull(catalog);
-        _resourceByTopic = BuildMap(catalog);
+        ArgumentNullException.ThrowIfNull(skills);
+        _resourceByTopic = BuildMap(skills);
         Topics = _resourceByTopic.Keys
             .OrderBy(static topic => topic, StringComparer.Ordinal)
             .ToArray();
@@ -35,60 +40,35 @@ internal sealed class DocsCatalog
         return false;
     }
 
-    private static Dictionary<string, DocResource> BuildMap(ProductCatalog catalog)
+    private static Dictionary<string, DocResource> BuildMap(SkillCatalog skills)
     {
         var map = new Dictionary<string, DocResource>(StringComparer.Ordinal);
-        foreach (ProductPackageResources resources
-            in catalog.Resources.Products)
+        foreach (BundledSkill skill in skills.All)
         {
-            if (resources.SkillName is not { } skillName)
-            {
-                continue;
-            }
-
-            Assembly resourceAssembly = resources.ResourceAssembly;
-            string productId = resources.ProductId;
-            string root = $"skill/{skillName}/";
+            string topicPrefix = skill.Name == SkillCatalog.PlatformSkillName
+                ? string.Empty
+                : skill.Name[DistributionInfo.SkillPrefix.Length..] + "/";
+            string root = $"skill/{skill.Name}/";
             string references = $"{root}references/";
             string examples = $"{root}examples/";
-            foreach (string resource in resources.ResourceNames)
+            foreach (string resource in skill.ResourceNames)
             {
                 string normalized = resource.Replace('\\', '/');
-                var location = new DocResource(resourceAssembly, resource);
+                var location = new DocResource(skill.ResourceAssembly, resource);
                 if (normalized.StartsWith(references, StringComparison.Ordinal)
                     && normalized.EndsWith(MarkdownExtension, StringComparison.Ordinal))
                 {
-                    string topic = normalized[references.Length..^MarkdownExtension.Length];
-                    map[$"{productId}/{topic}"] = location;
+                    map[topicPrefix + normalized[references.Length..^MarkdownExtension.Length]] = location;
                 }
                 else if (normalized.StartsWith(examples, StringComparison.Ordinal)
                     && normalized.EndsWith("/README.md", StringComparison.Ordinal))
                 {
-                    string topic = normalized[examples.Length..^"/README.md".Length];
-                    map[$"{productId}/{topic}"] = location;
+                    map[topicPrefix + normalized[examples.Length..^"/README.md".Length]] = location;
                 }
                 else if (string.Equals(normalized, $"{root}SKILL.md", StringComparison.Ordinal))
                 {
-                    map[$"{productId}/overview"] = location;
+                    map[topicPrefix + "overview"] = location;
                 }
-            }
-
-            if (map.TryGetValue($"{productId}/editing", out DocResource? editing))
-            {
-                map[$"{productId}/ops"] = editing;
-            }
-        }
-
-        string? defaultProductId = catalog.DefaultProduct?.Manifest.Id;
-        if (defaultProductId is not null)
-        {
-            foreach ((string topic, DocResource resource) in map
-                         .Where(pair => pair.Key.StartsWith(
-                             defaultProductId + "/",
-                             StringComparison.Ordinal))
-                         .ToArray())
-            {
-                map[topic[(defaultProductId.Length + 1)..]] = resource;
             }
         }
 

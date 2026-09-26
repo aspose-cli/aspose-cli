@@ -1075,7 +1075,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
 
     private static void AssertBundledSkills(string root)
     {
-        string[] expected = ["aspose-cli-cells", "aspose-cli-pdf", "aspose-cli-slides", "aspose-cli-words"];
+        string[] expected = ["aspose-cli-cells", "aspose-cli-pdf", "aspose-cli-platform", "aspose-cli-slides", "aspose-cli-words"];
         Assert.Equal(expected, Directory.GetDirectories(root).Select(Path.GetFileName).Order(StringComparer.Ordinal));
         foreach (string skill in expected)
         {

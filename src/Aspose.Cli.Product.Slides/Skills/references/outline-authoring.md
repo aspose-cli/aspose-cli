@@ -35,5 +35,5 @@ Without `--template`, the built-in 16:9 design is used. `--size 16x9` or
 it. Without `--from-markdown`, the template's own slides are kept; a template
 that has none yields one empty Title Slide.
 
-After creation, inspect the slide inventory before adding charts, tables,
-images, notes or transitions with `slides edit`.
+After creation, read the slides with `slides query slides --scope shapes` before adding
+charts, tables, images, notes or transitions with `slides edit`.

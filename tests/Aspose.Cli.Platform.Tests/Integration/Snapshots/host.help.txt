@@ -514,7 +514,7 @@ Examples:
   aspose-cli review <file> --out evidence --max-items 50 --output json
 
 Learn more:
-  aspose-cli docs <product>/verification  the verification protocol of the file's product, e.g. pdf/verification
+  aspose-cli docs verification  the delivery checklist, the review protocol and filtering by check code
 
 
 ## aspose-cli schema --help
@@ -576,7 +576,7 @@ Usage:
   aspose-cli skill install <skill> [options]
 
 Arguments:
-  <skill>  Bundled skill to install: aspose-cli-cells, aspose-cli-pdf, aspose-cli-slides, aspose-cli-words.
+  <skill>  Bundled skill to install: aspose-cli-platform, aspose-cli-cells, aspose-cli-pdf, aspose-cli-slides, aspose-cli-words.
 
 Options:
   --host <claude-code|codex|opencode>         Agent host whose standard skills directory should be used.
