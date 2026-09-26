@@ -26,7 +26,7 @@
         "semanticChangesDetected": { "type": "boolean" },
         "fieldCount": { "type": "integer", "minimum": 0 },
         "revisionCount": { "type": "integer", "minimum": 0 },
-        "protection": { "type": "string" }
+        "protection": { "enum": ["none", "readOnly", "comments", "trackedChanges", "forms"], "description": "The editing restriction: none, or the protect operation mode that sets it; every SDK protection type maps to one of these." }
       }
     },
     "license": { "type": "object" },

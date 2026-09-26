@@ -28,8 +28,27 @@
     },
     "slides": { "type": "array", "items": { "type": "object" } },
     "sections": { "type": "array", "items": { "type": "object" } },
-    "masters": { "type": "array", "items": { "type": "object" } },
-    "layouts": { "type": "array", "items": { "type": "object" } },
+    "masters": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["name", "slideCount"], "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "slideCount": { "type": "integer", "minimum": 0, "description": "How many slides use one of this master's layouts." }
+        }
+      }
+    },
+    "layouts": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["name", "master", "slideCount"], "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string" },
+          "master": { "type": ["string", "null"] },
+          "slideCount": { "type": "integer", "minimum": 0, "description": "How many slides use this layout." }
+        }
+      }
+    },
     "media": { "type": "array", "items": { "type": "object" } },
     "notes": { "type": "array", "items": { "type": "object" } },
     "comments": { "type": "array", "items": { "type": "object" } },

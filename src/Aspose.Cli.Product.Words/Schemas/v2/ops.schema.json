@@ -744,14 +744,14 @@
       }
     },
     "insert_table": {
-      "description": "Inserts a table at a block boundary; data must fit the table's rows and columns.",
+      "description": "Inserts a table at a block boundary; cells must fit the table's rows and columns.",
       "type": "object",
       "required": [
         "op",
         "at",
         "position",
         "rows",
-        "cols"
+        "columns"
       ],
       "additionalProperties": false,
       "properties": {
@@ -772,13 +772,13 @@
           "minimum": 1,
           "maximum": 32767
         },
-        "cols": {
+        "columns": {
           "description": "The column count; Word allows at most 63.",
           "type": "integer",
           "minimum": 1,
           "maximum": 63
         },
-        "data": {
+        "cells": {
           "description": "Cell text by row, then column; cells beyond it stay empty.",
           "type": "array",
           "items": {

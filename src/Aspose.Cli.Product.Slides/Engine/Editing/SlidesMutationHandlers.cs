@@ -79,9 +79,9 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         ISlide? slide = op switch
         {
             SlideTargetOp target => ResolveSlide(presentation, target),
-            AddSectionOp value => value.AtSlide <= presentation.Slides.Count
-                ? presentation.Slides[value.AtSlide - 1]
-                : throw SlideNotFound(value.AtSlide, presentation.Slides.Count),
+            AddSectionOp value => value.StartSlide <= presentation.Slides.Count
+                ? presentation.Slides[value.StartSlide - 1]
+                : throw SlideNotFound(value.StartSlide, presentation.Slides.Count),
             _ => null,
         };
         IShape? shape = op is ShapeTargetOp shapeTarget

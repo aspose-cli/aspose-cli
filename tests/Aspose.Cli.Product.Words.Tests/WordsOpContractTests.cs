@@ -58,7 +58,7 @@ public sealed class WordsOpContractTests
     }
 
     [Theory]
-    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rows":1,"cols":2,"data":[["a"],["b"]]}""", "more rows")]
+    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rows":1,"columns":2,"cells":[["a"],["b"]]}""", "more rows")]
     public void Parser_RejectsRulesTheRecordsStateInTheirSummaries(string operation, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));

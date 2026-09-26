@@ -19,7 +19,7 @@ public sealed class SlidesPartialChartTests
         string output = fixture.File("categories.pptx");
         fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
         {
-            Ops = [new UpdateChartDataOp { Slide = 1, Shape = id, Categories = ["C", "D"] }],
+            Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = id, Categories = ["C", "D"] }],
         }, new PresentationEditRequest { OutputPath = output });
         using var reopened = new Presentation(output);
         IChart chart = Chart(reopened);
@@ -38,7 +38,7 @@ public sealed class SlidesPartialChartTests
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
         {
-            Ops = [new UpdateChartDataOp { Slide = 1, Shape = ChartId(seed), Categories = ["C", "D"] }],
+            Ops = [new UpdateChartDataOp { Slide = 1, ShapeId = ChartId(seed), Categories = ["C", "D"] }],
         }, new PresentationEditRequest { OutputPath = output }));
 
         Assert.Equal(SlidesDiagnostics.ChartDataInvalid, error.Code);
@@ -57,7 +57,7 @@ public sealed class SlidesPartialChartTests
             [
                 new UpdateChartDataOp
                 {
-                    Slide = 1, Shape = ChartId(seed),
+                    Slide = 1, ShapeId = ChartId(seed),
                     Series = [new SlidesChartSeriesInput { Name = "New", Values = [50, 60], XValues = [5, 6] }],
                 },
             ],
@@ -85,7 +85,7 @@ public sealed class SlidesPartialChartTests
             [
                 new UpdateChartDataOp
                 {
-                    Slide = 1, Shape = ChartId(seed),
+                    Slide = 1, ShapeId = ChartId(seed),
                     Series = [new SlidesChartSeriesInput { Name = "Bad", Values = [50, 60] }],
                 },
             ],

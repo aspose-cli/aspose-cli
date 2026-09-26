@@ -121,7 +121,7 @@
       "required": [
         "op",
         "name",
-        "atSlide"
+        "startSlide"
       ],
       "additionalProperties": false,
       "properties": {
@@ -135,7 +135,7 @@
           "type": "string",
           "pattern": "\\S"
         },
-        "atSlide": {
+        "startSlide": {
           "description": "The 1-based number of the section's first slide.",
           "type": "integer",
           "minimum": 1
@@ -250,7 +250,7 @@
           "type": "integer",
           "minimum": 1
         },
-        "shape": {
+        "shapeId": {
           "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
           "type": "integer",
           "minimum": 1
@@ -290,7 +290,7 @@
           "oneOf": [
             {
               "required": [
-                "shape"
+                "shapeId"
               ]
             },
             {
@@ -1006,7 +1006,7 @@
           "type": "integer",
           "minimum": 1
         },
-        "shape": {
+        "shapeId": {
           "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
           "type": "integer",
           "minimum": 1
@@ -1049,7 +1049,7 @@
           "oneOf": [
             {
               "required": [
-                "shape"
+                "shapeId"
               ]
             },
             {
@@ -1144,7 +1144,7 @@
           "type": "integer",
           "minimum": 1
         },
-        "shape": {
+        "shapeId": {
           "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
           "type": "integer",
           "minimum": 1
@@ -1197,7 +1197,7 @@
           "oneOf": [
             {
               "required": [
-                "shape"
+                "shapeId"
               ]
             },
             {
@@ -1239,7 +1239,7 @@
           "type": "integer",
           "minimum": 1
         },
-        "shape": {
+        "shapeId": {
           "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
           "type": "integer",
           "minimum": 1
@@ -1282,7 +1282,7 @@
           "oneOf": [
             {
               "required": [
-                "shape"
+                "shapeId"
               ]
             },
             {
@@ -1422,7 +1422,7 @@
           "type": "integer",
           "minimum": 1
         },
-        "shape": {
+        "shapeId": {
           "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
           "type": "integer",
           "minimum": 1
@@ -1478,7 +1478,7 @@
           "oneOf": [
             {
               "required": [
-                "shape"
+                "shapeId"
               ]
             },
             {

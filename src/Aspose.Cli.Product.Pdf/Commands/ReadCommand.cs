@@ -52,7 +52,7 @@ internal static class ReadCommand
             ?? Enumerable.Range(1, result.PageCount).ToArray();
         return ReadContinuation.After(
                 selection,
-                [.. result.Pages.Select(static page => new ReadPart(page.Number, page.Truncated))],
+                [.. result.Pages.Select(static page => new ReadPart(page.Page, page.Truncated))],
                 request.MaxCharacters) is { } continuation
             ? resume
                 .Option("--pages", continuation.Parts)

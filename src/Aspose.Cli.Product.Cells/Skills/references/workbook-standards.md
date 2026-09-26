@@ -97,7 +97,7 @@ taller, and frozen so they survive scrolling:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"set_default_font","name":"Calibri","size":11},
+  {"op":"set_default_font","font":"Calibri","size":11},
   {"op":"format_range","sheet":"Sales","range":"A1:G12","style":{"font":"Calibri","size":11}},
   {"op":"format_range","sheet":"Sales","range":"A1:G1","style":{"bold":true,"bg":"#1F4E79","color":"#FFFFFF"}},
   {"op":"resize_rows","sheet":"Sales","from":1,"height":20},

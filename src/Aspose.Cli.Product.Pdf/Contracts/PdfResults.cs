@@ -49,7 +49,8 @@ public sealed record PdfPageSizeSummary
 /// <summary>One page's stable geometry in PDF points.</summary>
 public sealed record PdfPageInfo
 {
-    public required int Number { get; init; }
+    /// <summary>The 1-based page number that operations address.</summary>
+    public required int Page { get; init; }
     public required double WidthPoints { get; init; }
     public required double HeightPoints { get; init; }
 
@@ -63,7 +64,9 @@ public sealed record PdfPageInfo
 public sealed record PdfPageLabelInfo
 {
     public required int StartPage { get; init; }
-    public required string NumberingStyle { get; init; }
+
+    /// <summary>The numbering style, one of the values <c>set_page_labels</c> accepts.</summary>
+    public required string Style { get; init; }
     public string? Prefix { get; init; }
     public required int StartingValue { get; init; }
 }
@@ -82,7 +85,12 @@ public sealed record PdfOutlineItem
 {
     public required string Title { get; init; }
     public required int Level { get; init; }
-    public string? Destination { get; init; }
+
+    /// <summary>The slash-separated title path that <c>delete_bookmarks</c> and <c>add_bookmark</c> accept.</summary>
+    public required string Path { get; init; }
+
+    /// <summary>The page the bookmark opens, or null when its destination is not a page of the document.</summary>
+    public int? Page { get; init; }
 }
 
 /// <summary>AcroForm or XFA summary.</summary>
@@ -151,7 +159,8 @@ public sealed record PdfReadResult() : ResultEnvelope(PdfSchemaIds.PdfRead, 2)
 /// <summary>Text projection of one PDF page.</summary>
 public sealed record PdfPageText
 {
-    public required int Number { get; init; }
+    /// <summary>The 1-based page number that operations address.</summary>
+    public required int Page { get; init; }
     public required string Text { get; init; }
     public required bool Truncated { get; init; }
 }

@@ -213,7 +213,7 @@ internal sealed class WordsMutationService
                 var expected = new ExpectedDocumentState(
                     document.Range.Fields.Count,
                     document.Revisions.Count,
-                    document.ProtectionType.ToString());
+                    WordsProtection.ToMode(document.ProtectionType));
                 verification = write.Read(
                     candidate => Verify(candidate, outputPassword, baseline!, expected));
             }
@@ -252,7 +252,7 @@ internal sealed class WordsMutationService
             outputPassword);
         int fieldCount = reopened.Document.Range.Fields.Count;
         int revisionCount = reopened.Document.Revisions.Count;
-        string protection = reopened.Document.ProtectionType.ToString();
+        string protection = WordsProtection.ToMode(reopened.Document.ProtectionType);
         if (fieldCount != expected.FieldCount)
         {
             issues.Add($"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.");
@@ -316,7 +316,7 @@ internal sealed class WordsMutationService
             extra.Add(new Warning
             {
                 Code = WordsDiagnostics.ProtectionNotEnforced,
-                Message = $"The input has {inputProtection} editing restrictions; the edit was applied through them.",
+                Message = $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.",
                 Hint = "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect.",
             });
         }

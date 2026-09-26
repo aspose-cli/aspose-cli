@@ -1584,7 +1584,7 @@
       "type": "object",
       "required": [
         "op",
-        "name"
+        "font"
       ],
       "additionalProperties": false,
       "properties": {
@@ -1598,7 +1598,7 @@
           "description": "The target sheet; the active sheet when omitted.",
           "type": "string"
         },
-        "name": {
+        "font": {
           "description": "The font family name, such as Calibri; surrounding spaces are removed.",
           "type": "string",
           "pattern": "\\S"

@@ -23,10 +23,10 @@
     },
     "sheet": {
       "type": "object",
-      "required": ["name", "index"],
+      "required": ["name", "position"],
       "properties": {
         "name": { "type": "string" },
-        "index": { "type": "integer", "minimum": 0 },
+        "position": { "type": "integer", "minimum": 0 },
         "usedRange": { "type": "string" },
         "range": {
           "type": "string",

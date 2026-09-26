@@ -67,7 +67,7 @@ internal static class ReadCommand
             ?? Enumerable.Range(1, result.BlockCount).ToArray();
         if (ReadContinuation.After(
                 selection,
-                [.. result.Blocks.Select(static block => new ReadPart(block.I, block.ContentTruncated))],
+                [.. result.Blocks.Select(static block => new ReadPart(block.Block, block.ContentTruncated))],
                 request.MaxCharacters) is not { } continuation)
         {
             return null;

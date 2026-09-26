@@ -230,7 +230,7 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             """{ "op": "protect_sheet", "sheet": "Data" }, { "op": "unprotect_sheet", "sheet": "Data" }""",
             static workbook => Assert.False(workbook.Worksheets["Data"].IsProtected)),
         ["set_default_font"] = (
-            """{ "op": "set_default_font", "name": "Georgia", "size": 12 }""",
+            """{ "op": "set_default_font", "font": "Georgia", "size": 12 }""",
             static workbook =>
             {
                 Assert.Equal(("Georgia", 12d), (workbook.DefaultStyle.Font.Name, workbook.DefaultStyle.Font.DoubleSize));

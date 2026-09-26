@@ -118,7 +118,7 @@ public sealed class WordsCliTests : IDisposable
             StringComparison.Ordinal);
         Assert.True(section.ExitCode == 0, section.StdErr);
         JsonNode read = JsonNode.Parse(section.StdOut)!;
-        Assert.Equal(2, Assert.Single(read["blocks"]!.AsArray())!["i"]!.GetValue<int>());
+        Assert.Equal(2, Assert.Single(read["blocks"]!.AsArray())!["block"]!.GetValue<int>());
         Assert.EndsWith(
             " --blocks 3 --section 1 --scope text --max-chars 20000 --max-blocks 1 --output json",
             read["window"]!["next"]!.GetValue<string>(),

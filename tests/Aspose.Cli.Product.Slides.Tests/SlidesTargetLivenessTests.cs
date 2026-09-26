@@ -84,8 +84,8 @@ public sealed class SlidesTargetLivenessTests
         {
             Ops =
             [
-                new DeleteShapeOp { Slide = 1, Shape = shapeId },
-                new SetTextOp { Slide = 1, Shape = shapeId, Text = "Lost" },
+                new DeleteShapeOp { Slide = 1, ShapeId = shapeId },
+                new SetTextOp { Slide = 1, ShapeId = shapeId, Text = "Lost" },
                 new SetNotesOp { Slide = 2, Text = "Safe" },
             ],
         };

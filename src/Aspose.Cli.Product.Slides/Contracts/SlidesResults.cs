@@ -41,7 +41,8 @@ public sealed record PresentationSummary
 /// <summary>One slide in a structural presentation inventory.</summary>
 public sealed record SlideInfo
 {
-    public required int Number { get; init; }
+    /// <summary>The 1-based slide number.</summary>
+    public required int Slide { get; init; }
     public required uint SlideId { get; init; }
     public string? Name { get; init; }
     public string? Layout { get; init; }
@@ -57,7 +58,9 @@ public sealed record SlideInfo
 public sealed record PresentationMasterInfo
 {
     public required string Name { get; init; }
-    public required int Slides { get; init; }
+
+    /// <summary>How many slides use one of this master's layouts.</summary>
+    public required int SlideCount { get; init; }
 }
 
 /// <summary>One presentation layout and its direct slide usage.</summary>
@@ -65,7 +68,9 @@ public sealed record PresentationLayoutInfo
 {
     public required string Name { get; init; }
     public required string? Master { get; init; }
-    public required int Slides { get; init; }
+
+    /// <summary>How many slides use this layout.</summary>
+    public required int SlideCount { get; init; }
 }
 
 /// <summary>One bounded embedded media asset.</summary>
@@ -121,7 +126,8 @@ public sealed record PresentationReadResult() : ResultEnvelope(SlidesSchemaIds.P
 /// <summary>Agent-friendly content of one slide.</summary>
 public sealed record SlideData
 {
-    public required int Number { get; init; }
+    /// <summary>The 1-based slide number.</summary>
+    public required int Slide { get; init; }
     public required uint SlideId { get; init; }
     public string? Name { get; init; }
     public string? Layout { get; init; }
@@ -138,9 +144,11 @@ public sealed record SlideShapeData
 {
     /// <summary>A positive shape identifier persisted within its slide.</summary>
     public required long ShapeId { get; init; }
-    public string? Name { get; init; }
+    public string? ShapeName { get; init; }
     public required string Type { get; init; }
-    public string? Role { get; init; }
+
+    /// <summary>The placeholder role, which set_text and the other shape operations accept as placeholder when it is one they name.</summary>
+    public string? Placeholder { get; init; }
     public string? Text { get; init; }
     public IReadOnlyList<SlideTextRunData>? Runs { get; init; }
     public required SlideRect Rect { get; init; }

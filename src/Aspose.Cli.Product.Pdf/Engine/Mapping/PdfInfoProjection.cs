@@ -1,5 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Product.Pdf.Contracts;
+using Aspose.Cli.Product.Pdf.Engine.Editing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
@@ -126,27 +127,16 @@ internal static class PdfInfoProjection
                 return new PdfPageLabelInfo
                 {
                     StartPage = pageIndex + 1,
-                    NumberingStyle = PageLabelStyle(label.NumberingStyle),
+                    Style = PdfPageLabelStyles.ToStyle(label.NumberingStyle),
                     Prefix = string.IsNullOrEmpty(label.Prefix) ? null : label.Prefix,
                     StartingValue = label.StartingValue,
                 };
             })
             .ToArray();
 
-    private static string PageLabelStyle(NumberingStyle style) => style switch
-    {
-        NumberingStyle.NumeralsArabic => "arabic",
-        NumberingStyle.NumeralsRomanUppercase => "roman-upper",
-        NumberingStyle.NumeralsRomanLowercase => "roman-lower",
-        NumberingStyle.LettersUppercase => "letters-upper",
-        NumberingStyle.LettersLowercase => "letters-lower",
-        NumberingStyle.None => "none",
-        _ => "unknown",
-    };
-
     private static PdfPageInfo Page(Page page) => new()
     {
-        Number = page.Number,
+        Page = page.Number,
         WidthPoints = Round(page.GetPageRect(considerRotation: true).Width),
         HeightPoints = Round(page.GetPageRect(considerRotation: true).Height),
         Rotation = Degrees(page.Rotate),
@@ -177,13 +167,14 @@ internal static class PdfInfoProjection
     private static PdfOutlineItem[] Outline(Document document)
     {
         var results = new List<PdfOutlineItem>();
-        AppendOutline(document.Outlines, level: 1, results);
+        AppendOutline(document.Outlines, level: 1, parentPath: null, results);
         return results.ToArray();
     }
 
     private static void AppendOutline(
         IEnumerable<OutlineItemCollection> items,
         int level,
+        string? parentPath,
         List<PdfOutlineItem> results)
     {
         foreach (OutlineItemCollection item in items)
@@ -193,31 +184,20 @@ internal static class PdfInfoProjection
                 return;
             }
 
+            string path = PdfMutationSupport.OutlinePath(parentPath, item.Title);
             results.Add(new PdfOutlineItem
             {
                 Title = item.Title ?? string.Empty,
                 Level = level,
-                Destination = OutlineDestination(item),
+                Path = path,
+                Page = PdfNavigationCensus.DestinationPage(item) is > 0 and int page ? page : null,
             });
-            AppendOutline(item, level + 1, results);
+            AppendOutline(item, level + 1, path, results);
         }
     }
 
     private static int CountOutline(IEnumerable<OutlineItemCollection> items) =>
         items.Sum(static item => 1 + CountOutline(item));
-
-    private static string? OutlineDestination(OutlineItemCollection item)
-    {
-        ExplicitDestination? destination = item.Destination as ExplicitDestination;
-        if (destination is null && item.Action is GoToAction action)
-        {
-            destination = action.Destination as ExplicitDestination;
-        }
-
-        return destination?.PageNumber is > 0 and int pageNumber
-            ? $"page:{pageNumber.ToString(CultureInfo.InvariantCulture)}"
-            : null;
-    }
 
     private static PdfFormSummary Form(Document document)
     {

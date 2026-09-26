@@ -88,6 +88,7 @@ public sealed class WordsEditSafetyTests
             fixture.CreateReport(),
             new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly", PasswordEnv = "PROTECT_PASSWORD" }] },
             new WordsEditRequest { OutputPath = protectedPath, OpSecrets = secrets });
+        Assert.Equal("readOnly", fixture.Engine.GetInfo(protectedPath, new DocumentInfoRequest()).Document.Protection);
 
         CliException wrong = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             protectedPath, Unprotect("OTHER_PASSWORD"),
@@ -97,6 +98,7 @@ public sealed class WordsEditSafetyTests
             protectedPath, Unprotect("PROTECT_PASSWORD"),
             new WordsEditRequest { OutputPath = output, OpSecrets = secrets });
         Assert.Equal(ProtectionType.NoProtection, new Document(output).ProtectionType);
+        Assert.Equal("none", fixture.Engine.GetInfo(output, new DocumentInfoRequest()).Document.Protection);
 
         static WordsOpsBatch Unprotect(string variable) =>
             new() { Ops = [new UnprotectOp { PasswordEnv = variable }] };

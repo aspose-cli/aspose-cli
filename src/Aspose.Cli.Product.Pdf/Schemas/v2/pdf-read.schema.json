@@ -24,10 +24,10 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["number", "text", "truncated"],
+        "required": ["page", "text", "truncated"],
         "additionalProperties": false,
         "properties": {
-          "number": { "type": "integer", "minimum": 1 },
+          "page": { "type": "integer", "minimum": 1, "description": "The 1-based page number that operations address." },
           "text": { "type": "string" },
           "truncated": { "type": "boolean" }
         }

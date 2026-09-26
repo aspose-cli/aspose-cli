@@ -64,7 +64,7 @@
           "command": "edit",
           "inputSchema": "v2/cells/ops",
           "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-          "contractFingerprint": "sha256:810bcc19d123ad764b7701a181e848f94aa22580f2ffd28ea323135b49fcd434",
+          "contractFingerprint": "sha256:ef80800828100cf00745f79f42a5d6dfb2afcbbb2bc3f3ffd33409ea3339c9ca",
           "maximumOperations": 10000,
           "ops": [
             "add_comment",
@@ -4451,7 +4451,7 @@
           "command": "edit",
           "inputSchema": "v2/slides/ops",
           "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-          "contractFingerprint": "sha256:6b748ffbaf3ca2a2763b40a164c48a93992995a0186ce5259f169675adfb7bea",
+          "contractFingerprint": "sha256:83f5f3ba21c99f4836e9a8d9a3786111ade6ee8ae9ba130e43bbc5d270584d24",
           "maximumOperations": 256,
           "ops": [
             "add_section",
@@ -6415,7 +6415,7 @@
           "command": "edit",
           "inputSchema": "v2/words/ops",
           "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-          "contractFingerprint": "sha256:a52f71f9b179b9645d981945f90894eb094b0ca966b0dc7ed1b7068743086963",
+          "contractFingerprint": "sha256:7d7169a00f20922a720ea58f371b498c88b7e17f31a184c7291b038dd9cc6bcb",
           "maximumOperations": 256,
           "ops": [
             "accept_revisions",

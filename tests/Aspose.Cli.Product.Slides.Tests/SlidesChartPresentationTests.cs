@@ -90,7 +90,7 @@ public sealed class SlidesChartPresentationTests
             Ops = [new UpdateChartDataOp
             {
                 Slide = 1,
-                Shape = FindChartShapeId(seeded),
+                ShapeId = FindChartShapeId(seeded),
                 Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [first, second, third] }],
             }],
         }, new PresentationEditRequest { OutputPath = output });
@@ -114,7 +114,7 @@ public sealed class SlidesChartPresentationTests
             Ops = [new UpdateChartDataOp
             {
                 Slide = 1,
-                Shape = FindChartShapeId(seeded),
+                ShapeId = FindChartShapeId(seeded),
                 Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [95, -100, 105] }],
             }],
         }, new PresentationEditRequest { OutputPath = output });
@@ -158,7 +158,7 @@ public sealed class SlidesChartPresentationTests
                     new UpdateChartDataOp
                     {
                         Slide = 1,
-                        Shape = FindChartShapeId(seeded),
+                        ShapeId = FindChartShapeId(seeded),
                         Series = [new SlidesChartSeriesInput { Name = "Amount", Values = [96, 101, 106] }],
                     },
                 ],
@@ -186,7 +186,7 @@ public sealed class SlidesChartPresentationTests
                     new UpdateChartDataOp
                     {
                         Slide = 1,
-                        Shape = FindChartShapeId(seeded),
+                        ShapeId = FindChartShapeId(seeded),
                         Series =
                         [
                             new SlidesChartSeriesInput { Name = "Actual", Values = [95, 100, 105] },
@@ -248,7 +248,7 @@ public sealed class SlidesChartPresentationTests
             Ops = [new UpdateChartDataOp
             {
                 Slide = 1,
-                Shape = FindChartShapeId(seeded),
+                ShapeId = FindChartShapeId(seeded),
                 Series =
                 [
                     new SlidesChartSeriesInput { Name = "Actual", Values = [40] },
@@ -288,7 +288,7 @@ public sealed class SlidesChartPresentationTests
                     new SetShapeStyleOp
                     {
                         Slide = 1,
-                        Shape = shapeId,
+                        ShapeId = shapeId,
                         Style = new SlidesShapeStyleInput { Font = "Microsoft YaHei" },
                     },
                 ],

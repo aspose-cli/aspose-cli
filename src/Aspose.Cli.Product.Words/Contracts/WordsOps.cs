@@ -180,7 +180,7 @@ public sealed record InsertImageOp : WordsOp
     public bool Inline { get; init; } = true;
 }
 
-/// <summary>Inserts a table at a block boundary; data must fit the table's rows and columns.</summary>
+/// <summary>Inserts a table at a block boundary; cells must fit the table's rows and columns.</summary>
 [Operation("insert_table")]
 public sealed record InsertTableOp : WordsOp
 {
@@ -191,10 +191,10 @@ public sealed record InsertTableOp : WordsOp
     [Minimum(1), Maximum(32_767)] public required int Rows { get; init; }
 
     /// <summary>The column count; Word allows at most 63.</summary>
-    [Minimum(1), Maximum(63)] public required int Cols { get; init; }
+    [Minimum(1), Maximum(63)] public required int Columns { get; init; }
 
     /// <summary>Cell text by row, then column; cells beyond it stay empty.</summary>
-    public IReadOnlyList<IReadOnlyList<string>>? Data { get; init; }
+    public IReadOnlyList<IReadOnlyList<string>>? Cells { get; init; }
 
     /// <summary>An existing table style.</summary>
     [MinLength(1)] public string? Style { get; init; }
@@ -202,8 +202,8 @@ public sealed record InsertTableOp : WordsOp
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        OperationInvalidException.Require(Data is null || Data.Count <= Rows, "data has more rows than the table");
-        OperationInvalidException.Require(Data is null || Data.All(row => row.Count <= Cols), "data has more columns than the table");
+        OperationInvalidException.Require(Cells is null || Cells.Count <= Rows, "cells has more rows than the table");
+        OperationInvalidException.Require(Cells is null || Cells.All(row => row.Count <= Columns), "cells has more columns than the table");
         return this;
     }
 }

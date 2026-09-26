@@ -32,23 +32,27 @@ internal static class WordsContractSamples
             RevisionsPresent = true,
             RevisionCount = 2,
             RevisionAuthors = ["Reviewer"],
-            Protection = "NoProtection",
+            Protection = "none",
             Signed = false,
         },
         Sections =
         [
             new SectionData
             {
-                Index = 1,
-                Orientation = "Portrait",
+                Section = 1,
+                Orientation = "portrait",
                 WidthPoints = 612,
                 HeightPoints = 792,
                 Margins = new MarginData { Top = 72, Right = 72, Bottom = 72, Left = 72 },
             },
         ],
-        Outline = [new OutlineItem { Block = 1, Level = 1, Text = "Executive summary" }],
+        Outline = [new OutlineItem { Block = 1, HeadingLevel = 1, Text = "Executive summary" }],
         Styles = ["Normal", "Heading 1"],
+        Fields = [new FieldData { Type = "FieldDate", Block = 3, Code = " DATE ", Result = "9/26/2026" }],
         Bookmarks = ["Summary"],
+        Comments = [new CommentData { Author = "Reviewer", Text = "Check the figure.", Block = 2 }],
+        Images = [new ImageData { Block = 4, Name = "Picture 1", Width = 144, Height = 96 }],
+        Tables = [new TableData { Block = 5, Rows = 2, Columns = 2 }],
         License = Licensed,
     };
 
@@ -61,7 +65,7 @@ internal static class WordsContractSamples
         [
             new BlockData
             {
-                I = 1,
+                Block = 1,
                 Type = "paragraph",
                 Section = 1,
                 Text = "Executive summary",
@@ -72,7 +76,7 @@ internal static class WordsContractSamples
             },
             new BlockData
             {
-                I = 2,
+                Block = 2,
                 Type = "table",
                 Section = 1,
                 Rows = 2,
@@ -243,8 +247,8 @@ internal static class WordsContractSamples
                 At = new WordsTarget { Block = 3 },
                 Position = "after",
                 Rows = 2,
-                Cols = 2,
-                Data = [["Metric", "Value"], ["Revenue", "120"]],
+                Columns = 2,
+                Cells = [["Metric", "Value"], ["Revenue", "120"]],
                 Style = "Table Grid",
             },
             new SetTableCellOp

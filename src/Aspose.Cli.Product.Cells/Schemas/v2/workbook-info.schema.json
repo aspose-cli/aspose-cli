@@ -82,10 +82,10 @@
     },
     "sheetInfo": {
       "type": "object",
-      "required": ["name", "index", "rowCount", "columnCount", "hidden", "chartCount", "pivotTableCount"],
+      "required": ["name", "position", "rowCount", "columnCount", "hidden", "chartCount", "pivotTableCount"],
       "properties": {
         "name": { "type": "string" },
-        "index": { "type": "integer", "minimum": 0 },
+        "position": { "type": "integer", "minimum": 0 },
         "usedRange": { "type": "string" },
         "rowCount": { "type": "integer", "minimum": 0 },
         "columnCount": { "type": "integer", "minimum": 0 },
@@ -129,11 +129,23 @@
     },
     "chartInfo": {
       "type": "object",
-      "required": ["sheet", "name"],
+      "required": ["sheet", "index", "name", "type"],
       "properties": {
         "sheet": { "type": "string" },
+        "index": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Zero-based index of the chart on its sheet, as update_chart and delete_chart take it."
+        },
         "name": { "type": "string" },
-        "type": { "type": "string" }
+        "type": {
+          "type": "string",
+          "description": "A create_chart type, or the lower-camel engine name of a type outside that vocabulary, such as columnStacked.",
+          "anyOf": [
+            { "enum": ["column", "bar", "line", "pie", "scatter", "area"] },
+            { "pattern": "^[a-z][A-Za-z0-9]*$" }
+          ]
+        }
       }
     },
     "pivotInfo": {
@@ -151,7 +163,14 @@
       "properties": {
         "sheet": { "type": "string" },
         "range": { "type": "string" },
-        "type": { "type": "string" }
+        "type": {
+          "type": "string",
+          "description": "A set_validation type, or the lower-camel engine name of a type outside that vocabulary, such as anyValue.",
+          "anyOf": [
+            { "enum": ["list", "wholeNumber", "decimal", "date", "textLength", "custom"] },
+            { "pattern": "^[a-z][A-Za-z0-9]*$" }
+          ]
+        }
       }
     },
     "licenseInfo": {

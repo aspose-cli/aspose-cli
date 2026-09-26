@@ -15,17 +15,45 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["i", "type", "section", "contentTruncated"],
+        "required": ["block", "type", "section", "contentTruncated"],
         "additionalProperties": false,
         "properties": {
-          "i": { "type": "integer", "minimum": 1 },
+          "block": { "type": "integer", "minimum": 1, "description": "The 1-based block number that operation block addresses accept." },
           "type": { "enum": ["paragraph", "table"] },
           "section": { "type": "integer", "minimum": 1 },
           "text": { "type": "string" },
           "style": { "type": "string" },
           "headingLevel": { "type": "integer", "minimum": 1 },
-          "runs": { "type": "array", "items": { "type": "object" } },
-          "images": { "type": "array", "items": { "type": "object" } },
+          "runs": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["text"],
+              "additionalProperties": false,
+              "properties": {
+                "text": { "type": "string" },
+                "font": { "type": "string" },
+                "size": { "type": "number", "description": "The font size in points." },
+                "bold": { "type": "boolean" },
+                "italic": { "type": "boolean" },
+                "color": { "type": "string", "description": "A #RRGGBB color." }
+              }
+            }
+          },
+          "images": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "required": ["block", "width", "height"],
+              "additionalProperties": false,
+              "properties": {
+                "block": { "type": "integer", "minimum": 1 },
+                "name": { "type": "string" },
+                "width": { "type": "number", "minimum": 0, "description": "The width in points." },
+                "height": { "type": "number", "minimum": 0, "description": "The height in points." }
+              }
+            }
+          },
           "breakAfter": { "enum": ["page", "section"], "description": "The break that follows this block: a page break, or a section break after the last block of a section." },
           "rows": { "type": "integer", "minimum": 0 },
           "columns": { "type": "integer", "minimum": 0 },

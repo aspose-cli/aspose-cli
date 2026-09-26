@@ -66,7 +66,7 @@ internal sealed class SlidesReadService
                 ? presentation.Masters.Select(master => new PresentationMasterInfo
                 {
                     Name = master.Name,
-                    Slides = presentation.Slides.Count(slide =>
+                    SlideCount = presentation.Slides.Count(slide =>
                         ReferenceEquals(slide.LayoutSlide?.MasterSlide, master)),
                 }).OrderBy(static master => master.Name, StringComparer.Ordinal).ToArray()
                 : null,
@@ -75,7 +75,7 @@ internal sealed class SlidesReadService
                 {
                     Name = layout.Name,
                     Master = EmptyToNull(layout.MasterSlide?.Name),
-                    Slides = presentation.Slides.Count(slide => ReferenceEquals(slide.LayoutSlide, layout)),
+                    SlideCount = presentation.Slides.Count(slide => ReferenceEquals(slide.LayoutSlide, layout)),
                 }).OrderBy(static layout => layout.Name, StringComparer.Ordinal).ToArray()
                 : null,
             Media = media?.Take(MediaListLimit).ToArray(),
@@ -148,7 +148,7 @@ internal sealed class SlidesReadService
 
         // Without --slides the selection is every slide, of which a read returns at most ten.
         int selected = request.Slides is null ? presentation.Slides.Count : requested.Count;
-        int last = slides.Count == 0 ? 0 : slides[^1].Number;
+        int last = slides.Count == 0 ? 0 : slides[^1].Slide;
         bool selectionTruncated = slides.Count < requested.Count;
         bool defaultWindowTruncated = request.Slides is null && last < presentation.Slides.Count;
         bool truncated = selectionTruncated || defaultWindowTruncated || slides.Any(static slide => slide.ContentTruncated);

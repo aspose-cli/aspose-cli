@@ -60,10 +60,10 @@
       "description": "The first pages' geometry with --preview; a LIST_TRUNCATED warning names the page count when there are more.",
       "items": {
         "type": "object",
-        "required": ["number", "widthPoints", "heightPoints", "rotation", "mediaBox", "cropBox"],
+        "required": ["page", "widthPoints", "heightPoints", "rotation", "mediaBox", "cropBox"],
         "additionalProperties": false,
         "properties": {
-          "number": { "type": "integer", "minimum": 1 },
+          "page": { "type": "integer", "minimum": 1, "description": "The 1-based page number that operations address." },
           "widthPoints": { "type": "number", "exclusiveMinimum": 0 },
           "heightPoints": { "type": "number", "exclusiveMinimum": 0 },
           "rotation": { "enum": [0, 90, 180, 270], "description": "Clockwise page rotation in degrees." },
@@ -76,12 +76,13 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["startPage", "numberingStyle", "startingValue"],
+        "required": ["startPage", "style", "startingValue"],
         "additionalProperties": false,
         "properties": {
           "startPage": { "type": "integer", "minimum": 1 },
-          "numberingStyle": {
-            "enum": ["arabic", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none", "unknown"]
+          "style": {
+            "enum": ["arabic", "roman-upper", "roman-lower", "letters-upper", "letters-lower", "none"],
+            "description": "The numbering style, one of the values set_page_labels accepts."
           },
           "prefix": { "type": "string" },
           "startingValue": { "type": "integer", "minimum": 0 }
@@ -94,12 +95,13 @@
       "description": "Bookmarks in reading order, depth first; a LIST_TRUNCATED warning names the total when there are more.",
       "items": {
         "type": "object",
-        "required": ["title", "level"],
+        "required": ["title", "level", "path"],
         "additionalProperties": false,
         "properties": {
           "title": { "type": "string" },
           "level": { "type": "integer", "minimum": 1 },
-          "destination": { "type": "string" }
+          "path": { "type": "string", "description": "The slash-separated title path that delete_bookmarks.path and add_bookmark.parent accept." },
+          "page": { "type": "integer", "minimum": 1, "description": "The page the bookmark opens; omitted when its destination is not a page of the document." }
         }
       }
     },

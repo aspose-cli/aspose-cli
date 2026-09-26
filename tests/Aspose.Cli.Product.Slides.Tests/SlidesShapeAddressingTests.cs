@@ -41,7 +41,7 @@ public sealed class SlidesShapeAddressingTests
                 Slides = PageRange.Parse("2"),
                 Scope = PresentationReadScopes.Shapes,
             });
-            Assert.DoesNotContain(read.Slides[0].Shapes!, static shape => shape.Name == "Title 2");
+            Assert.DoesNotContain(read.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 2");
         }
     }
 
@@ -62,7 +62,7 @@ public sealed class SlidesShapeAddressingTests
             new PresentationEditRequest { OutputPath = output }));
 
         Assert.Equal(SlidesDiagnostics.ShapeNotFound, error.Code);
-        Assert.Contains("'shape' id", error.Hint!, StringComparison.Ordinal);
+        Assert.Contains("'shapeId'", error.Hint!, StringComparison.Ordinal);
         Assert.Equal(0, (int)error.Details!["index"]!);
         Assert.Equal("title 2", (string?)error.Details["requested"]);
         Assert.Contains("Title 2", error.Details["available"]!.AsArray().Select(static name => (string?)name));
@@ -90,7 +90,7 @@ public sealed class SlidesShapeAddressingTests
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("matches 2 shapes", error.Message, StringComparison.Ordinal);
-        Assert.Contains("'shape' id", error.Hint!, StringComparison.Ordinal);
+        Assert.Contains("'shapeId'", error.Hint!, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -154,8 +154,8 @@ public sealed class SlidesShapeAddressingTests
         {
             Slides = PageRange.Parse("3"), Scope = PresentationReadScopes.Shapes,
         });
-        SlideShapeData shape = Assert.Single(all.Slides[2].Shapes!, static shape => shape.Name == "Title 3");
-        SlideShapeData selected = Assert.Single(window.Slides[0].Shapes!, static shape => shape.Name == "Title 3");
+        SlideShapeData shape = Assert.Single(all.Slides[2].Shapes!, static shape => shape.ShapeName == "Title 3");
+        SlideShapeData selected = Assert.Single(window.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 3");
         Assert.True(shape.ShapeId > 0);
         Assert.Equal(shape.ShapeId, selected.ShapeId);
 
@@ -167,7 +167,7 @@ public sealed class SlidesShapeAddressingTests
         string output = fixture.File("addressed.pptx");
         SlidesEditResult edit = fixture.Engine.ApplyOps(input, new SlidesOpsBatch
         {
-            Ops = [new SetTextOp { Slide = 3, Shape = shape.ShapeId, Text = "Saved" }],
+            Ops = [new SetTextOp { Slide = 3, ShapeId = shape.ShapeId, Text = "Saved" }],
         }, new PresentationEditRequest { OutputPath = output });
         Assert.Equal([$"slide/{all.Slides[2].SlideId}/shape/{shape.ShapeId}"], edit.Applied[0].Targets);
         PresentationReadResult changed = fixture.Engine.Read(output, new PresentationReadRequest
@@ -226,7 +226,7 @@ public sealed class SlidesShapeAddressingTests
         string output = fixture.File("group-removed.pptx");
         SlidesEditResult removed = fixture.Engine.ApplyOps(saved, new SlidesOpsBatch
         {
-            Ops = [new DeleteShapeOp { Slide = 2, Shape = projectedGroup.ShapeId }],
+            Ops = [new DeleteShapeOp { Slide = 2, ShapeId = projectedGroup.ShapeId }],
         }, new PresentationEditRequest { OutputPath = output });
         Assert.Equal([$"slide/{read.Slides[0].SlideId}/shape/{groupId}"], removed.Applied[0].Targets);
         PresentationReadResult final = fixture.Engine.Read(output, new PresentationReadRequest
@@ -234,6 +234,6 @@ public sealed class SlidesShapeAddressingTests
             Slides = PageRange.Parse("2"), Scope = PresentationReadScopes.Shapes,
         });
         Assert.DoesNotContain(final.Slides[0].Shapes!, static shape => shape.Type == "group");
-        Assert.Contains(final.Slides[0].Shapes!, static shape => shape.Name == "Title 2");
+        Assert.Contains(final.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 2");
     }
 }

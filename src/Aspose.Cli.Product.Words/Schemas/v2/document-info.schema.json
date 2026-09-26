@@ -23,18 +23,105 @@
         "revisionsPresent": { "type": "boolean" },
         "revisionCount": { "type": "integer", "minimum": 0 },
         "revisionAuthors": { "type": "array", "items": { "type": "string" } },
-        "protection": { "type": "string" },
+        "protection": { "enum": ["none", "readOnly", "comments", "trackedChanges", "forms"], "description": "The editing restriction: none, or the protect operation mode that sets it; every SDK protection type maps to one of these." },
         "signed": { "type": "boolean" }
       }
     },
-    "sections": { "type": "array", "items": { "type": "object" } },
-    "outline": { "type": "array", "items": { "type": "object" } },
+    "sections": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["section", "orientation", "widthPoints", "heightPoints", "margins"],
+        "additionalProperties": false,
+        "properties": {
+          "section": { "type": "integer", "minimum": 1, "description": "The 1-based section number that section operations accept." },
+          "orientation": { "enum": ["portrait", "landscape"] },
+          "widthPoints": { "type": "number", "minimum": 0 },
+          "heightPoints": { "type": "number", "minimum": 0 },
+          "margins": {
+            "type": "object",
+            "required": ["top", "right", "bottom", "left"],
+            "additionalProperties": false,
+            "description": "Page margins in points.",
+            "properties": {
+              "top": { "type": "number" },
+              "right": { "type": "number" },
+              "bottom": { "type": "number" },
+              "left": { "type": "number" }
+            }
+          }
+        }
+      }
+    },
+    "outline": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["block", "headingLevel", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "block": { "type": "integer", "minimum": 1 },
+          "headingLevel": { "type": "integer", "minimum": 1 },
+          "text": { "type": "string" }
+        }
+      }
+    },
     "styles": { "type": "array", "items": { "type": "string" } },
-    "fields": { "type": "array", "items": { "type": "object" } },
+    "fields": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["type", "block"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "type": "string" },
+          "block": { "type": "integer", "minimum": 0, "description": "The body block that holds the field; 0 outside the body." },
+          "code": { "type": "string" },
+          "result": { "type": "string" }
+        }
+      }
+    },
     "bookmarks": { "type": "array", "items": { "type": "string" } },
-    "comments": { "type": "array", "items": { "type": "object" } },
-    "images": { "type": "array", "items": { "type": "object" } },
-    "tables": { "type": "array", "items": { "type": "object" } },
+    "comments": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["author", "text"],
+        "additionalProperties": false,
+        "properties": {
+          "author": { "type": "string" },
+          "text": { "type": "string" },
+          "block": { "type": "integer", "minimum": 1 }
+        }
+      }
+    },
+    "images": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["block", "width", "height"],
+        "additionalProperties": false,
+        "properties": {
+          "block": { "type": "integer", "minimum": 0, "description": "The body block that holds the image; 0 outside the body." },
+          "name": { "type": "string" },
+          "width": { "type": "number", "minimum": 0, "description": "The width in points." },
+          "height": { "type": "number", "minimum": 0, "description": "The height in points." }
+        }
+      }
+    },
+    "tables": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["block", "rows", "columns"],
+        "additionalProperties": false,
+        "properties": {
+          "block": { "type": "integer", "minimum": 1 },
+          "rows": { "type": "integer", "minimum": 0 },
+          "columns": { "type": "integer", "minimum": 0 }
+        }
+      }
+    },
     "properties": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
     "fonts": { "type": "array", "items": { "type": "string" }, "description": "The fonts the document's text is drawn with, per character script; not the font table." },
     "license": { "type": "object" },

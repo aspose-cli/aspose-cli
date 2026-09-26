@@ -59,7 +59,7 @@ internal static class ReadCommand
             ?? Enumerable.Range(1, result.SlideCount).ToArray();
         return ReadContinuation.After(
                 selection,
-                [.. result.Slides.Select(static slide => new ReadPart(slide.Number, slide.ContentTruncated))],
+                [.. result.Slides.Select(static slide => new ReadPart(slide.Slide, slide.ContentTruncated))],
                 request.MaxCharacters) is { } continuation
             ? resume
                 .Option("--slides", continuation.Parts)

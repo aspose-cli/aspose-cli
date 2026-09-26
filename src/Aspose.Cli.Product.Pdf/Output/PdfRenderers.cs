@@ -34,7 +34,7 @@ internal static class PdfRenderers
                 + string.Join(
                     ", ",
                     labels.Select(static label =>
-                        $"p{label.StartPage} {label.Prefix ?? string.Empty}{label.NumberingStyle} from {label.StartingValue}")));
+                        $"p{label.StartPage} {label.Prefix ?? string.Empty}{label.Style} from {label.StartingValue}")));
         }
 
         if (result.Pages is { Count: > 0 } pages)
@@ -43,7 +43,7 @@ internal static class PdfRenderers
             foreach (PdfPageInfo page in pages)
             {
                 table.AddRow(
-                    TableText.Int(page.Number),
+                    TableText.Int(page.Page),
                     $"{Points(page.WidthPoints)} x {Points(page.HeightPoints)}",
                     TableText.Int(page.Rotation));
             }
@@ -58,7 +58,7 @@ internal static class PdfRenderers
         foreach (PdfPageText page in result.Pages)
         {
             surface.Out.WriteLine();
-            surface.Out.WriteLine($"--- page {page.Number}{(page.Truncated ? " (truncated)" : string.Empty)} ---");
+            surface.Out.WriteLine($"--- page {page.Page}{(page.Truncated ? " (truncated)" : string.Empty)} ---");
             surface.Out.WriteLine(page.Text);
         }
     }

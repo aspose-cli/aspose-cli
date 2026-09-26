@@ -138,7 +138,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         JsonNode result = JsonNode.Parse(window.StdOut)!;
         JsonArray pages = result["pages"]!.AsArray();
         Assert.True(pages[^1]!["truncated"]!.GetValue<bool>());
-        int cut = pages[^1]!["number"]!.GetValue<int>();
+        int cut = pages[^1]!["page"]!.GetValue<int>();
         string resume = cut == 3 ? "3" : $"{cut}-3";
         int budget = pages.Count == 1 ? 48 : 24;
         string next = result["window"]!["next"]!.GetValue<string>();

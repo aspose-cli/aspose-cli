@@ -24,7 +24,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             source,
             """
             { "ops": [
-              { "op": "set_default_font", "name": "Calibri", "size": 10.5 },
+              { "op": "set_default_font", "font": "Calibri", "size": 10.5 },
               { "op": "format_range", "sheet": "Data", "range": "A1", "style": { "size": 11.5 } }
             ] }
             """,

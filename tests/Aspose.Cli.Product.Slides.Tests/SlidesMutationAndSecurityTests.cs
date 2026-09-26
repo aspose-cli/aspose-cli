@@ -106,8 +106,8 @@ public sealed class SlidesMutationAndSecurityTests
         {
             Ops =
             [
-                new AddSectionOp { Name = "Results", AtSlide = 1 },
-                new AddSectionOp { Name = "Results", AtSlide = 2 },
+                new AddSectionOp { Name = "Results", StartSlide = 1 },
+                new AddSectionOp { Name = "Results", StartSlide = 2 },
                 new SetNotesOp { Slide = 1, Text = "Saved" },
             ],
         };
@@ -192,7 +192,7 @@ public sealed class SlidesMutationAndSecurityTests
             {
                 Ops =
                 [
-                    new AddSectionOp { Name = "Results", AtSlide = 2 },
+                    new AddSectionOp { Name = "Results", StartSlide = 2 },
                     new SlidesReplaceTextOp { Find = "Slide", Replace = "Q" },
                     new InsertShapeOp
                     {

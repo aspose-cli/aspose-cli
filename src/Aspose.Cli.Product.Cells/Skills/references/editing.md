@@ -224,7 +224,8 @@ A column chart with the full set:
       "dataLabels": { "visible": true, "format": "#,##0" } }
 
 Update an existing chart with `update_chart` — identify it by `index`
-(zero-based) or `name`, then set any of `title`, `dataRange`, `type`,
+(zero-based) or `name`, as `cells inspect --detail charts` lists them with
+their `type`, then set any of `title`, `dataRange`, `type`,
 `seriesInRows` or the cosmetic fields above. `seriesInRows` is accepted only
 with `dataRange`: orientation is applied when the chart's data range is reset.
 An update leaves the value axis as the chart already has it:
@@ -437,7 +438,7 @@ so it sits inside the used range and shows up in renders and reads.
 
 | op | fields | notes |
 |----|--------|-------|
-| `set_default_font` | `name`, `size?` (1–409 pt) | Workbook-scoped (`sheet` is ignored): rewrites the Normal style every cell without an explicit font derives from. Cells with an explicit `format_range` font keep it. |
+| `set_default_font` | `font`, `size?` (1–409 pt) | Workbook-scoped (`sheet` is ignored): rewrites the Normal style every cell without an explicit font derives from. Cells with an explicit `format_range` font keep it. |
 | `set_tab_color` | `sheet`, `color?` (#RRGGBB) | Omit `color` to remove the tab color. |
 | `set_sheet_view` | `sheet`, `gridlines?`, `zoom?` (10–400), `headings?` | Only the fields present are applied; at least one is required. |
 
@@ -456,7 +457,7 @@ Two caveats, both measured:
 
 Recipe — a dashboard sheet that looks like one (colored tab, clean canvas):
 
-    { "op": "set_default_font", "name": "Calibri", "size": 11 }
+    { "op": "set_default_font", "font": "Calibri", "size": 11 }
     { "op": "set_tab_color", "sheet": "Dashboard", "color": "#1F4E79" }
     { "op": "set_sheet_view", "sheet": "Dashboard", "gridlines": false }
 

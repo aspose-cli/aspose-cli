@@ -79,7 +79,7 @@ internal static class PdfMutationSupport
             if (matches.Length == 0)
             {
                 throw CliErrors.NotFound(
-                    ErrorCodes.BookmarkNotFound, "bookmark", path, OutlinePaths(outlines, string.Empty).Distinct().ToArray());
+                    ErrorCodes.BookmarkNotFound, "bookmark", path, OutlinePaths(outlines, parentPath: null).Distinct().ToArray());
             }
 
             if (matches.Length > 1)
@@ -97,13 +97,20 @@ internal static class PdfMutationSupport
         return found ?? throw new OperationInvalidException($"Bookmark path '{path}' names no title.");
     }
 
-    private static IEnumerable<string> OutlinePaths(IEnumerable<OutlineItemCollection> items, string prefix)
+    /// <summary>
+    /// The title path <see cref="Outline"/> resolves for a bookmark titled <paramref name="title"/>
+    /// below the bookmark at <paramref name="parentPath"/>, or at the top level when it is null.
+    /// </summary>
+    internal static string OutlinePath(string? parentPath, string? title) =>
+        parentPath is null ? title ?? string.Empty : $"{parentPath}/{title}";
+
+    private static IEnumerable<string> OutlinePaths(IEnumerable<OutlineItemCollection> items, string? parentPath)
     {
         foreach (OutlineItemCollection item in items)
         {
-            string path = prefix + item.Title;
+            string path = OutlinePath(parentPath, item.Title);
             yield return path;
-            foreach (string child in OutlinePaths(item, path + "/"))
+            foreach (string child in OutlinePaths(item, path))
             {
                 yield return child;
             }
@@ -137,17 +144,6 @@ internal static class PdfMutationSupport
                 document.Pages.Count + 1);
         }
     }
-
-    internal static NumberingStyle NumberingStyleValue(string value) => value.ToLowerInvariant() switch
-    {
-        "arabic" => NumberingStyle.NumeralsArabic,
-        "roman-upper" => NumberingStyle.NumeralsRomanUppercase,
-        "roman-lower" => NumberingStyle.NumeralsRomanLowercase,
-        "letters-upper" => NumberingStyle.LettersUppercase,
-        "letters-lower" => NumberingStyle.LettersLowercase,
-        "none" => NumberingStyle.None,
-        _ => throw new OperationInvalidException($"Unknown page-label style '{value}'."),
-    };
 
     internal static void EnsureFile(string path)
     {

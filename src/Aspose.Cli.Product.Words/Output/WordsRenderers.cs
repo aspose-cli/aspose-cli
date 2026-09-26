@@ -25,7 +25,7 @@ internal static class WordsRenderers
         var table = new TextTable("block", "type", "section", "style", "text");
         foreach (BlockData block in result.Blocks)
         {
-            table.AddRow(TableText.Int(block.I), block.Type, TableText.Int(block.Section), block.Style ?? "-", block.Text ?? $"[{block.Rows}x{block.Columns} table]");
+            table.AddRow(TableText.Int(block.Block), block.Type, TableText.Int(block.Section), block.Style ?? "-", block.Text ?? $"[{block.Rows}x{block.Columns} table]");
         }
 
         table.WriteTo(surface.Out, surface.Format);
@@ -140,7 +140,7 @@ internal static class WordsRenderers
             foreach (SectionData section in sections)
             {
                 table.AddRow(
-                    TableText.Int(section.Index),
+                    TableText.Int(section.Section),
                     section.Orientation,
                     $"{Points(section.WidthPoints)} x {Points(section.HeightPoints)} pt",
                     $"{Points(section.Margins.Top)}/{Points(section.Margins.Right)}/"
@@ -159,7 +159,7 @@ internal static class WordsRenderers
             {
                 table.AddRow(
                     TableText.Int(item.Block),
-                    TableText.Int(item.Level),
+                    TableText.Int(item.HeadingLevel),
                     item.Text);
             }
 
@@ -219,7 +219,7 @@ internal static class WordsRenderers
                 table.AddRow(
                     TableText.Int(image.Block),
                     image.Name ?? "-",
-                    $"{Points(image.WidthPoints)} x {Points(image.HeightPoints)} pt");
+                    $"{Points(image.Width)} x {Points(image.Height)} pt");
             }
 
             table.WriteTo(surface.Out, surface.Format);

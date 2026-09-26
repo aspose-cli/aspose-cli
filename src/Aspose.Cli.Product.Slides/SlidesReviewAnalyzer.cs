@@ -43,12 +43,12 @@ internal static class SlidesReviewAnalyzer
                 result.DuplicateSlides++;
                 result.Findings.Add(Finding(
                     "SLIDES_DUPLICATE_SLIDE",
-                    $"Slide {slide.Number} has the same meaningful content and geometry as slide {first}; inspect both before removing either one.",
-                    slide.Number));
+                    $"Slide {slide.Slide} has the same meaningful content and geometry as slide {first}; inspect both before removing either one.",
+                    slide.Slide));
             }
             else
             {
-                firstByFingerprint.Add(fingerprint, slide.Number);
+                firstByFingerprint.Add(fingerprint, slide.Slide);
             }
         }
     }
@@ -65,12 +65,12 @@ internal static class SlidesReviewAnalyzer
             result.Findings.Add(Finding(
                 "SLIDES_BLANK_SLIDE",
                 "The slide has no visible authored content; confirm that it is intentional.",
-                slide.Number));
+                slide.Slide));
         }
 
         foreach (SlideShapeData shape in slide.Shapes)
         {
-            AddShapeFindings(slide.Number, shape, slideWidth, slideHeight, result);
+            AddShapeFindings(slide.Slide, shape, slideWidth, slideHeight, result);
         }
         AnalyzeDensity(slide, slideWidth, slideHeight, result);
         AnalyzeOverlaps(slide, slideWidth, slideHeight, result);
@@ -128,7 +128,7 @@ internal static class SlidesReviewAnalyzer
             result.Findings.Add(Finding(
                 "SLIDES_CONTENT_DENSITY_HIGH",
                 $"The slide contains {content.Length} content objects and {characters} text characters; inspect readability and consider splitting it.",
-                slide.Number));
+                slide.Slide));
             return;
         }
 
@@ -143,7 +143,7 @@ internal static class SlidesReviewAnalyzer
             result.Findings.Add(Finding(
                 "SLIDES_CONTENT_DENSITY_LOW",
                 $"Three or more content objects occupy only {occupied:P0} of the slide with very little text; inspect for content stranded in a corner.",
-                slide.Number));
+                slide.Slide));
         }
     }
 
@@ -183,7 +183,7 @@ internal static class SlidesReviewAnalyzer
                     result.Findings.Add(Finding(
                         "SLIDES_CHART_COVERED",
                         $"Opaque foreground shape '{Label(upper)}' covers {covered:P0} of chart '{Label(lower)}'; verify the rendered slide before changing it.",
-                        slide.Number));
+                        slide.Slide));
                     break;
                 }
                 if (covered >= SevereCoverage)
@@ -192,7 +192,7 @@ internal static class SlidesReviewAnalyzer
                     result.Findings.Add(Finding(
                         "SLIDES_SEVERE_OBJECT_OVERLAP",
                         $"Opaque foreground shape '{Label(upper)}' covers {covered:P0} of content shape '{Label(lower)}'; verify that this is intentional.",
-                        slide.Number));
+                        slide.Slide));
                     break;
                 }
             }
@@ -220,11 +220,11 @@ internal static class SlidesReviewAnalyzer
 
     private static bool IsDecorative(SlideShapeData shape)
     {
-        if (shape.Role is "footer" or "date" or "slide-number")
+        if (shape.Placeholder is "footer" or "date" or "slide-number")
         {
             return true;
         }
-        string name = shape.Name ?? string.Empty;
+        string name = shape.ShapeName ?? string.Empty;
         return DecorativeNames.Any(token => name.Contains(token, StringComparison.OrdinalIgnoreCase));
     }
 
@@ -253,7 +253,7 @@ internal static class SlidesReviewAnalyzer
         var value = new StringBuilder();
         foreach (SlideShapeData shape in slide.Shapes.Where(static shape => !IsDecorative(shape)))
         {
-            value.Append(shape.Type).Append('|').Append(shape.Role).Append('|')
+            value.Append(shape.Type).Append('|').Append(shape.Placeholder).Append('|')
                 .Append(Normalize(shape.Text)).Append('|')
                 .Append(Geometry(shape.Rect)).Append(';');
         }
@@ -291,7 +291,7 @@ internal static class SlidesReviewAnalyzer
 
     private static double Area(SlideRect rect) => Math.Max(0, rect.Width) * Math.Max(0, rect.Height);
 
-    private static string Label(SlideShapeData shape) => shape.Name ?? shape.ShapeId.ToString(CultureInfo.InvariantCulture);
+    private static string Label(SlideShapeData shape) => shape.ShapeName ?? shape.ShapeId.ToString(CultureInfo.InvariantCulture);
 
     private static ReviewFinding Finding(string code, string message, int slide) => new()
     {

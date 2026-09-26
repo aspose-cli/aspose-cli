@@ -14,13 +14,13 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 public sealed record SetDefaultFontOp : CellsOp
 {
     /// <summary>The font family name, such as Calibri; surrounding spaces are removed.</summary>
-    [Pattern(@"\S")] public required string Name { get; init; }
+    [Pattern(@"\S")] public required string Font { get; init; }
 
     /// <summary>The font size in points; unchanged when omitted.</summary>
     [Minimum(1), Maximum(409)] public double? Size { get; init; }
 
     /// <inheritdoc />
-    protected override BoundedOperation Validated() => this with { Name = Name.Trim() };
+    protected override BoundedOperation Validated() => this with { Font = Font.Trim() };
 }
 
 /// <summary>Sets a sheet's tab color, or removes it when color is omitted.</summary>

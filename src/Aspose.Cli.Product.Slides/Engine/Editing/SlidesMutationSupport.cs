@@ -48,7 +48,7 @@ internal static class SlidesMutationSupport
     internal static IShape ResolveShape(ISlide slide, ShapeTargetOp op)
     {
         IShape[] shapes = slide.Shapes.ToArray();
-        if (op.Shape is long shapeId)
+        if (op.ShapeId is long shapeId)
         {
             return shapes.FirstOrDefault(item => item.OfficeInteropShapeId == shapeId)
                 ?? throw CliErrors.NotFound(
@@ -67,7 +67,7 @@ internal static class SlidesMutationSupport
                     "shape",
                     name,
                     Names(shapes.Select(static item => item.Name)),
-                    hint: $"Use a shape name from details.available, or address the shape by its 'shape' id; {ShapeListing}.");
+                    hint: $"Use a shape name from details.available, or address the shape by its 'shapeId'; {ShapeListing}.");
         }
 
         string role = op.Placeholder!;
@@ -77,7 +77,7 @@ internal static class SlidesMutationSupport
                 "placeholder",
                 role,
                 Names(shapes.Select(PlaceholderRole)),
-                hint: $"Use a placeholder role from details.available, or address the shape by its 'shape' id or 'shapeName'; {ShapeListing}.");
+                hint: $"Use a placeholder role from details.available, or address the shape by its 'shapeId' or 'shapeName'; {ShapeListing}.");
     }
 
     internal static ILayoutSlide ResolveLayout(Presentation presentation, string name)
@@ -100,7 +100,7 @@ internal static class SlidesMutationSupport
         {
             throw new OperationInvalidException(
                 $"{description} matches {found.Length} shapes on this slide (ids {string.Join(", ", found.Select(static item => Invariant(item.OfficeInteropShapeId)))}).",
-                "Address the shape by its 'shape' id instead.");
+                "Address the shape by its 'shapeId' instead.");
         }
 
         return found.FirstOrDefault();

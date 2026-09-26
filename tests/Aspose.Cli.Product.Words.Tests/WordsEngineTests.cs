@@ -38,7 +38,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         int characters = (block.Text?.Length ?? 0) + (block.Runs?.Sum(static run => run.Text.Length) ?? 0);
         Assert.Equal(budget, characters);
         Assert.Equal(budget < textLength * 2, block.ContentTruncated);
-        Assert.Equal(1, block.I);
+        Assert.Equal(1, block.Block);
     }
     [Fact]
     public void InfoAndRead_UseOneStableParagraphTableBlockIndex()
@@ -206,7 +206,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         // A licensed document that merely quotes the banner keeps it as its first block.
         bool evaluation = _fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Evaluation;
         Assert.Equal(evaluation ? "User heading" : "Created with an evaluation copy of Aspose.Words.", read.Blocks[0].Text![..(evaluation ? 12 : 48)]);
-        Assert.Equal(1, read.Blocks[0].I);
+        Assert.Equal(1, read.Blocks[0].Block);
     }
 
     [Fact]

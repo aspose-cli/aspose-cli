@@ -87,7 +87,7 @@ internal static class ReadProjection
             }
             return new BlockData
             {
-                I = entry.Index,
+                Block = entry.Index,
                 Type = "paragraph",
                 Section = entry.Section,
                 Text = text,
@@ -99,8 +99,8 @@ internal static class ReadProjection
                     {
                         Block = entry.Index,
                         Name = shape.Name,
-                        WidthPoints = shape.Width,
-                        HeightPoints = shape.Height,
+                        Width = shape.Width,
+                        Height = shape.Height,
                     }).ToArray(),
                 BreakAfter = BreakAfter(paragraph),
                 ContentTruncated = truncated,
@@ -130,7 +130,7 @@ internal static class ReadProjection
         }
         return new BlockData
         {
-            I = entry.Index,
+            Block = entry.Index,
             Type = "table",
             Section = entry.Section,
             Rows = table.Rows.Count,

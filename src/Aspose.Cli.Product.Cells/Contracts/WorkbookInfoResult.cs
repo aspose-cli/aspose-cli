@@ -115,11 +115,17 @@ public sealed record ChartInfo
     /// <summary>Sheet the chart is on.</summary>
     public required string Sheet { get; init; }
 
+    /// <summary>The zero-based index of the chart on its sheet, as update_chart and delete_chart take it.</summary>
+    public required int Index { get; init; }
+
     /// <summary>The chart's name.</summary>
     public required string Name { get; init; }
 
-    /// <summary>The chart type; omitted when unknown.</summary>
-    public string? Type { get; init; }
+    /// <summary>
+    /// The chart type: a create_chart type such as <c>column</c>, or the lower-camel engine name
+    /// of a type outside that vocabulary, such as <c>columnStacked</c>.
+    /// </summary>
+    public required string Type { get; init; }
 }
 
 /// <summary>A pivot table in a workbook.</summary>
@@ -144,7 +150,10 @@ public sealed record ValidationInfo
     /// <summary>A1 range the validation applies to.</summary>
     public required string Range { get; init; }
 
-    /// <summary>The validation type, e.g. <c>List</c>, <c>WholeNumber</c>.</summary>
+    /// <summary>
+    /// The validation type: a set_validation type such as <c>list</c> or <c>wholeNumber</c>, or
+    /// the lower-camel engine name of a type outside that vocabulary, such as <c>anyValue</c>.
+    /// </summary>
     public required string Type { get; init; }
 }
 
@@ -182,8 +191,8 @@ public sealed record SheetInfo
     /// <summary>Sheet name, exactly as shown in Excel.</summary>
     public required string Name { get; init; }
 
-    /// <summary>Zero-based position in the workbook.</summary>
-    public required int Index { get; init; }
+    /// <summary>Zero-based position in the tab order, as add_sheet and move_sheet take it.</summary>
+    public required int Position { get; init; }
 
     /// <summary>
     /// A1 range covering all cells that hold data (e.g. <c>A1:G120</c>);

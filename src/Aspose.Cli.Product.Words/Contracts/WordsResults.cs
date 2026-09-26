@@ -41,7 +41,7 @@ public sealed record DocumentSummary
 /// <summary>One document section.</summary>
 public sealed record SectionData
 {
-    public required int Index { get; init; }
+    public required int Section { get; init; }
     public required string Orientation { get; init; }
     public required double WidthPoints { get; init; }
     public required double HeightPoints { get; init; }
@@ -61,7 +61,7 @@ public sealed record MarginData
 public sealed record OutlineItem
 {
     public required int Block { get; init; }
-    public required int Level { get; init; }
+    public required int HeadingLevel { get; init; }
     public required string Text { get; init; }
 }
 
@@ -82,13 +82,13 @@ public sealed record CommentData
     public int? Block { get; init; }
 }
 
-/// <summary>One embedded image summary.</summary>
+/// <summary>One embedded image summary; its size is in points.</summary>
 public sealed record ImageData
 {
     public required int Block { get; init; }
     public string? Name { get; init; }
-    public required double WidthPoints { get; init; }
-    public required double HeightPoints { get; init; }
+    public required double Width { get; init; }
+    public required double Height { get; init; }
 }
 
 /// <summary>One table summary.</summary>
@@ -119,7 +119,7 @@ public sealed record DocumentReadResult() : ResultEnvelope(WordsSchemaIds.Docume
 /// <summary>A paragraph or table directly owned by a section body.</summary>
 public sealed record BlockData
 {
-    public required int I { get; init; }
+    public required int Block { get; init; }
     public required string Type { get; init; }
     public required int Section { get; init; }
     public string? Text { get; init; }

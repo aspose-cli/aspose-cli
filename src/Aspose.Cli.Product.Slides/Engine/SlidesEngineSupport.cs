@@ -42,7 +42,7 @@ internal static class SlidesEngineSupport
         string? title = preview ? Title(slide) : null;
         return new SlideInfo
         {
-            Number = number,
+            Slide = number,
             SlideId = slide.SlideId,
             Name = EmptyToNull(slide.Name),
             Layout = EmptyToNull(slide.LayoutSlide?.Name),
@@ -87,9 +87,9 @@ internal static class SlidesEngineSupport
                 shapes.Add(new SlideShapeData
                 {
                     ShapeId = shape.OfficeInteropShapeId,
-                    Name = EmptyToNull(shape.Name),
+                    ShapeName = EmptyToNull(shape.Name),
                     Type = ShapeTypeName(shape),
-                    Role = SlidesPlaceholders.Role(shape.Placeholder?.Type),
+                    Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
                     Text = text,
                     Runs = scope == PresentationReadScopes.Full ? Runs(shape, ref remaining, ref contentTruncated) : null,
                     ZOrder = zOrder++,
@@ -126,7 +126,7 @@ internal static class SlidesEngineSupport
         }
         return new SlideData
         {
-            Number = number,
+            Slide = number,
             SlideId = slide.SlideId,
             Name = EmptyToNull(slide.Name),
             Layout = EmptyToNull(slide.LayoutSlide?.Name),

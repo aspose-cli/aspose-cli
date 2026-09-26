@@ -31,7 +31,7 @@ internal static class SlidesContractSamples
         [
             new SlideInfo
             {
-                Number = 1,
+                Slide = 1,
                 SlideId = 256,
                 Name = "Overview",
                 Layout = "Title and Content",
@@ -44,8 +44,8 @@ internal static class SlidesContractSamples
             },
         ],
         Sections = [new PresentationSectionInfo { Name = "Summary", SectionId = "01234567-89ab-cdef-0123-456789abcdef", StartSlide = 1 }],
-        Masters = [new PresentationMasterInfo { Name = "Office Theme", Slides = 3 }],
-        Layouts = [new PresentationLayoutInfo { Name = "Title and Content", Master = "Office Theme", Slides = 2 }],
+        Masters = [new PresentationMasterInfo { Name = "Office Theme", SlideCount = 3 }],
+        Layouts = [new PresentationLayoutInfo { Name = "Title and Content", Master = "Office Theme", SlideCount = 2 }],
         Media = [new PresentationMediaInfo { Index = 1, Type = "image", ContentType = "image/png", SizeBytes = 1024 }],
         Notes = [new PresentationNotesInfo { Slide = 1, Present = true, Characters = 27 }],
         Comments = [new PresentationCommentInfo { Slide = 1, Author = "Reviewer", Text = "Check this value." }],
@@ -67,7 +67,7 @@ internal static class SlidesContractSamples
         [
             new SlideData
             {
-                Number = 1,
+                Slide = 1,
                 SlideId = 256,
                 Name = "Overview",
                 Layout = "Title and Content",
@@ -77,9 +77,9 @@ internal static class SlidesContractSamples
                     new SlideShapeData
                     {
                         ShapeId = 2,
-                        Name = "Title 1",
+                        ShapeName = "Title 1",
                         Type = "AutoShape",
-                        Role = "Title",
+                        Placeholder = "title",
                         Text = "Quarterly review",
                         Runs =
                         [
@@ -178,7 +178,7 @@ internal static class SlidesContractSamples
             new SetSlideHiddenOp { Slides = "3", Hidden = true },
             new ApplyLayoutOp { Slides = "2", Layout = "Title Only" },
             new SetBackgroundOp { Slides = "1-2", Color = "#F8FAFC" },
-            new SlidesContracts.AddSectionOp { Name = "Results", AtSlide = 2 },
+            new SlidesContracts.AddSectionOp { Name = "Results", StartSlide = 2 },
             new AppendPresentationOp { Path = "D:/data/append.pptx", MasterPolicy = "keep-source" },
             new SetTitleOp { Slide = 1, Text = "Q3 Review" },
             new SlidesContracts.SetBodyOp
@@ -186,7 +186,7 @@ internal static class SlidesContractSamples
                 Slide = 1,
                 Paragraphs = [new SlidesParagraphInput { Text = "Revenue grew", Level = 0 }],
             },
-            new SlidesContracts.SetTextOp { Slide = 1, Shape = 4, Text = "Updated" },
+            new SlidesContracts.SetTextOp { Slide = 1, ShapeId = 4, Text = "Updated" },
             new SlidesReplaceTextOp { Find = "Q3", Replace = "Q4", Scope = "all" },
             new SetNotesOp { Slide = 1, Text = "Open with the headline." },
             new SlidesInsertImageOp
@@ -211,7 +211,7 @@ internal static class SlidesContractSamples
                 Cols = 2,
                 Data = [new[] { "Metric", "Value" }, new[] { "ARR", "$2M" }],
             },
-            new SlidesSetTableCellOp { Slide = 2, Shape = 8, Row = 2, Col = 2, Text = "$2.1M" },
+            new SlidesSetTableCellOp { Slide = 2, ShapeId = 8, Row = 2, Col = 2, Text = "$2.1M" },
             new InsertChartOp
             {
                 Slide = 3,
@@ -224,11 +224,11 @@ internal static class SlidesContractSamples
             new UpdateChartDataOp
             {
                 Slide = 3,
-                Shape = 9,
+                ShapeId = 9,
                 Categories = ["Q1", "Q2"],
                 Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [11, 14] }],
             },
-            new DeleteShapeOp { Slide = 3, Shape = 10 },
+            new DeleteShapeOp { Slide = 3, ShapeId = 10 },
             new SetShapeStyleOp
             {
                 Slide = 1,

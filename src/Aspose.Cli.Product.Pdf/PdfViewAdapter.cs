@@ -163,7 +163,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 "PDF_PAGE_WITHOUT_READABLE_CONTENT",
                 "warning",
                 "The page has no readable text and was not identified as a scanned page; inspect it for unintended blank output.",
-                $"page {page.Number}"));
+                $"page {page.Page}"));
         }
         return new TextAnalysis(emptyPages, lowUtilizationPages);
     }
@@ -172,7 +172,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         PdfPageText page,
         IReadOnlySet<int> suspectedScans) =>
         !string.IsNullOrWhiteSpace(page.Text)
-        || suspectedScans.Contains(page.Number);
+        || suspectedScans.Contains(page.Page);
 
     private static int AnalyzeTextPage(
         PdfPageText page,
@@ -181,7 +181,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         ICollection<ReviewFinding> findings)
     {
         int lowUtilization = 0;
-        if (!suspectedScans.Contains(page.Number)
+        if (!suspectedScans.Contains(page.Page)
             && formFields == 0
             && page.Text.Trim().Length is > 0 and < 24)
         {
@@ -190,7 +190,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 "PDF_LOW_PAGE_UTILIZATION",
                 "warning",
                 "The page contains very little readable content; inspect for an unintended sparse page or pagination break.",
-                $"page {page.Number}"));
+                $"page {page.Page}"));
         }
         if (page.Truncated)
         {
@@ -198,7 +198,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 "PDF_TEXT_ANALYSIS_TRUNCATED",
                 "warning",
                 "Text analysis reached its extraction budget; visual evidence remains available but structural text checks are incomplete.",
-                $"page {page.Number}"));
+                $"page {page.Page}"));
         }
         return lowUtilization;
     }

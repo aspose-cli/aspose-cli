@@ -22,7 +22,7 @@ internal static class SlidesRenderers
         foreach (SlideInfo slide in result.Slides)
         {
             table.AddRow(
-                TableText.Int(slide.Number),
+                TableText.Int(slide.Slide),
                 slide.SlideId.ToString(CultureInfo.InvariantCulture),
                 slide.Title ?? slide.Name ?? string.Empty,
                 slide.Layout ?? string.Empty,
@@ -44,7 +44,7 @@ internal static class SlidesRenderers
         foreach (SlideData slide in result.Slides)
         {
             surface.Out.WriteLine();
-            surface.Out.WriteLine($"--- slide {slide.Number} [{slide.SlideId}] {slide.Title ?? slide.Name ?? string.Empty} ---");
+            surface.Out.WriteLine($"--- slide {slide.Slide} [{slide.SlideId}] {slide.Title ?? slide.Name ?? string.Empty} ---");
             foreach (string text in slide.Text ?? [])
             {
                 surface.Out.WriteLine(text);

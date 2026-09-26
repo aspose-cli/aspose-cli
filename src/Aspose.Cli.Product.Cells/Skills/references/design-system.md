@@ -82,10 +82,10 @@ come first, and CJK renders are judged at >= 150 dpi only:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"set_default_font","name":"Calibri","size":11}
+  {"op":"set_default_font","font":"Calibri","size":11}
 ]}'
 # CJK-primary workbook instead:
-#   {"op":"set_default_font","name":"DengXian","size":11}
+#   {"op":"set_default_font","font":"DengXian","size":11}
 ```
 
 ## 3. Title band

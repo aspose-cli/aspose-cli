@@ -61,7 +61,7 @@ internal sealed class PdfReadService
             string projected = truncated ? text[..remaining] : text;
             pages.Add(new PdfPageText
             {
-                Number = pageNumber,
+                Page = pageNumber,
                 Text = projected,
                 Truncated = truncated,
             });

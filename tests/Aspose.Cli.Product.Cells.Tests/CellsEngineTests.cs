@@ -174,6 +174,40 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void GetInfo_ReportsChartsAndValidationsInTheEditVocabulary()
+    {
+        string source = _fixture.CreateSalesWorkbook("vocabulary-source.xlsx");
+        string[] chartTypes = [ChartTypes.Column, ChartTypes.Bar, ChartTypes.Line, ChartTypes.Pie, ChartTypes.Scatter, ChartTypes.Area];
+        string[] validationTypes = [ValidationTypes.List, ValidationTypes.WholeNumber, ValidationTypes.Decimal, ValidationTypes.Date, ValidationTypes.TextLength, ValidationTypes.Custom];
+        IEnumerable<string> charts = chartTypes.Select((type, index) =>
+            $$"""{"op":"create_chart","sheet":"Data","type":"{{type}}","dataRange":"A1:C2","at":"E{{1 + (index * 10)}}:J{{8 + (index * 10)}}"}""");
+        IEnumerable<string> validations = validationTypes.Select((type, index) => type switch
+        {
+            ValidationTypes.List => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","type":"list","listItems":["a","b"]}""",
+            ValidationTypes.Custom => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","type":"custom","value1":"=B{{index + 1}}>0"}""",
+            _ => $$"""{"op":"set_validation","sheet":"Second","range":"B{{index + 1}}","type":"{{type}}","operator":"greaterThan","value1":"=1"}""",
+        });
+        string path = _fixture.Temp.File("vocabulary.xlsx");
+        _fixture.Engine.ApplyOps(source,
+            ParseOps($$"""{"ops":[{{string.Join(",", charts.Concat(validations))}}]}"""),
+            new EditRequest { OutputPath = path });
+        using (var workbook = new Aspose.Cells.Workbook(path))
+        {
+            Aspose.Cells.Charts.ChartCollection sdkCharts = workbook.Worksheets["Data"].Charts;
+            sdkCharts[sdkCharts.Add(Aspose.Cells.Charts.ChartType.ColumnStacked, 70, 4, 78, 9)].Name = "Stacked";
+            workbook.Save(path);
+        }
+
+        WorkbookInfoResult result = _fixture.Engine.GetInfo(
+            path, new InfoRequest { Details = [InfoDetails.Charts, InfoDetails.Validation] });
+
+        // What inspect reads is what create_chart, update_chart and set_validation accept.
+        Assert.Equal([.. chartTypes, "columnStacked"], result.Workbook.Charts!.Select(static chart => chart.Type));
+        Assert.Equal(Enumerable.Range(0, chartTypes.Length + 1), result.Workbook.Charts!.Select(static chart => chart.Index));
+        Assert.Equal(validationTypes, result.Workbook.Validations!.Select(static validation => validation.Type));
+    }
+
+    [Fact]
     public void GetInfo_ReportsTheLicensedMode()
     {
         string path = _fixture.CreateSalesWorkbook("license.xlsx");

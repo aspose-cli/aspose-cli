@@ -13,6 +13,12 @@ public sealed class PdfModuleTests
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs =>
         PdfContractSamples.Inputs;
 
+    protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["rotation"] = "A page's clockwise rotation, while add_watermark_text.rotation is the watermark's counterclockwise angle.",
+        };
+
     [Fact]
     public void OperationBatch_RejectsNullOperations()
     {

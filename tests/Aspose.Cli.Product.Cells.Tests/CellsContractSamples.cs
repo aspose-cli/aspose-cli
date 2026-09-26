@@ -39,7 +39,7 @@ internal static class CellsContractSamples
                 new SheetInfo
                 {
                     Name = "Sales",
-                    Index = 0,
+                    Position = 0,
                     UsedRange = "A1:G120",
                     RowCount = 120,
                     ColumnCount = 7,
@@ -51,7 +51,7 @@ internal static class CellsContractSamples
                 new SheetInfo
                 {
                     Name = "Empty",
-                    Index = 1,
+                    Position = 1,
                     UsedRange = null,
                     RowCount = 0,
                     ColumnCount = 0,
@@ -74,9 +74,9 @@ internal static class CellsContractSamples
             ],
             Fonts = ["Arial", "Calibri"],
             Tables = [new TableInfo { Sheet = "Sales", Name = "SalesTable", Range = "A1:C5" }],
-            Charts = [new ChartInfo { Sheet = "Sales", Name = "Chart 1", Type = "Column" }],
+            Charts = [new ChartInfo { Sheet = "Sales", Index = 0, Name = "Chart 1", Type = "column" }],
             Pivots = [new PivotInfo { Sheet = "Summary", Name = "PivotTable1", Range = "A1:D10" }],
-            Validations = [new ValidationInfo { Sheet = "Sales", Range = "C2:C100", Type = "List" }],
+            Validations = [new ValidationInfo { Sheet = "Sales", Range = "C2:C100", Type = "list" }],
         },
         License = Licensed,
     };
@@ -88,7 +88,7 @@ internal static class CellsContractSamples
         Sheet = new SheetProjection
         {
             Name = "Sales",
-            Index = 0,
+            Position = 0,
             UsedRange = "A1:C4",
             Range = "A1:C3",
             Cells =
@@ -237,7 +237,7 @@ internal static class CellsContractSamples
                 Style = BorderLineStyles.Thin,
                 Color = "#000000",
             },
-            new SetDefaultFontOp { Name = "Aptos", Size = 11 },
+            new SetDefaultFontOp { Font = "Aptos", Size = 11 },
             new SetTabColorOp { Sheet = "Sales", Color = "#4472C4" },
             new SetSheetViewOp { Sheet = "Sales", Gridlines = false, Zoom = 90, Headings = true },
             new DeleteChartOp { Sheet = "Sales", Index = 0 },

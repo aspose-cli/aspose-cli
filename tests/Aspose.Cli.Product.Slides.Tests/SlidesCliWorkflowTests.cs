@@ -49,7 +49,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         Assert.True(read.ExitCode == 0, read.StdErr);
         JsonArray slides = JsonNode.Parse(read.StdOut)!["slides"]!.AsArray();
         Assert.Single(slides);
-        Assert.Equal(1, slides[0]!["number"]!.GetValue<int>());
+        Assert.Equal(1, slides[0]!["slide"]!.GetValue<int>());
         Assert.True(convert.ExitCode == 0, convert.StdErr);
         Assert.Single(JsonNode.Parse(convert.StdOut)!["outputs"]!.AsArray());
         Assert.True(File.Exists(_workspace.File("slide.png")));
@@ -103,7 +103,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         JsonNode last = returned[^1]!;
         bool cut = last["contentTruncated"]!.GetValue<bool>();
         int[] selection = [1, 2, 4];
-        int resume = Array.IndexOf(selection, last["number"]!.GetValue<int>()) + (cut ? 0 : 1);
+        int resume = Array.IndexOf(selection, last["slide"]!.GetValue<int>()) + (cut ? 0 : 1);
         int budget = cut && returned.Count == 1 ? 40 : 20;
         Assert.EndsWith(
             $" --slides {Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..])} --scope shapes --max-chars {budget} --output json",

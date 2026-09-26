@@ -1,4 +1,6 @@
+using System.Text.Json;
 using Aspose.Cells;
+using Aspose.Cells.Charts;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Sdk.Contracts;
@@ -73,7 +75,7 @@ internal static class InfoProjection
         return new SheetInfo
         {
             Name = sheet.Name,
-            Index = index,
+            Position = index,
             UsedRange = usedRange is { } range ? A1.FormatRange(range) : null,
             RowCount = usedRange?.RowCount ?? 0,
             ColumnCount = usedRange?.ColumnCount ?? 0,
@@ -182,9 +184,16 @@ internal static class InfoProjection
         var charts = new List<ChartInfo>();
         foreach (Worksheet sheet in workbook.Worksheets)
         {
-            foreach (var chart in sheet.Charts)
+            for (int index = 0; index < sheet.Charts.Count; index++)
             {
-                charts.Add(new ChartInfo { Sheet = sheet.Name, Name = chart.Name, Type = chart.Type.ToString() });
+                Chart chart = sheet.Charts[index];
+                charts.Add(new ChartInfo
+                {
+                    Sheet = sheet.Name,
+                    Index = index,
+                    Name = chart.Name,
+                    Type = VocabularyName(chart.Type),
+                });
             }
         }
 
@@ -225,7 +234,7 @@ internal static class InfoProjection
                     {
                         Sheet = sheet.Name,
                         Range = FormatArea(area),
-                        Type = validation.Type.ToString(),
+                        Type = VocabularyName(validation.Type),
                     });
                 }
             }
@@ -233,6 +242,15 @@ internal static class InfoProjection
 
         return validations;
     }
+
+    /// <summary>
+    /// Names an engine chart or validation type in the edit vocabulary. The create_chart and
+    /// set_validation values are the engine enum names in lower camel case, so a type the
+    /// operations accept reads back as that value and any other type keeps its engine name.
+    /// </summary>
+    private static string VocabularyName<TEnum>(TEnum value)
+        where TEnum : struct, Enum =>
+        JsonNamingPolicy.CamelCase.ConvertName(value.ToString());
 
     private static string FormatArea(CellArea area) =>
         A1.FormatRange(new RangeRef(

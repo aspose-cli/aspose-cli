@@ -429,8 +429,8 @@ internal static class ChartPivotOps
 
     /// <summary>
     /// Colors the series with a per-type recipe verified in renders: fills
-    /// for column/bar/area, the line color for line, line plus
-    /// marker for scatter (whose markers otherwise keep the default palette),
+    /// for column/bar/area, the line color for line, the markers and any
+    /// drawn line for scatter (whose markers otherwise keep the default palette),
     /// and per-point slice fills for the pie family (one series, points
     /// pre-materialized per category). Colors beyond the series/slice count
     /// are ignored.
@@ -467,7 +467,15 @@ internal static class ChartPivotOps
             }
             else if (isScatter)
             {
-                series.Border.Color = color;
+                // A color on the series line makes it visible, which turns a
+                // markers-only scatter into one connected by lines (probe-verified:
+                // it saves as ScatterConnectedByLinesWithDataMarker), so only a
+                // line the chart already draws is colored.
+                if (series.Border.IsVisible)
+                {
+                    series.Border.Color = color;
+                }
+
                 series.Marker.Area.Formatting = FormattingType.Custom;
                 series.Marker.Area.ForegroundColor = color;
                 series.Marker.Border.Color = color;

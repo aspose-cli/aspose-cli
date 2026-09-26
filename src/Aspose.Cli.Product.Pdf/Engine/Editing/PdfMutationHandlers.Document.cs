@@ -135,7 +135,7 @@ internal sealed partial class PdfMutationHandlers
             {
                 Prefix = range.Prefix,
                 StartingValue = range.StartingValue,
-                NumberingStyle = NumberingStyleValue(range.Style),
+                NumberingStyle = PdfPageLabelStyles.FromStyle(range.Style),
             });
             count++;
         }

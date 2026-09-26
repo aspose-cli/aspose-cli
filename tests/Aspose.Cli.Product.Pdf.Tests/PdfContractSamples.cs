@@ -40,7 +40,7 @@ internal static class PdfContractSamples
         [
             new PdfPageInfo
             {
-                Number = 1,
+                Page = 1,
                 WidthPoints = 612,
                 HeightPoints = 792,
                 Rotation = 0,
@@ -53,12 +53,16 @@ internal static class PdfContractSamples
             new PdfPageLabelInfo
             {
                 StartPage = 1,
-                NumberingStyle = "roman-lower",
+                Style = "roman-lower",
                 Prefix = "A-",
                 StartingValue = 1,
             },
         ],
-        Outline = [new PdfOutlineItem { Title = "Executive summary", Level = 1, Destination = "page:1" }],
+        Outline =
+        [
+            new PdfOutlineItem { Title = "Executive summary", Level = 1, Path = "Executive summary", Page = 1 },
+            new PdfOutlineItem { Title = "Web appendix", Level = 2, Path = "Executive summary/Web appendix" },
+        ],
         Forms = new PdfFormSummary { Type = "acro", Fields = 2, ReadOnly = false },
         Attachments = [new PdfAttachmentInfo { Name = "source.csv", MimeType = "text/csv", SizeBytes = 1200 }],
         Fonts = [new PdfFontInfo { Name = "Arial", Embedded = true, Subset = true }],
@@ -93,8 +97,8 @@ internal static class PdfContractSamples
         PageCount = 3,
         Pages =
         [
-            new PdfPageText { Number = 1, Text = "Executive summary", Truncated = false },
-            new PdfPageText { Number = 2, Text = "Revenue grew 12%.", Truncated = false },
+            new PdfPageText { Page = 1, Text = "Executive summary", Truncated = false },
+            new PdfPageText { Page = 2, Text = "Revenue grew 12%.", Truncated = false },
         ],
         ScannedPagesSuspected = [2],
         Window = new ResultWindow

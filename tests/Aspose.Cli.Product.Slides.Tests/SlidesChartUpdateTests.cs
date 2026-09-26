@@ -31,7 +31,7 @@ public sealed class SlidesChartUpdateTests
                 new UpdateChartDataOp
                 {
                     Slide = 1,
-                    Shape = ChartId(seed),
+                    ShapeId = ChartId(seed),
                     Categories = ["N", "S", "E", "W", "C"],
                     Series = [new SlidesChartSeriesInput { Name = "Rev", Values = [5, 4, 3, 2, 1] }],
                 },
@@ -67,7 +67,7 @@ public sealed class SlidesChartUpdateTests
                 new UpdateChartDataOp
                 {
                     Slide = 1,
-                    Shape = ChartId(seed),
+                    ShapeId = ChartId(seed),
                     Series =
                     [
                         new SlidesChartSeriesInput { Name = "One", Values = [7, 8, 9] },
@@ -121,7 +121,7 @@ public sealed class SlidesChartUpdateTests
             [
                 new UpdateChartDataOp
                 {
-                    Slide = 1, Shape = ChartId(seed),
+                    Slide = 1, ShapeId = ChartId(seed),
                     Series = [new SlidesChartSeriesInput { Name = "One", Values = [11, 21, 31], XValues = [1.5, 2.5, 3.5] }],
                 },
             ],
@@ -148,7 +148,7 @@ public sealed class SlidesChartUpdateTests
             [
                 new UpdateChartDataOp
                 {
-                    Slide = 1, Shape = ChartId(seed),
+                    Slide = 1, ShapeId = ChartId(seed),
                     Series = [new SlidesChartSeriesInput { Name = "One", Values = [1, 2, 3], XValues = [1, 2, 3] }],
                 },
             ],

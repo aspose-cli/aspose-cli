@@ -12,8 +12,10 @@ by later operations in that same batch. Obtain stable `slideId` values from
 counts, not shape ids.
 
 A `shapeId` is a positive, persistent identifier within its slide, not a shape
-position or a presentation-wide counter. Pass it as the operation's `shape` value
-and pair it with that slide's `slide` or `slideId`. Reading a different slide
+position or a presentation-wide counter. Pass it as the operation's `shapeId`
+and pair it with that slide's `slide` or `slideId`. `query slides` reports each
+slide's `slide` and `slideId` and each shape's `shapeId`, `shapeName` and
+`placeholder` under the names the operations accept. Reading a different slide
 window does not change these ids. Read new ids after duplicating or importing shapes.
 Shape selectors address top-level slide shapes, including a group as one shape;
 nested group children are not separately projected or addressed. `shapeName`

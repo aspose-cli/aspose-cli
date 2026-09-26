@@ -29,11 +29,17 @@ public sealed class PdfEngineTests
                 Prefix = "A-",
                 StartingValue = 1,
             });
-            document.Outlines.Add(new OutlineItemCollection(document.Outlines)
+            var first = new OutlineItemCollection(document.Outlines)
             {
                 Title = "First page",
                 Destination = new FitExplicitDestination(document.Pages[1]),
+            };
+            first.Add(new OutlineItemCollection(document.Outlines)
+            {
+                Title = "Website",
+                Action = new GoToURIAction("https://example.com/"),
             });
+            document.Outlines.Add(first);
             document.Save(path);
         }
 
@@ -54,7 +60,7 @@ public sealed class PdfEngineTests
             label =>
             {
                 Assert.Equal(1, label.StartPage);
-                Assert.Equal("roman-lower", label.NumberingStyle);
+                Assert.Equal("roman-lower", label.Style);
                 Assert.Equal("A-", label.Prefix);
                 Assert.Equal(1, label.StartingValue);
             });
@@ -63,7 +69,14 @@ public sealed class PdfEngineTests
             item =>
             {
                 Assert.Equal("First page", item.Title);
-                Assert.Equal("page:1", item.Destination);
+                Assert.Equal("First page", item.Path);
+                Assert.Equal(1, item.Page);
+            },
+            item =>
+            {
+                Assert.Equal(2, item.Level);
+                Assert.Equal("First page/Website", item.Path);
+                Assert.Null(item.Page);
             });
         Assert.Equal("none", result.Forms!.Type);
         Assert.Empty(result.Attachments!);

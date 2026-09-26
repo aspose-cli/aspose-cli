@@ -16,12 +16,12 @@ internal static class CellsRenderers
             $"sheets: {workbook.SheetCount}   vba: {TableText.YesNo(workbook.HasVba)}   defined names: {workbook.DefinedNameCount}");
         surface.Out.WriteLine();
 
-        var table = new TextTable("name", "index", "used range", "rows", "cols", "hidden", "charts", "pivots");
+        var table = new TextTable("name", "position", "used range", "rows", "cols", "hidden", "charts", "pivots");
         foreach (SheetInfo sheet in workbook.Sheets)
         {
             table.AddRow(
                 sheet.Name,
-                TableText.Int(sheet.Index),
+                TableText.Int(sheet.Position),
                 sheet.UsedRange ?? "-",
                 TableText.Int(sheet.RowCount),
                 TableText.Int(sheet.ColumnCount),

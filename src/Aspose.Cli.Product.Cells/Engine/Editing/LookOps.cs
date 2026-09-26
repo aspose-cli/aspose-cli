@@ -22,7 +22,7 @@ internal static class LookOps
     public static long? SetDefaultFont(Workbook workbook, SetDefaultFontOp op)
     {
         Style style = workbook.DefaultStyle;
-        style.Font.Name = op.Name;
+        style.Font.Name = op.Font;
         if (op.Size is { } size)
         {
             style.Font.DoubleSize = size;

@@ -168,15 +168,7 @@ internal sealed partial class WordsMutationHandlers
     public long Apply(ProtectOp operation)
     {
         string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
-        ProtectionType type = operation.Mode switch
-        {
-            "readOnly" => ProtectionType.ReadOnly,
-            "forms" => ProtectionType.AllowOnlyFormFields,
-            "comments" => ProtectionType.AllowOnlyComments,
-            "trackedChanges" => ProtectionType.AllowOnlyRevisions,
-            _ => throw Invalid($"unknown protection mode '{operation.Mode}'"),
-        };
-        _document.Protect(type, password ?? string.Empty);
+        _document.Protect(WordsProtection.FromMode(operation.Mode), password ?? string.Empty);
         return 1;
     }
 

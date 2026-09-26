@@ -27,7 +27,7 @@ aspose-cli cells edit dashboard.xlsx --ops ops-structure.json --in-place --outpu
 
 ```json
 {"ops":[
-  {"op":"set_default_font","name":"Calibri","size":11},
+  {"op":"set_default_font","font":"Calibri","size":11},
   {"op":"rename_sheet","sheet":"sales","to":"Data"},
   {"op":"add_sheet","name":"Dashboard","position":0},
   {"op":"set_values","sheet":"Data","range":"A1","values":[["Order id","Date","Category","Region","Owner","Qty","Unit price","Amount","Month"]]},

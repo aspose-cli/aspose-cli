@@ -40,7 +40,7 @@ internal static class InfoProjection
                 RevisionCount = document.Revisions.Count,
                 RevisionAuthors = document.Revisions.Cast<Revision>().Select(static r => r.Author)
                     .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
-                Protection = document.ProtectionType.ToString(),
+                Protection = WordsProtection.ToMode(document.ProtectionType),
                 Signed = loaded.Format.HasDigitalSignature,
             },
             Sections = details.Contains("sections") ? Sections(document) : null,
@@ -71,8 +71,8 @@ internal static class InfoProjection
     private static IReadOnlyList<SectionData> Sections(Document document) =>
         document.Sections.Cast<Section>().Select((section, index) => new SectionData
         {
-            Index = index + 1,
-            Orientation = section.PageSetup.Orientation.ToString(),
+            Section = index + 1,
+            Orientation = section.PageSetup.Orientation == Orientation.Landscape ? "landscape" : "portrait",
             WidthPoints = section.PageSetup.PageWidth,
             HeightPoints = section.PageSetup.PageHeight,
             Margins = new MarginData
@@ -93,7 +93,7 @@ internal static class InfoProjection
                 return new OutlineItem
                 {
                     Block = entry.Index,
-                    Level = HeadingLevel(paragraph)!.Value,
+                    HeadingLevel = HeadingLevel(paragraph)!.Value,
                     Text = WordsText.Of(paragraph),
                 };
             },
@@ -135,8 +135,8 @@ internal static class InfoProjection
             {
                 Block = index.FindBlock(shape) ?? 0,
                 Name = shape.Name,
-                WidthPoints = shape.Width,
-                HeightPoints = shape.Height,
+                Width = shape.Width,
+                Height = shape.Height,
             },
             "images",
             "Extract every image with 'words extract --what images'.",

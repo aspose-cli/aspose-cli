@@ -13,6 +13,12 @@ public sealed class SlidesModuleTests
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs =>
         SlidesContractSamples.Inputs;
 
+    protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["kind"] = "An extracted item's kind names what was extracted, not a shape, chart or transition kind.",
+        };
+
     [Fact]
     public void OperationBatch_RejectsNullOperations()
     {
@@ -24,7 +30,7 @@ public sealed class SlidesModuleTests
     [Fact]
     public void OperationObjects_RejectUnknownNestedFields() =>
         AssertOperationObjectIsStrict<SlidesOp>(
-            """{"op":"set_shape_style","slide":1,"shape":1,"style":{"bold":true}}""", "style");
+            """{"op":"set_shape_style","slide":1,"shapeId":1,"style":{"bold":true}}""", "style");
 
     [Fact]
     public Task EveryDefaultInputFormatHasPositiveRoutingEvidence() =>
@@ -74,8 +80,8 @@ public sealed class SlidesModuleTests
     }
 
     [Theory]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shape":1}""")]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shape":1,"style":null}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":1}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":1,"style":null}""")]
     public void ShapeStyle_RequiresTheStyleObject(string input)
     {
         Assert.Throws<Aspose.Cli.Sdk.Errors.CliException>(() =>
@@ -83,8 +89,8 @@ public sealed class SlidesModuleTests
     }
 
     [Theory]
-    [InlineData("""{"op":"set_shape_style","slide":1,"shape":2}""")]
-    [InlineData("""{"op":"update_chart_data","slide":1,"shape":2,"series":[]}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2}""")]
+    [InlineData("""{"op":"update_chart_data","slide":1,"shapeId":2,"series":[]}""")]
     [InlineData("""{"op":"set_text","slide":1,"placeholder":"object","text":"x"}""")]
     public void OperationRules_RejectIncompleteOrUnknownValues(string operation)
     {

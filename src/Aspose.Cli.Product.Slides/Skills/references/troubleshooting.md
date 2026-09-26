@@ -5,9 +5,9 @@
   placeholder roles or layout names in `details.available` and the closest ones
   in `details.suggestions`; a slide number past the end reports
   `details.availableCount`. `slides query slides --scope shapes` lists each
-  shape's id, name and role.
+  shape's `shapeId`, `shapeName` and `placeholder` role.
 - A shape name or placeholder role that several shapes on the slide share is
-  refused with `OPS_INVALID`; address the shape by its `shape` id.
+  refused with `OPS_INVALID`; address the shape by its `shapeId`.
 - If rendering fails, run `fonts check` for the Slides product, reduce the
   selected slide set and inspect the source for malformed embedded media.
 - If a template-based deck looks wrong, confirm which masters and layouts were

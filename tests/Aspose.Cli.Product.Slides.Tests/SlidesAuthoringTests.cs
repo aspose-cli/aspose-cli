@@ -146,6 +146,6 @@ public sealed class SlidesAuthoringTests
         {
             Slides = PageRange.Parse("1"), Scope = PresentationReadScopes.Shapes,
         });
-        Assert.Contains(read.Slides[0].Shapes!, static shape => shape.Role == "body" && shape.Text == "Final");
+        Assert.Contains(read.Slides[0].Shapes!, static shape => shape.Placeholder == "body" && shape.Text == "Final");
     }
 }

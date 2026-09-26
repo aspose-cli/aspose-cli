@@ -1,7 +1,9 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.Json;
+using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
+using Aspose.Cli.Sdk.Extensibility;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -15,6 +17,27 @@ public sealed class CellsModuleTests
 
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs =>
         CellsContractSamples.Inputs;
+
+    protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["left"] = "a diff or verification change's value in the first file, not a page margin",
+            ["right"] = "a diff or verification change's value in the second file, not a page margin",
+        };
+
+    [Theory]
+    [InlineData("chartInfo", "create_chart")]
+    [InlineData("validationInfo", "set_validation")]
+    public void InspectedTypes_StateTheOperationVocabulary(string info, string operation)
+    {
+        ProductCatalog catalog = ProductCatalog.Build([new CellsModule()]);
+        JsonNode read = JsonNode.Parse(catalog.Resources.Read("v2/cells/workbook-info"))!;
+        JsonNode ops = JsonNode.Parse(catalog.Resources.Read("v2/cells/ops"))!;
+
+        Assert.Equal(
+            ops["$defs"]![operation]!["properties"]!["type"]!["enum"]!.ToJsonString(),
+            read["$defs"]![info]!["properties"]!["type"]!["anyOf"]![0]!["enum"]!.ToJsonString());
+    }
 
     [Fact]
     public void OperationBatch_RejectsNullOperations()

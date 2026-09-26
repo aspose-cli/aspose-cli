@@ -25,6 +25,12 @@ start pages; they do not reset every existing range. `add_page_numbers` stamps
 visible text: `{n}` counts selected pages from `start`, while `{N}` is the
 current document's total page count.
 
+`pdf inspect` and `pdf query pages` report these targets under the names the
+operations take: each page's `page`, each label range's `startPage`, `style`,
+`prefix` and `startingValue`, and each bookmark's `page` and `path`, the
+slash-separated title path that `delete_bookmarks.path` and
+`add_bookmark.parent` accept.
+
 Edit `rect` values are `{x,y,width,height}` in points (72 points per inch),
 with a top-left origin against the currently visible, rotated CropBox (or
 MediaBox when uncropped). Search rectangles use the same coordinates.

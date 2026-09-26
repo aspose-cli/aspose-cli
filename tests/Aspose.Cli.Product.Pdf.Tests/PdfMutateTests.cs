@@ -559,6 +559,40 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
+    public void Bookmarks_ReadPathsAndPagesAddressEdits()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("paths.pdf", pages: 2);
+        string outlined = fixture.File("paths.out.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new AddBookmarkOp { Title = "Intro", Page = 1 },
+                new AddBookmarkOp { Title = "Scope", Page = 2, Parent = "Intro" },
+            ],
+        }, new PdfEditRequest { OutputPath = outlined });
+
+        PdfOutlineItem[] outline = [.. fixture.Engine.GetInfo(outlined, new PdfInfoRequest { Details = ["outline"] }).Outline!];
+        Assert.Equal(["Intro", "Intro/Scope"], outline.Select(static item => item.Path));
+        Assert.Equal([1, 2], outline.Select(static item => item.Page));
+
+        string edited = fixture.File("paths.edited.pdf");
+        fixture.Engine.ApplyOps(outlined, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new DeleteBookmarksOp { Path = outline[1].Path },
+                new AddBookmarkOp { Title = "Detail", Page = outline[1].Page!.Value, Parent = outline[0].Path },
+            ],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        PdfOutlineItem[] after = [.. fixture.Engine.GetInfo(edited, new PdfInfoRequest { Details = ["outline"] }).Outline!];
+        Assert.Equal(["Intro", "Intro/Detail"], after.Select(static item => item.Path));
+        Assert.Equal([1, 2], after.Select(static item => item.Page));
+    }
+
+    [Fact]
     public void PageTargets_PastTheDocumentReportThePageCount()
     {
         using var fixture = new PdfEngineFixture();

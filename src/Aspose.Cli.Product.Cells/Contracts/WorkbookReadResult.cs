@@ -56,8 +56,8 @@ public sealed record SheetProjection
     /// <summary>Sheet name, exactly as shown in Excel.</summary>
     public required string Name { get; init; }
 
-    /// <summary>Zero-based position in the workbook.</summary>
-    public required int Index { get; init; }
+    /// <summary>Zero-based position in the tab order, as add_sheet and move_sheet take it.</summary>
+    public required int Position { get; init; }
 
     /// <summary>A1 range covering all data on the sheet; omitted when empty.</summary>
     public string? UsedRange { get; init; }

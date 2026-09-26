@@ -26,7 +26,7 @@ public sealed class WordsContentControlTests : IClassFixture<WordsFixture>
         DocumentReadResult read = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "text" });
 
         Assert.Equal(Blocks, read.Blocks.Select(static block => block.Text));
-        Assert.Equal([1, 2, 3, 4, 5], read.Blocks.Select(static block => block.I));
+        Assert.Equal([1, 2, 3, 4, 5], read.Blocks.Select(static block => block.Block));
     }
 
     [Fact]

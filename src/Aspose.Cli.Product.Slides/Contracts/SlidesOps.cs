@@ -32,11 +32,11 @@ public abstract record SlideTargetOp : SlidesOp
 }
 
 /// <summary>An operation on one top-level shape of a slide, named by its id, its name or its placeholder role.</summary>
-[ExactlyOneOf("shape", "shapeName", "placeholder")]
+[ExactlyOneOf("shapeId", "shapeName", "placeholder")]
 public abstract record ShapeTargetOp : SlideTargetOp
 {
     /// <summary>The persistent slide-scoped shapeId returned by query slides; not a shape position.</summary>
-    [Minimum(1)] public long? Shape { get; init; }
+    [Minimum(1)] public long? ShapeId { get; init; }
 
     /// <summary>The shape name, matched case-sensitively.</summary>
     [Pattern(@"\S")] public string? ShapeName { get; init; }
@@ -214,7 +214,7 @@ public sealed record AddSectionOp : SlidesOp
     [Pattern(@"\S")] public required string Name { get; init; }
 
     /// <summary>The 1-based number of the section's first slide.</summary>
-    [Minimum(1)] public required int AtSlide { get; init; }
+    [Minimum(1)] public required int StartSlide { get; init; }
 }
 
 /// <summary>Appends every slide of another presentation.</summary>

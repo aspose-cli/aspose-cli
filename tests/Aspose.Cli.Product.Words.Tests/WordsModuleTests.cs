@@ -15,6 +15,12 @@ public sealed class WordsModuleTests
     protected override IReadOnlyList<ProductSchemaSample> CanonicalInputs =>
         WordsContractSamples.Inputs;
 
+    protected override IReadOnlyDictionary<string, string> Homonyms { get; } =
+        new Dictionary<string, string>(StringComparer.Ordinal)
+        {
+            ["kind"] = "An extracted item's kind names what was extracted, not a list, break or header kind.",
+        };
+
     [Fact]
     public void OperationBatch_RejectsNullOperations()
     {
@@ -91,6 +97,28 @@ public sealed class WordsModuleTests
             """{"ops":[{"op":"set_page_setup","setup":{"size":"A4"}}]}"""));
         Assert.Throws<CliException>(() => Parse(
             """{"ops":[{"op":"set_page_setup","setup":{"size":"tabloid"}}]}"""));
+    }
+
+    [Fact]
+    public void ProtectionTypes_ReadAsNoneOrTheProtectMode()
+    {
+        JsonNode schema = JsonNode.Parse(ProductCatalog.Build([new WordsModule()]).Resources.Read("v2/words/ops"))!;
+        string[] modes = schema["$defs"]!["protect"]!["properties"]!["mode"]!["enum"]!.AsArray()
+            .Select(static value => value!.GetValue<string>())
+            .ToArray();
+
+        foreach (Aspose.Words.ProtectionType type in Enum.GetValues<Aspose.Words.ProtectionType>())
+        {
+            string mode = Engine.Mapping.WordsProtection.ToMode(type);
+            if (type == Aspose.Words.ProtectionType.NoProtection)
+            {
+                Assert.Equal("none", mode);
+                continue;
+            }
+
+            Assert.Contains(mode, modes);
+            Assert.Equal(type, Engine.Mapping.WordsProtection.FromMode(mode));
+        }
     }
 
     private static byte[] OpenXml() => ProductRoutingContract.ZipMarker(

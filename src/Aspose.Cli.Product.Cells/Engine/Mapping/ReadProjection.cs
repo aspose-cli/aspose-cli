@@ -43,7 +43,7 @@ internal static class ReadProjection
         var projection = new SheetProjection
         {
             Name = sheet.Name,
-            Index = sheet.Index,
+            Position = sheet.Index,
             UsedRange = usedRange is { } used ? A1.FormatRange(used) : null,
             Range = window is { } w ? A1.FormatRange(w) : null,
             Cells = cells,
