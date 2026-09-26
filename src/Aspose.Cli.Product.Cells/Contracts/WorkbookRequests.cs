@@ -1,4 +1,4 @@
-using Aspose.Cli.Product.Cells.Addressing;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
 

@@ -58,7 +58,7 @@ public sealed class PdfModule : IProductModule
             resolution => new PdfLicenseGate(
                 resolution,
                 context.EnvironmentVariable),
-            license => new PdfDocumentEngine(
+            license => new PdfEngine(
                 license,
                 context.ResourceBudgets,
                 context.SafeFileWriter),

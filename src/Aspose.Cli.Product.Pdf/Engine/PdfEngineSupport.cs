@@ -33,6 +33,27 @@ internal static class PdfEngineSupport
         }
     }
 
+    internal static Page PageAt(Document document, int page) =>
+        page > 0 && page <= document.Pages.Count
+            ? document.Pages[page]
+            : throw PageNotFound(page, document.Pages.Count);
+
+    internal static CliException PageNotFound(int requested, int available) => new(
+        ErrorCodes.PageNotFound,
+        $"Requested page {requested} exceeds the available count of {available}.",
+        hint: $"Use a page from 1 through {available}.");
+
+    internal static void EnsureAcroForm(Document document)
+    {
+        if (document.Form.HasXfa)
+        {
+            throw new CliException(
+                PdfDiagnostics.FormXfaUnsupported,
+                "XFA forms are read-only in the current PDF command surface.",
+                hint: "Convert the XFA form to AcroForm before filling, flattening or exporting it.");
+        }
+    }
+
     internal static string ExtractText(Page page, string mode)
     {
         TextExtractionOptions.TextFormattingMode formatting = mode == PdfReadModes.Layout

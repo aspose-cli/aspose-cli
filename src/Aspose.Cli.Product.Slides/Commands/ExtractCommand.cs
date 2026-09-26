@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class ExtractCommand
 {
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
+    public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {
         var what = new Option<string>("--what") { Required = true, Description = "media, notes or text." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong([.. PresentationExtractKinds.All]);

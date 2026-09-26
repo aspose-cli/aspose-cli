@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells;
 /// Worksheet image and interactive workbook views, and the bounded
 /// workbook-structure findings of their review.
 /// </summary>
-internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
+internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
 {
     public IReadOnlyList<ProductView> Views { get; } =
     [
@@ -25,14 +25,14 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
     public bool VisualInspectionRequired => true;
 
     public ViewManifest Render(
-        IWorkbookEngine port,
+        ICellsEngine port,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts) =>
         port.RenderView(filePath, request, artifacts);
 
     public ProductReviewAssessment Assess(
-        IWorkbookEngine port,
+        ICellsEngine port,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered)
@@ -42,12 +42,12 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
             Details = [InfoDetails.Errors],
             Password = request.Password,
         });
-        if (port is not IWorkbookReviewPort reviewPort)
+        if (port is not ICellsReviewLayoutPort reviewPort)
         {
             throw new InvalidOperationException(
                 "The activated Cells engine does not provide review layout facts.");
         }
-        WorkbookReviewLayout layout = reviewPort.InspectReviewLayout(
+        CellsReviewLayout layout = reviewPort.Inspect(
             filePath,
             request.Password);
         SheetInfo[] visible = info.Workbook.Sheets
@@ -94,12 +94,12 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 
     private static List<ReviewFinding> Findings(
         WorkbookInfoResult info,
-        WorkbookReviewLayout layout,
+        CellsReviewLayout layout,
         IReadOnlyList<SheetInfo> visible,
         int renderedCount)
     {
         var findings = new List<ReviewFinding>();
-        IReadOnlyDictionary<string, WorksheetReviewLayout> layoutBySheet =
+        IReadOnlyDictionary<string, CellsReviewSheetLayout> layoutBySheet =
             layout.Sheets.ToDictionary(static sheet => sheet.Name, StringComparer.Ordinal);
         foreach (SheetInfo sheet in info.Workbook.Sheets.Where(static sheet => sheet.Hidden))
         {
@@ -119,7 +119,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
                 $"Visible worksheet '{sheet.Name}' is empty; its PNG is a blank placeholder.",
                 sheet.Name));
         }
-        foreach (WorksheetReviewLayout sheet in layout.Sheets.Where(sheet =>
+        foreach (CellsReviewSheetLayout sheet in layout.Sheets.Where(sheet =>
                      visible.Any(visibleSheet =>
                          string.Equals(visibleSheet.Name, sheet.Name, StringComparison.Ordinal))))
         {
@@ -154,7 +154,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 
     private static void AddLayoutFindings(
         ICollection<ReviewFinding> findings,
-        WorksheetReviewLayout sheet)
+        CellsReviewSheetLayout sheet)
     {
         AddSparseRangeFinding(findings, sheet);
         AddDimensionFindings(findings, sheet);
@@ -164,7 +164,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 
     private static void AddSparseRangeFinding(
         ICollection<ReviewFinding> findings,
-        WorksheetReviewLayout sheet)
+        CellsReviewSheetLayout sheet)
     {
         if (sheet.UsedAreaCells >= 100
             && checked(sheet.PopulatedCells * 100) < sheet.UsedAreaCells)
@@ -180,7 +180,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 
     private static void AddDimensionFindings(
         ICollection<ReviewFinding> findings,
-        WorksheetReviewLayout sheet)
+        CellsReviewSheetLayout sheet)
     {
         AddDimensionFinding(
             findings,
@@ -228,7 +228,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 
     private static void AddPrintAreaFindings(
         ICollection<ReviewFinding> findings,
-        WorksheetReviewLayout sheet)
+        CellsReviewSheetLayout sheet)
     {
         if (sheet.PrintAreaInvalid)
         {
@@ -258,9 +258,9 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 
     private static void AddChartFindings(
         ICollection<ReviewFinding> findings,
-        WorksheetReviewLayout sheet)
+        CellsReviewSheetLayout sheet)
     {
-        foreach (ChartReviewLayout chart in sheet.Charts)
+        foreach (CellsReviewChartLayout chart in sheet.Charts)
         {
             AddChartFindingSet(findings, sheet, chart);
         }
@@ -268,8 +268,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 
     private static void AddChartFindingSet(
         ICollection<ReviewFinding> findings,
-        WorksheetReviewLayout sheet,
-        ChartReviewLayout chart)
+        CellsReviewSheetLayout sheet,
+        CellsReviewChartLayout chart)
     {
         string location = $"{sheet.Name} chart '{chart.Name}'";
         if (chart.Hidden)
@@ -316,7 +316,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<IWorkbookEngine>
 
     private static void AddDimensionFinding(
         ICollection<ReviewFinding> findings,
-        WorksheetReviewLayout sheet,
+        CellsReviewSheetLayout sheet,
         string kind,
         int count,
         string code,

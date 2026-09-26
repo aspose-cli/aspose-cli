@@ -7,7 +7,7 @@ using Aspose.Cli.Sdk.Views;
 namespace Aspose.Cli.Product.Slides;
 
 /// <summary>Slide views and the conservative layout findings of their review.</summary>
-internal sealed class SlidesViewAdapter : IProductViewAdapter<IPresentationEngine>
+internal sealed class SlidesViewAdapter : IProductViewAdapter<ISlidesEngine>
 {
     public IReadOnlyList<ProductView> Views { get; } =
         [new(SlidesViews.Slides, "Slides", ViewPartKinds.Image)];
@@ -19,14 +19,14 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<IPresentationEngin
     public bool VisualInspectionRequired => true;
 
     public ViewManifest Render(
-        IPresentationEngine port,
+        ISlidesEngine port,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts) =>
         port.RenderView(filePath, request, artifacts);
 
     public ProductReviewAssessment Assess(
-        IPresentationEngine port,
+        ISlidesEngine port,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered)

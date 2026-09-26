@@ -15,7 +15,7 @@ public sealed class WordsMarkdownImportTests
         File.WriteAllText(markdown, "# Brief\n\nPlain **bold** and `code`.\n");
         string output = fixture.Temp.File("brief.docx");
 
-        fixture.Engine.CreateDocument(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
 
         var document = new Document(output);
         Section section = Assert.Single(document.Sections.Cast<Section>());
@@ -41,7 +41,7 @@ public sealed class WordsMarkdownImportTests
         string markdown = fixture.Temp.File("fonts.md");
         File.WriteAllText(markdown, "# Title\n\nHello 你好\n");
         string output = fixture.Temp.File("fonts.docx");
-        fixture.Engine.CreateDocument(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
 
         DocumentInfoResult info = fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["fonts"] });
 
@@ -66,7 +66,7 @@ public sealed class WordsMarkdownImportTests
     [Fact]
     public void BuiltInDesign_CarriesNoGeneratorMetadata()
     {
-        using Stream stream = typeof(WordsDocumentEngine).Assembly.GetManifestResourceStream("Templates/default-a4.docx")!;
+        using Stream stream = typeof(WordsEngine).Assembly.GetManifestResourceStream("Templates/default-a4.docx")!;
         using var package = new System.IO.Compression.ZipArchive(stream);
         foreach (System.IO.Compression.ZipArchiveEntry entry in package.Entries)
         {

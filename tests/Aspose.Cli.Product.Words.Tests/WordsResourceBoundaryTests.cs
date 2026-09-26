@@ -66,7 +66,7 @@ public sealed class WordsResourceBoundaryTests
         CliException error = Assert.Throws<CliException>(() => loader.OpenMarkdown(new string('a', 9), loaded));
         Assert.Equal(ErrorCodes.InputBudgetExceeded, error.Code);
         string output = fixture.Temp.File("budget-failure.docx");
-        var engine = new WordsDocumentEngine(fixture.Gate, budgets, new SafeFileWriter(budgets));
+        var engine = new WordsEngine(fixture.Gate, budgets, new SafeFileWriter(budgets));
         CliException batchError = Assert.Throws<CliException>(() => engine.ApplyOps(input,
             new WordsOpsBatch { Ops = [new InsertMarkdownOp
             {

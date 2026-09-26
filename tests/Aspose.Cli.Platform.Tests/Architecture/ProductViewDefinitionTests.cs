@@ -33,8 +33,9 @@ public sealed class ProductViewDefinitionTests
             new TestProductViewAdapter<ITestPort>(),
             "test");
         ProductBinding<ITestPort> binding =
-            ProductBinding.CreateLicenseFree<ITestPort, FontPort>(
+            ProductBinding.CreateLicenseFree<ITestPort>(
                 "test",
+                static _ => new FontPort(),
                 static _ => new FontPort());
         ViewRenderRequest request = Request("document");
 

@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <summary>Groups strongly typed, read-only Cells projections.</summary>
 internal static class QueryCommand
 {
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var query = new Command(
             "query",

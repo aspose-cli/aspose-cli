@@ -9,7 +9,7 @@ internal static class InfoCommand
     private static readonly string[] Details =
         ["outline", "sections", "styles", "fields", "bookmarks", "comments", "images", "tables", "properties", "fonts"];
 
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var preview = new Option<bool>("--preview") { Description = "Include a bounded outline preview." };
         var detail = new Option<string[]>("--detail")

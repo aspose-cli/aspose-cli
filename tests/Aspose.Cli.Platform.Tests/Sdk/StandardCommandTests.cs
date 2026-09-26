@@ -440,7 +440,7 @@ public sealed class StandardCommandTests : IDisposable
             TestEngine engine = Engine;
             var context = new ProductCommandContext<ITestPort>
             {
-                Binding = ProductBinding.CreateLicenseFree<ITestPort, TestEngine>("test", _ => engine),
+                Binding = ProductBinding.CreateLicenseFree<ITestPort>("test", _ => engine, _ => engine),
                 Paths = new PathResolver(workDirectory),
                 Inputs = TestBudgets.Create().Inputs,
                 ReadEnvironment = static name => name switch { "LEFT" => "a", "RIGHT" => "b", _ => null },

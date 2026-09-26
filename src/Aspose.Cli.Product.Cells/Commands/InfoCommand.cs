@@ -13,7 +13,7 @@ internal static class InfoCommand
 {
     private const int MaxPreviewRows = 100;
 
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var preview = new Option<bool>("--preview")
         {

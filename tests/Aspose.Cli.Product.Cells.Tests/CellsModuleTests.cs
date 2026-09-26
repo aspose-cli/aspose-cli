@@ -49,7 +49,7 @@ public sealed class CellsModuleTests
 
     [Fact]
     public void OperationObjects_RejectUnknownNestedFields() =>
-        AssertOperationObjectIsStrict<Op>(
+        AssertOperationObjectIsStrict<CellsOp>(
             """{"op":"format_range","range":"A1","style":{"bold":true}}""", "style");
 
     [Fact]
@@ -70,9 +70,9 @@ public sealed class CellsModuleTests
     [Fact]
     public void CanonicalOps_CoverEveryRegisteredOperation() =>
         Assert.Equal(
-            Op.Catalog.Names.Order(StringComparer.Ordinal),
+            CellsOp.Catalog.Names.Order(StringComparer.Ordinal),
             CellsContractSamples.Ops.Ops
-                .Select(Op.Catalog.NameOf)
+                .Select(CellsOp.Catalog.NameOf)
                 .Order(StringComparer.Ordinal));
 
     [Fact]
@@ -150,6 +150,6 @@ public sealed class CellsModuleTests
             int.Parse(match.Groups[3].Value));
     }
 
-    private static OpsBatch ParseOps(string json) =>
-        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+    private static CellsOpsBatch ParseOps(string json) =>
+        CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

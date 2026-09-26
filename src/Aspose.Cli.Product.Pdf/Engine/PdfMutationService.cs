@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Pdf.Contracts;
+using Aspose.Cli.Product.Pdf.Engine.Editing;
 using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
@@ -17,7 +18,6 @@ using Aspose.Pdf.Forms;
 using Aspose.Pdf.Optimization;
 using Aspose.Pdf.Text;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
-using static Aspose.Cli.Product.Pdf.Engine.PdfMutationSupport;
 using PdfColor = Aspose.Pdf.Color;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
@@ -42,8 +42,7 @@ internal sealed class PdfMutationService
         _inputs = inputs;
     }
 
-    /// <inheritdoc />
-
+    /// <summary>Opens the document, runs the batch through the mutation handlers and publishes the result.</summary>
     public PdfEditResult ApplyOps(string filePath, PdfOpsBatch batch, PdfEditRequest request)
     {
         batch = PdfOp.Catalog.Prepare(batch);

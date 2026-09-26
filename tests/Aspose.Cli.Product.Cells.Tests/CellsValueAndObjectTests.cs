@@ -238,8 +238,8 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             ?.Attribute("val")?.Value;
     }
 
-    private static OpsBatch Parse(string json) =>
-        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+    private static CellsOpsBatch Parse(string json) =>
+        CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
     private string Apply(string path, string operations, string output) =>
         _fixture.Engine.ApplyOps(

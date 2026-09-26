@@ -20,13 +20,23 @@ public sealed class CellsFixture : IDisposable
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new CellsLicenseGate(resolution, environment));
 
-    internal CellsWorkbookEngine Engine
+    internal CellsEngine Engine
     {
         get
         {
             TestLicense.Require(EvaluationLimit);
-            return ProductTestBudgets.StartEngine<CellsModule, CellsWorkbookEngine>(
-                (budgets, writer) => new CellsWorkbookEngine(Gate, budgets, writer));
+            return ProductTestBudgets.StartEngine<CellsModule, CellsEngine>(
+                (budgets, writer) => new CellsEngine(Gate, budgets, writer));
+        }
+    }
+
+    internal CellsFontEnvironment Fonts
+    {
+        get
+        {
+            TestLicense.Require(EvaluationLimit);
+            return ProductTestBudgets.StartEngine<CellsModule, CellsFontEnvironment>(
+                (budgets, _) => new CellsFontEnvironment(Gate, budgets));
         }
     }
 

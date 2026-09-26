@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class SearchCommand
 {
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var search = new SearchOptions(new SearchScopeGrammar(
             "Search scope: body (the main text, without the comments and footnotes it anchors), "

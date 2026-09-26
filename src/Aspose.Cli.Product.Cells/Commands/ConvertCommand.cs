@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <summary><c>cells convert</c> — workbook format conversion.</summary>
 internal static class ConvertCommand
 {
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var sheet = new Option<string?>("--sheet")
         {

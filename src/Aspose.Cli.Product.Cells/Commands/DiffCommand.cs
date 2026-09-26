@@ -17,7 +17,7 @@ internal static class DiffCommand
     private const string CompareValues = "values";
     private const string CompareFormulas = "formulas";
 
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var compare = new Option<string>("--compare")
         {

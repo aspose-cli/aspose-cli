@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 /// <summary>Groups strongly typed, read-only Slides projections.</summary>
 internal static class QueryCommand
 {
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
+    public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {
         var query = new Command(
             "query",

@@ -1,6 +1,6 @@
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -14,7 +14,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 internal static class Sheets
 {
     /// <summary>Resolves the sheet an op targets (its <c>sheet</c> field).</summary>
-    public static Worksheet Resolve(Workbook workbook, Op op) => Resolve(workbook, op.Sheet);
+    public static Worksheet Resolve(Workbook workbook, CellsOp op) => Resolve(workbook, op.Sheet);
 
     /// <summary>
     /// Resolves a sheet by name — the active sheet when the name is null — or

@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// </summary>
 internal static class EditCommand
 {
-    private static readonly BoundedEditDefinition<Op, OpsBatch> Definition = new()
+    private static readonly BoundedEditDefinition<CellsOp, CellsOpsBatch> Definition = new()
     {
         Contracts = ProductJsonContext.Definition,
         SetDirectives = new(
@@ -21,14 +21,14 @@ internal static class EditCommand
                 + "anything else is text. Quote sheet names that need it: --set \"'My Sheet'!A1=5\". "
                 + "Example: --set \"Sales!B3=42\" --set \"Sales!G2==E2*F2\".",
             SetDirectiveParser.Parse,
-            static ops => new OpsBatch { Ops = ops }),
+            static ops => new CellsOpsBatch { Ops = ops }),
         VerifyDescription = "Verify the staged output and report its cell changes and formula errors.",
     };
 
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var noRecalc = new Option<bool>("--no-recalc") { Description = "Skip the automatic formula recalculation after applying the ops." };
-        var bounded = new BoundedEditCommand<Op, OpsBatch>(Definition);
+        var bounded = new BoundedEditCommand<CellsOp, CellsOpsBatch>(Definition);
         return bounded.Create(
             host,
             "edit",

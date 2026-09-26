@@ -119,7 +119,7 @@ internal static class CellsContractSamples
         License = Licensed,
     };
 
-    public static OpsBatch Ops { get; } = new()
+    public static CellsOpsBatch Ops { get; } = new()
     {
         Schema = CellsSchemaIds.Ops,
         Ops =

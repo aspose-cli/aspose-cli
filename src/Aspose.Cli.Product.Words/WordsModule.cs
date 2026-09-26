@@ -28,7 +28,7 @@ public sealed class WordsModule : IProductModule
     };
 
     public ProductDefinition Define() =>
-        Aspose.Cli.Sdk.Extensibility.Product.Define<IDocumentEngine>(Manifest)
+        Aspose.Cli.Sdk.Extensibility.Product.Define<IWordsEngine>(Manifest)
             .Formats(WordsFormats.Definitions)
             .Diagnostics(WordsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
@@ -47,15 +47,15 @@ public sealed class WordsModule : IProductModule
             .Activator(Activate)
             .Build();
 
-    private static ProductBinding<IDocumentEngine> Activate(
+    private static ProductBinding<IWordsEngine> Activate(
         ProductActivationContext context) =>
-        ProductBinding.Create<IDocumentEngine>(
+        ProductBinding.Create<IWordsEngine>(
             context,
             Manifest.Id,
             resolution => new WordsLicenseGate(
                 resolution,
                 context.EnvironmentVariable),
-            license => new WordsDocumentEngine(
+            license => new WordsEngine(
                 license,
                 context.ResourceBudgets,
                 context.SafeFileWriter),

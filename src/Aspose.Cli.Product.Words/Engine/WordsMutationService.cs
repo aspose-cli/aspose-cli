@@ -5,11 +5,17 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
+using Aspose.Words.Layout;
+using Aspose.Words.Saving;
 using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
 namespace Aspose.Cli.Product.Words.Engine;
 
-/// <summary>Owns Words edit orchestration and mutation diagnostics.</summary>
+/// <summary>
+/// Applies one Words operation batch: opens the document, resolves every anchor before the
+/// first operation runs, runs the handlers, and commits the result through the atomic writer
+/// with optional save-and-reopen verification.
+/// </summary>
 internal sealed class WordsMutationService
 {
     private readonly ILicenseGate _licenseGate;
@@ -39,25 +45,249 @@ internal sealed class WordsMutationService
         bool inputHadRevisions = loaded.Document.Revisions.Count > 0;
         bool inputWasSigned = loaded.Format.HasDigitalSignature;
         ProtectionType inputProtection = loaded.Document.ProtectionType;
-        WordsEditResult result = WordsOpsExecutor.Apply(
-            loaded,
-            filePath,
-            precondition,
-            batch,
-            request,
-            _writer,
-            _loader,
-            _inputs);
-        return result with
+        using InputResourceScope operationInputs = _inputs.CreateScope();
+        ValidateRequest(request, batch);
+        string format = WordsFormats.ForOutput(request.OutputPath, loaded.FormatId);
+        string? outputPassword = request.EncryptPassword
+            ?? (loaded.Format.IsEncrypted && WordsFormats.EncryptIds.Contains(format, StringComparer.Ordinal)
+                ? request.Password : null);
+        SaveOptions saveOptions = WordsSavePipeline.Options(format, outputPassword);
+        if (request.Verify && !WordsFormats.IsLoad(format))
         {
+            throw CliErrors.OptionInvalid("--verify", $"format '{format}' cannot be reopened as a document",
+                "Use a reloadable document output when requesting semantic verification.");
+        }
+        SourceInfo input = InfoProjection.Source(filePath, loaded);
+        FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
+        FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
+        IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded, batch);
+        IReadOnlyList<int> originalPages = ResolveOriginalPages(loaded.Document, resolved);
+        Document? baseline = request.Verify ? loaded.Document.Clone() : null;
+        if (request.TrackChanges)
+        {
+            loaded.Document.StartTrackRevisions(request.Author!, DateTime.Now);
+        }
+
+        IReadOnlyList<BoundedOperationOutcome> outcomes =
+            ApplyOperations(loaded, resolved, request, operationInputs);
+        if (request.TrackChanges)
+        {
+            loaded.Document.StopTrackRevisions();
+        }
+
+        _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
+
+        (OutputInfo? output, BackupInfo? backup, WordsVerification? verification) =
+            Persist(
+                loaded.Document,
+                request,
+                baseline,
+                precondition,
+                loaded.Resources,
+                format,
+                saveOptions,
+                outputPassword);
+        baseline?.Cleanup();
+        IReadOnlyList<Warning>? outputWarnings = loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun
+            ? [new Warning
+            {
+                Code = WordsDiagnostics.EncryptionRemoved,
+                Message = $"The '{format}' output cannot retain the source document encryption.",
+                Hint = "Use an encryption-capable document output to keep password protection.",
+            }] : null;
+        return new WordsEditResult
+        {
+            Input = input,
+            Output = output,
+            DryRun = request.Options.DryRun,
+            Applied = outcomes,
+            Backup = backup,
+            PagesTouched = originalPages.Count == 0 ? null : originalPages,
+            Verification = verification,
             License = EnvelopeParts.License(state),
-            Warnings = Combine(result.Warnings, MutationWarnings(
+            Warnings = Combine(outputWarnings, MutationWarnings(
                 state,
                 inputHadRevisions,
                 inputWasSigned,
                 inputProtection,
                 loaded.RemoteResourcesBlocked,
                 loaded.EvaluationInputTruncated || loaded.ImportedInputTruncated)),
+        };
+    }
+
+    private static void ValidateRequest(WordsEditRequest request, WordsOpsBatch batch)
+    {
+        if (!request.TrackChanges)
+        {
+            return;
+        }
+
+        string[] untracked = batch.Ops
+            .Where(static op => !IsTrackable(op))
+            .Select(static op => WordsOp.Catalog.NameOf(op))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (untracked.Length > 0)
+        {
+            throw CliErrors.OptionInvalid(
+                "--track-changes",
+                $"{string.Join(", ", untracked)} cannot be recorded as tracked changes",
+                "Apply these operations in a separate batch without --track-changes; only content insertions and deletions are tracked.");
+        }
+    }
+
+    /// <summary>
+    /// Whether Word can record the operation as tracked changes. Aspose.Words tracks the
+    /// insertion and deletion of content only; formatting, styles, lists, page setup,
+    /// properties, protection, merges, field updates, header replacement and section
+    /// structure would change silently, and resolving revisions is not itself an edit.
+    /// </summary>
+    private static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
+        or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp { Kind: "page" } or InsertImageOp or InsertTableOp
+        or SetTableCellOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
+        or AddCommentOp or RemoveCommentsOp or AppendDocumentOp;
+
+    private IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
+        LoadedDocument loaded,
+        IReadOnlyList<ResolvedWordsOp> resolved,
+        WordsEditRequest request,
+        InputResourceScope operationInputs)
+    {
+        return BoundedOperationRunner.Run(
+            WordsOp.Catalog,
+            resolved.Select(static item => item.Op).ToArray(),
+            request.Options.BestEffort,
+            deadline: null,
+            (_, index) => new AppliedOperation(
+                new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets).Run(),
+                resolved[index].Targets),
+            (_, index) => resolved[index].Targets);
+    }
+
+    private (
+        OutputInfo? Output,
+        BackupInfo? Backup,
+        WordsVerification? Verification) Persist(
+        Document document,
+        WordsEditRequest request,
+        Document? baseline,
+        FileWritePrecondition precondition,
+        LocalDocumentResourceLoader resources,
+        string format,
+        SaveOptions saveOptions,
+        string? outputPassword)
+    {
+        OutputInfo? output = null;
+        BackupInfo? backup = null;
+        WordsVerification? verification = null;
+        if (!request.Options.DryRun)
+        {
+            using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "words-edit");
+            StagedOutput write = transaction.Stage(
+                request.OutputPath,
+                request.Overwrite,
+                request.BackupPath,
+                precondition,
+                temp =>
+                {
+                    try { document.Save(temp, saveOptions); }
+                    finally { resources.ThrowIfFailed(); }
+                    if (!request.Verify && WordsFormats.IsLoad(format))
+                    {
+                        using LoadedDocument reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
+                    }
+                });
+            output = new OutputInfo { Path = request.OutputPath, Format = format, SizeBytes = write.SizeBytes };
+            if (write.Backup is not null)
+            {
+                backup = new BackupInfo
+                {
+                    Path = write.Backup.Path,
+                    Created = write.Backup.Created,
+                    SizeBytes = write.Backup.SizeBytes,
+                };
+            }
+
+            if (request.Verify)
+            {
+                var expected = new ExpectedDocumentState(
+                    document.Range.Fields.Count,
+                    document.Revisions.Count,
+                    document.ProtectionType.ToString());
+                verification = write.Read(
+                    candidate => Verify(candidate, outputPassword, baseline!, expected));
+            }
+            transaction.Commit();
+        }
+        return (output, backup, verification);
+    }
+
+    private static IReadOnlyList<int> ResolveOriginalPages(Document document, IReadOnlyList<ResolvedWordsOp> operations)
+    {
+        document.UpdatePageLayout();
+        var collector = new LayoutCollector(document);
+        return operations.SelectMany(static item => item.Nodes)
+            .Where(static node => node.ParentNode is not null)
+            .Select(collector.GetStartPageIndex)
+            .Where(static page => page > 0)
+            .Distinct()
+            .Order()
+            .ToArray();
+    }
+
+    /// <summary>
+    /// Reports save-and-reopen evidence for the staged candidate. A comparison that
+    /// finds no body change is evidence, not a fault: whether an operation did
+    /// anything is already answered, authoritatively, by its own outcome.
+    /// </summary>
+    private WordsVerification Verify(
+        string candidatePath,
+        string? outputPassword,
+        Document baseline,
+        ExpectedDocumentState expected)
+    {
+        var issues = new List<string>();
+        using LoadedDocument reopened = _loader.OpenPublishedCandidate(
+            candidatePath,
+            outputPassword);
+        int fieldCount = reopened.Document.Range.Fields.Count;
+        int revisionCount = reopened.Document.Revisions.Count;
+        string protection = reopened.Document.ProtectionType.ToString();
+        if (fieldCount != expected.FieldCount)
+        {
+            issues.Add($"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.");
+        }
+
+        if (revisionCount != expected.RevisionCount)
+        {
+            issues.Add($"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.");
+        }
+
+        if (!string.Equals(protection, expected.Protection, StringComparison.Ordinal))
+        {
+            issues.Add($"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.");
+        }
+
+        Document comparisonBaseline = baseline.Clone();
+        Document comparisonOutput = reopened.Document.Clone();
+        comparisonBaseline.AcceptAllRevisions();
+        comparisonOutput.AcceptAllRevisions();
+        comparisonBaseline.Compare(
+            comparisonOutput,
+            "Aspose CLI",
+            new DateTime(2000, 1, 1));
+        bool semanticChanges = comparisonBaseline.Revisions.Count > 0;
+        comparisonBaseline.Cleanup();
+        comparisonOutput.Cleanup();
+
+        return new WordsVerification
+        {
+            Ok = issues.Count == 0,
+            Issues = issues,
+            SemanticChangesDetected = semanticChanges,
+            FieldCount = fieldCount,
+            RevisionCount = revisionCount,
+            Protection = protection,
         };
     }
 
@@ -103,4 +333,6 @@ internal sealed class WordsMutationService
 
         return Combine(EnvelopeParts.OutputWarnings(state), extra);
     }
+
+    private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string Protection);
 }

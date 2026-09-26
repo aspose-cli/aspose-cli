@@ -111,7 +111,7 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("$3:$1", "$1:$3")]
     public void PrintTitleRows_AreNormalizedToTheAbsoluteBand(string input, string expected)
     {
-        OpsBatch batch = Parse($$"""{"ops":[{"op":"set_print_area","titleRows":"{{input}}"}]}""");
+        CellsOpsBatch batch = Parse($$"""{"ops":[{"op":"set_print_area","titleRows":"{{input}}"}]}""");
 
         Assert.Equal(expected, Assert.IsType<SetPrintAreaOp>(Assert.Single(batch.Ops)).TitleRows);
     }
@@ -153,8 +153,8 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
         return Schema.Value.Evaluate(document.RootElement).IsValid;
     }
 
-    private static OpsBatch Parse(string json) =>
-        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+    private static CellsOpsBatch Parse(string json) =>
+        CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 
     private string Apply(string path, string operations, string output) =>
         _fixture.Engine.ApplyOps(

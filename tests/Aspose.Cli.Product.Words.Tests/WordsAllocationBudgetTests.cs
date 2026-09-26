@@ -121,17 +121,17 @@ public sealed class WordsAllocationBudgetTests
     [Fact]
     public void Csv_FollowsRfc4180Quoting()
     {
-        IReadOnlyList<string[]> records = WordsOpHandlers.ReadCsv(
+        IReadOnlyList<string[]> records = WordsMutationHandlers.ReadCsv(
             "Name, City\r\n\"Doe, Jane\",\"He said \"\"hi\"\"\"\n\n\"Two\nlines\", Oslo \r\n");
 
         Assert.Equal(3, records.Count);
         Assert.Equal(["Name", "City"], records[0]);
         Assert.Equal(["Doe, Jane", "He said \"hi\""], records[1]);
         Assert.Equal(["Two\nlines", "Oslo"], records[2]);
-        Assert.Throws<CliException>(() => WordsOpHandlers.ReadCsv("\"open"));
+        Assert.Throws<CliException>(() => WordsMutationHandlers.ReadCsv("\"open"));
     }
 
-    private static WordsDocumentEngine Engine(WordsFixture fixture, long? nodes = null, long? memoryBytes = null)
+    private static WordsEngine Engine(WordsFixture fixture, long? nodes = null, long? memoryBytes = null)
     {
         var limits = WordsModule.Manifest.ResourceBudgets.ToDictionary(static item => item.Kind, static item => item.Default);
         if (nodes is long nodeLimit)
@@ -145,6 +145,6 @@ public sealed class WordsAllocationBudgetTests
         }
 
         var budgets = new ResourceBudgetLedger(OperationDeadline.Start(null), limits);
-        return new WordsDocumentEngine(fixture.Gate, budgets, new SafeFileWriter(budgets));
+        return new WordsEngine(fixture.Gate, budgets, new SafeFileWriter(budgets));
     }
 }

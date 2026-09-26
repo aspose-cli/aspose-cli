@@ -16,7 +16,7 @@ namespace Aspose.Cli.Generated;
 [JsonSerializable(typeof(Product.Cells.Contracts.DiffResult))]
 [JsonSerializable(typeof(Product.Cells.Contracts.SearchResult))]
 [JsonSerializable(typeof(JsonObject))]
-[JsonSerializable(typeof(Product.Cells.Contracts.OpsBatch))]
+[JsonSerializable(typeof(Product.Cells.Contracts.CellsOpsBatch))]
 [JsonSerializable(typeof(string))]
 [JsonSerializable(typeof(double))]
 [JsonSerializable(typeof(bool))]

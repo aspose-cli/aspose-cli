@@ -1,6 +1,6 @@
 using System.CommandLine;
-using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// </summary>
 internal static class RenderCommand
 {
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var sheet = new Option<string?>("--sheet")
         {

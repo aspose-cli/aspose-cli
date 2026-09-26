@@ -1,30 +1,30 @@
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Engine.Editing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
-using Aspose.Cli.Product.Cells.Operations;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.IO;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
 
-/// <summary>Owns workbook creation and bounded mutation.</summary>
+/// <summary>Owns bounded mutation: opens a workbook, applies an ops batch and publishes the result.</summary>
 internal sealed class CellsMutationService
 {
     private readonly ILicenseGate _licenseGate;
-    private readonly WorkbookLoadService _loader;
-    private readonly WorkbookSaveService _saver;
+    private readonly CellsWorkbookLoader _loader;
+    private readonly CellsSavePipeline _saver;
     private readonly ResourceBudgetLedger _budgets;
     private readonly CellsEditVerifier _verifier;
 
     internal CellsMutationService(
         ILicenseGate licenseGate,
-        WorkbookLoadService loader,
-        WorkbookSaveService saver,
+        CellsWorkbookLoader loader,
+        CellsSavePipeline saver,
         ResourceBudgetLedger budgets,
         CellsEditVerifier verifier)
     {
@@ -39,7 +39,7 @@ internal sealed class CellsMutationService
     }
 
     /// <inheritdoc />
-    internal EditResult ApplyOps(string filePath, OpsBatch batch, EditRequest options)
+    internal EditResult ApplyOps(string filePath, CellsOpsBatch batch, EditRequest options)
     {
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(batch);
@@ -47,7 +47,7 @@ internal sealed class CellsMutationService
         string format = CellsFormats.ForOutputPath(options.OutputPath);
         if (!CellsFormats.EditIds.Contains(format, StringComparer.Ordinal))
         { throw CliErrors.FormatUnsupported(format, CellsFormats.EditIds); }
-        batch = Op.Catalog.Prepare(batch);
+        batch = CellsOp.Catalog.Prepare(batch);
         using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
             : _saver.CreateOutputSet([Path.GetDirectoryName(options.OutputPath)!], "cells-edit", options.BackupPath);
 
@@ -67,11 +67,8 @@ internal sealed class CellsMutationService
             ? CellsEditBaseline.Capture(filePath, precondition, _budgets) : null;
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(format, options.OutputPath, licenseState, options.EncryptPassword,
             loaded.IsEncrypted ? options.Password : null);
-        IReadOnlyList<BoundedOperationOutcome> applied = OpsExecutor.Execute(
-            workbook,
-            batch,
-            options.Options.BestEffort,
-            options.OpSecrets, operationInputs, _budgets);
+        IReadOnlyList<BoundedOperationOutcome> applied = ApplyOperations(
+            workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs);
         if (options.Recalculate)
         {
             workbook.CalculateFormula();
@@ -107,35 +104,27 @@ internal sealed class CellsMutationService
         };
     }
 
-    /// <inheritdoc />
-    internal CreateResult CreateWorkbook(NewWorkbookRequest request)
+    /// <summary>Runs the batch through the SDK runner, one handler call per operation.</summary>
+    private IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
+        Workbook workbook,
+        CellsOpsBatch batch,
+        bool bestEffort,
+        IReadOnlyDictionary<string, string>? secrets,
+        InputResourceScope inputs)
     {
-        ArgumentNullException.ThrowIfNull(request);
-
-        LicenseState licenseState = _licenseGate.EnsureApplied();
-        using var workbook = new Workbook();
-
-        workbook.Worksheets[0].Name = request.SheetNames[0];
-        foreach (string name in request.SheetNames.Skip(1))
-        {
-            workbook.Worksheets[workbook.Worksheets.Add()].Name = name;
-        }
-
-        (OutputInfo output, _, Warning? truncated, Warning? formulasBroken, Warning? sheetsDropped) = _saver.Save(
-            workbook,
-            request.OutputPath,
-            request.Overwrite,
-            licenseState,
-            request.EncryptPassword);
-
-        return new CreateResult
-        {
-            Output = output,
-            Sheets = request.SheetNames,
-            License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, truncated, formulasBroken, sheetsDropped),
-        };
+        var handlers = new CellsMutationHandlers(workbook, secrets, inputs);
+        return BoundedOperationRunner.Run(
+            CellsOp.Catalog,
+            batch.Ops,
+            bestEffort,
+            _budgets.Deadline,
+            (op, _) =>
+            {
+                // Charge the cells an operation writes before it writes them: a tiny op over a
+                // whole sheet must fail on the budget, not after billions of assignments.
+                _budgets.Consume(CellsBudgetDomains.Cells, OpsFootprint.CellCost(op), "items", "edit");
+                return new AppliedOperation(handlers.Run(op) ?? 0, OpsFootprint.OutcomeTargets(op));
+            },
+            (op, _) => OpsFootprint.OutcomeTargets(op));
     }
-
 }
-

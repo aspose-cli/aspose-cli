@@ -6,7 +6,7 @@ using Aspose.Cli.Sdk.Views;
 namespace Aspose.Cli.Product.Words;
 
 /// <summary>Product-owned page views and the structural heuristics of their review.</summary>
-internal sealed class WordsViewAdapter : IProductViewAdapter<IDocumentEngine>
+internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
 {
     public IReadOnlyList<ProductView> Views { get; } =
         [new(WordsViews.Pages, "Pages", ViewPartKinds.Image)];
@@ -18,14 +18,14 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IDocumentEngine>
     public bool VisualInspectionRequired => true;
 
     public ViewManifest Render(
-        IDocumentEngine port,
+        IWordsEngine port,
         string filePath,
         ViewRenderRequest request,
         IViewArtifactSink artifacts) =>
         port.RenderView(filePath, request, artifacts);
 
     public ProductReviewAssessment Assess(
-        IDocumentEngine port,
+        IWordsEngine port,
         string filePath,
         ViewRenderRequest request,
         ViewManifest rendered)

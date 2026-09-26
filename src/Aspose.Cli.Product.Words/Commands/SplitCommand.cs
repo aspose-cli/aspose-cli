@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class SplitCommand
 {
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var by = new Option<string>("--by") { Required = true, Description = "section, heading1 (one part per Heading 1, after a leading part for any blocks before the first) or pages." }.WithInput(InputKind.None);
         by.AcceptOnlyFromAmong("section", "heading1", "pages");

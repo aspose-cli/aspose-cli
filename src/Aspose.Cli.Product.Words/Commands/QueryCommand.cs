@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 /// <summary>Groups strongly typed, read-only Words projections.</summary>
 internal static class QueryCommand
 {
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var query = new Command(
             "query",

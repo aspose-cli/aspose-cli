@@ -14,9 +14,9 @@ public sealed class SlidesEngineFixture : IDisposable
 {
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new SlidesLicenseGate(resolution, environment));
-    internal SlidesPresentationEngine Engine =>
-        ProductTestBudgets.StartEngine<SlidesModule, SlidesPresentationEngine>(
-            (budgets, writer) => new SlidesPresentationEngine(Gate, budgets, writer));
+    internal SlidesEngine Engine =>
+        ProductTestBudgets.StartEngine<SlidesModule, SlidesEngine>(
+            (budgets, writer) => new SlidesEngine(Gate, budgets, writer));
     public LicenseState LicenseState => Gate.EnsureApplied();
 
     /// <summary>

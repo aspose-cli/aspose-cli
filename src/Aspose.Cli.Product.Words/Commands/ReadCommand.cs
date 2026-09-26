@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class ReadCommand
 {
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var blocks = new Option<string?>("--blocks") { Description = "1-based block range, e.g. 1-20,25." }.WithInput(InputKind.None);
         var section = new Option<int?>("--section") { Description = "Read one 1-based section; with --blocks, only its blocks in that range." };

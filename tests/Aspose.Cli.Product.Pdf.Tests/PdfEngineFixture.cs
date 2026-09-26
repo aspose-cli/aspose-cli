@@ -18,9 +18,9 @@ public sealed class PdfEngineFixture : IDisposable
 {
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new PdfLicenseGate(resolution, environment));
-    internal PdfDocumentEngine Engine =>
-        ProductTestBudgets.StartEngine<PdfModule, PdfDocumentEngine>(
-            (budgets, writer) => new PdfDocumentEngine(Gate, budgets, writer));
+    internal PdfEngine Engine =>
+        ProductTestBudgets.StartEngine<PdfModule, PdfEngine>(
+            (budgets, writer) => new PdfEngine(Gate, budgets, writer));
 
     public LicenseState LicenseState => Gate.EnsureApplied();
 

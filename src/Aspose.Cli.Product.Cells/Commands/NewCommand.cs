@@ -9,7 +9,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <summary><c>cells create</c> — create a blank workbook.</summary>
 internal static class NewCommand
 {
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var sheets = new Option<string?>("--sheets")
         {
@@ -30,7 +30,7 @@ internal static class NewCommand
                 IReadOnlyList<string> sheetNames = ParseSheetNames(parse.GetValue(sheets));
                 string outputPath = standard.CreatedPath;
                 string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(outputPath));
-                return standard.OpenEngine().CreateWorkbook(new NewWorkbookRequest
+                return standard.OpenEngine().Create(new NewWorkbookRequest
                 {
                     OutputPath = outputPath,
                     Overwrite = standard.Overwrite,

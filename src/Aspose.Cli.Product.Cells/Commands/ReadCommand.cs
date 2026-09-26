@@ -1,6 +1,6 @@
 using System.CommandLine;
-using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -18,7 +18,7 @@ internal static class ReadCommand
     private const int MinMaxCells = 1;
     private const int MaxMaxCells = 1_000_000;
 
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var sheet = new Option<string?>("--sheet")
         {

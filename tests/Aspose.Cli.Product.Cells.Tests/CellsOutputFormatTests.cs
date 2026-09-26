@@ -67,6 +67,6 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     private EditResult Apply(string source, string output) =>
         _fixture.Engine.ApplyOps(
             source,
-            Op.Catalog.Parse<OpsBatch>(Edit, Aspose.Cli.Generated.ProductJsonContext.Definition),
+            CellsOp.Catalog.Parse<CellsOpsBatch>(Edit, Aspose.Cli.Generated.ProductJsonContext.Definition),
             new EditRequest { OutputPath = output, Overwrite = true });
 }

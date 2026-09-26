@@ -29,7 +29,7 @@ public sealed class SlidesModule : IProductModule
 
     public ProductDefinition Define() =>
         Aspose.Cli.Sdk.Extensibility.Product
-            .Define<IPresentationEngine>(Manifest)
+            .Define<ISlidesEngine>(Manifest)
             .Formats(SlidesFormats.Definitions)
             .Diagnostics(SlidesDiagnostics.All)
             .Json(ProductJsonContext.Definition)
@@ -46,15 +46,15 @@ public sealed class SlidesModule : IProductModule
             .Activator(Activate)
             .Build();
 
-    private static ProductBinding<IPresentationEngine> Activate(
+    private static ProductBinding<ISlidesEngine> Activate(
         ProductActivationContext context) =>
-        ProductBinding.Create<IPresentationEngine>(
+        ProductBinding.Create<ISlidesEngine>(
             context,
             Manifest.Id,
             resolution => new SlidesLicenseGate(
                 resolution,
                 context.EnvironmentVariable),
-            license => new SlidesPresentationEngine(
+            license => new SlidesEngine(
                 license,
                 context.ResourceBudgets,
                 context.SafeFileWriter),

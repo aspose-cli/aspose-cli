@@ -14,7 +14,7 @@ public sealed class CellsModule : IProductModule
         DisplayName = ProductBuildMetadata.DisplayName,
         DisplayOrder = ProductBuildMetadata.DisplayOrder,
         IsDefaultCandidate = ProductBuildMetadata.IsDefaultCandidate,
-        Operations = [Op.Catalog.Describe("edit")],
+        Operations = [CellsOp.Catalog.Describe("edit")],
             ResourceBudgets =
             [
                 ResourceBudgetCapabilities.Domain(CellsBudgetDomains.Sheets, 1_000, 10_000, "items", "post-load"),
@@ -30,7 +30,7 @@ public sealed class CellsModule : IProductModule
 
     /// <summary>Returns the pure, immutable Cells product definition.</summary>
     public ProductDefinition Define() =>
-        Aspose.Cli.Sdk.Extensibility.Product.Define<IWorkbookEngine>(Manifest)
+        Aspose.Cli.Sdk.Extensibility.Product.Define<ICellsEngine>(Manifest)
             .Formats(CellsFormats.Definitions)
             .Diagnostics(CellsDiagnostics.All)
             .Json(ProductJsonContext.Definition)
@@ -47,17 +47,20 @@ public sealed class CellsModule : IProductModule
             .Activator(Activate)
             .Build();
 
-    private static ProductBinding<IWorkbookEngine> Activate(
+    private static ProductBinding<ICellsEngine> Activate(
         ProductActivationContext context) =>
-        ProductBinding.Create<IWorkbookEngine, CellsWorkbookEngine>(
+        ProductBinding.Create<ICellsEngine>(
             context,
             Manifest.Id,
             resolution => new CellsLicenseGate(
                 resolution,
                 context.EnvironmentVariable),
-            license => new CellsWorkbookEngine(
+            license => new CellsEngine(
                 license,
                 context.ResourceBudgets,
-                context.SafeFileWriter));
+                context.SafeFileWriter),
+            license => new CellsFontEnvironment(
+                license,
+                context.ResourceBudgets));
 
 }

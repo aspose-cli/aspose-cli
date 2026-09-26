@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class RenderCommand
 {
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
+    public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {
         var slides = new PartSelectionOptions("slide");
         var dpi = new DpiOption();

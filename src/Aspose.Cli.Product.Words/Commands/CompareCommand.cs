@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class CompareCommand
 {
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var ignoreFormatting = new Option<bool>("--ignore-formatting") { Description = "Ignore formatting-only changes." };
         return StandardCommand.Create(

@@ -116,7 +116,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
     [InlineData("""{ "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "rows": ["Ghost"], "values": [{ "field": "Amount" }] }""")]
     public void PivotWithUnknownField_IsAnActionableOperationsError(string pivotOperation)
     {
-        string created = _fixture.Engine.CreateWorkbook(new NewWorkbookRequest
+        string created = _fixture.Engine.Create(new NewWorkbookRequest
         {
             OutputPath = _fixture.Temp.File("pivot.xlsx"),
             SheetNames = ["Data", "Pivot"],
@@ -241,7 +241,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             new ReadRequest
             {
                 SheetName = "Data",
-                Range = global::Aspose.Cli.Product.Cells.Addressing.A1.ParseRange("B2:B2").Range,
+                Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B2").Range,
                 Scope = ReadScope.Full,
                 MaxCells = 10,
             });
@@ -382,6 +382,6 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
                 attribute.Value, CultureInfo.InvariantCulture));
     }
 
-    private static OpsBatch ParseOps(string json) =>
-        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+    private static CellsOpsBatch ParseOps(string json) =>
+        CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

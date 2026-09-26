@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class ReadCommand
 {
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
+    public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {
         var slides = new Option<string?>("--slides") { Description = "1-based slide range, e.g. 1-3,7,9-. Default: the first 10 slides." }.WithInput(InputKind.None);
         var scope = new Option<string>("--scope")

@@ -10,7 +10,7 @@ internal static class InfoCommand
     private static readonly string[] Details =
         ["masters", "layouts", "media", "fonts", "notes", "comments", "sections", "properties"];
 
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
+    public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {
         var preview = new Option<bool>("--preview") { Description = "Include bounded slide titles." };
         var detail = new Option<string[]>("--detail")

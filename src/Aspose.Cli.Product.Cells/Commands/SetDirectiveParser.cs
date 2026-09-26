@@ -1,7 +1,7 @@
 using System.Globalization;
 using Aspose.Cli.Product.Cells;
-using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Commands;
@@ -31,7 +31,7 @@ internal static class SetDirectiveParser
 
     /// <summary>Compiles one directive; see the class remarks for the grammar.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> naming what is wrong with the directive.</exception>
-    public static Op Parse(string directive)
+    public static CellsOp Parse(string directive)
     {
         ArgumentNullException.ThrowIfNull(directive);
 

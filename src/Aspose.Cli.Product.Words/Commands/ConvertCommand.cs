@@ -8,7 +8,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class ConvertCommand
 {
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var pages = new Option<string?>("--pages") { Description = "1-based pages for fixed-page targets only." }.WithInput(InputKind.None);
         return StandardCommand.Create(

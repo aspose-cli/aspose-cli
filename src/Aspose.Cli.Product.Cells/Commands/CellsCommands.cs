@@ -14,7 +14,7 @@ internal static class CellsCommands
     /// <summary>The workbook a reading command opens, with the command's own help.</summary>
     public static InputDocument Workbook(string description) => new(description, "the workbook");
 
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var cells = new Command(
             "cells",

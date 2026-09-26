@@ -17,9 +17,9 @@ public sealed class WordsFixture : IDisposable
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new WordsLicenseGate(resolution, environment));
 
-    internal WordsDocumentEngine Engine =>
-        ProductTestBudgets.StartEngine<WordsModule, WordsDocumentEngine>(
-            (budgets, writer) => new WordsDocumentEngine(Gate, budgets, writer));
+    internal WordsEngine Engine =>
+        ProductTestBudgets.StartEngine<WordsModule, WordsEngine>(
+            (budgets, writer) => new WordsEngine(Gate, budgets, writer));
 
     internal WordsFontEnvironment Fonts =>
         ProductTestBudgets.StartEngine<WordsModule, WordsFontEnvironment>(

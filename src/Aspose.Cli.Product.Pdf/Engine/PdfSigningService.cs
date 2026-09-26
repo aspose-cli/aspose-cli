@@ -42,7 +42,7 @@ internal sealed class PdfSigningService
         ValidateCertificate(request.CertificatePath, request.CertificatePassword);
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        _ = PdfMutationSupport.PageAt(loaded.Document, request.Page);
+        _ = PageAt(loaded.Document, request.Page);
         // The signature to verify is the one this command adds: a document may already
         // carry signed fields, and the first of them says nothing about the new one.
         HashSet<string> alreadySigned = SignedFields(loaded.Document)

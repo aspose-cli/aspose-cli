@@ -124,32 +124,6 @@ public abstract class ProductBinding
     }
 
     /// <summary>
-    /// Creates a binding whose concrete port implementation also supplies the
-    /// font environment while the public port remains interface-typed.
-    /// </summary>
-    public static ProductBinding<TPort> Create<TPort, TImplementation>(
-        ProductActivationContext context,
-        string productId,
-        Func<LicenseResolution, ILicenseGate> createLicenseGate,
-        Func<ILicenseGate, TImplementation> createPort)
-        where TPort : class
-        where TImplementation : class, TPort, IFontEnvironment
-    {
-        ArgumentNullException.ThrowIfNull(createPort);
-        ILicenseGate license = ProductLicenseGateFactory.Create(
-            context,
-            productId,
-            createLicenseGate);
-        var implementation = new Lazy<TImplementation>(
-            () => createPort(license));
-        return new ProductBinding<TPort>(
-            productId,
-            new Lazy<TPort>(() => implementation.Value),
-            license,
-            new Lazy<IFontEnvironment>(() => implementation.Value));
-    }
-
-    /// <summary>
     /// Creates a binding with independently deferred product and font ports.
     /// </summary>
     public static ProductBinding<TPort> Create<TPort>(
@@ -211,21 +185,21 @@ public abstract class ProductBinding
             fontEnvironment: null);
     }
 
-    /// <summary>Creates a license-free binding whose port also supplies font diagnostics.</summary>
-    public static ProductBinding<TPort> CreateLicenseFree<TPort, TImplementation>(
+    /// <summary>Creates a license-free binding with independently deferred product and font ports.</summary>
+    public static ProductBinding<TPort> CreateLicenseFree<TPort>(
         string productId,
-        Func<ILicenseGate, TImplementation> createPort)
+        Func<ILicenseGate, TPort> createPort,
+        Func<ILicenseGate, IFontEnvironment> createFontEnvironment)
         where TPort : class
-        where TImplementation : class, TPort, IFontEnvironment
     {
         ArgumentNullException.ThrowIfNull(createPort);
+        ArgumentNullException.ThrowIfNull(createFontEnvironment);
         ILicenseGate license = LicenseNotApplicableGate.Instance;
-        var implementation = new Lazy<TImplementation>(() => createPort(license));
         return new ProductBinding<TPort>(
             productId,
-            new Lazy<TPort>(() => implementation.Value),
+            new Lazy<TPort>(() => createPort(license)),
             license,
-            new Lazy<IFontEnvironment>(() => implementation.Value));
+            new Lazy<IFontEnvironment>(() => createFontEnvironment(license)));
     }
 }
 

@@ -20,7 +20,7 @@ public sealed class WordsResourceLoadingTests
         File.WriteAllBytes(fixture.Temp.File("local.png"), ResourceHttpServer.Image);
         File.WriteAllText(input, $"<html><body><p>Template</p><img src='local.png'><img src='{server.Url}/remote.png'></body></html>");
         string output = fixture.Temp.File("created.docx");
-        var created = fixture.Engine.CreateDocument(new NewDocumentRequest
+        var created = fixture.Engine.Create(new NewDocumentRequest
         {
             TemplatePath = input, OutputPath = output, Title = "Resource owner",
         });

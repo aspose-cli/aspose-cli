@@ -12,7 +12,7 @@ internal static class EditCommand
         Contracts = ProductJsonContext.Definition,
     };
 
-    public static Command Create(IProductCommandHost<IPresentationEngine> host) =>
+    public static Command Create(IProductCommandHost<ISlidesEngine> host) =>
         new BoundedEditCommand<SlidesOp, SlidesOpsBatch>(Definition).Create(
             host,
             "edit",

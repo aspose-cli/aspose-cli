@@ -20,7 +20,7 @@ internal static class EditCommand
         VerifyDescription = "Compare the staged document after save and reopen to report semantic verification.",
     };
 
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var trackChanges = new Option<bool>("--track-changes") { Description = "Track this batch as revisions." };
         var author = new Option<string?>("--author") { Description = "Revision author; required with --track-changes." }.WithInput(InputKind.None);

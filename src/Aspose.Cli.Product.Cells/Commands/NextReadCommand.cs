@@ -1,6 +1,6 @@
-using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Product.Cells.Reading;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
+using Aspose.Cli.Product.Cells.Contracts.Reading;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 

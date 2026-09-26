@@ -13,7 +13,7 @@ internal static class WordsCommands
     /// <summary>The password a writing command can put on its document.</summary>
     public static readonly EncryptedOutput EncryptedDocument = new("the output document", WordsFormats.EncryptIds);
 
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var words = new Command("words", "Word-processing document automation with layout fidelity.");
         words.Subcommands.Add(InfoCommand.Create(host));

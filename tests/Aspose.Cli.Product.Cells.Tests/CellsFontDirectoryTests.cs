@@ -16,7 +16,7 @@ public sealed class CellsFontDirectoryTests
         string fonts = fixture.Temp.File("fonts");
         FontFixtures.WriteUniqueFont(fonts);
         string input = CreateWorkbook(fixture, fixture.Temp.File("fixture.xlsx"));
-        IFontEnvironment environment = fixture.Engine;
+        IFontEnvironment environment = fixture.Fonts;
 
         Assert.False(FixtureAvailable(environment, input));
         using (environment.UseFonts(FontSearchProfile.Explicit([fonts])))

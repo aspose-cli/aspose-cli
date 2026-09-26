@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class RenderCommand
 {
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var pages = new PartSelectionOptions("page");
         var dpi = new DpiOption();

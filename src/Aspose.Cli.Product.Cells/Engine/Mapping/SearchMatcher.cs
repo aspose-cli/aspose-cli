@@ -1,6 +1,6 @@
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Addressing;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
 

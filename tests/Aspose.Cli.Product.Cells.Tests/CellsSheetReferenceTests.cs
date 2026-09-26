@@ -116,7 +116,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     [Fact]
     public void HyperlinkTarget_MustBeACellReference()
     {
-        CliException error = Assert.Throws<CliException>(() => Op.Catalog.Parse<OpsBatch>(
+        CliException error = Assert.Throws<CliException>(() => CellsOp.Catalog.Parse<CellsOpsBatch>(
             """{ "ops": [ { "op": "set_hyperlink", "cell": "A1", "target": "SomeDefinedName" } ] }""",
             Aspose.Cli.Generated.ProductJsonContext.Definition));
 
@@ -165,7 +165,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
 
     private string Seed(string dataSheet)
     {
-        string created = _fixture.Engine.CreateWorkbook(new NewWorkbookRequest
+        string created = _fixture.Engine.Create(new NewWorkbookRequest
         {
             OutputPath = _fixture.Temp.File("references.xlsx"),
             SheetNames = [dataSheet, "Dash"],
@@ -180,6 +180,6 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     private string Apply(string path, string operations, string output) =>
         _fixture.Engine.ApplyOps(
             path,
-            Op.Catalog.Parse<OpsBatch>(operations, Aspose.Cli.Generated.ProductJsonContext.Definition),
+            CellsOp.Catalog.Parse<CellsOpsBatch>(operations, Aspose.Cli.Generated.ProductJsonContext.Definition),
             new EditRequest { OutputPath = _fixture.Temp.File(output), Overwrite = true }).Output!.Path;
 }

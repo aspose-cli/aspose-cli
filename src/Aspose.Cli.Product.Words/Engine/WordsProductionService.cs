@@ -158,10 +158,10 @@ internal sealed class WordsProductionService
         checked((int)Math.Ceiling(points / 72d * dpi));
 
     /// <summary>Creates a document from a bounded source or blank template.</summary>
-    internal WordsCreateResult CreateDocument(NewDocumentRequest request)
+    internal WordsCreateResult Create(NewDocumentRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
-        using CreatedDocument created = Create(request);
+        using CreatedDocument created = Build(request);
         string formatId = WordsFormats.ForOutput(request.OutputPath);
         SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp => created.Save(temp, options));
@@ -179,7 +179,7 @@ internal sealed class WordsProductionService
     /// headers and footers; Markdown or text supplies the body. Content takes the
     /// destination's styles, so the template alone owns the look of the created document.
     /// </summary>
-    private CreatedDocument Create(NewDocumentRequest request)
+    private CreatedDocument Build(NewDocumentRequest request)
     {
         var sources = new List<LoadedDocument>();
         try

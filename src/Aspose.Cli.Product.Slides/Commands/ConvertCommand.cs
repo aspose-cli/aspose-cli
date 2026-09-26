@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class ConvertCommand
 {
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
+    public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {
         var slides = new Option<string?>("--slides") { Description = "Optional 1-based slide range." }.WithInput(InputKind.None);
         return StandardCommand.Create(

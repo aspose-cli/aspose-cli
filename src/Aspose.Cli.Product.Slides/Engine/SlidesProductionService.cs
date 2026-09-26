@@ -1,5 +1,4 @@
 using System.Globalization;
-using System.Text;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
@@ -14,7 +13,7 @@ using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine;
 
-/// <summary>Owns conversion, rendering, creation, extraction, and preview output.</summary>
+/// <summary>Owns conversion, rendering, creation and view rendering.</summary>
 internal sealed class SlidesProductionService
 {
     /// <summary>Marks the slide number in a multi-slide output name: <c>deck.s3.png</c>.</summary>
@@ -340,61 +339,4 @@ internal sealed class SlidesProductionService
             Warnings = OutputWarnings(state, template),
         };
     }
-
-    internal SlidesExtractResult Extract(string filePath, PresentationExtractRequest request)
-    {
-        LicenseState state = _licenseGate.EnsureApplied();
-        using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
-        IReadOnlyList<int> slides = request.Slides is null
-            ? Enumerable.Range(1, loaded.Presentation.Slides.Count).ToArray()
-            : ResolveSlideRange(request.Slides, loaded.Presentation.Slides.Count);
-        using var guard = new ExtractionGuard(_resourceBudgets, request.OutputDirectory, request.Overwrite);
-        var items = new List<SlidesExtractedItem>();
-
-        if (request.What == PresentationExtractKinds.Media)
-        {
-            ExtractMedia(loaded.Presentation, request.Slides is null ? null : slides, guard, items);
-        }
-        else
-        {
-            foreach (int number in slides)
-            {
-                ISlide slide = loaded.Presentation.Slides[number - 1];
-                string? text = request.What == PresentationExtractKinds.Notes
-                    ? Notes(slide)
-                    : string.Join(
-                        Environment.NewLine,
-                        slide.Shapes.Select(ShapeText).Where(static value => value is not null));
-                if (string.IsNullOrWhiteSpace(text))
-                {
-                    continue;
-                }
-
-                string suffix = request.What == PresentationExtractKinds.Notes ? "notes" : "text";
-                byte[] bytes = Encoding.UTF8.GetBytes(text);
-                items.Add(new SlidesExtractedItem
-                {
-                    Path = guard.WriteAllBytes($"slide.s{number}.{suffix}.txt", bytes),
-                    Kind = suffix,
-                    SizeBytes = bytes.LongLength,
-                    Slide = number,
-                    SlideId = slide.SlideId,
-                    Name = EmptyToNull(slide.Name),
-                    ContentType = "text/plain",
-                });
-            }
-        }
-
-        loaded.Resources.ThrowIfFailed();
-        guard.Commit();
-        return new SlidesExtractResult
-        {
-            Input = Source(filePath, loaded.FormatId),
-            What = request.What,
-            Items = items,
-            License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded),
-        };
-    }
-
 }

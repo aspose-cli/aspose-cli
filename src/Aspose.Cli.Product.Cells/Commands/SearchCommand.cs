@@ -16,7 +16,7 @@ internal static class SearchCommand
     private const string InFormulas = "formulas";
     private const string InBoth = "both";
 
-    public static Command Create(IProductCommandHost<IWorkbookEngine> host)
+    public static Command Create(IProductCommandHost<ICellsEngine> host)
     {
         var search = new SearchOptions(new SearchScopeGrammar(
             "Where to search: values (default), formulas or both.",

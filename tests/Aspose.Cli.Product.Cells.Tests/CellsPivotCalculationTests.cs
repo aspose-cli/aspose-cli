@@ -128,7 +128,7 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
             Assert.True(header.Font.IsBold);
         }
     }
-    private string CreateWorkbook(string output) => _fixture.Engine.CreateWorkbook(new NewWorkbookRequest
+    private string CreateWorkbook(string output) => _fixture.Engine.Create(new NewWorkbookRequest
     {
         OutputPath = _fixture.Temp.File(output),
         SheetNames = ["Data", "Pivot"],
@@ -144,6 +144,6 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
             Overwrite = true,
         }).Output!.Path;
 
-    private static OpsBatch ParseOps(string json) =>
-        Op.Catalog.Parse<OpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+    private static CellsOpsBatch ParseOps(string json) =>
+        CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
 }

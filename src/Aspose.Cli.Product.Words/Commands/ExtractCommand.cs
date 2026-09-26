@@ -6,7 +6,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 
 internal static class ExtractCommand
 {
-    public static Command Create(IProductCommandHost<IDocumentEngine> host)
+    public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var what = new Option<string>("--what") { Required = true, Description = "images, comments or text (the visible block text, one line per paragraph)." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong("images", "comments", "text");

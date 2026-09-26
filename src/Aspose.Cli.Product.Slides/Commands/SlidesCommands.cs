@@ -14,7 +14,7 @@ internal static class SlidesCommands
     /// <summary>The password a writing command can put on its presentation.</summary>
     public static readonly EncryptedOutput EncryptedPresentation = new("the output presentation", SlidesFormats.EncryptIds);
 
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
+    public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {
         var slides = new Command("slides", "Presentation automation with slide, layout and notes semantics.");
         slides.Subcommands.Add(InfoCommand.Create(host));

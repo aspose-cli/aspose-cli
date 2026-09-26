@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Slides.Commands;
 
 internal static class SearchCommand
 {
-    public static Command Create(IProductCommandHost<IPresentationEngine> host)
+    public static Command Create(IProductCommandHost<ISlidesEngine> host)
     {
         var search = new SearchOptions(new SearchScopeGrammar(
             "Search scope: shapes, notes, or all.",

@@ -1,7 +1,7 @@
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Drawing;
-using Aspose.Cli.Product.Cells.Addressing;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Product.Cells.Ports;
 using Aspose.Cli.Sdk.Errors;
 
@@ -16,26 +16,26 @@ internal static class ReviewLayoutProjection
     private const double ShortRowHeight = 8;
     private const double TallRowHeight = 120;
 
-    public static WorkbookReviewLayout Inspect(Workbook workbook)
+    public static CellsReviewLayout Inspect(Workbook workbook)
     {
-        var sheets = new List<WorksheetReviewLayout>(workbook.Worksheets.Count);
+        var sheets = new List<CellsReviewSheetLayout>(workbook.Worksheets.Count);
         foreach (Worksheet sheet in workbook.Worksheets)
         {
             sheets.Add(InspectSheet(sheet));
         }
-        return new WorkbookReviewLayout(sheets);
+        return new CellsReviewLayout(sheets);
     }
 
-    private static WorksheetReviewLayout InspectSheet(Worksheet sheet)
+    private static CellsReviewSheetLayout InspectSheet(Worksheet sheet)
     {
         SheetContentScan content = ScanContent(sheet);
-        var issues = new List<DimensionReviewIssue>();
+        var issues = new List<CellsReviewDimensionIssue>();
         DimensionScan columns = InspectColumns(sheet, content.OccupiedColumns, issues);
         DimensionScan rows = InspectRows(sheet, content.OccupiedRows, issues);
         PrintAreaScan print = InspectPrintArea(sheet, content.ContentRange);
-        IReadOnlyList<ChartReviewLayout> charts = InspectCharts(sheet, print.Ranges);
+        IReadOnlyList<CellsReviewChartLayout> charts = InspectCharts(sheet, print.Ranges);
 
-        return new WorksheetReviewLayout
+        return new CellsReviewSheetLayout
         {
             Name = sheet.Name,
             UsedAreaCells = content.UsedAreaCells,
@@ -102,7 +102,7 @@ internal static class ReviewLayoutProjection
     private static DimensionScan InspectColumns(
         Worksheet sheet,
         IReadOnlyList<bool> occupied,
-        ICollection<DimensionReviewIssue> issues)
+        ICollection<CellsReviewDimensionIssue> issues)
     {
         int hiddenColumns = 0;
         int narrowColumns = 0;
@@ -136,7 +136,7 @@ internal static class ReviewLayoutProjection
     private static DimensionScan InspectRows(
         Worksheet sheet,
         IReadOnlyList<bool> occupied,
-        ICollection<DimensionReviewIssue> issues)
+        ICollection<CellsReviewDimensionIssue> issues)
     {
         int hiddenRows = 0;
         int shortRows = 0;
@@ -191,18 +191,18 @@ internal static class ReviewLayoutProjection
             excessivePrintArea);
     }
 
-    private static IReadOnlyList<ChartReviewLayout> InspectCharts(
+    private static IReadOnlyList<CellsReviewChartLayout> InspectCharts(
         Worksheet sheet,
         IReadOnlyList<RangeRef> printRanges)
     {
-        var charts = new List<ChartReviewLayout>(sheet.Charts.Count);
+        var charts = new List<CellsReviewChartLayout>(sheet.Charts.Count);
         foreach (Chart chart in sheet.Charts)
         {
             ChartShape shape = chart.ChartObject;
             var chartRange = new RangeRef(
                 new CellRef(shape.UpperLeftRow, shape.UpperLeftColumn),
                 new CellRef(shape.LowerRightRow, shape.LowerRightColumn));
-            charts.Add(new ChartReviewLayout
+            charts.Add(new CellsReviewChartLayout
             {
                 Name = chart.Name,
                 Hidden = shape.IsHidden,
@@ -234,14 +234,14 @@ internal static class ReviewLayoutProjection
         bool Excessive);
 
     private static void AddIssue(
-        ICollection<DimensionReviewIssue> issues,
+        ICollection<CellsReviewDimensionIssue> issues,
         string kind,
         int index,
         double size)
     {
         if (issues.Count < MaxIssueSamplesPerSheet)
         {
-            issues.Add(new DimensionReviewIssue(kind, index, size));
+            issues.Add(new CellsReviewDimensionIssue(kind, index, size));
         }
     }
 
