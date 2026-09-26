@@ -60,7 +60,7 @@ internal sealed class CellsReadService
         LicenseState licenseState = _licenseGate.EnsureApplied();
         using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
         Workbook workbook = loaded.Workbook;
-        (SheetProjection sheet, IReadOnlyDictionary<string, StyleData>? styles) =
+        (SheetProjection sheet, IReadOnlyDictionary<string, StyleData>? styles, ResultWindow window) =
             ReadProjection.Project(_resourceBudgets, workbook, request);
 
         return new WorkbookReadResult
@@ -69,8 +69,9 @@ internal sealed class CellsReadService
             Scope = request.Scope.ToContractName(),
             Sheet = sheet,
             Styles = styles,
-            // Next is left unset: the read command assembles the follow-up command
-            // from this projection, keeping the engine free of CLI syntax.
+            // The window's next is left unset: the read command spells the follow-up
+            // command, keeping the engine free of CLI syntax.
+            Window = window,
             License = EnvelopeParts.License(licenseState),
             Warnings = loaded.Warnings(),
         };

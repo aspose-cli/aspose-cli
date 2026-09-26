@@ -134,7 +134,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
     // A real corpus xlsb held 19,318 formula errors; the old scan returned exactly
     // 1,000 from the first sheet with no signal, so later sheets looked clean. The
-    // list stays capped, but the honest total now rides an ERRORS_TRUNCATED warning.
+    // list stays capped, but the honest total now rides a LIST_TRUNCATED warning.
     [Fact]
     public void GetInfo_WithErrorsDetail_PastTheCap_WarnsWithTheHonestTotal()
     {
@@ -156,7 +156,7 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
 
         // The list is capped, but the warning reports the true count.
         Assert.Equal(1000, result.Workbook.FormulaErrors!.Count);
-        Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == "ERRORS_TRUNCATED");
+        Warning? warning = result.Warnings?.FirstOrDefault(w => w.Code == WarningCodes.ListTruncated);
         Assert.NotNull(warning);
         Assert.Contains("1001", warning!.Message, StringComparison.Ordinal);
         Assert.NotNull(warning.Hint);

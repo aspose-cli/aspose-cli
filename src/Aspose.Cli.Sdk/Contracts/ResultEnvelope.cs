@@ -11,9 +11,10 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// <remarks>
 /// Property order is fixed so output stays byte-for-byte deterministic:
 /// schema identification first, command payload in the middle (order 0..n,
-/// declared by derived records), license and warnings last. Schema identity
-/// is injected through the constructor (instead of abstract properties) so
-/// the ordering attributes live in exactly one place.
+/// declared by derived records), then the window of a bounded read, and
+/// license and warnings last. Schema identity is injected through the
+/// constructor (instead of abstract properties) so the ordering attributes
+/// live in exactly one place.
 /// </remarks>
 public abstract record ResultEnvelope
 {
@@ -32,6 +33,13 @@ public abstract record ResultEnvelope
     /// <summary>Version of this result contract.</summary>
     [JsonPropertyOrder(-99)]
     public int SchemaVersion { get; }
+
+    /// <summary>
+    /// The window of a bounded read or search: how much it returned and how to continue.
+    /// Omitted for results that are not windowed.
+    /// </summary>
+    [JsonPropertyOrder(800)]
+    public ResultWindow? Window { get; init; }
 
     /// <summary>
     /// License mode the operation ran under. Omitted for commands that never

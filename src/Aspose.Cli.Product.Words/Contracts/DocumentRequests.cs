@@ -1,6 +1,7 @@
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Words.Contracts;
 
@@ -84,14 +85,10 @@ public sealed record WordsCompareRequest
     public string? RightPassword { get; init; }
 }
 
-/// <summary>Options for bounded document search.</summary>
+/// <summary>Options for bounded document search; the query's scope is one of <see cref="WordsTextScopes"/>.</summary>
 public sealed record WordsSearchRequest
 {
-    public required string Pattern { get; init; }
-    public bool Regex { get; init; }
-    public bool CaseSensitive { get; init; }
-    public string Scope { get; init; } = WordsTextScopes.Body;
-    public int MaxHits { get; init; } = 100;
+    public required SearchQuery Query { get; init; }
     public string? Password { get; init; }
 }
 

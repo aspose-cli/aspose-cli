@@ -6,6 +6,9 @@ internal enum OutputMode
     /// <summary>Structured JSON envelopes (the contract agents parse).</summary>
     Json,
 
+    /// <summary>The same JSON envelopes, each written on one line.</summary>
+    Compact,
+
     /// <summary>Compact human-readable text.</summary>
     Table,
 
@@ -28,7 +31,8 @@ internal static class OutputWriterFactory
         ArgumentNullException.ThrowIfNull(serializer);
         return mode switch
         {
-            OutputMode.Json => new JsonOutputWriter(serializer, output, error),
+            OutputMode.Json => new JsonOutputWriter(serializer, compact: false, output, error),
+            OutputMode.Compact => new JsonOutputWriter(serializer, compact: true, output, error),
             OutputMode.Markdown => new TableOutputWriter(
                 catalog, serializer, quiet, markdown: true, output, error),
             _ => new TableOutputWriter(

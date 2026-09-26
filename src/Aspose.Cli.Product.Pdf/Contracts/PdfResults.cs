@@ -141,18 +141,11 @@ public sealed record PdfReadResult() : ResultEnvelope(PdfSchemaIds.PdfRead, 2)
     [JsonPropertyOrder(-49)]
     public required SourceInfo Source { get; init; }
     public required string Mode { get; init; }
-    public required PdfPageWindow Window { get; init; }
+
+    /// <summary>How many pages the document has, whatever <c>--pages</c> selected.</summary>
+    public required int PageCount { get; init; }
     public required IReadOnlyList<PdfPageText> Pages { get; init; }
     public IReadOnlyList<int>? ScannedPagesSuspected { get; init; }
-    public string? Next { get; init; }
-}
-
-/// <summary>Description of the returned page window.</summary>
-public sealed record PdfPageWindow
-{
-    public required string Pages { get; init; }
-    public required int Of { get; init; }
-    public required bool Truncated { get; init; }
 }
 
 /// <summary>Text projection of one PDF page.</summary>
@@ -317,10 +310,9 @@ public sealed record PdfFormExportResult() : ResultEnvelope(PdfSchemaIds.FormExp
 public sealed record PdfSearchResult() : ResultEnvelope(PdfSchemaIds.SearchResult, 2)
 {
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required SourceInfo Source { get; init; }
     public required string Pattern { get; init; }
     public required IReadOnlyList<PdfSearchHit> Hits { get; init; }
-    public required bool Truncated { get; init; }
 }
 
 public sealed record PdfSearchHit
@@ -339,7 +331,6 @@ public sealed record PdfValidateResult() : ResultEnvelope(PdfSchemaIds.ValidateR
     public required string Profile { get; init; }
     public required bool Valid { get; init; }
     public required IReadOnlyList<string> Issues { get; init; }
-    public required bool Truncated { get; init; }
 }
 
 /// <summary>Result of applying and reopening one PDF signature.</summary>

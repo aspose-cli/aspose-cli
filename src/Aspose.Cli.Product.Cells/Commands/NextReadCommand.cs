@@ -6,9 +6,10 @@ namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary>
 /// Assembles the ready-to-run follow-up commands of a planned scan: a chain of
-/// <c>cells query range</c> windows that together cover one bounded region of a sheet.
-/// The engine returns the projection; the command spells the follow-up with the shared
-/// continuation builder, so agents run it verbatim instead of computing ranges.
+/// <c>cells query range</c> pages that together cover one bounded region of a sheet.
+/// The engine returns the projection and its window; the command spells the follow-up
+/// with the shared continuation builder, so agents run it verbatim instead of computing
+/// ranges.
 /// </summary>
 internal static class NextReadCommand
 {
@@ -16,32 +17,29 @@ internal static class NextReadCommand
     public const string ScanOption = "--scan-range";
 
     /// <summary>
-    /// The follow-up command for <paramref name="result"/>, or null when the scan covered
-    /// its region. The next window is recomputed from the returned window, the region and
-    /// the truncated flag, so the geometry stays in <see cref="ReadWindowPlanner"/>.
+    /// The follow-up command of a read, or null when nothing remains. The page is planned
+    /// again from the read's own inputs and the used range it reported, so the geometry
+    /// stays in <see cref="ReadWindowPlanner"/> and agrees with the engine's window.
     /// </summary>
-    /// <param name="region">The region the scan covers; the used range bounds it.</param>
-    public static string? Build(string filePath, WorkbookReadResult result, int maxCells, RangeRef region)
+    /// <param name="range">The read's explicit range or current page.</param>
+    /// <param name="scan">The region the read's command carried; null otherwise.</param>
+    /// <param name="resume">The invocation's continuation (<see cref="StandardInvocation.Continuation"/>).</param>
+    public static string? Build(
+        ContinuationCommand resume, WorkbookReadResult result, RangeRef? range, RangeRef? scan, int maxCells)
     {
-        if (result.Sheet.UsedRange is not { } used
-            || Intersect(region, A1.ParseRange(used).Range) is not { } bounds)
-        {
-            return null;
-        }
-
-        RangeRef? window = result.Sheet.Window is { } text ? A1.ParseRange(text).Range : null;
-        return ReadWindowPlanner.NextWindow(window, bounds, maxCells, result.Sheet.Truncated) is { } next
-            ? Page(filePath, result.Sheet.Name, next, bounds, result.Scope, maxCells)
+        RangeRef? used = result.Sheet.UsedRange is { } text ? A1.ParseRange(text).Range : null;
+        ReadPlan plan = ReadWindowPlanner.Plan(range, scan, used, maxCells);
+        return plan is { Next: { } next, Region: { } region }
+            ? Page(resume, result.Sheet.Name, next, region, result.Scope, maxCells)
             : null;
     }
 
     /// <summary>The first page of a scan over an explicit region too large for one read.</summary>
-    public static string First(string filePath, string? sheet, RangeRef region, string scope, int maxCells) =>
-        Page(filePath, sheet, ReadWindowPlanner.FirstWindow(region, maxCells), region, scope, maxCells);
+    public static string First(ContinuationCommand resume, string? sheet, RangeRef region, string scope, int maxCells) =>
+        Page(resume, sheet, ReadWindowPlanner.FirstWindow(region, maxCells), region, scope, maxCells);
 
-    private static string Page(string filePath, string? sheet, RangeRef window, RangeRef region, string scope, int maxCells)
+    private static string Page(ContinuationCommand command, string? sheet, RangeRef window, RangeRef region, string scope, int maxCells)
     {
-        var command = new ContinuationCommand("cells", "query", "range").Argument(filePath);
         if (sheet is not null)
         {
             command.Option("--sheet", sheet);
@@ -53,16 +51,5 @@ internal static class NextReadCommand
             .Option("--scope", scope)
             .Option("--max-cells", maxCells)
             .ToString();
-    }
-
-    private static RangeRef? Intersect(RangeRef left, RangeRef right)
-    {
-        int top = Math.Max(left.Start.Row, right.Start.Row);
-        int leftColumn = Math.Max(left.Start.Column, right.Start.Column);
-        int bottom = Math.Min(left.End.Row, right.End.Row);
-        int rightColumn = Math.Min(left.End.Column, right.End.Column);
-        return top <= bottom && leftColumn <= rightColumn
-            ? new RangeRef(new CellRef(top, leftColumn), new CellRef(bottom, rightColumn))
-            : null;
     }
 }

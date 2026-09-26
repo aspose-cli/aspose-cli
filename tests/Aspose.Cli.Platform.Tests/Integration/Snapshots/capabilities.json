@@ -1704,6 +1704,22 @@
               "valueSource": "command-line",
               "inputKind": "none",
               "description": "Restrict to one sheet. Default: all sheets."
+            },
+            {
+              "name": "--skip",
+              "aliases": [],
+              "type": "integer",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": true,
+              "default": "0",
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
             }
           ],
           "arguments": [
@@ -3643,6 +3659,22 @@
               "valueSource": "command-line",
               "inputKind": "none",
               "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+            },
+            {
+              "name": "--skip",
+              "aliases": [],
+              "type": "integer",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": true,
+              "default": "0",
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
             }
           ],
           "arguments": [
@@ -5932,6 +5964,22 @@
               "valueSource": "command-line",
               "inputKind": "none",
               "description": "Search scope: shapes, notes, or all."
+            },
+            {
+              "name": "--skip",
+              "aliases": [],
+              "type": "integer",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": true,
+              "default": "0",
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
             }
           ],
           "arguments": [
@@ -8483,6 +8531,22 @@
               "valueSource": "command-line",
               "inputKind": "none",
               "description": "Search scope: body (the main text, without the comments and footnotes it anchors), headersFooters, footnotes (with endnotes), comments or all."
+            },
+            {
+              "name": "--skip",
+              "aliases": [],
+              "type": "integer",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": true,
+              "default": "0",
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
             }
           ],
           "arguments": [
@@ -8893,6 +8957,7 @@
     "v2/common/operation-outcome",
     "v2/common/preview-session",
     "v2/common/preview-status",
+    "v2/common/result-window",
     "v2/common/review",
     "v2/common/schema-list",
     "v2/common/skill-install",
@@ -9532,6 +9597,7 @@
           "recursive": true,
           "hasDefault": false,
           "allowedValues": [
+            "compact",
             "json",
             "markdown",
             "table"
@@ -9539,7 +9605,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected."
+          "description": "Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected."
         },
         {
           "name": "--quiet",
@@ -11019,6 +11085,22 @@
           "valueSource": "command-line",
           "inputKind": "none",
           "description": "Restrict to one sheet. Default: all sheets."
+        },
+        {
+          "name": "--skip",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
         }
       ],
       "arguments": [
@@ -12862,6 +12944,22 @@
           "valueSource": "command-line",
           "inputKind": "none",
           "description": "Treat the pattern as a culture-invariant regular expression with a one-second budget."
+        },
+        {
+          "name": "--skip",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
         }
       ],
       "arguments": [
@@ -15149,6 +15247,22 @@
           "valueSource": "command-line",
           "inputKind": "none",
           "description": "Search scope: shapes, notes, or all."
+        },
+        {
+          "name": "--skip",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
         }
       ],
       "arguments": [
@@ -17049,6 +17163,22 @@
           "valueSource": "command-line",
           "inputKind": "none",
           "description": "Search scope: body (the main text, without the comments and footnotes it anchors), headersFooters, footnotes (with endnotes), comments or all."
+        },
+        {
+          "name": "--skip",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "0",
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Matches to pass over before the returned hits; a truncated search's window.next sets it."
         }
       ],
       "arguments": [
@@ -17611,15 +17741,6 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "ERRORS_TRUNCATED",
-      "owner": "cells",
-      "severity": "warning",
-      "category": "warning",
-      "messageTemplateId": "cells.errors-truncated.message.v1",
-      "hintTemplateId": "cells.errors-truncated.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "EVALUATION_LIMIT",
       "owner": "common",
       "severity": "error",
@@ -17882,6 +18003,15 @@
       "category": "warning",
       "messageTemplateId": "words.linked-images-skipped.message.v1",
       "hintTemplateId": "words.linked-images-skipped.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "LIST_TRUNCATED",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.list-truncated.message.v1",
+      "hintTemplateId": "common.list-truncated.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

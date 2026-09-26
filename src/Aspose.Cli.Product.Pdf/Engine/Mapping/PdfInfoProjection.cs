@@ -2,6 +2,7 @@ using System.Globalization;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Facades;
@@ -22,6 +23,25 @@ internal static class PdfInfoProjection
         bool includePages = request.IncludePreview;
         PdfFormSummary form = Form(document);
         PdfSignatureInfo[] signatures = Signatures(document);
+        PdfOutlineItem[]? outline = details.Contains("outline") ? Outline(document) : null;
+        var warnings = new List<Warning>();
+        if (includePages && document.Pages.Count > PagePreviewLimit)
+        {
+            warnings.Add(EnvelopeParts.ListTruncated(
+                "pages",
+                PagePreviewLimit,
+                document.Pages.Count,
+                "'pdf.distinctPageSizes' counts the size of every page."));
+        }
+
+        if (outline?.Length == OutlineLimit && CountOutline(document.Outlines) is int total and > OutlineLimit)
+        {
+            warnings.Add(EnvelopeParts.ListTruncated(
+                "outline",
+                OutlineLimit,
+                total,
+                "Split at top-level bookmarks with 'aspose-cli pdf split --by-bookmarks' and inspect each part's outline."));
+        }
 
         return new PdfInfoResult
         {
@@ -42,7 +62,7 @@ internal static class PdfInfoProjection
             },
             Pages = includePages ? Pages(document) : null,
             PageLabels = PageLabels(document),
-            Outline = details.Contains("outline") ? Outline(document) : null,
+            Outline = outline,
             Forms = details.Contains("forms") ? form : null,
             Attachments = details.Contains("attachments") ? Attachments(document) : null,
             Fonts = details.Contains("fonts") ? Fonts(document) : null,
@@ -50,6 +70,7 @@ internal static class PdfInfoProjection
             Signatures = details.Contains("signatures") ? signatures : null,
             Layers = details.Contains("layers") ? Layers(document) : null,
             Metadata = details.Contains("metadata") ? Metadata(document) : null,
+            Warnings = warnings.Count == 0 ? null : warnings,
         };
     }
 
@@ -181,6 +202,9 @@ internal static class PdfInfoProjection
             AppendOutline(item, level + 1, results);
         }
     }
+
+    private static int CountOutline(IEnumerable<OutlineItemCollection> items) =>
+        items.Sum(static item => 1 + CountOutline(item));
 
     private static string? OutlineDestination(OutlineItemCollection item)
     {

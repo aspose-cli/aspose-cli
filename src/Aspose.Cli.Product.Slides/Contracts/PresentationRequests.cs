@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
 
@@ -81,11 +82,8 @@ public sealed record PresentationEditRequest
 /// <summary>Options for bounded shape and notes search.</summary>
 public sealed record PresentationSearchRequest
 {
-    public required string Pattern { get; init; }
-    public bool Regex { get; init; }
-    public bool CaseSensitive { get; init; }
-    public string Scope { get; init; } = PresentationSearchScopes.All;
-    public int MaxHits { get; init; } = 100;
+    /// <summary>The pattern, hit window and scope (one of <see cref="PresentationSearchScopes.Values"/>).</summary>
+    public required SearchQuery Query { get; init; }
     public string? Password { get; init; }
 }
 

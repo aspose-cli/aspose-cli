@@ -343,7 +343,7 @@ internal static class SlidesEngineSupport
             });
         }
 
-        return media.Take(100).ToArray();
+        return media;
     }
 
     internal static int FindSlideNumber(Presentation presentation, ISlide slide)

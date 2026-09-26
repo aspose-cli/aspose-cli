@@ -32,7 +32,7 @@ public sealed class PdfMutateTests
             document.Save(input);
         }
         PdfRect rect = Assert.Single(fixture.Engine.Search(input,
-            new PdfSearchRequest { Pattern = "SECRET" }).Hits).Rect;
+            Find("SECRET")).Hits).Rect;
         double width = angle is 90 or 270 ? 570 : 380;
         double height = angle is 90 or 270 ? 380 : 570;
         PdfPageInfo geometry = Assert.Single(fixture.Engine.GetInfo(input, new PdfInfoRequest { IncludePreview = true }).Pages!);
@@ -70,14 +70,14 @@ public sealed class PdfMutateTests
             document.Pages.Add().Paragraphs.Add(text);
             document.Save(input);
         }
-        Assert.Single(fixture.Engine.Search(input, new PdfSearchRequest { Pattern = pattern, Regex = regex }).Hits);
+        Assert.Single(fixture.Engine.Search(input, Find(pattern, regex)).Hits);
         string output = fixture.File("context.out.pdf");
         PdfEditResult edited = fixture.Engine.ApplyOps(input,
             new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = pattern, Regex = regex }] },
             new PdfEditRequest { OutputPath = output });
         Assert.Equal(1, Assert.Single(edited.Applied).ItemsAffected);
         Assert.Contains("PUBLIC: 1234", fixture.Engine.Read(output, new PdfReadRequest()).Pages[0].Text, StringComparison.Ordinal);
-        Assert.Empty(fixture.Engine.Search(output, new PdfSearchRequest { Pattern = pattern, Regex = regex }).Hits);
+        Assert.Empty(fixture.Engine.Search(output, Find(pattern, regex)).Hits);
     }
     [Fact]
     public void Edit_VisualContentAndRedactionPersist()
@@ -457,11 +457,7 @@ public sealed class PdfMutateTests
     {
         using var fixture = new PdfEngineFixture();
         string input = TableDocument(fixture);
-        PdfSearchResult search = fixture.Engine.Search(input, new PdfSearchRequest
-        {
-            Pattern = "Revenue",
-            MaxHits = 1,
-        });
+        PdfSearchResult search = fixture.Engine.Search(input, Find("Revenue", maxHits: 1));
         Assert.Single(search.Hits);
         Assert.True(search.Hits[0].Rect.Width > 0);
 
@@ -741,4 +737,10 @@ public sealed class PdfMutateTests
 
         return bytes;
     }
+
+    private static PdfSearchRequest Find(string pattern, bool regex = false, int maxHits = 100) => new()
+    {
+        Query = new Aspose.Cli.Sdk.Text.SearchQuery(
+            Aspose.Cli.Sdk.Text.TextSearch.Create(pattern, regex, caseSensitive: false), maxHits, Scope: null),
+    };
 }

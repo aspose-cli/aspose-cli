@@ -26,11 +26,11 @@ public sealed record DiffResult() : ResultEnvelope(CellsSchemaIds.DiffResult, 2)
     [JsonPropertyOrder(-47)]
     public required DiffSummary Summary { get; init; }
 
-    /// <summary>Per-sheet differences; omitted when the workbooks are identical.</summary>
+    /// <summary>
+    /// Per-sheet differences; omitted when the workbooks are identical. The listed cells
+    /// stop at the diff budget, which a <c>LIST_TRUNCATED</c> warning discloses.
+    /// </summary>
     public IReadOnlyList<SheetDiff>? Sheets { get; init; }
-
-    /// <summary>True when the per-cell list was capped by the diff budget.</summary>
-    public bool Truncated { get; init; }
 }
 
 /// <summary>Aggregate counts of a <see cref="DiffResult"/>.</summary>

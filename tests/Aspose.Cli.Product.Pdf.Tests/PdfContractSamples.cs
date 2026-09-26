@@ -90,14 +90,21 @@ internal static class PdfContractSamples
     {
         Source = new SourceInfo { Path = "D:/data/report.pdf", Format = "pdf", SizeBytes = 52000 },
         Mode = "plain",
-        Window = new PdfPageWindow { Pages = "1,2", Of = 3, Truncated = true },
+        PageCount = 3,
         Pages =
         [
             new PdfPageText { Number = 1, Text = "Executive summary", Truncated = false },
             new PdfPageText { Number = 2, Text = "Revenue grew 12%.", Truncated = false },
         ],
         ScannedPagesSuspected = [2],
-        Next = "aspose-cli pdf query pages \"D:/data/report.pdf\" --pages 3 --mode plain --max-chars 20000 --output json",
+        Window = new ResultWindow
+        {
+            Unit = "page",
+            Returned = 2,
+            Total = 3,
+            Truncated = true,
+            Next = "aspose-cli pdf query pages \"D:/data/report.pdf\" --pages 3 --mode plain --max-chars 20000 --output json",
+        },
         License = Evaluation,
         Warnings =
         [
@@ -260,7 +267,7 @@ internal static class PdfContractSamples
 
     public static PdfSearchResult PdfSearch { get; } = new()
     {
-        Input = new SourceInfo { Path = "D:/data/report.pdf", Format = "pdf", SizeBytes = 52000 },
+        Source = new SourceInfo { Path = "D:/data/report.pdf", Format = "pdf", SizeBytes = 52000 },
         Pattern = "revenue",
         Hits =
         [
@@ -272,7 +279,13 @@ internal static class PdfContractSamples
                 Occurrence = 1,
             },
         ],
-        Truncated = false,
+        Window = new ResultWindow
+        {
+            Unit = "hit",
+            Returned = 1,
+            Truncated = true,
+            Next = "aspose-cli pdf query search \"D:/data/report.pdf\" --pattern revenue --max-hits 1 --skip 1 --output json",
+        },
         License = Licensed,
     };
 
@@ -282,7 +295,6 @@ internal static class PdfContractSamples
         Profile = "pdfa-2b",
         Valid = false,
         Issues = ["Document metadata does not satisfy the requested profile."],
-        Truncated = false,
         License = Licensed,
     };
 

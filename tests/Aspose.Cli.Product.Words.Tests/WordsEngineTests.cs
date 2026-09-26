@@ -70,7 +70,35 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(2, table.Columns);
         Assert.Equal("Metric", table.Cells![0][0]);
         Assert.Equal("120", table.Cells[1][1]);
-        Assert.True(first.Window.Truncated);
+        Assert.True(first.Window!.Truncated);
+        Assert.Equal("block", first.Window.Unit);
+        Assert.Equal(first.Blocks.Count, first.Window.Returned);
+        Assert.Equal(info.Document.Blocks, first.Window.Total);
+        Assert.Equal(info.Document.Blocks, first.BlockCount);
+    }
+
+    [Fact]
+    public void Inspect_DisclosesAnOutlineCappedAtAThousandHeadings()
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        for (int heading = 1; heading <= 1000; heading++)
+        {
+            builder.Writeln($"Heading {heading}");
+        }
+
+        builder.Write("Heading 1001");
+        string input = _fixture.Temp.File("headings.docx");
+        document.Save(input, SaveFormat.Docx);
+
+        DocumentInfoResult info = _fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["outline"] });
+
+        Assert.Equal(1000, info.Outline!.Count);
+        Warning warning = Assert.Single(info.Warnings!, static warning => warning.Code == WarningCodes.ListTruncated);
+        Assert.Equal("outline", warning.Location);
+        Assert.Contains("first 1000 of 1001", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("words query blocks --scope outline", warning.Hint, StringComparison.Ordinal);
     }
 
     [Fact]

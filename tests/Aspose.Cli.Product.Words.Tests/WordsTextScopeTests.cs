@@ -22,7 +22,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
     {
         string input = CreateStories();
 
-        WordsSearchResult result = _fixture.Engine.Search(input, new WordsSearchRequest { Pattern = "needle", Scope = scope });
+        WordsSearchResult result = _fixture.Engine.Search(input, WordsFixture.Search("needle", scope));
 
         Assert.All(result.Hits, hit => Assert.Equal(scope, hit.Scope));
         Assert.Equal(expected.Order(), result.Hits.SelectMany(static hit => Needles(hit.Snippet)).Order());
@@ -33,7 +33,7 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
     {
         string input = CreateStories();
 
-        WordsSearchResult result = _fixture.Engine.Search(input, new WordsSearchRequest { Pattern = "needle", Scope = "all" });
+        WordsSearchResult result = _fixture.Engine.Search(input, WordsFixture.Search("needle", "all"));
 
         Assert.Equal(
             ["Body needle", "Box needle", "Comment needle", "Footer needle", "Footnote needle", "Header needle"],

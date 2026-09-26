@@ -12,8 +12,10 @@ aspose-cli pdf query pages report.final.pdf --pages 1-5 --mode layout --output j
 aspose-cli pdf query search report.final.pdf --pattern DRAFT --output json
 ```
 
-Choose ranges from the inspected page count, check query truncation, and
-compare extracted text with the expected content.
+Choose ranges from the inspected page count and compare extracted text with the
+expected content. When window.truncated is true, run window.next for the
+rest; a search's 
+ext adds --skip past the hits already returned.
 
 After `move_pages`, also verify each affected bookmark, local link and named
 destination against the original target content, including destination type,

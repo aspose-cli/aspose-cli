@@ -42,7 +42,7 @@ internal static class ReadCommand
                     Password = standard.InputPassword,
                 };
                 DocumentReadResult result = standard.OpenEngine().Read(input, request);
-                return result with { Next = Next(input, request, result) };
+                return result with { Window = result.Window! with { Next = Next(standard.Continuation(), request, result) } };
             })
             .WithExamples(
             [
@@ -56,15 +56,15 @@ internal static class ReadCommand
     /// The section and scope filters travel with it, so the block range may name blocks the
     /// filters then skip.
     /// </summary>
-    private static string? Next(string input, DocumentReadRequest request, DocumentReadResult result)
+    private static string? Next(ContinuationCommand resume, DocumentReadRequest request, DocumentReadResult result)
     {
-        if (!result.Window.Truncated || result.Window.Of == 0)
+        if (!result.Window!.Truncated || result.BlockCount == 0)
         {
             return null;
         }
 
-        IReadOnlyList<int> selection = request.Blocks?.Resolve(result.Window.Of, WordsDiagnostics.BlockNotFound, "block")
-            ?? Enumerable.Range(1, result.Window.Of).ToArray();
+        IReadOnlyList<int> selection = request.Blocks?.Resolve(result.BlockCount, WordsDiagnostics.BlockNotFound, "block")
+            ?? Enumerable.Range(1, result.BlockCount).ToArray();
         if (ReadContinuation.After(
                 selection,
                 [.. result.Blocks.Select(static block => new ReadPart(block.I, block.ContentTruncated))],
@@ -73,8 +73,7 @@ internal static class ReadCommand
             return null;
         }
 
-        var next = new ContinuationCommand("words", "query", "blocks")
-            .Argument(input)
+        ContinuationCommand next = resume
             .Option("--blocks", continuation.Parts);
         if (request.Section is { } section)
         {

@@ -80,7 +80,7 @@ internal sealed class WordsExtractionService
             Outputs = outputs,
             License = EnvelopeParts.License(state),
             Warnings = request.By == "pages"
-                ? Combine(OutputWarnings(state, loaded, "docx"), [new Warning { Code = WordsDiagnostics.LayoutMayDiffer, Message = "Page extraction can slightly reflow complex layouts.", Hint = "Visually inspect the split pages." }])
+                ? EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded, "docx"), [new Warning { Code = WordsDiagnostics.LayoutMayDiffer, Message = "Page extraction can slightly reflow complex layouts.", Hint = "Visually inspect the split pages." }])
                 : OutputWarnings(state, loaded, "docx"),
         };
     }
@@ -153,7 +153,7 @@ internal sealed class WordsExtractionService
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),
-            Warnings = Combine(Combine(EnvelopeParts.OutputWarnings(state), InputWarnings(loaded)), warnings),
+            Warnings = EnvelopeParts.CombineWarnings(EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), InputWarnings(loaded)), warnings),
         };
     }
 

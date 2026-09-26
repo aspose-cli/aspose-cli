@@ -23,7 +23,6 @@ internal static class CellsDiagnostics
     internal const string SheetsDropped = "SHEETS_DROPPED";
     internal const string SheetsSkipped = "SHEETS_SKIPPED";
     internal const string DataTruncated = "DATA_TRUNCATED";
-    internal const string ErrorsTruncated = "ERRORS_TRUNCATED";
     internal const string MhtmlResourceCoverageUnverified = "MHTML_RESOURCE_COVERAGE_UNVERIFIED";
     internal const string FormulasBroken = "FORMULAS_BROKEN";
     internal const string EncryptionRemoved = "WORKBOOK_ENCRYPTION_REMOVED";
@@ -42,7 +41,6 @@ internal static class CellsDiagnostics
         Warning(SheetsDropped),
         Warning(SheetsSkipped),
         Warning(DataTruncated),
-        Warning(ErrorsTruncated),
         Warning(FormulasBroken),
         Warning(EncryptionRemoved),
         Warning(MhtmlResourceCoverageUnverified),

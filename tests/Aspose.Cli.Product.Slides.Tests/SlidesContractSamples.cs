@@ -62,7 +62,7 @@ internal static class SlidesContractSamples
     {
         Source = new SourceInfo { Path = "D:/data/briefing.pptx", Format = "pptx", SizeBytes = 24000 },
         Scope = "full",
-        Window = new SlideWindow { Slides = "1", Of = 3, Truncated = true },
+        SlideCount = 3,
         Slides =
         [
             new SlideData
@@ -100,7 +100,14 @@ internal static class SlidesContractSamples
                 ContentTruncated = false,
             },
         ],
-        Next = "aspose-cli slides query slides \"D:/data/briefing.pptx\" --slides 2- --scope full --max-chars 20000 --output json",
+        Window = new ResultWindow
+        {
+            Unit = "slide",
+            Returned = 1,
+            Total = 3,
+            Truncated = true,
+            Next = "aspose-cli slides query slides \"D:/data/briefing.pptx\" --slides 2- --scope full --max-chars 20000 --output json",
+        },
         License = Licensed,
     };
 
@@ -237,7 +244,7 @@ internal static class SlidesContractSamples
 
     public static SlidesEditResult SlidesEdit { get; } = new()
     {
-        Input = new SourceInfo { Path = "D:/data/deck.pptx", Format = "pptx", SizeBytes = 24000 },
+        Input =new SourceInfo { Path = "D:/data/deck.pptx", Format = "pptx", SizeBytes = 24000 },
         Output = new OutputInfo { Path = "D:/data/deck.out.pptx", Format = "pptx", SizeBytes = 24500 },
         DryRun = false,
         Applied =
@@ -258,7 +265,7 @@ internal static class SlidesContractSamples
 
     public static SlidesSearchResult SlidesSearch { get; } = new()
     {
-        Input = new SourceInfo { Path = "D:/data/deck.pptx", Format = "pptx", SizeBytes = 24000 },
+        Source = new SourceInfo { Path = "D:/data/deck.pptx", Format = "pptx", SizeBytes = 24000 },
         Pattern = "revenue",
         Scope = "all",
         Hits =
@@ -275,10 +282,9 @@ internal static class SlidesContractSamples
                 Length = 7,
             },
         ],
-        Truncated = false,
+        Window = new ResultWindow { Unit = "hit", Returned = 1, Truncated = false },
         License = Licensed,
     };
-
 
     public static IReadOnlyList<ResultEnvelope> Results { get; } =
     [

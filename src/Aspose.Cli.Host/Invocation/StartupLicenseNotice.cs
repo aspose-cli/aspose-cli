@@ -15,7 +15,7 @@ internal static class StartupLicenseNotice
     {
         GlobalValues? globals = invocation.GlobalValues;
         if (globals is null
-            || globals.Output == OutputMode.Json
+            || globals.Output is OutputMode.Json or OutputMode.Compact
             || globals.Quiet
             || globals.Verbose
             || InvocationInputs.Current is not null

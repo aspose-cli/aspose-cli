@@ -23,6 +23,9 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>Owns bounded content inspection and standards validation.</summary>
 internal sealed class PdfInspectionService
 {
+    /// <summary>The most validation issues one result lists.</summary>
+    private const int ListedIssues = 100;
+
     private readonly ILicenseGate _licenseGate;
     private readonly PdfDocumentLoader _loader;
 
@@ -36,36 +39,33 @@ internal sealed class PdfInspectionService
 
     public PdfSearchResult Search(string filePath, PdfSearchRequest request)
     {
-        // Validates the pattern once, the way every product search does, before the document opens.
-        _ = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
+        TextSearch text = request.Query.Text;
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
-        var hits = new List<PdfSearchHit>();
-        bool truncated = false;
+        SearchHits<PdfSearchHit> hits = request.Query.Collect<PdfSearchHit>();
         foreach (int number in pages)
         {
             Page page = loaded.Document.Pages[number];
             int occurrence = 0;
-            foreach (TextFragment fragment in MatchText(page, request.Pattern, request.Regex, request.CaseSensitive,
+            foreach (TextFragment fragment in MatchText(page, text.Pattern, text.Expression is not null, text.CaseSensitive,
                 static reason => CliErrors.OptionInvalid("--pattern", reason, "Use a pattern that matches at least one character.")))
             {
-                occurrence++;
-                if (hits.Count == request.MaxHits)
-                {
-                    truncated = true;
-                    break;
-                }
-                hits.Add(new PdfSearchHit
+                int current = ++occurrence;
+                if (!hits.Offer(() => new PdfSearchHit
                 {
                     Page = number,
                     Snippet = fragment.Text,
                     Rect = ToContractRect(page, fragment.Rectangle),
-                    Occurrence = occurrence,
-                });
+                    Occurrence = current,
+                }))
+                {
+                    break;
+                }
             }
-            if (truncated)
+
+            if (hits.Truncated)
             {
                 break;
             }
@@ -73,10 +73,10 @@ internal sealed class PdfInspectionService
 
         return new PdfSearchResult
         {
-            Input = PdfInfoProjection.Source(filePath),
-            Pattern = request.Pattern,
-            Hits = hits,
-            Truncated = truncated,
+            Source = PdfInfoProjection.Source(filePath),
+            Pattern = text.Pattern,
+            Hits = hits.Hits,
+            Window = hits.Window(),
             License = EnvelopeParts.License(state),
         };
     }
@@ -100,9 +100,15 @@ internal sealed class PdfInspectionService
             Input = PdfInfoProjection.Source(filePath),
             Profile = request.Profile.ToLowerInvariant(),
             Valid = valid,
-            Issues = problems.Take(100).Select(static problem => problem.ToString()).ToArray(),
-            Truncated = problems.Count > 100,
+            Issues = problems.Take(ListedIssues).Select(static problem => problem.ToString()).ToArray(),
             License = EnvelopeParts.License(state),
+            Warnings = problems.Count > ListedIssues
+                ? [EnvelopeParts.ListTruncated(
+                    "issues",
+                    ListedIssues,
+                    problems.Count,
+                    "Fix the listed issues and validate again; 'pdf convert --to <profile>' fixes the ones it can.")]
+                : null,
         };
     }
 }

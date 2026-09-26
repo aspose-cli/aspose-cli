@@ -35,9 +35,10 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         Classify(diff, footprint, direct, formulaResults, other);
         if (diff.Truncated)
         { issues.Add(new VerificationIssue { Code = "DIFF_TRUNCATED", Message = $"The edit changed more than {MaxDiffs} cells, so verification could not list every change." }); }
-        (WorkbookSummary summary, Warning? truncated) = InfoProjection.Summarize(budgets, candidate.Workbook,
+        (WorkbookSummary summary, Warning? errorsCapped) = InfoProjection.Summarize(budgets, candidate.Workbook,
             candidatePath, new InfoRequest { Details = [InfoDetails.Errors] });
-        AddCompletenessIssues(truncated is null ? null : [truncated], issues);
+        if (errorsCapped is not null)
+        { issues.Add(new VerificationIssue { Code = errorsCapped.Code, Message = errorsCapped.Message }); }
         IReadOnlyList<CellError> errors = summary.FormulaErrors ?? [];
         if (errors.Count > 0)
         { issues.Add(new VerificationIssue { Code = "FORMULA_ERRORS", Message = $"The edited workbook contains {errors.Count} formula error(s)." }); }

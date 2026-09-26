@@ -45,6 +45,30 @@ public sealed class SearchOptionsTests
             new SearchOptions(), "--pattern", "x", "--max-hits", "10000").MaxHits);
     }
 
+    [Fact]
+    public void Window_SkipsEarlierMatchesAndResumesAfterTheReturnedHits()
+    {
+        SearchQuery query = Read(new SearchOptions(Scopes), "--pattern", "a b", "--regex", "--max-hits", "2", "--skip", "1");
+        SearchHits<int> hits = query.Collect<int>();
+
+        int offered = 0;
+        foreach (int match in Enumerable.Range(1, 5))
+        {
+            offered++;
+            if (!hits.Offer(() => match))
+            {
+                break;
+            }
+        }
+
+        Assert.Equal([2, 3], hits.Hits);
+        Assert.Equal(4, offered);
+        Assert.Equal(
+            "aspose-cli p search in.x --pattern \"a b\" --regex --scope body --max-hits 2 --skip 3 --output json",
+            SearchOptions.Continue(query, hits.Window(), new ContinuationCommand("p", "search").Argument("in.x")).Next);
+        Assert.Null(SearchOptions.Continue(query, query.Collect<int>().Window(), new ContinuationCommand("p", "search")).Next);
+    }
+
     [Theory]
     [InlineData("", false)]
     [InlineData("(", true)]

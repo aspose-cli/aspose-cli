@@ -62,6 +62,7 @@ public sealed class ProductJsonDefinition
 public sealed class ContractJsonSerializer
 {
     private readonly JsonSerializerOptions _options;
+    private readonly JsonSerializerOptions _compactOptions;
 
     /// <summary>Creates a serializer for the supplied product contributions.</summary>
     public ContractJsonSerializer(
@@ -76,6 +77,8 @@ public sealed class ContractJsonSerializer
             .SelectMany(static definition => definition.Converters)
             .ToArray();
         _options = CreateOptions(resolvers, converters);
+        _compactOptions = new JsonSerializerOptions(_options) { WriteIndented = false };
+        _compactOptions.MakeReadOnly();
     }
 
     /// <summary>Frozen options used by this serializer.</summary>
@@ -86,6 +89,13 @@ public sealed class ContractJsonSerializer
     {
         ArgumentNullException.ThrowIfNull(value);
         return JsonSerializer.Serialize(value, value.GetType(), _options);
+    }
+
+    /// <summary>Serializes a contract value on one line, with the same content as <see cref="Serialize"/>.</summary>
+    public string SerializeCompact(object value)
+    {
+        ArgumentNullException.ThrowIfNull(value);
+        return JsonSerializer.Serialize(value, value.GetType(), _compactOptions);
     }
 
     /// <summary>Deserializes one contract root.</summary>

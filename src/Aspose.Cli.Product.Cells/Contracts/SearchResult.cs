@@ -3,10 +3,10 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>
-/// Result of <c>aspose-cli cells query search</c>: budgeted cell hits for a pattern.
-/// Hits are ordered by sheet then row-major, so output is deterministic; the
-/// list is capped by the hit budget, which <see cref="Truncated"/> and
-/// <see cref="Hint"/> disclose rather than silently dropping matches.
+/// Result of <c>aspose-cli cells query search</c>: one window of cell hits for a pattern.
+/// Hits are ordered by sheet then row-major, so output is deterministic; the envelope's
+/// window counts the returned hits and, when more match, carries the command that returns
+/// the next ones.
 /// </summary>
 public sealed record SearchResult() : ResultEnvelope(CellsSchemaIds.SearchResult, 2)
 {
@@ -21,12 +21,6 @@ public sealed record SearchResult() : ResultEnvelope(CellsSchemaIds.SearchResult
     /// <summary>Matching cells.</summary>
     [JsonPropertyOrder(-48)]
     public required IReadOnlyList<SearchHit> Hits { get; init; }
-
-    /// <summary>True when the hit list was capped by the budget.</summary>
-    public bool Truncated { get; init; }
-
-    /// <summary>How to narrow the search; set only when truncated.</summary>
-    public string? Hint { get; init; }
 }
 
 /// <summary>One matching cell.</summary>

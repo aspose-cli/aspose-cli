@@ -54,17 +54,12 @@ internal static class PdfRenderers
 
     public static void Render(PdfReadResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"{result.Source.Path}: pages {result.Window.Pages} of {result.Window.Of} ({result.Mode})");
+        surface.Out.WriteLine($"{result.Source.Path}: {result.PageCount} page(s) ({result.Mode})");
         foreach (PdfPageText page in result.Pages)
         {
             surface.Out.WriteLine();
             surface.Out.WriteLine($"--- page {page.Number}{(page.Truncated ? " (truncated)" : string.Empty)} ---");
             surface.Out.WriteLine(page.Text);
-        }
-
-        if (result.Next is not null)
-        {
-            surface.Out.WriteLine($"next: {result.Next}");
         }
     }
 
@@ -147,7 +142,7 @@ internal static class PdfRenderers
 
     public static void Render(PdfSearchResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"found {result.Hits.Count} hit(s){(result.Truncated ? " (truncated)" : string.Empty)}");
+        surface.Out.WriteLine($"found {result.Hits.Count} hit(s)");
         var table = new TextTable("page", "occurrence", "rectangle", "text");
         foreach (PdfSearchHit hit in result.Hits)
         {

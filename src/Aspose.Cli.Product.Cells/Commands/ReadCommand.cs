@@ -10,7 +10,7 @@ namespace Aspose.Cli.Product.Cells.Commands;
 /// <c>cells query range</c> — step two of the projection ladder: windowed
 /// cell data of one sheet. Reads are budgeted (<c>--max-cells</c>) so output
 /// stays affordable for agents; a default read over budget degrades to a summary plus a
-/// ready-to-run follow-up command, and an explicit range over budget is refused with the
+/// ready-to-run window.next command, and an explicit range over budget is refused with the
 /// command that scans it page by page.
 /// </summary>
 internal static class ReadCommand
@@ -29,7 +29,7 @@ internal static class ReadCommand
             Description = "Window to read, e.g. A1:F50 or Sales!A1:F50. Default: the used range, subject to --max-cells.",
         }.WithInput(InputKind.None);
 
-        // Set only by a generated `next` command: it names the region a planned scan
+        // Set only by a generated window.next command: it names the region a planned scan
         // covers, so each page's --range is one window of that region and the chain keeps
         // covering columns the budget could not fit in one window. Hidden — it is
         // CLI-internal plumbing, not a knob a human sets.
@@ -55,7 +55,7 @@ internal static class ReadCommand
             {
                 int maxCells = parse.GetValue(maxCellsOption);
                 OptionGuards.EnsureInRange("--max-cells", maxCells, MinMaxCells, MaxMaxCells,
-                    "Keep the budget modest; page through large sheets with the 'next' commands instead.");
+                    "Keep the budget modest; page through large sheets with each window.next command instead.");
                 _ = ReadScopeExtensions.TryParse(parse.GetValue(scopeOption), out ReadScope scope);
                 (string? sheetName, RangeRef? range) = SheetRangeInput.Resolve(
                     parse.GetValue(sheet), parse.GetValue(rangeOption));
@@ -68,27 +68,29 @@ internal static class ReadCommand
                         explicitRange.CellCount,
                         maxCells,
                         "Scan the range in budgeted windows: run "
-                            + NextReadCommand.First(input, sheetName, explicitRange, scope.ToContractName(), maxCells)
-                            + " and follow each 'next' command, or raise --max-cells.");
+                            + NextReadCommand.First(standard.Continuation(), sheetName, explicitRange, scope.ToContractName(), maxCells)
+                            + " and follow each window.next command, or raise --max-cells.");
                 }
 
                 WorkbookReadResult result = standard.OpenEngine().Read(input, new ReadRequest
                 {
                     SheetName = sheetName,
                     Range = range,
+                    Scan = scan,
                     Scope = scope,
                     MaxCells = maxCells,
                     Password = standard.InputPassword,
                 });
 
                 // An explicit range is a complete, bounded request. Only a CLI-planned scan
-                // advertises another page: a default read scans the used range, and a generated
+                // has another page: a default read scans the used range, and a generated
                 // page scans the region its command carries.
-                RangeRef? scanned = scan
-                    ?? (range is null && result.Sheet.UsedRange is { } used ? A1.ParseRange(used).Range : null);
                 return result with
                 {
-                    Next = scanned is { } bounds ? NextReadCommand.Build(input, result, maxCells, bounds) : null,
+                    Window = result.Window! with
+                    {
+                        Next = NextReadCommand.Build(standard.Continuation(), result, range, scan, maxCells),
+                    },
                 };
             }).WithExamples(
             [

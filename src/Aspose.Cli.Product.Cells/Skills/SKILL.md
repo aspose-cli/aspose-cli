@@ -66,7 +66,8 @@ aspose-cli cells query range book.xlsx --sheet Sales --range A1:F50 --output jso
 
 - `--scope values` (default), `formulas` (adds `f`), `styles` or `full`.
 - Whole rows or columns (`A:A`) are rejected; give explicit bounds.
-- Over-budget reads return a summary and a ready-to-run `next` command;
+- `window` counts the cells returned and covered. An over-budget read returns
+  a summary, and `window.next` is a ready-to-run command for the next page;
   execute it verbatim.
 - Cell types: `string`, `number`, `boolean`, `datetime` (ISO 8601), `error`,
   `empty`.

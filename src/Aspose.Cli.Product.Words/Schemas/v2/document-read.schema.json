@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/words/document-read.schema.json",
   "type": "object",
-  "required": ["schema", "schemaVersion", "kind", "source", "scope", "window", "blocks"],
+  "required": ["schema", "schemaVersion", "kind", "source", "scope", "blockCount", "blocks", "window"],
   "additionalProperties": false,
   "properties": {
     "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/words/document-read.schema.json" },
@@ -10,16 +10,7 @@
     "kind": { "const": "document" },
     "source": { "type": "object" },
     "scope": { "enum": ["text", "full", "outline"] },
-    "window": {
-      "type": "object",
-      "required": ["blocks", "of", "truncated"],
-      "additionalProperties": false,
-      "properties": {
-        "blocks": { "type": "string" },
-        "of": { "type": "integer", "minimum": 0 },
-        "truncated": { "type": "boolean", "description": "True if content within a returned item or later selected items was omitted." }
-      }
-    },
+    "blockCount": { "type": "integer", "minimum": 0, "description": "The document's block count, whatever the range, section and scope select." },
     "blocks": {
       "type": "array",
       "items": {
@@ -43,7 +34,7 @@
         }
       }
     },
-    "next": { "type": "string", "description": "Ready-to-run command for the unread parts, or absent when the read covered its selection. It starts again at a part whose content was truncated and doubles --max-chars when that part alone exceeded the budget." },
+    "window": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json", "description": "Counts blocks; total is the blocks the range, section and scope select. next starts again at a block whose content was truncated and doubles --max-chars when that block alone exceeded the budget." },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

@@ -111,17 +111,11 @@ public sealed record PresentationReadResult() : ResultEnvelope(SlidesSchemaIds.P
     public required SourceInfo Source { get; init; }
 
     public required string Scope { get; init; }
-    public required SlideWindow Window { get; init; }
-    public required IReadOnlyList<SlideData> Slides { get; init; }
-    public string? Next { get; init; }
-}
 
-/// <summary>Description of the returned slide window.</summary>
-public sealed record SlideWindow
-{
-    public required string Slides { get; init; }
-    public required int Of { get; init; }
-    public required bool Truncated { get; init; }
+    /// <summary>How many slides the presentation holds, which open slide ranges resolve against.</summary>
+    public required int SlideCount { get; init; }
+
+    public required IReadOnlyList<SlideData> Slides { get; init; }
 }
 
 /// <summary>Agent-friendly content of one slide.</summary>
@@ -269,12 +263,11 @@ public sealed record SlidesEditResult() : ResultEnvelope(SlidesSchemaIds.EditRes
 public sealed record SlidesSearchResult() : ResultEnvelope(SlidesSchemaIds.SearchResult, 2)
 {
     [JsonPropertyOrder(-50)]
-    public required SourceInfo Input { get; init; }
+    public required SourceInfo Source { get; init; }
 
     public required string Pattern { get; init; }
     public required string Scope { get; init; }
     public required IReadOnlyList<SlidesSearchHit> Hits { get; init; }
-    public required bool Truncated { get; init; }
 }
 
 /// <summary>One shape or notes match in a presentation.</summary>

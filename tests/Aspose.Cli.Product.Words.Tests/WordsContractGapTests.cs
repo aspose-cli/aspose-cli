@@ -72,8 +72,8 @@ public sealed class WordsContractGapTests
         string input = fixture.Temp.File("search.docx");
         source.Save(input, SaveFormat.Docx);
 
-        WordsSearchResult body = fixture.Engine.Search(input, new WordsSearchRequest { Pattern = "needle", Scope = "body" });
-        WordsSearchResult all = fixture.Engine.Search(input, new WordsSearchRequest { Pattern = "needle", Scope = "all" });
+        WordsSearchResult body = fixture.Engine.Search(input, WordsFixture.Search("needle", "body"));
+        WordsSearchResult all = fixture.Engine.Search(input, WordsFixture.Search("needle", "all"));
 
         Assert.Equal(["body"], body.Hits.Select(static hit => hit.Scope));
         Assert.Equal(["body", "comments", "footnotes"], all.Hits.Select(static hit => hit.Scope).Order());

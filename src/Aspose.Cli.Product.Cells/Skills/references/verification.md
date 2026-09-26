@@ -49,8 +49,8 @@ aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formu
 - After structural edits (insert/delete rows or columns, sorts), re-read
   a formula range you did NOT touch as well — its references should have
   shifted with the structure, and Tier 4 will confirm nothing else moved.
-- Keep windows small and targeted; if a read chains a `next` command,
-  execute it verbatim.
+- Keep reads small and targeted; if a read's `window.next` is set, execute
+  it verbatim.
 
 ## Tier 2 — the visual pass
 
@@ -181,7 +181,8 @@ aspose-cli cells query search book.xlsx --pattern "TBD|TODO|xxx|\{\{" --regex --
 `hits` must be empty — anything found is either unfinished work or an
 intentional token to explain in your report. `query search` covers all sheets
 by default (`--sheet` narrows it) and matches values; add `--scope both` to
-sweep formula text too.
+sweep formula text too. When more cells match than `--max-hits`,
+`window.next` returns the following hits (it sets `--skip`).
 
 ## Tier 4 — the session diff
 
@@ -276,4 +277,4 @@ When a check fails and the fix is not obvious:
 
 Comparison uses exact stored values, independently of display formatting. Dates compare as raw Excel serial numbers, including across 1900/1904 date systems. Strings use ordinal equality; empty cells, empty strings, numbers, booleans and errors are distinct. Each nonempty comparison side carries required `t` and canonical `v`; a formula with an empty cache retains `t: "empty"` and `f`.
 
-The default `--compare formulas` compares stored values and formula text without recalculation. `--compare values` ignores formula text. `--max-diffs` limits listed cells across the whole workbook; the summary still counts every difference and `truncated` reports omitted entries. Enumeration is sparse and bounded across both files and all shared sheets. Budget exhaustion or cancellation fails the comparison instead of returning a partial total.
+The default `--compare formulas` compares stored values and formula text without recalculation. `--compare values` ignores formula text. `--max-diffs` limits listed cells across the whole workbook; the summary still counts every difference and a `LIST_TRUNCATED` warning reports omitted entries. Enumeration is sparse and bounded across both files and all shared sheets. Budget exhaustion or cancellation fails the comparison instead of returning a partial total.

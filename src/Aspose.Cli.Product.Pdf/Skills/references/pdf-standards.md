@@ -3,7 +3,7 @@
 Use `pdf convert --to pdfa-1b|pdfa-2b|pdfa-3b` to produce an archival candidate,
 then independently run `pdf validate --profile ...` on that output. Require
 `valid: true`; a completed validation command can return `valid: false`.
-The issue list is capped at 100 entries, with `truncated` indicating more.
+The issue list holds at most 100 entries; a `LIST_TRUNCATED` warning gives the total.
 
 ```powershell
 aspose-cli pdf convert report.pdf --to pdfa-2b --out report.archive.pdf --output json

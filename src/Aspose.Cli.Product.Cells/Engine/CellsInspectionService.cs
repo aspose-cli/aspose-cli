@@ -5,6 +5,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
+using Aspose.Cli.Sdk.Text;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
@@ -51,11 +52,20 @@ internal sealed class CellsInspectionService
             Identical = diff.Identical,
             Summary = diff.Summary,
             Sheets = diff.Sheets.Count > 0 ? diff.Sheets : null,
-            Truncated = diff.Truncated,
             License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings(other.Resources.CoverageWarning),
+            Warnings = loaded.Warnings(other.Resources.CoverageWarning, CellsTruncated(diff)),
         };
     }
+
+    // The summary counts every differing cell; the listed cells stop at --max-diffs.
+    private static Warning? CellsTruncated(DiffComparer.Result diff) =>
+        diff.Truncated
+            ? EnvelopeParts.ListTruncated(
+                "sheets[].cells",
+                diff.Sheets.Sum(static sheet => sheet.Cells?.Count ?? 0),
+                diff.Summary.CellsDiffering,
+                "Raise --max-diffs to list more differing cells; summary.cellsDiffering counts them all.")
+            : null;
 
     internal SearchResult Search(string filePath, SearchRequest request)
     {
@@ -68,17 +78,15 @@ internal sealed class CellsInspectionService
         SourceInfo source = BuildSource(filePath, workbook);
 
         int? sheetIndex = request.SheetName is { } name ? Sheets.Resolve(workbook, name).Index : null;
-        (IReadOnlyList<SearchHit> hits, bool truncated) = SearchMatcher.Find(_resourceBudgets, workbook, request, sheetIndex);
+        SearchHits<SearchHit> hits = SearchMatcher.Find(_resourceBudgets, workbook, request, sheetIndex);
 
         return new SearchResult
         {
             Source = source,
-            Pattern = request.Pattern,
-            Hits = hits,
-            Truncated = truncated,
-            Hint = truncated
-                ? $"showing the first {request.MaxHits} hits; narrow with --sheet, tighten the pattern, or raise --max-hits"
-                : null,
+            Pattern = request.Query.Text.Pattern,
+            Hits = hits.Hits,
+            // The window's next is left unset: the search command spells the follow-up.
+            Window = hits.Window(),
             License = EnvelopeParts.License(licenseState),
             Warnings = loaded.Warnings(),
         };

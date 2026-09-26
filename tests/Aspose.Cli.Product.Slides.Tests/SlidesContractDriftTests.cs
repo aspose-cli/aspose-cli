@@ -66,6 +66,35 @@ public sealed class SlidesContractDriftTests
         Assert.Equal(File.ReadAllBytes(all.Items[1].Path), File.ReadAllBytes(item.Path));
     }
 
+    [Fact]
+    public void InspectMedia_OverTheListLimit_DisclosesTheCap()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("many-media.pptx", slides: 1);
+        byte[] png = Png(8);
+        int count = SlidesReadService.MediaListLimit + 1;
+        using (var deck = new Presentation(input))
+        {
+            // Trailing bytes after IEND keep each image distinct without re-rendering it; a picture
+            // frame shows each one so the saved file keeps it.
+            for (int index = 0; index < count; index++)
+            {
+                IPPImage image = deck.Images.AddImage([.. png, .. BitConverter.GetBytes(index)]);
+                deck.Slides[0].Shapes.AddPictureFrame(ShapeType.Rectangle, index, index, 8, 8, image);
+            }
+
+            deck.Save(input, SaveFormat.Pptx);
+        }
+
+        PresentationInfoResult info = fixture.Engine.GetInfo(input, new PresentationInfoRequest { Details = ["media"] });
+
+        Assert.Equal(count, info.Presentation.Media);
+        Assert.Equal(SlidesReadService.MediaListLimit, info.Media!.Count);
+        Warning warning = Assert.Single(info.Warnings ?? [], static warning => warning.Code == WarningCodes.ListTruncated);
+        Assert.Equal("media", warning.Location);
+        Assert.Contains("--what media", warning.Hint, StringComparison.Ordinal);
+    }
+
     private static byte[] Png(int size)
     {
         using var source = new Presentation();

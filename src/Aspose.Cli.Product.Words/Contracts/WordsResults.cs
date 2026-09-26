@@ -99,7 +99,10 @@ public sealed record TableData
     public required int Columns { get; init; }
 }
 
-/// <summary>Windowed block projection returned by <c>words query blocks</c>.</summary>
+/// <summary>
+/// Windowed block projection returned by <c>words query blocks</c>. Its <c>window</c> counts
+/// blocks: the total is the blocks the range, section and scope select.
+/// </summary>
 public sealed record DocumentReadResult() : ResultEnvelope(WordsSchemaIds.DocumentRead, 2)
 {
     [JsonPropertyOrder(-50)]
@@ -107,17 +110,10 @@ public sealed record DocumentReadResult() : ResultEnvelope(WordsSchemaIds.Docume
     [JsonPropertyOrder(-49)]
     public required SourceInfo Source { get; init; }
     public required string Scope { get; init; }
-    public required BlockWindow Window { get; init; }
-    public required IReadOnlyList<BlockData> Blocks { get; init; }
-    public string? Next { get; init; }
-}
 
-/// <summary>Description of the returned block window.</summary>
-public sealed record BlockWindow
-{
-    public required string Blocks { get; init; }
-    public required int Of { get; init; }
-    public required bool Truncated { get; init; }
+    /// <summary>The document's block count, whatever the range, section and scope select.</summary>
+    public required int BlockCount { get; init; }
+    public required IReadOnlyList<BlockData> Blocks { get; init; }
 }
 
 /// <summary>A paragraph or table directly owned by a section body.</summary>
@@ -238,13 +234,15 @@ public sealed record RevisionSample
     public required string Text { get; init; }
 }
 
-/// <summary>Budgeted document search result.</summary>
+/// <summary>One window of search hits; its <c>window</c> counts hits and continues with <c>--skip</c>.</summary>
 public sealed record WordsSearchResult() : ResultEnvelope(WordsSchemaIds.SearchResult, 2)
 {
+    [JsonPropertyOrder(-50)]
     public required SourceInfo Source { get; init; }
+    [JsonPropertyOrder(-49)]
     public required string Pattern { get; init; }
+    [JsonPropertyOrder(-48)]
     public required IReadOnlyList<WordsSearchHit> Hits { get; init; }
-    public required bool Truncated { get; init; }
 }
 
 /// <summary>One search hit.</summary>

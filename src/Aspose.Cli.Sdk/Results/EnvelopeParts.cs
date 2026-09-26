@@ -37,6 +37,27 @@ public static class EnvelopeParts
     public static IReadOnlyList<Warning>? OutputWarnings(LicenseState state) =>
         state == LicenseState.Evaluation ? [EvaluationWatermark] : null;
 
+    /// <summary>
+    /// Discloses a list inside a result that holds only its first <paramref name="returned"/>
+    /// of <paramref name="total"/> entries, so no result is cut short silently.
+    /// </summary>
+    /// <param name="list">The result field that was capped, e.g. <c>outline</c>.</param>
+    /// <param name="returned">How many entries the list holds.</param>
+    /// <param name="total">How many entries exist.</param>
+    /// <param name="hint">How to read the rest, e.g. a narrower command.</param>
+    public static Warning ListTruncated(string list, int returned, int total, string hint)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(list);
+        ArgumentException.ThrowIfNullOrWhiteSpace(hint);
+        return new Warning
+        {
+            Code = WarningCodes.ListTruncated,
+            Message = $"'{list}' lists the first {returned} of {total} entries.",
+            Hint = hint,
+            Location = list,
+        };
+    }
+
     /// <summary>Combines optional warning collections without emitting an empty list.</summary>
     public static IReadOnlyList<Warning>? CombineWarnings(
         params IReadOnlyList<Warning>?[] collections)

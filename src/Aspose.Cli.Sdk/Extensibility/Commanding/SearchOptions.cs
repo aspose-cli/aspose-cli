@@ -1,4 +1,5 @@
 using System.CommandLine;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
@@ -12,16 +13,10 @@ public sealed record SearchScopeGrammar(
     IReadOnlyList<string> Values,
     string Default);
 
-/// <summary>One validated <c>query search</c> invocation.</summary>
-/// <param name="Text">The validated pattern, ready to match.</param>
-/// <param name="MaxHits">The returned-hit budget.</param>
-/// <param name="Scope">The selected scope, or null when the product has none.</param>
-public sealed record SearchQuery(TextSearch Text, int MaxHits, string? Scope);
-
 /// <summary>
 /// The one <c>query search</c> grammar: <c>--pattern</c>, <c>--regex</c>,
-/// <c>--case-sensitive</c>, <c>--max-hits</c> and an optional product-supplied
-/// <c>--scope</c>. Every product validates the pattern and the hit budget the same way.
+/// <c>--case-sensitive</c>, <c>--max-hits</c>, <c>--skip</c> and an optional product-supplied
+/// <c>--scope</c>. Every product validates the pattern, the hit budget and paging the same way.
 /// </summary>
 public sealed class SearchOptions
 {
@@ -31,32 +26,45 @@ public sealed class SearchOptions
     /// <summary>The largest accepted <c>--max-hits</c>.</summary>
     internal const int MaximumHits = 10_000;
 
+    internal const string PatternOption = "--pattern";
+    internal const string RegexOption = "--regex";
+    internal const string CaseSensitiveOption = "--case-sensitive";
+    internal const string ScopeOption = "--scope";
+    internal const string MaxHitsOption = "--max-hits";
+    internal const string SkipOption = "--skip";
+
     private readonly Option<string> _pattern;
     private readonly Option<bool> _regex;
     private readonly Option<bool> _caseSensitive;
     private readonly Option<int> _maxHits;
+    private readonly Option<int> _skip;
     private readonly Option<string>? _scope;
 
     /// <summary>Creates the search options, with a scope only when the product has one.</summary>
     public SearchOptions(SearchScopeGrammar? scope = null)
     {
-        _pattern = new Option<string>("--pattern")
+        _pattern = new Option<string>(PatternOption)
         {
             Required = true,
             Description = "Text to find, or a regular expression with --regex.",
         }.WithInput(InputKind.None);
-        _regex = new Option<bool>("--regex")
+        _regex = new Option<bool>(RegexOption)
         {
             Description = "Treat the pattern as a culture-invariant regular expression with a one-second budget.",
         };
-        _caseSensitive = new Option<bool>("--case-sensitive")
+        _caseSensitive = new Option<bool>(CaseSensitiveOption)
         {
             Description = "Match letter case exactly.",
         };
-        _maxHits = new Option<int>("--max-hits")
+        _maxHits = new Option<int>(MaxHitsOption)
         {
             Description = $"Maximum returned hits (1-{MaximumHits}).",
             DefaultValueFactory = _ => DefaultMaxHits,
+        };
+        _skip = new Option<int>(SkipOption)
+        {
+            Description = "Matches to pass over before the returned hits; a truncated search's window.next sets it.",
+            DefaultValueFactory = _ => 0,
         };
         if (scope is not null)
         {
@@ -66,7 +74,7 @@ public sealed class SearchOptions
                 throw new ArgumentException("The default scope must be one of the accepted values.", nameof(scope));
             }
 
-            _scope = new Option<string>("--scope")
+            _scope = new Option<string>(ScopeOption)
             {
                 Description = scope.Description,
                 DefaultValueFactory = _ => scope.Default,
@@ -75,8 +83,36 @@ public sealed class SearchOptions
         }
 
         Options = _scope is null
-            ? [_pattern, _regex, _caseSensitive, _maxHits]
-            : [_pattern, _regex, _caseSensitive, _scope, _maxHits];
+            ? [_pattern, _regex, _caseSensitive, _maxHits, _skip]
+            : [_pattern, _regex, _caseSensitive, _scope, _maxHits, _skip];
+    }
+
+    /// <summary>
+    /// Completes the window a search returned: when hits remain, <c>next</c> is
+    /// <paramref name="resume"/> (see <see cref="StandardInvocation.Continuation"/>, plus the
+    /// product's own options) followed by the query's options and a <c>--skip</c> past the
+    /// returned hits.
+    /// </summary>
+    public static ResultWindow Continue(SearchQuery query, ResultWindow window, ContinuationCommand resume)
+    {
+        ArgumentNullException.ThrowIfNull(query);
+        ArgumentNullException.ThrowIfNull(window);
+        ArgumentNullException.ThrowIfNull(resume);
+        if (!window.Truncated)
+        {
+            return window;
+        }
+
+        resume.Option(PatternOption, query.Text.Pattern)
+            .Flag(RegexOption, query.Text.Expression is not null)
+            .Flag(CaseSensitiveOption, query.Text.CaseSensitive);
+        if (query.Scope is not null)
+        {
+            resume.Option(ScopeOption, query.Scope);
+        }
+
+        resume.Option(MaxHitsOption, query.MaxHits).Option(SkipOption, query.Skip + window.Returned);
+        return window with { Next = resume.ToString() };
     }
 
     /// <summary>The search options in help order, for a product command's option list.</summary>
@@ -88,17 +124,25 @@ public sealed class SearchOptions
         ArgumentNullException.ThrowIfNull(parse);
         int maxHits = parse.GetValue(_maxHits);
         OptionGuards.EnsureInRange(
-            "--max-hits",
+            MaxHitsOption,
             maxHits,
             1,
             MaximumHits,
             "Keep the hit budget modest and narrow the search instead.");
+        int skip = parse.GetValue(_skip);
+        OptionGuards.EnsureInRange(
+            SkipOption,
+            skip,
+            0,
+            int.MaxValue,
+            "Use the --skip value from the previous result's window.next.");
         return new SearchQuery(
             TextSearch.Create(
                 parse.GetRequiredValue(_pattern),
                 parse.GetValue(_regex),
                 parse.GetValue(_caseSensitive)),
             maxHits,
-            _scope is null ? null : parse.GetRequiredValue(_scope));
+            _scope is null ? null : parse.GetRequiredValue(_scope),
+            skip);
     }
 }

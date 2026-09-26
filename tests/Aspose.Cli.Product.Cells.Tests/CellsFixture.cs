@@ -1,5 +1,7 @@
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Tests;
 
@@ -16,6 +18,10 @@ public sealed class CellsFixture : IDisposable
 {
     private const string EvaluationLimit =
         "Aspose.Cells evaluation mode opens at most 100 files per process, too few for the in-process engine suite.";
+
+    /// <summary>A plain, case-insensitive search query, as the search options produce it.</summary>
+    public static SearchQuery Search(string pattern, int maxHits = 100) =>
+        new(Aspose.Cli.Sdk.Text.TextSearch.Create(pattern, regex: false, caseSensitive: false), maxHits, Scope: null);
 
     public ILicenseGate Gate { get; } = TestLicense.Apply(
         static (resolution, environment) => new CellsLicenseGate(resolution, environment));

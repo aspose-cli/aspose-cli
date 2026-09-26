@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
@@ -11,6 +12,9 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
 internal static class InfoProjection
 {
+    // The most entries a detail list returns; a longer list carries a LIST_TRUNCATED warning.
+    private const int ListLimit = 1000;
+
     public static DocumentInfoResult Project(LoadedDocument loaded, string path, DocumentInfoRequest request)
     {
         Document document = loaded.Document;
@@ -19,6 +23,7 @@ internal static class InfoProjection
         NodeCollection paragraphs = document.GetChildNodes(NodeType.Paragraph, true);
         NodeCollection tables = document.GetChildNodes(NodeType.Table, true);
         document.UpdateWordCount();
+        var warnings = new List<Warning>();
 
         return new DocumentInfoResult
         {
@@ -39,17 +44,19 @@ internal static class InfoProjection
                 Signed = loaded.Format.HasDigitalSignature,
             },
             Sections = details.Contains("sections") ? Sections(document) : null,
-            Outline = details.Contains("outline") || request.IncludePreview ? Outline(index) : null,
+            Outline = details.Contains("outline") || request.IncludePreview ? Outline(index, warnings) : null,
             Styles = details.Contains("styles") ? document.Styles.Cast<Style>()
                 .Select(static s => s.Name).Order(StringComparer.Ordinal).ToArray() : null,
-            Fields = details.Contains("fields") ? Fields(document, index) : null,
+            Fields = details.Contains("fields") ? Fields(document, index, warnings) : null,
             Bookmarks = details.Contains("bookmarks") ? document.Range.Bookmarks.Cast<Bookmark>()
                 .Select(static b => b.Name).Order(StringComparer.Ordinal).ToArray() : null,
-            Comments = details.Contains("comments") ? Comments(document, index) : null,
-            Images = details.Contains("images") ? Images(document, index) : null,
+            Comments = details.Contains("comments") ? Comments(document, index, warnings) : null,
+            Images = details.Contains("images") ? Images(document, index, warnings) : null,
             Tables = details.Contains("tables") ? Tables(index) : null,
             Properties = details.Contains("properties") ? Properties(document) : null,
             Fonts = details.Contains("fonts") ? WordsFonts.Used(document) : null,
+            // Last, so it holds the caps the detail lists above disclosed.
+            Warnings = warnings.Count == 0 ? null : warnings,
         };
     }
 
@@ -77,9 +84,10 @@ internal static class InfoProjection
             },
         }).ToArray();
 
-    private static IReadOnlyList<OutlineItem> Outline(DocumentBlockIndex index) =>
-        index.Entries.Where(static entry => entry.Node is Paragraph p && HeadingLevel(p) is not null)
-            .Select(static entry =>
+    private static IReadOnlyList<OutlineItem> Outline(DocumentBlockIndex index, List<Warning> warnings) =>
+        Capped(
+            index.Entries.Where(static entry => entry.Node is Paragraph p && HeadingLevel(p) is not null).ToArray(),
+            static entry =>
             {
                 var paragraph = (Paragraph)entry.Node;
                 return new OutlineItem
@@ -88,34 +96,70 @@ internal static class InfoProjection
                     Level = HeadingLevel(paragraph)!.Value,
                     Text = WordsText.Of(paragraph),
                 };
-            }).Take(1000).ToArray();
+            },
+            "outline",
+            "Read every heading in windows with 'words query blocks --scope outline'.",
+            warnings);
 
-    private static IReadOnlyList<ContractFieldData> Fields(Document document, DocumentBlockIndex index) =>
-        document.Range.Fields.Cast<Field>().Select(field => new ContractFieldData
-        {
-            Type = field.Type.ToString(),
-            Block = index.FindBlock(field.Start) ?? 0,
-            Code = field.GetFieldCode(),
-            Result = field.Result,
-        }).Take(1000).ToArray();
+    private static IReadOnlyList<ContractFieldData> Fields(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
+        Capped(
+            document.Range.Fields.Cast<Field>().ToArray(),
+            field => new ContractFieldData
+            {
+                Type = field.Type.ToString(),
+                Block = index.FindBlock(field.Start) ?? 0,
+                Code = field.GetFieldCode(),
+                Result = field.Result,
+            },
+            "fields",
+            "Split the document with 'words split --by section' and inspect each part with '--detail fields'.",
+            warnings);
 
-    private static IReadOnlyList<CommentData> Comments(Document document, DocumentBlockIndex index) =>
-        document.GetChildNodes(NodeType.Comment, true).Cast<Comment>().Select(comment => new CommentData
-        {
-            Author = comment.Author,
-            Text = WordsText.Of(comment),
-            Block = index.FindBlock(comment),
-        }).Take(1000).ToArray();
+    private static IReadOnlyList<CommentData> Comments(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
+        Capped(
+            document.GetChildNodes(NodeType.Comment, true).Cast<Comment>().ToArray(),
+            comment => new CommentData
+            {
+                Author = comment.Author,
+                Text = WordsText.Of(comment),
+                Block = index.FindBlock(comment),
+            },
+            "comments",
+            "Extract every comment with 'words extract --what comments'.",
+            warnings);
 
-    private static IReadOnlyList<ContractImageData> Images(Document document, DocumentBlockIndex index) =>
-        document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage)
-            .Select(shape => new ContractImageData
+    private static IReadOnlyList<ContractImageData> Images(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
+        Capped(
+            document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage).ToArray(),
+            shape => new ContractImageData
             {
                 Block = index.FindBlock(shape) ?? 0,
                 Name = shape.Name,
                 WidthPoints = shape.Width,
                 HeightPoints = shape.Height,
-            }).Take(1000).ToArray();
+            },
+            "images",
+            "Extract every image with 'words extract --what images'.",
+            warnings);
+
+    /// <summary>
+    /// Projects the first <see cref="ListLimit"/> entries of a detail list and discloses the
+    /// cap with a <c>LIST_TRUNCATED</c> warning when the document holds more.
+    /// </summary>
+    private static IReadOnlyList<TItem> Capped<TSource, TItem>(
+        IReadOnlyList<TSource> source,
+        Func<TSource, TItem> project,
+        string list,
+        string hint,
+        List<Warning> warnings)
+    {
+        if (source.Count > ListLimit)
+        {
+            warnings.Add(EnvelopeParts.ListTruncated(list, ListLimit, source.Count, hint));
+        }
+
+        return source.Take(ListLimit).Select(project).ToArray();
+    }
 
     private static IReadOnlyList<TableData> Tables(DocumentBlockIndex index) =>
         index.Entries.Where(static entry => entry.Node is Table).Select(static entry =>

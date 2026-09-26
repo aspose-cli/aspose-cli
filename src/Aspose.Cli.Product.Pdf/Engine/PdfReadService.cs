@@ -47,7 +47,6 @@ internal sealed class PdfReadService
         var pages = new List<PdfPageText>();
         var scanned = new List<int>();
         int remaining = request.MaxCharacters;
-        int consumed = 0;
 
         foreach (int pageNumber in requested)
         {
@@ -66,7 +65,6 @@ internal sealed class PdfReadService
                 Text = projected,
                 Truncated = truncated,
             });
-            consumed++;
             remaining -= projected.Length;
 
             if (string.IsNullOrWhiteSpace(text) && IsImageDominated(page))
@@ -75,7 +73,7 @@ internal sealed class PdfReadService
             }
         }
 
-        bool windowTruncated = consumed < requested.Count || pages.Any(static page => page.Truncated);
+        bool windowTruncated = pages.Count < requested.Count || pages.Any(static page => page.Truncated);
         IReadOnlyList<Warning>? warnings = scanned.Count == 0
             ? null
             : [new Warning
@@ -89,15 +87,15 @@ internal sealed class PdfReadService
         {
             Source = PdfInfoProjection.Source(filePath),
             Mode = request.Mode,
-            Window = new PdfPageWindow
+            PageCount = loaded.Document.Pages.Count,
+            Pages = pages,
+            Window = new ResultWindow
             {
-                Pages = pages.Count == 0
-                    ? string.Empty
-                    : PageRangeText(pages.Select(static page => page.Number)),
-                Of = loaded.Document.Pages.Count,
+                Unit = "page",
+                Returned = pages.Count,
+                Total = requested.Count,
                 Truncated = windowTruncated,
             },
-            Pages = pages,
             ScannedPagesSuspected = scanned.Count == 0 ? null : scanned,
             License = EnvelopeParts.License(state),
             Warnings = warnings,

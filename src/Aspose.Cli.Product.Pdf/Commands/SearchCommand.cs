@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Pdf.Commands;
 
@@ -21,15 +22,19 @@ internal static class SearchCommand
             {
                 SearchQuery query = search.Read(parse);
                 string? range = parse.GetValue(pages);
-                return standard.OpenEngine().Search(standard.Input, new PdfSearchRequest
+                PdfSearchResult result = standard.OpenEngine().Search(standard.Input, new PdfSearchRequest
                 {
-                    Pattern = query.Text.Pattern,
-                    Regex = query.Text.Expression is not null,
-                    CaseSensitive = query.Text.CaseSensitive,
+                    Query = query,
                     Pages = range is null ? null : PageRange.Parse(range),
-                    MaxHits = query.MaxHits,
                     Password = standard.InputPassword,
                 });
+                ContinuationCommand resume = standard.Continuation();
+                if (range is not null)
+                {
+                    resume.Option("--pages", range);
+                }
+
+                return result with { Window = SearchOptions.Continue(query, result.Window!, resume) };
             });
     }
 }

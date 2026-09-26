@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/search-result.schema.json",
   "title": "Cells search result",
-  "description": "Result of `aspose-cli cells query search`: budgeted cell hits for a pattern, ordered by sheet then row-major. When `truncated` is true, `hint` says how to narrow the search.",
+  "description": "Result of `aspose-cli cells query search`: one window of cell hits for a pattern, ordered by sheet then row-major. When more cells match, `window.next` is the ready-to-run command for the following hits.",
   "type": "object",
-  "required": ["schema", "schemaVersion", "source", "pattern", "hits"],
+  "required": ["schema", "schemaVersion", "source", "pattern", "hits", "window"],
   "properties": {
     "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/search-result.schema.json" },
     "schemaVersion": { "const": 2 },
@@ -23,8 +23,7 @@
         }
       }
     },
-    "truncated": { "type": "boolean" },
-    "hint": { "type": "string" },
+    "window": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json" },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   },

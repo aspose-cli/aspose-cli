@@ -90,8 +90,7 @@ internal static class CellsContractSamples
             Name = "Sales",
             Index = 0,
             UsedRange = "A1:C4",
-            Window = "A1:C3",
-            Truncated = false,
+            Range = "A1:C3",
             Cells =
             [
                 [
@@ -116,7 +115,14 @@ internal static class CellsContractSamples
             ["s0"] = new StyleData { Font = "Calibri", Size = 11, Bold = true, Color = "#FFFFFF", Bg = "#1F4E79" },
             ["s1"] = new StyleData { Font = "Calibri", Size = 11, NumberFormat = "0.0%" },
         },
-        Next = "aspose-cli cells query range \"D:/data/report.xlsx\" --sheet \"Sales\" --range A4:C4 --scope full --max-cells 9 --output json",
+        Window = new ResultWindow
+        {
+            Unit = "cell",
+            Returned = 9,
+            Total = 12,
+            Truncated = true,
+            Next = "aspose-cli cells query range \"D:/data/report.xlsx\" --sheet \"Sales\" --range A4:C4 --scan-range A1:C4 --scope full --max-cells 9 --output json",
+        },
         License = Licensed,
     };
 
@@ -387,7 +393,6 @@ internal static class CellsContractSamples
                 ],
             },
         ],
-        Truncated = false,
         License = Licensed,
     };
 
@@ -400,7 +405,7 @@ internal static class CellsContractSamples
             new SearchHit { Sheet = "Sales", Cell = "A7", Value = "Q3 Adjustment" },
             new SearchHit { Sheet = "Summary", Cell = "D2", Value = "1250.5", Formula = "=Sales!E7" },
         ],
-        Truncated = false,
+        Window = new ResultWindow { Unit = "hit", Returned = 2, Truncated = false },
         License = Licensed,
     };
 

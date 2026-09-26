@@ -34,9 +34,9 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     {
         string input = CreateAnnotatedParagraph();
 
-        WordsSearchResult link = _fixture.Engine.Search(input, new WordsSearchRequest { Pattern = "link text" });
-        WordsSearchResult code = _fixture.Engine.Search(input, new WordsSearchRequest { Pattern = "HYPERLINK" });
-        WordsSearchResult deleted = _fixture.Engine.Search(input, new WordsSearchRequest { Pattern = "withdrawn" });
+        WordsSearchResult link = _fixture.Engine.Search(input, WordsFixture.Search("link text"));
+        WordsSearchResult code = _fixture.Engine.Search(input, WordsFixture.Search("HYPERLINK"));
+        WordsSearchResult deleted = _fixture.Engine.Search(input, WordsFixture.Search("withdrawn"));
         CliException anchor = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
             input,
             new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "example.com" }, Text = "x" }] },

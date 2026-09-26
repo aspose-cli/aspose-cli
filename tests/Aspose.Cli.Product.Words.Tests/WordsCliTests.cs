@@ -114,15 +114,43 @@ public sealed class WordsCliTests : IDisposable
         Assert.True(spread.ExitCode == 0, spread.StdErr);
         Assert.EndsWith(
             " --blocks 3,5 --scope text --max-chars 20000 --max-blocks 1 --output json",
-            JsonNode.Parse(spread.StdOut)!["next"]!.GetValue<string>(),
+            JsonNode.Parse(spread.StdOut)!["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
         Assert.True(section.ExitCode == 0, section.StdErr);
         JsonNode read = JsonNode.Parse(section.StdOut)!;
         Assert.Equal(2, Assert.Single(read["blocks"]!.AsArray())!["i"]!.GetValue<int>());
         Assert.EndsWith(
             " --blocks 3 --section 1 --scope text --max-chars 20000 --max-blocks 1 --output json",
-            read["next"]!.GetValue<string>(),
+            read["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void QuerySearch_WindowNextReturnsTheFollowingHits()
+    {
+        File.WriteAllText(_workspace.File("source.md"), "needle one\n\nneedle two\n\nneedle three\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "notes.docx", "--markdown", "source.md").ExitCode);
+
+        CliResult first = _workspace.Run(
+            "words", "query", "search", "notes.docx", "--pattern", "needle", "--max-hits", "2", "--output", "json");
+
+        Assert.True(first.ExitCode == 0, first.StdErr);
+        JsonNode page = JsonNode.Parse(first.StdOut)!;
+        Assert.Equal(["needle one", "needle two"], Snippets(page));
+        JsonNode window = page["window"]!;
+        Assert.Equal("hit", window["unit"]!.GetValue<string>());
+        Assert.Equal(2, window["returned"]!.GetValue<int>());
+        Assert.True(window["truncated"]!.GetValue<bool>());
+        string next = window["next"]!.GetValue<string>();
+        Assert.EndsWith(" --pattern needle --scope body --max-hits 2 --skip 2 --output json", next, StringComparison.Ordinal);
+
+        CliResult second = _workspace.RunCommandLine(next);
+
+        Assert.True(second.ExitCode == 0, second.StdErr);
+        JsonNode rest = JsonNode.Parse(second.StdOut)!;
+        Assert.Equal(["needle three"], Snippets(rest));
+        Assert.False(rest["window"]!["truncated"]!.GetValue<bool>());
+        Assert.Null(rest["window"]!["next"]);
     }
 
     [Fact]
@@ -184,4 +212,7 @@ public sealed class WordsCliTests : IDisposable
     }
 
     public void Dispose() => _workspace.Dispose();
+
+    private static IEnumerable<string> Snippets(JsonNode result) =>
+        result["hits"]!.AsArray().Select(static hit => hit!["snippet"]!.GetValue<string>());
 }

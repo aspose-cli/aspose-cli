@@ -32,6 +32,61 @@ public sealed class TempWorkspace : IDisposable
     public CliResult RunWithInput(string standardInput, params string[] args) =>
         Execute(standardInput, variables: null, args);
 
+    /// <summary>
+    /// Runs a command line the CLI printed for the caller to run verbatim, such as a result's
+    /// <c>window.next</c>: it is split the way a shell splits the quoting the continuation writes
+    /// (double quotes, with <c>\"</c>, <c>\$</c> and <c>\`</c> escaped inside them), and its
+    /// leading executable name is dropped.
+    /// </summary>
+    public CliResult RunCommandLine(string commandLine)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(commandLine);
+        var tokens = new List<string>();
+        var current = new System.Text.StringBuilder();
+        bool quoted = false;
+        bool started = false;
+        for (int index = 0; index < commandLine.Length; index++)
+        {
+            char character = commandLine[index];
+            if (quoted && character == '\\' && index + 1 < commandLine.Length
+                && commandLine[index + 1] is '"' or '$' or '`')
+            {
+                current.Append(commandLine[++index]);
+            }
+            else if (character == '"')
+            {
+                quoted = !quoted;
+                started = true;
+            }
+            else if (character == ' ' && !quoted)
+            {
+                if (started)
+                {
+                    tokens.Add(current.ToString());
+                    current.Clear();
+                    started = false;
+                }
+            }
+            else
+            {
+                current.Append(character);
+                started = true;
+            }
+        }
+
+        if (started)
+        {
+            tokens.Add(current.ToString());
+        }
+
+        if (tokens.Count == 0 || tokens[0] != Aspose.Cli.Sdk.DistributionInfo.CommandName)
+        {
+            throw new ArgumentException($"Not a command line of this CLI: {commandLine}", nameof(commandLine));
+        }
+
+        return Run([.. tokens.Skip(1)]);
+    }
+
     /// <summary>Runs in evaluation mode with extra environment variables set on the child.</summary>
     public CliResult RunWithEnv(IReadOnlyDictionary<string, string?> variables, params string[] args)
         => Execute(standardInput: null, variables, args);

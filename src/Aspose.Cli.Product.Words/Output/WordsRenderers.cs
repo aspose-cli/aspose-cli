@@ -21,7 +21,7 @@ internal static class WordsRenderers
 
     public static void Render(DocumentReadResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"{result.Source.Path}: blocks {result.Window.Blocks} of {result.Window.Of}");
+        surface.Out.WriteLine($"{result.Source.Path} (scope {result.Scope}, {result.BlockCount} blocks in the document)");
         var table = new TextTable("block", "type", "section", "style", "text");
         foreach (BlockData block in result.Blocks)
         {
@@ -29,10 +29,6 @@ internal static class WordsRenderers
         }
 
         table.WriteTo(surface.Out, surface.Format);
-        if (result.Next is not null)
-        {
-            surface.Out.WriteLine($"next: {result.Next}");
-        }
     }
 
     public static void Render(WordsConvertResult result, TableSurface surface) =>
@@ -99,11 +95,6 @@ internal static class WordsRenderers
         }
 
         table.WriteTo(surface.Out, surface.Format);
-        if (result.Truncated)
-        {
-            surface.Out.WriteLine(
-                "results truncated; narrow the scope or raise --max-hits");
-        }
     }
 
     public static void Render(WordsSplitResult result, TableSurface surface)

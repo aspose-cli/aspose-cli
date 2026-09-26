@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/search-result.schema.json",
   "type": "object",
-  "required": ["schema", "schemaVersion", "input", "pattern", "hits", "truncated"],
+  "required": ["schema", "schemaVersion", "source", "pattern", "hits", "window"],
   "additionalProperties": false,
   "properties": {
     "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/search-result.schema.json" },
     "schemaVersion": { "const": 2 },
-    "input": { "$ref": "#/$defs/source" }, "pattern": { "type": "string" },
+    "source": { "$ref": "#/$defs/source" }, "pattern": { "type": "string" },
     "hits": {
       "type": "array",
       "items": {
@@ -18,7 +18,7 @@
         }
       }
     },
-    "truncated": { "type": "boolean" }, "license": { "type": "object" }, "warnings": { "type": "array" }
+    "window": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json" }, "license": { "type": "object" }, "warnings": { "type": "array" }
   },
   "$defs": {
     "source": {

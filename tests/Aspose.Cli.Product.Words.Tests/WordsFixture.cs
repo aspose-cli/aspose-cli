@@ -1,5 +1,7 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Extensibility.Commanding;
 using Aspose.Cli.Sdk.Licensing;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Saving;
 using Aspose.Words.Tables;
@@ -48,6 +50,10 @@ public sealed class WordsFixture : IDisposable
     /// <summary>The first paragraph a test or the engine wrote, after any evaluation banner.</summary>
     internal static Paragraph FirstAuthoredParagraph(HeaderFooter header) =>
         header.Paragraphs.Cast<Paragraph>().First(static paragraph => !WordsEvaluation.IsBanner(paragraph));
+
+    /// <summary>A plain-text search of one scope with the default hit budget.</summary>
+    internal static WordsSearchRequest Search(string pattern, string scope = WordsTextScopes.Body) =>
+        new() { Query = new SearchQuery(TextSearch.Create(pattern, regex: false, caseSensitive: false), 100, scope) };
 
     public string CreateReport(string fileName = "report.docx")
     {

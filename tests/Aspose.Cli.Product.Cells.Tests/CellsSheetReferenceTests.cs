@@ -98,7 +98,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     {
         string source = Seed("Data");
 
-        SearchResult result = _fixture.Engine.Search(source, new SearchRequest { Pattern = "East", SheetName = sheet });
+        SearchResult result = _fixture.Engine.Search(source, new SearchRequest { Query = CellsFixture.Search("East"), SheetName = sheet });
 
         SearchHit hit = Assert.Single(result.Hits);
         Assert.Equal(("Data", "A2"), (hit.Sheet, hit.Cell));
@@ -108,7 +108,7 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
     public void SearchSheetFilter_ReportsAMissingSheet()
     {
         CliException error = Assert.Throws<CliException>(() =>
-            _fixture.Engine.Search(Seed("Data"), new SearchRequest { Pattern = "East", SheetName = "Nope" }));
+            _fixture.Engine.Search(Seed("Data"), new SearchRequest { Query = CellsFixture.Search("East"), SheetName = "Nope" }));
 
         Assert.Equal(CellsDiagnostics.SheetNotFound, error.Code);
     }

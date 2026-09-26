@@ -42,17 +42,19 @@ internal static class ReadProjection
             remainingCharacters = available;
         }
 
-        int first = blocks.Count == 0 ? 0 : blocks[0].I;
-        int last = blocks.Count == 0 ? 0 : blocks[^1].I;
-        int remaining = candidates.Count - blocks.Count;
-        string window = blocks.Count == 0 ? "empty" : first == last ? first.ToString() : $"{first}-{last}";
-
         return new DocumentReadResult
         {
             Source = InfoProjection.Source(path, loaded),
             Scope = request.Scope,
-            Window = new BlockWindow { Blocks = window, Of = index.Count, Truncated = remaining > 0 || blocks.Any(static b => b.ContentTruncated) },
             Blocks = blocks,
+            BlockCount = index.Count,
+            Window = new ResultWindow
+            {
+                Unit = "block",
+                Returned = blocks.Count,
+                Total = candidates.Count,
+                Truncated = blocks.Count < candidates.Count || blocks.Any(static block => block.ContentTruncated),
+            },
         };
     }
 

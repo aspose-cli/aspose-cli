@@ -56,7 +56,7 @@ internal static class WordsContractSamples
     {
         Source = new SourceInfo { Path = "D:/data/report.docx", Format = "docx", SizeBytes = 18000 },
         Scope = "full",
-        Window = new BlockWindow { Blocks = "1-2", Of = 14, Truncated = true },
+        BlockCount = 14,
         Blocks =
         [
             new BlockData
@@ -81,7 +81,14 @@ internal static class WordsContractSamples
                 ContentTruncated = false,
             },
         ],
-        Next = "aspose-cli words query blocks \"D:/data/report.docx\" --blocks 3-14 --scope full --output json",
+        Window = new ResultWindow
+        {
+            Unit = "block",
+            Returned = 2,
+            Total = 14,
+            Truncated = true,
+            Next = "aspose-cli words query blocks D:/data/report.docx --blocks 3-14 --scope full --max-chars 20000 --max-blocks 200 --output json",
+        },
         License = Licensed,
     };
 
@@ -144,7 +151,13 @@ internal static class WordsContractSamples
         Source = new SourceInfo { Path = "D:/data/report.docx", Format = "docx", SizeBytes = 18000 },
         Pattern = "revenue",
         Hits = [new WordsSearchHit { Block = 4, Section = 1, Scope = "body", Snippet = "Revenue increased." }],
-        Truncated = false,
+        Window = new ResultWindow
+        {
+            Unit = "hit",
+            Returned = 1,
+            Truncated = true,
+            Next = "aspose-cli words query search D:/data/report.docx --pattern revenue --scope body --max-hits 1 --skip 1 --output json",
+        },
         License = Licensed,
     };
 

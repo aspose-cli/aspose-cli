@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Rendering;
@@ -495,6 +496,30 @@ public class StandardInvocation
     /// </summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a conflicting, empty or unavailable source.</exception>
     public string? InputPassword => _inputPassword.Value;
+
+    /// <summary>
+    /// Starts the command that continues this invocation for a result's <c>window.next</c>: the
+    /// same command path and input, and the input password's environment variable when it came
+    /// from one (the variable's name is not a secret). The product appends its own options. A
+    /// password given literally or on stdin is not repeated, so the caller supplies it again.
+    /// </summary>
+    public ContinuationCommand Continuation()
+    {
+        var path = new List<string>();
+        for (CommandResult? command = _parse.CommandResult; command?.Parent is not null; command = command.Parent as CommandResult)
+        {
+            path.Add(command.Command.Name);
+        }
+
+        path.Reverse();
+        ContinuationCommand next = new ContinuationCommand([.. path]).Argument(Input);
+        if (_options.InputPassword is { } password && password.EnvironmentName(_parse) is { } variable)
+        {
+            next.Option(password.EnvironmentOption, variable);
+        }
+
+        return next;
+    }
 
     /// <summary>The password for <see cref="Other"/>, or null when none was given.</summary>
     /// <exception cref="CliException"><c>OPTION_INVALID</c> for a conflicting, empty or missing source.</exception>

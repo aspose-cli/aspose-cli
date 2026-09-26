@@ -141,14 +141,51 @@ public sealed class PdfCliWorkflowTests : IDisposable
         int cut = pages[^1]!["number"]!.GetValue<int>();
         string resume = cut == 3 ? "3" : $"{cut}-3";
         int budget = pages.Count == 1 ? 48 : 24;
-        string next = result["next"]!.GetValue<string>();
+        string next = result["window"]!["next"]!.GetValue<string>();
         Assert.StartsWith("aspose-cli pdf query pages ", next, StringComparison.Ordinal);
         Assert.EndsWith($" --pages {resume} --mode plain --max-chars {budget} --output json", next, StringComparison.Ordinal);
         Assert.True(single.ExitCode == 0, single.StdErr);
         Assert.EndsWith(
             " --pages 2 --mode plain --max-chars 10 --output json",
-            JsonNode.Parse(single.StdOut)!["next"]!.GetValue<string>(),
+            JsonNode.Parse(single.StdOut)!["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void QuerySearch_WindowNextReturnsTheFollowingHits()
+    {
+        using (var document = new Document())
+        {
+            for (int number = 1; number <= 3; number++)
+            {
+                document.Pages.Add().Paragraphs.Add(new TextFragment($"Marker {number}a and Marker {number}b"));
+            }
+
+            document.Save(_workspace.File("markers.pdf"));
+        }
+
+        CliResult first = _workspace.Run(
+            "pdf", "query", "search", "markers.pdf", "--pages", "1-3", "--pattern", "marker", "--max-hits", "4", "--output", "json");
+
+        Assert.True(first.ExitCode == 0, first.StdErr);
+        JsonNode window = JsonNode.Parse(first.StdOut)!["window"]!;
+        Assert.Equal("hit", window["unit"]!.GetValue<string>());
+        Assert.Equal(4, window["returned"]!.GetValue<int>());
+        Assert.True(window["truncated"]!.GetValue<bool>());
+        string next = window["next"]!.GetValue<string>();
+        Assert.StartsWith("aspose-cli pdf query search ", next, StringComparison.Ordinal);
+        Assert.EndsWith(
+            "markers.pdf\" --pages 1-3 --pattern marker --max-hits 4 --skip 4 --output json", next, StringComparison.Ordinal);
+
+        CliResult second = _workspace.RunCommandLine(next);
+
+        Assert.True(second.ExitCode == 0, second.StdErr);
+        JsonNode rest = JsonNode.Parse(second.StdOut)!;
+        JsonArray hits = rest["hits"]!.AsArray();
+        Assert.Equal([3, 3], hits.Select(static hit => hit!["page"]!.GetValue<int>()));
+        Assert.Equal([1, 2], hits.Select(static hit => hit!["occurrence"]!.GetValue<int>()));
+        Assert.False(rest["window"]!["truncated"]!.GetValue<bool>());
+        Assert.Null(rest["window"]!["next"]);
     }
 
     public void Dispose() => _workspace.Dispose();

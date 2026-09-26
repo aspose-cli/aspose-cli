@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Commands;
 
@@ -32,21 +33,27 @@ internal static class SearchCommand
             (parse, standard) =>
             {
                 SearchQuery query = search.Read(parse);
-                return standard.OpenEngine().Search(standard.Input, new SearchRequest
+                string? sheetName = parse.GetValue(sheet);
+                SearchResult result = standard.OpenEngine().Search(standard.Input, new SearchRequest
                 {
-                    Pattern = query.Text.Pattern,
-                    Regex = query.Text.Expression is not null,
+                    Query = query,
                     In = query.Scope switch
                     {
                         InFormulas => SearchIn.Formulas,
                         InBoth => SearchIn.Both,
                         _ => SearchIn.Values,
                     },
-                    SheetName = parse.GetValue(sheet),
-                    MaxHits = query.MaxHits,
-                    CaseSensitive = query.Text.CaseSensitive,
+                    SheetName = sheetName,
                     Password = standard.InputPassword,
                 });
+
+                ContinuationCommand resume = standard.Continuation();
+                if (sheetName is not null)
+                {
+                    resume.Option("--sheet", sheetName);
+                }
+
+                return result with { Window = SearchOptions.Continue(query, result.Window!, resume) };
             }).WithExamples(
             [
                 "cells query search book.xlsx --pattern TODO --output json",

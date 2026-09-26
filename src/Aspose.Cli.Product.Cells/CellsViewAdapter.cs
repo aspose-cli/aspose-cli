@@ -74,7 +74,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
         return new ProductReviewAssessment
         {
             Findings = findings,
-            Warnings = warnings.DistinctBy(static warning => warning.Code).ToArray(),
+            Warnings = warnings.DistinctBy(static warning => (warning.Code, warning.Location)).ToArray(),
             Coverage =
             [
                 Metric("sheets", info.Workbook.SheetCount, "sheets"),

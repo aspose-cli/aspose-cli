@@ -56,6 +56,8 @@
     },
     "pages": {
       "type": "array",
+      "maxItems": 20,
+      "description": "The first pages' geometry with --preview; a LIST_TRUNCATED warning names the page count when there are more.",
       "items": {
         "type": "object",
         "required": ["number", "widthPoints", "heightPoints", "rotation", "mediaBox", "cropBox"],
@@ -88,6 +90,8 @@
     },
     "outline": {
       "type": "array",
+      "maxItems": 200,
+      "description": "Bookmarks in reading order, depth first; a LIST_TRUNCATED warning names the total when there are more.",
       "items": {
         "type": "object",
         "required": ["title", "level"],

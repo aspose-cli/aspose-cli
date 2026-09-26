@@ -40,7 +40,7 @@ internal static class ReadCommand
                     Password = standard.InputPassword,
                 };
                 PresentationReadResult result = standard.OpenEngine().Read(input, request);
-                return result with { Next = Next(input, request, result) };
+                return result with { Window = result.Window! with { Next = Next(standard.Continuation(), request, result) } };
             });
     }
 
@@ -48,21 +48,20 @@ internal static class ReadCommand
     /// The read that resumes where this one stopped, or null when it covered the selection.
     /// Without --slides the selection is every slide, read ten at a time.
     /// </summary>
-    private static string? Next(string input, PresentationReadRequest request, PresentationReadResult result)
+    private static string? Next(ContinuationCommand resume, PresentationReadRequest request, PresentationReadResult result)
     {
-        if (!result.Window.Truncated || result.Window.Of == 0)
+        if (!result.Window!.Truncated || result.SlideCount == 0)
         {
             return null;
         }
 
-        IReadOnlyList<int> selection = request.Slides?.Resolve(result.Window.Of)
-            ?? Enumerable.Range(1, result.Window.Of).ToArray();
+        IReadOnlyList<int> selection = request.Slides?.Resolve(result.SlideCount)
+            ?? Enumerable.Range(1, result.SlideCount).ToArray();
         return ReadContinuation.After(
                 selection,
                 [.. result.Slides.Select(static slide => new ReadPart(slide.Number, slide.ContentTruncated))],
                 request.MaxCharacters) is { } continuation
-            ? new ContinuationCommand("slides", "query", "slides")
-                .Argument(input)
+            ? resume
                 .Option("--slides", continuation.Parts)
                 .Option("--scope", request.Scope)
                 .Flag("--notes", request.IncludeNotes)

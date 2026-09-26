@@ -12,9 +12,11 @@ or case-sensitive `shapeName` within their slide.
 `query slides --max-chars` bounds all returned title, text, run, requested note
 and comment text, including repeated projections. Addressing and formatting
 metadata do not consume this text budget. Inspect `window.truncated` and each
-slide's `contentTruncated`. Run `next` verbatim: it reads the remaining slides
-and starts again at a slide the budget cut short; when that slide alone exceeded
-the budget, `next` doubles `--max-chars`.
+slide's `contentTruncated`. Run `window.next` verbatim: it reads the remaining
+slides and starts again at a slide the budget cut short; when that slide alone
+exceeded the budget, it doubles `--max-chars`. A truncated `query search` also
+carries `window.next`, which repeats the search with `--skip` past the returned
+hits.
 
 ## Workflow
 

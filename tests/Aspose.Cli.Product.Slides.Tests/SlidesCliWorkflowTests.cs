@@ -107,13 +107,51 @@ public sealed class SlidesCliWorkflowTests : IDisposable
         int budget = cut && returned.Count == 1 ? 40 : 20;
         Assert.EndsWith(
             $" --slides {Aspose.Cli.Sdk.Addressing.PageRange.Describe(selection[resume..])} --scope shapes --max-chars {budget} --output json",
-            read["next"]!.GetValue<string>(),
+            read["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
         Assert.True(single.ExitCode == 0, single.StdErr);
         Assert.EndsWith(
             " --slides 1-4 --scope shapes --notes --max-chars 8 --output json",
-            JsonNode.Parse(single.StdOut)!["next"]!.GetValue<string>(),
+            JsonNode.Parse(single.StdOut)!["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void QuerySearch_WindowNextReturnsTheFollowingHits()
+    {
+        CreateDeck(_workspace.File("deck.pptx"));
+
+        // The unpaged search is the reference, so evaluation watermark text cannot skew the pages.
+        CliResult all = _workspace.Run(
+            "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes", "--output", "json");
+        CliResult first = _workspace.Run(
+            "slides", "query", "search", "deck.pptx", "--pattern", "Slide", "--scope", "shapes",
+            "--max-hits", "2", "--output", "json");
+
+        Assert.True(all.ExitCode == 0, all.StdErr);
+        Assert.True(first.ExitCode == 0, first.StdErr);
+        string[] expected = Hits(JsonNode.Parse(all.StdOut)!);
+        Assert.True(expected.Length > 2, all.StdOut);
+        JsonNode page = JsonNode.Parse(first.StdOut)!;
+        Assert.Equal(expected[..2], Hits(page));
+        Assert.Equal(2, page["window"]!["returned"]!.GetValue<int>());
+        Assert.True(page["window"]!["truncated"]!.GetValue<bool>());
+        string next = page["window"]!["next"]!.GetValue<string>();
+        Assert.EndsWith(
+            " --pattern Slide --scope shapes --max-hits 2 --skip 2 --output json", next, StringComparison.Ordinal);
+
+        CliResult following = _workspace.RunCommandLine(next);
+
+        Assert.True(following.ExitCode == 0, following.StdErr);
+        JsonNode rest = JsonNode.Parse(following.StdOut)!;
+        Assert.Equal(expected[2..Math.Min(4, expected.Length)], Hits(rest));
+        Assert.Equal(expected.Length > 4, rest["window"]!["truncated"]!.GetValue<bool>());
+
+        static string[] Hits(JsonNode result) =>
+        [
+            .. result["hits"]!.AsArray().Select(static hit =>
+                $"{hit!["slide"]}:{hit["shapeId"]}:{hit["start"]}"),
+        ];
     }
 
     public void Dispose() => _workspace.Dispose();

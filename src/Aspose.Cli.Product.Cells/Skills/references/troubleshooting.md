@@ -40,7 +40,7 @@ most likely fix. Read the hint first; this page adds background.
   budgetable. In an ops document a malformed cell, range or column is
   `OPS_INVALID` instead, with the field and the reason in `details.reason`.
 - **RANGE_TOO_LARGE** — you asked for more cells than `--max-cells`.
-  Follow the hint's suggested first window and then the `next` commands,
+  Follow the hint's suggested first page and then each `window.next` command,
   or raise `--max-cells` when you truly need everything.
 - **OPS_INVALID** — an op failed validation; `error.details.index` is its
   zero-based position, `details.op` its name and `details.reason` the rule

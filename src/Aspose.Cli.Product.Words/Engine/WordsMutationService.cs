@@ -105,7 +105,7 @@ internal sealed class WordsMutationService
             PagesTouched = originalPages.Count == 0 ? null : originalPages,
             Verification = verification,
             License = EnvelopeParts.License(state),
-            Warnings = Combine(outputWarnings, MutationWarnings(
+            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, MutationWarnings(
                 state,
                 inputHadRevisions,
                 inputWasSigned,
@@ -331,7 +331,7 @@ internal sealed class WordsMutationService
             extra.Add(EvaluationTruncated);
         }
 
-        return Combine(EnvelopeParts.OutputWarnings(state), extra);
+        return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
     }
 
     private sealed record ExpectedDocumentState(int FieldCount, int RevisionCount, string Protection);

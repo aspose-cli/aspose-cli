@@ -23,78 +23,70 @@ internal sealed class SlidesInspectionService
 
     internal SlidesSearchResult Search(string filePath, PresentationSearchRequest request)
     {
-        TextSearch query = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
+        TextSearch text = request.Query.Text;
+        string scope = request.Query.Scope ?? PresentationSearchScopes.All;
 
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
-        var hits = new List<SlidesSearchHit>();
-        bool truncated = false;
+        SearchHits<SlidesSearchHit> hits = request.Query.Collect<SlidesSearchHit>();
         foreach ((ISlide slide, int index) in loaded.Presentation.Slides.Select((slide, index) => (slide, index)))
         {
-            if (request.Scope is PresentationSearchScopes.Shapes or PresentationSearchScopes.All)
+            if (scope is PresentationSearchScopes.Shapes or PresentationSearchScopes.All)
             {
                 foreach (IShape shape in slide.Shapes)
                 {
-                    string? text = ShapeText(shape);
-                    if (text is null)
-                    {
-                        continue;
-                    }
-
-                    AddHits(text, "shapes", shape.OfficeInteropShapeId, shape.Name);
-                    if (truncated)
+                    if (ShapeText(shape) is { } shapeText
+                        && !Offer(shapeText, "shapes", shape.OfficeInteropShapeId, shape.Name))
                     {
                         break;
                     }
                 }
             }
 
-            if (!truncated && request.Scope is PresentationSearchScopes.Notes or PresentationSearchScopes.All)
+            if (!hits.Truncated
+                && scope is PresentationSearchScopes.Notes or PresentationSearchScopes.All
+                && Notes(slide) is { } notes)
             {
-                string? notes = Notes(slide);
-                if (notes is not null)
-                {
-                    AddHits(notes, "notes", null, null);
-                }
+                Offer(notes, "notes", null, null);
             }
 
-            if (truncated)
+            if (hits.Truncated)
             {
                 break;
             }
 
-            void AddHits(string text, string scope, long? shapeId, string? shapeName)
+            // Offers every match in one text; false once the hit window is full.
+            bool Offer(string source, string hitScope, long? shapeId, string? shapeName)
             {
-                foreach ((int start, int length) in query.Find(text))
+                foreach ((int start, int length) in text.Find(source))
                 {
-                    if (hits.Count == request.MaxHits)
-                    {
-                        truncated = true;
-                        break;
-                    }
-
-                    hits.Add(new SlidesSearchHit
+                    if (!hits.Offer(() => new SlidesSearchHit
                     {
                         Slide = index + 1,
                         SlideId = slide.SlideId,
-                        Scope = scope,
+                        Scope = hitScope,
                         ShapeId = shapeId,
                         ShapeName = EmptyToNull(shapeName),
-                        Text = MatchPreview(text, start, length),
+                        Text = MatchPreview(source, start, length),
                         Start = start,
                         Length = length,
-                    });
+                    }))
+                    {
+                        return false;
+                    }
                 }
+
+                return true;
             }
         }
 
         return new SlidesSearchResult
         {
-            Input = Source(filePath, loaded.FormatId),
-            Pattern = request.Pattern,
-            Scope = request.Scope,
-            Hits = hits,
-            Truncated = truncated,
+            Source = Source(filePath, loaded.FormatId),
+            Pattern = text.Pattern,
+            Scope = scope,
+            Hits = hits.Hits,
+            Window = hits.Window(),
             License = EnvelopeParts.License(state),
             Warnings = InputWarnings(state, loaded),
         };

@@ -21,10 +21,14 @@ one file, one line per paragraph.
 `query blocks --max-chars` bounds the sum of returned paragraph, table-cell and
 run text. Full scope counts repeated text/run projections separately; addressing
 and formatting metadata do not consume this text budget. Inspect both
-`window.truncated` and each block's `contentTruncated`. Run `next` verbatim: it
-reads the remaining blocks and starts again at a block the budget cut short;
-when that block alone exceeded the budget, `next` doubles `--max-chars`.
+`window.truncated` and each block's `contentTruncated`. Run `window.next`
+verbatim: it reads the remaining blocks and starts again at a block the budget
+cut short; when that block alone exceeded the budget, it doubles `--max-chars`.
 `--section` with `--blocks` reads only that section's blocks in the range.
+A truncated `query search` also carries `window.next`, which repeats the search
+with `--skip` past the returned hits. An `inspect` detail list or compare
+`samples` list that was capped carries a `LIST_TRUNCATED` warning whose hint
+names the command that reads the rest.
 
 ## Workflow
 

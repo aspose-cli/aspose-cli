@@ -90,9 +90,8 @@ public sealed class PdfEngineTests
         });
 
         Assert.Equal(mode, result.Mode);
-        Assert.Equal("2,3", result.Window.Pages);
-        Assert.Equal(3, result.Window.Of);
-        Assert.False(result.Window.Truncated);
+        Assert.Equal(3, result.PageCount);
+        Assert.Equal(new ResultWindow { Unit = "page", Returned = 2, Total = 2, Truncated = false }, result.Window);
         Assert.Contains("Portable PDF page 2", result.Pages[0].Text, StringComparison.Ordinal);
         Assert.Contains("Portable PDF page 3", result.Pages[1].Text, StringComparison.Ordinal);
     }
@@ -105,7 +104,7 @@ public sealed class PdfEngineTests
 
         var result = fixture.Engine.Read(path, new PdfReadRequest { MaxCharacters = 24 });
 
-        Assert.True(result.Window.Truncated);
+        Assert.True(result.Window!.Truncated);
         Assert.Equal(24, result.Pages.Sum(static page => page.Text.Length));
         Assert.True(result.Pages[^1].Truncated);
     }
@@ -198,9 +197,23 @@ public sealed class PdfEngineTests
 
         var result = fixture.Engine.Read(path, new PdfReadRequest { MaxCharacters = 1 });
 
-        Assert.Equal(100, result.Window.Of);
+        Assert.Equal(new ResultWindow { Unit = "page", Returned = 1, Total = 100, Truncated = true }, result.Window);
         Assert.Single(result.Pages);
-        Assert.True(result.Window.Truncated);
+    }
+
+    [Fact]
+    public void Info_DisclosesThePagePreviewCap()
+    {
+        using var fixture = new PdfEngineFixture();
+        string path = fixture.CreateRawDocument("many-pages.pdf", pages: 21);
+
+        PdfInfoResult info = fixture.Engine.GetInfo(path, new PdfInfoRequest { IncludePreview = true });
+
+        Assert.Equal(20, info.Pages!.Count);
+        Warning warning = Assert.Single(info.Warnings!);
+        Assert.Equal(WarningCodes.ListTruncated, warning.Code);
+        Assert.Equal("pages", warning.Location);
+        Assert.Contains("first 20 of 21", warning.Message, StringComparison.Ordinal);
     }
 
     [Fact]

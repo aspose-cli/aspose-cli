@@ -40,7 +40,7 @@ internal static class SlidesRenderers
 
     public static void Render(PresentationReadResult result, TableSurface surface)
     {
-        surface.Out.WriteLine($"{result.Source.Path}: slides {result.Window.Slides} of {result.Window.Of} ({result.Scope})");
+        surface.Out.WriteLine($"{result.Source.Path}: {result.SlideCount} slide(s) ({result.Scope})");
         foreach (SlideData slide in result.Slides)
         {
             surface.Out.WriteLine();
@@ -62,11 +62,6 @@ internal static class SlidesRenderers
             {
                 surface.Out.WriteLine($"notes: {slide.Notes}");
             }
-        }
-
-        if (result.Next is not null)
-        {
-            surface.Out.WriteLine($"next: {result.Next}");
         }
     }
 
@@ -125,10 +120,6 @@ internal static class SlidesRenderers
         }
 
         table.WriteTo(surface.Out, surface.Format);
-        if (result.Truncated)
-        {
-            surface.Out.WriteLine("results truncated; lower the scope or raise --max-hits");
-        }
     }
 
     private static string Points(double value) =>

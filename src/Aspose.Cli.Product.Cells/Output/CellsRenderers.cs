@@ -52,9 +52,9 @@ internal static class CellsRenderers
     {
         SheetProjection sheet = read.Sheet;
         var headline = new List<string> { sheet.Name };
-        if (sheet.Window is { } window)
+        if (sheet.Range is { } returned)
         {
-            headline.Add(window);
+            headline.Add(returned);
         }
 
         if (sheet.UsedRange is { } used)
@@ -64,9 +64,9 @@ internal static class CellsRenderers
 
         surface.Out.WriteLine(string.Join(' ', headline));
 
-        if (sheet.Cells is { Count: > 0 } cells && sheet.Window is not null)
+        if (sheet.Cells is { Count: > 0 } cells && sheet.Range is not null)
         {
-            RangeRef range = A1.ParseRange(sheet.Window).Range;
+            RangeRef range = A1.ParseRange(sheet.Range).Range;
 
             string[] headers = new string[range.ColumnCount + 1];
             headers[0] = string.Empty;
@@ -90,14 +90,9 @@ internal static class CellsRenderers
 
             table.WriteTo(surface.Out, surface.Format);
         }
-        else if (sheet.Truncated)
+        else if (read.Window is { Truncated: true })
         {
             surface.Out.WriteLine("cell data omitted: the sheet exceeds the cell budget");
-        }
-
-        if (read.Next is { } next)
-        {
-            surface.Out.WriteLine($"next: {next}");
         }
     }
 
@@ -169,11 +164,6 @@ internal static class CellsRenderers
 
             table.WriteTo(surface.Out, surface.Format);
         }
-
-        if (diff.Truncated)
-        {
-            surface.Out.WriteLine("(cell list truncated by the diff budget)");
-        }
     }
 
     public static void Render(SearchResult search, TableSurface surface)
@@ -190,11 +180,6 @@ internal static class CellsRenderers
             }
 
             table.WriteTo(surface.Out, surface.Format);
-        }
-
-        if (search.Truncated && search.Hint is { } hint)
-        {
-            surface.Out.WriteLine($"({hint})");
         }
     }
 

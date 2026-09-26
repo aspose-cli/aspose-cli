@@ -1,5 +1,6 @@
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
@@ -131,11 +132,8 @@ public sealed record PdfFormExportRequest
 }
 public sealed record PdfSearchRequest
 {
-    public required string Pattern { get; init; }
-    public bool Regex { get; init; }
-    public bool CaseSensitive { get; init; }
+    public required SearchQuery Query { get; init; }
     public PageRange? Pages { get; init; }
-    public int MaxHits { get; init; } = 100;
     public string? Password { get; init; }
 }
 public sealed record PdfValidateRequest

@@ -40,8 +40,8 @@ public sealed class SlidesHardeningTests
             + (result.Notes?.Length ?? 0) + (result.Comments?.Sum(static comment => comment.Text.Length) ?? 0);
         Assert.Equal(budget, characters);
         Assert.Equal(truncated, result.ContentTruncated);
-        Assert.Equal(truncated, read.Window.Truncated);
-        Assert.Null(read.Next);
+        Assert.Equal(truncated, read.Window!.Truncated);
+        Assert.Equal(1, read.Window.Total);
     }
     [Fact]
     public void LargeDeck_RemainsProgressiveAndSupportsBoundedRendering()
@@ -67,7 +67,8 @@ public sealed class SlidesHardeningTests
 
         Assert.Equal(12, info.Presentation.Slides);
         Assert.Equal(10, window.Slides.Count);
-        Assert.True(window.Window.Truncated);
+        Assert.True(window.Window!.Truncated);
+        Assert.Equal(12, window.Window.Total);
         Assert.Equal([1, 12], rendered.Outputs.Select(static item => item.Slide));
         Assert.All(rendered.Outputs, static item => Assert.True(item.Output.SizeBytes > 100));
         Assert.Equal(320, PngWidth(rendered.Outputs[0].Output.Path));

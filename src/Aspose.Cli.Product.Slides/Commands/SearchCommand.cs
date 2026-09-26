@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Slides.Commands;
 
@@ -22,15 +23,15 @@ internal static class SearchCommand
             (parse, standard) =>
             {
                 SearchQuery query = search.Read(parse);
-                return standard.OpenEngine().Search(standard.Input, new PresentationSearchRequest
+                SlidesSearchResult result = standard.OpenEngine().Search(standard.Input, new PresentationSearchRequest
                 {
-                    Pattern = query.Text.Pattern,
-                    Regex = query.Text.Expression is not null,
-                    CaseSensitive = query.Text.CaseSensitive,
-                    Scope = query.Scope!,
-                    MaxHits = query.MaxHits,
+                    Query = query,
                     Password = standard.InputPassword,
                 });
+                return result with
+                {
+                    Window = SearchOptions.Continue(query, result.Window!, standard.Continuation()),
+                };
             });
     }
 }

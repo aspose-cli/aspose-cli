@@ -44,7 +44,7 @@
   other files in the directory stay.
 - `EVAL_MODE`: disclose evaluation limits and the visible watermark. After a
   license change, start the matching preview again to select the new license.
-- PDF/A validation issues: inspect `valid`, `issues` and `truncated`; command
+- PDF/A validation issues: inspect `valid`, `issues` and any `LIST_TRUNCATED` warning; command
   success and conversion success alone do not establish conformance.
 
 Use `aspose-cli doctor`, `aspose-cli license status --output json`,

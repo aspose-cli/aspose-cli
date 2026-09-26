@@ -75,7 +75,7 @@ public sealed class SlidesTextCoverageTests
             new PresentationReadRequest { Scope = PresentationReadScopes.Full });
         SlidesSearchResult search = fixture.Engine.Search(
             input,
-            new PresentationSearchRequest { Pattern = "q", CaseSensitive = true, Scope = PresentationSearchScopes.Shapes });
+            new PresentationSearchRequest { Query = new SearchQuery(TextSearch.Create("q", regex: false, caseSensitive: true), 100, PresentationSearchScopes.Shapes) });
         SlidesExtractResult extract = fixture.Engine.Extract(
             input,
             new PresentationExtractRequest { What = PresentationExtractKinds.Text, OutputDirectory = fixture.File("text") });

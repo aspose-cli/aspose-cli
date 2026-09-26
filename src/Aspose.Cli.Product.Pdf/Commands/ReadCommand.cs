@@ -36,26 +36,25 @@ internal static class ReadCommand
                     Password = standard.InputPassword,
                 };
                 PdfReadResult result = standard.OpenEngine().Read(input, request);
-                return result with { Next = Next(input, request, result) };
+                return result with { Window = result.Window! with { Next = Next(standard.Continuation(), request, result) } };
             });
     }
 
     /// <summary>The read that resumes where this one stopped, or null when it covered the selection.</summary>
-    private static string? Next(string input, PdfReadRequest request, PdfReadResult result)
+    private static string? Next(ContinuationCommand resume, PdfReadRequest request, PdfReadResult result)
     {
-        if (!result.Window.Truncated || result.Window.Of == 0)
+        if (!result.Window!.Truncated)
         {
             return null;
         }
 
-        IReadOnlyList<int> selection = request.Pages?.Resolve(result.Window.Of)
-            ?? Enumerable.Range(1, result.Window.Of).ToArray();
+        IReadOnlyList<int> selection = request.Pages?.Resolve(result.PageCount)
+            ?? Enumerable.Range(1, result.PageCount).ToArray();
         return ReadContinuation.After(
                 selection,
                 [.. result.Pages.Select(static page => new ReadPart(page.Number, page.Truncated))],
                 request.MaxCharacters) is { } continuation
-            ? new ContinuationCommand("pdf", "query", "pages")
-                .Argument(input)
+            ? resume
                 .Option("--pages", continuation.Parts)
                 .Option("--mode", request.Mode)
                 .Option(MaxCharactersOption.Name, continuation.MaxCharacters)

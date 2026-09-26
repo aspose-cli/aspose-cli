@@ -9,21 +9,20 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>
 /// Finds cells whose display value or formula matches a pattern. Iterates
 /// sheet-by-sheet in address order, charging stored cells to the shared work
-/// budget and bounding the returned matches separately.
+/// budget and collecting one window of matches through the shared search paging.
 /// </summary>
 internal static class SearchMatcher
 {
     private const int MaxValueLength = 200;
 
     /// <summary>Searches every sheet, or only the already resolved <paramref name="sheetIndex"/>.</summary>
-    public static (IReadOnlyList<SearchHit> Hits, bool Truncated) Find(
+    public static SearchHits<SearchHit> Find(
         ResourceBudgetLedger budgets, Workbook workbook, SearchRequest request, int? sheetIndex)
     {
-        var hits = new List<SearchHit>();
+        SearchHits<SearchHit> hits = request.Query.Collect<SearchHit>();
         bool inValues = request.In is SearchIn.Values or SearchIn.Both;
         bool inFormulas = request.In is SearchIn.Formulas or SearchIn.Both;
-
-        TextSearch query = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
+        TextSearch query = request.Query.Text;
 
         foreach (Worksheet sheet in workbook.Worksheets)
         {
@@ -51,12 +50,7 @@ internal static class SearchMatcher
                     continue;
                 }
 
-                if (hits.Count >= request.MaxHits)
-                {
-                    return (hits, true);
-                }
-
-                hits.Add(new SearchHit
+                bool kept = hits.Offer(() => new SearchHit
                 {
                     Sheet = sheet.Name,
                     Cell = A1.FormatCell(new CellRef(cell.Row, cell.Column)),
@@ -68,10 +62,14 @@ internal static class SearchMatcher
                     Value = Truncate(rawValue ?? display),
                     Formula = formula,
                 });
+                if (!kept)
+                {
+                    return hits;
+                }
             }
         }
 
-        return (hits, false);
+        return hits;
     }
 
     private static string Truncate(string value) =>

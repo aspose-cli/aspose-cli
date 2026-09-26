@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/slides/presentation-read.schema.json",
   "type": "object",
-  "required": ["schema", "schemaVersion", "kind", "source", "scope", "window", "slides"],
+  "required": ["schema", "schemaVersion", "kind", "source", "scope", "slideCount", "slides", "window"],
   "additionalProperties": false,
   "properties": {
     "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/presentation-read.schema.json" },
@@ -10,18 +10,9 @@
     "kind": { "const": "presentation" },
     "source": { "type": "object" },
     "scope": { "enum": ["text", "shapes", "full"] },
-    "window": {
-      "type": "object",
-      "required": ["slides", "of", "truncated"],
-      "additionalProperties": false,
-      "properties": {
-        "slides": { "type": "string" },
-        "of": { "type": "integer", "minimum": 0 },
-        "truncated": { "type": "boolean", "description": "True if content within a returned item or later selected items was omitted." }
-      }
-    },
+    "slideCount": { "type": "integer", "minimum": 0, "description": "How many slides the presentation holds." },
     "slides": { "type": "array", "items": { "type": "object", "properties": { "contentTruncated": { "type": "boolean", "description": "The shared max-chars budget covers title, text, runs, requested notes and comments, including repeated projections; re-read this slide with a larger budget for omitted content." }, "shapes": { "type": "array", "items": { "type": "object", "properties": { "shapeId": { "type": "integer", "minimum": 1, "description": "Positive persistent identifier within this slide; pass as an edit operation shape selector." } } } } } } },
-    "next": { "type": "string", "description": "Ready-to-run command for the unread parts, or absent when the read covered its selection. It starts again at a part whose content was truncated and doubles --max-chars when that part alone exceeded the budget." },
+    "window": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json" },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

@@ -6,14 +6,14 @@ Usage:
   aspose-cli slides [command] [options]
 
 Options:
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Commands:
   inspect <file>  Show presentation structure, stable slide ids and metadata.
@@ -59,7 +59,7 @@ Options:
   --encrypt-env <encrypt-env>                                                      Name of an environment variable holding the password for the output presentation.
   --font-dir <font-dir>                                                            Local font directory searched in addition to the system fonts; repeat for more.
   -?, -h, --help                                                                   Show help and usage information
-  -f, --output <json|markdown|table>                                               Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -f, --output <compact|json|markdown|table>                                       Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                                                      Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                                                                    Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                                                              Path to an Aspose license file; overrides every other license source.
@@ -87,7 +87,7 @@ Options:
   --encrypt-env <encrypt-env>                  Name of an environment variable holding the password for the output presentation.
   --font-dir <font-dir>                        Local font directory searched in addition to the system fonts; repeat for more.
   -?, -h, --help                               Show help and usage information
-  -f, --output <json|markdown|table>           Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -f, --output <compact|json|markdown|table>   Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                  Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                                Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                          Path to an Aspose license file; overrides every other license source.
@@ -107,28 +107,28 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --ops <ops> (REQUIRED)               The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/slides/ops.
-  --if-match <if-match>                Require the current input SHA-256 fingerprint before editing.
-  --dry-run                            Resolve and apply operations in memory without writing.
-  --best-effort                        Keep successful operations, report failures, and exit 8.
-  -o, --out <out>                      Output path. Default: the input path with '.out' inserted before the extension.
-  --overwrite                          Replace the output file if it already exists.
-  --in-place                           Modify the input file itself atomically.
-  --backup                             Create a non-overwriting backup before an in-place write.
-  --password <password>                Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>        Name of an environment variable holding the password for the presentation.
-  --password-stdin                     Read the password for the presentation from the first line of stdin.
-  --encrypt <encrypt>                  Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>          Name of an environment variable holding the password for the output presentation.
-  --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --ops <ops> (REQUIRED)                      The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/slides/ops.
+  --if-match <if-match>                       Require the current input SHA-256 fingerprint before editing.
+  --dry-run                                   Resolve and apply operations in memory without writing.
+  --best-effort                               Keep successful operations, report failures, and exit 8.
+  -o, --out <out>                             Output path. Default: the input path with '.out' inserted before the extension.
+  --overwrite                                 Replace the output file if it already exists.
+  --in-place                                  Modify the input file itself atomically.
+  --backup                                    Create a non-overwriting backup before an in-place write.
+  --password <password>                       Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the presentation.
+  --password-stdin                            Read the password for the presentation from the first line of stdin.
+  --encrypt <encrypt>                         Password for the output presentation. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                 Name of an environment variable holding the password for the output presentation.
+  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 
 ## aspose-cli slides extract --help
@@ -142,21 +142,21 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --what <media|notes|text> (REQUIRED)  media, notes or text.
-  --slides <slides>                     Optional slide range for notes or text.
-  --out-dir <out-dir> (REQUIRED)        Safe extraction directory.
-  --overwrite                           Replace the output file if it already exists.
-  --password <password>                 Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>         Name of an environment variable holding the password for the presentation.
-  --password-stdin                      Read the password for the presentation from the first line of stdin.
-  -?, -h, --help                        Show help and usage information
-  -f, --output <json|markdown|table>    Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                           Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                         Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                   Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                   Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                   Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>   Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --what <media|notes|text> (REQUIRED)        media, notes or text.
+  --slides <slides>                           Optional slide range for notes or text.
+  --out-dir <out-dir> (REQUIRED)              Safe extraction directory.
+  --overwrite                                 Replace the output file if it already exists.
+  --password <password>                       Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the presentation.
+  --password-stdin                            Read the password for the presentation from the first line of stdin.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 
 ## aspose-cli slides inspect --help
@@ -176,7 +176,7 @@ Options:
   --password-env <password-env>                                              Name of an environment variable holding the password for the presentation.
   --password-stdin                                                           Read the password for the presentation from the first line of stdin.
   -?, -h, --help                                                             Show help and usage information
-  -f, --output <json|markdown|table>                                         Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -f, --output <compact|json|markdown|table>                                 Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                                                Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                                                              Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                                                        Path to an Aspose license file; overrides every other license source.
@@ -193,14 +193,14 @@ Usage:
   aspose-cli slides query [command] [options]
 
 Options:
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Commands:
   slides <file>  Read a bounded slide-content window.
@@ -218,22 +218,23 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --pattern <pattern> (REQUIRED)       Text to find, or a regular expression with --regex.
-  --regex                              Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                     Match letter case exactly.
-  --scope <all|notes|shapes>           Search scope: shapes, notes, or all. [default: all]
-  --max-hits <max-hits>                Maximum returned hits (1-10000). [default: 100]
-  --password <password>                Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>        Name of an environment variable holding the password for the presentation.
-  --password-stdin                     Read the password for the presentation from the first line of stdin.
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --pattern <pattern> (REQUIRED)              Text to find, or a regular expression with --regex.
+  --regex                                     Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                            Match letter case exactly.
+  --scope <all|notes|shapes>                  Search scope: shapes, notes, or all. [default: all]
+  --max-hits <max-hits>                       Maximum returned hits (1-10000). [default: 100]
+  --skip <skip>                               Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --password <password>                       Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the presentation.
+  --password-stdin                            Read the password for the presentation from the first line of stdin.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 
 ## aspose-cli slides query slides --help
@@ -247,21 +248,21 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --slides <slides>                    1-based slide range, e.g. 1-3,7,9-. Default: the first 10 slides.
-  --scope <full|shapes|text>           Projection scope: text, shapes or full. [default: shapes]
-  --max-chars <max-chars>              Maximum returned title/text/run/notes/comment characters, including repeated projections. [default: 20000]
-  --notes                              Include speaker notes for returned slides.
-  --password <password>                Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>        Name of an environment variable holding the password for the presentation.
-  --password-stdin                     Read the password for the presentation from the first line of stdin.
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --slides <slides>                           1-based slide range, e.g. 1-3,7,9-. Default: the first 10 slides.
+  --scope <full|shapes|text>                  Projection scope: text, shapes or full. [default: shapes]
+  --max-chars <max-chars>                     Maximum returned title/text/run/notes/comment characters, including repeated projections. [default: 20000]
+  --notes                                     Include speaker notes for returned slides.
+  --password <password>                       Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the presentation.
+  --password-stdin                            Read the password for the presentation from the first line of stdin.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 
 ## aspose-cli slides render --help
@@ -275,24 +276,24 @@ Arguments:
   <file>  Presentation file path.
 
 Options:
-  --to <jpeg|png|svg>                  png, jpeg or svg. [default: png]
-  --slides <slides>                    1-based slide range, e.g. 1-3,7,9-. Default: slide 1.
-  --all-slides                         Render every slide.
-  --dpi <dpi>                          Raster resolution (36-1200; default 192); ignored for vector formats. [default: 192]
-  --width <width>                      Exact raster width in pixels (64-20000); replaces --dpi.
-  -o, --out <out>                      Output path; multi-slide output adds .sN before the extension.
-  --overwrite                          Replace the output file if it already exists.
-  --password <password>                Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>        Name of an environment variable holding the password for the presentation.
-  --password-stdin                     Read the password for the presentation from the first line of stdin.
-  --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --to <jpeg|png|svg>                         png, jpeg or svg. [default: png]
+  --slides <slides>                           1-based slide range, e.g. 1-3,7,9-. Default: slide 1.
+  --all-slides                                Render every slide.
+  --dpi <dpi>                                 Raster resolution (36-1200; default 192); ignored for vector formats. [default: 192]
+  --width <width>                             Exact raster width in pixels (64-20000); replaces --dpi.
+  -o, --out <out>                             Output path; multi-slide output adds .sN before the extension.
+  --overwrite                                 Replace the output file if it already exists.
+  --password <password>                       Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the presentation.
+  --password-stdin                            Read the password for the presentation from the first line of stdin.
+  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 

@@ -21,7 +21,7 @@
         "cellsDiffering": {
           "type": "integer",
           "minimum": 0,
-          "description": "Total differing cells across the workbook. The true count even when 'truncated' is set — the --max-diffs cap bounds the listed 'cells', not this total."
+          "description": "Total differing cells across the workbook. The true count even when a LIST_TRUNCATED warning reports that --max-diffs capped the listed 'cells'."
         }
       }
     },
@@ -48,10 +48,6 @@
           }
         }
       }
-    },
-    "truncated": {
-      "type": "boolean",
-      "description": "True when more cells differ than --max-diffs listed; summary.cellsDiffering still reports the full count."
     },
     "license": { "type": "object" },
     "warnings": { "type": "array" }

@@ -48,7 +48,7 @@ internal static class WordsEngineSupport
             extra.Add(new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source contains macros which the target format does not preserve.", Hint = "Convert to docm/dotm to preserve macros." });
         }
 
-        return Combine(EnvelopeParts.OutputWarnings(state), extra);
+        return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
     }
 
     internal static IReadOnlyList<Warning>? CompareWarnings(
@@ -63,22 +63,7 @@ internal static class WordsEngineSupport
         IReadOnlyList<Warning>? outputWarnings = producedOutput
             ? EnvelopeParts.OutputWarnings(state)
             : null;
-        return Combine(outputWarnings, warnings);
-    }
-
-    internal static IReadOnlyList<Warning>? Combine(IReadOnlyList<Warning>? first, IReadOnlyList<Warning>? second)
-    {
-        if (first is null or { Count: 0 })
-        {
-            return second is null or { Count: 0 } ? null : second;
-        }
-
-        if (second is null or { Count: 0 })
-        {
-            return first;
-        }
-
-        return [.. first, .. second];
+        return EnvelopeParts.CombineWarnings(outputWarnings, warnings);
     }
 
     internal static OutputInfo BuildOutput(string path, string format, long size) =>

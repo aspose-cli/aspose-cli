@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -16,7 +17,7 @@ internal static class InfoProjection
 {
     private const int MaxPreviewColumns = 20;
 
-    public static (WorkbookSummary Summary, Warning? ErrorsTruncated) Summarize(
+    public static (WorkbookSummary Summary, Warning? ListTruncated) Summarize(
         ResourceBudgetLedger budgets, Workbook workbook, string filePath, InfoRequest request)
     {
         var sheets = new List<SheetInfo>(workbook.Worksheets.Count);
@@ -32,15 +33,12 @@ internal static class InfoProjection
             (formulaErrors, int total) = ScanFormulaErrors(budgets, workbook);
             if (total > formulaErrors.Count)
             {
-                errorsTruncated = new Warning
-                {
-                    Code = CellsDiagnostics.ErrorsTruncated,
-                    AffectsCompleteness = true,
-                    Message = $"The workbook has {total} formula errors; this list is capped at the first "
-                        + $"{formulaErrors.Count}, so sheets scanned after the cap are not represented.",
-                    Hint = "Treat the count, not the list, as complete; read a specific sheet with "
-                        + "--scope values to see its errors beyond the cap.",
-                };
+                errorsTruncated = EnvelopeParts.ListTruncated(
+                    "workbook.formulaErrors",
+                    formulaErrors.Count,
+                    total,
+                    "Sheets scanned after the cap are not represented; read a sheet with "
+                        + "'cells query range --sheet <name>' and look for cells of type error.");
             }
         }
 

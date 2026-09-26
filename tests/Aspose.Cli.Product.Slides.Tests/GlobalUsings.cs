@@ -5,3 +5,5 @@ global using Aspose.Cli.Sdk.Operations;
 global using Aspose.Cli.Product.Slides.Ports;
 global using Aspose.Cli.Sdk.Addressing;
 global using Aspose.Cli.Sdk.Contracts;
+global using Aspose.Cli.Sdk.Extensibility.Commanding;
+global using Aspose.Cli.Sdk.Text;

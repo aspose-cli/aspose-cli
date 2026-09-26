@@ -115,11 +115,13 @@ public sealed class CliContractTests : IDisposable
     public void Capabilities_ExposeTheCurrentDeterministicSourceRevision()
     {
         CliResult first = _workspace.Run("capabilities", "--output", "json");
-        CliResult second = _workspace.Run("capabilities", "--output", "json");
+        CliResult compact = _workspace.Run("capabilities", "--output", "compact");
 
         Assert.Equal(0, first.ExitCode);
-        Assert.Equal(0, second.ExitCode);
-        Assert.Equal(first.StdOut, second.StdOut);
+        Assert.Equal(0, compact.ExitCode);
+        // Compact output is the same document on one line.
+        Assert.Single(compact.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries));
+        Assert.True(JsonNode.DeepEquals(Parse(first.StdOut), Parse(compact.StdOut)));
 
         using JsonDocument capabilities = JsonDocument.Parse(first.StdOut);
         string sourceRevision = capabilities.RootElement

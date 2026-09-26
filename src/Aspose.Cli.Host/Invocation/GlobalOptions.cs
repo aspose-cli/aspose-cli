@@ -13,16 +13,26 @@ namespace Aspose.Cli.Host.Invocation;
 /// </summary>
 internal sealed class GlobalOptions
 {
+    /// <summary>The accepted <c>--output</c> values, in help order.</summary>
+    private static readonly IReadOnlyDictionary<string, OutputMode> OutputModes =
+        new Dictionary<string, OutputMode>(StringComparer.Ordinal)
+        {
+            ["json"] = OutputMode.Json,
+            ["compact"] = OutputMode.Compact,
+            ["table"] = OutputMode.Table,
+            ["markdown"] = OutputMode.Markdown,
+        };
+
     public GlobalOptions(bool licensingApplicable)
     {
         License = null;
         Output = new Option<string?>(GlobalOptionNames.Output, GlobalOptionNames.OutputAlias)
         {
-            Description = "Output format: json (contract envelopes), table (human text) or markdown. " +
-                          "Default: table on a terminal, json when redirected.",
+            Description = "Output format: json (contract envelopes), compact (the same JSON on one line), " +
+                          "table (human text) or markdown. Default: table on a terminal, json when redirected.",
             Recursive = true,
         }.WithInput(InputKind.None);
-        Output.AcceptOnlyFromAmong("json", "table", "markdown");
+        Output.AcceptOnlyFromAmong([.. OutputModes.Keys]);
 
         Quiet = new Option<bool>(GlobalOptionNames.Quiet, GlobalOptionNames.QuietAlias)
         {
@@ -205,7 +215,7 @@ internal sealed class GlobalOptions
                 candidate = argument[(GlobalOptionNames.OutputAlias.Length + 1)..];
             }
 
-            if (candidate is "json" or "table" or "markdown")
+            if (candidate is not null && OutputModes.ContainsKey(candidate))
             {
                 output = candidate;
             }
@@ -214,14 +224,10 @@ internal sealed class GlobalOptions
         return (MapOutput(output), quiet);
     }
 
-    private static OutputMode MapOutput(string? value) => value switch
-    {
-        "json" => OutputMode.Json,
-        "table" => OutputMode.Table,
-        "markdown" => OutputMode.Markdown,
-        // Agents typically read the CLI through a pipe; humans get a table.
-        _ => Console.IsOutputRedirected ? OutputMode.Json : OutputMode.Table,
-    };
+    // Agents typically read the CLI through a pipe; humans get a table.
+    private static OutputMode MapOutput(string? value) =>
+        value is not null && OutputModes.TryGetValue(value, out OutputMode mode) ? mode
+        : Console.IsOutputRedirected ? OutputMode.Json : OutputMode.Table;
 
     private static long ResolveMaxInputBytes(long? requested)
     {

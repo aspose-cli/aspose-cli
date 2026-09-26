@@ -19,7 +19,7 @@ public sealed class CellsSparseQueryTests
         int original = sheet.Cells.Count;
         using var deadline = OperationDeadline.Start(null);
         var budgets = Budgets(deadline, 3);
-        var result = SearchMatcher.Find(budgets, workbook, new SearchRequest { Pattern = "needle" }, null);
+        var result = SearchMatcher.Find(budgets, workbook, new SearchRequest { Query = CellsFixture.Search("needle") }, null);
         Assert.Equal(["A1", "C2", "XFD1048576"], result.Hits.Select(hit => hit.Cell));
         Assert.False(result.Truncated);
         Assert.Equal(0, budgets.Remaining(CellsBudgetDomains.Cells));
@@ -34,12 +34,12 @@ public sealed class CellsSparseQueryTests
         workbook.Worksheets[0].Cells["XFD1048576"].PutValue("needle");
         using var deadline = OperationDeadline.Start(null);
         var result = SearchMatcher.Find(Budgets(deadline, 2), workbook,
-            new SearchRequest { Pattern = "needle", MaxHits = 1 }, null);
+            new SearchRequest { Query = CellsFixture.Search("needle", maxHits: 1) }, null);
         Assert.Equal("A1", Assert.Single(result.Hits).Cell);
         Assert.True(result.Truncated);
         Assert.Equal(ErrorCodes.InputBudgetExceeded, Assert.Throws<CliException>(() =>
             SearchMatcher.Find(Budgets(deadline, 1), workbook,
-                new SearchRequest { Pattern = "needle", MaxHits = 1 }, null)).Code);
+                new SearchRequest { Query = CellsFixture.Search("needle", maxHits: 1) }, null)).Code);
     }
 
     [Fact]
@@ -58,8 +58,8 @@ public sealed class CellsSparseQueryTests
         Assert.Equal(1000, result.Summary.FormulaErrors!.Count);
         Assert.Equal("A1", result.Summary.FormulaErrors[0].Cell);
         Assert.Equal("A1000", result.Summary.FormulaErrors[^1].Cell);
-        Assert.Contains("1002", result.ErrorsTruncated!.Message);
-        Assert.True(result.ErrorsTruncated.AffectsCompleteness);
+        Assert.Contains("1002", result.ListTruncated!.Message, StringComparison.Ordinal);
+        Assert.Equal(WarningCodes.ListTruncated, result.ListTruncated.Code);
         Assert.Equal(original, first.Cells.Count + second.Cells.Count);
     }
 
@@ -124,7 +124,7 @@ public sealed class CellsSparseQueryTests
         {
             _ = InfoProjection.Summarize(budgets, workbook, "sample.xlsx", new InfoRequest { Details = [InfoDetails.Errors] });
         }
-        else { _ = SearchMatcher.Find(budgets, workbook, new SearchRequest { Pattern = "needle", MaxHits = 1 }, null); }
+        else { _ = SearchMatcher.Find(budgets, workbook, new SearchRequest { Query = CellsFixture.Search("needle", maxHits: 1) }, null); }
     }
 
     private static ResourceBudgetLedger Budgets(OperationDeadline deadline, int cells) =>

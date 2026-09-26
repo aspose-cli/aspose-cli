@@ -14,6 +14,9 @@ namespace Aspose.Cli.Product.Words.Engine;
 /// <summary>Owns comparison and bounded content search.</summary>
 internal sealed class WordsInspectionService
 {
+    // The revision samples a comparison returns; the revision counts always cover every revision.
+    private const int SampleLimit = 50;
+
     private readonly ILicenseGate _licenseGate;
     private readonly SafeFileWriter _writer;
     private readonly WordsDocumentLoader _loader;
@@ -70,14 +73,18 @@ internal sealed class WordsInspectionService
                 FormatChanges = revisions.Count(static r => r.RevisionType == RevisionType.FormatChange),
                 Moves = revisions.Count(static r => r.RevisionType == RevisionType.Moving),
             },
-            Samples = revisions.Take(50).Select(static revision => new RevisionSample
+            Samples = revisions.Take(SampleLimit).Select(static revision => new RevisionSample
             {
                 Type = revision.RevisionType.ToString(),
                 Text = Truncate(WordsText.Clean(revision.ParentNode?.GetText() ?? string.Empty), 300),
             }).ToArray(),
             Output = output,
             License = EnvelopeParts.License(state),
-            Warnings = CompareWarnings(state, leftLoaded, rightLoaded, output is not null),
+            Warnings = EnvelopeParts.CombineWarnings(
+                CompareWarnings(state, leftLoaded, rightLoaded, output is not null),
+                revisions.Length > SampleLimit
+                    ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
+                    : null),
         };
     }
 
@@ -87,43 +94,39 @@ internal sealed class WordsInspectionService
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         var index = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
-        TextSearch query = TextSearch.Create(request.Pattern, request.Regex, request.CaseSensitive);
-        var hits = new List<WordsSearchHit>();
-        bool truncated = false;
-        IEnumerable<(Node Node, string Scope)> units = WordsStories.In(loaded.Document, request.Scope)
+        SearchQuery query = request.Query;
+        SearchHits<WordsSearchHit> hits = query.Collect<WordsSearchHit>();
+        IEnumerable<(Node Node, string Scope)> units = WordsStories.In(loaded.Document, query.Scope ?? WordsTextScopes.Body)
             .SelectMany(static story => WordsStories.Units(story.Story).Select(unit => (unit, story.Scope)));
         foreach ((Node node, string scope) in units)
         {
             string text = WordsText.Of(node);
-            if (!query.IsMatch(text))
+            if (query.Text.IsMatch(text) && !hits.Offer(() => Hit(index, node, scope, text)))
             {
-                continue;
-            }
-
-            if (hits.Count >= request.MaxHits)
-            {
-                truncated = true;
                 break;
             }
-
-            int block = index.FindBlock(node) ?? 0;
-            hits.Add(new WordsSearchHit
-            {
-                Block = block,
-                Section = block == 0 ? 0 : index.Get(block).Section,
-                Scope = scope,
-                Snippet = Truncate(text, 300),
-            });
         }
 
         return new WordsSearchResult
         {
             Source = InfoProjection.Source(filePath, loaded),
-            Pattern = request.Pattern,
-            Hits = hits,
-            Truncated = truncated,
+            Pattern = query.Text.Pattern,
+            Hits = hits.Hits,
+            Window = hits.Window(),
             License = EnvelopeParts.License(state),
             Warnings = InputWarnings(loaded),
+        };
+    }
+
+    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text)
+    {
+        int block = index.FindBlock(node) ?? 0;
+        return new WordsSearchHit
+        {
+            Block = block,
+            Section = block == 0 ? 0 : index.Get(block).Section,
+            Scope = scope,
+            Snippet = Truncate(text, 300),
         };
     }
 }

@@ -2,9 +2,9 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-read.schema.json",
   "title": "Workbook read projection",
-  "description": "Result of `aspose-cli cells query range`: a windowed projection of one sheet's cell data. The file on disk is the primary artifact; this JSON is a view, never a round-trip format.",
+  "description": "Result of `aspose-cli cells query range`: a budgeted projection of one sheet's cell data. `window` counts cells; for a planned scan (a default read over the used range, or a page generated for an explicit range too large for one read) `window.next` is the ready-to-run command for the next page. The file on disk is the primary artifact; this JSON is a view, never a round-trip format.",
   "type": "object",
-  "required": ["schema", "schemaVersion", "kind", "source", "scope", "sheet"],
+  "required": ["schema", "schemaVersion", "kind", "source", "scope", "sheet", "window"],
   "properties": {
     "schema": {
       "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-read.schema.json"
@@ -23,16 +23,18 @@
     },
     "sheet": {
       "type": "object",
-      "required": ["name", "index", "truncated"],
+      "required": ["name", "index"],
       "properties": {
         "name": { "type": "string" },
         "index": { "type": "integer", "minimum": 0 },
         "usedRange": { "type": "string" },
-        "window": { "type": "string" },
-        "truncated": { "type": "boolean" },
+        "range": {
+          "type": "string",
+          "description": "A1 range returned in `cells`; omitted when no cells were returned."
+        },
         "cells": {
           "type": "array",
-          "description": "Row-major matrix covering exactly `window`.",
+          "description": "Row-major matrix covering exactly `range`.",
           "items": {
             "type": "array",
             "items": { "$ref": "#/$defs/cell" }
@@ -45,10 +47,7 @@
       "description": "Style pool referenced by cell styleId; present only for style-bearing scopes.",
       "additionalProperties": { "$ref": "#/$defs/style" }
     },
-    "next": {
-      "type": "string",
-      "description": "Ready-to-run command for the next window of a planned scan: a default read over the used range, or a page generated for an explicit range too large for one read."
-    },
+    "window": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json" },
     "license": {
       "$ref": "#/$defs/licenseInfo"
     },

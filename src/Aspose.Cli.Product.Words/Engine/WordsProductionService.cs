@@ -271,7 +271,7 @@ internal sealed class WordsProductionService
             extra.Add(new Warning { Code = WarningCodes.SignatureInvalidated, Message = "Creating from the signed source invalidates its digital signature.", Hint = "Sign the produced document after review." });
         }
 
-        return Combine(EnvelopeParts.OutputWarnings(state), extra);
+        return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
     }
 
 

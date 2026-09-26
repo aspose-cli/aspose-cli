@@ -161,7 +161,7 @@ public sealed class SlidesShapeAddressingTests
 
         SlidesSearchResult search = fixture.Engine.Search(input, new PresentationSearchRequest
         {
-            Pattern = "Slide", Scope = "shapes",
+            Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: false), 100, PresentationSearchScopes.Shapes),
         });
         Assert.Contains(search.Hits, hit => hit.Slide == 3 && hit.ShapeId == shape.ShapeId);
         string output = fixture.File("addressed.pptx");

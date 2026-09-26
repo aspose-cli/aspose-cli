@@ -42,6 +42,9 @@ public static partial class WarningCodes
     public const string SignatureInvalidated = "SIGNATURE_INVALIDATED";
     public const string EvalInputTruncated = "EVAL_INPUT_TRUNCATED";
 
+    /// <summary>A list inside a result was capped; the warning.s location names the list.</summary>
+    public const string ListTruncated = "LIST_TRUNCATED";
+
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
@@ -50,5 +53,6 @@ public static partial class WarningCodes
         LossyConversion,
         SignatureInvalidated,
         EvalInputTruncated,
+        ListTruncated,
     ];
 }

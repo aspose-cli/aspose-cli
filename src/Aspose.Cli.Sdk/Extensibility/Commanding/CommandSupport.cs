@@ -272,6 +272,12 @@ internal sealed class PasswordOptions
         }
     }
 
+    /// <summary>The option that names the password's environment variable.</summary>
+    internal string EnvironmentOption => _prefix + StandardOptionNames.EnvironmentSuffix;
+
+    /// <summary>The environment variable the caller named for the password, or null.</summary>
+    internal string? EnvironmentName(ParseResult parseResult) => parseResult.GetValue(_fromEnvironment);
+
     /// <summary>
     /// Returns the option that supplies the secret, or null when none was given, so an error
     /// about the secret's use names the option the caller actually passed.

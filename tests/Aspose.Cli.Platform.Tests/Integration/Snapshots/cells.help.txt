@@ -6,14 +6,14 @@ Usage:
   aspose-cli cells [command] [options]
 
 Options:
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Commands:
   inspect <file>          Show structure and metadata of a workbook.
@@ -46,20 +46,20 @@ Arguments:
   <right>  Candidate workbook to compare against the baseline.
 
 Options:
-  --compare <formulas|values>                What to compare: values, or formulas (values + formulas, the default). [default: formulas]
-  --max-diffs <max-diffs>                    Maximum differing cells to list across the entire workbook (1-1000000). [default: 1000]
-  --left-password <left-password>            Password for the baseline file. Discouraged: visible in the process list; prefer --left-password-env.
-  --left-password-env <left-password-env>    Name of an environment variable holding the password for the baseline file.
-  --right-password <right-password>          Password for the candidate file. Discouraged: visible in the process list; prefer --right-password-env.
-  --right-password-env <right-password-env>  Name of an environment variable holding the password for the candidate file.
-  -?, -h, --help                             Show help and usage information
-  -f, --output <json|markdown|table>         Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                              Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                        Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                        Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                        Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>        Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --compare <formulas|values>                 What to compare: values, or formulas (values + formulas, the default). [default: formulas]
+  --max-diffs <max-diffs>                     Maximum differing cells to list across the entire workbook (1-1000000). [default: 1000]
+  --left-password <left-password>             Password for the baseline file. Discouraged: visible in the process list; prefer --left-password-env.
+  --left-password-env <left-password-env>     Name of an environment variable holding the password for the baseline file.
+  --right-password <right-password>           Password for the candidate file. Discouraged: visible in the process list; prefer --right-password-env.
+  --right-password-env <right-password-env>   Name of an environment variable holding the password for the candidate file.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli cells compare old.xlsx new.xlsx --output json
@@ -88,7 +88,7 @@ Options:
   --encrypt-env <encrypt-env>                                                  Name of an environment variable holding the password for the output file.
   --font-dir <font-dir>                                                        Local font directory searched in addition to the system fonts; repeat for more.
   -?, -h, --help                                                               Show help and usage information
-  -f, --output <json|markdown|table>                                           Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -f, --output <compact|json|markdown|table>                                   Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                                                  Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                                                                Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                                                          Path to an Aspose license file; overrides every other license source.
@@ -113,18 +113,18 @@ Arguments:
   <file>  Path of the workbook to create, e.g. report.xlsx.
 
 Options:
-  --sheets <sheets>                    Comma-separated sheet names, e.g. "Data,Summary". Default: one sheet named Sheet1.
-  --overwrite                          Replace the output file if it already exists.
-  --encrypt <encrypt>                  Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>          Name of an environment variable holding the password for the output file.
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --sheets <sheets>                           Comma-separated sheet names, e.g. "Data,Summary". Default: one sheet named Sheet1.
+  --overwrite                                 Replace the output file if it already exists.
+  --encrypt <encrypt>                         Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                 Name of an environment variable holding the password for the output file.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli cells create book.xlsx --sheets "Data,Summary"
@@ -141,31 +141,31 @@ Arguments:
   <file>  Workbook to edit.
 
 Options:
-  --ops <ops>                          The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/cells/ops.
-  --set <set>                          Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and anything else is text. Quote sheet names that need it: --set "'My Sheet'!A1=5". Example: --set "Sales!B3=42" --set "Sales!G2==E2*F2".
-  --if-match <if-match>                Require the current input SHA-256 fingerprint before editing.
-  --dry-run                            Resolve and apply operations in memory without writing.
-  --best-effort                        Keep successful operations, report failures, and exit 8.
-  --verify                             Verify the staged output and report its cell changes and formula errors.
-  --no-recalc                          Skip the automatic formula recalculation after applying the ops.
-  -o, --out <out>                      Output path. Default: the input path with '.out' inserted before the extension.
-  --overwrite                          Replace the output file if it already exists.
-  --in-place                           Modify the input file itself atomically.
-  --backup                             Create a non-overwriting backup before an in-place write.
-  --password <password>                Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>        Name of an environment variable holding the password for the workbook.
-  --password-stdin                     Read the password for the workbook from the first line of stdin.
-  --encrypt <encrypt>                  Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>          Name of an environment variable holding the password for the output file.
-  --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --ops <ops>                                 The ops JSON: a path to the document, '-' to read it from stdin, or the document itself when the value starts with { or [ (inline). To name a file whose name starts with '[', prefix it with ./ . Vocabulary: aspose-cli schema v2/cells/ops.
+  --set <set>                                 Set one cell as SHEET!CELL=VALUE; repeatable, applied after the --ops document. A VALUE starting with '=' is a formula; otherwise TRUE/FALSE and numbers are typed and anything else is text. Quote sheet names that need it: --set "'My Sheet'!A1=5". Example: --set "Sales!B3=42" --set "Sales!G2==E2*F2".
+  --if-match <if-match>                       Require the current input SHA-256 fingerprint before editing.
+  --dry-run                                   Resolve and apply operations in memory without writing.
+  --best-effort                               Keep successful operations, report failures, and exit 8.
+  --verify                                    Verify the staged output and report its cell changes and formula errors.
+  --no-recalc                                 Skip the automatic formula recalculation after applying the ops.
+  -o, --out <out>                             Output path. Default: the input path with '.out' inserted before the extension.
+  --overwrite                                 Replace the output file if it already exists.
+  --in-place                                  Modify the input file itself atomically.
+  --backup                                    Create a non-overwriting backup before an in-place write.
+  --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the workbook.
+  --password-stdin                            Read the password for the workbook from the first line of stdin.
+  --encrypt <encrypt>                         Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                 Name of an environment variable holding the password for the output file.
+  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli cells edit book.xlsx --in-place --set "Sales!B3=42" --set "Sales!G2==E2*F2"
@@ -196,7 +196,7 @@ Options:
   --password-env <password-env>                                  Name of an environment variable holding the password for the workbook.
   --password-stdin                                               Read the password for the workbook from the first line of stdin.
   -?, -h, --help                                                 Show help and usage information
-  -f, --output <json|markdown|table>                             Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -f, --output <compact|json|markdown|table>                     Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                                    Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                                            Path to an Aspose license file; overrides every other license source.
@@ -217,14 +217,14 @@ Usage:
   aspose-cli cells query [command] [options]
 
 Options:
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Commands:
   range <file>   Read cell data of one sheet as a windowed projection.
@@ -242,21 +242,21 @@ Arguments:
   <file>  Workbook to read.
 
 Options:
-  --sheet <sheet>                        Sheet to read. Default: the active sheet.
-  --range <range>                        Window to read, e.g. A1:F50 or Sales!A1:F50. Default: the used range, subject to --max-cells.
-  --scope <formulas|full|styles|values>  Projection scope: values (default), formulas (adds f), styles (adds styleId + pool), full. [default: values]
-  --max-cells <max-cells>                Cell budget per call (1-1000000). [default: 10000]
-  --password <password>                  Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>          Name of an environment variable holding the password for the workbook.
-  --password-stdin                       Read the password for the workbook from the first line of stdin.
-  -?, -h, --help                         Show help and usage information
-  -f, --output <json|markdown|table>     Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                            Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                          Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                    Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                    Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                    Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>    Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --sheet <sheet>                             Sheet to read. Default: the active sheet.
+  --range <range>                             Window to read, e.g. A1:F50 or Sales!A1:F50. Default: the used range, subject to --max-cells.
+  --scope <formulas|full|styles|values>       Projection scope: values (default), formulas (adds f), styles (adds styleId + pool), full. [default: values]
+  --max-cells <max-cells>                     Cell budget per call (1-1000000). [default: 10000]
+  --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the workbook.
+  --password-stdin                            Read the password for the workbook from the first line of stdin.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli cells query range book.xlsx --range Sales!A1:D10 --scope values --output json
@@ -274,23 +274,24 @@ Arguments:
   <file>  Workbook to search.
 
 Options:
-  --pattern <pattern> (REQUIRED)       Text to find, or a regular expression with --regex.
-  --regex                              Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                     Match letter case exactly.
-  --scope <both|formulas|values>       Where to search: values (default), formulas or both. [default: values]
-  --max-hits <max-hits>                Maximum returned hits (1-10000). [default: 100]
-  --sheet <sheet>                      Restrict to one sheet. Default: all sheets.
-  --password <password>                Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>        Name of an environment variable holding the password for the workbook.
-  --password-stdin                     Read the password for the workbook from the first line of stdin.
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --pattern <pattern> (REQUIRED)              Text to find, or a regular expression with --regex.
+  --regex                                     Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                            Match letter case exactly.
+  --scope <both|formulas|values>              Where to search: values (default), formulas or both. [default: values]
+  --max-hits <max-hits>                       Maximum returned hits (1-10000). [default: 100]
+  --skip <skip>                               Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --sheet <sheet>                             Restrict to one sheet. Default: all sheets.
+  --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the workbook.
+  --password-stdin                            Read the password for the workbook from the first line of stdin.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli cells query search book.xlsx --pattern TODO --output json
@@ -308,25 +309,25 @@ Arguments:
   <file>  Workbook to render.
 
 Options:
-  --to <jpeg|png|svg>                  Image format: png, jpeg, svg. [default: png]
-  --sheet <sheet>                      Sheet to render. Default: the active sheet.
-  --range <range>                      Render only this range, e.g. A1:G20 or Sales!A1:G20.
-  --all-sheets                         Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.
-  --dpi <dpi>                          Raster resolution (36-1200; default 192); ignored for vector formats. [default: 192]
-  -o, --out <out>                      Output path. Default: the input path with the image extension. With --all-sheets it is the naming template: <base>.<Sheet><ext>.
-  --overwrite                          Replace the output file if it already exists.
-  --password <password>                Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>        Name of an environment variable holding the password for the workbook.
-  --password-stdin                     Read the password for the workbook from the first line of stdin.
-  --font-dir <font-dir>                Local font directory searched in addition to the system fonts; repeat for more.
-  -?, -h, --help                       Show help and usage information
-  -f, --output <json|markdown|table>   Output format: json (contract envelopes), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                          Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                        Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                  Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                  Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                  Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>  Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --to <jpeg|png|svg>                         Image format: png, jpeg, svg. [default: png]
+  --sheet <sheet>                             Sheet to render. Default: the active sheet.
+  --range <range>                             Render only this range, e.g. A1:G20 or Sales!A1:G20.
+  --all-sheets                                Render every visible sheet, one image per sheet named <out-base>.<Sheet><ext>.
+  --dpi <dpi>                                 Raster resolution (36-1200; default 192); ignored for vector formats. [default: 192]
+  -o, --out <out>                             Output path. Default: the input path with the image extension. With --all-sheets it is the naming template: <base>.<Sheet><ext>.
+  --overwrite                                 Replace the output file if it already exists.
+  --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the workbook.
+  --password-stdin                            Read the password for the workbook from the first line of stdin.
+  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli cells render book.xlsx --range Sales!A1:G20 --out sales.png

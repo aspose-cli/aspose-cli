@@ -3,9 +3,11 @@ using System.Text.Json.Serialization;
 namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>
-/// Result of <c>aspose-cli cells query range</c>: a windowed projection of one sheet's
-/// cell data. The file on disk remains the primary artifact — this JSON is a
-/// view of it, never a round-trip format.
+/// Result of <c>aspose-cli cells query range</c>: a budgeted projection of one sheet's
+/// cell data. The envelope's window counts cells: how many the read returned, how many
+/// the read covers, and for a planned scan the command that returns the next page. The
+/// file on disk remains the primary artifact — this JSON is a view of it, never a
+/// round-trip format.
 /// </summary>
 public sealed record WorkbookReadResult() : ResultEnvelope(CellsSchemaIds.WorkbookRead, 2)
 {
@@ -30,13 +32,6 @@ public sealed record WorkbookReadResult() : ResultEnvelope(CellsSchemaIds.Workbo
     /// formatting from bloating the payload.
     /// </summary>
     public IReadOnlyDictionary<string, StyleData>? Styles { get; init; }
-
-    /// <summary>
-    /// Ready-to-run command for the next window when the projection was
-    /// truncated. Explicit ranges are complete requests and omit it. Agents
-    /// should execute generated commands verbatim instead of computing ranges.
-    /// </summary>
-    public string? Next { get; init; }
 }
 
 /// <summary>Accepted values of the read scope.</summary>
@@ -55,7 +50,7 @@ public static class ReadScopes
     public const string Full = "full";
 }
 
-/// <summary>Windowed cell data of one sheet.</summary>
+/// <summary>Budgeted cell data of one sheet.</summary>
 public sealed record SheetProjection
 {
     /// <summary>Sheet name, exactly as shown in Excel.</summary>
@@ -67,19 +62,15 @@ public sealed record SheetProjection
     /// <summary>A1 range covering all data on the sheet; omitted when empty.</summary>
     public string? UsedRange { get; init; }
 
-    /// <summary>A1 range actually returned in <see cref="Cells"/>; omitted when no data was returned.</summary>
-    public string? Window { get; init; }
-
     /// <summary>
-    /// <c>true</c> when the projection covers less than the requested data
-    /// because of the cell budget; the envelope's <c>next</c> field then
-    /// carries the follow-up command.
+    /// A1 range returned in <see cref="Cells"/>; omitted when no cells were returned, as for
+    /// an empty sheet or a default read over the cell budget.
     /// </summary>
-    public required bool Truncated { get; init; }
+    public string? Range { get; init; }
 
     /// <summary>
-    /// Row-major cell matrix covering exactly <see cref="Window"/>. Omitted
-    /// when the sheet is empty or the projection was truncated to a summary.
+    /// Row-major cell matrix covering exactly <see cref="Range"/>. Omitted when the sheet
+    /// is empty or a default read over the cell budget returned only a summary.
     /// </summary>
     public IReadOnlyList<IReadOnlyList<CellData>>? Cells { get; init; }
 }

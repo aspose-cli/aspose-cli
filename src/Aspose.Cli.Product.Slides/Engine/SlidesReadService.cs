@@ -9,6 +9,9 @@ namespace Aspose.Cli.Product.Slides.Engine;
 /// <summary>Owns presentation info and bounded content-window reads.</summary>
 internal sealed class SlidesReadService
 {
+    /// <summary>The most entries the <c>media</c> detail lists; <c>extract --what media</c> exports them all.</summary>
+    internal const int MediaListLimit = 100;
+
     private readonly ILicenseGate _licenseGate;
     private readonly SlidesPresentationLoader _loader;
 
@@ -32,6 +35,7 @@ internal sealed class SlidesReadService
             .ToArray();
         double width = presentation.SlideSize.Size.Width;
         double height = presentation.SlideSize.Size.Height;
+        IReadOnlyList<PresentationMediaInfo>? media = Details("media") ? Media(presentation) : null;
 
         return new PresentationInfoResult
         {
@@ -74,7 +78,7 @@ internal sealed class SlidesReadService
                     Slides = presentation.Slides.Count(slide => ReferenceEquals(slide.LayoutSlide, layout)),
                 }).OrderBy(static layout => layout.Name, StringComparer.Ordinal).ToArray()
                 : null,
-            Media = Details("media") ? Media(presentation) : null,
+            Media = media?.Take(MediaListLimit).ToArray(),
             Notes = Details("notes")
                 ? presentation.Slides.Select((slide, index) =>
                 {
@@ -100,7 +104,18 @@ internal sealed class SlidesReadService
                 : null,
             Properties = Details("properties") ? Properties(presentation.DocumentProperties) : null,
             License = EnvelopeParts.License(state),
-            Warnings = InputWarnings(state, loaded),
+            Warnings = EnvelopeParts.CombineWarnings(
+                InputWarnings(state, loaded),
+                media is { Count: > MediaListLimit }
+                    ?
+                    [
+                        EnvelopeParts.ListTruncated(
+                            "media",
+                            MediaListLimit,
+                            media.Count,
+                            "Run 'aspose-cli slides extract <presentation> --what media --out <directory>' to export every media item."),
+                    ]
+                    : null),
         };
     }
 
@@ -131,6 +146,8 @@ internal sealed class SlidesReadService
             }
         }
 
+        // Without --slides the selection is every slide, of which a read returns at most ten.
+        int selected = request.Slides is null ? presentation.Slides.Count : requested.Count;
         int last = slides.Count == 0 ? 0 : slides[^1].Number;
         bool selectionTruncated = slides.Count < requested.Count;
         bool defaultWindowTruncated = request.Slides is null && last < presentation.Slides.Count;
@@ -139,13 +156,15 @@ internal sealed class SlidesReadService
         {
             Source = Source(filePath, loaded.FormatId),
             Scope = request.Scope,
-            Window = new SlideWindow
+            SlideCount = presentation.Slides.Count,
+            Slides = slides,
+            Window = new ResultWindow
             {
-                Slides = slides.Count == 0 ? string.Empty : string.Join(",", slides.Select(static slide => slide.Number)),
-                Of = presentation.Slides.Count,
+                Unit = "slide",
+                Returned = slides.Count,
+                Total = selected,
                 Truncated = truncated,
             },
-            Slides = slides,
             License = EnvelopeParts.License(state),
             Warnings = InputWarnings(state, loaded),
         };

@@ -78,20 +78,68 @@ public sealed class CellsCliTests : IDisposable
             "cells", "query", "range", "grid.csv", "--range", "A1:C10", "--max-cells", "10", "--output", "json");
 
         Assert.True(summary.ExitCode == 0, summary.StdErr);
-        string first = JsonNode.Parse(summary.StdOut)!["next"]!.GetValue<string>();
+        JsonNode summaryWindow = JsonNode.Parse(summary.StdOut)!["window"]!;
+        Assert.Equal(("cell", 0, 30, true), (
+            summaryWindow["unit"]!.GetValue<string>(),
+            summaryWindow["returned"]!.GetValue<int>(),
+            summaryWindow["total"]!.GetValue<int>(),
+            summaryWindow["truncated"]!.GetValue<bool>()));
+        string first = summaryWindow["next"]!.GetValue<string>();
         Assert.EndsWith(" --range A1:C3 --scan-range A1:C10 --scope values --max-cells 10 --output json", first, StringComparison.Ordinal);
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("RANGE_TOO_LARGE", error["code"]!.GetValue<string>());
         Assert.Contains(" --range A1:C3 --scan-range A1:C10 ", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
 
-        CliResult second = _workspace.Run(Tokens(first));
+        CliResult second = _workspace.RunCommandLine(first);
         Assert.True(second.ExitCode == 0, second.StdErr);
         JsonNode page = JsonNode.Parse(second.StdOut)!;
-        Assert.Equal("A1:C3", page["sheet"]!["window"]!.GetValue<string>());
+        Assert.Equal("A1:C3", page["sheet"]!["range"]!.GetValue<string>());
+        Assert.Equal(9, page["window"]!["returned"]!.GetValue<int>());
         Assert.EndsWith(
             " --range A4:C6 --scan-range A1:C10 --scope values --max-cells 10 --output json",
-            page["next"]!.GetValue<string>(),
+            page["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
+
+        CliResult last = _workspace.Run(
+            "cells", "query", "range", "grid.csv", "--range", "A10:C10", "--scan-range", "A1:C10", "--max-cells", "10", "--output", "json");
+        Assert.True(last.ExitCode == 0, last.StdErr);
+        JsonNode lastWindow = JsonNode.Parse(last.StdOut)!["window"]!;
+        Assert.False(lastWindow["truncated"]!.GetValue<bool>());
+        Assert.Null(lastWindow["next"]);
+    }
+
+    [Fact]
+    public void QuerySearch_TruncatedWindowNextReturnsTheFollowingHits()
+    {
+        File.WriteAllLines(
+            _workspace.File("hits.csv"),
+            Enumerable.Range(1, 5).Select(static row => $"hit-{row},other"));
+
+        CliResult first = _workspace.Run(
+            "cells", "query", "search", "hits.csv", "--pattern", "HIT-", "--max-hits", "2", "--output", "json");
+
+        Assert.True(first.ExitCode == 0, first.StdErr);
+        JsonNode firstPayload = JsonNode.Parse(first.StdOut)!;
+        Assert.Equal(["A1", "A2"], firstPayload["hits"]!.AsArray().Select(static hit => hit!["cell"]!.GetValue<string>()));
+        JsonNode window = firstPayload["window"]!;
+        Assert.Equal(("hit", 2, true), (
+            window["unit"]!.GetValue<string>(),
+            window["returned"]!.GetValue<int>(),
+            window["truncated"]!.GetValue<bool>()));
+        string next = window["next"]!.GetValue<string>();
+        Assert.Contains(" --skip 2 ", next, StringComparison.Ordinal);
+
+        CliResult second = _workspace.RunCommandLine(next);
+        Assert.True(second.ExitCode == 0, second.StdErr);
+        JsonNode secondPayload = JsonNode.Parse(second.StdOut)!;
+        Assert.Equal(["A3", "A4"], secondPayload["hits"]!.AsArray().Select(static hit => hit!["cell"]!.GetValue<string>()));
+
+        CliResult third = _workspace.RunCommandLine(secondPayload["window"]!["next"]!.GetValue<string>());
+        Assert.True(third.ExitCode == 0, third.StdErr);
+        JsonNode thirdPayload = JsonNode.Parse(third.StdOut)!;
+        Assert.Equal("A5", Assert.Single(thirdPayload["hits"]!.AsArray())!["cell"]!.GetValue<string>());
+        Assert.False(thirdPayload["window"]!["truncated"]!.GetValue<bool>());
+        Assert.Null(thirdPayload["window"]!["next"]);
     }
 
     [Fact]
@@ -108,49 +156,6 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("[op-0002/1] set_values: failed", edited.StdOut, StringComparison.Ordinal);
         Assert.Contains("      SHEET_NOT_FOUND: ", edited.StdOut, StringComparison.Ordinal);
         Assert.Contains("      hint: ", edited.StdOut, StringComparison.Ordinal);
-    }
-
-    /// <summary>Splits a generated command the way a shell would, dropping the executable name.</summary>
-    private static string[] Tokens(string command)
-    {
-        var tokens = new List<string>();
-        var current = new System.Text.StringBuilder();
-        bool quoted = false;
-        bool started = false;
-        for (int index = 0; index < command.Length; index++)
-        {
-            char character = command[index];
-            if (quoted && character == '\\' && index + 1 < command.Length && command[index + 1] is '"' or '$' or '`')
-            {
-                current.Append(command[++index]);
-            }
-            else if (character == '"')
-            {
-                quoted = !quoted;
-                started = true;
-            }
-            else if (character == ' ' && !quoted)
-            {
-                if (started)
-                {
-                    tokens.Add(current.ToString());
-                    current.Clear();
-                    started = false;
-                }
-            }
-            else
-            {
-                current.Append(character);
-                started = true;
-            }
-        }
-
-        if (started)
-        {
-            tokens.Add(current.ToString());
-        }
-
-        return [.. tokens.Skip(1)];
     }
 
     /// <summary>

@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Product.Cells.Contracts;
 
@@ -31,6 +32,12 @@ public sealed record ReadRequest
     /// error — the caller asked for something specific and gets an honest no.
     /// </summary>
     public RangeRef? Range { get; init; }
+
+    /// <summary>
+    /// The region of a planned scan that <see cref="Range"/> is one page of, carried by a
+    /// generated follow-up command; null for a default read or a complete explicit range.
+    /// </summary>
+    public RangeRef? Scan { get; init; }
 
     /// <summary>Projection scope.</summary>
     public ReadScope Scope { get; init; } = ReadScope.Values;
@@ -150,23 +157,14 @@ public sealed record NewWorkbookRequest
 /// <summary>Options of <c>cells query search</c>.</summary>
 public sealed record SearchRequest
 {
-    /// <summary>The text or regular expression to look for.</summary>
-    public required string Pattern { get; init; }
-
-    /// <summary>Treat <see cref="Pattern"/> as a regular expression.</summary>
-    public bool Regex { get; init; }
+    /// <summary>The validated pattern, hit budget and paging of the search.</summary>
+    public required SearchQuery Query { get; init; }
 
     /// <summary>Where to look.</summary>
     public SearchIn In { get; init; } = SearchIn.Values;
 
     /// <summary>Restrict to one sheet; all sheets when null.</summary>
     public string? SheetName { get; init; }
-
-    /// <summary>Maximum number of hits to return.</summary>
-    public int MaxHits { get; init; } = 100;
-
-    /// <summary>Case-sensitive matching.</summary>
-    public bool CaseSensitive { get; init; }
 
     /// <summary>Password for encrypted files.</summary>
     public string? Password { get; init; }

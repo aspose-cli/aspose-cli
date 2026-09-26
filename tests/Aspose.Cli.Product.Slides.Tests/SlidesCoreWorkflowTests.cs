@@ -83,8 +83,7 @@ public sealed class SlidesCoreWorkflowTests
             searchable,
             new PresentationSearchRequest
             {
-                Pattern = "Slide",
-                MaxHits = 1,
+                Query = new SearchQuery(TextSearch.Create("Slide", regex: false, caseSensitive: false), 1, Scope: null),
             });
         SlidesSearchHit hit = Assert.Single(search.Hits);
         Assert.Contains("Slide", hit.Text, StringComparison.Ordinal);

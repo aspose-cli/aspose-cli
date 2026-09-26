@@ -306,6 +306,27 @@ public sealed class StandardCommandTests : IDisposable
     }
 
     [Fact]
+    public void Continuation_RepeatsThePathInputAndPasswordVariableButNeverThePassword()
+    {
+        Command command = StandardCommand.Create(
+            _host,
+            "run",
+            "Runs.",
+            new CommandTraits { Input = Report },
+            [],
+            (_, standard) => Result(standard.Continuation().ToString()));
+        var root = new RootCommand { command };
+
+        string fromVariable = Run(root, "run", "report.test", "--password-env", "LEFT")!;
+        string literal = Run(root, "run", "report.test", "--password", "secret")!;
+
+        Assert.StartsWith("aspose-cli run ", fromVariable, StringComparison.Ordinal);
+        Assert.EndsWith("report.test\" --password-env LEFT --output json", fromVariable, StringComparison.Ordinal);
+        Assert.DoesNotContain("secret", literal, StringComparison.Ordinal);
+        Assert.DoesNotContain("--password", literal, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void OpenEngine_ResolvesTheInputAndAppliesTheFontsUntilTheInvocationEnds()
     {
         string fonts = Directory.CreateDirectory(_temp.File("fonts")).FullName;
