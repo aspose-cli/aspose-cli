@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Forms;
@@ -63,12 +64,7 @@ internal sealed partial class PdfMutationHandlers
         OutlineCollection target = _document.Outlines;
         if (operation.Parent is not null)
         {
-            OutlineItemCollection? parent = FindOutline(_document.Outlines, operation.Parent.Split('/', StringSplitOptions.RemoveEmptyEntries));
-            if (parent is null)
-            {
-                throw new OperationInvalidException($"Bookmark parent '{operation.Parent}' was not found.");
-            }
-
+            OutlineItemCollection parent = Outline(_document.Outlines, operation.Parent);
             var nested = new OutlineItemCollection(_document.Outlines)
             {
                 Title = operation.Title,
@@ -95,14 +91,7 @@ internal sealed partial class PdfMutationHandlers
             return count;
         }
 
-        string[] path = operation.Path!.Split('/', StringSplitOptions.RemoveEmptyEntries);
-        OutlineItemCollection? item = FindOutline(_document.Outlines, path);
-        if (item is null)
-        {
-            throw new OperationInvalidException($"Bookmark '{operation.Path}' was not found.");
-        }
-
-        item.Delete();
+        Outline(_document.Outlines, operation.Path!).Delete();
         return 1;
     }
 
@@ -123,9 +112,13 @@ internal sealed partial class PdfMutationHandlers
     public long Apply(RemoveAttachmentOp operation)
     {
         // FindByName throws an engine exception for a missing name; match the names query reports.
-        if (!_document.EmbeddedFiles.Any(file => string.Equals(file.UnicodeName ?? file.Name, operation.Name, StringComparison.Ordinal)))
+        string[] names = _document.EmbeddedFiles
+            .Select(static file => file.UnicodeName ?? file.Name)
+            .Where(static name => !string.IsNullOrEmpty(name))
+            .ToArray();
+        if (!names.Contains(operation.Name, StringComparer.Ordinal))
         {
-            throw new OperationInvalidException($"Attachment '{operation.Name}' was not found.");
+            throw CliErrors.NotFound(PdfDiagnostics.AttachmentNotFound, "attachment", operation.Name, names);
         }
 
         _document.EmbeddedFiles.Delete(operation.Name);
@@ -153,13 +146,7 @@ internal sealed partial class PdfMutationHandlers
     public long Apply(SetFormFieldOp operation)
     {
         EnsureAcroForm(_document);
-        Field? field = _document.Form.Fields.FirstOrDefault(
-            value => string.Equals(value.FullName, operation.Name, StringComparison.Ordinal));
-        if (field is null)
-        {
-            throw new OperationInvalidException($"Form field '{operation.Name}' was not found.");
-        }
-
+        Field field = FormField(_document, operation.Name);
         if (RejectedFieldValue(field, operation.Value) is { } rejected)
         {
             throw new OperationInvalidException(rejected);
@@ -180,9 +167,7 @@ internal sealed partial class PdfMutationHandlers
         }
 
         // Resolve every name first: a missing field must reject the operation before any change.
-        Field[] fields = operation.Fields.Select(name => _document.Form.Fields.FirstOrDefault(
-                value => string.Equals(value.FullName, name, StringComparison.Ordinal))
-            ?? throw new OperationInvalidException($"Form field '{name}' was not found.")).ToArray();
+        Field[] fields = operation.Fields.Select(name => FormField(_document, name)).ToArray();
         foreach (Field field in fields)
         {
             field.Flatten();

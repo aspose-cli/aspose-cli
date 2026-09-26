@@ -12,29 +12,7 @@
     "dryRun": { "type": "boolean" },
     "applied": {
       "type": "array",
-      "items": {
-        "type": "object",
-        "required": ["id", "index", "op", "status", "itemsAffected", "targets"],
-        "additionalProperties": false,
-        "properties": {
-          "id": { "type": "string", "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$" },
-          "index": { "type": "integer", "minimum": 0 },
-          "op": { "type": "string" },
-          "status": { "enum": ["ok", "failed"] },
-          "itemsAffected": { "type": "integer", "minimum": 0 },
-          "targets": { "type": "array", "maxItems": 100, "items": { "type": "string" } },
-          "error": {
-            "type": "object",
-            "required": ["code", "message", "hint"],
-            "additionalProperties": false,
-            "properties": {
-              "code": { "type": "string" },
-              "message": { "type": "string" },
-              "hint": { "type": "string" }
-            }
-          }
-        }
-      }
+      "items": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/operation-outcome.schema.json" }
     },
     "backup": { "type": "object" },
     "mutation": {

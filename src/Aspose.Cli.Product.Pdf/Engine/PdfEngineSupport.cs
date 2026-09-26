@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
@@ -36,12 +37,11 @@ internal static class PdfEngineSupport
     internal static Page PageAt(Document document, int page) =>
         page > 0 && page <= document.Pages.Count
             ? document.Pages[page]
-            : throw PageNotFound(page, document.Pages.Count);
-
-    internal static CliException PageNotFound(int requested, int available) => new(
-        ErrorCodes.PageNotFound,
-        $"Requested page {requested} exceeds the available count of {available}.",
-        hint: $"Use a page from 1 through {available}.");
+            : throw CliErrors.NotFoundAt(
+                ErrorCodes.PageNotFound,
+                "page",
+                page.ToString(CultureInfo.InvariantCulture),
+                document.Pages.Count);
 
     internal static void EnsureAcroForm(Document document)
     {

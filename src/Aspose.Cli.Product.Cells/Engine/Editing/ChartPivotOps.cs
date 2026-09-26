@@ -213,8 +213,13 @@ internal static class ChartPivotOps
 
         if (op.Name is { } name && !refreshedAny)
         {
-            // The executor attaches the op index to this domain error.
-            throw new OperationInvalidException($"no pivot table named '{name}' on sheet '{sheet.Name}'");
+            var names = new List<string>(sheet.PivotTables.Count);
+            foreach (PivotTable pivot in sheet.PivotTables)
+            {
+                names.Add(pivot.Name);
+            }
+
+            throw CliErrors.NotFound(CellsDiagnostics.PivotNotFound, "pivot table", name, names);
         }
 
         return null;
@@ -265,30 +270,53 @@ internal static class ChartPivotOps
     /// Resolves the index/name addressing shared by <c>update_chart</c> and
     /// <c>delete_chart</c> to the chart's collection index (delete needs the
     /// index, not the object). The parser guarantees exactly one of the two
-    /// is present.
+    /// is present. Chart names need not be unique, so a name several charts
+    /// share is refused rather than resolved to one of them.
     /// </summary>
     private static int ResolveChart(Worksheet sheet, int? index, string? name)
     {
+        int count = sheet.Charts.Count;
         if (index is { } wanted)
         {
-            if (wanted < 0 || wanted >= sheet.Charts.Count)
-            {
-                // The executor attaches the op index to this domain error.
-                throw new OperationInvalidException($"no chart at index {wanted} on sheet '{sheet.Name}'");
-            }
-
-            return wanted;
+            return wanted < count ? wanted : throw ChartIndexNotFound(sheet, wanted);
         }
 
-        for (int i = 0; i < sheet.Charts.Count; i++)
+        var names = new string[count];
+        var matches = new List<int>();
+        for (int i = 0; i < count; i++)
         {
-            if (string.Equals(sheet.Charts[i].Name, name, StringComparison.Ordinal))
+            names[i] = sheet.Charts[i].Name;
+            if (string.Equals(names[i], name, StringComparison.Ordinal))
             {
-                return i;
+                matches.Add(i);
             }
         }
 
-        throw new OperationInvalidException($"no chart named '{name}' on sheet '{sheet.Name}'");
+        return matches.Count switch
+        {
+            1 => matches[0],
+            0 => throw CliErrors.NotFound(CellsDiagnostics.ChartNotFound, "chart", name!, names),
+            _ => throw new OperationInvalidException(
+                $"{matches.Count} charts on sheet '{sheet.Name}' are named '{name}', at indexes {string.Join(", ", matches)}",
+                hint: "Address the chart by its zero-based 'index' instead of 'name'."),
+        };
+    }
+
+    /// <summary>
+    /// <c>CHART_NOT_FOUND</c> for an index past the sheet's charts. Chart indexes are
+    /// zero-based, so the message and hint state the sheet's own index range.
+    /// </summary>
+    private static CliException ChartIndexNotFound(Worksheet sheet, int index)
+    {
+        int count = sheet.Charts.Count;
+        return CliErrors.NotFoundAt(
+            CellsDiagnostics.ChartNotFound,
+            "chart index",
+            index.ToString(CultureInfo.InvariantCulture),
+            count,
+            count == 0
+                ? $"Sheet '{sheet.Name}' has no chart; select the sheet that holds it."
+                : $"Use a zero-based index from 0 through {count - 1}, or address the chart by 'name'.");
     }
 
     /// <summary>

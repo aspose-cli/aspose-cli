@@ -5,6 +5,12 @@
 - `FORM_XFA_UNSUPPORTED`: XFA can be inspected but not filled, flattened or
   exported as AcroForm data in this build.
 - `PAGE_RANGE_INVALID`: use 1-based ranges such as `1-3,7,9-`.
+- `PAGE_NOT_FOUND`, `BOOKMARK_NOT_FOUND`, `ATTACHMENT_NOT_FOUND`, `FIELD_NOT_FOUND`:
+  `details.requested` repeats the target. Pages report `details.availableCount`;
+  named targets list the available names (bookmark title paths, attachment names,
+  full field names) in `details.available` and the closest ones in
+  `details.suggestions`. A bookmark path that several sibling bookmarks share is
+  refused with `OPS_INVALID`.
 - `RENDER_TOO_LARGE`: lower DPI or render fewer pages.
 - `REMOTE_RESOURCES_BLOCKED`: a local HTML image or stylesheet was missing or
   outside the HTML directory and was left out; review the incomplete output.

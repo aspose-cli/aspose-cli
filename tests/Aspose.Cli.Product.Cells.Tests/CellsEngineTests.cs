@@ -246,11 +246,13 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         {
             TargetFormatId = "csv",
             OutputPath = _fixture.Temp.File("never.csv"),
-            SheetName = "Nope",
+            SheetName = "Dat",
         }));
 
         Assert.Equal("SHEET_NOT_FOUND", exception.Code.Name);
-        Assert.Contains("Data", exception.Message, StringComparison.Ordinal);
+        Assert.Equal("Dat", exception.Details!["requested"]!.GetValue<string>());
+        Assert.Contains("Data", exception.Details["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.Equal("Data", exception.Details["suggestions"]![0]!.GetValue<string>());
     }
 
     // The legacy xls grid is 65,536 rows × 256 columns. A modern source that

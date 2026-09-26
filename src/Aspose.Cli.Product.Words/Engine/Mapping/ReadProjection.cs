@@ -15,11 +15,7 @@ internal static class ReadProjection
             : index.Entries;
         if (request.Section is { } section)
         {
-            if (section < 1 || section > loaded.Document.Sections.Count)
-            {
-                throw WordsErrors.SectionNotFound(section, loaded.Document.Sections.Count);
-            }
-
+            WordsSections.Get(loaded.Document, section);
             candidates = candidates.Where(entry => entry.Section == section).ToArray();
         }
 

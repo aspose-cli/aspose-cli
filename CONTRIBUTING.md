@@ -109,6 +109,13 @@ waives it for the version in `Directory.Build.props`.
   serializer does, the schema's `integer` does not state the CLR type's range, and a value
   kind read by a parser, such as an A1 range, publishes a pattern that admits some values
   the parser rejects.
+- **Missing targets.** A code for a sheet, slide, bookmark or other target the document does
+  not contain is declared with `ErrorCode.NotFound`, and its errors are built only with
+  `CliErrors.NotFound` (named targets, listing the available names and the closest ones) or
+  `CliErrors.NotFoundAt` (numbered targets, stating the count); `CliException` rejects a
+  not-found code without those details. A code needed by more than one product is declared
+  once in the SDK's `ErrorCodes`. A name that several targets share is refused, never resolved
+  to the first match.
 - **Command parameters.** Every string argument and option declares its input role with
   `WithInput` (`InputKind.File`, `InputKind.JsonSource` or `InputKind.None`), and its value
   sources and secret handling on the symbol. The Host reads these declarations, never token

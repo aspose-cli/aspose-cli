@@ -394,6 +394,9 @@ public sealed class PdfMutateTests
         Assert.Equal([OpStatuses.Ok, OpStatuses.Failed], partial.Applied.Select(static item => item.Status));
         Assert.Equal(["pdf/metadata"], partial.Applied[0].Targets);
         Assert.Equal(["pdf/attachment"], partial.Applied[1].Targets);
+        Assert.Equal("ATTACHMENT_NOT_FOUND", partial.Applied[1].Error!.Code);
+        Assert.Equal("missing.bin", partial.Applied[1].Error!.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(0, partial.Applied[1].Error!.Details!["availableCount"]!.GetValue<int>());
         using (var reopened = new Document(output))
         {
             Assert.Equal("Changed", reopened.Info.Title);
@@ -498,6 +501,98 @@ public sealed class PdfMutateTests
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("Off, Yes", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(fixture.File("checkbox.invalid.pdf")));
+    }
+
+    [Fact]
+    public void SetFormField_UnknownNameListsTheFieldsAndSuggestsTheClosest()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = FormDocument(fixture);
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "customer", Value = "Contoso" }] },
+            new PdfEditRequest { OutputPath = fixture.File("form.missing.pdf") }));
+
+        Assert.Equal("FIELD_NOT_FOUND", error.Code.Name);
+        Assert.Equal("customer", error.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(["Customer"], error.Details["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.Equal("Customer", error.Details["suggestions"]![0]!.GetValue<string>());
+        Assert.Equal(0, error.Details["index"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public void Bookmarks_UnknownPathListsTitlePathsAndDuplicateTitlesAreRefused()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("outline.pdf", pages: 1);
+        string outlined = fixture.File("outline.out.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new AddBookmarkOp { Title = "Intro", Page = 1 },
+                new AddBookmarkOp { Title = "Scope", Page = 1, Parent = "Intro" },
+                new AddBookmarkOp { Title = "Results", Page = 1 },
+                new AddBookmarkOp { Title = "Results", Page = 1 },
+            ],
+        }, new PdfEditRequest { OutputPath = outlined });
+
+        PdfEditResult result = fixture.Engine.ApplyOps(outlined, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new DeleteBookmarksOp { Path = "intro/scope" },
+                new AddBookmarkOp { Title = "Detail", Page = 1, Parent = "Results" },
+            ],
+        }, new PdfEditRequest
+        {
+            OutputPath = fixture.File("outline.failed.pdf"),
+            Options = new EditCommandOptions { BestEffort = true },
+        });
+
+        OpError missing = result.Applied[0].Error!;
+        Assert.Equal("BOOKMARK_NOT_FOUND", missing.Code);
+        Assert.Equal(
+            ["Intro", "Intro/Scope", "Results"],
+            missing.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
+        Assert.Equal("Intro/Scope", missing.Details["suggestions"]![0]!.GetValue<string>());
+        OpError ambiguous = result.Applied[1].Error!;
+        Assert.Equal(ErrorCodes.OpsInvalid.Name, ambiguous.Code);
+        Assert.Contains("ambiguous", ambiguous.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void PageTargets_PastTheDocumentReportThePageCount()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("short.pdf", pages: 2);
+
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new AddLinkOp
+                {
+                    Page = 5,
+                    Rect = new PdfRectInput { X = 10, Y = 10, Width = 20, Height = 20 },
+                    Url = "https://example.com/",
+                },
+                new InsertBlankPageOp { At = 5 },
+            ],
+        }, new PdfEditRequest
+        {
+            OutputPath = fixture.File("short.out.pdf"),
+            Options = new EditCommandOptions { BestEffort = true },
+        });
+
+        OpError page = result.Applied[0].Error!;
+        Assert.Equal("PAGE_NOT_FOUND", page.Code);
+        Assert.Equal("5", page.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(2, page.Details["availableCount"]!.GetValue<int>());
+        OpError position = result.Applied[1].Error!;
+        Assert.Equal("PAGE_NOT_FOUND", position.Code);
+        Assert.Equal(3, position.Details!["availableCount"]!.GetValue<int>());
     }
 
     [Fact]

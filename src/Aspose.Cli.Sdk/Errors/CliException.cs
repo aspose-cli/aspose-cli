@@ -20,6 +20,14 @@ public sealed class CliException : Exception
         : base(message, innerException)
     {
         ArgumentNullException.ThrowIfNull(code);
+        if (code.DetailsSchemaId == CommonSchemaIds.NotFoundDetails
+            && (details?["subject"] is null || details["requested"] is null || details["availableCount"] is null))
+        {
+            throw new ArgumentException(
+                $"Error code '{code.Name}' is a not-found code; build it with CliErrors.NotFound or CliErrors.NotFoundAt.",
+                nameof(details));
+        }
+
         Code = code;
         Hint = hint;
         Details = details;

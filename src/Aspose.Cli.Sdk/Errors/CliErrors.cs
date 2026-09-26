@@ -1,6 +1,8 @@
 using System.Globalization;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Errors;
 
@@ -12,13 +14,12 @@ namespace Aspose.Cli.Sdk.Errors;
 /// </summary>
 public static partial class CliErrors
 {
+    /// <summary>The most names a not-found error lists in <c>details.available</c>.</summary>
+    public const int MaximumAvailableNames = 50;
+
     public static CliException Usage(IReadOnlyList<string> problems)
     {
-        var errors = new JsonArray();
-        foreach (string problem in problems)
-        {
-            errors.Add(problem);
-        }
+        JsonArray errors = Strings(problems);
 
         return new CliException(
             ErrorCodes.UsageError,
@@ -397,11 +398,7 @@ public static partial class CliErrors
 
     public static CliException FormatUnsupported(string requested, IReadOnlyList<string> supported)
     {
-        var ids = new JsonArray();
-        foreach (string id in supported)
-        {
-            ids.Add(id);
-        }
+        JsonArray ids = Strings(supported);
 
         return new CliException(
             ErrorCodes.FormatUnsupported,
@@ -416,11 +413,7 @@ public static partial class CliErrors
         string declaredProduct,
         IReadOnlyList<string> detectedProducts)
     {
-        var detected = new JsonArray();
-        foreach (string product in detectedProducts)
-        {
-            detected.Add(product);
-        }
+        JsonArray detected = Strings(detectedProducts);
 
         return new CliException(
             ErrorCodes.FormatMismatch,
@@ -471,11 +464,7 @@ public static partial class CliErrors
         string path,
         IReadOnlyList<string> candidates)
     {
-        var available = new JsonArray();
-        foreach (string product in candidates)
-        {
-            available.Add(product);
-        }
+        JsonArray available = Strings(candidates);
 
         return new CliException(
             ErrorCodes.FormatAmbiguous,
@@ -502,11 +491,7 @@ public static partial class CliErrors
         IReadOnlyList<string> available)
     {
         ArgumentNullException.ThrowIfNull(available);
-        var values = new JsonArray();
-        foreach (string value in available)
-        {
-            values.Add(value);
-        }
+        JsonArray values = Strings(available);
 
         return new CliException(
             ErrorCodes.OptionInvalid,
@@ -528,11 +513,7 @@ public static partial class CliErrors
         ArgumentException.ThrowIfNullOrWhiteSpace(feature);
         ArgumentException.ThrowIfNullOrWhiteSpace(product);
         ArgumentNullException.ThrowIfNull(available);
-        var values = new JsonArray();
-        foreach (string value in available)
-        {
-            values.Add(value);
-        }
+        JsonArray values = Strings(available);
 
         return new CliException(
             ErrorCodes.FeatureUnsupported,
@@ -571,11 +552,7 @@ public static partial class CliErrors
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
         ArgumentNullException.ThrowIfNull(available);
-        var values = new JsonArray();
-        foreach (string value in available)
-        {
-            values.Add(value);
-        }
+        JsonArray values = Strings(available);
 
         string subject = product is null
             ? "this distribution"
@@ -594,6 +571,101 @@ public static partial class CliErrors
                 ["available"] = values,
             },
             docs: "licensing");
+    }
+
+    /// <summary>
+    /// The error for a named target the document does not contain. The details list the names
+    /// that exist (at most <see cref="MaximumAvailableNames"/>) and the closest ones, so the
+    /// caller can correct the request directly.
+    /// </summary>
+    /// <param name="code">A code declared with <see cref="ErrorCode.NotFound"/>.</param>
+    /// <param name="subject">What was looked up, e.g. <c>sheet</c> or <c>bookmark</c>.</param>
+    /// <param name="requested">The name as the caller wrote it.</param>
+    /// <param name="available">Every name of this kind in document order.</param>
+    /// <param name="hint">A product-specific next step; by default the closest name or the available names.</param>
+    public static CliException NotFound(
+        ErrorCode code,
+        string subject,
+        string requested,
+        IReadOnlyCollection<string> available,
+        string? hint = null)
+    {
+        RequireNotFoundCode(code);
+        ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+        ArgumentNullException.ThrowIfNull(requested);
+        ArgumentNullException.ThrowIfNull(available);
+
+        IReadOnlyList<string> suggestions = NameSuggestions.Closest(requested, available);
+        var details = new JsonObject
+        {
+            ["subject"] = subject,
+            ["requested"] = requested,
+            ["availableCount"] = available.Count,
+            ["available"] = Strings(available.Take(MaximumAvailableNames)),
+        };
+        if (suggestions.Count > 0)
+        {
+            details["suggestions"] = Strings(suggestions);
+        }
+
+        hint ??= suggestions.Count > 0 ? $"Did you mean '{suggestions[0]}'?"
+            : available.Count == 0 ? $"The document has no {subject} to select."
+            : $"Use one of the names in details.available.";
+        return new CliException(code, $"No {subject} '{requested}' was found.", hint, details);
+    }
+
+    /// <summary>
+    /// The error for a number or range that reaches past the targets the document contains,
+    /// such as page 12 of 10. Numbering starts at 1 unless the hint says otherwise.
+    /// </summary>
+    /// <param name="code">A code declared with <see cref="ErrorCode.NotFound"/>.</param>
+    /// <param name="subject">What was looked up, e.g. <c>page</c> or <c>slide</c>.</param>
+    /// <param name="requested">The number or range as the caller wrote it.</param>
+    /// <param name="count">How many targets of this kind exist, numbered from 1.</param>
+    /// <param name="hint">A product-specific next step; by default the valid numbers.</param>
+    public static CliException NotFoundAt(
+        ErrorCode code,
+        string subject,
+        string requested,
+        int count,
+        string? hint = null)
+    {
+        RequireNotFoundCode(code);
+        ArgumentException.ThrowIfNullOrWhiteSpace(subject);
+        ArgumentException.ThrowIfNullOrWhiteSpace(requested);
+        ArgumentOutOfRangeException.ThrowIfNegative(count);
+
+        return new CliException(
+            code,
+            $"No {subject} '{requested}' was found; {count} exist.",
+            hint ?? (count == 0 ? $"The document has no {subject} to select." : $"Use a {subject} from 1 through {count}."),
+            new JsonObject
+            {
+                ["subject"] = subject,
+                ["requested"] = requested,
+                ["availableCount"] = count,
+            });
+    }
+
+    private static void RequireNotFoundCode(ErrorCode code)
+    {
+        ArgumentNullException.ThrowIfNull(code);
+        if (code.DetailsSchemaId != CommonSchemaIds.NotFoundDetails)
+        {
+            throw new ArgumentException(
+                $"Error code '{code.Name}' is not declared with ErrorCode.NotFound.", nameof(code));
+        }
+    }
+
+    private static JsonArray Strings(IEnumerable<string> values)
+    {
+        var array = new JsonArray();
+        foreach (string value in values)
+        {
+            array.Add(value);
+        }
+
+        return array;
     }
 
     public static CliException Internal(

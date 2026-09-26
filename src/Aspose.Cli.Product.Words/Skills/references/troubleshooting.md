@@ -6,8 +6,8 @@
 - `PASSWORD_REQUIRED` / `PASSWORD_INVALID`: use `--password-env` or `--password-stdin`.
 - `DOCUMENT_PROTECTED`: the `unprotect` password was wrong. Editing restrictions alone never block an edit; they report `PROTECTION_NOT_ENFORCED`.
 - `DOCUMENT_HAS_REVISIONS`: comparison inputs must be revision-free.
-- `BLOCK_NOT_FOUND`: run `words query blocks` again; block numbers are 1-based.
-- `ANCHOR_NOT_FOUND`: inspect headings/bookmarks or use a current block.
+- `BLOCK_NOT_FOUND`, `SECTION_NOT_FOUND`: numbers are 1-based; `details.availableCount` says how many exist.
+- `BOOKMARK_NOT_FOUND`, `STYLE_NOT_FOUND`, `ANCHOR_NOT_FOUND`: named not-found errors list the available names in `details.available` and the closest ones in `details.suggestions`; a `find` or `nth` past the matches reports the match count in `details.availableCount`.
 - `PAGE_RANGE_INVALID`: use ranges such as `1-3,7,9-`.
 - `RENDER_TOO_LARGE`: lower DPI or render fewer pages.
 - `REMOTE_RESOURCES_BLOCKED`: external access is denied; use guarded local resources beside the document.

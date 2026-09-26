@@ -95,6 +95,7 @@ public static class BoundedOperationRunner
                     Code = rejection.Code.Name,
                     Message = rejection.Message,
                     Hint = rejection.Hint ?? BestEffortHint,
+                    Details = rejection.Details,
                 },
             });
         }

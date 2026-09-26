@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -20,11 +19,28 @@ internal static class NameOps
     {
         if (workbook.Worksheets.Names[op.Name] is null)
         {
-            // The executor attaches the op index to this domain error.
-            throw new OperationInvalidException($"no defined name '{op.Name}' in the workbook");
+            throw CliErrors.NotFound(CellsDiagnostics.NameNotFound, "defined name", op.Name, VisibleNames(workbook));
         }
 
         workbook.Worksheets.Names.Remove(op.Name);
         return null;
+    }
+
+    /// <summary>
+    /// The names a caller can address, in collection order: the full text, which carries the
+    /// sheet prefix of a sheet-scoped name, and never the hidden names Excel keeps for itself.
+    /// </summary>
+    private static List<string> VisibleNames(Workbook workbook)
+    {
+        var names = new List<string>();
+        foreach (Name name in workbook.Worksheets.Names)
+        {
+            if (name.IsVisible)
+            {
+                names.Add(name.FullText);
+            }
+        }
+
+        return names;
     }
 }

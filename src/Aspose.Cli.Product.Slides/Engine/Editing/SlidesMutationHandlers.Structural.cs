@@ -11,7 +11,7 @@ internal sealed partial class SlidesMutationHandlers
         int at = operation.At ?? _presentation.Slides.Count + 1;
         if (at > _presentation.Slides.Count + 1)
         {
-            throw SlideNotFound(at, _presentation.Slides.Count + 1);
+            throw SlideNotFound(at, _presentation.Slides.Count + 1, "slide position");
         }
 
         ISlide slide = _presentation.Slides.AddEmptySlide(_target.Layout ?? _presentation.LayoutSlides[0]);
@@ -56,7 +56,7 @@ internal sealed partial class SlidesMutationHandlers
         int at = operation.At ?? _presentation.Slides.Count + 1;
         if (at > _presentation.Slides.Count + 1)
         {
-            throw SlideNotFound(at, _presentation.Slides.Count + 1);
+            throw SlideNotFound(at, _presentation.Slides.Count + 1, "slide position");
         }
 
         ISlide clone = at == _presentation.Slides.Count + 1

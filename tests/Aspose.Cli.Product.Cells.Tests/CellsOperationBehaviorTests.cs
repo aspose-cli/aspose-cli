@@ -376,17 +376,89 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     }
 
     [Theory]
-    [InlineData("""{ "op": "edit_comment", "sheet": "Data", "cell": "B2", "text": "x" }""")]
-    [InlineData("""{ "op": "delete_comment", "sheet": "Data", "cell": "B2" }""")]
-    [InlineData("""{ "op": "remove_hyperlink", "sheet": "Data", "cell": "B2" }""")]
-    [InlineData("""{ "op": "delete_name", "name": "Ghost" }""")]
-    [InlineData("""{ "op": "delete_chart", "sheet": "Data", "index": 0 }""")]
-    [InlineData("""{ "op": "refresh_pivot", "sheet": "Data", "name": "Ghost" }""")]
-    [InlineData("""{ "op": "set_active_sheet", "sheet": "Backstage" }""")]
-    public void AnOperationWithoutItsTarget_IsAnActionableOperationsError(string operation)
+    [InlineData("""
+        { "op": "add_comment", "sheet": "Data", "cell": "C3", "text": "x" },
+        { "op": "edit_comment", "sheet": "Data", "cell": "B2", "text": "x" }
+        """, "COMMENT_NOT_FOUND", "B2", "C3", null)]
+    [InlineData("""
+        { "op": "add_comment", "sheet": "Data", "cell": "C3", "text": "x" },
+        { "op": "delete_comment", "sheet": "Data", "cell": "B2" }
+        """, "COMMENT_NOT_FOUND", "B2", "C3", null)]
+    [InlineData("""
+        { "op": "set_hyperlink", "sheet": "Data", "cell": "E1", "url": "https://example.com" },
+        { "op": "remove_hyperlink", "sheet": "Data", "cell": "B2" }
+        """, "HYPERLINK_NOT_FOUND", "B2", "E1", null)]
+    [InlineData("""
+        { "op": "define_name", "name": "Rate", "refersTo": "Data!$B$2" },
+        { "op": "delete_name", "name": "Rates" }
+        """, "NAME_NOT_FOUND", "Rates", "Rate", "Rate")]
+    [InlineData("""
+        { "op": "create_pivot", "sheet": "Second", "sourceRange": "Data!A1:C2", "at": "D1", "name": "Sales", "rows": ["Region"], "values": [{ "field": "Q1" }] },
+        { "op": "refresh_pivot", "sheet": "Second", "name": "Ghost" }
+        """, "PIVOT_NOT_FOUND", "Ghost", "Sales", null)]
+    public void AnOperationWithoutItsTarget_ListsTheTargetsTheDocumentHas(
+        string operations, string code, string requested, string available, string? suggestion)
     {
         CliException error = Assert.Throws<CliException>(() =>
-            Apply(_fixture.CreateSalesWorkbook("missing-target.xlsx"), operation, "missing-target.out.xlsx"));
+            Apply(_fixture.CreateSalesWorkbook("missing-target.xlsx"), operations, "missing-target.out.xlsx"));
+
+        Assert.Equal(code, error.Code.Name);
+        Assert.Equal(1, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal(requested, error.Details["requested"]!.GetValue<string>());
+        Assert.Equal(available, Assert.Single(error.Details["available"]!.AsArray())!.GetValue<string>());
+        Assert.Equal(suggestion, error.Details["suggestions"]?.AsArray().Single()!.GetValue<string>());
+    }
+
+    [Fact]
+    public void AChartIndexPastTheSheetsCharts_ReportsHowManyTheSheetHas()
+    {
+        CliException error = Assert.Throws<CliException>(() => Apply(
+            _fixture.CreateSalesWorkbook("missing-chart.xlsx"),
+            """
+            { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:C2", "at": "E2:K12" },
+            { "op": "delete_chart", "sheet": "Data", "index": 1 }
+            """,
+            "missing-chart.out.xlsx"));
+
+        Assert.Equal(CellsDiagnostics.ChartNotFound, error.Code);
+        Assert.Equal("1", error.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(1, error.Details["availableCount"]!.GetValue<int>());
+        Assert.Contains("0 through 0", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AChartNameSeveralChartsShare_IsRefusedAndAMissingNameListsTheCharts()
+    {
+        string source = _fixture.CreateSalesWorkbook("chart-names.xlsx");
+        using (var workbook = new Workbook(source))
+        {
+            Aspose.Cells.Charts.ChartCollection charts = workbook.Worksheets["Data"].Charts;
+            foreach (string name in new[] { "Sales", "Costs", "Sales" })
+            {
+                charts[charts.Add(Aspose.Cells.Charts.ChartType.Column, 5, 5, 15, 10)].Name = name;
+            }
+
+            workbook.Save(source);
+        }
+
+        CliException ambiguous = Assert.Throws<CliException>(() => Apply(
+            source, """{ "op": "delete_chart", "sheet": "Data", "name": "Sales" }""", "chart-names.out.xlsx"));
+        CliException missing = Assert.Throws<CliException>(() => Apply(
+            source, """{ "op": "delete_chart", "sheet": "Data", "name": "Revenue" }""", "chart-names.out.xlsx"));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, ambiguous.Code);
+        Assert.Contains("at indexes 0, 2", ambiguous.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(CellsDiagnostics.ChartNotFound, missing.Code);
+        Assert.Equal(["Sales", "Costs", "Sales"], missing.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
+    }
+
+    [Fact]
+    public void ActivatingAHiddenSheet_IsAnOperationsError()
+    {
+        CliException error = Assert.Throws<CliException>(() => Apply(
+            _fixture.CreateSalesWorkbook("hidden-active.xlsx"),
+            """{ "op": "set_active_sheet", "sheet": "Backstage" }""",
+            "hidden-active.out.xlsx"));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
     }

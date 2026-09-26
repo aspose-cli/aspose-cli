@@ -5,6 +5,7 @@ public static class CommonSchemaIds
 {
     public const string Error = DistributionInfo.SchemaBaseUri + "common/error.schema.json";
     public const string DiagnosticDetails = "v2/common/diagnostic-details";
+    public const string NotFoundDetails = "v2/common/not-found-details";
     public const string Capabilities = DistributionInfo.SchemaBaseUri + "common/capabilities.schema.json";
     public const string LicenseStatus = DistributionInfo.SchemaBaseUri + "common/license-status.schema.json";
     public const string Doctor = DistributionInfo.SchemaBaseUri + "common/doctor.schema.json";

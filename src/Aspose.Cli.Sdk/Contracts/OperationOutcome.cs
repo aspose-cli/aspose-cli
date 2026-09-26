@@ -1,3 +1,5 @@
+using System.Text.Json.Nodes;
+
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>
@@ -45,6 +47,12 @@ public sealed record OpError
 
     /// <summary>Actionable recovery guidance for the failed operation.</summary>
     public required string Hint { get; init; }
+
+    /// <summary>
+    /// Structured context from the error, such as the names a not-found target could have
+    /// been; the same object a failing batch would report in its error envelope.
+    /// </summary>
+    public JsonObject? Details { get; init; }
 }
 
 /// <summary>Stable wire values used for per-operation status.</summary>

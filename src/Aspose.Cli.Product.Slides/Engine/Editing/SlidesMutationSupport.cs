@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Globalization;
-using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
@@ -14,6 +13,8 @@ namespace Aspose.Cli.Product.Slides.Engine.Editing;
 /// <summary>Resolves mutation targets and translates handler failures.</summary>
 internal static class SlidesMutationSupport
 {
+    private const string ShapeListing = "'slides query slides --scope shapes' lists each shape's id, name and role";
+
     internal static ISlide ResolveSlide(Presentation presentation, SlideTargetOp op)
     {
         if (op.Slide is int number)
@@ -24,10 +25,12 @@ internal static class SlidesMutationSupport
         }
 
         ISlide? slide = presentation.Slides.FirstOrDefault(item => item.SlideId == op.SlideId);
-        return slide ?? throw new CliException(
+        return slide ?? throw CliErrors.NotFound(
             SlidesDiagnostics.SlideNotFound,
-            $"Slide id {op.SlideId} was not found.",
-            hint: "Run 'slides query slides' and use a current slide number or slideId.");
+            "slide id",
+            Invariant(op.SlideId!.Value),
+            presentation.Slides.Select(static item => Invariant(item.SlideId)).ToArray(),
+            hint: "Use a slideId from details.available, or address the slide by its number with 'slide'.");
     }
 
     internal static IReadOnlyList<ISlide> ResolveSlides(Presentation presentation, string range) =>
@@ -38,50 +41,76 @@ internal static class SlidesMutationSupport
     internal static IReadOnlyList<ISlide> ResolveOptionalSlides(Presentation presentation, string? range) =>
         range is null ? presentation.Slides.ToArray() : ResolveSlides(presentation, range);
 
+    /// <summary>
+    /// Finds the top-level shape an operation names by id, name or placeholder role. A name or
+    /// role that several shapes share is refused rather than resolved to the first of them.
+    /// </summary>
     internal static IShape ResolveShape(ISlide slide, ShapeTargetOp op)
     {
-        IShape? shape = op.Shape is long shapeId
-            ? slide.Shapes.FirstOrDefault(item => item.OfficeInteropShapeId == shapeId)
-            : op.ShapeName is not null
-                ? slide.Shapes.FirstOrDefault(item => string.Equals(item.Name, op.ShapeName, StringComparison.Ordinal))
-                : slide.Shapes.FirstOrDefault(item =>
-                    string.Equals(SlidesPlaceholders.Role(item.Placeholder?.Type), op.Placeholder, StringComparison.Ordinal));
-        if (shape is not null)
+        IShape[] shapes = slide.Shapes.ToArray();
+        if (op.Shape is long shapeId)
         {
-            return shape;
+            return shapes.FirstOrDefault(item => item.OfficeInteropShapeId == shapeId)
+                ?? throw CliErrors.NotFound(
+                    SlidesDiagnostics.ShapeNotFound,
+                    "shape id",
+                    Invariant(shapeId),
+                    shapes.Select(static item => Invariant(item.OfficeInteropShapeId)).ToArray(),
+                    hint: $"Use a shape id from details.available; {ShapeListing}.");
         }
 
-        string[] available = slide.Shapes.Take(30)
-            .Select(item => $"{item.OfficeInteropShapeId}:{item.Name}")
-            .ToArray();
-        ErrorCode code = op.Placeholder is null ? SlidesDiagnostics.ShapeNotFound : SlidesDiagnostics.PlaceholderNotFound;
-        throw new CliException(
-            code,
-            op.Placeholder is null
-                ? "The requested slide shape was not found."
-                : $"Placeholder role '{op.Placeholder}' was not found on slide {slide.SlideId}.",
-            hint: "Run 'slides query slides --scope shapes' and use a current shape id, name, or placeholder role.",
-            details: new JsonObject
-            {
-                ["available"] = new JsonArray(
-                    available.Select(static value => (JsonNode?)JsonValue.Create(value)).ToArray()),
-            });
+        if (op.ShapeName is { } name)
+        {
+            return Unique(shapes.Where(item => string.Equals(item.Name, name, StringComparison.Ordinal)), $"Shape name '{name}'")
+                ?? throw CliErrors.NotFound(
+                    SlidesDiagnostics.ShapeNotFound,
+                    "shape",
+                    name,
+                    Names(shapes.Select(static item => item.Name)),
+                    hint: $"Use a shape name from details.available, or address the shape by its 'shape' id; {ShapeListing}.");
+        }
+
+        string role = op.Placeholder!;
+        return Unique(shapes.Where(item => PlaceholderRole(item) == role), $"Placeholder role '{role}'")
+            ?? throw CliErrors.NotFound(
+                SlidesDiagnostics.PlaceholderNotFound,
+                "placeholder",
+                role,
+                Names(shapes.Select(PlaceholderRole)),
+                hint: $"Use a placeholder role from details.available, or address the shape by its 'shape' id or 'shapeName'; {ShapeListing}.");
     }
 
     internal static ILayoutSlide ResolveLayout(Presentation presentation, string name)
     {
         ILayoutSlide? layout = presentation.LayoutSlides.FirstOrDefault(item =>
             string.Equals(item.Name, name, StringComparison.OrdinalIgnoreCase));
-        return layout ?? throw new CliException(
+        return layout ?? throw CliErrors.NotFound(
             SlidesDiagnostics.LayoutNotFound,
-            $"Layout '{name}' was not found.",
-            hint: "Run 'slides inspect --detail layouts' and use an available layout name.",
-            details: new JsonObject
-            {
-                ["available"] = new JsonArray(
-                    presentation.LayoutSlides.Select(static item => JsonValue.Create(item.Name)).Take(50).ToArray()),
-            });
+            "layout",
+            name,
+            Names(presentation.LayoutSlides.Select(static item => item.Name)));
     }
+
+    private static string? PlaceholderRole(IShape shape) => SlidesPlaceholders.Role(shape.Placeholder?.Type);
+
+    private static IShape? Unique(IEnumerable<IShape> matches, string description)
+    {
+        IShape[] found = matches.ToArray();
+        if (found.Length > 1)
+        {
+            throw new OperationInvalidException(
+                $"{description} matches {found.Length} shapes on this slide (ids {string.Join(", ", found.Select(static item => Invariant(item.OfficeInteropShapeId)))}).",
+                "Address the shape by its 'shape' id instead.");
+        }
+
+        return found.FirstOrDefault();
+    }
+
+    /// <summary>The distinct non-empty names in document order, as not-found errors list them.</summary>
+    private static string[] Names(IEnumerable<string?> names) =>
+        names.OfType<string>().Where(static item => item.Trim().Length > 0).Distinct(StringComparer.Ordinal).ToArray();
+
+    private static string Invariant(long value) => value.ToString(CultureInfo.InvariantCulture);
 
     internal static ChartType ChartTypeFor(string kind) => kind switch
     {
@@ -106,10 +135,9 @@ internal static class SlidesMutationSupport
         }
     }
 
-    internal static CliException SlideNotFound(int requested, int available) => new(
-        SlidesDiagnostics.SlideNotFound,
-        $"Requested slide {requested} exceeds the available count of {available}.",
-        hint: available > 0 ? $"Use a slide from 1 through {available}." : "Add a slide first.");
+    /// <summary>A slide number, or with <paramref name="subject"/> a slide position, past the <paramref name="count"/> there are.</summary>
+    internal static CliException SlideNotFound(int requested, int count, string subject = "slide") =>
+        CliErrors.NotFoundAt(SlidesDiagnostics.SlideNotFound, subject, Invariant(requested), count);
 
     internal static CliException ChartDataInvalid(string reason) => new(
         SlidesDiagnostics.ChartDataInvalid,

@@ -221,7 +221,7 @@ public abstract class ProductContractTests<TModule>
                 .Select(static property => property.Name)
                 .OrderBy(static name => name, StringComparer.Ordinal));
         Assert.Equal(
-            ["Code", "Hint", "Message"],
+            ["Code", "Details", "Hint", "Message"],
             typeof(OpError)
                 .GetProperties(BindingFlags.Public | BindingFlags.Instance)
                 .Select(static property => property.Name)

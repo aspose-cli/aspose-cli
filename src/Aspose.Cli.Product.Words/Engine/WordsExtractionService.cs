@@ -170,7 +170,8 @@ internal sealed class WordsExtractionService
             .Select(static entry => entry.Index).ToList();
         if (starts.Count == 0)
         {
-            throw new CliException(WordsDiagnostics.AnchorNotFound, "No Heading 1 paragraph was found.", hint: "Use --by section/pages, or apply Heading 1 styles first.");
+            throw CliErrors.NotFoundAt(WordsDiagnostics.AnchorNotFound, "Heading 1 paragraph", "1", 0,
+                "Use --by section or --by pages, or apply Heading 1 styles first.");
         }
 
         if (starts[0] > 1)

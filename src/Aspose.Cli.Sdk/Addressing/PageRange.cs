@@ -98,16 +98,22 @@ public sealed class PageRange
     }
 
     /// <summary>
-    /// Resolves the range against the available count, sorted and deduplicated. A range that
-    /// reaches past the count, including any range over none, is the product's not-found
-    /// error; pages are the default.
+    /// Resolves the range against the document's page count, sorted and deduplicated. A range
+    /// that reaches past the count, including any range over none, is <c>PAGE_NOT_FOUND</c>.
     /// </summary>
-    /// <param name="available">How many items exist; zero when there are none.</param>
-    /// <param name="notFound">
-    /// The owning product's error for this range and count, such as a missing slide or block;
-    /// null for the shared PAGE_NOT_FOUND error.
-    /// </param>
-    public IReadOnlyList<int> Resolve(int available, Func<PageRange, int, CliException>? notFound = null)
+    /// <param name="available">How many pages exist; zero when there are none.</param>
+    public IReadOnlyList<int> Resolve(int available) =>
+        Resolve(available, ErrorCodes.PageNotFound, "page");
+
+    /// <summary>
+    /// Resolves the range against the count of a product's numbered targets, such as slides
+    /// or blocks, sorted and deduplicated. A range that reaches past the count, including any
+    /// range over none, is the product's not-found error.
+    /// </summary>
+    /// <param name="available">How many targets exist; zero when there are none.</param>
+    /// <param name="notFound">A code declared with <see cref="ErrorCode.NotFound"/>.</param>
+    /// <param name="subject">What one target is called, e.g. <c>slide</c>.</param>
+    public IReadOnlyList<int> Resolve(int available, ErrorCode notFound, string subject)
     {
         ArgumentOutOfRangeException.ThrowIfNegative(available);
         var values = new SortedSet<int>();
@@ -116,7 +122,7 @@ public sealed class PageRange
             int end = segment.End ?? available;
             if (available == 0 || segment.Start > available || end > available)
             {
-                throw (notFound ?? PageNotFound)(this, available);
+                throw CliErrors.NotFoundAt(notFound, subject, Text, available);
             }
 
             for (int value = segment.Start; value <= end; value++)
@@ -126,17 +132,6 @@ public sealed class PageRange
         }
 
         return values.ToArray();
-    }
-
-    /// <summary><c>PAGE_NOT_FOUND</c> for a range that names pages the document does not have.</summary>
-    private static CliException PageNotFound(PageRange range, int available)
-    {
-        ArgumentNullException.ThrowIfNull(range);
-        return new CliException(
-            ErrorCodes.PageNotFound,
-            $"Requested page range '{range.Text}' exceeds the document's {available} page(s).",
-            hint: available == 0 ? "The document has no pages to select." : $"Use pages from 1 through {available}.",
-            details: new System.Text.Json.Nodes.JsonObject { ["available"] = available, ["range"] = range.Text });
     }
 
     private static int Positive(string value, string whole)

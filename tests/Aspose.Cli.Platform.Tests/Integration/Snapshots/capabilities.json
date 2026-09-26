@@ -8889,6 +8889,8 @@
     "v2/common/font-list",
     "v2/common/license-status",
     "v2/common/mutation-receipt",
+    "v2/common/not-found-details",
+    "v2/common/operation-outcome",
     "v2/common/preview-session",
     "v2/common/preview-status",
     "v2/common/review",
@@ -17498,7 +17500,7 @@
       "category": "validation",
       "messageTemplateId": "words.anchor-not-found.message.v1",
       "hintTemplateId": "words.anchor-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "APP_BUSY",
@@ -17511,6 +17513,16 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "ATTACHMENT_NOT_FOUND",
+      "owner": "pdf",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "pdf.attachment-not-found.message.v1",
+      "hintTemplateId": "pdf.attachment-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
       "code": "BLOCK_NOT_FOUND",
       "owner": "words",
       "severity": "error",
@@ -17518,17 +17530,17 @@
       "category": "validation",
       "messageTemplateId": "words.block-not-found.message.v1",
       "hintTemplateId": "words.block-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "BOOKMARK_NOT_FOUND",
-      "owner": "words",
+      "owner": "common",
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "words.bookmark-not-found.message.v1",
-      "hintTemplateId": "words.bookmark-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "messageTemplateId": "common.bookmark-not-found.message.v1",
+      "hintTemplateId": "common.bookmark-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "CHART_DATA_INVALID",
@@ -17539,6 +17551,26 @@
       "messageTemplateId": "slides.chart-data-invalid.message.v1",
       "hintTemplateId": "slides.chart-data-invalid.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "CHART_NOT_FOUND",
+      "owner": "cells",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "cells.chart-not-found.message.v1",
+      "hintTemplateId": "cells.chart-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "COMMENT_NOT_FOUND",
+      "owner": "cells",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "cells.comment-not-found.message.v1",
+      "hintTemplateId": "cells.comment-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "DATA_TRUNCATED",
@@ -17634,6 +17666,16 @@
       "messageTemplateId": "common.feature-unsupported.message.v1",
       "hintTemplateId": "common.feature-unsupported.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FIELD_NOT_FOUND",
+      "owner": "pdf",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "pdf.field-not-found.message.v1",
+      "hintTemplateId": "pdf.field-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "FILE_ACCESS_DENIED",
@@ -17735,6 +17777,16 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "HYPERLINK_NOT_FOUND",
+      "owner": "cells",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "cells.hyperlink-not-found.message.v1",
+      "hintTemplateId": "cells.hyperlink-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
       "code": "INPUT_BUDGET_EXCEEDED",
       "owner": "common",
       "severity": "error",
@@ -17791,7 +17843,7 @@
       "category": "validation",
       "messageTemplateId": "slides.layout-not-found.message.v1",
       "hintTemplateId": "slides.layout-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "LICENSE_FILE_NOT_FOUND",
@@ -17888,6 +17940,16 @@
       "messageTemplateId": "cells.mhtml-resource-coverage-unverified.message.v1",
       "hintTemplateId": "cells.mhtml-resource-coverage-unverified.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "NAME_NOT_FOUND",
+      "owner": "cells",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "cells.name-not-found.message.v1",
+      "hintTemplateId": "cells.name-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "NAVIGATION_DEGRADED",
@@ -17995,7 +18057,7 @@
       "category": "validation",
       "messageTemplateId": "common.page-not-found.message.v1",
       "hintTemplateId": "common.page-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "PAGE_RANGE_INVALID",
@@ -18038,6 +18100,16 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "PIVOT_NOT_FOUND",
+      "owner": "cells",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "cells.pivot-not-found.message.v1",
+      "hintTemplateId": "cells.pivot-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
       "code": "PLACEHOLDER_NOT_FOUND",
       "owner": "slides",
       "severity": "error",
@@ -18045,7 +18117,7 @@
       "category": "validation",
       "messageTemplateId": "slides.placeholder-not-found.message.v1",
       "hintTemplateId": "slides.placeholder-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "PREVIEW_BUDGET_EXCEEDED",
@@ -18172,7 +18244,7 @@
       "category": "validation",
       "messageTemplateId": "words.section-not-found.message.v1",
       "hintTemplateId": "words.section-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "SHAPE_NOT_FOUND",
@@ -18182,7 +18254,7 @@
       "category": "validation",
       "messageTemplateId": "slides.shape-not-found.message.v1",
       "hintTemplateId": "slides.shape-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "SHEETS_DROPPED",
@@ -18210,7 +18282,7 @@
       "category": "validation",
       "messageTemplateId": "cells.sheet-not-found.message.v1",
       "hintTemplateId": "cells.sheet-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "SIGNATURE_INVALIDATED",
@@ -18239,17 +18311,17 @@
       "category": "validation",
       "messageTemplateId": "slides.slide-not-found.message.v1",
       "hintTemplateId": "slides.slide-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "STYLE_NOT_FOUND",
-      "owner": "words",
+      "owner": "common",
       "severity": "error",
       "exitCode": 4,
       "category": "validation",
-      "messageTemplateId": "words.style-not-found.message.v1",
-      "hintTemplateId": "words.style-not-found.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
+      "messageTemplateId": "common.style-not-found.message.v1",
+      "hintTemplateId": "common.style-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "TRACKED_CHANGES_PRESENT",

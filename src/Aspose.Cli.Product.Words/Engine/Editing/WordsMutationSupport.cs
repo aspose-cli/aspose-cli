@@ -56,13 +56,7 @@ internal static class WordsMutationSupport
 
     internal static void ApplyParagraphStyle(Document document, Paragraph paragraph, string styleName)
     {
-        Style? style = document.Styles[styleName];
-        if (style is null)
-        {
-            throw StyleNotFound(styleName);
-        }
-
-        paragraph.ParagraphFormat.Style = style;
+        paragraph.ParagraphFormat.Style = GetStyle(document, styleName);
     }
 
     internal static Paragraph InsertBuilderParagraph(Document document, Node anchor, string position)
@@ -95,16 +89,6 @@ internal static class WordsMutationSupport
             ? composite.GetChildNodes(NodeType.Any, true).Cast<Node>().OfType<T>()
             : [];
 
-    internal static Section GetSection(Document document, int number)
-    {
-        if (number < 1 || number > document.Sections.Count)
-        {
-            throw WordsErrors.SectionNotFound(number, document.Sections.Count);
-        }
-
-        return document.Sections[number - 1];
-    }
-
     internal static HeaderFooterType HeaderFooterTypeOf(string kind, bool isHeader) => (kind, isHeader) switch
     {
         ("primary", true) => HeaderFooterType.HeaderPrimary,
@@ -136,10 +120,10 @@ internal static class WordsMutationSupport
         }
     }
 
-    internal static CliException StyleNotFound(string style) => new(
-        WordsDiagnostics.StyleNotFound,
-        $"Style '{style}' was not found.",
-        hint: "Run 'words inspect --detail styles' or define the style earlier in the same batch.");
+    /// <summary>A style of the document by name; a missing name is STYLE_NOT_FOUND listing the document's styles.</summary>
+    internal static Style GetStyle(Document document, string name) =>
+        document.Styles[name] ?? throw CliErrors.NotFound(
+            ErrorCodes.StyleNotFound, "style", name, document.Styles.Select(static style => style.Name).ToArray());
 
     /// <summary>The hint for merge data whose shape is wrong.</summary>
     internal const string MergeDataShape =

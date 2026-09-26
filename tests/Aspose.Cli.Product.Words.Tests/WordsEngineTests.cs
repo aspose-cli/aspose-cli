@@ -86,9 +86,72 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new WordsEditRequest { OutputPath = _fixture.Temp.File("past-the-end.docx") }));
 
         Assert.Equal(WordsDiagnostics.BlockNotFound, read.Code);
-        Assert.Equal("99", read.Details!["range"]!.GetValue<string>());
+        Assert.Equal("99", read.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(6, read.Details["availableCount"]!.GetValue<int>());
         Assert.Equal(WordsDiagnostics.BlockNotFound, edit.Code);
     }
+
+    [Fact]
+    public void MissingSectionsAndOccurrences_ReportHowManyExist()
+    {
+        string input = _fixture.CreateReport();
+
+        CliException section = Assert.Throws<CliException>(() =>
+            _fixture.Engine.Read(input, new DocumentReadRequest { Section = 5 }));
+        CliException occurrence = Assert.Throws<CliException>(() => Edit(input, "occurrence",
+            new SetTextOp { At = new WordsTarget { Find = "revenue", Nth = 5 }, Text = "x" }));
+
+        Assert.Equal(WordsDiagnostics.SectionNotFound, section.Code);
+        Assert.Equal("5", section.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(1, section.Details["availableCount"]!.GetValue<int>());
+        Assert.Equal(WordsDiagnostics.AnchorNotFound, occurrence.Code);
+        Assert.Equal("5", occurrence.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(2, occurrence.Details["availableCount"]!.GetValue<int>());
+    }
+
+    [Fact]
+    public void MissingNamedTargets_ListTheAvailableNamesAndTheClosest()
+    {
+        string input = _fixture.Temp.File("named-targets.docx");
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Writeln("Quarterly report");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.StartBookmark("Summary");
+        builder.Write("Summary text");
+        builder.EndBookmark("Summary");
+        builder.StartBookmark("_Toc1");
+        builder.Write(" hidden target");
+        builder.EndBookmark("_Toc1");
+        document.Save(input);
+
+        CliException bookmark = Assert.Throws<CliException>(() => Edit(input, "bookmark",
+            new SetTextOp { At = new WordsTarget { Bookmark = "Sumary" }, Text = "x" }));
+        CliException heading = Assert.Throws<CliException>(() => Edit(input, "heading",
+            new SetTextOp { At = new WordsTarget { Heading = "Quartely report" }, Text = "x" }));
+        CliException style = Assert.Throws<CliException>(() => Edit(input, "style",
+            new SetStyleOp { Target = new WordsTarget { Block = 1 }, Style = "heading 7x" }));
+
+        Assert.Equal(ErrorCodes.BookmarkNotFound, bookmark.Code);
+        Assert.Equal("Sumary", bookmark.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(["Summary"], Names(bookmark, "available"));
+        Assert.Equal(["Summary"], Names(bookmark, "suggestions"));
+        Assert.Equal(WordsDiagnostics.AnchorNotFound, heading.Code);
+        Assert.Equal(["Quarterly report"], Names(heading, "available"));
+        Assert.Equal("Did you mean 'Quarterly report'?", heading.Hint);
+        Assert.Equal(ErrorCodes.StyleNotFound, style.Code);
+        Assert.Equal("heading 7x", style.Details!["requested"]!.GetValue<string>());
+        Assert.Contains("Normal", Names(style, "available"));
+    }
+
+    private WordsEditResult Edit(string input, string name, WordsOp op) => _fixture.Engine.ApplyOps(
+        input,
+        new WordsOpsBatch { Ops = [op] },
+        new WordsEditRequest { OutputPath = _fixture.Temp.File($"not-found-{name}.docx") });
+
+    private static string[] Names(CliException error, string key) =>
+        error.Details![key]!.AsArray().Select(static node => node!.GetValue<string>()).ToArray();
 
     [Fact]
     public void Read_ExcludesTheEvaluationBannerOnlyUnderEvaluation()

@@ -155,7 +155,7 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
     [InlineData("NoSuchStyle")]
     [InlineData("5")]
     [InlineData("Custom")]
-    public void CreateTable_RejectsAStyleItCannotApplyBeforeCreatingTheTable(string style)
+    public void CreateTable_ReportsAStyleItCannotApplyBeforeCreatingTheTable(string style)
     {
         string source = _fixture.CreateSalesWorkbook("table-bad.xlsx");
         string output = _fixture.Temp.File("table-bad.out.xlsx");
@@ -166,8 +166,9 @@ public sealed class CellsValueAndObjectTests : IClassFixture<CellsFixture>
             $$"""{ "ops": [ { "op": "create_table", "sheet": "Data", "range": "A1:C2", "style": "{{style}}" } ] }""",
             "table-bad.out.xlsx"));
 
-        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
-        Assert.Contains(style, error.Message, StringComparison.Ordinal);
+        Assert.Equal(ErrorCodes.StyleNotFound, error.Code);
+        Assert.Equal(style, error.Details!["requested"]!.GetValue<string>());
+        Assert.Contains("TableStyleMedium2", error.Details["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
         Assert.False(File.Exists(output));
     }
 

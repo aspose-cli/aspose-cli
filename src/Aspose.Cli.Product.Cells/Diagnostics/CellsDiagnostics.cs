@@ -5,8 +5,12 @@ namespace Aspose.Cli.Product.Cells;
 
 internal static class CellsDiagnostics
 {
-    internal static readonly ErrorCode SheetNotFound =
-        new("SHEET_NOT_FOUND", ExitCode.ValidationError);
+    internal static readonly ErrorCode SheetNotFound = ErrorCode.NotFound("SHEET_NOT_FOUND");
+    internal static readonly ErrorCode NameNotFound = ErrorCode.NotFound("NAME_NOT_FOUND");
+    internal static readonly ErrorCode ChartNotFound = ErrorCode.NotFound("CHART_NOT_FOUND");
+    internal static readonly ErrorCode PivotNotFound = ErrorCode.NotFound("PIVOT_NOT_FOUND");
+    internal static readonly ErrorCode CommentNotFound = ErrorCode.NotFound("COMMENT_NOT_FOUND");
+    internal static readonly ErrorCode HyperlinkNotFound = ErrorCode.NotFound("HYPERLINK_NOT_FOUND");
     internal static readonly ErrorCode RangeInvalid =
         new("RANGE_INVALID", ExitCode.ValidationError);
     /// <summary>An explicit read range exceeds the --max-cells budget.</summary>
@@ -27,6 +31,11 @@ internal static class CellsDiagnostics
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         Error(SheetNotFound),
+        Error(NameNotFound),
+        Error(ChartNotFound),
+        Error(PivotNotFound),
+        Error(CommentNotFound),
+        Error(HyperlinkNotFound),
         Error(RangeInvalid),
         Error(RangeTooLarge),
         Error(RenderEmpty),

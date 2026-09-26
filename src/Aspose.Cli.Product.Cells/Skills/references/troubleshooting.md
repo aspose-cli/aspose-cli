@@ -25,8 +25,14 @@ most likely fix. Read the hint first; this page adds background.
 
 ## Validation problems (exit 4)
 
-- **SHEET_NOT_FOUND** — `error.details.available` lists every sheet,
-  exactly spelled. Sheet names match case-insensitively, as in Excel
+- **SHEET_NOT_FOUND, NAME_NOT_FOUND, CHART_NOT_FOUND, PIVOT_NOT_FOUND,
+  COMMENT_NOT_FOUND, HYPERLINK_NOT_FOUND, STYLE_NOT_FOUND** — the named
+  target does not exist. `error.details.available` lists the names that do
+  (sheets, defined names, the sheet's charts or pivots, the cells that carry a
+  comment, the areas hyperlinks cover, table styles), exactly spelled, and
+  `details.suggestions` the closest ones; `details.availableCount` is the full
+  count. A chart `index` past the sheet's charts reports only
+  `availableCount`. Sheet names match case-insensitively, as in Excel
   (`data` finds `Data`); results report the stored spelling.
 - **RANGE_INVALID** — a command's range, such as `--range`; supported forms:
   `C5`, `B2:D10`, `Sales!A1:C10`, `'My Sheet'!A1:C10`. Whole-row/column specs

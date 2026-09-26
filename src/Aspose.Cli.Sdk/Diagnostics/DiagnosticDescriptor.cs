@@ -43,12 +43,8 @@ public sealed record DiagnosticDescriptor
     /// <summary>Schema governing the dynamic details object.</summary>
     public string DetailsSchemaId { get; init; } = CommonSchemaIds.DiagnosticDetails;
 
-    /// <summary>Declares an immutable error descriptor.</summary>
-    public static DiagnosticDescriptor Error(
-        ErrorCode code,
-        string owner,
-        string category,
-        string detailsSchemaId = CommonSchemaIds.DiagnosticDetails)
+    /// <summary>Declares an immutable error descriptor; the details schema is the code's own.</summary>
+    public static DiagnosticDescriptor Error(ErrorCode code, string owner, string category)
     {
         ArgumentNullException.ThrowIfNull(code);
         return Create(
@@ -57,22 +53,18 @@ public sealed record DiagnosticDescriptor
             DiagnosticSeverity.Error,
             code.ExitCode,
             category,
-            detailsSchemaId);
+            code.DetailsSchemaId);
     }
 
     /// <summary>Declares an immutable warning descriptor.</summary>
-    public static DiagnosticDescriptor Warning(
-        string code,
-        string owner,
-        string category,
-        string detailsSchemaId = CommonSchemaIds.DiagnosticDetails) =>
+    public static DiagnosticDescriptor Warning(string code, string owner, string category) =>
         Create(
             code,
             owner,
             DiagnosticSeverity.Warning,
             null,
             category,
-            detailsSchemaId);
+            CommonSchemaIds.DiagnosticDetails);
 
     private static DiagnosticDescriptor Create(
         string code,

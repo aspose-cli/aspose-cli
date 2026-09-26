@@ -46,7 +46,7 @@ public sealed class SlidesShapeAddressingTests
     }
 
     [Fact]
-    public void DeleteMissingName_ReportsAvailableTargetsAndPreservesFiles()
+    public void DeleteMissingName_ListsShapeNamesAndSuggestsTheCasingSlip()
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation();
@@ -57,15 +57,88 @@ public sealed class SlidesShapeAddressingTests
             input,
             new SlidesOpsBatch
             {
-                Ops = [new DeleteShapeOp { Slide = 2, ShapeName = "Missing target" }],
+                Ops = [new DeleteShapeOp { Slide = 2, ShapeName = "title 2" }],
             },
             new PresentationEditRequest { OutputPath = output }));
 
         Assert.Equal(SlidesDiagnostics.ShapeNotFound, error.Code);
-        Assert.Contains("slides query slides", error.Hint!, StringComparison.Ordinal);
-        Assert.Contains("Title 2", error.Details!.ToJsonString(), StringComparison.Ordinal);
+        Assert.Contains("'shape' id", error.Hint!, StringComparison.Ordinal);
+        Assert.Equal(0, (int)error.Details!["index"]!);
+        Assert.Equal("title 2", (string?)error.Details["requested"]);
+        Assert.Contains("Title 2", error.Details["available"]!.AsArray().Select(static name => (string?)name));
+        Assert.Equal("Title 2", (string?)error.Details["suggestions"]![0]);
         Assert.Equal(original, File.ReadAllBytes(input));
         Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public void SharedShapeName_IsRefusedInsteadOfPickingTheFirst()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("shared-names.pptx");
+        using (var presentation = new Presentation())
+        {
+            presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 10, 10, 100, 40).Name = "Box";
+            presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 10, 80, 100, 40).Name = "Box";
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch { Ops = [new SetTextOp { Slide = 1, ShapeName = "Box", Text = "Which?" }] },
+            new PresentationEditRequest { OutputPath = fixture.File("shared-names-out.pptx") }));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("matches 2 shapes", error.Message, StringComparison.Ordinal);
+        Assert.Contains("'shape' id", error.Hint!, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void MissingSlideTargets_ReportTheCountOrTheSlideIds()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation();
+
+        CliException byNumber = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch { Ops = [new SetNotesOp { Slide = 9, Text = "Late" }] },
+            new PresentationEditRequest { OutputPath = fixture.File("number.pptx") }));
+        CliException byId = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch { Ops = [new SetNotesOp { SlideId = 99999, Text = "Late" }] },
+            new PresentationEditRequest { OutputPath = fixture.File("id.pptx") }));
+
+        Assert.Equal(SlidesDiagnostics.SlideNotFound, byNumber.Code);
+        Assert.Equal("9", (string?)byNumber.Details!["requested"]);
+        Assert.Equal(3, (int)byNumber.Details["availableCount"]!);
+        Assert.Equal(SlidesDiagnostics.SlideNotFound, byId.Code);
+        Assert.Equal("99999", (string?)byId.Details!["requested"]);
+        Assert.Equal(3, byId.Details["available"]!.AsArray().Count);
+    }
+
+    [Fact]
+    public void MissingLayout_FailsOnlyItsOperationInABestEffortBatch()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation();
+
+        SlidesEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch
+            {
+                Ops = [new AddSlideOp { Layout = "Title Onyl" }, new SetNotesOp { Slide = 1, Text = "Kept" }],
+            },
+            new PresentationEditRequest
+            {
+                OutputPath = fixture.File("layout.pptx"),
+                Options = new EditCommandOptions { BestEffort = true },
+            });
+
+        Assert.Equal(["failed", "ok"], result.Applied.Select(static operation => operation.Status));
+        OpError error = result.Applied[0].Error!;
+        Assert.Equal(SlidesDiagnostics.LayoutNotFound.Name, error.Code);
+        Assert.Equal("Title Onyl", (string?)error.Details!["requested"]);
+        Assert.Equal("Title Only", (string?)error.Details["suggestions"]![0]);
     }
 
     [Fact]

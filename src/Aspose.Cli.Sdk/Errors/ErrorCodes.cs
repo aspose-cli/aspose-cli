@@ -69,7 +69,13 @@ public static partial class ErrorCodes
     public static readonly ErrorCode OpsInvalid = new("OPS_INVALID", ExitCode.ValidationError);
 
     public static readonly ErrorCode PageRangeInvalid = new("PAGE_RANGE_INVALID", ExitCode.ValidationError);
-    public static readonly ErrorCode PageNotFound = new("PAGE_NOT_FOUND", ExitCode.ValidationError);
+    public static readonly ErrorCode PageNotFound = ErrorCode.NotFound("PAGE_NOT_FOUND");
+
+    /// <summary>A bookmark named by the caller does not exist (documents with bookmarks share it).</summary>
+    public static readonly ErrorCode BookmarkNotFound = ErrorCode.NotFound("BOOKMARK_NOT_FOUND");
+
+    /// <summary>A named style does not exist in the document.</summary>
+    public static readonly ErrorCode StyleNotFound = ErrorCode.NotFound("STYLE_NOT_FOUND");
     public static readonly ErrorCode ExtractBudgetExceeded = new("EXTRACT_BUDGET_EXCEEDED", ExitCode.ValidationError);
     public static readonly ErrorCode PreviewBudgetExceeded =
         new("PREVIEW_BUDGET_EXCEEDED", ExitCode.ValidationError);
@@ -180,6 +186,8 @@ public static partial class ErrorCodes
         OpsInvalid,
         PageRangeInvalid,
         PageNotFound,
+        BookmarkNotFound,
+        StyleNotFound,
         ExtractBudgetExceeded,
         PreviewBudgetExceeded,
         UploadBudgetExceeded,

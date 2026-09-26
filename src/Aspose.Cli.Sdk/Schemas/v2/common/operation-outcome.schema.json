@@ -1,0 +1,54 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/operation-outcome.schema.json",
+  "title": "Aspose CLI operation outcome",
+  "description": "The result of one operation in an edit batch, reported in input order.",
+  "type": "object",
+  "required": ["id", "index", "op", "status", "itemsAffected", "targets"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^[A-Za-z][A-Za-z0-9._-]{0,63}$",
+      "description": "Correlation id from the input batch."
+    },
+    "index": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Zero-based position in the input batch."
+    },
+    "op": {
+      "type": "string",
+      "description": "Operation name."
+    },
+    "status": {
+      "enum": ["ok", "failed"]
+    },
+    "itemsAffected": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Number of items the operation changed."
+    },
+    "targets": {
+      "type": "array",
+      "maxItems": 100,
+      "items": { "type": "string" },
+      "description": "Addresses the operation changed; a failed operation lists the targets it attempted."
+    },
+    "error": {
+      "type": "object",
+      "required": ["code", "message", "hint"],
+      "additionalProperties": false,
+      "description": "Present only when status is failed, under --best-effort.",
+      "properties": {
+        "code": { "type": "string" },
+        "message": { "type": "string" },
+        "hint": { "type": "string" },
+        "details": {
+          "type": "object",
+          "description": "Structured context, the same object the error envelope would carry; for a not-found code it follows common/not-found-details."
+        }
+      }
+    }
+  }
+}

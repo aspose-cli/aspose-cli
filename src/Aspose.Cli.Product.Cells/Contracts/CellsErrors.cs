@@ -68,19 +68,4 @@ public static class CellsErrors
         $"File could not be read as a spreadsheet: {path} ({reason})",
         hint: "Verify the file opens in a spreadsheet application and is one of the supported input formats.",
         details: new JsonObject { ["path"] = path, ["reason"] = reason });
-
-    public static CliException SheetNotFound(string requested, IReadOnlyList<string> available)
-    {
-        var names = new JsonArray();
-        foreach (string name in available)
-        {
-            names.Add(name);
-        }
-
-        return new CliException(
-            CellsDiagnostics.SheetNotFound,
-            $"Worksheet '{requested}' not found. Available sheets: {string.Join(", ", available)}",
-            hint: "Use one of the available sheet names (matched case-insensitively, as in Excel), or run 'aspose-cli cells inspect <file>' to inspect the structure.",
-            details: new JsonObject { ["requested"] = requested, ["available"] = names });
-    }
 }

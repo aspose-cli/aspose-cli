@@ -5,11 +5,11 @@ namespace Aspose.Cli.Product.Slides;
 
 internal static class SlidesDiagnostics
 {
-    internal static readonly ErrorCode SlideNotFound = Validation("SLIDE_NOT_FOUND");
-    internal static readonly ErrorCode PlaceholderNotFound = Validation("PLACEHOLDER_NOT_FOUND");
+    internal static readonly ErrorCode SlideNotFound = ErrorCode.NotFound("SLIDE_NOT_FOUND");
+    internal static readonly ErrorCode PlaceholderNotFound = ErrorCode.NotFound("PLACEHOLDER_NOT_FOUND");
     internal static readonly ErrorCode ChartDataInvalid = Validation("CHART_DATA_INVALID");
-    internal static readonly ErrorCode ShapeNotFound = Validation("SHAPE_NOT_FOUND");
-    internal static readonly ErrorCode LayoutNotFound = Validation("LAYOUT_NOT_FOUND");
+    internal static readonly ErrorCode ShapeNotFound = ErrorCode.NotFound("SHAPE_NOT_FOUND");
+    internal static readonly ErrorCode LayoutNotFound = ErrorCode.NotFound("LAYOUT_NOT_FOUND");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [

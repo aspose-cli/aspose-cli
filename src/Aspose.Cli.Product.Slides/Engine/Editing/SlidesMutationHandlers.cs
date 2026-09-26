@@ -1,3 +1,4 @@
+using System.Runtime.ExceptionServices;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Slides;
@@ -50,6 +51,8 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     /// <summary>
     /// Resolves every operation's targets against the presentation before the first one is
     /// applied, so later operations address what the caller read, not what earlier ones made.
+    /// A target that cannot be resolved becomes the operation's failure, raised when the
+    /// operation runs so the batch reports it at that operation's position.
     /// </summary>
     internal static IReadOnlyList<ResolvedSlidesOp> ResolveBatch(
         Presentation presentation,
@@ -58,39 +61,51 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         var resolved = new List<ResolvedSlidesOp>(batch.Ops.Count);
         foreach (SlidesOp op in batch.Ops)
         {
-            ISlide? slide = op switch
+            try
             {
-                SlideTargetOp target => ResolveSlide(presentation, target),
-                AddSectionOp value => value.AtSlide <= presentation.Slides.Count
-                    ? presentation.Slides[value.AtSlide - 1]
-                    : throw SlideNotFound(value.AtSlide, presentation.Slides.Count),
-                _ => null,
-            };
-            IShape? shape = op is ShapeTargetOp shapeTarget
-                ? ResolveShape(slide!, shapeTarget)
-                : null;
-            IReadOnlyList<ISlide>? slides = op switch
+                resolved.Add(Resolve(presentation, op));
+            }
+            catch (Exception failure) when (failure is CliException or OperationInvalidException)
             {
-                DeleteSlidesOp value => ResolveSlides(presentation, value.Slides),
-                SetSlideHiddenOp value => ResolveSlides(presentation, value.Slides),
-                ApplyLayoutOp value => ResolveSlides(presentation, value.Slides),
-                SetBackgroundOp value => ResolveOptionalSlides(presentation, value.Slides),
-                SetFooterOp value => ResolveOptionalSlides(presentation, value.Slides),
-                SetTransitionOp value => ResolveSlides(presentation, value.Slides),
-                _ => null,
-            };
-            ILayoutSlide? layout = op switch
-            {
-                AddSlideOp { Layout: not null } value => ResolveLayout(presentation, value.Layout),
-                ApplyLayoutOp value => ResolveLayout(presentation, value.Layout),
-                _ => null,
-            };
-            // Detached shapes may no longer expose their SDK identity. Keep the receipt target
-            // aligned with the original presentation used to resolve every operation.
-            resolved.Add(new ResolvedSlidesOp(op, slide, shape, slides, layout, shape?.OfficeInteropShapeId));
+                resolved.Add(new ResolvedSlidesOp(op, null, null, null, null, null, failure));
+            }
         }
 
         return resolved;
+    }
+
+    private static ResolvedSlidesOp Resolve(Presentation presentation, SlidesOp op)
+    {
+        ISlide? slide = op switch
+        {
+            SlideTargetOp target => ResolveSlide(presentation, target),
+            AddSectionOp value => value.AtSlide <= presentation.Slides.Count
+                ? presentation.Slides[value.AtSlide - 1]
+                : throw SlideNotFound(value.AtSlide, presentation.Slides.Count),
+            _ => null,
+        };
+        IShape? shape = op is ShapeTargetOp shapeTarget
+            ? ResolveShape(slide!, shapeTarget)
+            : null;
+        IReadOnlyList<ISlide>? slides = op switch
+        {
+            DeleteSlidesOp value => ResolveSlides(presentation, value.Slides),
+            SetSlideHiddenOp value => ResolveSlides(presentation, value.Slides),
+            ApplyLayoutOp value => ResolveSlides(presentation, value.Slides),
+            SetBackgroundOp value => ResolveOptionalSlides(presentation, value.Slides),
+            SetFooterOp value => ResolveOptionalSlides(presentation, value.Slides),
+            SetTransitionOp value => ResolveSlides(presentation, value.Slides),
+            _ => null,
+        };
+        ILayoutSlide? layout = op switch
+        {
+            AddSlideOp { Layout: not null } value => ResolveLayout(presentation, value.Layout),
+            ApplyLayoutOp value => ResolveLayout(presentation, value.Layout),
+            _ => null,
+        };
+        // Detached shapes may no longer expose their SDK identity. Keep the receipt target
+        // aligned with the original presentation used to resolve every operation.
+        return new ResolvedSlidesOp(op, slide, shape, slides, layout, shape?.OfficeInteropShapeId);
     }
 
     /// <summary>
@@ -99,6 +114,11 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     /// </summary>
     internal long Run()
     {
+        if (_target.Failure is not null)
+        {
+            ExceptionDispatchInfo.Throw(_target.Failure);
+        }
+
         try
         {
             if (_target.Slide is not null && !_presentation.Slides.Contains(_target.Slide)
@@ -127,5 +147,6 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
         IShape? Shape,
         IReadOnlyList<ISlide>? Slides,
         ILayoutSlide? Layout,
-        long? ShapeId);
+        long? ShapeId,
+        Exception? Failure = null);
 }

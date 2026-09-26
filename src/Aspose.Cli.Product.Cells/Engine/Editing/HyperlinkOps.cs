@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
@@ -38,7 +37,24 @@ internal static class HyperlinkOps
             }
         }
 
-        // The executor attaches the op index to this domain error.
-        throw new OperationInvalidException($"no hyperlink covers cell '{op.Cell}'");
+        throw NotFound(sheet, op.Cell);
+    }
+
+    /// <summary>
+    /// <c>HYPERLINK_NOT_FOUND</c> for a cell no hyperlink covers, listing the areas the sheet's
+    /// hyperlinks cover in collection order.
+    /// </summary>
+    private static CliException NotFound(Worksheet sheet, string cell)
+    {
+        var areas = new string[sheet.Hyperlinks.Count];
+        for (int i = 0; i < areas.Length; i++)
+        {
+            CellArea area = sheet.Hyperlinks[i].Area;
+            areas[i] = A1.FormatRange(new RangeRef(
+                new CellRef(area.StartRow, area.StartColumn),
+                new CellRef(area.EndRow, area.EndColumn)));
+        }
+
+        return CliErrors.NotFound(CellsDiagnostics.HyperlinkNotFound, "hyperlink", cell, areas);
     }
 }

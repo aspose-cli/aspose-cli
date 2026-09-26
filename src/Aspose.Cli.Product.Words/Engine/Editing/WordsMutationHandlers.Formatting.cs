@@ -70,12 +70,7 @@ internal sealed partial class WordsMutationHandlers
 
     public long Apply(SetStyleOp operation)
     {
-        Style? style = _document.Styles[operation.Style];
-        if (style is null)
-        {
-            throw StyleNotFound(operation.Style);
-        }
-
+        Style style = GetStyle(_document, operation.Style);
         long count = 0;
         foreach (Paragraph paragraph in Nodes.SelectMany(Paragraphs))
         {

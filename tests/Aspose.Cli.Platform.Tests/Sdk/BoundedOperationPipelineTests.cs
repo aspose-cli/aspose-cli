@@ -54,16 +54,20 @@ public sealed class BoundedOperationPipelineTests
     }
 
     [Fact]
-    public void Run_KeepsADomainFailureCodeAndAddsItsPosition()
+    public void Run_KeepsADomainFailureCodeAndDetailsAndAddsItsPosition()
     {
         TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+        Func<TestOp, int, AppliedOperation> missingPage = (_, _) =>
+            throw CliErrors.NotFoundAt(ErrorCodes.PageNotFound, "page", "4", 3);
 
-        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false,
-            (_, _) => throw CliErrors.FileNotFound("missing.png")));
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, missingPage));
+        OpError recorded = Run(batch, bestEffort: true, missingPage)[0].Error!;
 
-        Assert.Equal(ErrorCodes.FileNotFound, error.Code);
+        Assert.Equal(ErrorCodes.PageNotFound, error.Code);
         Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
         Assert.Equal("note", error.Details["op"]!.GetValue<string>());
+        Assert.Equal(ErrorCodes.PageNotFound.Name, recorded.Code);
+        Assert.Equal(error.Details.ToJsonString(), recorded.Details!.ToJsonString());
     }
 
     [Theory]

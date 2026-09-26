@@ -41,10 +41,7 @@ internal sealed partial class PdfMutationHandlers
     public long Apply(MovePagesOp operation)
     {
         int[] pages = Resolve(_document, operation.Pages).ToArray();
-        if (operation.To > _document.Pages.Count + 1)
-        {
-            throw PageNotFound(operation.To, _document.Pages.Count + 1);
-        }
+        EnsureInsertionPosition(_document, operation.To);
 
         using Document selected = Select(_document, pages);
         int before = pages.Count(page => page < operation.To);
@@ -61,10 +58,7 @@ internal sealed partial class PdfMutationHandlers
 
     public long Apply(InsertPagesFromOp operation)
     {
-        if (operation.At > _document.Pages.Count + 1)
-        {
-            throw PageNotFound(operation.At, _document.Pages.Count + 1);
-        }
+        EnsureInsertionPosition(_document, operation.At);
 
         string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
         using LoadedPdf source = _loader.Open(operation.Path, password);
@@ -83,10 +77,7 @@ internal sealed partial class PdfMutationHandlers
 
     public long Apply(InsertBlankPageOp operation)
     {
-        if (operation.At > _document.Pages.Count + 1)
-        {
-            throw PageNotFound(operation.At, _document.Pages.Count + 1);
-        }
+        EnsureInsertionPosition(_document, operation.At);
 
         Page page = _document.Pages.Insert(operation.At);
         (double width, double height) = PdfPageSizes.Dimensions(operation.Size);

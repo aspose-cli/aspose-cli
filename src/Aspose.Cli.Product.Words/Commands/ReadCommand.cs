@@ -63,7 +63,7 @@ internal static class ReadCommand
             return null;
         }
 
-        IReadOnlyList<int> selection = request.Blocks?.Resolve(result.Window.Of)
+        IReadOnlyList<int> selection = request.Blocks?.Resolve(result.Window.Of, WordsDiagnostics.BlockNotFound, "block")
             ?? Enumerable.Range(1, result.Window.Of).ToArray();
         if (ReadContinuation.After(
                 selection,

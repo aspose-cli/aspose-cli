@@ -28,7 +28,7 @@ internal static class Sheets
         }
 
         Worksheet? sheet = workbook.Worksheets[sheetName];
-        return sheet ?? throw CellsErrors.SheetNotFound(sheetName, Names(workbook));
+        return sheet ?? throw CliErrors.NotFound(CellsDiagnostics.SheetNotFound, "sheet", sheetName, Names(workbook));
     }
 
     /// <summary>The workbook's sheet names, in sheet order.</summary>

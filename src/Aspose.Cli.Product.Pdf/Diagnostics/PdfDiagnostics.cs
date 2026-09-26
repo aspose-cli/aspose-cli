@@ -14,6 +14,12 @@ internal static class PdfDiagnostics
     internal static readonly ErrorCode PdfaConversionFailed =
         new("PDFA_CONVERSION_FAILED", ExitCode.FormatError);
 
+    /// <summary>No embedded file carries the requested attachment name.</summary>
+    internal static readonly ErrorCode AttachmentNotFound = ErrorCode.NotFound("ATTACHMENT_NOT_FOUND");
+
+    /// <summary>No AcroForm field carries the requested full name.</summary>
+    internal static readonly ErrorCode FieldNotFound = ErrorCode.NotFound("FIELD_NOT_FOUND");
+
     internal const string ScannedPagesSuspected = "SCANNED_PAGES_SUSPECTED";
 
     /// <summary>Bookmarks, links or named destinations that no longer lead to their page.</summary>
@@ -27,6 +33,8 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Error(SignCertInvalid, "pdf", "input"),
         DiagnosticDescriptor.Error(FormXfaUnsupported, "pdf", "format"),
         DiagnosticDescriptor.Error(PdfaConversionFailed, "pdf", "format"),
+        DiagnosticDescriptor.Error(AttachmentNotFound, "pdf", "validation"),
+        DiagnosticDescriptor.Error(FieldNotFound, "pdf", "validation"),
         DiagnosticDescriptor.Warning(ScannedPagesSuspected, "pdf", "warning"),
         DiagnosticDescriptor.Warning(NavigationDegraded, "pdf", "warning"),
         DiagnosticDescriptor.Warning(NetworkResourcesRequested, "pdf", "warning"),

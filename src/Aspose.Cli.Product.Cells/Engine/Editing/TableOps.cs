@@ -3,6 +3,7 @@ using Aspose.Cells;
 using Aspose.Cells.Tables;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -61,22 +62,31 @@ internal static class TableOps
     /// </summary>
     private static Action<ListObject> ResolveStyle(Workbook workbook, string name)
     {
-        foreach (TableStyleType type in Enum.GetValues<TableStyleType>())
+        TableStyleType[] builtIn = Enum.GetValues<TableStyleType>()
+            .Where(static type => type is not (TableStyleType.None or TableStyleType.Custom))
+            .ToArray();
+        foreach (TableStyleType type in builtIn)
         {
-            if (type is not (TableStyleType.None or TableStyleType.Custom)
-                && string.Equals(type.ToString(), name, StringComparison.OrdinalIgnoreCase))
+            if (string.Equals(type.ToString(), name, StringComparison.OrdinalIgnoreCase))
             {
                 return table => table.TableStyleType = type;
             }
         }
 
-        if (workbook.Worksheets.TableStyles[name] is { } custom)
+        TableStyleCollection customStyles = workbook.Worksheets.TableStyles;
+        if (customStyles[name] is { } custom)
         {
             return table => table.TableStyleName = custom.Name;
         }
 
-        throw new OperationInvalidException(
-            $"table style '{name}' is neither built in nor defined in the workbook",
-            hint: "Use a built-in style such as TableStyleLight1-21, TableStyleMedium1-28 or TableStyleDark1-11.");
+        // The workbook's own styles come first so the listed names include them.
+        var available = new List<string>(customStyles.Count + builtIn.Length);
+        for (int i = 0; i < customStyles.Count; i++)
+        {
+            available.Add(customStyles[i].Name);
+        }
+
+        available.AddRange(builtIn.Select(static type => type.ToString()));
+        throw CliErrors.NotFound(ErrorCodes.StyleNotFound, "table style", name, available);
     }
 }

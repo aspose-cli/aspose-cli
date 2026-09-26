@@ -306,7 +306,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             "Aspose.Cli.Sdk.Contracts.ResourceBudgetCapabilities" =>
                 member == "Domain",
             "Aspose.Cli.Sdk.Errors.ErrorCode" =>
-                IsDataMember(symbol),
+                member == "NotFound" || IsDataMember(symbol),
             "Aspose.Cli.Sdk.Diagnostics.DiagnosticDescriptor" =>
                 member is "Error" or "Warning" || IsDataMember(symbol),
             "Aspose.Cli.Sdk.Views.ViewPartKinds" =>

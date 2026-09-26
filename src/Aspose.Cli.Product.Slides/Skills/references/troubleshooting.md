@@ -1,8 +1,13 @@
 # Slides troubleshooting
 
-- If a slide or layout is not found, rerun `slides inspect` and use a current
-  slide id or advertised layout name. For shape ids and names, use
-  `slides query slides --scope shapes`.
+- `SLIDE_NOT_FOUND`, `SHAPE_NOT_FOUND`, `PLACEHOLDER_NOT_FOUND` and
+  `LAYOUT_NOT_FOUND` list the available slide ids, shape ids or names,
+  placeholder roles or layout names in `details.available` and the closest ones
+  in `details.suggestions`; a slide number past the end reports
+  `details.availableCount`. `slides query slides --scope shapes` lists each
+  shape's id, name and role.
+- A shape name or placeholder role that several shapes on the slide share is
+  refused with `OPS_INVALID`; address the shape by its `shape` id.
 - If rendering fails, run `fonts check` for the Slides product, reduce the
   selected slide set and inspect the source for malformed embedded media.
 - If a template-based deck looks wrong, confirm which masters and layouts were

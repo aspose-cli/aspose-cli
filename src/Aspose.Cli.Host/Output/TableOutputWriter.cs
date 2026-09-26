@@ -87,6 +87,8 @@ internal sealed class TableOutputWriter : IOutputWriter
             output.WriteLine($"  hint: {hint}");
         }
 
+        WriteNotFoundDetails(output, error.Error.Details, error.Error.Hint);
+
         if (error.Error.Code is "OUTPUT_PUBLICATION_FAILED" or "OUTPUT_PUBLICATION_PARTIAL"
             && error.Error.Details?["targets"] is JsonArray targets)
         {
@@ -107,6 +109,32 @@ internal sealed class TableOutputWriter : IOutputWriter
             }
         }
     }
+
+    // Not-found details (common/not-found-details) carry the names a caller can use instead;
+    // suggestions the hint already names are not repeated.
+    private static void WriteNotFoundDetails(TextWriter output, JsonObject? details, string? hint)
+    {
+        if (details?["availableCount"] is not JsonValue countNode
+            || !countNode.TryGetValue(out int count))
+        {
+            return;
+        }
+
+        if (details["suggestions"] is JsonArray { Count: > 0 } suggestions
+            && !(hint?.Contains($"'{suggestions[0]?.GetValue<string>()}'", StringComparison.Ordinal) ?? false))
+        {
+            output.WriteLine($"  did you mean: {JoinNames(suggestions)}");
+        }
+
+        if (details["available"] is JsonArray { Count: > 0 } available)
+        {
+            string more = count > available.Count ? $" (+{count - available.Count} more)" : string.Empty;
+            output.WriteLine($"  available: {JoinNames(available)}{more}");
+        }
+    }
+
+    private static string JoinNames(JsonArray names) =>
+        string.Join(", ", names.Select(static name => name?.GetValue<string>()));
 
     private void WriteWarnings(IReadOnlyList<Warning>? warnings)
     {

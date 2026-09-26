@@ -21,11 +21,7 @@ internal sealed partial class WordsMutationHandlers
 {
     public long Apply(InsertTableOp operation)
     {
-        Style? style = null;
-        if (operation.Style is not null)
-        {
-            style = _document.Styles[operation.Style] ?? throw StyleNotFound(operation.Style);
-        }
+        Style? style = operation.Style is null ? null : GetStyle(_document, operation.Style);
 
         // One table, then per row a row node and per cell a cell, a paragraph and a run.
         _loader.EnsureNodeCapacity(_document, 1 + ((long)operation.Rows * (1 + (3L * operation.Cols))));

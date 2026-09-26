@@ -15,12 +15,15 @@ public sealed class PageRangeTests
     [InlineData("2-", 0)]
     public void Resolve_ReportsTheProductsNotFoundErrorForARangePastTheCount(string text, int available)
     {
-        CliException error = Assert.Throws<CliException>(() => PageRange.Parse(text).Resolve(
-            available,
-            static (range, count) => new CliException(ErrorCodes.UsageError, $"{range.Text} of {count}")));
+        ErrorCode slideNotFound = ErrorCode.NotFound("SLIDE_NOT_FOUND");
 
-        Assert.Equal(ErrorCodes.UsageError, error.Code);
-        Assert.Equal($"{PageRange.Parse(text).Text} of {available}", error.Message);
+        CliException error = Assert.Throws<CliException>(() => PageRange.Parse(text).Resolve(
+            available, slideNotFound, "slide"));
+
+        Assert.Equal(slideNotFound, error.Code);
+        Assert.Equal("slide", error.Details!["subject"]!.GetValue<string>());
+        Assert.Equal(PageRange.Parse(text).Text, error.Details["requested"]!.GetValue<string>());
+        Assert.Equal(available, error.Details["availableCount"]!.GetValue<int>());
     }
 
     [Fact]
@@ -30,8 +33,8 @@ public sealed class PageRangeTests
         CliException none = Assert.Throws<CliException>(() => PageRange.Parse("1").Resolve(0));
 
         Assert.Equal(ErrorCodes.PageNotFound, past.Code);
-        Assert.Equal(2, past.Details!["available"]!.GetValue<int>());
+        Assert.Equal("Use a page from 1 through 2.", past.Hint);
         Assert.Equal(ErrorCodes.PageNotFound, none.Code);
-        Assert.Contains("no pages", none.Hint, StringComparison.Ordinal);
+        Assert.Contains("no page", none.Hint, StringComparison.Ordinal);
     }
 }

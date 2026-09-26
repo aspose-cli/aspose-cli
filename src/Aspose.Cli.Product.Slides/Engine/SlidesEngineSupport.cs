@@ -460,33 +460,13 @@ internal static class SlidesEngineSupport
     internal static string? EmptyToNull(string? value) =>
         string.IsNullOrWhiteSpace(value) ? null : value.Trim();
 
-    internal static IReadOnlyList<int> ResolveSlideRange(PageRange range, int slideCount)
-    {
-        EnsureHasSlides(slideCount);
-        return range.Resolve(slideCount, static (selection, available) => new CliException(
-            SlidesDiagnostics.SlideNotFound,
-            $"The requested slide selection is outside the presentation's {available} slide(s).",
-            hint: $"Use slide numbers from 1 to {available}.",
-            details: new JsonObject { ["available"] = available, ["range"] = selection.Text }));
-    }
+    /// <summary>The slide numbers a range selects; a presentation without slides has none to select.</summary>
+    internal static IReadOnlyList<int> ResolveSlideRange(PageRange range, int slideCount) =>
+        range.Resolve(slideCount, SlidesDiagnostics.SlideNotFound, "slide");
 
-    /// <summary>Every slide number; a presentation without slides has nothing to select.</summary>
-    internal static IReadOnlyList<int> AllSlides(int slideCount)
-    {
-        EnsureHasSlides(slideCount);
-        return Enumerable.Range(1, slideCount).ToArray();
-    }
-
-    private static void EnsureHasSlides(int slideCount)
-    {
-        if (slideCount == 0)
-        {
-            throw new CliException(
-                SlidesDiagnostics.SlideNotFound,
-                "The presentation has no slides.",
-                hint: "Add a slide with an add_slide operation in 'slides edit' first.");
-        }
-    }
+    /// <summary>Every slide number, as the range <c>1-</c> selects them.</summary>
+    internal static IReadOnlyList<int> AllSlides(int slideCount) =>
+        ResolveSlideRange(PageRange.Parse("1-"), slideCount);
 
     internal static SaveFormat SaveFormatFor(string format) => format switch
     {

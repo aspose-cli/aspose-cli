@@ -1,3 +1,4 @@
+using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Contracts;
 using AddCommentOp = Aspose.Cli.Product.Cells.Contracts.AddCommentOp;
@@ -265,8 +266,17 @@ internal static class CellsContractSamples
                 Error = new OpError
                 {
                     Code = "SHEET_NOT_FOUND",
-                    Message = "Worksheet 'Ghost' not found.",
-                    Hint = "Use an existing worksheet name.",
+                    Message = "Operation 2 (delete_sheet) failed: No sheet named 'Ghost' was found.",
+                    Hint = "Use one of the names in details.available.",
+                    Details = new JsonObject
+                    {
+                        ["subject"] = "sheet",
+                        ["requested"] = "Ghost",
+                        ["availableCount"] = 1,
+                        ["available"] = new JsonArray("Data"),
+                        ["index"] = 2,
+                        ["op"] = "delete_sheet",
+                    },
                 },
             },
         ],

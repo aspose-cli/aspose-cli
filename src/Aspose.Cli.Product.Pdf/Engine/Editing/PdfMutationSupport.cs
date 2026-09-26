@@ -61,24 +61,81 @@ internal static class PdfMutationSupport
             : box.LLY + edgeMargin;
     }
 
-    internal static OutlineItemCollection? FindOutline(
-        IEnumerable<OutlineItemCollection> root,
-        IReadOnlyList<string> path)
+    /// <summary>
+    /// The bookmark at a slash-separated title path. A path that matches no bookmark is
+    /// <c>BOOKMARK_NOT_FOUND</c> listing every title path; a path that several sibling
+    /// bookmarks share is refused rather than resolved to one of them.
+    /// </summary>
+    internal static OutlineItemCollection Outline(OutlineCollection outlines, string path)
     {
-        IEnumerable<OutlineItemCollection> current = root;
+        IEnumerable<OutlineItemCollection> current = outlines;
         OutlineItemCollection? found = null;
-        foreach (string segment in path)
+        foreach (string segment in path.Split('/', StringSplitOptions.RemoveEmptyEntries))
         {
-            found = current.FirstOrDefault(item => string.Equals(item.Title, segment, StringComparison.Ordinal));
-            if (found is null)
+            OutlineItemCollection[] matches = current
+                .Where(item => string.Equals(item.Title, segment, StringComparison.Ordinal))
+                .Take(2)
+                .ToArray();
+            if (matches.Length == 0)
             {
-                return null;
+                throw CliErrors.NotFound(
+                    ErrorCodes.BookmarkNotFound, "bookmark", path, OutlinePaths(outlines, string.Empty).Distinct().ToArray());
             }
 
+            if (matches.Length > 1)
+            {
+                throw new OperationInvalidException(
+                    $"Bookmark path '{path}' is ambiguous: several sibling bookmarks are titled '{segment}'.",
+                    "A title path selects one bookmark only when its titles are unique among their siblings; "
+                    + "use delete_bookmarks with all: true and add the bookmarks again to restructure them.");
+            }
+
+            found = matches[0];
             current = found;
         }
 
-        return found;
+        return found ?? throw new OperationInvalidException($"Bookmark path '{path}' names no title.");
+    }
+
+    private static IEnumerable<string> OutlinePaths(IEnumerable<OutlineItemCollection> items, string prefix)
+    {
+        foreach (OutlineItemCollection item in items)
+        {
+            string path = prefix + item.Title;
+            yield return path;
+            foreach (string child in OutlinePaths(item, path + "/"))
+            {
+                yield return child;
+            }
+        }
+    }
+
+    /// <summary>The AcroForm field with a full name, or <c>FIELD_NOT_FOUND</c> listing every full name.</summary>
+    internal static Field FormField(Document document, string name) =>
+        document.Form.Fields.FirstOrDefault(field => string.Equals(field.FullName, name, StringComparison.Ordinal))
+        ?? throw CliErrors.NotFound(
+            PdfDiagnostics.FieldNotFound,
+            "form field",
+            name,
+            document.Form.Fields
+                .Select(static field => field.FullName)
+                .Where(static fullName => !string.IsNullOrEmpty(fullName))
+                .ToArray());
+
+    /// <summary>
+    /// Refuses a position past the end of the document; pages insert before positions 1
+    /// through the page count, and position count + 1 appends.
+    /// </summary>
+    internal static void EnsureInsertionPosition(Document document, int position)
+    {
+        if (position > document.Pages.Count + 1)
+        {
+            throw CliErrors.NotFoundAt(
+                ErrorCodes.PageNotFound,
+                "page position",
+                position.ToString(CultureInfo.InvariantCulture),
+                document.Pages.Count + 1);
+        }
     }
 
     internal static NumberingStyle NumberingStyleValue(string value) => value.ToLowerInvariant() switch

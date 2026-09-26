@@ -5,11 +5,9 @@ namespace Aspose.Cli.Product.Words;
 
 internal static class WordsDiagnostics
 {
-    internal static readonly ErrorCode BlockNotFound = Validation("BLOCK_NOT_FOUND");
-    internal static readonly ErrorCode SectionNotFound = Validation("SECTION_NOT_FOUND");
-    internal static readonly ErrorCode BookmarkNotFound = Validation("BOOKMARK_NOT_FOUND");
-    internal static readonly ErrorCode AnchorNotFound = Validation("ANCHOR_NOT_FOUND");
-    internal static readonly ErrorCode StyleNotFound = Validation("STYLE_NOT_FOUND");
+    internal static readonly ErrorCode BlockNotFound = ErrorCode.NotFound("BLOCK_NOT_FOUND");
+    internal static readonly ErrorCode SectionNotFound = ErrorCode.NotFound("SECTION_NOT_FOUND");
+    internal static readonly ErrorCode AnchorNotFound = ErrorCode.NotFound("ANCHOR_NOT_FOUND");
     internal static readonly ErrorCode MergeDataInvalid = Validation("MERGE_DATA_INVALID");
     internal static readonly ErrorCode DocumentProtected =
         new("DOCUMENT_PROTECTED", ExitCode.InputError);
@@ -27,9 +25,7 @@ internal static class WordsDiagnostics
     [
         Error(BlockNotFound, "validation"),
         Error(SectionNotFound, "validation"),
-        Error(BookmarkNotFound, "validation"),
         Error(AnchorNotFound, "validation"),
-        Error(StyleNotFound, "validation"),
         Error(MergeDataInvalid, "validation"),
         Error(DocumentProtected, "input"),
         Error(DocumentHasRevisions, "input"),

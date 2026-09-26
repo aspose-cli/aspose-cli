@@ -1,3 +1,5 @@
+using System.Globalization;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Markup;
 using Aspose.Words.Tables;
@@ -82,7 +84,8 @@ internal sealed class DocumentBlockIndex
     {
         if (index < 1 || index > _entries.Count)
         {
-            throw WordsErrors.BlockNotFound(index, _entries.Count);
+            throw CliErrors.NotFoundAt(
+                WordsDiagnostics.BlockNotFound, "block", index.ToString(CultureInfo.InvariantCulture), _entries.Count);
         }
 
         return _entries[index - 1];
@@ -90,7 +93,7 @@ internal sealed class DocumentBlockIndex
 
     /// <summary>The blocks a 1-based range names, in order; a range past the last block is BLOCK_NOT_FOUND.</summary>
     public IReadOnlyList<BlockEntry> Select(PageRange range) =>
-        range.Resolve(_entries.Count, WordsErrors.BlockRangeNotFound).Select(Get).ToArray();
+        range.Resolve(_entries.Count, WordsDiagnostics.BlockNotFound, "block").Select(Get).ToArray();
 
     /// <summary>The block that contains a node, or null outside every block.</summary>
     public BlockEntry? Find(Node node)

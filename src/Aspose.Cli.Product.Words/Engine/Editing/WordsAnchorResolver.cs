@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
@@ -31,8 +32,8 @@ internal static class WordsAnchorResolver
 
     private static IReadOnlyList<Section> ResolveSections(Document document, WordsOp op) => op switch
     {
-        AddSectionOp { Position: "after", After: int after } => [WordsMutationSupport.GetSection(document, after)],
-        DeleteSectionOp value => [WordsMutationSupport.GetSection(document, value.Section)],
+        AddSectionOp { Position: "after", After: int after } => [WordsSections.Get(document, after)],
+        DeleteSectionOp value => [WordsSections.Get(document, value.Section)],
         SetPageSetupOp value => SelectSections(document, value.Section),
         SetHeaderOp value => SelectSections(document, value.Section),
         SetFooterOp value => SelectSections(document, value.Section),
@@ -41,7 +42,7 @@ internal static class WordsAnchorResolver
     };
 
     private static IReadOnlyList<Section> SelectSections(Document document, int? section) =>
-        section is int number ? [WordsMutationSupport.GetSection(document, number)] : document.Sections.Cast<Section>().ToArray();
+        section is int number ? [WordsSections.Get(document, number)] : document.Sections.Cast<Section>().ToArray();
 
     internal static void EnsureAttached(Document document, ResolvedWordsOp operation)
     {
@@ -69,36 +70,56 @@ internal static class WordsAnchorResolver
             Bookmark? bookmark = document.Range.Bookmarks[target.Bookmark];
             if (bookmark is null)
             {
-                throw new CliException(
-                    WordsDiagnostics.BookmarkNotFound,
-                    $"Bookmark '{target.Bookmark}' was not found.",
-                    hint: "Run 'words inspect --detail bookmarks' and use an available bookmark.");
+                // Bookmarks whose names begin with '_' are hidden ones Word maintains itself,
+                // such as table of contents targets; they resolve but are not offered.
+                throw CliErrors.NotFound(
+                    ErrorCodes.BookmarkNotFound,
+                    "bookmark",
+                    target.Bookmark,
+                    document.Range.Bookmarks
+                        .Select(static item => item.Name)
+                        .Where(static name => !name.StartsWith('_'))
+                        .ToArray());
             }
 
             BlockEntry? entry = index.Find(bookmark.BookmarkStart);
             if (entry is null)
             {
-                throw AnchorNotFound($"bookmark '{target.Bookmark}' is not inside a body block");
+                throw new CliException(
+                    ErrorCodes.OpsInvalid,
+                    $"Bookmark '{target.Bookmark}' is not inside a body block, so it cannot address one.",
+                    hint: "Target a bookmark in the document body, or address the block by number, heading or text.");
             }
 
             return [entry.Node];
         }
 
-        string? needle = target.Heading ?? target.Find;
-        IEnumerable<BlockEntry> candidates = index.Entries;
-        if (target.Heading is not null)
+        string needle = (target.Heading ?? target.Find)!;
+        BlockEntry[] candidates = target.Heading is null
+            ? [.. index.Entries]
+            : [.. index.Entries.Where(static entry => entry.Node is Paragraph paragraph
+                && InfoProjection.HeadingLevel(paragraph) is not null)];
+        BlockEntry[] matches = candidates
+            .Where(entry => WordsText.Of(entry.Node).Contains(needle, StringComparison.OrdinalIgnoreCase))
+            .ToArray();
+        if (matches.Length == 0 && target.Heading is not null)
         {
-            candidates = candidates.Where(static entry => entry.Node is Paragraph paragraph
-                && InfoProjection.HeadingLevel(paragraph) is not null);
+            throw CliErrors.NotFound(
+                WordsDiagnostics.AnchorNotFound,
+                "heading",
+                needle,
+                candidates
+                    .Select(static entry => WordsText.Of(entry.Node).Trim())
+                    .Where(static text => text.Length > 0)
+                    .ToArray());
         }
 
-        BlockEntry[] matches = candidates
-            .Where(entry => WordsText.Of(entry.Node).Contains(needle!, StringComparison.OrdinalIgnoreCase))
-            .ToArray();
         int nth = target.Nth ?? 1;
         if (matches.Length < nth)
         {
-            throw AnchorNotFound($"'{needle}' occurrence {nth} was not found");
+            string subject = target.Heading is null ? $"'{needle}' occurrence" : $"heading '{needle}' occurrence";
+            throw CliErrors.NotFoundAt(
+                WordsDiagnostics.AnchorNotFound, subject, nth.ToString(CultureInfo.InvariantCulture), matches.Length);
         }
 
         return [matches[nth - 1].Node];
@@ -182,11 +203,6 @@ internal static class WordsAnchorResolver
             }
         }
     }
-
-    private static CliException AnchorNotFound(string reason) => new(
-        WordsDiagnostics.AnchorNotFound,
-        $"Document anchor not found: {reason}.",
-        hint: "Inspect the document with 'words inspect' or 'words query blocks', then use a current block, bookmark or heading.");
 
     private static CliException Invalid(string reason) => new(
         ErrorCodes.OpsInvalid,
