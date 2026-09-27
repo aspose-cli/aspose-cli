@@ -6,10 +6,11 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 
 /// <summary>
 /// Counts a document's in-document navigation — bookmarks, link annotations and named
-/// destinations — whose target does not resolve to one of its pages. Page moves and merges
-/// rebuild page objects, and the SDK exposes no public way to retarget an existing
-/// destination losslessly, so the difference between two censuses is what an operation
-/// broke; it is disclosed rather than repaired with an invented destination.
+/// destinations — whose target does not resolve to one of its pages. Deleting a page leaves
+/// the navigation to it without a target, and a page move retargets only the destinations it
+/// can rebuild exactly (<see cref="PdfNavigationRetarget"/>), so the difference between two
+/// censuses is what an operation broke; it is disclosed rather than repaired with an invented
+/// destination.
 /// </summary>
 internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, int NamedDestinations)
 {

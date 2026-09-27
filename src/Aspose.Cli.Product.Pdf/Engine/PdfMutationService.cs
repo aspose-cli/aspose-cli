@@ -66,7 +66,7 @@ internal sealed class PdfMutationService
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes);
         if (navigation.ToWarning(
-                "no longer lead to a page: moving or deleting pages leaves destinations pointing at pages the document no longer has",
+                "no longer lead to a page: they targeted deleted pages, or moved pages at a position with a coordinate of 0, which the SDK cannot tell apart from an omitted one",
                 "Re-create the affected bookmarks (add_bookmark) and links (add_link) after the page change, or reorder pages before adding navigation.")
             is { } degraded)
         {

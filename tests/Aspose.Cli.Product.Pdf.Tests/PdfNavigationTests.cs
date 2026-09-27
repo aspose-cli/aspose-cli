@@ -13,7 +13,7 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfNavigationTests
 {
     [Fact]
-    public void MovePages_CountsTheNavigationToMovedPagesThatLostItsTarget()
+    public void MovePages_RetargetsExactDestinationsAndCountsOnesWithAZeroCoordinate()
     {
         using var fixture = new PdfEngineFixture();
         string input = CreateNavigationDocument(fixture, "move.pdf");
@@ -22,10 +22,95 @@ public sealed class PdfNavigationTests
             new PdfOpsBatch { Ops = [new MovePagesOp { Pages = "3", To = 1 }] },
             new PdfEditRequest { OutputPath = fixture.File("move.out.pdf") });
 
+        // "Three" and the explicit link are retargeted; "appendix" has left 0, which may stand
+        // for an omitted coordinate, so it and the bookmark and link that use it are counted.
         Warning warning = Assert.Single(result.Warnings!, static item => item.Code == "NAVIGATION_DEGRADED");
         Assert.True(warning.AffectsCompleteness);
-        Assert.StartsWith("2 bookmark(s), 2 link(s) and 1 named destination(s)", warning.Message, StringComparison.Ordinal);
-        Assert.True(File.Exists(result.Output!.Path));
+        Assert.StartsWith("1 bookmark(s), 1 link(s) and 1 named destination(s)", warning.Message, StringComparison.Ordinal);
+        using var moved = new Document(result.Output!.Path);
+        var three = (XYZExplicitDestination)moved.Outlines.Single(static item => item.Title == "Three").Destination;
+        Assert.Equal((1, 10d, 700d, 2d), (three.PageNumber, three.Left, three.Top, three.Zoom));
+        Assert.Equal(0, ((ExplicitDestination)moved.NamedDestinations["appendix"]).PageNumber);
+    }
+
+    [Fact]
+    public void MovePages_KeepsEveryExactDestinationOnTheMovedPages()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("exact.pdf");
+        using (var document = new Document())
+        {
+            for (int number = 1; number <= 3; number++)
+            {
+                document.Pages.Add().Paragraphs.Add(new TextFragment($"Page {number}"));
+            }
+
+            Page two = document.Pages[2];
+            Page three = document.Pages[3];
+            document.NamedDestinations.Add("appendix", new XYZExplicitDestination(three, 20, 600, 0));
+            var parent = new OutlineItemCollection(document.Outlines) { Title = "Parent", Destination = new FitExplicitDestination(two) };
+            parent.Add(new OutlineItemCollection(document.Outlines) { Title = "Child", Destination = new FitRExplicitDestination(three, 0, 10, 300, 400) });
+            document.Outlines.Add(parent);
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines) { Title = "Action", Action = new GoToAction(new FitHExplicitDestination(three, 650)) });
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines) { Title = "Named", Destination = new NamedDestination(document, "appendix") });
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines) { Title = "Bounded", Destination = new FitBVExplicitDestination(two, 30) });
+            document.Pages[1].Annotations.Add(new LinkAnnotation(document.Pages[1], new Rectangle(100, 100, 200, 120))
+            {
+                Destination = new FitBExplicitDestination(three),
+            });
+            three.Annotations.Add(new LinkAnnotation(three, new Rectangle(100, 100, 200, 120))
+            {
+                Action = new GoToAction(new XYZExplicitDestination(two, 5, 500, 1)),
+            });
+            three.Annotations.Add(new LinkAnnotation(three, new Rectangle(100, 200, 200, 220))
+            {
+                Destination = new FitVExplicitDestination(three, 40),
+            });
+            three.Annotations.Add(new LinkAnnotation(three, new Rectangle(100, 300, 200, 320))
+            {
+                Destination = new FitHExplicitDestination(document.Pages[1], 70),
+            });
+            document.Save(input);
+        }
+
+        // Pages 2 and 3 move to the front: 2 becomes 1 and 3 becomes 2.
+        PdfEditResult result = fixture.Engine.ApplyOps(input,
+            new PdfOpsBatch { Ops = [new MovePagesOp { Pages = "2-3", To = 1 }] },
+            new PdfEditRequest { OutputPath = fixture.File("exact.out.pdf") });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == "NAVIGATION_DEGRADED");
+        using var moved = new Document(result.Output!.Path);
+        Assert.Equal(["Page 2", "Page 3", "Page 1"], Enumerable.Range(1, 3).Select(number => Text(moved.Pages[number])));
+        OutlineItemCollection parentItem = moved.Outlines.Single(static item => item.Title == "Parent");
+        Assert.Equal("1 Fit", Describe(parentItem.Destination));
+        Assert.Equal("2 FitR 0 10 300 400", Describe(parentItem.Single().Destination));
+        Assert.Equal("2 FitH 650", Describe(((GoToAction)moved.Outlines.Single(static item => item.Title == "Action").Action).Destination));
+        Assert.Equal("1 FitBV 30", Describe(moved.Outlines.Single(static item => item.Title == "Bounded").Destination));
+        Assert.Equal("2 XYZ 20 600 0", Describe(moved.NamedDestinations["appendix"]));
+        Assert.Equal("2 FitB", Describe(((LinkAnnotation)moved.Pages[3].Annotations[1]).Destination));
+        Assert.Equal("1 XYZ 5 500 1", Describe(((GoToAction)((LinkAnnotation)moved.Pages[2].Annotations[1]).Action).Destination));
+        Assert.Equal("2 FitV 40", Describe(((LinkAnnotation)moved.Pages[2].Annotations[2]).Destination));
+        Assert.Equal("3 FitH 70", Describe(((LinkAnnotation)moved.Pages[2].Annotations[3]).Destination));
+    }
+
+    /// <summary>The page number, type and coordinates of an explicit destination.</summary>
+    private static string Describe(IAppointment destination) => destination switch
+    {
+        FitExplicitDestination fit => $"{fit.PageNumber} Fit",
+        FitBExplicitDestination fit => $"{fit.PageNumber} FitB",
+        FitRExplicitDestination fit => $"{fit.PageNumber} FitR {fit.Left} {fit.Bottom} {fit.Right} {fit.Top}",
+        FitHExplicitDestination fit => $"{fit.PageNumber} FitH {fit.Top}",
+        FitVExplicitDestination fit => $"{fit.PageNumber} FitV {fit.Left}",
+        FitBVExplicitDestination fit => $"{fit.PageNumber} FitBV {fit.Left}",
+        XYZExplicitDestination xyz => $"{xyz.PageNumber} XYZ {xyz.Left} {xyz.Top} {xyz.Zoom}",
+        _ => destination.GetType().Name,
+    };
+
+    private static string Text(Page page)
+    {
+        var absorber = new TextAbsorber();
+        page.Accept(absorber);
+        return absorber.Text.Trim();
     }
 
     [Fact]

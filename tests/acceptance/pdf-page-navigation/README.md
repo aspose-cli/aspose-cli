@@ -54,8 +54,11 @@ copied or logged. The original fixture remains unchanged.
 `verify.ps1` reopens each saved output through public SDK APIs. Eight assertions check
 page count, both page texts, bookmark count and each bookmark's destination page/type.
 Desired result: Appendix is page 1, Approval is page 2, and all three Appendix bookmarks
-still target page 1. Actual current result: page order is correct, Approval targets
-page 2, but the three moved-page destinations report `PageNumber = 0`.
+still target page 1. Actual current result: page order is correct, and Approval and
+Appendix (Fit) target their pages; Appendix-null and Appendix-zero report
+`PageNumber = 0`, because their coordinates read 0 and the CLI does not rebuild a
+destination it cannot reproduce exactly. The native control leaves all three Appendix
+bookmarks at `PageNumber = 0`.
 
 The aggregate script and verifier return **1 for failed desired assertions**, **0 only
 when those assertions pass**, and **2 for setup/operation exceptions**. CLI exit 0 is
@@ -68,28 +71,28 @@ not a navigation pass. A retained output can be checked separately:
 ```
 
 The getter observation in `provenance.json` is diagnostic, not a passing preservation
-assertion. SDK 26.8 reads both source null and source zero coordinates as double zero.
-`NullSemanticsVerified` stays false: a future page-target pass alone is insufficient to
-certify complete navigation fidelity. No NaN sentinel is used by this reproduction.
+assertion. SDK 26.8 reads both source null and source zero## Ownership and release boundary
 
-## Ownership and release boundary
+The SDK has no page move: `PageCollection` offers insertion and deletion only, inserting
+a page copies it, and reinserting a removed page throws. A move therefore copies pages
+and must rebuild the navigation that named the originals. The CLI's `move_pages` does so
+through public API, exactly, for every destination whose coordinates it can read.
 
-The CLI currently implements a semantic move by copying selected pages into another
-Document, deleting originals and inserting copied pages, without preserving navigation
-to the replaced page identities. This is a CLI command-composition defect. The native
-control additionally demonstrates that simply changing the call order is insufficient.
+What remains is an SDK capability gap. Typed coordinate getters and `ToString` read an
+omitted (null) coordinate as 0, the destination Page property is read-only, and no
+public constructor writes an omitted coordinate: `XYZExplicitDestination` with `NaN`
+writes the invalid token `NaN`. The CLI leaves a destination with a coordinate that
+reads 0 without a target and counts it in `NAVIGATION_DEGRADED`, rather than rebuilding
+it with an invented coordinate.
 
-The SDK exposes lower-level page insertion/deletion, but no demonstrated public API
-for lossless retargeting of an existing opaque destination. Typed coordinate getters
-lose the null/zero distinction, while the destination Page property is read-only.
-This is a public-SDK capability limitation; the evidence does **not** establish a
-violation of a documented reference-preserving SDK Move contract.
+Do not invent a Fit fallback, reset coordinates/zoom, rewrite PDF objects, or weaken the
+desired gate. A vendor-confirmed API that reads and writes omitted coordinates, or moves
+pages in place, must preserve destination type, location, zoom and inheritance semantics,
+including recursive bookmarks, local links/action chains, named destinations and
+affected document actions. This minimal gate is necessary evidence, not certification of
+every such navigation construct.
 
-Keep navigation-sensitive move publication blocked. Command availability and production
-behavior are unchanged. Do not invent a Fit fallback, reset coordinates/zoom, reject
-additional input classes silently, rewrite PDF objects, or weaken the desired gate.
-A vendor-confirmed API or SDK change must preserve destination type, location, zoom and
-inheritance semantics, including recursive bookmarks, local links/action chains, named
+cluding recursive bookmarks, local links/action chains, named
 destinations and affected document actions. This minimal gate is necessary evidence,
 not certification of every such navigation construct.
 

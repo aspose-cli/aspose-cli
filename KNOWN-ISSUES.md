@@ -30,12 +30,16 @@ and blocks the release until it is fixed or waived below.
   SVG, with `FEATURE_UNSUPPORTED`.
 - **Reproduction:** [tests/acceptance/cells-svg-egress](tests/acceptance/cells-svg-egress/README.md).
 
-### Aspose.PDF.Drawing 26.8.0: moving pages loses bookmark destinations (gate `PDF-MOVE-BOOKMARK`)
+### Aspose.PDF.Drawing 26.8.0: omitted destination coordinates cannot be read or written (gate `PDF-MOVE-BOOKMARK`)
 
-- **Defect:** after a page move, outline destinations point at `PageNumber=0`, and no public API
-  retargets a destination without losing information.
-- **CLI behavior:** an edit or merge that leaves navigation unresolved reports
-  `NAVIGATION_DEGRADED` with the number of bookmarks, links and named destinations affected.
+- **Defect:** destination getters read an omitted (null) coordinate as 0, and no public API
+  writes one; `XYZExplicitDestination` with `NaN` writes the invalid token `NaN`. The SDK has no
+  page move, so a move copies pages and must rebuild each destination that named an original,
+  which it cannot do exactly for a coordinate that reads 0.
+- **CLI behavior:** `move_pages` retargets every other bookmark, link and named destination to
+  the moved pages exactly. It leaves one with a coordinate of 0 without a target and counts it in
+  `NAVIGATION_DEGRADED`, as it does navigation to deleted pages and bookmarks a merge reduces to
+  Fit.
 - **Reproduction:** [tests/acceptance/pdf-page-navigation](tests/acceptance/pdf-page-navigation/README.md).
 
 ### Aspose.Slides 26.9.0: chart layout and axis scale change on save (gate `SLD-003`)
