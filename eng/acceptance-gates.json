@@ -27,6 +27,14 @@
       }
     },
     {
+      "id": "SLIDES-FONT-REGISTRY",
+      "directory": "tests/acceptance/slides-font-registry",
+      "arguments": {
+        "SdkAssembly": "{buildOutput}/Aspose.Slides.dll",
+        "OutputDirectory": "{output}"
+      }
+    },
+    {
       "id": "SLD-003",
       "directory": "tests/acceptance/slides-sdk-fidelity",
       "arguments": {

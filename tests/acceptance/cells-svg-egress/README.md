@@ -40,7 +40,9 @@ picture made a request** and **2 when the check could not run**.
 With SDK 26.9 `Pictures.Add` requests the SVG's `xlink:href` image twice while it builds
 the picture; `WorkbookSettings.ResourceProvider`, documented as the stream provider for
 external resources, is never called. The same happens without a provider and from a file
-stream. Saving afterwards and reloading the saved workbook make no request, and a
+stream. The requests come from rasterizing the picture's fallback image:
+`Shapes.AddSvg` with a caller-supplied fallback image makes none. Saving afterwards,
+reloading the saved workbook and rendering it to PDF, PNG or HTML make no request, and a
 compressed SVG (SVGZ) is not recognized as an image.
 
 ## Ownership and release boundary

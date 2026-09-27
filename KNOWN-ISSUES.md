@@ -24,8 +24,10 @@ and blocks the release until it is fixed or waived below.
 
 ### Aspose.Cells 26.9.0: adding an SVG picture fetches its external images (gate `CELLS-SVG-EGRESS`)
 
-- **Defect:** `Pictures.Add` requests the `xlink:href` images of an SVG, and
-  `WorkbookSettings.ResourceProvider` is never consulted.
+- **Defect:** `Pictures.Add` requests the `xlink:href` images of an SVG while it rasterizes the
+  picture's fallback image, and `WorkbookSettings.ResourceProvider` is never consulted.
+  `Shapes.AddSvg` with a supplied fallback image makes no request, nor do loading and rendering a
+  workbook that already holds an SVG picture.
 - **CLI behavior:** `insert_image` refuses an SVG that names a network address, and a compressed
   SVG, with `FEATURE_UNSUPPORTED`.
 - **Reproduction:** [tests/acceptance/cells-svg-egress](tests/acceptance/cells-svg-egress/README.md).
@@ -42,22 +44,25 @@ and blocks the release until it is fixed or waived below.
   Fit.
 - **Reproduction:** [tests/acceptance/pdf-page-navigation](tests/acceptance/pdf-page-navigation/README.md).
 
-### Aspose.Slides 26.9.0: chart layout and axis scale change on save (gate `SLD-003`)
+### Aspose.Slides 26.9.0: an implicit automatic chart title becomes an overlay on save (gate `SLD-003`)
 
-- **Defect:** saving an unchanged PowerPoint chart moves its plot area and changes its automatic
-  major unit.
+- **Defect:** loading a chart whose automatic title is implicit (no `c:title`, `autoTitleDeleted`
+  0) reports a title with `Overlay` true, and saving writes `<c:title><c:overlay val="1"/>`.
+  PowerPoint then draws the title over the plot, so the plot area grows and its automatic major
+  unit changes.
 - **Reproduction:** [tests/acceptance/slides-sdk-fidelity](tests/acceptance/slides-sdk-fidelity/README.md).
 
-### Aspose.Slides 26.9.0: a non-string value in the per-user font registry key breaks Slides
+### Aspose.Slides 26.9.0: a non-string value in the per-user font registry key breaks Slides (gate `SLIDES-FONT-REGISTRY`)
 
 - **Defect:** font initialization casts every value under
   `HKCU\SOFTWARE\Microsoft\Windows NT\CurrentVersion\Fonts` to `string`, so a value of another
-  kind, such as a `REG_DWORD` written by other software, throws `InvalidCastException`.
+  kind, such as a `REG_DWORD` or `REG_BINARY` written by other software, throws
+  `InvalidCastException`.
 - **CLI behavior:** every Slides command that loads fonts fails with `FEATURE_UNSUPPORTED`.
 - **Workaround:** remove the non-string value from that key; Windows writes only string values
   there.
-- **Tracking:** to be filed upstream. There is no acceptance gate, because reproducing it writes
-  to the user's registry.
+- **Reproduction:** [tests/acceptance/slides-font-registry](tests/acceptance/slides-font-registry/README.md),
+  which redirects `HKCU` to a private hive and never writes the user's registry.
 
 ## Release gate waivers
 
