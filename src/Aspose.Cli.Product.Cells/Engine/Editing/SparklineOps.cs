@@ -51,10 +51,10 @@ internal static class SparklineOps
         // in its name, however the name is quoted, so the group is built from its
         // parts: an empty group with the settings the one-call Add applies (an
         // empty group has no colours, and reading its PresetStyle throws), then
-        // one sparkline per data row or column, each range written
-        // as start:end. The contract keeps the location a one-row or one-column
-        // strip, so sparkline i lands in its i-th cell. Tests pin the result to
-        // the one-call Add's.
+        // one sparkline per data row or column, each range written as start:end.
+        // The contract keeps the location a one-row or one-column strip, so
+        // sparkline i lands in its i-th cell. Tests pin the result to the
+        // one-call Add's.
         SparklineType type = ToType(op.Type);
         SparklineGroup group = sheet.SparklineGroups[sheet.SparklineGroups.Add(type)];
         group.PresetStyle = SparklinePresetStyleType.Style1;
