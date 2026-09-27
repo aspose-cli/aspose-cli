@@ -17,6 +17,7 @@ internal static class ErrorTranslator
     public static CliException TranslateLoad(Exception exception, string path, bool passwordProvided) =>
         exception switch
         {
+            CellsException { Code: ExceptionType.License } => CellsErrors.EvaluationOpenLimit(path),
             CellsException cells when IsPasswordError(cells) =>
                 passwordProvided ? CliErrors.PasswordInvalid(path) : CliErrors.PasswordRequired(path),
             CellsException cells => CellsErrors.FileCorrupt(path, Summarize(cells.Message)),

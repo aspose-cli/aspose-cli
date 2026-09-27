@@ -26,6 +26,14 @@ public static class CellsErrors
             ["firstSheet"] = firstSheet,
         },
         docs: "licensing");
+
+    /// <summary>The evaluation engine refuses to open more files in this process.</summary>
+    internal static CliException EvaluationOpenLimit(string path) => new(
+        ErrorCodes.EvaluationLimit,
+        $"Evaluation mode opens at most 100 workbooks per process, and this process has reached that limit; {path} was not opened.",
+        hint: "Apply an Aspose.Cells license, or run the command again in a new process.",
+        docs: "licensing");
+
     internal static CliException RangeInvalid(string spec, string reason) => new(
         CellsDiagnostics.RangeInvalid,
         $"Invalid range '{spec}': {reason}",

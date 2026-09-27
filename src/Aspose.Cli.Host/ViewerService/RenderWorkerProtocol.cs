@@ -96,7 +96,8 @@ internal sealed record RenderWorkerResponse
 
     /// <summary>
     /// Set when the worker is exiting because the license it applied no longer
-    /// matches the configured one; the supervisor restarts it and retries.
+    /// matches the configured one, or an evaluation engine refused more files
+    /// after earlier requests; the supervisor restarts it and retries once.
     /// </summary>
     public bool Recycle { get; init; }
 }

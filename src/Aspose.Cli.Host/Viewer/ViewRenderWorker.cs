@@ -23,7 +23,10 @@ namespace Aspose.Cli.Host.Viewer;
 /// with its own deadline and resource ledger, so one render never inherits
 /// the budgets of the last. The worker exits when its input ends, and asks to
 /// be recycled as soon as the license it applied for a product no longer
-/// matches the configured one, because an engine cannot swap a license.
+/// matches the configured one, because an engine cannot swap a license, or
+/// when an evaluation engine refuses more files after earlier requests: an
+/// evaluation engine counts the files one process opens, so a new process can
+/// serve the request.
 /// </summary>
 internal static class ViewRenderWorker
 {
@@ -36,6 +39,7 @@ internal static class ViewRenderWorker
         using Stream output = Console.OpenStandardOutput();
         LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
         var licenses = new Dictionary<string, string>(StringComparer.Ordinal);
+        bool served = false;
         while (true)
         {
             RenderWorkerRequest? request = ProcessPipeMessages
@@ -46,7 +50,8 @@ internal static class ViewRenderWorker
                 return 0;
             }
 
-            RenderWorkerResponse response = Serve(catalog, globals, limits, licenses, request);
+            RenderWorkerResponse response = Serve(catalog, globals, limits, licenses, request, served);
+            served = true;
             ProcessPipeMessages.WriteAsync(output, response, CancellationToken.None)
                 .GetAwaiter().GetResult();
             if (response.Recycle)
@@ -61,7 +66,8 @@ internal static class ViewRenderWorker
         GlobalValues globals,
         LocalServiceResourceLimits limits,
         Dictionary<string, string> licenses,
-        RenderWorkerRequest request)
+        RenderWorkerRequest request,
+        bool served)
     {
         try
         {
@@ -127,6 +133,10 @@ internal static class ViewRenderWorker
                 PresenterScript = request.Presentation ? views.Presentation.Script : null,
                 PresenterStylesheet = request.Presentation ? views.Presentation.Stylesheet : null,
             };
+        }
+        catch (CliException exception) when (served && exception.Code == ErrorCodes.EvaluationLimit)
+        {
+            return new RenderWorkerResponse { Id = request.Id, Ok = false, Recycle = true };
         }
         catch (Exception exception)
         {

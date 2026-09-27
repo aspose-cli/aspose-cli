@@ -121,6 +121,25 @@ public sealed class RenderWorkerTests : IDisposable
         Assert.Equal(ErrorCodes.LicenseInvalid.Name, response.Code);
     }
 
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Render_PastTheEvaluationFileLimit_RecyclesTheWorkerAndKeepsServing()
+    {
+        CreateWorkbook("book.xlsx");
+        using var supervisor = new RenderWorkerSupervisor(() => _workspace.StartInfo(), RenderTimeout);
+        Assert.True(Render(supervisor, "book.xlsx").Response.Ok);
+        int first = supervisor.ProcessId!.Value;
+
+        // Evaluation Aspose.Cells opens at most 100 files per process.
+        for (int render = 2; render <= 105; render++)
+        {
+            RenderWorkerResponse response = Render(supervisor, "book.xlsx").Response;
+            Assert.True(response.Ok, $"render {render}: {response.Code} {response.Message}");
+        }
+
+        Assert.NotEqual(first, supervisor.ProcessId);
+    }
+
     [Fact]
     public void Render_WhenTheWorkerRunsPastItsBound_KillsItAndReportsTheTimeout()
     {
