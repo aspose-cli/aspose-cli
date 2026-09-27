@@ -10,6 +10,14 @@
       }
     },
     {
+      "id": "CELLS-SPARKLINE-APOSTROPHE",
+      "directory": "tests/acceptance/cells-sparkline-apostrophe",
+      "arguments": {
+        "SdkDir": "{buildOutput}",
+        "OutputDirectory": "{output}"
+      }
+    },
+    {
       "id": "PDF-MOVE-BOOKMARK",
       "directory": "tests/acceptance/pdf-page-navigation",
       "arguments": {
@@ -35,7 +43,7 @@
       }
     },
     {
-      "id": "SLD-003",
+      "id": "SLIDES-CHART-TITLE",
       "directory": "tests/acceptance/slides-sdk-fidelity",
       "arguments": {
         "SdkAssembly": "{buildOutput}/Aspose.Slides.dll",

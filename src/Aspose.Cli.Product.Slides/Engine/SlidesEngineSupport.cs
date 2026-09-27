@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
@@ -444,6 +445,21 @@ internal static class SlidesEngineSupport
         if (loaded.Resources.Warning is { } omitted)
         {
             warnings.Add(omitted);
+        }
+
+        if (output)
+        {
+            foreach ((int slide, string chart) in loaded.ImplicitTitleCharts)
+            {
+                warnings.Add(new Warning
+                {
+                    Code = SlidesDiagnostics.ChartTitleOverlaid,
+                    Message = $"The chart '{chart}' on slide {slide} has an implicit automatic title, which this output draws over the plot, enlarging the plot area.",
+                    Hint = "Inspect the chart in PowerPoint and restore its title layout there if it changed.",
+                    Location = string.Create(CultureInfo.InvariantCulture, $"slide {slide}"),
+                    AffectsCompleteness = true,
+                });
+            }
         }
 
         return warnings.Count == 0 ? null : warnings;

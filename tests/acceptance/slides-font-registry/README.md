@@ -43,13 +43,12 @@ With SDK 26.9 font initialization casts every value of the per-user Fonts key to
 throws it for `Byte[]`, on load, save and rendering alike. `REG_SZ` and `REG_EXPAND_SZ` values, an
 empty key and a missing key work. `FontsLoader.GetFontFolders` is not affected.
 
-## Ownership and release boundary
+## Handling
 
-This is an upstream SDK defect: Windows writes only string values to that key, but other
-software can add others, and the SDK has no option to skip unreadable entries. The CLI does not
-rewrite the registry or redirect it. Until a fixed SDK passes this gate, every Slides command
-that initializes fonts fails on such a machine; the workaround is to remove the non-string
-value.
+KNOWN-ISSUES.md describes the CLI's handling of this defect under the gate's id, and the code
+that handles it names the id. While this gate exits 1 the release proceeds; when it exits 0,
+delete the issue, its handling and this gate. Do not make it pass by rewriting input or output,
+or by weakening its assertion.
 
 Official references:
 

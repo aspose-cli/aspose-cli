@@ -65,9 +65,7 @@ A run is licensed only when `ASPOSE_CLI_TEST_LICENSE_PATH` names a license file.
 the cases that need a license are skipped and listed; the `Full` scope requires the license and
 fails when a licensed case is skipped.
 Other skips name their reason: a missing platform, tool (`pwsh`, `openssl`, `dotnet`) or
-symbolic-link privilege. A test marked `[Trait("ProductDefect", "<id>")]` asserts behavior a
-confirmed defect still breaks; it fails on purpose and blocks the release until the defect is
-fixed. Keep license contents out of logs and fixtures.
+symbolic-link privilege. Keep license contents out of logs and fixtures.
 
 ```powershell
 $env:ASPOSE_CLI_TEST_LICENSE_PATH = 'C:\private\Aspose.Total.lic'
@@ -76,11 +74,15 @@ $env:ASPOSE_CLI_TEST_LICENSE_PATH = 'C:\private\Aspose.Total.lic'
 
 ### Acceptance gates
 
-The SDK acceptance gates under `tests/acceptance` are listed in `eng/acceptance-gates.json`.
-`scripts/acceptance.ps1` runs them against the built CLI with licensed SDKs (set
-`ASPOSE_LICENSE_PATH` or the variable each gate's README names; the `Full` test scope passes its
-test license); `-Plan` only validates the list and the waivers. A failing gate blocks the release unless [KNOWN-ISSUES.md](KNOWN-ISSUES.md)
-waives it for the version in `Directory.Build.props`.
+Each issue in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) has a gate of the same id under
+`tests/acceptance`, listed in `eng/acceptance-gates.json`, whose `reproduce.ps1` exits 1 while the
+defect is present, 0 once it is gone and 2 when it could not run. `scripts/acceptance.ps1` runs
+them against the built CLI with licensed SDKs (set `ASPOSE_LICENSE_PATH` or the variable each
+gate's README names; the `Full` test scope passes its test license); `-Plan` only checks that the
+gates and the `### <id>` headings of KNOWN-ISSUES.md match one to one. A gate that still
+reproduces its defect passes the release; one that no longer does, or cannot run, blocks it.
+After an SDK update, run the gates and, for each that exits 0, search the id and delete the
+issue's section, the code that names it and the gate.
 
 ## Code conventions
 

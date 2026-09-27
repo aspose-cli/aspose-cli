@@ -44,7 +44,7 @@ internal sealed partial class PdfMutationHandlers
         EnsureFile(operation.Path);
         IReadOnlyList<int> pages = ResolveOptional(_document, operation.Pages);
         // Read (and charge) the image once; every page stamps its own view of the bytes. An SVG
-        // stamp fetches its external images with no resource hook (KNOWN-ISSUES.md), so the
+        // stamp fetches its external images with no resource hook (known issue PDF-HTML-EGRESS), so the
         // read refuses an SVG that names a network address.
         byte[] image = NetworkReferenceGuard.ReadImage(_inputs, operation.Path);
 

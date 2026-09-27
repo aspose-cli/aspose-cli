@@ -45,13 +45,12 @@ stream. The requests come from rasterizing the picture's fallback image:
 reloading the saved workbook and rendering it to PDF, PNG or HTML make no request, and a
 compressed SVG (SVGZ) is not recognized as an image.
 
-## Ownership and release boundary
+## Handling
 
-This is an upstream SDK defect: no public hook governs the network access of SVG picture
-import. The CLI does not rewrite the SVG. Until a fixed SDK passes this gate, `cells edit`
-`insert_image` refuses an SVG that names any network address, and a compressed SVG, with
-`FEATURE_UNSUPPORTED`, before the picture is added. When this gate passes, route SVG
-resources through the workbook's resource policy and remove the refusal.
+KNOWN-ISSUES.md describes the CLI's handling of this defect under the gate's id, and the code
+that handles it names the id. While this gate exits 1 the release proceeds; when it exits 0,
+delete the issue, its handling and this gate. Do not make it pass by rewriting input or output,
+or by weakening its assertion.
 
 Official references:
 

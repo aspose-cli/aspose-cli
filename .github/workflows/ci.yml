@@ -37,7 +37,8 @@ jobs:
           if-no-files-found: warn
 
   # Licensed mode: the Full scope, so LicensedFact cases run instead of being skipped and the
-  # acceptance gates follow; an unwaived failing gate fails this job as it blocks a release.
+  # acceptance gates follow; a gate whose SDK defect is fixed, or that cannot run, fails this job
+  # as it blocks a release.
   # Evaluation-contract subprocesses strip license variables themselves.
   # Secrets are not available to pull requests from forks, so those runs skip this job.
   licensed:

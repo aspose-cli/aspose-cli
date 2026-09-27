@@ -88,7 +88,10 @@ internal sealed class SlidesPresentationLoader(
                 resources.Dispose();
                 throw;
             }
-            return new LoadedPresentation(presentation, format, resources);
+            return new LoadedPresentation(presentation, format, resources)
+            {
+                ImplicitTitleCharts = ImplicitTitleCharts(presentation),
+            };
         }
         catch (CliException)
         {
@@ -130,6 +133,39 @@ internal sealed class SlidesPresentationLoader(
         }
     }
 
+    /// <summary>
+    /// The charts, as loaded, whose implicit automatic title the engine turns into one drawn over
+    /// the plot (known issue SLIDES-CHART-TITLE in KNOWN-ISSUES.md): it reports a title that
+    /// overlays the plot and has no text of its own.
+    /// </summary>
+    private static IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts(Presentation presentation)
+    {
+        var charts = new List<(int Slide, string Chart)>();
+        for (int index = 0; index < presentation.Slides.Count; index++)
+        {
+            Collect(presentation.Slides[index].Shapes, index + 1);
+        }
+
+        return charts;
+
+        void Collect(IShapeCollection shapes, int slide)
+        {
+            foreach (IShape shape in shapes)
+            {
+                if (shape is IGroupShape group)
+                {
+                    Collect(group.Shapes, slide);
+                }
+                else if (shape is Aspose.Slides.Charts.IChart { HasTitle: true } chart
+                    && chart.ChartTitle.Overlay
+                    && chart.ChartTitle.TextFrameForOverriding is null)
+                {
+                    charts.Add((slide, chart.Name));
+                }
+            }
+        }
+    }
+
     private static string FormatId(LoadFormat format) => format switch
     {
         LoadFormat.Ppt => "ppt",
@@ -158,6 +194,9 @@ internal sealed class SlidesPresentationLoader(
 internal sealed record LoadedPresentation(Presentation Presentation, string FormatId, SlidesResourcePolicy Resources)
     : IDisposable
 {
+    /// <summary>The charts whose implicit automatic title an output draws over the plot.</summary>
+    public IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts { get; init; } = [];
+
     public void Dispose()
     {
         try { Presentation.Dispose(); }

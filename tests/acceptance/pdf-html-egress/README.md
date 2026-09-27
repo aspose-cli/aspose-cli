@@ -69,20 +69,12 @@ autolinks and references inside code are not loaded. SVG images placed with `Ima
 stamped with `ImageStamp` likewise request their external stylesheets and images, with no
 hook.
 
-## Ownership and release boundary
+## Handling
 
-This is an upstream SDK defect: the documented resource-loading callback does not govern
-network access, and the Markdown importer has none. The CLI does not rewrite or sanitize
-HTML or Markdown. Until a fixed SDK passes this gate, `pdf create --from-html`, Markdown
-`--from-text` and SVG image inputs refuse any input that names a network address or
-contains script, with `FEATURE_UNSUPPORTED`, before the engine reads it, as does a local
-stylesheet or SVG file the HTML loader would supply; and an HTML import whose loader
-nevertheless sees a network address fails without publishing output instead of reporting
-the resource as blocked. A Markdown import is refused unless every file the importer could
-read, resolved as the importer does, is an ordinary file beneath the Markdown file's
-directory. `--allow-network-resources` lets trusted HTML, never Markdown, fetch, and
-discloses each address. When this gate passes, remove the refusals and keep the loader as
-the only policy.
+KNOWN-ISSUES.md describes the CLI's handling of this defect under the gate's id, and the code
+that handles it names the id. While this gate exits 1 the release proceeds; when it exits 0,
+delete the issue, its handling and this gate. Do not make it pass by rewriting input or output,
+or by weakening its assertion.
 
 Official references:
 

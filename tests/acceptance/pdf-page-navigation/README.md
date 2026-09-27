@@ -71,40 +71,27 @@ not a navigation pass. A retained output can be checked separately:
 ```
 
 The getter observation in `provenance.json` is diagnostic, not a passing preservation
-assertion. SDK 26.8 reads both source null and source zero## Ownership and release boundary
+assertion. SDK 26.8 reads both source null and source zero coordinates as double zero.
+`NullSemanticsVerified` stays false: a future page-target pass alone is insufficient to
+certify complete navigation fidelity. No NaN sentinel is used by this reproduction.
 
-The SDK has no page move: `PageCollection` offers insertion and deletion only, inserting
-a page copies it, and reinserting a removed page throws. A move therefore copies pages
-and must rebuild the navigation that named the originals. The CLI's `move_pages` does so
-through public API, exactly, for every destination whose coordinates it can read.
+## Observed behavior
 
-What remains is an SDK capability gap. Typed coordinate getters and `ToString` read an
-omitted (null) coordinate as 0, the destination Page property is read-only, and no
-public constructor writes an omitted coordinate: `XYZExplicitDestination` with `NaN`
-writes the invalid token `NaN`. The CLI leaves a destination with a coordinate that
-reads 0 without a target and counts it in `NAVIGATION_DEGRADED`, rather than rebuilding
-it with an invented coordinate.
+The SDK has no page move: `PageCollection` offers insertion and deletion only, inserting a
+page copies it, and reinserting a removed page throws. Copying pages keeps the links between
+them, but every other destination that named an original is left without a page. Typed
+coordinate getters and `ToString` read an omitted (null) coordinate as 0, the destination Page
+property is read-only, and no public constructor writes an omitted coordinate:
+`XYZExplicitDestination` with `NaN` writes the invalid token `NaN`. `PdfFileEditor.Extract`
+with CopyOutlines, CopyLogicalStructure and KeepActions drops every bookmark, so it is no move
+substitute either.
 
-Do not invent a Fit fallback, reset coordinates/zoom, rewrite PDF objects, or weaken the
-desired gate. A vendor-confirmed API that reads and writes omitted coordinates, or moves
-pages in place, must preserve destination type, location, zoom and inheritance semantics,
-including recursive bookmarks, local links/action chains, named destinations and
-affected document actions. This minimal gate is necessary evidence, not certification of
-every such navigation construct.
+## Handling
 
-cluding recursive bookmarks, local links/action chains, named
-destinations and affected document actions. This minimal gate is necessary evidence,
-not certification of every such navigation construct.
-
-The full-permutation `PdfFileEditor.Extract` alternative was checked separately with
-CopyOutlines/CopyLogicalStructure/KeepActions and dropped all bookmarks; it is not a
-whole-document move substitute. Bulky SDK and independent pypdf diagnostics remain in
-`artifacts/plan-attribution-pdf-20260923/` (not packaged here):
-`navigation-null-results.json`, `navigation-null-independent.json`,
-`facade-extract-independent.json`, and `standalone-gate-01/`.
-The prior actual-business reproduction remains in
-`artifacts/validation/commercial-20260922-final-review/pdf/bugs/PDF-MOVE-BOOKMARK/`.
-No vendor submission is performed by these scripts.
+KNOWN-ISSUES.md describes the CLI's handling of this defect under the gate's id, and the code
+that handles it names the id. While this gate exits 1 the release proceeds; when it exits 0,
+delete the issue, its handling and this gate. Do not make it pass by rewriting input or output,
+or by weakening its assertion.
 
 Official references:
 

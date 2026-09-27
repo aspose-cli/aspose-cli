@@ -55,7 +55,9 @@ intentional contract change.
 
 Before changing code around a commercial SDK, verify the official API usage and reproduce
 suspected engine behavior with a minimal SDK-only case. Correct our misuse in the owning
-adapter. Keep confirmed SDK defects as upstream issues and release blockers, recorded in
-[KNOWN-ISSUES.md](KNOWN-ISSUES.md) and, where they can be reproduced, guarded by an acceptance
-gate or a `ProductDefect` test; never hide them with implicit default rewrites, file-format
-patches, or product, producer or version special cases.
+adapter. Record each confirmed SDK defect once, under its id in
+[KNOWN-ISSUES.md](KNOWN-ISSUES.md), with an acceptance gate of the same id that reproduces it;
+code that handles it (a refusal, a workaround through other public API, or a warning) names the
+id in a comment. A handled known issue does not block a release; a gate that passes does, until
+the issue, its handling and its gate are deleted. Never hide a defect with implicit default
+rewrites, file-format patches, or product, producer or version special cases.

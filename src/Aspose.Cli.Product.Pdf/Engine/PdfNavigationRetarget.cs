@@ -13,9 +13,9 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// deletion; <see cref="Retarget"/> points them at the pages' new numbers afterwards.
 /// </summary>
 /// <remarks>
-/// The SDK reads an omitted (null) destination coordinate as 0 and cannot write one, so a
-/// destination with a coordinate that reads 0 could only be rebuilt with an invented
-/// position. It is left untouched and <see cref="PdfNavigationCensus"/> discloses it. A zoom
+/// Known issue PDF-MOVE-BOOKMARK (KNOWN-ISSUES.md): the SDK reads an omitted (null) destination
+/// coordinate as 0 and cannot write one, so a destination with a coordinate that reads 0 could
+/// only be rebuilt with an invented position. It is left untouched and <see cref="PdfNavigationCensus"/> discloses it. A zoom
 /// of 0 means the same as an omitted zoom, and FitR coordinates are never omitted, so neither
 /// is ambiguous. Destinations are built with <see cref="ExplicitDestination.CreateDestination(Page, ExplicitDestinationType, double[])"/>:
 /// one constructed from a page reports page number 0 until the document is saved, which the

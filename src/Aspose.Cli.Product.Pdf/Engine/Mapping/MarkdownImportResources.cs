@@ -9,8 +9,9 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 
 /// <summary>
 /// Enforces the input-directory boundary for the Aspose.PDF Markdown importer, which reads
-/// files with no resource hook (see KNOWN-ISSUES.md). Before the import, every file the
-/// importer could read must be an ordinary file beneath the Markdown file's directory: Markdown
+/// files with no resource hook (known issue PDF-HTML-EGRESS in KNOWN-ISSUES.md). Before the
+/// import, every file the importer could read must be an ordinary file beneath the Markdown
+/// file's directory: Markdown
 /// images, the resources raw HTML and CSS name, and the resources named inside the
 /// stylesheets, SVG and HTML files those load. As the importer does, the Markdown's own
 /// references resolve against the working directory and a loaded file's references against

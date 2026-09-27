@@ -8,11 +8,11 @@ namespace Aspose.Cli.Product.Pdf.Engine.Mapping;
 /// <summary>
 /// Adapts the document resource policy to the Aspose.PDF HTML importer: verified files beneath
 /// the HTML directory are supplied and every other local reference, shares included, is
-/// omitted. The importer requests a network resource before it calls this loader (see
-/// KNOWN-ISSUES.md). By default the HTML was refused before the import if it named one, so an
-/// address that still reaches the loader fails the import, and a supplied stylesheet or SVG
-/// that names one is refused before the importer can parse it. With network resources allowed,
-/// the importer keeps what it fetched and the result discloses every address.
+/// omitted. The importer requests a network resource before it calls this loader (known issue
+/// PDF-HTML-EGRESS in KNOWN-ISSUES.md). By default the HTML was refused before the import if it
+/// named one, so an address that still reaches the loader fails the import, and a supplied
+/// stylesheet or SVG that names one is refused before the importer can parse it. With network
+/// resources allowed, the importer keeps what it fetched and the result discloses every address.
 /// </summary>
 internal sealed class HtmlImportResources(string htmlPath, ResourceBudgetLedger budgets, bool allowNetwork) : IDisposable
 {

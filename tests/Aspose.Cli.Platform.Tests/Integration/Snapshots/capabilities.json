@@ -18029,6 +18029,15 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "CHART_TITLE_OVERLAID",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "slides.chart-title-overlaid.message.v1",
+      "hintTemplateId": "slides.chart-title-overlaid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "COMMENT_NOT_FOUND",
       "owner": "cells",
       "severity": "error",

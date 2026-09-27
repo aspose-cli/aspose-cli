@@ -1,24 +1,20 @@
 <#
 .SYNOPSIS
-Runs the SDK acceptance gates under tests/acceptance as release blockers.
+Runs the SDK acceptance gates under tests/acceptance, one per known SDK issue.
 
 .DESCRIPTION
 Every directory below tests/acceptance is a gate listed in eng/acceptance-gates.json, which
-names the gate and binds the arguments of its reproduce.ps1. A gate exits 0 when the desired
-behavior holds, 1 when it does not and 2 when it could not run.
+names the gate and binds the arguments of its reproduce.ps1. Each gate reproduces the known issue
+that KNOWN-ISSUES.md describes under a "### <id>" heading of the same id, and exits 1 while the
+defect is present, 0 once it is gone and 2 when it could not run.
 
-A failing gate blocks the release unless KNOWN-ISSUES.md waives it for the version declared in
-Directory.Build.props. A gate that could not run always blocks. A waived gate that passes
-is reported so that its waiver can be removed. Waivers are rows of the table that follows the
-heading "## Release gate waivers":
+A gate that still reproduces its issue passes the release, because the CLI handles the issue. A
+gate that exits 0 blocks the release until the issue, its handling and its gate are deleted, and
+a gate that could not run always blocks.
 
-    | Gate | Version | Tracking | Reason |
-    | --- | --- | --- | --- |
-    | SLD-003 | 1.0.0 | <upstream issue or ticket> | <why the release may ship with it> |
-
-Gates run the built CLI and SDK assemblies with licensed SDKs. Build the solution first and
-set ASPOSE_LICENSE_PATH (or the product license variables each gate README names).
--Plan only validates the gate list and the waivers and prints which gates are waived.
+Gates run the built CLI and SDK assemblies with licensed SDKs. Build the solution first and set
+ASPOSE_LICENSE_PATH (or the product license variables each gate README names). -Plan only checks
+that the gates and the known issues match one to one and prints them.
 #>
 [CmdletBinding()]
 param(
@@ -67,52 +63,26 @@ function Read-AcceptanceGates {
     return @($catalog.gates)
 }
 
-function Read-GateWaivers {
-    param([Parameter(Mandatory)][string] $Path, [Parameter(Mandatory)][string[]] $GateIds)
-    if (-not (Test-Path -LiteralPath $Path -PathType Leaf)) { return @() }
-    $lines = @(Get-Content -LiteralPath $Path)
-    $start = -1
-    for ($index = 0; $index -lt $lines.Count; $index++) {
-        if ($lines[$index].Trim() -ceq '## Release gate waivers') { $start = $index; break }
-    }
-    if ($start -lt 0) { return @() }
-    $waivers = @()
-    $inTable = $false
-    for ($index = $start + 1; $index -lt $lines.Count; $index++) {
-        $line = $lines[$index].Trim()
-        if (-not $line.StartsWith('|')) {
-            if ($inTable -or $line.StartsWith('#')) { break }
-            continue
-        }
-        $inTable = $true
-        $cells = @($line.Trim('|').Split('|') | ForEach-Object { $_.Trim() })
-        if ($cells[0] -ceq 'Gate' -or $cells[0] -match '^:?-{3,}:?$') { continue }
-        if ($cells.Count -ne 4) { throw "A release gate waiver needs four cells (Gate | Version | Tracking | Reason): $line" }
-        $waiver = [pscustomobject]@{ Gate = $cells[0]; Version = $cells[1]; Tracking = $cells[2]; Reason = $cells[3] }
-        if ($waiver.Gate -cnotin $GateIds) { throw "KNOWN-ISSUES.md waives unknown acceptance gate '$($waiver.Gate)'." }
-        if ($waiver.Version -cnotmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?$') { throw "Waiver for '$($waiver.Gate)' names an invalid version '$($waiver.Version)'." }
-        if ([string]::IsNullOrWhiteSpace($waiver.Tracking) -or [string]::IsNullOrWhiteSpace($waiver.Reason)) {
-            throw "Waiver for '$($waiver.Gate)' needs both a tracking reference and a reason."
-        }
-        if (@($waivers | Where-Object { $_.Gate -ceq $waiver.Gate -and $_.Version -ceq $waiver.Version }).Count -ne 0) {
-            throw "KNOWN-ISSUES.md waives '$($waiver.Gate)' for $($waiver.Version) twice."
-        }
-        $waivers += $waiver
-    }
-    return $waivers
+function Read-KnownIssues {
+    if (-not (Test-Path -LiteralPath $KnownIssuesPath -PathType Leaf)) { throw "The known issues are missing: $KnownIssuesPath" }
+    return @(Get-Content -LiteralPath $KnownIssuesPath |
+        Where-Object { $_ -cmatch '^### ([A-Z][A-Z0-9]*(?:-[A-Z0-9]+)*)\s*$' } |
+        ForEach-Object { $Matches[1] })
 }
 
 $gates = Read-AcceptanceGates
-$waivers = @(Read-GateWaivers $KnownIssuesPath @($gates | ForEach-Object { [string]$_.id }))
+$gateIds = @($gates | ForEach-Object { [string]$_.id })
+$issueIds = @(Read-KnownIssues)
+$ungated = @($issueIds | Where-Object { $_ -cnotin $gateIds })
+$unknown = @($gateIds | Where-Object { $_ -cnotin $issueIds })
+if ($ungated.Count -ne 0 -or $unknown.Count -ne 0) {
+    throw "Acceptance gates and known issues must match one to one. Known issues without a gate: $(if ($ungated.Count) { $ungated -join ', ' } else { 'none' }). Gates without a known issue: $(if ($unknown.Count) { $unknown -join ', ' } else { 'none' })."
+}
 if ($Plan) {
     [ordered]@{
         schemaVersion = 1
         version = $version
-        gates = @($gates | ForEach-Object {
-            $id = [string]$_.id
-            $waiver = @($waivers | Where-Object { $_.Gate -ceq $id -and $_.Version -ceq $version }) | Select-Object -First 1
-            [ordered]@{ id = $id; waived = ($null -ne $waiver); tracking = $(if ($null -ne $waiver) { $waiver.Tracking } else { $null }) }
-        })
+        gates = $gateIds
     } | ConvertTo-Json -Depth 4
     return
 }
@@ -131,20 +101,18 @@ foreach ($gate in $gates) {
     # Each gate loads SDK assemblies, so it runs in its own process.
     & $shell -NoLogo -NoProfile -NonInteractive -File (Join-Path $repoRoot ([string]$gate.directory) 'reproduce.ps1') @arguments
     $exitCode = $LASTEXITCODE
-    $waiver = @($waivers | Where-Object { $_.Gate -ceq $gate.id -and $_.Version -ceq $version }) | Select-Object -First 1
     $outcome = switch ($exitCode) {
-        0 { 'passed' }
-        1 { if ($null -ne $waiver) { 'waived' } else { 'failed' } }
+        1 { 'present' }
+        0 { 'fixed' }
         default { 'error' }
     }
-    if ($exitCode -eq 0 -and $null -ne $waiver) {
-        Write-Warning "Acceptance gate $($gate.id) passes; remove its waiver for $version from KNOWN-ISSUES.md."
+    if ($outcome -eq 'fixed') {
+        Write-Warning "The SDK no longer reproduces $($gate.id); delete the known issue, its handling and its gate."
     }
     $results += [pscustomobject][ordered]@{
         id = [string]$gate.id
         exitCode = $exitCode
         outcome = $outcome
-        tracking = $(if ($null -ne $waiver) { $waiver.Tracking } else { $null })
         output = $output
     }
     Write-Host "GATE $($gate.id): $outcome (exit $exitCode)"
@@ -153,8 +121,8 @@ foreach ($gate in $gates) {
     ([ordered]@{ schemaVersion = 1; version = $version; gates = @($results) } | ConvertTo-Json -Depth 4),
     [Text.UTF8Encoding]::new($false))
 
-$blockers = @($results | Where-Object { $_.outcome -in @('failed', 'error') })
+$blockers = @($results | Where-Object { $_.outcome -in @('fixed', 'error') })
 if ($blockers.Count -ne 0) {
-    throw "Release-blocking acceptance gates: $(($blockers | ForEach-Object { "$($_.id) ($($_.outcome))" }) -join ', '). A failing gate may ship only with a waiver for $version in KNOWN-ISSUES.md; a gate that could not run always blocks. Evidence: $runRoot"
+    throw "Release-blocking acceptance gates: $(($blockers | ForEach-Object { "$($_.id) ($($_.outcome))" }) -join ', '). A fixed issue must be deleted with its handling and gate; a gate that could not run always blocks. Evidence: $runRoot"
 }
-Write-Host "Acceptance gates for $version passed or are waived. Evidence: $runRoot"
+Write-Host "Every acceptance gate for $version reproduces a known issue the CLI handles. Evidence: $runRoot"

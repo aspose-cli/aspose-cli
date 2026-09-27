@@ -1,4 +1,4 @@
-# Slides SDK fidelity acceptance: SLD-003
+# Slides chart title acceptance: SLIDES-CHART-TITLE
 
 This is an explicitly invoked upstream SDK acceptance check. It is outside the normal
 regression discovery under `tests/acceptance`; it adds no project or dependency.
@@ -63,19 +63,12 @@ font-initialization control produced identical changed chart XML. The CLI's font
 initialization, chart getters, template application and mutation code were excluded
 as causes. Bulky diagnostic outputs remain under `artifacts`, not in this fixture.
 
-## Ownership and release gate
+## Handling
 
-This remains an upstream SDK compatibility issue. Plain native load/save changes an
-untouched automatic chart title to an overlay title, including after an Office save.
-Independent PowerPoint comparison confirmed the appearance change. The verifier reads
-the persisted chart part and checks this fixture's known title-layout expectation,
-category behavior, native data and explicit range. It is not a substitute for the
-independent viewer comparison when assessing a proposed SDK fix.
-
-Do not fix this by rewriting imported defaults, replacing package parts, changing
-unrelated charts, or weakening the acceptance assertion. Require a vendor-confirmed
-API correction or SDK release and rerun both the assertion and independent comparison.
-No vendor submission has been made by this check.
+KNOWN-ISSUES.md describes the CLI's handling of this defect under the gate's id, and the code
+that handles it names the id. While this gate exits 1 the release proceeds; when it exits 0,
+delete the issue, its handling and this gate. Do not make it pass by rewriting input or output,
+or by weakening its assertion.
 
 Official API references:
 

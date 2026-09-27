@@ -46,12 +46,12 @@ internal static class SparklineOps
                 hint: "Give one location cell per data row (one sparkline per row) or one per data column.");
         }
 
-        // The engine's one-call SparklineGroups.Add(type, range, isVertical, area)
-        // throws Invalid "'" when the data sheet or this sheet has an apostrophe
-        // in its name, however the name is quoted, so the group is built from its
-        // parts: an empty group with the settings the one-call Add applies (an
-        // empty group has no colours, and reading its PresetStyle throws), then
-        // one sparkline per data row or column, each range written as start:end.
+        // Known issue CELLS-SPARKLINE-APOSTROPHE (KNOWN-ISSUES.md): the engine's
+        // one-call SparklineGroups.Add rejects data on a sheet whose name has an
+        // apostrophe, so the group is built from its parts: an empty group with
+        // the settings the one-call Add applies (an empty group has no colours,
+        // and reading its PresetStyle throws), then one sparkline per data row
+        // or column, each range written as start:end.
         // The contract keeps the location a one-row or one-column strip, so
         // sparkline i lands in its i-th cell. Tests pin the result to the
         // one-call Add's.

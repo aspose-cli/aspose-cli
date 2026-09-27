@@ -39,22 +39,13 @@ top-left origin against the visible, rotated page box.
 
 ## Sources that can reach the network
 
-`pdf create --from-html`, Markdown `--from-text` and SVG images (`--from-images`,
-`add_stamp_image`, `add_watermark_image`) refuse any input that names a network
-address, hyperlinks included, or contains script, with `FEATURE_UNSUPPORTED`: the
-PDF engine requests network resources before the CLI can refuse them. Compressed
-SVG images are refused too. Save required images and CSS beside the input and
-reference them by relative path. For trusted HTML only, `--allow-network-resources`
-lets the importer fetch what the HTML names; the result lists every address in a
-`NETWORK_RESOURCES_REQUESTED` warning, local references still stay beneath the HTML
-directory, and `--timeout` bounds the fetches. `aspose-cli words convert page.html --to pdf`
-makes no network request at all.
-
-Markdown may reference only ordinary files beneath its own directory, including
-the images, stylesheets and SVG files that raw HTML and CSS load; anything else is
-refused before the import. The PDF Markdown importer resolves relative paths against
-the working directory, so run `pdf create --from-text` from the Markdown file's
-directory.
+HTML, Markdown and SVG inputs are refused with `FEATURE_UNSUPPORTED` when they name a
+network address or contain script, and Markdown also when it references a file
+outside its own directory, because the PDF engine would fetch or read it before any
+policy applies. Keep resources beside the input and
+reference them by relative path, and run `pdf create --from-text` from the Markdown
+file's directory. [Troubleshooting](references/troubleshooting.md) lists each refusal
+and its remedy, including `--allow-network-resources` for trusted HTML.
 
 HTML form controls become AcroForm fields. A text `<input>` keeps its `name`;
 other controls get generated names, so read them with `pdf query forms` before

@@ -46,8 +46,8 @@ aspose-cli slides convert deck.revised.pptx --to pdf --font-dir fonts --output j
 
 ## Existing chart fidelity
 
-Every edit passes the presentation through the SDK's full save path. The pinned Aspose.Slides
-SDK can change an untouched chart's automatic title layout, axis scale and colors during a
-plain load and save (a known SDK defect). Inspect existing native charts in PowerPoint before
-publishing a revised template; a successful reopen and complete review coverage do not
-establish unchanged appearance.
+Every edit and conversion passes the presentation through the SDK. It turns a chart's implicit
+automatic title into one drawn over the plot, which enlarges the plot area and can change its
+automatic axis scale; a `CHART_TITLE_OVERLAID` warning locates each affected chart. Inspect
+those charts in PowerPoint before publishing a revised template; a successful reopen and
+complete review coverage do not establish unchanged appearance.
