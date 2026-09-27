@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Pivot;
@@ -71,6 +72,73 @@ public sealed class CellsSheetReferenceTests : IClassFixture<CellsFixture>
         Assert.Equal($"='{name}'!$B$2:$B$3", sheet.Charts[0].NSeries[0].Values);
         Assert.Equal($"'{name}'!B2:B2", sheet.SparklineGroups[0].Sparklines[0].DataRange);
         AssertPivotTotals(sheet, 30);
+    }
+
+    [Theory]
+    [InlineData("O'Brien", "Dash")]
+    [InlineData("Data", "O'Brien")]
+    [InlineData("O'Brien", "O'Brien")]
+    public void Sparklines_AcceptSheetNamesWithApostrophes(string dataSheet, string hostSheet)
+    {
+        string created = _fixture.Engine.Create(new NewWorkbookRequest
+        {
+            OutputPath = _fixture.Temp.File("apostrophe.xlsx"),
+            SheetNames = dataSheet == hostSheet ? [dataSheet] : [dataSheet, hostSheet],
+            Overwrite = true,
+        }).Output.Path;
+        string quoted = "'" + dataSheet.Replace("'", "''", StringComparison.Ordinal) + "'";
+        string output = Apply(
+            created,
+            $$"""
+            { "ops": [
+              { "op": "set_values", "sheet": "{{dataSheet}}", "range": "A1", "values": [[1,2,3],[4,5,6]] },
+              { "op": "add_sparkline", "sheet": "{{hostSheet}}", "dataRange": "{{quoted}}!A1:C2", "location": "E5:E6" }
+            ] }
+            """,
+            "apostrophe.out.xlsx");
+
+        // The engine stores a plain name unquoted.
+        string stored = dataSheet.Contains('\'', StringComparison.Ordinal) ? quoted : dataSheet;
+        using var workbook = new Workbook(output);
+        SparklineGroup group = workbook.Worksheets[hostSheet].SparklineGroups[0];
+        Assert.Equal(
+            [($"{stored}!A1:C1", 4, 4), ($"{stored}!A2:C2", 5, 4)],
+            group.Sparklines.Select(static line => (line.DataRange, line.Row, line.Column)));
+    }
+
+    [Theory]
+    [InlineData("line", SparklineType.Line, "B2:D4", "F2:F4", false)]
+    [InlineData("column", SparklineType.Column, "B2:D4", "F2:H2", false)]
+    [InlineData("winloss", SparklineType.WinLoss, "B2:D5", "F2:H2", true)]
+    [InlineData("line", SparklineType.Line, "B2:B5", "F2", true)]
+    [InlineData("winloss", SparklineType.WinLoss, "B2:B3", "F2:F3", false)]
+    public void Sparklines_MatchTheEnginesOneCallGroup(string type, SparklineType engineType, string data, string location, bool vertical)
+    {
+        string source = Seed("Data");
+        string output = Apply(
+            source,
+            $$"""{ "ops": [ { "op": "add_sparkline", "sheet": "Data", "type": "{{type}}", "dataRange": "{{data}}", "location": "{{location}}" } ] }""",
+            "one-call.out.xlsx");
+
+        using var reference = new Workbook(source);
+        CellArea area = CellArea.CreateCellArea(location.Split(':')[0], location.Split(':')[^1]);
+        reference.Worksheets["Data"].SparklineGroups.Add(engineType, "Data!" + data, vertical, area);
+        string expected = _fixture.Temp.File("one-call.reference.xlsx");
+        reference.Save(expected);
+
+        Assert.Equal(SparklineGroupsXml(expected), SparklineGroupsXml(output));
+    }
+
+    /// <summary>The persisted sparkline groups of the first worksheet, colours included.</summary>
+    private static string SparklineGroupsXml(string path)
+    {
+        using ZipArchive package = ZipFile.OpenRead(path);
+        using var reader = new StreamReader(package.GetEntry("xl/worksheets/sheet1.xml")!.Open());
+        string xml = reader.ReadToEnd();
+        int start = xml.IndexOf("<x14:sparklineGroups", StringComparison.Ordinal);
+        int end = xml.IndexOf("</x14:sparklineGroups>", StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start, "the worksheet has no sparkline groups");
+        return xml[start..end];
     }
 
     [Theory]

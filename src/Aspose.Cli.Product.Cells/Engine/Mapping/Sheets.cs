@@ -72,7 +72,11 @@ internal static class Sheets
     /// a quoted plain name is equally valid.
     /// </summary>
     public static string Reference(Worksheet sheet, RangeRef range) =>
-        "'" + sheet.Name.Replace("'", "''", StringComparison.Ordinal) + "'!" + A1.FormatRange(range);
+        QuotedName(sheet) + "!" + A1.FormatRange(range);
+
+    /// <summary>The sheet's name quoted for a reference, embedded apostrophes doubled.</summary>
+    public static string QuotedName(Worksheet sheet) =>
+        "'" + sheet.Name.Replace("'", "''", StringComparison.Ordinal) + "'";
 
     /// <summary>
     /// The range covering all data on the sheet — <c>(0,0)</c> to the last data

@@ -8,9 +8,9 @@ using Aspose.Cli.Product.Cells.Engine.Mapping;
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
 /// <summary>
-/// Sparklines — tiny in-cell charts. One engine <c>Add</c> call fans a data
-/// block out to one sparkline per row (or column), each landing in one cell of
-/// the location strip. Takes the workbook because the group's series colour is
+/// Sparklines — tiny in-cell charts. A data block fans out to one sparkline per
+/// row (or column) in one group, each landing in one cell of the location
+/// strip. Takes the workbook because the group's series colour is
 /// a <c>CellsColor</c> only the workbook can create (as the CF ops do).
 /// </summary>
 internal static class SparklineOps
@@ -21,8 +21,8 @@ internal static class SparklineOps
         RangeRef location = A1.ParseRange(op.Location).Range;
         long locationCells = location.CellCount;
 
-        // The engine's isVertical is not exposed on the wire; it is inferred
-        // from the shapes (probe-verified): N location cells serving N data
+        // The orientation is not exposed on the wire; it is inferred
+        // from the shapes: N location cells serving N data
         // rows means one sparkline per row (isVertical false); M cells serving
         // M data columns means one per column (true). When both match (a
         // square data block) per-row wins — the overwhelmingly common reading.
@@ -46,16 +46,33 @@ internal static class SparklineOps
                 hint: "Give one location cell per data row (one sparkline per row) or one per data column.");
         }
 
-        // The engine wants the data reference qualified; an unqualified range
-        // means the op's sheet (as create_pivot's sourceRange).
-        CellArea area = CellArea.CreateCellArea(
-            location.Start.Row, location.Start.Column, location.End.Row, location.End.Column);
-        int groupIndex = sheet.SparklineGroups.Add(
-            ToType(op.Type), Sheets.Reference(dataSheet, data), isVertical, area);
+        // The engine's one-call SparklineGroups.Add(type, range, isVertical, area)
+        // throws Invalid "'" when the data sheet or this sheet has an apostrophe
+        // in its name, however the name is quoted, so the group is built from its
+        // parts: an empty group with the settings the one-call Add applies (an
+        // empty group has no colours, and reading its PresetStyle throws), then
+        // one sparkline per data row or column, each range written
+        // as start:end. The contract keeps the location a one-row or one-column
+        // strip, so sparkline i lands in its i-th cell. Tests pin the result to
+        // the one-call Add's.
+        SparklineType type = ToType(op.Type);
+        SparklineGroup group = sheet.SparklineGroups[sheet.SparklineGroups.Add(type)];
+        group.PresetStyle = SparklinePresetStyleType.Style1;
+        group.ShowNegativePoints = type == SparklineType.WinLoss;
+        bool locationIsRow = location.RowCount == 1;
+        for (int index = 0; index < locationCells; index++)
+        {
+            (CellRef first, CellRef last) = isVertical
+                ? (new CellRef(data.Start.Row, data.Start.Column + index), new CellRef(data.End.Row, data.Start.Column + index))
+                : (new CellRef(data.Start.Row + index, data.Start.Column), new CellRef(data.Start.Row + index, data.End.Column));
+            group.Sparklines.Add(
+                Sheets.QuotedName(dataSheet) + "!" + A1.FormatCell(first) + ":" + A1.FormatCell(last),
+                location.Start.Row + (locationIsRow ? 0 : index),
+                location.Start.Column + (locationIsRow ? index : 0));
+        }
 
         if (op.Color is { } color)
         {
-            SparklineGroup group = sheet.SparklineGroups[groupIndex];
             CellsColor seriesColor = workbook.CreateCellsColor();
             seriesColor.Color = StyleWriter.ParseHex(color);
             group.SeriesColor = seriesColor;

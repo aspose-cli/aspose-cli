@@ -55,13 +55,6 @@ and blocks the release until it is fixed or waived below.
 - **Tracking:** to be filed upstream. There is no acceptance gate, because reproducing it writes
   to the user's registry.
 
-### Aspose.Cells 26.9.0: sparklines cannot use a sheet whose name contains an apostrophe
-
-- **Defect:** `SparklineGroups.Add` throws `Invalid "'"` for a data range on such a sheet,
-  whether or not the name is quoted.
-- **CLI behavior:** `add_sparkline` on such a sheet fails with `FEATURE_UNSUPPORTED`.
-- **Tracking:** to be filed upstream.
-
 ## Release gate waivers
 
 `scripts/acceptance.ps1` lets a failing gate ship only with a row in this table for the version
