@@ -229,11 +229,17 @@ public sealed class StandardCommandTests : IDisposable
             command.Options.Select(static option => option.Name));
         Assert.Equal("png", Run(command, "report.test"));
         Assert.Equal("svg", Run(command, "report.test", "--out", "page.SVG"));
-        Assert.Equal("png", Run(command, "report.test", "--out", "page.dat"));
+        Assert.Equal("png", Run(command, "report.test", "--out", "page"));
         Assert.Equal("svg", Run(command, "report.test", "--to", "SVG", "--out", "page.svg"));
         Assert.Equal("jpeg", Run(command, "report.test", "--to", "JPG", "--out", "page.jpeg"));
-        Assert.Equal("png", Run(command, "report.test", "--to", "png", "--out", "page.dat"));
         Assert.NotEmpty(command.Parse(["report.test", "--to", "doc"]).Errors);
+        foreach (string[] arguments in new[] { new[] { "report.test", "--out", "page.doc" }, new[] { "report.test", "--to", "png", "--out", "page.doc" } })
+        {
+            CliException foreign = RunFailing(command, arguments);
+            Assert.Equal(ErrorCodes.UsageError, foreign.Code);
+            Assert.Contains("--out 'page.doc' has the .doc extension, which names no render format; use .png, .jpg, .jpeg, .svg", foreign.Message, StringComparison.Ordinal);
+        }
+
         CliException conflict = RunFailing(command, "report.test", "--to", "png", "--out", "page.svg");
         Assert.Equal(ErrorCodes.UsageError, conflict.Code);
         Assert.Contains("--to png", conflict.Message, StringComparison.Ordinal);

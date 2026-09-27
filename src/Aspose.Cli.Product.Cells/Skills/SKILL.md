@@ -99,8 +99,9 @@ aspose-cli cells render book.xlsx --all-sheets --out book.png
 ```
 
 `cells convert` takes `--sheet` for csv, tsv, md and pdf. `cells render`
-writes png, jpeg or svg, taken from `--to` or the `--out` extension; a `--to`
-that contradicts an image extension is a usage error.
+writes png, jpeg or svg, taken from `--to` or the `--out` extension; an `--out`
+extension that is not an image extension, or that contradicts `--to`, is a usage
+error.
 `aspose-cli capabilities cells` lists every format.
 
 ## Evaluation mode
