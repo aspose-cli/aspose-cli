@@ -15,7 +15,7 @@ transaction under per-user interprocess locks.
 #>
 [CmdletBinding()]
 param(
-    [string] $PackageRoot = $PSScriptRoot,
+    [string] $PackageRoot,
     [string] $InstallDirectory,
     [switch] $SkipPath,
     [switch] $SkipSkills,
@@ -2392,11 +2392,16 @@ try {
     }
     else {
         if ($RemoveConfiguration) { throw '-RemoveConfiguration applies only to -Uninstall.' }
-        if (-not $PSBoundParameters.ContainsKey('PackageRoot') -and
-            ([string]::IsNullOrWhiteSpace($PackageRoot) -or -not (Test-Path -LiteralPath (Join-Path $PackageRoot $script:ExecutableName) -PathType Leaf))) {
-            if (-not [string]::IsNullOrWhiteSpace($cleanupDirectory)) { throw '-CleanupRoot applies only to an installer run beside its package.' }
-            $cleanupDirectory = Join-Path ([IO.Path]::GetTempPath()) ("$($script:ProductId)-install-" + [Guid]::NewGuid().ToString('N'))
-            $PackageRoot = Get-ReleasePackage $cleanupDirectory
+        # The package defaults to the installer's own directory, read here because Windows
+        # PowerShell leaves $PSScriptRoot empty in parameter defaults. Without a package there,
+        # as under 'irm | iex', the installer downloads the latest release.
+        if (-not $PSBoundParameters.ContainsKey('PackageRoot')) {
+            $PackageRoot = $PSScriptRoot
+            if ([string]::IsNullOrWhiteSpace($PackageRoot) -or -not (Test-Path -LiteralPath (Join-Path $PackageRoot $script:ExecutableName) -PathType Leaf)) {
+                if (-not [string]::IsNullOrWhiteSpace($cleanupDirectory)) { throw '-CleanupRoot applies only to an installer run beside its package.' }
+                $cleanupDirectory = Join-Path ([IO.Path]::GetTempPath()) ("$($script:ProductId)-install-" + [Guid]::NewGuid().ToString('N'))
+                $PackageRoot = Get-ReleasePackage $cleanupDirectory
+            }
         }
         Install-Release
     }
