@@ -25,7 +25,7 @@ public sealed partial class CustomerInstallerPowerShellTests
 
         // Only -Update: PATH, Skills and MCP choices come from the marker.
         PowerShellResult updated = RunInstaller(_package.Path, install, arguments: ["-Update"],
-            skipPath: false, skipSkills: false, skipMcp: false);
+            skipPath: false, skipSkills: false);
 
         Assert.True(updated.ExitCode == 0, updated.StdErr + updated.StdOut);
         Assert.Equal(choices, MarkerChoices(install));
@@ -42,7 +42,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         Requires.Windows();
         string install = Path.Combine(_root, "update-requirements");
         PowerShellResult missing = RunInstaller(_package.Path, install, arguments: ["-Update"],
-            skipPath: false, skipSkills: false, skipMcp: false);
+            skipPath: false, skipSkills: false);
         Assert.NotEqual(0, missing.ExitCode);
         Assert.Contains("-Update requires one", Flat(missing), StringComparison.Ordinal);
         Assert.False(Directory.Exists(install));
@@ -52,7 +52,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         foreach (string[] conflict in new[] { new[] { "-SkipPath" }, new[] { "-SkillsRoot", Path.Combine(_root, "other") } })
         {
             PowerShellResult rejected = RunInstaller(_package.Path, install, arguments: ["-Update", .. conflict],
-                skipPath: false, skipSkills: false, skipMcp: false);
+                skipPath: false, skipSkills: false);
             Assert.NotEqual(0, rejected.ExitCode);
             Assert.Contains("cannot be combined with " + conflict[0], Flat(rejected), StringComparison.Ordinal);
         }
@@ -96,7 +96,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         string before = Snapshot(install);
 
         PowerShellResult succeeded = RunInstaller(_package.Path, install, arguments: ["-Update", "-StatusPath", status],
-            skipPath: false, skipSkills: false, skipMcp: false);
+            skipPath: false, skipSkills: false);
         Assert.True(succeeded.ExitCode == 0, succeeded.StdErr + succeeded.StdOut);
         Assert.Equal("succeeded", JsonNode.Parse(File.ReadAllText(status))!["state"]!.GetValue<string>());
         Assert.Null(UpdateStatus.ReadWarning(status));
@@ -107,7 +107,7 @@ public sealed partial class CustomerInstallerPowerShellTests
         // duplicate backup.
         PowerShellResult failed = RunInstaller(_package.Path, install,
             new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_FAULT"] = "newPublished" },
-            arguments: ["-Update", "-StatusPath", status], skipPath: false, skipSkills: false, skipMcp: false);
+            arguments: ["-Update", "-StatusPath", status], skipPath: false, skipSkills: false);
         Assert.NotEqual(0, failed.ExitCode);
         Assert.Equal(before, Snapshot(install));
         Assert.Empty(Directory.GetFiles(_root, ".aspose-cli-transaction-*.json"));
@@ -123,7 +123,7 @@ public sealed partial class CustomerInstallerPowerShellTests
 
         PowerShellResult crashed = RunInstaller(_package.Path, install,
             new Dictionary<string, string?> { ["ASPOSE_CLI_INSTALL_CRASH"] = "oldMoved" },
-            arguments: ["-Update", "-StatusPath", status], skipPath: false, skipSkills: false, skipMcp: false);
+            arguments: ["-Update", "-StatusPath", status], skipPath: false, skipSkills: false);
         Assert.Equal(97, crashed.ExitCode);
         Assert.Equal("running", JsonNode.Parse(File.ReadAllText(status))!["state"]!.GetValue<string>());
         Assert.Contains("stopped before", UpdateStatus.ReadWarning(status)!.Message, StringComparison.Ordinal);

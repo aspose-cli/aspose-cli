@@ -8,6 +8,10 @@ Run beside an extracted release package, it installs that package; run on its ow
 downloads the latest release and checks it against the SHA-256 its release manifest records.
 Every file of the package must match the package's SHA256SUMS.
 
+It adds the installation to the user PATH and installs the Agent Skills for the agent hosts it
+finds. It changes no agent host's MCP configuration unless -Mcp asks it to register the MCP
+server with the Codex, Claude Code and OpenCode setups it finds.
+
 An installation records the choices it was made with (PATH, Skills, MCP). -Update replaces an
 existing installation and replays those choices; -Uninstall removes the installation, its PATH
 entry, its pristine Skill copies and the MCP registrations it owns. Every mode is one
@@ -23,7 +27,7 @@ param(
     [string] $LicensePath,
     [string] $LicenseProduct,
     [switch] $SkipLicensePrompt,
-    [switch] $SkipMcp,
+    [switch] $Mcp,
 
     [switch] $Update,
 
@@ -1882,11 +1886,11 @@ function Install-Release {
     }
     $skipPath = [bool]$SkipPath
     $skipSkills = [bool]$SkipSkills
-    $skipMcp = [bool]$SkipMcp
+    $skipMcp = -not [bool]$Mcp
     $skipLicensePrompt = [bool]$SkipLicensePrompt
     $licensePath = $LicensePath
     if ($Update) {
-        foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','SkipMcp','LicensePath','LicenseProduct')) {
+        foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','Mcp','LicensePath','LicenseProduct')) {
             if ($bound.ContainsKey($name)) { throw "-Update replays the choices recorded by the existing installation and cannot be combined with -$name." }
         }
         $skipLicensePrompt = $true
@@ -2238,7 +2242,7 @@ function Install-Release {
 
 function Uninstall-Installation {
     $bound = $script:ScriptParameters
-    foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','SkipMcp','LicensePath','LicenseProduct')) {
+    foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','Mcp','LicensePath','LicenseProduct')) {
         if ($bound.ContainsKey($name)) { throw "-Uninstall cannot be combined with -$name." }
     }
     # The installed copy of this script uninstalls the installation it belongs to.

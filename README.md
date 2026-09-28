@@ -81,18 +81,21 @@ powershell -ExecutionPolicy ByPass -c "irm https://github.com/aspose-cli/aspose-
 The installer downloads the latest [release](https://github.com/aspose-cli/aspose-cli/releases),
 checks the archive against the SHA-256 recorded in the release's `RELEASE-MANIFEST.json` and every
 file against the package's `SHA256SUMS`, then installs per user into `%LOCALAPPDATA%\Aspose\CLI`
-in one transaction. It adds the directory to the user PATH, installs the Skills and registers the
-MCP server for the Codex, Claude Code and OpenCode setups it finds, and offers to install a
-license; a host it cannot register produces only a warning. To install without downloading, run
-`install.ps1` from an extracted release archive.
+in one transaction. It adds the directory to the user PATH, installs the Agent Skills for the
+Codex, Claude Code and OpenCode setups it finds, and offers to install a license. Agents that run
+commands need nothing more: the Skills teach them the CLI. It changes no agent's MCP
+configuration unless you ask with `-Mcp`, which also registers the `aspose-cli mcp serve` server
+with those hosts (a host it cannot register produces only a warning). To install without
+downloading, run `install.ps1` from an extracted release archive.
 
 Switches apply to `install.ps1` run from an extracted archive, or to the downloaded script, as in
-`& ([scriptblock]::Create((irm <install.ps1 URL>))) -SkipMcp`:
+`& ([scriptblock]::Create((irm <install.ps1 URL>))) -Mcp`:
 
 | Switch | Effect |
 | --- | --- |
 | `-InstallDirectory <path>` | Install somewhere other than `%LOCALAPPDATA%\Aspose\CLI`. |
-| `-SkipPath`, `-SkipSkills`, `-SkipMcp` | Leave PATH, Skills or MCP registration alone. |
+| `-SkipPath`, `-SkipSkills` | Leave PATH or the Skills alone. |
+| `-Mcp` | Also register the MCP server with the detected agent hosts. |
 | `-SkillsRoot <path>` | Install the Skills into this directory instead of the detected hosts. |
 | `-LicensePath <file>`, `-LicenseProduct <id>` | Install a license, optionally for one product. |
 | `-SkipLicensePrompt` | Do not ask for a license. |

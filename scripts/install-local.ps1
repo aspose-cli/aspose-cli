@@ -15,7 +15,7 @@ param(
     [string] $LicensePath,
     [string] $LicenseProduct,
     [switch] $SkipLicensePrompt,
-    [switch] $SkipMcp,
+    [switch] $Mcp,
     [switch] $Update,
     [switch] $Uninstall,
     [switch] $RemoveConfiguration
@@ -36,7 +36,7 @@ $parameters = @{
     InstallDirectory = $installRoot
     DevelopmentPackage = $true
 }
-foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','SkipMcp','LicensePath','LicenseProduct','SkipLicensePrompt','Update','Uninstall','RemoveConfiguration')) {
+foreach ($name in @('SkipPath','SkipSkills','SkillsRoot','Mcp','LicensePath','LicenseProduct','SkipLicensePrompt','Update','Uninstall','RemoveConfiguration')) {
     if ($PSBoundParameters.ContainsKey($name)) { $parameters[$name] = $PSBoundParameters[$name] }
 }
 if (-not $Uninstall) {

@@ -291,7 +291,7 @@ try {
         'WindowsPowerShell\v1.0\powershell.exe'
     # A clean install, then an update that replays the recorded choices.
     foreach ($pass in @(
-        @('-InstallDirectory', $smokeInstall, '-SkipPath', '-SkillsRoot', $smokeSkills, '-SkipLicensePrompt', '-SkipMcp'),
+        @('-InstallDirectory', $smokeInstall, '-SkipPath', '-SkillsRoot', $smokeSkills, '-SkipLicensePrompt'),
         @('-InstallDirectory', $smokeInstall, '-Update'))) {
         & $powerShell `
             -NoLogo `

@@ -138,7 +138,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         Directory.CreateDirectory(emptyPath);
         PowerShellResult interrupted = RunInstaller(_package.Path, install,
             new Dictionary<string, string?> { ["Path"] = emptyPath, ["ASPOSE_CLI_INSTALL_CRASH"] = "mcpMetadataUpdated" },
-            skipMcp: false);
+            registerMcp: true);
         Assert.True(interrupted.ExitCode == 97, interrupted.StdErr + interrupted.StdOut);
         PowerShellResult recovered = RunInstaller(_package.Path, install);
         Assert.True(recovered.ExitCode == 0, recovered.StdErr + recovered.StdOut);
@@ -156,7 +156,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         string emptyPath = Path.Combine(_root, "cleanup-empty-path");
         Directory.CreateDirectory(emptyPath);
         PowerShellResult committed = RunInstaller(_package.Path, install,
-            new Dictionary<string, string?> { ["Path"] = emptyPath, ["ASPOSE_CLI_INSTALL_FAULT"] = "committedCleanup" }, skipMcp: false);
+            new Dictionary<string, string?> { ["Path"] = emptyPath, ["ASPOSE_CLI_INSTALL_FAULT"] = "committedCleanup" }, registerMcp: true);
         Assert.True(committed.ExitCode == 0, committed.StdErr + committed.StdOut);
         Assert.Contains("cleanup remains pending", committed.StdErr + committed.StdOut, StringComparison.OrdinalIgnoreCase);
         Assert.Equal("codex", JsonNode.Parse(File.ReadAllText(markerPath))!["mcpRegistrations"]![0]!.GetValue<string>());
@@ -187,6 +187,9 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         PowerShellResult first = RunInstaller(package, install);
         Assert.True(first.ExitCode == 0, first.StdErr);
         AssertInstall(install);
+        // Without -Mcp the installation changes no agent host's MCP configuration.
+        Assert.False(JsonNode.Parse(MarkerChoices(install))!["mcp"]!.GetValue<bool>());
+        Assert.DoesNotContain("MCP host", first.StdOut + first.StdErr, StringComparison.Ordinal);
         string firstSnapshot = Snapshot(install);
 
         PowerShellResult second = RunInstaller(package, install);
@@ -214,7 +217,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
                 ["Path"] = emptyPath,
                 ["PSModulePath"] = string.Empty,
             },
-            skipMcp: false);
+            registerMcp: true);
 
         Assert.True(result.ExitCode == 0, result.StdErr + result.StdOut);
         AssertInstall(install);
@@ -847,7 +850,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         bool skipPath = true,
         bool skipSkills = true,
         bool developmentPackage = true,
-        bool skipMcp = true)
+        bool registerMcp = false)
     {
         string script = Path.Combine(RepositoryPaths.Root, "install.ps1");
         var start = new ProcessStartInfo("powershell.exe")
@@ -868,7 +871,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         {
             start.ArgumentList.Add(argument);
         }
-        if (skipMcp) { start.ArgumentList.Add("-SkipMcp"); }
+        if (registerMcp) { start.ArgumentList.Add("-Mcp"); }
         if (skipPath)
         {
             start.ArgumentList.Add("-SkipPath");
@@ -1181,11 +1184,11 @@ public sealed class CustomerInstallerPackageFixture : IDisposable
 
     public string Path { get; }
 
-    /// <summary>Copies the installation made with -SkipPath -SkipSkills -SkipMcp to <paramref name="install"/>.</summary>
+    /// <summary>Copies the installation made with -SkipPath -SkipSkills and no -Mcp to <paramref name="install"/>.</summary>
     public void CopyInstallation(string install) => CopyInstallationTree(_installation.Value, install);
 
     /// <summary>
-    /// Copies the installation made with -SkillsRoot -SkipPath -SkipMcp to <paramref name="install"/>
+    /// Copies the installation made with -SkillsRoot -SkipPath and no -Mcp to <paramref name="install"/>
     /// and its Skills to <paramref name="skillsRoot"/>, which the copied marker records.
     /// </summary>
     public void CopySkillsInstallation(string install, string skillsRoot)
