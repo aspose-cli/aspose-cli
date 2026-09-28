@@ -90,14 +90,19 @@ public sealed class AppMutationTests
         {
             Original = _workspace.File("original.csv");
             File.WriteAllText(Original, "Heading,Value\nORIGINAL,1\n");
+            // Session directories are named <pid>-<random> in the user's shared temporary root, so a
+            // directory an earlier process with the same id left there is told apart by existing
+            // before this App started.
+            string sessions = PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.TemporaryRoot(), "app"));
+            var existing = Directory.GetDirectories(sessions).ToHashSet(StringComparer.OrdinalIgnoreCase);
             CliResult started = _workspace.Run("app", Original, "--no-open", "--output", "json");
             Assert.True(started.ExitCode == 0, started.StdErr);
             JsonNode result = JsonNode.Parse(started.StdOut)!;
             Url = new Uri(result["url"]!.GetValue<string>());
             int pid = result["pid"]!.GetValue<int>();
-            SessionRoot = Assert.Single(Directory.GetDirectories(
-                PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.TemporaryRoot(), "app")),
-                $"{pid}-*"));
+            SessionRoot = Assert.Single(
+                Directory.GetDirectories(sessions, $"{pid}-*"),
+                directory => !existing.Contains(directory));
             _client = new HttpClient(new HttpClientHandler { UseCookies = false })
             {
                 BaseAddress = new Uri(Url.GetLeftPart(UriPartial.Authority)),
@@ -169,6 +174,10 @@ public sealed class AppMutationTests
             {
                 _workspace.Run("app", "stop", "--output", "json");
                 _client.Dispose();
+                // The App keeps files it does not own, which some tests plant in its session; a
+                // directory still held by the exiting App is left, as the lookup above tolerates.
+                try { Directory.Delete(SessionRoot, recursive: true); }
+                catch (Exception exception) when (exception is IOException or UnauthorizedAccessException) { }
             }
             finally { _workspace.Dispose(); }
         }
