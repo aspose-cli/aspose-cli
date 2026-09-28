@@ -52,7 +52,7 @@ internal sealed class CellsProductionService
         ArgumentNullException.ThrowIfNull(request);
 
         LicenseState licenseState = _licenseGate.EnsureApplied();
-        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password);
+        using LoadedWorkbook loaded = _loader.Open(filePath, request.Password, request.TextImport);
         Workbook workbook = loaded.Workbook;
 
         // Capture before saving: Workbook.FileFormat mutates to the target

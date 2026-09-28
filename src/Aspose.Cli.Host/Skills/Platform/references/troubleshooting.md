@@ -114,7 +114,9 @@ aspose-cli capabilities --output json
   converts and renders.
 - `FORMAT_MISMATCH`: the extension disagrees with the content; check the real
   file type.
-- `FORMAT_AMBIGUOUS`: several products recognize the input; pass `--product`.
+- `FORMAT_AMBIGUOUS`: the input can be read more than one way. Several products
+  recognize it (pass `--product`), or a text input's numbers depend on its
+  culture (the hint names the option that reads it).
 - `FEATURE_UNSUPPORTED`: this build cannot perform the request on this input;
   the message names what.
 

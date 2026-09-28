@@ -69,6 +69,22 @@ public sealed record ConvertRequest
 
     /// <summary>New output password; null preserves source encryption where the target format supports it.</summary>
     public string? EncryptPassword { get; init; }
+
+    /// <summary>How a delimited text input is decoded and its numbers and dates parsed.</summary>
+    public TextImportOptions? TextImport { get; init; }
+}
+
+/// <summary>
+/// How <c>cells convert</c> reads a delimited text input. Other commands read text inputs as
+/// UTF-8 with invariant number and date formats and refuse inputs that need these choices.
+/// </summary>
+public sealed record TextImportOptions
+{
+    /// <summary>Text encoding name, such as <c>gb18030</c>; null reads a byte order mark or UTF-8.</summary>
+    public string? Encoding { get; init; }
+
+    /// <summary>Culture name for numbers and dates, such as <c>de-DE</c>; null uses invariant formats.</summary>
+    public string? Culture { get; init; }
 }
 
 /// <summary>Options of <c>cells render</c>.</summary>

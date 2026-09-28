@@ -47,6 +47,12 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output json
   `format_range` writes.
 - Give explicit bounds; `A:A` is refused. An over-budget read returns a
   summary and a `window.next` command for the next page.
+- CSV and TSV inputs are read as UTF-8 with invariant number and date formats.
+  A file that needs anything else is refused rather than misread:
+  `INPUT_ENCODING_INVALID` for other encodings (typical of Chinese ERP exports),
+  `FORMAT_AMBIGUOUS` for decimal commas (`1.234,56`). Import it once with
+  `cells convert data.csv --to xlsx --encoding gb18030` or `--culture de-DE`, as
+  the hint says, and work on the workbook.
 
 ## Editing
 
@@ -118,6 +124,7 @@ sheet, and CSV, TSV and Markdown export only the first worksheet
 | A workbook open in Excel | Reads work; the in-place save fails with `OUTPUT_UNWRITABLE`. Ask the user to close it |
 | `set_values` with `"2026-04-03"` | Stored as text; write `=DATE(2026,4,3)` |
 | A bigger font on a title row | The row keeps its height; auto-fit it with `resize_rows` and no `height` |
+| Text written into a new workbook | Columns keep the default width, so long text is cut off by the next cell; size them with `resize_columns` (no `width` auto-fits) |
 | `cells compare` after a formatting session | `identical: true` is correct: it compares values and formula text only |
 
 ## Routing

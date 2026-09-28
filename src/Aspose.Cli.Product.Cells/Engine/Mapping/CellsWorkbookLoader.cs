@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
@@ -43,19 +44,25 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             ".json",
         };
 
-    internal LoadedWorkbook Open(string path, string? password)
+    internal LoadedWorkbook Open(string path, string? password, TextImportOptions? textImport = null)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
-        return OpenCore(path, password);
+        return OpenCore(path, password, textImport, published: false);
     }
 
-    // Derived output is already bounded by publication; it is not a new user input.
+    // Derived output is already bounded by publication; it is not a new user input, and its
+    // text was written with invariant formats, so its quoted text fields are not re-judged.
     internal LoadedWorkbook OpenPublishedCandidate(string path, string? password, string? resourceSource = null) =>
-        OpenCore(path, password, resourceSource);
+        OpenCore(path, password, textImport: null, published: true, resourceSource);
 
-    private LoadedWorkbook OpenCore(string path, string? password, string? resourceSource = null)
+    private LoadedWorkbook OpenCore(
+        string path,
+        string? password,
+        TextImportOptions? textImport,
+        bool published,
+        string? resourceSource = null)
     {
-        LoadPlan plan = ResolveLoadPlan(path);
+        LoadPlan plan = ResolveLoadPlan(path, textImport, published);
         var resources = new WorkbookResources(resourceSource ?? path, resourceBudgets, plan.Format == LoadFormat.MHtml);
         Workbook? workbook = null;
         bool transferred = false;
@@ -98,7 +105,29 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         }
     }
 
-    private static LoadPlan ResolveLoadPlan(string path)
+    private LoadPlan ResolveLoadPlan(string path, TextImportOptions? textImport, bool published)
+    {
+        LoadPlan plan = ResolveFormatPlan(path);
+        if (plan.Separator is not { } separator)
+        {
+            if (textImport is { Encoding: not null } or { Culture: not null })
+            {
+                throw CliErrors.OptionInvalid(
+                    textImport.Encoding is not null ? "--encoding" : "--culture",
+                    "it applies only to delimited text input such as CSV or TSV",
+                    "Drop --encoding and --culture for this input.");
+            }
+
+            return plan;
+        }
+
+        (Encoding encoding, CultureInfo culture) = published
+            ? (new UTF8Encoding(encoderShouldEmitUTF8Identifier: false), CultureInfo.InvariantCulture)
+            : CellsTextImport.Resolve(path, separator, textImport, resourceBudgets);
+        return plan with { TextEncoding = encoding, TextCulture = culture };
+    }
+
+    private static LoadPlan ResolveFormatPlan(string path)
     {
         FileFormatInfo detected;
         try
@@ -123,10 +152,10 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             if (detected.FileFormatType
                 is FileFormatType.Csv or FileFormatType.TabDelimited)
             {
-                char? separator = DetectDelimiter(path)
+                char separator = DetectDelimiter(path)
                     ?? (detected.FileFormatType == FileFormatType.TabDelimited
                         ? '\t'
-                        : null);
+                        : ',');
                 return new LoadPlan(null, separator);
             }
 
@@ -145,7 +174,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             {
                 return extension == ".json"
                     ? LoadPlan.Auto
-                    : new LoadPlan(null, DetectDelimiter(path));
+                    : new LoadPlan(null, DetectDelimiter(path) ?? ',');
             }
 
             if (ContentLooksLikeHtml(path))
@@ -284,9 +313,17 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             signature => text.Contains(signature, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// How one input is opened. A delimited text input always carries its separator, encoding
+    /// and culture, so neither the engine's guesses nor the machine's regional settings apply.
+    /// </summary>
     private readonly record struct LoadPlan(LoadFormat? Format, char? Separator, bool Encrypted = false)
     {
         internal static LoadPlan Auto => default;
+
+        internal Encoding? TextEncoding { get; init; }
+
+        internal CultureInfo? TextCulture { get; init; }
 
         internal LoadOptions ToLoadOptions(IStreamProvider resources)
         {
@@ -295,6 +332,8 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
                 return new TxtLoadOptions(LoadFormat.Csv)
                 {
                     Separator = separator,
+                    Encoding = TextEncoding,
+                    CultureInfo = TextCulture,
                 };
             }
             return Format switch

@@ -15,6 +15,16 @@ internal static class ConvertCommand
         {
             Description = $"Convert only this sheet (supported for {string.Join(", ", CellsFormats.SheetScopedConvertIds)}).",
         }.WithInput(InputKind.None);
+        var encoding = new Option<string?>("--encoding")
+        {
+            Description = "Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. "
+                + "Default: its byte order mark, else UTF-8 (other bytes are refused).",
+        }.WithInput(InputKind.None);
+        var culture = new Option<string?>("--culture")
+        {
+            Description = "Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. "
+                + "Default: invariant formats (a decimal comma is refused).",
+        }.WithInput(InputKind.None);
         return StandardCommand.Create(
             host,
             "convert",
@@ -30,10 +40,12 @@ internal static class ConvertCommand
                     $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",
                     CellsFormats.Definitions),
             },
-            [sheet],
+            [sheet, encoding, culture],
             (parse, standard) =>
             {
                 string format = standard.TargetFormat();
+                string? encodingName = parse.GetValue(encoding);
+                string? cultureName = parse.GetValue(culture);
                 string? sheetName = parse.GetValue(sheet);
                 if (sheetName is not null && !CellsFormats.SheetScopedConvertIds.Contains(format))
                 {
@@ -53,10 +65,15 @@ internal static class ConvertCommand
                     SheetName = sheetName,
                     Password = standard.InputPassword,
                     EncryptPassword = encryptPassword,
+                    TextImport = encodingName is null && cultureName is null
+                        ? null
+                        : new TextImportOptions { Encoding = encodingName, Culture = cultureName },
                 });
             }).WithExamples(
             [
                 "cells convert sales.csv --to xlsx",
+                "cells convert erp-export.csv --to xlsx --encoding gb18030",
+                "cells convert partner-orders.csv --to xlsx --culture de-DE",
                 "cells convert book.xlsx --to pdf --out report.pdf",
                 "cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf",
             ]);
