@@ -29,6 +29,7 @@ to workbooks.
 | `SHEETS_SKIPPED` | `render --all-sheets` could not render some sheets; render one alone with `--sheet` for its error. |
 | `DATA_TRUNCATED` | The target grid (for example xls, 65,536 rows) is smaller than the data; save to xlsx, xlsb or ods. |
 | `FORMULAS_BROKEN` | Formulas that referenced cells beyond the target grid became `#REF!`; save to xlsx or xlsb. |
+| `FORMULAS_CALCULATED_ON_OPEN` | The workbook asks to be calculated when opened and some formula results shown differ from the stored ones, usually because a tool wrote formulas without results. The values shown are the engine's, as Excel shows them; `cells edit` stores them. |
 | `WORKBOOK_ENCRYPTION_REMOVED` | The output format cannot be encrypted, so the source encryption was dropped. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
 

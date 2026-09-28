@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 
@@ -44,22 +45,33 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             ".json",
         };
 
-    internal LoadedWorkbook Open(string path, string? password, TextImportOptions? textImport = null)
+    /// <summary>
+    /// Opens a user input. A workbook that asks to be calculated when opened is calculated, as
+    /// Excel does, unless <paramref name="calculateOnOpen"/> is false because the caller
+    /// recalculates itself or was told not to.
+    /// </summary>
+    internal LoadedWorkbook Open(
+        string path,
+        string? password,
+        TextImportOptions? textImport = null,
+        bool calculateOnOpen = true)
     {
         InputSizeGuard.Ensure(resourceBudgets, path);
-        return OpenCore(path, password, textImport, published: false);
+        return OpenCore(path, password, textImport, published: false, calculateOnOpen);
     }
 
     // Derived output is already bounded by publication; it is not a new user input, and its
     // text was written with invariant formats, so its quoted text fields are not re-judged.
+    // It is read as stored, since verification compares what was written.
     internal LoadedWorkbook OpenPublishedCandidate(string path, string? password, string? resourceSource = null) =>
-        OpenCore(path, password, textImport: null, published: true, resourceSource);
+        OpenCore(path, password, textImport: null, published: true, calculateOnOpen: false, resourceSource);
 
     private LoadedWorkbook OpenCore(
         string path,
         string? password,
         TextImportOptions? textImport,
         bool published,
+        bool calculateOnOpen,
         string? resourceSource = null)
     {
         LoadPlan plan = ResolveLoadPlan(path, textImport, published);
@@ -87,8 +99,9 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
                 }
             }
             resources.ThrowIfFailed();
+            Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, resourceBudgets) : null;
             transferred = true;
-            return new LoadedWorkbook(workbook, resources, plan.Encrypted);
+            return new LoadedWorkbook(workbook, resources, plan.Encrypted) { CalculatedOnOpen = calculated };
         }
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {

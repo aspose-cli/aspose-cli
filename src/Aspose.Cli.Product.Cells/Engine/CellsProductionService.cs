@@ -126,7 +126,7 @@ internal sealed class CellsProductionService
             },
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning),
+            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen, sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning),
         };
     }
 
@@ -172,7 +172,7 @@ internal sealed class CellsProductionService
 
         if (request.AllSheets)
         {
-            return RenderAllSheets(workbook, input, request, licenseState, loaded.Resources.CoverageWarning);
+            return RenderAllSheets(workbook, input, request, licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen);
         }
 
         Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
@@ -212,7 +212,7 @@ internal sealed class CellsProductionService
             Range = renderedRange,
             Dpi = isRaster ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning),
+            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen),
         };
     }
 
@@ -294,7 +294,7 @@ internal sealed class CellsProductionService
     /// rethrown so an all-empty workbook still surfaces <c>RENDER_EMPTY</c>.
     /// </summary>
     private RenderResult RenderAllSheets(
-        Workbook workbook, SourceInfo input, RenderRequest request, LicenseState licenseState, Warning? resourceOmission)
+        Workbook workbook, SourceInfo input, RenderRequest request, LicenseState licenseState, Warning? resourceOmission, Warning? calculatedOnOpen)
     {
         var candidates = new List<Worksheet>();
         foreach (Worksheet sheet in workbook.Worksheets)
@@ -362,7 +362,7 @@ internal sealed class CellsProductionService
             Dpi = FormatMapper.IsRaster(request.TargetFormatId) ? request.Dpi : null,
             Outputs = rendered,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, resourceOmission, sheetsSkipped),
+            Warnings = CombineWarnings(licenseState, resourceOmission, calculatedOnOpen, sheetsSkipped),
         };
     }
 

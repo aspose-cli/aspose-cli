@@ -28,7 +28,8 @@ aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formu
 
 - Report numbers from these reads, never from your own arithmetic.
 - A formula has two faces: `--scope formulas` adds its text (`f`), `--scope
-  values` shows its stored result. Queries do not recalculate.
+  values` shows its result as Excel shows it on opening: stored, or calculated
+  when the workbook asks for that (`FORMULAS_CALCULATED_ON_OPEN`).
 - A cell of type `error` (`#DIV/0!`, `#REF!`) is a finding now.
 - After inserting or deleting rows or columns, or sorting, also read a formula
   range you did not touch: its references should have moved with the

@@ -54,7 +54,8 @@ internal sealed class CellsMutationService
         LicenseState licenseState = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);
         using InputResourceScope operationInputs = _budgets.Inputs.CreateScope();
-        using LoadedWorkbook loaded = _loader.Open(filePath, options.Password);
+        // The edit recalculates after its operations, or was told not to calculate at all.
+        using LoadedWorkbook loaded = _loader.Open(filePath, options.Password, calculateOnOpen: false);
         Workbook workbook = loaded.Workbook;
         SourceInfo input = BuildSource(filePath, workbook);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);

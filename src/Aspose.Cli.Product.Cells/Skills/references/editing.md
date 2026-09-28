@@ -48,9 +48,12 @@ Cells semantics, ordering rules and recipes.
 The whole workbook calculates once after the complete batch, including
 `--set` writes; `--no-recalc` skips it. Auto-fit resizing, `sort_range`,
 `remove_duplicates`, `create_pivot` and `refresh_pivot` calculate the batch's
-earlier edits first, so they see current formula results. Queries read stored
-results and never recalculate: treat an imported workbook or a `--no-recalc`
-edit as stale until an edit recalculates it.
+earlier edits first, so they see current formula results. Reads show what
+Excel shows on opening: a workbook that asks to be calculated when opened (as
+openpyxl, pandas and many exporters write them, with no stored results) is
+calculated first, and `FORMULAS_CALCULATED_ON_OPEN` says how many results differ
+from the stored ones. Any other workbook reads its stored results, so treat a
+`--no-recalc` edit as stale until an edit recalculates it.
 
 Because operations apply in order and calculate at the end, a whole model fits
 one batch: a `define_name` early in the batch resolves in formulas set later,
