@@ -557,44 +557,71 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
     }
 
     [Fact]
-    public void CustomerInstall_RejectsUnsignedPackagesUnlessDevelopmentModeIsExplicit()
+    public void CustomerInstall_RejectsATamperedPackageBeforeExecutingIt()
     {
         Requires.Windows();
-        string customerInstall = Path.Combine(_root, "unsigned-customer");
-        PowerShellResult rejected = RunInstaller(
-            _package.Path,
-            customerInstall,
-            developmentPackage: false);
+        string customerInstall = Path.Combine(_root, "customer");
+        string package = Path.Combine(_root, "tampered-package");
+        Directory.CreateDirectory(package);
+        foreach (string source in Directory.GetFiles(_package.Path))
+        {
+            File.Copy(source, Path.Combine(package, Path.GetFileName(source)));
+        }
+        File.AppendAllText(Path.Combine(package, "aspose-cli.exe"), "tampered", Encoding.UTF8);
+        PowerShellResult tampered = RunInstaller(package, customerInstall, developmentPackage: false);
 
-        Assert.NotEqual(0, rejected.ExitCode);
-        Assert.Contains("Authenticode signature", rejected.StdErr + rejected.StdOut, StringComparison.Ordinal);
+        Assert.NotEqual(0, tampered.ExitCode);
+        Assert.Contains("Checksum mismatch for 'aspose-cli.exe'", tampered.StdErr + tampered.StdOut, StringComparison.Ordinal);
         Assert.False(Directory.Exists(customerInstall));
-        // Every other test installs this unsigned package with an explicit -DevelopmentPackage.
     }
 
-    [Fact]
-    public void CustomerInstall_VerifiesTrustedSignatureBeforeExecutingPayload()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void OneLineInstall_ExtractsOnlyTheArchiveItsManifestDescribes(bool tampered)
     {
         Requires.Windows();
-        (string package, string trustRing) = CreateSignedPackage("signed-package");
-        var environment = new Dictionary<string, string?>
+        // The release location is served from a local directory in place of GitHub.
+        string release = Path.Combine(_root, "release");
+        Directory.CreateDirectory(release);
+        string archive = Path.Combine(release, "aspose-cli-9.9.9-win-x64.zip");
+        using (var zip = System.IO.Compression.ZipFile.Open(archive, System.IO.Compression.ZipArchiveMode.Create))
+        using (var writer = new StreamWriter(zip.CreateEntry("aspose-cli.exe").Open()))
         {
-            ["ASPOSE_CLI_RELEASE_TRUSTED_KEYS"] = trustRing,
-        };
+            writer.Write("payload");
+        }
+        File.WriteAllText(Path.Combine(release, "RELEASE-MANIFEST.json"), JsonSerializer.Serialize(new
+        {
+            schemaVersion = 1,
+            productId = Aspose.Cli.Sdk.DistributionInfo.Id,
+            edition = Aspose.Cli.Sdk.DistributionInfo.Edition,
+            runtimeIdentifier = "win-x64",
+            artifactVersion = "9.9.9",
+            sourceRevision = new string('a', 40),
+            archive = new { path = Path.GetFileName(archive), size = new FileInfo(archive).Length, sha256 = FileHashes.Sha256(archive) },
+        }));
+        if (tampered) { File.AppendAllText(archive, "tampered"); }
+        string download = Path.Combine(_root, "download");
+        string command = $". {PowerShellLiteral(Path.Combine(RepositoryPaths.Root, "install.ps1"))}; "
+            + $"function Invoke-WebRequest {{ param([switch] $UseBasicParsing, [string] $Uri, [string] $OutFile) "
+            + $"Copy-Item -LiteralPath (Join-Path {PowerShellLiteral(release)} ($Uri -split '/')[-1]) -Destination $OutFile }}; "
+            + $"$package = Get-ReleasePackage {PowerShellLiteral(download)}; Get-Content -LiteralPath (Join-Path $package 'aspose-cli.exe')";
 
-        PowerShellResult untrusted = RunCustomerPackageTrustValidation(package);
-        Assert.NotEqual(0, untrusted.ExitCode);
-        Assert.Contains("ASPOSE_CLI_RELEASE_TRUSTED_KEYS", untrusted.StdErr + untrusted.StdOut, StringComparison.Ordinal);
+        PowerShellResult result = RunExecutable(
+            "powershell.exe",
+            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
 
-        PowerShellResult accepted = RunCustomerPackageTrustValidation(package, environment);
-        Assert.True(accepted.ExitCode == 0, accepted.StdErr);
-
-        File.AppendAllText(Path.Combine(package, "aspose-cli.exe"), "tampered", Encoding.UTF8);
-        WriteChecksums(package);
-        PowerShellResult rejected = RunCustomerPackageTrustValidation(package, environment);
-
-        Assert.NotEqual(0, rejected.ExitCode);
-        Assert.Contains("signature", rejected.StdErr + rejected.StdOut, StringComparison.OrdinalIgnoreCase);
+        if (tampered)
+        {
+            Assert.NotEqual(0, result.ExitCode);
+            Assert.Contains("does not match the size and SHA-256", result.StdErr + result.StdOut, StringComparison.Ordinal);
+            Assert.False(Directory.Exists(Path.Combine(download, "package")));
+        }
+        else
+        {
+            Assert.True(result.ExitCode == 0, result.StdErr);
+            Assert.Contains("payload", result.StdOut, StringComparison.Ordinal);
+        }
     }
 
     [Theory]
@@ -885,61 +912,6 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         return new(process.ExitCode, output.Result, error.Result);
     }
 
-    private (string Package, string TrustRing) CreateSignedPackage(string name)
-    {
-        string package = Path.Combine(_root, name);
-        Directory.CreateDirectory(package);
-        foreach (string source in Directory.GetFiles(_package.Path))
-        {
-            File.Copy(source, Path.Combine(package, Path.GetFileName(source)));
-        }
-        using ECDsa key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        byte[] publicKey = key.ExportSubjectPublicKeyInfo();
-        string keyId = Convert.ToHexString(SHA256.HashData(publicKey)).ToLowerInvariant();
-        File.WriteAllText(
-            Path.Combine(package, "PACKAGE-SIGNATURE.json"),
-            JsonSerializer.Serialize(new
-            {
-                schemaVersion = 1,
-                productId = "aspose-cli",
-                algorithm = "ECDSA-P256-SHA256",
-                format = "rfc3279-der",
-                keyId,
-                signedFile = "SHA256SUMS",
-            }),
-            new UTF8Encoding(false));
-        byte[] signature = key.SignData(
-            File.ReadAllBytes(Path.Combine(package, "SHA256SUMS")),
-            HashAlgorithmName.SHA256,
-            DSASignatureFormat.Rfc3279DerSequence);
-        File.WriteAllText(
-            Path.Combine(package, "PACKAGE-SIGNATURE.sig"),
-            Convert.ToBase64String(signature) + Environment.NewLine,
-            new UTF8Encoding(false));
-        string trustRing = Path.Combine(_root, name + "-trust.json");
-        File.WriteAllText(
-            trustRing,
-            JsonSerializer.Serialize(new
-            {
-                keys = new[] { new { keyId, publicKeyPem = key.ExportSubjectPublicKeyInfoPem() } },
-            }),
-            new UTF8Encoding(false));
-        return (package, trustRing);
-    }
-
-    private static void WriteChecksums(string package)
-    {
-        string[] excluded = ["SHA256SUMS", "PACKAGE-SIGNATURE.json", "PACKAGE-SIGNATURE.sig"];
-        string[] files = Directory.GetFiles(package)
-            .Where(path => !excluded.Contains(Path.GetFileName(path), StringComparer.Ordinal))
-            .OrderBy(Path.GetFileName, StringComparer.Ordinal)
-            .ToArray();
-        File.WriteAllText(
-            Path.Combine(package, "SHA256SUMS"),
-            string.Join(Environment.NewLine, files.Select(path => $"{FileHashes.Sha256(path)}  {Path.GetFileName(path)}")) + Environment.NewLine,
-            new UTF8Encoding(false));
-    }
-
     private static bool IsProcessRunning(int processId)
     {
         try
@@ -962,21 +934,6 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         return RunExecutable(
             "powershell.exe",
             ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command]);
-    }
-
-    private static PowerShellResult RunCustomerPackageTrustValidation(
-        string package,
-        IReadOnlyDictionary<string, string?>? environment = null)
-    {
-        string installer = Path.Combine(RepositoryPaths.Root, "install.ps1");
-        string command = $". {PowerShellLiteral(installer)}; "
-            + $"$root = {PowerShellLiteral(package)}; "
-            + "$inventory = Get-TreeInventory $root; "
-            + "Assert-CustomerPackageTrust $root ([IO.File]::ReadAllBytes((Join-Path $root 'SHA256SUMS'))) $inventory";
-        return RunExecutable(
-            "powershell.exe",
-            ["-NoLogo", "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-Command", command],
-            environment);
     }
 
     private static PowerShellResult RunExecutable(

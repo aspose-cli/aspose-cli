@@ -135,26 +135,18 @@ from the protected tag `v<Version>`. Give every new build a higher version: an u
 different build with the same version.
 
 `scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64` needs a clean revision.
-Without a mode switch it stages and signs in one run; `-StageOnly` stages the unsigned payload in
-`artifacts/publish/win-x64`, `-SignStaged` signs a payload staged from the same revision
-(Authenticode, checksums and package signature, an AllSigned install, update and uninstall smoke
-test, the archive and its signed `RELEASE-MANIFEST.json`), and `-PrepareOnly` stages an unsigned
-development package. The signed manifest binds the source revision and the locked SDK packages;
-dependency notices follow the published graph ([notice sources](eng/notices/README.md)).
-
-Signing reads:
-
-| Variable | Value |
-| --- | --- |
-| `ASPOSE_CLI_RELEASE_SIGNING_KEY` | A passphrase-protected ECDSA P-256 PEM file or an OpenSSL store URI |
-| `ASPOSE_CLI_RELEASE_SIGNING_KEY_PASSPHRASE` | Its passphrase |
-| `ASPOSE_CLI_OPENSSL_PATH` | OpenSSL 3 |
-| `ASPOSE_CLI_AUTHENTICODE_TOOL` | `signtool.exe` |
-| `ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT` | A certificate in `CurrentUser\My` or `LocalMachine\My`, trusted on the signing machine including Trusted Publishers |
-| `ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER` | An RFC 3161 URL |
+It publishes the payload, writes its `SHA256SUMS`, runs an install, update and uninstall smoke
+test, and writes the release assets to `artifacts/release/win-x64`: the archive, `install.ps1`,
+`RELEASE-MANIFEST.json` (the archive's name, size and SHA-256, and the source revision) and
+`SHA256SUMS`. `-PrepareOnly` stages a development package instead. Dependency notices follow the
+published graph ([notice sources](eng/notices/README.md)). Authenticode signing is optional: set
+`ASPOSE_CLI_AUTHENTICODE_TOOL` (`signtool.exe`), `ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT`
+and `ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER` to sign the executable and `install.ps1`.
 
 The workflows in `.github/workflows` automate this: `ci.yml` runs the `Fast` scope in evaluation
 mode (`verify`) and the `Full` scope (`licensed`, environment `licensed-tests`, secret
-`ASPOSE_TEST_LICENSE_BASE64`); `release.yml` runs the `Full` scope and `-StageOnly` in `build` (environment `release-build`), then `-SignStaged` in `sign` (environment
+`ASPOSE_TEST_LICENSE_BASE64`); `release.yml`, on a protected version tag, runs the `Full` scope
+(environment `release-build`), packages, and publishes the assets as a GitHub release of
+`aspose-cli/aspose-cli`, the repository named by `releaseRepository` in `eng/distribution.json`.
 `release`, runner `[self-hosted, Windows, X64, aspose-signing]`), the only job that sees the
 signing variables and passphrase.

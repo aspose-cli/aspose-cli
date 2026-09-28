@@ -101,9 +101,6 @@ public static partial class ErrorCodes
     public static readonly ErrorCode ReleaseVerificationFailed =
         new("RELEASE_VERIFICATION_FAILED", ExitCode.OutputError);
 
-    public static readonly ErrorCode ReleaseTrustUnavailable =
-        new("RELEASE_TRUST_UNAVAILABLE", ExitCode.OutputError);
-
     /// <summary>The release feed could not be read, so nothing was verified or installed; retrying later can succeed.</summary>
     public static readonly ErrorCode ReleaseFeedUnavailable =
         new("RELEASE_FEED_UNAVAILABLE", ExitCode.OutputError);
@@ -197,7 +194,6 @@ public static partial class ErrorCodes
         OutputConflict,
         OutputPublicationFailed,
         ReleaseVerificationFailed,
-        ReleaseTrustUnavailable,
         ReleaseFeedUnavailable,
         LoopbackPortInUse,
         LoopbackListenerUnavailable,

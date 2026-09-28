@@ -9,5 +9,6 @@
   "schemaBaseUri": "https://schemas.aspose.dev/aspose-cli/v2/",
   "configurationDirectoryName": "aspose-cli",
   "installDirectory": "Aspose/CLI",
+  "releaseRepository": "aspose-cli/aspose-cli",
   "solutionName": "Aspose.CLI.slnx"
 }

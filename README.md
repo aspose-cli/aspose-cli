@@ -74,19 +74,20 @@ back to evaluation. The CLI source license grants no SDK rights; see the
 
 ## Install
 
-A release archive contains the Authenticode-signed payload, its `SHA256SUMS` with a detached
-signature, `LICENSE` and the dependency notices. Save the approved key ring
-(`{"keys":[{"keyId":"<SHA-256 of the public key>","publicKeyPem":"<PEM>"}]}`), set
-`ASPOSE_CLI_RELEASE_TRUSTED_KEYS` to its path, extract the archive and run:
-
 ```powershell
-& "$env:SystemRoot\System32\WindowsPowerShell\v1.0\powershell.exe" -NoProfile -ExecutionPolicy AllSigned -File .\install.ps1
+powershell -ExecutionPolicy ByPass -c "irm https://github.com/aspose-cli/aspose-cli/releases/latest/download/install.ps1 | iex"
 ```
 
-The installer verifies the signatures and hashes, then installs per user into
-`%LOCALAPPDATA%\Aspose\CLI` in one transaction. It adds the directory to the user PATH,
-installs the Skills and registers the MCP server for the Codex, Claude Code and OpenCode setups
-it finds, and offers to install a license; a host it cannot register produces only a warning.
+The installer downloads the latest [release](https://github.com/aspose-cli/aspose-cli/releases),
+checks the archive against the SHA-256 recorded in the release's `RELEASE-MANIFEST.json` and every
+file against the package's `SHA256SUMS`, then installs per user into `%LOCALAPPDATA%\Aspose\CLI`
+in one transaction. It adds the directory to the user PATH, installs the Skills and registers the
+MCP server for the Codex, Claude Code and OpenCode setups it finds, and offers to install a
+license; a host it cannot register produces only a warning. To install without downloading, run
+`install.ps1` from an extracted release archive.
+
+Switches apply to `install.ps1` run from an extracted archive, or to the downloaded script, as in
+`& ([scriptblock]::Create((irm <install.ps1 URL>))) -SkipMcp`:
 
 | Switch | Effect |
 | --- | --- |
@@ -98,19 +99,19 @@ it finds, and offers to install a license; a host it cannot register produces on
 | `-Update` | Replace an installation, keeping the choices it was made with. |
 | `-Uninstall` [`-RemoveConfiguration`] | Remove the installation, its PATH entry, Skills and MCP registrations, and optionally the configuration. |
 | `-PackageRoot <path>` | Install from an extracted package elsewhere. |
-| `-DevelopmentPackage` | Accept an unsigned development package; no release trust is claimed. |
+| `-DevelopmentPackage` | Accept a local development package, which may replace any build. |
 
-Configuration lives in `%APPDATA%\aspose-cli`, or in the absolute directory named by
+Configuration lives in `%APPDATA%spose-cli`, or in the absolute directory named by
 `ASPOSE_CLI_CONFIG_DIR`. To uninstall:
 
 ```powershell
-powershell -NoProfile -ExecutionPolicy AllSigned -File "$env:LOCALAPPDATA\Aspose\CLI\install.ps1" -Uninstall
+powershell -NoProfile -ExecutionPolicy ByPass -File "$env:LOCALAPPDATA\Aspose\CLI\install.ps1" -Uninstall
 ```
 
-`aspose-cli update check <feed>` and `aspose-cli update install <feed>` read a local
-`RELEASE-MANIFEST.json` or an HTTPS manifest URL and verify it against the same key ring. An
-update installs only a higher version, or the identical build again, and runs the release's
-installer after the CLI exits; a later `update` command reports a failed or unfinished run.
+`aspose-cli update check` and `aspose-cli update install` read the latest release, or the
+`RELEASE-MANIFEST.json` path or HTTPS URL you name, and check the archive the same way. An update
+installs only a higher version, or the identical build again, and runs the release's installer
+after the CLI exits; a later `update` command reports a failed or unfinished run.
 
 ## Development
 

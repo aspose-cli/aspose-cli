@@ -6,7 +6,6 @@ using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Nodes;
-using Aspose.Cli.Host.Updating;
 using Aspose.Cli.Host.Tests;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.TestKit;
@@ -42,8 +41,8 @@ public sealed class UpdateHandoffTests
             if (-not $full.StartsWith($prefix, [StringComparison]::OrdinalIgnoreCase) -or -not [IO.Path]::GetFileName($full).StartsWith('aspose-cli-update-')) { throw 'Unexpected cleanup target.' }
             Remove-Item -LiteralPath $full -Recurse -Force
             """;
-        (string feed, string ring) = SignedFeed(workspace, script);
-        var start = StartInfo(workspace, scratch, ring,
+        string feed = Feed(workspace, script);
+        var start = StartInfo(workspace, scratch,
             ["update", "install", feed, "--output", "json", .. timed ? new[] { "--timeout", "20" } : Array.Empty<string>()]);
         using Process cli = Process.Start(start)!;
         Task<string> stdout = cli.StandardOutput.ReadToEndAsync();
@@ -94,7 +93,7 @@ public sealed class UpdateHandoffTests
         int port = ((IPEndPoint)server.LocalEndpoint).Port;
         using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         Task<TcpClient> accepted = server.AcceptTcpClientAsync(stop.Token).AsTask();
-        var start = StartInfo(workspace, scratch, null,
+        var start = StartInfo(workspace, scratch,
             ["update", "install", $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json", "--timeout", "3", "--output", "json"]);
         using Process cli = Process.Start(start)!;
         Task<string> stdout = cli.StandardOutput.ReadToEndAsync();
@@ -130,11 +129,10 @@ public sealed class UpdateHandoffTests
         while (!File.Exists(path)) { await Task.Delay(25, timeout.Token); }
     }
 
-    private static ProcessStartInfo StartInfo(TempWorkspace workspace, string scratch, string? ring, string[] args)
+    private static ProcessStartInfo StartInfo(TempWorkspace workspace, string scratch, string[] args)
     {
         ProcessStartInfo start = workspace.StartInfo(new Dictionary<string, string?>
         {
-            [ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable] = ring,
             ["TEMP"] = scratch, ["TMP"] = scratch,
         });
         start.RedirectStandardOutput = true;
@@ -143,7 +141,7 @@ public sealed class UpdateHandoffTests
         return start;
     }
 
-    private static (string Feed, string Ring) SignedFeed(TempWorkspace workspace, string script)
+    private static string Feed(TempWorkspace workspace, string script)
     {
         string archive = workspace.File("release.zip");
         using (var zip = ZipFile.Open(archive, ZipArchiveMode.Create))
@@ -157,29 +155,15 @@ public sealed class UpdateHandoffTests
                 writer.Write(content);
             }
         }
-        using ECDsa key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        string keyId = Convert.ToHexString(SHA256.HashData(key.ExportSubjectPublicKeyInfo())).ToLowerInvariant();
         string hash = Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(archive))).ToLowerInvariant();
-        const string version = "99.0.0";
-        string revision = new('a', 40);
-        var packages = ActualCommandTree.Host.Catalog.Products.Select(product => new ReleaseEnginePackage(
-            product.Manifest.Id, "Test." + product.Manifest.Id, "1.0.0", Convert.ToBase64String(new byte[64]))).ToArray();
-        byte[] payload = ReleaseManifestVerifier.CreateSigningPayload(DistributionInfo.Id, DistributionInfo.Edition,
-            "win-x64", version, revision, "release.zip", new FileInfo(archive).Length, hash, false, packages,
-            "signed", "ECDSA-P256-SHA256", "rfc3279-der", keyId, "RELEASE-MANIFEST.sig");
         string manifest = workspace.File("RELEASE-MANIFEST.json");
         File.WriteAllText(manifest, JsonSerializer.Serialize(new
         {
             schemaVersion = 1, productId = DistributionInfo.Id, edition = DistributionInfo.Edition,
-            runtimeIdentifier = "win-x64", artifactVersion = version, sourceRevision = revision, buildDirty = false,
-            enginePackages = packages.Select(item => new { product = item.Product, packageId = item.PackageId, version = item.Version, contentHash = item.ContentHash }),
+            runtimeIdentifier = "win-x64", artifactVersion = "99.0.0", sourceRevision = new string('a', 40),
             archive = new { path = "release.zip", size = new FileInfo(archive).Length, sha256 = hash },
-            signature = new { status = "signed", algorithm = "ECDSA-P256-SHA256", format = "rfc3279-der", keyId, path = "RELEASE-MANIFEST.sig" },
         }));
-        File.WriteAllText(workspace.File("RELEASE-MANIFEST.sig"), Convert.ToBase64String(key.SignData(payload, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence)));
-        string ring = workspace.File("keys.json");
-        File.WriteAllText(ring, JsonSerializer.Serialize(new { keys = new[] { new { keyId, publicKeyPem = key.ExportSubjectPublicKeyInfoPem() } } }));
-        return (manifest, ring);
+        return manifest;
     }
 
     private static string Quote(string value) => value.Replace("'", "''", StringComparison.Ordinal);

@@ -9,4 +9,5 @@
   <AsposeCliSchemaBaseUri>https://schemas.aspose.dev/aspose-cli/v2/</AsposeCliSchemaBaseUri>
   <AsposeCliConfigurationDirectoryName>aspose-cli</AsposeCliConfigurationDirectoryName>
   <AsposeCliInstallDirectory>Aspose/CLI</AsposeCliInstallDirectory>
+  <AsposeCliReleaseRepository>aspose-cli/aspose-cli</AsposeCliReleaseRepository>
 </PropertyGroup></Project>

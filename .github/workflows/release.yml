@@ -1,7 +1,7 @@
-name: Signed release artifacts
+name: Release
 # A release is built only from a protected version tag (v<Version from Directory.Build.props>),
-# however the run was started. Tests, acceptance gates and publication run without signing
-# material; only the minimal signing job can reach the release keys.
+# however the run was started. It passes every test and acceptance gate, then publishes the
+# archive, install.ps1, RELEASE-MANIFEST.json and SHA256SUMS as a GitHub release.
 on:
   push:
     tags: ['v*']
@@ -12,11 +12,13 @@ concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
 jobs:
-  build:
+  release:
     if: github.ref_type == 'tag' && startsWith(github.ref_name, 'v') && github.ref_protected
     runs-on: windows-latest
     timeout-minutes: 120
     environment: release-build
+    permissions:
+      contents: write
     env:
       GIT_LFS_SKIP_SMUDGE: '1'
     defaults:
@@ -50,13 +52,14 @@ jobs:
       - name: Remove the test license
         if: always()
         run: Remove-Item -LiteralPath (Join-Path $env:RUNNER_TEMP 'Aspose.Total.lic') -Force -ErrorAction SilentlyContinue
-      - run: ./scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64 -StageOnly
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: unsigned-aspose-cli-win-x64
-          path: artifacts/publish/win-x64/
-          if-no-files-found: error
-          retention-days: 1
+      - run: ./scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $assets = @(Get-ChildItem -LiteralPath artifacts/release/win-x64 -File | ForEach-Object FullName)
+          gh release create $env:GITHUB_REF_NAME @assets --verify-tag --title "Aspose CLI $($env:GITHUB_REF_NAME.Substring(1))" --generate-notes
+          if ($LASTEXITCODE -ne 0) { throw "gh release create failed with exit code $LASTEXITCODE." }
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         if: always()
         with:
@@ -65,44 +68,3 @@ jobs:
             artifacts/TestResults/**/*.trx
             artifacts/acceptance/**/summary.json
           if-no-files-found: warn
-
-  sign:
-    needs: build
-    # Signing runner prerequisites: Windows x64, Windows PowerShell 5.1, PowerShell 7, OpenSSL 3,
-    # signtool.exe, and the code-signing certificate in CurrentUser\My or LocalMachine\My (its key
-    # may be HSM-backed). The certificate must be trusted there, including in Trusted Publishers,
-    # because the smoke test runs the signed installer with ExecutionPolicy AllSigned.
-    runs-on: [self-hosted, Windows, X64, aspose-signing]
-    environment: release
-    timeout-minutes: 30
-    defaults:
-      run:
-        shell: pwsh
-    env:
-      ASPOSE_CLI_RELEASE_SIGNING_KEY: ${{ vars.ASPOSE_CLI_RELEASE_SIGNING_KEY }}
-      ASPOSE_CLI_RELEASE_SIGNING_KEY_PASSPHRASE: ${{ secrets.ASPOSE_CLI_RELEASE_SIGNING_KEY_PASSPHRASE }}
-      ASPOSE_CLI_OPENSSL_PATH: ${{ vars.ASPOSE_CLI_OPENSSL_PATH }}
-      ASPOSE_CLI_AUTHENTICODE_TOOL: ${{ vars.ASPOSE_CLI_AUTHENTICODE_TOOL }}
-      ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT: ${{ vars.ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT }}
-      ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER: ${{ vars.ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER }}
-    steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-        with:
-          submodules: false
-          lfs: false
-          persist-credentials: false
-      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0 # v5.0.0
-        with:
-          name: unsigned-aspose-cli-win-x64
-          path: artifacts/publish/win-x64
-      # Signs only a payload staged from this same revision; nothing is rebuilt here.
-      - run: ./scripts/package.ps1 -RuntimeIdentifier win-x64 -SignStaged
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: signed-aspose-cli-win-x64
-          path: |
-            artifacts/release/win-x64/*.zip
-            artifacts/release/win-x64/SHA256SUMS
-            artifacts/release/win-x64/RELEASE-MANIFEST.json
-            artifacts/release/win-x64/RELEASE-MANIFEST.sig
-          if-no-files-found: error

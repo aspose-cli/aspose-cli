@@ -214,8 +214,10 @@ if ($customerPublish) {
         throw "Published executable failed skill discovery with exit code $LASTEXITCODE."
     }
     $skills = ($skillsText -join [Environment]::NewLine) | ConvertFrom-Json
-    if (@($skills.skills).Count -ne $productCount) {
-        throw "Published executable reports $(@($skills.skills).Count) Skills, expected $productCount."
+    # One Skill per active product, plus the Host's platform Skill.
+    $platformSkill = [string]$layout.Identity.id + '-platform'
+    if (@($skills.skills).Count -ne $productCount + 1 -or $platformSkill -cnotin @($skills.skills.name)) {
+        throw "Published executable reports $(@($skills.skills).Count) Skills, expected $($productCount + 1) including $platformSkill."
     }
 }
 

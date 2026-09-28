@@ -8,9 +8,11 @@ $ErrorActionPreference = 'Stop'
 $repoRoot = if ([string]::IsNullOrWhiteSpace($RepositoryRoot)) { Split-Path -Parent $PSScriptRoot } else { [IO.Path]::GetFullPath($RepositoryRoot) }
 $identityPath = Join-Path $repoRoot 'eng/distribution.json'
 $identity = Get-Content -LiteralPath $identityPath -Raw | ConvertFrom-Json
-$required = @('schemaVersion','id','commandName','displayName','edition','environmentVariablePrefix','skillPrefix','schemaBaseUri','configurationDirectoryName','installDirectory','solutionName')
+$required = @('schemaVersion','id','commandName','displayName','edition','environmentVariablePrefix','skillPrefix','schemaBaseUri','configurationDirectoryName','installDirectory','releaseRepository','solutionName')
 if (@(Compare-Object @($identity.PSObject.Properties.Name | Sort-Object) @($required | Sort-Object)).Count -ne 0 -or $identity.schemaVersion -ne 1) { throw "Invalid distribution identity: $identityPath" }
 if ($identity.id -cnotmatch '^[a-z][a-z0-9-]*$' -or $identity.commandName -cne $identity.id -or $identity.skillPrefix -cne ($identity.id + '-') -or $identity.environmentVariablePrefix -cne ($identity.id.Replace('-','_').ToUpperInvariant() + '_') -or $identity.schemaBaseUri -cne ("https://schemas.aspose.dev/" + $identity.id + "/v2/")) { throw "Inconsistent distribution identity: $identityPath" }
+# Releases are GitHub Releases of this owner/repository.
+if ([string]$identity.releaseRepository -cnotmatch '^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9._-]+$') { throw "Invalid release repository in: $identityPath" }
 foreach ($relative in @($identity.configurationDirectoryName,$identity.installDirectory,$identity.solutionName)) {
     if ([IO.Path]::IsPathRooted($relative) -or $relative -match '(^|[/\\])\.\.([/\\]|$)') { throw 'Distribution paths must be project-relative and bounded.' }
 }
@@ -25,7 +27,6 @@ $names = [pscustomobject][ordered]@{
     ConfigurationOwnerName = '.' + [string]$identity.id + '-config.json'
     SkillManifestProductId = [string]$identity.id + '-skill'
     ArtifactOwnerProductId = [string]$identity.id + '-build-output'
-    ReleaseSignatureDomain = [string]$identity.id + '-release-v1'
     WindowsInstallDirectory = ([string]$identity.installDirectory).Replace('/', '\')
 }
 [pscustomobject][ordered]@{

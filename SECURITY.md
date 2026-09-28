@@ -27,7 +27,9 @@ reproduction. Do not attach customer documents, passwords, tokens or license con
 
 ## Releases
 
-Installation and updates require the installer's Authenticode signature and a detached package
-signature from a key in the `ASPOSE_CLI_RELEASE_TRUSTED_KEYS` ring. A release signed for another
-distribution is rejected, as is a downgrade or a different build with the same version. The
-explicit development-package path claims no release trust.
+Releases are published on GitHub over HTTPS. The installer and `aspose-cli update` check the
+downloaded archive against the size and SHA-256 in the release's `RELEASE-MANIFEST.json`, and
+every installed file against the package's `SHA256SUMS`; a mismatch installs nothing. This proves
+integrity, not the publisher's identity, which rests on the GitHub repository. A release for
+another distribution or edition is rejected, as is a downgrade or a different build with the same
+version. The explicit development-package path may replace any build.

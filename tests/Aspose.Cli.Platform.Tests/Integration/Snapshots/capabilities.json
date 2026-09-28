@@ -15971,7 +15971,7 @@
       "path": "aspose-cli update",
       "name": "update",
       "aliases": [],
-      "description": "Check or install a verified CLI release; no background checks are performed.",
+      "description": "Check or install a CLI release; no background checks are performed.",
       "hidden": false,
       "options": [],
       "arguments": []
@@ -16014,7 +16014,7 @@
       "path": "aspose-cli update check",
       "name": "check",
       "aliases": [],
-      "description": "Check one signed local or HTTPS release feed.",
+      "description": "Check whether a newer release is available.",
       "hidden": false,
       "options": [],
       "arguments": [
@@ -16024,12 +16024,13 @@
           "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
-          "minimumArity": 1,
+          "minimumArity": 0,
           "maximumArity": 1,
-          "required": true,
-          "hasDefault": false,
+          "required": false,
+          "hasDefault": true,
+          "default": "https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json",
           "allowedValues": [],
-          "description": "Path to RELEASE-MANIFEST.json or an HTTPS manifest URL."
+          "description": "RELEASE-MANIFEST.json, as a local path or an HTTPS URL."
         }
       ]
     },
@@ -16037,7 +16038,7 @@
       "path": "aspose-cli update install",
       "name": "install",
       "aliases": [],
-      "description": "Install a verified release from one signed local or HTTPS feed.",
+      "description": "Install a newer release after checking its archive against the release manifest.",
       "hidden": false,
       "options": [],
       "arguments": [
@@ -16047,12 +16048,13 @@
           "inputKind": "none",
           "valueSource": "command-line",
           "secret": false,
-          "minimumArity": 1,
+          "minimumArity": 0,
           "maximumArity": 1,
-          "required": true,
-          "hasDefault": false,
+          "required": false,
+          "hasDefault": true,
+          "default": "https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json",
           "allowedValues": [],
-          "description": "Path to RELEASE-MANIFEST.json or an HTTPS manifest URL."
+          "description": "RELEASE-MANIFEST.json, as a local path or an HTTPS URL."
         }
       ]
     },
@@ -18641,16 +18643,6 @@
       "category": "output",
       "messageTemplateId": "common.release-feed-unavailable.message.v1",
       "hintTemplateId": "common.release-feed-unavailable.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
-      "code": "RELEASE_TRUST_UNAVAILABLE",
-      "owner": "common",
-      "severity": "error",
-      "exitCode": 5,
-      "category": "output",
-      "messageTemplateId": "common.release-trust-unavailable.message.v1",
-      "hintTemplateId": "common.release-trust-unavailable.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

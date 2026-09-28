@@ -11,9 +11,13 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.Updating;
 
-/// <summary>Resolves and verifies one explicit release feed.</summary>
+/// <summary>Resolves a release feed and checks its archive against the release manifest.</summary>
 internal static class UpdateClient
 {
+    /// <summary>The manifest of the latest GitHub release, read when no feed is named.</summary>
+    internal static string DefaultFeed { get; } =
+        $"https://github.com/{DistributionInfo.ReleaseRepository}/releases/latest/download/{ReleaseManifest.FileName}";
+
     private const int MaximumManifestBytes = 64 * 1024;
     internal const long MaximumArchiveBytes = 1L * 1024 * 1024 * 1024;
     private const int MaximumZipEntries = 4096;
@@ -21,7 +25,7 @@ internal static class UpdateClient
     public static UpdateResult Check(CommandContext context, string feed)
     {
         using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory, context.ResourceBudgets);
-        var manifest = Verify(files);
+        var manifest = ReleaseManifest.Read(files.ManifestPath);
         return WithLastUpdateWarning(Describe(manifest, feed, CompareVersions(manifest) == 0));
     }
 
@@ -36,7 +40,7 @@ internal static class UpdateClient
     internal static UpdateResult Prepare(CommandContext context, string feed, string outputDirectory)
     {
         using var files = FeedFiles.Open(feed, context.Paths.BaseDirectory, context.ResourceBudgets);
-        ReleaseManifestInfo manifest = Verify(files);
+        ReleaseManifestInfo manifest = ReleaseManifest.Read(files.ManifestPath);
         bool current = CompareVersions(manifest) == 0;
         if (!current)
         {
@@ -59,33 +63,6 @@ internal static class UpdateClient
             Feed = feed,
             ArchiveSha256 = manifest.ArchiveSha256,
         };
-
-    private static ReleaseManifestInfo Verify(FeedFiles files)
-    {
-        try
-        {
-            var keys = ReleaseManifestVerifier.LoadConfiguredKeyRing();
-            if (keys.Count == 0)
-            {
-                throw ReleaseErrors.TrustUnavailable("the trusted public-key ring is empty");
-            }
-
-            return ReleaseManifestVerifier.Verify(files.ManifestPath, keys, files.SignaturePath, expectedEdition: DistributionInfo.Edition, expectedRuntimeIdentifier: "win-x64");
-        }
-        catch (CliException) { throw; }
-        catch (ReleaseVerificationException exception) when (!exception.TrustedKeysConfigured)
-        {
-            throw ReleaseErrors.TrustUnavailable(exception.Message);
-        }
-        catch (ReleaseVerificationException exception)
-        {
-            throw ReleaseErrors.VerificationFailed(exception.Message);
-        }
-        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or FormatException)
-        {
-            throw ReleaseErrors.VerificationFailed(exception.Message);
-        }
-    }
 
     private static int CompareVersions(ReleaseManifestInfo candidate) =>
         CompareUpdateCandidate(
@@ -154,10 +131,10 @@ internal static class UpdateClient
                 UseShellExecute = true,
                 WindowStyle = ProcessWindowStyle.Hidden,
             };
-            // Bypass skips only the machine's script policy; the signed release manifest is the
-            // trust root. It pins the archive's SHA-256, the preparation worker hashes the archive
-            // and extracts it from one handle that denies writers, and this install.ps1 is an
-            // entry of that archive. From download to this launch every file stays in the current
+            // Bypass skips only the machine's script policy. The release manifest pins the
+            // archive's SHA-256, the preparation worker hashes the archive and extracts it from
+            // one handle that denies writers, and this install.ps1 is an entry of that archive,
+            // checked against its SHA256SUMS. From download to this launch every file stays in the current
             // user's private storage, which grants access to no other account (LocalSystem
             // aside), and the parent validates the package directory before handing it off. Only
             // code already running as this user could swap the script between extraction and
@@ -318,17 +295,15 @@ internal static class UpdateClient
         private readonly Uri? _remoteBase;
         private readonly OperationDeadline _deadline;
 
-        private FeedFiles(string manifestPath, string signaturePath, string temporaryRoot, Uri? remoteBase, OperationDeadline deadline)
+        private FeedFiles(string manifestPath, string temporaryRoot, Uri? remoteBase, OperationDeadline deadline)
         {
             ManifestPath = manifestPath;
-            SignaturePath = signaturePath;
             _temporaryRoot = temporaryRoot;
             _remoteBase = remoteBase;
             _deadline = deadline;
         }
 
         public string ManifestPath { get; }
-        public string SignaturePath { get; }
 
         public static FeedFiles Open(string feed, string baseDirectory, ResourceBudgetLedger budgets)
         {
@@ -339,25 +314,21 @@ internal static class UpdateClient
                 if (!Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out var uri))
                 {
                     ValidateHttpsFeedUri(uri);
-                    string manifest = Path.Combine(root, "RELEASE-MANIFEST.json");
+                    string manifest = Path.Combine(root, ReleaseManifest.FileName);
                     Download(uri, manifest, MaximumManifestBytes, budgets.Deadline);
-                    string signature = Path.Combine(root, "RELEASE-MANIFEST.sig");
-                    Download(new Uri(uri, "RELEASE-MANIFEST.sig"), signature, 16 * 1024, budgets.Deadline);
-                    return new FeedFiles(manifest, signature, root, uri, budgets.Deadline);
+                    return new FeedFiles(manifest, root, uri, budgets.Deadline);
                 }
                 string path = Path.GetFullPath(feed, baseDirectory);
-                if (Directory.Exists(path)) { path = Path.Combine(path, "RELEASE-MANIFEST.json"); }
+                if (Directory.Exists(path)) { path = Path.Combine(path, ReleaseManifest.FileName); }
                 EnsureLocal(path);
-                string signaturePath = Path.Combine(Path.GetDirectoryName(path)!, "RELEASE-MANIFEST.sig");
-                EnsureLocal(signaturePath);
-                return new FeedFiles(path, signaturePath, root, null, budgets.Deadline);
+                return new FeedFiles(path, root, null, budgets.Deadline);
             }
             catch { DeleteTree(root); throw; }
         }
 
         /// <summary>
         /// Returns the archive open for reading, with writes and deletion denied, after its bytes
-        /// matched the signed manifest; extraction reads the same handle, so the verified bytes
+        /// matched the release manifest; extraction reads the same handle, so the verified bytes
         /// are the extracted bytes.
         /// </summary>
         public FileStream DownloadArchive(ReleaseManifestInfo manifest)
@@ -368,8 +339,6 @@ internal static class UpdateClient
             {
                 if (_remoteBase is not null)
                 {
-                    if (manifest.ArchivePath.Contains("..", StringComparison.Ordinal))
-                    { throw ReleaseErrors.VerificationFailed("the feed archive path is unsafe"); }
                     Download(new Uri(new Uri(_remoteBase, "."), manifest.ArchivePath), target, MaximumArchiveBytes, _deadline);
                 }
                 else
@@ -384,7 +353,7 @@ internal static class UpdateClient
                 if (stream.Length != manifest.ArchiveSize || !string.Equals(
                     Convert.ToHexString(SHA256.HashDataAsync(stream, _deadline.Token).GetAwaiter().GetResult()),
                     manifest.ArchiveSha256, StringComparison.OrdinalIgnoreCase))
-                { throw ReleaseErrors.VerificationFailed("the downloaded archive hash does not match the signed manifest"); }
+                { throw ReleaseErrors.VerificationFailed("the downloaded archive does not match the size and SHA-256 of the release manifest"); }
                 _deadline.ThrowIfExpired("update-archive-verified");
                 stream.Position = 0;
                 return stream;
@@ -398,10 +367,12 @@ internal static class UpdateClient
         {
             ValidateHttpsFeedUri(uri);
             // The operation deadline alone bounds the transfer. HttpClient's own 100-second
-            // timeout would end a slow feed as a cancellation without an error.
+            // timeout would end a slow feed as a cancellation without an error. GitHub serves
+            // release files through redirects; HttpClient never follows one from HTTPS to HTTP.
             using var client = new HttpClient(new SocketsHttpHandler
             {
-                AllowAutoRedirect = false,
+                AllowAutoRedirect = true,
+                MaxAutomaticRedirections = 5,
                 ConnectTimeout = TimeSpan.FromSeconds(30),
             })
             { Timeout = Timeout.InfiniteTimeSpan };
@@ -410,8 +381,7 @@ internal static class UpdateClient
                 using var response = client.GetAsync(uri, HttpCompletionOption.ResponseHeadersRead, deadline.Token).GetAwaiter().GetResult();
                 if (response.StatusCode != HttpStatusCode.OK)
                 {
-                    throw ReleaseErrors.FeedUnavailable(uri, $"the feed answered HTTP {(int)response.StatusCode}"
-                        + ((int)response.StatusCode is >= 300 and < 400 ? "; redirects are not followed, so use the final HTTPS URL" : string.Empty));
+                    throw ReleaseErrors.FeedUnavailable(uri, $"the feed answered HTTP {(int)response.StatusCode}");
                 }
                 if (response.Content.Headers.ContentLength is > 0 and var length && length > maximum)
                 {

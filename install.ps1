@@ -3,6 +3,11 @@
 Installs, updates or uninstalls a verified Aspose CLI Windows release for the current user.
 
 .DESCRIPTION
+Run beside an extracted release package, it installs that package; run on its own, as
+'irm https://github.com/<repository>/releases/latest/download/install.ps1 | iex' does, it first
+downloads the latest release and checks it against the SHA-256 its release manifest records.
+Every file of the package must match the package's SHA256SUMS.
+
 An installation records the choices it was made with (PATH, Skills, MCP). -Update replaces an
 existing installation and replays those choices; -Uninstall removes the installation, its PATH
 entry, its pristine Skill copies and the MCP registrations it owns. Every mode is one
@@ -36,19 +41,6 @@ param(
 )
 
 $isDotSourced = $MyInvocation.InvocationName -ceq '.'
-if (-not $DevelopmentPackage -and -not $isDotSourced) {
-    if ([string]::IsNullOrWhiteSpace($PSCommandPath)) {
-        throw 'Customer installation requires a signed install.ps1 file.'
-    }
-    Import-Module `
-        (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1') `
-        -ErrorAction Stop
-    $installerSignature = Get-AuthenticodeSignature -FilePath $PSCommandPath
-    if ([string]$installerSignature.Status -cne 'Valid') {
-        throw "Customer installer Authenticode signature is not valid ($($installerSignature.Status)). Run the released script with ExecutionPolicy AllSigned, or use scripts/install-local.ps1 for a source build."
-    }
-}
-
 $ErrorActionPreference = 'Stop'
 Set-StrictMode -Version 2.0
 if ($env:OS -cne 'Windows_NT') {
@@ -149,84 +141,6 @@ namespace AsposeFileInstaller {
             public JOBOBJECT_BASIC_LIMIT_INFORMATION BasicLimitInformation;
             public IO_COUNTERS IoInfo;
             public System.UIntPtr ProcessMemoryLimit, JobMemoryLimit, PeakProcessMemoryUsed, PeakJobMemoryUsed;
-        }
-    }
-
-    public static class ReleaseSignature {
-        private static readonly byte[] P256SpkiPrefix = new byte[] {
-            0x30,0x59,0x30,0x13,0x06,0x07,0x2A,0x86,0x48,0xCE,0x3D,0x02,0x01,
-            0x06,0x08,0x2A,0x86,0x48,0xCE,0x3D,0x03,0x01,0x07,0x03,0x42,0x00,0x04
-        };
-
-        public static string GetKeyId(string pem) {
-            byte[] spki = DecodePublicKey(pem);
-            using (var sha = System.Security.Cryptography.SHA256.Create()) {
-                return System.BitConverter.ToString(sha.ComputeHash(spki)).Replace("-", "").ToLowerInvariant();
-            }
-        }
-
-        public static bool Verify(string pem, byte[] content, byte[] derSignature) {
-            byte[] spki = DecodePublicKey(pem);
-            byte[] blob = new byte[72];
-            System.Buffer.BlockCopy(System.BitConverter.GetBytes(0x31534345), 0, blob, 0, 4);
-            System.Buffer.BlockCopy(System.BitConverter.GetBytes(32), 0, blob, 4, 4);
-            System.Buffer.BlockCopy(spki, P256SpkiPrefix.Length, blob, 8, 64);
-            using (var key = System.Security.Cryptography.CngKey.Import(blob, System.Security.Cryptography.CngKeyBlobFormat.EccPublicBlob))
-            using (var verifier = new System.Security.Cryptography.ECDsaCng(key)) {
-                return verifier.VerifyData(content, DerToP1363(derSignature), System.Security.Cryptography.HashAlgorithmName.SHA256);
-            }
-        }
-
-        private static byte[] DecodePublicKey(string pem) {
-            const string begin = "-----BEGIN PUBLIC KEY-----";
-            const string end = "-----END PUBLIC KEY-----";
-            if (pem == null || !pem.Contains(begin) || !pem.Contains(end)) { throw new System.Security.Cryptography.CryptographicException("Release public key PEM is invalid."); }
-            string value = pem.Replace(begin, "").Replace(end, "").Replace("\r", "").Replace("\n", "").Replace(" ", "").Replace("\t", "");
-            byte[] spki = System.Convert.FromBase64String(value);
-            if (spki.Length != P256SpkiPrefix.Length + 64) { throw new System.Security.Cryptography.CryptographicException("Release public key is not ECDSA P-256."); }
-            for (int i = 0; i != P256SpkiPrefix.Length; i++) {
-                if (spki[i] != P256SpkiPrefix[i]) { throw new System.Security.Cryptography.CryptographicException("Release public key is not ECDSA P-256."); }
-            }
-            return spki;
-        }
-
-        private static byte[] DerToP1363(byte[] value) {
-            int offset = 0;
-            if (ReadByte(value, ref offset) != 0x30) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            int sequenceLength = ReadLength(value, ref offset);
-            if (sequenceLength != value.Length - offset) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            byte[] result = new byte[64];
-            ReadInteger(value, ref offset, result, 0);
-            ReadInteger(value, ref offset, result, 32);
-            if (offset != value.Length) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            return result;
-        }
-
-        private static void ReadInteger(byte[] value, ref int offset, byte[] target, int targetOffset) {
-            if (ReadByte(value, ref offset) != 0x02) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            int length = ReadLength(value, ref offset);
-            if (length < 1 || length > 33 || offset + length > value.Length || (value[offset] & 0x80) != 0) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            if (length > 1 && value[offset] == 0 && (value[offset + 1] & 0x80) == 0) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            if (length == 33) {
-                if (value[offset] != 0) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-                offset++; length--;
-            }
-            System.Buffer.BlockCopy(value, offset, target, targetOffset + 32 - length, length);
-            offset += length;
-        }
-
-        private static int ReadLength(byte[] value, ref int offset) {
-            int length = ReadByte(value, ref offset);
-            if (length < 0x80) { return length; }
-            if (length != 0x81) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            length = ReadByte(value, ref offset);
-            if (length < 0x80) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            return length;
-        }
-
-        private static int ReadByte(byte[] value, ref int offset) {
-            if (offset >= value.Length) { throw new System.Security.Cryptography.CryptographicException("Release signature DER is invalid."); }
-            return value[offset++];
         }
     }
 
@@ -359,13 +273,12 @@ $script:ExecutableName = 'aspose-cli.exe'
 $script:MarkerName = '.aspose-cli-install.json'
 $script:PayloadManifestName = '.aspose-cli-payload.json'
 $script:BuildManifestName = 'ASPOSE-CLI-BUILD.json'
-$script:PackageSignatureManifestName = 'PACKAGE-SIGNATURE.json'
-$script:PackageSignatureName = 'PACKAGE-SIGNATURE.sig'
 $script:SkillManifestProductId = 'aspose-cli-skill'
 $script:DefaultInstallDirectory = 'Aspose\CLI'
 $script:ConfigurationDirectoryName = 'aspose-cli'
 $script:ConfigurationOwnerName = '.aspose-cli-config.json'
 $script:EnvironmentVariablePrefix = 'ASPOSE_CLI_'
+$script:ReleaseRepository = 'aspose-cli/aspose-cli'
 $script:Utf8 = [Text.UTF8Encoding]::new($false)
 $script:AllowedEditions = @('commercial')
 $script:AllowedSkills = @('aspose-cli-platform', 'aspose-cli-cells', 'aspose-cli-pdf', 'aspose-cli-slides', 'aspose-cli-words')
@@ -619,8 +532,8 @@ function Assert-CapabilitiesMatchBuildMetadata {
     Assert-SetEqual @($provenance | ForEach-Object { [string]$_.product }) @($Capabilities.products | ForEach-Object { [string]$_.id }) 'compiled product graph'
     foreach ($engine in $provenance) {
         $actual = @($Capabilities.products | Where-Object { $_.id -ceq [string]$engine.product })
-        if ($actual.Count -ne 1 -or $actual[0].engine.sdkVersion -cne [string]$engine.version) { throw 'Executable engine version does not match the signed build provenance.' }
-        if ($actual[0].engine.sdk -cne [string]$engine.packageId) { throw 'Executable SDK name does not match the signed build provenance.' }
+        if ($actual.Count -ne 1 -or $actual[0].engine.sdkVersion -cne [string]$engine.version) { throw 'Executable engine version does not match the packaged build provenance.' }
+        if ($actual[0].engine.sdk -cne [string]$engine.packageId) { throw 'Executable SDK name does not match the packaged build provenance.' }
     }
 }
 
@@ -689,78 +602,6 @@ function Get-RelativePathCompat {
     $rootUri = [Uri]$rootFull
     $pathUri = [Uri]$pathFull
     return [Uri]::UnescapeDataString($rootUri.MakeRelativeUri($pathUri).ToString()).Replace('/', '\')
-}
-
-function Assert-CustomerPackageTrust {
-    param(
-        [Parameter(Mandatory)][string] $Root,
-        [Parameter(Mandatory)][byte[]] $ChecksumBytes,
-        [Parameter(Mandatory)] $Inventory,
-        [switch] $Development
-    )
-    $manifestPath = Join-Path $Root $script:PackageSignatureManifestName
-    $signaturePath = Join-Path $Root $script:PackageSignatureName
-    if ($Development) {
-        if ((Test-Path -LiteralPath $manifestPath) -or (Test-Path -LiteralPath $signaturePath)) {
-            throw 'Development package mode cannot bypass a customer package signature.'
-        }
-        return
-    }
-    foreach ($required in @($script:PackageSignatureManifestName, $script:PackageSignatureName)) {
-        if ($required -cnotin @($Inventory.Files.Path)) {
-            throw "Customer release package is missing '$required'. Use scripts/install-local.ps1 for unsigned local development builds."
-        }
-    }
-
-    $manifest = Read-StrictJson $manifestPath 'customer package signature manifest'
-    Assert-ExactProperties $manifest @('schemaVersion','productId','algorithm','format','keyId','signedFile') 'customer package signature manifest'
-    if (-not (Test-JsonInteger $manifest.schemaVersion 1) -or
-        $manifest.productId -isnot [string] -or $manifest.productId -cne $script:ProductId -or
-        $manifest.algorithm -isnot [string] -or $manifest.algorithm -cne 'ECDSA-P256-SHA256' -or
-        $manifest.format -isnot [string] -or $manifest.format -cne 'rfc3279-der' -or
-        $manifest.keyId -isnot [string] -or $manifest.keyId -cnotmatch '^[0-9a-f]{64}$' -or
-        $manifest.signedFile -isnot [string] -or $manifest.signedFile -cne 'SHA256SUMS') {
-        throw 'Customer package signature metadata is invalid.'
-    }
-
-    $trustRingValue = [Environment]::GetEnvironmentVariable($script:EnvironmentVariablePrefix + 'RELEASE_TRUSTED_KEYS', 'Process')
-    if ([string]::IsNullOrWhiteSpace($trustRingValue)) {
-        throw "Customer release verification requires $($script:EnvironmentVariablePrefix)RELEASE_TRUSTED_KEYS. Use scripts/install-local.ps1 only for unsigned local development builds."
-    }
-    $trustRingPath = Assert-LocalAbsolutePath ((Resolve-Path -LiteralPath $trustRingValue).Path) 'release trust ring'
-    if ((Get-Item -LiteralPath $trustRingPath).Length -gt 64KB) { throw 'The release trust ring exceeds its 64 KiB limit.' }
-    $trustRing = Read-StrictJson $trustRingPath 'release trust ring'
-    Assert-ExactProperties $trustRing @('keys') 'release trust ring'
-    $keys = @($trustRing.keys)
-    if ($keys.Count -eq 0 -or $keys.Count -gt 16) { throw 'The release trust ring must contain between 1 and 16 keys.' }
-    $ids = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
-    $trustedPem = $null
-    foreach ($key in $keys) {
-        Assert-ExactProperties $key @('keyId','publicKeyPem') 'release trust-ring key'
-        if ($key.keyId -isnot [string] -or $key.keyId -cnotmatch '^[0-9A-Fa-f]{64}$' -or
-            $key.publicKeyPem -isnot [string] -or [string]::IsNullOrWhiteSpace($key.publicKeyPem) -or
-            $key.publicKeyPem.Length -gt 16KB -or -not $ids.Add([string]$key.keyId)) {
-            throw 'The release trust ring contains an invalid or duplicate key.'
-        }
-        $calculatedId = [AsposeFileInstaller.ReleaseSignature]::GetKeyId([string]$key.publicKeyPem)
-        if ($calculatedId -cne ([string]$key.keyId).ToLowerInvariant()) {
-            throw 'A release trust-ring key id does not match its public key.'
-        }
-        if ($calculatedId -ceq [string]$manifest.keyId) { $trustedPem = [string]$key.publicKeyPem }
-    }
-    if ($null -eq $trustedPem) { throw "No trusted release key is configured for key id '$($manifest.keyId)'." }
-
-    $signatureFile = Get-Item -LiteralPath $signaturePath
-    if ($signatureFile.Length -gt 24KB) { throw 'The customer package signature exceeds its encoded size limit.' }
-    try { $signature = [Convert]::FromBase64String(([IO.File]::ReadAllText($signaturePath, [Text.Encoding]::ASCII)).Trim()) }
-    catch { throw 'The customer package signature is not valid Base64.' }
-    if ($signature.Length -eq 0 -or $signature.Length -gt 16KB -or
-        -not [AsposeFileInstaller.ReleaseSignature]::Verify(
-            $trustedPem,
-            $ChecksumBytes,
-            $signature)) {
-        throw 'The customer package detached signature is invalid.'
-    }
 }
 
 function Get-TreeInventory {
@@ -1626,7 +1467,7 @@ function Remove-VerifiedSkillStageParent {
     Remove-DirectoryWithRetry $Root $false
 }
 
-# Fault injection exists for transaction tests. A signed customer installation never
+# Fault injection exists for transaction tests. A release installation never
 # honors it: only development packages and dot-sourced test hosts do.
 $script:TestFaultsEnabled = $DevelopmentPackage -or $isDotSourced
 
@@ -1888,6 +1729,44 @@ function Assert-SkillsRootPlacement {
     }
 }
 
+# Run without a package beside it, as 'irm .../install.ps1 | iex' does, the installer downloads the
+# latest GitHub release: its manifest names the archive, and the archive must have exactly the size
+# and SHA-256 the manifest records before it is extracted. The extracted package is then verified
+# file by file like any other.
+function Get-ReleasePackage {
+    param([Parameter(Mandatory)][string] $Root)
+    [Net.ServicePointManager]::SecurityProtocol = [Net.ServicePointManager]::SecurityProtocol -bor [Net.SecurityProtocolType]::Tls12
+    $ProgressPreference = 'SilentlyContinue'
+    $latest = "https://github.com/$($script:ReleaseRepository)/releases/latest/download"
+    [IO.Directory]::CreateDirectory($Root) | Out-Null
+    $manifestPath = Join-Path $Root 'RELEASE-MANIFEST.json'
+    Write-Host "Downloading the latest $($script:DisplayName) release from https://github.com/$($script:ReleaseRepository)."
+    Invoke-WebRequest -UseBasicParsing -Uri "$latest/RELEASE-MANIFEST.json" -OutFile $manifestPath
+    if ((Get-Item -LiteralPath $manifestPath).Length -gt 64KB) { throw 'The release manifest exceeds its 64 KiB limit.' }
+    $manifest = Read-StrictJson $manifestPath 'release manifest'
+    Assert-ExactProperties $manifest @('schemaVersion','productId','edition','runtimeIdentifier','artifactVersion','sourceRevision','archive') 'release manifest'
+    Assert-ExactProperties $manifest.archive @('path','size','sha256') 'release manifest archive'
+    $archive = $manifest.archive
+    if (-not (Test-JsonInteger $manifest.schemaVersion 1) -or $manifest.productId -cne $script:ProductId -or
+        $manifest.edition -cnotin $script:AllowedEditions -or $manifest.runtimeIdentifier -cne 'win-x64' -or
+        $archive.path -isnot [string] -or $archive.path -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.zip$' -or
+        -not ($archive.size -is [int] -or $archive.size -is [long]) -or $archive.size -le 0 -or $archive.size -gt 1GB -or
+        $archive.sha256 -isnot [string] -or $archive.sha256 -cnotmatch '^[0-9a-f]{64}$') {
+        throw 'The release manifest is invalid.'
+    }
+    $archivePath = Join-Path $Root $archive.path
+    Write-Host "Downloading $($archive.path)."
+    Invoke-WebRequest -UseBasicParsing -Uri "$latest/$($archive.path)" -OutFile $archivePath
+    if ((Get-Item -LiteralPath $archivePath).Length -ne [long]$archive.size -or (Get-FileSha256 $archivePath) -cne $archive.sha256) {
+        throw "The downloaded $($archive.path) does not match the size and SHA-256 its release manifest records."
+    }
+    $package = Join-Path $Root 'package'
+    Add-Type -AssemblyName System.IO.Compression.FileSystem
+    # ExtractToDirectory refuses entries that would land outside the package directory.
+    [IO.Compression.ZipFile]::ExtractToDirectory($archivePath, $package)
+    return $package
+}
+
 function Resolve-CleanupRoot {
     param([AllowEmptyString()][string] $Root)
     if ([string]::IsNullOrWhiteSpace($Root)) { return '' }
@@ -2026,14 +1905,11 @@ function Install-Release {
         throw "Release package must contain $($script:ExecutableName) and SHA256SUMS: $packageDirectory"
     }
     $packageInventory = Get-TreeInventory $packageDirectory
-    $packageTrustFiles = @('SHA256SUMS',$script:PackageSignatureManifestName,$script:PackageSignatureName)
-    # Read the checksum manifest once: the bytes whose signature is verified are the bytes parsed.
     if ((Get-Item -LiteralPath $checksumPath).Length -gt 1MB) { throw 'SHA256SUMS exceeds its 1 MiB limit.' }
     $checksumBytes = [IO.File]::ReadAllBytes($checksumPath)
-    Assert-CustomerPackageTrust $packageDirectory $checksumBytes $packageInventory -Development:$DevelopmentPackage
-    $verifiedFiles = @($packageInventory.Files | Where-Object { $_.Path -cnotin $packageTrustFiles } | Sort-Object Path)
-    # The signed install.ps1 is part of the payload, so the installation can update and
-    # uninstall itself. The unsigned development entry point is not.
+    $verifiedFiles = @($packageInventory.Files | Where-Object { $_.Path -cne 'SHA256SUMS' } | Sort-Object Path)
+    # install.ps1 is part of the payload, so the installation can update and uninstall itself.
+    # The development entry point is not.
     $payloadFiles = @($verifiedFiles | Where-Object { $_.Path -cne 'install.cmd' })
     $checksums = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($line in ($script:Utf8.GetString($checksumBytes) -split "`r?`n")) {
@@ -2053,7 +1929,7 @@ function Install-Release {
         Where-Object { $_ -cin @($packageInventory.Files.Path) }
     if (@($releaseIndicators).Count -ne 0) {
         if (-not $DevelopmentPackage -and 'install.cmd' -cin @($packageInventory.Files.Path)) {
-            throw "Customer release packages must not contain the unsigned development entry 'install.cmd'."
+            throw "Release packages must not contain the development entry 'install.cmd'."
         }
         $requiredReleaseFiles = @('install.ps1',$script:BuildManifestName)
         if ($DevelopmentPackage) { $requiredReleaseFiles += 'install.cmd' }
@@ -2100,7 +1976,7 @@ function Install-Release {
                 Assert-SkillsRootPlacement $customSkillsRoot $packageDirectory $installRoot
             }
         }
-        # Development packages are explicitly unsigned builds that may replace any build.
+        # Development packages are local builds that may replace any build.
         if ($null -ne $existingState -and -not $DevelopmentPackage) {
             Assert-InstallationUpgrade $existingState ([string]$capabilities.cliVersion) ([string]$capabilities.sourceRevision)
         }
@@ -2516,6 +2392,12 @@ try {
     }
     else {
         if ($RemoveConfiguration) { throw '-RemoveConfiguration applies only to -Uninstall.' }
+        if (-not $PSBoundParameters.ContainsKey('PackageRoot') -and
+            ([string]::IsNullOrWhiteSpace($PackageRoot) -or -not (Test-Path -LiteralPath (Join-Path $PackageRoot $script:ExecutableName) -PathType Leaf))) {
+            if (-not [string]::IsNullOrWhiteSpace($cleanupDirectory)) { throw '-CleanupRoot applies only to an installer run beside its package.' }
+            $cleanupDirectory = Join-Path ([IO.Path]::GetTempPath()) ("$($script:ProductId)-install-" + [Guid]::NewGuid().ToString('N'))
+            $PackageRoot = Get-ReleasePackage $cleanupDirectory
+        }
         Install-Release
     }
     Set-InstallerStatus $statusContext 'succeeded' $null

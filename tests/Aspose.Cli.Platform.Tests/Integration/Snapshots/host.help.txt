@@ -32,7 +32,7 @@ Commands:
   docs <topic>                      Print an offline reference document bundled with this binary.
   fonts                             Diagnose the font environment used for rendering.
   mcp                               Expose this CLI to a local MCP client over stdio.
-  update                            Check or install a verified CLI release; no background checks are performed.
+  update                            Check or install a CLI release; no background checks are performed.
 
 Examples:
   aspose-cli app
@@ -613,7 +613,7 @@ Options:
 
 ## aspose-cli update --help
 Description:
-  Check or install a verified CLI release; no background checks are performed.
+  Check or install a CLI release; no background checks are performed.
 
 Usage:
   aspose-cli update [command] [options]
@@ -629,21 +629,21 @@ Options:
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Commands:
-  check <feed>    Check one signed local or HTTPS release feed.
-  install <feed>  Install a verified release from one signed local or HTTPS feed.
+  check <feed>    Check whether a newer release is available. [default: https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json]
+  install <feed>  Install a newer release after checking its archive against the release manifest. [default: https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json]
 
 
 ## aspose-cli update _prepare --help
 
 ## aspose-cli update check --help
 Description:
-  Check one signed local or HTTPS release feed.
+  Check whether a newer release is available.
 
 Usage:
-  aspose-cli update check <feed> [options]
+  aspose-cli update check [<feed>] [options]
 
 Arguments:
-  <feed>  Path to RELEASE-MANIFEST.json or an HTTPS manifest URL.
+  <feed>  RELEASE-MANIFEST.json, as a local path or an HTTPS URL. [default: https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json]
 
 Options:
   -?, -h, --help                              Show help and usage information
@@ -658,13 +658,13 @@ Options:
 
 ## aspose-cli update install --help
 Description:
-  Install a verified release from one signed local or HTTPS feed.
+  Install a newer release after checking its archive against the release manifest.
 
 Usage:
-  aspose-cli update install <feed> [options]
+  aspose-cli update install [<feed>] [options]
 
 Arguments:
-  <feed>  Path to RELEASE-MANIFEST.json or an HTTPS manifest URL.
+  <feed>  RELEASE-MANIFEST.json, as a local path or an HTTPS URL. [default: https://github.com/aspose-cli/aspose-cli/releases/latest/download/RELEASE-MANIFEST.json]
 
 Options:
   -?, -h, --help                              Show help and usage information

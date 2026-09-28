@@ -462,7 +462,7 @@ $distributionCode = [Text.StringBuilder]::new()
 [void]$distributionCode.AppendLine('/// <summary>Fixed build-time identity of this CLI distribution.</summary>')
 [void]$distributionCode.AppendLine('public static class DistributionInfo')
 [void]$distributionCode.AppendLine('{')
-foreach ($name in @('id','commandName','displayName','edition','environmentVariablePrefix','skillPrefix','schemaBaseUri','configurationDirectoryName','installDirectory')) {
+foreach ($name in @('id','commandName','displayName','edition','environmentVariablePrefix','skillPrefix','schemaBaseUri','configurationDirectoryName','installDirectory','releaseRepository')) {
     $value = [string]$layout.Identity.$name
     $propertyName = [char]::ToUpperInvariant($name[0]) + $name.Substring(1)
     $escaped = [Security.SecurityElement]::Escape($value)
@@ -495,13 +495,12 @@ if (Test-Path -LiteralPath $installerPath -PathType Leaf) {
         MarkerName = [string]$names.MarkerName
         PayloadManifestName = [string]$names.PayloadManifestName
         BuildManifestName = [string]$names.BuildManifestName
-        PackageSignatureManifestName = 'PACKAGE-SIGNATURE.json'
-        PackageSignatureName = 'PACKAGE-SIGNATURE.sig'
         SkillManifestProductId = [string]$names.SkillManifestProductId
         DefaultInstallDirectory = [string]$names.WindowsInstallDirectory
         ConfigurationDirectoryName = [string]$identity.configurationDirectoryName
         ConfigurationOwnerName = [string]$names.ConfigurationOwnerName
         EnvironmentVariablePrefix = [string]$identity.environmentVariablePrefix
+        ReleaseRepository = [string]$identity.releaseRepository
     }).GetEnumerator()) {
         $literal = "'" + ([string]$entry.Value).Replace("'","''") + "'"
         $settings.Add('$script:' + $entry.Key + ' = ' + $literal)

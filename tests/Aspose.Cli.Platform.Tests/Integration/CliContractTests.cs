@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using Aspose.Cli.Host.Updating;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -450,28 +449,30 @@ public sealed class CliContractTests : IDisposable
     }
 
     [Fact]
-    public void UpdateCheck_RequiresConfiguredReleaseTrust()
+    public void UpdateCheck_ReportsTheReleaseAManifestDescribes()
     {
-        string manifest = _workspace.File("RELEASE-MANIFEST.json");
-        string signature = _workspace.File("RELEASE-MANIFEST.sig");
-        File.WriteAllText(
-            manifest,
-            """{"schemaVersion":1,"productId":"aspose-cli","edition":"free","runtimeIdentifier":"win-x64","artifactVersion":"99.0.0","sourceRevision":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","archive":{"path":"release.zip","size":0,"sha256":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"},"signature":{"status":"signed","algorithm":"ECDSA-P256-SHA256","keyId":"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa","path":"RELEASE-MANIFEST.sig"}}""",
-            System.Text.Encoding.UTF8);
-        File.WriteAllText(signature, "AA==", System.Text.Encoding.ASCII);
+        string manifest = WriteReleaseManifest(_workspace.File("feed"), "release.zip", 1, new string('a', 64));
 
-        CliResult result = _workspace.Run(
-            "update",
-            "check",
-            manifest,
-            "--output",
-            "json");
+        CliResult result = _workspace.Run("update", "check", manifest, "--output", "json");
+
+        Assert.Equal(0, result.ExitCode);
+        JsonNode update = Parse(result.StdOut);
+        Assert.Equal("available", update["status"]!.GetValue<string>());
+        Assert.Equal("99.0.0", update["availableVersion"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void UpdateInstall_RejectsAnArchiveThatDoesNotMatchItsManifest()
+    {
+        string root = _workspace.File("feed");
+        Directory.CreateDirectory(root);
+        File.WriteAllText(Path.Combine(root, "release.zip"), "tampered", Encoding.UTF8);
+        string manifest = WriteReleaseManifest(root, "release.zip", 8, new string('a', 64));
+
+        CliResult result = _workspace.Run("update", "install", manifest, "--output", "json");
 
         Assert.Equal(5, result.ExitCode);
-        Assert.Equal(string.Empty, result.StdOut);
-        Assert.Equal(
-            "RELEASE_TRUST_UNAVAILABLE",
-            Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
+        Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
     }
 
     [Fact]
@@ -479,7 +480,7 @@ public sealed class CliContractTests : IDisposable
     {
         Requires.Windows();
 
-        string root = _workspace.File("signed-feed");
+        string root = _workspace.File("feed");
         Directory.CreateDirectory(root);
         string archive = Path.Combine(root, "release.zip");
         string escapeName = "aspose-update-escape-" + Guid.NewGuid().ToString("N") + ".txt";
@@ -490,56 +491,32 @@ public sealed class CliContractTests : IDisposable
             zip.CreateEntry("../" + escapeName);
         }
 
-        using ECDsa key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
-        string keyId = Convert.ToHexString(SHA256.HashData(key.ExportSubjectPublicKeyInfo())).ToLowerInvariant();
-        string archiveHash = HashFile(archive);
-        string revision = new string('a', 40);
-        var links = new[]
-        {
-            new { product = "cells", packageId = "Test.cells", version = "1.0.0", contentHash = Convert.ToBase64String(Enumerable.Repeat((byte)1, 64).ToArray()) },
-            new { product = "pdf", packageId = "Test.pdf", version = "1.0.0", contentHash = Convert.ToBase64String(Enumerable.Repeat((byte)2, 64).ToArray()) },
-            new { product = "slides", packageId = "Test.slides", version = "1.0.0", contentHash = Convert.ToBase64String(Enumerable.Repeat((byte)3, 64).ToArray()) },
-            new { product = "words", packageId = "Test.words", version = "1.0.0", contentHash = Convert.ToBase64String(Enumerable.Repeat((byte)4, 64).ToArray()) },
-        };
-        string edition = Aspose.Cli.Sdk.DistributionInfo.Edition;
-        byte[] payload = ReleaseManifestVerifier.CreateSigningPayload(
-            "aspose-cli", edition, "win-x64", "99.0.0", revision,
-            "release.zip", new FileInfo(archive).Length, archiveHash, false,
-            links.Select(static link => new ReleaseEnginePackage(link.product, link.packageId, link.version, link.contentHash)),
-            "signed", "ECDSA-P256-SHA256", "rfc3279-der", keyId, "RELEASE-MANIFEST.sig");
-        File.WriteAllText(
-            Path.Combine(root, "RELEASE-MANIFEST.json"),
-            JsonSerializer.Serialize(new
-            {
-                schemaVersion = 1,
-                productId = "aspose-cli",
-                edition,
-                runtimeIdentifier = "win-x64",
-                artifactVersion = "99.0.0",
-                sourceRevision = revision,
-                buildDirty = false,
-                enginePackages = links,
-                archive = new { path = "release.zip", size = new FileInfo(archive).Length, sha256 = archiveHash },
-                signature = new { status = "signed", algorithm = "ECDSA-P256-SHA256", format = "rfc3279-der", keyId, path = "RELEASE-MANIFEST.sig" },
-            }),
-            Encoding.UTF8);
-        File.WriteAllText(
-            Path.Combine(root, "RELEASE-MANIFEST.sig"),
-            Convert.ToBase64String(key.SignData(payload, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence)),
-            Encoding.ASCII);
-        string ring = Path.Combine(root, "keys.json");
-        File.WriteAllText(
-            ring,
-            JsonSerializer.Serialize(new { keys = new[] { new { keyId, publicKeyPem = key.ExportSubjectPublicKeyInfoPem() } } }),
-            Encoding.UTF8);
-
-        CliResult result = _workspace.RunWithEnv(
-            new Dictionary<string, string?> { [ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable] = ring },
-            "update", "install", Path.Combine(root, "RELEASE-MANIFEST.json"), "--output", "json");
+        string manifest = WriteReleaseManifest(root, "release.zip", new FileInfo(archive).Length, HashFile(archive));
+        CliResult result = _workspace.Run("update", "install", manifest, "--output", "json");
 
         Assert.Equal(5, result.ExitCode);
         Assert.Equal("RELEASE_VERIFICATION_FAILED", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
         Assert.False(File.Exists(escaped));
+    }
+
+    private static string WriteReleaseManifest(string root, string archive, long size, string sha256)
+    {
+        Directory.CreateDirectory(root);
+        string path = Path.Combine(root, "RELEASE-MANIFEST.json");
+        File.WriteAllText(
+            path,
+            JsonSerializer.Serialize(new
+            {
+                schemaVersion = 1,
+                productId = Aspose.Cli.Sdk.DistributionInfo.Id,
+                edition = Aspose.Cli.Sdk.DistributionInfo.Edition,
+                runtimeIdentifier = "win-x64",
+                artifactVersion = "99.0.0",
+                sourceRevision = new string('a', 40),
+                archive = new { path = archive, size, sha256 },
+            }),
+            Encoding.UTF8);
+        return path;
     }
 
     /// <summary>Set to 1 to rewrite the snapshots under Integration/Snapshots from the current build.</summary>

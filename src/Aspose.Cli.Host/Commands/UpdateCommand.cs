@@ -11,7 +11,7 @@ internal static class UpdateCommand
         HostContext host, CommandExecutor executor,
         GlobalOptions globals)
     {
-        var update = new Command("update", "Check or install a verified CLI release; no background checks are performed.");
+        var update = new Command("update", "Check or install a CLI release; no background checks are performed.");
         update.Subcommands.Add(CreateCheck(executor, globals));
         update.Subcommands.Add(CreateInstall(host, executor, globals));
         update.Subcommands.Add(CreatePreparation(host, executor, globals));
@@ -20,22 +20,21 @@ internal static class UpdateCommand
 
     private static Command CreateCheck(CommandExecutor executor, GlobalOptions globals)
     {
-        var command = new Command("check", "Check one signed local or HTTPS release feed.");
-        var feed = new Argument<string>("feed") { Description = "Path to RELEASE-MANIFEST.json or an HTTPS manifest URL." }.WithInput(InputKind.None);
+        var command = new Command("check", "Check whether a newer release is available.");
+        Argument<string> feed = Feed();
         command.Arguments.Add(feed);
         command.SetAction(parse => executor.Run(parse, globals, context =>
-            UpdateClient.Check(context, parse.GetRequiredValue(feed))));
-        return command.WithInvocationPolicy(new CommandInvocationPolicy(
-            EnvironmentVariables: [ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable]));
+            UpdateClient.Check(context, parse.GetValue(feed)!)));
+        return command;
     }
 
     private static Command CreateInstall(HostContext host, CommandExecutor executor, GlobalOptions globals)
     {
-        var command = new Command("install", "Install a verified release from one signed local or HTTPS feed.");
-        var feed = new Argument<string>("feed") { Description = "Path to RELEASE-MANIFEST.json or an HTTPS manifest URL." }.WithInput(InputKind.None);
+        var command = new Command("install", "Install a newer release after checking its archive against the release manifest.");
+        Argument<string> feed = Feed();
         command.Arguments.Add(feed);
         command.SetAction(parse => executor.RunHandoff(parse, globals, context =>
-            UpdateInstaller.Install(host, context, parse.GetRequiredValue(feed))));
+            UpdateInstaller.Install(host, context, parse.GetValue(feed)!)));
         return command.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.ParentHandoff));
     }
 
@@ -55,7 +54,13 @@ internal static class UpdateCommand
             return UpdateClient.Prepare(context, parse.GetRequiredValue(feed), parse.GetRequiredValue(target));
         }));
         return command.WithInvocationPolicy(new CommandInvocationPolicy(
-            EnvironmentVariables: [ReleaseManifestVerifier.TrustedKeyRingEnvironmentVariable],
             OutputBytesLimit: UpdateClient.MaximumArchiveBytes));
     }
+
+    private static Argument<string> Feed() => new Argument<string>("feed")
+    {
+        Description = "RELEASE-MANIFEST.json, as a local path or an HTTPS URL.",
+        Arity = ArgumentArity.ZeroOrOne,
+        DefaultValueFactory = static _ => UpdateClient.DefaultFeed,
+    }.WithInput(InputKind.None);
 }
