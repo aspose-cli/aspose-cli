@@ -46,6 +46,16 @@ internal static class SlidesReviewChecks
         ReviewSeverities.Warning,
         string.Create(CultureInfo.InvariantCulture, $"An opaque foreground shape covers at least {SlidesReviewAnalyzer.SevereCoverage * 100:0}% of a content shape."));
 
+    public static ReviewCheck TextOverlapsObject { get; } = new(
+        "SLIDES_TEXT_OVERLAPS_OBJECT",
+        ReviewSeverities.Warning,
+        "Laid-out text runs into a table or chart on the same slide.");
+
+    public static ReviewCheck PlaceholderEmpty { get; } = new(
+        "SLIDES_PLACEHOLDER_EMPTY",
+        ReviewSeverities.Info,
+        "An empty placeholder is invisible in a slide show but shows its prompt text when the deck is edited.");
+
     public static IReadOnlyList<ReviewCheck> All { get; } =
     [
         SlideDuplicate,
@@ -56,5 +66,7 @@ internal static class SlidesReviewChecks
         ContentDensityLow,
         ChartCovered,
         ShapesOverlap,
+        TextOverlapsObject,
+        PlaceholderEmpty,
     ];
 }

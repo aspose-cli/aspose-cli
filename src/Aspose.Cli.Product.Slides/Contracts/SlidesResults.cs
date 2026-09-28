@@ -158,6 +158,9 @@ public sealed record SlideShapeData
     // semantics needed for conservative deterministic overlap checks.
     internal int ZOrder { get; init; }
     internal bool HasOpaqueFill { get; init; }
+
+    /// <summary>Where the shape's text is laid out, in slide points; null for a shape without text.</summary>
+    internal SlideRect? TextRect { get; init; }
 }
 
 /// <summary>One text run with effective formatting used by the full projection.</summary>

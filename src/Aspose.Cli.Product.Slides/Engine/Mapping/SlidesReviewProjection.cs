@@ -1,3 +1,4 @@
+using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 
@@ -20,5 +21,31 @@ internal static class SlidesReviewProjection
             FillType.Pattern => true,
             _ => false,
         };
+    }
+
+    /// <summary>
+    /// The area the shape's laid-out text occupies, in slide points. A placeholder is usually far
+    /// taller than its text, so its frame alone cannot tell whether the text runs into a table.
+    /// </summary>
+    internal static SlideRect? TextRect(IShape shape)
+    {
+        if (shape is not IAutoShape { TextFrame: { } frame } || string.IsNullOrWhiteSpace(frame.Text))
+        {
+            return null;
+        }
+
+        System.Drawing.RectangleF? bounds = null;
+        foreach (IParagraph paragraph in frame.Paragraphs)
+        {
+            System.Drawing.RectangleF rect = paragraph.GetRect();
+            if (rect.Width > 0 && rect.Height > 0)
+            {
+                bounds = bounds is { } union ? System.Drawing.RectangleF.Union(union, rect) : rect;
+            }
+        }
+
+        return bounds is { } area
+            ? new SlideRect { X = shape.X + area.X, Y = shape.Y + area.Y, Width = area.Width, Height = area.Height }
+            : null;
     }
 }

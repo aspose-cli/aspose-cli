@@ -28,6 +28,8 @@ public sealed class SlidesReviewCheckTests
             Slide(6, Shape(1, new(0, 0, 10, 10), "a"), Shape(2, new(20, 0, 10, 10), "b"), Shape(3, new(0, 20, 10, 10), "c")),
             Slide(7, Shape(1, new(100, 100, 200, 200), type: "chart"), Occluder(2, new(100, 100, 100, 200))),
             Slide(8, Shape(1, new(100, 100, 200, 200), "Body"), Occluder(2, new(100, 100, 200, 200))),
+            Slide(9, BodyWithLines(1, new(60, 150, 400, 60)), Shape(2, new(60, 195, 600, 280), type: "table")),
+            Slide(10, Shape(1, new(60, 100, 600, 300)) with { Placeholder = "body" }),
         ];
 
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(slides, Width, Height);
@@ -36,6 +38,39 @@ public sealed class SlidesReviewCheckTests
             SlidesReviewChecks.All.Select(static check => check.Code).Order(StringComparer.Ordinal),
             analysis.Findings.Select(static finding => finding.Code).Distinct().Order(StringComparer.Ordinal));
     }
+
+    [Fact]
+    public void TextAboveATable_IsNotAnOverlap()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(1, BodyWithLines(1, new(60, 120, 400, 60)), Shape(2, new(60, 195, 600, 280), type: "table"))],
+            Width,
+            Height);
+
+        Assert.DoesNotContain(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.TextOverlapsObject.Code);
+    }
+
+    [Fact]
+    public void TextRect_IsWhereTheTextIsLaidOutOnTheSlide()
+    {
+        using var presentation = new Aspose.Slides.Presentation();
+        Aspose.Slides.IAutoShape box = presentation.Slides[0].Shapes.AddAutoShape(Aspose.Slides.ShapeType.Rectangle, 100, 150, 400, 300);
+        box.TextFrame.Text = "A summary line";
+        box.TextFrame.TextFrameFormat.AnchoringType = Aspose.Slides.TextAnchorType.Top;
+
+        SlideRect rect = Assert.IsType<SlideRect>(Engine.Mapping.SlidesReviewProjection.TextRect(box));
+
+        Assert.InRange(rect.Y, 150, 170);
+        Assert.InRange(rect.Height, 10, 60);
+        Assert.True(rect.X >= 100 && rect.X + rect.Width <= 500);
+    }
+
+    private static SlideShapeData BodyWithLines(long id, Rect lines) =>
+        Shape(id, new(lines.X, lines.Y, lines.Width, 350), "Two lines of summary text above the table") with
+        {
+            Placeholder = "body",
+            TextRect = new SlideRect { X = lines.X, Y = lines.Y, Width = lines.Width, Height = lines.Height },
+        };
 
     private static SlideData Slide(int number, params SlideShapeData[] shapes) => new()
     {

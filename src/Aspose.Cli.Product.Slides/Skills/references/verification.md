@@ -22,9 +22,11 @@ aspose-cli review deck.revised.pptx --out deck.review-1 --output json
 ```
 
 The Slides checks (`SLIDES_*` in `capabilities` under `review.checks`) flag shapes outside the
-slide, text below 12 pt, overlapping shapes, covered charts, blank or duplicate slides and
-content density. After fixing one kind of finding, a later round can focus on it while you still
-open every image:
+slide, text below 12 pt, overlapping shapes, covered charts, laid-out text running into a table
+or chart (`SLIDES_TEXT_OVERLAPS_OBJECT`, judged from where the text actually sits, not from its
+often much taller placeholder), empty placeholders that PowerPoint shows as prompts while editing
+(`SLIDES_PLACEHOLDER_EMPTY`), blank or duplicate slides and content density. After fixing one
+kind of finding, a later round can focus on it while you still open every image:
 
 ```powershell
 aspose-cli review deck.revised.pptx --out deck.review-2 --code SLIDES_SHAPE_OUTSIDE_SLIDE --code SLIDES_TEXT_TOO_SMALL --output json

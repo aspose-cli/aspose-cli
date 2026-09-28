@@ -75,6 +75,51 @@ internal static class SlidesReviewAnalyzer
         }
         AnalyzeDensity(slide, slideWidth, slideHeight, result);
         AnalyzeOverlaps(slide, slideWidth, slideHeight, result);
+        AnalyzeTextOverObjects(slide, result);
+        AnalyzeEmptyPlaceholders(slide, result);
+    }
+
+    /// <summary>
+    /// Text laid out over a table or chart is garbled whichever is in front. The frames cannot
+    /// show it, since a placeholder is usually far taller than its text, so this compares the
+    /// laid-out text with the object. Text over a picture is left alone: captions often are.
+    /// </summary>
+    private static void AnalyzeTextOverObjects(SlideData slide, SlidesReviewAnalysis result)
+    {
+        foreach (SlideShapeData text in slide.Shapes.Where(static shape => shape.TextRect is not null && !IsDecorative(shape)))
+        {
+            SlideRect lines = text.TextRect!;
+            foreach (SlideShapeData other in slide.Shapes.Where(shape => shape.Type is "table" or "chart" && shape.ShapeId != text.ShapeId))
+            {
+                double overlap = IntersectionArea(lines, other.Rect);
+                if (overlap < 0.10 * Math.Max(1, Area(lines)))
+                {
+                    continue;
+                }
+
+                result.TextOverlaps++;
+                result.Findings.Add(SlidesReviewChecks.TextOverlapsObject.Finding(
+                    $"The text of '{Label(text)}' runs into {other.Type} '{Label(other)}' ({overlap / Math.Max(1, Area(lines)):P0} of the text area); move or shorten one of them.",
+                    Location(slide.Slide),
+                    Hint));
+                break;
+            }
+        }
+    }
+
+    private static void AnalyzeEmptyPlaceholders(SlideData slide, SlidesReviewAnalysis result)
+    {
+        foreach (SlideShapeData shape in slide.Shapes.Where(static shape =>
+                     shape.Placeholder is not (null or "footer" or "date" or "slide-number")
+                     && shape.Type is not ("chart" or "table" or "image" or "audio" or "video")
+                     && string.IsNullOrWhiteSpace(shape.Text)))
+        {
+            result.EmptyPlaceholders++;
+            result.Findings.Add(SlidesReviewChecks.PlaceholderEmpty.Finding(
+                $"Placeholder '{Label(shape)}' is empty; PowerPoint shows its prompt text while the deck is edited. Delete it or fill it.",
+                Location(slide.Slide),
+                Hint));
+        }
     }
 
     private static void AddShapeFindings(
@@ -308,4 +353,6 @@ internal sealed class SlidesReviewAnalysis
     public int CoveredCharts { get; set; }
     public int HighDensitySlides { get; set; }
     public int LowDensitySlides { get; set; }
+    public int TextOverlaps { get; set; }
+    public int EmptyPlaceholders { get; set; }
 }
