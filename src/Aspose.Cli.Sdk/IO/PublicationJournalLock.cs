@@ -15,17 +15,25 @@ internal sealed class PublicationJournalLock : IDisposable
 
     private PublicationJournalLock(Mutex mutex) => _mutex = mutex;
 
+    /// <summary>
+    /// Acquires the lock only if it is free now. A held lock proves a live process is using the
+    /// journal: the lock of a process that died is granted, as abandoned.
+    /// </summary>
+    internal static PublicationJournalLock? TryAcquire(string path)
+    {
+        Mutex mutex = Open(path);
+        bool acquired;
+        try { acquired = mutex.WaitOne(0); }
+        catch (AbandonedMutexException) { acquired = true; }
+        if (acquired) { return new PublicationJournalLock(mutex); }
+        mutex.Dispose();
+        return null;
+    }
+
     internal static PublicationJournalLock Acquire(string path, OperationDeadline? deadline = null,
         IPublicationFaultInjector? faults = null)
     {
-        string canonical = Path.GetFullPath(path);
-        if (OperatingSystem.IsWindows()) { canonical = canonical.ToUpperInvariant(); }
-        string name = "aspose-publication-journal-" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
-        var mutex = new Mutex(false, name, new NamedWaitHandleOptions
-        {
-            CurrentUserOnly = true,
-            CurrentSessionOnly = false,
-        });
+        Mutex mutex = Open(path);
         using OperationDeadline? owned = deadline is null ? OperationDeadline.Start(TimeSpan.FromSeconds(30)) : null;
         OperationDeadline wait = deadline ?? owned!;
         bool acquired = false;
@@ -55,6 +63,18 @@ internal sealed class PublicationJournalLock : IDisposable
             mutex.Dispose();
             throw;
         }
+    }
+
+    private static Mutex Open(string path)
+    {
+        string canonical = Path.GetFullPath(path);
+        if (OperatingSystem.IsWindows()) { canonical = canonical.ToUpperInvariant(); }
+        string name = "aspose-publication-journal-" + Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(canonical)));
+        return new Mutex(false, name, new NamedWaitHandleOptions
+        {
+            CurrentUserOnly = true,
+            CurrentSessionOnly = false,
+        });
     }
 
     public void Dispose()

@@ -809,12 +809,14 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 
         try
         {
-            journal = PublicationJournal.Read(path, deadline: deadline);
-            return true;
+            // A journal whose lock a live process holds belongs to a transaction in use, not an
+            // abandoned one; discovery passes it rather than wait for a busy owner.
+            journal = PublicationJournal.ReadUnlessBusy(path, deadline);
+            return journal is not null;
         }
         catch (Exception exception) when (exception is FileNotFoundException or DirectoryNotFoundException && !File.Exists(path))
         {
-            // A terminal transaction may finish cleanup while discovery waits for the journal mutex.
+            // A terminal transaction may finish cleanup between discovery and the read.
             return false;
         }
         catch (Exception exception) when (

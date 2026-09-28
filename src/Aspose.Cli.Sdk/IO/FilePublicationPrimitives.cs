@@ -380,6 +380,21 @@ internal sealed class PublicationJournal
     public static PublicationJournal Read(string path, IPublicationFaultInjector? faults = null, OperationDeadline? deadline = null)
     {
         using PublicationJournalLock gate = PublicationJournalLock.Acquire(path, deadline, faults);
+        return ReadLocked(path, faults, deadline);
+    }
+
+    /// <summary>
+    /// Reads the journal unless a live process holds its lock, which proves the transaction is in
+    /// use; returns null then instead of waiting.
+    /// </summary>
+    internal static PublicationJournal? ReadUnlessBusy(string path, OperationDeadline? deadline = null)
+    {
+        using PublicationJournalLock? gate = PublicationJournalLock.TryAcquire(path);
+        return gate is null ? null : ReadLocked(path, faults: null, deadline);
+    }
+
+    private static PublicationJournal ReadLocked(string path, IPublicationFaultInjector? faults, OperationDeadline? deadline)
+    {
         using var stream = new FileStream(
             path,
             FileMode.Open,

@@ -14,6 +14,37 @@ public sealed class PublicationTimingCollection;
 public sealed class PublicationConcurrencyTests
 {
     [Fact]
+    public void ConcurrentDirectoryPublicationsRemainIsolated()
+    {
+        Requires.Windows();
+
+        using var temp = new TempDirectory();
+        const int count = 20;
+
+        Parallel.For(0, count, index =>
+        {
+            string target = temp.File($"output-{index:00}.txt");
+            using var set = new AtomicOutputSetWriter(
+                TestBudgets.Writer(),
+                temp.Path,
+                $"concurrent-{index:00}");
+            set.Stage(
+                target,
+                overwrite: false,
+                staged => File.WriteAllText(staged, index.ToString()));
+            set.Commit();
+        });
+
+        for (int index = 0; index < count; index++)
+        {
+            Assert.Equal(
+                index.ToString(),
+                File.ReadAllText(temp.File($"output-{index:00}.txt")));
+        }
+        Assert.Empty(Directory.EnumerateDirectories(temp.Path, ".aspose-*"));
+    }
+
+    [Fact]
     public async Task AnIndependentCommitCompletesWhileAnotherDirectoryIsPaused()
     {
         TimeSpan watchdog = TimeSpan.FromSeconds(60);
