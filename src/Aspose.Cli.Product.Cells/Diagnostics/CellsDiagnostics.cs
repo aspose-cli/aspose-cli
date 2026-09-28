@@ -27,6 +27,7 @@ internal static class CellsDiagnostics
     internal const string FormulasBroken = "FORMULAS_BROKEN";
     internal const string EncryptionRemoved = "WORKBOOK_ENCRYPTION_REMOVED";
     internal const string FormulasCalculatedOnOpen = "FORMULAS_CALCULATED_ON_OPEN";
+    internal const string SheetPartiallyRendered = "CELLS_SHEET_PARTIALLY_RENDERED";
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -45,6 +46,7 @@ internal static class CellsDiagnostics
         Warning(FormulasBroken),
         Warning(EncryptionRemoved),
         Warning(FormulasCalculatedOnOpen),
+        Warning(SheetPartiallyRendered),
         Warning(MhtmlResourceCoverageUnverified),
     ];
 

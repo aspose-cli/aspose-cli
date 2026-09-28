@@ -491,12 +491,17 @@ internal sealed class CellsProductionService
             .Where(static sheet => sheet.IsVisible)
             .ToArray();
         var parts = new List<ViewPart>();
+        var partial = new List<Warning>();
         foreach (Worksheet sheet in visible.Take(request.MaxParts))
         {
             string file = string.Create(
                 System.Globalization.CultureInfo.InvariantCulture,
                 $"sheet-{sheet.Index + 1:0000}.png");
-            (int width, int height) = RenderSheetPart(sheet, dpi, file, artifacts);
+            (int width, int height, Warning? window) = RenderSheetPart(sheet, dpi, file, artifacts);
+            if (window is not null)
+            {
+                partial.Add(window);
+            }
             parts.Add(new ViewPart
             {
                 Id = sheet.Name,
@@ -515,7 +520,7 @@ internal sealed class CellsProductionService
             SourceSizeBytes = source.SizeBytes,
             TotalParts = visible.Length,
             Parts = parts,
-            Warnings = loaded.Warnings(),
+            Warnings = loaded.Warnings([.. partial]),
         };
     }
 
@@ -524,7 +529,7 @@ internal sealed class CellsProductionService
     /// without printable content becomes a blank placeholder rather than an
     /// error, so an empty sheet never hides the rest of the workbook.
     /// </summary>
-    private (int Width, int Height) RenderSheetPart(
+    private (int Width, int Height, Warning? Window) RenderSheetPart(
         Worksheet sheet,
         int dpi,
         string file,
@@ -541,17 +546,40 @@ internal sealed class CellsProductionService
         if (render.PageCount == 0)
         {
             artifacts.Write(file, stream => stream.Write(BlankPng));
-            return (320, 120);
+            return (320, 120, null);
         }
 
         try
         {
+            // A review shows every sheet, so a sheet too large for one image contributes its
+            // first rows rather than failing the review; the workbook is never saved here.
+            Warning? window = null;
+            float[] whole = render.GetPageSizeInch(0);
+            double pixels = Math.Ceiling(whole[0] * dpi) * Math.Ceiling(whole[1] * dpi);
+            long maxPixels = _resourceBudgets.Limit(ResourceBudgetKinds.RasterPixels);
+            int lastRow = sheet.Cells.MaxDataRow;
+            if (pixels > maxPixels && lastRow > 0)
+            {
+                int rows = Math.Clamp((int)(0.9 * (lastRow + 1) * maxPixels / pixels), 1, lastRow);
+                sheet.PageSetup.PrintArea = "A1:" + CellsHelper.CellIndexToName(rows - 1, Math.Max(0, sheet.Cells.MaxDataColumn));
+                render = new SheetRender(sheet, options);
+                window = new Warning
+                {
+                    Code = CellsDiagnostics.SheetPartiallyRendered,
+                    Message = $"Worksheet '{sheet.Name}' is too large for one review image; only rows 1-{rows} of {lastRow + 1} were rendered.",
+                    Hint = $"Check the rest with 'cells render --sheet \"{sheet.Name}\" --range' windows, or trust 'cells query' for the data.",
+                    Location = sheet.Name,
+                    AffectsCompleteness = true,
+                };
+            }
+
             EnsureRenderable(render, dpi);
             float[] inches = render.GetPageSizeInch(0);
             artifacts.Write(file, stream => render.ToImage(0, stream));
             return (
                 Math.Max(1, (int)Math.Ceiling(inches[0] * 96)),
-                Math.Max(1, (int)Math.Ceiling(inches[1] * 96)));
+                Math.Max(1, (int)Math.Ceiling(inches[1] * 96)),
+                window);
         }
         catch (CellsException exception)
         {

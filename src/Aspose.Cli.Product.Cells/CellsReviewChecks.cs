@@ -20,6 +20,11 @@ internal static class CellsReviewChecks
         ReviewSeverities.Warning,
         "Less than 1% of a worksheet's used area of at least 100 cells contains data.");
 
+    public static ReviewCheck CellsClipped { get; } = new(
+        "CELLS_VALUES_CLIPPED",
+        ReviewSeverities.Warning,
+        "Values are wider than their columns: text is cut off by the next cell, or a number cannot show in full (#### or rounded).");
+
     public static ReviewCheck PopulatedColumnsHidden { get; } = new(
         "CELLS_POPULATED_COLUMNS_HIDDEN",
         ReviewSeverities.Warning,
@@ -109,6 +114,7 @@ internal static class CellsReviewChecks
     [
         SheetHidden,
         SheetEmpty,
+        CellsClipped,
         UsedRangeSparse,
         PopulatedColumnsHidden,
         PopulatedColumnsNarrow,

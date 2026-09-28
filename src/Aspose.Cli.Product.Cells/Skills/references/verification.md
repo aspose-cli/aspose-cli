@@ -46,10 +46,14 @@ aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out zoom.png --
 ```
 
 `review` renders one 192 DPI image per visible sheet; hidden sheets are not
-reviewed. Cells checks report codes such as `CELLS_FORMULA_ERROR` and
-`CELLS_POPULATED_COLUMNS_NARROW`. For a file a person opens, the look also
-grades the design checklist in `aspose-cli docs cells/design-system`,
-section 12. Render large sheets as windows with `--sheet` and `--range`.
+reviewed. A sheet too large for one image contributes its first rows, and the
+`CELLS_SHEET_PARTIALLY_RENDERED` warning names how many; the other sheets are
+still reviewed. Cells checks report codes such as `CELLS_FORMULA_ERROR`,
+`CELLS_POPULATED_COLUMNS_NARROW` and `CELLS_VALUES_CLIPPED` (text cut off by
+the next cell, or a number too wide to show in full, measured with Excel's
+column widths). For a file a person opens, the look also grades the design
+checklist in `aspose-cli docs cells/design-system`, section 12. Render large
+sheets as windows with `--sheet` and `--range`.
 
 ### Judge widths from a `--range` render
 

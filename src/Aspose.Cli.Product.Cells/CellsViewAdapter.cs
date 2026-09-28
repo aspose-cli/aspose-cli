@@ -157,6 +157,14 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
     {
         AddSparseRangeFinding(findings, sheet);
         AddDimensionFindings(findings, sheet);
+        if (sheet.ClippedCells.Count > 0)
+        {
+            findings.Add(CellsReviewChecks.CellsClipped.Finding(
+                $"{sheet.ClippedCells.Count} cell value(s) are wider than their columns; sample: {string.Join(", ", sheet.ClippedCells.Samples)}. "
+                    + "Widen the columns (resize_columns without a width auto-fits) or wrap the text.",
+                sheet.Name,
+                Hint));
+        }
         AddPrintAreaFindings(findings, sheet);
         AddChartFindings(findings, sheet);
     }

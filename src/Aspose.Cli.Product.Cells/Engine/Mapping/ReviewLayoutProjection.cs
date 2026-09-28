@@ -47,6 +47,7 @@ internal static class ReviewLayoutProjection
             HiddenPopulatedRows = rows.Hidden.ToSet(),
             ShortPopulatedRows = rows.Small.ToSet(),
             TallPopulatedRows = rows.Large.ToSet(),
+            ClippedCells = InspectClippedCells(sheet),
             PrintArea = print.Value,
             PrintAreaInvalid = print.Invalid,
             PrintAreaExcludesContent = print.ExcludesContent,
@@ -96,6 +97,60 @@ internal static class ReviewLayoutProjection
             contentRange,
             usedAreaCells);
     }
+
+    /// <summary>
+    /// Finds values wider than their column that Excel shows cut off: text whose right-hand
+    /// neighbor is filled (so it cannot spill over), and numbers, which Excel shows as #### or rounded.
+    /// Only values whose length could exceed the column are measured.
+    /// </summary>
+    private static CellsReviewCellSet InspectClippedCells(Worksheet sheet)
+    {
+        Aspose.Cells.Cells cells = sheet.Cells;
+        var samples = new List<string>();
+        int count = 0;
+        foreach (Cell cell in cells)
+        {
+            if (cell.Value is null or "" || cell.IsMerged || cells.IsColumnHidden(cell.Column))
+            {
+                continue;
+            }
+
+            bool number = cell.Type is CellValueType.IsNumeric or CellValueType.IsDateTime;
+            if (!number && cell.Type != CellValueType.IsString)
+            {
+                continue;
+            }
+
+            if (DisplayUnits(cell.StringValue) <= cells.GetColumnWidth(cell.Column)
+                || cell.GetWidthOfValue() <= cells.GetColumnWidthPixel(cell.Column))
+            {
+                continue;
+            }
+
+            Style style = cell.GetStyle();
+            if (style.IsTextWrapped || style.ShrinkToFit)
+            {
+                continue;
+            }
+
+            if (!number && cells.CheckCell(cell.Row, cell.Column + 1) is not { Value: not (null or "") })
+            {
+                continue;
+            }
+
+            count++;
+            if (samples.Count < MaxDimensionSamples)
+            {
+                samples.Add(cell.Name);
+            }
+        }
+
+        return new CellsReviewCellSet(count, samples);
+    }
+
+    // Column widths are measured in characters of the default font; East Asian characters take two.
+    private static int DisplayUnits(string text) =>
+        text.Sum(static character => character >= '⺀' ? 2 : 1);
 
     private static DimensionScan InspectColumns(
         Worksheet sheet,

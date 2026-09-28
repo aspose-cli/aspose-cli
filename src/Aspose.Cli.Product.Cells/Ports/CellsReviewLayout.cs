@@ -32,6 +32,9 @@ internal sealed record CellsReviewSheetLayout
 
     public required CellsReviewDimensionSet TallPopulatedRows { get; init; }
 
+    /// <summary>Cells whose value is wider than its column and shows cut off or as ####.</summary>
+    public required CellsReviewCellSet ClippedCells { get; init; }
+
     public required string? PrintArea { get; init; }
 
     public required bool PrintAreaInvalid { get; init; }
@@ -50,6 +53,11 @@ internal sealed record CellsReviewSheetLayout
 internal sealed record CellsReviewDimensionSet(
     int Count,
     IReadOnlyList<int> Samples);
+
+/// <summary>Cells in one layout condition: how many there are and the A1 names of the first few.</summary>
+internal sealed record CellsReviewCellSet(
+    int Count,
+    IReadOnlyList<string> Samples);
 
 /// <summary>Layout facts for one chart on a worksheet.</summary>
 internal sealed record CellsReviewChartLayout

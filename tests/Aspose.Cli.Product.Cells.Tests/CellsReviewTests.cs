@@ -57,6 +57,7 @@ public sealed class CellsReviewTests
                 "CELLS_SHEET_EMPTY",
                 "CELLS_SHEET_HIDDEN",
                 "CELLS_USED_RANGE_SPARSE",
+                "CELLS_VALUES_CLIPPED",
             ],
             findings
                 .Select(static finding => finding.Code)
