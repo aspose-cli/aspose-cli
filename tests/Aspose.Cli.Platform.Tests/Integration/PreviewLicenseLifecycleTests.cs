@@ -48,6 +48,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         }
     }
 
+    [Category(TestCategory.Slow)]
     [LicensedFact]
     public void ExplicitLicense_RendersItsDocumentLicensedBesideAnEvaluationOne()
     {

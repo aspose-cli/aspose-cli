@@ -11,6 +11,7 @@ public sealed class CellsCliTests : IDisposable
     private readonly List<Process> _previewServices = [];
     private bool _previewRequested;
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()
     {

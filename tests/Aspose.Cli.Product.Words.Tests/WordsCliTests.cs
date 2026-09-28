@@ -8,6 +8,7 @@ public sealed class WordsCliTests : IDisposable
 {
     private readonly TempWorkspace _workspace = new();
 
+    [Category(TestCategory.Slow)]
     [Fact]
     public void CreateEditAndQuery_RoundTripsThroughTheBuiltCli()
     {

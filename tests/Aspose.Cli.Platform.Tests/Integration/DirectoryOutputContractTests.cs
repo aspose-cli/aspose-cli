@@ -28,6 +28,7 @@ public sealed class DirectoryOutputContractTests
 
     public static TheoryData<string> Commands => [.. Cases.Keys];
 
+    [Category(TestCategory.Slow)]
     [Theory]
     [MemberData(nameof(Commands))]
     public void AnExistingFileIsReplacedOnlyWithOverwrite(string command)

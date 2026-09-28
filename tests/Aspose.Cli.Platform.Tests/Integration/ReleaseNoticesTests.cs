@@ -10,6 +10,7 @@ namespace Aspose.Cli.IntegrationTests;
 
 public sealed class ReleaseNoticesTests
 {
+    [Category(TestCategory.Slow)]
     [Fact]
     public void DeployedPackagesAndRuntimePreserveLegalBytesAndRejectArchiveTampering()
     {
