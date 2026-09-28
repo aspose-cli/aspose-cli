@@ -46,7 +46,7 @@ internal sealed class WordsDocumentLoader
 
     /// <summary>
     /// Opens an admitted input. <paramref name="warnings"/> receives what the SDK reports while
-    /// it loads and first lays out the document, such as font substitutions.
+    /// it loads the document; font substitutions arrive only when the document is laid out.
     /// </summary>
     public LoadedDocument Open(string path, string? password, IWarningCallback? warnings = null)
     {

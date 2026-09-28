@@ -65,11 +65,11 @@ internal sealed partial class WordsFontEnvironment : IFontEnvironment
         var substitutions = new FontSubstitutions();
         using LoadedDocument loaded = _loader.Open(filePath, request.Password, substitutions);
 
-        HashSet<string> available = FontSettings.DefaultInstance.GetFontsSources()
-            .SelectMany(static source => source.GetAvailableFonts())
-            .Select(static font => font.FullFontName)
-            .Where(static name => !string.IsNullOrWhiteSpace(name))
-            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        // Only layout resolves fonts, and it resolves them by every name a font file carries:
+        // a document's "宋体" is the installed SimSun, whose font sources list only "SimSun".
+        // So a font is available unless laying the document out substituted it.
+        loaded.Document.WarningCallback = substitutions;
+        loaded.Document.UpdatePageLayout();
 
         IReadOnlyList<FontAvailability> fonts = WordsFonts.Used(loaded.Document)
             .Select(name =>
@@ -78,7 +78,7 @@ internal sealed partial class WordsFontEnvironment : IFontEnvironment
                 return new FontAvailability
                 {
                     Name = name,
-                    Available = substitute is null && available.Contains(name),
+                    Available = substitute is null,
                     SubstitutedBy = substitute,
                 };
             })

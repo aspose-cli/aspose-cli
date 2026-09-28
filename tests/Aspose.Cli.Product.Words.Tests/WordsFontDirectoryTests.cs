@@ -26,6 +26,30 @@ public sealed class WordsFontDirectoryTests
         Assert.False(FixtureAvailable(environment, input));
     }
 
+    [Fact]
+    public void CheckFonts_ResolvesAnInstalledFontByItsLocalizedName()
+    {
+        Requires.Windows();
+        Assert.SkipUnless(
+            File.Exists(Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Fonts), "simsun.ttc")),
+            "Requires the SimSun font, which Chinese documents name 宋体.");
+        using var fixture = new WordsFixture();
+        var builder = new DocumentBuilder();
+        builder.Font.Name = "宋体";
+        builder.Writeln("正文使用宋体。");
+        builder.Font.Name = "NoSuchFont 2026";
+        builder.Writeln("A font this machine does not have.");
+        string input = fixture.Temp.File("localized.docx");
+        builder.Document.Save(input);
+
+        IReadOnlyList<Aspose.Cli.Sdk.Contracts.FontAvailability> fonts = fixture.Fonts.CheckFonts(input, new FontCheckRequest()).Fonts;
+
+        Assert.True(fonts.Single(static font => font.Name == "宋体").Available);
+        Aspose.Cli.Sdk.Contracts.FontAvailability missing = fonts.Single(static font => font.Name == "NoSuchFont 2026");
+        Assert.False(missing.Available);
+        Assert.NotNull(missing.SubstitutedBy);
+    }
+
     [Category(TestCategory.Slow)]
     [Fact]
     public void Cli_FontsCheckAndReviewUseTheFontDirectory()
