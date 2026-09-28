@@ -584,8 +584,8 @@ public class StandardInvocation
     /// render command it must not contradict the render format that the <c>--out</c> extension
     /// names; when it is omitted that format is used, so <c>--out page.svg</c> writes SVG rather
     /// than the default's bytes under an .svg name, and otherwise the default. An <c>--out</c>
-    /// extension that names no render format, such as .pdf, is refused rather than given image
-    /// bytes; an output name without an extension is accepted.
+    /// extension that names no render format, such as a convert format's, is refused rather than
+    /// given image bytes; an output name without an extension is accepted.
     /// </summary>
     /// <exception cref="CliException"><c>USAGE_ERROR</c> when the <c>--out</c> extension names no render format, or a render <c>--to</c> and the extension name different formats.</exception>
     public string TargetFormat()
