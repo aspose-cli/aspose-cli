@@ -27,6 +27,32 @@ Windows x64 with:
 4. For publishing or installer changes, check `scripts/publish.ps1 -Configuration Release
    -RuntimeIdentifier win-x64` and `scripts/install-local.ps1`, which installs an unsigned
    development build (`-Update` and `-Uninstall` work as in `install.ps1`).
+5. Open a pull request as described below.
+
+## Pull requests
+
+Every change reaches `master` through a pull request that `CI / verify` passes. The
+`Pull request` workflow checks the branch name and the title.
+
+- **One concern per pull request**, split by responsibility rather than by file, with its tests,
+  schemas, Skills and docs in the same change. Keep a mechanical refactor apart from a behavior
+  change. Aim for about 400 changed lines, not counting generated files and snapshots, and
+  split anything near 1,000.
+- **Branch:** `<type>/<kebab-case-summary>` from the latest `master`, for example
+  `fix/backup-disclosure`. GitHub's own `revert-<number>-<branch>` branches are accepted too.
+- **Title:** `<type>(<scope>): <summary>`, imperative, starting in lower case, no final period,
+  at most 65 characters; GitHub appends ` (#N)` when it becomes the squash commit. Types: `feat`,
+  `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`, `revert`. The scope is
+  optional: `sdk`, `host`, `cli`, `app`, `cells`, `pdf`, `slides`, `words`, `skills`,
+  `install`, `release`, `deps`. Retitle a GitHub-generated revert as
+  `revert: <original summary>`.
+- **Description:** the template's summary (what and why), test plan (commands actually run) and
+  contract checklist. Leave out how the change was produced.
+- **Push when step 3 passes;** every push runs CI again. Resolve conflicts on the branch by
+  rebasing on `master`; take lock files and `eng/generated` from `master` and rerun
+  `scripts/sync.ps1` rather than merging them by hand.
+- **Merge** by squash, with the title as the whole commit message. Commits inside a branch are
+  not kept, so their messages only need to be short.
 
 ## Tests
 
@@ -168,3 +194,7 @@ The workflows rely on these repository settings:
   `contents: write` in its one job.
 - **A tag ruleset** protects `v*`. `release.yml` runs only when `github.ref_protected` is true,
   so a tag pushed without it builds nothing.
+- **Pull requests** allow only squash merging, with the pull request title as the default
+  commit message, and head branches are deleted after merging.
+- **A branch ruleset** on `master` requires a pull request and the `verify` and `conventions`
+  checks, requires linear history and blocks force pushes and deletion.
