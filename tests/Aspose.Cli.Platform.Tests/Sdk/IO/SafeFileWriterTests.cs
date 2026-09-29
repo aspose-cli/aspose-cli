@@ -1,5 +1,7 @@
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.TestKit;
 using Xunit;
 
@@ -94,6 +96,8 @@ public sealed class SafeFileWriterTests : IDisposable
         Assert.Equal("original", File.ReadAllText(backup));
         Assert.NotNull(result.Backup);
         Assert.True(result.Backup.Created);
+        Assert.True(result.Backup.HoldsReplacedVersion);
+        Assert.Null(EnvelopeParts.BackupWarnings(result.Backup));
     }
 
     [Fact]
@@ -113,6 +117,30 @@ public sealed class SafeFileWriterTests : IDisposable
         Assert.Equal("new", File.ReadAllText(target));
         Assert.Equal("first-session", File.ReadAllText(backup));
         Assert.False(result.Backup!.Created);
+        Assert.False(result.Backup.HoldsReplacedVersion);
+        Assert.Equal(File.GetLastWriteTimeUtc(backup), result.Backup.LastWriteUtc.UtcDateTime);
+        Warning warning = Assert.Single(EnvelopeParts.BackupWarnings(result.Backup)!);
+        Assert.Equal(WarningCodes.BackupPredatesEdit, warning.Code);
+        Assert.Contains(backup, warning.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Write_WithExistingBackupOfTheReplacedVersion_KeepsItWithoutAWarning()
+    {
+        string target = _temp.File("out.txt");
+        string backup = _temp.File("out.backup.txt");
+        File.WriteAllText(target, "current");
+        File.WriteAllText(backup, "current");
+
+        SafeWriteResult result = _writer.Write(
+            target,
+            overwrite: true,
+            backup,
+            temp => File.WriteAllText(temp, "new"));
+
+        Assert.False(result.Backup!.Created);
+        Assert.True(result.Backup.HoldsReplacedVersion);
+        Assert.Null(EnvelopeParts.BackupWarnings(result.Backup));
     }
 
     [Fact]

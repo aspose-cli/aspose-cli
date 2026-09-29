@@ -73,6 +73,8 @@ internal sealed class PdfMutationService
             warnings.Add(degraded);
         }
 
+        warnings.AddRange(EnvelopeParts.BackupWarnings(publication.Backup) ?? []);
+
         return new PdfEditResult
         {
             Input = input,
@@ -170,16 +172,7 @@ internal sealed class PdfMutationService
                 Fingerprint = write.Fingerprint,
             };
             mutation = new MutationReceipt { Verification = "reopened" };
-            if (write.Backup is not null)
-            {
-                backup = new BackupInfo
-                {
-                    Path = write.Backup.Path,
-                    Created = write.Backup.Created,
-                    SizeBytes = write.Backup.SizeBytes,
-                };
-            }
-
+            backup = write.Backup;
             transaction.Commit();
         }
 

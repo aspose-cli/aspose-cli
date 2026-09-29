@@ -68,7 +68,7 @@ internal sealed class SlidesMutationService
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
                 ? InputWarnings(state, loaded)
-                : OutputWarnings(state, loaded),
+                : EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded), EnvelopeParts.BackupWarnings(publication.Backup)),
         };
     }
 
@@ -150,16 +150,7 @@ internal sealed class SlidesMutationService
                 Format = format,
                 SizeBytes = write.SizeBytes,
             };
-            if (write.Backup is not null)
-            {
-                backup = new BackupInfo
-                {
-                    Path = write.Backup.Path,
-                    Created = write.Backup.Created,
-                    SizeBytes = write.Backup.SizeBytes,
-                };
-            }
-
+            backup = write.Backup;
             transaction.Commit();
         }
 

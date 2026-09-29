@@ -101,7 +101,9 @@ internal sealed class CellsMutationService
             Verification = verification,
             License = EnvelopeParts.License(licenseState),
             Warnings = options.Options.DryRun ? loaded.Warnings()
-                : CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning),
+                : EnvelopeParts.CombineWarnings(
+                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning),
+                    EnvelopeParts.BackupWarnings(saved?.Backup)),
         };
     }
 

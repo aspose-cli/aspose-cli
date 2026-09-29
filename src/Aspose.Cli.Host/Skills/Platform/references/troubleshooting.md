@@ -129,6 +129,8 @@ aspose-cli capabilities --output json
 
 - `EVAL_MODE`, `EVAL_INPUT_TRUNCATED`: evaluation mode; disclose it
   (`aspose-cli docs licensing`).
+- `BACKUP_PREDATES_EDIT`: an in-place edit kept an existing backup that holds an
+  earlier version than the file it replaced; the replaced version has no backup.
 - `LIST_TRUNCATED`: a list in the result was capped; its hint names the command
   that reads the rest.
 - `LOSSY_CONVERSION`: the target format cannot hold everything the source

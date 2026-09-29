@@ -11,4 +11,13 @@ public sealed record BackupInfo
 
     /// <summary>Backup file size in bytes.</summary>
     public required long SizeBytes { get; init; }
+
+    /// <summary>When the content the backup holds was last written, in UTC.</summary>
+    public required DateTimeOffset LastWriteUtc { get; init; }
+
+    /// <summary>
+    /// True when the backup holds exactly the version this invocation replaced; false when a
+    /// reused backup holds an earlier version, which a <c>BACKUP_PREDATES_EDIT</c> warning discloses.
+    /// </summary>
+    public required bool HoldsReplacedVersion { get; init; }
 }

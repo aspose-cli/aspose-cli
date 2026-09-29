@@ -48,11 +48,8 @@ public sealed class SafeFileWriter
 }
 
 /// <summary>Outcome of one atomic file write.</summary>
-public sealed record SafeWriteResult(long SizeBytes, SafeBackupResult? Backup)
+public sealed record SafeWriteResult(long SizeBytes, BackupInfo? Backup)
 {
     internal FilePublicationSnapshot PublishedSnapshot { get; init; } = FilePublicationSnapshot.Missing;
     public FileFingerprint Fingerprint => new() { Sha256 = PublishedSnapshot.Sha256!.ToLowerInvariant() };
 }
-
-/// <summary>Outcome of the stable, never-overwritten safety backup.</summary>
-public sealed record SafeBackupResult(string Path, bool Created, long SizeBytes);

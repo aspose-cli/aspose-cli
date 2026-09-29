@@ -82,7 +82,11 @@ publishing report `mutation.verification: "reopened"`; where a product offers
 
 `--backup` creates the backup once and never overwrites it: later runs report
 `backup.created: false` and keep the original, so the backup stays the
-pre-session state for a final comparison. Tell the user its path.
+pre-session state for a final comparison. When the kept backup holds an earlier
+version than the file an edit replaced, `backup.holdsReplacedVersion` is false
+and a `BACKUP_PREDATES_EDIT` warning gives its `lastWriteUtc`; copy the file
+first if that intermediate version must survive. Tell the user its path and
+which version it holds.
 
 Before the first in-place edit of a file you did not create, use
 `--in-place --backup --if-match <sha256>` with the fingerprint from your last

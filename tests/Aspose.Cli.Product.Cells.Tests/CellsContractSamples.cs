@@ -286,7 +286,7 @@ internal static class CellsContractSamples
                 },
             },
         ],
-        Backup = new BackupInfo { Path = "D:/data/report.backup.xlsx", Created = true, SizeBytes = 24576 },
+        Backup = new BackupInfo { Path = "D:/data/report.backup.xlsx", Created = true, SizeBytes = 24576, LastWriteUtc = new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero), HoldsReplacedVersion = true },
         Verification = new EditVerification
         {
             Ok = true,
