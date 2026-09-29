@@ -1,5 +1,4 @@
 using System.Reflection;
-using System.Runtime.CompilerServices;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -120,10 +119,10 @@ public sealed class CellsModuleTests
             ?? throw new InvalidOperationException("SkiaSharp exposes no version.");
     }
 
-    private static string LinuxNativePin([CallerFilePath] string thisFile = "")
+    private static string LinuxNativePin()
     {
         using JsonDocument catalog = JsonDocument.Parse(
-            File.ReadAllText(ProductsPath(thisFile)));
+            File.ReadAllText(Path.Combine(RepositoryPaths.Root, "eng", "products.json")));
         JsonElement cells = catalog.RootElement
             .GetProperty("products")
             .EnumerateArray()
@@ -137,26 +136,6 @@ public sealed class CellsModuleTests
         }
         throw new InvalidOperationException(
             "SkiaSharp.NativeAssets.Linux pin not found in eng/products.json.");
-    }
-
-    private static string ProductsPath(string thisFile)
-    {
-        for (DirectoryInfo? directory = new FileInfo(thisFile).Directory;
-             directory is not null;
-             directory = directory.Parent)
-        {
-            string candidate = Path.Combine(
-                directory.FullName,
-                "eng",
-                "products.json");
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-
-        throw new FileNotFoundException(
-            "Could not locate eng/products.json by walking up from the test source.");
     }
 
     private static Version ThreePartVersion(string raw)

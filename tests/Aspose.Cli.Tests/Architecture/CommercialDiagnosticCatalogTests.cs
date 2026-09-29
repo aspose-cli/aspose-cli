@@ -1,6 +1,6 @@
-using System.Runtime.CompilerServices;
 using Aspose.Cli.Sdk.Diagnostics;
 using Aspose.Cli.Sdk.Extensibility;
+using Aspose.Cli.TestKit;
 
 namespace Aspose.Cli.Tests;
 
@@ -32,15 +32,9 @@ public sealed class CommercialDiagnosticCatalogTests
         ProductCatalog catalog = CompiledProductCatalog.Instance;
         string sdkDiagnostics = string.Join(
             Environment.NewLine,
-            File.ReadAllText(RepositoryFile(
-                "src/Aspose.Cli.Sdk/Errors",
-                "ErrorCodes.cs")),
-            File.ReadAllText(RepositoryFile(
-                "src/Aspose.Cli.Sdk/Errors",
-                "CliErrors.cs")),
-            File.ReadAllText(RepositoryFile(
-                "src/Aspose.Cli.Sdk/Contracts",
-                "Warning.cs")));
+            File.ReadAllText(Path.Combine(RepositoryPaths.Root, "src/Aspose.Cli.Sdk/Errors", "ErrorCodes.cs")),
+            File.ReadAllText(Path.Combine(RepositoryPaths.Root, "src/Aspose.Cli.Sdk/Errors", "CliErrors.cs")),
+            File.ReadAllText(Path.Combine(RepositoryPaths.Root, "src/Aspose.Cli.Sdk/Contracts", "Warning.cs")));
 
         HashSet<string> commonCodes = CommonDiagnostics.All
             .Select(static item => item.Code)
@@ -55,23 +49,5 @@ public sealed class CommercialDiagnosticCatalogTests
                 sdkDiagnostics,
                 StringComparison.Ordinal);
         }
-    }
-
-    private static string RepositoryFile(
-        string directory,
-        string name,
-        [CallerFilePath] string source = "")
-    {
-        for (DirectoryInfo? current = new FileInfo(source).Directory;
-            current is not null;
-            current = current.Parent)
-        {
-            string candidate = Path.Combine(current.FullName, directory, name);
-            if (File.Exists(candidate))
-            {
-                return candidate;
-            }
-        }
-        throw new FileNotFoundException(name);
     }
 }
