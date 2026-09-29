@@ -506,6 +506,12 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         }
         if (!IsOwnedByCurrentUser(fullDirectory))
         {
+            // Its owner may have completed and deleted it since discovery; the caller skips it.
+            if (!Directory.Exists(fullDirectory))
+            {
+                throw new DirectoryNotFoundException(
+                    $"Publication transaction '{directory}' no longer exists.");
+            }
             throw new InvalidDataException(
                 $"Publication transaction '{directory}' is not owned by the current user.");
         }
