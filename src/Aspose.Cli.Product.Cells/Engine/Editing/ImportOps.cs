@@ -91,7 +91,10 @@ internal static class ImportOps
         }
 
         RefuseConflictingNames(workbook, origin);
+        // The source was checked once when it opened; each import adds its sheet again.
         sources.Budgets.Consume(CellsBudgetDomains.Cells, origin.Cells.Count, "items", "edit");
+        sources.Budgets.Consume(CellsBudgetDomains.Sheets, 1, "items", "edit");
+        sources.Budgets.Consume(CellsBudgetDomains.Objects, origin.Shapes.Count, "items", "edit");
 
         Worksheet sheet = workbook.Worksheets[workbook.Worksheets.Add()];
         try

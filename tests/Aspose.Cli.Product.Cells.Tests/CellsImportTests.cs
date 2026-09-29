@@ -1,7 +1,12 @@
 using System.Text.Json;
 using Aspose.Cells;
+using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Engine.Editing;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
+using Aspose.Cli.Sdk.IO;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -274,6 +279,34 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
     private static CellsOpsBatch Parse(string json) =>
         CellsOp.Catalog.Parse<CellsOpsBatch>(json, Aspose.Cli.Generated.ProductJsonContext.Definition);
+
+    [Fact]
+    public void ImportSheet_ChargesEachImportedSheetsObjectsToTheEditBudget()
+    {
+        string source = _fixture.Temp.File("shapes-source.xlsx");
+        using (var created = new Workbook())
+        {
+            created.Worksheets[0].Shapes.AddRectangle(0, 0, 0, 0, 50, 50);
+            created.Worksheets[0].Shapes.AddRectangle(4, 0, 0, 0, 50, 50);
+            created.Save(source);
+        }
+        using var deadline = OperationDeadline.Start(null);
+        var budgets = new ResourceBudgetLedger(deadline, new Dictionary<string, long>
+        {
+            [CellsBudgetDomains.Cells] = 1_000,
+            [CellsBudgetDomains.Sheets] = 10,
+            [CellsBudgetDomains.Objects] = 3,
+        });
+        using var sources = new CellsImportSources(new CellsWorkbookLoader(budgets), budgets, null);
+        using var workbook = new Workbook();
+
+        ImportOps.ImportSheet(workbook, new ImportSheetOp { Path = source, Name = "One" }, sources);
+        CliException refused = Assert.Throws<CliException>(() =>
+            ImportOps.ImportSheet(workbook, new ImportSheetOp { Path = source, Name = "Two" }, sources));
+
+        Assert.Equal(ErrorCodes.InputBudgetExceeded, refused.Code);
+        Assert.Null(workbook.Worksheets["Two"]);
+    }
 
     private Workbook Apply(string path, string operations)
     {
