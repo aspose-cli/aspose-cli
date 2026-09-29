@@ -173,27 +173,26 @@ public sealed class McpCommandTests
             Path.GetTempPath(),
             $"aspose-mcp-timeout-{Guid.NewGuid():N}");
         Directory.CreateDirectory(root);
-        string childScript = Path.Combine(root, "child.ps1");
         string parentScript = Path.Combine(root, "parent.ps1");
         string pidFile = Path.Combine(root, "child.pid");
         Process? child = null;
         Task<McpExecutionResult>? execution = null;
         using var cancellation = new CancellationTokenSource();
-        const int timeoutSeconds = 60;
+        const int timeoutSeconds = 120;
         try
         {
-            await File.WriteAllTextAsync(
-                childScript,
-                "$identity = Get-Process -Id $PID\n"
-                + "$receipt = [string]$PID + '|' + [string]$identity.StartTime.ToUniversalTime().Ticks + '|' + $identity.Path\n"
-                + $"[IO.File]::WriteAllText('{PowerShellLiteral(pidFile)}.tmp', $receipt)\n"
-                + $"[IO.File]::Move('{PowerShellLiteral(pidFile)}.tmp', '{PowerShellLiteral(pidFile)}')\n"
-                + "while ($true) { Start-Sleep -Milliseconds 100 }");
+            // The descendant is a native console program that inherits the script's output pipes and
+            // runs until it is killed; the script records its identity once its modules are loaded.
             await File.WriteAllTextAsync(
                 parentScript,
-                "$powershell = Join-Path $env:SystemRoot 'System32\\WindowsPowerShell\\v1.0\\powershell.exe'\n"
-                + $"$child = Start-Process -FilePath $powershell -ArgumentList '-NoLogo','-NoProfile','-NonInteractive','-File','{PowerShellLiteral(childScript)}' -NoNewWindow -PassThru\n"
-                + $"while (-not (Test-Path -LiteralPath '{PowerShellLiteral(pidFile)}')) {{ Start-Sleep -Milliseconds 10 }}\n"
+                "$ping = Join-Path $env:SystemRoot 'System32\\PING.EXE'\n"
+                + "$child = Start-Process -FilePath $ping -ArgumentList '-t','127.0.0.1' -NoNewWindow -PassThru\n"
+                // MainModule is unavailable, as an error or as null, until the loader has initialized.
+                + "$path = $null\n"
+                + "while (-not $path) { try { $path = $child.MainModule.FileName } catch { }; if (-not $path) { Start-Sleep -Milliseconds 10 } }\n"
+                + "$receipt = [string]$child.Id + '|' + [string]$child.StartTime.ToUniversalTime().Ticks + '|' + $path\n"
+                + $"[IO.File]::WriteAllText('{PowerShellLiteral(pidFile)}.tmp', $receipt)\n"
+                + $"[IO.File]::Move('{PowerShellLiteral(pidFile)}.tmp', '{PowerShellLiteral(pidFile)}')\n"
                 + "while ($true) { Start-Sleep -Milliseconds 100 }");
 
             var runner = new McpCommandRunner(
@@ -205,10 +204,24 @@ public sealed class McpCommandTests
                 timeoutSeconds,
                 cancellation.Token);
 
-            // Two cold interpreters must be ready before this test can exercise descendant cleanup;
-            // a loaded machine can take several seconds to start them.
+            // The interpreter and its descendant must be ready before this test can exercise descendant
+            // cleanup. That setup is not the behavior under test, so it waits well within the command's
+            // own timeout.
+            Task<bool> ready = WaitForFileAsync(pidFile, TimeSpan.FromSeconds(timeoutSeconds / 2));
+            if (await Task.WhenAny(ready, execution) == execution)
+            {
+                // The interpreter ended before its descendant was ready: report how.
+                string outcome;
+                try
+                {
+                    McpExecutionResult ended = await execution;
+                    outcome = $"exit {ended.ExitCode}: {ended.Stdout} {ended.Stderr}";
+                }
+                catch (Exception exception) { outcome = exception.Message; }
+                Assert.Fail($"The probe script ended before its descendant was ready ({outcome}).");
+            }
             Assert.True(
-                await WaitForFileAsync(pidFile, TimeSpan.FromSeconds(30)),
+                await ready,
                 "The adversarial descendant did not become ready within its startup budget.");
             string[] identity = (await File.ReadAllTextAsync(pidFile)).Split('|');
             Process candidate = Process.GetProcessById(int.Parse(identity[0]));
@@ -287,12 +300,9 @@ public sealed class McpCommandTests
 
     private static ProcessStartInfo CreatePowerShellStartInfo(string script)
     {
-        string executable = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.System),
-            "WindowsPowerShell",
-            "v1.0",
-            "powershell.exe");
-        var start = new ProcessStartInfo(executable)
+        // PowerShell 7 is already warm on every test machine; a cold Windows PowerShell 5.1 on a fresh
+        // CI runner can take longer to start than the probes allow.
+        var start = new ProcessStartInfo(ToolPath.Require("pwsh"))
         {
             UseShellExecute = false,
             CreateNoWindow = true,
@@ -302,6 +312,8 @@ public sealed class McpCommandTests
         start.ArgumentList.Add("-NoLogo");
         start.ArgumentList.Add("-NoProfile");
         start.ArgumentList.Add("-NonInteractive");
+        start.ArgumentList.Add("-ExecutionPolicy");
+        start.ArgumentList.Add("Bypass");
         start.ArgumentList.Add("-File");
         start.ArgumentList.Add(script);
         return start;

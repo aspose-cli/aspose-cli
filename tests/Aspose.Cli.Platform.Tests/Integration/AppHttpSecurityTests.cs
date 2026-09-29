@@ -58,7 +58,8 @@ public sealed class AppHttpSecurityTests
             (null, csrf),
             ("null", csrf),
             (origin, null),
-            (origin, "0" + csrf[1..]),
+            // Altered in its first character, which always differs from the real token's.
+            (origin, (csrf[0] == '0' ? "1" : "0") + csrf[1..]),
             (origin, csrf + "0"),
         })
         {

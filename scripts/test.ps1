@@ -1,19 +1,27 @@
 <#
 .SYNOPSIS
-Builds the repository once and runs the catalog test projects at one of three scopes.
+Builds the repository once and runs the catalog test projects at one of four scopes.
 
 .DESCRIPTION
 Tests marked [Category(Installer)], [Category(Browser)] or [Category(Slow)] are left out of
 the fast feedback loop:
 
 - Fast (default) runs every unmarked test.
+- Changed runs the unmarked tests of only the test projects a change reaches, plus
+  tests/Aspose.Cli.Tests (the architecture and contract tests). A change inside a source or
+  test project reaches the test projects that reference it, documentation and repository
+  metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes, .editorconfig) reach
+  nothing, and any other change (build inputs, eng/, scripts/, install.ps1) reaches every
+  project. Pull-request CI uses it; master pushes run Fast.
 - Affected adds every test of the projects a change reaches: a change inside a source or test
   project runs the test projects that reference it in full, installer inputs add the installer
   tests, documentation adds nothing, and any other change (build inputs, eng/, scripts/) runs
-  everything. Changes are read against the merge base with -Base, including uncommitted and
-  untracked files.
+  everything.
 - Full runs every test with a required license, including the reproductions of the SDK defects
   in KNOWN-ISSUES.md. Run it before a release and after an SDK update.
+
+Changed and Affected read the change against the merge base of -Base and HEAD, including
+uncommitted and untracked files.
 
 Test projects run at the same time, each with its log beside its TRX result. Prerequisites are
 checked first: PowerShell 7.4 (tests start pwsh.exe from PATH), and only when the scope needs
@@ -25,13 +33,13 @@ that ran longer than 10 seconds without a category.
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Fast', 'Affected', 'Full')]
+    [ValidateSet('Fast', 'Changed', 'Affected', 'Full')]
     [string] $Scope = 'Fast',
 
     [ValidateSet('Debug', 'Release')]
     [string] $Configuration = 'Debug',
 
-    # Affected: the branch whose merge base the change is measured from.
+    # Changed and Affected: the git ref whose merge base with HEAD the change is measured from.
     [string] $Base = 'master',
 
     [switch] $NoBuild,
@@ -111,7 +119,22 @@ function Get-ChangedPaths {
     return @(@($tracked) + @($untracked) | Where-Object { $_ } | Sort-Object -Unique)
 }
 
-# The categories each test project runs besides its unmarked tests.
+# Documentation and repository metadata outside the projects, which no test depends on.
+function Test-DocumentationPath {
+    param([Parameter(Mandatory)][string] $Path)
+    $name = $Path.Split('/')[-1]
+    return $Path -like '*.md' -or (Test-PathPrefix $Path @('.github/')) -or $name -like 'LICENSE*' -or
+        $name -in @('.gitignore', '.gitattributes', '.editorconfig')
+}
+
+function Get-TestProjectClosures {
+    $closures = @{}
+    foreach ($project in $testProjects) { $closures[$project] = Get-ProjectClosure @($project, $testKit) }
+    return $closures
+}
+
+# The test projects this run starts, and the categories each runs besides its unmarked tests.
+$selected = $testProjects
 $included = @{}
 foreach ($project in $testProjects) {
     $included[$project] = [Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
@@ -120,9 +143,32 @@ switch ($Scope) {
     'Full' {
         foreach ($project in $testProjects) { $included[$project].UnionWith([string[]]$categories) }
     }
+    'Changed' {
+        $architectureTests = [IO.Path]::GetFullPath((Join-Path $layout.TestRoot 'Aspose.Cli.Tests/Aspose.Cli.Tests.csproj'))
+        if (-not ($testProjects -contains $architectureTests)) { throw "The architecture test project is missing: $architectureTests" }
+        $closures = Get-TestProjectClosures
+        $projectDirectories = @($closures.Values | ForEach-Object { $_ } | Sort-Object -Unique)
+        $changed = Get-ChangedPaths
+        $reached = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        [void]$reached.Add($architectureTests)
+        foreach ($path in $changed) {
+            if (Test-PathPrefix $path $projectDirectories) {
+                foreach ($project in $testProjects) {
+                    if (Test-PathPrefix $path $closures[$project]) { [void]$reached.Add($project) }
+                }
+            }
+            elseif (-not (Test-DocumentationPath $path)) {
+                $reached.UnionWith([string[]]$testProjects)
+            }
+        }
+        $selected = @($testProjects | Where-Object { $reached.Contains($_) })
+        Write-Host "CHANGED $($changed.Count) changed path(s) since the merge base with $Base; running $($selected.Count) of $($testProjects.Count) test project(s)."
+        foreach ($project in $testProjects | Where-Object { -not $reached.Contains($_) }) {
+            Write-Host "SKIP $([IO.Path]::GetFileNameWithoutExtension($project)) (not reached by the change)"
+        }
+    }
     'Affected' {
-        $closures = @{}
-        foreach ($project in $testProjects) { $closures[$project] = Get-ProjectClosure @($project, $testKit) }
+        $closures = Get-TestProjectClosures
         $projectDirectories = @($closures.Values | ForEach-Object { $_ } | Sort-Object -Unique)
         $changed = Get-ChangedPaths
         foreach ($path in $changed) {
@@ -135,7 +181,7 @@ switch ($Scope) {
                     if (Test-PathPrefix $path $closures[$project]) { $included[$project].UnionWith([string[]]@('Browser', 'Slow')) }
                 }
             }
-            elseif (-not $installerInput -and $path -notlike '*.md' -and -not (Test-PathPrefix $path @('.github/', 'LICENSE'))) {
+            elseif (-not $installerInput -and -not (Test-DocumentationPath $path)) {
                 foreach ($project in $testProjects) { $included[$project].UnionWith([string[]]$categories) }
             }
         }
@@ -150,8 +196,8 @@ function Get-ProjectFilter {
     return ($excluded | ForEach-Object { "Category!=$_" }) -join '&'
 }
 
-$runsInstaller = @($testProjects | Where-Object { $included[$_].Contains('Installer') }).Count -ne 0
-$runsBrowser = @($testProjects | Where-Object { $included[$_].Contains('Browser') }).Count -ne 0
+$runsInstaller = @($selected | Where-Object { $included[$_].Contains('Installer') }).Count -ne 0
+$runsBrowser = @($selected | Where-Object { $included[$_].Contains('Browser') }).Count -ne 0
 $requireLicense = $Scope -eq 'Full'
 
 $missing = @()
@@ -269,8 +315,8 @@ $resultsRoot = Join-Path $repoRoot "artifacts/TestResults/$runId"
 $markedFilter = ($categories | ForEach-Object { "Category=$_" }) -join '|'
 # Concurrent projects share the processor: each runs at most its share of 1.5 test threads
 # per core, so tests with process-start and I/O budgets are not starved.
-$threadsPerProject = [Math]::Max(2, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5 / $testProjects.Count))
-$runs = foreach ($project in $testProjects) {
+$threadsPerProject = [Math]::Max(2, [int][Math]::Ceiling([Environment]::ProcessorCount * 1.5 / $selected.Count))
+$runs = foreach ($project in $selected) {
     $projectName = [IO.Path]::GetFileNameWithoutExtension($project)
     $resultsDirectory = Join-Path $resultsRoot $projectName
     $filter = Get-ProjectFilter $project
@@ -354,5 +400,5 @@ if ($failures.Count -ne 0) {
     throw "$Scope test run failed:$([Environment]::NewLine)$($failures -join [Environment]::NewLine)"
 }
 
-Write-Host "PASS $Scope scope: $($testProjects.Count) test projects after one solution build."
+Write-Host "PASS $Scope scope: $($selected.Count) test projects after one solution build."
 Write-Host "Test results: $resultsRoot"

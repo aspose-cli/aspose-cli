@@ -32,11 +32,12 @@ Windows x64 with:
 
 Tests use xUnit v3 with real engines and CLI child processes. `scripts/test.ps1` checks the
 prerequisites and generated projections, builds once and runs the test projects side by side at
-one of three scopes:
+one of four scopes:
 
 | Scope | Runs | Use |
 | --- | --- | --- |
 | `Fast` (default) | Every test without a category | While you work; a few minutes |
+| `Changed` | Only the test projects a change reaches, plus the architecture tests | Pull-request CI |
 | `Affected` | `Fast`, plus every test of the projects your change reaches since the merge base with `-Base` (default `master`) | Before a commit |
 | `Full` | Every test, with a required license | Before a release and after an SDK update |
 
@@ -56,6 +57,13 @@ the diff.
 adds the installer tests when `install.ps1` or `scripts/install-local.ps1` changes, adds nothing
 for documentation, and runs everything for any other change, such as `eng/`, `scripts/` or
 the shared build files.
+
+`Changed` runs the tests without a category of the test projects the change since the merge
+base with `-Base` reaches, by the same project rule, and always `tests/Aspose.Cli.Tests`.
+Documentation and repository metadata (`*.md`, `.github/`, `LICENSE*`, `.gitignore`,
+`.gitattributes`, `.editorconfig`) reach nothing else, and any other change outside the
+projects runs every project. The other projects are listed as skipped. Pull-request CI runs
+`Changed` against the target branch; pushes to `master` run `Fast`.
 
 Runs are isolated from the developer's machine: they never read `%APPDATA%\aspose-cli`, project
 `.aspose` files or `ASPOSE_*` settings; only `ASPOSE_CLI_TEST_*` variables pass through. Run one
@@ -143,9 +151,13 @@ test, and writes the release assets to `artifacts/release/win-x64`: the archive,
 published graph ([notice sources](eng/notices/README.md)).
 
 No license reaches the workflows in `.github/workflows`, so they run the SDKs in evaluation
-mode: `ci.yml` runs the `Fast` scope and `package.ps1` for pushes to `master` and pull requests,
-and `release.yml`, on a protected version tag, does the same and publishes the assets as a
-GitHub release of `aspose-cli/aspose-cli`, the repository named by `releaseRepository` in
+mode. `ci.yml` runs the `Changed` scope for a pull request, and `package.ps1` too when the pull
+request changes a packaging input (`install.ps1`, `scripts/`, `eng/`, the build properties,
+`global.json` or the launcher project). Pushes to `master` run the `Fast` scope, so a test a
+pull request skipped runs when it merges; a manual run adds `package.ps1`, to rehearse a release
+before its tag. A newer push to a pull request cancels its running check. `release.yml`, on a protected
+version tag, runs the `Fast` scope and `package.ps1` and publishes the assets as a GitHub
+release of `aspose-cli/aspose-cli`, the repository named by `releaseRepository` in
 `eng/distribution.json`. Before pushing the tag, run the `Full` scope locally with a license.
 
 The workflows rely on these repository settings:
