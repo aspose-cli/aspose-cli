@@ -243,9 +243,9 @@
   }
 
   function renderLicenseComposition() {
-    var bannerMount = $('license-banner-mount');
-    var settingsMount = $('license-settings-mount');
-    var previewMount = $('preview-license-mount');
+    var bannerMount = $('status-banner-mount');
+    var settingsMount = $('status-settings-mount');
+    var previewMount = $('preview-notice-mount');
     bannerMount.replaceChildren();
     settingsMount.replaceChildren();
     previewMount.replaceChildren();

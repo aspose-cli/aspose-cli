@@ -855,7 +855,7 @@ body.preview-active .empty-state {
   gap: 16px;
 }
 
-#license-settings-mount:not(:empty) {
+#status-settings-mount:not(:empty) {
   margin-bottom: 16px;
 }
 
