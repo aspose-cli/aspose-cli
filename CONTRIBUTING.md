@@ -41,7 +41,8 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
   change. Aim for about 400 changed lines, not counting generated files and snapshots, and
   split anything near 1,000.
 - **Branch:** `<type>/<kebab-case-summary>` from the latest `master`, for example
-  `fix/backup-disclosure`. GitHub's own `revert-<number>-<branch>` branches are accepted too.
+  `fix/backup-disclosure`. GitHub's own `revert-<number>-<branch>` and `dependabot/...`
+  branches are accepted too.
 - **Title:** `<type>(<scope>): <summary>`, imperative, starting in lower case, no final period,
   at most 65 characters; GitHub appends ` (#N)` when it becomes the squash commit. Types: `feat`,
   `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`, `revert`. The scope is
@@ -55,6 +56,11 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
   `scripts/sync.ps1` rather than merging them by hand.
 - **Merge** by squash, with the title as the whole commit message. Commits inside a branch are
   not kept, so their messages only need to be short.
+- **A red `master` comes first.** Pull requests run only the tests their change reaches, so
+  the full run on `master` can still fail. Fix or revert the cause before merging anything
+  else.
+- **Dependabot** opens one pull request a month that updates the pinned actions; merge it
+  like any other once CI passes.
 
 ## Tests
 

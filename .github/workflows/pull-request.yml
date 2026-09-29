@@ -19,7 +19,7 @@ jobs:
           types='feat|fix|refactor|perf|test|docs|build|ci|chore|revert'
           scopes='sdk|host|cli|app|cells|pdf|slides|words|skills|install|release|deps'
           status=0
-          if ! printf '%s' "$BRANCH" | grep -Eq "^(($types)/[a-z0-9]+(-[a-z0-9]+)*|revert-[0-9]+-.+)$"; then
+          if ! printf '%s' "$BRANCH" | grep -Eq "^(($types)/[a-z0-9]+(-[a-z0-9]+)*|revert-[0-9]+-.+|dependabot/.+)$"; then
             echo "::error::Branch '$BRANCH' must be <type>/<kebab-case-summary> (CONTRIBUTING.md#pull-requests)."
             status=1
           fi
@@ -27,7 +27,8 @@ jobs:
             echo "::error::Title '$TITLE' must be <type>(<scope>): <summary> starting in lower case, without a final period (CONTRIBUTING.md#pull-requests)."
             status=1
           fi
-          if [ "${#TITLE}" -gt 65 ]; then
+          # Dependabot writes its own titles, which can be longer.
+          if [ "${#TITLE}" -gt 65 ] && [ "${BRANCH#dependabot/}" = "$BRANCH" ]; then
             echo "::error::Title is ${#TITLE} characters; the limit is 65."
             status=1
           fi
