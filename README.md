@@ -104,7 +104,7 @@ Switches apply to `install.ps1` run from an extracted archive, or to the downloa
 | `-PackageRoot <path>` | Install from an extracted package elsewhere. |
 | `-DevelopmentPackage` | Accept a local development package, which may replace any build. |
 
-Configuration lives in `%APPDATA%spose-cli`, or in the absolute directory named by
+Configuration lives in `%APPDATA%\aspose-cli`, or in the absolute directory named by
 `ASPOSE_CLI_CONFIG_DIR`. To uninstall:
 
 ```powershell
