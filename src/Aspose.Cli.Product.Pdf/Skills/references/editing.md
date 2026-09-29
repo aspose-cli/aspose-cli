@@ -73,5 +73,11 @@ can be encoded or compressed.
 ## Other effects
 
 `optimize` can lower image quality and unembed fonts; compare file sizes and
-look at the affected pages. `add_attachment` stores the source file name, never
+look at the affected pages. It always stores identical streams once, so a merge
+of files that each embed the same font keeps one copy; image settings do not
+shrink a file whose size is its fonts (`pdf inspect --detail fonts` shows
+`embedded` and `subset`). `unembedFonts` removes the fonts altogether, and the
+text then renders only where the reader has them installed (a CJK font on
+another operating system usually is not): tell the user before sending such a
+file outside. `add_attachment` stores the source file name, never
 its local path, when `name` is omitted.
