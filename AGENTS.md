@@ -43,6 +43,22 @@ the fixed distribution identity; the generated projections and the solution come
 - Existing user files and unrelated worktree changes. Never clean unknown files.
 - Files stay primary: never round-trip an entire document through JSON.
 
+## Workflow
+
+- Plan in the gitignored `.claude/`: `roadmap.md` is the task list, one line per task, and a
+  multi-step task gets `plans/<branch>.md` with its goal, acceptance, what is out of scope and
+  how it is verified. Knowledge that must last goes into this file, KNOWN-ISSUES.md or the pull
+  request, not into these notes.
+- One task is one branch in its own worktree, named as
+  [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) requires. Never switch, edit or clean another
+  session's worktree.
+- Parallel subagents own disjoint files and commit in their own worktrees; integrate their
+  commits with cherry-pick or merge, not patch files.
+- Before opening the pull request, a reviewer in a fresh context checks the diff for
+  correctness, scope, weakened or deleted tests, and dead code or stale docs the change left;
+  fix only what is real. Add anything outside the task to the roadmap instead of widening the
+  pull request.
+- Merge only when the owner says so. Afterwards delete the branch, its worktree and its plan.
 ## Conventions
 
 Use only the corresponding commercial Aspose SDK packages; no FOSS source, gitlinks or

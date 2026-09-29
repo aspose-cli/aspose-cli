@@ -1,0 +1,34 @@
+name: Pull request
+# Checks the branch name and title against CONTRIBUTING.md. It reruns when the title is edited,
+# which does not rerun CI.
+on:
+  pull_request:
+    types: [opened, edited, reopened, synchronize]
+permissions:
+  contents: read
+jobs:
+  conventions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Check the branch name and title
+        env:
+          BRANCH: ${{ github.head_ref }}
+          TITLE: ${{ github.event.pull_request.title }}
+        run: |
+          types='feat|fix|refactor|perf|test|docs|build|ci|chore|revert'
+          scopes='sdk|host|cli|app|cells|pdf|slides|words|skills|install|release|deps'
+          status=0
+          if ! printf '%s' "$BRANCH" | grep -Eq "^(($types)/[a-z0-9]+(-[a-z0-9]+)*|revert-[0-9]+-.+)$"; then
+            echo "::error::Branch '$BRANCH' must be <type>/<kebab-case-summary> (CONTRIBUTING.md#pull-requests)."
+            status=1
+          fi
+          if ! printf '%s' "$TITLE" | grep -Eq "^($types)(\(($scopes)\))?: [a-z0-9].*[^.]$"; then
+            echo "::error::Title '$TITLE' must be <type>(<scope>): <summary> starting in lower case, without a final period (CONTRIBUTING.md#pull-requests)."
+            status=1
+          fi
+          if [ "${#TITLE}" -gt 65 ]; then
+            echo "::error::Title is ${#TITLE} characters; the limit is 65."
+            status=1
+          fi
+          exit $status
