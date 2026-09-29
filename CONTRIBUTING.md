@@ -7,7 +7,7 @@ through [SECURITY.md](SECURITY.md), not public issues.
 
 Windows x64 with:
 
-- the .NET SDK selected by `global.json`;
+- a .NET 10 SDK at or above the version in `global.json` (any later 10.0 feature band works);
 - PowerShell 7.4 or later (`pwsh`) for the scripts, and Windows PowerShell 5.1, which runs the
   customer installer;
 - access to the Playwright CDN, from which `scripts/test.ps1` provisions the pinned Chromium for
