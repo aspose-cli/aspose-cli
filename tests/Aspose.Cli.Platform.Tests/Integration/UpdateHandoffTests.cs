@@ -32,7 +32,9 @@ public sealed class UpdateHandoffTests
             $ErrorActionPreference = 'Stop'
             try { Wait-Process -Id $WaitForProcessId -ErrorAction SilentlyContinue } catch { }
             $handoff = [ordered]@{ parent = $WaitForProcessId; installer = $PID; update = [bool]$Update; installDirectory = $InstallDirectory; status = $StatusPath }
-            [IO.File]::WriteAllText('{{Quote(ready)}}', ($handoff | ConvertTo-Json -Compress))
+            # Written beside the target and renamed, so the test never reads a half-written file.
+            [IO.File]::WriteAllText('{{Quote(ready)}}.tmp', ($handoff | ConvertTo-Json -Compress))
+            [IO.File]::Move('{{Quote(ready)}}.tmp', '{{Quote(ready)}}')
             $stop = [DateTime]::UtcNow.AddSeconds(30)
             while (-not [IO.File]::Exists('{{Quote(release)}}') -and [DateTime]::UtcNow -lt $stop) { Start-Sleep -Milliseconds 25 }
             [IO.File]::WriteAllText('{{Quote(complete)}}', 'completed')
