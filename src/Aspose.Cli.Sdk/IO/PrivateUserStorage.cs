@@ -586,8 +586,12 @@ public static class PrivateUserStorage
         SecurityIdentifier current = CurrentUserSid();
         SecurityIdentifier system =
             new(WellKnownSidType.LocalSystemSid, null);
+        // A process elevated from the Administrators group gives every entry it creates that
+        // group as owner, so storage written from an elevated shell or installer is owned by
+        // it. Only a principal that already administers the machine can assign this owner, so
+        // it is accepted with the current user; the DACL below still admits no one else.
         if (security.GetOwner(typeof(SecurityIdentifier)) is not SecurityIdentifier owner
-            || !owner.Equals(current))
+            || !(owner.Equals(current) || owner.IsWellKnown(WellKnownSidType.BuiltinAdministratorsSid)))
         {
             throw new UnauthorizedAccessException(
                 $"Private storage is not owned by the current user: {path}");

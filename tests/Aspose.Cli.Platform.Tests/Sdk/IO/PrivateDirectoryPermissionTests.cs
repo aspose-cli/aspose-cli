@@ -48,6 +48,26 @@ public sealed class PrivateDirectoryPermissionTests
     }
 
     [Fact]
+    [SupportedOSPlatform("windows")]
+    public void Validate_AcceptsEntriesAnElevatedProcessCreatesInsidePrivateStorage()
+    {
+        Requires.ElevatedWindows();
+        var administrators = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        Assert.SkipUnless(administrators == WindowsIdentity.GetCurrent().Owner,
+            "Requires a token whose default owner is the Administrators group.");
+        using var temp = new TempDirectory();
+        string root = PrivateUserStorage.EnsureDirectory(temp.File("private"));
+        string directory = Directory.CreateDirectory(Path.Combine(root, "child")).FullName;
+        string file = Path.Combine(root, "child.txt");
+        File.WriteAllText(file, "x");
+        Assert.Equal(administrators, new DirectoryInfo(directory).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+        Assert.Equal(administrators, new FileInfo(file).GetAccessControl().GetOwner(typeof(SecurityIdentifier)));
+
+        PrivateUserStorage.ValidateDirectory(directory);
+        PrivateUserStorage.ValidateFile(file);
+    }
+
+    [Fact]
     [UnsupportedOSPlatform("windows")]
     public void EnsureDirectory_NormalizesRestrictiveUnixOwnerPermissions()
     {
