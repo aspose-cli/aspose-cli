@@ -95,6 +95,22 @@
         }
       }
     },
+    "revisions": {
+      "type": "array",
+      "description": "The tracked changes in document order, one entry per change. A replacement is a deletion followed by an insertion.",
+      "items": {
+        "type": "object",
+        "required": ["type", "author"],
+        "additionalProperties": false,
+        "properties": {
+          "type": { "enum": ["insertion", "deletion", "formatChange", "styleDefinitionChange", "moving"] },
+          "author": { "type": "string" },
+          "date": { "type": "string", "description": "The date and time the document records, as ISO 8601 yyyy-MM-ddTHH:mm:ss without a time zone; absent when none is recorded." },
+          "block": { "type": "integer", "minimum": 1, "description": "The body block that holds the change; absent outside the body and for style definition changes." },
+          "text": { "type": "string", "description": "The text an insertion adds, a deletion removes or a move relocates; a longer text is cut to 300 characters and an ellipsis; absent for format and style definition changes." }
+        }
+      }
+    },
     "images": {
       "type": "array",
       "items": {

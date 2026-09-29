@@ -8449,6 +8449,7 @@
                 "images",
                 "outline",
                 "properties",
+                "revisions",
                 "sections",
                 "styles",
                 "tables"
@@ -17216,6 +17217,7 @@
             "images",
             "outline",
             "properties",
+            "revisions",
             "sections",
             "styles",
             "tables"

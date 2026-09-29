@@ -16,6 +16,7 @@ public sealed record DocumentInfoResult() : ResultEnvelope(WordsSchemaIds.Docume
     public IReadOnlyList<FieldData>? Fields { get; init; }
     public IReadOnlyList<string>? Bookmarks { get; init; }
     public IReadOnlyList<CommentData>? Comments { get; init; }
+    public IReadOnlyList<RevisionData>? Revisions { get; init; }
     public IReadOnlyList<ImageData>? Images { get; init; }
     public IReadOnlyList<TableData>? Tables { get; init; }
     public IReadOnlyDictionary<string, string?>? Properties { get; init; }
@@ -80,6 +81,19 @@ public sealed record CommentData
     public required string Author { get; init; }
     public required string Text { get; init; }
     public int? Block { get; init; }
+}
+
+/// <summary>
+/// One tracked change in document order: its type, author, the date the document records and
+/// the text it inserts, deletes or moves.
+/// </summary>
+public sealed record RevisionData
+{
+    public required string Type { get; init; }
+    public required string Author { get; init; }
+    public string? Date { get; init; }
+    public int? Block { get; init; }
+    public string? Text { get; init; }
 }
 
 /// <summary>One embedded image summary; its size is in points.</summary>

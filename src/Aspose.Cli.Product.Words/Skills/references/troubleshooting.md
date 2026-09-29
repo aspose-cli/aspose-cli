@@ -17,8 +17,8 @@ The error envelope, exit codes, not-found details and shared codes such as
 - `MERGE_DATA_INVALID`: the merge data is not a JSON array of flat objects or a
   CSV file with a header and at least one data row ([mail merge](mail-merge.md)).
 - `DOCUMENT_PROTECTED`: the `unprotect` password was wrong.
-- `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free
-  ([revisions](revisions.md)).
+- `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free; list
+  the revisions with `words inspect --detail revisions` ([revisions](revisions.md)).
 - `OPTION_INVALID` from a tracked batch: the batch contains an operation that
   cannot be recorded as a revision ([editing](editing.md)).
 

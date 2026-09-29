@@ -203,6 +203,24 @@ internal static class WordsRenderers
 
             table.WriteTo(surface.Out, surface.Format);
         }
+
+        if (result.Revisions is { Count: > 0 } revisions)
+        {
+            surface.Out.WriteLine();
+            surface.Out.WriteLine("revisions:");
+            var table = new TextTable("block", "type", "author", "date", "text");
+            foreach (RevisionData revision in revisions)
+            {
+                table.AddRow(
+                    revision.Block is { } block ? TableText.Int(block) : "-",
+                    revision.Type,
+                    revision.Author,
+                    revision.Date ?? "-",
+                    revision.Text ?? "-");
+            }
+
+            table.WriteTo(surface.Out, surface.Format);
+        }
     }
 
     private static void RenderImagesAndTables(

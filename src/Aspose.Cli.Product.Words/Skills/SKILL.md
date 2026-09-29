@@ -20,7 +20,9 @@ session start, the rules every product shares and the delivery checklist are in
 - Block text, search snippets and `heading`/`find` addresses use the text a
   reader sees: field results rather than field codes, without text a tracked
   change deletes, and without the comments and footnotes a paragraph anchors.
-  Read those with `inspect --detail comments` or `query search --scope`.
+  Read those with `inspect --detail comments` or `query search --scope`, and
+  tracked changes themselves with `inspect --detail revisions`
+  ([revisions](references/revisions.md)).
 - `query search --scope` and the `replace_text` op share one scope vocabulary:
   `body`, `headersFooters`, `footnotes` (with endnotes), `comments` and `all`.
 - Read fields use the edit vocabulary: a table block's `rows`, `columns` and
