@@ -11,6 +11,9 @@
     <!-- Customer releases are RID-specific, self-contained artifacts. Keep this
          list limited to platforms verified by every compiled product engine. -->
     <RuntimeIdentifiers>win-x64</RuntimeIdentifiers>
+    <!-- The runtime a release ships, independent of the SDK that builds it. Raise it to the
+         latest patch before a release; scripts/sync.ps1 then records the packs it restores. -->
+    <RuntimeFrameworkVersion>10.0.10</RuntimeFrameworkVersion>
   </PropertyGroup>
 
   <ItemGroup>

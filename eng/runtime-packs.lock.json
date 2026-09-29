@@ -7,6 +7,11 @@
       "contentHash": "YUpE0pT/TH+PdL13dbJSSTcgjvWJUQlfpZ+IbsVZfBnjSfB141cpY4snL9Gd3Y/XH7sTT957cG5+qPuIUjvBTQ=="
     },
     {
+      "id": "Microsoft.NETCore.App.Host.win-x64",
+      "version": "10.0.10",
+      "contentHash": "f2x9yrUKOzoVmjCR5VwU5MSeN816u2L4FekcIbXD5oWEvmxTQx1buUKrDUCkfwmGJgIiUsTSMhHATpnnTq84sg=="
+    },
+    {
       "id": "Microsoft.NETCore.App.Runtime.win-x64",
       "version": "10.0.10",
       "contentHash": "aup0x7tq3XRIe3Db4NzTFzJCOafa8nlmDeLZiJ/35yfynT4NVd4ftRbiA2ywym4Wpvka1JusIqTP9sTOwj/N0g=="
