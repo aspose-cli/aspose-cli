@@ -784,7 +784,7 @@ function Get-ManagedInstallState {
         throw 'Installation marker is missing required property schemaVersion.'
     }
     if (-not (Test-JsonInteger $marker.schemaVersion 3)) {
-        throw "Installation marker schemaVersion must be an integer with a supported value: '$Root' was installed by a build this installer does not support. Nothing was changed. Move that directory aside, and remove the aspose-cli-* Skill folders it installed, then install again."
+        throw "Installation marker schemaVersion must be an integer with a supported value: '$Root' was installed by a build this installer does not support. Nothing was changed. Move that directory aside, and remove the $($script:ProductId)-* Skill folders it installed, then install again."
     }
     $schemaVersion = [long]$marker.schemaVersion
 
