@@ -9,7 +9,7 @@ public static class DistributionInfo
     public const string Edition = "commercial";
     public const string EnvironmentVariablePrefix = "ASPOSE_CLI_";
     public const string SkillPrefix = "aspose-cli-";
-    public const string SchemaBaseUri = "https://schemas.aspose.dev/aspose-cli/v2/";
+    public const string SchemaBaseUri = "https://schemas.aspose.com/aspose-cli/v2/";
     public const string ConfigurationDirectoryName = "aspose-cli";
     public const string InstallDirectory = "Aspose/CLI";
     public const string ReleaseRepository = "aspose-cli/aspose-cli";

@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/operation-outcome.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json",
   "title": "Aspose CLI operation outcome",
   "description": "The result of one operation in an edit batch, reported in input order.",
   "type": "object",

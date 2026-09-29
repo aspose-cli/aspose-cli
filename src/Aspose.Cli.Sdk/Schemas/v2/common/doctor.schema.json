@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/doctor.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/doctor.schema.json",
   "title": "Doctor",
   "description": "Result of `aspose-cli doctor`: environment self-diagnosis — license, runtime and output writability, each an ok/warn/fail check.",
   "type": "object",
   "required": ["schema", "schemaVersion", "ok", "checks"],
   "properties": {
     "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/common/doctor.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/common/doctor.schema.json"
     },
     "schemaVersion": {
       "const": 2

@@ -315,7 +315,7 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal(string.Empty, selected.StdErr);
         JsonNode selectedSchema = Parse(selected.StdOut);
         Assert.Equal(
-            $"https://schemas.aspose.dev/aspose-cli/{schemaId}.schema.json",
+            $"https://schemas.aspose.com/aspose-cli/{schemaId}.schema.json",
             selectedSchema["$id"]!.GetValue<string>());
 
         CliResult unknown = _workspace.Run(
@@ -337,7 +337,7 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal(0, json.ExitCode);
         JsonNode list = Parse(json.StdOut);
         Assert.Equal(
-            "https://schemas.aspose.dev/aspose-cli/v2/common/schema-list.schema.json",
+            "https://schemas.aspose.com/aspose-cli/v2/common/schema-list.schema.json",
             list["schema"]!.GetValue<string>());
         Assert.NotEmpty(list["schemas"]!.AsArray());
         Assert.True(

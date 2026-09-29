@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/license-status.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/license-status.schema.json",
   "title": "Aspose CLI license status",
   "description": "Effective independently verified license status for every selected product.",
   "type": "object",
   "required": ["schema", "schemaVersion", "applicable", "products", "sharedUserLicenseInstalled"],
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/license-status.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/common/license-status.schema.json" },
     "schemaVersion": { "const": 2 },
     "applicable": { "type": "boolean" },
     "warnings": { "$ref": "#/$defs/warnings" },

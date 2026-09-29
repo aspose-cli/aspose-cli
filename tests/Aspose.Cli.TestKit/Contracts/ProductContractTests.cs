@@ -433,7 +433,7 @@ public abstract class ProductContractTests<TModule>
             _ = ParseSchema(text);
             JsonObject document = JsonNode.Parse(text)!.AsObject();
             Assert.Equal(
-                $"https://schemas.aspose.dev/aspose-cli/{id}.schema.json",
+                $"https://schemas.aspose.com/aspose-cli/{id}.schema.json",
                 document["$id"]?.GetValue<string>());
             Assert.Equal(
                 "https://json-schema.org/draft/2020-12/schema",
@@ -753,7 +753,7 @@ public abstract class ProductContractTests<TModule>
 
     private static string ResourceSchemaId(string schema)
     {
-        const string prefix = "https://schemas.aspose.dev/aspose-cli/";
+        const string prefix = "https://schemas.aspose.com/aspose-cli/";
         const string suffix = ".schema.json";
         Assert.StartsWith(prefix, schema, StringComparison.Ordinal);
         Assert.EndsWith(suffix, schema, StringComparison.Ordinal);

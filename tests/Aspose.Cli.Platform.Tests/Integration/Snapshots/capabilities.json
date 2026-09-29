@@ -1,5 +1,5 @@
 {
-  "schema": "https://schemas.aspose.dev/aspose-cli/v2/common/capabilities.schema.json",
+  "schema": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities.schema.json",
   "schemaVersion": 2,
   "edition": "commercial",
   "cliVersion": "<build>",
@@ -64,7 +64,7 @@
           "command": "edit",
           "inputSchema": "v2/cells/ops",
           "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-          "contractFingerprint": "sha256:ef80800828100cf00745f79f42a5d6dfb2afcbbb2bc3f3ffd33409ea3339c9ca",
+          "contractFingerprint": "sha256:0aa87da2cb65a8f6346252c20923d1d358c89257ee4a96a5c77f5ceef6df77ca",
           "maximumOperations": 10000,
           "ops": [
             "add_comment",
@@ -2160,7 +2160,7 @@
           "command": "edit",
           "inputSchema": "v2/pdf/ops",
           "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-          "contractFingerprint": "sha256:6b3f05f100514fb5370fd4eb70bb5a4ebdb778ae74f81d1fd2570188b2527120",
+          "contractFingerprint": "sha256:ae9173d880c31ba3c2b9634668d4f33d60330be5408e4861ced354f24f7d021f",
           "maximumOperations": 256,
           "ops": [
             "add_attachment",
@@ -4650,7 +4650,7 @@
           "command": "edit",
           "inputSchema": "v2/slides/ops",
           "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-          "contractFingerprint": "sha256:83f5f3ba21c99f4836e9a8d9a3786111ade6ee8ae9ba130e43bbc5d270584d24",
+          "contractFingerprint": "sha256:0ee7e3d535cdbff6584d0042d295ad9b0fbba284c06a84899a1a28eafe3f6aa8",
           "maximumOperations": 256,
           "ops": [
             "add_section",
@@ -6676,7 +6676,7 @@
           "command": "edit",
           "inputSchema": "v2/words/ops",
           "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-          "contractFingerprint": "sha256:7d7169a00f20922a720ea58f371b498c88b7e17f31a184c7291b038dd9cc6bcb",
+          "contractFingerprint": "sha256:6b14a01aea0e7a5fc89a56f6b4700485a8d0aaa61bef817a03c922701372ffea",
           "maximumOperations": 256,
           "ops": [
             "accept_revisions",

@@ -79,8 +79,8 @@ public sealed class LocalServiceRuntimeTests
     [InlineData("diagnostic\n{}", 3)]
     [InlineData("{}", 3)]
     [InlineData("{\"schema\":\"wrong\",\"schemaVersion\":1,\"error\":{\"code\":\"X\",\"message\":\"x\"}}", 3)]
-    [InlineData("{\"schema\":\"https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json\",\"schemaVersion\":1,\"error\":{\"code\":\"X\",\"message\":\"x\"}}", 0)]
-    [InlineData("{\"schema\":\"https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json\",\"schemaVersion\":1,\"error\":{\"code\":\"X\",\"message\":\"x\"}}", 10)]
+    [InlineData("{\"schema\":\"https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json\",\"schemaVersion\":1,\"error\":{\"code\":\"X\",\"message\":\"x\"}}", 0)]
+    [InlineData("{\"schema\":\"https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json\",\"schemaVersion\":1,\"error\":{\"code\":\"X\",\"message\":\"x\"}}", 10)]
     public void ChildError_RejectsAnythingOtherThanOneCurrentErrorEnvelope(
         string standardError,
         int exitCode)

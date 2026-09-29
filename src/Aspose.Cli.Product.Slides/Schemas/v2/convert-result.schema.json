@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/slides/convert-result.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/convert-result.schema.json",
   "description": "Presentation conversion outputs. PNG and JPEG use the default 192 DPI render geometry and pixel budgets.",
   "type": "object",
   "required": ["schema", "schemaVersion", "input", "outputs"],
   "additionalProperties": false,
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/convert-result.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/slides/convert-result.schema.json" },
     "schemaVersion": { "const": 2 },
     "input": { "type": "object" },
     "outputs": { "type": "array", "minItems": 1, "items": { "type": "object" } },

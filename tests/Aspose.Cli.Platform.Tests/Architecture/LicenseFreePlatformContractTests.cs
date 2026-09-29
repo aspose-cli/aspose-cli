@@ -63,7 +63,7 @@ public sealed class LicenseFreePlatformContractTests
         Assert.Equal(0, schemaRaw.ExitCode);
         using JsonDocument raw = JsonDocument.Parse(schemaRaw.StandardOutput);
         Assert.Equal(
-            "https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json",
+            "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
             raw.RootElement.GetProperty("$id").GetString());
 
         InvocationResult capabilities = Invoke(root, "capabilities", "--output", "json");

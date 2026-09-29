@@ -55,8 +55,8 @@
   <PropertyGroup>
     <GeneratedProductsLfSha256>865DED0437949EB75466B555F41616BA9B956EC3448DCD093D00896CD8AAC2B2</GeneratedProductsLfSha256>
     <GeneratedProductsCrLfSha256>E20218ADD069130BF59404A45CB16FB669BDD126D187F29E01BF82603C61AC86</GeneratedProductsCrLfSha256>
-    <GeneratedDistributionLfSha256>AE45E89515017A9430DA980387826994B5FD386F77DCA23A56D1E4493E3202BD</GeneratedDistributionLfSha256>
-    <GeneratedDistributionCrLfSha256>F0D219AC821816E86A274FFECF2969940EFA922D12E6B392EA5233E299E90877</GeneratedDistributionCrLfSha256>
+    <GeneratedDistributionLfSha256>E36A98FD3EA5C9B2677D545D01A487D2B38B2D46F5980E5EB80D10776333F70A</GeneratedDistributionLfSha256>
+    <GeneratedDistributionCrLfSha256>4FDCD20F11A3A0A480B6632C85BEC965CEF7926CB183CD61F53DB92BB287BE3E</GeneratedDistributionCrLfSha256>
   </PropertyGroup>
   <Target Name="ValidateRepositoryProjectionSources" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(GeneratedProductsLfSha256)' == '' Or '$(GeneratedProductsCrLfSha256)' == '' Or '$(GeneratedDistributionLfSha256)' == '' Or '$(GeneratedDistributionCrLfSha256)' == ''" Text="Generated repository projections are missing. Run scripts/sync.ps1 ." />

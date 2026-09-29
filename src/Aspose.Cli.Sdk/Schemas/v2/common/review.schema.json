@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/review.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/review.schema.json",
   "title": "Static product review evidence",
   "description": "Result of `aspose-cli review <file>` and the review.json manifest written into the new evidence directory.",
   "type": "object",
@@ -21,7 +21,7 @@
     "findings"
   ],
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/review.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/common/review.schema.json" },
     "schemaVersion": { "const": 2 },
     "product": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },
     "input": { "type": "string" },

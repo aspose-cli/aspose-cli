@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/form-export-result.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/form-export-result.schema.json",
   "type": "object",
   "required": ["schema", "schemaVersion", "input", "output"],
   "additionalProperties": false,
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/form-export-result.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/form-export-result.schema.json" },
     "schemaVersion": { "const": 2 },
     "input": { "$ref": "#/$defs/file" }, "output": { "$ref": "#/$defs/file" },
     "license": { "type": "object" }, "warnings": { "type": "array" }

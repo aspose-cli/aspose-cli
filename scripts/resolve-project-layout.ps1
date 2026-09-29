@@ -10,7 +10,7 @@ $identityPath = Join-Path $repoRoot 'eng/distribution.json'
 $identity = Get-Content -LiteralPath $identityPath -Raw | ConvertFrom-Json
 $required = @('schemaVersion','id','commandName','displayName','edition','environmentVariablePrefix','skillPrefix','schemaBaseUri','configurationDirectoryName','installDirectory','releaseRepository','solutionName')
 if (@(Compare-Object @($identity.PSObject.Properties.Name | Sort-Object) @($required | Sort-Object)).Count -ne 0 -or $identity.schemaVersion -ne 1) { throw "Invalid distribution identity: $identityPath" }
-if ($identity.id -cnotmatch '^[a-z][a-z0-9-]*$' -or $identity.commandName -cne $identity.id -or $identity.skillPrefix -cne ($identity.id + '-') -or $identity.environmentVariablePrefix -cne ($identity.id.Replace('-','_').ToUpperInvariant() + '_') -or $identity.schemaBaseUri -cne ("https://schemas.aspose.dev/" + $identity.id + "/v2/")) { throw "Inconsistent distribution identity: $identityPath" }
+if ($identity.id -cnotmatch '^[a-z][a-z0-9-]*$' -or $identity.commandName -cne $identity.id -or $identity.skillPrefix -cne ($identity.id + '-') -or $identity.environmentVariablePrefix -cne ($identity.id.Replace('-','_').ToUpperInvariant() + '_') -or $identity.schemaBaseUri -cne ("https://schemas.aspose.com/" + $identity.id + "/v2/")) { throw "Inconsistent distribution identity: $identityPath" }
 # Releases are GitHub Releases of this owner/repository.
 if ([string]$identity.releaseRepository -cnotmatch '^[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?/[A-Za-z0-9._-]+$') { throw "Invalid release repository in: $identityPath" }
 foreach ($relative in @($identity.configurationDirectoryName,$identity.installDirectory,$identity.solutionName)) {

@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/render-result.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json",
   "title": "Render result",
   "description": "Result of `aspose-cli cells render`: a visual image of one sheet or range.",
   "type": "object",
   "required": ["schema", "schemaVersion", "input", "output", "sheet"],
   "properties": {
     "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/render-result.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/cells/render-result.schema.json"
     },
     "schemaVersion": {
       "const": 2

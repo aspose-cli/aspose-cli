@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/diff-result.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/diff-result.schema.json",
   "title": "Cells diff result",
   "description": "Result of `aspose-cli cells compare`: a structural comparison of two workbooks. The exit code is 0 even when they differ — the verdict is the `identical` flag, so compare can be used as a verifier.",
   "type": "object",
   "required": ["schema", "schemaVersion", "left", "right", "identical", "summary"],
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/diff-result.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/cells/diff-result.schema.json" },
     "schemaVersion": { "const": 2 },
     "left": { "$ref": "#/$defs/source" },
     "right": { "$ref": "#/$defs/source" },
@@ -60,7 +60,7 @@
         "path": { "type": "string" },
         "format": { "type": "string" },
         "sizeBytes": { "type": "integer" },
-        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+        "fingerprint": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json" }
       }
     },
     "side": {

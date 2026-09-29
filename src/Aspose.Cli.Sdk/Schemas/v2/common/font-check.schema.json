@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/font-check.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/font-check.schema.json",
   "title": "Font check",
   "description": "Result of `aspose-cli fonts check <file>`: whether the fonts a document uses are available here and, if not, what they will be substituted with — the rendering-fidelity diagnostic.",
   "type": "object",
   "required": ["schema", "schemaVersion", "source", "allAvailable", "fonts"],
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/font-check.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/common/font-check.schema.json" },
     "schemaVersion": { "const": 2 },
     "source": { "$ref": "#/$defs/source" },
     "allAvailable": { "type": "boolean" },

@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/skill-list.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/skill-list.schema.json",
   "title": "Skill list",
   "description": "Skills bundled with Aspose CLI.",
   "type": "object",
   "required": ["schema", "schemaVersion", "skills"],
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/skill-list.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/common/skill-list.schema.json" },
     "schemaVersion": { "const": 2 },
     "skills": {
       "type": "array",

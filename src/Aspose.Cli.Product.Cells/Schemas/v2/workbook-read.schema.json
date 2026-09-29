@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-read.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json",
   "title": "Workbook read projection",
   "description": "Result of `aspose-cli cells query range`: a budgeted projection of one sheet's cell data. `window` counts cells; for a planned scan (a default read over the used range, or a page generated for an explicit range too large for one read) `window.next` is the ready-to-run command for the next page. The file on disk is the primary artifact; this JSON is a view, never a round-trip format.",
   "type": "object",
   "required": ["schema", "schemaVersion", "kind", "source", "scope", "sheet", "window"],
   "properties": {
     "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-read.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-read.schema.json"
     },
     "schemaVersion": {
       "const": 2
@@ -47,7 +47,7 @@
       "description": "Style pool referenced by cell styleId; present only for style-bearing scopes.",
       "additionalProperties": { "$ref": "#/$defs/style" }
     },
-    "window": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json" },
+    "window": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json" },
     "license": {
       "$ref": "#/$defs/licenseInfo"
     },
@@ -98,7 +98,7 @@
         "path": { "type": "string" },
         "format": { "type": "string" },
         "sizeBytes": { "type": "integer", "minimum": 0 },
-        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+        "fingerprint": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json" }
       }
     },
     "licenseInfo": {

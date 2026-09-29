@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/ops.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/ops.schema.json",
   "description": "The operation document of cells edit --ops. An operation's sheet defaults to the active sheet; rows are 1-based numbers, columns are letters, and cells and ranges use A1 notation on that sheet unless a field says it may name another sheet. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.",
   "type": "object",
   "required": [
@@ -10,7 +10,7 @@
   "properties": {
     "schema": {
       "description": "Optional; checked when present.",
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/ops.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/cells/ops.schema.json"
     },
     "schemaVersion": {
       "const": 2

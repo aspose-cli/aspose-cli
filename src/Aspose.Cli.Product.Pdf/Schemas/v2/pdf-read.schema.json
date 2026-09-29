@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/pdf-read.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/pdf-read.schema.json",
   "type": "object",
   "required": ["schema", "schemaVersion", "kind", "source", "mode", "pageCount", "pages", "window"],
   "additionalProperties": false,
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/pdf-read.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/pdf-read.schema.json" },
     "schemaVersion": { "const": 2 },
     "kind": { "const": "pdf" },
     "source": {
@@ -38,7 +38,7 @@
       "items": { "type": "integer", "minimum": 1 },
       "uniqueItems": true
     },
-    "window": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json" },
+    "window": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json" },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

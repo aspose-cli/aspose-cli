@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/not-found-details.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/not-found-details.schema.json",
   "title": "Aspose CLI not-found details",
   "description": "Details of an error whose code names a target the document does not contain. They state what was requested and what exists, so the caller can correct the request without another inspection. Operation errors add the operation's index and op.",
   "type": "object",

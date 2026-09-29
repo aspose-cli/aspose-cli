@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/edit-result.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/edit-result.schema.json",
   "title": "Edit result",
   "description": "Result of `aspose-cli cells edit`. Batches are atomic by default; with --best-effort, domain failures are recorded with status 'failed' and the command exits 8. Invocation resource failures abort publication. Verification describes the staged candidate and its jointly published evidence.",
   "type": "object",
   "required": ["schema", "schemaVersion", "input", "dryRun", "recalculated", "applied"],
   "properties": {
     "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/edit-result.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/cells/edit-result.schema.json"
     },
     "schemaVersion": {
       "const": 2
@@ -28,7 +28,7 @@
     },
     "applied": {
       "type": "array",
-      "items": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/operation-outcome.schema.json" }
+      "items": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json" }
     },
     "backup": {
       "$ref": "#/$defs/backupInfo"
@@ -51,7 +51,7 @@
         "path": { "type": "string" },
         "format": { "type": "string" },
         "sizeBytes": { "type": "integer", "minimum": 0 },
-        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+        "fingerprint": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json" }
       }
     },
     "outputInfo": {
@@ -61,7 +61,7 @@
         "path": { "type": "string" },
         "format": { "type": "string" },
         "sizeBytes": { "type": "integer", "minimum": 0 },
-        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+        "fingerprint": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json" }
       }
     },
     "backupInfo": {

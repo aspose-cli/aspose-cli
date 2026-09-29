@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/slides/ops.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/slides/ops.schema.json",
   "description": "The operation document of slides edit --ops. Every slide and shape target resolves against the presentation as it was before the first operation, so content inserted earlier in the batch cannot be targeted, and a target deleted earlier fails the operation. Operations apply in order. Without --best-effort the batch is atomic: if any operation fails, no file is written. With --best-effort the operations that succeed are kept and saved, each one that fails is reported, and the command exits 8 when any failed; an invalid document or a failure inside the document engine still writes nothing.",
   "type": "object",
   "required": [
@@ -10,7 +10,7 @@
   "properties": {
     "schema": {
       "description": "Optional; checked when present.",
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/slides/ops.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/slides/ops.schema.json"
     },
     "schemaVersion": {
       "const": 2

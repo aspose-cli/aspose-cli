@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-info.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json",
   "title": "Workbook info",
   "description": "Result of `aspose-cli cells inspect`: structural summary of a workbook. First step of the projection ladder; never contains full cell data.",
   "type": "object",
   "required": ["schema", "schemaVersion", "kind", "source", "workbook"],
   "properties": {
     "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/cells/workbook-info.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/cells/workbook-info.schema.json"
     },
     "schemaVersion": {
       "const": 2
@@ -77,7 +77,7 @@
         "path": { "type": "string" },
         "format": { "type": "string" },
         "sizeBytes": { "type": "integer", "minimum": 0 },
-        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+        "fingerprint": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json" }
       }
     },
     "sheetInfo": {

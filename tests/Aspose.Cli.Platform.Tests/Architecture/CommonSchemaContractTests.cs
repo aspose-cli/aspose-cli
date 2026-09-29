@@ -90,7 +90,7 @@ public sealed class CommonSchemaContractTests
                     path)
                 .Replace(Path.DirectorySeparatorChar, '/');
             Assert.Equal(
-                "https://schemas.aspose.dev/aspose-cli/" + relative,
+                "https://schemas.aspose.com/aspose-cli/" + relative,
                 document["$id"]?.GetValue<string>());
         }
     }
@@ -169,7 +169,7 @@ public sealed class CommonSchemaContractTests
                 """{"verification":"reopened"}"""),
             (
                 "v2/common/view",
-                """{"schema":"https://schemas.aspose.dev/aspose-cli/v2/common/view.schema.json","schemaVersion":2,"view":"pages","sourceFormat":"docx","sourceSizeBytes":10,"totalParts":2,"parts":[{"id":"page-1","label":"Page 1","file":"page-0001.png","kind":"image","width":816,"height":1056,"hidden":false,"digest":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","properties":{"notes":"Speaker notes"},"elements":[{"id":"shape-3","kind":"paragraph","box":{"x":96,"y":96.5,"width":624,"height":20},"digest":"f00d","label":"Hello","level":1}]}]}"""),
+                """{"schema":"https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json","schemaVersion":2,"view":"pages","sourceFormat":"docx","sourceSizeBytes":10,"totalParts":2,"parts":[{"id":"page-1","label":"Page 1","file":"page-0001.png","kind":"image","width":816,"height":1056,"hidden":false,"digest":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","properties":{"notes":"Speaker notes"},"elements":[{"id":"shape-3","kind":"paragraph","box":{"x":96,"y":96.5,"width":624,"height":20},"digest":"f00d","label":"Hello","level":1}]}]}"""),
         ];
 
         foreach ((string id, string json) in contracts)
@@ -247,7 +247,7 @@ public sealed class CommonSchemaContractTests
 
     private static string SchemaPath(string schema)
     {
-        const string prefix = "https://schemas.aspose.dev/aspose-cli/";
+        const string prefix = "https://schemas.aspose.com/aspose-cli/";
         Assert.StartsWith(prefix, schema, StringComparison.Ordinal);
         string relative = schema[prefix.Length..]
             .Replace('/', Path.DirectorySeparatorChar);

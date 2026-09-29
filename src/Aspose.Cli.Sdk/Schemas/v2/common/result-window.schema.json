@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json",
   "title": "Aspose CLI result window",
   "description": "How much of a larger collection a bounded read or search returned, and the ready-to-run command that continues it.",
   "type": "object",

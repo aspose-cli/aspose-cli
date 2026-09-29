@@ -203,7 +203,7 @@ public sealed class TempWorkspace : IDisposable
             {
                 return cached;
             }
-            const string prefix = "https://schemas.aspose.dev/aspose-cli/";
+            const string prefix = "https://schemas.aspose.com/aspose-cli/";
             const string suffix = ".schema.json";
             if (!schemaUri.StartsWith(prefix, StringComparison.Ordinal)
                 || !schemaUri.EndsWith(suffix, StringComparison.Ordinal))

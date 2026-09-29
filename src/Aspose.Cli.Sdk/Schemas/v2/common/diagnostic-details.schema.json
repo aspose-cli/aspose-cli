@@ -1,6 +1,6 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/diagnostic-details.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/diagnostic-details.schema.json",
   "title": "Aspose CLI diagnostic details",
   "description": "Base schema for product-owned diagnostic details. Product-specific schemas may narrow this object without changing the common envelope.",
   "type": "object"

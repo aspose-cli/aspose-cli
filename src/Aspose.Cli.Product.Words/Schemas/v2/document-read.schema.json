@@ -1,11 +1,11 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/words/document-read.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json",
   "type": "object",
   "required": ["schema", "schemaVersion", "kind", "source", "scope", "blockCount", "blocks", "window"],
   "additionalProperties": false,
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/words/document-read.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/words/document-read.schema.json" },
     "schemaVersion": { "const": 2 },
     "kind": { "const": "document" },
     "source": { "type": "object" },
@@ -62,7 +62,7 @@
         }
       }
     },
-    "window": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/result-window.schema.json", "description": "Counts blocks; total is the blocks the range, section and scope select. next starts again at a block whose content was truncated and doubles --max-chars when that block alone exceeded the budget." },
+    "window": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json", "description": "Counts blocks; total is the blocks the range, section and scope select. next starts again at a block whose content was truncated and doubles --max-chars when that block alone exceeded the budget." },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   }

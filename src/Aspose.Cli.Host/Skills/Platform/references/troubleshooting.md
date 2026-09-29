@@ -10,7 +10,7 @@ A failed command writes one JSON envelope to stderr and exits non-zero:
 
 ```json
 {
-  "schema": "https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json",
+  "schema": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
   "schemaVersion": 2,
   "error": {
     "code": "SHEET_NOT_FOUND",

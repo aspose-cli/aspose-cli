@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/preview-session.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/preview-session.schema.json",
   "title": "Product preview session result",
   "description": "Result of `aspose-cli preview <file>`.",
   "type": "object",
   "required": ["schema", "schemaVersion", "id", "product", "url", "pid", "file", "view", "reused"],
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/preview-session.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/common/preview-session.schema.json" },
     "schemaVersion": { "const": 2 },
     "id": { "type": "string", "pattern": "^[0-9a-f]{32}$" },
     "product": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]*$" },

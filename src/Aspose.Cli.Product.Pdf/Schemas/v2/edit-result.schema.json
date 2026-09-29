@@ -1,22 +1,22 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/pdf/edit-result.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/pdf/edit-result.schema.json",
   "type": "object",
   "required": ["schema", "schemaVersion", "input", "dryRun", "applied"],
   "additionalProperties": false,
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/pdf/edit-result.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/pdf/edit-result.schema.json" },
     "schemaVersion": { "const": 2 },
     "input": { "$ref": "#/$defs/source" },
     "output": { "$ref": "#/$defs/output" },
     "dryRun": { "type": "boolean" },
     "applied": {
       "type": "array",
-      "items": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/operation-outcome.schema.json" }
+      "items": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json" }
     },
     "backup": { "type": "object" },
     "mutation": {
-      "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/mutation-receipt.schema.json"
+      "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/mutation-receipt.schema.json"
     },
     "pagesTouched": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
     "license": { "type": "object" },
@@ -43,7 +43,7 @@
         "path": { "type": "string" },
         "format": { "const": "pdf" },
         "sizeBytes": { "type": "integer", "minimum": 0 },
-        "fingerprint": { "$ref": "https://schemas.aspose.dev/aspose-cli/v2/common/file-fingerprint.schema.json" }
+        "fingerprint": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json" }
       }
     }
   },

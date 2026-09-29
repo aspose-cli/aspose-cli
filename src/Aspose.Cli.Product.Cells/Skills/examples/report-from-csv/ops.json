@@ -1,5 +1,5 @@
 {
-  "schema": "https://schemas.aspose.dev/aspose-cli/v2/cells/ops.schema.json",
+  "schema": "https://schemas.aspose.com/aspose-cli/v2/cells/ops.schema.json",
   "ops": [
     { "op": "set_values", "sheet": "sales", "range": "E1", "values": [["Total"]] },
     { "op": "set_formula", "sheet": "sales", "range": "E2:E5", "formula": "=SUM(B2:D2)" },

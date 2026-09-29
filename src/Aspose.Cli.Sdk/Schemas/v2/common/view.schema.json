@@ -1,12 +1,12 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/view.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json",
   "title": "Rendered product view",
   "description": "The view.json manifest beside the parts of one rendered product view: its ordered parts with the semantic layout of each. Review evidence and live display share it.",
   "type": "object",
   "required": ["schema", "schemaVersion", "view", "sourceFormat", "sourceSizeBytes", "totalParts", "parts"],
   "properties": {
-    "schema": { "const": "https://schemas.aspose.dev/aspose-cli/v2/common/view.schema.json" },
+    "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json" },
     "schemaVersion": { "const": 2 },
     "view": { "type": "string", "pattern": "^[a-z][a-z0-9-]{0,31}$" },
     "sourceFormat": { "type": "string", "minLength": 1 },

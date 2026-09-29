@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json",
   "title": "Aspose CLI error envelope",
   "description": "The single error shape of the CLI, written to stderr when a command fails. Error codes are stable identifiers designed for agent self-correction.",
   "type": "object",
   "required": ["schema", "schemaVersion", "error"],
   "properties": {
     "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/common/error.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/common/error.schema.json"
     },
     "schemaVersion": {
       "const": 2

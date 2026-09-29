@@ -1,13 +1,13 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "$id": "https://schemas.aspose.dev/aspose-cli/v2/common/skill-install.schema.json",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/skill-install.schema.json",
   "title": "Skill install",
   "description": "Result of `aspose-cli skill install`: the bundled agent skill was extracted to a target directory.",
   "type": "object",
   "required": ["schema", "schemaVersion", "skill", "target", "files"],
   "properties": {
     "schema": {
-      "const": "https://schemas.aspose.dev/aspose-cli/v2/common/skill-install.schema.json"
+      "const": "https://schemas.aspose.com/aspose-cli/v2/common/skill-install.schema.json"
     },
     "schemaVersion": {
       "const": 2
