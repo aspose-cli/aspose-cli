@@ -18,7 +18,7 @@ to workbooks.
 | `RANGE_INVALID` | 4 | A command range such as `--range`. Use `C5`, `B2:D10`, `Sales!A1:C10` or `'My Sheet'!A1:C10`; whole rows and columns (`A:A`, `1:3`) are refused so output stays bounded. In an ops document the same mistake is `OPS_INVALID` with the field in `details.reason`. |
 | `RANGE_TOO_LARGE` | 4 | The range exceeds `--max-cells`. Run the first page the hint suggests and then each `window.next`, or raise `--max-cells` when you need everything. |
 | `RENDER_EMPTY` | 4 | The selected sheet has no content. Pick a sheet with data; `cells inspect` lists each sheet's used range. |
-| `OPS_INVALID` | 4 | `details.index` and `details.op` name the operation, `details.reason` the rule or JSON path (`unknown field 'style.shiny'`). A failure while applying an operation keeps its own code, such as `SHEET_NOT_FOUND`, with the same details. Fix that operation and rerun the whole batch. |
+| `OPS_INVALID` | 4 | `details.index` and `details.op` name the operation, `details.reason` the rule or JSON path (`unknown field 'style.shiny'; style accepts: ...`, with the accepted fields in `details.allowedFields`). A failure while applying an operation keeps its own code, such as `SHEET_NOT_FOUND`, with the same details. Fix that operation and rerun the whole batch. |
 | `EVALUATION_LIMIT` | 7 | Evaluation mode exports only the first worksheet to CSV, TSV or Markdown, and `--sheet` named another one. Nothing was written. Apply a Cells license, or select the first sheet if that is the data you want. |
 
 ## Warnings
