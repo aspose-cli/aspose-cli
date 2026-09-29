@@ -51,7 +51,10 @@ the fixed distribution identity; the generated projections and the solution come
   request, not into these notes.
 - One task is one branch in its own worktree, named as
   [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) requires. Never switch, edit or clean another
-  session's worktree.
+  session's worktree. A session may work on several tasks at once; each still gets its own
+  branch from the latest `master` and its own pull request, opened as soon as that task
+  passes. A task that needs another unmerged task waits for its merge, or branches from it
+  and is rebased on `master` once it merges.
 - Parallel subagents own disjoint files and commit in their own worktrees; integrate their
   commits with cherry-pick or merge, not patch files.
 - Before opening the pull request, a reviewer in a fresh context checks the diff for
