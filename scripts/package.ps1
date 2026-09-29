@@ -10,15 +10,6 @@ one-line install and by the update command) and SHA256SUMS.
 
   -PrepareOnly  Stages a local development package, which also contains install.cmd, and
                 stops after its checksum and launch checks.
-
-Authenticode signing is optional. When both a tool and a certificate are configured, the
-executable and install.ps1 are signed before the checksums are written:
-  -AuthenticodeToolPath / ASPOSE_CLI_AUTHENTICODE_TOOL
-      signtool.exe.
-  -AuthenticodeCertificateThumbprint / ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT
-      SHA-1 thumbprint of the code-signing certificate in CurrentUser\My or LocalMachine\My.
-  -AuthenticodeTimestampServer / ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER
-      RFC 3161 timestamp URL.
 #>
 [CmdletBinding()]
 param(
@@ -27,13 +18,7 @@ param(
 
     [string] $RuntimeIdentifier = 'win-x64',
 
-    [switch] $PrepareOnly,
-
-    [string] $AuthenticodeToolPath,
-
-    [string] $AuthenticodeCertificateThumbprint,
-
-    [string] $AuthenticodeTimestampServer
+    [switch] $PrepareOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -125,105 +110,6 @@ if ($buildManifest.edition -cne $layout.Edition -or
     [bool]([bool]$buildManifest.buildDirty -and -not $PrepareOnly)) {
     throw 'Published build manifest does not describe this clean package build.'
 }
-function Invoke-SigningTool {
-    param(
-        [Parameter(Mandatory)][string] $Tool,
-        [Parameter(Mandatory)][string[]] $Arguments,
-        [Parameter(Mandatory)][string] $Purpose
-    )
-    $output = @(& $Tool @Arguments 2>&1)
-    if ($LASTEXITCODE -ne 0) {
-        throw "$Purpose failed with exit code ${LASTEXITCODE}: $($output -join ' ')"
-    }
-}
-
-function Get-AuthenticodeInputs {
-    $toolValue = if ([string]::IsNullOrWhiteSpace($AuthenticodeToolPath)) {
-        $env:ASPOSE_CLI_AUTHENTICODE_TOOL
-    }
-    else { $AuthenticodeToolPath }
-    $thumbprintValue = if ([string]::IsNullOrWhiteSpace($AuthenticodeCertificateThumbprint)) {
-        $env:ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT
-    }
-    else { $AuthenticodeCertificateThumbprint }
-    if ([string]::IsNullOrWhiteSpace($toolValue) -and [string]::IsNullOrWhiteSpace($thumbprintValue)) {
-        return $null
-    }
-    if ([string]::IsNullOrWhiteSpace($toolValue) -or
-        [string]::IsNullOrWhiteSpace($thumbprintValue)) {
-        throw 'Authenticode signing needs both a signing tool and a certificate thumbprint. Supply the parameters or ASPOSE_CLI_AUTHENTICODE_TOOL and ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT, or neither.'
-    }
-    $tool = [IO.Path]::GetFullPath($toolValue)
-    if (-not (Test-Path -LiteralPath $tool -PathType Leaf)) { throw "Authenticode signing tool was not found: $tool" }
-    # The certificate comes from a Windows certificate store, so a hardware-backed key works
-    # through its CSP/KSP and no tool ever receives a password.
-    $thumbprint = ($thumbprintValue -replace '[\s‎]', '').ToUpperInvariant()
-    if ($thumbprint -cnotmatch '^[0-9A-F]{40}$') { throw 'The Authenticode certificate thumbprint must be 40 hexadecimal characters.' }
-    $certificate = $null
-    $machineStore = $false
-    foreach ($location in @('CurrentUser', 'LocalMachine')) {
-        $store = [Security.Cryptography.X509Certificates.X509Store]::new('My', $location)
-        try {
-            $store.Open([Security.Cryptography.X509Certificates.OpenFlags]'ReadOnly, OpenExistingOnly')
-            $found = @($store.Certificates.Find('FindByThumbprint', $thumbprint, $false))
-            if ($found.Count -eq 1) { $certificate = $found[0]; $machineStore = $location -ceq 'LocalMachine'; break }
-        }
-        catch [Security.Cryptography.CryptographicException] { }
-        finally { $store.Dispose() }
-    }
-    if ($null -eq $certificate -or -not $certificate.HasPrivateKey) {
-        throw "No code-signing certificate with a private key and thumbprint $thumbprint is in CurrentUser\My or LocalMachine\My."
-    }
-    $timestamp = if ([string]::IsNullOrWhiteSpace($AuthenticodeTimestampServer)) {
-        $env:ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER
-    } else { $AuthenticodeTimestampServer }
-    $timestampUri = $null
-    if (-not [Uri]::TryCreate($timestamp, [UriKind]::Absolute, [ref]$timestampUri) -or
-        $timestampUri.Scheme -notin @('http','https') -or $timestampUri.UserInfo) {
-        throw 'Authenticode signing requires a credential-free timestamp server URL. Supply -AuthenticodeTimestampServer or ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER.'
-    }
-    return [pscustomobject]@{
-        Tool = $tool
-        Thumbprint = $thumbprint
-        Certificate = $certificate
-        MachineStore = $machineStore
-        TimestampServer = $timestamp
-    }
-}
-
-function Assert-TimestampedAuthenticode {
-    param([Parameter(Mandatory)][string] $Path)
-    $signature = Get-AuthenticodeSignature -FilePath $Path
-    if ([string]$signature.Status -cne 'Valid' -or $null -eq $signature.TimeStamperCertificate) {
-        throw "Authenticode signature must be valid and timestamped: $Path"
-    }
-}
-
-function Invoke-AuthenticodeSigning {
-    param(
-        [Parameter(Mandatory)][string] $Executable,
-        [Parameter(Mandatory)][string] $Script
-    )
-    $inputs = Get-AuthenticodeInputs
-    if ($null -eq $inputs) { return }
-    $store = if ($inputs.MachineStore) { @('/sm') } else { @() }
-    Invoke-SigningTool $inputs.Tool (@('sign','/sha1',$inputs.Thumbprint) + $store + @('/fd','SHA256','/tr',$inputs.TimestampServer,'/td','SHA256',$Executable)) 'Authenticode signing'
-    Invoke-SigningTool $inputs.Tool @('verify','/pa','/all',$Executable) 'Authenticode verification'
-    Assert-TimestampedAuthenticode $Executable
-    Import-Module `
-        (Join-Path $PSHOME 'Modules\Microsoft.PowerShell.Security\Microsoft.PowerShell.Security.psd1') `
-        -ErrorAction Stop
-    $signature = Set-AuthenticodeSignature `
-        -FilePath $Script `
-        -Certificate $inputs.Certificate `
-        -HashAlgorithm SHA256 `
-        -TimestampServer $inputs.TimestampServer
-    if ([string]$signature.Status -cne 'Valid') {
-        throw "PowerShell installer Authenticode signing failed: $($signature.StatusMessage)"
-    }
-    Assert-TimestampedAuthenticode $Script
-}
-
 foreach ($packageFile in @('install.cmd','install.ps1','SHA256SUMS')) {
     Remove-Item -LiteralPath (Join-Path $publishRoot $packageFile) -Force -ErrorAction SilentlyContinue
 }
@@ -232,9 +118,6 @@ foreach ($installerName in $installerNames) {
     Copy-Item `
         -LiteralPath (Join-Path $repoRoot $installerName) `
         -Destination (Join-Path $publishRoot $installerName)
-}
-if (-not $PrepareOnly) {
-    Invoke-AuthenticodeSigning (Join-Path $publishRoot $layout.Names.ExecutableName) (Join-Path $publishRoot 'install.ps1')
 }
 $verifiedFiles = @(
     Get-ChildItem -LiteralPath $publishRoot -File -Recurse |

@@ -140,9 +140,7 @@ It publishes the payload, writes its `SHA256SUMS`, runs an install, update and u
 test, and writes the release assets to `artifacts/release/win-x64`: the archive, `install.ps1`,
 `RELEASE-MANIFEST.json` (the archive's name, size and SHA-256, and the source revision) and
 `SHA256SUMS`. `-PrepareOnly` stages a development package instead. Dependency notices follow the
-published graph ([notice sources](eng/notices/README.md)). Authenticode signing is optional: set
-`ASPOSE_CLI_AUTHENTICODE_TOOL` (`signtool.exe`), `ASPOSE_CLI_AUTHENTICODE_CERTIFICATE_THUMBPRINT`
-and `ASPOSE_CLI_AUTHENTICODE_TIMESTAMP_SERVER` to sign the executable and `install.ps1`.
+published graph ([notice sources](eng/notices/README.md)).
 
 The workflows in `.github/workflows` automate this: `ci.yml` runs the `Fast` scope in evaluation
 mode (`verify`) and the `Full` scope (`licensed`, environment `licensed-tests`, secret
