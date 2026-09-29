@@ -1,0 +1,14 @@
+# Keeps the SHA-pinned actions current with one monthly pull request. NuGet packages are
+# updated by hand, because a version change also needs scripts/sync.ps1 and the notices.
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: monthly
+    groups:
+      actions:
+        patterns: ["*"]
+    commit-message:
+      prefix: ci
+      include: scope
