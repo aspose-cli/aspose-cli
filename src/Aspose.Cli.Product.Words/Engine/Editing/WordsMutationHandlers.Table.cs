@@ -10,7 +10,6 @@ using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Fields;
 using Aspose.Words.Lists;
-using Aspose.Words.Notes;
 using Aspose.Words.Replacing;
 using Aspose.Words.Tables;
 
