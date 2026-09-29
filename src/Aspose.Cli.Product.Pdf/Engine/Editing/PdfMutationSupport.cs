@@ -156,12 +156,25 @@ internal static class PdfMutationSupport
     /// <summary>
     /// Explains why a form field cannot display a value, or null when it can.
     /// A check box renders only the states its appearance dictionary defines, so any
-    /// other value is stored and read back while the box itself stays empty.
+    /// other value is stored and read back while the box itself stays empty. A radio group
+    /// selects only one of its buttons' values; any other value selects none.
     /// </summary>
-    internal static string? RejectedFieldValue(Field field, string value) =>
-        field is CheckboxField { AllowedStates.Count: > 0 } checkbox
-            && !checkbox.AllowedStates.Contains(value, StringComparer.Ordinal)
-            ? $"check box '{field.FullName}' has no state '{value}'; use one of: "
-                + string.Join(", ", checkbox.AllowedStates)
-            : null;
+    internal static string? RejectedFieldValue(Field field, string value)
+    {
+        if (field is CheckboxField checkbox
+            && PdfFormService.CheckboxStates(checkbox) is { Count: > 0 } states
+            && !states.Contains(value, StringComparer.Ordinal))
+        {
+            return $"check box '{field.FullName}' has no state '{value}'; use one of: " + string.Join(", ", states);
+        }
+
+        if (PdfFormService.RadioGroup(field) is { } group
+            && PdfFormService.ChoiceValues(group) is { Count: > 0 } options
+            && !options.Contains(value, StringComparer.Ordinal))
+        {
+            return $"radio group '{field.FullName}' has no option '{value}'; use one of: " + string.Join(", ", options);
+        }
+
+        return null;
+    }
 }

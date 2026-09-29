@@ -10,6 +10,7 @@
   <ItemGroup>
     <PackageReference Include="Aspose.PDF.Drawing" />
     <PackageReference Include="Microsoft.Bcl.Memory" />
+    <PackageReference Include="SkiaSharp" />
   </ItemGroup>
   <ItemGroup>
     <InternalsVisibleTo Include="Aspose.Cli.Product.Pdf.Tests" />

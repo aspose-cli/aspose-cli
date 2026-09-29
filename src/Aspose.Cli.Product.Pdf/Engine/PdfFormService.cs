@@ -45,18 +45,7 @@ internal sealed class PdfFormService
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         Form form = loaded.Document.Form;
         var fields = form.Fields.OrderBy(static field => field.FullName, StringComparer.Ordinal)
-            .Select(static field => new PdfFormField
-            {
-                Name = field.FullName,
-                Type = FieldType(field),
-                Value = field.Value,
-                Options = field is ChoiceField choice
-                    ? choice.Options.Select(static option => option.Value ?? option.Name).ToArray()
-                    : null,
-                ReadOnly = field.ReadOnly,
-                Required = field.Required,
-                Page = field.PageIndex > 0 ? field.PageIndex : null,
-            })
+            .Select(static field => Project(field))
             .ToArray();
         return new PdfFormResult
         {
@@ -67,6 +56,65 @@ internal sealed class PdfFormService
             License = EnvelopeParts.License(state),
         };
     }
+
+    /// <summary>
+    /// Projects one field. A check box reports its appearance states and, when it has exactly
+    /// one state besides Off, that state as the value that checks it. The engine lists a radio
+    /// group as one field per button under the group's name; each reports the group's values
+    /// as its options and its own value as the one that selects it.
+    /// </summary>
+    private static PdfFormField Project(Field field)
+    {
+        IReadOnlyList<string>? options = null;
+        IReadOnlyList<string>? states = null;
+        string? onValue = null;
+        switch (field)
+        {
+            case ChoiceField choice:
+                options = ChoiceValues(choice);
+                break;
+            case CheckboxField checkbox:
+                IReadOnlyList<string> allowed = CheckboxStates(checkbox);
+                string[] on = allowed.Where(static state => state != CheckboxOff).ToArray();
+                states = allowed.Count > 0 ? allowed : null;
+                onValue = on.Length == 1 ? on[0] : null;
+                break;
+            case RadioButtonOptionField button:
+                options = RadioGroup(button) is { } group ? ChoiceValues(group) : null;
+                onValue = string.IsNullOrEmpty(button.OptionName) ? null : button.OptionName;
+                break;
+        }
+
+        return new PdfFormField
+        {
+            Name = field.FullName,
+            Type = FieldType(field),
+            Value = field.Value,
+            Options = options,
+            States = states,
+            OnValue = onValue,
+            ReadOnly = field.ReadOnly,
+            Required = field.Required,
+            Page = field.PageIndex > 0 ? field.PageIndex : null,
+        };
+    }
+
+    /// <summary>The check box state that leaves it unchecked.</summary>
+    private const string CheckboxOff = "Off";
+
+    /// <summary>A check box's appearance states without repeats, Off first when it has one.</summary>
+    internal static IReadOnlyList<string> CheckboxStates(CheckboxField checkbox) =>
+        checkbox.AllowedStates.Distinct(StringComparer.Ordinal)
+            .OrderBy(static state => state == CheckboxOff ? 0 : 1)
+            .ToArray();
+
+    /// <summary>The radio group a button belongs to; the group, not the button, holds the selection.</summary>
+    internal static RadioButtonField? RadioGroup(Field field) =>
+        field is RadioButtonOptionField { Parent: RadioButtonField group } ? group : null;
+
+    /// <summary>The values a choice field or radio group accepts, in its order.</summary>
+    internal static IReadOnlyList<string> ChoiceValues(ChoiceField choice) =>
+        choice.Options.Select(static option => option.Value ?? option.Name).ToArray();
 
     /// <summary>
     /// Maps an engine field class to the product vocabulary. Specialized text boxes

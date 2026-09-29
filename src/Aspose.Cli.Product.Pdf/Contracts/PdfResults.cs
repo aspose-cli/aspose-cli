@@ -182,6 +182,26 @@ public sealed record PdfRenderResult() : ResultEnvelope(PdfSchemaIds.RenderResul
     public required SourceInfo Input { get; init; }
     public required IReadOnlyList<PdfPageOutput> Outputs { get; init; }
     public int? Dpi { get; init; }
+
+    /// <summary>The coordinate grid drawn on every output image, present only when one was requested.</summary>
+    public PdfRenderGrid? Grid { get; init; }
+}
+
+/// <summary>
+/// A coordinate grid drawn on rendered images, in the coordinates <c>redact_area</c> takes: points from the
+/// top-left corner of the visible, rotated page box.
+/// </summary>
+public sealed record PdfRenderGrid
+{
+    /// <summary>Distance between grid lines.</summary>
+    public required int Spacing { get; init; }
+
+    /// <summary>Distance between the heavier, labelled lines.</summary>
+    public required int LabelSpacing { get; init; }
+
+    public string Unit { get; init; } = "pt";
+
+    public string Origin { get; init; } = "top-left";
 }
 
 /// <summary>One rendered PDF page.</summary>
@@ -281,7 +301,22 @@ public sealed record PdfFormField
     /// <summary>The field kind; one of <see cref="PdfFormFieldTypes"/>.</summary>
     public required string Type { get; init; }
     public string? Value { get; init; }
+
+    /// <summary>
+    /// The values a choice field accepts; for a radio button, the values of its group, which
+    /// set_form_field accepts under the group's name.
+    /// </summary>
     public IReadOnlyList<string>? Options { get; init; }
+
+    /// <summary>A check box's appearance states, <c>Off</c> first; set_form_field accepts only these.</summary>
+    public IReadOnlyList<string>? States { get; init; }
+
+    /// <summary>
+    /// The value that checks a check box, when it has exactly one state besides <c>Off</c>, or
+    /// that selects a radio button.
+    /// </summary>
+    public string? OnValue { get; init; }
+
     public required bool ReadOnly { get; init; }
     public required bool Required { get; init; }
     public int? Page { get; init; }

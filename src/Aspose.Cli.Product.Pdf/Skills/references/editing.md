@@ -70,6 +70,35 @@ hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
 can be encoded or compressed.
 
+### Scanned pages
+
+A page without a text layer (`pdf query pages` reports
+`SCANNED_PAGES_SUSPECTED`) can only be redacted with `redact_area`. Take its
+rectangle from a gridded render, never by eye:
+
+1. Render the page with a coordinate grid. `--grid 50` draws a line every 50
+   points and labels every 100 points along the top and left edges; the
+   result's `grid` states the spacing.
+2. Read the rectangle from the labels: `x` and `y` are the distances in points
+   from the top-left corner of the visible page (after rotation and crop), and
+   `width` and `height` extend right and down, exactly as `redact_area.rect`
+   takes them. Add a margin of a few points on every side.
+3. Apply `redact_area` to a copy, never to the only original.
+4. Render the result again with `--grid` at a higher `--dpi`, and check that
+   nothing sensitive shows and that nothing that must stay is covered. Repeat
+   from step 2 with a corrected rectangle when either check fails, then
+   `review` the output.
+
+```powershell
+aspose-cli pdf query pages scan.pdf --output json
+aspose-cli pdf render scan.pdf --pages 2 --grid 50 --dpi 150 --out scan.grid.png --output json
+aspose-cli pdf edit scan.pdf --ops redact-ops.json --out scan.redacted.pdf --output json
+aspose-cli pdf render scan.redacted.pdf --pages 2 --grid 50 --dpi 200 --out scan.redacted.grid.png --output json
+```
+
+The grid exists only in the rendered image; the PDF is never changed.
+`--grid` takes 10 to 500 points and applies to PNG and JPEG output.
+
 ## Other effects
 
 `optimize` can lower image quality and unembed fonts; compare file sizes and

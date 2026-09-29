@@ -146,6 +146,7 @@ internal static class PdfContractSamples
             },
         ],
         Dpi = 192,
+        Grid = new PdfRenderGrid { Spacing = 50, LabelSpacing = 100 },
         License = Licensed,
     };
 
@@ -256,6 +257,28 @@ internal static class PdfContractSamples
                 Value = "Contoso",
                 ReadOnly = false,
                 Required = true,
+                Page = 1,
+            },
+            new PdfFormField
+            {
+                Name = "agree",
+                Type = PdfFormFieldTypes.Checkbox,
+                Value = "Off",
+                States = ["Off", "Checked"],
+                OnValue = "Checked",
+                ReadOnly = false,
+                Required = false,
+                Page = 1,
+            },
+            new PdfFormField
+            {
+                Name = "color",
+                Type = PdfFormFieldTypes.RadioOption,
+                Value = string.Empty,
+                Options = ["Red", "Blue"],
+                OnValue = "Blue",
+                ReadOnly = false,
+                Required = false,
                 Page = 1,
             },
         ],

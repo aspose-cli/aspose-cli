@@ -13,7 +13,22 @@ aspose-cli pdf extract cover.filled.pdf --what forms --to json --out form-result
 `set_form_field` addresses an AcroForm field by its exact full name. Each field's
 `type` is one of `text` (including date, number, password and rich-text boxes),
 `checkbox`, `radio`, `radio-option`, `combobox`, `listbox`, `button`, `signature`
-or `other`. `query forms` reports XFA as `type: "xfa"` and `readOnly: true`;
+or `other`.
+
+A check box accepts only its `states`: set its `onValue` to check it and `Off`
+to clear it. A box whose widgets export several values has no `onValue`; set
+the state of the widget to check. A radio group is listed as one `radio-option`
+field per button under the group's name: `options` holds the group's values and
+`onValue` the value that selects that button. Any other value is refused.
+
+```json
+{ "ops": [
+  { "op": "set_form_field", "name": "agree", "value": "Checked" },
+  { "op": "set_form_field", "name": "color", "value": "Blue" }
+] }
+```
+
+`query forms` reports XFA as `type: "xfa"` and `readOnly: true`;
 filling, flattening and form export reject it with `FORM_XFA_UNSUPPORTED`.
 Flattening is the `flatten_forms` operation, for named fields or every field; use
 it only when those fields should no longer be editable.

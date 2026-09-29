@@ -333,6 +333,7 @@ Options:
   --pages <pages>                             1-based page range, e.g. 1-3,7,9-. Default: page 1.
   --all-pages                                 Render every page.
   --dpi <dpi>                                 Raster resolution (36-1200; default 192); ignored for vector formats. [default: 192]
+  --grid <grid>                               Draw a labelled coordinate grid with a line every <grid> points (10-500) on png or jpeg output, measured from the top-left corner as redact_area takes them.
   -o, --out <out>                             Output path; multi-page output adds .pN before the extension.
   --overwrite                                 Replace the output file if it already exists.
   --password <password>                       Password for the PDF. Discouraged: visible in the process list; prefer --password-env.

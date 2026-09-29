@@ -79,6 +79,12 @@ internal static class PdfRenderers
             surface.Out.WriteLine(
                 $"  page {output.Page}: {output.Output.Path} ({output.Output.Format}, {TableText.Bytes(output.Output.SizeBytes)})");
         }
+
+        if (result.Grid is { } grid)
+        {
+            surface.Out.WriteLine(
+                $"grid: lines every {grid.Spacing} {grid.Unit}, labelled every {grid.LabelSpacing} {grid.Unit}, origin {grid.Origin}");
+        }
     }
 
     public static void Render(PdfWriteResult result, TableSurface surface) =>
@@ -118,13 +124,15 @@ internal static class PdfRenderers
     public static void Render(PdfFormResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"{result.Type} form: {result.Fields.Count} field(s)");
-        var table = new TextTable("name", "type", "value", "page", "flags");
+        var table = new TextTable("name", "type", "value", "on value", "accepts", "page", "flags");
         foreach (PdfFormField field in result.Fields)
         {
             table.AddRow(
                 field.Name,
                 field.Type,
                 field.Value ?? string.Empty,
+                field.OnValue ?? string.Empty,
+                string.Join(", ", field.States ?? field.Options ?? []),
                 field.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
                 string.Join(", ", new[]
                 {

@@ -152,7 +152,8 @@ internal sealed partial class PdfMutationHandlers
             throw new OperationInvalidException(rejected);
         }
 
-        field.Value = operation.Value;
+        // The name of a radio group resolves to its first button; the group holds the selection.
+        (PdfFormService.RadioGroup(field) ?? field).Value = operation.Value;
         return 1;
     }
 

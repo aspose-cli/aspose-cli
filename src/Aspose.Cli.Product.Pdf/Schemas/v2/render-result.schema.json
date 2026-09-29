@@ -21,6 +21,17 @@
       }
     },
     "dpi": { "type": "integer", "minimum": 1 },
+    "grid": {
+      "type": "object",
+      "required": ["spacing", "labelSpacing", "unit", "origin"],
+      "additionalProperties": false,
+      "properties": {
+        "spacing": { "type": "integer", "minimum": 10, "maximum": 500 },
+        "labelSpacing": { "type": "integer", "minimum": 10 },
+        "unit": { "const": "pt" },
+        "origin": { "const": "top-left" }
+      }
+    },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   },

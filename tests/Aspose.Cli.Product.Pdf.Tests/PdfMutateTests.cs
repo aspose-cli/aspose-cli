@@ -643,6 +643,92 @@ public sealed class PdfMutateTests
         Assert.Equal("Yes", checkbox.ActiveState);
     }
 
+    [Fact]
+    public void QueryForms_ReportsTheValuesThatCheckABoxAndSelectARadioButton()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = ChoiceDocument(fixture);
+        string output = fixture.File("choices.filled.pdf");
+
+        IReadOnlyList<PdfFormField> fields = fixture.Engine.ReadForm(input, new PdfFormReadRequest()).Fields;
+
+        PdfFormField agree = fields.Single(static field => field.Name == "agree");
+        Assert.Equal(["Off", "Checked"], agree.States);
+        Assert.Equal("Checked", agree.OnValue);
+        Assert.Null(agree.Options);
+        // Widgets that export several values leave the state to check to the caller.
+        PdfFormField multi = fields.Single(static field => field.Name == "multi");
+        Assert.Equal(["Off", "Yes", "Alpha", "Beta"], multi.States);
+        Assert.Null(multi.OnValue);
+        PdfFormField[] buttons = fields.Where(static field => field.Name == "color").ToArray();
+        Assert.All(buttons, static button => Assert.Equal(PdfFormFieldTypes.RadioOption, button.Type));
+        Assert.All(buttons, static button => Assert.Equal(["Red", "Blue"], button.Options));
+        Assert.Equal(["Red", "Blue"], buttons.Select(static button => button.OnValue));
+        Assert.All(fields, static field => Assert.True(field.Type is PdfFormFieldTypes.Checkbox or PdfFormFieldTypes.RadioOption));
+
+        fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new SetFormFieldOp { Name = "agree", Value = agree.OnValue! },
+                    new SetFormFieldOp { Name = "color", Value = buttons[1].OnValue! },
+                ],
+            },
+            new PdfEditRequest { OutputPath = output });
+
+        using var reopened = new Document(output);
+        var checkbox = (CheckboxField)reopened.Form["agree"];
+        Assert.True(checkbox.Checked);
+        Assert.Equal("Checked", checkbox.ActiveState);
+        var group = (RadioButtonField)reopened.Form["color"];
+        Assert.Equal("Blue", group.Value);
+        Assert.Equal(2, group.Selected);
+    }
+
+    [Fact]
+    public void SetFormField_RefusesAValueThatSelectsNoRadioButton()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = ChoiceDocument(fixture);
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "color", Value = "Green" }] },
+            new PdfEditRequest { OutputPath = fixture.File("choices.invalid.pdf") }));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("Red, Blue", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(fixture.File("choices.invalid.pdf")));
+    }
+
+    /// <summary>
+    /// A check box whose on state is not "Yes", one whose widgets export several values, and
+    /// a radio group.
+    /// </summary>
+    private static string ChoiceDocument(PdfEngineFixture fixture)
+    {
+        string path = fixture.File("choices.pdf");
+        using var document = new Document();
+        Page page = document.Pages.Add();
+        document.Form.Add(new CheckboxField(page, new Rectangle(72, 700, 92, 720))
+        {
+            PartialName = "agree",
+            ExportValue = "Checked",
+        });
+        var multi = new CheckboxField(page, new Rectangle(72, 660, 92, 680)) { PartialName = "multi" };
+        multi.AddOption("Alpha");
+        multi.AddOption("Beta");
+        document.Form.Add(multi);
+        var color = new RadioButtonField(page) { PartialName = "color" };
+        color.Add(new RadioButtonOptionField(page, new Rectangle(72, 620, 92, 640)) { OptionName = "Red" });
+        color.Add(new RadioButtonOptionField(page, new Rectangle(112, 620, 132, 640)) { OptionName = "Blue" });
+        document.Form.Add(color);
+        document.Save(path);
+        return path;
+    }
+
     private static string CheckBoxDocument(PdfEngineFixture fixture)
     {
         string path = fixture.File("checkbox.pdf");

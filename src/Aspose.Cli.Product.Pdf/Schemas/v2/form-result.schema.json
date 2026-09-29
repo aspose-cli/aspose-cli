@@ -18,7 +18,9 @@
         "additionalProperties": false,
         "properties": {
           "name": { "type": "string" }, "type": { "enum": ["text", "checkbox", "radio", "radio-option", "combobox", "listbox", "button", "signature", "other"] }, "value": { "type": "string" },
-          "options": { "type": "array", "items": { "type": "string" } },
+          "options": { "type": "array", "items": { "type": "string" }, "description": "The values a choice field accepts; for a radio button, the values of its group, which set_form_field accepts under the group's name." },
+          "states": { "type": "array", "items": { "type": "string" }, "description": "A check box's appearance states, Off first; set_form_field accepts only these." },
+          "onValue": { "type": "string", "description": "The value that checks a check box, when it has exactly one state besides Off, or that selects a radio button." },
           "readOnly": { "type": "boolean" }, "required": { "type": "boolean" },
           "page": { "type": "integer", "minimum": 1 }
         }
