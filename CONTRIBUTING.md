@@ -142,10 +142,8 @@ test, and writes the release assets to `artifacts/release/win-x64`: the archive,
 `SHA256SUMS`. `-PrepareOnly` stages a development package instead. Dependency notices follow the
 published graph ([notice sources](eng/notices/README.md)).
 
-The workflows in `.github/workflows` automate this: `ci.yml` runs the `Fast` scope in evaluation
-mode (`verify`) and the `Full` scope (`licensed`, environment `licensed-tests`, secret
-`ASPOSE_TEST_LICENSE_BASE64`); `release.yml`, on a protected version tag, runs the `Full` scope
-(environment `release-build`), packages, and publishes the assets as a GitHub release of
-`aspose-cli/aspose-cli`, the repository named by `releaseRepository` in `eng/distribution.json`.
-`release`, runner `[self-hosted, Windows, X64, aspose-signing]`), the only job that sees the
-signing variables and passphrase.
+No license reaches the workflows in `.github/workflows`, so they run the SDKs in evaluation
+mode: `ci.yml` runs the `Fast` scope and `package.ps1` for pushes to `master` and pull requests,
+and `release.yml`, on a protected version tag, does the same and publishes the assets as a
+GitHub release of `aspose-cli/aspose-cli`, the repository named by `releaseRepository` in
+`eng/distribution.json`. Before pushing the tag, run the `Full` scope locally with a license.
