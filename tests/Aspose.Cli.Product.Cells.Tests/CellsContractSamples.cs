@@ -135,6 +135,8 @@ internal static class CellsContractSamples
             new SetFormulaOp { Range = "E2:E6", Formula = "=SUM(B2:D2)" },
             new ClearRangeOp { Range = "F1:F10", What = "formats" },
             new CopyRangeOp { From = "Sales!A1:C3", To = "Summary!B2" },
+            new ImportRangeOp { Sheet = "Summary", Path = "D:/data/eu_raw.xlsx", From = "Totals!A2:D8", To = "F2" },
+            new ImportSheetOp { Sheet = "Totals", Path = "D:/data/eu_raw.xlsx", Name = "EU", Position = 1 },
             new FormatRangeOp { Range = "A1:E1", Style = new StyleData { Bold = true, Bg = "#1F4E79" } },
             new MergeCellsOp { Range = "A1:E1" },
             new UnmergeCellsOp { Range = "A1:E1" },

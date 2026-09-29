@@ -63,7 +63,7 @@
           "command": "edit",
           "inputSchema": "v2/cells/ops",
           "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-          "contractFingerprint": "sha256:0aa87da2cb65a8f6346252c20923d1d358c89257ee4a96a5c77f5ceef6df77ca",
+          "contractFingerprint": "sha256:2e88e057d9c8b769bcb1973d5b0772a8a60874e2b89da7c1ceb782d298bb31b0",
           "maximumOperations": 10000,
           "ops": [
             "add_comment",
@@ -89,6 +89,8 @@
             "freeze_panes",
             "group_columns",
             "group_rows",
+            "import_range",
+            "import_sheet",
             "insert_columns",
             "insert_image",
             "insert_rows",

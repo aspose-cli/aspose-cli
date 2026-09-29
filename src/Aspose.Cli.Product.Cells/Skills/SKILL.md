@@ -76,6 +76,9 @@ aspose-cli schema v2/cells/ops --operation format_range
 
 - Formulas recalculate once after the whole batch; `--no-recalc` opts out.
 - `set_formula` over a range uses Excel fill semantics.
+- `copy_range` copies within the workbook; data from another file comes in
+  with `import_range` or `import_sheet` (`aspose-cli docs cells/editing`,
+  Combining workbooks).
 - `--verify` compares the staged output with the input before publishing and
   reports cell changes and formula errors (exit 8 on findings). Use
   `--in-place --backup --verify` for the first edit of a file you did not

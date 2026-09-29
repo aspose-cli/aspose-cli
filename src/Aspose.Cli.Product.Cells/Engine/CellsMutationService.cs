@@ -68,8 +68,9 @@ internal sealed class CellsMutationService
             ? CellsEditBaseline.Capture(filePath, precondition, _budgets) : null;
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(format, options.OutputPath, licenseState, options.EncryptPassword,
             loaded.IsEncrypted ? options.Password : null);
+        using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
         IReadOnlyList<BoundedOperationOutcome> applied = ApplyOperations(
-            workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs);
+            workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs, importSources);
         if (options.Recalculate)
         {
             workbook.CalculateFormula();
@@ -100,9 +101,10 @@ internal sealed class CellsMutationService
             Backup = saved?.Backup,
             Verification = verification,
             License = EnvelopeParts.License(licenseState),
-            Warnings = options.Options.DryRun ? loaded.Warnings()
+            Warnings = options.Options.DryRun ? EnvelopeParts.CombineWarnings(loaded.Warnings(), importSources.Warnings())
                 : EnvelopeParts.CombineWarnings(
                     CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning),
+                    importSources.Warnings(),
                     EnvelopeParts.BackupWarnings(saved?.Backup)),
         };
     }
@@ -113,9 +115,10 @@ internal sealed class CellsMutationService
         CellsOpsBatch batch,
         bool bestEffort,
         IReadOnlyDictionary<string, string>? secrets,
-        InputResourceScope inputs)
+        InputResourceScope inputs,
+        CellsImportSources sources)
     {
-        var handlers = new CellsMutationHandlers(workbook, secrets, inputs);
+        var handlers = new CellsMutationHandlers(workbook, secrets, inputs, sources);
         return BoundedOperationRunner.Run(
             CellsOp.Catalog,
             batch.Ops,

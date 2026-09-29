@@ -15,7 +15,8 @@ Cells semantics, ordering rules and recipes.
 
 | task | operations |
 |------|------------|
-| Cell data | `set_values` writes a matrix; `set_formula` fills a formula over a range; `clear_range`; `copy_range` |
+| Cell data | `set_values` writes a matrix; `set_formula` fills a formula over a range; `clear_range`; `copy_range` within the workbook |
+| Other workbooks | `import_range` copies a range from another file; `import_sheet` copies a whole sheet |
 | Formatting | `format_range` sets only the style fields given; `set_borders` |
 | Rows and columns | `insert_rows`, `delete_rows`, `insert_columns`, `delete_columns`, `resize_rows`, `resize_columns`, `merge_cells`, `unmerge_cells`, `group_rows`, `ungroup_rows`, `group_columns`, `ungroup_columns`, `freeze_panes` |
 | Sheets | `add_sheet`, `rename_sheet`, `delete_sheet`, `move_sheet`, `set_sheet_visibility`, `set_active_sheet` |
@@ -62,9 +63,10 @@ The field names of these operations are the ones most often guessed wrong:
   evaluation save makes its warning sheet the active one.
 - Range fields are unqualified A1 on the operation's sheet. Only the fields
   whose schema description says so (`copy_range.from`/`to`,
-  `create_pivot.sourceRange`, the chart and sparkline `dataRange`,
-  `set_hyperlink.target`) take another sheet. Write the sheet name as it
-  appears (`P&L!A1:B9`, `'My Sheet'!A1`); the CLI quotes it for the engine.
+  `import_range.from`/`to`, `create_pivot.sourceRange`, the chart and
+  sparkline `dataRange`, `set_hyperlink.target`) take another sheet. Write
+  the sheet name as it appears (`P&L!A1:B9`, `'My Sheet'!A1`); the CLI quotes
+  it for the engine.
 - Rows are 1-based numbers and columns are letters, as in A1. Whole rows and
   columns (`A:A`, `1:3`) are not ranges.
 - `--set "SHEET!CELL=VALUE"` appends single-cell writes to the same batch,
@@ -112,6 +114,42 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
   relative references shift per cell, `$` references stay.
 - Inserting or deleting rows and columns updates formula references as in
   Excel.
+
+## Combining workbooks
+
+`copy_range` works inside one workbook; a `[book.xlsx]Sheet!A1` source is not
+a sheet name. Bring data from another file with `import_range` or
+`import_sheet`: `path` names the source file (any format `cells` reads,
+including CSV and TSV), relative to the working directory, and the source is
+only read. Merge several sources in one batch, then formulas over the merged
+cells:
+
+```json
+{ "ops": [
+  { "op": "import_range", "sheet": "Report", "path": "eu_raw.xlsx",
+    "from": "Totals!A2:D8", "to": "F2" },
+  { "op": "import_sheet", "path": "us_raw.csv", "name": "US", "position": 1 },
+  { "op": "set_formula", "sheet": "Report", "range": "J2:J8", "formula": "=SUM(F2:I2)" }
+] }
+```
+
+- `import_range.from` without a sheet lies on the source's first sheet.
+  `content` `values` (default) writes values, with formulas replaced by their
+  results, and number formats; `all` keeps formulas as written and formatting,
+  like `copy_range`.
+- `import_sheet` takes the source sheet from the operation's `sheet`, the
+  source's first sheet when omitted, and names the new sheet after it unless
+  `name` is given. A name the workbook already uses is refused; `position` is
+  0-based, appended when omitted. The sheet keeps its charts, tables, pivots,
+  comments, validation and conditional formats.
+- Imported formulas keep their sheet names: a reference to another source
+  sheet points at the sheet of that name in this workbook, or becomes `#REF!`.
+  Import the referenced sheets first, or import `values`. Defined names that
+  imported formulas use come along unless this workbook defines them;
+  `import_sheet` refuses a source whose workbook-level name this workbook
+  defines differently.
+- An encrypted source needs `passwordEnv`. Sources open once per batch; the
+  edited file can be a source, read as it is on disk before the edit.
 
 ## Charts
 

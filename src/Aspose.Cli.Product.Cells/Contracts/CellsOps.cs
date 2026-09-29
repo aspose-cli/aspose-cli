@@ -47,6 +47,8 @@ public abstract partial record CellsOp : BoundedOperation
 [JsonSerializable(typeof(FreezePanesOp))]
 [JsonSerializable(typeof(GroupColumnsOp))]
 [JsonSerializable(typeof(GroupRowsOp))]
+[JsonSerializable(typeof(ImportRangeOp))]
+[JsonSerializable(typeof(ImportSheetOp))]
 [JsonSerializable(typeof(InsertColumnsOp))]
 [JsonSerializable(typeof(InsertImageOp))]
 [JsonSerializable(typeof(InsertRowsOp))]

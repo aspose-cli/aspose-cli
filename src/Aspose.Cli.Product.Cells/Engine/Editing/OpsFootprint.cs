@@ -62,6 +62,7 @@ internal static class OpsFootprint
     internal static long CellCost(CellsOp op) => op switch
     {
         CopyRangeOp copy => A1.ParseRange(copy.From).Range.CellCount,
+        ImportRangeOp import => A1.ParseRange(import.From).Range.CellCount,
         _ => TargetOf(op) is { Range: { } range } ? A1.ParseRange(range).Range.CellCount : 0,
     };
 
@@ -78,11 +79,11 @@ internal static class OpsFootprint
             or RemoveDuplicatesOp or CreateTableOp or AddConditionalFormatOp
             or ClearConditionalFormatsOp or SetBordersOp or SetAutoFilterOp or SetPrintAreaOp
             or AddSparklineOp => RangeTarget(op),
-        CopyRangeOp or AddCommentOp or EditCommentOp or DeleteCommentOp or SetHyperlinkOp
+        CopyRangeOp or ImportRangeOp or AddCommentOp or EditCommentOp or DeleteCommentOp or SetHyperlinkOp
             or RemoveHyperlinkOp or InsertRowsOp or DeleteRowsOp or InsertColumnsOp or DeleteColumnsOp
             or ResizeRowsOp or ResizeColumnsOp or GroupRowsOp or UngroupRowsOp
             or GroupColumnsOp or UngroupColumnsOp => CellOrStructureTarget(op),
-        AddSheetOp or RenameSheetOp or DeleteSheetOp or SetSheetVisibilityOp or MoveSheetOp
+        AddSheetOp or ImportSheetOp or RenameSheetOp or DeleteSheetOp or SetSheetVisibilityOp or MoveSheetOp
             or FreezePanesOp or ProtectSheetOp or UnprotectSheetOp or SetPageSetupOp
             or SetTabColorOp or SetSheetViewOp or SetActiveSheetOp => SheetTarget(op),
         _ => ObjectOrWorkbookTarget(op),
@@ -119,7 +120,9 @@ internal static class OpsFootprint
     {
         // A copy changes its destination; the destination anchor may be
         // sheet-qualified and then overrides the op's sheet.
-        CopyRangeOp o => CopyTarget(o),
+        CopyRangeOp o => CopyTarget(o.Sheet, o.To, from: null),
+        // An import spotlights the whole range it wrote.
+        ImportRangeOp o => CopyTarget(o.Sheet, o.To, o.From),
 
         // Single-cell ops spotlight their cell.
         AddCommentOp o => new CellsEditTarget(o.Sheet, o.Cell),
@@ -149,6 +152,9 @@ internal static class OpsFootprint
         // add/rename the sheet worth looking at is the one that exists after
         // the edit: the new sheet's name, the renamed sheet's new name.
         AddSheetOp o => new CellsEditTarget(o.Name, null),
+        // An imported sheet is named after its source sheet unless it is given a name; the
+        // source's first sheet is known only once the source is open.
+        ImportSheetOp o => new CellsEditTarget(o.Name ?? o.Sheet, null),
         RenameSheetOp o => new CellsEditTarget(o.To, null),
         DeleteSheetOp o => new CellsEditTarget(o.Sheet, null),
         SetSheetVisibilityOp o => new CellsEditTarget(o.Sheet, null),
@@ -190,18 +196,32 @@ internal static class OpsFootprint
     private static CellsEditTarget? SheetLevelOrNone(CellsOp op) =>
         op.Sheet is null ? null : new CellsEditTarget(op.Sheet, null);
 
-    private static CellsEditTarget CopyTarget(CopyRangeOp op)
+    /// <summary>
+    /// The destination of a copy: its anchor, or the source range's size at the anchor when
+    /// <paramref name="from"/> is given, clipped to the grid.
+    /// </summary>
+    private static CellsEditTarget CopyTarget(string? sheet, string to, string? from)
     {
         try
         {
-            RangeSpec destination = A1.ParseRange(op.To);
-            return new CellsEditTarget(destination.SheetName ?? op.Sheet, A1.FormatRange(destination.Range));
+            RangeSpec destination = A1.ParseRange(to);
+            RangeRef landed = destination.Range;
+            if (from is not null)
+            {
+                RangeRef source = A1.ParseRange(from).Range;
+                CellRef anchor = landed.Start;
+                landed = new RangeRef(anchor, new CellRef(
+                    Math.Min(anchor.Row + source.RowCount, A1.MaxRows) - 1,
+                    Math.Min(anchor.Column + source.ColumnCount, A1.MaxColumns) - 1));
+            }
+
+            return new CellsEditTarget(destination.SheetName ?? sheet, A1.FormatRange(landed));
         }
         catch (CliException)
         {
             // Best effort: an unparsable destination (conceivable under
             // --best-effort) still hints at the op's sheet.
-            return new CellsEditTarget(op.Sheet, null);
+            return new CellsEditTarget(sheet, null);
         }
     }
 

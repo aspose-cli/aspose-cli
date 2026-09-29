@@ -18,12 +18,18 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
     private readonly Workbook _workbook;
     private readonly IReadOnlyDictionary<string, string>? _secrets;
     private readonly InputResourceScope _inputs;
+    private readonly CellsImportSources _sources;
 
-    internal CellsMutationHandlers(Workbook workbook, IReadOnlyDictionary<string, string>? secrets, InputResourceScope inputs)
+    internal CellsMutationHandlers(
+        Workbook workbook,
+        IReadOnlyDictionary<string, string>? secrets,
+        InputResourceScope inputs,
+        CellsImportSources sources)
     {
         _workbook = workbook;
         _secrets = secrets;
         _inputs = inputs;
+        _sources = sources;
     }
 
     /// <summary>
@@ -108,6 +114,11 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
     public long? Apply(GroupColumnsOp operation) => OutlineOps.GroupColumns(Sheet(operation), operation);
 
     public long? Apply(GroupRowsOp operation) => OutlineOps.GroupRows(Sheet(operation), operation);
+
+    public long? Apply(ImportRangeOp operation) => ImportOps.ImportRange(Sheet(operation), operation, _sources);
+
+    // The operation's sheet names the source sheet, not a sheet of this workbook.
+    public long? Apply(ImportSheetOp operation) => ImportOps.ImportSheet(_workbook, operation, _sources);
 
     public long? Apply(InsertColumnsOp operation) => RowColumnOps.InsertColumns(Sheet(operation), operation);
 
