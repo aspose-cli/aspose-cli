@@ -59,8 +59,9 @@ The field names of these operations are the ones most often guessed wrong:
 
 ## Addressing
 
-- An operation's `sheet` defaults to the active sheet. Name it every time: an
-  evaluation save makes its warning sheet the active one.
+- An operation's `sheet` defaults to the active sheet. Name it every time: in
+  evaluation mode an active warning sheet gives way to the first other sheet
+  (`EVALUATION_SHEET_SKIPPED`), not to the sheet you made active.
 - Range fields are unqualified A1 on the operation's sheet. Only the fields
   whose schema description says so (`copy_range.from`/`to`,
   `import_range.from`/`to`, `create_pivot.sourceRange`, the chart and
@@ -247,7 +248,7 @@ show in renders and reads; give the location column a header.
 
 - `set_active_sheet` saves the sheet a workbook opens on; the browser preview
   honors it. An evaluation save activates its own "Evaluation Warning" sheet
-  instead.
+  instead (`EVALUATION_SHEET_ADDED`).
 - `set_sheet_view` gridlines, zoom and headings affect Excel and the live
   preview, never `render` or PDF output. Draw `set_borders` when a grid must
   appear in a render.

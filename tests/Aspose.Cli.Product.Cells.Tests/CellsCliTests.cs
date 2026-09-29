@@ -219,6 +219,59 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal("evaluation", JsonNode.Parse(inspected.StdOut)!["license"]!["mode"]!.GetValue<string>());
     }
 
+    /// <summary>
+    /// An evaluation save adds a warning sheet and activates it; the save says so, and later
+    /// commands that default to the active sheet use the workbook's first sheet and say so.
+    /// </summary>
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Evaluation_TheAddedWarningSheetIsDisclosedAndSkippedByActiveSheetDefaults()
+    {
+        JsonNode created = Json(_workspace.Run("cells", "create", "book.xlsx", "--sheets", "One,Two", "--output", "json"));
+        Assert.Equal("Evaluation Warning", Warning(created, "EVALUATION_SHEET_ADDED")["location"]!.GetValue<string>());
+        File.WriteAllText(_workspace.File("ops.json"), """
+            {"ops":[
+              {"op":"set_values","sheet":"One","range":"A1","values":[["one"]]},
+              {"op":"set_values","sheet":"Two","range":"A1","values":[["two"]]},
+              {"op":"set_active_sheet","sheet":"Two"}]}
+            """);
+
+        JsonNode edited = Json(_workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output", "json"));
+        JsonNode added = Warning(edited, "EVALUATION_SHEET_ADDED");
+        Assert.Equal("Evaluation Warning (1)", added["location"]!.GetValue<string>());
+        Assert.Contains("in place of 'Two'", added["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal("Evaluation Warning", Warning(edited, "EVALUATION_SHEET_SKIPPED")["location"]!.GetValue<string>());
+
+        JsonNode read = Json(_workspace.Run("cells", "query", "range", "book.xlsx", "--output", "json"));
+        JsonNode rendered = Json(_workspace.Run("cells", "render", "book.xlsx", "--out", "book.png", "--output", "json"));
+        JsonNode csv = Json(_workspace.Run("cells", "convert", "book.xlsx", "--to", "csv", "--out", "book.csv", "--output", "json"));
+        JsonNode pdf = Json(_workspace.Run("cells", "convert", "book.xlsx", "--to", "pdf", "--out", "book.pdf", "--output", "json"));
+        JsonNode chosen = Json(_workspace.Run("cells", "query", "range", "book.xlsx", "--sheet", "Two", "--output", "json"));
+        JsonNode chosenPdf = Json(_workspace.Run("cells", "convert", "book.xlsx", "--to", "pdf", "--sheet", "Two", "--out", "two.pdf", "--output", "json"));
+
+        Assert.Equal("One", read["sheet"]!["name"]!.GetValue<string>());
+        Assert.Contains("uses 'One'", Warning(read, "EVALUATION_SHEET_SKIPPED")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal("One", rendered["sheet"]!.GetValue<string>());
+        _ = Warning(rendered, "EVALUATION_SHEET_SKIPPED");
+        Assert.StartsWith("one", File.ReadAllText(_workspace.File("book.csv")), StringComparison.Ordinal);
+        _ = Warning(csv, "EVALUATION_SHEET_SKIPPED");
+        _ = Warning(csv, "EVAL_MODE");
+        _ = Warning(pdf, "EVALUATION_SHEET_SKIPPED");
+        Assert.True(new FileInfo(_workspace.File("book.pdf")).Length > 0);
+        Assert.Equal("Two", chosen["sheet"]!["name"]!.GetValue<string>());
+        Assert.Equal("two", chosen["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
+        Assert.Equal("Two", chosenPdf["sheet"]!.GetValue<string>());
+
+        static JsonNode Json(CliResult result)
+        {
+            Assert.True(result.ExitCode == 0, result.StdErr);
+            return JsonNode.Parse(result.StdOut)!;
+        }
+
+        static JsonNode Warning(JsonNode result, string code) =>
+            Assert.Single(result["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == code)!;
+    }
+
     [Fact]
     public void PasswordEnvironmentAndStdin_RoundTripEncryptedOutputWithoutLeaks()
     {

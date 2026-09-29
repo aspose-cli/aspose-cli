@@ -32,6 +32,8 @@ to workbooks.
 | `FORMULAS_CALCULATED_ON_OPEN` | The workbook asks to be calculated when opened and some formula results shown differ from the stored ones, usually because a tool wrote formulas without results. The values shown are the engine's, as Excel shows them; `cells edit` stores them. |
 | `WORKBOOK_ENCRYPTION_REMOVED` | The output format cannot be encrypted, so the source encryption was dropped. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
+| `EVALUATION_SHEET_ADDED` | An evaluation save added the warning sheet `location` names and made it the active sheet in place of the one the message names; see below. |
+| `EVALUATION_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, so this command used the sheet the message names wherever it defaults to the active sheet; see below. |
 
 ## Evaluation mode in workbooks
 
@@ -39,10 +41,17 @@ Without a Cells license, results carry `EVAL_MODE` and every saved workbook
 gains an "Evaluation Warning" sheet plus watermark content. Disclose it
 (`aspose-cli docs licensing`), and handle these effects:
 
-- The warning sheet becomes the active sheet, so `query range` and `render`
-  without `--sheet` read it. Always pass `--sheet`, and take names from
-  `inspect`, never from sheet order.
-- Each further save can add another ("Evaluation Warning (1)", ...); `inspect`
+- The engine appends the warning sheet and makes it the active sheet; no
+  option keeps your active sheet (`set_active_sheet` included). The result
+  says so with `EVALUATION_SHEET_ADDED`.
+- When a workbook's active sheet is such a warning sheet, every command that
+  defaults to the active sheet (`query range`, `render`, an operation without
+  `"sheet"`, the preview) uses the first other sheet instead, preferring a
+  visible one, and warns `EVALUATION_SHEET_SKIPPED`; the file is not changed.
+  The sheet you made active is not recorded anywhere, so pass `--sheet` (or
+  `"sheet"`) for any other one, and take names from `inspect`, never from
+  sheet order.
+- Each further save adds another ("Evaluation Warning (1)", ...); `inspect`
   lists them. Do not delete them.
 - Data projections carry the marks too: a CSV gains a trailing watermark row,
   Markdown a trailing `# Evaluation Only` heading, whole-workbook JSON the

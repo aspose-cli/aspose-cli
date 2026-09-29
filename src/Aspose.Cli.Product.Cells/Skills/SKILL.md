@@ -18,7 +18,8 @@ this Skill adds what is specific to workbooks.
 2. If a number can be computed from other cells, write a formula; the engine
    recalculates after every edit.
 3. Name the sheet on every read, render and operation (`--sheet`, `"sheet"`):
-   an evaluation save makes its warning sheet the active one. Sheet names match
+   an evaluation save makes its warning sheet the active one, and defaults
+   then fall back to the first other sheet. Sheet names match
    case-insensitively.
 4. Serialize writes to one file; parallel reads are safe.
 5. An open-ended request ("make me a sales sheet") gets the full deliverable:
@@ -119,7 +120,9 @@ error.
 ## Evaluation mode
 
 Saved workbooks gain an "Evaluation Warning" sheet that becomes the active
-sheet, and CSV, TSV and Markdown export only the first worksheet
+sheet (`EVALUATION_SHEET_ADDED`); commands that default to the active sheet
+then use the first other sheet (`EVALUATION_SHEET_SKIPPED`). CSV, TSV and
+Markdown export only the first worksheet
 (`EVALUATION_LIMIT`). Effects and fixes: `aspose-cli docs cells/troubleshooting`.
 
 ## Pitfalls

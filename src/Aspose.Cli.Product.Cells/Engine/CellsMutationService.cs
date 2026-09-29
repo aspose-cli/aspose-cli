@@ -103,7 +103,7 @@ internal sealed class CellsMutationService
             License = EnvelopeParts.License(licenseState),
             Warnings = options.Options.DryRun ? EnvelopeParts.CombineWarnings(loaded.Warnings(), importSources.Warnings())
                 : EnvelopeParts.CombineWarnings(
-                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning),
+                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.EvaluationSheetSkipped, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded),
                     importSources.Warnings(),
                     EnvelopeParts.BackupWarnings(saved?.Backup)),
         };

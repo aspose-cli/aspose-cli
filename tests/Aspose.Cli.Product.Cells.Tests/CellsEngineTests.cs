@@ -288,6 +288,39 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == WarningCodes.EvalMode);
     }
 
+    /// <summary>
+    /// A licensed engine never takes a sheet for the evaluation warning sheet, however it is
+    /// named and whatever it holds: the active sheet stays the default and saves add none.
+    /// </summary>
+    [Fact]
+    public void Licensed_ASheetLikeTheEvaluationWarningSheet_StaysTheActiveDefault()
+    {
+        string path = _fixture.Temp.File("lookalike.xlsx");
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            workbook.Worksheets[0].Name = "Data";
+            workbook.Worksheets[0].Cells["A1"].PutValue("data");
+            Aspose.Cells.Worksheet lookalike = workbook.Worksheets.Add("Evaluation Warning");
+            lookalike.Cells["A5"].PutValue("Evaluation Only. Created with Aspose.Cells for .NET.");
+            workbook.Worksheets.ActiveSheetIndex = lookalike.Index;
+            workbook.Save(path);
+        }
+
+        WorkbookReadResult read = _fixture.Engine.Read(path, new ReadRequest());
+        ConvertResult converted = _fixture.Engine.Convert(path, new ConvertRequest
+        {
+            TargetFormatId = "xlsx",
+            OutputPath = _fixture.Temp.File("lookalike-copy.xlsx"),
+        });
+
+        Assert.Equal("Evaluation Warning", read.Sheet!.Name);
+        Assert.Null(read.Warnings);
+        Assert.Null(converted.Warnings);
+        using var copy = new Aspose.Cells.Workbook(converted.Output.Path);
+        Assert.Equal(["Data", "Evaluation Warning"], copy.Worksheets.Cast<Aspose.Cells.Worksheet>().Select(static sheet => sheet.Name));
+        Assert.Equal("Evaluation Warning", copy.Worksheets[copy.Worksheets.ActiveSheetIndex].Name);
+    }
+
     [Fact]
     public void Convert_UnknownSheet_ThrowsSheetNotFoundWithAlternatives()
     {

@@ -14,7 +14,8 @@ aspose-cli preview book.xlsx --open --output json
   change, for a live demonstration.
 - `--view sheets` shows one rendered image per sheet instead.
 - The preview opens on the workbook's saved active sheet (`set_active_sheet`);
-  an evaluation save activates its warning sheet instead.
+  when an evaluation save made its warning sheet the active one, it opens on
+  the first other sheet instead.
 - Gridlines, zoom and headings from `set_sheet_view` show here and in Excel,
   never in `render` output.
 

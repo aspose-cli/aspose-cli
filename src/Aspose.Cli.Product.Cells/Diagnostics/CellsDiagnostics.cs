@@ -28,6 +28,10 @@ internal static class CellsDiagnostics
     internal const string EncryptionRemoved = "WORKBOOK_ENCRYPTION_REMOVED";
     internal const string FormulasCalculatedOnOpen = "FORMULAS_CALCULATED_ON_OPEN";
     internal const string SheetPartiallyRendered = "CELLS_SHEET_PARTIALLY_RENDERED";
+    /// <summary>An evaluation save added its warning sheet and made it the active sheet.</summary>
+    internal const string EvaluationSheetAdded = "EVALUATION_SHEET_ADDED";
+    /// <summary>The input's active sheet is an evaluation warning sheet, so defaults use another sheet.</summary>
+    internal const string EvaluationSheetSkipped = "EVALUATION_SHEET_SKIPPED";
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -48,6 +52,8 @@ internal static class CellsDiagnostics
         Warning(FormulasCalculatedOnOpen),
         Warning(SheetPartiallyRendered),
         Warning(MhtmlResourceCoverageUnverified),
+        Warning(EvaluationSheetAdded),
+        Warning(EvaluationSheetSkipped),
     ];
 
     private static DiagnosticDescriptor Error(ErrorCode code) =>

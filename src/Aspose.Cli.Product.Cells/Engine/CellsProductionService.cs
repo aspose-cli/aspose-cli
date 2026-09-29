@@ -108,8 +108,9 @@ internal sealed class CellsProductionService
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, request.OutputPath, licenseState,
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
+        Warning? evaluationSheetAdded = null;
         long sizeBytes = _saver.Write(request.OutputPath, request.Overwrite,
-            path => _saver.Produce(workbook, savePlan, path));
+            path => evaluationSheetAdded = _saver.Produce(workbook, savePlan, path));
         Warning? formulasBroken = _saver.BuildBrokenFormulaWarning(
             refsBefore,
             _saver.CountRefFormulas(workbook),
@@ -126,7 +127,7 @@ internal sealed class CellsProductionService
             },
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen, sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning),
+            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen, loaded.EvaluationSheetSkipped, sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded),
         };
     }
 
@@ -143,7 +144,7 @@ internal sealed class CellsProductionService
             workbook.Worksheets[workbook.Worksheets.Add()].Name = name;
         }
 
-        (OutputInfo output, _, Warning? truncated, Warning? formulasBroken, Warning? sheetsDropped) = _saver.Save(
+        WorkbookStagedSave saved = _saver.Save(
             workbook,
             request.OutputPath,
             request.Overwrite,
@@ -152,10 +153,10 @@ internal sealed class CellsProductionService
 
         return new CreateResult
         {
-            Output = output,
+            Output = saved.Output,
             Sheets = request.SheetNames,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, truncated, formulasBroken, sheetsDropped),
+            Warnings = CombineWarnings(licenseState, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, saved.EvaluationSheetAdded),
         };
     }
 
@@ -172,7 +173,7 @@ internal sealed class CellsProductionService
 
         if (request.AllSheets)
         {
-            return RenderAllSheets(workbook, input, request, licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen);
+            return RenderAllSheets(workbook, input, request, licenseState, loaded);
         }
 
         Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
@@ -212,7 +213,7 @@ internal sealed class CellsProductionService
             Range = renderedRange,
             Dpi = isRaster ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen),
+            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen, loaded.EvaluationSheetSkipped),
         };
     }
 
@@ -294,7 +295,7 @@ internal sealed class CellsProductionService
     /// rethrown so an all-empty workbook still surfaces <c>RENDER_EMPTY</c>.
     /// </summary>
     private RenderResult RenderAllSheets(
-        Workbook workbook, SourceInfo input, RenderRequest request, LicenseState licenseState, Warning? resourceOmission, Warning? calculatedOnOpen)
+        Workbook workbook, SourceInfo input, RenderRequest request, LicenseState licenseState, LoadedWorkbook loaded)
     {
         var candidates = new List<Worksheet>();
         foreach (Worksheet sheet in workbook.Worksheets)
@@ -362,7 +363,7 @@ internal sealed class CellsProductionService
             Dpi = FormatMapper.IsRaster(request.TargetFormatId) ? request.Dpi : null,
             Outputs = rendered,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, resourceOmission, calculatedOnOpen, sheetsSkipped),
+            Warnings = CombineWarnings(licenseState, [.. loaded.Warnings() ?? [], sheetsSkipped]),
         };
     }
 

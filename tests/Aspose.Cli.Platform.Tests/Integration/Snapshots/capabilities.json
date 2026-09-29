@@ -18247,6 +18247,24 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "EVALUATION_SHEET_ADDED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.evaluation-sheet-added.message.v1",
+      "hintTemplateId": "cells.evaluation-sheet-added.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EVALUATION_SHEET_SKIPPED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.evaluation-sheet-skipped.message.v1",
+      "hintTemplateId": "cells.evaluation-sheet-skipped.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "EVAL_INPUT_TRUNCATED",
       "owner": "common",
       "severity": "warning",
