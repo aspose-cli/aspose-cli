@@ -1,0 +1,541 @@
+{
+  "schema": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities-summary.schema.json",
+  "schemaVersion": 2,
+  "cliVersion": "<build>",
+  "products": [
+    {
+      "id": "cells",
+      "name": "Cells",
+      "description": "Spreadsheet operations (Excel and friends) with engine-grade fidelity.",
+      "engine": "aspose",
+      "engineVersion": "<build>",
+      "loadFormats": [
+        "xlsx",
+        "xlsm",
+        "xlsb",
+        "xls",
+        "ods",
+        "csv",
+        "tsv",
+        "html",
+        "mhtml",
+        "pdf",
+        "xps",
+        "json",
+        "md"
+      ],
+      "convertFormats": [
+        "xlsx",
+        "xlsm",
+        "xlsb",
+        "xls",
+        "ods",
+        "csv",
+        "tsv",
+        "html",
+        "mhtml",
+        "pdf",
+        "xps",
+        "json",
+        "md"
+      ],
+      "renderFormats": [
+        "png",
+        "jpeg",
+        "svg"
+      ],
+      "commands": [
+        {
+          "command": "compare",
+          "description": "Compare stored workbook values and optional formula text; dates use raw serial numbers."
+        },
+        {
+          "command": "convert",
+          "description": "Convert a workbook to another format."
+        },
+        {
+          "command": "create",
+          "description": "Create a new workbook."
+        },
+        {
+          "command": "edit",
+          "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml."
+        },
+        {
+          "command": "inspect",
+          "description": "Show structure and metadata of a workbook."
+        },
+        {
+          "command": "query",
+          "description": "Read bounded workbook data without mutating the source file."
+        },
+        {
+          "command": "query range",
+          "description": "Read cell data of one sheet as a windowed projection."
+        },
+        {
+          "command": "query search",
+          "description": "Find cells whose value or formula matches a pattern."
+        },
+        {
+          "command": "render",
+          "description": "Render a sheet, a range, or every visible sheet to images."
+        }
+      ],
+      "operations": [
+        {
+          "command": "edit",
+          "ops": [
+            "add_comment",
+            "add_conditional_format",
+            "add_sheet",
+            "add_sparkline",
+            "clear_conditional_formats",
+            "clear_range",
+            "clear_validation",
+            "copy_range",
+            "create_chart",
+            "create_pivot",
+            "create_table",
+            "define_name",
+            "delete_chart",
+            "delete_columns",
+            "delete_comment",
+            "delete_name",
+            "delete_rows",
+            "delete_sheet",
+            "edit_comment",
+            "format_range",
+            "freeze_panes",
+            "group_columns",
+            "group_rows",
+            "import_range",
+            "import_sheet",
+            "insert_columns",
+            "insert_image",
+            "insert_rows",
+            "merge_cells",
+            "move_sheet",
+            "protect_sheet",
+            "protect_workbook",
+            "refresh_pivot",
+            "remove_duplicates",
+            "remove_hyperlink",
+            "rename_sheet",
+            "resize_columns",
+            "resize_rows",
+            "set_active_sheet",
+            "set_autofilter",
+            "set_borders",
+            "set_default_font",
+            "set_formula",
+            "set_hyperlink",
+            "set_page_setup",
+            "set_print_area",
+            "set_sheet_view",
+            "set_sheet_visibility",
+            "set_tab_color",
+            "set_validation",
+            "set_values",
+            "sort_range",
+            "ungroup_columns",
+            "ungroup_rows",
+            "unmerge_cells",
+            "unprotect_sheet",
+            "unprotect_workbook",
+            "update_chart"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "pdf",
+      "name": "PDF",
+      "description": "PDF automation with page, security and fixed-layout semantics.",
+      "engine": "aspose",
+      "engineVersion": "<build>",
+      "loadFormats": [
+        "pdf"
+      ],
+      "convertFormats": [
+        "docx",
+        "xlsx",
+        "pptx",
+        "html",
+        "epub",
+        "txt",
+        "md",
+        "svg",
+        "xps",
+        "pdfa-1b",
+        "pdfa-2b",
+        "pdfa-3b",
+        "png",
+        "jpeg",
+        "tiff"
+      ],
+      "renderFormats": [
+        "png",
+        "jpeg",
+        "svg"
+      ],
+      "commands": [
+        {
+          "command": "convert",
+          "description": "Convert selected PDF pages to a supported format."
+        },
+        {
+          "command": "create",
+          "description": "Create a PDF from exactly one source family."
+        },
+        {
+          "command": "edit",
+          "description": "Apply one validated, atomic PDF operation batch."
+        },
+        {
+          "command": "extract",
+          "description": "Extract bounded PDF assets, text, tables or form data."
+        },
+        {
+          "command": "inspect",
+          "description": "Show PDF structure, security state and metadata."
+        },
+        {
+          "command": "merge",
+          "description": "Merge PDF inputs in order."
+        },
+        {
+          "command": "query",
+          "description": "Query bounded PDF pages, forms or text matches."
+        },
+        {
+          "command": "query forms",
+          "description": "List PDF form fields and current values."
+        },
+        {
+          "command": "query pages",
+          "description": "Read a bounded page-text window."
+        },
+        {
+          "command": "query search",
+          "description": "Search PDF text and return page rectangles."
+        },
+        {
+          "command": "render",
+          "description": "Render one or more PDF pages."
+        },
+        {
+          "command": "sign",
+          "description": "Apply a PKCS#7 signature and verify the saved signature field."
+        },
+        {
+          "command": "split",
+          "description": "Split a PDF into an atomic output set."
+        },
+        {
+          "command": "validate",
+          "description": "Validate a PDF against a PDF/A profile."
+        }
+      ],
+      "operations": [
+        {
+          "command": "edit",
+          "ops": [
+            "add_attachment",
+            "add_bookmark",
+            "add_footer_text",
+            "add_header_text",
+            "add_link",
+            "add_page_numbers",
+            "add_stamp_image",
+            "add_watermark_image",
+            "add_watermark_text",
+            "crop_pages",
+            "decrypt",
+            "delete_bookmarks",
+            "delete_pages",
+            "encrypt",
+            "flatten_forms",
+            "insert_blank_page",
+            "insert_pages_from",
+            "move_pages",
+            "optimize",
+            "redact_area",
+            "redact_text",
+            "remove_attachment",
+            "remove_metadata",
+            "rotate_pages",
+            "set_form_field",
+            "set_metadata",
+            "set_page_labels",
+            "set_page_size"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "slides",
+      "name": "Slides",
+      "description": "Presentation automation with slide, layout and notes semantics.",
+      "engine": "aspose",
+      "engineVersion": "<build>",
+      "loadFormats": [
+        "ppt",
+        "pptx",
+        "pptm",
+        "pps",
+        "ppsx",
+        "ppsm",
+        "pot",
+        "potx",
+        "potm",
+        "odp",
+        "otp",
+        "fodp"
+      ],
+      "convertFormats": [
+        "pptx",
+        "ppt",
+        "pptm",
+        "odp",
+        "pdf",
+        "xps",
+        "html",
+        "html5",
+        "png",
+        "jpeg",
+        "tiff",
+        "gif",
+        "svg",
+        "md"
+      ],
+      "renderFormats": [
+        "png",
+        "jpeg",
+        "svg"
+      ],
+      "commands": [
+        {
+          "command": "convert",
+          "description": "Convert a presentation or selected slides."
+        },
+        {
+          "command": "create",
+          "description": "Create a blank, template-based or Markdown-authored presentation."
+        },
+        {
+          "command": "edit",
+          "description": "Apply one validated, atomic presentation operation batch."
+        },
+        {
+          "command": "extract",
+          "description": "Extract bounded presentation media, notes or text."
+        },
+        {
+          "command": "inspect",
+          "description": "Show presentation structure, stable slide ids and metadata."
+        },
+        {
+          "command": "query",
+          "description": "Read bounded presentation projections without mutating the source."
+        },
+        {
+          "command": "query search",
+          "description": "Search presentation shape and speaker-notes text."
+        },
+        {
+          "command": "query slides",
+          "description": "Read a bounded slide-content window."
+        },
+        {
+          "command": "render",
+          "description": "Render one or more slides for visual verification."
+        }
+      ],
+      "operations": [
+        {
+          "command": "edit",
+          "ops": [
+            "add_section",
+            "add_slide",
+            "append_presentation",
+            "apply_layout",
+            "delete_shape",
+            "delete_slides",
+            "duplicate_slide",
+            "insert_chart",
+            "insert_image",
+            "insert_shape",
+            "insert_table",
+            "move_slide",
+            "replace_text",
+            "set_background",
+            "set_body",
+            "set_footer",
+            "set_notes",
+            "set_properties",
+            "set_shape_style",
+            "set_slide_hidden",
+            "set_slide_size",
+            "set_table_cell",
+            "set_text",
+            "set_title",
+            "set_transition",
+            "update_chart_data"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "words",
+      "name": "Words",
+      "description": "Word-processing document automation with layout fidelity.",
+      "engine": "aspose",
+      "engineVersion": "<build>",
+      "loadFormats": [
+        "doc",
+        "dot",
+        "docx",
+        "docm",
+        "dotx",
+        "dotm",
+        "flatopc",
+        "rtf",
+        "wordml",
+        "html",
+        "mhtml",
+        "odt",
+        "ott",
+        "txt",
+        "md",
+        "pdf",
+        "epub",
+        "mobi",
+        "azw3",
+        "chm"
+      ],
+      "convertFormats": [
+        "doc",
+        "dot",
+        "docx",
+        "docm",
+        "dotx",
+        "dotm",
+        "flatopc",
+        "rtf",
+        "wordml",
+        "pdf",
+        "xps",
+        "openxps",
+        "ps",
+        "pcl",
+        "html",
+        "html-fixed",
+        "mhtml",
+        "epub",
+        "mobi",
+        "azw3",
+        "odt",
+        "ott",
+        "txt",
+        "md"
+      ],
+      "renderFormats": [
+        "png",
+        "jpeg",
+        "svg"
+      ],
+      "commands": [
+        {
+          "command": "compare",
+          "description": "Semantically compare two documents and optionally save a redline."
+        },
+        {
+          "command": "convert",
+          "description": "Convert a document using the detected input format."
+        },
+        {
+          "command": "create",
+          "description": "Create a document from one content source, optionally inside a template."
+        },
+        {
+          "command": "edit",
+          "description": "Apply one validated, atomic Words operation batch."
+        },
+        {
+          "command": "extract",
+          "description": "Extract bounded document assets."
+        },
+        {
+          "command": "inspect",
+          "description": "Show document structure, safety state and metadata."
+        },
+        {
+          "command": "query",
+          "description": "Read bounded document projections without mutating the source."
+        },
+        {
+          "command": "query blocks",
+          "description": "Read a bounded, stable window of document blocks."
+        },
+        {
+          "command": "query search",
+          "description": "Search bounded document scopes with regex timeout protection."
+        },
+        {
+          "command": "render",
+          "description": "Render one or more document pages."
+        },
+        {
+          "command": "split",
+          "description": "Split a document into safe, deterministically named DOCX files."
+        }
+      ],
+      "operations": [
+        {
+          "command": "edit",
+          "ops": [
+            "accept_revisions",
+            "add_comment",
+            "add_section",
+            "add_watermark",
+            "append_document",
+            "apply_list",
+            "define_style",
+            "delete_blocks",
+            "delete_section",
+            "format_table",
+            "format_text",
+            "insert_bookmark",
+            "insert_break",
+            "insert_field",
+            "insert_hyperlink",
+            "insert_image",
+            "insert_markdown",
+            "insert_paragraphs",
+            "insert_table",
+            "insert_toc",
+            "mail_merge",
+            "protect",
+            "reject_revisions",
+            "remove_comments",
+            "remove_watermark",
+            "repeat_table_row",
+            "replace_text",
+            "set_default_font",
+            "set_footer",
+            "set_header",
+            "set_page_numbers",
+            "set_page_setup",
+            "set_properties",
+            "set_style",
+            "set_table_cell",
+            "set_text",
+            "unprotect",
+            "update_fields"
+          ]
+        }
+      ]
+    }
+  ]
+}

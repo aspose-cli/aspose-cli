@@ -11,6 +11,7 @@ namespace Aspose.Cli.Sdk.Serialization;
     WriteIndented = true)]
 [JsonSerializable(typeof(ErrorEnvelope))]
 [JsonSerializable(typeof(CapabilitiesResult))]
+[JsonSerializable(typeof(CapabilitiesSummaryResult))]
 [JsonSerializable(typeof(LicenseStatusResult))]
 [JsonSerializable(typeof(DoctorResult))]
 [JsonSerializable(typeof(VersionResult))]

@@ -109,6 +109,34 @@ internal static class CommonSchemaSamples
         License = Evaluation,
     };
 
+    public static CapabilitiesSummaryResult CapabilitiesSummary { get; } = new()
+    {
+        CliVersion = "1.0.0",
+        Products =
+        [
+            new ProductCapabilitiesSummary
+            {
+                Id = "test",
+                Name = "Test",
+                Description = "Test document automation.",
+                Engine = "test",
+                EngineVersion = "1.0.0",
+                LoadFormats = ["bin"],
+                ConvertFormats = ["bin"],
+                RenderFormats = [],
+                Commands =
+                [
+                    new CommandCapabilitiesSummary { Command = "edit", Description = "Apply a batch of ops." },
+                    new CommandCapabilitiesSummary { Command = "query range" },
+                ],
+                Operations =
+                [
+                    new OperationCapabilitiesSummary { Command = "edit", Ops = ["set_value"] },
+                ],
+            },
+        ],
+    };
+
     public static VersionResult Version { get; } = new()
     {
         CliVersion = "1.0.0",
@@ -268,6 +296,7 @@ internal static class CommonSchemaSamples
     [
         new(Error.Schema, Error),
         new(Capabilities.Schema, Capabilities),
+        new(CapabilitiesSummary.Schema, CapabilitiesSummary),
         new(App.Schema, App),
         new(LicenseStatus.Schema, LicenseStatus),
         new(Doctor.Schema, Doctor),

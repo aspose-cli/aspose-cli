@@ -9277,6 +9277,7 @@
     "v2/common/app-result",
     "v2/common/app-status",
     "v2/common/capabilities",
+    "v2/common/capabilities-summary",
     "v2/common/diagnostic-details",
     "v2/common/doctor",
     "v2/common/error",
@@ -10200,7 +10201,27 @@
       "aliases": [],
       "description": "Describe everything this build supports (products, verbs, formats), as data.",
       "hidden": false,
-      "options": [],
+      "options": [
+        {
+          "name": "--summary",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "List only each product's commands, formats and edit operation names."
+        }
+      ],
       "arguments": [
         {
           "name": "product",

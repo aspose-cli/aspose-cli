@@ -194,6 +194,7 @@ public sealed class CommonSchemaContractTests
         string[] files =
         [
             "app-result.schema.json",
+            "capabilities-summary.schema.json",
             "doctor.schema.json",
             "font-check.schema.json",
             "font-list.schema.json",

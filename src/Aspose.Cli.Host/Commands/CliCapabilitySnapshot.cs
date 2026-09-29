@@ -15,12 +15,66 @@ namespace Aspose.Cli.Host.Commands;
 /// </summary>
 internal sealed class CliCapabilitySnapshot
 {
-    private CliCapabilitySnapshot(CapabilitiesResult result)
+    private readonly IReadOnlyDictionary<string, string> _displayNames;
+
+    private CliCapabilitySnapshot(
+        CapabilitiesResult result,
+        IReadOnlyDictionary<string, string> displayNames)
     {
         Result = result;
+        _displayNames = displayNames;
     }
 
     public CapabilitiesResult Result { get; }
+
+    /// <summary>
+    /// Projects the capabilities of every product, or of one, to their commands, formats and
+    /// operation names. The product selection and its errors are those of <see cref="Select"/>.
+    /// </summary>
+    public CapabilitiesSummaryResult Summarize(string? productId)
+    {
+        CapabilitiesResult selected = Select(productId, commandPath: null);
+        return new CapabilitiesSummaryResult
+        {
+            CliVersion = selected.CliVersion,
+            Products = selected.Products
+                .Select(product => new ProductCapabilitiesSummary
+                {
+                    Id = product.Id,
+                    Name = _displayNames[product.Id],
+                    Description = product.Commands
+                        .Single(command => string.Equals(
+                            command.Path,
+                            product.Id,
+                            StringComparison.Ordinal))
+                        .Description,
+                    Engine = product.Engine?.Id,
+                    EngineVersion = product.Engine?.SdkVersion,
+                    LoadFormats = product.LoadFormats,
+                    ConvertFormats = product.ConvertFormats,
+                    RenderFormats = product.RenderFormats,
+                    Commands = product.Commands
+                        .Where(command => !command.Hidden
+                            && command.Path.StartsWith(
+                                product.Id + " ",
+                                StringComparison.Ordinal))
+                        .Select(command => new CommandCapabilitiesSummary
+                        {
+                            Command = command.Path[(product.Id.Length + 1)..],
+                            Description = command.Description,
+                        })
+                        .ToArray(),
+                    Operations = product.Operations
+                        .Select(static operation => new OperationCapabilitiesSummary
+                        {
+                            Command = operation.Command,
+                            Ops = operation.Ops,
+                        })
+                        .ToArray(),
+                })
+                .ToArray(),
+        };
+    }
 
     public CapabilitiesResult Select(
         string? productId,
@@ -198,7 +252,11 @@ internal sealed class CliCapabilitySnapshot
                     DetailsSchemaId = descriptor.DetailsSchemaId,
                 })
                 .ToArray(),
-        });
+        },
+        catalog.Products.ToDictionary(
+            static product => product.Manifest.Id,
+            static product => product.Manifest.DisplayName,
+            StringComparer.Ordinal));
     }
 
     /// <summary>The engine pin of each product, as capabilities and <c>--version</c> report them.</summary>

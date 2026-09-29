@@ -60,6 +60,7 @@ internal sealed class TableOutputWriter : IOutputWriter
                 case ReviewResult review: CommonRenderers.Render(review, surface); break;
                 case LicenseStatusResult status: CommonRenderers.Render(status, surface); break;
                 case CapabilitiesResult capabilities: CommonRenderers.Render(capabilities, surface); break;
+                case CapabilitiesSummaryResult summary: CommonRenderers.Render(summary, surface); break;
                 case DoctorResult doctor: CommonRenderers.Render(doctor, surface); break;
                 case VersionResult version: CommonRenderers.Render(version, surface); break;
                 case SchemaListResult schemas: CommonRenderers.Render(schemas, surface); break;

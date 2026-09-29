@@ -100,6 +100,36 @@ internal static class CommonRenderers
         }
     }
 
+    public static void Render(CapabilitiesSummaryResult summary, TableSurface surface)
+    {
+        surface.Out.WriteLine($"aspose-cli {summary.CliVersion}");
+        foreach (ProductCapabilitiesSummary product in summary.Products)
+        {
+            surface.Out.WriteLine();
+            string engine = product.Engine is null
+                ? string.Empty
+                : $" ({product.Engine} {product.EngineVersion})";
+            surface.Out.WriteLine($"{product.Id}: {product.Name}{engine}");
+            surface.Out.WriteLine($"  load:     {string.Join(", ", product.LoadFormats)}");
+            surface.Out.WriteLine($"  convert:  {string.Join(", ", product.ConvertFormats)}");
+            surface.Out.WriteLine($"  render:   {string.Join(", ", product.RenderFormats)}");
+            foreach (OperationCapabilitiesSummary operation in product.Operations)
+            {
+                surface.Out.WriteLine(
+                    $"  {operation.Command} ops: {string.Join(", ", operation.Ops)}");
+            }
+
+            surface.Out.WriteLine();
+            var table = new TextTable("command", "description");
+            foreach (CommandCapabilitiesSummary command in product.Commands)
+            {
+                table.AddRow($"{product.Id} {command.Command}", command.Description ?? "-");
+            }
+
+            table.WriteTo(surface.Out, surface.Format);
+        }
+    }
+
     public static void Render(VersionResult version, TableSurface surface)
     {
         surface.Out.WriteLine($"aspose-cli {version.CliVersion}");
