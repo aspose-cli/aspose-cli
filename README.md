@@ -11,7 +11,7 @@ effect on its output.
 ## Quick start
 
 ```powershell
-aspose-cli capabilities --output json
+aspose-cli capabilities --summary --output json
 aspose-cli doctor --output json
 aspose-cli skill list
 aspose-cli docs cells/editing
