@@ -124,13 +124,15 @@ internal static class PdfRenderers
     public static void Render(PdfFormResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"{result.Type} form: {result.Fields.Count} field(s)");
-        var table = new TextTable("name", "type", "value", "page", "flags");
+        var table = new TextTable("name", "type", "value", "on value", "accepts", "page", "flags");
         foreach (PdfFormField field in result.Fields)
         {
             table.AddRow(
                 field.Name,
                 field.Type,
                 field.Value ?? string.Empty,
+                field.OnValue ?? string.Empty,
+                string.Join(", ", field.States ?? field.Options ?? []),
                 field.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
                 string.Join(", ", new[]
                 {

@@ -301,7 +301,22 @@ public sealed record PdfFormField
     /// <summary>The field kind; one of <see cref="PdfFormFieldTypes"/>.</summary>
     public required string Type { get; init; }
     public string? Value { get; init; }
+
+    /// <summary>
+    /// The values a choice field accepts; for a radio button, the values of its group, which
+    /// set_form_field accepts under the group's name.
+    /// </summary>
     public IReadOnlyList<string>? Options { get; init; }
+
+    /// <summary>A check box's appearance states, <c>Off</c> first; set_form_field accepts only these.</summary>
+    public IReadOnlyList<string>? States { get; init; }
+
+    /// <summary>
+    /// The value that checks a check box, when it has exactly one state besides <c>Off</c>, or
+    /// that selects a radio button.
+    /// </summary>
+    public string? OnValue { get; init; }
+
     public required bool ReadOnly { get; init; }
     public required bool Required { get; init; }
     public int? Page { get; init; }

@@ -259,6 +259,28 @@ internal static class PdfContractSamples
                 Required = true,
                 Page = 1,
             },
+            new PdfFormField
+            {
+                Name = "agree",
+                Type = PdfFormFieldTypes.Checkbox,
+                Value = "Off",
+                States = ["Off", "Checked"],
+                OnValue = "Checked",
+                ReadOnly = false,
+                Required = false,
+                Page = 1,
+            },
+            new PdfFormField
+            {
+                Name = "color",
+                Type = PdfFormFieldTypes.RadioOption,
+                Value = string.Empty,
+                Options = ["Red", "Blue"],
+                OnValue = "Blue",
+                ReadOnly = false,
+                Required = false,
+                Page = 1,
+            },
         ],
         License = Licensed,
     };
