@@ -337,6 +337,43 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void InspectTables_ReportsTheTableStyleThatInsertTableAccepts()
+    {
+        string input = _fixture.Temp.File("table-style.docx");
+        string output = _fixture.Temp.File("table-style-changed.docx");
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        foreach (bool styled in new[] { true, false })
+        {
+            Table table = builder.StartTable();
+            builder.InsertCell();
+            builder.Write(styled ? "Styled" : "Plain");
+            builder.EndRow();
+            builder.EndTable();
+            if (styled)
+            {
+                table.StyleIdentifier = StyleIdentifier.TableGrid;
+            }
+
+            builder.Writeln("After");
+        }
+
+        document.Save(input);
+
+        IReadOnlyList<TableData> tables = _fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["tables"] }).Tables!;
+        Assert.Equal(["Table Grid", null], tables.Select(static table => table.Style));
+
+        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new InsertTableOp { At = new WordsTarget { Block = tables[1].Block }, Position = "after", Rows = 1, Columns = 1, Style = tables[0].Style }],
+        }, new WordsEditRequest { OutputPath = output });
+
+        IReadOnlyList<TableData> changed = _fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["tables"] }).Tables!;
+        Assert.Equal(["Table Grid", null, "Table Grid"], changed.Select(static table => table.Style));
+        Assert.Equal(StyleIdentifier.TableGrid, new Document(output).GetChildNodes(NodeType.Table, true).Cast<Table>().Last().StyleIdentifier);
+    }
+
+    [Fact]
     public void FormatTable_KeepTogether_MovesATableThatStraddlesAPageOntoOnePage()
     {
         (string input, int tableBlock) = CreateStraddlingTable("keep-together.docx");

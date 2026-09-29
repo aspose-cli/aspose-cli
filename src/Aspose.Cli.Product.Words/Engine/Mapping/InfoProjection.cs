@@ -229,6 +229,9 @@ internal static class InfoProjection
                 Block = entry.Index,
                 Rows = table.Rows.Count,
                 Columns = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
+                Style = table.StyleIdentifier == StyleIdentifier.TableNormal || string.IsNullOrEmpty(table.StyleName)
+                    ? null
+                    : table.StyleName,
             };
         }).ToArray();
 

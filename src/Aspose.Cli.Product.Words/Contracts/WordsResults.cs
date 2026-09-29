@@ -105,12 +105,16 @@ public sealed record ImageData
     public required double Height { get; init; }
 }
 
-/// <summary>One table summary.</summary>
+/// <summary>
+/// One table summary. <c>Style</c> names the table style the table uses, omitted for the
+/// default Table Normal style; insert_table accepts it as its <c>style</c>.
+/// </summary>
 public sealed record TableData
 {
     public required int Block { get; init; }
     public required int Rows { get; init; }
     public required int Columns { get; init; }
+    public string? Style { get; init; }
 }
 
 /// <summary>

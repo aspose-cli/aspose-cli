@@ -247,13 +247,14 @@ internal static class WordsRenderers
         {
             surface.Out.WriteLine();
             surface.Out.WriteLine("tables:");
-            var table = new TextTable("block", "rows", "columns");
+            var table = new TextTable("block", "rows", "columns", "style");
             foreach (TableData item in tables)
             {
                 table.AddRow(
                     TableText.Int(item.Block),
                     TableText.Int(item.Rows),
-                    TableText.Int(item.Columns));
+                    TableText.Int(item.Columns),
+                    item.Style ?? "-");
             }
 
             table.WriteTo(surface.Out, surface.Format);

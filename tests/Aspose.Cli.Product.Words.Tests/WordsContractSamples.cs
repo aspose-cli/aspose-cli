@@ -57,7 +57,7 @@ internal static class WordsContractSamples
             new RevisionData { Type = "insertion", Author = "Reviewer", Date = "2026-09-01T10:30:00", Block = 2, Text = "sixty" },
         ],
         Images = [new ImageData { Block = 4, Name = "Picture 1", Width = 144, Height = 96 }],
-        Tables = [new TableData { Block = 5, Rows = 2, Columns = 2 }],
+        Tables = [new TableData { Block = 5, Rows = 2, Columns = 2, Style = "Table Grid" }],
         License = Licensed,
     };
 
