@@ -207,8 +207,15 @@ public sealed class McpCommandTests
             // A cold interpreter and its descendant must be ready before this test can exercise
             // descendant cleanup. That setup is not the behavior under test, and a loaded machine can
             // take tens of seconds to start Windows PowerShell.
+            Task<bool> ready = WaitForFileAsync(pidFile, TimeSpan.FromSeconds(120));
+            if (await Task.WhenAny(ready, execution) == execution)
+            {
+                // The interpreter ended before its descendant was ready: report what it printed.
+                McpExecutionResult ended = await execution;
+                Assert.Fail($"The probe script exited with {ended.ExitCode} before starting its descendant: {ended.Stdout} {ended.Stderr}");
+            }
             Assert.True(
-                await WaitForFileAsync(pidFile, TimeSpan.FromSeconds(120)),
+                await ready,
                 "The adversarial descendant did not become ready within its startup budget.");
             string[] identity = (await File.ReadAllTextAsync(pidFile)).Split('|');
             Process candidate = Process.GetProcessById(int.Parse(identity[0]));
@@ -302,6 +309,8 @@ public sealed class McpCommandTests
         start.ArgumentList.Add("-NoLogo");
         start.ArgumentList.Add("-NoProfile");
         start.ArgumentList.Add("-NonInteractive");
+        start.ArgumentList.Add("-ExecutionPolicy");
+        start.ArgumentList.Add("Bypass");
         start.ArgumentList.Add("-File");
         start.ArgumentList.Add(script);
         return start;
