@@ -116,6 +116,8 @@ internal static class WorkbookGridExporter
             CellNameAttribute = CellAddressAttribute,
         };
 
+        // Read before saving: an evaluation save activates the warning sheet it adds.
+        string activeSheet = workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name;
         using var stream = new BudgetedMemoryStream(
             resourceBudgets,
             ResourceBudgetKinds.MemoryBufferBytes,
@@ -127,9 +129,7 @@ internal static class WorkbookGridExporter
             checked((int)stream.Length));
         artifacts.WriteText(
             entryFileName,
-            StampActiveSheet(
-                html,
-                workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name));
+            StampActiveSheet(html, activeSheet));
         return entryFileName;
     }
 

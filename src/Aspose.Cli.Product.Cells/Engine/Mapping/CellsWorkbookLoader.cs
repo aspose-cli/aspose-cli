@@ -48,7 +48,8 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
     /// <summary>
     /// Opens a user input. A workbook that asks to be calculated when opened is calculated, as
     /// Excel does, unless <paramref name="calculateOnOpen"/> is false because the caller
-    /// recalculates itself or was told not to.
+    /// recalculates itself or was told not to. In evaluation mode an active evaluation warning
+    /// sheet gives way to the workbook's content (<see cref="CellsEvaluation.SkipActiveWarningSheet"/>).
     /// </summary>
     internal LoadedWorkbook Open(
         string path,
@@ -100,8 +101,9 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             }
             resources.ThrowIfFailed();
             Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, resourceBudgets) : null;
+            Warning? skipped = published ? null : CellsEvaluation.SkipActiveWarningSheet(workbook);
             transferred = true;
-            return new LoadedWorkbook(workbook, resources, plan.Encrypted) { CalculatedOnOpen = calculated };
+            return new LoadedWorkbook(workbook, resources, plan.Encrypted) { CalculatedOnOpen = calculated, EvaluationSheetSkipped = skipped, IsDelimitedText = plan.Separator is not null };
         }
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {

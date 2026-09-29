@@ -128,6 +128,34 @@ public sealed class CellsPivotCalculationTests : IClassFixture<CellsFixture>
             Assert.True(header.Font.IsBold);
         }
     }
+    [Fact]
+    public void ChineseCaptions_AreStoredOnThePivotAndSurviveARefresh()
+    {
+        string source = CreateWorkbook("pivot-captions.xlsx");
+        string seeded = Apply(source,
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A1",
+                "values": [["地区","产品","不含税净额"],["北京","甲",10],["上海","乙",20]] },
+              { "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:C3", "at": "A1",
+                "rows": ["地区"], "columns": ["产品"],
+                "values": [{ "field": "不含税净额" }, { "field": "不含税净额", "function": "average", "label": "平均净额" }] }
+            ] }
+            """, "pivot-captions.seeded.xlsx");
+        string output = Apply(seeded,
+            """{ "ops": [ { "op": "refresh_pivot", "sheet": "Pivot" } ] }""",
+            "pivot-captions.out.xlsx");
+
+        using var reopened = new Workbook(output);
+        Aspose.Cells.Pivot.PivotTable pivot = reopened.Worksheets["Pivot"].PivotTables[0];
+        Assert.Equal("总计", pivot.GrandTotalName);
+        Assert.Equal("行标签", pivot.RowHeaderCaption);
+        Assert.Equal("列标签", pivot.ColumnHeaderCaption);
+        Assert.Equal("值", pivot.DataFieldHeaderName);
+        Assert.Equal("求和项:不含税净额", pivot.DataFields[0].DisplayName);
+        Assert.Equal("平均净额", pivot.DataFields[1].DisplayName);
+    }
+
     private string CreateWorkbook(string output) => _fixture.Engine.Create(new NewWorkbookRequest
     {
         OutputPath = _fixture.Temp.File(output),

@@ -18,7 +18,8 @@ this Skill adds what is specific to workbooks.
 2. If a number can be computed from other cells, write a formula; the engine
    recalculates after every edit.
 3. Name the sheet on every read, render and operation (`--sheet`, `"sheet"`):
-   an evaluation save makes its warning sheet the active one. Sheet names match
+   an evaluation save makes its warning sheet the active one, and defaults
+   then fall back to the first other sheet. Sheet names match
    case-insensitively.
 4. Serialize writes to one file; parallel reads are safe.
 5. An open-ended request ("make me a sales sheet") gets the full deliverable:
@@ -53,6 +54,10 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output json
   `FORMAT_AMBIGUOUS` for decimal commas (`1.234,56`). Import it once with
   `cells convert data.csv --to xlsx --encoding gb18030` or `--culture de-DE`, as
   the hint says, and work on the workbook.
+- `cells inspect` and `cells convert` warn `TEXT_TABLE_LAYOUT` when a CSV or
+  TSV is not a plain table from row 1: title or query-condition rows before the
+  header, empty rows inside the table, or a total row (`合计`, `Total`) at its
+  end. Take the header row and data rows from the message, not from row 1.
 
 ## Editing
 
@@ -119,7 +124,9 @@ error.
 ## Evaluation mode
 
 Saved workbooks gain an "Evaluation Warning" sheet that becomes the active
-sheet, and CSV, TSV and Markdown export only the first worksheet
+sheet (`EVALUATION_SHEET_ADDED`); commands that default to the active sheet
+then use the first other sheet (`EVALUATION_SHEET_SKIPPED`). CSV, TSV and
+Markdown export only the first worksheet
 (`EVALUATION_LIMIT`). Effects and fixes: `aspose-cli docs cells/troubleshooting`.
 
 ## Pitfalls

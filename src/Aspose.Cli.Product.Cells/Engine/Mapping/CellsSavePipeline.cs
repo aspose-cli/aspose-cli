@@ -19,7 +19,7 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
     internal AtomicOutputSetWriter CreateOutputSet(IEnumerable<string> directories, string operation, string? backupPath = null) =>
         new(_writer, backupPath is null ? directories : directories.Append(Path.GetDirectoryName(backupPath)!), operation);
 
-    internal (OutputInfo Output, BackupInfo? Backup, Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped) Save(
+    internal WorkbookStagedSave Save(
         Workbook workbook, string outputPath, bool overwrite, LicenseState licenseState, string? encryptPassword = null,
         string? backupPath = null, FileWritePrecondition? inputPrecondition = null,
         bool verifyReopen = false, string? inputPassword = null)
@@ -28,7 +28,7 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
         using AtomicOutputSetWriter transaction = CreateOutputSet([Path.GetDirectoryName(outputPath)!], "cells-save", backupPath);
         WorkbookStagedSave saved = Stage(transaction, workbook, plan, outputPath, overwrite, backupPath, inputPrecondition, verifyReopen);
         transaction.Commit();
-        return (saved.Output, saved.Backup, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped);
+        return saved;
     }
 
     internal WorkbookStagedSave Stage(AtomicOutputSetWriter transaction, Workbook workbook,
@@ -38,22 +38,32 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
         Warning? truncated = DetectGridTruncation(workbook, plan.Format);
         Warning? sheetsDropped = plan.DetectSheetLoss(workbook);
         int refsBefore = CountRefFormulas(workbook);
+        Warning? evaluationSheetAdded = null;
         StagedOutput candidate = transaction.Stage(outputPath, overwrite, backupPath, inputPrecondition,
-            path => Produce(workbook, plan, path),
+            path => evaluationSheetAdded = Produce(workbook, plan, path),
             verify: verifyReopen ? path =>
             {
                 using LoadedWorkbook reopened = loader.OpenPublishedCandidate(path, plan.OutputPassword);
                 _ = reopened.Workbook.Worksheets.Count;
             } : null);
         return new WorkbookStagedSave(candidate, plan.FormatId, truncated,
-            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped);
+            BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped)
+        { EvaluationSheetAdded = evaluationSheetAdded };
     }
 
-    internal void Produce(Workbook workbook, WorkbookSavePlan plan, string path)
+    /// <summary>
+    /// Writes the workbook and returns the disclosure of the evaluation warning sheet the save
+    /// added and activated, if it added one. The engine adds that sheet to the in-memory workbook
+    /// too, and no public API keeps the caller's active sheet.
+    /// </summary>
+    internal Warning? Produce(Workbook workbook, WorkbookSavePlan plan, string path)
     {
         if (plan.FormatId is "csv" or "tsv" or "md")
         { NormalizeDatesForTextExport(plan.TextSheet(workbook)); }
+        int sheetsBefore = workbook.Worksheets.Count;
+        string activeBefore = workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name;
         plan.Save(workbook, path);
+        return CellsEvaluation.DescribeAddedWarningSheet(workbook, sheetsBefore, activeBefore);
     }
 
     internal long Write(
@@ -176,6 +186,9 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
 internal sealed record WorkbookStagedSave(StagedOutput Candidate, string Format,
     Warning? Truncated, Warning? FormulasBroken, Warning? SheetsDropped)
 {
+    /// <summary>The evaluation warning sheet the save added and activated, if any.</summary>
+    internal Warning? EvaluationSheetAdded { get; init; }
+
     internal OutputInfo Output => new()
     { Path = Candidate.TargetPath, Format = Format, SizeBytes = Candidate.SizeBytes, Fingerprint = Candidate.Fingerprint };
     internal BackupInfo? Backup => Candidate.Backup;

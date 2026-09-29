@@ -536,7 +536,7 @@
       }
     },
     "create_pivot": {
-      "description": "Adds a pivot table that summarizes a source range.",
+      "description": "Adds a pivot table that summarizes a source range. Its captions (value field names, the grand total, the row, column and value headers) follow captions, whose auto default changes only pivots with Han field names; a value field's label always wins. A label that repeats a source header or another value field's caption, ignoring case, is refused, as Excel refuses it.",
       "type": "object",
       "required": [
         "op",
@@ -591,6 +591,16 @@
           "items": {
             "$ref": "#/$defs/pivotValueField"
           }
+        },
+        "captions": {
+          "description": "The caption language: en keeps the engine's English captions (Sum of X, Grand Total); zh writes Excel's Simplified Chinese ones (求和项:X, 总计, 行标签, 列标签, 值); auto is zh when a row, column or value field name contains a Han character, otherwise en.",
+          "type": "string",
+          "enum": [
+            "auto",
+            "en",
+            "zh"
+          ],
+          "default": "auto"
         }
       }
     },
@@ -2763,6 +2773,11 @@
         },
         "numberFormat": {
           "description": "The number format code of the field, such as #,##0.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "label": {
+          "description": "The caption of the value field, such as Net sales; derived from the function and field when omitted.",
           "type": "string",
           "pattern": "\\S"
         }

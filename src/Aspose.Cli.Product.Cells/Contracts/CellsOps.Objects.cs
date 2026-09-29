@@ -112,7 +112,13 @@ public sealed record ChartDataLabels
     public string? Format { get; init; }
 }
 
-/// <summary>Adds a pivot table that summarizes a source range.</summary>
+/// <summary>
+/// Adds a pivot table that summarizes a source range. Its captions (value field names, the
+/// grand total, the row, column and value headers) follow captions, whose auto default
+/// changes only pivots with Han field names; a value field's label always wins. A label that
+/// repeats a source header or another value field's caption, ignoring case, is refused, as
+/// Excel refuses it.
+/// </summary>
 [Operation("create_pivot")]
 public sealed record CreatePivotOp : CellsOp
 {
@@ -133,6 +139,21 @@ public sealed record CreatePivotOp : CellsOp
 
     /// <summary>The value fields with their aggregation.</summary>
     [MinItems(1)] public required IReadOnlyList<PivotValueField> Values { get; init; }
+
+    /// <summary>
+    /// The caption language: en keeps the engine's English captions (Sum of X, Grand Total);
+    /// zh writes Excel's Simplified Chinese ones (求和项:X, 总计, 行标签, 列标签, 值); auto is zh
+    /// when a row, column or value field name contains a Han character, otherwise en.
+    /// </summary>
+    [AllowedValues(typeof(PivotCaptionLanguages))] public string Captions { get; init; } = PivotCaptionLanguages.Auto;
+}
+
+/// <summary>Accepted values of <see cref="CreatePivotOp.Captions"/>.</summary>
+public static class PivotCaptionLanguages
+{
+    public const string Auto = "auto";
+    public const string English = "en";
+    public const string Chinese = "zh";
 }
 
 /// <summary>One aggregated value field of a pivot table.</summary>
@@ -145,6 +166,9 @@ public sealed record PivotValueField
 
     /// <summary>The number format code of the field, such as #,##0.</summary>
     [Pattern(@"\S")] public string? NumberFormat { get; init; }
+
+    /// <summary>The caption of the value field, such as Net sales; derived from the function and field when omitted.</summary>
+    [Pattern(@"\S")] public string? Label { get; init; }
 }
 
 /// <summary>Accepted values of <see cref="PivotValueField.Function"/>.</summary>

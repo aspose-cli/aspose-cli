@@ -59,8 +59,9 @@ The field names of these operations are the ones most often guessed wrong:
 
 ## Addressing
 
-- An operation's `sheet` defaults to the active sheet. Name it every time: an
-  evaluation save makes its warning sheet the active one.
+- An operation's `sheet` defaults to the active sheet. Name it every time: in
+  evaluation mode an active warning sheet gives way to the first other sheet
+  (`EVALUATION_SHEET_SKIPPED`), not to the sheet you made active.
 - Range fields are unqualified A1 on the operation's sheet. Only the fields
   whose schema description says so (`copy_range.from`/`to`,
   `import_range.from`/`to`, `create_pivot.sourceRange`, the chart and
@@ -192,6 +193,18 @@ cells:
   unformatted.
 - Pivots do not follow source changes: add `refresh_pivot` after editing the
   source. Refresh keeps the pivot's formatting and the sheet's column widths.
+- Captions follow `captions`: `en` keeps the engine's English ones (`Sum of X`,
+  `Grand Total`, `Data`); `zh` writes Excel's Simplified Chinese ones
+  (`求和项:X`, `计数项:X`, `平均值项:X`, `最大值项:X`, `最小值项:X`, `总计`,
+  `行标签`, `列标签`, `值`). The default `auto` picks `zh` when a row, column
+  or value field name contains a Han character, so other pivots keep the
+  English captions. Refresh keeps them.
+- A value field's `label` names it in either language, such as
+  `{ "field": "不含税净额", "label": "净额合计" }`. A label that repeats a source
+  header or another value field's caption, ignoring case, is refused, as Excel
+  refuses it.
+- With two or more value fields, the grand-total row of each value field reads
+  `Total <caption>` in every language; no pivot caption holds that word.
 - `query range` the target area to read the aggregated numbers.
 
 ## Conditional formatting
@@ -247,7 +260,7 @@ show in renders and reads; give the location column a header.
 
 - `set_active_sheet` saves the sheet a workbook opens on; the browser preview
   honors it. An evaluation save activates its own "Evaluation Warning" sheet
-  instead.
+  instead (`EVALUATION_SHEET_ADDED`).
 - `set_sheet_view` gridlines, zoom and headings affect Excel and the live
   preview, never `render` or PDF output. Draw `set_borders` when a grid must
   appear in a render.

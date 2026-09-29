@@ -63,7 +63,7 @@
           "command": "edit",
           "inputSchema": "v2/cells/ops",
           "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-          "contractFingerprint": "sha256:2e88e057d9c8b769bcb1973d5b0772a8a60874e2b89da7c1ceb782d298bb31b0",
+          "contractFingerprint": "sha256:261770470245789c9a7b2b2ce827a310d1c596c58a1bd4404ca3681ca709fab9",
           "maximumOperations": 10000,
           "ops": [
             "add_comment",
@@ -18247,6 +18247,24 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "EVALUATION_SHEET_ADDED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.evaluation-sheet-added.message.v1",
+      "hintTemplateId": "cells.evaluation-sheet-added.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "EVALUATION_SHEET_SKIPPED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.evaluation-sheet-skipped.message.v1",
+      "hintTemplateId": "cells.evaluation-sheet-skipped.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "EVAL_INPUT_TRUNCATED",
       "owner": "common",
       "severity": "warning",
@@ -18947,6 +18965,15 @@
       "messageTemplateId": "common.style-not-found.message.v1",
       "hintTemplateId": "common.style-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "TEXT_TABLE_LAYOUT",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.text-table-layout.message.v1",
+      "hintTemplateId": "cells.text-table-layout.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "TRACKED_CHANGES_PRESENT",
