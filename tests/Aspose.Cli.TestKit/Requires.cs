@@ -20,7 +20,4 @@ public static class Requires
                     .IsInRole(System.Security.Principal.WindowsBuiltInRole.Administrator),
             "Requires an elevated Windows process.");
     }
-
-    public static void Unix() =>
-        Assert.SkipWhen(OperatingSystem.IsWindows(), "Requires a Unix platform.");
 }

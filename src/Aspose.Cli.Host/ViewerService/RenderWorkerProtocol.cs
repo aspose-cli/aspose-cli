@@ -27,7 +27,7 @@ internal sealed record RenderWorkerRequest(long MaxInputBytes = Aspose.Cli.Sdk.I
     /// <summary>Original document path defining the verified local resource boundary of a snapshot.</summary>
     public string? SourceOrigin { get; init; }
 
-    /// <summary>Absolute path of the empty private directory to render into.</summary>
+    /// <summary>Absolute path of the empty dedicated directory to render into.</summary>
     public required string Output { get; init; }
 
     /// <summary>Upper bound of rendered parts.</summary>

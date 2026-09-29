@@ -201,7 +201,7 @@ rules.
 
 ## Built-in verification
 
-`cells edit --verify` compares a private snapshot of the input with the staged
+`cells edit --verify` compares a temporary snapshot of the input with the staged
 output before publishing and reports `verification` with `directChanges`,
 `formulaResultChanges`, `otherChanges`, `formulaErrors` and `issues`. Formula
 errors, sheet loss, grid truncation or an incomplete scan keep the edited file

@@ -435,8 +435,8 @@ public sealed class AtomicOutputSetWriterTests
             temp.Path,
             ".aspose-publication-crashed-0001");
         string backups = Path.Combine(transaction, "backups");
-        PrivateUserStorage.EnsureDirectory(transaction);
-        PrivateUserStorage.EnsureDirectory(backups);
+        Directory.CreateDirectory(transaction);
+        Directory.CreateDirectory(backups);
         string staged = AtomicPublicationPlan.StagedPath(
             transaction,
             target,
@@ -498,8 +498,8 @@ public sealed class AtomicOutputSetWriterTests
             temp.Path,
             ".aspose-publication-crashed-delete");
         string backups = Path.Combine(transaction, "backups");
-        PrivateUserStorage.EnsureDirectory(transaction);
-        PrivateUserStorage.EnsureDirectory(backups);
+        Directory.CreateDirectory(transaction);
+        Directory.CreateDirectory(backups);
         string staged = AtomicPublicationPlan.StagedPath(
             transaction,
             target,
@@ -592,7 +592,7 @@ public sealed class AtomicOutputSetWriterTests
         string transaction = Path.Combine(
             temp.Path,
             ".aspose-publication-crashed-create");
-        PrivateUserStorage.EnsureDirectory(transaction);
+        Directory.CreateDirectory(transaction);
         string staged = AtomicPublicationPlan.StagedPath(
             transaction,
             target,
@@ -640,13 +640,13 @@ public sealed class AtomicOutputSetWriterTests
     public void OrphanJournalTemporaryIsBoundedlyRemoved()
     {
         using var temp = new TempDirectory();
-        string transaction = PrivateUserStorage.EnsureDirectory(Path.Combine(
+        string transaction = Directory.CreateDirectory(Path.Combine(
             temp.Path,
-            $".aspose-publication-crashed-{Guid.NewGuid():N}"));
+            $".aspose-publication-crashed-{Guid.NewGuid():N}")).FullName;
         string temporary = Path.Combine(
             transaction,
             $".{AtomicPublicationPlan.JournalName}.{Guid.NewGuid():N}.tmp");
-        PrivateUserStorage.WriteAllText(temporary, "partial journal");
+        File.WriteAllText(temporary, "partial journal");
 
         int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
 
@@ -858,7 +858,7 @@ public sealed class AtomicOutputSetWriterTests
         string transaction = Path.Combine(
             temp.Path,
             ".aspose-publication-invalid-large");
-        PrivateUserStorage.EnsureDirectory(transaction);
+        Directory.CreateDirectory(transaction);
         string journal = Path.Combine(
             transaction,
             AtomicPublicationPlan.JournalName);
@@ -878,9 +878,9 @@ public sealed class AtomicOutputSetWriterTests
     public void DuplicateRecoveryJournalPropertiesAreRejected()
     {
         using var temp = new TempDirectory();
-        string transaction = PrivateUserStorage.EnsureDirectory(Path.Combine(
+        string transaction = Directory.CreateDirectory(Path.Combine(
             temp.Path,
-            ".aspose-publication-invalid-duplicate"));
+            ".aspose-publication-invalid-duplicate")).FullName;
         string journal = Path.Combine(
             transaction,
             AtomicPublicationPlan.JournalName);
@@ -902,9 +902,9 @@ public sealed class AtomicOutputSetWriterTests
     public void NullRecoveryJournalEntriesAreRejected()
     {
         using var temp = new TempDirectory();
-        string transaction = PrivateUserStorage.EnsureDirectory(Path.Combine(
+        string transaction = Directory.CreateDirectory(Path.Combine(
             temp.Path,
-            ".aspose-publication-invalid-null"));
+            ".aspose-publication-invalid-null")).FullName;
         string journal = Path.Combine(
             transaction,
             AtomicPublicationPlan.JournalName);
@@ -923,23 +923,28 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
+    [SupportedOSPlatform("windows")]
     public void ForeignTransactionDirectoriesNeitherBlockNorConsumeRecoveryBudget()
     {
+        // Assigning another principal as owner needs the restore privilege of an elevated token.
+        Requires.ElevatedWindows();
         using var temp = new TempDirectory();
         string nested = Directory.CreateDirectory(temp.File("nested")).FullName;
+        var system = new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null);
         var planted = new List<string>();
         foreach (string parent in new[] { temp.Path, nested })
         {
             for (int index = 0; index < 40; index++)
             {
-                // Ordinary inherited permissions: any other principal could have created these.
                 string foreign = Directory.CreateDirectory(
                     Path.Combine(parent, $".aspose-publication-foreign-{index:000}")).FullName;
                 string journal = Path.Combine(foreign, AtomicPublicationPlan.JournalName);
                 File.WriteAllText(journal, "{\"state\":\"Partial\"}");
                 planted.Add(journal);
             }
+            SetOwner(Path.Combine(parent, ".aspose-publication-foreign-*"), system);
         }
+        Assert.All(planted, journal => Assert.Equal(system, OwnerOf(Path.GetDirectoryName(journal)!)));
 
         string target = Path.Combine(nested, "target.txt");
         using (var set = new AtomicOutputSetWriter(TestBudgets.Writer(), nested, "foreign-state"))
@@ -953,10 +958,130 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
+    [SupportedOSPlatform("windows")]
+    public void TransactionDirectoryAdmitsOnlyTheCurrentUserAndLocalSystem()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string shared = Path.Combine(temp.Path, "shared");
+        Directory.CreateDirectory(shared);
+        var sharedSecurity = new DirectoryInfo(shared).GetAccessControl();
+        sharedSecurity.AddAccessRule(new FileSystemAccessRule(
+            new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null),
+            FileSystemRights.Modify,
+            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+            PropagationFlags.None,
+            AccessControlType.Allow));
+        new DirectoryInfo(shared).SetAccessControl(sharedSecurity);
+
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), shared, "test");
+        set.Stage(Path.Combine(shared, "out.txt"), overwrite: false, staged => File.WriteAllText(staged, "x"));
+        string transaction = Assert.Single(Directory.GetDirectories(shared, ".aspose-publication-*"));
+
+        var security = new DirectoryInfo(transaction).GetAccessControl(AccessControlSections.Access | AccessControlSections.Owner);
+        SecurityIdentifier user = WindowsIdentity.GetCurrent().User!;
+        Assert.Equal(user, security.GetOwner(typeof(SecurityIdentifier)));
+        Assert.True(security.AreAccessRulesProtected);
+        var principals = security.GetAccessRules(true, true, typeof(SecurityIdentifier))
+            .Cast<FileSystemAccessRule>()
+            .Select(rule => (SecurityIdentifier)rule.IdentityReference)
+            .ToHashSet();
+        Assert.Equal(
+            new HashSet<SecurityIdentifier> { user, new(WellKnownSidType.LocalSystemSid, null) },
+            principals);
+    }
+
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void TransactionOwnedByTheElevatedTokensDefaultOwnerIsRecovered()
+    {
+        Requires.ElevatedWindows();
+        var administrators = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        Assert.SkipUnless(administrators == WindowsIdentity.GetCurrent().Owner,
+            "Requires a token whose default owner is the Administrators group.");
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        string transaction = CreateAbandonedPublishingTransaction(
+            temp.Path,
+            target,
+            original: "original",
+            published: "published");
+        Assert.Equal(administrators, OwnerOf(transaction));
+        Assert.NotEqual(WindowsIdentity.GetCurrent().User, OwnerOf(transaction));
+
+        int recovered = AtomicOutputSetWriter.RecoverPending(temp.Path);
+
+        Assert.Equal(1, recovered);
+        Assert.Equal("original", File.ReadAllText(target));
+        Assert.False(Directory.Exists(transaction));
+    }
+
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void RollbackRestoresContentAndKeepsATargetAclThatDiffersFromItsFolder()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string first = temp.File("first.txt");
+        string second = temp.File("second.txt");
+        File.WriteAllText(first, "original");
+        File.WriteAllText(second, "original-two");
+        SecurityIdentifier user = WindowsIdentity.GetCurrent().User!;
+        var security = new FileSecurity();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.AddAccessRule(new FileSystemAccessRule(user, FileSystemRights.FullControl, AccessControlType.Allow));
+        security.AddAccessRule(new FileSystemAccessRule(
+            new SecurityIdentifier(WellKnownSidType.WorldSid, null), FileSystemRights.Read, AccessControlType.Allow));
+        new FileInfo(first).SetAccessControl(security);
+        string expected = AccessSddl(first);
+        Assert.NotEqual(AccessSddl(second), expected);
+        var faults = new SelectiveFaultInjector(
+            point => point.Kind == PublicationFaultKind.Publish && point.EntryIndex == 1
+                ? new IOException("publish fault")
+                : null);
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test", faults);
+        set.Stage(first, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
+        set.Stage(second, overwrite: true, staged => File.WriteAllText(staged, "replacement-two"));
+
+        CliException error = Assert.Throws<CliException>(() => set.Commit());
+
+        Assert.True(error.Details!["recoveryComplete"]!.GetValue<bool>());
+        Assert.Equal("original", File.ReadAllText(first));
+        Assert.Equal(expected, AccessSddl(first));
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static string AccessSddl(string path) =>
+        new FileInfo(path).GetAccessControl(AccessControlSections.Access)
+            .GetSecurityDescriptorSddlForm(AccessControlSections.Access);
+
+    [SupportedOSPlatform("windows")]
+    private static IdentityReference? OwnerOf(string directory) =>
+        new DirectoryInfo(directory).GetAccessControl(AccessControlSections.Owner)
+            .GetOwner(typeof(SecurityIdentifier));
+
+    /// <summary>Uses icacls, which enables the restore privilege that assigning another owner needs.</summary>
+    [SupportedOSPlatform("windows")]
+    private static void SetOwner(string pattern, SecurityIdentifier owner)
+    {
+        using var process = System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(
+            Path.Combine(Environment.SystemDirectory, "icacls.exe"))
+        {
+            ArgumentList = { pattern, "/setowner", "*" + owner.Value, "/Q" },
+            UseShellExecute = false,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true,
+        })!;
+        string output = process.StandardOutput.ReadToEnd() + process.StandardError.ReadToEnd();
+        process.WaitForExit();
+        Assert.True(process.ExitCode == 0, output);
+    }
+
+    [Fact]
     public void UnrelatedAncestorTransactionDoesNotBlockNestedPublication()
     {
         using var temp = new TempDirectory();
-        string transaction = PrivateUserStorage.EnsureDirectory(temp.File(".aspose-publication-invalid-ancestor"));
+        string transaction = Directory.CreateDirectory(temp.File(".aspose-publication-invalid-ancestor")).FullName;
         string journal = Path.Combine(transaction, AtomicPublicationPlan.JournalName);
         File.WriteAllText(journal, """{"version":1,"operation":"invalid","ownerProcessId":1,"state":0,"entries":null}""");
         string nested = Directory.CreateDirectory(temp.File("nested")).FullName;
@@ -1115,11 +1240,11 @@ public sealed class AtomicOutputSetWriterTests
 
     [Fact]
     [SupportedOSPlatform("windows")]
-    public void NewWindowsOutputsInheritDestinationAclInsteadOfPrivateStagingAcl()
+    public void NewWindowsOutputsCarryTheAclTheirFolderGivesNewFiles()
     {
         Requires.Windows();
 
-        VerifyNewWindowsOutputsInheritDestinationAcl();
+        VerifyNewWindowsOutputsCarryTheAclTheirFolderGivesNewFiles();
     }
 
     [Fact]
@@ -1174,35 +1299,73 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [SupportedOSPlatform("windows")]
-    private static void VerifyNewWindowsOutputsInheritDestinationAcl()
+    private static void VerifyNewWindowsOutputsCarryTheAclTheirFolderGivesNewFiles()
     {
         using var temp = new TempDirectory();
         string target = temp.File("published.txt");
-        var stagedSid = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+        string reference = temp.File("reference.txt");
+        File.WriteAllText(reference, "reference");
         using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
-        set.Stage(target, overwrite: false, staged =>
-        {
-            File.WriteAllText(staged, "content");
-            FileSecurity security = new FileInfo(staged).GetAccessControl();
-            security.AddAccessRule(new FileSystemAccessRule(
-                stagedSid,
-                FileSystemRights.ReadData,
-                AccessControlType.Allow));
-            new FileInfo(staged).SetAccessControl(security);
-        });
+        set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
 
         _ = set.Commit();
 
-        FileSecurity published = new FileInfo(target).GetAccessControl();
-        bool copiedExplicitRule = published.GetAccessRules(
-                includeExplicit: true,
-                includeInherited: false,
-                typeof(SecurityIdentifier))
-            .OfType<FileSystemAccessRule>()
-            .Any(rule => stagedSid.Equals(rule.IdentityReference)
-                && rule.FileSystemRights.HasFlag(FileSystemRights.ReadData));
-        Assert.False(copiedExplicitRule);
+        string[] published = AccessRules(target);
+        Assert.Equal(AccessRules(reference), published);
+        Assert.DoesNotContain(published, rule => rule.EndsWith(":explicit", StringComparison.Ordinal));
     }
+
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void NewWindowsOutputInASubfolderInheritsTheSubfolderAcl()
+    {
+        Requires.Windows();
+
+        VerifyNewWindowsOutputInASubfolderInheritsTheSubfolderAcl();
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void VerifyNewWindowsOutputInASubfolderInheritsTheSubfolderAcl()
+    {
+        using var temp = new TempDirectory();
+        string folder = Directory.CreateDirectory(temp.File("shared")).FullName;
+        var users = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+        var info = new DirectoryInfo(folder);
+        DirectorySecurity security = info.GetAccessControl(AccessControlSections.Access);
+        security.AddAccessRule(new FileSystemAccessRule(
+            users,
+            FileSystemRights.ReadData,
+            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+            PropagationFlags.None,
+            AccessControlType.Allow));
+        info.SetAccessControl(security);
+        string target = Path.Combine(folder, "published.txt");
+
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        set.Stage(target, overwrite: false, staged => File.WriteAllText(staged, "content"));
+        _ = set.Commit();
+
+        Assert.Equal("content", File.ReadAllText(target));
+        FileSystemAccessRule[] rules = new FileInfo(target).GetAccessControl(AccessControlSections.Access)
+            .GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+            .OfType<FileSystemAccessRule>()
+            .ToArray();
+        Assert.Contains(rules, rule => rule.IdentityReference.Equals(users)
+            && rule.IsInherited
+            && rule.AccessControlType == AccessControlType.Allow
+            && rule.FileSystemRights.HasFlag(FileSystemRights.ReadData));
+        Assert.DoesNotContain(rules, rule => !rule.IsInherited);
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static string[] AccessRules(string path) =>
+        new FileInfo(path).GetAccessControl(AccessControlSections.Access)
+            .GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+            .OfType<FileSystemAccessRule>()
+            .Select(rule => $"{rule.IdentityReference}:{rule.AccessControlType}:{rule.FileSystemRights}:"
+                + (rule.IsInherited ? "inherited" : "explicit"))
+            .Order(StringComparer.Ordinal)
+            .ToArray();
 
     private sealed class SelectiveFaultInjector(
         Func<PublicationFaultPoint, Exception?> select) : IPublicationFaultInjector
@@ -1225,8 +1388,8 @@ public sealed class AtomicOutputSetWriterTests
             root,
             $".aspose-publication-crashed-{Guid.NewGuid():N}");
         string backups = Path.Combine(transaction, "backups");
-        PrivateUserStorage.EnsureDirectory(transaction);
-        PrivateUserStorage.EnsureDirectory(backups);
+        Directory.CreateDirectory(transaction);
+        Directory.CreateDirectory(backups);
         string staged = AtomicPublicationPlan.StagedPath(
             transaction,
             target,
@@ -1284,8 +1447,8 @@ public sealed class AtomicOutputSetWriterTests
             root,
             $".aspose-publication-crashed-{Guid.NewGuid():N}");
         string backups = Path.Combine(transaction, "backups");
-        PrivateUserStorage.EnsureDirectory(transaction);
-        PrivateUserStorage.EnsureDirectory(backups);
+        Directory.CreateDirectory(transaction);
+        Directory.CreateDirectory(backups);
         string staged = AtomicPublicationPlan.StagedPath(
             transaction,
             target,

@@ -93,7 +93,7 @@ public sealed class AppMutationTests
             // Session directories are named <pid>-<random> in the user's shared temporary root, so a
             // directory an earlier process with the same id left there is told apart by existing
             // before this App started.
-            string sessions = PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.TemporaryRoot(), "app"));
+            string sessions = Directory.CreateDirectory(Path.Combine(UserStorage.TemporaryRoot(), "app")).FullName;
             var existing = Directory.GetDirectories(sessions).ToHashSet(StringComparer.OrdinalIgnoreCase);
             CliResult started = _workspace.Run("app", Original, "--no-open", "--output", "json");
             Assert.True(started.ExitCode == 0, started.StdErr);

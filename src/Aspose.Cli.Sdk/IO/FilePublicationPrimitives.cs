@@ -1,6 +1,7 @@
+using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Cryptography;
-using System.Runtime.Versioning;
+using System.Security.Principal;
 using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -68,113 +69,23 @@ internal sealed class NoPublicationFaultInjector : IPublicationFaultInjector
     }
 }
 
-internal sealed record FilePublicationMetadata(
-    FileAttributes Attributes,
-    int? UnixMode,
-    byte[]? WindowsSecurityDescriptor)
+/// <summary>
+/// The file attributes a publication restores with a file's content. Access control is the
+/// file system's: a replaced file keeps its own DACL and a new file inherits from its folder.
+/// </summary>
+internal sealed record FilePublicationMetadata(FileAttributes Attributes)
 {
-    public static FilePublicationMetadata Capture(string path)
-    {
-        // On Unix, Hidden is derived from a leading dot in the path rather
-        // than stored metadata. Transaction backups deliberately use dot
-        // names, so comparing that synthetic flag would make an otherwise
-        // verified backup impossible to restore. Unix mode is the durable
-        // permission contract on those platforms.
-        FileAttributes attributes = OperatingSystem.IsWindows()
-            ? File.GetAttributes(path)
-            : FileAttributes.Normal;
-        int? unixMode = OperatingSystem.IsWindows()
-            ? null
-            : (int)File.GetUnixFileMode(path);
-        byte[]? securityDescriptor = null;
-        if (OperatingSystem.IsWindows())
-        {
-            FileSecurity security = FileSystemAclExtensions.GetAccessControl(
-                new FileInfo(path),
-                AccessControlSections.Access | AccessControlSections.Owner);
-            securityDescriptor = security.GetSecurityDescriptorBinaryForm();
-        }
+    public static FilePublicationMetadata Capture(string path) =>
+        new(File.GetAttributes(path));
 
-        return new FilePublicationMetadata(attributes, unixMode, securityDescriptor);
-    }
-
-    public void Apply(string path)
-    {
-        if (!OperatingSystem.IsWindows() && UnixMode is { } unixMode)
-        {
-            ApplyUnixMode(path, unixMode);
-        }
-
-        if (OperatingSystem.IsWindows()
-            && WindowsSecurityDescriptor is { Length: > 0 } descriptor)
-        {
-            ApplyWindowsSecurity(path, descriptor);
-        }
-
-        FileAttributes portable = Attributes
-            & ~FileAttributes.Directory
-            & ~FileAttributes.ReparsePoint;
-        File.SetAttributes(path, portable);
-    }
-
-    /// <summary>Uses destination inheritance beneath a still-private transaction root.</summary>
-    internal static void PrepareOutputDirectory(string directory, string targetDirectory)
-    {
-        Directory.CreateDirectory(directory);
-        if (OperatingSystem.IsWindows())
-        {
-            DirectorySecurity access = new DirectoryInfo(targetDirectory).GetAccessControl(AccessControlSections.Access);
-            access.SetAccessRuleProtection(isProtected: true, preserveInheritance: true);
-            new DirectoryInfo(directory).SetAccessControl(access);
-        }
-    }
-
-    /// <summary>Copies access rules without requesting ownership changes.</summary>
-    public void ApplyAccess(string path)
-    {
-        if (OperatingSystem.IsWindows() && WindowsSecurityDescriptor is { Length: > 0 } descriptor)
-        {
-            var security = new FileSecurity();
-            security.SetSecurityDescriptorBinaryForm(descriptor, AccessControlSections.Access);
-            FileSystemAclExtensions.SetAccessControl(new FileInfo(path), security);
-        }
-    }
-
-    public void ApplyContentAttributes(string path)
-    {
-        if (!OperatingSystem.IsWindows() && UnixMode is { } unixMode)
-        {
-            ApplyUnixMode(path, unixMode);
-        }
-
-        FileAttributes portable = Attributes
-            & ~FileAttributes.Directory
-            & ~FileAttributes.ReparsePoint;
-        File.SetAttributes(path, portable);
-    }
-
-    [UnsupportedOSPlatform("windows")]
-    private static void ApplyUnixMode(string path, int unixMode) =>
-        File.SetUnixFileMode(path, (UnixFileMode)unixMode);
-
-    [SupportedOSPlatform("windows")]
-    private static void ApplyWindowsSecurity(string path, byte[] descriptor)
-    {
-        var security = new FileSecurity();
-        security.SetSecurityDescriptorBinaryForm(
-            descriptor,
-            AccessControlSections.Access | AccessControlSections.Owner);
-        FileSystemAclExtensions.SetAccessControl(new FileInfo(path), security);
-    }
+    public void Apply(string path) =>
+        File.SetAttributes(path, Attributes & ~FileAttributes.Directory & ~FileAttributes.ReparsePoint);
 
     public bool Matches(string path)
     {
         try
         {
-            FilePublicationMetadata current = Capture(path);
-            return Attributes == current.Attributes
-                && UnixMode == current.UnixMode
-                && EqualBytes(WindowsSecurityDescriptor, current.WindowsSecurityDescriptor);
+            return Attributes == Capture(path).Attributes;
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)
@@ -182,30 +93,151 @@ internal sealed record FilePublicationMetadata(
             return false;
         }
     }
+}
+
+/// <summary>
+/// Creates a publication transaction directory that only the current user and LocalSystem can
+/// open, with the current user as its owner. Recovery restores and deletes files on the word of
+/// the journal inside, so nobody else may write there even when the output folder itself is
+/// shared. The access rules are set once at creation and never re-validated; a volume or server
+/// that cannot store them keeps the folder's own rules.
+/// </summary>
+internal static class PublicationTransactionDirectory
+{
+    public static string Create(string path)
+    {
+        if (OperatingSystem.IsWindows())
+        {
+            try
+            {
+                return CreateWindows(path).FullName;
+            }
+            catch (Exception exception) when (exception is UnauthorizedAccessException
+                or InvalidOperationException or NotSupportedException)
+            {
+                System.Diagnostics.Trace.TraceWarning(
+                    "A transaction directory kept its folder's access rules ({0}).", exception.GetType().Name);
+            }
+        }
+        return Directory.CreateDirectory(path).FullName;
+    }
 
     [SupportedOSPlatform("windows")]
-    public static void ResetAccessToInherited(string path)
+    private static DirectoryInfo CreateWindows(string path)
     {
-        var file = new FileInfo(path);
-        FileSecurity security = file.GetAccessControl(
-            AccessControlSections.Access);
+        using WindowsIdentity current = WindowsIdentity.GetCurrent();
+        SecurityIdentifier user = current.User
+            ?? throw new InvalidOperationException("The current Windows user SID is unavailable.");
+        var security = new DirectorySecurity();
+        security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);
+        security.SetOwner(user);
+        foreach (SecurityIdentifier principal in new[] { user, new SecurityIdentifier(WellKnownSidType.LocalSystemSid, null) })
+        {
+            security.AddAccessRule(new FileSystemAccessRule(
+                principal,
+                FileSystemRights.FullControl,
+                InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+                PropagationFlags.None,
+                AccessControlType.Allow));
+        }
+        var directory = new DirectoryInfo(path);
+        directory.Create(security);
+        return directory;
+    }
+}
+
+/// <summary>
+/// Lets a newly published file or directory inherit access from the folder it was published
+/// into. A rename keeps the DACL the entry inherited under its staging directory, so its
+/// explicit rules are removed and its DACL unprotected, which makes Windows recompute the
+/// inherited rules from the real parent (and propagate them below a directory). This is not a
+/// check: a volume without access control lists, or an entry whose DACL the user cannot
+/// rewrite, keeps the rules it was renamed with and the publication still succeeds.
+/// </summary>
+internal static class FilePublicationInheritance
+{
+    public static void TryReset(string path)
+    {
+        if (!OperatingSystem.IsWindows()) { return; }
+        try
+        {
+            if (Directory.Exists(path))
+            {
+                var directory = new DirectoryInfo(path);
+                DirectorySecurity security = directory.GetAccessControl(AccessControlSections.Access);
+                Unprotect(security);
+                directory.SetAccessControl(security);
+            }
+            else
+            {
+                var file = new FileInfo(path);
+                FileSecurity security = file.GetAccessControl(AccessControlSections.Access);
+                Unprotect(security);
+                file.SetAccessControl(security);
+            }
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or InvalidOperationException or NotSupportedException)
+        {
+            System.Diagnostics.Trace.TraceWarning(
+                "A published entry kept its staging access rules ({0}).", exception.GetType().Name);
+        }
+    }
+
+    /// <summary>
+    /// Reads the access rules of a file about to be replaced, so <see cref="TryApplyAccess"/> can
+    /// give the published replacement the permissions its owner had set instead of those of the
+    /// private transaction directory it was staged in. Best effort, like <see cref="TryReset"/>.
+    /// </summary>
+    public static byte[]? TryCaptureAccess(string existingTarget)
+    {
+        if (!OperatingSystem.IsWindows()) { return null; }
+        try
+        {
+            return new FileInfo(existingTarget).GetAccessControl(AccessControlSections.Access)
+                .GetSecurityDescriptorBinaryForm();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or InvalidOperationException or NotSupportedException)
+        {
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Applies rules captured by <see cref="TryCaptureAccess"/> to the published file. Applied
+    /// in place, so Windows recomputes the inherited rules from the real folder and keeps the
+    /// explicit ones.
+    /// </summary>
+    public static void TryApplyAccess(string published, byte[]? access)
+    {
+        if (!OperatingSystem.IsWindows() || access is null) { return; }
+        try
+        {
+            var security = new FileSecurity();
+            security.SetSecurityDescriptorBinaryForm(access, AccessControlSections.Access);
+            new FileInfo(published).SetAccessControl(security);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or InvalidOperationException or NotSupportedException)
+        {
+            System.Diagnostics.Trace.TraceWarning(
+                "A published replacement kept its staging access rules ({0}).", exception.GetType().Name);
+        }
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void Unprotect(FileSystemSecurity security)
+    {
         foreach (FileSystemAccessRule rule in security.GetAccessRules(
                      includeExplicit: true,
                      includeInherited: false,
-                     typeof(System.Security.Principal.SecurityIdentifier)))
+                     typeof(SecurityIdentifier)))
         {
             security.RemoveAccessRuleSpecific(rule);
         }
-        security.SetAccessRuleProtection(
-            isProtected: false,
-            preserveInheritance: false);
-        file.SetAccessControl(security);
+        security.SetAccessRuleProtection(isProtected: false, preserveInheritance: false);
     }
-
-    private static bool EqualBytes(byte[]? left, byte[]? right) =>
-        left is null
-            ? right is null
-            : right is not null && left.AsSpan().SequenceEqual(right);
 }
 
 internal sealed record FilePublicationSnapshot(
@@ -493,7 +525,6 @@ internal sealed class PublicationJournal
     {
         using PublicationJournalLock gate = PublicationJournalLock.Acquire(path, faults: faults);
         if (!File.Exists(path)) { return; }
-        PrivateUserStorage.ValidateFile(path);
         if (!FilePublicationOwnedDelete.TryDelete(path, FilePublicationSnapshot.Capture(path)))
         { throw new IOException("A changed publication journal was preserved."); }
     }
@@ -523,7 +554,7 @@ internal sealed class PublicationJournal
             throw CliErrors.OutputConflict(path, expected, current);
         }
         deadline?.ThrowIfExpired("publication-journal-write");
-        PrivateFileRename.Move(tempPath, path, overwrite: expected.Exists, deadline);
+        AtomicFileRename.Move(tempPath, path, overwrite: expected.Exists, deadline);
         temporary.MarkPublished();
         if (!staged.VersionEquals(FilePublicationSnapshot.Capture(path)))
         {

@@ -20,7 +20,7 @@ internal static class FilePublicationAtomicSwap
         ArgumentNullException.ThrowIfNull(expectedTarget);
         ArgumentNullException.ThrowIfNull(metadataSource);
         OutputPathValidator.EnsureSafeFile(target);
-        metadataSource.Metadata?.ApplyContentAttributes(temporary);
+        metadataSource.Metadata?.Apply(temporary);
         FilePublicationSnapshot staged = FilePublicationSnapshot.Capture(temporary);
         if (expectedStage is not null
             && !expectedStage.VersionEquals(staged))

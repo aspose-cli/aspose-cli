@@ -48,11 +48,11 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         _journal = new PublicationJournal { Operation = operation, State = PublicationTransactionState.Staging };
         if (budgets.OutputSession is null) { AtomicPublicationRecovery.RecoverPendingHierarchy(parent, budgets.Deadline); }
         _parents.Ensure(parent);
-        _transaction = budgets.OutputSession?.CreatePrivateDirectory("directory")
-            ?? PrivateUserStorage.EnsureDirectory(Path.Combine(parent,
+        _transaction = budgets.OutputSession?.CreateDirectory("directory")
+            ?? PublicationTransactionDirectory.Create(Path.Combine(parent,
                 $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}"));
         _transactionIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(_transaction);
-        StagingDirectory = PrivateUserStorage.EnsureDirectory(Path.Combine(_transaction, "directory"));
+        StagingDirectory = Directory.CreateDirectory(Path.Combine(_transaction, "directory")).FullName;
         _candidateIdentity = FilePublicationOwnedDelete.TryGetDirectoryIdentity(StagingDirectory);
     }
 
@@ -101,6 +101,7 @@ public sealed class AtomicNewDirectoryWriter : IDisposable
         Directory.Move(StagingDirectory, TargetDirectory);
         // Rename is the commit point: later cancellation or journal/cleanup failure cannot undo success.
         _completed = true;
+        FilePublicationInheritance.TryReset(TargetDirectory);
         _budgets.MarkOutputsCommitted();
         try { Persist(PublicationTransactionState.Committed); }
         catch (Exception error) when (error is IOException or InvalidDataException or UnauthorizedAccessException or CliException)
@@ -291,7 +292,7 @@ internal static class NewDirectoryPublication
         foreach (DirectoryOutputDirectory directory in output.Tree.Directories.OrderBy(directory => directory.Path.Length))
         {
             budgets.Deadline.ThrowIfExpired("directory-copy");
-            PrivateUserStorage.EnsureDirectory(Path.Combine(destination, directory.Path));
+            Directory.CreateDirectory(Path.Combine(destination, directory.Path));
         }
         byte[] buffer = new byte[81920];
         foreach (DirectoryOutputFile file in output.Tree.Files)
@@ -299,7 +300,7 @@ internal static class NewDirectoryPublication
             budgets.Deadline.ThrowIfExpired("directory-copy");
             string source = Path.Combine(output.Staged, file.Path);
             using var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read);
-            using var target = PrivateUserStorage.CreateFile(Path.Combine(destination, file.Path));
+            using var target = new FileStream(Path.Combine(destination, file.Path), FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
             int count;
             long bytes = 0;
             while ((count = input.Read(buffer)) > 0)
@@ -341,7 +342,6 @@ internal static class NewDirectoryPublication
             { throw new IOException("Unknown directory publication staging was preserved."); }
             if (Path.GetFileName(entry) == AtomicPublicationPlan.JournalName)
             { PublicationJournal.Delete(entry); continue; }
-            PrivateUserStorage.ValidateFile(entry);
             if (!FilePublicationOwnedDelete.TryDelete(entry, FilePublicationSnapshot.Capture(entry)))
             { throw new IOException("A changed directory publication journal was preserved."); }
         }

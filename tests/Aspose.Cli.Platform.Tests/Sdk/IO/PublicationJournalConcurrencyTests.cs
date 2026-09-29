@@ -14,7 +14,7 @@ public sealed class PublicationJournalConcurrencyTests
     public async Task AtomicReplacementOrDeletionWaitsUntilTheLiveReaderClosesItsHandle(bool delete)
     {
         using var temp = new TempDirectory();
-        PrivateUserStorage.EnsureDirectory(temp.Path);
+        Directory.CreateDirectory(temp.Path);
         string path = temp.File(AtomicPublicationPlan.JournalName);
         new PublicationJournal { Operation = "initial", State = PublicationTransactionState.Staging }.Write(path);
         using var releaseReader = new ManualResetEventSlim();
@@ -68,7 +68,7 @@ public sealed class PublicationJournalConcurrencyTests
     public async Task WaitingWriterHonorsCallerCancellationWithoutReplacingTheJournal()
     {
         using var temp = new TempDirectory();
-        PrivateUserStorage.EnsureDirectory(temp.Path);
+        Directory.CreateDirectory(temp.Path);
         string path = temp.File(AtomicPublicationPlan.JournalName);
         new PublicationJournal { Operation = "original", State = PublicationTransactionState.Staging }.Write(path);
         using var releaseReader = new ManualResetEventSlim();

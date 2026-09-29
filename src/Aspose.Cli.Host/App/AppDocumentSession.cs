@@ -177,13 +177,12 @@ internal sealed class AppDocumentSession : IDisposable
 
     private UploadPaths CreateUploadPaths()
     {
-        string uploads = PrivateUserStorage.EnsureDirectory(
-            Path.Combine(_root, "uploads"));
+        string uploads = Path.Combine(_root, "uploads");
         return new UploadPaths(
-            PrivateUserStorage.EnsureDirectory(
-                Path.Combine(uploads, "files")),
-            PrivateUserStorage.EnsureDirectory(
-                Path.Combine(uploads, "staging")));
+            Directory.CreateDirectory(
+                Path.Combine(uploads, "files")).FullName,
+            Directory.CreateDirectory(
+                Path.Combine(uploads, "staging")).FullName);
     }
 
     private long ValidateUploadQuota(
@@ -230,7 +229,6 @@ internal sealed class AppDocumentSession : IDisposable
         var owned = OwnedTemporaryFile.Create(staged);
         try
         {
-            PrivateUserStorage.ProtectFile(staged);
             owned.BindProducedFile();
             await WriteStagedUploadAsync(staged, input, fileLimit, existingBytes, cancellationToken).ConfigureAwait(false);
             owned.MoveTo(destination);

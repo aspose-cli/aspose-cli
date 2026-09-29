@@ -22,16 +22,16 @@ public sealed class WorkerOutputSession
 
     public WorkerOutputSession(string root, string manifestPath)
     {
-        (_root, _manifestPath) = WorkerManifestStore.ValidateSessionPaths(root, manifestPath, requireManifest: false);
+        (_root, _manifestPath) = WorkerManifestStore.ValidateSessionPaths(root, manifestPath);
     }
 
     /// <summary>Creates scratch storage reclaimed with this worker, including after forced termination.</summary>
-    public string CreatePrivateDirectory(string operation)
+    public string CreateDirectory(string operation)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(operation);
         if (operation.Length > 128) { throw new ArgumentOutOfRangeException(nameof(operation)); }
         string name = string.Concat(operation.Select(c => char.IsAsciiLetterOrDigit(c) ? c : '-'));
-        return PrivateUserStorage.EnsureDirectory(Path.Combine(_root, $"{Interlocked.Increment(ref _nextId):000000}-{name}"));
+        return Directory.CreateDirectory(Path.Combine(_root, $"{Interlocked.Increment(ref _nextId):000000}-{name}")).FullName;
     }
 
     internal void RegisterBatch(IReadOnlyList<PublicationJournalEntry> entries,
@@ -62,7 +62,7 @@ public sealed class WorkerOutputSession
                 foreach (PublicationJournalEntry entry in entries)
                 {
                     deadline.ThrowIfExpired("worker-handoff");
-                    string path = Path.Combine(CreatePrivateDirectory("retained"), "output.stage");
+                    string path = Path.Combine(CreateDirectory("retained"), "output.stage");
                     OwnedTemporaryFile temporary = OwnedTemporaryFile.Create(path);
                     retained.Add(temporary);
                     using (var source = new FileStream(entry.Staged, FileMode.Open, FileAccess.Read, FileShare.Read))
@@ -127,7 +127,7 @@ public sealed class WorkerOutputSession
             NewDirectoryPublication.ValidateDescriptor(output);
             if (!WorkerManifestStore.PathComparer.Equals(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), _root)
                 || Path.GetFileName(output.Staged) != "directory")
-            { throw new IOException("The directory candidate is outside its worker's private storage."); }
+            { throw new IOException("The directory candidate is outside its worker's storage."); }
             deadline.ThrowIfExpired("directory-handoff");
             WorkerManifestStore.CheckCapacity(new WorkerOutputManifest { DirectoryOutput = output, Sealed = true });
             _directoryOutput = output;

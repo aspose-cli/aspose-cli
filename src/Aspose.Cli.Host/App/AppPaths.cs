@@ -7,15 +7,14 @@ namespace Aspose.Cli.Host.App;
 internal static class AppPaths
 {
     public static string ConfigDirectory =>
-        PrivateUserStorage.EnsureDirectory(
-            Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnsureUserDirectory());
+        Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnsureUserDirectory();
 
     public static string Preferences => Path.Combine(ConfigDirectory, "app-settings.json");
 
     public static string Log => Path.Combine(ConfigDirectory, "app.log");
 
     public static string SessionRoot(int pid) =>
-        PrivateUserStorage.CreateTemporaryDirectory(
+        UserStorage.CreateTemporaryDirectory(
             "app",
             pid.ToString(System.Globalization.CultureInfo.InvariantCulture));
 }

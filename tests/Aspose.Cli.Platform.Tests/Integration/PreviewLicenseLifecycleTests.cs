@@ -79,7 +79,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
     /// <summary>A private copy of the test license, removed with the test.</summary>
     private sealed class PrivateLicense : IDisposable
     {
-        private readonly string _directory = PrivateUserStorage.CreateTemporaryDirectory("preview-license-tests");
+        private readonly string _directory = UserStorage.CreateTemporaryDirectory("preview-license-tests");
 
         public PrivateLicense()
         {
@@ -88,7 +88,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
             try
             {
                 using FileStream input = System.IO.File.OpenRead(original);
-                using FileStream output = PrivateUserStorage.CreateFile(Path);
+                using FileStream output = new(Path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
                 input.CopyTo(output);
             }
             catch
@@ -102,7 +102,7 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
 
         public void Dispose()
         {
-            string root = System.IO.Path.GetFullPath(PrivateUserStorage.TemporaryRoot())
+            string root = System.IO.Path.GetFullPath(UserStorage.TemporaryRoot())
                 + System.IO.Path.DirectorySeparatorChar;
             string directory = System.IO.Path.GetFullPath(_directory);
             if (!directory.StartsWith(

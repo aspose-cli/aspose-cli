@@ -86,7 +86,7 @@ internal sealed class AtomicPublicationPlan
         {
             directories.Ensure(root);
             string stagingDirectory = worker is not null
-                ? worker.CreatePrivateDirectory(operation)
+                ? worker.CreateDirectory(operation)
                 : CreateLocalStagingDirectory(root);
             var journal = new PublicationJournal
             {
@@ -109,7 +109,7 @@ internal sealed class AtomicPublicationPlan
         {
             directories.CleanUp();
             throw Aspose.Cli.Sdk.Errors.CliErrors.OutputUnwritable(root,
-                "the private transaction directory could not be created", error, "output-set-admission");
+                "the transaction directory could not be created", error, "output-set-admission");
         }
         finally
         {
@@ -383,6 +383,6 @@ internal sealed class AtomicPublicationPlan
         string stagingDirectory = Path.Combine(
             root,
             $".aspose-publication-{Environment.ProcessId}-{PublicationJournal.CurrentProcessStartUtcTicks}-{Guid.NewGuid():N}");
-        return PrivateUserStorage.EnsureDirectory(stagingDirectory);
+        return PublicationTransactionDirectory.Create(stagingDirectory);
     }
 }

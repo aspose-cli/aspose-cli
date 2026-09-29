@@ -16,8 +16,8 @@ public sealed class PublicationBoundaryTests
         string target = temp.File("document.txt");
         File.WriteAllText(target, "original");
         FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-        string transaction = PrivateUserStorage.EnsureDirectory(temp.File(".aspose-publication-interrupted-rollback"));
-        string backups = PrivateUserStorage.EnsureDirectory(Path.Combine(transaction, "backups"));
+        string transaction = Directory.CreateDirectory(temp.File(".aspose-publication-interrupted-rollback")).FullName;
+        string backups = Directory.CreateDirectory(Path.Combine(transaction, "backups")).FullName;
         string staged = AtomicPublicationPlan.StagedPath(transaction, target, 0);
         Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         File.WriteAllText(staged, "uncommitted");
@@ -52,8 +52,8 @@ public sealed class PublicationBoundaryTests
     public void RecoveryOfAPublicationIntentRestoresSwappedTargetsAndLeavesUntouchedOnes()
     {
         using var temp = new TempDirectory();
-        string transaction = PrivateUserStorage.EnsureDirectory(temp.File(".aspose-publication-interrupted-intent"));
-        string backups = PrivateUserStorage.EnsureDirectory(Path.Combine(transaction, "backups"));
+        string transaction = Directory.CreateDirectory(temp.File(".aspose-publication-interrupted-intent")).FullName;
+        string backups = Directory.CreateDirectory(Path.Combine(transaction, "backups")).FullName;
         PublicationJournalEntry Entry(int index, string name, bool swap)
         {
             string target = temp.File(name);
@@ -92,7 +92,7 @@ public sealed class PublicationBoundaryTests
     public void UnfinishedWorkerCannotPublishEvenAfterAnOutputSetWasStaged()
     {
         using var temp = new TempDirectory();
-        string root = PrivateUserStorage.CreateTemporaryDirectory("worker");
+        string root = UserStorage.CreateTemporaryDirectory("worker");
         try
         {
             string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
@@ -103,14 +103,14 @@ public sealed class PublicationBoundaryTests
             Assert.Throws<CliException>(() => WorkerOutputSession.Publish(manifest, TestBudgets.Create()));
             Assert.False(File.Exists(temp.File("output.txt")));
         }
-        finally { PrivateUserStorage.TryDeleteTree(root); }
+        finally { UserStorage.TryDeleteTree(root); }
     }
 
     [Fact]
     public void FailedWorkerBatchDoesNotRetainAnEarlierEntry()
     {
         using var temp = new TempDirectory();
-        string root = PrivateUserStorage.CreateTemporaryDirectory("worker");
+        string root = UserStorage.CreateTemporaryDirectory("worker");
         try
         {
             string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
@@ -127,7 +127,7 @@ public sealed class PublicationBoundaryTests
             Assert.False(File.Exists(temp.File("first.txt")));
             Assert.False(File.Exists(temp.File("second.txt")));
         }
-        finally { PrivateUserStorage.TryDeleteTree(root); }
+        finally { UserStorage.TryDeleteTree(root); }
     }
 
     [Fact]
@@ -150,8 +150,7 @@ public sealed class PublicationBoundaryTests
         string original = temp.File("original.txt");
         File.WriteAllText(original, "original");
         FilePublicationSnapshot snapshot = FilePublicationSnapshot.Capture(original);
-        FilePublicationSnapshot large = snapshot with
-        { Metadata = snapshot.Metadata! with { WindowsSecurityDescriptor = new byte[32 * 1024] } };
+        FilePublicationSnapshot large = snapshot with { Sha256 = new string('0', 40 * 1024) };
         var journal = new PublicationJournal
         {
             Operation = "capacity", State = PublicationTransactionState.Staging,
@@ -324,11 +323,11 @@ public sealed class PublicationBoundaryTests
         using var temp = new TempDirectory();
         for (int index = 0; index < 34; index++)
         {
-            string transaction = PrivateUserStorage.EnsureDirectory(temp.File($".aspose-publication-unsealed-{index}"));
+            string transaction = Directory.CreateDirectory(temp.File($".aspose-publication-unsealed-{index}")).FullName;
             string candidate = Path.Combine(transaction, "output-000001", "candidate.txt");
             Directory.CreateDirectory(Path.GetDirectoryName(candidate)!);
             File.WriteAllText(candidate, "private candidate");
-            PrivateUserStorage.WriteAllText(
+            File.WriteAllText(
                 Path.Combine(transaction, $".publication-journal.v1.json.{Guid.NewGuid():N}.tmp"), "interrupted journal");
         }
         Assert.Equal(0, AtomicOutputSetWriter.RecoverPending(temp.Path));

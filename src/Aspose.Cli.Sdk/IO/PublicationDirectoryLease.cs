@@ -51,7 +51,7 @@ internal sealed class PublicationDirectoryLease : IDisposable
                 requests[current] = write || requests.GetValueOrDefault(current);
             }
         }
-        string lockRoot = PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.PublicationLockRoot(), "publication-locks"));
+        string lockRoot = System.IO.Directory.CreateDirectory(Path.Combine(UserStorage.PublicationLockRoot(), "publication-locks")).FullName;
         using OperationDeadline? fallback = deadline?.OriginalBudget is null
             ? OperationDeadline.Start(DefaultWait, deadline?.Token ?? CancellationToken.None) : null;
         OperationDeadline wait = fallback ?? deadline!;
@@ -108,10 +108,9 @@ internal sealed class PublicationDirectoryLease : IDisposable
         string path = Path.Combine(root, Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(key))) + ".lock");
         if (!File.Exists(path))
         {
-            try { using FileStream created = PrivateUserStorage.CreateFile(path); }
+            try { using FileStream created = new(path, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None); }
             catch (IOException) when (File.Exists(path)) { }
         }
-        PrivateUserStorage.ValidateFile(path);
         while (true)
         {
             deadline.ThrowIfExpired("publication-lock");

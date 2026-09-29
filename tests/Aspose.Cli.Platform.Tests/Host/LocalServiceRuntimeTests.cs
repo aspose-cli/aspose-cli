@@ -1,7 +1,6 @@
 using System.Buffers.Binary;
 using System.IO.Pipes;
 using System.Net.Sockets;
-using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Host.LocalServices;
@@ -338,31 +337,6 @@ public sealed class LocalServiceRuntimeTests
             nonce,
             token,
             "ping").Ok);
-    }
-
-    [Fact]
-    [UnsupportedOSPlatform("windows")]
-    public void UnixControlSocket_IsPrivateAndOwnedByTheEffectiveUser()
-    {
-        Requires.Unix();
-
-        LocalServiceControlEndpoint endpoint = Endpoint();
-        using var server = new LocalServiceControlServer(
-            endpoint,
-            Guid.NewGuid().ToString("N"),
-            Guid.NewGuid().ToString("N"),
-            (request, _) => new LocalServiceControlResponse(
-                0,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                string.Empty,
-                true));
-        server.Start();
-
-        Assert.Equal(
-            UnixFileMode.UserRead | UnixFileMode.UserWrite,
-            File.GetUnixFileMode(endpoint.UnixSocketPath));
     }
 
     [Fact]

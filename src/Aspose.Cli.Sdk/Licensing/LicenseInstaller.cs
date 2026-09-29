@@ -5,16 +5,16 @@ using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Sdk.Licensing;
 
-/// <summary>Bounded private license snapshots and transactional per-user file storage.</summary>
+/// <summary>Bounded license snapshots and transactional per-user file storage.</summary>
 public static class LicenseInstaller
 {
     /// <summary>Maximum bytes admitted for one license file.</summary>
     public const int MaximumBytes = 1024 * 1024;
 
     /// <summary>
-    /// Captures one private source snapshot, lets the caller validate that exact
+    /// Captures one source snapshot, lets the caller validate that exact
     /// snapshot and select compatible destinations, then publishes its bytes as
-    /// one recoverable output set. Existing targets must already be private.
+    /// one recoverable output set that replaces existing targets.
     /// </summary>
     public static IReadOnlyList<string> InstallMany(
         ResourceBudgetLedger resourceBudgets,
@@ -24,7 +24,7 @@ public static class LicenseInstaller
             NoPublicationFaultInjector.Instance);
 
     /// <summary>
-    /// Installs a caller-owned readable stream through the same private
+    /// Installs a caller-owned readable stream through the same
     /// snapshot and validation boundary. The input stream remains open.
     /// </summary>
     public static IReadOnlyList<string> InstallMany(
@@ -82,10 +82,10 @@ public static class LicenseInstaller
         try
         {
             snapshotDirectory = resourceBudgets.OutputSession is { } worker
-                ? worker.CreatePrivateDirectory("license-snapshot")
-                : PrivateUserStorage.CreateTemporaryDirectory("license-install");
+                ? worker.CreateDirectory("license-snapshot")
+                : UserStorage.CreateTemporaryDirectory("license-install");
             string snapshot = Path.Combine(snapshotDirectory, "source.lic");
-            using (FileStream created = PrivateUserStorage.CreateFile(snapshot))
+            using (var created = new FileStream(snapshot, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
             {
                 created.Write(contents);
                 created.Flush(flushToDisk: true);
@@ -110,10 +110,10 @@ public static class LicenseInstaller
                 throw new ArgumentException("A license destination cannot be inside its temporary snapshot.");
             }
             ValidateExistingTargets(destinations);
-            EnsurePrivateDirectory(directory);
+            EnsureDirectory(directory);
             foreach (string parent in destinations.Select(static path => Path.GetDirectoryName(path)!).Distinct())
             {
-                EnsurePrivateDirectory(parent);
+                EnsureDirectory(parent);
             }
 
             using var transaction = new AtomicOutputSetWriter(
@@ -122,11 +122,8 @@ public static class LicenseInstaller
             foreach (string destination in destinations)
             {
                 resourceBudgets.Deadline.ThrowIfExpired("license-install-stage");
-                transaction.Stage(destination, overwrite: true, staged =>
-                {
-                    File.WriteAllBytes(staged, contents);
-                    PrivateUserStorage.ProtectFile(staged);
-                });
+                transaction.Stage(destination, overwrite: true,
+                    staged => File.WriteAllBytes(staged, contents));
             }
             transaction.Commit();
             return destinations;
@@ -136,13 +133,13 @@ public static class LicenseInstaller
             CryptographicOperations.ZeroMemory(contents);
             if (snapshotDirectory is not null)
             {
-                PrivateUserStorage.TryDeleteTree(snapshotDirectory);
+                UserStorage.TryDeleteTree(snapshotDirectory);
             }
         }
     }
 
     /// <summary>
-    /// Removes existing private licenses as one recoverable output set and
+    /// Removes existing licenses as one recoverable output set and
     /// returns their paths. Missing files are a no-op. A supervised worker only
     /// stages the deletions; the parent uses the same publication transaction.
     /// </summary>
@@ -169,7 +166,7 @@ public static class LicenseInstaller
             return [];
         }
         string directory = CommonDirectory(destinations);
-        EnsurePrivateDirectory(directory);
+        EnsureDirectory(directory);
         using var transaction = new AtomicOutputSetWriter(
             new SafeFileWriter(resourceBudgets), directory, "license-remove", faults);
         ValidateExistingTargets(destinations);
@@ -229,7 +226,6 @@ public static class LicenseInstaller
     }
     private static void VerifySnapshot(ResourceBudgetLedger budgets, string path, byte[] contents)
     {
-        PrivateUserStorage.ValidateFile(path);
         using var snapshot = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         bool matches = snapshot.Length == contents.Length;
         Span<byte> buffer = stackalloc byte[4096];
@@ -243,7 +239,7 @@ public static class LicenseInstaller
         }
         if (!matches || snapshot.ReadByte() >= 0)
         {
-            throw CliErrors.LicenseInvalid("file", "the private license snapshot changed during validation");
+            throw CliErrors.LicenseInvalid("file", "the license snapshot changed during validation");
         }
     }
 
@@ -278,37 +274,13 @@ public static class LicenseInstaller
         return directory;
     }
 
-    private static void EnsurePrivateDirectory(string directory)
-    {
-        if (Directory.Exists(directory))
-        {
-            // A common ancestor can cover several configured directories. Do
-            // not rewrite unrelated ancestor permissions to make it private.
-            PrivateUserStorage.ValidateDirectory(directory);
-        }
-        else
-        {
-            PrivateUserStorage.EnsureDirectory(directory);
-        }
-    }
+    private static void EnsureDirectory(string directory) => Directory.CreateDirectory(directory);
+
     private static void ValidateExistingTargets(IEnumerable<string> paths)
     {
         foreach (string path in paths)
         {
             OutputPathValidator.EnsureSafeFile(path);
-            if (!File.Exists(path))
-            {
-                continue;
-            }
-            try
-            {
-                PrivateUserStorage.ValidateFile(path);
-            }
-            catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
-            {
-                throw CliErrors.OutputUnwritable(path,
-                    "the existing license file is not private; it was preserved", exception);
-            }
         }
     }
 }

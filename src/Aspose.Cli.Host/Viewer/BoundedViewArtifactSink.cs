@@ -40,7 +40,6 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
         ArgumentException.ThrowIfNullOrWhiteSpace(root);
         _root = Path.GetFullPath(root);
         _limits = limits ?? throw new ArgumentNullException(nameof(limits));
-        PrivateUserStorage.ValidateDirectory(_root);
     }
 
     public void Write(
@@ -128,11 +127,11 @@ internal sealed class BoundedViewArtifactSink : IViewArtifactSink
         string fullPath = Path.Combine(
             _root,
             normalized.Replace('/', Path.DirectorySeparatorChar));
-        PrivateUserStorage.EnsureDirectory(
+        Directory.CreateDirectory(
             Path.GetDirectoryName(fullPath)!);
         try
         {
-            using FileStream file = PrivateUserStorage.CreateFile(fullPath);
+            using FileStream file = new(fullPath, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
             using var bounded = new BoundedWriteStream(file, fileLimit);
             contentWriter(bounded);
             bounded.Flush();

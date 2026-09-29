@@ -121,7 +121,6 @@ internal static class ViewRenderWorker
                 Path.Combine(request.Output, RenderWorkerProtocol.ManifestFileName),
                 JsonSerializer.Serialize(manifest, SdkJsonContext.Default.ViewManifest),
                 new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
-            PrivateUserStorage.ProtectTree(request.Output);
             return new RenderWorkerResponse
             {
                 Id = request.Id,

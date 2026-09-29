@@ -97,14 +97,6 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
     {
         string backups = Path.Combine(plan.StagingDirectory, "backups");
         Directory.CreateDirectory(backups);
-        if (!OperatingSystem.IsWindows())
-        {
-            File.SetUnixFileMode(
-                backups,
-                UnixFileMode.UserRead
-                    | UnixFileMode.UserWrite
-                    | UnixFileMode.UserExecute);
-        }
     }
 
     private void PrepareBackup(PublicationJournalEntry entry)
@@ -117,7 +109,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             ?? throw new InvalidOperationException($"Publication entry '{entry.Target}' has no backup path.");
         File.Copy(entry.Target, backup, overwrite: false);
         DurableFile.Flush(backup);
-        entry.Original.Metadata?.ApplyContentAttributes(backup);
+        entry.Original.Metadata?.Apply(backup);
         if (!entry.Original.ContentMatches(backup))
         {
             throw new IOException(
@@ -146,7 +138,7 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
 
         File.Copy(entry.Target, requestedBackup, overwrite: false);
         DurableFile.Flush(requestedBackup);
-        entry.Original.Metadata?.ApplyContentAttributes(requestedBackup);
+        entry.Original.Metadata?.Apply(requestedBackup);
         OutputPathValidator.EnsureParentUnchanged(
             requestedBackup,
             entry.RequestedBackupParentIdentity);
@@ -170,6 +162,9 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             entry.Target,
             entry.TargetParentIdentity);
         plan.ResourceBudgets?.Deadline.ThrowIfExpired("publication-replace");
+        byte[]? originalAccess = entry.Original.Exists
+            ? FilePublicationInheritance.TryCaptureAccess(entry.Target)
+            : null;
         entry.PublishedSnapshot = FilePublicationAtomicSwap.Publish(
             entry.Staged,
             entry.Target,
@@ -178,11 +173,11 @@ internal sealed class AtomicPublicationCommit(AtomicPublicationPlan plan)
             entry.Original,
             entry.Displaced,
             entry.StagedSnapshot);
-        if (OperatingSystem.IsWindows() && !entry.Original.Exists)
-        {
-            FilePublicationMetadata.ResetAccessToInherited(entry.Target);
-            entry.PublishedSnapshot = FilePublicationSnapshot.Capture(entry.Target);
-        }
+        // The replacement was staged in the private transaction directory: a new file takes the
+        // folder's rules, a replaced file keeps the rules its owner had set.
+        if (entry.Original.Exists) { FilePublicationInheritance.TryApplyAccess(entry.Target, originalAccess); }
+        else { FilePublicationInheritance.TryReset(entry.Target); }
+        entry.PublishedSnapshot = FilePublicationSnapshot.Capture(entry.Target);
         plan.ResourceBudgets?.RefreshAdmissionAfterPublication(entry.Target);
         CaptureDisplaced(entry);
         if (!entry.StagedSnapshot.ContentMatches(entry.Target))

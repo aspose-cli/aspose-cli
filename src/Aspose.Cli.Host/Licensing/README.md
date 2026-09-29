@@ -14,12 +14,12 @@ lifetime, identity and atomic storage. Each product Engine retains only its own
 - An explicit invalid source is an error; it never falls through to evaluation.
 - A gate reads at most one MiB, validates those exact bytes and exposes their opaque
   source/content identity.
-- Installation admits one private snapshot before validation, then publishes the
+- Installation admits one bounded snapshot before validation, then publishes the
   validated bytes for compatible products in one transaction. Removal uses the same
   publication locks and rollback, including shared and product-specific locations.
 - Installation/removal results come from explicit validated configuration changes. Only
   the supervisor publishes worker outputs; ordinary file reads always address physical files.
-  Existing license targets must already be private.
+  Existing license targets must be regular files reached without links or reparse points.
 - The long-lived viewer service, which hosts the App, never applies a license. The App
   runs `license status`, `license install` and `license remove` as bounded CLI child
   processes (`AppCliGateway`), keeps the status until `LicenseFingerprint` reports a

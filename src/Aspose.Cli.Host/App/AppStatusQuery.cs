@@ -201,8 +201,13 @@ internal sealed class AppStatusQuery
             $".{Guid.NewGuid():N}.probe");
         try
         {
-            using (FileStream stream =
-                   Aspose.Cli.Sdk.IO.PrivateUserStorage.CreateFile(probe))
+            using (var stream = new FileStream(
+                       probe,
+                       FileMode.CreateNew,
+                       FileAccess.ReadWrite,
+                       FileShare.None,
+                       bufferSize: 4096,
+                       FileOptions.WriteThrough))
             using (var writer = new StreamWriter(stream, leaveOpen: true))
             {
                 writer.Write("ok");

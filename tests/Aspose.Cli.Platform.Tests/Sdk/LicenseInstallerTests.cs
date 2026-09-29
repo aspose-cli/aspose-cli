@@ -3,6 +3,7 @@ using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.TestKit;
+using System.Runtime.Versioning;
 using System.Security.AccessControl;
 using System.Security.Principal;
 using Xunit;
@@ -18,20 +19,20 @@ public sealed class LicenseInstallerTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void InstallMany_ValidatesOnePrivateSnapshotAndPreservesSource(bool replacing)
+    public void InstallMany_ValidatesOneSnapshotAndPreservesSource(bool replacing)
     {
         using var temp = new TempDirectory();
         string source = temp.File("source.lic");
         byte[] contents = [0, 1, 2, 3, 254, 255];
         File.WriteAllBytes(source, contents);
         DateTime modified = File.GetLastWriteTimeUtc(source);
-        string directory = PrivateUserStorage.EnsureDirectory(temp.File("licenses"));
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
         string[] destinations = [Path.Combine(directory, "alpha.lic"), Path.Combine(directory, "beta.lic")];
         if (replacing)
         {
             foreach (string destination in destinations)
             {
-                WritePrivate(destination, "previous license");
+                WriteFile(destination, "previous license");
             }
         }
         string? snapshotPath = null;
@@ -42,7 +43,6 @@ public sealed class LicenseInstallerTests
             validations++;
             snapshotPath = snapshot;
             Assert.NotEqual(source, snapshot);
-            PrivateUserStorage.ValidateFile(snapshot);
             Assert.Equal(contents, File.ReadAllBytes(snapshot));
             return destinations;
         });
@@ -55,7 +55,6 @@ public sealed class LicenseInstallerTests
         foreach (string destination in destinations)
         {
             Assert.Equal(contents, File.ReadAllBytes(destination));
-            PrivateUserStorage.ValidateFile(destination);
         }
         Assert.Equal(destinations.Order(), Directory.GetFileSystemEntries(directory).Order());
     }
@@ -83,13 +82,13 @@ public sealed class LicenseInstallerTests
     }
 
     [Fact]
-    public void InstallMany_ValidationFailurePreservesTargetsAndRemovesPrivateSnapshot()
+    public void InstallMany_ValidationFailurePreservesTargetsAndRemovesSnapshot()
     {
         using var temp = new TempDirectory();
         string source = temp.File("source.lic");
         File.WriteAllText(source, "unvalidated bytes");
-        string target = Path.Combine(PrivateUserStorage.EnsureDirectory(temp.File("licenses")), "alpha.lic");
-        WritePrivate(target, "previous license");
+        string target = Path.Combine(Directory.CreateDirectory(temp.File("licenses")).FullName, "alpha.lic");
+        WriteFile(target, "previous license");
         FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
         string? snapshotPath = null;
 
@@ -176,12 +175,12 @@ public sealed class LicenseInstallerTests
         using var temp = new TempDirectory();
         string source = temp.File("source.lic");
         File.WriteAllText(source, "new license");
-        string directory = PrivateUserStorage.EnsureDirectory(temp.File("licenses"));
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
         string existing = Path.Combine(directory, "existing.lic");
         string missing = Path.Combine(directory, "missing.lic");
         string occupied = Path.Combine(directory, "occupied.lic");
         Directory.CreateDirectory(occupied);
-        WritePrivate(existing, "previous license");
+        WriteFile(existing, "previous license");
         File.WriteAllText(Path.Combine(occupied, "keep.txt"), "user file");
 
         CliException error = Assert.Throws<CliException>(() => LicenseInstaller.InstallMany(
@@ -196,52 +195,46 @@ public sealed class LicenseInstallerTests
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
-    public void ExistingNonPrivateTargetIsRejectedWithoutChangingItsContentsOrPermissions(bool removing)
+    [SupportedOSPlatform("windows")]
+    public void ExistingTargetWithABroaderAclIsReplacedOrRemoved(bool removing)
     {
+        Requires.Windows();
         using var temp = new TempDirectory();
-        string directory = PrivateUserStorage.EnsureDirectory(temp.File("licenses"));
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
         string target = Path.Combine(directory, "alpha.lic");
-        WritePrivate(target, "existing license");
-        if (OperatingSystem.IsWindows())
+        WriteFile(target, "existing license");
+        var everyone = new SecurityIdentifier(WellKnownSidType.WorldSid, null);
+        FileSecurity acl = new FileInfo(target).GetAccessControl();
+        acl.AddAccessRule(new FileSystemAccessRule(everyone, FileSystemRights.ReadData, AccessControlType.Allow));
+        new FileInfo(target).SetAccessControl(acl);
+        using var source = new MemoryStream("replacement"u8.ToArray());
+
+        if (removing)
         {
-            FileSecurity acl = new FileInfo(target).GetAccessControl();
-            acl.AddAccessRule(new FileSystemAccessRule(new SecurityIdentifier(WellKnownSidType.WorldSid, null),
-                FileSystemRights.ReadData, AccessControlType.Allow));
-            new FileInfo(target).SetAccessControl(acl);
+            Assert.Equal([target], LicenseInstaller.RemoveMany(TestBudgets.Create(), [target]));
+            Assert.False(File.Exists(target));
         }
         else
         {
-            File.SetUnixFileMode(target, UnixFileMode.UserRead | UnixFileMode.UserWrite | UnixFileMode.GroupRead);
+            Assert.Equal([target], LicenseInstaller.InstallMany(TestBudgets.Create(), source, _ => [target]));
+            Assert.Equal("replacement", File.ReadAllText(target));
+            Assert.Contains(new FileInfo(target).GetAccessControl()
+                .GetAccessRules(includeExplicit: true, includeInherited: false, typeof(SecurityIdentifier))
+                .Cast<FileSystemAccessRule>(), rule => rule.IdentityReference == everyone
+                    && rule.AccessControlType == AccessControlType.Allow
+                    && rule.FileSystemRights.HasFlag(FileSystemRights.ReadData));
         }
-        FilePublicationSnapshot original = FilePublicationSnapshot.Capture(target);
-        using var source = new MemoryStream("replacement"u8.ToArray());
-
-        CliException error = Assert.Throws<CliException>(() =>
-        {
-            if (removing)
-            {
-                LicenseInstaller.RemoveMany(TestBudgets.Create(), [target]);
-            }
-            else
-            {
-                LicenseInstaller.InstallMany(TestBudgets.Create(), source, _ => [target]);
-            }
-        });
-
-        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
-        Assert.True(original.VersionEquals(FilePublicationSnapshot.Capture(target)));
-        Assert.True(original.Metadata!.Matches(target));
     }
 
     [Fact]
     public void InstallMany_CommitFailureRollsBackEveryPublishedTarget()
     {
         using var temp = new TempDirectory();
-        string directory = PrivateUserStorage.EnsureDirectory(temp.File("licenses"));
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
         string first = Path.Combine(directory, "alpha.lic");
         string second = Path.Combine(directory, "beta.lic");
-        WritePrivate(first, "old alpha");
-        WritePrivate(second, "old beta");
+        WriteFile(first, "old alpha");
+        WriteFile(second, "old beta");
         using var source = new MemoryStream("new license"u8.ToArray());
 
         CliException error = Assert.Throws<CliException>(() => LicenseInstaller.InstallMany(
@@ -251,19 +244,17 @@ public sealed class LicenseInstallerTests
         Assert.True(error.Details!["recoveryComplete"]!.GetValue<bool>());
         Assert.Equal("old alpha", File.ReadAllText(first));
         Assert.Equal("old beta", File.ReadAllText(second));
-        PrivateUserStorage.ValidateFile(first);
-        PrivateUserStorage.ValidateFile(second);
     }
 
     [Fact]
     public void RemoveMany_CommitFailureRestoresAnEarlierDeletion()
     {
         using var temp = new TempDirectory();
-        string directory = PrivateUserStorage.EnsureDirectory(temp.File("licenses"));
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
         string first = Path.Combine(directory, "alpha.lic");
         string second = Path.Combine(directory, "beta.lic");
-        WritePrivate(first, "old alpha");
-        WritePrivate(second, "old beta");
+        WriteFile(first, "old alpha");
+        WriteFile(second, "old beta");
         FilePublicationSnapshot original = FilePublicationSnapshot.Capture(first);
 
         CliException error = Assert.Throws<CliException>(() => LicenseInstaller.RemoveMany(
@@ -280,12 +271,12 @@ public sealed class LicenseInstallerTests
     public void RemoveMany_DeduplicatesTargetsAndTreatsMissingFilesAsNoOp()
     {
         using var temp = new TempDirectory();
-        string directory = PrivateUserStorage.EnsureDirectory(temp.File("licenses"));
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
         string first = Path.Combine(directory, "alpha.lic");
         string second = Path.Combine(directory, "beta.lic");
         string missing = Path.Combine(directory, "missing.lic");
-        WritePrivate(first, "alpha");
-        WritePrivate(second, "beta");
+        WriteFile(first, "alpha");
+        WriteFile(second, "beta");
 
         Assert.Equal([first, second], LicenseInstaller.RemoveMany(TestBudgets.Create(), [first, first, missing, second]));
         Assert.Empty(Directory.GetFileSystemEntries(directory));
@@ -296,14 +287,14 @@ public sealed class LicenseInstallerTests
     }
 
     [Fact]
-    public void WorkerStagesPrivateInstallAndDeletionBeforeTheParentCommits()
+    public void WorkerStagesInstallAndDeletionBeforeTheParentCommits()
     {
         using var temp = new TempDirectory();
-        string directory = PrivateUserStorage.EnsureDirectory(temp.File("licenses"));
+        string directory = Directory.CreateDirectory(temp.File("licenses")).FullName;
         string installed = Path.Combine(directory, "installed.lic");
         string deleted = Path.Combine(temp.Path, "license.lic");
-        WritePrivate(deleted, "old license");
-        string workerRoot = PrivateUserStorage.CreateTemporaryDirectory("worker");
+        WriteFile(deleted, "old license");
+        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
         string manifestPath = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
         var worker = new WorkerOutputSession(workerRoot, manifestPath);
         using var deadline = OperationDeadline.Start(null);
@@ -326,10 +317,9 @@ public sealed class LicenseInstallerTests
             Assert.True(Assert.Single(manifest.Entries, entry => entry.Target == deleted).DeleteTarget);
             WorkerOutputSession.Publish(manifestPath, TestBudgets.Create());
             Assert.Equal("new license", File.ReadAllText(installed));
-            PrivateUserStorage.ValidateFile(installed);
             Assert.False(File.Exists(deleted));
         }
-        finally { PrivateUserStorage.TryDeleteTree(workerRoot); }
+        finally { UserStorage.TryDeleteTree(workerRoot); }
     }
 
     [Fact]
@@ -370,12 +360,12 @@ public sealed class LicenseInstallerTests
     public void RemoveMany_SharedAndProductLicensesCommitInOneTransaction()
     {
         using var temp = new TempDirectory();
-        string root = PrivateUserStorage.EnsureDirectory(temp.File("config"));
+        string root = Directory.CreateDirectory(temp.File("config")).FullName;
         string shared = Path.Combine(root, "license.lic");
         string product = Path.Combine(root, "licenses", "alpha.lic");
         string missing = Path.Combine(root, "licenses", "absent.lic");
-        WritePrivate(shared, "shared");
-        WritePrivate(product, "product");
+        WriteFile(shared, "shared");
+        WriteFile(product, "product");
 
         Assert.Equal([shared, product], LicenseInstaller.RemoveMany(TestBudgets.Create(), [shared, product, missing]));
         Assert.False(File.Exists(shared));
@@ -391,11 +381,11 @@ public sealed class LicenseInstallerTests
     public void RemoveMany_FailureRestoresSharedAndProductPathsAcrossTwoLevels()
     {
         using var temp = new TempDirectory();
-        string root = PrivateUserStorage.EnsureDirectory(temp.File("config"));
+        string root = Directory.CreateDirectory(temp.File("config")).FullName;
         string shared = Path.Combine(root, "license.lic");
         string product = Path.Combine(root, "licenses", "alpha.lic");
-        WritePrivate(shared, "shared");
-        WritePrivate(product, "product");
+        WriteFile(shared, "shared");
+        WriteFile(product, "product");
         FilePublicationSnapshot sharedBefore = FilePublicationSnapshot.Capture(shared);
         FilePublicationSnapshot productBefore = FilePublicationSnapshot.Capture(product);
 
@@ -409,7 +399,11 @@ public sealed class LicenseInstallerTests
         Assert.True(sharedBefore.Metadata!.Matches(shared));
         Assert.True(productBefore.Metadata!.Matches(product));
     }
-    private static void WritePrivate(string path, string contents) => PrivateUserStorage.WriteAllText(path, contents);
+    private static void WriteFile(string path, string contents)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
+        File.WriteAllText(path, contents);
+    }
 
     private sealed class FailSecondPublication : IPublicationFaultInjector
     {

@@ -59,7 +59,7 @@ public sealed class AppPreferencesTransactionTests
         finally { File.SetAttributes(file, original); }
         store.Update("cells", "sheets", false);
         Assert.Equal("sheets", store.Current.PreviewViews["cells"]);
-        _ = PrivateUserStorage.ReadAllText(file);
+        _ = File.ReadAllText(file);
     }
 
     [Fact]

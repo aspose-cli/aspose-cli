@@ -3,18 +3,18 @@ using Aspose.Cli.Sdk.Execution;
 namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>
-/// Renames a file the CLI privately owns while another process briefly holds it open.
+/// Renames a file the CLI owns while another process briefly holds it open.
 /// On Windows an antivirus scanner or search indexer that opens a freshly written file
 /// without delete sharing makes a rename fail with an access or sharing violation. A
 /// same-volume rename either happens completely or not at all, so repeating it is
 /// idempotent. The wait is bounded and never outlives the caller's deadline.
 /// </summary>
 /// <remarks>
-/// Only renames between CLI-private paths use this. A user-visible target swap reports a
-/// lock instead of waiting it out: a lock on a user document usually means an application
+/// Only renames of files the CLI itself writes, such as staging, manifest and state files,
+/// use this. A user-visible target swap reports a lock instead of waiting it out: a lock on a user document usually means an application
 /// holds it, and a replace that fails part-way is recovered, not repeated.
 /// </remarks>
-internal static class PrivateFileRename
+public static class AtomicFileRename
 {
     internal static readonly TimeSpan MaximumWait = TimeSpan.FromSeconds(2);
     private const int InitialDelayMilliseconds = 10;
@@ -22,7 +22,8 @@ internal static class PrivateFileRename
     private const int ErrorSharingViolation = 32;
     private const int ErrorLockViolation = 33;
 
-    internal static void Move(string source, string destination, bool overwrite, OperationDeadline? deadline = null)
+    /// <summary>Renames <paramref name="source"/> to <paramref name="destination"/>, retrying a transient lock within the bounded wait.</summary>
+    public static void Move(string source, string destination, bool overwrite, OperationDeadline? deadline = null)
     {
         long stopAt = Environment.TickCount64 + (long)MaximumWait.TotalMilliseconds;
         for (int delay = InitialDelayMilliseconds; ; delay = Math.Min(delay * 2, MaximumDelayMilliseconds))

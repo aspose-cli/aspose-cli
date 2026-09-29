@@ -2,7 +2,7 @@ using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.IO;
 
-/// <summary>The exact private file produced for one final output, before publication.</summary>
+/// <summary>The exact staged file produced for one final output, before publication.</summary>
 public sealed class StagedOutput
 {
     private readonly PublicationJournalEntry _entry;

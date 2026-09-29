@@ -1,6 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Host.Invocation;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Host.LocalServices;
 
 namespace Aspose.Cli.Host.App;
 
@@ -14,7 +14,7 @@ internal sealed class AppLog
     public AppLog(string path)
     {
         _path = Path.GetFullPath(path);
-        PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(_path)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
     }
 
     public void Write(string message)
@@ -26,7 +26,7 @@ internal sealed class AppLog
             try
             {
                 string timestamp = DateTimeOffset.UtcNow.ToString("O", CultureInfo.InvariantCulture);
-                PrivateUserStorage.AppendLine(
+                UserTextFile.AppendLine(
                     _path,
                     $"{timestamp} {oneLine}",
                     MaxBytes);

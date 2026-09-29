@@ -28,7 +28,7 @@ internal static class UpdateInstaller
         // Read the outcome of the previous run before this run replaces it.
         Warning? previous = UpdateStatus.ReadWarning(statusPath);
         IReadOnlyList<Warning>? warnings = previous is null ? null : [previous];
-        string parent = PrivateUserStorage.EnsureDirectory(Path.Combine(PrivateUserStorage.TemporaryRoot(), "updates"));
+        string parent = Directory.CreateDirectory(Path.Combine(UserStorage.TemporaryRoot(), "updates")).FullName;
         // install.ps1 accepts only a <distribution id>-update-* cleanup root below the temporary directory.
         string target = Path.Combine(parent, DistributionInfo.Id + "-update-" + Guid.NewGuid().ToString("N"));
         string source = !Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out _)
@@ -58,7 +58,6 @@ internal static class UpdateInstaller
             { throw ReleaseErrors.VerificationFailed("the preparation worker returned an inconsistent result"); }
             context.Deadline.ThrowIfExpired("update-handoff");
             if (!ownsPackage) { return prepared with { Feed = feed, Warnings = warnings }; }
-            PrivateUserStorage.ValidateDirectory(target);
             int pid = UpdateClient.HandoffToInstaller(powerShell, target, AppContext.BaseDirectory, statusPath, context.Deadline);
             handedOff = true;
             // Starting the independent installer is the commit point. It waits for this parent PID
@@ -69,7 +68,7 @@ internal static class UpdateInstaller
         }
         finally
         {
-            if (ownsPackage && !handedOff) { PrivateUserStorage.TryDeleteTree(target); }
+            if (ownsPackage && !handedOff) { UserStorage.TryDeleteTree(target); }
         }
     }
 }

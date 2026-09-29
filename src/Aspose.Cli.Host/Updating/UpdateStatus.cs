@@ -6,6 +6,7 @@ using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Host.LocalServices;
 
 namespace Aspose.Cli.Host.Updating;
 
@@ -26,7 +27,7 @@ internal static class UpdateStatus
         string root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(installRoot));
         string key = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(root.ToUpperInvariant())))
             .ToLowerInvariant()[..16];
-        return Path.Combine(PrivateUserStorage.TemporaryRoot(), "updates", "status-" + key + ".json");
+        return Path.Combine(UserStorage.TemporaryRoot(), "updates", "status-" + key + ".json");
     }
 
     /// <summary>Records a started installer; the installer overwrites the state it owns.</summary>
@@ -43,7 +44,7 @@ internal static class UpdateStatus
             ["log"] = Path.ChangeExtension(path, ".log"),
             ["updatedAt"] = DateTimeOffset.UtcNow.ToString("O", System.Globalization.CultureInfo.InvariantCulture),
         };
-        PrivateUserStorage.WriteAllText(path, status.ToJsonString());
+        UserTextFile.Replace(path, status.ToJsonString());
     }
 
     /// <summary>A warning about the last installer run, or null when it succeeded or never ran.</summary>

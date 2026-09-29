@@ -134,9 +134,8 @@ internal static class UpdateClient
             // archive's SHA-256, the preparation worker hashes the archive and extracts it from
             // one handle that denies writers, and this install.ps1 is an entry of that archive,
             // checked against its SHA256SUMS. From download to this launch every file stays in the current
-            // user's private storage, which grants access to no other account (LocalSystem
-            // aside), and the parent validates the package directory before handing it off. Only
-            // code already running as this user could swap the script between extraction and
+            // user's temporary directory, whose Windows per-user permissions admit no other
+            // standard account. Only code already running as this user could swap the script between extraction and
             // PowerShell reading it, and such code can equally replace the installed CLI itself,
             // so the remaining window crosses no privilege boundary.
             foreach (string argument in new[]
@@ -272,7 +271,7 @@ internal static class UpdateClient
         }
     }
 
-    private static void DeleteTree(string path) => PrivateUserStorage.TryDeleteTree(path);
+    private static void DeleteTree(string path) => UserStorage.TryDeleteTree(path);
 
     private static void TryDeleteFile(string path)
     {
@@ -306,8 +305,8 @@ internal static class UpdateClient
 
         public static FeedFiles Open(string feed, string baseDirectory, ResourceBudgetLedger budgets)
         {
-            string root = budgets.OutputSession?.CreatePrivateDirectory("update-feed")
-                ?? PrivateUserStorage.CreateTemporaryDirectory("update-feed");
+            string root = budgets.OutputSession?.CreateDirectory("update-feed")
+                ?? UserStorage.CreateTemporaryDirectory("update-feed");
             try
             {
                 if (!Path.IsPathRooted(feed) && Uri.TryCreate(feed, UriKind.Absolute, out var uri))
@@ -345,7 +344,7 @@ internal static class UpdateClient
                     string source = Path.Combine(Path.GetDirectoryName(ManifestPath)!, manifest.ArchivePath.Replace('/', Path.DirectorySeparatorChar));
                     EnsureLocal(source);
                     using var input = File.OpenRead(source);
-                    using FileStream output = PrivateUserStorage.CreateFile(target);
+                    using FileStream output = new(target, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
                     CopyBounded(input, output, Math.Min(manifest.ArchiveSize, MaximumArchiveBytes), _deadline);
                 }
                 stream = new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read);
@@ -389,7 +388,7 @@ internal static class UpdateClient
                 try
                 {
                     using var input = response.Content.ReadAsStreamAsync(deadline.Token).GetAwaiter().GetResult();
-                    using FileStream output = PrivateUserStorage.CreateFile(destination);
+                    using FileStream output = new(destination, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None);
                     CopyBounded(input, output, maximum, deadline);
                 }
                 catch { TryDeleteFile(destination); throw; }

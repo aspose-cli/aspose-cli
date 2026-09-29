@@ -1,3 +1,6 @@
+using System.Runtime.Versioning;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
@@ -110,7 +113,7 @@ public sealed class AtomicNewDirectoryWriterTests
     public void Worker_RetainsCandidateUntilParentPublishesAndThenReclaimsItsStorage()
     {
         using var temp = new TempDirectory();
-        string workerRoot = PrivateUserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
         try
         {
             string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
@@ -127,9 +130,9 @@ public sealed class AtomicNewDirectoryWriterTests
             Assert.Empty(Directory.EnumerateFileSystemEntries(temp.Path));
             WorkerOutputSession.Publish(manifest, TestBudgets.Create());
             Assert.Equal("complete", File.ReadAllText(Path.Combine(target, "parts", "data.txt")));
-            Assert.True(PrivateUserStorage.TryDeleteTree(workerRoot));
+            Assert.True(UserStorage.TryDeleteTree(workerRoot));
         }
-        finally { PrivateUserStorage.TryDeleteTree(workerRoot); }
+        finally { UserStorage.TryDeleteTree(workerRoot); }
     }
 
     [Theory]
@@ -138,7 +141,7 @@ public sealed class AtomicNewDirectoryWriterTests
     public void Worker_RejectsChangedOrExtraCandidateFiles(bool extra)
     {
         using var temp = new TempDirectory();
-        string workerRoot = PrivateUserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
         try
         {
             string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
@@ -153,14 +156,14 @@ public sealed class AtomicNewDirectoryWriterTests
             Assert.Throws<CliException>(() => WorkerOutputSession.Publish(manifest, TestBudgets.Create()));
             Assert.False(Directory.Exists(target));
         }
-        finally { PrivateUserStorage.TryDeleteTree(workerRoot); }
+        finally { UserStorage.TryDeleteTree(workerRoot); }
     }
 
     [Fact]
     public void Worker_RejectsMixedDirectoryAndFileOutputSets()
     {
         using var temp = new TempDirectory();
-        string workerRoot = PrivateUserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
         try
         {
             var worker = new WorkerOutputSession(workerRoot, Path.Combine(workerRoot, WorkerOutputSession.ManifestName));
@@ -173,7 +176,7 @@ public sealed class AtomicNewDirectoryWriterTests
             Assert.False(File.Exists(temp.File("file.txt")));
             Assert.False(Directory.Exists(temp.File("directory")));
         }
-        finally { PrivateUserStorage.TryDeleteTree(workerRoot); }
+        finally { UserStorage.TryDeleteTree(workerRoot); }
     }
 
     [Fact]
@@ -223,7 +226,7 @@ public sealed class AtomicNewDirectoryWriterTests
         using var temp = new TempDirectory();
         string parent = temp.File("parent");
         Directory.CreateDirectory(parent);
-        string workerRoot = PrivateUserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = UserStorage.CreateTemporaryDirectory("worker");
         try
         {
             string manifest = Path.Combine(workerRoot, WorkerOutputSession.ManifestName);
@@ -242,7 +245,7 @@ public sealed class AtomicNewDirectoryWriterTests
             }
             Assert.Equal("preserve", File.ReadAllText(Path.Combine(parent, "owner.txt")));
         }
-        finally { PrivateUserStorage.TryDeleteTree(workerRoot); }
+        finally { UserStorage.TryDeleteTree(workerRoot); }
     }
 
     [Fact]
@@ -261,13 +264,63 @@ public sealed class AtomicNewDirectoryWriterTests
 
     [Fact]
     public void WorkerCleanup_EntryCapCoversTheLargestDirectoryOutputTree() =>
-        Assert.True(PrivateUserStorage.MaximumCleanupEntries
+        Assert.True(UserStorage.MaximumCleanupEntries
             >= NewDirectoryPublication.MaximumFiles + PublicationLimits.MaximumDirectories);
+
+    [Fact]
+    [SupportedOSPlatform("windows")]
+    public void Commit_NewWindowsDirectoryInheritsItsParentAcl()
+    {
+        Requires.Windows();
+
+        VerifyNewWindowsDirectoryInheritsItsParentAcl();
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static void VerifyNewWindowsDirectoryInheritsItsParentAcl()
+    {
+        using var temp = new TempDirectory();
+        string parent = Directory.CreateDirectory(temp.File("shared")).FullName;
+        var users = new SecurityIdentifier(WellKnownSidType.BuiltinUsersSid, null);
+        var info = new DirectoryInfo(parent);
+        DirectorySecurity security = info.GetAccessControl(AccessControlSections.Access);
+        // Reaches only direct children, so the staging directory one level deeper lacks it.
+        security.AddAccessRule(new FileSystemAccessRule(
+            users,
+            FileSystemRights.ReadData,
+            InheritanceFlags.ContainerInherit | InheritanceFlags.ObjectInherit,
+            PropagationFlags.NoPropagateInherit,
+            AccessControlType.Allow));
+        info.SetAccessControl(security);
+        string target = Path.Combine(parent, "result");
+
+        using (var output = new AtomicNewDirectoryWriter(TestBudgets.Create(), target, "test"))
+        {
+            Write(output, "index.html", "index");
+            Assert.DoesNotContain(Rules(output.StagingDirectory), rule => rule.IdentityReference.Equals(users));
+            output.Commit();
+        }
+
+        FileSystemAccessRule[] rules = Rules(target);
+        Assert.Contains(rules, rule => rule.IdentityReference.Equals(users)
+            && rule.IsInherited
+            && rule.AccessControlType == AccessControlType.Allow
+            && rule.FileSystemRights.HasFlag(FileSystemRights.ReadData));
+        Assert.DoesNotContain(rules, rule => !rule.IsInherited);
+        Assert.Equal("index", File.ReadAllText(Path.Combine(target, "index.html")));
+    }
+
+    [SupportedOSPlatform("windows")]
+    private static FileSystemAccessRule[] Rules(string directory) =>
+        new DirectoryInfo(directory).GetAccessControl(AccessControlSections.Access)
+            .GetAccessRules(includeExplicit: true, includeInherited: true, typeof(SecurityIdentifier))
+            .OfType<FileSystemAccessRule>()
+            .ToArray();
 
     private static void Write(AtomicNewDirectoryWriter output, string relative, string contents)
     {
         string path = Path.Combine(output.StagingDirectory, relative);
-        PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(path)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(path)!);
         File.WriteAllText(path, contents);
     }
 

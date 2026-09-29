@@ -33,12 +33,12 @@ internal sealed class LocalServiceOperationLock : IDisposable
                     Encoding.UTF8.GetBytes(key))
                 .AsSpan(0, 16))
             .ToLowerInvariant();
-        string directory = PrivateUserStorage.EnsureDirectory(
+        string directory = Directory.CreateDirectory(
             Path.Combine(
-                PrivateUserStorage.TemporaryRoot(),
+                UserStorage.TemporaryRoot(),
                 "services",
                 service,
-                "locks"));
+                "locks")).FullName;
         string path = Path.Combine(directory, digest + ".lock");
         EnsureFile(path);
 
@@ -47,7 +47,6 @@ internal sealed class LocalServiceOperationLock : IDisposable
         {
             try
             {
-                PrivateUserStorage.ValidateFile(path);
                 return new LocalServiceOperationLock(
                     new FileStream(
                         path,
@@ -88,12 +87,15 @@ internal sealed class LocalServiceOperationLock : IDisposable
 
         try
         {
-            using FileStream _ =
-                PrivateUserStorage.CreateFile(path);
+            using FileStream _ = new(
+                path,
+                FileMode.CreateNew,
+                FileAccess.ReadWrite,
+                FileShare.None);
         }
         catch (IOException) when (File.Exists(path))
         {
-            PrivateUserStorage.ValidateFile(path);
+            // Another process created the lock file first; Acquire opens it.
         }
     }
 

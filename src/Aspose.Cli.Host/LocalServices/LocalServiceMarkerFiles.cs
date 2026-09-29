@@ -1,12 +1,13 @@
+using System.Text;
 using System.Text.Json;
 using System.Text.Json.Serialization.Metadata;
-using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.LocalServices;
 
 /// <summary>
-/// Stores public discovery metadata and its secret companion as separate,
-/// current-user-only atomic files. One resource lock keeps paired reads and writes coherent.
+/// Stores public discovery metadata and its secret companion as separate atomic files in a
+/// directory of the current user's configuration root, whose per-user permissions protect them.
+/// The caller owns that directory. One resource lock keeps paired reads and writes coherent.
 /// </summary>
 internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
     where TMarker : class
@@ -33,8 +34,6 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
             ?? throw new ArgumentNullException(nameof(markerType));
         _secretsType = secretsType
             ?? throw new ArgumentNullException(nameof(secretsType));
-        PrivateUserStorage.EnsureDirectory(
-            Path.GetDirectoryName(_markerPath)!);
         if (!string.Equals(
                 Path.GetDirectoryName(_markerPath),
                 Path.GetDirectoryName(_secretPath),
@@ -85,13 +84,11 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
                 return null;
             }
 
-            PrivateUserStorage.ValidateFile(_markerPath);
-            PrivateUserStorage.ValidateFile(_secretPath);
             TMarker? marker = JsonSerializer.Deserialize(
-                PrivateUserStorage.ReadAllText(_markerPath),
+                File.ReadAllText(_markerPath, Encoding.UTF8),
                 _markerType);
             TSecrets? secrets = JsonSerializer.Deserialize(
-                PrivateUserStorage.ReadAllText(_secretPath),
+                File.ReadAllText(_secretPath, Encoding.UTF8),
                 _secretsType);
             return marker is null || secrets is null
                 ? null
@@ -112,14 +109,12 @@ internal sealed class LocalServiceMarkerFiles<TMarker, TSecrets>
         ArgumentNullException.ThrowIfNull(marker);
         ArgumentNullException.ThrowIfNull(secrets);
         using LocalServiceOperationLock lease = Acquire();
-        PrivateUserStorage.ValidateDirectory(
-            Path.GetDirectoryName(_markerPath)!);
-        PrivateUserStorage.WriteAllText(
+        UserTextFile.Replace(
             _secretPath,
             JsonSerializer.Serialize(
                 secrets,
                 _secretsType));
-        PrivateUserStorage.WriteAllText(
+        UserTextFile.Replace(
             _markerPath,
             JsonSerializer.Serialize(
                 marker,

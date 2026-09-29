@@ -61,22 +61,17 @@ internal sealed class AtomicPublicationStaging(
         int index = plan.Journal.Entries.Count;
         string staged = plan.StagedPath(target, index);
         plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);
-        if (plan.WorkerStagingOnly) { PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(staged)!); }
-        else { FilePublicationMetadata.PrepareOutputDirectory(Path.GetDirectoryName(staged)!, Path.GetDirectoryName(target)!); }
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         using var temporary = OwnedTemporaryFile.Create(staged);
         write(staged);
         temporary.BindAndVerify(verify);
-        original.Metadata?.ApplyAccess(staged);
-        original.Metadata?.ApplyContentAttributes(staged);
+        original.Metadata?.Apply(staged);
         temporary.BindProducedFile();
         temporary.FlushBound();
         FilePublicationSnapshot stagedSnapshot = temporary.CaptureBoundSnapshot();
         writer.ConsumeOutput(stagedSnapshot.Length, "output-set-stage");
 
         long size = stagedSnapshot.Length;
-        // Staging files are private content carriers. Replaying a Windows
-        // owner here would require WRITE_OWNER even though the caller has all
-        // permissions needed to edit the target contents.
         if (!plan.WorkerStagingOnly)
         {
             OutputPathValidator.EnsureParentUnchanged(
@@ -140,8 +135,7 @@ internal sealed class AtomicPublicationStaging(
         int index = plan.Journal.Entries.Count;
         string staged = plan.StagedPath(target, index);
         plan.CreatedStagingDirectories.Add(Path.GetDirectoryName(staged)!);
-        if (plan.WorkerStagingOnly) { PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(staged)!); }
-        else { FilePublicationMetadata.PrepareOutputDirectory(Path.GetDirectoryName(staged)!, Path.GetDirectoryName(target)!); }
+        Directory.CreateDirectory(Path.GetDirectoryName(staged)!);
         using var temporary = OwnedTemporaryFile.Create(staged);
         temporary.BindAndVerify(verify: null);
         temporary.FlushBound();

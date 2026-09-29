@@ -10,7 +10,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
 {
     private readonly TempDirectory _temp = new();
     private readonly string _workerRoot =
-        PrivateUserStorage.CreateTemporaryDirectory("worker");
+        UserStorage.CreateTemporaryDirectory("worker");
 
     private string ManifestPath =>
         Path.Combine(_workerRoot, WorkerOutputSession.ManifestName);
@@ -18,7 +18,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
     public void Dispose()
     {
         _temp.Dispose();
-        PrivateUserStorage.TryDeleteTree(_workerRoot);
+        UserStorage.TryDeleteTree(_workerRoot);
     }
 
     [Fact]
@@ -38,7 +38,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
 
         Assert.Equal("published", File.ReadAllText(target));
         Assert.Equal("original", File.ReadAllText(backup));
-        Assert.DoesNotContain("\"state\"", PrivateUserStorage.ReadAllText(ManifestPath), StringComparison.Ordinal);
+        Assert.DoesNotContain("\"state\"", File.ReadAllText(ManifestPath), StringComparison.Ordinal);
 
     }
 
@@ -61,41 +61,6 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         Assert.Equal("published", File.ReadAllText(replaced));
         Assert.Equal(2, WorkerManifestStore.ReadAndValidate(ManifestPath).Entries.Count);
 
-    }
-
-    [Fact]
-    public void PrivateCleanup_RemovesValidatedTree()
-    {
-        string root = PrivateUserStorage.CreateTemporaryDirectory("worker");
-        string child = PrivateUserStorage.EnsureDirectory(
-            Path.Combine(root, "child"));
-        PrivateUserStorage.WriteAllText(
-            Path.Combine(child, "owned.txt"),
-            "owned");
-
-        Assert.True(PrivateUserStorage.TryDeleteTree(root));
-        Assert.False(Directory.Exists(root));
-    }
-
-    [Fact]
-    public void PrivateCleanup_PreservesADanglingRootLink()
-    {
-        Requires.Windows();
-
-        string link = _temp.File("dangling-private-root");
-        FileSystemLinks.CreateDirectoryLink(link, _temp.File("missing-private-root"));
-
-        try
-        {
-            Assert.False(PrivateUserStorage.TryDeleteTree(link));
-            Assert.True(
-                FilePublicationOwnedDelete.TryGetAttributesNoFollow(link)
-                    ?.HasFlag(FileAttributes.ReparsePoint));
-        }
-        finally
-        {
-            Directory.Delete(link, recursive: false);
-        }
     }
 
     [Fact]
@@ -136,7 +101,6 @@ public sealed class WorkerOutputPublicationTests : IDisposable
             Path.GetDirectoryName(staged)!,
             "displaced.tmp");
         File.WriteAllText(replacement, "published");
-        PrivateUserStorage.ProtectFile(replacement);
         File.Replace(replacement, staged, displaced);
 
         CliException error = Assert.Throws<CliException>(
@@ -238,7 +202,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string target = _temp.File("report.txt");
         WorkerOutputManifest manifest = Manifest(Entry(target, "published"));
         WorkerManifestStore.Write(ManifestPath, manifest);
-        string json = PrivateUserStorage.ReadAllText(ManifestPath);
+        string json = File.ReadAllText(ManifestPath);
         string version = $"\"version\":{manifest.Version},";
         json = corruption switch
         {
@@ -246,7 +210,7 @@ public sealed class WorkerOutputPublicationTests : IDisposable
             "unknown" => json.Replace(version, version + "\r\n  \"unknown\": true,", StringComparison.Ordinal),
             _ => json + new string(' ', PublicationLimits.MaximumMetadataBytes),
         };
-        PrivateUserStorage.WriteAllText(ManifestPath, json);
+        File.WriteAllText(ManifestPath, json);
 
         CliException error = Assert.Throws<CliException>(
             () => WorkerOutputSession.Publish(ManifestPath, TestBudgets.Create()));
@@ -315,12 +279,11 @@ public sealed class WorkerOutputPublicationTests : IDisposable
         string fullTarget = Path.GetFullPath(target);
         FilePublicationSnapshot original =
             FilePublicationSnapshot.Capture(fullTarget);
-        string retained = PrivateUserStorage.EnsureDirectory(Path.Combine(
+        string retained = Directory.CreateDirectory(Path.Combine(
             _workerRoot,
-            Guid.NewGuid().ToString("N") + "-retained"));
+            Guid.NewGuid().ToString("N") + "-retained")).FullName;
         string staged = Path.Combine(retained, "output.stage");
         File.WriteAllText(staged, content);
-        PrivateUserStorage.ProtectFile(staged);
         FilePublicationSnapshot stagedSnapshot =
             FilePublicationSnapshot.Capture(staged);
         string? fullBackup = backupPath is null

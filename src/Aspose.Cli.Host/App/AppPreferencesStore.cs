@@ -5,7 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.Sdk.Extensibility;
-using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Host.LocalServices;
 
 namespace Aspose.Cli.Host.App;
 
@@ -55,7 +55,7 @@ internal sealed class AppPreferencesStore
     {
         ArgumentNullException.ThrowIfNull(catalog);
         _path = Path.GetFullPath(path);
-        PrivateUserStorage.EnsureDirectory(Path.GetDirectoryName(_path)!);
+        Directory.CreateDirectory(Path.GetDirectoryName(_path)!);
         _current = Freeze(Load(_path, catalog));
     }
 
@@ -169,7 +169,7 @@ internal sealed class AppPreferencesStore
             }
 
             AppPreferences loaded = JsonSerializer.Deserialize<AppPreferences>(
-                PrivateUserStorage.ReadAllText(path),
+                File.ReadAllText(path, Encoding.UTF8),
                 JsonOptions) ?? new AppPreferences();
             return Normalize(loaded, catalog);
         }
@@ -206,7 +206,7 @@ internal sealed class AppPreferencesStore
     private AppPreferences Commit(AppPreferences candidate)
     {
         AppPreferences snapshot = Freeze(candidate);
-        PrivateUserStorage.WriteAllText(_path, JsonSerializer.Serialize(snapshot, JsonOptions));
+        UserTextFile.Replace(_path, JsonSerializer.Serialize(snapshot, JsonOptions));
         _current = snapshot;
         return snapshot;
     }

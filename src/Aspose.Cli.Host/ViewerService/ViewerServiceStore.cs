@@ -1,6 +1,5 @@
 using Aspose.Cli.Host.LocalServices;
 using Aspose.Cli.Sdk.Configuration;
-using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Host.ViewerService;
 
@@ -19,8 +18,8 @@ internal sealed class ViewerServiceStore
         Path.Combine(ConfigurationPaths.EnsureUserDirectory(), "viewer");
 
     public ViewerServiceStore(string? directory = null) =>
-        _directory = PrivateUserStorage.EnsureDirectory(
-            Path.GetFullPath(directory ?? DirectoryPath));
+        _directory = Directory.CreateDirectory(
+            Path.GetFullPath(directory ?? DirectoryPath)).FullName;
 
     /// <summary>The running service, or null when none is.</summary>
     public ViewerServiceMarker? ReadLive()

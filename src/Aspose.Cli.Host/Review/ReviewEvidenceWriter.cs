@@ -58,7 +58,7 @@ internal static class ReviewEvidenceWriter
         string staging = publication.StagingDirectory;
         try
         {
-            string evidenceDirectory = PrivateUserStorage.EnsureDirectory(Path.Combine(staging, "artifacts"));
+            string evidenceDirectory = Directory.CreateDirectory(Path.Combine(staging, "artifacts")).FullName;
             LocalServiceResourceLimits limits = LocalServiceResourceLimits.Resolve();
             ViewManifest manifest = ViewRendering.Render(render, evidenceDirectory, maxItems, limits);
             ProductReviewAssessment assessment = assess(manifest);

@@ -1,11 +1,14 @@
 using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Sdk.Errors;
-using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Sdk.Configuration;
 
-/// <summary>Resolves private configuration owned by this independent application.</summary>
+/// <summary>
+/// Resolves the per-user configuration directory this application marks as its own. The
+/// directory relies on the permissions Windows gives the user profile; its access control is
+/// neither set nor validated here.
+/// </summary>
 public static class ConfigurationPaths
 {
     public const string EnvironmentVariableName = DistributionInfo.EnvironmentVariablePrefix + "CONFIG_DIR";
@@ -30,9 +33,9 @@ public static class ConfigurationPaths
     {
         string selected = UserDirectory();
         string marker = Path.Combine(selected, OwnerFileName);
-        // Claiming makes the directory private, which rewrites its permissions. The default
-        // location is named for this CLI; a directory chosen through the environment is claimed
-        // only when it is new, empty or already marked, never when it holds someone else's files.
+        // The default location is named for this CLI; a directory chosen through the environment
+        // is claimed only when it is new, empty or already marked, never when it holds someone
+        // else's files.
         if (!string.IsNullOrWhiteSpace(Environment.GetEnvironmentVariable(EnvironmentVariableName))
             && Directory.Exists(selected)
             && !File.Exists(marker)
@@ -40,7 +43,7 @@ public static class ConfigurationPaths
         {
             throw Conflict();
         }
-        string root = PrivateUserStorage.EnsureDirectory(selected);
+        string root = Directory.CreateDirectory(selected).FullName;
         try
         {
             using FileStream file = new(marker, FileMode.CreateNew, FileAccess.Write, FileShare.None);
@@ -63,7 +66,6 @@ public static class ConfigurationPaths
         }
         try
         {
-            PrivateUserStorage.ValidateFile(marker);
             using FileStream file = new(marker, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (file.Length > 1024)
             {

@@ -49,16 +49,16 @@ internal sealed partial class AppHost
     internal string InstallLicense(Stream input, long length, string? productId) => Save(() =>
     {
         if (length > LicenseInstaller.MaximumBytes) { throw CliErrors.FileTooLarge(length, LicenseInstaller.MaximumBytes); }
-        // The file the person chose reaches the CLI as a private file of
-        // ours, and is gone again before this answers.
-        string directory = PrivateUserStorage.CreateTemporaryDirectory(
+        // The file the person chose is staged in the per-user temporary root
+        // and is gone again before this answers.
+        string directory = UserStorage.CreateTemporaryDirectory(
             "app-license",
             Environment.ProcessId.ToString(System.Globalization.CultureInfo.InvariantCulture));
         string staged = Path.Combine(directory, Guid.NewGuid().ToString("N") + ".lic");
         IReadOnlyList<string> installed;
         try
         {
-            using (FileStream destination = PrivateUserStorage.CreateFile(staged))
+            using (FileStream destination = new(staged, FileMode.CreateNew, FileAccess.ReadWrite, FileShare.None))
             {
                 BoundedStreamCopy.CopyAsync(
                     input,

@@ -191,12 +191,12 @@ public sealed class OwnedTemporaryFile : IDisposable
         return stream;
     }
 
-    /// <summary>Moves the bound file into another private location while retaining cleanup ownership.</summary>
+    /// <summary>Moves the bound file into another CLI-owned location while retaining cleanup ownership.</summary>
     public void MoveTo(string destination)
     {
         BindProducedFile();
         string full = System.IO.Path.GetFullPath(destination);
-        PrivateFileRename.Move(Path, full, overwrite: false);
+        AtomicFileRename.Move(Path, full, overwrite: false);
         Path = full;
         BindProducedFile();
     }

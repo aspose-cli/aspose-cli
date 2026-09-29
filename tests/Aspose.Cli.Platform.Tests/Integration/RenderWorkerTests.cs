@@ -18,7 +18,7 @@ public sealed class RenderWorkerTests : IDisposable
 {
     private static readonly TimeSpan RenderTimeout = TimeSpan.FromMinutes(2);
     private readonly TempWorkspace _workspace = new();
-    private readonly string _storage = PrivateUserStorage.CreateTemporaryDirectory("viewer-test");
+    private readonly string _storage = UserStorage.CreateTemporaryDirectory("viewer-test");
 
     public void Dispose()
     {
@@ -159,8 +159,8 @@ public sealed class RenderWorkerTests : IDisposable
         bool presentation = false,
         IReadOnlyList<string>? fontDirectories = null)
     {
-        string output = PrivateUserStorage.EnsureDirectory(
-            Path.Combine(_storage, Guid.NewGuid().ToString("N")));
+        string output = Directory.CreateDirectory(
+            Path.Combine(_storage, Guid.NewGuid().ToString("N"))).FullName;
         RenderWorkerResponse response = supervisor.Render(new RenderWorkerRequest
         {
             Id = 0,

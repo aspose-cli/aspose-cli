@@ -6,7 +6,7 @@ using Aspose.Cli.Sdk.Views;
 namespace Aspose.Cli.Host.Viewer;
 
 /// <summary>
-/// Renders one product view into a private directory: the product writes
+/// Renders one product view into a dedicated directory: the product writes
 /// through a bounded sink, the files it wrote are proven to be exactly the
 /// ones its manifest names, and every part is stamped with the digest of its
 /// bytes so viewers can tell which parts changed between two renders. Static

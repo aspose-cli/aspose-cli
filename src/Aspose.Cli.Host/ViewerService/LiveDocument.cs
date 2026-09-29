@@ -105,10 +105,10 @@ internal sealed class LiveDocument : IDisposable
 
         Id = id;
         _source = Path.GetFullPath(sourcePath);
-        _root = PrivateUserStorage.EnsureDirectory(Path.GetFullPath(root));
+        _root = Directory.CreateDirectory(Path.GetFullPath(root)).FullName;
         // Products label parts after the file they rendered, so the copy
         // carries the document's own name rather than a private one.
-        _copy = Path.Combine(PrivateUserStorage.EnsureDirectory(Path.Combine(_root, ViewerStorage.SourceDirectory)), FileName);
+        _copy = Path.Combine(Directory.CreateDirectory(Path.Combine(_root, ViewerStorage.SourceDirectory)).FullName, FileName);
         _worker = worker;
         _options = options;
         _limits = limits;

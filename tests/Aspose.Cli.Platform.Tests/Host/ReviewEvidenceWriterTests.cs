@@ -251,7 +251,7 @@ public sealed class ReviewEvidenceWriterTests
     public void Write_WorkerOwnsAllReviewCandidatesUntilParentPublication()
     {
         using var temp = new TempDirectory();
-        string workerRoot = Aspose.Cli.Sdk.IO.PrivateUserStorage.CreateTemporaryDirectory("worker");
+        string workerRoot = Aspose.Cli.Sdk.IO.UserStorage.CreateTemporaryDirectory("worker");
         try
         {
             string manifest = Path.Combine(workerRoot, Aspose.Cli.Sdk.Execution.WorkerOutputSession.ManifestName);
@@ -269,7 +269,7 @@ public sealed class ReviewEvidenceWriterTests
             Assert.True(File.Exists(Path.Combine(target, "review.json")));
             Assert.True(File.Exists(Path.Combine(target, "artifacts", "page.png")));
         }
-        finally { Assert.True(Aspose.Cli.Sdk.IO.PrivateUserStorage.TryDeleteTree(workerRoot)); }
+        finally { Assert.True(Aspose.Cli.Sdk.IO.UserStorage.TryDeleteTree(workerRoot)); }
     }
 
     [Fact]

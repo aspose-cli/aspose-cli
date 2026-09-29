@@ -19,7 +19,7 @@ internal sealed class RevisionStore : IDisposable
     {
         ArgumentException.ThrowIfNullOrEmpty(rootDirectory);
         _root = Path.GetFullPath(rootDirectory);
-        PrivateUserStorage.EnsureDirectory(_root);
+        Directory.CreateDirectory(_root);
     }
 
     public string CreateVersionDirectory(int revision)
@@ -29,7 +29,7 @@ internal sealed class RevisionStore : IDisposable
             string.Create(
                 CultureInfo.InvariantCulture,
                 $"v{revision}"));
-        PrivateUserStorage.EnsureDirectory(path);
+        Directory.CreateDirectory(path);
         return path;
     }
 

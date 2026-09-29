@@ -16,7 +16,7 @@ public sealed class AtomicOutputSetWriter : IDisposable
     private readonly AtomicPublicationRecovery _recovery;
     private bool _disposed;
 
-    /// <summary>Creates a private staging area beneath the target directory.</summary>
+    /// <summary>Creates a staging area beneath the target directory.</summary>
     public AtomicOutputSetWriter(
         SafeFileWriter writer,
         string targetDirectory,

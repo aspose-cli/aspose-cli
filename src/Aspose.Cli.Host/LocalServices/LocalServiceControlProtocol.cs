@@ -40,11 +40,11 @@ internal sealed record LocalServiceControlEndpoint(
         $"{DistributionInfo.Id}-{Service}-{Digest()}";
 
     public string UnixSocketPath => Path.Combine(
-        PrivateUserStorage.EnsureDirectory(Path.Combine(
-            PrivateUserStorage.TemporaryRoot(),
+        Directory.CreateDirectory(Path.Combine(
+            UserStorage.TemporaryRoot(),
             "services",
             Service,
-            "ipc")),
+            "ipc")).FullName,
         Digest() + ".sock");
 
     private string Digest() => Convert.ToHexString(
@@ -203,7 +203,6 @@ internal sealed class LocalServiceControlServer : IDisposable
         try
         {
             listener.Bind(new UnixDomainSocketEndPoint(path));
-            CurrentUserPipeSecurity.HardenPath(path);
             listener.Listen(backlog: 8);
             _unixListener = listener;
             CancellationToken cancellationToken = _shutdown.Token;
@@ -429,7 +428,6 @@ internal sealed class LocalServiceControlServer : IDisposable
                 "The local-service socket path is linked.");
         }
 
-        PrivateUserStorage.ValidateUnixOwner(path);
         File.Delete(path);
     }
 
@@ -439,7 +437,6 @@ internal sealed class LocalServiceControlServer : IDisposable
         {
             if (File.Exists(path))
             {
-                PrivateUserStorage.ValidateUnixOwner(path);
                 File.Delete(path);
             }
         }

@@ -41,9 +41,9 @@ internal sealed class ViewerStorage : IDisposable
     public string CreateDocumentRoot(string id)
     {
         if (!IsDocumentId(id)) { throw new ArgumentException("Invalid document id.", nameof(id)); }
-        string root = PrivateUserStorage.EnsureDirectory(Path.Combine(Root, id));
-        PrivateUserStorage.EnsureDirectory(Path.Combine(root, SourceDirectory));
-        PrivateUserStorage.EnsureDirectory(Path.Combine(root, RevisionsDirectory));
+        string root = Directory.CreateDirectory(Path.Combine(Root, id)).FullName;
+        Directory.CreateDirectory(Path.Combine(root, SourceDirectory));
+        Directory.CreateDirectory(Path.Combine(root, RevisionsDirectory));
         return root;
     }
 
@@ -76,10 +76,9 @@ internal sealed class ViewerStorage : IDisposable
 
     public static ViewerStorage Create()
     {
-        string categoryRoot = PrivateUserStorage.EnsureDirectory(
-            Path.Combine(
-                PrivateUserStorage.TemporaryRoot(),
-                "preview"));
+        string categoryRoot = Path.Combine(
+            UserStorage.TemporaryRoot(),
+            "preview");
         return Create(
             categoryRoot,
             IsOwnerAlive,
@@ -94,15 +93,15 @@ internal sealed class ViewerStorage : IDisposable
         ArgumentException.ThrowIfNullOrWhiteSpace(categoryRoot);
         ArgumentNullException.ThrowIfNull(isOwnerAlive);
         ArgumentNullException.ThrowIfNull(deleteDirectory);
-        string category = PrivateUserStorage.EnsureDirectory(categoryRoot);
+        string category = Directory.CreateDirectory(Path.GetFullPath(categoryRoot)).FullName;
         lock (Gate)
         {
             SweepStaleRoots(category, isOwnerAlive, deleteDirectory);
             string name = string.Create(
                 CultureInfo.InvariantCulture,
                 $"{Environment.ProcessId}-{CurrentProcessStart}-{Guid.NewGuid():N}");
-            string root = PrivateUserStorage.EnsureDirectory(
-                Path.Combine(category, name));
+            string root = Directory.CreateDirectory(
+                Path.Combine(category, name)).FullName;
             ActiveRoots.Add(root);
             return new ViewerStorage(
                 category,
@@ -241,7 +240,7 @@ internal sealed class ViewerStorage : IDisposable
                 or NotSupportedException)
         {
             // An inaccessible process is treated as live. Cleanup must fail
-            // safe and may leave a stale private directory rather than delete
+            // safe and may leave a stale session directory rather than delete
             // another process's active session.
             return true;
         }

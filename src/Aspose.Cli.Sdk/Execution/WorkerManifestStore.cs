@@ -25,7 +25,7 @@ internal static class WorkerManifestStore
     {
         try
         {
-            (string root, string path) = ValidateSessionPaths(Path.GetDirectoryName(Path.GetFullPath(manifestPath))!, manifestPath, true);
+            (string root, string path) = ValidateSessionPaths(Path.GetDirectoryName(Path.GetFullPath(manifestPath))!, manifestPath);
             using var stream = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
             if (stream.Length is < 1 or > MaximumBytes) { throw new InvalidDataException("Worker manifest byte budget exceeded."); }
             WorkerOutputManifest manifest = JsonSerializer.Deserialize<WorkerOutputManifest>(stream, JsonOptions)
@@ -41,9 +41,22 @@ internal static class WorkerManifestStore
 
     internal static void Write(string manifestPath, WorkerOutputManifest manifest)
     {
-        _ = ValidateSessionPaths(Path.GetDirectoryName(manifestPath)!, manifestPath, false);
+        _ = ValidateSessionPaths(Path.GetDirectoryName(manifestPath)!, manifestPath);
         string contents = CheckCapacity(manifest);
-        PrivateUserStorage.WriteAllText(manifestPath, contents);
+        string temporary = Path.Combine(Path.GetDirectoryName(manifestPath)!, $".{Path.GetFileName(manifestPath)}.{Guid.NewGuid():N}.tmp");
+        try
+        {
+            File.WriteAllText(temporary, contents);
+            DurableFile.Flush(temporary);
+            AtomicFileRename.Move(temporary, manifestPath, overwrite: true);
+        }
+        finally
+        {
+            // A failed rename is the error worth reporting; a temporary that a scanner still holds is left to worker cleanup.
+            try { File.Delete(temporary); }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
         DurableFile.Flush(manifestPath);
     }
 
@@ -58,20 +71,18 @@ internal static class WorkerManifestStore
         return contents;
     }
 
-    internal static (string Root, string Manifest) ValidateSessionPaths(string root, string manifestPath, bool requireManifest)
+    internal static (string Root, string Manifest) ValidateSessionPaths(string root, string manifestPath)
     {
         string fullRoot = Canonical(root);
         string path = Canonical(manifestPath);
-        string category = Path.Combine(PrivateUserStorage.TemporaryRoot(), "worker");
+        string category = Path.Combine(UserStorage.TemporaryRoot(), "worker");
         if (!PathComparer.Equals(Path.GetDirectoryName(fullRoot), category)
             || !Guid.TryParseExact(Path.GetFileName(fullRoot), "N", out _)
             || !PathComparer.Equals(Path.GetDirectoryName(path), fullRoot)
             || Path.GetFileName(path) != WorkerOutputSession.ManifestName)
         {
-            throw new InvalidDataException("Worker manifest is outside its owned private root.");
+            throw new InvalidDataException("Worker manifest is outside its worker root.");
         }
-        PrivateUserStorage.ValidateDirectory(fullRoot);
-        if (requireManifest) { PrivateUserStorage.ValidateFile(path); }
         return (fullRoot, path);
     }
 
@@ -91,8 +102,6 @@ internal static class WorkerManifestStore
             if (!PathComparer.Equals(Path.GetDirectoryName(Path.GetDirectoryName(output.Staged)!), root)
                 || Path.GetFileName(output.Staged) != "directory")
             { throw new InvalidDataException("A staged directory is outside the worker layout."); }
-            PrivateUserStorage.ValidateDirectory(Path.GetDirectoryName(output.Staged)!);
-            PrivateUserStorage.ValidateDirectory(output.Staged);
             NewDirectoryPublication.ValidateTree(output.Staged, output.Tree);
             return;
         }
@@ -116,8 +125,6 @@ internal static class WorkerManifestStore
             {
                 throw new InvalidDataException("A staged file is outside the worker layout.");
             }
-            PrivateUserStorage.ValidateDirectory(parent);
-            PrivateUserStorage.ValidateFile(staged);
             if (!entry.StagedSnapshot.VersionEquals(FilePublicationSnapshot.Capture(staged))
                 || !entry.StagedSnapshot.Metadata!.Matches(staged)) { throw new InvalidDataException("The staged file changed after handoff."); }
             if (entry.BackupPath is { } backup)

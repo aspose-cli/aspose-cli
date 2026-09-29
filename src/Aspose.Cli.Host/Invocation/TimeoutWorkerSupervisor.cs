@@ -67,7 +67,7 @@ internal static class TimeoutWorkerSupervisor
         Func<ProcessStartInfo> startInfoFactory, GlobalValues? inherited = null,
         bool redirectInput = false, string? stdin = null)
     {
-        string root = PrivateUserStorage.CreateTemporaryDirectory("worker");
+        string root = UserStorage.CreateTemporaryDirectory("worker");
         string manifest = Path.Combine(root, WorkerOutputSession.ManifestName);
         bool safeToClean = true;
         try
@@ -129,7 +129,7 @@ internal static class TimeoutWorkerSupervisor
         }
         finally
         {
-            if (safeToClean && !PrivateUserStorage.TryDeleteTree(root))
+            if (safeToClean && !UserStorage.TryDeleteTree(root))
             { Trace.TraceWarning("Worker cleanup preserved changed or unverified staging: '{0}'.", root); }
         }
     }

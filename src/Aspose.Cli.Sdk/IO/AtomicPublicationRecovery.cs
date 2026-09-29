@@ -1,5 +1,7 @@
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
+using System.Security.AccessControl;
+using System.Security.Principal;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 
@@ -386,7 +388,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             if (!Directory.Exists(directory) || File.Exists(journalPath) || IsLiveCreation(directory)) { return false; }
             return CleanOrphanJournalTemporaries(directory);
         }
-        PrivateUserStorage.ValidateFile(journalPath);
         if (!TryReadJournal(journalPath, out PublicationJournal? journal, deadline))
         {
             return false;
@@ -503,7 +504,11 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             throw new InvalidDataException(
                 $"Publication transaction '{directory}' is outside its recovery root or is a reparse point.");
         }
-        PrivateUserStorage.ValidateDirectory(fullDirectory);
+        if (!IsOwnedByCurrentUser(fullDirectory))
+        {
+            throw new InvalidDataException(
+                $"Publication transaction '{directory}' is not owned by the current user.");
+        }
     }
 
     private static void ValidateJournal(
@@ -608,7 +613,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
             ValidateStagedFileIfPresent(entry, staged);
             if (entry.Backup is not null)
             {
-                ValidatePrivateFileIfPresent(entry.Backup);
+                EnsureNotDirectory(entry.Backup);
             }
             if (entry.Displaced is not null)
             {
@@ -636,7 +641,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                     "the abandoned publication recovery time budget was exceeded",
                     phase: "recovery");
             }
-            if (IsPrivateToCurrentUser(directory) && HasJournalOrTemporary(directory))
+            if (IsOwnedByCurrentUser(directory) && HasJournalOrTemporary(directory))
             {
                 directories.Add(directory);
                 if (directories.Count > MaximumTransactionDirectories)
@@ -650,18 +655,30 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
     }
 
     /// <summary>
-    /// Every transaction this code creates is private to its user. Anything else under the
-    /// transaction name was created by another principal: it is neither recoverable nor
-    /// allowed to block this user's publications.
+    /// Recovery restores and deletes files on the journal's word, and any user can create a
+    /// transaction-named directory in a shared ancestor such as a drive root. The NTFS owner is
+    /// the only creator identity the operating system attests, so only a directory owned by
+    /// this user, or by the default owner of this user's token (Administrators when the
+    /// process is elevated), is recovered. Any other directory, or one whose owner cannot be
+    /// read, belongs to someone else: it is neither recovered nor allowed to block this
+    /// user's publications. <see cref="PublicationTransactionDirectory"/> creates every
+    /// transaction with this user as owner and nobody else admitted, so the journal inside a
+    /// recovered directory was written by this user.
     /// </summary>
-    private static bool IsPrivateToCurrentUser(string directory)
+    private static bool IsOwnedByCurrentUser(string directory)
     {
+        if (!OperatingSystem.IsWindows()) { return false; }
         try
         {
-            PrivateUserStorage.ValidateDirectory(directory);
-            return true;
+            IdentityReference? owner = new DirectoryInfo(directory)
+                .GetAccessControl(AccessControlSections.Owner)
+                .GetOwner(typeof(SecurityIdentifier));
+            if (owner is null) { return false; }
+            using WindowsIdentity current = WindowsIdentity.GetCurrent();
+            return owner.Equals(current.User) || owner.Equals(current.Owner);
         }
-        catch (Exception exception) when (exception is UnauthorizedAccessException or IOException)
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException
+            or InvalidOperationException or NotSupportedException)
         {
             return false;
         }
@@ -705,16 +722,12 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
                 comparison);
     }
 
-    private static void ValidatePrivateFileIfPresent(string path)
+    private static void EnsureNotDirectory(string path)
     {
         if (Directory.Exists(path))
         {
             throw new InvalidDataException(
                 $"Publication file path '{path}' is occupied by a directory.");
-        }
-        if (File.Exists(path))
-        {
-            PrivateUserStorage.ValidateFile(path);
         }
     }
 
@@ -752,7 +765,7 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         {
             if (File.GetAttributes(directory).HasFlag(FileAttributes.ReparsePoint)) { return false; }
             if (File.Exists(Path.Combine(directory, AtomicPublicationPlan.JournalName))) { return true; }
-            // A private candidate set without its first durable journal never reached publication.
+            // A candidate set without its first durable journal never reached publication.
             // Only an otherwise empty journal-temporary directory is eligible for orphan cleanup.
             bool hasTemporary = false;
             foreach (string path in Directory.EnumerateFileSystemEntries(directory))
@@ -782,7 +795,6 @@ internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
         }
         foreach (string path in entries)
         {
-            PrivateUserStorage.ValidateFile(path);
             FilePublicationSnapshot snapshot =
                 FilePublicationSnapshot.Capture(path);
             if (!FilePublicationOwnedDelete.TryDelete(path, snapshot))

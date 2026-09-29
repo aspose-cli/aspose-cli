@@ -10,7 +10,7 @@ internal sealed class CellsEditBaseline(string directory, OwnedTemporaryFile fil
 
     internal static CellsEditBaseline Capture(string sourcePath, FileWritePrecondition precondition, ResourceBudgetLedger budgets)
     {
-        string directory = PrivateUserStorage.CreateTemporaryDirectory("cells-edit-baseline");
+        string directory = UserStorage.CreateTemporaryDirectory("cells-edit-baseline");
         OwnedTemporaryFile? file = null;
         try
         {

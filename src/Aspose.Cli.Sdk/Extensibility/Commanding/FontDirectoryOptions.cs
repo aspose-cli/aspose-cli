@@ -86,11 +86,12 @@ internal sealed class FontDirectoryOptions
         }
         try
         {
-            PrivateUserStorage.RejectLinkedComponents(fullPath, includeLeaf: true);
+            // A junction could otherwise lead font loading to a network share.
+            OutputPathValidator.EnsureSafeDirectory(fullPath);
         }
-        catch (UnauthorizedAccessException)
+        catch (CliException)
         {
-            throw Invalid(value, "must not traverse a reparse point");
+            throw Invalid(value, "must not traverse a reparse point or use a reserved name");
         }
         if (OperatingSystem.IsWindows())
         {

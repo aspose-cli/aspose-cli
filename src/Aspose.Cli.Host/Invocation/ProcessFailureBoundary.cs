@@ -193,8 +193,7 @@ internal static class ProcessFailureLog
         try
         {
             string directory =
-                Aspose.Cli.Sdk.IO.PrivateUserStorage.EnsureDirectory(
-                    Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnsureUserDirectory());
+                Aspose.Cli.Sdk.Configuration.ConfigurationPaths.EnsureUserDirectory();
             string path = Path.Combine(
                 directory,
                 "process-errors.log");
@@ -209,7 +208,7 @@ internal static class ProcessFailureLog
                 string timestamp = DateTimeOffset.UtcNow.ToString(
                     "O",
                     CultureInfo.InvariantCulture);
-                Aspose.Cli.Sdk.IO.PrivateUserStorage.AppendLine(
+                Aspose.Cli.Host.LocalServices.UserTextFile.AppendLine(
                     path,
                     $"{timestamp} pid={Environment.ProcessId} " +
                     $"phase={phase} hresult=0x{exception.HResult:X8} " +
