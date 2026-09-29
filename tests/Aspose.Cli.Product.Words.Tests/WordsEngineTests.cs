@@ -77,7 +77,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(info.Document.Blocks, first.BlockCount);
     }
 
-    [Fact]
+    [LicensedFact]
     public void Inspect_DisclosesAnOutlineCappedAtAThousandHeadings()
     {
         var document = new Document();

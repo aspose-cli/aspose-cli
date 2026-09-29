@@ -214,7 +214,7 @@ public sealed class PdfEngineTests
         Assert.Single(result.Pages);
     }
 
-    [Fact]
+    [LicensedFact]
     public void Info_DisclosesThePagePreviewCap()
     {
         using var fixture = new PdfEngineFixture();

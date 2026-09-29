@@ -34,7 +34,7 @@ public sealed class WordsMarkdownImportTests
         Assert.Equal("InlineCode", Assert.Single(runs, static run => run.Text == "code").Font.StyleName);
         Assert.DoesNotContain(paragraphs, static paragraph => !paragraph.HasChildNodes);
     }
-    [Fact]
+    [LicensedFact]
     public void Create_FitsAnImageWiderThanThePageToTheTextColumn()
     {
         using var fixture = new WordsFixture();

@@ -58,7 +58,11 @@ the size of the page in view, zoom and a mark on what a change touched
 (`aspose-cli docs preview`). Without a PDF license, output is watermarked and
 results carry `EVAL_MODE`; a license installed later does not remove watermarks
 already saved into a PDF, so regenerate that file from its original inputs
-(`aspose-cli docs licensing`).
+(`aspose-cli docs licensing`). Evaluation mode also reads only the first 4 pages
+of a document and 4 items of any other list, such as bookmarks or form fields:
+`inspect` of a longer PDF warns `EVAL_INPUT_TRUNCATED`, and a command that
+needs more fails with `EVALUATION_LIMIT` (exit 7) before writing anything.
+Limit it with `--pages 1-4`, or tell the user a PDF license is needed.
 
 ## References
 

@@ -32,9 +32,13 @@ internal sealed class PdfReadService
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        return PdfInfoProjection.Project(loaded, filePath, request) with
+        PdfInfoResult info = PdfInfoProjection.Project(loaded, filePath, request);
+        return info with
         {
             License = EnvelopeParts.License(state),
+            Warnings = PdfEvaluation.InputTruncated(state, loaded.Document.Pages.Count) is { } truncated
+                ? EnvelopeParts.CombineWarnings(info.Warnings, [truncated])
+                : info.Warnings,
         };
     }
 

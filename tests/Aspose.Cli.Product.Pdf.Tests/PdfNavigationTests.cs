@@ -33,7 +33,7 @@ public sealed class PdfNavigationTests
         Assert.Equal(0, ((ExplicitDestination)moved.NamedDestinations["appendix"]).PageNumber);
     }
 
-    [Fact]
+    [LicensedFact]
     public void MovePages_KeepsEveryExactDestinationOnTheMovedPages()
     {
         using var fixture = new PdfEngineFixture();

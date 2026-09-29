@@ -119,6 +119,28 @@ public sealed class PdfCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void EvaluationMode_DisclosesAPartialInspectAndRefusesReadingPastTheFourthPage()
+    {
+        using (var fixture = new PdfEngineFixture())
+        {
+            File.Copy(fixture.CreateRawDocument("six.pdf", pages: 6), _workspace.File("six.pdf"));
+        }
+
+        CliResult inspect = _workspace.Run("pdf", "inspect", "six.pdf", "--output", "json");
+        CliResult firstPages = _workspace.Run("pdf", "query", "pages", "six.pdf", "--pages", "1-4", "--output", "json");
+        CliResult allPages = _workspace.Run("pdf", "query", "pages", "six.pdf", "--output", "json");
+
+        Assert.True(inspect.ExitCode == 0, inspect.StdErr);
+        JsonNode truncated = Assert.Single(
+            JsonNode.Parse(inspect.StdOut)!["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!;
+        Assert.StartsWith("Evaluation mode shows only the first 4 of 6 pages", truncated["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.True(firstPages.ExitCode == 0, firstPages.StdErr);
+        Assert.Equal(7, allPages.ExitCode);
+        Assert.Equal("EVALUATION_LIMIT", JsonNode.Parse(allPages.StdErr)!["error"]!["code"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void QueryPages_NextRereadsACutPageAndRaisesTheBudgetForAPageThatAloneExceedsIt()
     {
         using (var document = new Document())
