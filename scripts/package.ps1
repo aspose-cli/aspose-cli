@@ -8,8 +8,8 @@ uninstall smoke test, and writes the GitHub release assets to artifacts/release/
 archive, install.ps1, RELEASE-MANIFEST.json (the archive's name, size and SHA-256, read by the
 one-line install and by the update command) and SHA256SUMS.
 
-  -PrepareOnly  Stages a local development package, which also contains install.cmd, and
-                stops after its checksum and launch checks.
+  -PrepareOnly  Stages a local development package and stops after its checksum and launch
+                checks.
 #>
 [CmdletBinding()]
 param(
@@ -109,29 +109,16 @@ if ($buildManifest.runtimeIdentifier -cne $RuntimeIdentifier -or
     [bool]([bool]$buildManifest.buildDirty -and -not $PrepareOnly)) {
     throw 'Published build manifest does not describe this clean package build.'
 }
-foreach ($packageFile in @('install.cmd','install.ps1','SHA256SUMS')) {
+foreach ($packageFile in @('install.ps1','SHA256SUMS')) {
     Remove-Item -LiteralPath (Join-Path $publishRoot $packageFile) -Force -ErrorAction SilentlyContinue
 }
-$installerNames = if ($PrepareOnly) { @('install.cmd', 'install.ps1') } else { @('install.ps1') }
-foreach ($installerName in $installerNames) {
-    Copy-Item `
-        -LiteralPath (Join-Path $repoRoot $installerName) `
-        -Destination (Join-Path $publishRoot $installerName)
-}
+Copy-Item -LiteralPath (Join-Path $repoRoot 'install.ps1') -Destination (Join-Path $publishRoot 'install.ps1')
 $verifiedFiles = @(
     Get-ChildItem -LiteralPath $publishRoot -File -Recurse |
         Where-Object {
             (Get-ArtifactRelativePath -Root $publishRoot -Path $_.FullName) -cne 'SHA256SUMS'
         } |
         Sort-Object FullName
-)
-# The installer is installed with the payload so an installation can update and uninstall
-# itself; the development entry point is not.
-$payloadFiles = @(
-    $verifiedFiles |
-        Where-Object {
-            (Get-ArtifactRelativePath -Root $publishRoot -Path $_.FullName) -cne 'install.cmd'
-        }
 )
 $checksumLines = @(
     foreach ($file in $verifiedFiles) {
@@ -186,7 +173,7 @@ try {
             throw "Customer installer smoke test '$($pass -join ' ')' failed with exit code $LASTEXITCODE."
         }
     }
-    foreach ($file in $payloadFiles) {
+    foreach ($file in $verifiedFiles) {
         $relativePath = Get-ArtifactRelativePath -Root $publishRoot -Path $file.FullName
         $installedFile = Join-Path $smokeInstall $relativePath
         if (-not (Test-Path -LiteralPath $installedFile -PathType Leaf)) {

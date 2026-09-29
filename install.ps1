@@ -1932,8 +1932,6 @@ function Install-Release {
     $checksumBytes = [IO.File]::ReadAllBytes($checksumPath)
     $verifiedFiles = @($packageInventory.Files | Where-Object { $_.Path -cne 'SHA256SUMS' } | Sort-Object Path)
     # install.ps1 is part of the payload, so the installation can update and uninstall itself.
-    # The development entry point is not.
-    $payloadFiles = @($verifiedFiles | Where-Object { $_.Path -cne 'install.cmd' })
     $checksums = [Collections.Generic.Dictionary[string,string]]::new([StringComparer]::OrdinalIgnoreCase)
     foreach ($line in ($script:Utf8.GetString($checksumBytes) -split "`r?`n")) {
         if ([string]::IsNullOrWhiteSpace($line)) { continue }
@@ -1947,15 +1945,10 @@ function Install-Release {
         if ($payload.Sha256 -cne $checksums[$payload.Path]) { throw "Checksum mismatch for '$($payload.Path)': expected $($checksums[$payload.Path]), got $($payload.Sha256)." }
     }
     $capabilities = Invoke-Capabilities $sourceExecutable
-    $releaseIndicators = @('install.cmd','install.ps1',$script:BuildManifestName) |
+    $releaseIndicators = @('install.ps1',$script:BuildManifestName) |
         Where-Object { $_ -cin @($packageInventory.Files.Path) }
     if (@($releaseIndicators).Count -ne 0) {
-        if (-not $DevelopmentPackage -and 'install.cmd' -cin @($packageInventory.Files.Path)) {
-            throw "Release packages must not contain the development entry 'install.cmd'."
-        }
-        $requiredReleaseFiles = @('install.ps1',$script:BuildManifestName)
-        if ($DevelopmentPackage) { $requiredReleaseFiles += 'install.cmd' }
-        foreach ($required in $requiredReleaseFiles) {
+        foreach ($required in @('install.ps1',$script:BuildManifestName)) {
             if ($required -cnotin @($packageInventory.Files.Path)) { throw "Release package is missing '$required'." }
         }
         $packageBuildMetadata = Read-BuildMetadata $packageDirectory
@@ -2004,7 +1997,7 @@ function Install-Release {
         }
 
         [IO.Directory]::CreateDirectory($stage) | Out-Null
-        foreach ($payload in $payloadFiles) {
+        foreach ($payload in $verifiedFiles) {
             $destination = Join-Path $stage $payload.Path.Replace('/', '\')
             [IO.Directory]::CreateDirectory((Split-Path -Parent $destination)) | Out-Null
             Copy-Item -LiteralPath $payload.FullPath -Destination $destination
@@ -2012,7 +2005,7 @@ function Install-Release {
         $payloadManifest = [ordered]@{
             schemaVersion = 1
             productId = $script:ProductId
-            files = @($payloadFiles | ForEach-Object { [ordered]@{ path = $_.Path; size = $_.Size; sha256 = $_.Sha256 } })
+            files = @($verifiedFiles | ForEach-Object { [ordered]@{ path = $_.Path; size = $_.Size; sha256 = $_.Sha256 } })
         }
         $payloadManifestPath = Join-Path $stage $script:PayloadManifestName
         Write-JsonAtomic $payloadManifestPath $payloadManifest

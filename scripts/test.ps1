@@ -59,7 +59,7 @@ $env:ASPOSE_CLI_TEST_EXECUTABLE = $builtExecutable
 $categories = @('Installer', 'Browser', 'Slow')
 $slowTestSeconds = 10
 # Inputs of the customer installer tests outside their source file.
-$installerInputs = @('install.ps1', 'install.cmd', 'scripts/install-local.ps1', 'tests/Aspose.Cli.Platform.Tests/Integration/CustomerInstaller')
+$installerInputs = @('install.ps1', 'scripts/install-local.ps1', 'tests/Aspose.Cli.Platform.Tests/Integration/CustomerInstaller')
 
 $testKit = Join-Path $layout.TestRoot 'Aspose.Cli.TestKit/Aspose.Cli.TestKit.csproj'
 $testProjects = @(
