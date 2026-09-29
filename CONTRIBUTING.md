@@ -1,7 +1,9 @@
 # Contributing to Aspose CLI
 
-Every change keeps the architecture rules in [AGENTS.md](AGENTS.md). Report vulnerabilities
-through [SECURITY.md](SECURITY.md), not public issues.
+Every change keeps the architecture rules in [AGENTS.md](AGENTS.md). Only collaborators can open
+pull requests; this repository does not accept them from outside contributors, so report problems
+and proposals through an issue. Report vulnerabilities through [SECURITY.md](SECURITY.md), not
+public issues.
 
 ## Prerequisites
 
