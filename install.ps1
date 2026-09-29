@@ -437,6 +437,28 @@ function Invoke-CliChildProcess {
     finally { $process.Dispose() }
 }
 
+# Without a license argument, the licenses already configured for the user still apply; say
+# which products they cover rather than implying there is none.
+function Write-LicenseSummary {
+    param([Parameter(Mandatory)][string] $Executable)
+    $licensed = @()
+    try {
+        $status = Invoke-CliChildProcess $Executable @('license', 'status', '--output', 'json')
+        if ($status.ExitCode -eq 0) {
+            $licensed = @(($status.StdOut | ConvertFrom-Json).products |
+                Where-Object { [string]$_.mode -ceq 'licensed' } |
+                ForEach-Object { [string]$_.product })
+        }
+    }
+    catch { $licensed = @() }
+    if ($licensed.Count -gt 0) {
+        Write-Host "Licenses already configured for this user apply to: $($licensed -join ', '). Check them with: $($script:CommandName) license status"
+    }
+    else {
+        Write-Host "No license is configured, so the products run in evaluation mode, which marks their output. Install one with: $($script:CommandName) license install <file>"
+    }
+}
+
 function Get-ChildProcessDiagnostic {
     param([Parameter(Mandatory)] $Result)
     $text = @($Result.StdErr, $Result.StdOut) |
@@ -762,7 +784,7 @@ function Get-ManagedInstallState {
         throw 'Installation marker is missing required property schemaVersion.'
     }
     if (-not (Test-JsonInteger $marker.schemaVersion 3)) {
-        throw 'Installation marker schemaVersion must be an integer with a supported value.'
+        throw "Installation marker schemaVersion must be an integer with a supported value: '$Root' was installed by a build this installer does not support. Nothing was changed. Move that directory aside, and remove the aspose-cli-* Skill folders it installed, then install again."
     }
     $schemaVersion = [long]$marker.schemaVersion
 
@@ -1328,7 +1350,9 @@ function Register-OwnedMcp {
             continue
         }
         if ($add.ExitCode -ne 0) {
-            Write-Warning "MCP host '$name' registration command failed with exit code $($add.ExitCode); registration was skipped."
+            # The host's own first line of output usually names the fix, such as a broken configuration file.
+            $reason = @((Get-ChildProcessDiagnostic $add) -split "`r?`n" | Where-Object { -not [string]::IsNullOrWhiteSpace($_) } | Select-Object -First 3) -join ' '
+            Write-Warning "MCP host '$name' registration command failed with exit code $($add.ExitCode)$(if ($reason) { ": $reason" }); registration was skipped."
             continue
         }
         # No entry existed before the add, so whatever is registered now was created here.
@@ -2213,7 +2237,7 @@ function Install-Release {
         Write-Host "$($script:DisplayName) $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
         if (-not $skipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
         if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }
-        if ($null -eq $licenseArguments -and -not $Update) { Write-Host "No license was supplied for this installation. Check effective product licenses with: $($script:CommandName) license status" }
+        if ($null -eq $licenseArguments -and -not $Update) { Write-LicenseSummary $installExecutable }
     }
     catch {
         $failure = $_

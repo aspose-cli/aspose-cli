@@ -51,6 +51,23 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void RemoveDuplicates_ReportsTheRowsItRemoved()
+    {
+        string path = _fixture.CreateSalesWorkbook("dedupe-count.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(path,
+            ParseOps("""
+                {"ops":[
+                  {"op":"add_sheet","name":"Orders"},
+                  {"op":"set_values","sheet":"Orders","range":"A1","values":[["Order","Amount"],["A-1",10],["A-1",10],["A-2",20],["A-1",10]]},
+                  {"op":"remove_duplicates","sheet":"Orders","range":"A1:B5","hasHeader":true}
+                ]}
+                """),
+            new EditRequest { OutputPath = _fixture.Temp.File("dedupe-count.out.xlsx") });
+
+        Assert.Equal(2, result.Applied.Single(static outcome => outcome.Op == "remove_duplicates").ItemsAffected);
+    }
+
+    [Fact]
     public void TextCreationReportsTheSameSheetLossAsConversionAndEditing()
     {
         CreateResult result = _fixture.Engine.Create(new NewWorkbookRequest

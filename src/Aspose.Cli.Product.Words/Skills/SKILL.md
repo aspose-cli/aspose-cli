@@ -63,6 +63,12 @@ file, one line per paragraph. Windows, paging and compact output in general:
    aspose-cli words edit input.docx --ops ops.json --out output.docx --verify --output json
    ```
 
+   Filling a template's `{{placeholder}}` text: `replace_text` covers only the
+   body unless it names `"scope": "all"`, and templates often keep the contract
+   number or date in a header. Replace with `"scope": "all"`, then confirm
+   `words query search output.docx --pattern "{{" --scope all` finds nothing (the
+   pattern is literal unless `--regex`).
+
 4. **Verify:** read the changed blocks back, then review every page
    ([verification](references/verification.md)).
 

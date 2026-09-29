@@ -196,9 +196,11 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             }
         }
 
-        string reason = detected.FileFormatType == FileFormatType.Unknown
-            ? "content does not match any supported spreadsheet format"
-            : $"the file's content is {detected.FileFormatType}, not a spreadsheet";
+        string reason = detected.FileFormatType != FileFormatType.Unknown
+            ? $"the file's content is {detected.FileFormatType}, not a spreadsheet"
+            : StartsWithZipSignature(path)
+                ? "it is an incomplete or damaged ZIP container, as an interrupted download or copy leaves it; ask for the file again"
+                : "content does not match any supported spreadsheet format";
         throw CellsErrors.FileCorrupt(path, reason);
     }
 
@@ -288,6 +290,22 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         return text.Split('\n')
             .Select(static line => line.TrimEnd('\r'))
             .FirstOrDefault(static line => !string.IsNullOrWhiteSpace(line));
+    }
+
+    // xlsx, xlsm, xlsb and ods are ZIP containers; a complete one is recognized by its format.
+    private static bool StartsWithZipSignature(string path)
+    {
+        Span<byte> head = stackalloc byte[4];
+        try
+        {
+            using FileStream stream = File.OpenRead(path);
+            return stream.ReadAtLeast(head, head.Length, throwOnEndOfStream: false) == head.Length
+                && head.SequenceEqual("PK\u0003\u0004"u8);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException)
+        {
+            return false;
+        }
     }
 
     private static bool ContentLooksLikeHtml(string path)

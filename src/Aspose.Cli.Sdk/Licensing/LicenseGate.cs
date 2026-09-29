@@ -50,7 +50,10 @@ public abstract class LicenseGate : ILicenseGate
         catch (CliException) { throw; }
         catch (Exception exception)
         {
-            throw CliErrors.LicenseInvalid(source, exception.Message, exception);
+            throw CliErrors.LicenseInvalid(
+                source,
+                $"it is not an Aspose license the SDK can verify, so it is damaged, edited or not a license ({exception.Message})",
+                exception);
         }
     }
 

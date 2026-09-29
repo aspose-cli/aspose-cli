@@ -80,7 +80,8 @@ internal sealed class PdfReadService
             {
                 Code = PdfDiagnostics.ScannedPagesSuspected,
                 Message = $"Pages with no extractable text appear image-dominated: {string.Join(", ", scanned)}.",
-                Hint = "Use 'aspose-cli ocr recognize' when the OCR product is available, or inspect rendered pages.",
+                Hint = "This build has no OCR: read those pages from rendered images ('aspose-cli pdf render'), and hide content "
+                    + "on them with redact_area, whose coordinates you can take from a render.",
             }];
 
         return new PdfReadResult

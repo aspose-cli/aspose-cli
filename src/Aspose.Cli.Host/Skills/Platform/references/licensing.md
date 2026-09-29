@@ -77,7 +77,11 @@ retry unchanged input.
   watermarks or added evaluation content. The mark is in the file you deliver,
   so tell the user.
 - `EVAL_INPUT_TRUNCATED` means evaluation mode loaded only part of an input,
-  so the result is incomplete.
+  so the result is incomplete. On a read, the text you get back is the
+  engine's replacement ("...text has been truncated due to evaluation version
+  limitation"), not what the file holds: check the file's text in rendered
+  images instead, and do not report the file as damaged. A command that loads
+  such an input and saves writes the replacement into its output.
 - Reads (`inspect`, `query`) add no marks and carry no `EVAL_MODE` warning;
   input, resource and engine limits still apply.
 - Detect evaluation from the JSON `warnings` array. With `--output table`,
