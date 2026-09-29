@@ -1,4 +1,5 @@
 using Aspose.Words;
+using Aspose.Words.Drawing;
 using Aspose.Words.Tables;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
@@ -7,7 +8,7 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 /// The one way Markdown content enters a destination document, shared by <c>create</c>,
 /// <c>insert_markdown</c> and Markdown headers and footers. Blocks take the destination's
 /// styles, so the destination's template owns the look, and runs keep only the emphasis the
-/// Markdown expressed.
+/// Markdown expressed, and images fit the destination's text width.
 /// </summary>
 internal static class WordsMarkdownImport
 {
@@ -15,12 +16,33 @@ internal static class WordsMarkdownImport
     internal static IReadOnlyList<Node> Blocks(Document destination, Document markdown)
     {
         KeepOnlyExpressedEmphasis(markdown);
+        FitImages(markdown, destination);
         var importer = new NodeImporter(markdown, destination, ImportFormatMode.UseDestinationStyles);
         return markdown.Sections.Cast<Section>()
             .SelectMany(static section => section.Body.GetChildNodes(NodeType.Any, false).Cast<Node>())
             .Where(static node => node is Paragraph or Table)
             .Select(node => importer.ImportNode(node, true))
             .ToArray();
+    }
+
+    /// <summary>
+    /// The Markdown reader sizes an image by its pixels at 96 DPI, so a chart rendered at print
+    /// resolution comes out several page widths wide. Images wider than the destination's text
+    /// column are scaled down to it, keeping their proportions.
+    /// </summary>
+    private static void FitImages(Document markdown, Document destination)
+    {
+        PageSetup page = destination.FirstSection.PageSetup;
+        double column = page.PageWidth - page.LeftMargin - page.RightMargin;
+        foreach (Shape image in markdown.GetChildNodes(NodeType.Shape, isDeep: true).OfType<Shape>())
+        {
+            if (image.HasImage && image.Width > column && column > 0)
+            {
+                double scale = column / image.Width;
+                image.Width = column;
+                image.Height *= scale;
+            }
+        }
     }
 
     /// <summary>

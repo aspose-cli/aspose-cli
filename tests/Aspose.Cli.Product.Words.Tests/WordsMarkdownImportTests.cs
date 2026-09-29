@@ -35,6 +35,32 @@ public sealed class WordsMarkdownImportTests
         Assert.DoesNotContain(paragraphs, static paragraph => !paragraph.HasChildNodes);
     }
     [Fact]
+    public void Create_FitsAnImageWiderThanThePageToTheTextColumn()
+    {
+        using var fixture = new WordsFixture();
+        string chart = fixture.Temp.File("chart.png");
+        using (var bitmap = new SkiaSharp.SKBitmap(1367, 1150))
+        using (SkiaSharp.SKImage image = SkiaSharp.SKImage.FromBitmap(bitmap))
+        using (SkiaSharp.SKData png = image.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100))
+        using (FileStream file = File.Create(chart))
+        {
+            png.SaveTo(file);
+        }
+
+        string markdown = fixture.Temp.File("report.md");
+        File.WriteAllText(markdown, "# Report\n\n![Completion](chart.png)\n");
+        string output = fixture.Temp.File("report.docx");
+
+        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+
+        var document = new Document(output);
+        PageSetup page = document.FirstSection.PageSetup;
+        Aspose.Words.Drawing.Shape picture = Assert.Single(document.GetChildNodes(NodeType.Shape, true).OfType<Aspose.Words.Drawing.Shape>());
+        Assert.InRange(picture.Width, 1, page.PageWidth - page.LeftMargin - page.RightMargin + 0.01);
+        Assert.Equal(1150d / 1367d, picture.Height / picture.Width, 2);
+    }
+
+    [Fact]
     public void InspectFonts_ReportsTheFontsTheTextUses()
     {
         using var fixture = new WordsFixture();
