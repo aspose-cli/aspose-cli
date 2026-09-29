@@ -100,6 +100,7 @@ internal sealed class PdfProductionService
             throw CliErrors.FormatUnsupported(request.TargetFormatId, PdfFormats.RenderIds);
         }
 
+        PdfRenderGrid? grid = RenderGrid(request);
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.AllPages
@@ -121,7 +122,8 @@ internal sealed class PdfProductionService
                     pageNumber,
                     request.TargetFormatId,
                     request.Dpi,
-                    stream);
+                    stream,
+                    grid);
             });
             staged.Add((pageNumber, path));
         }
@@ -136,6 +138,7 @@ internal sealed class PdfProductionService
                 Output = BuildOutput(item.Path, request.TargetFormatId, sizes[index]),
             }).ToArray(),
             Dpi = request.TargetFormatId == "svg" ? null : request.Dpi,
+            Grid = grid,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.OutputWarnings(state),
         };
@@ -143,19 +146,31 @@ internal sealed class PdfProductionService
 
     /// <summary>
     /// Writes one page as an image. Every page raster passes the shared pixel guard here,
-    /// before the engine allocates the bitmap.
+    /// before the engine allocates the bitmap. A <paramref name="grid"/> is drawn on the raster,
+    /// never into the document.
     /// </summary>
     private void RenderPage(
         Document document,
         int pageNumber,
         string format,
         int dpi,
-        Stream stream)
+        Stream stream,
+        PdfRenderGrid? grid = null)
     {
         Page page = document.Pages[pageNumber];
         if (format != "svg")
         {
             EnsurePageFits(page, dpi);
+        }
+
+        if (grid is not null)
+        {
+            using var raster = new MemoryStream();
+            new PngDevice(new Resolution(dpi)).Process(page, raster);
+            raster.Position = 0;
+            Rectangle box = page.GetPageRect(considerRotation: true);
+            PdfGridOverlay.Draw(raster, grid, box.Width, box.Height, dpi, format, stream);
+            return;
         }
 
         switch (format)
@@ -176,6 +191,35 @@ internal sealed class PdfProductionService
             default:
                 throw CliErrors.FormatUnsupported(format, PdfFormats.RenderIds);
         }
+    }
+
+    /// <summary>Validates the requested grid, which only raster output carries.</summary>
+    private static PdfRenderGrid? RenderGrid(PdfRenderRequest request)
+    {
+        if (request.Grid is not int spacing)
+        {
+            return null;
+        }
+
+        if (request.TargetFormatId == "svg")
+        {
+            throw CliErrors.OptionInvalid(
+                "--grid",
+                "applies only to png and jpeg output",
+                "Render the page with --to png or --to jpeg to draw a coordinate grid.");
+        }
+
+        if (spacing is < PdfGridOverlay.MinimumSpacing or > PdfGridOverlay.MaximumSpacing)
+        {
+            throw CliErrors.OptionInvalid(
+                "--grid",
+                string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"must be between {PdfGridOverlay.MinimumSpacing} and {PdfGridOverlay.MaximumSpacing} points"),
+                "Choose a spacing such as --grid 50.");
+        }
+
+        return PdfGridOverlay.Describe(spacing);
     }
 
     private void EnsurePageFits(Page page, int dpi) =>

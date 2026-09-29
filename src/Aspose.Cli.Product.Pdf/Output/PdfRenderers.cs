@@ -79,6 +79,12 @@ internal static class PdfRenderers
             surface.Out.WriteLine(
                 $"  page {output.Page}: {output.Output.Path} ({output.Output.Format}, {TableText.Bytes(output.Output.SizeBytes)})");
         }
+
+        if (result.Grid is { } grid)
+        {
+            surface.Out.WriteLine(
+                $"grid: lines every {grid.Spacing} {grid.Unit}, labelled every {grid.LabelSpacing} {grid.Unit}, origin {grid.Origin}");
+        }
     }
 
     public static void Render(PdfWriteResult result, TableSurface surface) =>

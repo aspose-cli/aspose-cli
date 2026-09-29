@@ -31,15 +31,6 @@
         "resolved": "10.0.2",
         "contentHash": "zOIurr59+kUf9vNcsUkCvKWZv+fPosUZXURZesYkJCvl0EzTc9F7maAO4Cd2WEV7ZJJ0AZrFQvuH6Npph9wdBw=="
       },
-      "SkiaSharp": {
-        "type": "Transitive",
-        "resolved": "3.119.0",
-        "contentHash": "gR9yVoOta2Mc1Rxt15LD65AckfHMfwjIs/3kkD59C9bT2nYYISsE6uz3t4aMPNHA6CgsIL0Ssn+jE5OVilZ1yw==",
-        "dependencies": {
-          "SkiaSharp.NativeAssets.Win32": "3.119.0",
-          "SkiaSharp.NativeAssets.macOS": "3.119.0"
-        }
-      },
       "SkiaSharp.NativeAssets.macOS": {
         "type": "Transitive",
         "resolved": "3.119.0",
@@ -54,6 +45,16 @@
         "type": "Project",
         "dependencies": {
           "System.CommandLine": "[2.0.9, )"
+        }
+      },
+      "SkiaSharp": {
+        "type": "CentralTransitive",
+        "requested": "[3.119.0, )",
+        "resolved": "3.119.0",
+        "contentHash": "gR9yVoOta2Mc1Rxt15LD65AckfHMfwjIs/3kkD59C9bT2nYYISsE6uz3t4aMPNHA6CgsIL0Ssn+jE5OVilZ1yw==",
+        "dependencies": {
+          "SkiaSharp.NativeAssets.Win32": "3.119.0",
+          "SkiaSharp.NativeAssets.macOS": "3.119.0"
         }
       },
       "System.CommandLine": {

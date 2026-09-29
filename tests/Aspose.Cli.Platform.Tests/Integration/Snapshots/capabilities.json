@@ -3949,6 +3949,21 @@
               "description": "Local font directory searched in addition to the system fonts; repeat for more."
             },
             {
+              "name": "--grid",
+              "aliases": [],
+              "type": "integer",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": false,
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Draw a labelled coordinate grid with a line every <grid> points (10-500) on png or jpeg output, measured from the top-left corner as redact_area takes them."
+            },
+            {
               "name": "--out",
               "aliases": [
                 "-o"
@@ -13381,6 +13396,21 @@
           "valueSource": "command-line",
           "inputKind": "none",
           "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--grid",
+          "aliases": [],
+          "type": "integer",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Draw a labelled coordinate grid with a line every <grid> points (10-500) on png or jpeg output, measured from the top-left corner as redact_area takes them."
         },
         {
           "name": "--out",

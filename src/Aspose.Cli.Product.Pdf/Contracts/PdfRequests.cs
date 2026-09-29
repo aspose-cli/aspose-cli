@@ -40,6 +40,9 @@ public sealed record PdfRenderRequest
     public PageRange? Pages { get; init; }
     public bool AllPages { get; init; }
     public int Dpi { get; init; } = 192;
+
+    /// <summary>Spacing in points of a coordinate grid drawn on raster output, or null for none.</summary>
+    public int? Grid { get; init; }
     public string? Password { get; init; }
 }
 

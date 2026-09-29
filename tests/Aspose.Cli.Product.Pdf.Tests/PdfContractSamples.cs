@@ -146,6 +146,7 @@ internal static class PdfContractSamples
             },
         ],
         Dpi = 192,
+        Grid = new PdfRenderGrid { Spacing = 50, LabelSpacing = 100 },
         License = Licensed,
     };
 

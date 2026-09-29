@@ -173,6 +173,16 @@
         "resolved": "13.0.3",
         "contentHash": "HrC5BXdl00IP9zeV+0Z848QWPAoCr9P3bDEZguI+gkLcBKAOxix/tLEAAHC+UvDNPv4a2d18lOReHMOagPa+zQ=="
       },
+      "SkiaSharp.NativeAssets.macOS": {
+        "type": "Transitive",
+        "resolved": "3.119.0",
+        "contentHash": "YE1vNn0Nyw2PWtv7hw1PYkKJO0itFiQp9vSqGppZUKzQJqwp28a2jgdCMPfYtOiR8KCnDgZqQoynqJRRaE2ZVg=="
+      },
+      "SkiaSharp.NativeAssets.Win32": {
+        "type": "Transitive",
+        "resolved": "3.119.0",
+        "contentHash": "IwC9yx36lOdXVT2DjgmWHl1qkVspfj8ctd4+li8CNnvqdfaTolXCOh6TLznURcPAvzatx9K/tLOB7zT6T8EA9w=="
+      },
       "System.Configuration.ConfigurationManager": {
         "type": "Transitive",
         "resolved": "4.5.0",
@@ -265,7 +275,8 @@
         "dependencies": {
           "Aspose.Cli.Sdk": "[1.0.0, )",
           "Aspose.PDF.Drawing": "[26.8.0, )",
-          "Microsoft.Bcl.Memory": "[9.0.18, )"
+          "Microsoft.Bcl.Memory": "[9.0.18, )",
+          "SkiaSharp": "[3.119.0, )"
         }
       },
       "aspose.cli.sdk": {
@@ -297,6 +308,16 @@
         "requested": "[9.0.18, )",
         "resolved": "9.0.18",
         "contentHash": "D6ygTjzk2Um7aT93f4N+q3+jCvY7VgTRVtU9qTKxEjubrpPoxEvRTTSLFJf27QP01LUj81xlPTTC7AVjrX3p+Q=="
+      },
+      "SkiaSharp": {
+        "type": "CentralTransitive",
+        "requested": "[3.119.0, )",
+        "resolved": "3.119.0",
+        "contentHash": "gR9yVoOta2Mc1Rxt15LD65AckfHMfwjIs/3kkD59C9bT2nYYISsE6uz3t4aMPNHA6CgsIL0Ssn+jE5OVilZ1yw==",
+        "dependencies": {
+          "SkiaSharp.NativeAssets.Win32": "3.119.0",
+          "SkiaSharp.NativeAssets.macOS": "3.119.0"
+        }
       },
       "System.CommandLine": {
         "type": "CentralTransitive",
