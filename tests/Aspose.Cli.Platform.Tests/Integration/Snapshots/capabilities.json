@@ -18971,6 +18971,15 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "TABLE_OVERFLOW",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "slides.table-overflow.message.v1",
+      "hintTemplateId": "slides.table-overflow.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "TEXT_TABLE_LAYOUT",
       "owner": "cells",
       "severity": "warning",

@@ -49,6 +49,70 @@ public sealed class SlidesAuthoringTests
     }
 
     [Fact]
+    public void Parse_ReadsPipeTablesWithAlignmentEscapesAndRaggedRows()
+    {
+        IReadOnlyList<MarkdownSlide> slides = SlidesMarkdownBuilder.Parse(
+            """
+            ## Pipeline
+            Deals by stage
+            | Stage | Owner | Value |
+            |:------|:-----:|------:|
+            | **Won** | A\|B | 12 |
+            | Lost |
+            | Open | C | 3 | extra |
+            After the table
+            a | b
+            not a delimiter
+            | Second | Table |
+            | --- | --- |
+            | x | y |
+            """,
+            "fallback");
+
+        Assert.Equal(["Pipeline", "Pipeline"], slides.Select(static slide => slide.Title));
+        MarkdownSlide first = slides[0];
+        Assert.Equal(
+            ["Deals by stage", "After the table", "a | b", "not a delimiter"],
+            first.Blocks.Select(static block => string.Concat(block.Runs.Select(static run => run.Text))));
+        MarkdownTable table = Assert.IsType<MarkdownTable>(first.Table);
+        Assert.Equal([TextAlignment.Left, TextAlignment.Center, TextAlignment.Right], table.Alignments);
+        Assert.Equal(
+            [
+                ["Stage", "Owner", "Value"],
+                ["Won", "A|B", "12"],
+                ["Lost", "", ""],
+                ["Open", "C", "3"],
+            ],
+            table.Rows.Select(static row => row.Select(static cell => string.Concat(cell.Select(static run => run.Text))).ToArray()));
+        Assert.True(Assert.Single(table.Rows[1][0]).Bold);
+
+        // A slide holds one table; the next one continues on a slide with the same title.
+        MarkdownSlide continuation = slides[1];
+        Assert.False(continuation.TitleSlide);
+        Assert.Empty(continuation.Blocks);
+        Assert.Equal([TextAlignment.NotDefined, TextAlignment.NotDefined], continuation.Table!.Alignments);
+        Assert.Equal(2, continuation.Table.Rows.Count);
+    }
+
+    [Fact]
+    public void Parse_KeepsPipeLinesWithoutAMatchingDelimiterRowAsText()
+    {
+        MarkdownSlide slide = Assert.Single(SlidesMarkdownBuilder.Parse(
+            """
+            ## Notes
+            | a | b |
+            |---|
+            ---
+            """,
+            "fallback"));
+
+        Assert.Null(slide.Table);
+        Assert.Equal(
+            ["| a | b |", "|---|"],
+            slide.Blocks.Select(static block => string.Concat(block.Runs.Select(static run => run.Text))));
+    }
+
+    [Fact]
     public void SetTitle_WithoutATitlePlaceholder_NeverWritesIntoASubtitleAndReusesItsBox()
     {
         using var fixture = new SlidesEngineFixture();

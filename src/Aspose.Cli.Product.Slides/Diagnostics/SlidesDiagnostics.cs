@@ -14,6 +14,9 @@ internal static class SlidesDiagnostics
     /// <summary>An output draws a chart's implicit automatic title over its plot.</summary>
     internal const string ChartTitleOverlaid = "CHART_TITLE_OVERLAID";
 
+    /// <summary>A table authored from Markdown is taller than the area it was placed in.</summary>
+    internal const string TableOverflow = "TABLE_OVERFLOW";
+
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         Error(SlideNotFound),
@@ -22,6 +25,7 @@ internal static class SlidesDiagnostics
         Error(ShapeNotFound),
         Error(LayoutNotFound),
         DiagnosticDescriptor.Warning(ChartTitleOverlaid, "slides", "warning"),
+        DiagnosticDescriptor.Warning(TableOverflow, "slides", "warning"),
     ];
 
     private static ErrorCode Validation(string code) =>

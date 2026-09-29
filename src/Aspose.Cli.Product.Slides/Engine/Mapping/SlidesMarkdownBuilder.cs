@@ -10,11 +10,13 @@ namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 /// Maps a Markdown outline onto the presentation's own layouts. The builder only
 /// fills title, subtitle and content placeholders; colors, backgrounds, geometry and
 /// fonts come from the master, layouts and theme, so a template fully owns the look.
-/// Emphasis becomes bold or italic runs, and code uses a monospace font.
+/// Emphasis becomes bold or italic runs, and code uses a monospace font. A pipe table
+/// becomes a slide table in the template's default table style.
 /// </summary>
 internal static partial class SlidesMarkdownBuilder
 {
-    public static void Build(
+    /// <summary>Replaces the presentation's slides with the outline; returns the fit warnings.</summary>
+    public static IReadOnlyList<Warning> Build(
         ResourceBudgetLedger resourceBudgets,
         Presentation presentation,
         string markdownPath)
@@ -30,6 +32,7 @@ internal static partial class SlidesMarkdownBuilder
             presentation.Slides.RemoveAt(0);
         }
 
+        var warnings = new List<Warning>();
         foreach (MarkdownSlide item in model)
         {
             ISlide slide = presentation.Slides.AddEmptySlide(LayoutFor(presentation, item));
@@ -51,12 +54,20 @@ internal static partial class SlidesMarkdownBuilder
                 AddImage(resourceBudgets, presentation, slide, root, item.Image, content);
             }
 
+            if (item.Table is not null
+                && AddTable(slide, presentation.Slides.Count, item.Table, content, besideText: item.Blocks.Count > 0) is { } overflow)
+            {
+                warnings.Add(overflow);
+            }
+
             RemoveEmptyPlaceholders(slide);
             if (item.Section is not null)
             {
                 presentation.Sections.AddSection(item.Section, slide);
             }
         }
+
+        return warnings;
     }
 
     internal static IReadOnlyList<MarkdownSlide> Parse(string markdown, string fallbackTitle)
@@ -67,8 +78,9 @@ internal static partial class SlidesMarkdownBuilder
         string? pendingSection = null;
         bool inCode = false;
 
-        foreach (string raw in lines)
+        for (int index = 0; index < lines.Length; index++)
         {
+            string raw = lines[index];
             string line = raw.TrimEnd();
             if (line.TrimStart().StartsWith("```", StringComparison.Ordinal))
             {
@@ -120,8 +132,23 @@ internal static partial class SlidesMarkdownBuilder
 
             current ??= AddFallback(slides, fallbackTitle, ref pendingSection);
             string trimmed = line.Trim();
-            if (ImagePattern().Match(trimmed) is { Success: true } image)
+            if (ReadTable(lines, ref index, current.Title) is { } table)
             {
+                // A slide holds one picture or table; another table continues on a new slide.
+                if (current.HasObject)
+                {
+                    current = Continue(slides, current);
+                }
+
+                current.Table = table;
+            }
+            else if (ImagePattern().Match(trimmed) is { Success: true } image)
+            {
+                if (current.Table is not null)
+                {
+                    current = Continue(slides, current);
+                }
+
                 current.Image ??= new MarkdownImage(
                     image.Groups["path"].Value,
                     EmptyToNull(image.Groups["alt"].Value),
@@ -208,13 +235,20 @@ internal static partial class SlidesMarkdownBuilder
         return value;
     }
 
+    private static MarkdownSlide Continue(List<MarkdownSlide> slides, MarkdownSlide slide)
+    {
+        var value = new MarkdownSlide(slide.Title, TitleSlide: false);
+        slides.Add(value);
+        return value;
+    }
+
     private static ILayoutSlide LayoutFor(Presentation presentation, MarkdownSlide item)
     {
         SlideLayoutType type = item switch
         {
             { TitleSlide: true } => SlideLayoutType.Title,
-            { Image: not null, Blocks.Count: > 0 } => SlideLayoutType.TwoObjects,
-            { Image: null, Blocks.Count: 0 } => SlideLayoutType.TitleOnly,
+            { HasObject: true, Blocks.Count: > 0 } => SlideLayoutType.TwoObjects,
+            { HasObject: false, Blocks.Count: 0 } => SlideLayoutType.TitleOnly,
             _ => SlideLayoutType.TitleAndObject,
         };
         return SlidesPlaceholders.Layout(presentation, type);
@@ -321,5 +355,7 @@ internal sealed record MarkdownSlide(string Title, bool TitleSlide)
 {
     public string? Section { get; set; }
     public MarkdownImage? Image { get; set; }
+    public MarkdownTable? Table { get; set; }
+    public bool HasObject => Image is not null || Table is not null;
     public List<AuthoredParagraph> Blocks { get; } = [];
 }

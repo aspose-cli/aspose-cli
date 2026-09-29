@@ -293,9 +293,10 @@ internal sealed class SlidesProductionService
             : _loader.Open(request.TemplatePath, password: null);
         Presentation presentation = template.Presentation;
         ApplySlideSize(presentation, request.Size);
+        IReadOnlyList<Warning> authoring = [];
         if (request.MarkdownPath is not null)
         {
-            SlidesMarkdownBuilder.Build(
+            authoring = SlidesMarkdownBuilder.Build(
                 _resourceBudgets,
                 presentation,
                 request.MarkdownPath);
@@ -336,7 +337,9 @@ internal sealed class SlidesProductionService
                     SizeBytes = new FileInfo(request.MarkdownPath).Length,
                 },
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, template),
+            Warnings = authoring.Count == 0
+                ? OutputWarnings(state, template)
+                : [.. OutputWarnings(state, template) ?? [], .. authoring],
         };
     }
 }
