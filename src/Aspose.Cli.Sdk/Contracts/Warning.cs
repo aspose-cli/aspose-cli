@@ -45,6 +45,9 @@ public static partial class WarningCodes
     /// <summary>A list inside a result was capped; the warning.s location names the list.</summary>
     public const string ListTruncated = "LIST_TRUNCATED";
 
+    /// <summary>An in-place edit kept an existing backup that holds an earlier version than the file it replaced.</summary>
+    public const string BackupPredatesEdit = "BACKUP_PREDATES_EDIT";
+
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
@@ -54,5 +57,6 @@ public static partial class WarningCodes
         SignatureInvalidated,
         EvalInputTruncated,
         ListTruncated,
+        BackupPredatesEdit,
     ];
 }

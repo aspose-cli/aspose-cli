@@ -29,6 +29,33 @@ Cells semantics, ordering rules and recipes.
 | Print and PDF | `set_page_setup`, `set_print_area` |
 | Protection | `protect_sheet`, `unprotect_sheet`, `protect_workbook`, `unprotect_workbook` |
 
+## Common operations
+
+The field names of these operations are the ones most often guessed wrong:
+
+```json
+{ "ops": [
+  { "op": "rename_sheet", "sheet": "Sheet1", "to": "Data" },
+  { "op": "add_sheet", "name": "Summary", "position": 0 },
+  { "op": "move_sheet", "sheet": "Data", "position": 0 },
+  { "op": "sort_range", "sheet": "Data", "range": "A1:D100", "hasHeader": true,
+    "by": [ { "column": "C", "order": "desc" }, { "column": "A" } ] },
+  { "op": "insert_rows", "sheet": "Data", "at": 2, "count": 3 },
+  { "op": "resize_rows", "sheet": "Data", "from": 1, "to": 1, "height": 24 },
+  { "op": "resize_columns", "sheet": "Data", "from": "A", "to": "D" },
+  { "op": "set_sheet_view", "sheet": "Data", "gridlines": false, "zoom": 90 }
+] }
+```
+
+- `rename_sheet` takes the new name in `to`; `add_sheet` names the new sheet in
+  `name`. `position` is the 0-based place in the tab order.
+- `sort_range.by` lists keys primary first; `order` is `asc` (default) or
+  `desc`.
+- Row spans are 1-based numbers and column spans letters, in `from` and an
+  optional `to`; `insert_rows` and its kin take `at` and `count`. An omitted
+  `height` or `width` auto-fits.
+- `set_sheet_view` takes at least one of `gridlines`, `zoom` and `headings`.
+
 ## Addressing
 
 - An operation's `sheet` defaults to the active sheet. Name it every time: an

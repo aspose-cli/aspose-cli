@@ -105,7 +105,7 @@ internal sealed class WordsMutationService
             PagesTouched = originalPages.Count == 0 ? null : originalPages,
             Verification = verification,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, MutationWarnings(
+            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), MutationWarnings(
                 state,
                 inputHadRevisions,
                 inputWasSigned,
@@ -198,15 +198,7 @@ internal sealed class WordsMutationService
                     }
                 });
             output = new OutputInfo { Path = request.OutputPath, Format = format, SizeBytes = write.SizeBytes };
-            if (write.Backup is not null)
-            {
-                backup = new BackupInfo
-                {
-                    Path = write.Backup.Path,
-                    Created = write.Backup.Created,
-                    SizeBytes = write.Backup.SizeBytes,
-                };
-            }
+            backup = write.Backup;
 
             if (request.Verify)
             {

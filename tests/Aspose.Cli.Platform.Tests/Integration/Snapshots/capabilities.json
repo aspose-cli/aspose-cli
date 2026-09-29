@@ -18068,6 +18068,15 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "BACKUP_PREDATES_EDIT",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.backup-predates-edit.message.v1",
+      "hintTemplateId": "common.backup-predates-edit.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "BLOCK_NOT_FOUND",
       "owner": "words",
       "severity": "error",

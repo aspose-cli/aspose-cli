@@ -178,6 +178,5 @@ internal sealed record WorkbookStagedSave(StagedOutput Candidate, string Format,
 {
     internal OutputInfo Output => new()
     { Path = Candidate.TargetPath, Format = Format, SizeBytes = Candidate.SizeBytes, Fingerprint = Candidate.Fingerprint };
-    internal BackupInfo? Backup => Candidate.Backup is { } backup
-        ? new BackupInfo { Path = backup.Path, Created = backup.Created, SizeBytes = backup.SizeBytes } : null;
+    internal BackupInfo? Backup => Candidate.Backup;
 }

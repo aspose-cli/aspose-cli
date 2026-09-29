@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Licensing;
 
@@ -57,6 +58,25 @@ public static class EnvelopeParts
             Location = list,
         };
     }
+
+    /// <summary>
+    /// Discloses a kept backup that holds an earlier version than the file the edit replaced,
+    /// so a caller never mistakes it for a copy of the version just overwritten; otherwise none.
+    /// </summary>
+    public static IReadOnlyList<Warning>? BackupWarnings(BackupInfo? backup) =>
+        backup is { HoldsReplacedVersion: false }
+            ? [new Warning
+            {
+                Code = WarningCodes.BackupPredatesEdit,
+                Message = $"The existing backup '{backup.Path}' was kept, not replaced: it holds the file as last written at "
+                    + $"{backup.LastWriteUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} UTC, "
+                    + "an earlier version than the one this edit replaced.",
+                Hint = "The kept backup stays the state before the first backed-up edit. To keep the version this edit "
+                    + "replaced as well, copy the file before the next in-place edit, or move the old backup aside so "
+                    + "--backup creates a new one. Tell the user which version the backup holds.",
+                Location = "backup",
+            }]
+            : null;
 
     /// <summary>Combines optional warning collections without emitting an empty list.</summary>
     public static IReadOnlyList<Warning>? CombineWarnings(

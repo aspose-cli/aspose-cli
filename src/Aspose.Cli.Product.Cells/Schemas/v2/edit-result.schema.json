@@ -70,7 +70,9 @@
       "properties": {
         "path": { "type": "string" },
         "created": { "type": "boolean" },
-        "sizeBytes": { "type": "integer", "minimum": 0 }
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "lastWriteUtc": { "type": "string", "format": "date-time", "description": "When the content the backup holds was last written." },
+        "holdsReplacedVersion": { "type": "boolean", "description": "False when a kept backup holds an earlier version than the file this edit replaced; a BACKUP_PREDATES_EDIT warning then says so." }
       }
     },
     "editVerification": {

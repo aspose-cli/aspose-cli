@@ -29,7 +29,11 @@ public sealed class ResultTextTests
             dryRun: false,
             output,
             applied,
-            new BackupInfo { Path = "in.backup.docx", Created = true, SizeBytes = 10 }));
+            new BackupInfo
+            {
+                Path = "in.backup.docx", Created = true, SizeBytes = 10,
+                LastWriteUtc = DateTimeOffset.UnixEpoch, HoldsReplacedVersion = true,
+            }));
 
         Assert.Equal(
             [
@@ -41,6 +45,20 @@ public sealed class ResultTextTests
                 "backup: in.backup.docx (created)",
             ],
             Lines(text));
+    }
+
+    [Fact]
+    public void Backup_SaysAKeptBackupHoldsAnEarlierVersion()
+    {
+        string text = Render(surface => ResultText.Backup(surface, new BackupInfo
+        {
+            Path = "in.backup.docx", Created = false, SizeBytes = 10,
+            LastWriteUtc = new DateTimeOffset(2026, 9, 28, 8, 30, 0, TimeSpan.Zero), HoldsReplacedVersion = false,
+        }));
+
+        Assert.Equal(
+            "backup: in.backup.docx (kept existing, an earlier version last written 2026-09-28 08:30:00 UTC)",
+            Lines(text)[0]);
     }
 
     [Fact]

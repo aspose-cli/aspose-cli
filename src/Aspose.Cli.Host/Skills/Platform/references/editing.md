@@ -54,8 +54,11 @@ A PDF batch, for example:
 
 - **Atomic (default).** If any operation fails, nothing is written. The error
   carries `details.index` (zero-based), `details.op` and, for validation
-  failures, `details.reason` (such as `unknown field 'style.shiny'`). Fix that
-  entry and run the whole batch again.
+  failures, `details.reason` (such as `unknown field 'style.shiny'; style
+  accepts: ...`). An unknown field also lists the fields its operation or
+  nested object accepts in `details.allowedFields` and, when one is likely
+  meant, names it in `details.suggestion`. Fix that entry and run the whole
+  batch again.
 - **`--best-effort`.** Successful operations are kept and saved; each failed
   entry in `applied[]` has `status: "failed"` and an `error` with `code`,
   `message`, `hint` and `details`. The command exits 8 when any operation
@@ -82,7 +85,11 @@ publishing report `mutation.verification: "reopened"`; where a product offers
 
 `--backup` creates the backup once and never overwrites it: later runs report
 `backup.created: false` and keep the original, so the backup stays the
-pre-session state for a final comparison. Tell the user its path.
+pre-session state for a final comparison. When the kept backup holds an earlier
+version than the file an edit replaced, `backup.holdsReplacedVersion` is false
+and a `BACKUP_PREDATES_EDIT` warning gives its `lastWriteUtc`; copy the file
+first if that intermediate version must survive. Tell the user its path and
+which version it holds.
 
 Before the first in-place edit of a file you did not create, use
 `--in-place --backup --if-match <sha256>` with the fingerprint from your last

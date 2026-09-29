@@ -15,10 +15,28 @@ public sealed class StagedOutput
     public FileFingerprint Fingerprint => new() { Sha256 = _entry.StagedSnapshot.Sha256!.ToLowerInvariant() };
 
     internal FilePublicationSnapshot Snapshot => _entry.StagedSnapshot;
-    public SafeBackupResult? Backup => _entry.RequestedBackup is { } path && _entry.Original.Exists
-        ? new SafeBackupResult(path, !_entry.RequestedBackupOriginal!.Exists,
-            _entry.RequestedBackupOriginal.Exists ? _entry.RequestedBackupOriginal.Length : _entry.Original.Length)
+    /// <summary>
+    /// The requested safety backup: the one this publication creates, or the existing one it
+    /// keeps, which may hold an earlier version than the file it replaces.
+    /// </summary>
+    public BackupInfo? Backup => _entry.RequestedBackup is { } path && _entry.Original.Exists
+        ? Describe(path, _entry.RequestedBackupOriginal!.Exists ? _entry.RequestedBackupOriginal : null, _entry.Original)
         : null;
+
+    private static BackupInfo Describe(string path, FilePublicationSnapshot? kept, FilePublicationSnapshot replaced)
+    {
+        // A created backup is a copy of the replaced file, which keeps its last-write time.
+        FilePublicationSnapshot held = kept ?? replaced;
+        return new BackupInfo
+        {
+            Path = path,
+            Created = kept is null,
+            SizeBytes = held.Length,
+            LastWriteUtc = new DateTimeOffset(held.LastWriteUtcTicks, TimeSpan.Zero),
+            HoldsReplacedVersion = kept is null
+                || string.Equals(kept.Sha256, replaced.Sha256, StringComparison.OrdinalIgnoreCase),
+        };
+    }
 
     /// <summary>Inspects the bound candidate while preventing Windows writers from replacing it.</summary>
     public T Read<T>(Func<string, T> inspect)

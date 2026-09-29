@@ -30,6 +30,28 @@ public sealed class BoundedOperationPipelineTests
             .Ops.Select(static op => op.Id));
     }
 
+    [Theory]
+    [InlineData("""{"ops":[{"op":"set","vlaue":1}]}""", "set",
+        "unknown field 'vlaue'; set accepts: op, id, value (did you mean 'value'?)", "op,id,value", "value")]
+    [InlineData("""{"ops":[{"op":"set","amount":1}]}""", "set",
+        "unknown field 'amount'; set accepts: op, id, value (did you mean 'value'?)", "op,id,value", "value")]
+    [InlineData("""{"ops":[{"op":"note","text":"a","colour":"red"}]}""", "note",
+        "unknown field 'colour'; note accepts: op, id, text, pinned", "op,id,text,pinned", null)]
+    [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"box":{"widht":2}}]}""", "place",
+        "unknown field 'box.widht'; box accepts: width (did you mean 'width'?)", "width", "width")]
+    public void Parse_NamesTheAcceptedFieldsOfAnUnknownField(
+        string document, string op, string reason, string allowed, string? suggestion)
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal(op, error.Details["op"]!.GetValue<string>());
+        Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.Equal(allowed.Split(','), error.Details["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal(suggestion, error.Details["suggestion"]?.GetValue<string>());
+    }
+
     [Fact]
     public void Prepare_EnforcesTheDeclaredOperationLimit()
     {

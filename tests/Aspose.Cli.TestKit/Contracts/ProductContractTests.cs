@@ -379,7 +379,7 @@ public abstract class ProductContractTests<TModule>
             string first = batch["ops"]![0]!.ToJsonString();
             foreach (string member in new[] { "\"__unexpected\":true", "\"opName\":\"ignored\"", "\"op\":\"__unknown_operation__\"" })
             {
-                Assert.Throws<JsonException>(() => JsonSerializer.Deserialize(
+                Assert.ThrowsAny<JsonException>(() => JsonSerializer.Deserialize(
                     "{\"ops\":[{" + member + "," + first[1..] + "]}", batchType, options));
             }
         }
@@ -396,7 +396,7 @@ public abstract class ProductContractTests<TModule>
         Assert.NotNull(JsonSerializer.Deserialize<TOperation>(input, options));
         JsonObject operation = JsonNode.Parse(input)!.AsObject();
         operation[member]!["__unexpected"] = true;
-        JsonException error = Assert.Throws<JsonException>(() =>
+        JsonException error = Assert.ThrowsAny<JsonException>(() =>
             JsonSerializer.Deserialize<TOperation>(operation.ToJsonString(), options));
         Assert.Contains("__unexpected", error.Message, StringComparison.Ordinal);
     }

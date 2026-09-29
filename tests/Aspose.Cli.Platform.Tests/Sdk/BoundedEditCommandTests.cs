@@ -171,7 +171,7 @@ public sealed class BoundedEditCommandTests : IDisposable
     }
 
     [Theory]
-    [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'")]
+    [InlineData("""{"ops":[{"op":"set","value":1},{"op":"set","value":1,"extra":true}]}""", 1, "set", "unknown field 'extra'; set accepts: op, id, value")]
     [InlineData("""{"ops":[{"op":"set","value":"one"}]}""", 0, "set", "value must be a whole number")]
     [InlineData("""{"ops":[{"op":"set","value":1,"value":2}]}""", 0, "set", "value is duplicated")]
     [InlineData("""{"ops":[{"op":"link","path":null}]}""", 0, "link", "path must not be null")]

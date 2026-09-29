@@ -22,7 +22,10 @@ public static class ResultText
     {
         if (backup is not null)
         {
-            surface.Out.WriteLine($"backup: {backup.Path} ({(backup.Created ? "created" : "kept existing")})");
+            string state = backup.Created ? "created"
+                : backup.HoldsReplacedVersion ? "kept existing"
+                : $"kept existing, an earlier version last written {backup.LastWriteUtc.UtcDateTime.ToString("yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture)} UTC";
+            surface.Out.WriteLine($"backup: {backup.Path} ({state})");
         }
     }
 
