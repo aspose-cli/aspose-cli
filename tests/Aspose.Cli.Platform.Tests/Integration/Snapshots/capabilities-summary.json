@@ -109,6 +109,8 @@
             "freeze_panes",
             "group_columns",
             "group_rows",
+            "import_range",
+            "import_sheet",
             "insert_columns",
             "insert_image",
             "insert_rows",
