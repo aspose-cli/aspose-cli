@@ -91,8 +91,8 @@ public sealed class UpdateHandoffTests
         using var server = new TcpListener(IPAddress.Loopback, 0);
         server.Start();
         int port = ((IPEndPoint)server.LocalEndpoint).Port;
-        using var stop = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-        Task<TcpClient> accepted = server.AcceptTcpClientAsync(stop.Token).AsTask();
+        using var stopAccepting = new CancellationTokenSource();
+        Task<TcpClient> accepted = server.AcceptTcpClientAsync(stopAccepting.Token).AsTask();
         var start = StartInfo(workspace, scratch,
             ["update", "install", $"https://127.0.0.1:{port}/RELEASE-MANIFEST.json", "--timeout", "3", "--output", "json"]);
         using Process cli = Process.Start(start)!;
@@ -100,15 +100,22 @@ public sealed class UpdateHandoffTests
         Task<string> stderr = cli.StandardError.ReadToEndAsync();
         try
         {
-            using TcpClient connection = await accepted;
-            await cli.WaitForExitAsync(stop.Token);
+            // The budget starts in the parent CLI, so on a loaded machine it can expire before the
+            // preparation worker connects. A connection that does arrive stays open and unanswered
+            // until the CLI exits; the timeout and cleanup contract holds either way.
+            await cli.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(60));
             Assert.Equal(9, cli.ExitCode);
             Assert.Equal(string.Empty, await stdout);
             Assert.Equal("OPERATION_TIMEOUT", JsonNode.Parse(await stderr)!["error"]!["code"]!.GetValue<string>());
             Assert.Empty(Directory.EnumerateFiles(scratch, "*", SearchOption.AllDirectories));
             Assert.Empty(Directory.EnumerateDirectories(scratch, "aspose-cli-update-*", SearchOption.AllDirectories));
         }
-        finally { if (!cli.HasExited) { cli.Kill(entireProcessTree: true); } }
+        finally
+        {
+            if (!cli.HasExited) { cli.Kill(entireProcessTree: true); }
+            stopAccepting.Cancel();
+            if (accepted.IsCompletedSuccessfully) { (await accepted).Dispose(); }
+        }
     }
 
     [Fact]
