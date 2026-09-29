@@ -263,6 +263,11 @@
             "summary": "Less than 1% of a worksheet's used area of at least 100 cells contains data."
           },
           {
+            "code": "CELLS_VALUES_CLIPPED",
+            "severity": "warning",
+            "summary": "Values are wider than their columns: text is cut off by the next cell, or a number cannot show in full (#### or rounded)."
+          },
+          {
             "code": "CELLS_VBA_PRESENT",
             "severity": "warning",
             "summary": "The workbook contains VBA, which static images do not exercise."
@@ -776,6 +781,36 @@
           "description": "Convert a workbook to another format.",
           "hidden": false,
           "options": [
+            {
+              "name": "--culture",
+              "aliases": [],
+              "type": "string",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": false,
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused)."
+            },
+            {
+              "name": "--encoding",
+              "aliases": [],
+              "type": "string",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": false,
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused)."
+            },
             {
               "name": "--encrypt",
               "aliases": [],
@@ -4712,6 +4747,11 @@
             "summary": "Several content objects with little text occupy only a small part of a slide."
           },
           {
+            "code": "SLIDES_PLACEHOLDER_EMPTY",
+            "severity": "info",
+            "summary": "An empty placeholder is invisible in a slide show but shows its prompt text when the deck is edited."
+          },
+          {
             "code": "SLIDES_SHAPES_OVERLAP",
             "severity": "warning",
             "summary": "An opaque foreground shape covers at least 80% of a content shape."
@@ -4730,6 +4770,11 @@
             "code": "SLIDES_SLIDE_DUPLICATE",
             "severity": "warning",
             "summary": "A slide repeats the meaningful content and geometry of an earlier slide."
+          },
+          {
+            "code": "SLIDES_TEXT_OVERLAPS_OBJECT",
+            "severity": "warning",
+            "summary": "Laid-out text runs into a table or chart on the same slide."
           },
           {
             "code": "SLIDES_TEXT_TOO_SMALL",
@@ -10319,6 +10364,36 @@
       "hidden": false,
       "options": [
         {
+          "name": "--culture",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused)."
+        },
+        {
+          "name": "--encoding",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused)."
+        },
+        {
           "name": "--encrypt",
           "aliases": [],
           "type": "string",
@@ -14235,6 +14310,7 @@
             "CELLS_SHEET_EMPTY",
             "CELLS_SHEET_HIDDEN",
             "CELLS_USED_RANGE_SPARSE",
+            "CELLS_VALUES_CLIPPED",
             "CELLS_VBA_PRESENT",
             "FONTS_MISSING_OR_SUBSTITUTED",
             "FONTS_NOT_CHECKED",
@@ -14249,10 +14325,12 @@
             "SLIDES_CHART_COVERED",
             "SLIDES_CONTENT_DENSITY_HIGH",
             "SLIDES_CONTENT_DENSITY_LOW",
+            "SLIDES_PLACEHOLDER_EMPTY",
             "SLIDES_SHAPES_OVERLAP",
             "SLIDES_SHAPE_OUTSIDE_SLIDE",
             "SLIDES_SLIDE_BLANK",
             "SLIDES_SLIDE_DUPLICATE",
+            "SLIDES_TEXT_OVERLAPS_OBJECT",
             "SLIDES_TEXT_TOO_SMALL",
             "WORDS_DOCUMENT_EMPTY",
             "WORDS_HEADING_ORPHANED",
@@ -18011,6 +18089,15 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "CELLS_SHEET_PARTIALLY_RENDERED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.cells-sheet-partially-rendered.message.v1",
+      "hintTemplateId": "cells.cells-sheet-partially-rendered.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "CHART_DATA_INVALID",
       "owner": "slides",
       "severity": "error",
@@ -18232,6 +18319,15 @@
       "category": "warning",
       "messageTemplateId": "cells.formulas-broken.message.v1",
       "hintTemplateId": "cells.formulas-broken.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "FORMULAS_CALCULATED_ON_OPEN",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.formulas-calculated-on-open.message.v1",
+      "hintTemplateId": "cells.formulas-calculated-on-open.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

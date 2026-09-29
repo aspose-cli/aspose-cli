@@ -319,7 +319,8 @@ internal static class ReviewEvidenceWriter
         new(
             ErrorCodes.OutputExists,
             $"Review output directory already exists: {target}",
-            hint: "Choose a new directory with --out; review evidence is never overwritten.",
+            hint: "Pass --out a path that does not exist yet, not even as an empty directory: review publishes its evidence "
+                + "as one new directory and never overwrites.",
             details: new JsonObject { ["path"] = target });
 
 }
