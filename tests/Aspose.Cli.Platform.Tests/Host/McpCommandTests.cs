@@ -178,7 +178,7 @@ public sealed class McpCommandTests
         Process? child = null;
         Task<McpExecutionResult>? execution = null;
         using var cancellation = new CancellationTokenSource();
-        const int timeoutSeconds = 60;
+        const int timeoutSeconds = 120;
         try
         {
             // The descendant is a native console program that inherits the script's output pipes and
@@ -204,15 +204,21 @@ public sealed class McpCommandTests
                 timeoutSeconds,
                 cancellation.Token);
 
-            // A cold interpreter and its descendant must be ready before this test can exercise
-            // descendant cleanup. That setup is not the behavior under test, and a loaded machine can
-            // take tens of seconds to start Windows PowerShell.
-            Task<bool> ready = WaitForFileAsync(pidFile, TimeSpan.FromSeconds(120));
+            // The interpreter and its descendant must be ready before this test can exercise descendant
+            // cleanup. That setup is not the behavior under test, so it waits well within the command's
+            // own timeout.
+            Task<bool> ready = WaitForFileAsync(pidFile, TimeSpan.FromSeconds(timeoutSeconds / 2));
             if (await Task.WhenAny(ready, execution) == execution)
             {
-                // The interpreter ended before its descendant was ready: report what it printed.
-                McpExecutionResult ended = await execution;
-                Assert.Fail($"The probe script exited with {ended.ExitCode} before starting its descendant: {ended.Stdout} {ended.Stderr}");
+                // The interpreter ended before its descendant was ready: report how.
+                string outcome;
+                try
+                {
+                    McpExecutionResult ended = await execution;
+                    outcome = $"exit {ended.ExitCode}: {ended.Stdout} {ended.Stderr}";
+                }
+                catch (Exception exception) { outcome = exception.Message; }
+                Assert.Fail($"The probe script ended before its descendant was ready ({outcome}).");
             }
             Assert.True(
                 await ready,
@@ -294,12 +300,9 @@ public sealed class McpCommandTests
 
     private static ProcessStartInfo CreatePowerShellStartInfo(string script)
     {
-        string executable = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.System),
-            "WindowsPowerShell",
-            "v1.0",
-            "powershell.exe");
-        var start = new ProcessStartInfo(executable)
+        // PowerShell 7 is already warm on every test machine; a cold Windows PowerShell 5.1 on a fresh
+        // CI runner can take longer to start than the probes allow.
+        var start = new ProcessStartInfo(ToolPath.Require("pwsh"))
         {
             UseShellExecute = false,
             CreateNoWindow = true,
