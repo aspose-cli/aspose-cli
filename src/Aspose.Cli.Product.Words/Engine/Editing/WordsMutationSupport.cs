@@ -127,12 +127,12 @@ internal static class WordsMutationSupport
 
     /// <summary>The hint for merge data whose shape is wrong.</summary>
     internal const string MergeDataShape =
-        "Use a JSON array of flat objects, or a CSV file with a header row and at least one data row.";
+        "Use a JSON array of flat objects, or a CSV file with a header row.";
 
-    /// <summary>The merge data cannot feed a merge.</summary>
+    /// <summary>The merge data of mail_merge or repeat_table_row cannot be read as rows.</summary>
     internal static CliException MergeDataInvalid(string reason, string hint) => new(
         WordsDiagnostics.MergeDataInvalid,
-        $"Mail merge data is invalid: {reason}.",
+        $"Merge data is invalid: {reason}.",
         hint: hint);
 
     /// <summary>The template's merge regions cannot take the flat merge rows.</summary>

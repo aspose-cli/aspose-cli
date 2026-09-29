@@ -16,6 +16,7 @@ public sealed record DocumentInfoResult() : ResultEnvelope(WordsSchemaIds.Docume
     public IReadOnlyList<FieldData>? Fields { get; init; }
     public IReadOnlyList<string>? Bookmarks { get; init; }
     public IReadOnlyList<CommentData>? Comments { get; init; }
+    public IReadOnlyList<RevisionData>? Revisions { get; init; }
     public IReadOnlyList<ImageData>? Images { get; init; }
     public IReadOnlyList<TableData>? Tables { get; init; }
     public IReadOnlyDictionary<string, string?>? Properties { get; init; }
@@ -82,6 +83,19 @@ public sealed record CommentData
     public int? Block { get; init; }
 }
 
+/// <summary>
+/// One tracked change in document order: its type, author, the date the document records and
+/// the text it inserts, deletes or moves.
+/// </summary>
+public sealed record RevisionData
+{
+    public required string Type { get; init; }
+    public required string Author { get; init; }
+    public string? Date { get; init; }
+    public int? Block { get; init; }
+    public string? Text { get; init; }
+}
+
 /// <summary>One embedded image summary; its size is in points.</summary>
 public sealed record ImageData
 {
@@ -91,12 +105,16 @@ public sealed record ImageData
     public required double Height { get; init; }
 }
 
-/// <summary>One table summary.</summary>
+/// <summary>
+/// One table summary. <c>Style</c> names the table style the table uses, omitted for the
+/// default Table Normal style; insert_table accepts it as its <c>style</c>.
+/// </summary>
 public sealed record TableData
 {
     public required int Block { get; init; }
     public required int Rows { get; init; }
     public required int Columns { get; init; }
+    public string? Style { get; init; }
 }
 
 /// <summary>

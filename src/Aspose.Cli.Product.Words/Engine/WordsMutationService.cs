@@ -63,17 +63,13 @@ internal sealed class WordsMutationService
         IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded, batch);
         IReadOnlyList<int> originalPages = ResolveOriginalPages(loaded.Document, resolved);
         Document? baseline = request.Verify ? loaded.Document.Clone() : null;
-        if (request.TrackChanges)
-        {
-            loaded.Document.StartTrackRevisions(request.Author!, DateTime.Now);
-        }
-
+        WordsRevisionTracking? tracking = request.TrackChanges
+            ? new WordsRevisionTracking(loaded.Document, request.Author!)
+            : null;
+        tracking?.Start();
         IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(loaded, resolved, request, operationInputs);
-        if (request.TrackChanges)
-        {
-            loaded.Document.StopTrackRevisions();
-        }
+            ApplyOperations(loaded, resolved, request, operationInputs, tracking);
+        tracking?.Stop();
 
         _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
 
@@ -144,14 +140,15 @@ internal sealed class WordsMutationService
     /// </summary>
     private static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
         or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp { Kind: "page" } or InsertImageOp or InsertTableOp
-        or SetTableCellOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
+        or SetTableCellOp or RepeatTableRowOp or InsertTocOp or InsertBookmarkOp or InsertHyperlinkOp or InsertFieldOp
         or AddCommentOp or RemoveCommentsOp or AppendDocumentOp;
 
     private IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
         LoadedDocument loaded,
         IReadOnlyList<ResolvedWordsOp> resolved,
         WordsEditRequest request,
-        InputResourceScope operationInputs)
+        InputResourceScope operationInputs,
+        WordsRevisionTracking? tracking)
     {
         return BoundedOperationRunner.Run(
             WordsOp.Catalog,
@@ -159,7 +156,7 @@ internal sealed class WordsMutationService
             request.Options.BestEffort,
             deadline: null,
             (_, index) => new AppliedOperation(
-                new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets).Run(),
+                new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking).Run(),
                 resolved[index].Targets),
             (_, index) => resolved[index].Targets);
     }

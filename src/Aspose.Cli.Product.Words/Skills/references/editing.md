@@ -37,8 +37,8 @@ aspose-cli schema v2/words/ops --operation insert_table
   shift to a different original section.
 - `--track-changes` requires `--author` and records content insertions and
   deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not
-  section breaks), `delete_blocks`, `set_table_cell`, `append_document`,
-  `add_comment` and `remove_comments`. Every other operation would change the
+  section breaks), `delete_blocks`, `set_table_cell`, `repeat_table_row`,
+  `append_document`, `add_comment` and `remove_comments`. Every other operation would change the
   document without a revision, so a tracked batch that contains one fails with
   `OPTION_INVALID` before anything changes; run it in a separate batch.
 
@@ -52,6 +52,18 @@ aspose-cli schema v2/words/ops --operation insert_table
   bookmark spanning several paragraphs becomes one paragraph.
 - `replace_text` changes the text a reader sees: field results but never field
   codes, and never text a tracked change deletes.
+- `repeat_table_row` expands a template row of the table `at` addresses (such
+  as `{"find":"{{code}}"}`): one copy per item, in order, in place of the
+  template row. Without `row`, the template is the table's one row with a
+  `{{key}}` placeholder (spaces inside the braces are allowed); pass the
+  1-based `row` when no row or several rows have one. Items come inline as
+  `items` or from `path` (a JSON array of flat objects, or CSV with a header
+  row); a null or missing CSV value is empty text. Each placeholder takes the
+  item's value as literal text in the placeholder's formatting, and the copies
+  keep the row's height, borders, shading and cell widths. An item without a
+  key for one of the row's placeholders fails the operation; extra keys are
+  ignored, and no items removes the template row. A tracked batch records
+  each copy as a row insertion and the template row as a deletion.
 - Inline Markdown loads local resources under the edited document's directory;
   remote and escaping resources are omitted and reported.
 
@@ -59,10 +71,10 @@ aspose-cli schema v2/words/ops --operation insert_table
 
 | Task | Operations |
 |---|---|
-| Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell) |
+| Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell), `repeat_table_row` (one copy of a `{{key}}` template row per item) |
 | Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field`, `insert_toc`, `insert_bookmark` (a paragraph's visible text), `append_document` |
 | Remove content | `delete_blocks` |
-| Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `apply_list` (one new bullet or numbered list), `set_default_font` |
+| Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `format_table` (how one table breaks across pages), `apply_list` (one new bullet or numbered list), `set_default_font` |
 | Sections and pages | `insert_break` (page break, or split the section), `add_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `add_watermark`, `remove_watermark` |
 | Review annotations | `add_comment`, `remove_comments`, `accept_revisions`, `reject_revisions` |
 | Fields and data | `update_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |
@@ -75,7 +87,9 @@ directly after the anchor, ahead of earlier ones, and each `before` insertion
 lands directly before it, behind earlier ones. To keep the batch order as the
 reading order, anchor every piece `before` the block that should follow them.
 A table read with `query blocks` can be written back with its `rows`,
-`columns` and `cells` unchanged.
+`columns` and `cells` unchanged. `insert_table`'s `style` names an existing
+table style; `inspect --detail tables` shows the `style` each table uses, so a
+new table can match the document's tables.
 
 ```json
 {
@@ -83,9 +97,35 @@ A table read with `query blocks` can be written back with its `rows`,
     { "op": "insert_paragraphs", "at": { "find": "Revenue increased" }, "position": "before",
       "paragraphs": [ { "text": "Key figures", "style": "Heading 3" }, { "text": "Figures are in thousands." } ] },
     { "op": "insert_table", "at": { "find": "Revenue increased" }, "position": "before",
-      "rows": 2, "columns": 2, "cells": [ [ "Metric", "Value" ], [ "Revenue", "120" ] ] }
+      "rows": 2, "columns": 2, "cells": [ [ "Metric", "Value" ], [ "Revenue", "120" ] ],
+      "style": "Table Grid" }
   ]
 }
+```
+
+## Tables across pages
+
+`format_table` sets how the one table `at` addresses breaks across pages;
+omitted settings keep their values:
+
+- `keepTogether: true` keeps the whole table on one page when it fits: no row
+  splits, and every paragraph keeps with the next except the last paragraph of
+  each last-row cell. `false` clears keep-with-next on those same paragraphs
+  and leaves the row setting; pass `allowRowBreakAcrossPages: true` as well to
+  let rows split again. A table taller than a page still breaks.
+- `allowRowBreakAcrossPages` sets whether each row's text may split.
+- `headerRows` repeats the first N rows as a heading on every page the table
+  spans and clears the other rows; `0` clears all, and more than the table's
+  rows fails.
+- `keepWithNext` keeps the table on the page of the paragraph that follows it.
+  A caption or heading before the table stays with it through its own
+  paragraph style's keep-with-next setting, which heading styles usually have.
+
+`itemsAffected` counts the table's rows, or 1 when only `keepWithNext` is
+set. `--track-changes` cannot record it.
+
+```json
+{ "ops": [ { "op": "format_table", "at": { "find": "Action items" }, "keepTogether": true, "headerRows": 1 } ] }
 ```
 
 ## Headers, footers and page numbers

@@ -14,11 +14,12 @@ The error envelope, exit codes, not-found details and shared codes such as
   `words split --by heading1` found no Heading 1 paragraph.
 - `BOOKMARK_NOT_FOUND`, `STYLE_NOT_FOUND`: the document's bookmarks or styles
   are in `details.available`; `define_style` creates a missing style.
-- `MERGE_DATA_INVALID`: the merge data is not a JSON array of flat objects or a
-  CSV file with a header and at least one data row ([mail merge](mail-merge.md)).
+- `MERGE_DATA_INVALID`: the `mail_merge` or `repeat_table_row` data is not a
+  JSON array of flat objects or a CSV file with a header row, or `mail_merge`
+  got no rows ([mail merge](mail-merge.md)).
 - `DOCUMENT_PROTECTED`: the `unprotect` password was wrong.
-- `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free
-  ([revisions](revisions.md)).
+- `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free; list
+  the revisions with `words inspect --detail revisions` ([revisions](revisions.md)).
 - `OPTION_INVALID` from a tracked batch: the batch contains an operation that
   cannot be recorded as a revision ([editing](editing.md)).
 

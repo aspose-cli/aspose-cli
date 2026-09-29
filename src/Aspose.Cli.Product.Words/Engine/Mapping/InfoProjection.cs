@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
@@ -14,6 +15,9 @@ internal static class InfoProjection
 {
     // The most entries a detail list returns; a longer list carries a LIST_TRUNCATED warning.
     private const int ListLimit = 1000;
+
+    // The most characters of a revision's text; a longer text ends with an ellipsis.
+    private const int RevisionTextLimit = 300;
 
     public static DocumentInfoResult Project(LoadedDocument loaded, string path, DocumentInfoRequest request)
     {
@@ -51,6 +55,7 @@ internal static class InfoProjection
             Bookmarks = details.Contains("bookmarks") ? document.Range.Bookmarks.Cast<Bookmark>()
                 .Select(static b => b.Name).Order(StringComparer.Ordinal).ToArray() : null,
             Comments = details.Contains("comments") ? Comments(document, index, warnings) : null,
+            Revisions = details.Contains("revisions") ? Revisions(document, index, warnings) : null,
             Images = details.Contains("images") ? Images(document, index, warnings) : null,
             Tables = details.Contains("tables") ? Tables(index) : null,
             Properties = details.Contains("properties") ? Properties(document) : null,
@@ -128,6 +133,60 @@ internal static class InfoProjection
             "Extract every comment with 'words extract --what comments'.",
             warnings);
 
+    /// <summary>
+    /// One entry per logical change in document order. The SDK splits a change into one
+    /// revision per run and paragraph mark and joins adjacent revisions of one type and author
+    /// into a <see cref="RevisionGroup"/>, so a grouped change is listed once, at its first
+    /// revision, with the group's text. <see cref="RevisionCollection.Groups"/> itself is not in
+    /// document order, and style definition changes and moves belong to no group; each of those
+    /// revisions is listed on its own. A deletion followed by an insertion stays two entries.
+    /// </summary>
+    private static IReadOnlyList<RevisionData> Revisions(Document document, DocumentBlockIndex index, List<Warning> warnings)
+    {
+        var groups = new HashSet<RevisionGroup>(ReferenceEqualityComparer.Instance);
+        Revision[] changes = document.Revisions.Cast<Revision>()
+            .Where(revision => revision.Group is not { } group || groups.Add(group))
+            .ToArray();
+        return Capped(
+            changes,
+            revision => Entry(revision, index),
+            "revisions",
+            "Split the document with 'words split --by section' and inspect each part with '--detail revisions'.",
+            warnings);
+    }
+
+    private static RevisionData Entry(Revision revision, DocumentBlockIndex index)
+    {
+        bool style = revision.RevisionType == RevisionType.StyleDefinitionChange;
+        // Format changes carry a description of the formatting, not document text.
+        string? text = revision.RevisionType is RevisionType.Insertion or RevisionType.Deletion or RevisionType.Moving
+            ? revision.Group?.Text ?? revision.ParentNode.GetText()
+            : null;
+        text = text is null ? null : WordsEngineSupport.Truncate(WordsText.Clean(text), RevisionTextLimit);
+        return new RevisionData
+        {
+            Type = RevisionTypeName(revision.RevisionType),
+            Author = revision.Author,
+            // The SDK reports a revision without a recorded date as DateTime.MinValue. Word records
+            // local wall-clock time, so the date is written without a time zone.
+            Date = revision.DateTime == DateTime.MinValue
+                ? null
+                : revision.DateTime.ToString("yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture),
+            Block = style ? null : index.FindBlock(revision.ParentNode),
+            Text = string.IsNullOrEmpty(text) ? null : text,
+        };
+    }
+
+    private static string RevisionTypeName(RevisionType type) => type switch
+    {
+        RevisionType.Insertion => "insertion",
+        RevisionType.Deletion => "deletion",
+        RevisionType.FormatChange => "formatChange",
+        RevisionType.StyleDefinitionChange => "styleDefinitionChange",
+        RevisionType.Moving => "moving",
+        _ => throw new ArgumentOutOfRangeException(nameof(type), type, "Unmapped revision type."),
+    };
+
     private static IReadOnlyList<ContractImageData> Images(Document document, DocumentBlockIndex index, List<Warning> warnings) =>
         Capped(
             document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage).ToArray(),
@@ -170,6 +229,9 @@ internal static class InfoProjection
                 Block = entry.Index,
                 Rows = table.Rows.Count,
                 Columns = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
+                Style = table.StyleIdentifier == StyleIdentifier.TableNormal || string.IsNullOrEmpty(table.StyleName)
+                    ? null
+                    : table.StyleName,
             };
         }).ToArray();
 

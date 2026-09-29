@@ -42,7 +42,8 @@ internal sealed class WordsInspectionService
             throw new CliException(
                 WordsDiagnostics.DocumentHasRevisions,
                 "Words comparison requires both source documents to have no existing revisions.",
-                hint: "Accept or reject revisions explicitly in copies of both documents, then compare again.");
+                hint: "List the revisions with 'aspose-cli words inspect <file> --detail revisions'. "
+                    + "Accept or reject revisions explicitly in copies of both documents, then compare again.");
         }
 
         Document compared = leftLoaded.Document.Clone();

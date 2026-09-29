@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Words.Commands;
 internal static class InfoCommand
 {
     private static readonly string[] Details =
-        ["outline", "sections", "styles", "fields", "bookmarks", "comments", "images", "tables", "properties", "fonts"];
+        ["outline", "sections", "styles", "fields", "bookmarks", "comments", "revisions", "images", "tables", "properties", "fonts"];
 
     public static Command Create(IProductCommandHost<IWordsEngine> host)
     {

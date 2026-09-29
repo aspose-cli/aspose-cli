@@ -20,7 +20,9 @@ session start, the rules every product shares and the delivery checklist are in
 - Block text, search snippets and `heading`/`find` addresses use the text a
   reader sees: field results rather than field codes, without text a tracked
   change deletes, and without the comments and footnotes a paragraph anchors.
-  Read those with `inspect --detail comments` or `query search --scope`.
+  Read those with `inspect --detail comments` or `query search --scope`, and
+  tracked changes themselves with `inspect --detail revisions`
+  ([revisions](references/revisions.md)).
 - `query search --scope` and the `replace_text` op share one scope vocabulary:
   `body`, `headersFooters`, `footnotes` (with endnotes), `comments` and `all`.
 - Read fields use the edit vocabulary: a table block's `rows`, `columns` and
@@ -65,9 +67,22 @@ file, one line per paragraph. Windows, paging and compact output in general:
 
    Filling a template's `{{placeholder}}` text: `replace_text` covers only the
    body unless it names `"scope": "all"`, and templates often keep the contract
-   number or date in a header. Replace with `"scope": "all"`, then confirm
-   `words query search output.docx --pattern "{{" --scope all` finds nothing (the
-   pattern is literal unless `--regex`).
+   number or date in a header. A table with one template row for a list of
+   items, such as products, takes `repeat_table_row`: it copies that row per
+   item with its formatting and column widths, so never rebuild such a table
+   with `insert_table`.
+
+   ```json
+   {"ops":[
+     {"op":"replace_text","find":"{{contract_no}}","replace":"C-2026-014","scope":"all"},
+     {"op":"repeat_table_row","at":{"find":"{{code}}"},"items":[
+       {"code":"A-100","name":"Widget","qty":"2"},
+       {"code":"B-200","name":"Gadget","qty":"1"}]}
+   ]}
+   ```
+
+   Then confirm `words query search output.docx --pattern "{{" --scope all`
+   finds nothing (the pattern is literal unless `--regex`).
 
 4. **Verify:** read the changed blocks back, then review every page
    ([verification](references/verification.md)).
