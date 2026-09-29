@@ -31,7 +31,8 @@ jobs:
         with:
           persist-credentials: false
           # The Changed scope measures a pull request against the merge base with its target.
-          fetch-depth: ${{ github.event_name == 'pull_request' && 0 || 1 }}
+          # (0 is falsy in expressions, so the pull-request case must be the fallback.)
+          fetch-depth: ${{ github.event_name != 'pull_request' && 1 || 0 }}
       - uses: actions/setup-dotnet@a98b56852c35b8e3190ac28c8c2271da59106c68 # v6.0.0
         with:
           global-json-file: global.json
