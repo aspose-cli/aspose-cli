@@ -56,6 +56,8 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"import_range","path":"eu.xlsx","to":"C1"}""")]
     [InlineData("""{"op":"import_sheet","path":" "}""")]
     [InlineData("""{"op":"import_sheet","path":"eu.xlsx","position":-1}""")]
+    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X"}],"captions":"fr"}""")]
+    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X","label":" "}]}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -80,6 +82,8 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
     [InlineData("""{"op":"set_hyperlink","cell":"A1","url":"mailto:team@example.com"}""")]
     [InlineData("""{"op":"import_range","path":"eu.xlsx","from":"Totals!A2:D8","to":"Report!F2","content":"all","passwordEnv":"EU_PASSWORD"}""")]
     [InlineData("""{"op":"import_sheet","path":"eu.csv","sheet":"eu","name":"EU","position":0}""")]
+    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"净额","label":"净额合计"}],"captions":"zh"}""")]
+    [InlineData("""{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"Amount"}],"captions":"en"}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -127,6 +131,16 @@ public sealed class CellsOpContractTests : IClassFixture<CellsFixture>
             ImportContents.Values,
             Assert.IsType<ImportRangeOp>(Assert.Single(
                 Parse("""{"ops":[{"op":"import_range","path":"eu.xlsx","from":"A1:B2","to":"C1"}]}""").Ops)).Content);
+
+    [Fact]
+    public void CreatePivot_ChoosesTheCaptionLanguageByDefaultAndLeavesLabelsUnset()
+    {
+        CreatePivotOp pivot = Assert.IsType<CreatePivotOp>(Assert.Single(
+            Parse("""{"ops":[{"op":"create_pivot","sourceRange":"A1:B9","at":"D1","values":[{"field":"X"}]}]}""").Ops));
+
+        Assert.Equal(PivotCaptionLanguages.Auto, pivot.Captions);
+        Assert.Null(Assert.Single(pivot.Values).Label);
+    }
 
     [Theory]
     [InlineData("1", "$1:$1")]

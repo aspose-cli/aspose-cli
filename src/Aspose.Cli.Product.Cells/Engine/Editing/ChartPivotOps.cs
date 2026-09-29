@@ -1,6 +1,7 @@
 using Aspose.Cli.Sdk.Operations;
 using System.Drawing;
 using System.Globalization;
+using System.Text;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Pivot;
@@ -79,6 +80,7 @@ internal static class ChartPivotOps
                 AddField(pivot, PivotFieldType.Column, column);
             }
 
+            var dataFields = new List<PivotField>(op.Values.Count);
             foreach (PivotValueField value in op.Values)
             {
                 int fieldIndex = AddField(pivot, PivotFieldType.Data, value.Field);
@@ -87,7 +89,11 @@ internal static class ChartPivotOps
                 {
                     pivot.DataFields[fieldIndex].NumberFormat = numberFormat;
                 }
+
+                dataFields.Add(pivot.DataFields[fieldIndex]);
             }
+
+            ApplyCaptions(pivot, op, dataFields);
         }
         catch (OperationInvalidException)
         {
@@ -100,6 +106,123 @@ internal static class ChartPivotOps
 
         pivot.CalculateData();
         return null;
+    }
+
+    /// <summary>
+    /// Writes the pivot's captions after its functions are set, since the engine renames a
+    /// data field whenever its function changes. <c>en</c> leaves every engine caption as it
+    /// is. <c>zh</c> writes Excel's Simplified Chinese captions through the pivot's own caption
+    /// properties, which the file stores and a refresh keeps. An explicit label wins in either
+    /// language. Excel refuses a value field name that repeats a source header or another
+    /// value field's name, ignoring case, while the engine accepts and saves one, so a label
+    /// that would do so is refused here and a generated Chinese caption takes the next free
+    /// number, as the engine's own <c>Sum of X2</c> does.
+    /// </summary>
+    private static void ApplyCaptions(PivotTable pivot, CreatePivotOp op, List<PivotField> dataFields)
+    {
+        bool chinese = op.Captions switch
+        {
+            PivotCaptionLanguages.Chinese => true,
+            PivotCaptionLanguages.English => false,
+            _ => (op.Rows ?? []).Concat(op.Columns ?? []).Concat(op.Values.Select(static value => value.Field)).Any(ContainsHan),
+        };
+
+        var sourceFields = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < pivot.BaseFields.Count; i++)
+        {
+            sourceFields.Add(pivot.BaseFields[i].Name);
+        }
+
+        var labels = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < op.Values.Count; i++)
+        {
+            if (op.Values[i].Label is not { } label)
+            {
+                continue;
+            }
+
+            if (sourceFields.Contains(label))
+            {
+                throw LabelTaken(i, label, "a header of the source data");
+            }
+
+            if (!labels.TryAdd(label, i))
+            {
+                throw LabelTaken(i, label, $"the label of values[{labels[label]}]");
+            }
+
+            dataFields[i].DisplayName = label;
+        }
+
+        var taken = new HashSet<string>(labels.Keys, StringComparer.OrdinalIgnoreCase);
+        for (int i = 0; i < op.Values.Count; i++)
+        {
+            if (op.Values[i].Label is not null)
+            {
+                continue;
+            }
+
+            if (chinese)
+            {
+                string caption = UnusedCaption(ChineseCaptionPrefix(op.Values[i].Function) + op.Values[i].Field, sourceFields, taken);
+                dataFields[i].DisplayName = caption;
+                taken.Add(caption);
+            }
+            else if (labels.TryGetValue(dataFields[i].DisplayName, out int labelled))
+            {
+                throw LabelTaken(labelled, dataFields[i].DisplayName, $"the caption of values[{i}]");
+            }
+        }
+
+        if (chinese)
+        {
+            pivot.GrandTotalName = "总计";
+            pivot.RowHeaderCaption = "行标签";
+            pivot.ColumnHeaderCaption = "列标签";
+            pivot.DataFieldHeaderName = "值";
+        }
+    }
+
+    private static OperationInvalidException LabelTaken(int index, string label, string owner) => new(
+        $"create_pivot values[{index}].label '{label}' repeats {owner}; Excel refuses a value field name that is already taken",
+        hint: "Give each value field a label that differs, ignoring case, from every source header and every other value field's caption.");
+
+    /// <summary>Excel's Simplified Chinese value field prefixes, with its ASCII colon.</summary>
+    private static string ChineseCaptionPrefix(string function) => function switch
+    {
+        PivotFunctions.Sum => "求和项:",
+        PivotFunctions.Count => "计数项:",
+        PivotFunctions.Average => "平均值项:",
+        PivotFunctions.Max => "最大值项:",
+        PivotFunctions.Min => "最小值项:",
+        _ => throw new ArgumentOutOfRangeException(
+            nameof(function), function, "Pivot function is missing from the caption mapper."),
+    };
+
+    private static string UnusedCaption(string caption, HashSet<string> sourceFields, HashSet<string> taken)
+    {
+        string candidate = caption;
+        for (int number = 2; sourceFields.Contains(candidate) || taken.Contains(candidate); number++)
+        {
+            candidate = caption + number.ToString(CultureInfo.InvariantCulture);
+        }
+
+        return candidate;
+    }
+
+    /// <summary>Whether the text holds a Han character (a CJK unified or compatibility ideograph).</summary>
+    private static bool ContainsHan(string text)
+    {
+        foreach (Rune rune in text.EnumerateRunes())
+        {
+            if (rune.Value is (>= 0x3400 and <= 0x4DBF) or (>= 0x4E00 and <= 0x9FFF)
+                or (>= 0xF900 and <= 0xFAFF) or (>= 0x20000 and <= 0x323AF))
+            {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private static PivotTable? FindPivot(Worksheet sheet, string name)

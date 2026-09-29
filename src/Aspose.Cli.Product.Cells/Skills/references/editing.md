@@ -193,6 +193,18 @@ cells:
   unformatted.
 - Pivots do not follow source changes: add `refresh_pivot` after editing the
   source. Refresh keeps the pivot's formatting and the sheet's column widths.
+- Captions follow `captions`: `en` keeps the engine's English ones (`Sum of X`,
+  `Grand Total`, `Data`); `zh` writes Excel's Simplified Chinese ones
+  (`求和项:X`, `计数项:X`, `平均值项:X`, `最大值项:X`, `最小值项:X`, `总计`,
+  `行标签`, `列标签`, `值`). The default `auto` picks `zh` when a row, column
+  or value field name contains a Han character, so other pivots keep the
+  English captions. Refresh keeps them.
+- A value field's `label` names it in either language, such as
+  `{ "field": "不含税净额", "label": "净额合计" }`. A label that repeats a source
+  header or another value field's caption, ignoring case, is refused, as Excel
+  refuses it.
+- With two or more value fields, the grand-total row of each value field reads
+  `Total <caption>` in every language; no pivot caption holds that word.
 - `query range` the target area to read the aggregated numbers.
 
 ## Conditional formatting
