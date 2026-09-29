@@ -224,6 +224,9 @@ internal sealed class GlobalOptions
         return (MapOutput(output), quiet);
     }
 
+    /// <summary>Whether a value is one of the accepted <c>--output</c> modes.</summary>
+    internal static bool IsOutputMode(string value) => OutputModes.ContainsKey(value);
+
     // Agents typically read the CLI through a pipe; humans get a table.
     private static OutputMode MapOutput(string? value) =>
         value is not null && OutputModes.TryGetValue(value, out OutputMode mode) ? mode

@@ -5,7 +5,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;
+using Json.Schema;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
@@ -25,6 +27,68 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal(0, result.ExitCode);
         Assert.False(string.IsNullOrWhiteSpace(result.StdOut));
         Assert.True(char.IsAsciiDigit(result.StdOut.TrimStart()[0]));
+        // Plain --version stays the parser's single text line, never a JSON envelope.
+        Assert.Matches(@"^[0-9][^\s]*?
+$", result.StdOut);
+        Assert.Equal(string.Empty, result.StdErr);
+    }
+
+    [Theory]
+    [InlineData("--version", "--output", "json")]
+    [InlineData("--output", "json", "--version")]
+    [InlineData("--version", "--output=json")]
+    [InlineData("-f", "json", "--version")]
+    public void VersionWithJsonOutput_ReportsTheCapabilitiesBuildIdentity(params string[] args)
+    {
+        CliResult plain = _workspace.Run("--version");
+        CliResult result = _workspace.Run(args);
+        CliResult capabilities = _workspace.Run("capabilities", "--output", "json");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal(string.Empty, result.StdErr);
+        AssertConformsTo(CommonSchemaIds.Version, result.StdOut);
+        JsonNode version = Parse(result.StdOut);
+        JsonNode expected = Parse(capabilities.StdOut);
+        foreach (string field in new[] { "cliVersion", "sourceRevision", "buildDirty", "enginePins" })
+        {
+            Assert.True(JsonNode.DeepEquals(expected[field], version[field]), field);
+        }
+        // Plain --version prints the artifact version; the result names it only when it differs.
+        string artifact = version["artifactVersion"]?.GetValue<string>()
+            ?? version["cliVersion"]!.GetValue<string>();
+        Assert.Equal(plain.StdOut.Trim(), artifact);
+    }
+
+    [Fact]
+    public void VersionWithCompactOrTableOutput_UsesTheOrdinaryResultWriter()
+    {
+        CliResult json = _workspace.Run("--version", "--output", "json");
+        CliResult compact = _workspace.Run("--version", "--output", "compact");
+        CliResult table = _workspace.Run("--version", "--output", "table");
+
+        Assert.Equal(0, compact.ExitCode);
+        Assert.Single(compact.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries));
+        Assert.True(JsonNode.DeepEquals(Parse(json.StdOut), Parse(compact.StdOut)));
+        Assert.Equal(0, table.ExitCode);
+        Assert.StartsWith(
+            "aspose-cli " + Parse(json.StdOut)["cliVersion"]!.GetValue<string>(),
+            table.StdOut,
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("--version", "--quiet")]
+    [InlineData("--version", "--output", "json", "--quiet")]
+    [InlineData("--version", "--output", "text")]
+    [InlineData("--version", "--output", "json", "--workdir", ".")]
+    [InlineData("--version", "--output", "json", "doctor")]
+    public void VersionWithAnotherOption_StaysAUsageError(params string[] args)
+    {
+        CliResult result = _workspace.Run(args);
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Equal(string.Empty, result.StdOut);
+        Assert.Equal("USAGE_ERROR", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
     }
 
     [Fact]
@@ -156,6 +220,84 @@ public sealed class CliContractTests : IDisposable
             result.StdOut,
             static match => match.Groups["key"].Value + "\"<build>\"");
         AssertSnapshot("capabilities.json", normalized);
+    }
+
+    /// <summary>
+    /// Pins the capabilities summary; the build identity is normalized as in
+    /// <see cref="Capabilities_MatchTheSnapshot"/>.
+    /// </summary>
+    [Fact]
+    public void CapabilitiesSummary_MatchesTheSnapshot()
+    {
+        CliResult result = _workspace.Run("capabilities", "--summary", "--output", "json");
+
+        Assert.Equal(0, result.ExitCode);
+        string normalized = BuildIdentity.Replace(
+            result.StdOut,
+            static match => match.Groups["key"].Value + "\"<build>\"");
+        AssertSnapshot("capabilities-summary.json", normalized);
+    }
+
+    [Fact]
+    public void CapabilitiesSummary_ProjectsTheCapabilitiesDocument()
+    {
+        CliResult result = _workspace.Run("capabilities", "--summary", "--output", "json");
+        CliResult full = _workspace.Run("capabilities", "--output", "json");
+
+        Assert.Equal(0, result.ExitCode);
+        AssertConformsTo(CommonSchemaIds.CapabilitiesSummary, result.StdOut);
+        // The first look stays small next to the full document.
+        Assert.True(result.StdOut.Length < 16 * 1024, $"The summary is {result.StdOut.Length} characters.");
+        JsonNode summary = Parse(result.StdOut);
+        JsonNode capabilities = Parse(full.StdOut);
+        Assert.Equal(capabilities["cliVersion"]!.GetValue<string>(), summary["cliVersion"]!.GetValue<string>());
+        JsonArray products = capabilities["products"]!.AsArray();
+        JsonArray summarized = summary["products"]!.AsArray();
+        Assert.Equal(
+            products.Select(static product => product!["id"]!.GetValue<string>()),
+            summarized.Select(static product => product!["id"]!.GetValue<string>()));
+        foreach ((JsonNode? product, JsonNode? entry) in products.Zip(summarized))
+        {
+            string id = product!["id"]!.GetValue<string>();
+            foreach (string formats in new[] { "loadFormats", "convertFormats", "renderFormats" })
+            {
+                Assert.True(JsonNode.DeepEquals(product[formats], entry![formats]), $"{id} {formats}");
+            }
+            Assert.Equal(product["engine"]!["sdkVersion"]!.GetValue<string>(), entry!["engineVersion"]!.GetValue<string>());
+            Assert.Equal(
+                product["commands"]!.AsArray()
+                    .Where(static command => !command!["hidden"]!.GetValue<bool>())
+                    .Select(static command => command!["path"]!.GetValue<string>())
+                    .Where(path => path != id)
+                    .Select(path => path[(id.Length + 1)..]),
+                entry["commands"]!.AsArray().Select(static command => command!["command"]!.GetValue<string>()));
+            Assert.True(
+                JsonNode.DeepEquals(
+                    new JsonArray(product["operations"]!.AsArray()
+                        .Select(static operation => (JsonNode)new JsonObject
+                        {
+                            ["command"] = operation!["command"]!.DeepClone(),
+                            ["ops"] = operation["ops"]!.DeepClone(),
+                        })
+                        .ToArray()),
+                    entry["operations"]),
+                $"{id} operations");
+        }
+    }
+
+    [Fact]
+    public void CapabilitiesSummary_SelectsOneProductButNoCommand()
+    {
+        CliResult cells = _workspace.Run("capabilities", "cells", "--summary", "--output", "json");
+        CliResult command = _workspace.Run("capabilities", "cells", "edit", "--summary", "--output", "json");
+        CliResult unknown = _workspace.Run("capabilities", "missing", "--summary", "--output", "json");
+
+        Assert.Equal(0, cells.ExitCode);
+        Assert.Equal("cells", Assert.Single(Parse(cells.StdOut)["products"]!.AsArray())!["id"]!.GetValue<string>());
+        Assert.Equal(2, command.ExitCode);
+        Assert.Equal("USAGE_ERROR", Parse(command.StdErr)["error"]!["code"]!.GetValue<string>());
+        Assert.Equal(2, unknown.ExitCode);
+        Assert.Equal("OPTION_INVALID", Parse(unknown.StdErr)["error"]!["code"]!.GetValue<string>());
     }
 
     /// <summary>
@@ -519,7 +661,7 @@ public sealed class CliContractTests : IDisposable
     private const string UpdateSnapshotsVariable = Aspose.Cli.Sdk.DistributionInfo.EnvironmentVariablePrefix + "TEST_UPDATE_SNAPSHOTS";
 
     private static readonly Regex BuildIdentity = new(
-        """(?<key>"(?:cliVersion|sourceRevision|buildDirty|version|sdkVersion)": )(?:"[^"]*"|true|false)""",
+        """(?<key>"(?:cliVersion|sourceRevision|buildDirty|version|sdkVersion|engineVersion)": )(?:"[^"]*"|true|false)""",
         RegexOptions.CultureInvariant);
 
     /// <summary>
@@ -558,6 +700,16 @@ public sealed class CliContractTests : IDisposable
             $"expected: {(line < expectedLines.Length ? expectedLines[line] : "<end of snapshot>")}\n" +
             $"actual:   {(line < actualLines.Length ? actualLines[line] : "<end of output>")}\n" +
             $"If the change is intended, set {UpdateSnapshotsVariable}=1, rerun and review the diff.");
+    }
+
+    private static void AssertConformsTo(string schemaId, string json)
+    {
+        JsonSchema schema = SchemaTestRegistry.CreateOptions().SchemaRegistry
+            .Get(new Uri(schemaId)) as JsonSchema
+            ?? throw new InvalidOperationException($"Schema {schemaId} is not registered.");
+        using JsonDocument document = JsonDocument.Parse(json);
+        EvaluationResults evaluation = schema.Evaluate(document.RootElement);
+        Assert.True(evaluation.IsValid, JsonSerializer.Serialize(evaluation));
     }
 
     private static JsonNode Parse(string json) =>

@@ -16,22 +16,29 @@ recipes.
 Run these once per session:
 
 ```powershell
-aspose-cli --version
+aspose-cli --version --output json
 aspose-cli doctor --output json
 aspose-cli license status --output json
-aspose-cli capabilities --output json
+aspose-cli capabilities --summary --output json
 ```
 
+- `--version --output json` reports `cliVersion`, `sourceRevision`,
+  `buildDirty` and each product's `enginePins`, the same values as
+  `capabilities`; plain `--version` prints only the version text.
 - `doctor` reports `ok` and one entry per check (`cli`, `runtime`,
   `resource-budgets`, `license`, `output`). A `license` check of `warn` means
   at least one product runs in evaluation mode.
 - `license status` reports each product's `mode` (`licensed`, `evaluation`,
   `invalid`) and effective `source`; see `aspose-cli docs licensing`.
+- `capabilities --summary` is the short first look at what this build can
+  do: each product's commands with one-line descriptions, its load, convert
+  and render formats and its edit operation names.
 - `capabilities` is the machine-readable truth about this build: products,
   verbs, formats, edit operations and their schema command, review checks,
   every command and option, and every error and warning code with its exit
-  code (`diagnostics`). `aspose-cli capabilities <product>` narrows it to one
-  product.
+  code (`diagnostics`). Read it selectively:
+  `aspose-cli capabilities <product> <command>` gives one command's options
+  and operations, and `aspose-cli capabilities <product>` one product.
 
 When unsure about a command, option, operation or field, ask the CLI
 (`--help`, `capabilities`, `schema`, `docs`) instead of guessing.
@@ -46,9 +53,9 @@ When unsure about a command, option, operation or field, ask the CLI
 | Word processing: DOCX, DOC, RTF, ODT, Markdown, HTML | `aspose-cli-words` | `aspose-cli docs words/overview` |
 
 Read the product overview before the first command on that document type.
-`capabilities` lists each product's load, convert and render formats. The
-product-neutral commands `review`, `preview` and `fonts check` choose the
-product from the file's content; `review` and `preview` accept `--product` to
+`capabilities --summary` lists each product's load, convert and render
+formats. The product-neutral commands `review`, `preview` and `fonts check`
+choose the product from the file's content; `review` and `preview` accept `--product` to
 override the choice.
 
 ## Golden rules

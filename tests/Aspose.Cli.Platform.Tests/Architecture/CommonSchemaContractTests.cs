@@ -194,6 +194,7 @@ public sealed class CommonSchemaContractTests
         string[] files =
         [
             "app-result.schema.json",
+            "capabilities-summary.schema.json",
             "doctor.schema.json",
             "font-check.schema.json",
             "font-list.schema.json",
@@ -204,6 +205,7 @@ public sealed class CommonSchemaContractTests
             "schema-list.schema.json",
             "skill-install.schema.json",
             "skill-list.schema.json",
+            "version.schema.json",
         ];
 
         foreach (string file in files)

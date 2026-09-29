@@ -142,6 +142,7 @@ Arguments:
   <command>  Optional product-relative command path to select.
 
 Options:
+  --summary                                   List only each product's commands, formats and edit operation names.
   -?, -h, --help                              Show help and usage information
   -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).

@@ -109,6 +109,43 @@ internal static class CommonSchemaSamples
         License = Evaluation,
     };
 
+    public static CapabilitiesSummaryResult CapabilitiesSummary { get; } = new()
+    {
+        CliVersion = "1.0.0",
+        Products =
+        [
+            new ProductCapabilitiesSummary
+            {
+                Id = "test",
+                Name = "Test",
+                Description = "Test document automation.",
+                Engine = "test",
+                EngineVersion = "1.0.0",
+                LoadFormats = ["bin"],
+                ConvertFormats = ["bin"],
+                RenderFormats = [],
+                Commands =
+                [
+                    new CommandCapabilitiesSummary { Command = "edit", Description = "Apply a batch of ops." },
+                    new CommandCapabilitiesSummary { Command = "query range" },
+                ],
+                Operations =
+                [
+                    new OperationCapabilitiesSummary { Command = "edit", Ops = ["set_value"] },
+                ],
+            },
+        ],
+    };
+
+    public static VersionResult Version { get; } = new()
+    {
+        CliVersion = "1.0.0",
+        ArtifactVersion = "1.0.0+0123456789abcdef0123456789abcdef01234567",
+        SourceRevision = "0123456789abcdef0123456789abcdef01234567",
+        BuildDirty = false,
+        EnginePins = Capabilities.EnginePins,
+    };
+
     public static LicenseStatusResult LicenseStatus { get; } = new()
     {
         Applicable = true,
@@ -259,9 +296,11 @@ internal static class CommonSchemaSamples
     [
         new(Error.Schema, Error),
         new(Capabilities.Schema, Capabilities),
+        new(CapabilitiesSummary.Schema, CapabilitiesSummary),
         new(App.Schema, App),
         new(LicenseStatus.Schema, LicenseStatus),
         new(Doctor.Schema, Doctor),
+        new(Version.Schema, Version),
         new(SchemaList.Schema, SchemaList),
         new(SkillInstall.Schema, SkillInstall),
         new(SkillList.Schema, SkillList),

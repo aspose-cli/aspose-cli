@@ -27,6 +27,7 @@ internal static class RootCommandFactory
             "Aspose CLI — high-fidelity file automation for people, scripts, and AI agents. " +
             "Structured commands support --output json for stable, machine-readable results; explicit schema and docs documents remain raw.");
         globals.AddTo(root);
+        VersionOutput.Attach(root, executor, globals, catalog);
 
         Lazy<CliCapabilitySnapshot>? capabilitySnapshot = null;
         Func<CapabilitiesResult> capabilities = () =>
