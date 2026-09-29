@@ -53,13 +53,14 @@ internal sealed partial class SlidesMutationHandlers
 
     public long Apply(SlidesInsertTableOp operation)
     {
-        double[] columns = Enumerable.Repeat(operation.Rect.Width / operation.Cols, operation.Cols).ToArray();
-        double[] rows = Enumerable.Repeat(operation.Rect.Height / operation.Rows, operation.Rows).ToArray();
-        ITable table = Slide.Shapes.AddTable(
-            (float)operation.Rect.X,
-            (float)operation.Rect.Y,
-            columns,
-            rows);
+        ITable table = SlidesAuthoring.AddTable(
+            Slide,
+            operation.Rect.X,
+            operation.Rect.Y,
+            operation.Rect.Width,
+            operation.Rect.Height,
+            operation.Rows,
+            operation.Cols);
         if (operation.Data is not null)
         {
             for (int row = 0; row < operation.Data.Count; row++)

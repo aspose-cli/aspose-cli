@@ -2,8 +2,9 @@
 
 Markdown is the deterministic path from notes to a first draft. The outline is
 mapped onto the template's own layouts; the template decides fonts, colors,
-backgrounds and placement. Only emphasis (bold, italic) and code (a monospace
-font) are applied to the text itself.
+backgrounds and placement, and tables take the template's default table style.
+Only emphasis (bold, italic), code (a monospace font) and table column alignment
+are applied to the text itself.
 
 ```powershell
 aspose-cli slides create qbr.pptx --from-markdown notes.md --template brand.pptx --output json
@@ -21,6 +22,7 @@ aspose-cli slides create qbr.pptx --from-markdown notes.md --template brand.pptx
 | `**strong**`, `*emphasis*`, `` `code` ``, a link | Bold, italic and monospace runs; a link keeps its text only |
 | Fenced code block | Body paragraphs in a monospace font |
 | Markdown image of a local file, with optional `"title"` after the path | Picture with the image's alternative text and title; with body text the slide uses Two Content |
+| Pipe table: header row, delimiter row (`\|---\|:-:\|--:\|`), body rows | Table with a header row; see [Tables](#tables) |
 | `---` | Starts a new section at the next slide |
 
 The template's existing slides are replaced; its masters, layouts, theme and
@@ -35,5 +37,34 @@ Without `--template`, the built-in 16:9 design is used. `--size 16x9` or
 it. Without `--from-markdown`, the template's own slides are kept; a template
 that has none yields one empty Title Slide.
 
+## Tables
+
+```markdown
+## Pipeline
+Deals by stage
+| Stage | Owner | Value |
+|:------|:-----:|------:|
+| **Won** | A\|B | 12 |
+```
+
+- The table fills the width of the free content placeholder, top-aligned. Text
+  before or after it on the slide goes to the body, and the slide uses Two
+  Content (text first, table second) as it does for a picture.
+- A slide holds one picture or table. A further table, or a picture after a
+  table, starts a continuation slide with the same title, which also takes the
+  content that follows.
+- The first row is the table's header row, styled by the template. Colons in
+  the delimiter row align a column left, center or right; without them the
+  table style decides.
+- Cells accept emphasis, code spans and links like paragraphs. `\|` is a
+  literal pipe. A shorter row gets empty cells, a longer one loses its extra
+  cells.
+- A pipe line not followed by a delimiter row with as many cells stays a
+  paragraph. The table ends at a blank line, a heading or a line without a pipe.
+- A table holds at most 100 rows and 50 columns; a larger one is
+  `FEATURE_UNSUPPORTED`. Rows grow with their text, and a table that ends below
+  its placeholder is reported as a `TABLE_OVERFLOW` warning located at its
+  slide: split it across slides under the same heading or shorten its cells.
+
 After creation, read the slides with `slides query slides --scope shapes` before adding
-charts, tables, images, notes or transitions with `slides edit`.
+charts, images, notes or transitions with `slides edit`.

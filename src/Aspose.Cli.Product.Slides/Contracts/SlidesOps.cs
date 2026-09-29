@@ -323,11 +323,17 @@ public sealed record InsertShapeOp : SlideTargetOp
 [Operation("insert_table")]
 public sealed record SlidesInsertTableOp : SlideTargetOp
 {
+    /// <summary>The most rows a slide table holds, shared by Markdown tables.</summary>
+    internal const int MaxRows = 100;
+
+    /// <summary>The most columns a slide table holds, shared by Markdown tables.</summary>
+    internal const int MaxCols = 50;
+
     public required SlidesRectInput Rect { get; init; }
 
-    [Minimum(1), Maximum(100)] public required int Rows { get; init; }
+    [Minimum(1), Maximum(MaxRows)] public required int Rows { get; init; }
 
-    [Minimum(1), Maximum(50)] public required int Cols { get; init; }
+    [Minimum(1), Maximum(MaxCols)] public required int Cols { get; init; }
 
     /// <summary>Cell text by row, at most rows rows of at most cols cells each.</summary>
     public IReadOnlyList<IReadOnlyList<string>>? Data { get; init; }

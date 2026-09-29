@@ -158,4 +158,79 @@ public sealed class SlidesCreationTests
                 Assert.Equal(FillType.NotDefined, portion.PortionFormat.FillFormat.FillType);
             });
     }
+
+    [Fact]
+    public void Markdown_TableBecomesAStyledSlideTableInTheFreePlaceholder()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("table.md");
+        File.WriteAllText(
+            markdown,
+            """
+            ## Pipeline
+            | Stage | Value |
+            |:--|--:|
+            | Won | 12 |
+            | Lost | 3 |
+
+            ## Mix
+            By region
+            | Region | Share |
+            |---|:-:|
+            | EMEA | 40% |
+            """);
+        string output = fixture.File("table.pptx");
+
+        SlidesCreateResult result = fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = output });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == SlidesDiagnostics.TableOverflow);
+        using var deck = new Presentation(output);
+        Assert.Equal(["Title and Content", "Two Content"], deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+
+        ITable table = Assert.Single(deck.Slides[0].Shapes.OfType<ITable>());
+        IShape area = deck.Slides[0].LayoutSlide.Shapes.Single(static shape => shape.Placeholder?.Type == PlaceholderType.Object);
+        Assert.Equal((area.X, area.Y), (table.X, table.Y));
+        Assert.Equal(area.Width, table.Width, 0.5f);
+        Assert.True(table.FirstRow);
+        Assert.Equal(TableStylePreset.MediumStyle2Accent1, table.StylePreset);
+        Assert.Equal(
+            ["Stage", "Value", "Won", "12", "Lost", "3"],
+            Enumerable.Range(0, 3).SelectMany(row => Enumerable.Range(0, 2).Select(column => table[column, row].TextFrame.Text)));
+        Assert.All(Enumerable.Range(0, 3), row =>
+        {
+            Assert.Equal(TextAlignment.Left, table[0, row].TextFrame.Paragraphs[0].ParagraphFormat.Alignment);
+            Assert.Equal(TextAlignment.Right, table[1, row].TextFrame.Paragraphs[0].ParagraphFormat.Alignment);
+        });
+        Assert.DoesNotContain(deck.Slides[0].Shapes, static shape => shape.Placeholder?.Type == PlaceholderType.Object);
+
+        // With body text the table takes the second content placeholder.
+        ISlide mixed = deck.Slides[1];
+        IAutoShape text = mixed.Shapes.OfType<IAutoShape>().Single(static shape => shape.Name == "Body");
+        Assert.Single(text.TextFrame.Paragraphs);
+        ITable shares = Assert.Single(mixed.Shapes.OfType<ITable>());
+        Assert.Equal(TextAlignment.NotDefined, shares[0, 1].TextFrame.Paragraphs[0].ParagraphFormat.Alignment);
+        Assert.Equal(TextAlignment.Center, shares[1, 1].TextFrame.Paragraphs[0].ParagraphFormat.Alignment);
+        Assert.True(shares.X >= text.X + text.Width);
+    }
+
+    [Fact]
+    public void Markdown_TableTallerThanItsArea_IsReported()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("long.md");
+        File.WriteAllText(
+            markdown,
+            "## Intro\n\n## Backlog\n| Item | Owner |\n|---|---|\n"
+                + string.Concat(Enumerable.Range(1, 30).Select(static row => $"| Item {row} | Team |\n")));
+
+        SlidesCreateResult result = fixture.Engine.Create(new NewPresentationRequest
+        {
+            MarkdownPath = markdown,
+            OutputPath = fixture.File("long.pptx"),
+        });
+
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code == SlidesDiagnostics.TableOverflow);
+        Assert.Equal("slide 2", warning.Location);
+        Assert.NotNull(warning.Hint);
+    }
 }
