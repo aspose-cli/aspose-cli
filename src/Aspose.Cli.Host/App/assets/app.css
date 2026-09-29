@@ -283,7 +283,7 @@ main {
 }
 
 .getting-started,
-.edition-banner {
+.license-banner {
   margin-bottom: 18px;
   padding: 16px 18px;
   display: flex;
@@ -296,26 +296,26 @@ main {
 }
 
 .getting-started strong,
-.edition-banner strong {
+.license-banner strong {
   display: block;
   margin-top: 4px;
   font-size: 15px;
 }
 
 .getting-started p,
-.edition-banner p {
+.license-banner p {
   margin: 4px 0 0;
   color: var(--muted);
   font-size: 13px;
   line-height: 1.5;
 }
 
-.edition-banner.warn {
+.license-banner.warn {
   border-color: color-mix(in srgb, var(--warning) 45%, var(--line));
   background: var(--warning-bg);
 }
 
-.edition-banner.error {
+.license-banner.error {
   border-color: color-mix(in srgb, var(--danger) 35%, var(--line));
   background: color-mix(in srgb, var(--danger) 10%, var(--surface));
 }
@@ -855,7 +855,7 @@ body.preview-active .empty-state {
   gap: 16px;
 }
 
-#edition-settings-mount:not(:empty) {
+#license-settings-mount:not(:empty) {
   margin-bottom: 16px;
 }
 
@@ -1121,7 +1121,7 @@ body.preview-active .empty-state {
   }
 
   .getting-started,
-  .edition-banner,
+  .license-banner,
   .section-heading,
   .card-heading,
   .preview-notice {

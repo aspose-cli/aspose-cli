@@ -3,7 +3,6 @@
   "id": "aspose-cli",
   "commandName": "aspose-cli",
   "displayName": "Aspose CLI",
-  "edition": "commercial",
   "environmentVariablePrefix": "ASPOSE_CLI_",
   "skillPrefix": "aspose-cli-",
   "schemaBaseUri": "https://schemas.aspose.com/aspose-cli/v2/",

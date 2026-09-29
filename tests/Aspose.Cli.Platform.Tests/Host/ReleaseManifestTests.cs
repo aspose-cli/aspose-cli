@@ -28,7 +28,6 @@ public sealed class ReleaseManifestTests : IDisposable
     public static TheoryData<string, JsonNode?> InvalidFields => new()
     {
         { "productId", "another-cli" },
-        { "edition", "another-edition" },
         { "runtimeIdentifier", "linux-x64" },
         { "schemaVersion", 2 },
         { "sourceRevision", "main" },
@@ -78,7 +77,6 @@ public sealed class ReleaseManifestTests : IDisposable
     {
         ["schemaVersion"] = 1,
         ["productId"] = DistributionInfo.Id,
-        ["edition"] = DistributionInfo.Edition,
         ["runtimeIdentifier"] = "win-x64",
         ["artifactVersion"] = "1.2.3",
         ["sourceRevision"] = new string('a', 40),

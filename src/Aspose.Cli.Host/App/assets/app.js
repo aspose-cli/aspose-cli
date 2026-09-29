@@ -228,13 +228,12 @@
       return;
     }
 
-    document.body.dataset.edition = status.edition;
     document.body.dataset.experience = status.experience;
-    $('edition-chip').textContent = status.editionName;
+    $('build-chip').textContent = status.displayName;
     setActivity(status.file ? 'Preview live' : 'Ready');
     $('file-input').accept = (status.supportedExtensions || []).join(',');
     syncPreferences();
-    renderEditionComposition();
+    renderLicenseComposition();
     renderProducts();
     renderRecents();
     renderPreviewOptions();
@@ -243,10 +242,10 @@
     renderPreview();
   }
 
-  function renderEditionComposition() {
-    var bannerMount = $('edition-banner-mount');
-    var settingsMount = $('edition-settings-mount');
-    var previewMount = $('preview-edition-mount');
+  function renderLicenseComposition() {
+    var bannerMount = $('license-banner-mount');
+    var settingsMount = $('license-settings-mount');
+    var previewMount = $('preview-license-mount');
     bannerMount.replaceChildren();
     settingsMount.replaceChildren();
     previewMount.replaceChildren();
@@ -255,7 +254,7 @@
     }
 
     var state = commercialState();
-    var banner = node('aside', 'edition-banner');
+    var banner = node('aside', 'license-banner');
     banner.dataset.ui = 'license-banner';
     if (state.broken) {
       banner.classList.add('error');
@@ -264,7 +263,7 @@
     }
     var copy = node('div');
     copy.append(
-      node('span', 'eyebrow', 'COMMERCIAL EDITION'),
+      node('span', 'eyebrow', 'LICENSES'),
       node('strong', '', state.broken
         ? 'License configuration needs attention.'
         : state.complete

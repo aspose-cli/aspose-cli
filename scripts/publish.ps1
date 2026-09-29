@@ -1,6 +1,6 @@
 <#
 .SYNOPSIS
-Publishes one isolated Aspose CLI edition and scans its artifacts.
+Publishes the Aspose CLI and scans its artifacts.
 #>
 [CmdletBinding()]
 param(
@@ -41,7 +41,7 @@ if ($customerPublish) {
             Where-Object { -not [string]::IsNullOrWhiteSpace($_) }
     )
     if ($RuntimeIdentifier -notin $supportedRuntimeIdentifiers) {
-        throw "Runtime '$RuntimeIdentifier' is not verified for every $($layout.Edition) product. Supported customer runtimes: $($supportedRuntimeIdentifiers -join ', ')."
+        throw "Runtime '$RuntimeIdentifier' is not verified for every product. Supported customer runtimes: $($supportedRuntimeIdentifiers -join ', ')."
     }
 }
 $publishFlavor = if ([string]::IsNullOrWhiteSpace($RuntimeIdentifier)) {
@@ -128,7 +128,6 @@ if ($customerPublish) {
 $buildManifest = [ordered]@{
     schemaVersion = 1
     productId = [string]$layout.Identity.id
-    edition = $layout.Edition
     runtimeIdentifier = $publishFlavor
     sourceRevision = $provenance.SourceRevision
     buildDirty = [bool]$provenance.BuildDirty
@@ -202,9 +201,6 @@ if ($customerPublish) {
     if ($capabilities.cliVersion -cne $declaredVersion) {
         throw "Published version '$($capabilities.cliVersion)' does not match declared version '$declaredVersion'."
     }
-    if ($capabilities.edition -cne $layout.Edition) {
-        throw "Published executable reports edition '$($capabilities.edition)', expected '$($layout.Edition)'."
-    }
     if ($capabilities.sourceRevision -cne $provenance.SourceRevision -or
         [bool]$capabilities.buildDirty -ne [bool]$provenance.BuildDirty) {
         throw 'Published executable provenance does not match the captured repository provenance.'
@@ -222,4 +218,4 @@ if ($customerPublish) {
 }
 
 $kind = if ($customerPublish) { "self-contained $RuntimeIdentifier customer" } else { 'framework-dependent portable' }
-Write-Host "$($layout.Edition) $kind publish at $($provenance.SourceRevision) passed artifact isolation checks: $publishRoot"
+Write-Host "$([char]::ToUpperInvariant($kind[0]) + $kind.Substring(1)) publish at $($provenance.SourceRevision) passed artifact isolation checks: $publishRoot"

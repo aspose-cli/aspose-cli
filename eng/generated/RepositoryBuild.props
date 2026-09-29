@@ -55,8 +55,8 @@
   <PropertyGroup>
     <GeneratedProductsLfSha256>865DED0437949EB75466B555F41616BA9B956EC3448DCD093D00896CD8AAC2B2</GeneratedProductsLfSha256>
     <GeneratedProductsCrLfSha256>E20218ADD069130BF59404A45CB16FB669BDD126D187F29E01BF82603C61AC86</GeneratedProductsCrLfSha256>
-    <GeneratedDistributionLfSha256>E36A98FD3EA5C9B2677D545D01A487D2B38B2D46F5980E5EB80D10776333F70A</GeneratedDistributionLfSha256>
-    <GeneratedDistributionCrLfSha256>4FDCD20F11A3A0A480B6632C85BEC965CEF7926CB183CD61F53DB92BB287BE3E</GeneratedDistributionCrLfSha256>
+    <GeneratedDistributionLfSha256>69E30A91A7FD0CF4E5F2184F09DB8EC3A37AB19E8665659AAA9F800656C9BC2C</GeneratedDistributionLfSha256>
+    <GeneratedDistributionCrLfSha256>2D44512421B4FDE7D4160B564A094BA2E5CF39F2E2305C59772980226D44F7F8</GeneratedDistributionCrLfSha256>
   </PropertyGroup>
   <Target Name="ValidateRepositoryProjectionSources" BeforeTargets="PrepareForBuild">
     <Error Condition="'$(GeneratedProductsLfSha256)' == '' Or '$(GeneratedProductsCrLfSha256)' == '' Or '$(GeneratedDistributionLfSha256)' == '' Or '$(GeneratedDistributionCrLfSha256)' == ''" Text="Generated repository projections are missing. Run scripts/sync.ps1 ." />

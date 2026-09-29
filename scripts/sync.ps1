@@ -17,7 +17,7 @@ else {
 $generator = Join-Path $repoRoot 'scripts/generate-product-catalog.ps1'
 $layoutResolver = Join-Path $repoRoot 'scripts/resolve-project-layout.ps1'
 if (-not (Test-Path -LiteralPath $layoutResolver -PathType Leaf)) {
-    throw "Edition layout resolver does not exist: $layoutResolver"
+    throw "Layout resolver does not exist: $layoutResolver"
 }
 $layout = & $layoutResolver  -RepositoryRoot $repoRoot
 $solution = $layout.SolutionPath
@@ -50,4 +50,4 @@ Write-StableJson (Join-Path $repoRoot 'eng/runtime-packs.lock.json') (Get-Runtim
     -RepositoryRoot $repoRoot
 Invoke-DotNetRestore -Arguments @('--locked-mode')
 
-Write-Host "$($layout.Edition) product catalog projections and lock files are synchronized."
+Write-Host "Product catalog projections and lock files are synchronized."

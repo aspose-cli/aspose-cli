@@ -64,8 +64,7 @@ internal sealed record AppProductView(
 
 internal sealed record AppStatusView(
     string Version,
-    string Edition,
-    string EditionName,
+    string DisplayName,
     string Experience,
     string Route,
     bool OnboardingCompleted,

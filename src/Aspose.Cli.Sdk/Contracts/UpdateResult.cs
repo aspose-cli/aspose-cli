@@ -1,11 +1,9 @@
 namespace Aspose.Cli.Sdk.Contracts;
 
-/// <summary>Result of a signed offline or HTTPS update check/install.</summary>
+/// <summary>Result of an update check or install.</summary>
 public sealed record UpdateResult() : ResultEnvelope(CommonSchemaIds.Update, 2)
 {
     public required string Status { get; init; }
-
-    public required string Edition { get; init; }
 
     public required string CurrentVersion { get; init; }
 

@@ -4,17 +4,13 @@
   "title": "Aspose CLI capabilities",
   "description": "Machine-readable self-description of the CLI build: products, verbs, formats and structured operations. Agents use it for runtime discovery.",
   "type": "object",
-  "required": ["schema", "schemaVersion", "edition", "cliVersion", "sourceRevision", "buildDirty", "enginePins", "products", "schemas", "routing", "commands", "resourceBudgetContractVersion", "resourceBudgets", "diagnostics"],
+  "required": ["schema", "schemaVersion", "cliVersion", "sourceRevision", "buildDirty", "enginePins", "products", "schemas", "routing", "commands", "resourceBudgetContractVersion", "resourceBudgets", "diagnostics"],
   "properties": {
     "schema": {
       "const": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities.schema.json"
     },
     "schemaVersion": {
       "const": 2
-    },
-    "edition": {
-      "type": "string",
-      "minLength": 1
     },
     "cliVersion": {
       "type": "string"

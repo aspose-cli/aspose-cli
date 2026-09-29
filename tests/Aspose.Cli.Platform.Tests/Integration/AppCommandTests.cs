@@ -113,10 +113,8 @@ public sealed class AppCommandTests : IDisposable
                 await repeatedStatus.Content.ReadAsStringAsync());
 
             Assert.Equal(
-                capabilities["edition"]!.GetValue<string>(),
-                statusJson["edition"]!.GetValue<string>());
-            Assert.False(string.IsNullOrWhiteSpace(
-                statusJson["editionName"]!.GetValue<string>()));
+                Aspose.Cli.Sdk.DistributionInfo.DisplayName,
+                statusJson["displayName"]!.GetValue<string>());
             Assert.Equal(
                 "licensed",
                 statusJson["experience"]!.GetValue<string>());

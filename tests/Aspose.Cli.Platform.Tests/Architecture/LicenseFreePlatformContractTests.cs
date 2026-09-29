@@ -71,8 +71,6 @@ public sealed class LicenseFreePlatformContractTests
         using (JsonDocument capabilityJson = JsonDocument.Parse(capabilities.StandardOutput))
         {
             JsonElement capabilityRoot = capabilityJson.RootElement;
-            Assert.Equal(Aspose.Cli.Sdk.DistributionInfo.Edition,
-                capabilityRoot.GetProperty("edition").GetString());
             JsonElement engine = capabilityRoot.GetProperty("products")[0]
                 .GetProperty("engine");
             Assert.False(engine.GetProperty("licenseApplicable").GetBoolean());

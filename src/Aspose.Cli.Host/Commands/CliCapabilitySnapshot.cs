@@ -167,7 +167,6 @@ internal sealed class CliCapabilitySnapshot
 
         return new CliCapabilitySnapshot(new CapabilitiesResult
         {
-            Edition = DistributionInfo.Edition,
             CliVersion = VersionInfo.CliVersion,
             SourceRevision = VersionInfo.SourceRevision,
             BuildDirty = VersionInfo.BuildDirty,

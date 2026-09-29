@@ -7,9 +7,6 @@ namespace Aspose.Cli.Sdk.Contracts;
 /// </summary>
 public sealed record CapabilitiesResult() : ResultEnvelope(CommonSchemaIds.Capabilities, 2)
 {
-    /// <summary>Stable id of the statically composed CLI edition.</summary>
-    public required string Edition { get; init; }
-
     /// <summary>CLI version, e.g. <c>0.2.0</c>.</summary>
     public required string CliVersion { get; init; }
 

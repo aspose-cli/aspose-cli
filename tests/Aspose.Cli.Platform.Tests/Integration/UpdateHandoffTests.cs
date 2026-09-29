@@ -159,7 +159,7 @@ public sealed class UpdateHandoffTests
         string manifest = workspace.File("RELEASE-MANIFEST.json");
         File.WriteAllText(manifest, JsonSerializer.Serialize(new
         {
-            schemaVersion = 1, productId = DistributionInfo.Id, edition = DistributionInfo.Edition,
+            schemaVersion = 1, productId = DistributionInfo.Id,
             runtimeIdentifier = "win-x64", artifactVersion = "99.0.0", sourceRevision = new string('a', 40),
             archive = new { path = "release.zip", size = new FileInfo(archive).Length, sha256 = hash },
         }));

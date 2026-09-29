@@ -80,7 +80,6 @@ internal sealed class AppStatusQuery
         LicenseStatusResult license = _cli.LicenseStatus();
         return new AppStatusView(
             VersionInfo.CliVersion,
-            DistributionInfo.Edition,
             DistributionInfo.DisplayName,
             _experience,
             route,

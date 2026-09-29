@@ -105,8 +105,7 @@ $publishRoot = Join-Path $repoRoot "artifacts/publish/$RuntimeIdentifier"
 
 $buildManifestPath = Join-Path $publishRoot $script:BuildManifestName
 $buildManifest = Read-BuildManifest $buildManifestPath
-if ($buildManifest.edition -cne $layout.Edition -or
-    $buildManifest.runtimeIdentifier -cne $RuntimeIdentifier -or
+if ($buildManifest.runtimeIdentifier -cne $RuntimeIdentifier -or
     [bool]([bool]$buildManifest.buildDirty -and -not $PrepareOnly)) {
     throw 'Published build manifest does not describe this clean package build.'
 }
@@ -264,7 +263,6 @@ Copy-Item -LiteralPath (Join-Path $publishRoot 'install.ps1') -Destination (Join
 Write-StableJson (Join-Path $releaseRoot 'RELEASE-MANIFEST.json') ([ordered]@{
     schemaVersion = 1
     productId = [string]$layout.Identity.id
-    edition = $layout.Edition
     runtimeIdentifier = $RuntimeIdentifier
     artifactVersion = $artifactVersion
     sourceRevision = [string]$buildManifest.sourceRevision

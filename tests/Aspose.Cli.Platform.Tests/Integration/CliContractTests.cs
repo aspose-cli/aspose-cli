@@ -43,9 +43,6 @@ public sealed class CliContractTests : IDisposable
 
         Assert.Equal(0, result.ExitCode);
         JsonNode capabilities = Parse(result.StdOut);
-        Assert.Equal(
-            "commercial",
-            capabilities["edition"]!.GetValue<string>());
         JsonArray products = capabilities["products"]!.AsArray();
         string[] schemas = capabilities["schemas"]!.AsArray()
             .Select(static schema => schema!.GetValue<string>())
@@ -509,7 +506,6 @@ public sealed class CliContractTests : IDisposable
             {
                 schemaVersion = 1,
                 productId = Aspose.Cli.Sdk.DistributionInfo.Id,
-                edition = Aspose.Cli.Sdk.DistributionInfo.Edition,
                 runtimeIdentifier = "win-x64",
                 artifactVersion = "99.0.0",
                 sourceRevision = new string('a', 40),

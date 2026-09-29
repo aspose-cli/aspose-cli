@@ -284,7 +284,6 @@ $script:ConfigurationOwnerName = '.aspose-cli-config.json'
 $script:EnvironmentVariablePrefix = 'ASPOSE_CLI_'
 $script:ReleaseRepository = 'aspose-cli/aspose-cli'
 $script:Utf8 = [Text.UTF8Encoding]::new($false)
-$script:AllowedEditions = @('commercial')
 $script:AllowedSkills = @('aspose-cli-platform', 'aspose-cli-cells', 'aspose-cli-pdf', 'aspose-cli-slides', 'aspose-cli-words')
 $script:AllowedLicenseProducts = @('cells', 'pdf', 'slides', 'words')
 # </generated-distribution-identity>
@@ -511,11 +510,10 @@ function Read-BuildMetadata {
 
     $metadata = Read-StrictJson (Join-Path $Root $script:BuildManifestName) 'build manifest'
     Assert-ExactProperties $metadata @(
-        'schemaVersion','productId','edition','runtimeIdentifier',
+        'schemaVersion','productId','runtimeIdentifier',
         'sourceRevision','buildDirty','enginePackages') 'build manifest'
     if (-not (Test-JsonInteger $metadata.schemaVersion 1) -or
         $metadata.productId -cne $script:ProductId -or
-        $metadata.edition -cnotin $script:AllowedEditions -or
         $metadata.runtimeIdentifier -cne 'win-x64' -or
         $metadata.sourceRevision -cnotmatch '^[0-9a-f]{40}$' -or
         $metadata.buildDirty -isnot [bool] -or
@@ -547,7 +545,6 @@ function Assert-CapabilitiesMatchBuildMetadata {
 
     $properties = @($Capabilities.PSObject.Properties.Name)
     if ('sourceRevision' -cnotin $properties -or 'buildDirty' -cnotin $properties -or
-        $Capabilities.edition -cne $Metadata.edition -or
         $Capabilities.sourceRevision -cne $Metadata.sourceRevision -or
         $Capabilities.buildDirty -isnot [bool] -or
         [bool]$Capabilities.buildDirty -ne [bool]$Metadata.buildDirty) {
@@ -789,10 +786,9 @@ function Get-ManagedInstallState {
     $schemaVersion = [long]$marker.schemaVersion
 
         if ('mcpRegistrations' -cnotin @($marker.PSObject.Properties.Name)) { throw 'Installation marker is missing mcpRegistrations.' }
-        $markerNames = @('schemaVersion','productId','edition','cliVersion','sourceRevision','payloadManifest','payloadManifestSha256','choices','mcpRegistrations')
+        $markerNames = @('schemaVersion','productId','cliVersion','sourceRevision','payloadManifest','payloadManifestSha256','choices','mcpRegistrations')
         Assert-ExactProperties $marker $markerNames 'installation marker'
         if ($marker.productId -isnot [string] -or $marker.productId -cne $script:ProductId -or
-            $marker.edition -isnot [string] -or $marker.edition -cnotin $script:AllowedEditions -or
             $marker.cliVersion -isnot [string] -or [string]::IsNullOrWhiteSpace($marker.cliVersion) -or
             $marker.cliVersion -cnotmatch '^\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?$' -or
             $marker.sourceRevision -isnot [string] -or $marker.sourceRevision -cnotmatch '^(?:[0-9a-f]{40}|unknown)$' -or
@@ -836,7 +832,6 @@ function Get-ManagedInstallState {
 
     return [pscustomobject]@{
         SchemaVersion = $schemaVersion
-        Edition = [string]$marker.edition
         CliVersion = [string]$marker.cliVersion
         SourceRevision = [string]$marker.sourceRevision
         Choices = $choices
@@ -1772,11 +1767,11 @@ function Get-ReleasePackage {
     Invoke-WebRequest -UseBasicParsing -Uri "$latest/RELEASE-MANIFEST.json" -OutFile $manifestPath
     if ((Get-Item -LiteralPath $manifestPath).Length -gt 64KB) { throw 'The release manifest exceeds its 64 KiB limit.' }
     $manifest = Read-StrictJson $manifestPath 'release manifest'
-    Assert-ExactProperties $manifest @('schemaVersion','productId','edition','runtimeIdentifier','artifactVersion','sourceRevision','archive') 'release manifest'
+    Assert-ExactProperties $manifest @('schemaVersion','productId','runtimeIdentifier','artifactVersion','sourceRevision','archive') 'release manifest'
     Assert-ExactProperties $manifest.archive @('path','size','sha256') 'release manifest archive'
     $archive = $manifest.archive
     if (-not (Test-JsonInteger $manifest.schemaVersion 1) -or $manifest.productId -cne $script:ProductId -or
-        $manifest.edition -cnotin $script:AllowedEditions -or $manifest.runtimeIdentifier -cne 'win-x64' -or
+        $manifest.runtimeIdentifier -cne 'win-x64' -or
         $archive.path -isnot [string] -or $archive.path -cnotmatch '^[A-Za-z0-9][A-Za-z0-9._-]*\.zip$' -or
         -not ($archive.size -is [int] -or $archive.size -is [long]) -or $archive.size -le 0 -or $archive.size -gt 1GB -or
         $archive.sha256 -isnot [string] -or $archive.sha256 -cnotmatch '^[0-9a-f]{64}$') {
@@ -1952,7 +1947,6 @@ function Install-Release {
         if ($payload.Sha256 -cne $checksums[$payload.Path]) { throw "Checksum mismatch for '$($payload.Path)': expected $($checksums[$payload.Path]), got $($payload.Sha256)." }
     }
     $capabilities = Invoke-Capabilities $sourceExecutable
-    if ($capabilities.edition -cnotin $script:AllowedEditions) { throw "Packaged executable reports unknown edition '$($capabilities.edition)'." }
     $releaseIndicators = @('install.cmd','install.ps1',$script:BuildManifestName) |
         Where-Object { $_ -cin @($packageInventory.Files.Path) }
     if (@($releaseIndicators).Count -ne 0) {
@@ -2025,7 +2019,6 @@ function Install-Release {
         $marker = [ordered]@{
             schemaVersion = 3
             productId = $script:ProductId
-            edition = [string]$capabilities.edition
             cliVersion = [string]$capabilities.cliVersion
             sourceRevision = [string]$capabilities.sourceRevision
             payloadManifest = $script:PayloadManifestName
@@ -2189,7 +2182,7 @@ function Install-Release {
         }
 
         $final = Get-ManagedInstallState $installRoot
-        if ($final.Snapshot -cne $newState.Snapshot -or $final.Edition -cne $capabilities.edition) { throw 'Final installed CLI validation failed.' }
+        if ($final.Snapshot -cne $newState.Snapshot -or $final.CliVersion -cne $capabilities.cliVersion) { throw 'Final installed CLI validation failed.' }
         $journal.phase = 'committed'
         Write-Journal $journalPath $journal
         # Once committed, an injected ordinary failure must not report a rollbackable
@@ -2234,7 +2227,7 @@ function Install-Release {
                 $licenseFailure = "The CLI is installed, but the validated license could not be installed (exit code $($licenseResult.ExitCode)): $(Get-ChildProcessDiagnostic $licenseResult) Retry with: $($script:CommandName) $($licenseArguments[0..($licenseArguments.Count - 3)] -join ' ')"
             }
         }
-        Write-Host "$($script:DisplayName) $($capabilities.cliVersion) ($($capabilities.edition)) installed to $installRoot"
+        Write-Host "$($script:DisplayName) $($capabilities.cliVersion) installed to $installRoot"
         if (-not $skipPath) { Write-Host 'The user PATH contains exactly one install-directory entry; restart terminals and AI agents to pick it up.' }
         if ($installedSkills -ne 0) { Write-Host "Installed or updated $installedSkills pristine bundled Agent Skill package(s)." }
         if ($null -eq $licenseArguments -and -not $Update) { Write-LicenseSummary $installExecutable }

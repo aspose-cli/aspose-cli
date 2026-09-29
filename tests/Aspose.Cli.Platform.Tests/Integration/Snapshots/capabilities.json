@@ -1,7 +1,6 @@
 {
   "schema": "https://schemas.aspose.com/aspose-cli/v2/common/capabilities.schema.json",
   "schemaVersion": 2,
-  "edition": "commercial",
   "cliVersion": "<build>",
   "sourceRevision": "<build>",
   "buildDirty": "<build>",

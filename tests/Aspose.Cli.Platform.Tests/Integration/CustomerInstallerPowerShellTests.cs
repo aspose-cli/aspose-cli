@@ -597,7 +597,6 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         {
             schemaVersion = 1,
             productId = Aspose.Cli.Sdk.DistributionInfo.Id,
-            edition = Aspose.Cli.Sdk.DistributionInfo.Edition,
             runtimeIdentifier = "win-x64",
             artifactVersion = "9.9.9",
             sourceRevision = new string('a', 40),
@@ -792,7 +791,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
             install => File.WriteAllText(MarkerPath(install), "{\"schemaVersion\":3,\"schemaVersion\":3}", new UTF8Encoding(false)),
             "duplicate JSON property 'schemaVersion'");
         yield return ("missing-schemaVersion", Remove("schemaVersion"), "missing required property schemaVersion");
-        foreach (string property in new[] { "productId", "edition", "cliVersion", "payloadManifest", "payloadManifestSha256", "sourceRevision", "choices" })
+        foreach (string property in new[] { "productId", "cliVersion", "payloadManifest", "payloadManifestSha256", "sourceRevision", "choices" })
         {
             yield return ("missing-" + property, Remove(property), $"missing: [{property}]");
         }
@@ -1001,7 +1000,7 @@ public sealed partial class CustomerInstallerPowerShellTests : IDisposable, ICla
         File.Copy(executable, Path.Combine(root, "aspose-cli.exe"));
         File.WriteAllText(
             Path.Combine(root, ".aspose-cli-install.json"),
-            "{\"schemaVersion\":1,\"edition\":\"free\",\"cliVersion\":\"1.0.0\"}",
+            "{\"schemaVersion\":1,\"cliVersion\":\"1.0.0\"}",
             new UTF8Encoding(false));
         File.WriteAllText(Path.Combine(root, "THIRD-PARTY-NOTICES.md"), "test", Encoding.UTF8);
         foreach (string product in new[] { "Cells", "Pdf", "Slides", "Words" })

@@ -3,12 +3,11 @@
   "$id": "https://schemas.aspose.com/aspose-cli/v2/common/update-result.schema.json",
   "title": "Aspose CLI update result",
   "type": "object",
-  "required": ["schema", "schemaVersion", "status", "edition", "currentVersion"],
+  "required": ["schema", "schemaVersion", "status", "currentVersion"],
   "properties": {
     "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/common/update-result.schema.json" },
     "schemaVersion": { "const": 2 },
     "status": { "enum": ["up-to-date", "available", "pending"] },
-    "edition": { "enum": ["free", "commercial"] },
     "currentVersion": { "type": "string", "minLength": 1 },
     "availableVersion": { "type": "string", "minLength": 1 },
     "sourceRevision": { "type": "string", "pattern": "^[0-9a-f]{40}$" },

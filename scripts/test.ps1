@@ -68,7 +68,7 @@ $testProjects = @(
         ForEach-Object FullName
 ) | Sort-Object
 if ($testProjects.Count -eq 0) {
-    throw "No test projects were found for $($layout.Edition)."
+    throw "No test projects were found."
 }
 
 function ConvertTo-RepositoryPath {
@@ -197,7 +197,7 @@ if (-not $NoBuild) {
 }
 
 if (-not (Test-Path -LiteralPath $builtExecutable -PathType Leaf)) {
-    throw "$($layout.Edition) CLI executable does not exist: $builtExecutable"
+    throw "The CLI executable does not exist: $builtExecutable"
 }
 
 if ($runsBrowser) {
@@ -354,5 +354,5 @@ if ($failures.Count -ne 0) {
     throw "$Scope test run failed:$([Environment]::NewLine)$($failures -join [Environment]::NewLine)"
 }
 
-Write-Host "PASS $Scope scope: $($testProjects.Count) $($layout.Edition) test projects after one solution build."
+Write-Host "PASS $Scope scope: $($testProjects.Count) test projects after one solution build."
 Write-Host "Test results: $resultsRoot"

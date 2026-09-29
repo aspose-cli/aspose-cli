@@ -64,7 +64,6 @@ internal static class CommonRenderers
     public static void Render(CapabilitiesResult capabilities, TableSurface surface)
     {
         surface.Out.WriteLine($"aspose-cli {capabilities.CliVersion}");
-        surface.Out.WriteLine($"edition: {capabilities.Edition}");
         surface.Out.WriteLine($"source:  {capabilities.SourceRevision}");
         surface.Out.WriteLine($"dirty:   {TableText.YesNo(capabilities.BuildDirty)}");
         surface.Out.WriteLine(

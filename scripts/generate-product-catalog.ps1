@@ -22,7 +22,7 @@ else {
 }
 $layoutResolver = Join-Path $repoRoot 'scripts/resolve-project-layout.ps1'
 if (-not (Test-Path -LiteralPath $layoutResolver -PathType Leaf)) {
-    throw "Edition layout resolver does not exist: $layoutResolver"
+    throw "Layout resolver does not exist: $layoutResolver"
 }
 $layout = & $layoutResolver  -RepositoryRoot $repoRoot
 $catalogPath = [IO.Path]::GetFullPath($layout.CatalogPath)
@@ -462,7 +462,7 @@ $distributionCode = [Text.StringBuilder]::new()
 [void]$distributionCode.AppendLine('/// <summary>Fixed build-time identity of this CLI distribution.</summary>')
 [void]$distributionCode.AppendLine('public static class DistributionInfo')
 [void]$distributionCode.AppendLine('{')
-foreach ($name in @('id','commandName','displayName','edition','environmentVariablePrefix','skillPrefix','schemaBaseUri','configurationDirectoryName','installDirectory','releaseRepository')) {
+foreach ($name in @('id','commandName','displayName','environmentVariablePrefix','skillPrefix','schemaBaseUri','configurationDirectoryName','installDirectory','releaseRepository')) {
     $value = [string]$layout.Identity.$name
     $propertyName = [char]::ToUpperInvariant($name[0]) + $name.Substring(1)
     $escaped = [Security.SecurityElement]::Escape($value)
@@ -506,7 +506,6 @@ if (Test-Path -LiteralPath $installerPath -PathType Leaf) {
         $settings.Add('$script:' + $entry.Key + ' = ' + $literal)
     }
     $settings.Add('$script:Utf8 = [Text.UTF8Encoding]::new($false)')
-    $settings.Add('$script:AllowedEditions = @(' + "'" + $identity.edition + "'" + ')')
     # The Host ships the platform Skill; every product ships its own.
     $skillNames = @("'" + $identity.skillPrefix + "platform'") + @($products | ForEach-Object { "'" + $identity.skillPrefix + $_.id + "'" })
     $settings.Add('$script:AllowedSkills = @(' + ($skillNames -join ', ') + ')')

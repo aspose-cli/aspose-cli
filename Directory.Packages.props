@@ -1,7 +1,7 @@
 <Project>
 
-  <!-- Shared platform and test dependency versions. Edition-specific engine
-       versions are imported by the selected edition graph. -->
+  <!-- Shared platform and test dependency versions. The engine SDK versions are generated
+       from eng/products.json into eng/generated/ProductVersions.props. -->
   <PropertyGroup>
     <ManagePackageVersionsCentrally>true</ManagePackageVersionsCentrally>
   </PropertyGroup>

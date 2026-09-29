@@ -51,7 +51,7 @@ internal static class UpdateInstaller
             ownsPackage = Directory.Exists(target);
             UpdateResult prepared = JsonSerializer.Deserialize(process.Stdout, SdkJsonContext.Default.UpdateResult)
                 ?? throw ReleaseErrors.VerificationFailed("the preparation worker returned no result");
-            if (prepared.Edition != DistributionInfo.Edition || prepared.CurrentVersion != VersionInfo.ArtifactVersion
+            if (prepared.CurrentVersion != VersionInfo.ArtifactVersion
                 || prepared.Feed != source || prepared.ProcessId is not null
                 || prepared.Status is not ("available" or "up-to-date")
                 || (prepared.Status == "available") != ownsPackage)

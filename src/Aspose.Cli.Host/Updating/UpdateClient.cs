@@ -56,7 +56,6 @@ internal static class UpdateClient
         new()
         {
             Status = current ? "up-to-date" : "available",
-            Edition = DistributionInfo.Edition,
             CurrentVersion = VersionInfo.ArtifactVersion,
             AvailableVersion = current ? null : manifest.ArtifactVersion,
             SourceRevision = manifest.SourceRevision,

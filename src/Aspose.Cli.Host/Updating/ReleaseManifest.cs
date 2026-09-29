@@ -28,7 +28,7 @@ internal static class ReleaseManifest
                 document.RootElement,
                 static message => new InvalidDataException(message));
             JsonElement root = document.RootElement;
-            AssertProperties(root, "schemaVersion", "productId", "edition", "runtimeIdentifier", "artifactVersion", "sourceRevision", "archive");
+            AssertProperties(root, "schemaVersion", "productId", "runtimeIdentifier", "artifactVersion", "sourceRevision", "archive");
             string revision = RequiredString(root, "sourceRevision");
             if (root.GetProperty("schemaVersion").GetInt32() != 1
                 || RequiredString(root, "productId") != DistributionInfo.Id
@@ -37,11 +37,6 @@ internal static class ReleaseManifest
                 || revision.Any(static c => !Uri.IsHexDigit(c)))
             {
                 throw new InvalidDataException("the manifest describes another product, runtime or source revision");
-            }
-
-            if (RequiredString(root, "edition") != DistributionInfo.Edition)
-            {
-                throw new InvalidDataException("the release edition does not match the running distribution");
             }
 
             JsonElement archive = root.GetProperty("archive");

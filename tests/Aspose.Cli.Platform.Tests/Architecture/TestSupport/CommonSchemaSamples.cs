@@ -32,7 +32,6 @@ internal static class CommonSchemaSamples
 
     public static CapabilitiesResult Capabilities { get; } = new()
     {
-        Edition = "commercial",
         CliVersion = "development",
         SourceRevision = "0123456789abcdef0123456789abcdef01234567",
         BuildDirty = false,
