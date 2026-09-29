@@ -170,16 +170,7 @@ internal sealed class CliCapabilitySnapshot
             CliVersion = VersionInfo.CliVersion,
             SourceRevision = VersionInfo.SourceRevision,
             BuildDirty = VersionInfo.BuildDirty,
-            EnginePins = products
-                .Where(static product => product.Engine is not null)
-                .Select(static product => new EnginePinCapabilities
-                {
-                    Product = product.Id,
-                    Engine = product.Engine!.Id,
-                    Version = product.Engine.SdkVersion,
-                })
-                .OrderBy(static pin => pin.Product, StringComparer.Ordinal)
-                .ToArray(),
+            EnginePins = EnginePins(products),
             Products = products,
             Schemas = schemas.Ids,
             Routing = catalog.GetRoutingCapabilities(),
@@ -209,6 +200,20 @@ internal sealed class CliCapabilitySnapshot
                 .ToArray(),
         });
     }
+
+    /// <summary>The engine pin of each product, as capabilities and <c>--version</c> report them.</summary>
+    public static IReadOnlyList<EnginePinCapabilities> EnginePins(
+        IEnumerable<ProductCapabilities> products) =>
+        products
+            .Where(static product => product.Engine is not null)
+            .Select(static product => new EnginePinCapabilities
+            {
+                Product = product.Id,
+                Engine = product.Engine!.Id,
+                Version = product.Engine.SdkVersion,
+            })
+            .OrderBy(static pin => pin.Product, StringComparer.Ordinal)
+            .ToArray();
 
     private static bool IsLicenseSurfaceDiagnostic(string code) =>
         code.StartsWith("LICENSE_", StringComparison.Ordinal)

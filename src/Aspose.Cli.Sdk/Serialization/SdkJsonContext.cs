@@ -13,6 +13,7 @@ namespace Aspose.Cli.Sdk.Serialization;
 [JsonSerializable(typeof(CapabilitiesResult))]
 [JsonSerializable(typeof(LicenseStatusResult))]
 [JsonSerializable(typeof(DoctorResult))]
+[JsonSerializable(typeof(VersionResult))]
 [JsonSerializable(typeof(SchemaListResult))]
 [JsonSerializable(typeof(UpdateResult))]
 [JsonSerializable(typeof(SkillInstallResult))]

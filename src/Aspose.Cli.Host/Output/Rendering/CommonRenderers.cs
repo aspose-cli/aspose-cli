@@ -100,6 +100,29 @@ internal static class CommonRenderers
         }
     }
 
+    public static void Render(VersionResult version, TableSurface surface)
+    {
+        surface.Out.WriteLine($"aspose-cli {version.CliVersion}");
+        if (version.ArtifactVersion is { } artifact)
+        {
+            surface.Out.WriteLine($"artifact: {artifact}");
+        }
+
+        surface.Out.WriteLine($"source:   {version.SourceRevision}");
+        surface.Out.WriteLine($"dirty:    {TableText.YesNo(version.BuildDirty)}");
+        if (version.EnginePins.Count > 0)
+        {
+            surface.Out.WriteLine();
+            var table = new TextTable("product", "engine", "version");
+            foreach (EnginePinCapabilities pin in version.EnginePins)
+            {
+                table.AddRow(pin.Product, pin.Engine, pin.Version);
+            }
+
+            table.WriteTo(surface.Out, surface.Format);
+        }
+    }
+
     public static void Render(DoctorResult doctor, TableSurface surface)
     {
         surface.Out.WriteLine(doctor.Ok ? "doctor: ready" : "doctor: not ready");

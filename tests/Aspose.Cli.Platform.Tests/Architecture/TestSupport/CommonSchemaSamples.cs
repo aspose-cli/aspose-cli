@@ -109,6 +109,15 @@ internal static class CommonSchemaSamples
         License = Evaluation,
     };
 
+    public static VersionResult Version { get; } = new()
+    {
+        CliVersion = "1.0.0",
+        ArtifactVersion = "1.0.0+0123456789abcdef0123456789abcdef01234567",
+        SourceRevision = "0123456789abcdef0123456789abcdef01234567",
+        BuildDirty = false,
+        EnginePins = Capabilities.EnginePins,
+    };
+
     public static LicenseStatusResult LicenseStatus { get; } = new()
     {
         Applicable = true,
@@ -262,6 +271,7 @@ internal static class CommonSchemaSamples
         new(App.Schema, App),
         new(LicenseStatus.Schema, LicenseStatus),
         new(Doctor.Schema, Doctor),
+        new(Version.Schema, Version),
         new(SchemaList.Schema, SchemaList),
         new(SkillInstall.Schema, SkillInstall),
         new(SkillList.Schema, SkillList),

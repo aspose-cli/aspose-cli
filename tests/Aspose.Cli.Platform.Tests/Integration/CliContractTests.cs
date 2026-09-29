@@ -5,7 +5,9 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.TestKit;
+using Json.Schema;
 using Xunit;
 
 namespace Aspose.Cli.IntegrationTests;
@@ -25,6 +27,68 @@ public sealed class CliContractTests : IDisposable
         Assert.Equal(0, result.ExitCode);
         Assert.False(string.IsNullOrWhiteSpace(result.StdOut));
         Assert.True(char.IsAsciiDigit(result.StdOut.TrimStart()[0]));
+        // Plain --version stays the parser's single text line, never a JSON envelope.
+        Assert.Matches(@"^[0-9][^\s]*?
+$", result.StdOut);
+        Assert.Equal(string.Empty, result.StdErr);
+    }
+
+    [Theory]
+    [InlineData("--version", "--output", "json")]
+    [InlineData("--output", "json", "--version")]
+    [InlineData("--version", "--output=json")]
+    [InlineData("-f", "json", "--version")]
+    public void VersionWithJsonOutput_ReportsTheCapabilitiesBuildIdentity(params string[] args)
+    {
+        CliResult plain = _workspace.Run("--version");
+        CliResult result = _workspace.Run(args);
+        CliResult capabilities = _workspace.Run("capabilities", "--output", "json");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal(string.Empty, result.StdErr);
+        AssertConformsTo(CommonSchemaIds.Version, result.StdOut);
+        JsonNode version = Parse(result.StdOut);
+        JsonNode expected = Parse(capabilities.StdOut);
+        foreach (string field in new[] { "cliVersion", "sourceRevision", "buildDirty", "enginePins" })
+        {
+            Assert.True(JsonNode.DeepEquals(expected[field], version[field]), field);
+        }
+        // Plain --version prints the artifact version; the result names it only when it differs.
+        string artifact = version["artifactVersion"]?.GetValue<string>()
+            ?? version["cliVersion"]!.GetValue<string>();
+        Assert.Equal(plain.StdOut.Trim(), artifact);
+    }
+
+    [Fact]
+    public void VersionWithCompactOrTableOutput_UsesTheOrdinaryResultWriter()
+    {
+        CliResult json = _workspace.Run("--version", "--output", "json");
+        CliResult compact = _workspace.Run("--version", "--output", "compact");
+        CliResult table = _workspace.Run("--version", "--output", "table");
+
+        Assert.Equal(0, compact.ExitCode);
+        Assert.Single(compact.StdOut.Split('\n', StringSplitOptions.RemoveEmptyEntries));
+        Assert.True(JsonNode.DeepEquals(Parse(json.StdOut), Parse(compact.StdOut)));
+        Assert.Equal(0, table.ExitCode);
+        Assert.StartsWith(
+            "aspose-cli " + Parse(json.StdOut)["cliVersion"]!.GetValue<string>(),
+            table.StdOut,
+            StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("--version", "--quiet")]
+    [InlineData("--version", "--output", "json", "--quiet")]
+    [InlineData("--version", "--output", "text")]
+    [InlineData("--version", "--output", "json", "--workdir", ".")]
+    [InlineData("--version", "--output", "json", "doctor")]
+    public void VersionWithAnotherOption_StaysAUsageError(params string[] args)
+    {
+        CliResult result = _workspace.Run(args);
+
+        Assert.Equal(2, result.ExitCode);
+        Assert.Equal(string.Empty, result.StdOut);
+        Assert.Equal("USAGE_ERROR", Parse(result.StdErr)["error"]!["code"]!.GetValue<string>());
     }
 
     [Fact]
@@ -558,6 +622,16 @@ public sealed class CliContractTests : IDisposable
             $"expected: {(line < expectedLines.Length ? expectedLines[line] : "<end of snapshot>")}\n" +
             $"actual:   {(line < actualLines.Length ? actualLines[line] : "<end of output>")}\n" +
             $"If the change is intended, set {UpdateSnapshotsVariable}=1, rerun and review the diff.");
+    }
+
+    private static void AssertConformsTo(string schemaId, string json)
+    {
+        JsonSchema schema = SchemaTestRegistry.CreateOptions().SchemaRegistry
+            .Get(new Uri(schemaId)) as JsonSchema
+            ?? throw new InvalidOperationException($"Schema {schemaId} is not registered.");
+        using JsonDocument document = JsonDocument.Parse(json);
+        EvaluationResults evaluation = schema.Evaluate(document.RootElement);
+        Assert.True(evaluation.IsValid, JsonSerializer.Serialize(evaluation));
     }
 
     private static JsonNode Parse(string json) =>

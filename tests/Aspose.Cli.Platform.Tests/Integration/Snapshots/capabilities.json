@@ -9295,6 +9295,7 @@
     "v2/common/skill-install",
     "v2/common/skill-list",
     "v2/common/update-result",
+    "v2/common/version",
     "v2/common/view",
     "v2/pdf/convert-result",
     "v2/pdf/edit-result",

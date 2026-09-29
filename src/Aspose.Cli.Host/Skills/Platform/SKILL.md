@@ -16,12 +16,15 @@ recipes.
 Run these once per session:
 
 ```powershell
-aspose-cli --version
+aspose-cli --version --output json
 aspose-cli doctor --output json
 aspose-cli license status --output json
 aspose-cli capabilities --output json
 ```
 
+- `--version --output json` reports `cliVersion`, `sourceRevision`,
+  `buildDirty` and each product's `enginePins`, the same values as
+  `capabilities`; plain `--version` prints only the version text.
 - `doctor` reports `ok` and one entry per check (`cli`, `runtime`,
   `resource-budgets`, `license`, `output`). A `license` check of `warn` means
   at least one product runs in evaluation mode.

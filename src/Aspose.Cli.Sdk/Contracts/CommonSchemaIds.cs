@@ -9,6 +9,7 @@ public static class CommonSchemaIds
     public const string Capabilities = DistributionInfo.SchemaBaseUri + "common/capabilities.schema.json";
     public const string LicenseStatus = DistributionInfo.SchemaBaseUri + "common/license-status.schema.json";
     public const string Doctor = DistributionInfo.SchemaBaseUri + "common/doctor.schema.json";
+    public const string Version = DistributionInfo.SchemaBaseUri + "common/version.schema.json";
     public const string SkillInstall = DistributionInfo.SchemaBaseUri + "common/skill-install.schema.json";
     public const string SkillList = DistributionInfo.SchemaBaseUri + "common/skill-list.schema.json";
     public const string FontList = DistributionInfo.SchemaBaseUri + "common/font-list.schema.json";
