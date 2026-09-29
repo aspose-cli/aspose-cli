@@ -26,6 +26,20 @@ code that handles it names the id in a comment. The CLI does not hide them
   result.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-COPY-NAME-SCOPE
+
+- **Defect:** `Worksheet.Copy` from another workbook, when the copied sheet uses a
+  workbook-level name that the destination also defines and the source's definition refers to
+  another sheet, adds the source's definition as a name scoped to the destination's first sheet.
+  Once saved, that sheet's own formulas read the added name instead of the workbook's, and the
+  copied sheet's formulas read the destination's definition.
+- **CLI behavior:** `import_sheet` refuses, with `OPS_INVALID`, a source that defines a
+  workbook-level name this workbook defines differently, unless the name refers only to the
+  imported sheet.
+- **Workaround:** rename or delete the name in one of the workbooks, or import the cells with
+  `import_range`.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ## Aspose.PDF.Drawing 26.8.0
 
 ### PDF-HTML-EGRESS

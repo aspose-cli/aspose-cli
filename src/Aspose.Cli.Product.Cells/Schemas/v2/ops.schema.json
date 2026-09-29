@@ -97,6 +97,12 @@
             "$ref": "#/$defs/group_rows"
           },
           {
+            "$ref": "#/$defs/import_range"
+          },
+          {
+            "$ref": "#/$defs/import_sheet"
+          },
+          {
             "$ref": "#/$defs/insert_columns"
           },
           {
@@ -1005,6 +1011,101 @@
           "description": "Whether the new group is collapsed.",
           "type": "boolean",
           "default": false
+        }
+      }
+    },
+    "import_range": {
+      "description": "Copies a range from another workbook file into this one at an anchor cell. The source is any file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file itself, read as it is on disk before the edit. A reference in an imported formula to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none.",
+      "type": "object",
+      "required": [
+        "op",
+        "path",
+        "from",
+        "to"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "import_range"
+        },
+        "sheet": {
+          "description": "The target sheet; the active sheet when omitted.",
+          "type": "string"
+        },
+        "path": {
+          "description": "The source workbook file, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "from": {
+          "description": "The source range; it may name a source sheet, such as Sheet1!A1:D20, and otherwise lies on the source's first sheet.",
+          "$ref": "#/$defs/reference"
+        },
+        "to": {
+          "description": "The destination anchor cell; it may name another sheet, such as Summary!A1.",
+          "$ref": "#/$defs/reference"
+        },
+        "content": {
+          "description": "What is imported: values writes the cell values, with formulas replaced by their results, and the number formats; all also keeps the formulas as written and the formatting, as copy_range does.",
+          "type": "string",
+          "enum": [
+            "values",
+            "all"
+          ],
+          "default": "values"
+        },
+        "passwordEnv": {
+          "description": "The environment variable that holds the source's open password, for an encrypted source.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      }
+    },
+    "import_sheet": {
+      "description": "Copies a whole sheet from another workbook file into this one as a new sheet, with its values, formulas, formatting, merged cells, column widths, tables, charts, pivot tables, comments, hyperlinks, validation and conditional formatting. The operation's sheet field names the source sheet; the source's first sheet when omitted. The source is only read and may be the edited file itself, read as it is on disk before the edit. A reference to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none, and the defined names the sheet refers to come along. A source that defines a workbook-level name this workbook also defines differently is refused unless the name refers only to the imported sheet.",
+      "type": "object",
+      "required": [
+        "op",
+        "path"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "import_sheet"
+        },
+        "sheet": {
+          "description": "The target sheet; the active sheet when omitted.",
+          "type": "string"
+        },
+        "path": {
+          "description": "The source workbook file, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        },
+        "name": {
+          "description": "The name of the new sheet; the source sheet's name when omitted. A name this workbook already uses is refused.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "position": {
+          "description": "The zero-based position of the new sheet; appended when omitted.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "passwordEnv": {
+          "description": "The environment variable that holds the source's open password, for an encrypted source.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
         }
       }
     },
