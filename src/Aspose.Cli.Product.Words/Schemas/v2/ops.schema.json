@@ -55,6 +55,9 @@
             "$ref": "#/$defs/delete_section"
           },
           {
+            "$ref": "#/$defs/format_table"
+          },
+          {
             "$ref": "#/$defs/format_text"
           },
           {
@@ -473,6 +476,69 @@
           "minimum": 1
         }
       }
+    },
+    "format_table": {
+      "description": "Sets how one table block breaks across pages; omitted settings keep their values. keepTogether true also stops rows breaking, so it cannot be combined with allowRowBreakAcrossPages true.",
+      "type": "object",
+      "required": [
+        "op",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "format_table"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "keepTogether": {
+          "description": "true keeps the whole table on one page when it fits: no row breaks across pages, and every paragraph keeps with the next except the last paragraph of each last-row cell. false clears keep-with-next on those same paragraphs and leaves the row setting.",
+          "type": "boolean"
+        },
+        "allowRowBreakAcrossPages": {
+          "description": "Whether the text of each row may split across a page break.",
+          "type": "boolean"
+        },
+        "headerRows": {
+          "description": "The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.",
+          "type": "integer",
+          "minimum": 0
+        },
+        "keepWithNext": {
+          "description": "Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.",
+          "type": "boolean"
+        }
+      },
+      "allOf": [
+        {
+          "anyOf": [
+            {
+              "required": [
+                "keepTogether"
+              ]
+            },
+            {
+              "required": [
+                "allowRowBreakAcrossPages"
+              ]
+            },
+            {
+              "required": [
+                "headerRows"
+              ]
+            },
+            {
+              "required": [
+                "keepWithNext"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "format_text": {
       "description": "Applies character formatting to the runs of target blocks; omitted settings keep their values.",

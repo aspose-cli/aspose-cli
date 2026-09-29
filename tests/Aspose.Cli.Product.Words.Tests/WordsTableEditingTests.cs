@@ -2,6 +2,7 @@ using System.Drawing;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
+using Aspose.Words.Layout;
 using Aspose.Words.Tables;
 using Xunit;
 
@@ -333,6 +334,151 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         }, new WordsEditRequest { OutputPath = output });
 
         Assert.Equal([code, name, "{{code}} USD"], CellTexts(FirstTable(new Document(output)))[1]);
+    }
+
+    [Fact]
+    public void FormatTable_KeepTogether_MovesATableThatStraddlesAPageOntoOnePage()
+    {
+        (string input, int tableBlock) = CreateStraddlingTable("keep-together.docx");
+        string output = _fixture.Temp.File("keep-together-changed.docx");
+        Assert.True(PageSpan(new Document(input)) is var (first, last) && first < last, "The fixture table must straddle a page break.");
+
+        WordsEditResult result = _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, KeepTogether = true }],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Assert.Equal(6, Assert.Single(result.Applied).ItemsAffected);
+        var changed = new Document(output);
+        (int start, int end) = PageSpan(changed);
+        Assert.Equal(start, end);
+        Table table = FirstTable(changed);
+        Assert.All(table.Rows.Cast<Row>(), static row => Assert.False(row.RowFormat.AllowBreakAcrossPages));
+        foreach (Row row in table.Rows.Cast<Row>())
+        {
+            foreach (Cell cell in row.Cells.Cast<Cell>())
+            {
+                Assert.Equal(!row.IsLastRow, cell.LastParagraph.ParagraphFormat.KeepWithNext);
+            }
+        }
+    }
+
+    [Fact]
+    public void FormatTable_SetsEachPropertyIndependently()
+    {
+        (string input, int tableBlock) = CreateStraddlingTable("format-table.docx");
+        string kept = _fixture.Temp.File("format-table-kept.docx");
+        string output = _fixture.Temp.File("format-table-changed.docx");
+        var at = new WordsTarget { Block = tableBlock };
+        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new FormatTableOp { At = at, KeepTogether = true, HeaderRows = 3 }],
+        }, new WordsEditRequest { OutputPath = kept });
+
+        WordsEditResult result = _fixture.Engine.ApplyOps(kept, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new FormatTableOp { At = at, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRows = 1 },
+                new FormatTableOp { At = at, KeepWithNext = true },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Assert.Equal([6L, 1L], result.Applied.Select(static applied => applied.ItemsAffected));
+        Table table = FirstTable(new Document(output));
+        Assert.Equal([true, false, false, false, false, false], table.Rows.Cast<Row>().Select(static row => row.RowFormat.HeadingFormat));
+        Assert.All(table.Rows.Cast<Row>(), static row => Assert.True(row.RowFormat.AllowBreakAcrossPages));
+        foreach (Row row in table.Rows.Cast<Row>())
+        {
+            // keepTogether false cleared the rows above; keepWithNext set the last row's cell ends.
+            Assert.All(row.Cells.Cast<Cell>(), cell => Assert.Equal(row.IsLastRow, cell.LastParagraph.ParagraphFormat.KeepWithNext));
+        }
+    }
+
+    [Fact]
+    public void FormatTable_RefusesTooManyHeaderRowsAndATargetThatIsNotATable()
+    {
+        (string input, int tableBlock) = CreateStraddlingTable("format-table-refused.docx");
+        string output = _fixture.Temp.File("format-table-refused-changed.docx");
+
+        CliException tooMany = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, HeaderRows = 7 }],
+        }, new WordsEditRequest { OutputPath = output }));
+        Assert.Equal(ErrorCodes.OpsInvalid, tooMany.Code);
+        Assert.Contains("headerRows 7 is more than the table's 6 rows", tooMany.Message, StringComparison.Ordinal);
+
+        CliException notTable = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new FormatTableOp { At = new WordsTarget { Block = 1 }, KeepTogether = true }],
+        }, new WordsEditRequest { OutputPath = output }));
+        Assert.Equal(ErrorCodes.OpsInvalid, notTable.Code);
+        Assert.Contains("format_table must target one table block", notTable.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public void FormatTable_CannotBeTracked()
+    {
+        (string input, int tableBlock) = CreateStraddlingTable("format-table-tracked.docx");
+
+        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, KeepTogether = true }],
+        }, new WordsEditRequest
+        {
+            OutputPath = _fixture.Temp.File("format-table-tracked-changed.docx"),
+            TrackChanges = true,
+            Author = "Editor",
+        }));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Contains("format_table", error.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Filler paragraphs, then a six-row table, then a closing paragraph; the filler grows until
+    /// the table's first and last rows lay out on different pages.
+    /// </summary>
+    private (string Path, int TableBlock) CreateStraddlingTable(string fileName)
+    {
+        string path = _fixture.Temp.File(fileName);
+        for (int filler = 20; filler < 80; filler++)
+        {
+            var document = new Document();
+            var builder = new DocumentBuilder(document);
+            for (int line = 0; line < filler; line++)
+            {
+                builder.Writeln($"Minutes line {line + 1}");
+            }
+
+            builder.StartTable();
+            for (int row = 0; row < 6; row++)
+            {
+                builder.InsertCell();
+                builder.Write($"Action {row + 1}");
+                builder.InsertCell();
+                builder.Write("Owner");
+                builder.EndRow();
+            }
+
+            builder.EndTable();
+            builder.Writeln("Next meeting");
+            if (PageSpan(document) is var (first, last) && first < last)
+            {
+                document.Save(path);
+                return (path, Assert.Single(_fixture.Engine.GetInfo(path, new DocumentInfoRequest { Details = ["tables"] }).Tables!).Block);
+            }
+        }
+
+        throw new InvalidOperationException("No filler length made the table straddle a page break.");
+    }
+
+    private static (int Start, int End) PageSpan(Document document)
+    {
+        Table table = FirstTable(document);
+        var layout = new LayoutCollector(document);
+        return (layout.GetStartPageIndex(table.FirstRow.FirstCell.FirstParagraph), layout.GetEndPageIndex(table.LastRow.LastCell.LastParagraph));
     }
 
     /// <summary>

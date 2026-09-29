@@ -243,6 +243,43 @@ public sealed record RepeatTableRowOp : WordsOp
     [InputPath] public string? Path { get; init; }
 }
 
+/// <summary>
+/// Sets how one table block breaks across pages; omitted settings keep their values.
+/// keepTogether true also stops rows breaking, so it cannot be combined with
+/// allowRowBreakAcrossPages true.
+/// </summary>
+[Operation("format_table")]
+[AtLeastOneOf("keepTogether", "allowRowBreakAcrossPages", "headerRows", "keepWithNext")]
+public sealed record FormatTableOp : WordsOp
+{
+    public required WordsTarget At { get; init; }
+
+    /// <summary>
+    /// true keeps the whole table on one page when it fits: no row breaks across pages, and
+    /// every paragraph keeps with the next except the last paragraph of each last-row cell.
+    /// false clears keep-with-next on those same paragraphs and leaves the row setting.
+    /// </summary>
+    public bool? KeepTogether { get; init; }
+
+    /// <summary>Whether the text of each row may split across a page break.</summary>
+    public bool? AllowRowBreakAcrossPages { get; init; }
+
+    /// <summary>The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.</summary>
+    [Minimum(0)] public int? HeaderRows { get; init; }
+
+    /// <summary>Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.</summary>
+    public bool? KeepWithNext { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        OperationInvalidException.Require(
+            KeepTogether is not true || AllowRowBreakAcrossPages is not true,
+            "keepTogether true stops rows breaking across pages and cannot be combined with allowRowBreakAcrossPages true");
+        return this;
+    }
+}
+
 /// <summary>Inserts and updates a table of contents.</summary>
 [Operation("insert_toc")]
 public sealed record InsertTocOp : WordsOp
@@ -572,6 +609,7 @@ public sealed record UpdateFieldsOp : WordsOp
 [JsonSerializable(typeof(DefineStyleOp))]
 [JsonSerializable(typeof(DeleteBlocksOp))]
 [JsonSerializable(typeof(DeleteSectionOp))]
+[JsonSerializable(typeof(FormatTableOp))]
 [JsonSerializable(typeof(FormatTextOp))]
 [JsonSerializable(typeof(InsertBookmarkOp))]
 [JsonSerializable(typeof(InsertBreakOp))]

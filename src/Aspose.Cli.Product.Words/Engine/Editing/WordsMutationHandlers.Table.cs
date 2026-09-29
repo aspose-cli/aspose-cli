@@ -218,6 +218,75 @@ internal sealed partial class WordsMutationHandlers
         }
     }
 
+    /// <summary>
+    /// Sets page-break behaviour through RowFormat and ParagraphFormat. Keeping a table together
+    /// follows the Aspose.Words guidance: rows do not break, and every paragraph keeps with the
+    /// next except the end-of-cell paragraphs of the last row, which keepWithNext owns.
+    /// </summary>
+    public long Apply(FormatTableOp operation)
+    {
+        if (Nodes.Count != 1 || Nodes[0] is not Table table)
+        {
+            throw Invalid("format_table must target one table block");
+        }
+
+        Row[] rows = table.Rows.Cast<Row>().ToArray();
+        if (operation.HeaderRows > rows.Length)
+        {
+            throw Invalid($"headerRows {operation.HeaderRows} is more than the table's {rows.Length} rows");
+        }
+
+        for (int index = 0; index < rows.Length; index++)
+        {
+            Row row = rows[index];
+            bool isLast = index == rows.Length - 1;
+            if (operation.KeepTogether is bool keepTogether)
+            {
+                if (keepTogether)
+                {
+                    row.RowFormat.AllowBreakAcrossPages = false;
+                }
+
+                foreach (Paragraph paragraph in row.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>())
+                {
+                    if (!(isLast && IsCellEnd(row, paragraph)))
+                    {
+                        paragraph.ParagraphFormat.KeepWithNext = keepTogether;
+                    }
+                }
+            }
+
+            if (operation.AllowRowBreakAcrossPages is bool allowBreak)
+            {
+                row.RowFormat.AllowBreakAcrossPages = allowBreak;
+            }
+
+            if (operation.HeaderRows is int headerRows)
+            {
+                row.RowFormat.HeadingFormat = index < headerRows;
+            }
+
+            if (isLast && operation.KeepWithNext is bool keepWithNext)
+            {
+                foreach (Cell cell in row.Cells)
+                {
+                    if (cell.LastParagraph is Paragraph end)
+                    {
+                        end.ParagraphFormat.KeepWithNext = keepWithNext;
+                    }
+                }
+            }
+        }
+
+        return operation.KeepTogether is null && operation.AllowRowBreakAcrossPages is null && operation.HeaderRows is null
+            ? 1
+            : rows.Length;
+
+        static bool IsCellEnd(Row row, Paragraph paragraph) => paragraph.ParentNode is Cell cell
+            && cell.ParentRow == row
+            && cell.LastParagraph == paragraph;
+    }
+
     public long Apply(ApplyListOp operation)
     {
         List list = _document.Lists.Add(operation.Kind == "bullet" ? ListTemplate.BulletDefault : ListTemplate.NumberDefault);

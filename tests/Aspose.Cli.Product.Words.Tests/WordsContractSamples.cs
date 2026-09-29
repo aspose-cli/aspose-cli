@@ -272,6 +272,13 @@ internal static class WordsContractSamples
                     new Dictionary<string, string> { ["code"] = "A-100", ["name"] = "Widget" },
                 ],
             },
+            new FormatTableOp
+            {
+                At = new WordsTarget { Block = 4 },
+                KeepTogether = true,
+                HeaderRows = 1,
+                KeepWithNext = true,
+            },
             new InsertTocOp
             {
                 At = new WordsTarget { Block = 1 },

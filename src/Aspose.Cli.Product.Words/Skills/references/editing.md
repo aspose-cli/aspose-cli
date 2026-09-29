@@ -74,7 +74,7 @@ aspose-cli schema v2/words/ops --operation insert_table
 | Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell), `repeat_table_row` (one copy of a `{{key}}` template row per item) |
 | Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field`, `insert_toc`, `insert_bookmark` (a paragraph's visible text), `append_document` |
 | Remove content | `delete_blocks` |
-| Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `apply_list` (one new bullet or numbered list), `set_default_font` |
+| Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `format_table` (how one table breaks across pages), `apply_list` (one new bullet or numbered list), `set_default_font` |
 | Sections and pages | `insert_break` (page break, or split the section), `add_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `add_watermark`, `remove_watermark` |
 | Review annotations | `add_comment`, `remove_comments`, `accept_revisions`, `reject_revisions` |
 | Fields and data | `update_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |
@@ -98,6 +98,31 @@ A table read with `query blocks` can be written back with its `rows`,
       "rows": 2, "columns": 2, "cells": [ [ "Metric", "Value" ], [ "Revenue", "120" ] ] }
   ]
 }
+```
+
+## Tables across pages
+
+`format_table` sets how the one table `at` addresses breaks across pages;
+omitted settings keep their values:
+
+- `keepTogether: true` keeps the whole table on one page when it fits: no row
+  splits, and every paragraph keeps with the next except the last paragraph of
+  each last-row cell. `false` clears keep-with-next on those same paragraphs
+  and leaves the row setting; pass `allowRowBreakAcrossPages: true` as well to
+  let rows split again. A table taller than a page still breaks.
+- `allowRowBreakAcrossPages` sets whether each row's text may split.
+- `headerRows` repeats the first N rows as a heading on every page the table
+  spans and clears the other rows; `0` clears all, and more than the table's
+  rows fails.
+- `keepWithNext` keeps the table on the page of the paragraph that follows it.
+  A caption or heading before the table stays with it through its own
+  paragraph style's keep-with-next setting, which heading styles usually have.
+
+`itemsAffected` counts the table's rows, or 1 when only `keepWithNext` is
+set. `--track-changes` cannot record it.
+
+```json
+{ "ops": [ { "op": "format_table", "at": { "find": "Action items" }, "keepTogether": true, "headerRows": 1 } ] }
 ```
 
 ## Headers, footers and page numbers
