@@ -1,5 +1,6 @@
 using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Serialization;
 
 namespace Aspose.Cli.Sdk.Operations;
 
@@ -16,8 +17,13 @@ internal static class OperationErrors
         hint: hint,
         details: new JsonObject { ["reason"] = reason });
 
-    /// <summary>Rejects one operation; <paramref name="name"/> is null when the entry names no known operation.</summary>
-    internal static CliException InvalidAt(int index, string? name, string reason, string hint, ErrorCode? cause = null)
+    /// <summary>
+    /// Rejects one operation; <paramref name="name"/> is null when the entry names no known
+    /// operation. An unknown field adds <c>allowedFields</c> and, when one is likely meant,
+    /// <c>suggestion</c>.
+    /// </summary>
+    internal static CliException InvalidAt(
+        int index, string? name, string reason, string hint, ErrorCode? cause = null, UnknownFieldException? field = null)
     {
         var details = new JsonObject { ["index"] = index };
         if (name is not null)
@@ -28,6 +34,14 @@ internal static class OperationErrors
         if (cause is not null)
         {
             details["cause"] = cause.Name;
+        }
+        if (field is not null)
+        {
+            details["allowedFields"] = new JsonArray([.. field.AllowedFields.Select(static item => (JsonNode)item)]);
+            if (field.Suggestion is not null)
+            {
+                details["suggestion"] = field.Suggestion;
+            }
         }
         string subject = name is null ? $"Operation {index}" : $"Operation {index} ({name})";
         return new CliException(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}", hint: hint, details: details);

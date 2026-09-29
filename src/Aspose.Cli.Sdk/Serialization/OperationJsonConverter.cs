@@ -4,13 +4,15 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Operations;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Serialization;
 
 /// <summary>
 /// The wire protocol of an operation vocabulary; declare it on the vocabulary's base record
 /// with <c>[JsonConverter(typeof(OperationJsonConverter&lt;TOp&gt;))]</c>. It reads the
-/// <c>op</c> discriminator, rejects unknown, null and duplicated members in wire terms, and
+/// <c>op</c> discriminator, rejects unknown, null and duplicated members in wire terms (an
+/// unknown member with the fields its object accepts and the closest one), and
 /// writes every omitted member that has a default before the payload is read, so the schema's
 /// <c>default</c> is exactly the value applied.
 /// </summary>
@@ -133,6 +135,11 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
 
             if (property is null)
             {
+                if (!(isOperation && member.NameEquals("id")))
+                {
+                    throw UnknownField(value, record, path, member.Name, isOperation);
+                }
+
                 member.WriteTo(writer);
                 continue;
             }
@@ -152,6 +159,26 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         }
 
         writer.WriteEndObject();
+    }
+
+    /// <summary>
+    /// Rejects a member the record does not declare, naming the fields the object accepts and
+    /// the one most likely meant: the closest name, or else the only required field missing.
+    /// </summary>
+    private static UnknownFieldException UnknownField(
+        JsonElement value, OperationRecord record, string path, string name, bool isOperation)
+    {
+        string[] allowed = [.. isOperation ? ["op", "id"] : Array.Empty<string>(),
+            .. record.Properties.Select(static property => property.Name)];
+        string[] missing = [.. record.Properties
+            .Where(property => property.Required && !value.TryGetProperty(property.Name, out _))
+            .Select(static property => property.Name)];
+        string? suggestion = NameSuggestions.Closest(name, allowed).FirstOrDefault()
+            ?? (missing.Length == 1 ? missing[0] : null);
+        string subject = isOperation ? record.Name : path;
+        string reason = $"unknown field '{Join(path, name)}'; {subject} accepts: {string.Join(", ", allowed)}"
+            + (suggestion is null ? string.Empty : $" (did you mean '{suggestion}'?)");
+        return new UnknownFieldException(reason, allowed, suggestion);
     }
 
     private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)

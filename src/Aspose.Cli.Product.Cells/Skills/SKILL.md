@@ -81,7 +81,10 @@ aspose-cli schema v2/cells/ops --operation format_range
   `--in-place --backup --verify` for the first edit of a file you did not
   create, and diff against `book.backup.xlsx` at the end.
 - Operations by task, ordering rules and recipes:
-  `aspose-cli docs cells/editing`.
+  `aspose-cli docs cells/editing`. Its Common operations batch shows the field
+  names most often guessed wrong: `rename_sheet` `to`, `move_sheet`
+  `position`, `resize_rows`/`resize_columns` `from`/`to`, `sort_range`
+  `by[].order` and `set_sheet_view` `gridlines`.
 
 ## Verifying
 

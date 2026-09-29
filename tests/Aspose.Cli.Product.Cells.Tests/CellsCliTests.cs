@@ -159,6 +159,32 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("      hint: ", edited.StdOut, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Edit_AnUnknownFieldNamesTheAcceptedFieldsAndTheLikelyOne()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+
+        CliResult renamed = _workspace.Run(
+            "cells", "edit", "book.xlsx", "--in-place", "--output", "json", "--ops",
+            """{"ops":[{"op":"rename_sheet","sheet":"Data","name":"Sales"}]}""");
+        CliResult sorted = _workspace.Run(
+            "cells", "edit", "book.xlsx", "--in-place", "--output", "json", "--ops",
+            """{"ops":[{"op":"sort_range","sheet":"Data","range":"A1:B4","by":[{"column":"A","direction":"desc"}]}]}""");
+
+        Assert.Equal(4, renamed.ExitCode);
+        JsonNode rename = JsonNode.Parse(renamed.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", rename["code"]!.GetValue<string>());
+        Assert.Equal("unknown field 'name'; rename_sheet accepts: op, id, sheet, to (did you mean 'to'?)",
+            rename["details"]!["reason"]!.GetValue<string>());
+        Assert.Equal(["op", "id", "sheet", "to"],
+            rename["details"]!["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal("to", rename["details"]!["suggestion"]!.GetValue<string>());
+        JsonNode sort = JsonNode.Parse(sorted.StdErr)!["error"]!["details"]!;
+        Assert.Equal("unknown field 'by[0].direction'; by[0] accepts: column, order",
+            sort["reason"]!.GetValue<string>());
+        Assert.Null(sort["suggestion"]);
+    }
+
     /// <summary>
     /// Every CLI child runs in evaluation mode, the only place Cells evaluation is tested:
     /// the in-process engine suite needs a license.

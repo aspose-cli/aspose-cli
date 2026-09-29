@@ -223,7 +223,8 @@ public sealed class OperationCatalog<TOp>
     {
         if (OperationIndex(rejection?.Path) is { } index)
         {
-            return OperationErrors.InvalidAt(index, KnownNameAt(root, index), rejection!.Message, DefaultHint);
+            return OperationErrors.InvalidAt(
+                index, KnownNameAt(root, index), rejection!.Message, DefaultHint, field: rejection as UnknownFieldException);
         }
 
         return Invalid(JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path));

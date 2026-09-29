@@ -54,8 +54,11 @@ A PDF batch, for example:
 
 - **Atomic (default).** If any operation fails, nothing is written. The error
   carries `details.index` (zero-based), `details.op` and, for validation
-  failures, `details.reason` (such as `unknown field 'style.shiny'`). Fix that
-  entry and run the whole batch again.
+  failures, `details.reason` (such as `unknown field 'style.shiny'; style
+  accepts: ...`). An unknown field also lists the fields its operation or
+  nested object accepts in `details.allowedFields` and, when one is likely
+  meant, names it in `details.suggestion`. Fix that entry and run the whole
+  batch again.
 - **`--best-effort`.** Successful operations are kept and saved; each failed
   entry in `applied[]` has `status: "failed"` and an `error` with `code`,
   `message`, `hint` and `details`. The command exits 8 when any operation
