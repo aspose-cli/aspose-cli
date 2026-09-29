@@ -1,7 +1,8 @@
 # Security Policy
 
-Report vulnerabilities privately through the repository host or the private contact published
-by Aspose. Name Aspose CLI, the affected revision and platform, and include a minimal synthetic
+Report vulnerabilities privately through
+[GitHub private vulnerability reporting](https://github.com/aspose-cli/aspose-cli/security/advisories/new),
+never in a public issue. Name the affected revision and platform, and include a minimal synthetic
 reproduction. Do not attach customer documents, passwords, tokens or license contents.
 
 ## Boundaries

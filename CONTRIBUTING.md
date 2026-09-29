@@ -147,3 +147,12 @@ mode: `ci.yml` runs the `Fast` scope and `package.ps1` for pushes to `master` an
 and `release.yml`, on a protected version tag, does the same and publishes the assets as a
 GitHub release of `aspose-cli/aspose-cli`, the repository named by `releaseRepository` in
 `eng/distribution.json`. Before pushing the tag, run the `Full` scope locally with a license.
+
+The workflows rely on these repository settings:
+
+- **Actions permissions** allow only actions created by GitHub and require them to be pinned to
+  a full-length commit SHA, so every `uses:` names a commit, with its tag in a comment.
+- **Workflow permissions** give `GITHUB_TOKEN` read access by default; `release.yml` asks for
+  `contents: write` in its one job.
+- **A tag ruleset** protects `v*`. `release.yml` runs only when `github.ref_protected` is true,
+  so a tag pushed without it builds nothing.

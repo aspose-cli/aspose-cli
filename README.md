@@ -118,6 +118,7 @@ after the CLI exits; a later `update` command reports a failed or unfinished run
 
 ## Development
 
-[CONTRIBUTING.md](CONTRIBUTING.md) covers building, testing and releasing;
+[CONTRIBUTING.md](CONTRIBUTING.md) covers building, testing and releasing, and
+`scripts/install-local.ps1` installs a development build from source;
 [AGENTS.md](AGENTS.md) holds the architecture rules; [SECURITY.md](SECURITY.md) explains how to
 report a vulnerability.
