@@ -18,6 +18,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     private readonly InputSource _inputs;
     private readonly InputResourceScope _operationInputs;
     private readonly IReadOnlyDictionary<string, string>? _secrets;
+    private readonly WordsRevisionTracking? _tracking;
 
     /// <summary>Creates the handlers of one resolved operation.</summary>
     /// <param name="loaded">The document being edited.</param>
@@ -26,13 +27,15 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     /// <param name="inputs">Reads the merge data and watermark images that operations read.</param>
     /// <param name="operationInputs">Opens and charges the images that operations insert.</param>
     /// <param name="secrets">The operations' secrets by environment variable name.</param>
+    /// <param name="tracking">The edit's revision tracking, or null when changes are not tracked.</param>
     internal WordsMutationHandlers(
         LoadedDocument loaded,
         ResolvedWordsOp resolved,
         WordsDocumentLoader loader,
         InputSource inputs,
         InputResourceScope operationInputs,
-        IReadOnlyDictionary<string, string>? secrets)
+        IReadOnlyDictionary<string, string>? secrets,
+        WordsRevisionTracking? tracking)
     {
         _loaded = loaded;
         _document = loaded.Document;
@@ -41,6 +44,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         _inputs = inputs;
         _operationInputs = operationInputs;
         _secrets = secrets;
+        _tracking = tracking;
     }
 
     /// <summary>The operation's target blocks.</summary>

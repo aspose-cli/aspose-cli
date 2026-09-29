@@ -37,8 +37,8 @@ aspose-cli schema v2/words/ops --operation insert_table
   shift to a different original section.
 - `--track-changes` requires `--author` and records content insertions and
   deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not
-  section breaks), `delete_blocks`, `set_table_cell`, `append_document`,
-  `add_comment` and `remove_comments`. Every other operation would change the
+  section breaks), `delete_blocks`, `set_table_cell`, `repeat_table_row`,
+  `append_document`, `add_comment` and `remove_comments`. Every other operation would change the
   document without a revision, so a tracked batch that contains one fails with
   `OPTION_INVALID` before anything changes; run it in a separate batch.
 
@@ -52,6 +52,18 @@ aspose-cli schema v2/words/ops --operation insert_table
   bookmark spanning several paragraphs becomes one paragraph.
 - `replace_text` changes the text a reader sees: field results but never field
   codes, and never text a tracked change deletes.
+- `repeat_table_row` expands a template row of the table `at` addresses (such
+  as `{"find":"{{code}}"}`): one copy per item, in order, in place of the
+  template row. Without `row`, the template is the table's one row with a
+  `{{key}}` placeholder (spaces inside the braces are allowed); pass the
+  1-based `row` when no row or several rows have one. Items come inline as
+  `items` or from `path` (a JSON array of flat objects, or CSV with a header
+  row); a null or missing CSV value is empty text. Each placeholder takes the
+  item's value as literal text in the placeholder's formatting, and the copies
+  keep the row's height, borders, shading and cell widths. An item without a
+  key for one of the row's placeholders fails the operation; extra keys are
+  ignored, and no items removes the template row. A tracked batch records
+  each copy as a row insertion and the template row as a deletion.
 - Inline Markdown loads local resources under the edited document's directory;
   remote and escaping resources are omitted and reported.
 
@@ -59,7 +71,7 @@ aspose-cli schema v2/words/ops --operation insert_table
 
 | Task | Operations |
 |---|---|
-| Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell) |
+| Change text | `replace_text` (literal or regex, by scope), `set_text` (paragraph or bookmark text), `set_table_cell` (one 1-based cell), `repeat_table_row` (one copy of a `{{key}}` template row per item) |
 | Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field`, `insert_toc`, `insert_bookmark` (a paragraph's visible text), `append_document` |
 | Remove content | `delete_blocks` |
 | Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `apply_list` (one new bullet or numbered list), `set_default_font` |

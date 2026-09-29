@@ -263,6 +263,15 @@ internal static class WordsContractSamples
                 Col = 2,
                 Text = "125",
             },
+            new RepeatTableRowOp
+            {
+                At = new WordsTarget { Find = "{{code}}" },
+                Row = 2,
+                Items =
+                [
+                    new Dictionary<string, string> { ["code"] = "A-100", ["name"] = "Widget" },
+                ],
+            },
             new InsertTocOp
             {
                 At = new WordsTarget { Block = 1 },

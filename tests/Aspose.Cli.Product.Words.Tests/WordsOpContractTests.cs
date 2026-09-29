@@ -29,6 +29,11 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"insert_hyperlink","at":{"block":1},"position":"after","text":"a","url":"file:///c:/a.txt"}""")]
     [InlineData("""{"op":"insert_hyperlink","at":{"block":1},"position":"after","text":"a","url":"javascript:alert(1)"}""")]
     [InlineData("""{"op":"append_document","path":" "}""")]
+    [InlineData("""{"op":"repeat_table_row","at":{"block":1}}""")]
+    [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[],"path":"items.csv"}""")]
+    [InlineData("""{"op":"repeat_table_row","at":{"block":1},"row":0,"items":[]}""")]
+    [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[{"code":null}]}""")]
+    [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[{"code":1}]}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -46,6 +51,9 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"mail_merge","inline":[{"Name":null}]}""")]
     [InlineData("""{"op":"add_section","position":"after","after":1}""")]
     [InlineData("""{"op":"add_section"}""")]
+    [InlineData("""{"op":"repeat_table_row","at":{"find":"{{code}}"},"items":[]}""")]
+    [InlineData("""{"op":"repeat_table_row","at":{"block":2},"row":2,"items":[{"code":"A-1","extra":""}]}""")]
+    [InlineData("""{"op":"repeat_table_row","at":{"block":2},"path":"items.csv"}""")]
     [InlineData("""{"op":"insert_hyperlink","at":{"block":1},"position":"after","text":"a","url":"https://example.com/a"}""")]
     [InlineData("""{"op":"insert_hyperlink","at":{"block":1},"position":"after","text":"a","url":"mailto:team@example.com"}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)

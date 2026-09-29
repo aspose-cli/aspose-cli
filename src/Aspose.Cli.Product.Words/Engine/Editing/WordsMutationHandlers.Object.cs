@@ -269,7 +269,9 @@ internal sealed partial class WordsMutationHandlers
             operation.Inline ?? ReadMergeRows(operation.Path!, _inputs);
         if (rows.Count == 0)
         {
-            throw MergeDataInvalid("merge data has no rows", MergeDataShape);
+            throw MergeDataInvalid(
+                "mail_merge needs at least one row",
+                "Supply a JSON array with at least one object, or a CSV file with a data row after its header.");
         }
 
         if (operation.Regions)
@@ -437,6 +439,10 @@ internal sealed partial class WordsMutationHandlers
         }
     }
 
+    /// <summary>
+    /// Reads merge rows, by column or property name, from a JSON array of flat objects or a CSV
+    /// file with a header row; a header row alone is no rows.
+    /// </summary>
     internal static IReadOnlyList<IReadOnlyDictionary<string, string?>> ReadMergeRows(
         string path,
         InputSource inputs)
@@ -449,9 +455,9 @@ internal sealed partial class WordsMutationHandlers
         if (Path.GetExtension(path).Equals(".csv", StringComparison.OrdinalIgnoreCase))
         {
             IReadOnlyList<string[]> lines = ReadCsv(inputs.ReadTextFile(path));
-            if (lines.Count < 2)
+            if (lines.Count == 0)
             {
-                throw MergeDataInvalid("CSV needs a header and at least one data row", MergeDataShape);
+                throw MergeDataInvalid("the CSV has no header row", MergeDataShape);
             }
 
             return lines.Skip(1).Select(row => (IReadOnlyDictionary<string, string?>)lines[0]

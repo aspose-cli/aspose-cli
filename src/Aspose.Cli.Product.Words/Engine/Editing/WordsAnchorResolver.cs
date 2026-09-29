@@ -160,6 +160,7 @@ internal static class WordsAnchorResolver
         InsertImageOp value => value.At,
         InsertTableOp value => value.At,
         SetTableCellOp value => value.At,
+        RepeatTableRowOp value => value.At,
         InsertTocOp value => value.At,
         InsertBookmarkOp value => value.At,
         InsertHyperlinkOp value => value.At,

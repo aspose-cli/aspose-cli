@@ -100,6 +100,9 @@
             "$ref": "#/$defs/remove_watermark"
           },
           {
+            "$ref": "#/$defs/repeat_table_row"
+          },
+          {
             "$ref": "#/$defs/replace_text"
           },
           {
@@ -970,6 +973,63 @@
           "const": "remove_watermark"
         }
       }
+    },
+    "repeat_table_row": {
+      "description": "Repeats one template row of a table block once per item, in order, and removes the template row. Each copy keeps the row's formatting and replaces every {{key}} placeholder with the item's value as literal text in the placeholder's formatting; an item without a key for one of the row's placeholders fails the operation.",
+      "type": "object",
+      "required": [
+        "op",
+        "at"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "repeat_table_row"
+        },
+        "at": {
+          "$ref": "#/$defs/wordsTarget"
+        },
+        "row": {
+          "description": "The 1-based template row; when omitted, the table's one row that contains a {{key}} placeholder.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "items": {
+          "description": "Placeholder values by key, one object per row copy; an empty list removes the template row.",
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": {
+              "type": "string"
+            }
+          }
+        },
+        "path": {
+          "description": "A JSON array of flat objects, or a CSV file with a header row, relative to the working directory.",
+          "type": "string",
+          "minLength": 1,
+          "pattern": "\\S"
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "items"
+              ]
+            },
+            {
+              "required": [
+                "path"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "replace_text": {
       "description": "Replaces literal or regular-expression text within a document scope.",

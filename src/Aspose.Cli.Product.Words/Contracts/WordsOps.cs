@@ -221,6 +221,28 @@ public sealed record SetTableCellOp : WordsOp
     public required string Text { get; init; }
 }
 
+/// <summary>
+/// Repeats one template row of a table block once per item, in order, and removes the template
+/// row. Each copy keeps the row's formatting and replaces every <c>{{key}}</c> placeholder with
+/// the item's value as literal text in the placeholder's formatting; an item without a key for
+/// one of the row's placeholders fails the operation.
+/// </summary>
+[Operation("repeat_table_row")]
+[ExactlyOneOf("items", "path")]
+public sealed record RepeatTableRowOp : WordsOp
+{
+    public required WordsTarget At { get; init; }
+
+    /// <summary>The 1-based template row; when omitted, the table's one row that contains a <c>{{key}}</c> placeholder.</summary>
+    [Minimum(1)] public int? Row { get; init; }
+
+    /// <summary>Placeholder values by key, one object per row copy; an empty list removes the template row.</summary>
+    public IReadOnlyList<IReadOnlyDictionary<string, string>>? Items { get; init; }
+
+    /// <summary>A JSON array of flat objects, or a CSV file with a header row, relative to the working directory.</summary>
+    [InputPath] public string? Path { get; init; }
+}
+
 /// <summary>Inserts and updates a table of contents.</summary>
 [Operation("insert_toc")]
 public sealed record InsertTocOp : WordsOp
@@ -565,6 +587,7 @@ public sealed record UpdateFieldsOp : WordsOp
 [JsonSerializable(typeof(RejectRevisionsOp))]
 [JsonSerializable(typeof(RemoveCommentsOp))]
 [JsonSerializable(typeof(RemoveWatermarkOp))]
+[JsonSerializable(typeof(RepeatTableRowOp))]
 [JsonSerializable(typeof(ReplaceTextOp))]
 [JsonSerializable(typeof(SetDefaultFontOp))]
 [JsonSerializable(typeof(SetFooterOp))]

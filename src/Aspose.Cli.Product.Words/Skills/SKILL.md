@@ -67,9 +67,22 @@ file, one line per paragraph. Windows, paging and compact output in general:
 
    Filling a template's `{{placeholder}}` text: `replace_text` covers only the
    body unless it names `"scope": "all"`, and templates often keep the contract
-   number or date in a header. Replace with `"scope": "all"`, then confirm
-   `words query search output.docx --pattern "{{" --scope all` finds nothing (the
-   pattern is literal unless `--regex`).
+   number or date in a header. A table with one template row for a list of
+   items, such as products, takes `repeat_table_row`: it copies that row per
+   item with its formatting and column widths, so never rebuild such a table
+   with `insert_table`.
+
+   ```json
+   {"ops":[
+     {"op":"replace_text","find":"{{contract_no}}","replace":"C-2026-014","scope":"all"},
+     {"op":"repeat_table_row","at":{"find":"{{code}}"},"items":[
+       {"code":"A-100","name":"Widget","qty":"2"},
+       {"code":"B-200","name":"Gadget","qty":"1"}]}
+   ]}
+   ```
+
+   Then confirm `words query search output.docx --pattern "{{" --scope all`
+   finds nothing (the pattern is literal unless `--regex`).
 
 4. **Verify:** read the changed blocks back, then review every page
    ([verification](references/verification.md)).
