@@ -1,10 +1,10 @@
 # Known issues
 
-Confirmed defects in the commercial Aspose SDKs this CLI runs on. Each is reproduced with a
-minimal SDK-only program by the acceptance gate of the same id, and the code that handles it
-names that id in a comment. The CLI does not hide them ([AGENTS.md](AGENTS.md)). A gate that
-still reproduces its defect lets a release proceed; one that no longer does blocks it until the
-issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#acceptance-gates)).
+Confirmed defects in the commercial Aspose SDKs this CLI runs on. Each is reproduced with the SDK
+alone by a test that names its id and passes while the pinned SDK still has the defect, and the
+code that handles it names the id in a comment. The CLI does not hide them
+([AGENTS.md](AGENTS.md)); how an SDK update retires them is in
+[CONTRIBUTING.md](CONTRIBUTING.md#known-sdk-issues).
 
 ## Aspose.Cells 26.9.0
 
@@ -16,7 +16,7 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
 - **CLI behavior:** `insert_image` refuses an SVG that names a network address, and a compressed
   SVG, with `FEATURE_UNSUPPORTED`.
 - **Workaround:** embed the SVG's images as `data:` URIs, or insert a raster image.
-- **Reproduction:** [tests/acceptance/cells-svg-egress](tests/acceptance/cells-svg-egress/README.md)
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ### CELLS-SPARKLINE-APOSTROPHE
 
@@ -24,7 +24,7 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
   `Invalid "'"` for a data range on a sheet whose name has an apostrophe, however it is quoted.
 - **CLI behavior:** none visible; `add_sparkline` builds the group from its parts, with the same
   result.
-- **Reproduction:** [tests/acceptance/cells-sparkline-apostrophe](tests/acceptance/cells-sparkline-apostrophe/README.md)
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
 ## Aspose.PDF.Drawing 26.8.0
 
@@ -42,7 +42,7 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
   address in `NETWORK_RESOURCES_REQUESTED`.
 - **Workaround:** keep resources beside the input and reference them by relative path, or
   convert HTML with `aspose-cli words convert`, which makes no network request.
-- **Reproduction:** [tests/acceptance/pdf-html-egress](tests/acceptance/pdf-html-egress/README.md)
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-MOVE-BOOKMARK
 
@@ -53,7 +53,7 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
   a destination with a coordinate of 0, which it leaves without a target and counts in
   `NAVIGATION_DEGRADED`.
 - **Workaround:** re-create the counted bookmarks and links with `add_bookmark` and `add_link`.
-- **Reproduction:** [tests/acceptance/pdf-page-navigation](tests/acceptance/pdf-page-navigation/README.md)
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
@@ -65,7 +65,7 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
 - **CLI behavior:** every edit, conversion and rendering of such a chart warns
   `CHART_TITLE_OVERLAID` with its slide.
 - **Workaround:** inspect those charts in PowerPoint and restore their title layout there.
-- **Reproduction:** [tests/acceptance/slides-sdk-fidelity](tests/acceptance/slides-sdk-fidelity/README.md)
+- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-CJK-FALLBACK
 
@@ -78,7 +78,7 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
   Traditional Chinese, otherwise Simplified Chinese); the engine uses the first installed one.
   The rules affect rendering only and are not saved.
 - **Workaround:** give the template's theme an East Asian font that has the glyphs.
-- **Reproduction:** [tests/acceptance/slides-cjk-fallback](tests/acceptance/slides-cjk-fallback/README.md)
+- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-FALLBACK-STDOUT
 
@@ -86,7 +86,7 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
   `Updating of Inner rules` to `Console.Out`.
 - **CLI behavior:** none visible; every Slides engine call runs with `Console.Out` muted, so the
   JSON result and the render worker's messages stay intact.
-- **Reproduction:** [tests/acceptance/slides-fallback-stdout](tests/acceptance/slides-fallback-stdout/README.md)
+- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-FONT-REGISTRY
 
@@ -96,4 +96,4 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
 - **CLI behavior:** a Slides command that uses fonts fails with `FEATURE_UNSUPPORTED`, naming each
   such value, before the engine starts.
 - **Workaround:** remove the named values; Windows writes only string values there.
-- **Reproduction:** [tests/acceptance/slides-font-registry](tests/acceptance/slides-font-registry/README.md)
+- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)

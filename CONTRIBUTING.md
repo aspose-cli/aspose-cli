@@ -38,7 +38,7 @@ one of three scopes:
 | --- | --- | --- |
 | `Fast` (default) | Every test without a category | While you work; a few minutes |
 | `Affected` | `Fast`, plus every test of the projects your change reaches since the merge base with `-Base` (default `master`) | Before a commit |
-| `Full` | Every test with a required license, then the [acceptance gates](#acceptance-gates) | Before a release |
+| `Full` | Every test, with a required license | Before a release and after an SDK update |
 
 A test that takes several seconds by nature carries `[Category(TestCategory.Slow)]`; the
 installer and Playwright tests carry `Installer` and `Browser`. The run lists every test without a
@@ -72,17 +72,18 @@ $env:ASPOSE_CLI_TEST_LICENSE_PATH = 'C:\private\Aspose.Total.lic'
 .\scripts\test.ps1 -Configuration Release -Scope Full
 ```
 
-### Acceptance gates
+### Known SDK issues
 
-Each issue in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) has a gate of the same id under
-`tests/acceptance`, listed in `eng/acceptance-gates.json`, whose `reproduce.ps1` exits 1 while the
-defect is present, 0 once it is gone and 2 when it could not run. `scripts/acceptance.ps1` runs
-them against the built CLI with licensed SDKs (set `ASPOSE_LICENSE_PATH` or the variable each
-gate's README names; the `Full` test scope passes its test license); `-Plan` only checks that the
-gates and the `### <id>` headings of KNOWN-ISSUES.md match one to one. A gate that still
-reproduces its defect passes the release; one that no longer does, or cannot run, blocks it.
-After an SDK update, run the gates and, for each that exits 0, search the id and delete the
-issue's section, the code that names it and the gate.
+Each issue in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) is reproduced with the SDK alone by a test in its
+product's `<Product>KnownIssueTests` class that calls `KnownIssue.Reproduces` with the issue's id.
+The test passes while the pinned SDK still has the defect. `KnownIssueCatalogTests` keeps the
+file true: every issue has one reproduction, source code that names its id, and a heading with
+the SDK version `eng/products.json` pins.
+
+To update an SDK, change its version in `eng/products.json`, run `scripts/sync.ps1` and the
+`Full` scope. For each reproduction that now fails, the SDK fixed the defect: search its id and
+delete the issue's section, the code that names it and the test. Then update the version in the
+issue headings.
 
 ## Code conventions
 

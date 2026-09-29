@@ -12,8 +12,8 @@ the fast feedback loop:
   tests, documentation adds nothing, and any other change (build inputs, eng/, scripts/) runs
   everything. Changes are read against the merge base with -Base, including uncommitted and
   untracked files.
-- Full runs every test with a required license, then the SDK acceptance gates. Run it before a
-  release.
+- Full runs every test with a required license, including the reproductions of the SDK defects
+  in KNOWN-ISSUES.md. Run it before a release and after an SDK update.
 
 Test projects run at the same time, each with its log beside its TRX result. Prerequisites are
 checked first: PowerShell 7.4 (tests start pwsh.exe from PATH), and only when the scope needs
@@ -347,22 +347,6 @@ if ($unmarkedSlow.Count -ne 0) {
     Write-Warning "$($unmarkedSlow.Count) test(s) without a category ran longer than $slowTestSeconds s; speed them up or mark them [Category(TestCategory.Slow)]:"
     foreach ($test in $unmarkedSlow | Sort-Object Seconds -Descending) {
         Write-Host ('  [{0}] {1}: {2:n1} s' -f $test.Project, $test.Name, $test.Seconds)
-    }
-}
-
-if ($Scope -eq 'Full') {
-    # The gates load the licensed SDKs directly; they use the run's test license unless one is set.
-    $gateLicense = $env:ASPOSE_LICENSE_PATH
-    if ([string]::IsNullOrWhiteSpace($gateLicense)) { $env:ASPOSE_LICENSE_PATH = $licensePath }
-    try {
-        & (Join-Path $PSScriptRoot 'acceptance.ps1') -Configuration $Configuration
-    }
-    catch {
-        Write-Host $_.Exception.Message
-        $failures += 'acceptance gates block the release'
-    }
-    finally {
-        $env:ASPOSE_LICENSE_PATH = $gateLicense
     }
 }
 
