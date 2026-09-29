@@ -43,6 +43,22 @@
       }
     },
     {
+      "id": "SLIDES-CJK-FALLBACK",
+      "directory": "tests/acceptance/slides-cjk-fallback",
+      "arguments": {
+        "SdkAssembly": "{buildOutput}/Aspose.Slides.dll",
+        "OutputDirectory": "{output}"
+      }
+    },
+    {
+      "id": "SLIDES-FALLBACK-STDOUT",
+      "directory": "tests/acceptance/slides-fallback-stdout",
+      "arguments": {
+        "SdkAssembly": "{buildOutput}/Aspose.Slides.dll",
+        "OutputDirectory": "{output}"
+      }
+    },
+    {
       "id": "SLIDES-CHART-TITLE",
       "directory": "tests/acceptance/slides-sdk-fidelity",
       "arguments": {

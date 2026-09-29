@@ -67,6 +67,27 @@ issue, its handling and its gate are deleted ([CONTRIBUTING.md](CONTRIBUTING.md#
 - **Workaround:** inspect those charts in PowerPoint and restore their title layout there.
 - **Reproduction:** [tests/acceptance/slides-sdk-fidelity](tests/acceptance/slides-sdk-fidelity/README.md)
 
+### SLIDES-CJK-FALLBACK
+
+- **Defect:** when a run's font has no glyph for a Chinese, Japanese or Korean character, the
+  engine picks a fallback font per glyph and alternates between Japanese and Chinese fonts inside
+  one word (MS Gothic and SimSun on Windows), so rendered and exported text mixes stroke weights.
+  PowerPoint draws the run in one East Asian font.
+- **CLI behavior:** every loaded presentation gets fallback rules for the CJK ranges that name the
+  fonts of its script (kana: Japanese, Hangul: Korean, a Traditional Chinese language tag:
+  Traditional Chinese, otherwise Simplified Chinese); the engine uses the first installed one.
+  The rules affect rendering only and are not saved.
+- **Workaround:** give the template's theme an East Asian font that has the glyphs.
+- **Reproduction:** [tests/acceptance/slides-cjk-fallback](tests/acceptance/slides-cjk-fallback/README.md)
+
+### SLIDES-FALLBACK-STDOUT
+
+- **Defect:** every rendering or export that uses a font fallback rule writes
+  `Updating of Inner rules` to `Console.Out`.
+- **CLI behavior:** none visible; every Slides engine call runs with `Console.Out` muted, so the
+  JSON result and the render worker's messages stay intact.
+- **Reproduction:** [tests/acceptance/slides-fallback-stdout](tests/acceptance/slides-fallback-stdout/README.md)
+
 ### SLIDES-FONT-REGISTRY
 
 - **Defect:** font initialization casts every value under

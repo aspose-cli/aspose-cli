@@ -25,8 +25,9 @@ internal sealed class SlidesPresentationLoader(
         using Stream stream = typeof(SlidesPresentationLoader).Assembly.GetManifestResourceStream(DefaultTemplateResource)
             ?? throw new InvalidOperationException($"The built-in resource {DefaultTemplateResource} is missing.");
         var resources = SlidesResourcePolicy.DenyAll();
-        return new LoadedPresentation(
-            new Presentation(stream, new LoadOptions { ResourceLoadingCallback = resources }), "pptx", resources);
+        var presentation = new Presentation(stream, new LoadOptions { ResourceLoadingCallback = resources });
+        SlidesCjkFallback.Apply(presentation);
+        return new LoadedPresentation(presentation, "pptx", resources);
     }
 
     private const string DefaultTemplateResource = "Templates/default-16x9.pptx";
@@ -88,6 +89,7 @@ internal sealed class SlidesPresentationLoader(
                 resources.Dispose();
                 throw;
             }
+            SlidesCjkFallback.Apply(presentation);
             return new LoadedPresentation(presentation, format, resources)
             {
                 ImplicitTitleCharts = ImplicitTitleCharts(presentation),

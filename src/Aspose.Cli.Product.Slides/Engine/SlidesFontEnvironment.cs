@@ -85,7 +85,11 @@ internal sealed class SlidesFontEnvironment : IFontEnvironment
     }
 
     /// <inheritdoc />
-    public FontCheckResult CheckFonts(string filePath, FontCheckRequest request)
+    // Loading and laying out run with standard output muted (known issue SLIDES-FALLBACK-STDOUT).
+    public FontCheckResult CheckFonts(string filePath, FontCheckRequest request) =>
+        SlidesStandardOutput.Muted(() => CheckFontsCore(filePath, request));
+
+    private FontCheckResult CheckFontsCore(string filePath, FontCheckRequest request)
     {
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPresentation loaded = _loader.Open(filePath, request.Password);
