@@ -29,6 +29,20 @@ public sealed class NetworkReferenceGuardTests
         Assert.Equal(ErrorCodes.FeatureUnsupported, refused.Code);
     }
 
+    [Fact]
+    public void EnsureNone_QuotesTheAddressAloneAndNamesTheCallersOptIn()
+    {
+        byte[] markup = Encoding.UTF8.GetBytes(
+            "<link rel=\"stylesheet\" href=\"https://cdn.example.test/theme.css\"></head><body><h1>一次性医用手套</h1>");
+
+        CliException refused = Assert.Throws<CliException>(() =>
+            NetworkReferenceGuard.EnsureNone(markup, "HTML input", "input.html", optIn: "--allow-network-resources"));
+
+        Assert.Contains("('https://cdn.example.test/theme.css')", refused.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("<h1>", refused.Message, StringComparison.Ordinal);
+        Assert.Contains("--allow-network-resources", refused.Hint, StringComparison.Ordinal);
+    }
+
     // Script computes addresses no static scan can see, so any script refuses the markup.
     [Theory]
     [InlineData("<script>var i = new Image(); i.src = 'ht' + 'tp:/' + '/example.test/a.png';</script>")]

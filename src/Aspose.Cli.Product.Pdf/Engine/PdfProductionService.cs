@@ -640,7 +640,8 @@ internal sealed class PdfProductionService
         // first unless the caller allowed it. Markdown is checked with its local references.
         if (request.HtmlPath is { } html && !request.AllowNetworkResources)
         {
-            NetworkReferenceGuard.EnsureNone(resourceBudgets.Inputs.ReadAllBytes(html), "HTML input", html);
+            NetworkReferenceGuard.EnsureNone(
+                resourceBudgets.Inputs.ReadAllBytes(html), "HTML input", html, optIn: "--allow-network-resources");
         }
 
         foreach (string image in request.ImagePaths ?? [])

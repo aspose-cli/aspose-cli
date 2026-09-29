@@ -59,7 +59,12 @@ public static class NetworkReferenceGuard
     /// Throws <c>FEATURE_UNSUPPORTED</c> when markup such as HTML, Markdown, CSS or SVG names a
     /// network address, contains script, or is compressed.
     /// </summary>
-    public static void EnsureNone(byte[] content, string kind, string path)
+    /// <param name="content">The markup's bytes.</param>
+    /// <param name="kind">What the markup is, for the message.</param>
+    /// <param name="path">The markup's file, for the message.</param>
+    /// <param name="optIn">The caller's option that lets the engine fetch trusted input's
+    /// addresses, named in the hint; null when the caller has none.</param>
+    public static void EnsureNone(byte[] content, string kind, string path, string? optIn = null)
     {
         ArgumentNullException.ThrowIfNull(content);
         if (IsCompressed(content))
@@ -95,8 +100,9 @@ public static class NetworkReferenceGuard
             {
                 throw new CliException(
                     ErrorCodes.FeatureUnsupported,
-                    $"The {kind} names a network address ('{Excerpt(scanned, match.Index)}'), which the document engine would request before the CLI's resource policy applies: {path}.",
-                    hint: $"Remove every network address from the {kind}, including hyperlinks and addresses in text, or save the resources beside it and reference them by relative path.");
+                    $"The {kind} names a network address ('{Address(scanned, match.Index)}'), which the document engine would request before the CLI's resource policy applies: {path}.",
+                    hint: $"Remove every network address from the {kind}, including hyperlinks and addresses in text, or save the resources beside it and reference them by relative path."
+                        + (optIn is null ? string.Empty : $" If you trust the {kind}, {optIn} lets the engine fetch its addresses and lists every one."));
             }
         }
     }
@@ -170,6 +176,20 @@ public static class NetworkReferenceGuard
 
     private static string Excerpt(string text, int index) =>
         text.Substring(index, Math.Min(80, text.Length - index));
+
+    // The address alone: it ends where markup, text or a character outside ASCII begins. The
+    // markup is decoded as Latin-1, so anything beyond ASCII would be shown garbled.
+    private static string Address(string text, int index)
+    {
+        int end = index;
+        while (end < text.Length && end - index < 200
+            && text[end] is > ' ' and < '\u007F' and not ('"' or '\'' or '<' or '>' or '(' or ')' or '`'))
+        {
+            end++;
+        }
+
+        return text[index..end];
+    }
 
     // Markup starts with '<' after an optional byte order mark, whitespace and, for unmarked
     // UTF-16, NUL bytes. No raster image format starts that way.
