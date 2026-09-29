@@ -18,6 +18,9 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     /// </summary>
     internal Warning? EvaluationSheetSkipped { get; init; }
 
+    /// <summary>True when the input was imported as delimited text (CSV, TSV), not opened as a workbook.</summary>
+    internal bool IsDelimitedText { get; init; }
+
     internal IReadOnlyList<Warning>? Warnings(params Warning?[] additional)
     {
         Warning[] warnings = new[] { Resources.CoverageWarning, CalculatedOnOpen, EvaluationSheetSkipped }.Concat(additional).OfType<Warning>().ToArray();

@@ -33,6 +33,9 @@ internal static class CellsDiagnostics
     /// <summary>The input's active sheet is an evaluation warning sheet, so defaults use another sheet.</summary>
     internal const string EvaluationSheetSkipped = "EVALUATION_SHEET_SKIPPED";
 
+    /// <summary>A delimited text input has a preamble before its header, empty rows or a total row.</summary>
+    internal const string TextTableLayout = "TEXT_TABLE_LAYOUT";
+
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         Error(SheetNotFound),
@@ -54,6 +57,7 @@ internal static class CellsDiagnostics
         Warning(MhtmlResourceCoverageUnverified),
         Warning(EvaluationSheetAdded),
         Warning(EvaluationSheetSkipped),
+        Warning(TextTableLayout),
     ];
 
     private static DiagnosticDescriptor Error(ErrorCode code) =>

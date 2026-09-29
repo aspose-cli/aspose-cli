@@ -34,6 +34,26 @@ to workbooks.
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
 | `EVALUATION_SHEET_ADDED` | An evaluation save added the warning sheet `location` names and made it the active sheet in place of the one the message names; see below. |
 | `EVALUATION_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, so this command used the sheet the message names wherever it defaults to the active sheet; see below. |
+| `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes (`1:2`: the header is the row after them), empty rows lie inside the table, or a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`). The rows are imported as they are; see below. |
+
+## Text tables that do not start at row 1
+
+ERP and report exports often write a title and a query-condition row before
+the header, leave an empty row between groups and end with a total row. The
+CSV import keeps every row, so `cells inspect` and `cells convert` warn
+`TEXT_TABLE_LAYOUT` for each finding, and each hint names the ranges to use:
+
+- Read the header row the message names with
+  `cells query range <file> --range A3:F3`, and start data ranges, formulas and
+  sorts on the row after it.
+- Give sorts, filters and charts the whole table range rather than a range
+  that stops at an empty row, or remove empty rows in the converted workbook
+  with `delete_rows`; the rows below them move up, so inspect again.
+- End sums and data ranges before the total row, for example `=SUM(C4:C19)`,
+  and keep it out of sorts, pivots and charts.
+
+The check reads the first 10,000 rows and the last rows of a longer sheet; a
+message says when empty rows were looked for only in the first 10,000.
 
 ## Evaluation mode in workbooks
 

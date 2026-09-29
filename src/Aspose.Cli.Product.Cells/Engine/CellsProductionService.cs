@@ -58,6 +58,8 @@ internal sealed class CellsProductionService
         // Capture before saving: Workbook.FileFormat mutates to the target
         // format once the workbook is saved.
         SourceInfo input = BuildSource(filePath, workbook);
+        // The imported rows come over as they are; say which of them are not table data.
+        IReadOnlyList<Warning> textLayout = TextTableLayout.Warnings(loaded, _resourceBudgets);
 
         SaveFormat saveFormat = FormatMapper.ToSaveFormat(request.TargetFormatId);
         string? resolvedSheetName = null;
@@ -127,7 +129,7 @@ internal sealed class CellsProductionService
             },
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen, loaded.EvaluationSheetSkipped, sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded),
+            Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen, loaded.EvaluationSheetSkipped, sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, .. textLayout]),
         };
     }
 

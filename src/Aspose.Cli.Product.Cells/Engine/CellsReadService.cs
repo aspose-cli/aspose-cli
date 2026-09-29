@@ -48,7 +48,7 @@ internal sealed class CellsReadService
             License = EnvelopeParts.License(licenseState),
             // Info is read-only, so no evaluation watermark — but an honest count
             // that outran its capped list is a condition the caller must see.
-            Warnings = loaded.Warnings(errorsTruncated),
+            Warnings = loaded.Warnings([errorsTruncated, .. TextTableLayout.Warnings(loaded, _resourceBudgets)]),
         };
     }
 

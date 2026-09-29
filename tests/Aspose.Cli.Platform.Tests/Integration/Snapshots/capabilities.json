@@ -18967,6 +18967,15 @@
       "detailsSchemaId": "v2/common/not-found-details"
     },
     {
+      "code": "TEXT_TABLE_LAYOUT",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.text-table-layout.message.v1",
+      "hintTemplateId": "cells.text-table-layout.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "TRACKED_CHANGES_PRESENT",
       "owner": "words",
       "severity": "warning",

@@ -54,6 +54,10 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output json
   `FORMAT_AMBIGUOUS` for decimal commas (`1.234,56`). Import it once with
   `cells convert data.csv --to xlsx --encoding gb18030` or `--culture de-DE`, as
   the hint says, and work on the workbook.
+- `cells inspect` and `cells convert` warn `TEXT_TABLE_LAYOUT` when a CSV or
+  TSV is not a plain table from row 1: title or query-condition rows before the
+  header, empty rows inside the table, or a total row (`合计`, `Total`) at its
+  end. Take the header row and data rows from the message, not from row 1.
 
 ## Editing
 

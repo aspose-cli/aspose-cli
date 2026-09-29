@@ -103,7 +103,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             Warning? calculated = calculateOnOpen ? CellsOpenCalculation.Apply(workbook, resourceBudgets) : null;
             Warning? skipped = published ? null : CellsEvaluation.SkipActiveWarningSheet(workbook);
             transferred = true;
-            return new LoadedWorkbook(workbook, resources, plan.Encrypted) { CalculatedOnOpen = calculated, EvaluationSheetSkipped = skipped };
+            return new LoadedWorkbook(workbook, resources, plan.Encrypted) { CalculatedOnOpen = calculated, EvaluationSheetSkipped = skipped, IsDelimitedText = plan.Separator is not null };
         }
         catch (Exception exception) when (exception is not CliException and not OperationCanceledException)
         {

@@ -17,6 +17,13 @@ aspose-cli review report.xlsx --out report.review --output json
 aspose-cli cells convert report.xlsx --to pdf --sheet sales --overwrite --output json
 ```
 
+This CSV is a plain table: its header is row 1 and step 1 reports no
+`TEXT_TABLE_LAYOUT` warning. An export with a title or query-condition rows
+before the header, empty rows or a trailing total row gets one such warning per
+finding; shift the ranges in `ops.json` to the header and data rows the
+messages name, and end sums before the total row
+(`aspose-cli docs cells/troubleshooting`).
+
 Auto-fitting columns calculates the batch's formulas first, so widths account
 for the formatted totals.
 
