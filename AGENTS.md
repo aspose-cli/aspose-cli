@@ -49,14 +49,15 @@ the fixed distribution identity; the generated projections and the solution come
   multi-step task gets `plans/<branch>.md` with its goal, acceptance, what is out of scope and
   how it is verified. Knowledge that must last goes into this file, KNOWN-ISSUES.md or the pull
   request, not into these notes.
-- Work in the repository's one checkout, without extra worktrees; one session changes it at a
-  time. One task is one branch from the latest `master`, named as
+- Work in the repository's single checkout, without extra worktrees; one session changes it at
+  a time. One task is one branch from the latest `master`, named as
   [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) requires, with its own pull request, opened
-  as soon as that task passes. Commit the current work before switching branches; a pushed
-  branch waits for CI while the next task starts. A task that needs another unmerged task
-  waits for its merge, or branches from it and is rebased on `master` once it merges.
-- Subagents never change the checkout at the same time: one implements at a time, and
-  reviewers only read.
+  as soon as that task passes. Switch branches only after committing the current work and while
+  no test run is in progress; a pushed branch waits for CI while the next task starts. A task
+  that needs another unmerged task waits for its merge, or branches from it and is rebased on
+  `master` once it merges.
+- While a subagent implements, nothing else changes the checkout; it commits on the task
+  branch, and reviewers only read.
 - Before opening the pull request, a reviewer in a fresh context checks the diff for
   correctness, scope, weakened or deleted tests, a code change's test plan without a licensed
   `Affected` run, and dead code or stale docs the change left;
