@@ -312,7 +312,7 @@ function Read-Trx {
 
 # App tests share the per-user App endpoint, so this account's test runs, from any worktree, run
 # one at a time; the build above is not serialized. Windows releases the mutex if a run dies.
-$runLock = [Threading.Mutex]::new($false, "Global\aspose-cli-test-run-$([Environment]::UserName)")
+$runLock = [Threading.Mutex]::new($false, "Global\$($layout.Identity.id)-test-run-$([Environment]::UserName)")
 try {
     if (-not $runLock.WaitOne(0)) {
         Write-Host 'WAIT another test run of this Windows account is in progress.'
