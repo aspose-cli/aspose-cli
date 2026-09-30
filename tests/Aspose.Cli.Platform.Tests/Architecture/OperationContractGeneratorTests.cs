@@ -96,6 +96,7 @@ public sealed class OperationContractGeneratorTests
                 public virtual string? Title { get; init; }
                 public virtual string? Name { get; init; }
                 public virtual string? Label { get; init; }
+                public virtual string? Code { get; init; }
             }
 
             [Operation("restate")]
@@ -106,6 +107,7 @@ public sealed class OperationContractGeneratorTests
                 [MinLength(1)] public override string? Title { get; init; }
                 public override string? Name { get; init; } = "none";
                 public required override string? Label { get; init; }
+                public override string? Code { get => "fixed"; init { } }
             }
 
             [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase)]
@@ -116,13 +118,14 @@ public sealed class OperationContractGeneratorTests
         (string Message, string At)[] reported = [.. result.Diagnostics
             .Where(static diagnostic => diagnostic.Id == "APCLI012" && diagnostic.Severity == DiagnosticSeverity.Error)
             .Select(static diagnostic => (diagnostic.GetMessage(), diagnostic.Location.SourceTree!.GetText().ToString(diagnostic.Location.SourceSpan)))];
-        const string Restates = "an override restates only the summary; declare constraints on the base member";
+        const string Restates = "an override restates only the summary; state the rest on the base member";
         Assert.Contains(reported, static item => item.Message.Contains("'RestateOp.Title': " + Restates, StringComparison.Ordinal) && item.At == "Title");
         Assert.Contains(reported, static item => item.Message.Contains("'RestateOp.Name': " + Restates, StringComparison.Ordinal) && item.At == "Name");
         Assert.Contains(reported, static item => item.Message.Contains("'RestateOp.Label': " + Restates, StringComparison.Ordinal) && item.At == "Label");
+        Assert.Contains(reported, static item => item.Message.Contains("'RestateOp.Code': " + Restates, StringComparison.Ordinal) && item.At == "Code");
         // A summary is documentation, not a constraint, so restating it stays valid.
         Assert.DoesNotContain(reported, static item => item.At == "Sheet");
-        Assert.Equal(3, reported.Length);
+        Assert.Equal(4, reported.Length);
     }
 
     [Fact]
