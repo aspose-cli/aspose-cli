@@ -281,6 +281,30 @@ internal sealed class VocabularyWriter(
             && property.DeclaredAccessibility == Accessibility.Public && property.GetMethod is not null
             && property.OverriddenProperty is null));
 
+    /// <summary>
+    /// A member's summary as the record states it: an override of the member in the record's
+    /// chain restates what the member means for that record, and the most derived one wins.
+    /// </summary>
+    private static string? Summary(INamedTypeSymbol owner, IPropertySymbol property) =>
+        Chain(owner).Reverse()
+            .SelectMany(current => current.GetMembers(property.Name).OfType<IPropertySymbol>())
+            .Where(candidate => Overrides(candidate, property))
+            .Select(DocumentationText.Summary)
+            .FirstOrDefault(static text => text is not null);
+
+    private static bool Overrides(IPropertySymbol candidate, IPropertySymbol property)
+    {
+        for (IPropertySymbol? current = candidate; current is not null; current = current.OverriddenProperty)
+        {
+            if (SymbolEqualityComparer.Default.Equals(current, property))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private Member? Describe(INamedTypeSymbol owner, IPropertySymbol property, bool isOperation)
     {
         if (property.DeclaringSyntaxReferences.FirstOrDefault()?.GetSyntax() is not PropertyDeclarationSyntax declaration)
@@ -303,7 +327,7 @@ internal sealed class VocabularyWriter(
         string wire = CamelCase(property.Name);
         bool nullable = property.NullableAnnotation == NullableAnnotation.Annotated;
         var code = new StringBuilder("new() { Name = ").Append(Literal(wire));
-        if (DocumentationText.Summary(property) is { } description)
+        if (Summary(owner, property) is { } description)
         {
             code.Append(", Description = ").Append(Literal(description));
         }

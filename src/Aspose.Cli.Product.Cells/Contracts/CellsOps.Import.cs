@@ -51,8 +51,7 @@ public static class ImportContents
 /// <summary>
 /// Copies a whole sheet from another workbook file into this one as a new sheet, with its values,
 /// formulas, formatting, merged cells, column widths, tables, charts, pivot tables, comments,
-/// hyperlinks, validation and conditional formatting. The operation's sheet field names the
-/// source sheet; the source's first sheet when omitted. The source is only read and may be the
+/// hyperlinks, validation and conditional formatting. The source is only read and may be the
 /// edited file itself, read as it is on disk before the edit. A reference to another sheet of the
 /// source points at the sheet of that name in this workbook, or becomes #REF! when this workbook
 /// has none, and the defined names the sheet refers to come along. A source that defines a
@@ -62,6 +61,9 @@ public static class ImportContents
 [Operation("import_sheet")]
 public sealed record ImportSheetOp : CellsOp
 {
+    /// <summary>The source sheet to copy, in the source workbook; the source's first sheet when omitted.</summary>
+    public override string? Sheet { get; init; }
+
     /// <summary>The source workbook file, relative to the working directory.</summary>
     [InputPath, Pattern(@"\S")] public required string Path { get; init; }
 

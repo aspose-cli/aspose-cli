@@ -35,6 +35,8 @@ public sealed class OperationContractGeneratorTests
                 [InputPath] public string? Path { get; init; }
                 public bool All { get; init; }
                 [AllowedValues(typeof(Modes))] public string? Pace { get; init; }
+                /// <summary>The target sheet.</summary>
+                public virtual string? Sheet { get; init; }
             }
 
             /// <summary>Moves <c>pages</c>
@@ -42,6 +44,8 @@ public sealed class OperationContractGeneratorTests
             [Operation("move")]
             public sealed record MoveOp : TargetOp
             {
+                /// <summary>The source sheet.</summary>
+                public override string? Sheet { get; init; }
                 [AllowedValues(typeof(Modes))] public string Mode { get; init; } = Modes.Fast;
                 public uint Count { get; init; }
                 public IReadOnlyList<string> Tags { get; init; } = new string[0];
@@ -63,6 +67,10 @@ public sealed class OperationContractGeneratorTests
         Assert.True(
             source.IndexOf("Name = \"path\"", StringComparison.Ordinal) < source.IndexOf("Name = \"mode\"", StringComparison.Ordinal),
             "Inherited members must precede the operation's own members.");
+        // An override restates the inherited member's text for its record, in the member's place.
+        Assert.Contains("Name = \"sheet\", Description = \"The source sheet.\"", source, StringComparison.Ordinal);
+        Assert.DoesNotContain("The target sheet.", source, StringComparison.Ordinal);
+        Assert.Equal(1, source.Split("Name = \"sheet\"").Length - 1);
         Assert.Contains("Constraints = [new global::Aspose.Cli.Sdk.Operations.ExactlyOneOfAttribute(new string[] { (string)\"path\", (string)\"all\" })]", source, StringComparison.Ordinal);
         Assert.Contains("AllowedValuesAttribute(new object[] { \"fast\", \"slow\" })", source, StringComparison.Ordinal);
         Assert.Contains("Name = \"count\", Value = new() { Kind = global::Aspose.Cli.Sdk.Operations.OperationValueKind.Integer }, Default = \"0\", Constraints = [new global::Aspose.Cli.Sdk.Operations.MinimumAttribute(0)]", source, StringComparison.Ordinal);
