@@ -160,6 +160,11 @@ internal sealed class VocabularyWriter(
     private (string Code, IReadOnlyList<IPropertySymbol> Properties) Record(INamedTypeSymbol type, string name, bool isOperation)
     {
         Records.UnionWith(Chain(type));
+        foreach (IPropertySymbol property in ConstrainedOverrides(type))
+        {
+            Invalid(property, "an override restates only the summary; state the rest on the base member");
+        }
+
         var members = new List<Member>();
         foreach (IPropertySymbol property in Properties(type))
         {
@@ -280,6 +285,22 @@ internal sealed class VocabularyWriter(
             !property.IsStatic && !property.IsIndexer && !property.IsImplicitlyDeclared
             && property.DeclaredAccessibility == Accessibility.Public && property.GetMethod is not null
             && property.OverriddenProperty is null));
+
+    /// <summary>
+    /// Overrides in the record's chain that state more than a summary. A member is described from
+    /// its base declaration, so an attribute, an initializer, an accessor body or an added 'required'
+    /// on an override would be neither enforced nor in the schema. A 'new' member is not an override; it is
+    /// described on its own and collides with the base member's wire name.
+    /// </summary>
+    private static IEnumerable<IPropertySymbol> ConstrainedOverrides(INamedTypeSymbol type) =>
+        Chain(type).SelectMany(static current => current.GetMembers().OfType<IPropertySymbol>().Where(static property =>
+            property.OverriddenProperty is { } overridden
+            && (property.GetAttributes().Length > 0
+                || property.IsRequired != overridden.IsRequired
+                || property.DeclaringSyntaxReferences.Any(static reference =>
+                    reference.GetSyntax() is PropertyDeclarationSyntax syntax
+                    && (syntax.Initializer is not null || syntax.ExpressionBody is not null
+                        || syntax.AccessorList?.Accessors.Any(static accessor => accessor.Body is not null || accessor.ExpressionBody is not null) == true)))));
 
     /// <summary>
     /// A member's summary as the record states it: an override of the member in the record's
