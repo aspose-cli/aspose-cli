@@ -278,7 +278,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
             JavaScriptEnabled = javaScriptEnabled,
         });
         IPage page = await context.NewPageAsync();
-        page.SetDefaultTimeout(30_000);
+        page.SetDefaultTimeout(BrowserApp.Bound);
         var failures = new List<string>();
         page.PageError += (_, error) => failures.Add("Script error: " + error);
         page.Request += (_, request) =>
