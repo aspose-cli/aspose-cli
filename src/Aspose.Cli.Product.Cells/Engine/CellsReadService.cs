@@ -73,7 +73,7 @@ internal sealed class CellsReadService
             // command, keeping the engine free of CLI syntax.
             Window = window,
             License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings(),
+            Warnings = loaded.Warnings(loaded.SkippedSheetWarning(request.SheetName is null)),
         };
     }
 }

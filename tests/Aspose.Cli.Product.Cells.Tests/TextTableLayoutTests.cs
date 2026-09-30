@@ -72,6 +72,23 @@ public sealed class TextTableLayoutTests : IDisposable
     }
 
     [Fact]
+    public void Detect_TakesAHeaderNarrowerThanItsDataRowsForTheHeader()
+    {
+        Assert.Empty(TextTableLayout.Detect(Shapes((2, "Name"), (5, "Ann"), (5, "Bob")), []));
+    }
+
+    [Fact]
+    public void Detect_StartsTheTableAtANarrowHeaderAfterATitle()
+    {
+        TextTableFinding finding = Assert.Single(TextTableLayout.Detect(
+            Shapes((1, "Staff"), (2, "Name"), (5, "Ann"), (5, "Bob")), []));
+
+        Assert.Equal(TextTableFindingKind.Preamble, finding.Kind);
+        Assert.Equal(1, finding.HeaderRow);
+        Assert.Equal([0], finding.Rows);
+    }
+
+    [Fact]
     public void Detect_ReportsNoPreambleForASingleColumn()
     {
         Assert.Empty(TextTableLayout.Detect(Shapes((1, "Name"), (1, "Ann"), (1, "Bob")), []));
@@ -107,6 +124,14 @@ public sealed class TextTableLayoutTests : IDisposable
         File.WriteAllText(_workspace.File("clean.csv"), "Region,Sales\nIT,5\nES,7\n");
 
         Assert.Empty(LayoutWarnings(_workspace.Run("cells", "inspect", "clean.csv", "--output", "json").Json()));
+    }
+
+    [Fact]
+    public void Inspect_ReportsNoPreambleForAHeaderNarrowerThanItsDataRows()
+    {
+        File.WriteAllText(_workspace.File("unnamed.csv"), "Name,Amount\nAnn,5,a,b,c\nBob,7,d,e,f\n");
+
+        Assert.Empty(LayoutWarnings(_workspace.Run("cells", "inspect", "unnamed.csv", "--output", "json").Json()));
     }
 
     public void Dispose() => _workspace.Dispose();

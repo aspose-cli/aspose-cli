@@ -19,7 +19,8 @@ internal static partial class CellsEvaluation
     /// When the unlicensed engine opened a workbook whose active sheet is an evaluation warning
     /// sheet, activates the first other sheet in memory, preferring a visible one, so every
     /// command that defaults to the active sheet reads the workbook's content, and returns the
-    /// warning that says so. The file is not changed.
+    /// warning such a command reports (<see cref="LoadedWorkbook.SkippedSheetWarning"/>). The file
+    /// is not changed.
     /// </summary>
     internal static Warning? SkipActiveWarningSheet(Workbook workbook)
     {
@@ -40,7 +41,7 @@ internal static partial class CellsEvaluation
         return new Warning
         {
             Code = CellsDiagnostics.EvaluationSheetSkipped,
-            Message = $"The active sheet '{skipped}' is the evaluation warning sheet Aspose.Cells evaluation mode added when it saved this workbook, so this command uses '{replacement.Name}' wherever it defaults to the active sheet.",
+            Message = $"The active sheet '{skipped}' is the evaluation warning sheet Aspose.Cells evaluation mode added when it saved this workbook, so this command, which names no sheet, uses '{replacement.Name}' in its place.",
             Hint = "Pass --sheet (or an operation's \"sheet\") to choose any sheet; names come from inspect.",
             Docs = "cells/troubleshooting",
             Location = skipped,

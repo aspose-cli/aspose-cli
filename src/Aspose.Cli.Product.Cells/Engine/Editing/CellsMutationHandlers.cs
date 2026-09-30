@@ -67,7 +67,14 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
         _ => false,
     };
 
-    private Worksheet Sheet(CellsOp op) => Sheets.Resolve(_workbook, op);
+    /// <summary>True once an operation that names no sheet was applied to the active sheet.</summary>
+    internal bool DefaultedToActiveSheet { get; private set; }
+
+    private Worksheet Sheet(CellsOp op)
+    {
+        DefaultedToActiveSheet |= op.Sheet is null;
+        return Sheets.Resolve(_workbook, op);
+    }
 
     public long? Apply(AddCommentOp operation) => CommentOps.AddComment(Sheet(operation), operation);
 

@@ -221,7 +221,8 @@ public sealed class CellsCliTests : IDisposable
 
     /// <summary>
     /// An evaluation save adds a warning sheet and activates it; the save says so, and later
-    /// commands that default to the active sheet use the workbook's first sheet and say so.
+    /// commands that default to the active sheet use the workbook's first sheet and say so, while
+    /// commands that name their sheet or cover every sheet do not.
     /// </summary>
     [Category(TestCategory.Slow)]
     [Fact]
@@ -240,27 +241,34 @@ public sealed class CellsCliTests : IDisposable
         JsonNode added = Warning(edited, "EVALUATION_SHEET_ADDED");
         Assert.Equal("Evaluation Warning (1)", added["location"]!.GetValue<string>());
         Assert.Contains("in place of 'Two'", added["message"]!.GetValue<string>(), StringComparison.Ordinal);
-        Assert.Equal("Evaluation Warning", Warning(edited, "EVALUATION_SHEET_SKIPPED")["location"]!.GetValue<string>());
+        // Every operation named its sheet, so nothing defaulted to the active sheet.
+        AssertNoSkippedSheet(edited);
 
         JsonNode read = Json(_workspace.Run("cells", "query", "range", "book.xlsx", "--output", "json"));
         JsonNode rendered = Json(_workspace.Run("cells", "render", "book.xlsx", "--out", "book.png", "--output", "json"));
+        JsonNode renderedAll = Json(_workspace.Run("cells", "render", "book.xlsx", "--all-sheets", "--out", "all.png", "--output", "json"));
         JsonNode csv = Json(_workspace.Run("cells", "convert", "book.xlsx", "--to", "csv", "--out", "book.csv", "--output", "json"));
         JsonNode pdf = Json(_workspace.Run("cells", "convert", "book.xlsx", "--to", "pdf", "--out", "book.pdf", "--output", "json"));
         JsonNode chosen = Json(_workspace.Run("cells", "query", "range", "book.xlsx", "--sheet", "Two", "--output", "json"));
         JsonNode chosenPdf = Json(_workspace.Run("cells", "convert", "book.xlsx", "--to", "pdf", "--sheet", "Two", "--out", "two.pdf", "--output", "json"));
 
         Assert.Equal("One", read["sheet"]!["name"]!.GetValue<string>());
-        Assert.Contains("uses 'One'", Warning(read, "EVALUATION_SHEET_SKIPPED")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        JsonNode skipped = Warning(read, "EVALUATION_SHEET_SKIPPED");
+        Assert.Equal("Evaluation Warning (1)", skipped["location"]!.GetValue<string>());
+        Assert.Contains("uses 'One'", skipped["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Equal("One", rendered["sheet"]!.GetValue<string>());
         _ = Warning(rendered, "EVALUATION_SHEET_SKIPPED");
+        AssertNoSkippedSheet(renderedAll);
         Assert.StartsWith("one", File.ReadAllText(_workspace.File("book.csv")), StringComparison.Ordinal);
         _ = Warning(csv, "EVALUATION_SHEET_SKIPPED");
         _ = Warning(csv, "EVAL_MODE");
-        _ = Warning(pdf, "EVALUATION_SHEET_SKIPPED");
+        AssertNoSkippedSheet(pdf);
         Assert.True(new FileInfo(_workspace.File("book.pdf")).Length > 0);
         Assert.Equal("Two", chosen["sheet"]!["name"]!.GetValue<string>());
         Assert.Equal("two", chosen["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
+        AssertNoSkippedSheet(chosen);
         Assert.Equal("Two", chosenPdf["sheet"]!.GetValue<string>());
+        AssertNoSkippedSheet(chosenPdf);
 
         static JsonNode Json(CliResult result)
         {
@@ -270,6 +278,10 @@ public sealed class CellsCliTests : IDisposable
 
         static JsonNode Warning(JsonNode result, string code) =>
             Assert.Single(result["warnings"]!.AsArray(), warning => warning!["code"]!.GetValue<string>() == code)!;
+
+        static void AssertNoSkippedSheet(JsonNode result) =>
+            Assert.DoesNotContain(result["warnings"]?.AsArray() ?? [],
+                static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_SHEET_SKIPPED");
     }
 
     [Fact]
