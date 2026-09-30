@@ -236,7 +236,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
                     View = "pages",
                     SourceFormat = "test",
                     SourceSizeBytes = 1,
-                    TotalParts = parts.Length,
+                    TotalPartCount = parts.Length,
                     Parts = parts,
                 };
             },
@@ -364,5 +364,5 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
     }
 
     private static string Position(string noun, int index, JsonNode view) =>
-        $"{noun} {index + 1} of {view["totalParts"]!.GetValue<int>()}";
+        $"{noun} {index + 1} of {view["totalPartCount"]!.GetValue<int>()}";
 }

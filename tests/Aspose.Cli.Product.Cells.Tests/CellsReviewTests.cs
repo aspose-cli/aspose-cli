@@ -20,7 +20,7 @@ public sealed class CellsReviewTests
         var request = new ViewRenderRequest
         {
             View = CellsViews.Sheets,
-            MaxParts = 10,
+            MaxPartCount = 10,
             Purpose = ViewPurpose.Evidence,
         };
         var sink = new MemoryArtifactSink();

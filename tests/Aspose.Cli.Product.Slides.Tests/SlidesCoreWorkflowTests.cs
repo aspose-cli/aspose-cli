@@ -34,7 +34,7 @@ public sealed class SlidesCoreWorkflowTests
             new ViewRenderRequest
             {
                 View = SlidesViews.Slides,
-                MaxParts = 8,
+                MaxPartCount = 8,
                 Purpose = ViewPurpose.Display,
                 Password = password,
             },
@@ -43,7 +43,7 @@ public sealed class SlidesCoreWorkflowTests
         Assert.Equal(SlidesViews.Slides, manifest.View);
         Assert.Equal("pptx", manifest.SourceFormat);
         Assert.Equal(new FileInfo(input).Length, manifest.SourceSizeBytes);
-        Assert.Equal(2, manifest.TotalParts);
+        Assert.Equal(2, manifest.TotalPartCount);
         // The evaluation watermark carries the SDK's truncation marker, so evaluation discloses possible truncation.
         string[] expected = fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed
             ? []

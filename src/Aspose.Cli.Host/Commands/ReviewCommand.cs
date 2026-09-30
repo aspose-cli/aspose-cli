@@ -115,7 +115,7 @@ internal static class ReviewCommand
             var request = new ViewRenderRequest
             {
                 View = selectedView,
-                MaxParts = maximum,
+                MaxPartCount = maximum,
                 Purpose = ViewPurpose.Evidence,
                 Password = invocation.InputPassword,
             };

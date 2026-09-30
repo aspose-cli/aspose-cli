@@ -27,23 +27,23 @@ public sealed class OperationCatalog<TOp>
     /// wire names. Only generated code calls this constructor.
     /// </summary>
     /// <param name="schemaId">Canonical schema identifier of the operation document.</param>
-    /// <param name="maximumOperations">Largest accepted number of operations in one document.</param>
+    /// <param name="maximumOperationCount">Largest accepted number of operations in one document.</param>
     /// <param name="description">The vocabulary's description, published on the schema.</param>
     /// <param name="contracts">Source-generated JSON metadata for every operation record.</param>
     /// <param name="operations">The operation descriptors.</param>
     public OperationCatalog(
         string schemaId,
-        int maximumOperations,
+        int maximumOperationCount,
         string? description,
         IJsonTypeInfoResolver contracts,
         IReadOnlyList<OperationDescriptor> operations)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(schemaId);
-        ArgumentOutOfRangeException.ThrowIfLessThan(maximumOperations, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(maximumOperationCount, 1);
         ArgumentNullException.ThrowIfNull(contracts);
         ArgumentNullException.ThrowIfNull(operations);
         SchemaId = schemaId;
-        MaximumOperations = maximumOperations;
+        MaximumOperationCount = maximumOperationCount;
         Contracts = contracts;
         string relative = schemaId.StartsWith(DistributionInfo.SchemaBaseUri, StringComparison.Ordinal)
             ? schemaId[DistributionInfo.SchemaBaseUri.Length..]
@@ -66,14 +66,14 @@ public sealed class OperationCatalog<TOp>
 
         Names = [.. ordered.Select(static operation => operation.Record.Name)];
         OperationRecord[] records = [.. ordered.Select(static operation => operation.Record)];
-        _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, MaximumOperations, description, records), Names);
+        _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, MaximumOperationCount, description, records), Names);
     }
 
     /// <summary>Canonical schema identifier of the operation document.</summary>
     public string SchemaId { get; }
 
     /// <summary>Largest accepted number of operations in one document.</summary>
-    public int MaximumOperations { get; }
+    public int MaximumOperationCount { get; }
 
     /// <summary>Wire names in published order.</summary>
     public IReadOnlyList<string> Names { get; }
@@ -99,7 +99,7 @@ public sealed class OperationCatalog<TOp>
                 Command = command,
                 InputSchema = SchemaCommandId,
                 OperationSchema = $"{DistributionInfo.CommandName} schema {SchemaCommandId} --operation <op>",
-                MaximumOperations = MaximumOperations,
+                MaximumOperationCount = MaximumOperationCount,
                 Ops = Names,
                 Schema = _schema,
             });
@@ -149,9 +149,9 @@ public sealed class OperationCatalog<TOp>
     {
         ArgumentNullException.ThrowIfNull(batch);
         BoundedOperationValidation.ValidateEnvelope(batch, SchemaId, Invalid);
-        if (batch.Ops.Count < 1 || batch.Ops.Count > MaximumOperations)
+        if (batch.Ops.Count < 1 || batch.Ops.Count > MaximumOperationCount)
         {
-            throw Invalid($"the ops array must contain 1-{MaximumOperations} operations");
+            throw Invalid($"the ops array must contain 1-{MaximumOperationCount} operations");
         }
 
         IReadOnlyList<TOp> identified = BoundedOperationIds.Assign(

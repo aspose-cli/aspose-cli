@@ -124,7 +124,7 @@ internal static class ReviewEvidenceWriter
         LicenseState license,
         IReadOnlyList<string>? codes)
     {
-        int expected = manifest.TotalParts;
+        int expected = manifest.TotalPartCount;
         int rendered = manifest.Parts.Count;
         int omitted = expected - rendered;
         ReviewArtifact[] artifacts =
@@ -179,13 +179,13 @@ internal static class ReviewEvidenceWriter
             VisualInspectionRequired = visualInspectionRequired,
             Coverage = new ReviewCoverage
             {
-                MaxItems = maxItems,
-                DiscoveredItems = expected,
-                ReportedItems = rendered,
+                MaxItemCount = maxItems,
+                DiscoveredItemCount = expected,
+                ReportedItemCount = rendered,
                 Truncated = omitted > 0,
-                ExpectedItems = expected,
-                RenderedItems = rendered,
-                OmittedItems = omitted,
+                ExpectedItemCount = expected,
+                RenderedItemCount = rendered,
+                OmittedItemCount = omitted,
                 Complete = omitted == 0 && assessment.Complete
                     && !(warnings?.Any(static warning => warning.AffectsCompleteness) ?? false),
                 Metrics = assessment.Coverage ?? [],
@@ -195,7 +195,7 @@ internal static class ReviewEvidenceWriter
             Filter = codes is null ? null : new ReviewFilter
             {
                 Codes = codes,
-                OmittedFindings = findings.Count - reported.Count,
+                OmittedFindingCount = findings.Count - reported.Count,
             },
             License = EnvelopeParts.License(license),
             Warnings = warnings,

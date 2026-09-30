@@ -68,7 +68,7 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
         var sink = new MemoryArtifactSink();
         ViewManifest manifest = _fixture.Engine.RenderView(
             path,
-            new ViewRenderRequest { View = CellsViews.Sheets, MaxParts = 8, Purpose = ViewPurpose.Evidence },
+            new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 8, Purpose = ViewPurpose.Evidence },
             sink);
 
         Assert.Equal(["Detail", "Summary"], manifest.Parts.Select(static part => part.Id));

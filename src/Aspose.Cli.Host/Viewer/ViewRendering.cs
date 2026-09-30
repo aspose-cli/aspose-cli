@@ -17,7 +17,7 @@ internal static class ViewRendering
     public static ViewManifest Render(
         Func<IViewArtifactSink, ViewManifest> render,
         string directory,
-        int maxParts,
+        int maxPartCount,
         LocalServiceResourceLimits limits)
     {
         ArgumentNullException.ThrowIfNull(render);
@@ -27,7 +27,7 @@ internal static class ViewRendering
         var sink = new BoundedViewArtifactSink(directory, limits);
         ViewManifest manifest = render(sink);
         sink.EnsureComplete();
-        ViewManifestValidator.Validate(manifest, maxParts);
+        ViewManifestValidator.Validate(manifest, maxPartCount);
         EnsureNamedFilesOnly(manifest, directory);
         return manifest with
         {

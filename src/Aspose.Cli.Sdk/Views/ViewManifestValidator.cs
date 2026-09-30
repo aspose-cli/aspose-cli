@@ -12,13 +12,13 @@ public static partial class ViewManifestValidator
     /// Validates part identity, file names, kinds, layout sizes and element
     /// bounds; throws <see cref="InvalidOperationException"/> naming the first violation.
     /// </summary>
-    public static void Validate(ViewManifest manifest, int maxParts)
+    public static void Validate(ViewManifest manifest, int maxPartCount)
     {
         ArgumentNullException.ThrowIfNull(manifest);
-        if (manifest.Parts.Count > maxParts || manifest.TotalParts < manifest.Parts.Count)
+        if (manifest.Parts.Count > maxPartCount || manifest.TotalPartCount < manifest.Parts.Count)
         {
             throw Invalid(
-                $"reported {manifest.Parts.Count} of {manifest.TotalParts} parts with a bound of {maxParts}");
+                $"reported {manifest.Parts.Count} of {manifest.TotalPartCount} parts with a bound of {maxPartCount}");
         }
 
         var ids = new HashSet<string>(StringComparer.Ordinal);

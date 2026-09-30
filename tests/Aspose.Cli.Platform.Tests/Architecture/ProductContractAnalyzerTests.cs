@@ -350,7 +350,7 @@ public sealed class ProductContractAnalyzerTests
                         View = "document",
                         SourceFormat = "test",
                         SourceSizeBytes = 0,
-                        TotalParts = 0,
+                        TotalPartCount = 0,
                         Parts = System.Array.Empty<Aspose.Cli.Sdk.Views.ViewPart>(),
                     };
                 public ProductReviewAssessment Assess(

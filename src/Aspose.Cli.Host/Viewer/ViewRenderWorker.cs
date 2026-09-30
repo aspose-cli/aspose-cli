@@ -106,7 +106,7 @@ internal static class ViewRenderWorker
             var render = new ViewRenderRequest
             {
                 View = request.View ?? views.LiveView,
-                MaxParts = request.MaxParts,
+                MaxPartCount = request.MaxPartCount,
                 Purpose = ViewPurpose.Display,
                 Password = request.Password,
             };
@@ -115,7 +115,7 @@ internal static class ViewRenderWorker
             ViewManifest manifest = ViewRendering.Render(
                 artifacts => views.Render(binding, request.Source, render, artifacts),
                 request.Output,
-                request.MaxParts,
+                request.MaxPartCount,
                 limits);
             File.WriteAllText(
                 Path.Combine(request.Output, RenderWorkerProtocol.ManifestFileName),
@@ -128,7 +128,7 @@ internal static class ViewRenderWorker
                 Product = product,
                 View = manifest.View,
                 License = state.ToContractName(),
-                TotalParts = manifest.TotalParts,
+                TotalPartCount = manifest.TotalPartCount,
                 PresenterScript = request.Presentation ? views.Presentation.Script : null,
                 PresenterStylesheet = request.Presentation ? views.Presentation.Stylesheet : null,
             };

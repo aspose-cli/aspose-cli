@@ -137,7 +137,7 @@ public sealed class ViewerStateBrowserTests(ITestOutputHelper output)
     private static object Manifest(string[] parts, int width = 960) => new
     {
         view = "test",
-        totalParts = parts.Length,
+        totalPartCount = parts.Length,
         parts = parts.Select(id => new
         {
             id,

@@ -478,7 +478,7 @@ internal sealed class CellsProductionService
                 View = CellsViews.Workbook,
                 SourceFormat = source.Format,
                 SourceSizeBytes = source.SizeBytes,
-                TotalParts = 1,
+                TotalPartCount = 1,
                 Parts =
                 [
                     new ViewPart
@@ -500,7 +500,7 @@ internal sealed class CellsProductionService
             .ToArray();
         var parts = new List<ViewPart>();
         var partial = new List<Warning>();
-        foreach (Worksheet sheet in visible.Take(request.MaxParts))
+        foreach (Worksheet sheet in visible.Take(request.MaxPartCount))
         {
             string file = string.Create(
                 System.Globalization.CultureInfo.InvariantCulture,
@@ -526,7 +526,7 @@ internal sealed class CellsProductionService
             View = CellsViews.Sheets,
             SourceFormat = source.Format,
             SourceSizeBytes = source.SizeBytes,
-            TotalParts = visible.Length,
+            TotalPartCount = visible.Length,
             Parts = parts,
             Warnings = loaded.Warnings([.. partial]),
         };

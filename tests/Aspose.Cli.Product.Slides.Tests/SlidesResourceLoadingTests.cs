@@ -43,14 +43,14 @@ public sealed class SlidesResourceLoadingTests
         });
         ViewManifest view = fixture.Engine.RenderView(
             input,
-            new ViewRenderRequest { View = SlidesViews.Slides, MaxParts = 1, Purpose = ViewPurpose.Display },
+            new ViewRenderRequest { View = SlidesViews.Slides, MaxPartCount = 1, Purpose = ViewPurpose.Display },
             new MemoryArtifactSink());
 
         Assert.True(server.RequestCount == 0, string.Join("; ", server.Requests));
         Assert.NotEmpty(Assert.Single(read.Slides).Shapes);
         Assert.All(rendered.Outputs, static item => Assert.True(item.Output.SizeBytes > 0));
         Assert.All(converted.Outputs, static output => Assert.True(new FileInfo(output.Path).Length > 0));
-        Assert.Equal(1, view.TotalParts);
+        Assert.Equal(1, view.TotalPartCount);
         // Output that needed the linked picture discloses that it was left out.
         Assert.Contains(rendered.Warnings!, IsOmission);
         Assert.Contains(converted.Warnings!, IsOmission);

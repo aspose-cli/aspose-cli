@@ -33,7 +33,7 @@ internal sealed record LiveDocumentOptions
     public string? Effect { get; init; }
 
     /// <summary>Upper bound of rendered parts.</summary>
-    public int MaxParts { get; init; } = 512;
+    public int MaxPartCount { get; init; } = 512;
 
     public long MaxInputBytes { get; init; } = ResourceBudgetDefaults.DefaultInputBytes;
 
@@ -47,7 +47,7 @@ internal sealed record LiveRevision(
     string Product,
     string View,
     string License,
-    int TotalParts,
+    int TotalPartCount,
     IReadOnlyDictionary<string, string> Digests,
     IReadOnlyDictionary<string, string> Addressed,
     ViewBundleManifest Files);
@@ -295,7 +295,7 @@ internal sealed class LiveDocument : IDisposable
                     Source = _copy,
                     SourceOrigin = _source,
                     Output = directory,
-                    MaxParts = _options.MaxParts,
+                    MaxPartCount = _options.MaxPartCount,
                     TimeoutMs = (int)(deadline.OriginalBudget ?? _limits.RenderTimeout).TotalMilliseconds,
                     ExpiresAtTick = deadline.ExpiresAtTick,
                     MaxInputBytes = _options.MaxInputBytes,
@@ -378,7 +378,7 @@ internal sealed class LiveDocument : IDisposable
             response.Product ?? previous?.Product ?? string.Empty,
             response.View ?? previous?.View ?? string.Empty,
             response.License ?? previous?.License ?? string.Empty,
-            response.TotalParts,
+            response.TotalPartCount,
             digests,
             addressed,
             ViewBundleManifest.Validate(directory, RenderWorkerProtocol.ManifestFileName, _limits));

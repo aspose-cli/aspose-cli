@@ -31,7 +31,7 @@ internal sealed record RenderWorkerRequest(long MaxInputBytes = Aspose.Cli.Sdk.I
     public required string Output { get; init; }
 
     /// <summary>Upper bound of rendered parts.</summary>
-    public required int MaxParts { get; init; }
+    public required int MaxPartCount { get; init; }
 
     /// <summary>Wall-clock budget for this render; the worker fails cleanly within it.</summary>
     public required int TimeoutMs { get; init; }
@@ -77,7 +77,7 @@ internal sealed record RenderWorkerResponse
     public string? License { get; init; }
 
     /// <summary>Parts the document contains, including those beyond the bound.</summary>
-    public int TotalParts { get; init; }
+    public int TotalPartCount { get; init; }
 
     /// <summary>Product presenter script, when the request asked for it.</summary>
     public string? PresenterScript { get; init; }
