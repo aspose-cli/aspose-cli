@@ -69,8 +69,9 @@ internal sealed class CellsMutationService
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(format, options.OutputPath, licenseState, options.EncryptPassword,
             loaded.IsEncrypted ? options.Password : null);
         using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
-        IReadOnlyList<BoundedOperationOutcome> applied = ApplyOperations(
+        (IReadOnlyList<BoundedOperationOutcome> applied, bool defaultedToActiveSheet) = ApplyOperations(
             workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs, importSources);
+        Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
         if (options.Recalculate)
         {
             workbook.CalculateFormula();
@@ -101,16 +102,19 @@ internal sealed class CellsMutationService
             Backup = saved?.Backup,
             Verification = verification,
             License = EnvelopeParts.License(licenseState),
-            Warnings = options.Options.DryRun ? EnvelopeParts.CombineWarnings(loaded.Warnings(), importSources.Warnings())
+            Warnings = options.Options.DryRun ? EnvelopeParts.CombineWarnings(loaded.Warnings(skippedSheet), importSources.Warnings())
                 : EnvelopeParts.CombineWarnings(
-                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.EvaluationSheetSkipped, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded),
+                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, skippedSheet, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded),
                     importSources.Warnings(),
                     EnvelopeParts.BackupWarnings(saved?.Backup)),
         };
     }
 
-    /// <summary>Runs the batch through the SDK runner, one handler call per operation.</summary>
-    private IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
+    /// <summary>
+    /// Runs the batch through the SDK runner, one handler call per operation, and says whether
+    /// an operation that names no sheet was applied to the active sheet.
+    /// </summary>
+    private (IReadOnlyList<BoundedOperationOutcome> Applied, bool DefaultedToActiveSheet) ApplyOperations(
         Workbook workbook,
         CellsOpsBatch batch,
         bool bestEffort,
@@ -119,7 +123,7 @@ internal sealed class CellsMutationService
         CellsImportSources sources)
     {
         var handlers = new CellsMutationHandlers(workbook, secrets, inputs, sources);
-        return BoundedOperationRunner.Run(
+        IReadOnlyList<BoundedOperationOutcome> applied = BoundedOperationRunner.Run(
             CellsOp.Catalog,
             batch.Ops,
             bestEffort,
@@ -132,5 +136,6 @@ internal sealed class CellsMutationService
                 return new AppliedOperation(handlers.Run(op) ?? 0, OpsFootprint.OutcomeTargets(op));
             },
             (op, _) => OpsFootprint.OutcomeTargets(op));
+        return (applied, handlers.DefaultedToActiveSheet);
     }
 }

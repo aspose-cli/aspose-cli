@@ -129,7 +129,10 @@ internal sealed class CellsProductionService
             },
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen, loaded.EvaluationSheetSkipped, sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, .. textLayout]),
+            // Only a text export without --sheet writes one sheet chosen by default; the other
+            // formats write every sheet.
+            Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
+                loaded.SkippedSheetWarning(request.SheetName is null && request.TargetFormatId is "csv" or "tsv" or "md"), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, .. textLayout]),
         };
     }
 
@@ -215,7 +218,8 @@ internal sealed class CellsProductionService
             Range = renderedRange,
             Dpi = isRaster ? request.Dpi : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen, loaded.EvaluationSheetSkipped),
+            Warnings = CombineWarnings(licenseState, loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
+                loaded.SkippedSheetWarning(request.SheetName is null)),
         };
     }
 
@@ -485,7 +489,8 @@ internal sealed class CellsProductionService
                         Kind = ViewPartKinds.Html,
                     },
                 ],
-                Warnings = loaded.Warnings(),
+                // The workbook view opens on the active sheet.
+                Warnings = loaded.Warnings(loaded.SkippedSheetWarning(defaultedToActiveSheet: true)),
             };
         }
 

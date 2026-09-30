@@ -94,7 +94,15 @@ internal static class TextTableLayout
 
         int width = filled.Max(static shape => shape.Filled);
         // A header is more than half as wide as the widest row; with one column, any value is.
+        // The rows above it are a preamble only when each holds at most one value, as a title or
+        // a note does: an earlier row of several values is a header narrower than its data, as a
+        // CSV with unnamed trailing columns has, and the table starts at the first such row.
         TextRowShape header = width < 2 ? filled[0] : filled.First(shape => shape.Filled * 2 > width);
+        if (filled.FirstOrDefault(shape => shape.Row < header.Row && shape.Filled > 1) is { Filled: > 1 } narrower)
+        {
+            header = narrower;
+        }
+
         int lastRow = filled[^1].Row;
         var findings = new List<TextTableFinding>();
         if (header.Row > 0 && header.Row <= MaxPreambleRows && lastRow > header.Row)

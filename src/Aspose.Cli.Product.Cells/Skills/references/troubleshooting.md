@@ -33,8 +33,8 @@ to workbooks.
 | `WORKBOOK_ENCRYPTION_REMOVED` | The output format cannot be encrypted, so the source encryption was dropped. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
 | `EVALUATION_SHEET_ADDED` | An evaluation save added the warning sheet `location` names and made it the active sheet in place of the one the message names; see below. |
-| `EVALUATION_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, so this command used the sheet the message names wherever it defaults to the active sheet; see below. |
-| `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes (`1:2`: the header is the row after them), empty rows lie inside the table, or a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`). The rows are imported as they are; see below. |
+| `EVALUATION_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
+| `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes, rows that hold at most one value each (`1:2`: the header is the row after them), empty rows lie inside the table, or a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`). The rows are imported as they are; see below. |
 
 ## Text tables that do not start at row 1
 
@@ -65,9 +65,12 @@ gains an "Evaluation Warning" sheet plus watermark content. Disclose it
   option keeps your active sheet (`set_active_sheet` included). The result
   says so with `EVALUATION_SHEET_ADDED`.
 - When a workbook's active sheet is such a warning sheet, every command that
-  defaults to the active sheet (`query range`, `render`, an operation without
-  `"sheet"`, the preview) uses the first other sheet instead, preferring a
-  visible one, and warns `EVALUATION_SHEET_SKIPPED`; the file is not changed.
+  defaults to the active sheet (`query range` or `render` without `--sheet`,
+  `convert` to CSV, TSV or Markdown without `--sheet`, an operation without
+  `"sheet"`, the workbook preview) uses the first other sheet instead,
+  preferring a visible one, and warns `EVALUATION_SHEET_SKIPPED`; the file is
+  not changed. A command that names its sheet or covers every sheet does not
+  warn.
   The sheet you made active is not recorded anywhere, so pass `--sheet` (or
   `"sheet"`) for any other one, and take names from `inspect`, never from
   sheet order.
