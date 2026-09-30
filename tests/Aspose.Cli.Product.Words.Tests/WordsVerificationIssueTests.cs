@@ -29,7 +29,7 @@ public sealed class WordsVerificationIssueTests
 
         Assert.Equal("FIELD_COUNT_CHANGED", issue.Code);
         Assert.Contains("expected 1, found 0", issue.Message, StringComparison.Ordinal);
-        Assert.NotNull(issue.Hint);
+        Assert.Equal("txt may not keep fields; save to docx or another Word format and verify again.", issue.Hint);
         Assert.Null(issue.Location);
     }
 
@@ -47,7 +47,7 @@ public sealed class WordsVerificationIssueTests
 
         Assert.Equal("REVISION_COUNT_CHANGED", issue.Code);
         Assert.Contains("found 0", issue.Message, StringComparison.Ordinal);
-        Assert.NotNull(issue.Hint);
+        Assert.Contains("save to docx", issue.Hint, StringComparison.Ordinal);
     }
 
     [Fact]
@@ -64,7 +64,23 @@ public sealed class WordsVerificationIssueTests
         VerificationIssue issue = Assert.Single(result.Verification.Issues);
         Assert.Equal("PROTECTION_CHANGED", issue.Code);
         Assert.Contains("expected readOnly, found none", issue.Message, StringComparison.Ordinal);
-        Assert.NotNull(issue.Hint);
+        Assert.Contains("save to docx", issue.Hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// No realistic edit loses this state through a Word-format save, so the hint is checked
+    /// directly: advising a Word format again would send the caller round the same loop.
+    /// </summary>
+    [Theory]
+    [InlineData("docx")]
+    [InlineData("doc")]
+    [InlineData("flatopc")]
+    public void Hint_ForAWordFormatOutput_DoesNotAdviseSavingToAWordFormat(string format)
+    {
+        string hint = WordsMutationService.KeepStateHint("fields", format);
+
+        Assert.DoesNotContain("save to", hint, StringComparison.Ordinal);
+        Assert.Contains($"did not survive save and reopen in {format}", hint, StringComparison.Ordinal);
     }
 
     [Fact]

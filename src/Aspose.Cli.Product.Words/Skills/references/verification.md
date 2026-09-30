@@ -8,8 +8,7 @@ The delivery checklist, the review protocol and font checks are in
 `words edit --verify` reopens the staged file before publication and reports
 `verification`:
 
-- `ok` and `issues`, each `{code, message, hint?}`; any issue makes `ok`
-  false;
+- `ok` and `issues`;
 - `semanticChangesDetected`, from a comparison of private copies with
   revisions accepted, so the saved document keeps its revisions;
 - `fieldCount`, `revisionCount` and `protection`, each checked against the
