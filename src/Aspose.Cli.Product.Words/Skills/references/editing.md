@@ -114,9 +114,9 @@ omitted settings keep their values:
   and leaves the row setting; pass `allowRowBreakAcrossPages: true` as well to
   let rows split again. A table taller than a page still breaks.
 - `allowRowBreakAcrossPages` sets whether each row's text may split.
-- `headerRows` repeats the first N rows as a heading on every page the table
-  spans and clears the other rows; `0` clears all, and more than the table's
-  rows fails.
+- `headerRowCount` repeats the first N rows as a heading on every page the
+  table spans and clears the other rows; `0` clears all, and more than the
+  table's rows fails.
 - `keepWithNext` keeps the table on the page of the paragraph that follows it.
   A caption or heading before the table stays with it through its own
   paragraph style's keep-with-next setting, which heading styles usually have.
@@ -125,7 +125,7 @@ omitted settings keep their values:
 set. `--track-changes` cannot record it.
 
 ```json
-{ "ops": [ { "op": "format_table", "at": { "find": "Action items" }, "keepTogether": true, "headerRows": 1 } ] }
+{ "ops": [ { "op": "format_table", "at": { "find": "Action items" }, "keepTogether": true, "headerRowCount": 1 } ] }
 ```
 
 ## Headers, footers and page numbers

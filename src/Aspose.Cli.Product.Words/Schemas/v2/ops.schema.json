@@ -503,7 +503,7 @@
           "description": "Whether the text of each row may split across a page break.",
           "type": "boolean"
         },
-        "headerRows": {
+        "headerRowCount": {
           "description": "The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.",
           "type": "integer",
           "minimum": 0
@@ -528,7 +528,7 @@
             },
             {
               "required": [
-                "headerRows"
+                "headerRowCount"
               ]
             },
             {

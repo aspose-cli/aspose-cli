@@ -41,8 +41,8 @@ checks are listed with `aspose-cli capabilities words --output json` under
   breaks or empty paragraphs; remove them rather than adding more breaks.
 - A table split across pages, such as a last row pushed onto the next page,
   is not a check: look for it on the rendered pages. Fix it with
-  `format_table` and `keepTogether: true` (or `headerRows` for a long table)
-  rather than a page break, then run `review` again
+  `format_table` and `keepTogether: true` (or `headerRowCount` for a long
+  table) rather than a page break, then run `review` again
   ([editing](editing.md)).
 - `WORDS_OBJECT_OUTSIDE_PAGE`: a floating image or shape crosses the page edge.
 - `WORDS_REVISIONS_PRESENT` (info): tracked revisions are shown; never accept

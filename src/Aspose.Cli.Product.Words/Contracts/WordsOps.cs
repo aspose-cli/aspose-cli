@@ -248,7 +248,7 @@ public sealed record RepeatTableRowOp : WordsOp
 /// allowRowBreakAcrossPages true.
 /// </summary>
 [Operation("format_table")]
-[AtLeastOneOf("keepTogether", "allowRowBreakAcrossPages", "headerRows", "keepWithNext")]
+[AtLeastOneOf("keepTogether", "allowRowBreakAcrossPages", "headerRowCount", "keepWithNext")]
 public sealed record FormatTableOp : WordsOp
 {
     public required WordsTarget At { get; init; }
@@ -264,7 +264,7 @@ public sealed record FormatTableOp : WordsOp
     public bool? AllowRowBreakAcrossPages { get; init; }
 
     /// <summary>The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.</summary>
-    [Minimum(0)] public int? HeaderRows { get; init; }
+    [Minimum(0)] public int? HeaderRowCount { get; init; }
 
     /// <summary>Whether the last paragraph of each last-row cell keeps with the paragraph after the table, keeping the table with it.</summary>
     public bool? KeepWithNext { get; init; }

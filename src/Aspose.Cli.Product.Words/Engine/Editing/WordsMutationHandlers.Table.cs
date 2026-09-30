@@ -230,9 +230,9 @@ internal sealed partial class WordsMutationHandlers
         }
 
         Row[] rows = table.Rows.Cast<Row>().ToArray();
-        if (operation.HeaderRows > rows.Length)
+        if (operation.HeaderRowCount > rows.Length)
         {
-            throw Invalid($"headerRows {operation.HeaderRows} is more than the table's {rows.Length} rows");
+            throw Invalid($"headerRowCount {operation.HeaderRowCount} is more than the table's {rows.Length} rows");
         }
 
         for (int index = 0; index < rows.Length; index++)
@@ -260,9 +260,9 @@ internal sealed partial class WordsMutationHandlers
                 row.RowFormat.AllowBreakAcrossPages = allowBreak;
             }
 
-            if (operation.HeaderRows is int headerRows)
+            if (operation.HeaderRowCount is int headerRowCount)
             {
-                row.RowFormat.HeadingFormat = index < headerRows;
+                row.RowFormat.HeadingFormat = index < headerRowCount;
             }
 
             if (isLast && operation.KeepWithNext is bool keepWithNext)
@@ -277,7 +277,7 @@ internal sealed partial class WordsMutationHandlers
             }
         }
 
-        return operation.KeepTogether is null && operation.AllowRowBreakAcrossPages is null && operation.HeaderRows is null
+        return operation.KeepTogether is null && operation.AllowRowBreakAcrossPages is null && operation.HeaderRowCount is null
             ? 1
             : rows.Length;
 

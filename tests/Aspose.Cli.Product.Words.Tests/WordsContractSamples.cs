@@ -277,7 +277,7 @@ internal static class WordsContractSamples
             {
                 At = new WordsTarget { Block = 4 },
                 KeepTogether = true,
-                HeaderRows = 1,
+                HeaderRowCount = 1,
                 KeepWithNext = true,
             },
             new InsertTocOp
