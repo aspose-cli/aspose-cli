@@ -64,10 +64,11 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
   that touch the same code or regenerate the same snapshots are merged one at a time, each
   rebased on the one before.
 - **A red `master` comes first.** Find the pull request that broke it and fix or revert it
-  before merging anything else.
-- **A failure the change cannot reach is a flaky test,** on a pull request or on `master`. Rerun
-  the failed job once to confirm it, then make the test reliable in its own `test/` pull
-  request, merged before other work. Relax only the test's own timing, never a product check.
+  before merging anything else, unless the failure is flaky.
+- **A failure the change cannot reach may be flaky,** on a pull request or on `master`. Rerun the
+  failed job once. If it passes, the test is flaky: make it reliable in its own `test/` pull
+  request, merged before other work, relaxing only the test's own timing, never a product
+  check. If it fails again, it is a real failure.
 - **Dependabot** opens one pull request a month that updates the pinned actions; merge it
   like any other once CI passes.
 
