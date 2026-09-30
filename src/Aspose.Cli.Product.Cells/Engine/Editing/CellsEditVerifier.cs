@@ -28,41 +28,45 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         var formulaResults = new List<VerifiedCellChange>();
         var other = new List<VerificationOtherChange>();
         var issues = new List<VerificationIssue>();
-        AddCompletenessIssues(sourceWarnings, issues);
-        AddCompletenessIssues(candidate.Warnings(), issues);
+        issues.AddRange(CompletenessIssues(sourceWarnings));
+        issues.AddRange(CompletenessIssues(candidate.Warnings()));
         DiffComparer.Result diff = DiffComparer.Compare(budgets, baseline.Workbook, candidate.Workbook,
             includeFormulas: true, MaxDiffs);
         Classify(diff, footprint, direct, formulaResults, other);
         if (diff.Truncated)
-        { issues.Add(new VerificationIssue { Code = "DIFF_TRUNCATED", Message = $"The edit changed more than {MaxDiffs} cells, so verification could not list every change." }); }
+        {
+            issues.Add(VerificationIssue.Of(CellsDiagnostics.DiffTruncated,
+                $"The edit changed more than {MaxDiffs} cells, so verification could not list every change.",
+                hint: "Split the edit into smaller batches so each one changes fewer cells."));
+        }
         (WorkbookSummary summary, Warning? errorsCapped) = InfoProjection.Summarize(budgets, candidate.Workbook,
             candidatePath, new InfoRequest { Details = [InfoDetails.Errors] });
         if (errorsCapped is not null)
-        { issues.Add(new VerificationIssue { Code = errorsCapped.Code, Message = errorsCapped.Message }); }
+        { issues.Add(VerificationIssue.From(errorsCapped)); }
         IReadOnlyList<CellError> errors = summary.FormulaErrors ?? [];
         if (errors.Count > 0)
-        { issues.Add(new VerificationIssue { Code = "FORMULA_ERRORS", Message = $"The edited workbook contains {errors.Count} formula error(s)." }); }
+        {
+            issues.Add(VerificationIssue.Of(CellsDiagnostics.FormulaErrors,
+                $"The edited workbook contains {errors.Count} formula error(s).",
+                location: errors.Count == 1 ? CellReference(errors[0]) : null,
+                hint: "Fix the cells listed in formulaErrors, then edit again with --verify."));
+        }
         return new EditVerification
         {
             Ok = issues.Count == 0,
             RequestedTargets = footprint.Select(static target => new VerificationTarget { Sheet = target.Sheet, Range = target.Range }).ToArray(),
             DirectChanges = direct, FormulaResultChanges = formulaResults, OtherChanges = other,
             FormulaErrors = errors,
-            Truncated = diff.Truncated, Issues = issues.Count == 0 ? null : issues,
+            Truncated = diff.Truncated, Issues = issues,
         };
     }
 
-    private static void AddCompletenessIssues(
-        IReadOnlyList<Warning>? warnings, ICollection<VerificationIssue> issues)
-    {
-        foreach (Warning warning in warnings ?? [])
-        {
-            if (warning.AffectsCompleteness)
-            {
-                issues.Add(new VerificationIssue { Code = warning.Code, Message = warning.Message });
-            }
-        }
-    }
+    /// <summary>Completeness warnings carried into verification with their location and hint.</summary>
+    internal static IEnumerable<VerificationIssue> CompletenessIssues(IReadOnlyList<Warning>? warnings) =>
+        (warnings ?? []).Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From);
+
+    private static string CellReference(CellError error) =>
+        "'" + error.Sheet.Replace("'", "''", StringComparison.Ordinal) + "'!" + error.Cell;
 
     private static void Classify(
         DiffComparer.Result diff,

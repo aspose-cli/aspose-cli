@@ -36,6 +36,12 @@ internal static class CellsDiagnostics
     /// <summary>A delimited text input has a preamble before its header, empty rows or a total row.</summary>
     internal const string TextTableLayout = "TEXT_TABLE_LAYOUT";
 
+    /// <summary>Verification: the edit changed more cells than verification lists.</summary>
+    internal static readonly DiagnosticDescriptor DiffTruncated = Verification("DIFF_TRUNCATED");
+
+    /// <summary>Verification: the edited workbook contains formula errors.</summary>
+    internal static readonly DiagnosticDescriptor FormulaErrors = Verification("FORMULA_ERRORS");
+
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         Error(SheetNotFound),
@@ -58,6 +64,8 @@ internal static class CellsDiagnostics
         Warning(EvaluationSheetAdded),
         Warning(EvaluationSheetSkipped),
         Warning(TextTableLayout),
+        DiffTruncated,
+        FormulaErrors,
     ];
 
     private static DiagnosticDescriptor Error(ErrorCode code) =>
@@ -65,4 +73,9 @@ internal static class CellsDiagnostics
 
     private static DiagnosticDescriptor Warning(string code) =>
         DiagnosticDescriptor.Warning(code, "cells", "warning");
+
+    // Equivalent to DiagnosticDescriptor.Verification, which the definition-purity
+    // analyzer does not yet list as pure.
+    private static DiagnosticDescriptor Verification(string code) =>
+        DiagnosticDescriptor.Warning(code, "cells", DiagnosticDescriptor.VerificationCategory);
 }
