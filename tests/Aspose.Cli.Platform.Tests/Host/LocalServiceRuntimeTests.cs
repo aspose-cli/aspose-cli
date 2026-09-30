@@ -161,8 +161,10 @@ public sealed class LocalServiceRuntimeTests
         }
         finally { resume.Set(); }
         Assert.True((await opening.WaitAsync(TimeSpan.FromSeconds(5))).Ok);
+        // The caller's deadline cancels the operation, and its failure reply still arrives after
+        // expiry. The budget only has to outlast connecting and sending the request.
         Assert.False(LocalServiceControlServer.Send(endpoint, nonce, token, "cancel",
-            timeout: TimeSpan.FromMilliseconds(100)).Ok);
+            timeout: TimeSpan.FromSeconds(2)).Ok);
         Assert.True(cancelled.IsSet);
         cancelled.Reset();
         entered.Reset();
