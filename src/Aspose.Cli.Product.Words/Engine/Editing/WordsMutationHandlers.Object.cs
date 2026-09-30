@@ -270,7 +270,7 @@ internal sealed partial class WordsMutationHandlers
         if (rows.Count == 0)
         {
             throw MergeDataInvalid(
-                "mail_merge needs at least one row",
+                "the merge data has no rows; a CSV needs a data row after its header",
                 "Supply a JSON array with at least one object, or a CSV file with a data row after its header.");
         }
 

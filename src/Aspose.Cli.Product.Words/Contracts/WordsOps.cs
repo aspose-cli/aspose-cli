@@ -581,7 +581,7 @@ public sealed record AppendDocumentOp : WordsOp
 [ExactlyOneOf("path", "inline")]
 public sealed record MailMergeOp : WordsOp
 {
-    /// <summary>A JSON array of flat objects, or a CSV file with a header row, relative to the working directory.</summary>
+    /// <summary>A JSON array of flat objects, or a CSV file with a header row, relative to the working directory; it must hold at least one row.</summary>
     [InputPath] public string? Path { get; init; }
 
     /// <summary>Merge rows of field values by field name.</summary>

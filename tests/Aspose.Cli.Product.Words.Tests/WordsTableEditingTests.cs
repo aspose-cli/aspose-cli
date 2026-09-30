@@ -295,6 +295,23 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void RepeatTableRow_WithAHeaderOnlyCsv_RemovesTheTemplateRow()
+    {
+        string input = CreateTemplate("repeat-header-only.docx");
+        string output = _fixture.Temp.File("repeat-header-only-changed.docx");
+        string items = _fixture.Temp.File("repeat-header-only.csv");
+        File.WriteAllText(items, "code,name,price\n");
+
+        WordsEditResult result = _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new RepeatTableRowOp { At = new WordsTarget { Find = "{{code}}" }, Path = items }],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Assert.Equal(0, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal([["Code", "Name", "Price"], ["Total", "", "19.50"]], CellTexts(FirstTable(new Document(output))));
+    }
+
+    [Fact]
     public void RepeatTableRow_ReadsItemsFromACsvFile()
     {
         string input = CreateTemplate("repeat-csv.docx");
