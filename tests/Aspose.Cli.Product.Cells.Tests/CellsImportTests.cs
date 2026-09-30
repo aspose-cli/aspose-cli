@@ -236,7 +236,103 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.Contains("'Rate'", error.Details!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("""{ "op": "import_range", "sheet": "Second", "path": "{source}", "from": "Linked!A1", "to": "Second!B2", "content": "all" }""", "Second", "B2")]
+    [InlineData("""{ "op": "import_sheet", "sheet": "Linked", "path": "{source}" }""", "Linked", "A1")]
+    public void Import_AReferenceToAThirdWorkbookKeepsItsLinkAndCachedResultWithoutReadingIt(
+        string operation, string sheet, string cell)
+    {
+        string source = CreateThirdPartyLinkedSource(operation.Contains("import_sheet", StringComparison.Ordinal) ? "linked-sheet" : "linked-range");
+        string target = _fixture.CreateSalesWorkbook(Path.GetFileName(Path.GetDirectoryName(source)) + "-target.xlsx");
+
+        using Workbook result = Apply(target, operation.Replace("\"{source}\"", Json(source), StringComparison.Ordinal));
+
+        Cell imported = result.Worksheets[sheet].Cells[cell];
+        Assert.EndsWith("[rates.xlsx]Sheet1'!$A$1", imported.Formula, StringComparison.Ordinal);
+        ExternalLink link = Assert.Single(result.Worksheets.ExternalLinks.Cast<ExternalLink>());
+        Assert.EndsWith("rates.xlsx", link.DataSource, StringComparison.OrdinalIgnoreCase);
+        // rates.xlsx now holds 99 and stays readable, so any read of it would show here.
+        Assert.Equal(2d, imported.DoubleValue);
+    }
+
+    [Fact]
+    public void ImportRange_ValuesOfAThirdWorkbookReferenceAddNoLink()
+    {
+        string source = CreateThirdPartyLinkedSource("linked-values");
+
+        using Workbook result = Apply(
+            _fixture.CreateSalesWorkbook("linked-values-target.xlsx"),
+            $$"""{ "op": "import_range", "sheet": "Second", "path": {{Json(source)}}, "from": "Linked!A1", "to": "B2" }""");
+
+        Cell imported = result.Worksheets["Second"].Cells["B2"];
+        Assert.False(imported.IsFormula);
+        Assert.Equal(2d, imported.DoubleValue);
+        Assert.Equal(0, result.Worksheets.ExternalLinks.Count);
+    }
+
+    [Fact]
+    public void ImportSheet_ReferencesToTheSourceBecomeLocalWhenThisWorkbookAlreadyLinksToIt()
+    {
+        string source = CreateSource("linked-back-source.xlsx");
+        string target = _fixture.CreateSalesWorkbook("linked-back.xlsx");
+        using (var workbook = new Workbook(target))
+        {
+            workbook.Worksheets["Data"].Cells["E1"].Formula =
+                $"='{Path.GetDirectoryName(source)}{Path.DirectorySeparatorChar}[{Path.GetFileName(source)}]Rates'!A1";
+            workbook.Save(target);
+        }
+
+        using Workbook result = Apply(
+            target,
+            $$"""
+            { "op": "import_sheet", "sheet": "Rates", "path": {{Json(source)}} },
+            { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}} }
+            """);
+
+        Assert.Equal("=B4*Rates!A1", result.Worksheets["Totals"].Cells["B5"].Formula);
+        Assert.Equal(4001d, result.Worksheets["Totals"].Cells["B5"].DoubleValue);
+        // Only this workbook's own link to the source remains.
+        ExternalLink link = Assert.Single(result.Worksheets.ExternalLinks.Cast<ExternalLink>());
+        Assert.EndsWith(Path.GetFileName(source), link.DataSource, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains($"[{Path.GetFileName(source)}]Rates'!A1", result.Worksheets["Data"].Cells["E1"].Formula, StringComparison.Ordinal);
+    }
+
     private static readonly (byte R, byte G, byte B) FillColor = (0xFF, 0xF2, 0xCC);
+
+    /// <summary>
+    /// A folder with rates.xlsx (Sheet1!A1 = 2) and a source whose Linked!A1 is
+    /// ='[rates.xlsx]Sheet1'!$A$1 with the cached result 2, as Excel saves it. rates.xlsx is then
+    /// rewritten to hold 99 and left readable, so any read of it during the edit yields 99; a result
+    /// of 2 shows the linked file was not read.
+    /// </summary>
+    private string CreateThirdPartyLinkedSource(string folder)
+    {
+        string directory = _fixture.Temp.File(folder);
+        Directory.CreateDirectory(directory);
+        string rates = Path.Combine(directory, "rates.xlsx");
+        string source = Path.Combine(directory, "source.xlsx");
+        SaveRates(2);
+        using (var linked = new Workbook(rates))
+        using (var workbook = new Workbook())
+        {
+            workbook.Worksheets[0].Name = "Linked";
+            workbook.Worksheets[0].Cells["A1"].Formula = $"='{directory}{Path.DirectorySeparatorChar}[rates.xlsx]Sheet1'!$A$1";
+            // Authoring only: fill the link's cached values from the linked workbook, as Excel does.
+            workbook.UpdateLinkedDataSource([linked]);
+            workbook.CalculateFormula();
+            workbook.Save(source, SaveFormat.Xlsx);
+        }
+
+        SaveRates(99);
+        return source;
+
+        void SaveRates(int value)
+        {
+            using var workbook = new Workbook();
+            workbook.Worksheets[0].Cells["A1"].PutValue(value);
+            workbook.Save(rates, SaveFormat.Xlsx);
+        }
+    }
 
     private static (byte R, byte G, byte B) Rgb(Style style) =>
         (style.ForegroundColor.R, style.ForegroundColor.G, style.ForegroundColor.B);
