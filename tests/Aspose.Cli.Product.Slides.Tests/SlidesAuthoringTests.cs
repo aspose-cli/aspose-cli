@@ -95,6 +95,70 @@ public sealed class SlidesAuthoringTests
     }
 
     [Fact]
+    public void Parse_TableCellBackslashEscapesOnlyTheNextCharacter()
+    {
+        MarkdownSlide slide = Assert.Single(SlidesMarkdownBuilder.Parse(
+            """
+            ## Paths
+            | Path | Note |
+            |---|---|
+            | C:\\| a\|b \* |
+            C:\\|
+            """,
+            "fallback"));
+
+        // In \\| the pipe closes the cell; \| stays a literal pipe; other pairs stay as written.
+        MarkdownTable table = Assert.IsType<MarkdownTable>(slide.Table);
+        Assert.Equal(
+            [
+                ["Path", "Note"],
+                [@"C:\\", @"a|b \*"],
+                [@"C:\\", ""],
+            ],
+            table.Rows.Select(static row => row.Select(static cell => string.Concat(cell.Select(static run => run.Text))).ToArray()));
+    }
+
+    [Fact]
+    public void Parse_TitleSlideTableOrPictureContinuesOnANewSlide()
+    {
+        IReadOnlyList<MarkdownSlide> slides = SlidesMarkdownBuilder.Parse(
+            """
+            # Deck
+            For the board
+            | A | B |
+            |---|---|
+            | 1 | 2 |
+            After the table
+
+            # Launch
+            ![Logo](logo.png)
+            """,
+            "fallback");
+
+        Assert.Equal(["Deck", "Deck", "Launch", "Launch"], slides.Select(static slide => slide.Title));
+        Assert.Equal([true, false, true, false], slides.Select(static slide => slide.TitleSlide));
+        Assert.Equal(
+            ["For the board"],
+            slides[0].Blocks.Select(static block => string.Concat(block.Runs.Select(static run => run.Text))));
+        Assert.False(slides[0].HasObject);
+        Assert.NotNull(slides[1].Table);
+        Assert.Equal(
+            ["After the table"],
+            slides[1].Blocks.Select(static block => string.Concat(block.Runs.Select(static run => run.Text))));
+        Assert.False(slides[2].HasObject);
+        Assert.Equal("logo.png", slides[3].Image?.Path);
+    }
+
+    [Fact]
+    public void AddTable_MarksTheFirstRowAsTheHeaderRow()
+    {
+        using var presentation = new Presentation();
+        ITable table = SlidesAuthoring.AddTable(presentation.Slides[0], 10, 10, 200, 60, 2, 2);
+
+        Assert.True(table.FirstRow);
+    }
+
+    [Fact]
     public void Parse_KeepsPipeLinesWithoutAMatchingDelimiterRowAsText()
     {
         MarkdownSlide slide = Assert.Single(SlidesMarkdownBuilder.Parse(

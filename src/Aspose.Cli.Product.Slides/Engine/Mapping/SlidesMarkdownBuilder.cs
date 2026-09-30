@@ -40,7 +40,8 @@ internal static partial class SlidesMarkdownBuilder
             title.Name = SlidesAuthoring.TitleName;
             title.TextFrame.Text = item.Title;
 
-            IAutoShape[] content = SlidesPlaceholders.Content(slide, includeSubtitle: item.TitleSlide);
+            // Pictures and tables take content placeholders; Parse keeps them off title slides.
+            IAutoShape[] content = SlidesPlaceholders.Content(slide);
             if (item.Blocks.Count > 0)
             {
                 IAutoShape body = SlidesAuthoring.Body(slide, includeSubtitle: item.TitleSlide);
@@ -135,7 +136,8 @@ internal static partial class SlidesMarkdownBuilder
             if (ReadTable(lines, ref index, current.Title) is { } table)
             {
                 // A slide holds one picture or table; another table continues on a new slide.
-                if (current.HasObject)
+                // A title slide's subtitle holds text only, so its table continues too.
+                if (current.HasObject || current.TitleSlide)
                 {
                     current = Continue(slides, current);
                 }
@@ -144,7 +146,8 @@ internal static partial class SlidesMarkdownBuilder
             }
             else if (ImagePattern().Match(trimmed) is { Success: true } image)
             {
-                if (current.Table is not null)
+                // A picture after a table, or under a title slide, continues on a new slide.
+                if (current.Table is not null || current.TitleSlide)
                 {
                     current = Continue(slides, current);
                 }

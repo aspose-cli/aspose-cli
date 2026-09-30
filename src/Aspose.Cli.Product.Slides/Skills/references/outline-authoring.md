@@ -12,7 +12,7 @@ aspose-cli slides create qbr.pptx --from-markdown notes.md --template brand.pptx
 
 | Markdown | Result |
 |----------|--------|
-| `# Title` | Title Slide layout; following paragraphs fill the subtitle |
+| `# Title` | Title Slide layout; following paragraphs fill the subtitle, and a picture or table starts a continuation slide |
 | `## Title` | Title and Content layout; the body holds the content below it |
 | `## Title` with no content | Title Only layout |
 | `### Heading` (and deeper) | Bold body paragraph without a bullet |
@@ -52,13 +52,15 @@ Deals by stage
   Content (text first, table second) as it does for a picture.
 - A slide holds one picture or table. A further table, or a picture after a
   table, starts a continuation slide with the same title, which also takes the
-  content that follows.
+  content that follows. A title slide's subtitle holds text only, so a table or
+  picture under `# Title` starts such a continuation slide too.
 - The first row is the table's header row, styled by the template. Colons in
   the delimiter row align a column left, center or right; without them the
   table style decides.
-- Cells accept emphasis, code spans and links like paragraphs. `\|` is a
-  literal pipe. A shorter row gets empty cells, a longer one loses its extra
-  cells.
+- Cells accept emphasis, code spans and links like paragraphs. A backslash
+  escapes only the next character: `\|` is a literal pipe, while in `\\|` the
+  pipe still ends the cell. A shorter row gets empty cells, a longer one loses
+  its extra cells.
 - A pipe line not followed by a delimiter row with as many cells stays a
   paragraph. The table ends at a blank line, a heading or a line without a pipe.
 - A table holds at most 100 rows and 50 columns; a larger one is

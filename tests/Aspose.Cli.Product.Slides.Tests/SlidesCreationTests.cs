@@ -214,6 +214,39 @@ public sealed class SlidesCreationTests
     }
 
     [Fact]
+    public void Markdown_TableUnderATitleSlide_TakesAContentSlideInsteadOfTheSubtitle()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("title-table.md");
+        File.WriteAllText(
+            markdown,
+            """
+            # Deck
+            For the board
+            | Stage | Value |
+            |---|---|
+            | Won | 12 |
+            | Lost | 3 |
+            """);
+        string output = fixture.File("title-table.pptx");
+
+        SlidesCreateResult result = fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = output });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == SlidesDiagnostics.TableOverflow);
+        using var deck = new Presentation(output);
+        Assert.Equal(["Title Slide", "Title and Content"], deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+        Assert.Empty(deck.Slides[0].Shapes.OfType<ITable>());
+        IAutoShape subtitle = deck.Slides[0].Shapes.OfType<IAutoShape>()
+            .Single(static shape => shape.Placeholder?.Type == PlaceholderType.Subtitle);
+        // Evaluation mode truncates longer text, so only its start is compared.
+        Assert.StartsWith("For t", subtitle.TextFrame.Text, StringComparison.Ordinal);
+        Assert.Equal("Deck", SlidesPlaceholders.Title(deck.Slides[1])!.TextFrame.Text);
+        ITable table = Assert.Single(deck.Slides[1].Shapes.OfType<ITable>());
+        IShape area = deck.Slides[1].LayoutSlide.Shapes.Single(static shape => shape.Placeholder?.Type == PlaceholderType.Object);
+        Assert.Equal((area.X, area.Y), (table.X, table.Y));
+    }
+
+    [Fact]
     public void Markdown_TableTallerThanItsArea_IsReported()
     {
         using var fixture = new SlidesEngineFixture();
