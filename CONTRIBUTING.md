@@ -25,7 +25,9 @@ Windows x64 with:
    `eng/distribution.json` (identity literals, schema base URL and `ASPOSE_CLI_*` variable names,
    read in code through `DistributionInfo`).
 3. Run `scripts/test.ps1 -Configuration Release` while you work and
-   `scripts/test.ps1 -Configuration Release -Scope Affected` before you commit (see [Tests](#tests)).
+   `scripts/test.ps1 -Configuration Release -Scope Affected` before you push, licensed when you
+   can, because CI runs without a license (see [Tests](#tests)). Commits inside a branch need no
+   run of their own.
 4. For publishing or installer changes, check `scripts/publish.ps1 -Configuration Release
    -RuntimeIdentifier win-x64` and `scripts/install-local.ps1`, which installs an unsigned
    development build (`-Update` and `-Uninstall` work as in `install.ps1`).
@@ -38,8 +40,7 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
 
 - **One concern per pull request**, split by responsibility rather than by file, with its tests,
   schemas, Skills and docs in the same change. Keep a mechanical refactor apart from a behavior
-  change. Aim for about 400 changed lines, not counting generated files and snapshots, and
-  split anything near 1,000.
+  change. Size follows from the concern; there is no line limit.
 - **Branch:** `<type>/<kebab-case-summary>` from the latest `master`, for example
   `fix/backup-disclosure`. GitHub's own `revert-<number>-<branch>` and `dependabot/...`
   branches are accepted too.
@@ -49,8 +50,9 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
   optional: `sdk`, `host`, `cli`, `app`, `cells`, `pdf`, `slides`, `words`, `skills`,
   `install`, `release`, `deps`. Retitle a GitHub-generated revert as
   `revert: <original summary>`.
-- **Description:** the template's summary (what and why), test plan (commands actually run) and
-  contract checklist. Leave out how the change was produced.
+- **Description:** the template's summary (what and why), test plan (commands actually run, whether
+  they were licensed, and each project's result line) and contract checklist. Leave out how the
+  change was produced.
 - **Push when step 3 passes;** every push runs CI again. Resolve conflicts on the branch by
   rebasing on `master`; take lock files and `eng/generated` from `master` and rerun
   `scripts/sync.ps1` rather than merging them by hand.
@@ -63,6 +65,9 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
   rebased on the one before.
 - **A red `master` comes first.** Find the pull request that broke it and fix or revert it
   before merging anything else.
+- **A failure the change cannot reach is a flaky test,** on a pull request or on `master`. Rerun
+  the failed job once to confirm it, then make the test reliable in its own `test/` pull
+  request, merged before other work. Relax only the test's own timing, never a product check.
 - **Dependabot** opens one pull request a month that updates the pinned actions; merge it
   like any other once CI passes.
 
@@ -76,7 +81,7 @@ one of four scopes:
 | --- | --- | --- |
 | `Fast` (default) | Every test without a category | While you work; a few minutes |
 | `Changed` | Only the test projects a change reaches, plus the architecture tests | Pull-request CI |
-| `Affected` | `Fast`, plus every test of the projects your change reaches since the merge base with `-Base` (default `master`) | Before a commit |
+| `Affected` | `Fast`, plus every test of the projects your change reaches since the merge base with `-Base` (default `master`) | Before a push |
 | `Full` | Every test, with a required license | Before a release and after an SDK update |
 
 A test that takes several seconds by nature carries `[Category(TestCategory.Slow)]`; the
