@@ -49,10 +49,10 @@ internal static class SlidesEngineSupport
             Layout = EmptyToNull(slide.LayoutSlide?.Name),
             Title = title,
             PreviewText = preview ? PreviewText(slide) : null,
-            Shapes = slide.Shapes.Count,
+            ShapeCount = slide.Shapes.Count,
             Hidden = slide.Hidden,
             HasNotes = !string.IsNullOrWhiteSpace(Notes(slide)),
-            Comments = comments.Count(comment => ReferenceEquals(comment.Slide, slide)),
+            CommentCount = comments.Count(comment => ReferenceEquals(comment.Slide, slide)),
         };
     }
 

@@ -16,7 +16,7 @@ public sealed class SlidesCreationTests
 
         SlidesCreateResult result = fixture.Engine.Create(new NewPresentationRequest { OutputPath = output });
 
-        Assert.Equal(1, result.Slides);
+        Assert.Equal(1, result.SlideCount);
         Assert.Null(result.Template);
         using var deck = new Presentation(output);
         Assert.Equal(720f, deck.SlideSize.Size.Width);
@@ -43,7 +43,7 @@ public sealed class SlidesCreationTests
             TemplatePath = template,
         });
 
-        Assert.Equal(1, result.Slides);
+        Assert.Equal(1, result.SlideCount);
         using var deck = new Presentation(fixture.File("from-template.pptx"));
         Assert.Equal(SlideLayoutType.Title, Assert.Single(deck.Slides).LayoutSlide.LayoutType);
     }

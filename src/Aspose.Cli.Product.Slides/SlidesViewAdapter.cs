@@ -54,7 +54,7 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<ISlidesEngine>
             Findings = analysis.Findings,
             Coverage =
             [
-                Metric("slides", info.Presentation.Slides, "slides"),
+                Metric("slides", info.Presentation.SlideCount, "slides"),
                 Metric("inspectedSlides", inspected, "slides"),
                 Metric("blankSlides", analysis.BlankSlides, "slides"),
                 Metric("outsideShapes", analysis.OutsideShapes, "shapes"),

@@ -75,7 +75,7 @@ public sealed class SlidesCoreWorkflowTests
         });
 
         Assert.True(File.Exists(presentation));
-        Assert.True(created.Slides > 0);
+        Assert.True(created.SlideCount > 0);
 
         string searchable = fixture.CreatePresentation("searchable.pptx", slides: 1);
 

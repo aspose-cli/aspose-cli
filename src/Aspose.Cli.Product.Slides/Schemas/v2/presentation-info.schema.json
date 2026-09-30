@@ -11,18 +11,18 @@
     "source": { "type": "object" },
     "presentation": {
       "type": "object",
-      "required": ["slides", "widthPoints", "heightPoints", "orientation", "masters", "layouts", "sections", "comments", "media", "hasMacros"],
+      "required": ["slideCount", "widthPoints", "heightPoints", "orientation", "masterCount", "layoutCount", "sectionCount", "commentCount", "mediaCount", "hasMacros"],
       "additionalProperties": false,
       "properties": {
-        "slides": { "type": "integer", "minimum": 0 },
+        "slideCount": { "type": "integer", "minimum": 0 },
         "widthPoints": { "type": "number", "minimum": 0 },
         "heightPoints": { "type": "number", "minimum": 0 },
         "orientation": { "enum": ["landscape", "portrait", "square"] },
-        "masters": { "type": "integer", "minimum": 0 },
-        "layouts": { "type": "integer", "minimum": 0 },
-        "sections": { "type": "integer", "minimum": 0 },
-        "comments": { "type": "integer", "minimum": 0 },
-        "media": { "type": "integer", "minimum": 0 },
+        "masterCount": { "type": "integer", "minimum": 0 },
+        "layoutCount": { "type": "integer", "minimum": 0 },
+        "sectionCount": { "type": "integer", "minimum": 0 },
+        "commentCount": { "type": "integer", "minimum": 0 },
+        "mediaCount": { "type": "integer", "minimum": 0 },
         "hasMacros": { "type": "boolean" }
       }
     },

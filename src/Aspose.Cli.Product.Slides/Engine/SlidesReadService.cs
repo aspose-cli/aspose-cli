@@ -42,15 +42,15 @@ internal sealed class SlidesReadService
             Source = Source(filePath, loaded.FormatId),
             Presentation = new PresentationSummary
             {
-                Slides = presentation.Slides.Count,
+                SlideCount = presentation.Slides.Count,
                 WidthPoints = width,
                 HeightPoints = height,
                 Orientation = width > height ? "landscape" : height > width ? "portrait" : "square",
-                Masters = presentation.Masters.Count,
-                Layouts = presentation.LayoutSlides.Count,
-                Sections = presentation.Sections.Count,
-                Comments = comments.Length,
-                Media = presentation.Images.Count + presentation.Audios.Count + presentation.Videos.Count,
+                MasterCount = presentation.Masters.Count,
+                LayoutCount = presentation.LayoutSlides.Count,
+                SectionCount = presentation.Sections.Count,
+                CommentCount = comments.Length,
+                MediaCount = presentation.Images.Count + presentation.Audios.Count + presentation.Videos.Count,
                 HasMacros = presentation.VbaProject is not null,
             },
             Slides = slides,
@@ -87,7 +87,7 @@ internal sealed class SlidesReadService
                     {
                         Slide = index + 1,
                         Present = notes is not null,
-                        Characters = notes?.Length ?? 0,
+                        CharacterCount = notes?.Length ?? 0,
                     };
                 }).ToArray()
                 : null,

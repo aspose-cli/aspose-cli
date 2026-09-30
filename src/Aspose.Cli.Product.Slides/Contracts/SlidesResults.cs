@@ -26,15 +26,15 @@ public sealed record PresentationInfoResult() : ResultEnvelope(SlidesSchemaIds.P
 /// <summary>Stable presentation-level counts and geometry.</summary>
 public sealed record PresentationSummary
 {
-    public required int Slides { get; init; }
+    public required int SlideCount { get; init; }
     public required double WidthPoints { get; init; }
     public required double HeightPoints { get; init; }
     public required string Orientation { get; init; }
-    public required int Masters { get; init; }
-    public required int Layouts { get; init; }
-    public required int Sections { get; init; }
-    public required int Comments { get; init; }
-    public required int Media { get; init; }
+    public required int MasterCount { get; init; }
+    public required int LayoutCount { get; init; }
+    public required int SectionCount { get; init; }
+    public required int CommentCount { get; init; }
+    public required int MediaCount { get; init; }
     public required bool HasMacros { get; init; }
 }
 
@@ -48,10 +48,10 @@ public sealed record SlideInfo
     public string? Layout { get; init; }
     public string? Title { get; init; }
     public string? PreviewText { get; init; }
-    public required int Shapes { get; init; }
+    public required int ShapeCount { get; init; }
     public required bool Hidden { get; init; }
     public required bool HasNotes { get; init; }
-    public required int Comments { get; init; }
+    public required int CommentCount { get; init; }
 }
 
 /// <summary>One presentation master and its direct slide usage.</summary>
@@ -87,7 +87,7 @@ public sealed record PresentationNotesInfo
 {
     public required int Slide { get; init; }
     public required bool Present { get; init; }
-    public required int Characters { get; init; }
+    public required int CharacterCount { get; init; }
 }
 
 /// <summary>One presentation comment in deterministic slide order.</summary>
@@ -226,7 +226,7 @@ public sealed record SlidesCreateResult() : ResultEnvelope(SlidesSchemaIds.Creat
     [JsonPropertyOrder(-50)]
     public required OutputInfo Output { get; init; }
 
-    public required int Slides { get; init; }
+    public required int SlideCount { get; init; }
     public SourceInfo? Template { get; init; }
     public SourceInfo? Markdown { get; init; }
 }

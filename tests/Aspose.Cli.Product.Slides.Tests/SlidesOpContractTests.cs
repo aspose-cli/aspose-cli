@@ -21,7 +21,7 @@ public sealed class SlidesOpContractTests
     [InlineData("""{"op":"delete_slides","slides":"0"}""")]
     [InlineData("""{"op":"set_background","color":"#FFFFFF","imagePath":"a.png"}""")]
     [InlineData("""{"op":"set_body","slide":1,"paragraphs":[{"text":"x","level":9}]}""")]
-    [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rows":101,"cols":1}""")]
+    [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rowCount":101,"columnCount":1}""")]
     [InlineData("""{"op":"set_transition","slides":"1"}""")]
     [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{}}""")]
     [InlineData("""{"op":"set_footer"}""")]
@@ -59,7 +59,7 @@ public sealed class SlidesOpContractTests
     [Theory]
     [InlineData("""{"op":"replace_text","find":"(","replace":"x","regex":true}""")]
     [InlineData("""{"op":"insert_chart","slide":1,"kind":"bar","rect":{"x":0,"y":0,"width":10,"height":10},"categories":["a","b"],"series":[{"name":"s","values":[1]}]}""")]
-    [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rows":1,"cols":1,"data":[["a","b"]]}""")]
+    [InlineData("""{"op":"insert_table","slide":1,"rect":{"x":0,"y":0,"width":10,"height":10},"rowCount":1,"columnCount":1,"data":[["a","b"]]}""")]
     public void Parser_RejectsWhatTheOperationSummaryStates(string operation)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));

@@ -65,7 +65,7 @@ public sealed class SlidesHardeningTests
                 Width = 320,
             });
 
-        Assert.Equal(12, info.Presentation.Slides);
+        Assert.Equal(12, info.Presentation.SlideCount);
         Assert.Equal(10, window.Slides.Count);
         Assert.True(window.Window!.Truncated);
         Assert.Equal(12, window.Window.Total);
