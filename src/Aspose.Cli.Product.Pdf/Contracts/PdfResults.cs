@@ -25,7 +25,7 @@ public sealed record PdfInfoResult() : ResultEnvelope(PdfSchemaIds.PdfInfo, 2)
 /// <summary>Always-on PDF summary.</summary>
 public sealed record PdfSummary
 {
-    public required int Pages { get; init; }
+    public required int PageCount { get; init; }
     public required IReadOnlyList<PdfPageSizeSummary> DistinctPageSizes { get; init; }
     public required string Version { get; init; }
     public required bool Encrypted { get; init; }
@@ -33,12 +33,12 @@ public sealed record PdfSummary
     public required bool Tagged { get; init; }
     public required bool PdfaCompliant { get; init; }
     public required string FormType { get; init; }
-    public required int Attachments { get; init; }
+    public required int AttachmentCount { get; init; }
     public required bool Signed { get; init; }
     public required string PasswordType { get; init; }
 }
 
-/// <summary>One distinct page size and its document-wide occurrence count.</summary>
+/// <summary>One distinct page size and how many pages of the document have it.</summary>
 public sealed record PdfPageSizeSummary
 {
     public required double WidthPoints { get; init; }
@@ -97,7 +97,7 @@ public sealed record PdfOutlineItem
 public sealed record PdfFormSummary
 {
     public required string Type { get; init; }
-    public required int Fields { get; init; }
+    public required int FieldCount { get; init; }
     public required bool ReadOnly { get; init; }
 }
 

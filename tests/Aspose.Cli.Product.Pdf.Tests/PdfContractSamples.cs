@@ -20,11 +20,11 @@ internal static class PdfContractSamples
         Source = new SourceInfo { Path = "D:/data/report.pdf", Format = "pdf", SizeBytes = 52000, Fingerprint = Fingerprint },
         Pdf = new PdfSummary
         {
-            Pages = 3,
+            PageCount = 3,
             DistinctPageSizes =
             [
-                new PdfPageSizeSummary { WidthPoints = 612, HeightPoints = 792, Count = 2 },
-                new PdfPageSizeSummary { WidthPoints = 792, HeightPoints = 612, Count = 1 },
+                new PdfPageSizeSummary { WidthPoints = 612, HeightPoints = 792, PageCount = 2 },
+                new PdfPageSizeSummary { WidthPoints = 792, HeightPoints = 612, PageCount = 1 },
             ],
             Version = "1.7",
             Encrypted = true,
@@ -32,7 +32,7 @@ internal static class PdfContractSamples
             Tagged = true,
             PdfaCompliant = false,
             FormType = "acro",
-            Attachments = 1,
+            AttachmentCount = 1,
             Signed = true,
             PasswordType = "owner",
         },
@@ -63,7 +63,7 @@ internal static class PdfContractSamples
             new PdfOutlineItem { Title = "Executive summary", Level = 1, Path = "Executive summary", Page = 1 },
             new PdfOutlineItem { Title = "Web appendix", Level = 2, Path = "Executive summary/Web appendix" },
         ],
-        Forms = new PdfFormSummary { Type = "acro", Fields = 2, ReadOnly = false },
+        Forms = new PdfFormSummary { Type = "acro", FieldCount = 2, ReadOnly = false },
         Attachments = [new PdfAttachmentInfo { Name = "source.csv", MimeType = "text/csv", SizeBytes = 1200 }],
         Fonts = [new PdfFontInfo { Name = "Arial", Embedded = true, Subset = true }],
         Permissions = new PdfPermissionInfo

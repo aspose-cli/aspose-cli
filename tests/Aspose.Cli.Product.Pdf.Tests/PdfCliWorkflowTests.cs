@@ -59,7 +59,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
             "--out", "source.txt", "--output", "json");
 
         Assert.True(info.ExitCode == 0, info.StdErr);
-        Assert.Equal(1, JsonNode.Parse(info.StdOut)!["pdf"]!["pages"]!.GetValue<int>());
+        Assert.Equal(1, JsonNode.Parse(info.StdOut)!["pdf"]!["pageCount"]!.GetValue<int>());
         Assert.True(read.ExitCode == 0, read.StdErr);
         Assert.Contains("Portable PDF workflow", read.StdOut, StringComparison.Ordinal);
         Assert.True(forms.ExitCode == 0, forms.StdErr);

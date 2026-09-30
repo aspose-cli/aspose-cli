@@ -49,7 +49,7 @@ internal static class PdfInfoProjection
             Source = Source(path, includeFingerprint: true),
             Pdf = new PdfSummary
             {
-                Pages = document.Pages.Count,
+                PageCount = document.Pages.Count,
                 DistinctPageSizes = DistinctPageSizes(document),
                 Version = Version(document.Version),
                 Encrypted = document.IsEncrypted,
@@ -57,7 +57,7 @@ internal static class PdfInfoProjection
                 Tagged = IsTagged(document),
                 PdfaCompliant = document.IsPdfaCompliant,
                 FormType = form.Type,
-                Attachments = document.EmbeddedFiles.Count,
+                AttachmentCount = document.EmbeddedFiles.Count,
                 Signed = signatures.Any(static item => item.Signed),
                 PasswordType = loaded.PasswordType.ToString().ToLowerInvariant(),
             },
@@ -111,9 +111,9 @@ internal static class PdfInfoProjection
             {
                 WidthPoints = group.Key.Width,
                 HeightPoints = group.Key.Height,
-                Count = group.Count(),
+                PageCount = group.Count(),
             })
-            .OrderByDescending(static size => size.Count)
+            .OrderByDescending(static size => size.PageCount)
             .ThenBy(static size => size.WidthPoints)
             .ThenBy(static size => size.HeightPoints)
             .ToArray();
@@ -206,7 +206,7 @@ internal static class PdfInfoProjection
         return new PdfFormSummary
         {
             Type = type,
-            Fields = document.Form.Fields.Length,
+            FieldCount = document.Form.Fields.Length,
             ReadOnly = xfa,
         };
     }

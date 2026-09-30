@@ -64,14 +64,14 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         int unusualPages = AnalyzePageSizes(layout, findings);
         TextAnalysis text = AnalyzeText(
             read,
-            info.Forms?.Fields ?? 0,
+            info.Forms?.FieldCount ?? 0,
             findings);
         FormAnalysis forms = AnalyzeForms(
             port,
             filePath,
             request.Password,
-            info.Pdf.Pages,
-            info.Forms?.Fields ?? 0,
+            info.Pdf.PageCount,
+            info.Forms?.FieldCount ?? 0,
             findings);
         int unembeddedFonts = AnalyzeFonts(
             port,
@@ -84,7 +84,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             Findings = findings,
             Coverage =
             [
-                Metric("pages", info.Pdf.Pages, "pages"),
+                Metric("pages", info.Pdf.PageCount, "pages"),
                 Metric("inspectedPages", inspected, "pages"),
                 Metric("emptyTextPages", text.EmptyPages, "pages"),
                 Metric("lowUtilizationPages", text.LowUtilizationPages, "pages"),

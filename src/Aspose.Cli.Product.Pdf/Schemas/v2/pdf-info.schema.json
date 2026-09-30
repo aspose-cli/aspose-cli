@@ -26,20 +26,20 @@
     },
     "pdf": {
       "type": "object",
-      "required": ["pages", "distinctPageSizes", "version", "encrypted", "linearized", "tagged", "pdfaCompliant", "formType", "attachments", "signed", "passwordType"],
+      "required": ["pageCount", "distinctPageSizes", "version", "encrypted", "linearized", "tagged", "pdfaCompliant", "formType", "attachmentCount", "signed", "passwordType"],
       "additionalProperties": false,
       "properties": {
-        "pages": { "type": "integer", "minimum": 0 },
+        "pageCount": { "type": "integer", "minimum": 0 },
         "distinctPageSizes": {
           "type": "array",
           "items": {
             "type": "object",
-            "required": ["widthPoints", "heightPoints", "count"],
+            "required": ["widthPoints", "heightPoints", "pageCount"],
             "additionalProperties": false,
             "properties": {
               "widthPoints": { "type": "number", "exclusiveMinimum": 0 },
               "heightPoints": { "type": "number", "exclusiveMinimum": 0 },
-              "count": { "type": "integer", "minimum": 1 }
+              "pageCount": { "type": "integer", "minimum": 1 }
             }
           }
         },
@@ -49,7 +49,7 @@
         "tagged": { "type": "boolean" },
         "pdfaCompliant": { "type": "boolean" },
         "formType": { "enum": ["none", "acro", "xfa"] },
-        "attachments": { "type": "integer", "minimum": 0 },
+        "attachmentCount": { "type": "integer", "minimum": 0 },
         "signed": { "type": "boolean" },
         "passwordType": { "enum": ["none", "user", "owner"] }
       }
@@ -107,11 +107,11 @@
     },
     "forms": {
       "type": "object",
-      "required": ["type", "fields", "readOnly"],
+      "required": ["type", "fieldCount", "readOnly"],
       "additionalProperties": false,
       "properties": {
         "type": { "enum": ["none", "acro", "xfa"] },
-        "fields": { "type": "integer", "minimum": 0 },
+        "fieldCount": { "type": "integer", "minimum": 0 },
         "readOnly": { "type": "boolean" }
       }
     },
