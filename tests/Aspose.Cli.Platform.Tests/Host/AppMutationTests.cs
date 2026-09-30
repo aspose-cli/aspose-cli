@@ -22,6 +22,10 @@ public sealed class AppMutationIsolationCollection;
 [Collection("App mutation isolation")]
 public sealed class AppMutationTests
 {
+    // A blocked request never answers, so one generous bound tells it from a slow machine; the
+    // first status of an App starts two CLI child processes cold.
+    private static readonly TimeSpan ResponseBound = TimeSpan.FromSeconds(30);
+
     [Fact]
     public async Task SlowRequestBodyDoesNotBlockStatusOrClearAndKeepsItsUploadAlive()
     {
@@ -41,7 +45,7 @@ public sealed class AppMutationTests
                 document => document!["uploadedCopy"]!.GetValue<bool>());
         }
         finally { client.Dispose(); }
-        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(10));
+        using var deadline = new CancellationTokenSource(ResponseBound);
         while (File.Exists(uploaded)) { await Task.Delay(20, deadline.Token); }
         Assert.True(File.Exists(app.Original));
     }
@@ -106,7 +110,7 @@ public sealed class AppMutationTests
             _client = new HttpClient(new HttpClientHandler { UseCookies = false })
             {
                 BaseAddress = new Uri(Url.GetLeftPart(UriPartial.Authority)),
-                Timeout = TimeSpan.FromSeconds(30),
+                Timeout = ResponseBound,
             };
             string shell = _client.GetStringAsync("/").GetAwaiter().GetResult();
             string csrf = System.Text.RegularExpressions.Regex.Match(
@@ -126,13 +130,13 @@ public sealed class AppMutationTests
         internal string Csrf { get; }
 
         internal async Task<JsonNode> Status() =>
-            JsonNode.Parse(await _client.GetStringAsync("/api/status").WaitAsync(TimeSpan.FromSeconds(5)))!;
+            JsonNode.Parse(await _client.GetStringAsync("/api/status").WaitAsync(ResponseBound))!;
 
         internal async Task Post(string path)
         {
             HttpResponseMessage response = await _client
                 .PostAsync(path, new StringContent(string.Empty))
-                .WaitAsync(TimeSpan.FromSeconds(15));
+                .WaitAsync(ResponseBound);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
@@ -142,7 +146,7 @@ public sealed class AppMutationTests
             body.Headers.ContentType = new MediaTypeHeaderValue("text/csv");
             var request = new HttpRequestMessage(HttpMethod.Post, "/api/files/upload") { Content = body };
             request.Headers.Add("X-File-Name", name);
-            HttpResponseMessage response = await _client.SendAsync(request).WaitAsync(TimeSpan.FromSeconds(30));
+            HttpResponseMessage response = await _client.SendAsync(request).WaitAsync(ResponseBound);
             Assert.Equal(HttpStatusCode.OK, response.StatusCode);
         }
 
@@ -159,7 +163,7 @@ public sealed class AppMutationTests
                     + "Expect: 100-continue\r\nConnection: close\r\n\r\n";
                 await client.GetStream().WriteAsync(Encoding.ASCII.GetBytes(request));
                 using var reader = new StreamReader(client.GetStream(), Encoding.ASCII, false, 1024, leaveOpen: true);
-                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(5));
+                using var timeout = new CancellationTokenSource(ResponseBound);
                 string? line = await reader.ReadLineAsync(timeout.Token);
                 Assert.Contains("100 Continue", line, StringComparison.OrdinalIgnoreCase);
                 while (!string.IsNullOrEmpty(await reader.ReadLineAsync(timeout.Token))) { }
