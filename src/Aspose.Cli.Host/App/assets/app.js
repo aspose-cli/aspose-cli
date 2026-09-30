@@ -444,11 +444,14 @@
         'p',
         '',
         'Commands: ' + product.verbs.join(', ') + '. Review view: ' + product.review.defaultView + '.'));
-      if (product.skill) {
+      var skill = (status.skills || []).find(function (candidate) {
+        return candidate.product === product.id;
+      });
+      if (skill) {
         card.append(node(
           'div',
           'skill-line',
-          'aspose-cli skill install ' + product.skill.name + ' --host codex --scope project'));
+          'aspose-cli skill install ' + skill.name + ' --host codex --scope project'));
       }
       root.append(card);
     });
@@ -526,18 +529,19 @@
   function renderAgentCommands() {
     var root = $('agent-commands');
     root.replaceChildren();
-    var products = (status.products || []).filter(function (product) {
-      return Boolean(product.skill);
-    });
-    if (!products.length) {
+    var skills = status.skills || [];
+    if (!skills.length) {
       root.append(node('span', '', 'This build has no bundled Agent Skills.'));
       return;
     }
-    products.forEach(function (product) {
+    skills.forEach(function (skill) {
+      var product = (status.products || []).find(function (candidate) {
+        return candidate.id === skill.product;
+      });
       var command = node('div', 'agent-command');
       command.append(
-        node('strong', '', product.name),
-        node('span', '', 'aspose-cli skill install ' + product.skill.name + ' --host codex --scope project'));
+        node('strong', '', product ? product.name : 'Platform'),
+        node('span', '', 'aspose-cli skill install ' + skill.name + ' --host codex --scope project'));
       root.append(command);
     });
   }

@@ -28,14 +28,14 @@ internal sealed record AppOpenDocumentView(
     bool UploadedCopy,
     bool Active);
 
+/// <summary>
+/// One installable Agent Skill. <paramref name="Product"/> names the product
+/// that owns it; the platform Skill every product builds on has none.
+/// </summary>
 internal sealed record AppSkillView(
-    string Product,
     string Name,
-    string Description);
-
-internal sealed record AppSkillSummary(
-    string Name,
-    string Description);
+    string Description,
+    string? Product);
 
 internal sealed record AppFormatView(
     string Id,
@@ -59,8 +59,7 @@ internal sealed record AppProductView(
     IReadOnlyList<AppFormatView> Formats,
     IReadOnlyList<string> Verbs,
     AppPreviewCapabilityView Preview,
-    AppReviewCapabilityView Review,
-    AppSkillSummary? Skill);
+    AppReviewCapabilityView Review);
 
 internal sealed record AppStatusView(
     string Version,

@@ -124,6 +124,18 @@ public sealed class AppCommandTests : IDisposable
             AssertAppProductsMatchCapabilities(
                 statusJson["products"]!.AsArray(),
                 capabilities["products"]!.AsArray());
+            // One list of every installable Skill: the platform Skill first,
+            // with no product, then one per product naming its owner.
+            Assert.Equal(
+                capabilities["products"]!.AsArray()
+                    .Select(static product =>
+                        $"aspose-cli-{product!["id"]!.GetValue<string>()}:{product["id"]!.GetValue<string>()}")
+                    .Prepend("aspose-cli-platform:")
+                    .ToArray(),
+                statusJson["skills"]!.AsArray()
+                    .Select(static skill =>
+                        $"{skill!["name"]!.GetValue<string>()}:{skill["product"]?.GetValue<string>()}")
+                    .ToArray());
             JsonNode recent = Assert.Single(
                 statusJson["recentFiles"]!.AsArray())!;
             Assert.Equal("cells", recent["productId"]!.GetValue<string>());
@@ -257,9 +269,7 @@ public sealed class AppCommandTests : IDisposable
                     ? "rendered"
                     : "semantic",
                 app["preview"]!["fidelity"]!.GetValue<string>());
-            Assert.Equal(
-                $"aspose-cli-{id}",
-                app["skill"]!["name"]!.GetValue<string>());
+            Assert.Null(app["skill"]);
 
             JsonArray appFormats = app["formats"]!.AsArray();
             JsonArray capabilityFormats = capability["formats"]!.AsArray();

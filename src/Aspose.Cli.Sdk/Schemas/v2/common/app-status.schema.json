@@ -50,7 +50,9 @@
     },
     "skills": {
       "type": "array",
-      "items": { "$ref": "#/$defs/skill" }
+      "items": { "$ref": "#/$defs/skill" },
+      "minItems": 1,
+      "description": "Every installable Agent Skill: the platform Skill first, then one per product that ships one."
     },
     "rememberRecentFiles": { "type": "boolean" },
     "license": { "$ref": "#/$defs/license" },
@@ -98,20 +100,15 @@
     },
     "skill": {
       "type": "object",
-      "required": ["product", "name", "description"],
-      "properties": {
-        "product": { "type": "string", "minLength": 1 },
-        "name": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 }
-      },
-      "additionalProperties": false
-    },
-    "skillSummary": {
-      "type": "object",
       "required": ["name", "description"],
       "properties": {
         "name": { "type": "string", "minLength": 1 },
-        "description": { "type": "string", "minLength": 1 }
+        "description": { "type": "string", "minLength": 1 },
+        "product": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Product that owns the Skill; absent for the platform Skill."
+        }
       },
       "additionalProperties": false
     },
@@ -253,8 +250,7 @@
           "minItems": 1
         },
         "preview": { "$ref": "#/$defs/previewCapability" },
-        "review": { "$ref": "#/$defs/reviewCapability" },
-        "skill": { "$ref": "#/$defs/skillSummary" }
+        "review": { "$ref": "#/$defs/reviewCapability" }
       },
       "additionalProperties": false
     }
