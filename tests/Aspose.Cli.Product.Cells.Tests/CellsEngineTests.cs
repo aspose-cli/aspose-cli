@@ -127,6 +127,25 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void VerificationPointsACappedFormulaErrorListAtTheEditResult()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-formula-errors-capped.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_formula","sheet":"Second","range":"B1:B1001","formula":"=1/0"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-formula-errors-capped.out.xlsx"), Verify = true });
+
+        EditVerification verification = result.Verification!;
+        Assert.Equal(1000, verification.FormulaErrors.Count);
+        VerificationIssue capped = Assert.Single(verification.Issues, issue => issue.Code == "LIST_TRUNCATED");
+        Assert.Equal("verification.formulaErrors", capped.Location);
+        Assert.Contains("'verification.formulaErrors'", capped.Message, StringComparison.Ordinal);
+        VerificationIssue errors = Assert.Single(verification.Issues, issue => issue.Code == "FORMULA_ERRORS");
+        Assert.Contains("1001 formula error(s)", errors.Message, StringComparison.Ordinal);
+        Assert.Contains("first 1000", errors.Message, StringComparison.Ordinal);
+        Assert.Null(errors.Location);
+    }
+
+    [Fact]
     public void VerificationReportsATruncatedDiff()
     {
         string source = _fixture.CreateSalesWorkbook("verify-diff-truncated.xlsx");

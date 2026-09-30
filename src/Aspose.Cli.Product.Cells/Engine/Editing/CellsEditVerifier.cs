@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -39,17 +40,23 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                 $"The edit changed more than {MaxDiffs} cells, so verification could not list every change.",
                 hint: "Split the edit into smaller batches so each one changes fewer cells."));
         }
-        (WorkbookSummary summary, Warning? errorsCapped) = InfoProjection.Summarize(budgets, candidate.Workbook,
-            candidatePath, new InfoRequest { Details = [InfoDetails.Errors] });
-        if (errorsCapped is not null)
-        { issues.Add(VerificationIssue.From(errorsCapped)); }
-        IReadOnlyList<CellError> errors = summary.FormulaErrors ?? [];
-        if (errors.Count > 0)
+        (IReadOnlyList<CellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
+        bool errorsCapped = errorTotal > errors.Count;
+        if (errorsCapped)
+        {
+            issues.Add(VerificationIssue.From(EnvelopeParts.ListTruncated(
+                "verification.formulaErrors", errors.Count, errorTotal, InfoProjection.FormulaErrorsCappedHint)));
+        }
+        if (errorTotal > 0)
         {
             issues.Add(VerificationIssue.Of(CellsDiagnostics.FormulaErrors,
-                $"The edited workbook contains {errors.Count} formula error(s).",
-                location: errors.Count == 1 ? CellReference(errors[0]) : null,
-                hint: "Fix the cells listed in formulaErrors, then edit again with --verify."));
+                errorsCapped
+                    ? $"The edited workbook contains {errorTotal} formula error(s); formulaErrors lists the first {errors.Count}."
+                    : $"The edited workbook contains {errorTotal} formula error(s).",
+                location: errorTotal == 1 ? Sheets.QuotedName(errors[0].Sheet) + "!" + errors[0].Cell : null,
+                hint: errorsCapped
+                    ? "Fix the cells listed in formulaErrors, then edit again with --verify to list the rest."
+                    : "Fix the cells listed in formulaErrors, then edit again with --verify."));
         }
         return new EditVerification
         {
@@ -64,9 +71,6 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     /// <summary>Completeness warnings carried into verification with their location and hint.</summary>
     internal static IEnumerable<VerificationIssue> CompletenessIssues(IReadOnlyList<Warning>? warnings) =>
         (warnings ?? []).Where(static warning => warning.AffectsCompleteness).Select(VerificationIssue.From);
-
-    private static string CellReference(CellError error) =>
-        "'" + error.Sheet.Replace("'", "''", StringComparison.Ordinal) + "'!" + error.Cell;
 
     private static void Classify(
         DiffComparer.Result diff,
