@@ -1,0 +1,33 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json",
+  "title": "In-place backup",
+  "description": "The never-overwritten safety backup kept by --in-place --backup before the file was replaced.",
+  "type": "object",
+  "required": ["path", "created", "sizeBytes", "lastWriteUtc", "holdsReplacedVersion"],
+  "additionalProperties": false,
+  "properties": {
+    "path": {
+      "type": "string",
+      "description": "Absolute backup path."
+    },
+    "created": {
+      "type": "boolean",
+      "description": "True when this invocation created the backup; false when it reused an existing one."
+    },
+    "sizeBytes": {
+      "type": "integer",
+      "minimum": 0,
+      "description": "Backup file size in bytes."
+    },
+    "lastWriteUtc": {
+      "type": "string",
+      "format": "date-time",
+      "description": "When the content the backup holds was last written, in UTC."
+    },
+    "holdsReplacedVersion": {
+      "type": "boolean",
+      "description": "True when the backup holds exactly the version this invocation replaced; false when a reused backup holds an earlier version, which a BACKUP_PREDATES_EDIT warning discloses."
+    }
+  }
+}

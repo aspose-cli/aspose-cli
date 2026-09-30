@@ -238,6 +238,7 @@ internal static class PdfContractSamples
         Output = new OutputInfo { Path = "D:/data/report.out.pdf", Format = "pdf", SizeBytes = 50000, Fingerprint = Fingerprint },
         DryRun = false,
         Applied = [new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "rotate_pages", Status = OpStatuses.Ok, ItemsAffected = 1, Targets = ["pdf/page/1"] }],
+        Backup = new BackupInfo { Path = "D:/data/report.backup.pdf", Created = true, SizeBytes = 52000, LastWriteUtc = new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero), HoldsReplacedVersion = true },
         Mutation = new MutationReceipt { Verification = "reopened" },
         PagesTouched = [1],
         License = Licensed,

@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Aspose.Cli.Architecture.Tests.TestSupport;
@@ -179,6 +180,31 @@ public sealed class CommonSchemaContractTests
             using JsonDocument instance = JsonDocument.Parse(json);
             Assert.True(schema.Evaluate(instance.RootElement).IsValid, id);
         }
+    }
+
+    [Theory]
+    [InlineData("v2/common/backup", typeof(BackupInfo))]
+    [InlineData("v2/common/file-fingerprint", typeof(FileFingerprint))]
+    [InlineData("v2/common/mutation-receipt", typeof(MutationReceipt))]
+    [InlineData("v2/common/operation-outcome", typeof(BoundedOperationOutcome))]
+    public void CommonResultSchema_RequiresExactlyTheRecordsNonNullableMembers(
+        string id,
+        Type record)
+    {
+        JsonObject schema = JsonNode.Parse(SdkSchemaCatalog.Read(id))!.AsObject();
+        NullabilityInfoContext nullability = new();
+        PropertyInfo[] members = record.GetProperties(BindingFlags.Public | BindingFlags.Instance);
+
+        Assert.Equal(
+            members.Select(static member => JsonNamingPolicy.CamelCase.ConvertName(member.Name)).Order(),
+            schema["properties"]!.AsObject().Select(static pair => pair.Key).Order());
+        Assert.Equal(
+            members
+                .Where(member => nullability.Create(member).ReadState != NullabilityState.Nullable)
+                .Select(static member => JsonNamingPolicy.CamelCase.ConvertName(member.Name))
+                .Order(),
+            schema["required"]!.AsArray().Select(static value => value!.GetValue<string>()).Order());
+        Assert.False(schema["additionalProperties"]!.GetValue<bool>());
     }
 
     [Fact]

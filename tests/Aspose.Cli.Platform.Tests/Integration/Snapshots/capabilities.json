@@ -9281,6 +9281,7 @@
     "v2/cells/workbook-read",
     "v2/common/app-result",
     "v2/common/app-status",
+    "v2/common/backup",
     "v2/common/capabilities",
     "v2/common/capabilities-summary",
     "v2/common/diagnostic-details",
