@@ -330,18 +330,18 @@ public sealed record SlidesInsertTableOp : SlideTargetOp
 
     public required SlidesRectInput Rect { get; init; }
 
-    [Minimum(1), Maximum(MaxRows)] public required int Rows { get; init; }
+    [Minimum(1), Maximum(MaxRows)] public required int RowCount { get; init; }
 
-    [Minimum(1), Maximum(MaxCols)] public required int Cols { get; init; }
+    [Minimum(1), Maximum(MaxCols)] public required int ColumnCount { get; init; }
 
-    /// <summary>Cell text by row, at most rows rows of at most cols cells each.</summary>
+    /// <summary>Cell text by row, at most rowCount rows of at most columnCount cells each.</summary>
     public IReadOnlyList<IReadOnlyList<string>>? Data { get; init; }
 
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        Require(Data is null || Data.Count <= Rows && Data.All(row => row.Count <= Cols),
-            "data must fit the table: at most rows rows of at most cols cells");
+        Require(Data is null || Data.Count <= RowCount && Data.All(row => row.Count <= ColumnCount),
+            "data must fit the table: at most rowCount rows of at most columnCount cells");
         return this;
     }
 }

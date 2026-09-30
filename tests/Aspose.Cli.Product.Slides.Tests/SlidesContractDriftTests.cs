@@ -88,7 +88,7 @@ public sealed class SlidesContractDriftTests
 
         PresentationInfoResult info = fixture.Engine.GetInfo(input, new PresentationInfoRequest { Details = ["media"] });
 
-        Assert.Equal(count, info.Presentation.Media);
+        Assert.Equal(count, info.Presentation.MediaCount);
         Assert.Equal(SlidesReadService.MediaListLimit, info.Media!.Count);
         Warning warning = Assert.Single(info.Warnings ?? [], static warning => warning.Code == WarningCodes.ListTruncated);
         Assert.Equal("media", warning.Location);

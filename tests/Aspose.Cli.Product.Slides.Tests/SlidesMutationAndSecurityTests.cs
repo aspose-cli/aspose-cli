@@ -36,7 +36,7 @@ public sealed class SlidesMutationAndSecurityTests
             Assert.Equal(["ok", "failed"], result.Applied.Select(static outcome => outcome.Status));
             Assert.Equal(1, result.Applied[0].ItemsAffected);
             Assert.Equal(0, result.Applied[1].ItemsAffected);
-            Assert.Equal(2, fixture.Engine.GetInfo(output, new PresentationInfoRequest()).Presentation.Slides);
+            Assert.Equal(2, fixture.Engine.GetInfo(output, new PresentationInfoRequest()).Presentation.SlideCount);
         }
         else
         {
@@ -165,7 +165,7 @@ public sealed class SlidesMutationAndSecurityTests
             fixture.Engine.GetInfo(output, new PresentationInfoRequest())).Code);
         Assert.Equal(3, fixture.Engine.GetInfo(
             output,
-            new PresentationInfoRequest { Password = "correct" }).Presentation.Slides);
+            new PresentationInfoRequest { Password = "correct" }).Presentation.SlideCount);
         PresentationReadResult read = fixture.Engine.Read(
             output,
             new PresentationReadRequest

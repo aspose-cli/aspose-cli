@@ -324,7 +324,7 @@ internal sealed class SlidesProductionService
                 Format = format,
                 SizeBytes = size,
             },
-            Slides = presentation.Slides.Count,
+            SlideCount = presentation.Slides.Count,
             Template = request.TemplatePath is null
                 ? null
                 : Source(request.TemplatePath, template.FormatId),

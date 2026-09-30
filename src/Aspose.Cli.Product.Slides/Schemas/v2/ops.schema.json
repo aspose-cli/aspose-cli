@@ -574,8 +574,8 @@
       "required": [
         "op",
         "rect",
-        "rows",
-        "cols"
+        "rowCount",
+        "columnCount"
       ],
       "additionalProperties": false,
       "properties": {
@@ -598,18 +598,18 @@
         "rect": {
           "$ref": "#/$defs/slidesRectInput"
         },
-        "rows": {
+        "rowCount": {
           "type": "integer",
           "minimum": 1,
           "maximum": 100
         },
-        "cols": {
+        "columnCount": {
           "type": "integer",
           "minimum": 1,
           "maximum": 50
         },
         "data": {
-          "description": "Cell text by row, at most rows rows of at most cols cells each.",
+          "description": "Cell text by row, at most rowCount rows of at most columnCount cells each.",
           "type": "array",
           "items": {
             "type": "array",

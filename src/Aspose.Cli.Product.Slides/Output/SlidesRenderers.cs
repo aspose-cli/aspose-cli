@@ -12,11 +12,11 @@ internal static class SlidesRenderers
         PresentationSummary presentation = result.Presentation;
         surface.Out.WriteLine($"{result.Source.Path} ({result.Source.Format}, {TableText.Bytes(result.Source.SizeBytes)})");
         surface.Out.WriteLine(
-            $"slides: {presentation.Slides}   size: {Points(presentation.WidthPoints)} x {Points(presentation.HeightPoints)} pt   "
+            $"slides: {presentation.SlideCount}   size: {Points(presentation.WidthPoints)} x {Points(presentation.HeightPoints)} pt   "
             + $"orientation: {presentation.Orientation}");
         surface.Out.WriteLine(
-            $"masters: {presentation.Masters}   layouts: {presentation.Layouts}   sections: {presentation.Sections}   "
-            + $"comments: {presentation.Comments}   media: {presentation.Media}   macros: {TableText.YesNo(presentation.HasMacros)}");
+            $"masters: {presentation.MasterCount}   layouts: {presentation.LayoutCount}   sections: {presentation.SectionCount}   "
+            + $"comments: {presentation.CommentCount}   media: {presentation.MediaCount}   macros: {TableText.YesNo(presentation.HasMacros)}");
 
         var table = new TextTable("slide", "id", "title", "layout", "shapes", "flags");
         foreach (SlideInfo slide in result.Slides)
@@ -26,12 +26,12 @@ internal static class SlidesRenderers
                 slide.SlideId.ToString(CultureInfo.InvariantCulture),
                 slide.Title ?? slide.Name ?? string.Empty,
                 slide.Layout ?? string.Empty,
-                TableText.Int(slide.Shapes),
+                TableText.Int(slide.ShapeCount),
                 string.Join(", ", new[]
                 {
                     slide.Hidden ? "hidden" : null,
                     slide.HasNotes ? "notes" : null,
-                    slide.Comments > 0 ? $"{slide.Comments} comment(s)" : null,
+                    slide.CommentCount > 0 ? $"{slide.CommentCount} comment(s)" : null,
                 }.Where(static value => value is not null)));
         }
 
@@ -85,7 +85,7 @@ internal static class SlidesRenderers
 
     public static void Render(SlidesCreateResult result, TableSurface surface) =>
         surface.Out.WriteLine(
-            $"created {result.Output.Path} ({result.Slides} slide(s), {TableText.Bytes(result.Output.SizeBytes)})");
+            $"created {result.Output.Path} ({result.SlideCount} slide(s), {TableText.Bytes(result.Output.SizeBytes)})");
 
     public static void Render(SlidesExtractResult result, TableSurface surface)
     {

@@ -59,8 +59,8 @@ internal sealed partial class SlidesMutationHandlers
             operation.Rect.Y,
             operation.Rect.Width,
             operation.Rect.Height,
-            operation.Rows,
-            operation.Cols);
+            operation.RowCount,
+            operation.ColumnCount);
         if (operation.Data is not null)
         {
             for (int row = 0; row < operation.Data.Count; row++)
@@ -73,7 +73,7 @@ internal sealed partial class SlidesMutationHandlers
         }
 
         _touched.Add(Slide.SlideId);
-        return operation.Rows * operation.Cols;
+        return operation.RowCount * operation.ColumnCount;
     }
 
     public long Apply(SlidesSetTableCellOp operation)

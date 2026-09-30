@@ -45,7 +45,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
             "--slides", "1", "--out", "slide.png", "--output", "json");
 
         Assert.True(info.ExitCode == 0, info.StdErr);
-        Assert.Equal(3, JsonNode.Parse(info.StdOut)!["presentation"]!["slides"]!.GetValue<int>());
+        Assert.Equal(3, JsonNode.Parse(info.StdOut)!["presentation"]!["slideCount"]!.GetValue<int>());
         Assert.True(read.ExitCode == 0, read.StdErr);
         JsonArray slides = JsonNode.Parse(read.StdOut)!["slides"]!.AsArray();
         Assert.Single(slides);
