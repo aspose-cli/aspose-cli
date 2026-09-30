@@ -11,6 +11,14 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
     internal IFrameLocator Preview => page.FrameLocator("#preview-frame");
 
     /// <summary>
+    /// How long any page action may take. A broken App never gets there, so
+    /// the bound only has to outlast a loaded machine: every request passes
+    /// through this process's loopback-only route, and the first document
+    /// opens cold.
+    /// </summary>
+    private const float Bound = 60_000;
+
+    /// <summary>
     /// A new directory for one failed browser test's evidence, beside the run's TRX when
     /// scripts/test.ps1 names ASPOSE_CLI_TEST_ARTIFACTS.
     /// </summary>
@@ -40,7 +48,7 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
                 ? route.ContinueAsync() : route.AbortAsync());
         await context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true, Sources = true });
         IPage page = await context.NewPageAsync();
-        page.SetDefaultTimeout(12_000);
+        page.SetDefaultTimeout(Bound);
         await page.Clock.InstallAsync();
         var ui = new BrowserApp(app, page);
         try
@@ -80,7 +88,7 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
     internal async Task WaitForPreview(string file, string? view = null)
     {
         await Assertions.Expect(Preview.Locator(".av-file"))
-            .ToHaveTextAsync(file, new() { Timeout = 60_000 });
+            .ToHaveTextAsync(file, new() { Timeout = Bound });
         System.Text.Json.Nodes.JsonNode status = await app.Status();
         using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
         while (!Matches(status, file, view) && !deadline.IsCancellationRequested)
