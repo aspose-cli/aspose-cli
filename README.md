@@ -4,9 +4,9 @@ Local-first automation of spreadsheets, PDFs, presentations and Word documents f
 AI agents. `aspose-cli` provides a CLI, a loopback browser workspace and a local MCP endpoint;
 documents are processed on your machine. Windows x64 is the supported platform.
 
-The CLI source is Apache-2.0. The commercial Aspose SDKs it runs on have their own license
-terms; without a license they run in evaluation mode, and the CLI discloses every evaluation
-effect on its output.
+The CLI source is Apache-2.0 and grants no rights to the commercial Aspose SDKs it runs on, which
+have their own [license terms](https://about.aspose.com/legal/eula/); without a license they run
+in evaluation mode, and the CLI discloses every evaluation effect on its output.
 
 ## Quick start
 
@@ -38,10 +38,8 @@ bundled guides. The Skills `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-sli
   stderr, with a stable code and exit code.
 - **Bounded work.** Inputs, rendering and extraction are held to the budgets that `capabilities`
   lists; `--timeout` sets a deadline for the whole command.
-- **No network access.** A document never causes a network request unless you opt in; external
-  resources are read only from local files beneath the input directory, and each omitted
-  resource is reported. [KNOWN-ISSUES.md](KNOWN-ISSUES.md) lists the inputs that are refused
-  instead, because an SDK importer would fetch them.
+- **No network access.** A document never causes a network request unless you opt in, and each
+  omitted resource is reported ([SECURITY.md](SECURITY.md#boundaries)).
 - **Your fonts.** Commands whose output depends on fonts accept `--font-dir` to add local font
   directories to the system fonts.
 
@@ -54,9 +52,8 @@ aspose-cli mcp serve
 ```
 
 App and Preview are browser views for a person, served only on `127.0.0.1`. The MCP server
-`aspose-cli` offers a read-only `capabilities` tool and an `execute` tool that runs product
-commands and the host commands that only read or publish new outputs; a rejected call lists
-them. The security boundary is described in [SECURITY.md](SECURITY.md).
+`aspose-cli` offers the tools `capabilities` and `execute`. [SECURITY.md](SECURITY.md) describes
+what each may do.
 
 ## Licensing
 
@@ -69,8 +66,7 @@ A license is taken from `--license`, then `ASPOSE_<PRODUCT>_LICENSE_B64` or
 `ASPOSE_<PRODUCT>_LICENSE_PATH`, then `ASPOSE_LICENSE_B64` or `ASPOSE_LICENSE_PATH`, then
 `.aspose/licenses/<product>.lic` or `.aspose/license.lic` in the working directory, then the
 licenses installed for the user. An invalid configured license is an error, not a silent fall
-back to evaluation. The CLI source license grants no SDK rights; see the
-[Aspose EULA](https://about.aspose.com/legal/eula/).
+back to evaluation.
 
 ## Install
 
@@ -79,9 +75,8 @@ powershell -ExecutionPolicy ByPass -c "irm https://github.com/aspose-cli/aspose-
 ```
 
 The installer downloads the latest [release](https://github.com/aspose-cli/aspose-cli/releases),
-checks the archive against the SHA-256 recorded in the release's `RELEASE-MANIFEST.json` and every
-file against the package's `SHA256SUMS`, then installs per user into `%LOCALAPPDATA%\Aspose\CLI`
-in one transaction. It adds the directory to the user PATH, installs the Agent Skills for the
+verifies it ([SECURITY.md](SECURITY.md#releases)), then installs per user into
+`%LOCALAPPDATA%\Aspose\CLI` in one transaction. It adds the directory to the user PATH, installs the Agent Skills for the
 Codex, Claude Code and OpenCode setups it finds, and offers to install a license. Agents that run
 commands need nothing more: the Skills teach them the CLI. It changes no agent's MCP
 configuration unless you ask with `-Mcp`, which also registers the `aspose-cli mcp serve` server
@@ -102,7 +97,6 @@ Switches apply to `install.ps1` run from an extracted archive, or to the downloa
 | `-Update` | Replace an installation, keeping the choices it was made with. |
 | `-Uninstall` [`-RemoveConfiguration`] | Remove the installation, its PATH entry, Skills and MCP registrations, and optionally the configuration. |
 | `-PackageRoot <path>` | Install from an extracted package elsewhere. |
-| `-DevelopmentPackage` | Accept a local development package, which may replace any build. |
 
 Configuration lives in `%APPDATA%\aspose-cli`, or in the absolute directory named by
 `ASPOSE_CLI_CONFIG_DIR`. To uninstall:
@@ -112,13 +106,12 @@ powershell -NoProfile -ExecutionPolicy ByPass -File "$env:LOCALAPPDATA\Aspose\CL
 ```
 
 `aspose-cli update check` and `aspose-cli update install` read the latest release, or the
-`RELEASE-MANIFEST.json` path or HTTPS URL you name, and check the archive the same way. An update
-installs only a higher version, or the identical build again, and runs the release's installer
-after the CLI exits; a later `update` command reports a failed or unfinished run.
+`RELEASE-MANIFEST.json` path or HTTPS URL you name, and verify it the same way. An update runs
+the release's installer after the CLI exits; a later `update` command reports a failed or
+unfinished run.
 
 ## Development
 
-[CONTRIBUTING.md](CONTRIBUTING.md) covers building, testing and releasing, and
-`scripts/install-local.ps1` installs a development build from source;
+[CONTRIBUTING.md](CONTRIBUTING.md) covers building, testing and releasing;
 [AGENTS.md](AGENTS.md) holds the architecture rules; [SECURITY.md](SECURITY.md) explains how to
 report a vulnerability.

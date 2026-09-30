@@ -1,9 +1,8 @@
 # Contributing to Aspose CLI
 
-Every change keeps the architecture rules in [AGENTS.md](AGENTS.md). Only collaborators can open
-pull requests; this repository does not accept them from outside contributors, so report problems
-and proposals through an issue. Report vulnerabilities through [SECURITY.md](SECURITY.md), not
-public issues.
+Every change keeps the architecture rules in [AGENTS.md](AGENTS.md). Only collaborators open pull
+requests; others report problems and proposals through an issue, and vulnerabilities through
+[SECURITY.md](SECURITY.md).
 
 ## Prerequisites
 
@@ -21,16 +20,13 @@ Windows x64 with:
    tests.
 2. After a catalog, identity or dependency change, run `scripts/sync.ps1`. It regenerates
    `eng/generated`, the solution and the lock files from `eng/products.json` (whose row order is
-   the display order and whose optional `defaultProduct` owns unprefixed docs topics) and
-   `eng/distribution.json` (identity literals, schema base URL and `ASPOSE_CLI_*` variable names,
-   read in code through `DistributionInfo`).
+   the display order) and `eng/distribution.json` (read in code through `DistributionInfo`).
 3. Run `scripts/test.ps1 -Configuration Release` while you work and
    `scripts/test.ps1 -Configuration Release -Scope Affected` before you push, licensed when you
    can, because CI runs without a license (see [Tests](#tests)). Commits inside a branch need no
    run of their own.
-4. For publishing or installer changes, check `scripts/publish.ps1 -Configuration Release
-   -RuntimeIdentifier win-x64` and `scripts/install-local.ps1`, which installs an unsigned
-   development build (`-Update` and `-Uninstall` work as in `install.ps1`).
+4. For publishing or installer changes, check `scripts/install-local.ps1`, which publishes and
+   installs a development build (`-Update` and `-Uninstall` work as in `install.ps1`).
 5. Open a pull request as described below.
 
 ## Pull requests
@@ -50,19 +46,14 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
   optional: `sdk`, `host`, `cli`, `app`, `cells`, `pdf`, `slides`, `words`, `skills`,
   `install`, `release`, `deps`. Retitle a GitHub-generated revert as
   `revert: <original summary>`.
-- **Description:** the template's summary (what and why), test plan (commands actually run, whether
-  they were licensed, and each project's result line) and contract checklist. Leave out how the
-  change was produced.
-- **Push when step 3 passes;** every push runs CI again. Resolve conflicts on the branch by
-  rebasing on `master`; take lock files and `eng/generated` from `master` and rerun
+- **Description:** fill in the template; leave out how the change was produced.
+- **Conflicts:** rebase on `master`; take lock files and `eng/generated` from `master` and rerun
   `scripts/sync.ps1` rather than merging them by hand.
 - **Merge** by squash, with the title as the whole commit message. Commits inside a branch are
   not kept, so their messages only need to be short.
-- **Merge green pull requests in batches.** Pull requests run only the tests their change
-  reaches, so the full run on `master` is the final check. Pull requests that touch different
-  products or layers can be merged one after another and checked by that one run; pull requests
-  that touch the same code or regenerate the same snapshots are merged one at a time, each
-  rebased on the one before.
+- **Merge green pull requests in batches;** the `Fast` run on `master` checks what they merged.
+  Pull requests on different products or layers can merge one after another; ones that touch the
+  same code or regenerate the same snapshots merge one at a time, each rebased on the one before.
 - **A red `master` comes first.** Find the pull request that broke it and fix or revert it
   before merging anything else, unless the failure is flaky.
 - **A failure the change cannot reach may be flaky,** on a pull request or on `master`. Rerun the
@@ -89,25 +80,19 @@ A test that takes several seconds by nature carries `[Category(TestCategory.Slow
 installer and Playwright tests carry `Installer` and `Browser`. The run lists every test without a
 category that took longer than 10 seconds: make it faster or mark it. `-NoBuild` reuses a build
 and `-HangTimeout` (default `15m`) dumps a test that stays silent that long. Each project's log,
-TRX and browser failure traces are written to `artifacts/TestResults/<run-id>/<project>/`. Never
-weaken a check or remove a supported operation to make a test pass.
+TRX and browser failure traces are written to `artifacts/TestResults/<run-id>/<project>/`. A test
+that changes process-wide state, such as an SDK's font sources or the standard output, joins its
+serial collection in `tests/TestAssemblyFixture.cs`. Never weaken a check or remove a supported
+operation to make a test pass.
 
-Help and capabilities output is pinned by snapshots in
-`tests/Aspose.Cli.Platform.Tests/Integration/Snapshots`; after an intended change, rerun
-`CliContractTests` with `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review the regenerated files in
-the diff.
+The help of `scripts/test.ps1` states which projects a change reaches. CI runs without a license:
+a pull request runs `Changed` against its target branch and a push to `master` runs `Fast`, so a
+test a pull request skipped runs when it merges.
 
-`Affected` runs a test project in full when the change touches it or a project it references,
-adds the installer tests when `install.ps1` or `scripts/install-local.ps1` changes, adds nothing
-for documentation, and runs everything for any other change, such as `eng/`, `scripts/` or
-the shared build files.
-
-`Changed` runs the tests without a category of the test projects the change since the merge
-base with `-Base` reaches, by the same project rule, and always `tests/Aspose.Cli.Tests`.
-Documentation and repository metadata (`*.md`, `.github/`, `LICENSE*`, `.gitignore`,
-`.gitattributes`, `.editorconfig`) reach nothing else, and any other change outside the
-projects runs every project. The other projects are listed as skipped. Pull-request CI runs
-`Changed` against the target branch; pushes to `master` run `Fast`.
+Snapshots pin the help and capabilities output (`CliContractTests`, in
+`tests/Aspose.Cli.Platform.Tests/Integration/Snapshots`) and each product's committed ops schema
+(the product contract tests). After an intended change, rerun those tests with
+`ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1` and review the regenerated files in the diff.
 
 Runs are isolated from the developer's machine: they never read `%APPDATA%\aspose-cli`, project
 `.aspose` files or `ASPOSE_*` settings; only `ASPOSE_CLI_TEST_*` variables pass through. App
@@ -127,9 +112,10 @@ $env:ASPOSE_CLI_TEST_LICENSE_PATH = 'C:\private\Aspose.Total.lic'
 
 ### Known SDK issues
 
-Each issue in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) is reproduced with the SDK alone by a test in its
-product's `<Product>KnownIssueTests` class that calls `KnownIssue.Reproduces` with the issue's id.
-The test passes while the pinned SDK still has the defect. `KnownIssueCatalogTests` keeps the
+Each issue in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) is recorded once under its id and reproduced with
+the SDK alone by a test in its product's `<Product>KnownIssueTests` class that calls
+`KnownIssue.Reproduces` with the id; the code that handles it names the id in a comment. The test
+passes while the pinned SDK still has the defect. `KnownIssueCatalogTests` keeps the
 file true: every issue has one reproduction, source code that names its id, and a heading with
 the SDK version `eng/products.json` pins.
 
@@ -158,15 +144,8 @@ issue headings.
   `[MinProperties]` for every rule JSON Schema can state, and a `Validated()` override for the
   rest, stated in the record's summary. An array constraint applies at its `Depth`; any
   other constraint also reaches the items of lists and maps. The operation generator builds
-  the catalog and the handler dispatch, and analyzer `APCLI012` rejects an incomplete
-  contract. `OperationJsonConverter` owns the discriminator, strict fields and duplicate
-  rejection and writes omitted defaults; the catalog enforces the constraints and writes the
-  ops schema, whose committed copy the product contract tests keep current (rewrite it with
-  `ASPOSE_CLI_TEST_UPDATE_SNAPSHOTS=1`). Three deliberate gaps remain between the schema and
-  the parser: an integer member accepts a whole number written as `1.0` only as far as the
-  serializer does, the schema's `integer` does not state the CLR type's range, and a value
-  kind read by a parser, such as an A1 range, publishes a pattern that admits some values
-  the parser rejects.
+  the catalog and the handler dispatch, the catalog enforces the constraints and writes the ops
+  schema, and analyzer `APCLI012` rejects an incomplete contract.
 - **Missing targets.** A code for a sheet, slide, bookmark or other target the document does
   not contain is declared with `ErrorCode.NotFound`, and its errors are built only with
   `CliErrors.NotFound` (named targets, listing the available names and the closest ones) or
@@ -190,22 +169,14 @@ The version is declared once as `Version` in `Directory.Build.props`, and a rele
 from the protected tag `v<Version>`. Give every new build a higher version: an update refuses a
 different build with the same version.
 
-`scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64` needs a clean revision.
-It publishes the payload, writes its `SHA256SUMS`, runs an install, update and uninstall smoke
-test, and writes the release assets to `artifacts/release/win-x64`: the archive, `install.ps1`,
-`RELEASE-MANIFEST.json` (the archive's name, size and SHA-256, and the source revision) and
-`SHA256SUMS`. `-PrepareOnly` stages a development package instead. Dependency notices follow the
-published graph ([notice sources](eng/notices/README.md)).
+`scripts/package.ps1 -Configuration Release -RuntimeIdentifier win-x64` needs a clean revision;
+it builds, smoke-tests and writes the release assets to `artifacts/release/win-x64`, as its help
+describes. Dependency notices follow the published graph ([notice sources](eng/notices/README.md)).
 
-No license reaches the workflows in `.github/workflows`, so they run the SDKs in evaluation
-mode. `ci.yml` runs the `Changed` scope for a pull request, and `package.ps1` too when the pull
-request changes a packaging input (`install.ps1`, `scripts/`, `eng/`, the build properties,
-`global.json` or the launcher project). Pushes to `master` run the `Fast` scope, so a test a
-pull request skipped runs when it merges; a manual run adds `package.ps1`, to rehearse a release
-before its tag. A newer push to a pull request cancels its running check. `release.yml`, on a protected
-version tag, runs the `Fast` scope and `package.ps1` and publishes the assets as a GitHub
-release of `aspose-cli/aspose-cli`, the repository named by `releaseRepository` in
-`eng/distribution.json`. Before pushing the tag, run the `Full` scope locally with a license.
+Each workflow in `.github/workflows` states in its header what it runs; none receives a license.
+Before pushing a version tag, run the `Full` scope locally with a license; a manual run of
+`ci.yml` rehearses the packaging. `release.yml` publishes the tag as a GitHub release of the
+repository named by `releaseRepository` in `eng/distribution.json`.
 
 The workflows rely on these repository settings:
 
@@ -216,6 +187,7 @@ The workflows rely on these repository settings:
 - **A tag ruleset** protects `v*`. `release.yml` runs only when `github.ref_protected` is true,
   so a tag pushed without it builds nothing.
 - **Pull requests** allow only squash merging, with the pull request title as the default
-  commit message, and head branches are deleted after merging.
-- **A branch ruleset** on `master` requires a pull request and the `verify` and `conventions`
-  checks, requires linear history and blocks force pushes and deletion.
+  commit message, allow auto-merge, and delete head branches after merging.
+- **A branch ruleset** on `master`, with no bypass, requires a pull request and the `verify` and
+  `conventions` checks (the branch need not be up to date), requires linear history and blocks
+  force pushes and deletion.

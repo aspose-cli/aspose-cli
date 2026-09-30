@@ -34,18 +34,18 @@ the fixed distribution identity; the generated projections and the solution come
 
 ## Must not break
 
-- Atomic publication, bounded extraction, resource budgets, worker cancellation and rollback.
-- Loopback HTTP with exact Host, same-origin, CSRF and current-user service control.
-- No network egress from documents unless the caller opts in.
-- File publication and per-user install/PATH transactions holding resource-based
-  interprocess locks, which other Aspose CLI distributions on the machine share.
+- Every boundary in [SECURITY.md](SECURITY.md): local services, MCP, network, files and secrets.
+- Worker cancellation and rollback.
+- The resource-based interprocess locks, which other Aspose CLI distributions on the machine
+  share.
 - Licensed and evaluation behavior, including honest disclosure of evaluation output changes.
 - Existing user files and unrelated worktree changes. Never clean unknown files.
 - Files stay primary: never round-trip an entire document through JSON.
 
 ## Workflow
 
-- Plan in the gitignored `.claude/`: `roadmap.md` is the task list, one line per task, and a
+- Plan in the gitignored `.claude/`: `roadmap.md` is the task list, one line per task, read at
+  the start of a session, and a
   multi-step task gets `plans/<branch>.md` with its goal, acceptance, what is out of scope and
   how it is verified. Knowledge that must last goes into this file, KNOWN-ISSUES.md or the pull
   request, not into these notes.
@@ -58,16 +58,18 @@ the fixed distribution identity; the generated projections and the solution come
 - Parallel subagents own disjoint files and commit in their own worktrees; integrate their
   commits with cherry-pick or merge, not patch files.
 - Before opening the pull request, a reviewer in a fresh context checks the diff for
-  correctness, scope, weakened or deleted tests, and dead code or stale docs the change left;
+  correctness, scope, weakened or deleted tests, a code change's test plan without a licensed
+  `Affected` run, and dead code or stale docs the change left;
   fix only what is real. Add anything outside the task to `roadmap.md` instead of widening the
-  pull request; a pull request description is not a task list. Start a session by reading it.
-- Merge only when the owner says so, for one pull request or a named set of them, and as
-  [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) orders merges. Afterwards delete the branch,
-  its worktree and its plan.
+  pull request; a pull request description is not a task list.
+- Merge once that review finds nothing blocking and the required checks pass, in the order
+  [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) gives; never bypass a check. Afterwards
+  delete the branch, its worktree and its plan.
+
 ## Conventions
 
 Use only the corresponding commercial Aspose SDK packages; no FOSS source, gitlinks or
-Git LFS. The CLI source license does not replace the SDKs' own terms.
+Git LFS.
 Code comments, diagnostics, documentation and Skills are English and describe present behavior.
 Never add old-command aliases, legacy installer or Skill readers, historical version
 baselines, historical trust allowlists, or migration frameworks for unpublished builds.
@@ -76,9 +78,7 @@ intentional contract change.
 
 Before changing code around a commercial SDK, verify the official API usage and reproduce
 suspected engine behavior with a minimal SDK-only case. Correct our misuse in the owning
-adapter. Record each confirmed SDK defect once, under its id in
-[KNOWN-ISSUES.md](KNOWN-ISSUES.md), with an SDK-only test that reproduces it
-(`KnownIssue.Reproduces`); code that handles it (a refusal, a workaround through other public
-API, or a warning) names the id in a comment. When an SDK update fixes the defect, its test fails:
-delete the issue, its handling and its test together. Never hide a defect with implicit default
-rewrites, file-format patches, or product, producer or version special cases.
+adapter. Record each confirmed SDK defect in [KNOWN-ISSUES.md](KNOWN-ISSUES.md) as
+[CONTRIBUTING.md](CONTRIBUTING.md#known-sdk-issues) describes, and handle it openly with a
+refusal, a workaround through other public API, or a warning. Never hide a defect with implicit
+default rewrites, file-format patches, or product, producer or version special cases.
