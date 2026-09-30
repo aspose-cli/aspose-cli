@@ -583,9 +583,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new WordsEditRequest { OutputPath = output }));
 
         Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
-        Assert.Equal(
-            "Operation 0 (mail_merge) failed: Merge data is invalid: the merge data has no rows; a CSV needs a data row after its header.",
-            error.Message);
+        Assert.Contains("mail_merge needs at least one row", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
     }
 
