@@ -306,7 +306,7 @@ internal sealed record BundledSkill(
         {
             Skill = Name,
             Target = target,
-            Files = files,
+            FileCount = files,
         };
     }
 
