@@ -72,7 +72,7 @@ public sealed class WordsViewLayoutTests : IClassFixture<WordsFixture>
         new ViewRenderRequest
         {
             View = WordsViews.Pages,
-            MaxParts = 10,
+            MaxPartCount = 10,
             Purpose = ViewPurpose.Evidence,
         },
         new MemoryArtifactSink());

@@ -51,7 +51,7 @@ public sealed class SlidesViewLayoutTests
             new ViewRenderRequest
             {
                 View = SlidesViews.Slides,
-                MaxParts = 5,
+                MaxPartCount = 5,
                 Purpose = ViewPurpose.Evidence,
             },
             new MemoryArtifactSink());

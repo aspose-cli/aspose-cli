@@ -49,7 +49,7 @@ public sealed class CellsResourceLoadingTests
             new ViewRenderRequest
             {
                 View = CellsViews.Workbook,
-                MaxParts = 8,
+                MaxPartCount = 8,
                 Purpose = ViewPurpose.Display,
             },
             sink).Warnings);
@@ -70,7 +70,7 @@ public sealed class CellsResourceLoadingTests
         var request = new ViewRenderRequest
         {
             View = CellsViews.Sheets,
-            MaxParts = 10,
+            MaxPartCount = 10,
             Purpose = ViewPurpose.Evidence,
         };
         var sink = new MemoryArtifactSink();

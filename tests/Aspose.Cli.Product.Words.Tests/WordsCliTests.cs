@@ -83,8 +83,8 @@ public sealed class WordsCliTests : IDisposable
         Assert.Equal("words", result["product"]!.GetValue<string>());
         Assert.True(result["coverage"]!["complete"]!.GetValue<bool>());
         Assert.Equal(
-            result["coverage"]!["expectedItems"]!.GetValue<int>(),
-            result["coverage"]!["renderedItems"]!.GetValue<int>());
+            result["coverage"]!["expectedItemCount"]!.GetValue<int>(),
+            result["coverage"]!["renderedItemCount"]!.GetValue<int>());
         Assert.True(File.Exists(_workspace.File("evidence/index.html")));
         Assert.True(File.Exists(_workspace.File("evidence/review.json")));
     }
@@ -125,7 +125,7 @@ public sealed class WordsCliTests : IDisposable
         Assert.All(result["findings"]!.AsArray(), static finding =>
             Assert.Equal("WORDS_TEXT_TOO_SMALL", finding!["code"]!.GetValue<string>()));
         Assert.Equal(codes.Count(static code => code != "WORDS_TEXT_TOO_SMALL"),
-            result["filter"]!["omittedFindings"]!.GetValue<int>());
+            result["filter"]!["omittedFindingCount"]!.GetValue<int>());
     }
 
     [Fact]

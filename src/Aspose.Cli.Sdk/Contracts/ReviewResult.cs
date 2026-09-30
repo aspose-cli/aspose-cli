@@ -46,25 +46,25 @@ public sealed record ReviewFilter
 {
     public required IReadOnlyList<string> Codes { get; init; }
 
-    public required int OmittedFindings { get; init; }
+    public required int OmittedFindingCount { get; init; }
 }
 
 /// <summary>Bounded coverage of the renderer-owned evidence inventory.</summary>
 public sealed record ReviewCoverage
 {
-    public required int MaxItems { get; init; }
+    public required int MaxItemCount { get; init; }
 
-    public required int DiscoveredItems { get; init; }
+    public required int DiscoveredItemCount { get; init; }
 
-    public required int ReportedItems { get; init; }
+    public required int ReportedItemCount { get; init; }
 
     public required bool Truncated { get; init; }
 
-    public required int ExpectedItems { get; init; }
+    public required int ExpectedItemCount { get; init; }
 
-    public required int RenderedItems { get; init; }
+    public required int RenderedItemCount { get; init; }
 
-    public required int OmittedItems { get; init; }
+    public required int OmittedItemCount { get; init; }
 
     public required bool Complete { get; init; }
 

@@ -34,7 +34,7 @@ instead of the user's folder.
    the sheet, page or slide it shows in `label`. `findings[]` carry `code`,
    `severity` (`error`, `warning`, `info`), `message`, `location`, `hint` and
    the `evidence` images.
-2. Read `coverage`: `expectedItems`, `renderedItems`, `omittedItems`,
+2. Read `coverage`: `expectedItemCount`, `renderedItemCount`, `omittedItemCount`,
    `truncated` and `complete`. `--max-items` (default 256) caps the images;
    anything omitted is unreviewed.
 3. Open every evidence image with your image-reading tool and look. Findings
@@ -60,7 +60,7 @@ the list.
 of the named checks, and among findings only theirs decide exit 8; incomplete
 coverage still fails the review, and a missing or substituted font makes the
 evidence incomplete whatever the filter. `review.json` then carries `filter` with the
-`codes` and `omittedFindings`, the number of findings left out. The images are
+`codes` and `omittedFindingCount`, the number of findings left out. The images are
 still the full set: a filtered review narrows the findings, not the look.
 
 ## Fonts

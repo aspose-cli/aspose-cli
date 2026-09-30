@@ -54,7 +54,7 @@ public sealed class CellsLinkedPictureTests
             new ViewRenderRequest
             {
                 View = CellsViews.Workbook,
-                MaxParts = 8,
+                MaxPartCount = 8,
                 Purpose = ViewPurpose.Display,
             },
             sink);

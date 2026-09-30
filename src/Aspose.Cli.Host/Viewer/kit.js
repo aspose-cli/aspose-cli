@@ -1260,7 +1260,7 @@
     var section = el('section');
     section.append(
       el('h3', 'av-section-title', 'Coverage'),
-      el('p', 'av-coverage', coverage.renderedItems + ' of ' + coverage.expectedItems + ' '
+      el('p', 'av-coverage', coverage.renderedItemCount + ' of ' + coverage.expectedItemCount + ' '
         + plural(ctx.spec.noun) + ' rendered' + (coverage.complete ? '' : ' \u00b7 incomplete')));
     if (coverage.metrics.length) {
       var metrics = el('dl', 'av-metrics');
@@ -1626,7 +1626,7 @@
   }
 
   function totalOf(manifest) {
-    return Math.max(manifest.totalParts || 0, manifest.parts.length);
+    return Math.max(manifest.totalPartCount || 0, manifest.parts.length);
   }
 
   /** Parts are served by the digest of their bytes. */

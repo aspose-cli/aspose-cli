@@ -280,7 +280,7 @@ internal static class CommonRenderers
         surface.Out.WriteLine($"index:   {review.Index}");
         surface.Out.WriteLine($"manifest:{review.Manifest}");
         surface.Out.WriteLine(
-            $"evidence:{review.Coverage.ReportedItems}/{review.Coverage.DiscoveredItems} artifacts");
+            $"evidence:{review.Coverage.ReportedItemCount}/{review.Coverage.DiscoveredItemCount} artifacts");
         surface.Out.WriteLine(
             $"visual inspection required: {review.VisualInspectionRequired.ToString().ToLowerInvariant()}");
     }

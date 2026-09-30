@@ -128,7 +128,7 @@ public sealed record ProductOperationDescriptor
     public string ContractFingerprint => Schema.Fingerprint;
 
     /// <summary>Largest accepted number of operations in one document.</summary>
-    public required int MaximumOperations { get; init; }
+    public required int MaximumOperationCount { get; init; }
 
     /// <summary>Operation names in published order.</summary>
     public required IReadOnlyList<string> Ops { get; init; }

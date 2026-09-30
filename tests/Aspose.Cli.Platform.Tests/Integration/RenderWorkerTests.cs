@@ -48,7 +48,7 @@ public sealed class RenderWorkerTests : IDisposable
         Assert.Equal(worker, supervisor.ProcessId);
 
         JsonNode view = JsonNode.Parse(File.ReadAllText(Path.Combine(documentOutput, "view.json")))!;
-        Assert.Equal(document.TotalParts, view["totalParts"]!.GetValue<int>());
+        Assert.Equal(document.TotalPartCount, view["totalPartCount"]!.GetValue<int>());
         Assert.All(view["parts"]!.AsArray(), part =>
         {
             Assert.StartsWith("sha256:", part!["digest"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -166,7 +166,7 @@ public sealed class RenderWorkerTests : IDisposable
             Id = 0,
             Source = _workspace.File(file),
             Output = output,
-            MaxParts = 8,
+            MaxPartCount = 8,
             TimeoutMs = (int)RenderTimeout.TotalMilliseconds,
             Presentation = presentation,
             FontDirectories = fontDirectories,

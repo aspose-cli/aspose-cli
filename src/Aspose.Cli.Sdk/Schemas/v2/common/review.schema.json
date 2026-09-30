@@ -35,24 +35,24 @@
     "coverage": {
       "type": "object",
       "required": [
-        "maxItems",
-        "discoveredItems",
-        "reportedItems",
+        "maxItemCount",
+        "discoveredItemCount",
+        "reportedItemCount",
         "truncated",
-        "expectedItems",
-        "renderedItems",
-        "omittedItems",
+        "expectedItemCount",
+        "renderedItemCount",
+        "omittedItemCount",
         "complete",
         "metrics"
       ],
       "properties": {
-        "maxItems": { "type": "integer", "minimum": 1 },
-        "discoveredItems": { "type": "integer", "minimum": 0 },
-        "reportedItems": { "type": "integer", "minimum": 0 },
+        "maxItemCount": { "type": "integer", "minimum": 1 },
+        "discoveredItemCount": { "type": "integer", "minimum": 0 },
+        "reportedItemCount": { "type": "integer", "minimum": 0 },
         "truncated": { "type": "boolean" },
-        "expectedItems": { "type": "integer", "minimum": 0 },
-        "renderedItems": { "type": "integer", "minimum": 0 },
-        "omittedItems": { "type": "integer", "minimum": 0 },
+        "expectedItemCount": { "type": "integer", "minimum": 0 },
+        "renderedItemCount": { "type": "integer", "minimum": 0 },
+        "omittedItemCount": { "type": "integer", "minimum": 0 },
         "complete": { "type": "boolean" },
         "metrics": {
           "type": "array",
@@ -94,10 +94,10 @@
     "filter": {
       "type": "object",
       "description": "Present when review --code limited the findings to the listed checks; errors outside them do not fail the review.",
-      "required": ["codes", "omittedFindings"],
+      "required": ["codes", "omittedFindingCount"],
       "properties": {
         "codes": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" } },
-        "omittedFindings": { "type": "integer", "minimum": 0 }
+        "omittedFindingCount": { "type": "integer", "minimum": 0 }
       },
       "additionalProperties": false
     },

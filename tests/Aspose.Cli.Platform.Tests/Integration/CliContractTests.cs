@@ -146,7 +146,7 @@ $", result.StdOut);
                 Assert.Contains(
                     operation["inputSchema"]!.GetValue<string>(),
                     schemas);
-                Assert.True(operation["maximumOperations"]!.GetValue<int>() > 0);
+                Assert.True(operation["maximumOperationCount"]!.GetValue<int>() > 0);
                 Assert.NotEmpty(operation["ops"]!.AsArray());
             }
 

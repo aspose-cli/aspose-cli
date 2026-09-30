@@ -111,7 +111,7 @@ internal sealed class WordsProductionService
         Document document = loaded.Document;
         int dpi = request.Purpose == ViewPurpose.Display ? DisplayDpi : EvidenceDpi;
         int total = document.PageCount;
-        int count = Math.Min(total, request.MaxParts);
+        int count = Math.Min(total, request.MaxPartCount);
         IReadOnlyList<IReadOnlyList<ViewElement>> layout = WordsViewLayout.Collect(document, loaded.Evaluation, count);
         var parts = new List<ViewPart>(count);
         for (int page = 1; page <= count; page++)
@@ -148,7 +148,7 @@ internal sealed class WordsProductionService
             View = WordsViews.Pages,
             SourceFormat = loaded.FormatId,
             SourceSizeBytes = new FileInfo(filePath).Length,
-            TotalParts = total,
+            TotalPartCount = total,
             Parts = parts,
             Warnings = InputWarnings(loaded),
         };

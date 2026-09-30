@@ -304,7 +304,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new ViewRenderRequest
             {
                 View = WordsViews.Pages,
-                MaxParts = 8,
+                MaxPartCount = 8,
                 Purpose = ViewPurpose.Display,
                 Password = password,
             },

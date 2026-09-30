@@ -36,7 +36,7 @@ public sealed class ReviewEvidenceWriterTests
             temp,
             output,
             maxItems: 10,
-            totalParts: 1,
+            totalPartCount: 1,
             ["page-1.png", "page-2.png"]));
 
         Assert.False(Directory.Exists(output));
@@ -52,14 +52,14 @@ public sealed class ReviewEvidenceWriterTests
             temp,
             temp.File("review"),
             maxItems: 2,
-            totalParts: 5,
+            totalPartCount: 5,
             ["page-1.png", "page-2.png"]);
 
-        Assert.Equal(5, result.Coverage.DiscoveredItems);
-        Assert.Equal(2, result.Coverage.ReportedItems);
-        Assert.Equal(5, result.Coverage.ExpectedItems);
-        Assert.Equal(2, result.Coverage.RenderedItems);
-        Assert.Equal(3, result.Coverage.OmittedItems);
+        Assert.Equal(5, result.Coverage.DiscoveredItemCount);
+        Assert.Equal(2, result.Coverage.ReportedItemCount);
+        Assert.Equal(5, result.Coverage.ExpectedItemCount);
+        Assert.Equal(2, result.Coverage.RenderedItemCount);
+        Assert.Equal(3, result.Coverage.OmittedItemCount);
         Assert.True(result.Coverage.Truncated);
         Assert.False(result.Coverage.Complete);
         Assert.Contains(result.Artifacts, static artifact =>
@@ -77,7 +77,7 @@ public sealed class ReviewEvidenceWriterTests
             temp,
             temp.File("review"),
             maxItems: 1,
-            totalParts: 1,
+            totalPartCount: 1,
             ["page.png"],
             new ProductReviewAssessment { Complete = false });
 
@@ -300,7 +300,7 @@ public sealed class ReviewEvidenceWriterTests
         TempDirectory temp,
         string output,
         int maxItems,
-        int totalParts,
+        int totalPartCount,
         string[] files,
         ProductReviewAssessment? assessment = null) =>
         ReviewEvidenceWriter.Write(
@@ -316,18 +316,18 @@ public sealed class ReviewEvidenceWriterTests
                 {
                     artifacts.Write(file, static stream => stream.Write(PngHeader));
                 }
-                return Manifest(totalParts, files);
+                return Manifest(totalPartCount, files);
             },
             _ => assessment ?? new ProductReviewAssessment(),
             LicenseState.NotApplicable,
             new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
 
-    private static ViewManifest Manifest(int totalParts, string[] files) => new()
+    private static ViewManifest Manifest(int totalPartCount, string[] files) => new()
     {
         View = "pages",
         SourceFormat = "test",
         SourceSizeBytes = 1,
-        TotalParts = totalParts,
+        TotalPartCount = totalPartCount,
         Parts = files.Select(static (file, index) => new ViewPart
         {
             Id = "part-" + index,

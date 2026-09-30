@@ -79,13 +79,13 @@ internal sealed class OperationSchemaWriter
 
     /// <summary>Writes the schema of one vocabulary.</summary>
     /// <param name="schemaId">Canonical schema identifier.</param>
-    /// <param name="maximumOperations">Largest accepted number of operations.</param>
+    /// <param name="maximumOperationCount">Largest accepted number of operations.</param>
     /// <param name="description">The vocabulary's description, or null.</param>
     /// <param name="operations">The operations in published order.</param>
     /// <exception cref="InvalidOperationException">The descriptors cannot be published consistently.</exception>
     public static string Write(
         string schemaId,
-        int maximumOperations,
+        int maximumOperationCount,
         string? description,
         IReadOnlyList<OperationRecord> operations)
     {
@@ -114,7 +114,7 @@ internal sealed class OperationSchemaWriter
             definitions.Add(name, definition);
         }
 
-        JsonObject root = Envelope(schemaId, maximumOperations, description, operations.Select(static operation => operation.Name));
+        JsonObject root = Envelope(schemaId, maximumOperationCount, description, operations.Select(static operation => operation.Name));
         root["$defs"] = definitions;
         return Serialize(root);
     }
@@ -132,7 +132,7 @@ internal sealed class OperationSchemaWriter
         return views;
     }
 
-    private static JsonObject Envelope(string schemaId, int maximumOperations, string? description, IEnumerable<string> operations)
+    private static JsonObject Envelope(string schemaId, int maximumOperationCount, string? description, IEnumerable<string> operations)
     {
         var root = new JsonObject
         {
@@ -158,7 +158,7 @@ internal sealed class OperationSchemaWriter
                 ["description"] = "Operations applied in order.",
                 ["type"] = "array",
                 ["minItems"] = 1,
-                ["maxItems"] = maximumOperations,
+                ["maxItems"] = maximumOperationCount,
                 ["items"] = new JsonObject
                 {
                     ["oneOf"] = new JsonArray([.. operations.Select(static name => (JsonNode)Reference(name))]),

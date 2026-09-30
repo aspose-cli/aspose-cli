@@ -52,7 +52,7 @@ internal sealed class SlidesProductionService
         int pixelWidth = request.Purpose == ViewPurpose.Display ? displayWidth : evidenceWidth;
         float scale = (float)(pixelWidth / presentation.SlideSize.Size.Width);
         int total = presentation.Slides.Count;
-        int count = Math.Min(total, request.MaxParts);
+        int count = Math.Min(total, request.MaxPartCount);
         EnsureRasterFits(
             _resourceBudgets,
             (long)Math.Ceiling(presentation.SlideSize.Size.Width * scale),
@@ -94,7 +94,7 @@ internal sealed class SlidesProductionService
             View = SlidesViews.Slides,
             SourceFormat = loaded.FormatId,
             SourceSizeBytes = new FileInfo(filePath).Length,
-            TotalParts = total,
+            TotalPartCount = total,
             Parts = parts,
             Warnings = InputWarnings(state, loaded),
         };

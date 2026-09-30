@@ -82,7 +82,7 @@ public sealed class ProductViewDefinitionTests
     private static ViewRenderRequest Request(string view) => new()
     {
         View = view,
-        MaxParts = 1,
+        MaxPartCount = 1,
         Purpose = ViewPurpose.Evidence,
     };
 

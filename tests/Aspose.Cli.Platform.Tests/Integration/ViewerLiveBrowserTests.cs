@@ -254,7 +254,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
         Reply(page, $"r/{revision}/view.json", new
         {
             view = "workbook",
-            totalParts = 1,
+            totalPartCount = 1,
             parts = new[]
             {
                 new

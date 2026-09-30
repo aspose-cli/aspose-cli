@@ -39,7 +39,7 @@ public sealed record ViewRenderRequest
     public required string View { get; init; }
 
     /// <summary>Upper bound of parts rendered; parts beyond it are reported as omitted.</summary>
-    public required int MaxParts { get; init; }
+    public required int MaxPartCount { get; init; }
 
     /// <summary>Resolution intent.</summary>
     public required ViewPurpose Purpose { get; init; }
@@ -94,7 +94,7 @@ public sealed record ViewManifest
     public required long SourceSizeBytes { get; init; }
 
     /// <summary>Parts the document contains, including parts beyond the render bound.</summary>
-    public required int TotalParts { get; init; }
+    public required int TotalPartCount { get; init; }
 
     /// <summary>Rendered parts in document order.</summary>
     public required IReadOnlyList<ViewPart> Parts { get; init; }

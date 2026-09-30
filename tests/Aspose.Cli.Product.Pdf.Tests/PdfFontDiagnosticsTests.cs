@@ -68,8 +68,8 @@ public sealed class PdfFontDiagnosticsTests
         Assert.Empty(JsonNode.Parse(fonts.StdOut)!["fonts"]!.AsArray());
         Assert.True(review.ExitCode == 0, review.StdErr);
         JsonNode result = JsonNode.Parse(review.StdOut)!;
-        Assert.Equal(1, result["coverage"]!["renderedItems"]!.GetValue<int>());
-        Assert.Equal(0, result["coverage"]!["omittedItems"]!.GetValue<int>());
+        Assert.Equal(1, result["coverage"]!["renderedItemCount"]!.GetValue<int>());
+        Assert.Equal(0, result["coverage"]!["omittedItemCount"]!.GetValue<int>());
         Assert.Contains(result["findings"]!.AsArray(),
             finding => finding!["code"]!.GetValue<string>() == "PDF_PAGE_WITHOUT_READABLE_CONTENT");
         Assert.DoesNotContain(result["findings"]!.AsArray(),

@@ -148,7 +148,7 @@ public sealed partial class ProductViewDefinition
                 $"view '{request.View}' is not supported by {ProductId}",
                 $"Use {string.Join(", ", Views.Select(static view => view.Id))}.");
         }
-        ArgumentOutOfRangeException.ThrowIfLessThan(request.MaxParts, 1);
+        ArgumentOutOfRangeException.ThrowIfLessThan(request.MaxPartCount, 1);
         ViewManifest manifest = _render(port, filePath, request, artifacts)
             ?? throw new InvalidOperationException(
                 $"Product '{ProductId}' returned no view manifest.");
@@ -232,7 +232,7 @@ public sealed partial class ProductViewDefinition
         }
         try
         {
-            ViewManifestValidator.Validate(manifest, request.MaxParts);
+            ViewManifestValidator.Validate(manifest, request.MaxPartCount);
         }
         catch (InvalidOperationException exception)
         {

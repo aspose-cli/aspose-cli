@@ -15,7 +15,7 @@ aspose-cli schema v2/pdf/ops
 ```
 
 - `capabilities <product> edit` lists the operation names under
-  `products[].operations[].ops`, the batch limit (`maximumOperations`) and
+  `products[].operations[].ops`, the batch limit (`maximumOperationCount`) and
   the `operationSchema` command.
 - `schema v2/<product>/ops --operation <op>` prints one operation's fields,
   types, defaults, allowed values and descriptions. An unknown name fails with

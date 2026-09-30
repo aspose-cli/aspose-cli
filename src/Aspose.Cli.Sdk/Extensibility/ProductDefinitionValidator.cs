@@ -174,7 +174,7 @@ internal sealed class ProductDefinitionValidator
                     $"Product '{manifest.Id}' declares an invalid or duplicate operation command.");
             }
             if (string.IsNullOrWhiteSpace(operation.InputSchema)
-                || operation.MaximumOperations < 1
+                || operation.MaximumOperationCount < 1
                 || operation.Ops.Count == 0
                 || operation.Ops.Any(static op => !IsToken(op))
                 || operation.Ops.Distinct(StringComparer.Ordinal).Count() != operation.Ops.Count)

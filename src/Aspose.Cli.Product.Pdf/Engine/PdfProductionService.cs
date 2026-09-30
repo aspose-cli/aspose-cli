@@ -56,7 +56,7 @@ internal sealed class PdfProductionService
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         int dpi = request.Purpose == ViewPurpose.Display ? displayDpi : evidenceDpi;
         int total = loaded.Document.Pages.Count;
-        int count = Math.Min(total, request.MaxParts);
+        int count = Math.Min(total, request.MaxPartCount);
         var parts = new List<ViewPart>(count);
         for (int pageNumber = 1; pageNumber <= count; pageNumber++)
         {
@@ -88,7 +88,7 @@ internal sealed class PdfProductionService
             View = PdfViews.Pages,
             SourceFormat = "pdf",
             SourceSizeBytes = new FileInfo(filePath).Length,
-            TotalParts = total,
+            TotalPartCount = total,
             Parts = parts,
         };
     }
