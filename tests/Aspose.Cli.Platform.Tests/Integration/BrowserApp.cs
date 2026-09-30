@@ -1,7 +1,14 @@
 using Xunit;
 using Microsoft.Playwright;
 
+[assembly: AssemblyFixture(typeof(Aspose.Cli.Platform.Tests.Integration.BrowserBound))]
+
 namespace Aspose.Cli.Platform.Tests.Integration;
+
+public sealed class BrowserBound
+{
+    public BrowserBound() => Assertions.SetDefaultExpectTimeout(BrowserApp.Bound);
+}
 
 /// <summary>Real Chromium/App fixture with failure evidence and no external request dependencies.</summary>
 internal sealed class BrowserApp(AppTestSession app, IPage page)
@@ -11,12 +18,13 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
     internal IFrameLocator Preview => page.FrameLocator("#preview-frame");
 
     /// <summary>
-    /// How long any page action may take. A broken App never gets there, so
-    /// the bound only has to outlast a loaded machine: every request passes
-    /// through this process's loopback-only route, and the first document
-    /// opens cold.
+    /// How long any page action, expectation or App status wait may take;
+    /// <see cref="BrowserBound"/> makes it every browser test's expect timeout.
+    /// A broken App never gets there, so the bound only has to outlast a
+    /// loaded machine: every request passes through this process's
+    /// loopback-only route, and the first document opens cold.
     /// </summary>
-    private const float Bound = 60_000;
+    internal const float Bound = 60_000;
 
     /// <summary>
     /// A new directory for one failed browser test's evidence, beside the run's TRX when
@@ -88,9 +96,9 @@ internal sealed class BrowserApp(AppTestSession app, IPage page)
     internal async Task WaitForPreview(string file, string? view = null)
     {
         await Assertions.Expect(Preview.Locator(".av-file"))
-            .ToHaveTextAsync(file, new() { Timeout = Bound });
+            .ToHaveTextAsync(file);
         System.Text.Json.Nodes.JsonNode status = await app.Status();
-        using var deadline = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+        using var deadline = new CancellationTokenSource(TimeSpan.FromMilliseconds(Bound));
         while (!Matches(status, file, view) && !deadline.IsCancellationRequested)
         {
             await Task.Delay(100);
