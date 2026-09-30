@@ -184,7 +184,7 @@ internal static class CommonSchemaSamples
     {
         Skill = "aspose-cli",
         Target = "/home/user/.agent/skills/aspose-cli",
-        Files = 8,
+        FileCount = 8,
     };
 
     public static SkillListResult SkillList { get; } = new()

@@ -4,7 +4,7 @@
   "title": "Skill install",
   "description": "Result of `aspose-cli skill install`: the bundled agent skill was extracted to a target directory.",
   "type": "object",
-  "required": ["schema", "schemaVersion", "skill", "target", "files"],
+  "required": ["schema", "schemaVersion", "skill", "target", "fileCount"],
   "properties": {
     "schema": {
       "const": "https://schemas.aspose.com/aspose-cli/v2/common/skill-install.schema.json"
@@ -14,7 +14,7 @@
     },
     "skill": { "type": "string" },
     "target": { "type": "string" },
-    "files": { "type": "integer", "minimum": 0 },
+    "fileCount": { "type": "integer", "minimum": 0 },
     "license": {
       "$ref": "#/$defs/licenseInfo"
     },

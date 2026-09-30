@@ -53,7 +53,7 @@ public sealed class SkillInstallTests : IDisposable
             Assert.True(File.Exists(skillFile));
             Assert.True(File.Exists(Path.Combine(root, ".aspose-skill-manifest.json")));
             Assert.Equal(
-                Parse(installed.StdOut)["files"]!.GetValue<int>(),
+                Parse(installed.StdOut)["fileCount"]!.GetValue<int>(),
                 Directory.GetFiles(root, "*", SearchOption.AllDirectories).Length);
             string[] markdownFiles = Directory.GetFiles(
                 root,
