@@ -4,7 +4,6 @@ using System.Text.Json.Serialization;
 using System.Text.Json.Serialization.Metadata;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Operations;
-using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Serialization;
 
@@ -68,7 +67,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             // A fresh exception has no path, so the enclosing read records the op's position.
             using JsonDocument rejected = JsonDocument.Parse(fields);
             throw new JsonException(
-                JsonContractDiagnostics.Explain(rejected.RootElement, record.Type, strict, rejection.Path), rejection);
+                JsonContractDiagnostics.Explain(rejected.RootElement, record.Type, strict, rejection.Path).Message, rejection);
         }
     }
 
@@ -161,10 +160,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         writer.WriteEndObject();
     }
 
-    /// <summary>
-    /// Rejects a member the record does not declare, naming the fields the object accepts and
-    /// the one most likely meant: the closest name, or else the only required field missing.
-    /// </summary>
+    /// <summary>Rejects a member the record does not declare; an operation also accepts <c>op</c> and <c>id</c>.</summary>
     private static UnknownFieldException UnknownField(
         JsonElement value, OperationRecord record, string path, string name, bool isOperation)
     {
@@ -173,12 +169,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         string[] missing = [.. record.Properties
             .Where(property => property.Required && !value.TryGetProperty(property.Name, out _))
             .Select(static property => property.Name)];
-        string? suggestion = NameSuggestions.Closest(name, allowed).FirstOrDefault()
-            ?? (missing.Length == 1 ? missing[0] : null);
-        string subject = isOperation ? record.Name : path;
-        string reason = $"unknown field '{Join(path, name)}'; {subject} accepts: {string.Join(", ", allowed)}"
-            + (suggestion is null ? string.Empty : $" (did you mean '{suggestion}'?)");
-        return new UnknownFieldException(reason, allowed, suggestion);
+        return UnknownFieldException.For(path, name, isOperation ? record.Name : path, allowed, missing);
     }
 
     private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)
