@@ -295,12 +295,9 @@ internal sealed class WordsMutationService
     /// a save that already used a Word format, and repeating it would not help.
     /// </summary>
     internal static string KeepStateHint(string state, string format) =>
-        WordFormatIds.Contains(format, StringComparer.Ordinal)
+        WordsFormats.WordIds.Contains(format, StringComparer.Ordinal)
             ? $"The {state} did not survive save and reopen in {format}; check the output with 'aspose-cli words inspect' before relying on it."
             : $"{format} may not keep {state}; save to docx or another Word format and verify again.";
-
-    private static readonly string[] WordFormatIds =
-        ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "wordml"];
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         LicenseState state,

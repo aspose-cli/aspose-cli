@@ -52,6 +52,10 @@ public static class WordsFormats
     public static IReadOnlyList<string> EncryptIds { get; } =
         ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "odt", "ott"];
 
+    /// <summary>Microsoft Word formats, which keep fields, revisions and protection.</summary>
+    public static IReadOnlyList<string> WordIds { get; } =
+        ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "wordml"];
+
     public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
 
     /// <summary>
