@@ -9,7 +9,11 @@ public enum DiagnosticSeverity
     /// <summary>The command fails and returns a non-zero exit code.</summary>
     Error,
 
-    /// <summary>The command succeeds but discloses a non-fatal condition.</summary>
+    /// <summary>
+    /// The command succeeds but discloses a non-fatal condition. A code in the
+    /// <see cref="DiagnosticDescriptor.VerificationCategory"/> category instead reports a
+    /// verification issue, which makes the verification <c>ok:false</c> and the command exit 8.
+    /// </summary>
     Warning,
 }
 
@@ -65,6 +69,13 @@ public sealed record DiagnosticDescriptor
             null,
             category,
             CommonSchemaIds.DiagnosticDetails);
+
+    /// <summary>Category of codes reported as <see cref="VerificationIssue"/> entries.</summary>
+    public const string VerificationCategory = "verification";
+
+    /// <summary>Declares an immutable verification-issue descriptor in the <see cref="VerificationCategory"/> category.</summary>
+    public static DiagnosticDescriptor Verification(string code, string owner) =>
+        Warning(code, owner, VerificationCategory);
 
     private static DiagnosticDescriptor Create(
         string code,

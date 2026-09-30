@@ -72,13 +72,3 @@ public sealed record VerificationOtherChange
     /// <summary>Cell after the edit; null when absent or sheet-level.</summary>
     public CellSide? Right { get; init; }
 }
-
-/// <summary>A problem encountered after the edited file had already been produced.</summary>
-public sealed record VerificationIssue
-{
-    /// <summary>Stable machine-readable issue code.</summary>
-    public required string Code { get; init; }
-
-    /// <summary>Human-readable explanation.</summary>
-    public required string Message { get; init; }
-}
