@@ -109,7 +109,7 @@ public sealed class ProductPublicationTests
         Assert.True(File.Exists(Path.Combine(tree, "SKILL.md")));
         Assert.True(File.Exists(Path.Combine(tree, ".aspose-skill-manifest.json")));
         Assert.Equal(
-            JsonNode.Parse(installed.StdOut)!["files"]!.GetValue<int>(),
+            JsonNode.Parse(installed.StdOut)!["fileCount"]!.GetValue<int>(),
             Directory.GetFiles(tree, "*", SearchOption.AllDirectories).Length);
     }
 

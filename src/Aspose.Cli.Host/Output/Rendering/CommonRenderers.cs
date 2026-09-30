@@ -239,7 +239,7 @@ internal static class CommonRenderers
     }
 
     public static void Render(SkillInstallResult skill, TableSurface surface) =>
-        surface.Out.WriteLine($"installed {skill.Skill} to {skill.Target} ({skill.Files} files)");
+        surface.Out.WriteLine($"installed {skill.Skill} to {skill.Target} ({skill.FileCount} files)");
 
     public static void Render(SkillListResult result, TableSurface surface)
     {

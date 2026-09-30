@@ -18,5 +18,5 @@ public sealed record SkillInstallResult() : ResultEnvelope(CommonSchemaIds.Skill
     public required string Target { get; init; }
 
     /// <summary>Number of files written.</summary>
-    public required int Files { get; init; }
+    public required int FileCount { get; init; }
 }
