@@ -136,6 +136,7 @@ internal static class WordsContractSamples
         Output = new OutputInfo { Path = "D:/data/report.out.docx", Format = "docx", SizeBytes = 18250 },
         DryRun = false,
         Applied = [new BoundedOperationOutcome { Id = "op-0001", Index = 0, Op = "set_text", Status = OpStatuses.Ok, ItemsAffected = 1, Targets = ["block/1"] }],
+        Backup = new BackupInfo { Path = "D:/data/report.backup.docx", Created = true, SizeBytes = 18000, LastWriteUtc = new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero), HoldsReplacedVersion = true },
         PagesTouched = [1],
         Verification = new WordsVerification
         {

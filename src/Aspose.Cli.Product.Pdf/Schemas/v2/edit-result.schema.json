@@ -14,7 +14,7 @@
       "type": "array",
       "items": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json" }
     },
-    "backup": { "type": "object" },
+    "backup": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json" },
     "mutation": {
       "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/mutation-receipt.schema.json"
     },

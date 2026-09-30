@@ -259,6 +259,7 @@ internal static class SlidesContractSamples
                 Targets = ["slide/256"],
             },
         ],
+        Backup = new BackupInfo { Path = "D:/data/deck.backup.pptx", Created = true, SizeBytes = 24000, LastWriteUtc = new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero), HoldsReplacedVersion = true },
         SlidesTouched = [256],
         License = Licensed,
     };
