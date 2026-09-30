@@ -382,7 +382,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
 
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
-            Ops = [new InsertTableOp { At = new WordsTarget { Block = tables[1].Block }, Position = "after", Rows = 1, Columns = 1, Style = tables[0].Style }],
+            Ops = [new InsertTableOp { At = new WordsTarget { Block = tables[1].Block }, Position = "after", RowCount = 1, ColumnCount = 1, Style = tables[0].Style }],
         }, new WordsEditRequest { OutputPath = output });
 
         IReadOnlyList<TableData> changed = _fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["tables"] }).Tables!;

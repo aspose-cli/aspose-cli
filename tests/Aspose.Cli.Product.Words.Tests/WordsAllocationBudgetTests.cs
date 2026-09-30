@@ -22,7 +22,7 @@ public sealed class WordsAllocationBudgetTests
             input,
             new WordsOpsBatch
             {
-                Ops = [new InsertTableOp { At = new WordsTarget { Block = 1 }, Position = "after", Rows = 100, Columns = 20 }],
+                Ops = [new InsertTableOp { At = new WordsTarget { Block = 1 }, Position = "after", RowCount = 100, ColumnCount = 20 }],
             },
             new WordsEditRequest { OutputPath = output }));
 

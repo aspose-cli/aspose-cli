@@ -35,12 +35,12 @@ internal static class InfoProjection
             Source = Source(path, loaded),
             Document = new DocumentSummary
             {
-                Sections = document.Sections.Count,
-                Blocks = index.Count,
-                Paragraphs = paragraphs.Count,
-                Tables = tables.Count,
-                Pages = document.PageCount,
-                Words = document.BuiltInDocumentProperties.Words,
+                SectionCount = document.Sections.Count,
+                BlockCount = index.Count,
+                ParagraphCount = paragraphs.Count,
+                TableCount = tables.Count,
+                PageCount = document.PageCount,
+                WordCount = document.BuiltInDocumentProperties.Words,
                 RevisionsPresent = document.Revisions.Count > 0,
                 RevisionCount = document.Revisions.Count,
                 RevisionAuthors = document.Revisions.Cast<Revision>().Select(static r => r.Author)
@@ -338,8 +338,8 @@ internal static class InfoProjection
             return new TableData
             {
                 Block = entry.Index,
-                Rows = table.Rows.Count,
-                Columns = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
+                RowCount = table.Rows.Count,
+                ColumnCount = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
                 Style = table.StyleIdentifier == StyleIdentifier.TableNormal || string.IsNullOrEmpty(table.StyleName)
                     ? null
                     : table.StyleName,

@@ -71,7 +71,7 @@ public sealed class WordsOpContractTests
     }
 
     [Theory]
-    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rows":1,"columns":2,"cells":[["a"],["b"]]}""", "more rows")]
+    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":2,"cells":[["a"],["b"]]}""", "more rows")]
     [InlineData("""{"op":"format_table","at":{"block":1},"keepTogether":true,"allowRowBreakAcrossPages":true}""", "cannot be combined")]
     public void Parser_RejectsRulesTheRecordsStateInTheirSummaries(string operation, string reason)
     {

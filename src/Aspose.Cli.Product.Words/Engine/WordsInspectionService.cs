@@ -69,10 +69,10 @@ internal sealed class WordsInspectionService
             Identical = revisions.Length == 0,
             Revisions = new RevisionCounts
             {
-                Insertions = revisions.Count(static r => r.RevisionType == RevisionType.Insertion),
-                Deletions = revisions.Count(static r => r.RevisionType == RevisionType.Deletion),
-                FormatChanges = revisions.Count(static r => r.RevisionType == RevisionType.FormatChange),
-                Moves = revisions.Count(static r => r.RevisionType == RevisionType.Moving),
+                InsertionCount = revisions.Count(static r => r.RevisionType == RevisionType.Insertion),
+                DeletionCount = revisions.Count(static r => r.RevisionType == RevisionType.Deletion),
+                FormatChangeCount = revisions.Count(static r => r.RevisionType == RevisionType.FormatChange),
+                MoveCount = revisions.Count(static r => r.RevisionType == RevisionType.Moving),
             },
             Samples = revisions.Take(SampleLimit).Select(static revision => new RevisionSample
             {

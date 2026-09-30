@@ -11,15 +11,15 @@
     "source": { "type": "object" },
     "document": {
       "type": "object",
-      "required": ["sections", "blocks", "paragraphs", "tables", "pages", "words", "revisionsPresent", "revisionCount", "revisionAuthors", "protection", "signed"],
+      "required": ["sectionCount", "blockCount", "paragraphCount", "tableCount", "pageCount", "wordCount", "revisionsPresent", "revisionCount", "revisionAuthors", "protection", "signed"],
       "additionalProperties": false,
       "properties": {
-        "sections": { "type": "integer", "minimum": 0 },
-        "blocks": { "type": "integer", "minimum": 0 },
-        "paragraphs": { "type": "integer", "minimum": 0 },
-        "tables": { "type": "integer", "minimum": 0 },
-        "pages": { "type": "integer", "minimum": 0 },
-        "words": { "type": "integer", "minimum": 0 },
+        "sectionCount": { "type": "integer", "minimum": 0 },
+        "blockCount": { "type": "integer", "minimum": 0 },
+        "paragraphCount": { "type": "integer", "minimum": 0 },
+        "tableCount": { "type": "integer", "minimum": 0 },
+        "pageCount": { "type": "integer", "minimum": 0 },
+        "wordCount": { "type": "integer", "minimum": 0 },
         "revisionsPresent": { "type": "boolean" },
         "revisionCount": { "type": "integer", "minimum": 0 },
         "revisionAuthors": { "type": "array", "items": { "type": "string" } },
@@ -129,12 +129,12 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["block", "rows", "columns"],
+        "required": ["block", "rowCount", "columnCount"],
         "additionalProperties": false,
         "properties": {
           "block": { "type": "integer", "minimum": 1 },
-          "rows": { "type": "integer", "minimum": 0 },
-          "columns": { "type": "integer", "minimum": 0 },
+          "rowCount": { "type": "integer", "minimum": 0 },
+          "columnCount": { "type": "integer", "minimum": 0 },
           "style": { "type": "string", "minLength": 1, "description": "The table style the table uses, accepted by insert_table's style; omitted for the default Table Normal style." }
         }
       }

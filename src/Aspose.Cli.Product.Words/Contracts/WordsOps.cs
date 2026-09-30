@@ -68,7 +68,7 @@ public sealed record PageSetupInput
 
     public MarginInput? Margins { get; init; }
 
-    [Minimum(1)] public int? Columns { get; init; }
+    [Minimum(1)] public int? ColumnCount { get; init; }
 }
 
 /// <summary>Page margins in points; omitted margins keep their values.</summary>
@@ -187,10 +187,10 @@ public sealed record InsertTableOp : WordsOp
 
     [WordsPosition] public required string Position { get; init; }
 
-    [Minimum(1), Maximum(32_767)] public required int Rows { get; init; }
+    [Minimum(1), Maximum(32_767)] public required int RowCount { get; init; }
 
     /// <summary>The column count; Word allows at most 63.</summary>
-    [Minimum(1), Maximum(63)] public required int Columns { get; init; }
+    [Minimum(1), Maximum(63)] public required int ColumnCount { get; init; }
 
     /// <summary>Cell text by row, then column; cells beyond it stay empty.</summary>
     public IReadOnlyList<IReadOnlyList<string>>? Cells { get; init; }
@@ -201,8 +201,8 @@ public sealed record InsertTableOp : WordsOp
     /// <inheritdoc />
     protected override BoundedOperation Validated()
     {
-        OperationInvalidException.Require(Cells is null || Cells.Count <= Rows, "cells has more rows than the table");
-        OperationInvalidException.Require(Cells is null || Cells.All(row => row.Count <= Columns), "cells has more columns than the table");
+        OperationInvalidException.Require(Cells is null || Cells.Count <= RowCount, "cells has more rows than the table");
+        OperationInvalidException.Require(Cells is null || Cells.All(row => row.Count <= ColumnCount), "cells has more columns than the table");
         return this;
     }
 }

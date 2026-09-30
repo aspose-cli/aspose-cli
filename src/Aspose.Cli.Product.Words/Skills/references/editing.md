@@ -86,8 +86,8 @@ Insertions at the same anchor stack against it: each `after` insertion lands
 directly after the anchor, ahead of earlier ones, and each `before` insertion
 lands directly before it, behind earlier ones. To keep the batch order as the
 reading order, anchor every piece `before` the block that should follow them.
-A table read with `query blocks` can be written back with its `rows`,
-`columns` and `cells` unchanged. `insert_table`'s `style` names an existing
+A table read with `query blocks` can be written back with its `rowCount`,
+`columnCount` and `cells` unchanged. `insert_table`'s `style` names an existing
 table style; `inspect --detail tables` shows the `style` each table uses, so a
 new table can match the document's tables.
 
@@ -97,7 +97,7 @@ new table can match the document's tables.
     { "op": "insert_paragraphs", "at": { "find": "Revenue increased" }, "position": "before",
       "paragraphs": [ { "text": "Key figures", "style": "Heading 3" }, { "text": "Figures are in thousands." } ] },
     { "op": "insert_table", "at": { "find": "Revenue increased" }, "position": "before",
-      "rows": 2, "columns": 2, "cells": [ [ "Metric", "Value" ], [ "Revenue", "120" ] ],
+      "rowCount": 2, "columnCount": 2, "cells": [ [ "Metric", "Value" ], [ "Revenue", "120" ] ],
       "style": "Table Grid" }
   ]
 }

@@ -12,9 +12,9 @@ internal static class WordsRenderers
         DocumentSummary document = result.Document;
         surface.Out.WriteLine($"{result.Source.Path} ({result.Source.Format}, {TableText.Bytes(result.Source.SizeBytes)})");
         surface.Out.WriteLine(
-            $"sections: {document.Sections}   blocks: {document.Blocks} "
-            + $"({document.Paragraphs} paragraphs, {document.Tables} tables)   "
-            + $"pages: {document.Pages}   words: {document.Words}");
+            $"sections: {document.SectionCount}   blocks: {document.BlockCount} "
+            + $"({document.ParagraphCount} paragraphs, {document.TableCount} tables)   "
+            + $"pages: {document.PageCount}   words: {document.WordCount}");
         surface.Out.WriteLine($"revisions: {document.RevisionCount}   protection: {document.Protection}   signed: {TableText.YesNo(document.Signed)}");
         RenderInfoDetails(result, surface);
     }
@@ -25,7 +25,7 @@ internal static class WordsRenderers
         var table = new TextTable("block", "type", "section", "style", "text");
         foreach (BlockData block in result.Blocks)
         {
-            table.AddRow(TableText.Int(block.Block), block.Type, TableText.Int(block.Section), block.Style ?? "-", block.Text ?? $"[{block.Rows}x{block.Columns} table]");
+            table.AddRow(TableText.Int(block.Block), block.Type, TableText.Int(block.Section), block.Style ?? "-", block.Text ?? $"[{block.RowCount}x{block.ColumnCount} table]");
         }
 
         table.WriteTo(surface.Out, surface.Format);
@@ -67,7 +67,7 @@ internal static class WordsRenderers
     public static void Render(WordsCompareResult result, TableSurface surface)
     {
         surface.Out.WriteLine(result.Identical ? "documents are identical" : "documents differ");
-        surface.Out.WriteLine($"insertions: {result.Revisions.Insertions}   deletions: {result.Revisions.Deletions}   formatting: {result.Revisions.FormatChanges}   moves: {result.Revisions.Moves}");
+        surface.Out.WriteLine($"insertions: {result.Revisions.InsertionCount}   deletions: {result.Revisions.DeletionCount}   formatting: {result.Revisions.FormatChangeCount}   moves: {result.Revisions.MoveCount}");
         if (result.Samples.Count > 0)
         {
             var table = new TextTable("type", "sample");
@@ -252,8 +252,8 @@ internal static class WordsRenderers
             {
                 table.AddRow(
                     TableText.Int(item.Block),
-                    TableText.Int(item.Rows),
-                    TableText.Int(item.Columns),
+                    TableText.Int(item.RowCount),
+                    TableText.Int(item.ColumnCount),
                     item.Style ?? "-");
             }
 

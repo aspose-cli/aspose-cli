@@ -25,13 +25,13 @@ internal sealed partial class WordsMutationHandlers
         Style? style = operation.Style is null ? null : GetStyle(_document, operation.Style);
 
         // One table, then per row a row node and per cell a cell, a paragraph and a run.
-        _loader.EnsureNodeCapacity(_document, 1 + ((long)operation.Rows * (1 + (3L * operation.Columns))));
+        _loader.EnsureNodeCapacity(_document, 1 + ((long)operation.RowCount * (1 + (3L * operation.ColumnCount))));
         var table = new Table(_document);
-        for (int rowIndex = 0; rowIndex < operation.Rows; rowIndex++)
+        for (int rowIndex = 0; rowIndex < operation.RowCount; rowIndex++)
         {
             var row = new Row(_document);
             table.AppendChild(row);
-            for (int columnIndex = 0; columnIndex < operation.Columns; columnIndex++)
+            for (int columnIndex = 0; columnIndex < operation.ColumnCount; columnIndex++)
             {
                 var cell = new Cell(_document);
                 row.AppendChild(cell);
@@ -51,7 +51,7 @@ internal sealed partial class WordsMutationHandlers
 
         Node cursor = Anchor;
         InsertRelative(Anchor, ref cursor, table, operation.Position);
-        return (long)operation.Rows * operation.Columns;
+        return (long)operation.RowCount * operation.ColumnCount;
     }
 
     public long Apply(SetTableCellOp operation)
