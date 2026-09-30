@@ -24,8 +24,8 @@ public sealed record EditVerification
     /// <summary><c>true</c> when the cell-diff budget was reached.</summary>
     public required bool Truncated { get; init; }
 
-    /// <summary>Verification problems; an edit artifact is preserved when this list is non-empty.</summary>
-    public IReadOnlyList<VerificationIssue>? Issues { get; init; }
+    /// <summary>Verification problems, empty when <see cref="Ok"/>; an edit artifact is preserved when this list is non-empty.</summary>
+    public required IReadOnlyList<VerificationIssue> Issues { get; init; }
 }
 
 /// <summary>An operation target included in post-edit verification.</summary>

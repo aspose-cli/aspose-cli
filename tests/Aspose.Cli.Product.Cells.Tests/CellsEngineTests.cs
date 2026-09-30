@@ -85,9 +85,92 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
             ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
             new EditRequest { OutputPath = _fixture.Temp.File("text-loss.csv"), Verify = true });
         Assert.True(File.Exists(result.Output!.Path));
-        Assert.Contains(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED");
+        Warning dropped = Assert.Single(result.Warnings ?? [], warning => warning.Code == "SHEETS_DROPPED");
         Assert.False(result.Verification!.Ok);
-        Assert.Contains(result.Verification.Issues!, issue => issue.Code == "SHEETS_DROPPED");
+        VerificationIssue issue = Assert.Single(result.Verification.Issues, issue => issue.Code == "SHEETS_DROPPED");
+        Assert.Equal(dropped.Message, issue.Message);
+        Assert.NotNull(issue.Hint);
+        Assert.Equal(dropped.Hint, issue.Hint);
+    }
+
+    [Fact]
+    public void VerificationForwardsACompletenessWarningWithItsLocationAndHint()
+    {
+        var located = new Warning
+        {
+            Code = "DATA_TRUNCATED", Message = "Data was discarded.", Hint = "Use xlsx.",
+            Location = "'Data'!A1:C3", AffectsCompleteness = true,
+        };
+        var informational = new Warning { Code = "FORMULAS_CALCULATED_ON_OPEN", Message = "Recalculated." };
+
+        VerificationIssue issue = Assert.Single(
+            Aspose.Cli.Product.Cells.Engine.Editing.CellsEditVerifier.CompletenessIssues([located, informational]));
+
+        Assert.Equal(VerificationIssue.From(located), issue);
+        Assert.Equal("'Data'!A1:C3", issue.Location);
+    }
+
+    [Fact]
+    public void VerificationReportsAFormulaErrorAtItsCell()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-formula-error.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E5","formula":"=1/0"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-formula-error.out.xlsx"), Verify = true });
+
+        Assert.False(result.Verification!.Ok);
+        CellError error = Assert.Single(result.Verification.FormulaErrors);
+        Assert.Equal(("Data", "E5"), (error.Sheet, error.Cell));
+        VerificationIssue issue = Assert.Single(result.Verification.Issues);
+        Assert.Equal("FORMULA_ERRORS", issue.Code);
+        Assert.Equal("'Data'!E5", issue.Location);
+    }
+
+    [Fact]
+    public void VerificationPointsACappedFormulaErrorListAtTheEditResult()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-formula-errors-capped.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_formula","sheet":"Second","range":"B1:B1001","formula":"=1/0"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-formula-errors-capped.out.xlsx"), Verify = true });
+
+        EditVerification verification = result.Verification!;
+        Assert.Equal(1000, verification.FormulaErrors.Count);
+        VerificationIssue capped = Assert.Single(verification.Issues, issue => issue.Code == "LIST_TRUNCATED");
+        Assert.Equal("verification.formulaErrors", capped.Location);
+        Assert.Contains("'verification.formulaErrors'", capped.Message, StringComparison.Ordinal);
+        VerificationIssue errors = Assert.Single(verification.Issues, issue => issue.Code == "FORMULA_ERRORS");
+        Assert.Contains("1001 formula error(s)", errors.Message, StringComparison.Ordinal);
+        Assert.Contains("first 1000", errors.Message, StringComparison.Ordinal);
+        Assert.Null(errors.Location);
+    }
+
+    [Fact]
+    public void VerificationReportsATruncatedDiff()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-diff-truncated.xlsx");
+        string rows = string.Join(",", Enumerable.Range(1, 1001).Select(static value => $"[{value}]"));
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps($$"""{"ops":[{"op":"set_values","sheet":"Second","range":"B1","values":[{{rows}}]}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-diff-truncated.out.xlsx"), Verify = true });
+
+        Assert.False(result.Verification!.Ok);
+        Assert.True(result.Verification.Truncated);
+        VerificationIssue issue = Assert.Single(result.Verification.Issues);
+        Assert.Equal("DIFF_TRUNCATED", issue.Code);
+        Assert.Null(issue.Location);
+    }
+
+    [Fact]
+    public void CleanVerificationReportsAnEmptyIssueList()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-clean.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"B2","values":[[7]]}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-clean.out.xlsx"), Verify = true });
+
+        Assert.True(result.Verification!.Ok);
+        Assert.Empty(result.Verification.Issues);
     }
 
     [Fact]

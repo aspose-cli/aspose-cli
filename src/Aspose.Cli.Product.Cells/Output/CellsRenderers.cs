@@ -128,9 +128,10 @@ internal static class CellsRenderers
                 $"{verification.DirectChanges.Count} direct, " +
                 $"{verification.FormulaResultChanges.Count} formula-result, " +
                 $"{verification.FormulaErrors.Count} formula error(s)");
-            foreach (VerificationIssue issue in verification.Issues ?? [])
+            foreach (VerificationIssue issue in verification.Issues)
             {
-                surface.Out.WriteLine($"  {issue.Code}: {issue.Message}");
+                string at = issue.Location is null ? string.Empty : $" [{issue.Location}]";
+                surface.Out.WriteLine($"  {issue.Code}{at}: {issue.Message}");
             }
         }
     }

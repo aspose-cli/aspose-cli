@@ -291,7 +291,7 @@ internal static class CellsContractSamples
         Backup = new BackupInfo { Path = "D:/data/report.backup.xlsx", Created = true, SizeBytes = 24576, LastWriteUtc = new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero), HoldsReplacedVersion = true },
         Verification = new EditVerification
         {
-            Ok = true,
+            Ok = false,
             RequestedTargets = [new VerificationTarget { Sheet = "Sales", Range = "B2:B5" }],
             DirectChanges =
             [
@@ -314,8 +314,18 @@ internal static class CellsContractSamples
                 },
             ],
             OtherChanges = [],
-            FormulaErrors = [],
+            FormulaErrors = [new CellError { Sheet = "Sales", Cell = "D2", Error = "#DIV/0!" }],
             Truncated = false,
+            Issues =
+            [
+                new VerificationIssue
+                {
+                    Code = "FORMULA_ERRORS",
+                    Message = "The edited workbook contains 1 formula error(s).",
+                    Location = "'Sales'!D2",
+                    Hint = "Fix the cells listed in formulaErrors, then edit again with --verify.",
+                },
+            ],
         },
         License = Licensed,
     };

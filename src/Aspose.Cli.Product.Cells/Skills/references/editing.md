@@ -285,6 +285,11 @@ rules.
 output before publishing and reports `verification` with `directChanges`,
 `formulaResultChanges`, `otherChanges`, `formulaErrors` and `issues`. Formula
 errors, sheet loss, grid truncation or an incomplete scan keep the edited file
-and exit 8 with `verification.ok: false`; a reopen error, budget failure or
+and exit 8 with `verification.ok: false`. Issue codes: `FORMULA_ERRORS` (the
+edited workbook has formula errors; `location` is the cell when there is one),
+`DIFF_TRUNCATED` (more than 1000 changed cells, so the change lists are
+incomplete), `LIST_TRUNCATED` (`formulaErrors` holds only the first 1000), or
+the code of a completeness warning such as `SHEETS_DROPPED`; `capabilities`
+lists every code. A reopen error, budget failure or
 cancellation aborts publication. `--verify` needs the final recalculation, so
 it cannot accompany `--dry-run` or `--no-recalc`.
