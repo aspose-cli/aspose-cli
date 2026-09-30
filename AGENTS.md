@@ -49,14 +49,14 @@ the fixed distribution identity; the generated projections and the solution come
   multi-step task gets `plans/<branch>.md` with its goal, acceptance, what is out of scope and
   how it is verified. Knowledge that must last goes into this file, KNOWN-ISSUES.md or the pull
   request, not into these notes.
-- One task is one branch in its own worktree, named as
-  [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) requires. Never switch, edit or clean another
-  session's worktree. A session may work on several tasks at once; each still gets its own
-  branch from the latest `master` and its own pull request, opened as soon as that task
-  passes. A task that needs another unmerged task waits for its merge, or branches from it
-  and is rebased on `master` once it merges.
-- Parallel subagents own disjoint files and commit in their own worktrees; integrate their
-  commits with cherry-pick or merge, not patch files.
+- Work in the repository's one checkout, without extra worktrees; one session changes it at a
+  time. One task is one branch from the latest `master`, named as
+  [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) requires, with its own pull request, opened
+  as soon as that task passes. Commit the current work before switching branches; a pushed
+  branch waits for CI while the next task starts. A task that needs another unmerged task
+  waits for its merge, or branches from it and is rebased on `master` once it merges.
+- Subagents never change the checkout at the same time: one implements at a time, and
+  reviewers only read.
 - Before opening the pull request, a reviewer in a fresh context checks the diff for
   correctness, scope, weakened or deleted tests, a code change's test plan without a licensed
   `Affected` run, and dead code or stale docs the change left;
@@ -64,7 +64,7 @@ the fixed distribution identity; the generated projections and the solution come
   pull request; a pull request description is not a task list.
 - Merge once that review finds nothing blocking and the required checks pass, in the order
   [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) gives; never bypass a check. Afterwards
-  delete the branch, its worktree and its plan.
+  delete the branch and its plan.
 
 ## Conventions
 
