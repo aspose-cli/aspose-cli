@@ -19,4 +19,12 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>
 
+  <!-- Repository files outside the projects that these tests read; scripts/test.ps1 runs this project when one changes. -->
+  <ItemGroup>
+    <RepositoryInput Include="..\..\README.md" />
+    <RepositoryInput Include="..\..\CONTRIBUTING.md" />
+    <RepositoryInput Include="..\..\KNOWN-ISSUES.md" />
+    <RepositoryInput Include="..\..\LICENSE" />
+  </ItemGroup>
+
 </Project>
