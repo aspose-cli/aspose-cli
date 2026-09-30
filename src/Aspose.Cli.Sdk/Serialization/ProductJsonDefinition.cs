@@ -119,6 +119,9 @@ public sealed class ContractJsonSerializer
             DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull,
             AllowOutOfOrderMetadataProperties = true,
             AllowDuplicateProperties = false,
+            // Contract input is written by an agent: an unknown member is a mistake to report,
+            // never a field to ignore, whatever record it appears in.
+            UnmappedMemberHandling = JsonUnmappedMemberHandling.Disallow,
             // 'required' only demands presence; an explicit null in a non-nullable contract
             // member is also a wire error, not a value for product code to trip over.
             RespectNullableAnnotations = true,

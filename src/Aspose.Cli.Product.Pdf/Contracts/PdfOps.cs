@@ -6,7 +6,6 @@ using Aspose.Cli.Sdk.Text;
 namespace Aspose.Cli.Product.Pdf.Contracts;
 
 /// <summary>A validated atomic PDF edit batch.</summary>
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 [ProductJsonRoot]
 public sealed record PdfOpsBatch : BoundedOperationEnvelope<PdfOp>;
 

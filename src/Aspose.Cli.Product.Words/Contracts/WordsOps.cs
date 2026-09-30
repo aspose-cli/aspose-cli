@@ -5,7 +5,6 @@ using Aspose.Cli.Sdk.Serialization;
 namespace Aspose.Cli.Product.Words.Contracts;
 
 /// <summary>A validated Words edit batch.</summary>
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 [ProductJsonRoot]
 public sealed record WordsOpsBatch : BoundedOperationEnvelope<WordsOp>;
 

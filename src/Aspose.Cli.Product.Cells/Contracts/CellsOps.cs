@@ -6,7 +6,6 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 
 /// <summary>A validated atomic Cells edit batch, the payload of <c>cells edit --ops</c>.</summary>
 [ProductJsonRoot]
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record CellsOpsBatch : BoundedOperationEnvelope<CellsOp>;
 
 /// <summary>
