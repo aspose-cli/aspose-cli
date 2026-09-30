@@ -5,8 +5,9 @@ using Aspose.Cli.Sdk.IO;
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
 /// <summary>
-/// The one <c>--out-dir</c> option of commands that publish a set of files. It has no
-/// alias: <c>--out</c> always names a single output file.
+/// The one <c>--out-dir</c> option of commands that publish a set of files into a directory
+/// that may exist. It has no alias: <c>--out</c> always names one output, a file or, for
+/// <c>review</c>, one new evidence directory.
 /// </summary>
 internal sealed class OutputDirectoryOption
 {
