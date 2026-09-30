@@ -13,13 +13,14 @@ internal static class JsonContractDiagnostics
 {
     /// <summary>
     /// Returns the first field that does not fit the contract, or a reason that names the
-    /// serializer's failure path when the value's shape is correct.
+    /// serializer's failure path when the value's shape is correct. The exception's message is
+    /// the reason; an unknown field is an <see cref="UnknownFieldException"/>.
     /// </summary>
     /// <param name="value">The rejected JSON value.</param>
     /// <param name="type">The contract type the value was read as.</param>
     /// <param name="options">The options whose metadata describes the contract.</param>
     /// <param name="failurePath">The serializer's JSON path of the failure, if known.</param>
-    public static string Explain(JsonElement value, Type type, JsonSerializerOptions options, string? failurePath)
+    public static JsonException Explain(JsonElement value, Type type, JsonSerializerOptions options, string? failurePath)
     {
         ArgumentNullException.ThrowIfNull(type);
         ArgumentNullException.ThrowIfNull(options);
@@ -29,7 +30,8 @@ internal static class JsonContractDiagnostics
         }
 
         string field = FieldPath(failurePath);
-        return field.Length == 0 ? "the value does not match the documented contract" : $"{field} has an invalid value";
+        return new JsonException(
+            field.Length == 0 ? "the value does not match the documented contract" : $"{field} has an invalid value");
     }
 
     /// <summary>Converts a serializer path such as <c>$.style.color</c> into a field path.</summary>
@@ -39,7 +41,7 @@ internal static class JsonContractDiagnostics
             : jsonPath.StartsWith('$') ? jsonPath[1..]
             : jsonPath;
 
-    private static string? Find(JsonElement value, Type type, JsonSerializerOptions options, string path)
+    private static JsonException? Find(JsonElement value, Type type, JsonSerializerOptions options, string path)
     {
         if (!options.TryGetTypeInfo(type, out JsonTypeInfo? info))
         {
@@ -56,7 +58,7 @@ internal static class JsonContractDiagnostics
         };
     }
 
-    private static string? FindInObject(JsonElement value, JsonTypeInfo info, JsonSerializerOptions options, string path)
+    private static JsonException? FindInObject(JsonElement value, JsonTypeInfo info, JsonSerializerOptions options, string path)
     {
         if (value.ValueKind != JsonValueKind.Object)
         {
@@ -72,14 +74,14 @@ internal static class JsonContractDiagnostics
             string field = Join(path, member.Name);
             if (!options.AllowDuplicateProperties && !seen.Add(member.Name))
             {
-                return $"{field} is duplicated";
+                return new JsonException($"{field} is duplicated");
             }
 
             if (!properties.TryGetValue(member.Name, out JsonPropertyInfo? property))
             {
                 if (strict)
                 {
-                    return $"unknown field '{field}'";
+                    return UnknownField(value, info, names, path, member.Name);
                 }
 
                 continue;
@@ -89,7 +91,7 @@ internal static class JsonContractDiagnostics
             {
                 if (!(property.AssociatedParameter?.IsNullable ?? property.IsSetNullable))
                 {
-                    return $"{field} must not be null";
+                    return new JsonException($"{field} must not be null");
                 }
 
                 continue;
@@ -103,16 +105,16 @@ internal static class JsonContractDiagnostics
 
         foreach (JsonPropertyInfo property in info.Properties)
         {
-            if (property.IsRequired && !value.EnumerateObject().Any(member => names.Equals(member.Name, property.Name)))
+            if (property.IsRequired && !Declares(value, property.Name, names))
             {
-                return $"the required field '{Join(path, property.Name)}' is missing";
+                return new JsonException($"the required field '{Join(path, property.Name)}' is missing");
             }
         }
 
         return null;
     }
 
-    private static string? FindInArray(JsonElement value, Type element, JsonSerializerOptions options, string path)
+    private static JsonException? FindInArray(JsonElement value, Type element, JsonSerializerOptions options, string path)
     {
         if (value.ValueKind != JsonValueKind.Array)
         {
@@ -131,7 +133,7 @@ internal static class JsonContractDiagnostics
         return null;
     }
 
-    private static string? FindInMap(JsonElement value, Type element, JsonSerializerOptions options, string path)
+    private static JsonException? FindInMap(JsonElement value, Type element, JsonSerializerOptions options, string path)
     {
         if (value.ValueKind != JsonValueKind.Object)
         {
@@ -144,7 +146,7 @@ internal static class JsonContractDiagnostics
             string field = Join(path, entry.Name);
             if (!seen.Add(entry.Name))
             {
-                return $"{field} is duplicated";
+                return new JsonException($"{field} is duplicated");
             }
 
             if (entry.Value.ValueKind != JsonValueKind.Null && Find(entry.Value, element, options, field) is { } mismatch)
@@ -156,12 +158,12 @@ internal static class JsonContractDiagnostics
         return null;
     }
 
-    private static string? FindInScalar(JsonElement value, Type type, string path)
+    private static JsonException? FindInScalar(JsonElement value, Type type, string path)
     {
         Type? underlying = Nullable.GetUnderlyingType(type);
         if (value.ValueKind == JsonValueKind.Null)
         {
-            return type.IsValueType && underlying is null ? $"{path} must not be null" : null;
+            return type.IsValueType && underlying is null ? new JsonException($"{path} must not be null") : null;
         }
 
         Type scalar = underlying ?? type;
@@ -174,8 +176,22 @@ internal static class JsonContractDiagnostics
             : null;
     }
 
-    private static string Expected(string path, string kind) =>
-        path.Length == 0 ? $"the document must be {kind}" : $"{path} must be {kind}";
+    /// <summary>Rejects a member the object's contract does not declare.</summary>
+    private static UnknownFieldException UnknownField(
+        JsonElement value, JsonTypeInfo info, StringComparer names, string path, string name)
+    {
+        string[] allowed = [.. info.Properties.Select(static property => property.Name)];
+        string[] missing = [.. info.Properties
+            .Where(property => property.IsRequired && !Declares(value, property.Name, names))
+            .Select(static property => property.Name)];
+        return UnknownFieldException.For(path, name, path.Length == 0 ? "the document" : path, allowed, missing);
+    }
+
+    private static bool Declares(JsonElement value, string name, StringComparer names) =>
+        value.EnumerateObject().Any(member => names.Equals(member.Name, name));
+
+    private static JsonException Expected(string path, string kind) =>
+        new(path.Length == 0 ? $"the document must be {kind}" : $"{path} must be {kind}");
 
     private static string Join(string path, string name) => path.Length == 0 ? name : $"{path}.{name}";
 }

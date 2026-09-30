@@ -52,6 +52,25 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(suggestion, error.Details["suggestion"]?.GetValue<string>());
     }
 
+    [Theory]
+    [InlineData("""{"ops":[{"op":"set","value":1}],"extra":1}""",
+        "unknown field 'extra'; the document accepts: schema, schemaVersion, ifMatch, ops", null)]
+    [InlineData("""{"op":[{"op":"set","value":1}]}""",
+        "unknown field 'op'; the document accepts: schema, schemaVersion, ifMatch, ops (did you mean 'ops'?)", "ops")]
+    [InlineData("""{"steps":[{"op":"set","value":1}]}""",
+        "unknown field 'steps'; the document accepts: schema, schemaVersion, ifMatch, ops (did you mean 'ops'?)", "ops")]
+    public void Parse_NamesTheAcceptedFieldsOfAnUnknownDocumentField(string document, string reason, string? suggestion)
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Null(error.Details!["index"]);
+        Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.Equal(["schema", "schemaVersion", "ifMatch", "ops"],
+            error.Details["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal(suggestion, error.Details["suggestion"]?.GetValue<string>());
+    }
+
     [Fact]
     public void Prepare_EnforcesTheDeclaredOperationLimit()
     {

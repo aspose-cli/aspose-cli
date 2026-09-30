@@ -227,7 +227,8 @@ public sealed class OperationCatalog<TOp>
                 index, KnownNameAt(root, index), rejection!.Message, DefaultHint, field: rejection as UnknownFieldException);
         }
 
-        return Invalid(JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path));
+        JsonException reason = JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path);
+        return OperationErrors.Invalid(reason.Message, DefaultHint, reason as UnknownFieldException);
     }
 
     private static int? OperationIndex(string? path)

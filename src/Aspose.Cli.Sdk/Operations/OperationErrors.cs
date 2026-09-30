@@ -11,16 +11,20 @@ namespace Aspose.Cli.Sdk.Operations;
 /// </summary>
 internal static class OperationErrors
 {
-    internal static CliException Invalid(string reason, string hint) => new(
-        ErrorCodes.OpsInvalid,
-        $"The operation document is invalid: {reason}",
-        hint: hint,
-        details: new JsonObject { ["reason"] = reason });
+    /// <summary>
+    /// Rejects the document as a whole. An unknown field adds <c>allowedFields</c> and, when one
+    /// is likely meant, <c>suggestion</c>.
+    /// </summary>
+    internal static CliException Invalid(string reason, string hint, UnknownFieldException? field = null)
+    {
+        var details = new JsonObject { ["reason"] = reason };
+        AddUnknownField(details, field);
+        return new CliException(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}", hint: hint, details: details);
+    }
 
     /// <summary>
     /// Rejects one operation; <paramref name="name"/> is null when the entry names no known
-    /// operation. An unknown field adds <c>allowedFields</c> and, when one is likely meant,
-    /// <c>suggestion</c>.
+    /// operation. An unknown field adds details as <see cref="Invalid"/> does.
     /// </summary>
     internal static CliException InvalidAt(
         int index, string? name, string reason, string hint, ErrorCode? cause = null, UnknownFieldException? field = null)
@@ -35,16 +39,23 @@ internal static class OperationErrors
         {
             details["cause"] = cause.Name;
         }
-        if (field is not null)
-        {
-            details["allowedFields"] = new JsonArray([.. field.AllowedFields.Select(static item => (JsonNode)item)]);
-            if (field.Suggestion is not null)
-            {
-                details["suggestion"] = field.Suggestion;
-            }
-        }
+        AddUnknownField(details, field);
         string subject = name is null ? $"Operation {index}" : $"Operation {index} ({name})";
         return new CliException(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}", hint: hint, details: details);
+    }
+
+    private static void AddUnknownField(JsonObject details, UnknownFieldException? field)
+    {
+        if (field is null)
+        {
+            return;
+        }
+
+        details["allowedFields"] = new JsonArray([.. field.AllowedFields.Select(static item => (JsonNode)item)]);
+        if (field.Suggestion is not null)
+        {
+            details["suggestion"] = field.Suggestion;
+        }
     }
 
     /// <summary>Keeps a domain failure's own code (for example SHEET_NOT_FOUND) and adds its position.</summary>

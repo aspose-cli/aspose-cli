@@ -108,6 +108,8 @@ public sealed record SecretOp : TestOp
     [SecretEnv] public string? PasswordEnv { get; init; }
 }
 
+/// <summary>The test batch, strict about unknown members as every product batch is.</summary>
+[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
