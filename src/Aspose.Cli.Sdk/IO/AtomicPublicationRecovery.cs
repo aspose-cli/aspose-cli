@@ -11,7 +11,10 @@ namespace Aspose.Cli.Sdk.IO;
 internal sealed class AtomicPublicationRecovery(AtomicPublicationPlan plan)
 {
     private const int MaximumTransactionDirectories = 32;
-    private static readonly TimeSpan MaximumRecoveryTime = TimeSpan.FromSeconds(2);
+    // A backstop against debris, which MaximumTransactionDirectories already bounds, not a speed
+    // target: on a loaded machine, inspecting a few live transactions of concurrent publications
+    // can take seconds, and that must not fail the caller's publication.
+    private static readonly TimeSpan MaximumRecoveryTime = TimeSpan.FromSeconds(10);
     public PublicationRecoveryReport RollBack()
     {
         using OperationDeadline cleanup = OperationDeadline.Start(TimeSpan.FromSeconds(30));
