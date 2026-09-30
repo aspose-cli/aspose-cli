@@ -4,7 +4,7 @@
 
 ## Test plan
 
-<!-- The commands you ran and what you saw, for example `scripts/test.ps1 -Configuration Release -Scope Fast`. Write "Not tested" with the reason if nothing ran. -->
+<!-- The commands you ran, whether they were licensed, and each project's result line, for example `scripts/test.ps1 -Configuration Release -Scope Affected`. Write "Not tested" with the reason if nothing ran. -->
 
 ## Contract checklist
 
