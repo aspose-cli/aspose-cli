@@ -96,7 +96,7 @@ public sealed class PdfHardeningTests
 
         var result = fixture.Engine.GetInfo(input, new PdfInfoRequest());
 
-        Assert.Equal(2, result.Pdf.Pages);
+        Assert.Equal(2, result.Pdf.PageCount);
         Assert.Equal("pdf", result.Source.Format);
     }
 

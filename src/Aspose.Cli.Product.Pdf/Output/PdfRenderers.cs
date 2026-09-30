@@ -12,10 +12,10 @@ internal static class PdfRenderers
         PdfSummary pdf = result.Pdf;
         surface.Out.WriteLine($"{result.Source.Path} ({result.Source.Format}, {TableText.Bytes(result.Source.SizeBytes)})");
         surface.Out.WriteLine(
-            $"pages: {pdf.Pages}   version: {pdf.Version}   encrypted: {TableText.YesNo(pdf.Encrypted)}   "
+            $"pages: {pdf.PageCount}   version: {pdf.Version}   encrypted: {TableText.YesNo(pdf.Encrypted)}   "
             + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A: {TableText.YesNo(pdf.PdfaCompliant)}");
         surface.Out.WriteLine(
-            $"form: {pdf.FormType}   attachments: {pdf.Attachments}   signed: {TableText.YesNo(pdf.Signed)}   "
+            $"form: {pdf.FormType}   attachments: {pdf.AttachmentCount}   signed: {TableText.YesNo(pdf.Signed)}   "
             + $"password access: {pdf.PasswordType}");
         if (pdf.DistinctPageSizes.Count > 0)
         {
@@ -24,7 +24,7 @@ internal static class PdfRenderers
                 + string.Join(
                     ", ",
                     pdf.DistinctPageSizes.Select(static size =>
-                        $"{Points(size.WidthPoints)} x {Points(size.HeightPoints)} pt ({size.Count})")));
+                        $"{Points(size.WidthPoints)} x {Points(size.HeightPoints)} pt ({size.PageCount})")));
         }
 
         if (result.PageLabels is { Count: > 0 } labels)
