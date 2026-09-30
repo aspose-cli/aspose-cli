@@ -9,8 +9,8 @@ namespace Aspose.Cli.Product.Cells.Contracts;
 /// file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file
 /// itself, read as it is on disk before the edit. A reference in an imported formula to another
 /// sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when
-/// this workbook has none. A reference to a third workbook keeps its link; that workbook is
-/// never read, so recalculation uses the values the link cached.
+/// this workbook has none. A reference to a third workbook keeps its link and is not read
+/// through it, so recalculation uses the values the link cached.
 /// </summary>
 [Operation("import_range")]
 public sealed record ImportRangeOp : CellsOp
@@ -57,8 +57,8 @@ public static class ImportContents
 /// source points at the sheet of that name in this workbook, or becomes #REF! when this workbook
 /// has none, and the defined names the sheet refers to come along. A source that defines a
 /// workbook-level name this workbook also defines differently is refused unless the name refers
-/// only to the imported sheet. A reference to a third workbook keeps its link; that workbook is
-/// never read, so recalculation uses the values the link cached.
+/// only to the imported sheet. A reference to a third workbook keeps its link and is not read
+/// through it, so recalculation uses the values the link cached.
 /// </summary>
 [Operation("import_sheet")]
 public sealed record ImportSheetOp : CellsOp

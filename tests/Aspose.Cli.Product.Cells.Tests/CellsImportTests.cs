@@ -242,30 +242,23 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     public void Import_AReferenceToAThirdWorkbookKeepsItsLinkAndCachedResultWithoutReadingIt(
         string operation, string sheet, string cell)
     {
-        (string source, string rates) = CreateThirdPartyLinkedSource(operation.Contains("import_sheet", StringComparison.Ordinal) ? "linked-sheet" : "linked-range");
+        string source = CreateThirdPartyLinkedSource(operation.Contains("import_sheet", StringComparison.Ordinal) ? "linked-sheet" : "linked-range");
         string target = _fixture.CreateSalesWorkbook(Path.GetFileName(Path.GetDirectoryName(source)) + "-target.xlsx");
 
-        Workbook result;
-        // The linked workbook now holds another value and cannot be opened while the edit runs.
-        using (File.Open(rates, FileMode.Open, FileAccess.Read, FileShare.None))
-        {
-            result = Apply(target, operation.Replace("\"{source}\"", Json(source), StringComparison.Ordinal));
-        }
+        using Workbook result = Apply(target, operation.Replace("\"{source}\"", Json(source), StringComparison.Ordinal));
 
-        using (result)
-        {
-            Cell imported = result.Worksheets[sheet].Cells[cell];
-            Assert.EndsWith("[rates.xlsx]Sheet1'!$A$1", imported.Formula, StringComparison.Ordinal);
-            ExternalLink link = Assert.Single(result.Worksheets.ExternalLinks.Cast<ExternalLink>());
-            Assert.EndsWith("rates.xlsx", link.DataSource, StringComparison.OrdinalIgnoreCase);
-            Assert.Equal(2d, imported.DoubleValue);
-        }
+        Cell imported = result.Worksheets[sheet].Cells[cell];
+        Assert.EndsWith("[rates.xlsx]Sheet1'!$A$1", imported.Formula, StringComparison.Ordinal);
+        ExternalLink link = Assert.Single(result.Worksheets.ExternalLinks.Cast<ExternalLink>());
+        Assert.EndsWith("rates.xlsx", link.DataSource, StringComparison.OrdinalIgnoreCase);
+        // rates.xlsx now holds 99 and stays readable, so any read of it would show here.
+        Assert.Equal(2d, imported.DoubleValue);
     }
 
     [Fact]
     public void ImportRange_ValuesOfAThirdWorkbookReferenceAddNoLink()
     {
-        (string source, _) = CreateThirdPartyLinkedSource("linked-values");
+        string source = CreateThirdPartyLinkedSource("linked-values");
 
         using Workbook result = Apply(
             _fixture.CreateSalesWorkbook("linked-values-target.xlsx"),
@@ -309,9 +302,10 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     /// <summary>
     /// A folder with rates.xlsx (Sheet1!A1 = 2) and a source whose Linked!A1 is
     /// ='[rates.xlsx]Sheet1'!$A$1 with the cached result 2, as Excel saves it. rates.xlsx is then
-    /// rewritten to hold 99, so a result of 2 shows the linked file was not read.
+    /// rewritten to hold 99 and left readable, so any read of it during the edit yields 99; a result
+    /// of 2 shows the linked file was not read.
     /// </summary>
-    private (string Source, string Rates) CreateThirdPartyLinkedSource(string folder)
+    private string CreateThirdPartyLinkedSource(string folder)
     {
         string directory = _fixture.Temp.File(folder);
         Directory.CreateDirectory(directory);
@@ -330,7 +324,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         }
 
         SaveRates(99);
-        return (source, rates);
+        return source;
 
         void SaveRates(int value)
         {
