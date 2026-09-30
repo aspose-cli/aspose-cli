@@ -560,6 +560,33 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal(1, Count(text, "Noah"));
     }
 
+    [Theory]
+    [InlineData("header-only.csv", "Name,City\n", false)]
+    [InlineData("header-only.csv", "Name,City\n", true)]
+    [InlineData("blank-line.csv", "Name,City\n\n", false)]
+    [InlineData("blank-line.csv", "Name,City\n\n", true)]
+    [InlineData("empty-array.json", "[]", false)]
+    [InlineData("empty-array.json", "[]", true)]
+    public void Edit_MailMergeWithoutDataRowsIsRefusedAndWritesNothing(string dataName, string data, bool regions)
+    {
+        string input = _fixture.Temp.File($"merge-empty-{regions}-{dataName}.docx");
+        string output = _fixture.Temp.File($"merge-empty-{regions}-{dataName}.out.docx");
+        string path = _fixture.Temp.File($"merge-empty-{regions}-{dataName}");
+        var document = new Document();
+        new DocumentBuilder(document).InsertField("MERGEFIELD Name");
+        document.Save(input);
+        File.WriteAllText(path, data);
+
+        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new MailMergeOp { Path = path, Regions = regions }] },
+            new WordsEditRequest { OutputPath = output }));
+
+        Assert.Equal(WordsDiagnostics.MergeDataInvalid, error.Code);
+        Assert.Contains("mail_merge needs at least one row", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
     [Fact]
     public void Split_PreflightsTheWholeOutputSetBeforePublishingFiles()
     {
