@@ -59,9 +59,11 @@ the fixed distribution identity; the generated projections and the solution come
   commits with cherry-pick or merge, not patch files.
 - Before opening the pull request, a reviewer in a fresh context checks the diff for
   correctness, scope, weakened or deleted tests, and dead code or stale docs the change left;
-  fix only what is real. Add anything outside the task to the roadmap instead of widening the
-  pull request.
-- Merge only when the owner says so. Afterwards delete the branch, its worktree and its plan.
+  fix only what is real. Add anything outside the task to `roadmap.md` instead of widening the
+  pull request; a pull request description is not a task list. Start a session by reading it.
+- Merge only when the owner says so, for one pull request or a named set of them, and as
+  [CONTRIBUTING.md](CONTRIBUTING.md#pull-requests) orders merges. Afterwards delete the branch,
+  its worktree and its plan.
 ## Conventions
 
 Use only the corresponding commercial Aspose SDK packages; no FOSS source, gitlinks or
