@@ -1,6 +1,8 @@
 using System.Reflection;
 using System.Text.Json;
 using System.Text.Json.Nodes;
+using System.Text.Json.Serialization;
+using System.Text.Json.Serialization.Metadata;
 using System.CommandLine;
 using System.CommandLine.Completions;
 using Aspose.Cli.Sdk.Contracts;
@@ -14,6 +16,114 @@ namespace Aspose.Cli.TestKit;
 
 /// <summary>A product-owned input value and the schema that describes it.</summary>
 public sealed record ProductSchemaSample(string Schema, object Value);
+
+/// <summary>
+/// The count naming rule, checked on the source-generated JSON metadata of every
+/// <see cref="JsonSerializerContext"/> in the given assemblies: each context's
+/// <c>[JsonSerializable]</c> roots and everything their properties, items and derived types
+/// reach. An integer property whose last camelCase word is a plural noun is a count and ends
+/// in <c>Count</c> (<c>pageCount</c>, not <c>pages</c> or <c>headerRows</c>); a unit word
+/// after a qualifier (<c>sizeBytes</c>, <c>durationMs</c>) names a quantity, not a count, but a
+/// bare plural (<c>pages</c>, <c>bytes</c>) is never an integer, so it can only name the
+/// objects themselves or a range of them.
+/// </summary>
+public static class JsonCountNames
+{
+    /// <summary>Last words that are units of a quantity, used after a qualifier.</summary>
+    private static readonly HashSet<string> Units = new(StringComparer.Ordinal) { "Bytes", "Milliseconds", "Ms" };
+
+    /// <summary>Every violation, naming the CLR type, its property and the JSON name.</summary>
+    public static IReadOnlyList<string> Violations(IEnumerable<Assembly> assemblies)
+    {
+        var violations = new List<string>();
+        var visited = new HashSet<Type>();
+        foreach (Type contextType in assemblies
+            .SelectMany(static assembly => assembly.GetTypes())
+            .Where(static type => !type.IsAbstract && typeof(JsonSerializerContext).IsAssignableFrom(type))
+            .OrderBy(static type => type.FullName, StringComparer.Ordinal))
+        {
+            var context = (JsonSerializerContext)contextType
+                .GetProperty("Default", BindingFlags.Public | BindingFlags.Static)!
+                .GetValue(null)!;
+            foreach (Type root in contextType.GetCustomAttributesData()
+                .Where(static data => data.AttributeType == typeof(JsonSerializableAttribute))
+                .Select(static data => (Type)data.ConstructorArguments[0].Value!))
+            {
+                Walk(context, root, visited, violations);
+            }
+        }
+
+        return violations;
+    }
+
+    private static void Walk(JsonSerializerContext context, Type type, HashSet<Type> visited, List<string> violations)
+    {
+        if (!visited.Add(type) || context.GetTypeInfo(type) is not { } info)
+        {
+            return;
+        }
+
+        if (info.ElementType is { } element)
+        {
+            Walk(context, element, visited, violations);
+        }
+
+        foreach (JsonDerivedType derived in info.PolymorphismOptions?.DerivedTypes ?? [])
+        {
+            Walk(context, derived.DerivedType, visited, violations);
+        }
+
+        if (info.Kind != JsonTypeInfoKind.Object)
+        {
+            return;
+        }
+
+        foreach (JsonPropertyInfo property in info.Properties)
+        {
+            if (IsInteger(property.PropertyType) && IsUncountedPlural(property.Name))
+            {
+                violations.Add(
+                    $"{type.FullName}.{(property.AttributeProvider as MemberInfo)?.Name ?? property.Name}: "
+                    + $"integer '{property.Name}' is a count; name it '{Singular(property.Name)}Count'.");
+            }
+
+            Walk(context, property.PropertyType, visited, violations);
+        }
+    }
+
+    private static bool IsInteger(Type type) =>
+        (Nullable.GetUnderlyingType(type) ?? type) is var value
+        && (value == typeof(int) || value == typeof(long) || value == typeof(short) || value == typeof(byte)
+            || value == typeof(uint) || value == typeof(ulong) || value == typeof(ushort) || value == typeof(sbyte));
+
+    /// <summary>Whether a name's last camelCase word is a plural noun other than a qualified unit.</summary>
+    private static bool IsUncountedPlural(string name)
+    {
+        int start = LastWordStart(name);
+        string word = name[start..];
+        return word.EndsWith('s')
+            && !word.EndsWith("ss", StringComparison.Ordinal)
+            && !word.EndsWith("us", StringComparison.Ordinal)
+            && !word.EndsWith("is", StringComparison.Ordinal)
+            && !(start > 0 && Units.Contains(word));
+    }
+
+    private static int LastWordStart(string name)
+    {
+        for (int index = name.Length - 1; index > 0; index--)
+        {
+            if (char.IsUpper(name[index]))
+            {
+                return index;
+            }
+        }
+
+        return 0;
+    }
+
+    private static string Singular(string name) =>
+        name.EndsWith("ies", StringComparison.Ordinal) ? name[..^3] + "y" : name[..^1];
+}
 
 /// <summary>
 /// Reusable product-module contract tests. Product test projects inherit this
@@ -490,6 +600,17 @@ public abstract class ProductContractTests<TModule>
                 string.Equals(File.ReadAllText(path).ReplaceLineEndings("\n"), served, StringComparison.Ordinal),
                 $"{path} differs from the schema generated from the operation records; set {UpdateSnapshotsVariable}=1, rerun and review the diff.");
         }
+    }
+
+    /// <summary>
+    /// Names every integer count <c>&lt;noun&gt;Count</c> across the product's source-generated
+    /// contracts (results, inputs and operation records); see <see cref="JsonCountNames"/>.
+    /// </summary>
+    [Fact]
+    public void IntegerCounts_AreNamedNounCount()
+    {
+        IReadOnlyList<string> violations = JsonCountNames.Violations([typeof(TModule).Assembly]);
+        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
     }
 
     /// <summary>

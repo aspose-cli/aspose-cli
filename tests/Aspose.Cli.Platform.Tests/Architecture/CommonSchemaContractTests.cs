@@ -265,6 +265,15 @@ public sealed class CommonSchemaContractTests
         }
     }
 
+    /// <summary>Names every integer count of the SDK and Host contracts <c>&lt;noun&gt;Count</c>.</summary>
+    [Fact]
+    public void IntegerCounts_AreNamedNounCount()
+    {
+        IReadOnlyList<string> violations = JsonCountNames.Violations(
+            [typeof(SdkJsonContext).Assembly, typeof(HostContractJson).Assembly]);
+        Assert.True(violations.Count == 0, string.Join(Environment.NewLine, violations));
+    }
+
     [Fact]
     public void ProductCatalog_RejectsAnOperationVocabularyOutsideTheProductNamespace()
     {
