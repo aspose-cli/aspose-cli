@@ -66,50 +66,54 @@ internal static partial class SlidesMarkdownBuilder
         && !line.TrimStart().StartsWith("```", StringComparison.Ordinal)
         && !HeadingPattern().IsMatch(line.TrimEnd());
 
-    private static bool HasPipe(string line)
-    {
-        for (int i = 0; i < line.Length; i++)
-        {
-            if (line[i] == '|' && (i == 0 || line[i - 1] != '\\'))
-            {
-                return true;
-            }
-        }
+    private static bool HasPipe(string line) => Split(line).Count > 1;
 
-        return false;
-    }
-
-    /// <summary>The cells of one row; an escaped <c>\|</c> is a literal pipe.</summary>
+    /// <summary>The cells of one row, without the optional outer pipes.</summary>
     private static List<string> Cells(string line)
     {
-        string text = line.Trim();
-        if (text.StartsWith('|'))
+        List<string> cells = Split(line.Trim());
+        if (cells.Count > 1 && cells[0].Length == 0)
         {
-            text = text[1..];
+            cells.RemoveAt(0);
         }
 
-        if (text.EndsWith('|') && !text.EndsWith("\\|", StringComparison.Ordinal))
+        if (cells.Count > 1 && cells[^1].Length == 0)
         {
-            text = text[..^1];
+            cells.RemoveAt(cells.Count - 1);
         }
 
+        return cells;
+    }
+
+    /// <summary>
+    /// Splits a line at its unescaped pipes. A backslash escapes only the next character:
+    /// <c>\|</c> is a literal pipe, and in <c>\\|</c> the pipe still ends the cell. Other
+    /// escaped pairs stay in the text as written.
+    /// </summary>
+    private static List<string> Split(string line)
+    {
         var cells = new List<string>();
         var cell = new StringBuilder();
-        for (int i = 0; i < text.Length; i++)
+        for (int i = 0; i < line.Length; i++)
         {
-            if (text[i] == '\\' && i + 1 < text.Length && text[i + 1] == '|')
+            if (line[i] == '\\' && i + 1 < line.Length)
             {
-                cell.Append('|');
                 i++;
+                if (line[i] != '|')
+                {
+                    cell.Append('\\');
+                }
+
+                cell.Append(line[i]);
             }
-            else if (text[i] == '|')
+            else if (line[i] == '|')
             {
                 cells.Add(cell.ToString().Trim());
                 cell.Clear();
             }
             else
             {
-                cell.Append(text[i]);
+                cell.Append(line[i]);
             }
         }
 
@@ -155,7 +159,6 @@ internal static partial class SlidesMarkdownBuilder
             rows,
             columns);
         table.Name = "Table";
-        table.FirstRow = true;
         for (int row = 0; row < rows; row++)
         {
             for (int column = 0; column < columns; column++)

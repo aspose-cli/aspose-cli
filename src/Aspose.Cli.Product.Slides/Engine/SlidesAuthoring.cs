@@ -76,14 +76,17 @@ internal static class SlidesAuthoring
 
     /// <summary>
     /// Adds a table of equal columns and equal rows filling the box. The table takes the
-    /// presentation's default table style with a header row, so it follows the template;
-    /// a row grows past its share when its text needs more height.
+    /// presentation's default table style, so it follows the template, and its first row is
+    /// the header row; a row grows past its share when its text needs more height.
     /// </summary>
     internal static ITable AddTable(ISlide slide, double x, double y, double width, double height, int rows, int columns)
     {
         double[] widths = Enumerable.Repeat(width / columns, columns).ToArray();
         double[] heights = Enumerable.Repeat(height / rows, rows).ToArray();
-        return slide.Shapes.AddTable((float)x, (float)y, widths, heights);
+        ITable table = slide.Shapes.AddTable((float)x, (float)y, widths, heights);
+        // Stated rather than left to the SDK's current default, which also marks it.
+        table.FirstRow = true;
+        return table;
     }
 
     /// <summary>The largest rectangle with the image's aspect ratio, centered in the box.</summary>
