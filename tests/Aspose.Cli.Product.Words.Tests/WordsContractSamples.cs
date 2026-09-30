@@ -23,12 +23,12 @@ internal static class WordsContractSamples
         Source = new SourceInfo { Path = "D:/data/report.docx", Format = "docx", SizeBytes = 18000 },
         Document = new DocumentSummary
         {
-            Sections = 2,
-            Blocks = 14,
-            Paragraphs = 12,
-            Tables = 2,
-            Pages = 3,
-            Words = 420,
+            SectionCount = 2,
+            BlockCount = 14,
+            ParagraphCount = 12,
+            TableCount = 2,
+            PageCount = 3,
+            WordCount = 420,
             RevisionsPresent = true,
             RevisionCount = 2,
             RevisionAuthors = ["Reviewer"],
@@ -57,7 +57,7 @@ internal static class WordsContractSamples
             new RevisionData { Type = "insertion", Author = "Reviewer", Date = "2026-09-01T10:30:00", Block = 2, Text = "sixty" },
         ],
         Images = [new ImageData { Block = 4, Name = "Picture 1", Width = 144, Height = 96 }],
-        Tables = [new TableData { Block = 5, Rows = 2, Columns = 2, Style = "Table Grid" }],
+        Tables = [new TableData { Block = 5, RowCount = 2, ColumnCount = 2, Style = "Table Grid" }],
         License = Licensed,
     };
 
@@ -84,8 +84,8 @@ internal static class WordsContractSamples
                 Block = 2,
                 Type = "table",
                 Section = 1,
-                Rows = 2,
-                Columns = 2,
+                RowCount = 2,
+                ColumnCount = 2,
                 Cells = [["Metric", "Value"], ["Revenue", "120"]],
                 ContentTruncated = false,
             },
@@ -151,7 +151,7 @@ internal static class WordsContractSamples
         Left = new SourceInfo { Path = "D:/data/a.docx", Format = "docx", SizeBytes = 10000 },
         Right = new SourceInfo { Path = "D:/data/b.docx", Format = "docx", SizeBytes = 10100 },
         Identical = false,
-        Revisions = new RevisionCounts { Insertions = 1, Deletions = 0, FormatChanges = 0, Moves = 0 },
+        Revisions = new RevisionCounts { InsertionCount = 1, DeletionCount = 0, FormatChangeCount = 0, MoveCount = 0 },
         Samples = [new RevisionSample { Type = "Insertion", Text = "new clause" }],
         License = Licensed,
     };
@@ -207,7 +207,7 @@ internal static class WordsContractSamples
                 MatchCase = true,
                 WholeWord = true,
                 Scope = "body",
-                MaxReplacements = 2,
+                MaxReplacementCount = 2,
             },
             new SetTextOp
             {
@@ -252,8 +252,8 @@ internal static class WordsContractSamples
             {
                 At = new WordsTarget { Block = 3 },
                 Position = "after",
-                Rows = 2,
-                Columns = 2,
+                RowCount = 2,
+                ColumnCount = 2,
                 Cells = [["Metric", "Value"], ["Revenue", "120"]],
                 Style = "Table Grid",
             },
@@ -277,7 +277,7 @@ internal static class WordsContractSamples
             {
                 At = new WordsTarget { Block = 4 },
                 KeepTogether = true,
-                HeaderRows = 1,
+                HeaderRowCount = 1,
                 KeepWithNext = true,
             },
             new InsertTocOp
@@ -313,7 +313,7 @@ internal static class WordsContractSamples
                     Size = "a4",
                     Orientation = "landscape",
                     Margins = new MarginInput { Top = 48, Right = 54, Bottom = 48, Left = 54 },
-                    Columns = 2,
+                    ColumnCount = 2,
                 },
             },
             new DeleteSectionOp { Section = 3 },
@@ -325,7 +325,7 @@ internal static class WordsContractSamples
                     Size = "letter",
                     Orientation = "portrait",
                     Margins = new MarginInput { Top = 72, Right = 72, Bottom = 72, Left = 72 },
-                    Columns = 1,
+                    ColumnCount = 1,
                 },
             },
             new SetHeaderOp

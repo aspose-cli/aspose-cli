@@ -25,9 +25,10 @@ session start, the rules every product shares and the delivery checklist are in
   ([revisions](references/revisions.md)).
 - `query search --scope` and the `replace_text` op share one scope vocabulary:
   `body`, `headersFooters`, `footnotes` (with endnotes), `comments` and `all`.
-- Read fields use the edit vocabulary: a table block's `rows`, `columns` and
-  `cells` and a paragraph's `text` and `style` can be written back through
-  `insert_table` and `insert_paragraphs` under the same names.
+- Read fields use the edit vocabulary: a table block's `rowCount`,
+  `columnCount` and `cells` and a paragraph's `text` and `style` can be
+  written back through `insert_table` and `insert_paragraphs` under the same
+  names.
 
 ## Reading
 

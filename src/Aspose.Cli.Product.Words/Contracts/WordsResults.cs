@@ -26,12 +26,12 @@ public sealed record DocumentInfoResult() : ResultEnvelope(WordsSchemaIds.Docume
 /// <summary>Always-on document summary.</summary>
 public sealed record DocumentSummary
 {
-    public required int Sections { get; init; }
-    public required int Blocks { get; init; }
-    public required int Paragraphs { get; init; }
-    public required int Tables { get; init; }
-    public required int Pages { get; init; }
-    public required int Words { get; init; }
+    public required int SectionCount { get; init; }
+    public required int BlockCount { get; init; }
+    public required int ParagraphCount { get; init; }
+    public required int TableCount { get; init; }
+    public required int PageCount { get; init; }
+    public required int WordCount { get; init; }
     public required bool RevisionsPresent { get; init; }
     public required int RevisionCount { get; init; }
     public required IReadOnlyList<string> RevisionAuthors { get; init; }
@@ -112,8 +112,8 @@ public sealed record ImageData
 public sealed record TableData
 {
     public required int Block { get; init; }
-    public required int Rows { get; init; }
-    public required int Columns { get; init; }
+    public required int RowCount { get; init; }
+    public required int ColumnCount { get; init; }
     public string? Style { get; init; }
 }
 
@@ -146,8 +146,8 @@ public sealed record BlockData
     public IReadOnlyList<RunData>? Runs { get; init; }
     public IReadOnlyList<ImageData>? Images { get; init; }
     public string? BreakAfter { get; init; }
-    public int? Rows { get; init; }
-    public int? Columns { get; init; }
+    public int? RowCount { get; init; }
+    public int? ColumnCount { get; init; }
     public IReadOnlyList<IReadOnlyList<string>>? Cells { get; init; }
     public bool ContentTruncated { get; init; }
 }
@@ -239,10 +239,10 @@ public sealed record WordsCompareResult() : ResultEnvelope(WordsSchemaIds.Compar
 /// <summary>Counts by revision type.</summary>
 public sealed record RevisionCounts
 {
-    public required int Insertions { get; init; }
-    public required int Deletions { get; init; }
-    public required int FormatChanges { get; init; }
-    public required int Moves { get; init; }
+    public required int InsertionCount { get; init; }
+    public required int DeletionCount { get; init; }
+    public required int FormatChangeCount { get; init; }
+    public required int MoveCount { get; init; }
 }
 
 /// <summary>Bounded revision sample.</summary>

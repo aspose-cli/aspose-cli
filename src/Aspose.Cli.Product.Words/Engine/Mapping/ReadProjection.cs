@@ -133,8 +133,8 @@ internal static class ReadProjection
             Block = entry.Index,
             Type = "table",
             Section = entry.Section,
-            Rows = table.Rows.Count,
-            Columns = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
+            RowCount = table.Rows.Count,
+            ColumnCount = table.Rows.Count == 0 ? 0 : table.Rows.Cast<Row>().Max(static row => row.Cells.Count),
             Cells = rows,
             ContentTruncated = truncated,
         };

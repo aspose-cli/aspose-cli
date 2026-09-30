@@ -12,13 +12,13 @@
     "identical": { "type": "boolean" },
     "revisions": {
       "type": "object",
-      "required": ["insertions", "deletions", "formatChanges", "moves"],
+      "required": ["insertionCount", "deletionCount", "formatChangeCount", "moveCount"],
       "additionalProperties": false,
       "properties": {
-        "insertions": { "type": "integer", "minimum": 0 },
-        "deletions": { "type": "integer", "minimum": 0 },
-        "formatChanges": { "type": "integer", "minimum": 0 },
-        "moves": { "type": "integer", "minimum": 0 }
+        "insertionCount": { "type": "integer", "minimum": 0 },
+        "deletionCount": { "type": "integer", "minimum": 0 },
+        "formatChangeCount": { "type": "integer", "minimum": 0 },
+        "moveCount": { "type": "integer", "minimum": 0 }
       }
     },
     "samples": {

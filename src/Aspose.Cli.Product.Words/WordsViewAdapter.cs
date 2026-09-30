@@ -51,7 +51,7 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
             rendered.Parts.Count);
 
         var findings = new List<ReviewFinding>();
-        if (info.Document.Words == 0
+        if (info.Document.WordCount == 0
             && (info.Tables?.Count ?? 0) == 0
             && (info.Images?.Count ?? 0) == 0)
         {
@@ -75,8 +75,8 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
             Warnings = info.Warnings,
             Coverage =
             [
-                Metric("pages", info.Document.Pages, "pages"),
-                Metric("words", info.Document.Words, "words"),
+                Metric("pages", info.Document.PageCount, "pages"),
+                Metric("words", info.Document.WordCount, "words"),
                 Metric("renderedPages", rendered.Parts.Count, "pages"),
                 Metric("blankPages", layout.Pages.Count(static page => !HasVisibleContent(page)), "pages"),
                 Metric("lowUtilizationPages", layout.Pages.Count(IsExtremelyLowUtilization), "pages"),

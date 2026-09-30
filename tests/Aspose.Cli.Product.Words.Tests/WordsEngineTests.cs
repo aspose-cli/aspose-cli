@@ -63,18 +63,18 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             MaxCharacters = 10_000,
         });
 
-        Assert.Equal(info.Document.Blocks, first.Blocks.Count + rest.Blocks.Count);
+        Assert.Equal(info.Document.BlockCount, first.Blocks.Count + rest.Blocks.Count);
         Assert.Equal(1, info.Outline![0].Block);
         BlockData table = Assert.Single(rest.Blocks, block => block.Type == "table");
-        Assert.Equal(2, table.Rows);
-        Assert.Equal(2, table.Columns);
+        Assert.Equal(2, table.RowCount);
+        Assert.Equal(2, table.ColumnCount);
         Assert.Equal("Metric", table.Cells![0][0]);
         Assert.Equal("120", table.Cells[1][1]);
         Assert.True(first.Window!.Truncated);
         Assert.Equal("block", first.Window.Unit);
         Assert.Equal(first.Blocks.Count, first.Window.Returned);
-        Assert.Equal(info.Document.Blocks, first.Window.Total);
-        Assert.Equal(info.Document.Blocks, first.BlockCount);
+        Assert.Equal(info.Document.BlockCount, first.Window.Total);
+        Assert.Equal(info.Document.BlockCount, first.BlockCount);
     }
 
     [LicensedFact]
@@ -246,7 +246,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
     private string[] BlockTexts(string path) =>
         _fixture.Engine.Read(path, new DocumentReadRequest { MaxBlocks = 1000 })
-            .Blocks.Select(static block => block.Text ?? $"table {block.Rows}x{block.Columns}").ToArray();
+            .Blocks.Select(static block => block.Text ?? $"table {block.RowCount}x{block.ColumnCount}").ToArray();
 
     [Fact]
     public void ConvertRenderAndExtract_ProduceRealOutputs()
@@ -348,7 +348,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.Equal(ErrorCodes.PasswordRequired, missing.Code);
         Assert.Equal(ErrorCodes.PasswordInvalid, wrong.Code);
-        Assert.True(opened.Document.Blocks > 0);
+        Assert.True(opened.Document.BlockCount > 0);
         Assert.True(FileFormatUtil.DetectFileFormat(output).IsEncrypted);
         var reopened = new Document(output, new LoadOptions { Password = outputPassword });
         Assert.Contains("Encrypted portable document", reopened.GetText(), StringComparison.Ordinal);
@@ -416,7 +416,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             Assert.False(File.Exists(output));
         }
 
-        Assert.True(_fixture.Engine.GetInfo(input, new DocumentInfoRequest()).Document.Blocks > 0);
+        Assert.True(_fixture.Engine.GetInfo(input, new DocumentInfoRequest()).Document.BlockCount > 0);
         Assert.Equal(original, File.ReadAllBytes(input));
     }
 
@@ -514,7 +514,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                         Find = "token",
                         Replace = "done",
                         Scope = "body",
-                        MaxReplacements = 1,
+                        MaxReplacementCount = 1,
                     },
                 ],
             },

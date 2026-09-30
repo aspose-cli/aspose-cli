@@ -48,7 +48,7 @@ internal static class WordsMutationSupport
             section.PageSetup.LeftMargin = setup.Margins.Left ?? section.PageSetup.LeftMargin;
         }
 
-        if (setup.Columns is int columns)
+        if (setup.ColumnCount is int columns)
         {
             section.PageSetup.TextColumns.SetCount(columns);
         }

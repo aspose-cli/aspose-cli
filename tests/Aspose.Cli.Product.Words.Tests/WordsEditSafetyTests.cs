@@ -60,7 +60,7 @@ public sealed class WordsEditSafetyTests
         });
         Assert.Equal(ErrorCodes.PasswordInvalid, Assert.Throws<CliException>(() =>
             fixture.Engine.GetInfo(output, new DocumentInfoRequest { Password = OriginalPassword })).Code);
-        Assert.True(fixture.Engine.GetInfo(output, new DocumentInfoRequest { Password = ReplacementPassword }).Document.Blocks > 0);
+        Assert.True(fixture.Engine.GetInfo(output, new DocumentInfoRequest { Password = ReplacementPassword }).Document.BlockCount > 0);
     }
 
     [Fact]

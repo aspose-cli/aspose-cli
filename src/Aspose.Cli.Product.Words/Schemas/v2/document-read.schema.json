@@ -55,8 +55,8 @@
             }
           },
           "breakAfter": { "enum": ["page", "section"], "description": "The break that follows this block: a page break, or a section break after the last block of a section." },
-          "rows": { "type": "integer", "minimum": 0 },
-          "columns": { "type": "integer", "minimum": 0 },
+          "rowCount": { "type": "integer", "minimum": 0 },
+          "columnCount": { "type": "integer", "minimum": 0 },
           "cells": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } },
           "contentTruncated": { "type": "boolean", "description": "Returned document text shares the max-chars budget, including repeated projections. Re-read this item with a larger budget for omitted content." }
         }

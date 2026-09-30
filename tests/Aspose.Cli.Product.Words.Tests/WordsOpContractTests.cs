@@ -35,7 +35,7 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[{"code":null}]}""")]
     [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[{"code":1}]}""")]
     [InlineData("""{"op":"format_table","at":{"block":1}}""")]
-    [InlineData("""{"op":"format_table","at":{"block":1},"headerRows":-1}""")]
+    [InlineData("""{"op":"format_table","at":{"block":1},"headerRowCount":-1}""")]
     [InlineData("""{"op":"format_table","at":{"block":1},"keepTogether":"yes"}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
@@ -60,7 +60,7 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"insert_hyperlink","at":{"block":1},"position":"after","text":"a","url":"https://example.com/a"}""")]
     [InlineData("""{"op":"insert_hyperlink","at":{"block":1},"position":"after","text":"a","url":"mailto:team@example.com"}""")]
     [InlineData("""{"op":"format_table","at":{"find":"Agenda"},"keepTogether":true}""")]
-    [InlineData("""{"op":"format_table","at":{"block":2},"headerRows":0,"allowRowBreakAcrossPages":true,"keepWithNext":false}""")]
+    [InlineData("""{"op":"format_table","at":{"block":2},"headerRowCount":0,"allowRowBreakAcrossPages":true,"keepWithNext":false}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -71,7 +71,7 @@ public sealed class WordsOpContractTests
     }
 
     [Theory]
-    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rows":1,"columns":2,"cells":[["a"],["b"]]}""", "more rows")]
+    [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":2,"cells":[["a"],["b"]]}""", "more rows")]
     [InlineData("""{"op":"format_table","at":{"block":1},"keepTogether":true,"allowRowBreakAcrossPages":true}""", "cannot be combined")]
     public void Parser_RejectsRulesTheRecordsStateInTheirSummaries(string operation, string reason)
     {

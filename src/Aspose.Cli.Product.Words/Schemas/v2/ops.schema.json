@@ -503,7 +503,7 @@
           "description": "Whether the text of each row may split across a page break.",
           "type": "boolean"
         },
-        "headerRows": {
+        "headerRowCount": {
           "description": "The first rows repeated as a heading on every page the table spans; 0 clears it. At most the table's row count.",
           "type": "integer",
           "minimum": 0
@@ -528,7 +528,7 @@
             },
             {
               "required": [
-                "headerRows"
+                "headerRowCount"
               ]
             },
             {
@@ -819,8 +819,8 @@
         "op",
         "at",
         "position",
-        "rows",
-        "columns"
+        "rowCount",
+        "columnCount"
       ],
       "additionalProperties": false,
       "properties": {
@@ -836,12 +836,12 @@
         "position": {
           "$ref": "#/$defs/position"
         },
-        "rows": {
+        "rowCount": {
           "type": "integer",
           "minimum": 1,
           "maximum": 32767
         },
-        "columns": {
+        "columnCount": {
           "description": "The column count; Word allows at most 63.",
           "type": "integer",
           "minimum": 1,
@@ -1146,7 +1146,7 @@
           ],
           "default": "body"
         },
-        "maxReplacements": {
+        "maxReplacementCount": {
           "description": "The most matches replaced; every match when omitted.",
           "type": "integer",
           "minimum": 1
@@ -1586,7 +1586,7 @@
         "margins": {
           "$ref": "#/$defs/marginInput"
         },
-        "columns": {
+        "columnCount": {
           "type": "integer",
           "minimum": 1
         }

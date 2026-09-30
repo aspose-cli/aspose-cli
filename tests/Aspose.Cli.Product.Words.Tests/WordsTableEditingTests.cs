@@ -382,7 +382,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
 
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
-            Ops = [new InsertTableOp { At = new WordsTarget { Block = tables[1].Block }, Position = "after", Rows = 1, Columns = 1, Style = tables[0].Style }],
+            Ops = [new InsertTableOp { At = new WordsTarget { Block = tables[1].Block }, Position = "after", RowCount = 1, ColumnCount = 1, Style = tables[0].Style }],
         }, new WordsEditRequest { OutputPath = output });
 
         IReadOnlyList<TableData> changed = _fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["tables"] }).Tables!;
@@ -426,14 +426,14 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
         var at = new WordsTarget { Block = tableBlock };
         _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
-            Ops = [new FormatTableOp { At = at, KeepTogether = true, HeaderRows = 3 }],
+            Ops = [new FormatTableOp { At = at, KeepTogether = true, HeaderRowCount = 3 }],
         }, new WordsEditRequest { OutputPath = kept });
 
         WordsEditResult result = _fixture.Engine.ApplyOps(kept, new WordsOpsBatch
         {
             Ops =
             [
-                new FormatTableOp { At = at, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRows = 1 },
+                new FormatTableOp { At = at, KeepTogether = false, AllowRowBreakAcrossPages = true, HeaderRowCount = 1 },
                 new FormatTableOp { At = at, KeepWithNext = true },
             ],
         }, new WordsEditRequest { OutputPath = output });
@@ -457,10 +457,10 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
 
         CliException tooMany = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
-            Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, HeaderRows = 7 }],
+            Ops = [new FormatTableOp { At = new WordsTarget { Block = tableBlock }, HeaderRowCount = 7 }],
         }, new WordsEditRequest { OutputPath = output }));
         Assert.Equal(ErrorCodes.OpsInvalid, tooMany.Code);
-        Assert.Contains("headerRows 7 is more than the table's 6 rows", tooMany.Message, StringComparison.Ordinal);
+        Assert.Contains("headerRowCount 7 is more than the table's 6 rows", tooMany.Message, StringComparison.Ordinal);
 
         CliException notTable = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
