@@ -31,8 +31,8 @@ Windows x64 with:
 
 ## Pull requests
 
-Every change reaches `master` through a pull request that `CI / verify` passes. The
-`Pull request` workflow checks the branch name and the title.
+Every change reaches `master` through a pull request that passes the two required checks:
+`verify` runs the tests and `conventions` checks the branch name and the title.
 
 - **One concern per pull request**, split by responsibility rather than by file, with its tests,
   schemas, Skills and docs in the same change. Keep a mechanical refactor apart from a behavior
@@ -51,9 +51,8 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
   `scripts/sync.ps1` rather than merging them by hand.
 - **Merge** by squash, with the title as the whole commit message. Commits inside a branch are
   not kept, so their messages only need to be short.
-- **Merge green pull requests in batches;** the `Fast` run on `master` checks what they merged.
-  Pull requests on different products or layers can merge one after another; ones that touch the
-  same code or regenerate the same snapshots merge one at a time, each rebased on the one before.
+- **Pull requests that touch the same code or regenerate the same snapshots** merge one at a
+  time, each rebased on the one before; the `Fast` run on `master` checks what merged.
 - **A red `master` comes first.** Find the pull request that broke it and fix or revert it
   before merging anything else, unless the failure is flaky.
 - **A failure the change cannot reach may be flaky,** on a pull request or on `master`. Rerun the
