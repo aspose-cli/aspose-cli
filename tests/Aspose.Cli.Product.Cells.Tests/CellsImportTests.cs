@@ -35,8 +35,9 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Aspose.Cells.Cells cells = result.Worksheets["Second"].Cells;
         Assert.Equal("Region", cells["C2"].StringValue);
         Assert.Equal(1200.5d, cells["D3"].DoubleValue);
-        Assert.False(cells["D4"].IsFormula);
-        Assert.Equal(2000.5d, cells["D4"].DoubleValue);
+        // Totals!B4, the SUM, lands two rows below D3.
+        Assert.False(cells["D5"].IsFormula);
+        Assert.Equal(2000.5d, cells["D5"].DoubleValue);
         Assert.Equal("#,##0.00", cells["D3"].GetStyle().Custom);
         Assert.NotEqual(FillColor, Rgb(cells["D3"].GetStyle()));
         Assert.Equal("second-sheet-marker", cells["A1"].StringValue);
@@ -60,7 +61,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.Equal(FillColor, Rgb(cells["B2"].GetStyle()));
         // This workbook has no Rates sheet, so the reference to the source's Rates sheet breaks
         // instead of linking to the source file.
-        Assert.Equal("=B4*#REF!A1", cells["B5"].Formula);
+        Assert.Equal("=B4*#REF!", cells["B5"].Formula);
         Assert.Equal(0, result.Worksheets.ExternalLinks.Count);
     }
 
@@ -105,7 +106,7 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.Equal("=SUM(B2:B3)", cells["B4"].Formula);
         Assert.Equal(2000.5d, cells["B4"].DoubleValue);
         Assert.Equal(FillColor, Rgb(cells["B2"].GetStyle()));
-        Assert.Equal("=B4*#REF!A1", cells["B5"].Formula);
+        Assert.Equal("=B4*#REF!", cells["B5"].Formula);
         Assert.Equal(0, result.Worksheets.ExternalLinks.Count);
     }
 
@@ -250,6 +251,9 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         workbook.Worksheets[0].Name = "Notes";
         workbook.Worksheets[0].Cells["A1"].PutValue("first-sheet");
         Worksheet totals = workbook.Worksheets.Add("Totals");
+        // Rates exists before the formula that reads it; otherwise the formula links to an
+        // external workbook named Rates instead of the sheet.
+        workbook.Worksheets.Add("Rates").Cells["A1"].PutValue(2);
         totals.Cells["A1"].PutValue("Region");
         totals.Cells["B1"].PutValue("Sales");
         totals.Cells["A2"].PutValue("DE");
@@ -258,7 +262,6 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         totals.Cells["B3"].PutValue(800);
         totals.Cells["B4"].Formula = "=SUM(B2:B3)";
         totals.Cells["B5"].Formula = "=B4*Rates!A1";
-        workbook.Worksheets.Add("Rates").Cells["A1"].PutValue(2);
 
         Style number = workbook.CreateStyle();
         number.Custom = "#,##0.00";
