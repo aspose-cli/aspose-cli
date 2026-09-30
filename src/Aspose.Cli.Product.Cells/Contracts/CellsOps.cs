@@ -19,7 +19,7 @@ public sealed record CellsOpsBatch : BoundedOperationEnvelope<CellsOp>;
 public abstract partial record CellsOp : BoundedOperation
 {
     /// <summary>The target sheet; the active sheet when omitted.</summary>
-    public string? Sheet { get; init; }
+    public virtual string? Sheet { get; init; }
 }
 
 /// <summary>Source-generated serialization metadata for Cells operations.</summary>
