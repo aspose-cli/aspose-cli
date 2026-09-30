@@ -21,6 +21,10 @@ internal static class WordsDiagnostics
     internal const string LinkedImagesSkipped = "LINKED_IMAGES_SKIPPED";
     internal const string ProtectionNotEnforced = "PROTECTION_NOT_ENFORCED";
 
+    internal static readonly DiagnosticDescriptor FieldCountChanged = Verification("FIELD_COUNT_CHANGED");
+    internal static readonly DiagnosticDescriptor RevisionCountChanged = Verification("REVISION_COUNT_CHANGED");
+    internal static readonly DiagnosticDescriptor ProtectionChanged = Verification("PROTECTION_CHANGED");
+
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         Error(BlockNotFound, "validation"),
@@ -35,6 +39,9 @@ internal static class WordsDiagnostics
         Warning(LayoutMayDiffer),
         Warning(LinkedImagesSkipped),
         Warning(ProtectionNotEnforced),
+        FieldCountChanged,
+        RevisionCountChanged,
+        ProtectionChanged,
     ];
 
     private static ErrorCode Validation(string code) =>
@@ -45,4 +52,7 @@ internal static class WordsDiagnostics
 
     private static DiagnosticDescriptor Warning(string code) =>
         DiagnosticDescriptor.Warning(code, "words", "warning");
+
+    private static DiagnosticDescriptor Verification(string code) =>
+        DiagnosticDescriptor.Verification(code, "words");
 }

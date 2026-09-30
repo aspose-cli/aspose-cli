@@ -22,7 +22,10 @@
       "additionalProperties": false,
       "properties": {
         "ok": { "type": "boolean" },
-        "issues": { "type": "array", "items": { "type": "string" } },
+        "issues": {
+          "type": "array",
+          "items": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json" }
+        },
         "semanticChangesDetected": { "type": "boolean" },
         "fieldCount": { "type": "integer", "minimum": 0 },
         "revisionCount": { "type": "integer", "minimum": 0 },

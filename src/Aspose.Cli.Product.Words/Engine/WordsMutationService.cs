@@ -235,7 +235,7 @@ internal sealed class WordsMutationService
         Document baseline,
         ExpectedDocumentState expected)
     {
-        var issues = new List<string>();
+        var issues = new List<VerificationIssue>();
         using LoadedDocument reopened = _loader.OpenPublishedCandidate(
             candidatePath,
             outputPassword);
@@ -244,17 +244,26 @@ internal sealed class WordsMutationService
         string protection = WordsProtection.ToMode(reopened.Document.ProtectionType);
         if (fieldCount != expected.FieldCount)
         {
-            issues.Add($"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.");
+            issues.Add(VerificationIssue.Of(
+                WordsDiagnostics.FieldCountChanged,
+                $"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.",
+                hint: KeepStateHint("fields")));
         }
 
         if (revisionCount != expected.RevisionCount)
         {
-            issues.Add($"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.");
+            issues.Add(VerificationIssue.Of(
+                WordsDiagnostics.RevisionCountChanged,
+                $"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.",
+                hint: KeepStateHint("tracked revisions")));
         }
 
         if (!string.Equals(protection, expected.Protection, StringComparison.Ordinal))
         {
-            issues.Add($"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.");
+            issues.Add(VerificationIssue.Of(
+                WordsDiagnostics.ProtectionChanged,
+                $"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.",
+                hint: KeepStateHint("protection")));
         }
 
         Document comparisonBaseline = baseline.Clone();
@@ -279,6 +288,9 @@ internal sealed class WordsMutationService
             Protection = protection,
         };
     }
+
+    private static string KeepStateHint(string state) =>
+        $"The output format may not keep {state}; save to docx (or the input's Word format) and verify again.";
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         LicenseState state,

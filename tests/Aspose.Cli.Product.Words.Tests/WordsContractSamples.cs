@@ -140,8 +140,18 @@ internal static class WordsContractSamples
         PagesTouched = [1],
         Verification = new WordsVerification
         {
-            Ok = true,
-            Issues = [],
+            Ok = false,
+            Issues =
+            [
+                VerificationIssue.Of(
+                    WordsDiagnostics.FieldCountChanged,
+                    "Field count changed during save/reopen: expected 2, found 0.",
+                    hint: "The output format may not keep fields; save to docx (or the input's Word format) and verify again."),
+            ],
+            SemanticChangesDetected = true,
+            FieldCount = 0,
+            RevisionCount = 0,
+            Protection = "none",
         },
         License = Licensed,
     };

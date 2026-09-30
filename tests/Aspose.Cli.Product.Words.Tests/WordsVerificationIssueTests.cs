@@ -1,0 +1,91 @@
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Words;
+using Xunit;
+
+namespace Aspose.Cli.Product.Words.Tests;
+
+/// <summary>
+/// Plain text keeps no fields, revisions or protection, so a verified edit saved as
+/// <c>.txt</c> loses exactly the state each check compares.
+/// </summary>
+public sealed class WordsVerificationIssueTests
+{
+    [Fact]
+    public void Verify_ReportsFieldsLostOnReopen()
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Revenue increased by twelve percent.");
+        builder.InsertField("DATE");
+        string input = fixture.Temp.File("fields.docx");
+        document.Save(input, SaveFormat.Docx);
+
+        VerificationIssue issue = VerifyAsText(fixture, input, new WordsEditRequest
+        {
+            OutputPath = fixture.Temp.File("fields.txt"),
+            Verify = true,
+        });
+
+        Assert.Equal("FIELD_COUNT_CHANGED", issue.Code);
+        Assert.Contains("expected 1, found 0", issue.Message, StringComparison.Ordinal);
+        Assert.NotNull(issue.Hint);
+        Assert.Null(issue.Location);
+    }
+
+    [Fact]
+    public void Verify_ReportsRevisionsLostOnReopen()
+    {
+        using var fixture = new WordsFixture();
+        VerificationIssue issue = VerifyAsText(fixture, fixture.CreateReport(), new WordsEditRequest
+        {
+            OutputPath = fixture.Temp.File("revisions.txt"),
+            Verify = true,
+            TrackChanges = true,
+            Author = "Reviewer",
+        });
+
+        Assert.Equal("REVISION_COUNT_CHANGED", issue.Code);
+        Assert.Contains("found 0", issue.Message, StringComparison.Ordinal);
+        Assert.NotNull(issue.Hint);
+    }
+
+    [Fact]
+    public void Verify_ReportsProtectionLostOnReopen()
+    {
+        using var fixture = new WordsFixture();
+        WordsEditResult result = fixture.Engine.ApplyOps(
+            fixture.CreateReport(),
+            new WordsOpsBatch { Ops = [new ProtectOp { Mode = "readOnly" }] },
+            new WordsEditRequest { OutputPath = fixture.Temp.File("protection.txt"), Verify = true });
+
+        Assert.False(result.Verification!.Ok);
+        Assert.True(result.HasFailures);
+        VerificationIssue issue = Assert.Single(result.Verification.Issues);
+        Assert.Equal("PROTECTION_CHANGED", issue.Code);
+        Assert.Contains("expected readOnly, found none", issue.Message, StringComparison.Ordinal);
+        Assert.NotNull(issue.Hint);
+    }
+
+    [Fact]
+    public void VerificationCodes_AreDeclaredVerificationDiagnostics()
+    {
+        foreach (string code in new[] { "FIELD_COUNT_CHANGED", "REVISION_COUNT_CHANGED", "PROTECTION_CHANGED" })
+        {
+            Assert.Contains(WordsDiagnostics.All, descriptor =>
+                descriptor.Code == code && descriptor.Category == "verification");
+        }
+    }
+
+    private static VerificationIssue VerifyAsText(WordsFixture fixture, string input, WordsEditRequest request)
+    {
+        WordsEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "twelve", Replace = "ten" }] },
+            request);
+
+        Assert.Equal("ok", Assert.Single(result.Applied).Status);
+        Assert.False(result.Verification!.Ok);
+        return Assert.Single(result.Verification.Issues);
+    }
+}
