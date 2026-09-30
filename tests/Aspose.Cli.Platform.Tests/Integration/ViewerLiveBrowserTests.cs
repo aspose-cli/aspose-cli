@@ -99,7 +99,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             // A value written where the sheet had nothing grows the grid. The
             // cells the growth adds are empty, and an empty cell is not news.
             // The first mark is given time to fade so the next one stands alone.
-            await Expect(grid.Locator(".aspose-cell-changed")).ToHaveCountAsync(0, new() { Timeout = 10_000 });
+            await Expect(grid.Locator(".aspose-cell-changed")).ToHaveCountAsync(0);
             await RecordMarks(grid);
             _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
                 "--set", "Data!D4=Later", "--output", "json").Succeeded();
@@ -335,7 +335,7 @@ public sealed class ViewerLiveBrowserTests : IDisposable
             ViewportSize = new ViewportSize { Width = 1400, Height = 900 },
         });
         IPage page = await context.NewPageAsync();
-        page.SetDefaultTimeout(60_000);
+        page.SetDefaultTimeout(BrowserApp.Bound);
         var failures = new List<string>();
         page.PageError += (_, error) => failures.Add("Script error: " + error);
         if (configure is not null) { await configure(page); }

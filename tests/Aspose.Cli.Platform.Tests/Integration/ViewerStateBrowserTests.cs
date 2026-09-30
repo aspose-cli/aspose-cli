@@ -186,7 +186,7 @@ public sealed class ViewerStateBrowserTests(ITestOutputHelper output)
         });
         await context.Tracing.StartAsync(new() { Screenshots = true, Snapshots = true });
         IPage page = await context.NewPageAsync();
-        page.SetDefaultTimeout(15_000);
+        page.SetDefaultTimeout(BrowserApp.Bound);
         var errors = new List<string>();
         page.PageError += (_, error) => errors.Add(error);
         await page.RouteAsync("**/*", route =>
