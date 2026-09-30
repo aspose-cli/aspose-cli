@@ -207,7 +207,7 @@ internal static class WordsContractSamples
                 MatchCase = true,
                 WholeWord = true,
                 Scope = "body",
-                MaxReplacements = 2,
+                MaxReplacementCount = 2,
             },
             new SetTextOp
             {

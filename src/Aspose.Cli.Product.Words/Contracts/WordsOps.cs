@@ -106,7 +106,7 @@ public sealed record ReplaceTextOp : WordsOp
     [AllowedValues(typeof(WordsTextScopes))] public string Scope { get; init; } = WordsTextScopes.Body;
 
     /// <summary>The most matches replaced; every match when omitted.</summary>
-    [Minimum(1)] public int? MaxReplacements { get; init; }
+    [Minimum(1)] public int? MaxReplacementCount { get; init; }
 }
 
 /// <summary>Replaces the inline content of paragraph blocks, or the text a bookmark encloses.</summary>

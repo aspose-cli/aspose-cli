@@ -514,7 +514,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                         Find = "token",
                         Replace = "done",
                         Scope = "body",
-                        MaxReplacements = 1,
+                        MaxReplacementCount = 1,
                     },
                 ],
             },

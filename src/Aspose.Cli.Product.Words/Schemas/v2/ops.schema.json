@@ -1146,7 +1146,7 @@
           ],
           "default": "body"
         },
-        "maxReplacements": {
+        "maxReplacementCount": {
           "description": "The most matches replaced; every match when omitted.",
           "type": "integer",
           "minimum": 1

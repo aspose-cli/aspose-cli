@@ -26,7 +26,7 @@ internal sealed partial class WordsMutationHandlers
     /// </summary>
     public long Apply(ReplaceTextOp operation)
     {
-        var callback = new ScopedReplacingCallback(operation.MaxReplacements);
+        var callback = new ScopedReplacingCallback(operation.MaxReplacementCount);
         var options = new FindReplaceOptions
         {
             MatchCase = operation.MatchCase,
