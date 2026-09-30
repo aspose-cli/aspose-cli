@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json",
   "title": "In-place backup",
-  "description": "The never-overwritten safety backup kept by --in-place --backup before the file was replaced.",
+  "description": "The never-overwritten safety backup that --in-place --backup keeps; it may come from an earlier edit.",
   "type": "object",
   "required": ["path", "created", "sizeBytes", "lastWriteUtc", "holdsReplacedVersion"],
   "additionalProperties": false,
