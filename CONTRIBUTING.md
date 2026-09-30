@@ -137,7 +137,7 @@ issue headings.
   write the record in the product's contract file with its `[JsonSerializable]` line in the
   ops JSON context there, the handler method the engine's `I{Base}Handler` interface then
   requires, and its documentation and tests. Member summaries are the schema's descriptions;
-  an operation whose inherited member means something else overrides it with its own summary.
+  an operation whose inherited member means something else overrides it with only its own summary.
   The record states the contract: `required`
   members, initializers for defaults, `[InputPath]` and `[SecretEnv]` members, constraint
   attributes such as `[Minimum]`, `[PageRange]` or the record rules `[ExactlyOneOf]`,
