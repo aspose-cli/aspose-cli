@@ -92,7 +92,7 @@
         "truncated": { "type": "boolean" },
         "issues": {
           "type": "array",
-          "items": { "$ref": "#/$defs/verificationIssue" }
+          "items": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json" }
         }
       }
     },
@@ -147,14 +147,6 @@
         "sheet": { "type": "string" },
         "cell": { "type": "string" },
         "error": { "type": "string" }
-      }
-    },
-    "verificationIssue": {
-      "type": "object",
-      "required": ["code", "message"],
-      "properties": {
-        "code": { "type": "string", "pattern": "^[A-Z][A-Z0-9_]*$" },
-        "message": { "type": "string" }
       }
     },
     "licenseInfo": {

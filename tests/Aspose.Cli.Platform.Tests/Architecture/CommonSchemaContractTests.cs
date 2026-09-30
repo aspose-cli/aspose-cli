@@ -187,6 +187,7 @@ public sealed class CommonSchemaContractTests
     [InlineData("v2/common/file-fingerprint", typeof(FileFingerprint))]
     [InlineData("v2/common/mutation-receipt", typeof(MutationReceipt))]
     [InlineData("v2/common/operation-outcome", typeof(BoundedOperationOutcome))]
+    [InlineData("v2/common/verification-issue", typeof(VerificationIssue))]
     public void CommonResultSchema_RequiresExactlyTheRecordsNonNullableMembers(
         string id,
         Type record)
