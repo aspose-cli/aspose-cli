@@ -44,6 +44,12 @@ internal sealed class GeneratedOperationSchema
 /// and value kinds. The text is deterministic: stable member order, two-space indentation,
 /// <c>\n</c> line endings and a trailing newline.
 /// </summary>
+/// <remarks>
+/// Three deliberate gaps remain between the schema and the parser: an integer member accepts a
+/// whole number written as <c>1.0</c> only as far as the serializer does, <c>integer</c> does not
+/// state the CLR type's range, and a value kind read by a parser, such as an A1 range, publishes
+/// a pattern that admits some values the parser rejects.
+/// </remarks>
 internal sealed class OperationSchemaWriter
 {
     private const string Draft = "https://json-schema.org/draft/2020-12/schema";

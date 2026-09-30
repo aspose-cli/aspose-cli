@@ -1,10 +1,7 @@
 # Known issues
 
-Confirmed defects in the commercial Aspose SDKs this CLI runs on. Each is reproduced with the SDK
-alone by a test that names its id and passes while the pinned SDK still has the defect, and the
-code that handles it names the id in a comment. The CLI does not hide them
-([AGENTS.md](AGENTS.md)); how an SDK update retires them is in
-[CONTRIBUTING.md](CONTRIBUTING.md#known-sdk-issues).
+Confirmed defects in the commercial Aspose SDKs this CLI runs on, and how the CLI handles each.
+How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk-issues).
 
 ## Aspose.Cells 26.9.0
 
