@@ -148,12 +148,12 @@ public sealed class CommonSchemaContractTests
                 "inputSchema",
                 "operationSchema",
                 "contractFingerprint",
-                "maximumOperations",
+                "maximumOperationCount",
                 "ops",
             ],
             operation.Select(static property => property.Key));
         Assert.Equal(
-            """{"command":"edit","inputSchema":"v2/test/ops","operationSchema":"aspose-cli schema v2/test/ops --operation <op>","contractFingerprint":"sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","maximumOperations":16,"ops":["replace_text"]}""",
+            """{"command":"edit","inputSchema":"v2/test/ops","operationSchema":"aspose-cli schema v2/test/ops --operation <op>","contractFingerprint":"sha256:44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a","maximumOperationCount":16,"ops":["replace_text"]}""",
             operation.ToJsonString(new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping }));
     }
 
@@ -170,7 +170,7 @@ public sealed class CommonSchemaContractTests
                 """{"verification":"reopened"}"""),
             (
                 "v2/common/view",
-                """{"schema":"https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json","schemaVersion":2,"view":"pages","sourceFormat":"docx","sourceSizeBytes":10,"totalParts":2,"parts":[{"id":"page-1","label":"Page 1","file":"page-0001.png","kind":"image","width":816,"height":1056,"hidden":false,"digest":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","properties":{"notes":"Speaker notes"},"elements":[{"id":"shape-3","kind":"paragraph","box":{"x":96,"y":96.5,"width":624,"height":20},"digest":"f00d","label":"Hello","level":1}]}]}"""),
+                """{"schema":"https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json","schemaVersion":2,"view":"pages","sourceFormat":"docx","sourceSizeBytes":10,"totalPartCount":2,"parts":[{"id":"page-1","label":"Page 1","file":"page-0001.png","kind":"image","width":816,"height":1056,"hidden":false,"digest":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","properties":{"notes":"Speaker notes"},"elements":[{"id":"shape-3","kind":"paragraph","box":{"x":96,"y":96.5,"width":624,"height":20},"digest":"f00d","label":"Hello","level":1}]}]}"""),
         ];
 
         foreach ((string id, string json) in contracts)
