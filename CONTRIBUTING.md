@@ -85,7 +85,9 @@ that changes process-wide state, such as an SDK's font sources or the standard o
 serial collection in `tests/TestAssemblyFixture.cs`. Never weaken a check or remove a supported
 operation to make a test pass.
 
-The help of `scripts/test.ps1` states which projects a change reaches. CI runs without a license:
+The help of `scripts/test.ps1` states which projects a change reaches. A test project that reads a
+repository file outside the projects, such as `README.md`, lists it as a `RepositoryInput` item in
+its project file, so a change to that file reaches the project. CI runs without a license:
 a pull request runs `Changed` against its target branch and a push to `master` runs `Fast`, so a
 test a pull request skipped runs when it merges.
 

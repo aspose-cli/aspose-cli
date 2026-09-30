@@ -9,13 +9,15 @@ the fast feedback loop:
 - Fast (default) runs every unmarked test.
 - Changed runs the unmarked tests of only the test projects a change reaches, plus
   tests/Aspose.Cli.Tests (the architecture and contract tests). A change inside a source or
-  test project reaches the test projects that reference it, documentation and repository
-  metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes, .editorconfig) reach
-  nothing, and any other change (build inputs, eng/, scripts/, install.ps1) reaches every
-  project. Pull-request CI uses it; master pushes run Fast.
+  test project reaches the test projects that reference it, a repository file that a test
+  project lists as a RepositoryInput item (such as README.md) reaches that project, other
+  documentation and repository metadata (*.md, .github/, LICENSE*, .gitignore, .gitattributes,
+  .editorconfig) reach nothing, and any other change (build inputs, eng/, scripts/,
+  install.ps1) reaches every project. Pull-request CI uses it; master pushes run Fast.
 - Affected adds every test of the projects a change reaches: a change inside a source or test
-  project runs the test projects that reference it in full, installer inputs add the installer
-  tests, documentation adds nothing, and any other change (build inputs, eng/, scripts/) runs
+  project runs the test projects that reference it in full, a change to a RepositoryInput runs
+  the test projects that list it in full, installer inputs add the installer tests, other
+  documentation adds nothing, and any other change (build inputs, eng/, scripts/) runs
   everything.
 - Full runs every test with a required license, including the reproductions of the SDK defects
   in KNOWN-ISSUES.md. Run it before a release and after an SDK update.
@@ -119,7 +121,8 @@ function Get-ChangedPaths {
     return @(@($tracked) + @($untracked) | Where-Object { $_ } | Sort-Object -Unique)
 }
 
-# Documentation and repository metadata outside the projects, which no test depends on.
+# Documentation and repository metadata outside the projects, which reach only the test projects
+# that list them as a RepositoryInput.
 function Test-DocumentationPath {
     param([Parameter(Mandatory)][string] $Path)
     $name = $Path.Split('/')[-1]
@@ -131,6 +134,23 @@ function Get-TestProjectClosures {
     $closures = @{}
     foreach ($project in $testProjects) { $closures[$project] = Get-ProjectClosure @($project, $testKit) }
     return $closures
+}
+
+# The repository files outside the projects that each test project reads, from its RepositoryInput items.
+function Get-TestProjectInputs {
+    $inputs = @{}
+    foreach ($project in $testProjects) {
+        $inputs[$project] = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+        [xml] $xml = [IO.File]::ReadAllText($project)
+        foreach ($item in @($xml.SelectNodes('//RepositoryInput'))) {
+            $path = [IO.Path]::GetFullPath((Join-Path (Split-Path -Parent $project) ([string]$item.Include)))
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+                throw "$(ConvertTo-RepositoryPath $project) lists a RepositoryInput that does not exist: $(ConvertTo-RepositoryPath $path)"
+            }
+            [void]$inputs[$project].Add((ConvertTo-RepositoryPath $path))
+        }
+    }
+    return $inputs
 }
 
 # The test projects this run starts, and the categories each runs besides its unmarked tests.
@@ -147,17 +167,16 @@ switch ($Scope) {
         $architectureTests = [IO.Path]::GetFullPath((Join-Path $layout.TestRoot 'Aspose.Cli.Tests/Aspose.Cli.Tests.csproj'))
         if (-not ($testProjects -contains $architectureTests)) { throw "The architecture test project is missing: $architectureTests" }
         $closures = Get-TestProjectClosures
+        $inputs = Get-TestProjectInputs
         $projectDirectories = @($closures.Values | ForEach-Object { $_ } | Sort-Object -Unique)
         $changed = Get-ChangedPaths
         $reached = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
         [void]$reached.Add($architectureTests)
         foreach ($path in $changed) {
-            if (Test-PathPrefix $path $projectDirectories) {
-                foreach ($project in $testProjects) {
-                    if (Test-PathPrefix $path $closures[$project]) { [void]$reached.Add($project) }
-                }
+            foreach ($project in $testProjects) {
+                if ((Test-PathPrefix $path $closures[$project]) -or $inputs[$project].Contains($path)) { [void]$reached.Add($project) }
             }
-            elseif (-not (Test-DocumentationPath $path)) {
+            if (-not (Test-PathPrefix $path $projectDirectories) -and -not (Test-DocumentationPath $path)) {
                 $reached.UnionWith([string[]]$testProjects)
             }
         }
@@ -169,6 +188,7 @@ switch ($Scope) {
     }
     'Affected' {
         $closures = Get-TestProjectClosures
+        $inputs = Get-TestProjectInputs
         $projectDirectories = @($closures.Values | ForEach-Object { $_ } | Sort-Object -Unique)
         $changed = Get-ChangedPaths
         foreach ($path in $changed) {
@@ -176,12 +196,10 @@ switch ($Scope) {
             if ($installerInput) {
                 foreach ($project in $testProjects) { [void]$included[$project].Add('Installer') }
             }
-            if (Test-PathPrefix $path $projectDirectories) {
-                foreach ($project in $testProjects) {
-                    if (Test-PathPrefix $path $closures[$project]) { $included[$project].UnionWith([string[]]@('Browser', 'Slow')) }
-                }
+            foreach ($project in $testProjects) {
+                if ((Test-PathPrefix $path $closures[$project]) -or $inputs[$project].Contains($path)) { $included[$project].UnionWith([string[]]@('Browser', 'Slow')) }
             }
-            elseif (-not $installerInput -and -not (Test-DocumentationPath $path)) {
+            if (-not (Test-PathPrefix $path $projectDirectories) -and -not $installerInput -and -not (Test-DocumentationPath $path)) {
                 foreach ($project in $testProjects) { $included[$project].UnionWith([string[]]$categories) }
             }
         }
