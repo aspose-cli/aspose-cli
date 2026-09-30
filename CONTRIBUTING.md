@@ -56,9 +56,13 @@ Every change reaches `master` through a pull request that `CI / verify` passes. 
   `scripts/sync.ps1` rather than merging them by hand.
 - **Merge** by squash, with the title as the whole commit message. Commits inside a branch are
   not kept, so their messages only need to be short.
-- **A red `master` comes first.** Pull requests run only the tests their change reaches, so
-  the full run on `master` can still fail. Fix or revert the cause before merging anything
-  else.
+- **Merge green pull requests in batches.** Pull requests run only the tests their change
+  reaches, so the full run on `master` is the final check. Pull requests that touch different
+  products or layers can be merged one after another and checked by that one run; pull requests
+  that touch the same code or regenerate the same snapshots are merged one at a time, each
+  rebased on the one before.
+- **A red `master` comes first.** Find the pull request that broke it and fix or revert it
+  before merging anything else.
 - **Dependabot** opens one pull request a month that updates the pinned actions; merge it
   like any other once CI passes.
 
