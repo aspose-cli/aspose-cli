@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Results;
@@ -138,30 +139,140 @@ internal static class InfoProjection
     /// revision per run and paragraph mark and joins adjacent revisions of one type and author
     /// into a <see cref="RevisionGroup"/>, so a grouped change is listed once, at its first
     /// revision, with the group's text. <see cref="RevisionCollection.Groups"/> itself is not in
-    /// document order, and style definition changes and moves belong to no group; each of those
-    /// revisions is listed on its own. A deletion followed by an insertion stays two entries.
+    /// document order, and style definition changes and moves belong to no group. A style
+    /// definition change is listed on its own; a move is joined by <see cref="Moves"/>. A
+    /// deletion followed by an insertion stays two entries.
     /// </summary>
     private static IReadOnlyList<RevisionData> Revisions(Document document, DocumentBlockIndex index, List<Warning> warnings)
     {
+        Revision[] revisions = document.Revisions.Cast<Revision>().ToArray();
+        Dictionary<Revision, string?> moves = Moves(document, revisions);
         var groups = new HashSet<RevisionGroup>(ReferenceEqualityComparer.Instance);
-        Revision[] changes = document.Revisions.Cast<Revision>()
-            .Where(revision => revision.Group is not { } group || groups.Add(group))
+        (Revision Revision, string? Text)[] changes = revisions
+            .Where(revision => revision.RevisionType == RevisionType.Moving
+                ? moves.ContainsKey(revision)
+                : revision.Group is not { } group || groups.Add(group))
+            .Select(revision => (revision, revision.RevisionType switch
+            {
+                RevisionType.Moving => moves[revision],
+                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text ?? revision.ParentNode.GetText(),
+                // Format changes carry a description of the formatting, not document text.
+                _ => null,
+            }))
             .ToArray();
         return Capped(
             changes,
-            revision => Entry(revision, index),
+            change => Entry(change.Revision, change.Text, index),
             "revisions",
             "Split the document with 'words split --by section' and inspect each part with '--detail revisions'.",
             warnings);
     }
 
-    private static RevisionData Entry(Revision revision, DocumentBlockIndex index)
+    /// <summary>
+    /// Joins the move revisions into one move per side: its source (moved from) and its
+    /// destination (moved to). The SDK records a move as one revision per inline node and per
+    /// moved paragraph mark, in no <see cref="RevisionGroup"/>, and lists a paragraph mark before
+    /// its paragraph's runs. Walking the paragraphs, each inline node and then the paragraph's
+    /// mark, the nodes that follow one another with one direction, author and date are one move.
+    /// Returns the first revision of each move in <paramref name="revisions"/> order with the
+    /// move's text: its runs' text, with a paragraph break for each moved mark.
+    /// </summary>
+    private static Dictionary<Revision, string?> Moves(Document document, Revision[] revisions)
+    {
+        var moves = new Dictionary<Revision, string?>(ReferenceEqualityComparer.Instance);
+        var byNode = new Dictionary<Node, Revision>(ReferenceEqualityComparer.Instance);
+        var order = new Dictionary<Revision, int>(ReferenceEqualityComparer.Instance);
+        for (int i = 0; i < revisions.Length; i++)
+        {
+            if (revisions[i].RevisionType == RevisionType.Moving)
+            {
+                byNode[revisions[i].ParentNode] = revisions[i];
+                order[revisions[i]] = i;
+            }
+        }
+
+        if (byNode.Count == 0)
+        {
+            return moves;
+        }
+
+        var walked = new HashSet<Revision>(ReferenceEqualityComparer.Instance);
+        Revision? first = null;
+        Revision? last = null;
+        var text = new StringBuilder();
+        foreach (Node node in MoveOrder(document))
+        {
+            bool continues = byNode.TryGetValue(node, out Revision? revision) && last is not null
+                && MovedFrom(last.ParentNode) == MovedFrom(node)
+                && string.Equals(last.Author, revision!.Author, StringComparison.Ordinal)
+                && last.DateTime == revision.DateTime;
+            if (!continues && first is not null)
+            {
+                moves[first] = text.ToString();
+                first = last = null;
+                text.Clear();
+            }
+
+            if (revision is null)
+            {
+                continue;
+            }
+
+            walked.Add(revision);
+            if (first is null || order[revision] < order[first])
+            {
+                first = revision;
+            }
+
+            last = revision;
+            // The text is cut to the limit when listed, so collecting stops just past it.
+            if (text.Length <= RevisionTextLimit)
+            {
+                text.Append(node is Run run ? run.Text : node is Paragraph ? "\r" : string.Empty);
+            }
+        }
+
+        if (first is not null)
+        {
+            moves[first] = text.ToString();
+        }
+
+        // A move revision on a node the walk does not reach, such as a table row, is listed on its own.
+        foreach (Revision revision in byNode.Values.Where(revision => !walked.Contains(revision)))
+        {
+            moves[revision] = revision.ParentNode.GetText();
+        }
+
+        return moves;
+    }
+
+    // Each paragraph's own inline nodes, then the paragraph itself, standing for its mark.
+    private static IEnumerable<Node> MoveOrder(Document document)
+    {
+        foreach (Paragraph paragraph in document.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>())
+        {
+            foreach (Node node in paragraph.GetChildNodes(NodeType.Any, true))
+            {
+                if (node is Inline && node.GetAncestor(NodeType.Paragraph) == paragraph)
+                {
+                    yield return node;
+                }
+            }
+
+            yield return paragraph;
+        }
+    }
+
+    private static bool? MovedFrom(Node node) => node switch
+    {
+        Inline inline => inline.IsMoveFromRevision,
+        Paragraph paragraph => paragraph.IsMoveFromRevision,
+        _ => null,
+    };
+
+    private static RevisionData Entry(Revision revision, string? text, DocumentBlockIndex index)
     {
         bool style = revision.RevisionType == RevisionType.StyleDefinitionChange;
-        // Format changes carry a description of the formatting, not document text.
-        string? text = revision.RevisionType is RevisionType.Insertion or RevisionType.Deletion or RevisionType.Moving
-            ? revision.Group?.Text ?? revision.ParentNode.GetText()
-            : null;
         text = text is null ? null : WordsEngineSupport.Truncate(WordsText.Clean(text), RevisionTextLimit);
         return new RevisionData
         {
