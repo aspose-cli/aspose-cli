@@ -37,10 +37,10 @@ internal static class CellsDiagnostics
     internal const string TextTableLayout = "TEXT_TABLE_LAYOUT";
 
     /// <summary>Verification: the edit changed more cells than verification lists.</summary>
-    internal static readonly DiagnosticDescriptor DiffTruncated = Verification("DIFF_TRUNCATED");
+    internal static readonly DiagnosticDescriptor DiffTruncated = DiagnosticDescriptor.Verification("DIFF_TRUNCATED", "cells");
 
     /// <summary>Verification: the edited workbook contains formula errors.</summary>
-    internal static readonly DiagnosticDescriptor FormulaErrors = Verification("FORMULA_ERRORS");
+    internal static readonly DiagnosticDescriptor FormulaErrors = DiagnosticDescriptor.Verification("FORMULA_ERRORS", "cells");
 
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
@@ -73,9 +73,4 @@ internal static class CellsDiagnostics
 
     private static DiagnosticDescriptor Warning(string code) =>
         DiagnosticDescriptor.Warning(code, "cells", "warning");
-
-    // Equivalent to DiagnosticDescriptor.Verification, which the definition-purity
-    // analyzer does not yet list as pure.
-    private static DiagnosticDescriptor Verification(string code) =>
-        DiagnosticDescriptor.Warning(code, "cells", DiagnosticDescriptor.VerificationCategory);
 }

@@ -308,7 +308,7 @@ internal sealed class DefinitionPurityWalker : OperationWalker
             "Aspose.Cli.Sdk.Errors.ErrorCode" =>
                 member == "NotFound" || IsDataMember(symbol),
             "Aspose.Cli.Sdk.Diagnostics.DiagnosticDescriptor" =>
-                member is "Error" or "Warning" || IsDataMember(symbol),
+                member is "Error" or "Warning" or "Verification" || IsDataMember(symbol),
             "Aspose.Cli.Sdk.Views.ViewPartKinds" =>
                 symbol is IFieldSymbol { IsConst: true },
             _ => IsDefinitionValue(typeName) && IsDataMember(symbol),
