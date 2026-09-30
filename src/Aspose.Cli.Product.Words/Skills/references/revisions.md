@@ -26,11 +26,13 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 ```
 
 - One entry is one change: adjacent runs and paragraph marks that one author
-  inserted or deleted are listed together. `type` is `insertion`, `deletion`,
+  inserted, deleted or moved are listed together. `type` is `insertion`, `deletion`,
   `formatChange`, `styleDefinitionChange` or `moving`.
 - `text` is the new text of an insertion and the original text of a deletion.
   Format and style definition changes have no `text`; read the `block` instead.
-  A move is listed at its source and at its destination.
+  A move is listed twice, once at its source and once at its destination, each
+  with the moved text. A paragraph mark inserted or deleted on its own, as when
+  a paragraph is split or joined, has no `text`.
 - `date` is the time the document records, without a time zone; it is absent
   when the document records none. `block` is absent for changes outside the
   body, such as in headers, and for style definitions.
