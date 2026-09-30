@@ -98,15 +98,6 @@ public sealed class ContractJsonSerializer
         return JsonSerializer.Serialize(value, value.GetType(), _compactOptions);
     }
 
-    /// <summary>Deserializes one contract root.</summary>
-    public T Deserialize<T>(string json)
-    {
-        ArgumentException.ThrowIfNullOrEmpty(json);
-        return JsonSerializer.Deserialize<T>(json, _options)
-            ?? throw new JsonException(
-                $"JSON deserialized to null for {typeof(T).Name}.");
-    }
-
     internal static JsonSerializerOptions CreateOptions(
         IEnumerable<IJsonTypeInfoResolver> resolvers,
         IEnumerable<JsonConverter> converters)
