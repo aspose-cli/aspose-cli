@@ -7,7 +7,6 @@ using static Aspose.Cli.Sdk.Operations.OperationInvalidException;
 namespace Aspose.Cli.Product.Slides.Contracts;
 
 /// <summary>A validated, atomic presentation edit batch.</summary>
-[JsonUnmappedMemberHandling(JsonUnmappedMemberHandling.Disallow)]
 [ProductJsonRoot]
 public sealed record SlidesOpsBatch : BoundedOperationEnvelope<SlidesOp>;
 
