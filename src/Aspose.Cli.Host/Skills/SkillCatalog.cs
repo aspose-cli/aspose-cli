@@ -40,6 +40,7 @@ internal sealed class SkillCatalog
             new(
                 platform.Name,
                 platform.Description,
+                null,
                 host,
                 Array.AsReadOnly(host.GetManifestResourceNames()
                     .Where(static name => name.StartsWith($"skill/{PlatformSkillName}/", StringComparison.Ordinal))
@@ -54,6 +55,7 @@ internal sealed class SkillCatalog
             packages.Add(new(
                 resources.SkillName!,
                 resources.SkillDescription!,
+                resources.ProductId,
                 resources.ResourceAssembly,
                 resources.ResourceNames));
         }
@@ -67,10 +69,14 @@ internal sealed class SkillCatalog
         ?? throw new ArgumentException($"Unknown bundled skill '{name}'.", nameof(name));
 }
 
-/// <summary>One embedded Agent Skill package.</summary>
+/// <summary>
+/// One embedded Agent Skill package. <paramref name="Product"/> names the
+/// product that ships it; the platform Skill has none.
+/// </summary>
 internal sealed record BundledSkill(
     string Name,
     string Description,
+    string? Product,
     Assembly ResourceAssembly,
     IReadOnlyList<string> ResourceNames)
 {

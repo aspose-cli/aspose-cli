@@ -2,6 +2,7 @@ using System.Runtime.InteropServices;
 using Aspose.Cli.Host.Catalog;
 using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Host.Licensing;
+using Aspose.Cli.Host.Skills;
 using Aspose.Cli.Host.ViewerService;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
@@ -45,14 +46,11 @@ internal sealed class AppStatusQuery
             static product => product.Engine?.LicenseApplicable is false)
             ? "license-free"
             : "licensed";
-        _skills = catalog.Resources.Products
-            .Where(static package =>
-                package.SkillName is not null
-                && package.SkillDescription is not null)
-            .Select(static package => new AppSkillView(
-                package.ProductId,
-                package.SkillName!,
-                package.SkillDescription!))
+        _skills = new SkillCatalog(catalog).All
+            .Select(static skill => new AppSkillView(
+                skill.Name,
+                skill.Description,
+                skill.Product))
             .ToArray();
         _supportedExtensions =
             catalog.DefaultOwnerExtensions;
@@ -237,11 +235,6 @@ internal sealed class AppStatusQuery
     {
         ProductDefinition product =
             _catalog.ResolveById(capabilities.Id);
-        AppSkillView? skill = _skills.SingleOrDefault(candidate =>
-            string.Equals(
-                candidate.Product,
-                capabilities.Id,
-                StringComparison.Ordinal));
         string fidelity = capabilities.RenderFormats.Count > 0
             ? "rendered"
             : "semantic";
@@ -269,12 +262,7 @@ internal sealed class AppStatusQuery
                 fidelity,
                 review.DefaultView,
                 Views(product, review.Views),
-                review.VisualInspectionRequired),
-            skill is null
-                ? null
-                : new AppSkillSummary(
-                    skill.Name,
-                    skill.Description));
+                review.VisualInspectionRequired));
     }
 
     private AppRecentView RecentView(AppRecentFile file)
