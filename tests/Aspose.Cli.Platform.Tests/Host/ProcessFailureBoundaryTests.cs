@@ -49,7 +49,8 @@ public sealed class ProcessFailureBoundaryTests
         Requires.Windows();
 
         WindowsProcessErrorMode.SuppressNativeErrorUi();
-        var start = new ProcessStartInfo("powershell.exe")
+        // PowerShell 7 is a .NET process like the CLI's workers, and starts warm on every test machine.
+        var start = new ProcessStartInfo(ToolPath.Require("pwsh"))
         {
             UseShellExecute = false,
             RedirectStandardOutput = true,
@@ -76,7 +77,8 @@ public sealed class ProcessFailureBoundaryTests
         bool exited;
         try
         {
-            await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(15));
+            // Crash UI waits for a user indefinitely; the bound only has to outlast a loaded machine.
+            await child.WaitForExitAsync().WaitAsync(TimeSpan.FromSeconds(60));
             exited = true;
         }
         catch (TimeoutException)
