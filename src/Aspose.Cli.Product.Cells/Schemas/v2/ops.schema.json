@@ -1025,7 +1025,7 @@
       }
     },
     "import_range": {
-      "description": "Copies a range from another workbook file into this one at an anchor cell. The source is any file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file itself, read as it is on disk before the edit. A reference in an imported formula to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none.",
+      "description": "Copies a range from another workbook file into this one at an anchor cell. The source is any file the Cells loader opens, including CSV and TSV, and is only read; it may be the edited file itself, read as it is on disk before the edit. A reference in an imported formula to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none. A reference to a third workbook keeps its link; that workbook is never read, and the value is the source's cached result.",
       "type": "object",
       "required": [
         "op",
@@ -1077,7 +1077,7 @@
       }
     },
     "import_sheet": {
-      "description": "Copies a whole sheet from another workbook file into this one as a new sheet, with its values, formulas, formatting, merged cells, column widths, tables, charts, pivot tables, comments, hyperlinks, validation and conditional formatting. The source is only read and may be the edited file itself, read as it is on disk before the edit. A reference to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none, and the defined names the sheet refers to come along. A source that defines a workbook-level name this workbook also defines differently is refused unless the name refers only to the imported sheet.",
+      "description": "Copies a whole sheet from another workbook file into this one as a new sheet, with its values, formulas, formatting, merged cells, column widths, tables, charts, pivot tables, comments, hyperlinks, validation and conditional formatting. The source is only read and may be the edited file itself, read as it is on disk before the edit. A reference to another sheet of the source points at the sheet of that name in this workbook, or becomes #REF! when this workbook has none, and the defined names the sheet refers to come along. A source that defines a workbook-level name this workbook also defines differently is refused unless the name refers only to the imported sheet. A reference to a third workbook keeps its link; that workbook is never read, and the value is the source's cached result.",
       "type": "object",
       "required": [
         "op",
