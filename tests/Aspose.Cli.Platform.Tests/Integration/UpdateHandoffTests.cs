@@ -134,7 +134,8 @@ public sealed class UpdateHandoffTests
 
     private static async Task WaitForFile(string path)
     {
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+        // The installer runs in Windows PowerShell 5.1, whose start can take many seconds on a loaded machine.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
         while (!File.Exists(path)) { await Task.Delay(25, timeout.Token); }
     }
 
