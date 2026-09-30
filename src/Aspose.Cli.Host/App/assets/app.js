@@ -535,12 +535,12 @@
       return;
     }
     skills.forEach(function (skill) {
-      var product = (status.products || []).find(function (candidate) {
+      var product = skill.product && (status.products || []).find(function (candidate) {
         return candidate.id === skill.product;
       });
       var command = node('div', 'agent-command');
       command.append(
-        node('strong', '', product ? product.name : 'Platform'),
+        node('strong', '', skill.product ? (product ? product.name : skill.product) : 'Platform'),
         node('span', '', 'aspose-cli skill install ' + skill.name + ' --host codex --scope project'));
       root.append(command);
     });

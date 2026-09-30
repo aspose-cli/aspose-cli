@@ -47,12 +47,10 @@ internal sealed class AppStatusQuery
             ? "license-free"
             : "licensed";
         _skills = new SkillCatalog(catalog).All
-            .Select(skill => new AppSkillView(
+            .Select(static skill => new AppSkillView(
                 skill.Name,
                 skill.Description,
-                catalog.Resources.Products
-                    .SingleOrDefault(package => package.SkillName == skill.Name)?
-                    .ProductId))
+                skill.Product))
             .ToArray();
         _supportedExtensions =
             catalog.DefaultOwnerExtensions;
