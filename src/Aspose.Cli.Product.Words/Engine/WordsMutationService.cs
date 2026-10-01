@@ -204,7 +204,7 @@ internal sealed class WordsMutationService
                     document.Revisions.Count,
                     WordsProtection.ToMode(document.ProtectionType));
                 verification = write.Read(
-                    candidate => Verify(candidate, outputPassword, baseline!, expected));
+                    candidate => Verify(candidate, format, outputPassword, baseline!, expected));
             }
             transaction.Commit();
         }
@@ -231,11 +231,12 @@ internal sealed class WordsMutationService
     /// </summary>
     private WordsVerification Verify(
         string candidatePath,
+        string format,
         string? outputPassword,
         Document baseline,
         ExpectedDocumentState expected)
     {
-        var issues = new List<string>();
+        var issues = new List<VerificationIssue>();
         using LoadedDocument reopened = _loader.OpenPublishedCandidate(
             candidatePath,
             outputPassword);
@@ -244,17 +245,26 @@ internal sealed class WordsMutationService
         string protection = WordsProtection.ToMode(reopened.Document.ProtectionType);
         if (fieldCount != expected.FieldCount)
         {
-            issues.Add($"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.");
+            issues.Add(VerificationIssue.Of(
+                WordsDiagnostics.FieldCountChanged,
+                $"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.",
+                hint: KeepStateHint("fields", format)));
         }
 
         if (revisionCount != expected.RevisionCount)
         {
-            issues.Add($"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.");
+            issues.Add(VerificationIssue.Of(
+                WordsDiagnostics.RevisionCountChanged,
+                $"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.",
+                hint: KeepStateHint("tracked revisions", format)));
         }
 
         if (!string.Equals(protection, expected.Protection, StringComparison.Ordinal))
         {
-            issues.Add($"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.");
+            issues.Add(VerificationIssue.Of(
+                WordsDiagnostics.ProtectionChanged,
+                $"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.",
+                hint: KeepStateHint("protection", format)));
         }
 
         Document comparisonBaseline = baseline.Clone();
@@ -279,6 +289,15 @@ internal sealed class WordsMutationService
             Protection = protection,
         };
     }
+
+    /// <summary>
+    /// Advises a Word format only when the output is not one; otherwise the state was lost by
+    /// a save that already used a Word format, and repeating it would not help.
+    /// </summary>
+    internal static string KeepStateHint(string state, string format) =>
+        WordsFormats.WordIds.Contains(format, StringComparer.Ordinal)
+            ? $"The {state} did not survive save and reopen in {format}; check the output with 'aspose-cli words inspect' before relying on it."
+            : $"{format} may not keep {state}; save to docx or another Word format and verify again.";
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         LicenseState state,

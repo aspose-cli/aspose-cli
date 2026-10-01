@@ -18318,6 +18318,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "FIELD_COUNT_CHANGED",
+      "owner": "words",
+      "severity": "warning",
+      "category": "verification",
+      "messageTemplateId": "words.field-count-changed.message.v1",
+      "hintTemplateId": "words.field-count-changed.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "FIELD_NOT_FOUND",
       "owner": "pdf",
       "severity": "error",
@@ -18807,6 +18816,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "PROTECTION_CHANGED",
+      "owner": "words",
+      "severity": "warning",
+      "category": "verification",
+      "messageTemplateId": "words.protection-changed.message.v1",
+      "hintTemplateId": "words.protection-changed.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "PROTECTION_NOT_ENFORCED",
       "owner": "words",
       "severity": "warning",
@@ -18892,6 +18910,15 @@
       "category": "validation",
       "messageTemplateId": "common.render-too-large.message.v1",
       "hintTemplateId": "common.render-too-large.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "REVISION_COUNT_CHANGED",
+      "owner": "words",
+      "severity": "warning",
+      "category": "verification",
+      "messageTemplateId": "words.revision-count-changed.message.v1",
+      "hintTemplateId": "words.revision-count-changed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

@@ -12,7 +12,10 @@ The delivery checklist, the review protocol and font checks are in
 - `semanticChangesDetected`, from a comparison of private copies with
   revisions accepted, so the saved document keeps its revisions;
 - `fieldCount`, `revisionCount` and `protection`, each checked against the
-  in-memory result.
+  in-memory result. A mismatch is reported as `FIELD_COUNT_CHANGED`,
+  `REVISION_COUNT_CHANGED` or `PROTECTION_CHANGED`, usually because the
+  output format (such as `txt` or `html`) does not keep that state; save to a
+  Word format and verify again.
 
 `--verify` cannot be combined with `--dry-run`. Failed checks are a partial
 success (exit 8) that still publishes the output for repair; execution

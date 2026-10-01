@@ -218,7 +218,7 @@ public sealed record WordsEditResult() : ResultEnvelope(WordsSchemaIds.EditResul
 public sealed record WordsVerification
 {
     public required bool Ok { get; init; }
-    public required IReadOnlyList<string> Issues { get; init; }
+    public required IReadOnlyList<VerificationIssue> Issues { get; init; }
     public bool? SemanticChangesDetected { get; init; }
     public int? FieldCount { get; init; }
     public int? RevisionCount { get; init; }

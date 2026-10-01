@@ -70,7 +70,11 @@ A PDF batch, for example:
 Each `applied[]` entry has `id`, `index`, `op`, `status`, `itemsAffected` and
 `targets` (the addresses it changed). Products that reopen their output before
 publishing report `mutation.verification: "reopened"`; where a product offers
-`--verify`, it adds a semantic check described in the product Skill.
+`--verify`, it adds a semantic check described in the product Skill. Its
+`verification.issues` entries each have a stable `code`, a `message`, and a
+`location` and `hint` when known; any issue makes `verification.ok` false and
+the command exit 8. `capabilities` lists every code among its diagnostics;
+those found only by verification have category `verification`.
 
 ## Output, in-place and backups
 
