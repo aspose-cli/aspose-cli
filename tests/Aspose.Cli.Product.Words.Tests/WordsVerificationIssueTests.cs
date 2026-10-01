@@ -28,7 +28,12 @@ public sealed class WordsVerificationIssueTests
         });
 
         Assert.Equal("FIELD_COUNT_CHANGED", issue.Code);
-        Assert.Contains("expected 1, found 0", issue.Message, StringComparison.Ordinal);
+        // Evaluation mode adds a field of its own to every document it loads, so only the
+        // loss is fixed, not the counts.
+        System.Text.RegularExpressions.Match counts = System.Text.RegularExpressions.Regex.Match(
+            issue.Message, @"expected (\d+), found (\d+)");
+        Assert.True(counts.Success, issue.Message);
+        Assert.True(int.Parse(counts.Groups[2].Value) < int.Parse(counts.Groups[1].Value), issue.Message);
         Assert.Equal("txt may not keep fields; save to docx or another Word format and verify again.", issue.Hint);
         Assert.Null(issue.Location);
     }
