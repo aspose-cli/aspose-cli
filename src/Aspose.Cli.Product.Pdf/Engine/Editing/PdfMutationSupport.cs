@@ -62,39 +62,31 @@ internal static class PdfMutationSupport
     }
 
     /// <summary>
-    /// The bookmark at a slash-separated title path. A path that matches no bookmark is
-    /// <c>BOOKMARK_NOT_FOUND</c> listing every title path; a path that several sibling
-    /// bookmarks share is refused rather than resolved to one of them.
+    /// The bookmark at an index: 1-based positions from the top level down, joined by '/'.
+    /// Positions count the bookmarks in enumeration order, as <c>pdf inspect</c> lists them.
+    /// A position past its level is <c>BOOKMARK_NOT_FOUND</c> naming that level's count.
     /// </summary>
-    internal static OutlineItemCollection Outline(OutlineCollection outlines, string path)
+    internal static OutlineItemCollection Outline(OutlineCollection outlines, string index)
     {
         IEnumerable<OutlineItemCollection> current = outlines;
         OutlineItemCollection? found = null;
-        foreach (string segment in path.Split('/', StringSplitOptions.RemoveEmptyEntries))
+        string? parentIndex = null;
+        foreach (string segment in index.Split('/'))
         {
-            OutlineItemCollection[] matches = current
-                .Where(item => string.Equals(item.Title, segment, StringComparison.Ordinal))
-                .Take(2)
-                .ToArray();
-            if (matches.Length == 0)
+            OutlineItemCollection[] siblings = current.ToArray();
+            if (!int.TryParse(segment, NumberStyles.None, CultureInfo.InvariantCulture, out int position)
+                || position < 1 || position > siblings.Length)
             {
-                throw CliErrors.NotFound(
-                    ErrorCodes.BookmarkNotFound, "bookmark", path, OutlinePaths(outlines, parentPath: null).Distinct().ToArray());
+                throw CliErrors.NotFoundAt(
+                    ErrorCodes.BookmarkNotFound, "bookmark", index, siblings.Length, OutlineHint(parentIndex, siblings.Length));
             }
 
-            if (matches.Length > 1)
-            {
-                throw new OperationInvalidException(
-                    $"Bookmark path '{path}' is ambiguous: several sibling bookmarks are titled '{segment}'.",
-                    "A title path selects one bookmark only when its titles are unique among their siblings; "
-                    + "use delete_bookmarks with all: true and add the bookmarks again to restructure them.");
-            }
-
-            found = matches[0];
+            found = siblings[position - 1];
             current = found;
+            parentIndex = OutlineIndex(parentIndex, position);
         }
 
-        return found ?? throw new OperationInvalidException($"Bookmark path '{path}' names no title.");
+        return found!;
     }
 
     /// <summary>
@@ -108,25 +100,29 @@ internal static class PdfMutationSupport
         item.Delete();
     }
 
-    /// <summary>
-    /// The title path <see cref="Outline"/> resolves for a bookmark titled <paramref name="title"/>
-    /// below the bookmark at <paramref name="parentPath"/>, or at the top level when it is null.
-    /// </summary>
-    internal static string OutlinePath(string? parentPath, string? title) =>
-        parentPath is null ? title ?? string.Empty : $"{parentPath}/{title}";
+    /// <summary>How many bookmarks <paramref name="items"/> hold, their descendants included.</summary>
+    internal static int CountOutline(IEnumerable<OutlineItemCollection> items) =>
+        items.Sum(static item => 1 + CountOutline(item));
 
-    private static IEnumerable<string> OutlinePaths(IEnumerable<OutlineItemCollection> items, string? parentPath)
+    /// <summary>
+    /// The index <see cref="Outline"/> resolves for the bookmark at 1-based
+    /// <paramref name="position"/> below the bookmark at <paramref name="parentIndex"/>, or at
+    /// the top level when it is null.
+    /// </summary>
+    internal static string OutlineIndex(string? parentIndex, int position) =>
+        parentIndex is null
+            ? position.ToString(CultureInfo.InvariantCulture)
+            : $"{parentIndex}/{position.ToString(CultureInfo.InvariantCulture)}";
+
+    private static string OutlineHint(string? parentIndex, int count) => (parentIndex, count) switch
     {
-        foreach (OutlineItemCollection item in items)
-        {
-            string path = OutlinePath(parentPath, item.Title);
-            yield return path;
-            foreach (string child in OutlinePaths(item, path))
-            {
-                yield return child;
-            }
-        }
-    }
+        (null, 0) => "The document has no bookmarks.",
+        (null, 1) => "The document has one top-level bookmark; use 1.",
+        (null, _) => $"Use a top-level bookmark from 1 through {count}.",
+        (_, 0) => $"Bookmark {parentIndex} has no child bookmarks.",
+        (_, 1) => $"Bookmark {parentIndex} has one child bookmark; use {parentIndex}/1.",
+        _ => $"Bookmark {parentIndex} has {count} child bookmarks; use {parentIndex}/1 through {parentIndex}/{count}.",
+    };
 
     /// <summary>The AcroForm field with a full name, or <c>FIELD_NOT_FOUND</c> listing every full name.</summary>
     internal static Field FormField(Document document, string name) =>

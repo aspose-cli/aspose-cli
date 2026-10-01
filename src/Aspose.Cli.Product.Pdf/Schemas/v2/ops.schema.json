@@ -177,9 +177,9 @@
           "minimum": 1
         },
         "parent": {
-          "description": "The slash-separated title path of the parent bookmark; a top-level bookmark when omitted.",
+          "description": "The index of the parent bookmark, as pdf inspect --detail outline reports it: 1-based positions joined by '/', so \"2/1\" is the first child of the second top-level bookmark. The new bookmark is appended after the parent's existing children, or after the existing top-level bookmarks when omitted, so no existing index changes.",
           "type": "string",
-          "minLength": 1
+          "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)*$"
         }
       }
     },
@@ -528,7 +528,7 @@
       }
     },
     "delete_bookmarks": {
-      "description": "Deletes one bookmark with its children, or every bookmark.",
+      "description": "Deletes the listed bookmarks with their children, or every bookmark. An index must not repeat or lie inside another listed bookmark, which already deletes its children.",
       "type": "object",
       "required": [
         "op"
@@ -541,10 +541,14 @@
         "op": {
           "const": "delete_bookmarks"
         },
-        "path": {
-          "description": "The slash-separated title path of the bookmark.",
-          "type": "string",
-          "minLength": 1
+        "indexes": {
+          "description": "The indexes of the bookmarks, as pdf inspect --detail outline reports them: 1-based positions joined by '/', so \"2/1\" is the first child of the second top-level bookmark. Every index resolves against the outline as it stands before this operation, so their order does not matter, and all of them are deleted together; later operations in the batch address the renumbered outline.",
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)*$"
+          }
         },
         "all": {
           "description": "Whether every bookmark is deleted.",
@@ -557,7 +561,7 @@
           "oneOf": [
             {
               "required": [
-                "path"
+                "indexes"
               ]
             },
             {

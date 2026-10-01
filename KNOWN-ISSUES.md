@@ -71,8 +71,8 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Defect:** `OutlineItemCollection.Delete()` removes bookmarks by title rather than the item
   it is called on: it removes the first bookmark with that title it finds, which may be a
   different one, and when bookmarks at different levels share the title it can remove several.
-- **CLI behavior:** none visible; `delete_bookmarks` gives the selected bookmark a unique title
-  before deleting it, so exactly that bookmark and its children are removed.
+- **CLI behavior:** none visible; `delete_bookmarks` gives each selected bookmark a unique title
+  before deleting it, so exactly the selected bookmarks and their children are removed.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0

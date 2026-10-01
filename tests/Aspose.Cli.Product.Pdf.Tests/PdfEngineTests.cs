@@ -69,13 +69,13 @@ public sealed class PdfEngineTests
             item =>
             {
                 Assert.Equal("First page", item.Title);
-                Assert.Equal("First page", item.Path);
+                Assert.Equal("1", item.Index);
                 Assert.Equal(1, item.Page);
             },
             item =>
             {
                 Assert.Equal(2, item.Level);
-                Assert.Equal("First page/Website", item.Path);
+                Assert.Equal("1/1", item.Index);
                 Assert.Null(item.Page);
             });
         Assert.Equal("none", result.Forms!.Type);

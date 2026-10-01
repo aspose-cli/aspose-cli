@@ -6,10 +6,11 @@ The error envelope, exit codes and shared codes are in
 - `FORM_XFA_UNSUPPORTED`: XFA can be inspected but not filled, flattened or
   exported as AcroForm data.
 - `PAGE_RANGE_INVALID`: use 1-based ranges such as `1-3,7,9-`.
-- `BOOKMARK_NOT_FOUND`, `ATTACHMENT_NOT_FOUND`, `FIELD_NOT_FOUND`:
-  `details.available` lists bookmark title paths, attachment names or full field
-  names. A bookmark path that several sibling bookmarks share is refused with
-  `OPS_INVALID`.
+- `BOOKMARK_NOT_FOUND`: `details.requested` is the bookmark index and
+  `details.availableCount` counts the bookmarks at the level where it ran out;
+  the hint names that level and its valid range.
+- `ATTACHMENT_NOT_FOUND`, `FIELD_NOT_FOUND`: `details.available` lists
+  attachment names or full field names.
 - `PDFA_CONVERSION_FAILED`: `error.details.problems` lists what the conversion
   could not fix; a font the document uses that is missing here also fails it.
 - `FEATURE_UNSUPPORTED` naming a network address or script: HTML, Markdown and SVG

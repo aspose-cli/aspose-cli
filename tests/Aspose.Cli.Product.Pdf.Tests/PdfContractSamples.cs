@@ -60,8 +60,8 @@ internal static class PdfContractSamples
         ],
         Outline =
         [
-            new PdfOutlineItem { Title = "Executive summary", Level = 1, Path = "Executive summary", Page = 1 },
-            new PdfOutlineItem { Title = "Web appendix", Level = 2, Path = "Executive summary/Web appendix" },
+            new PdfOutlineItem { Title = "Executive summary", Level = 1, Index = "1", Page = 1 },
+            new PdfOutlineItem { Title = "Web appendix", Level = 2, Index = "1/1" },
         ],
         Forms = new PdfFormSummary { Type = "acro", FieldCount = 2, ReadOnly = false },
         Attachments = [new PdfAttachmentInfo { Name = "source.csv", MimeType = "text/csv", SizeBytes = 1200 }],

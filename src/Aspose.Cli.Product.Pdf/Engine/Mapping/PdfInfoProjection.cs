@@ -35,7 +35,7 @@ internal static class PdfInfoProjection
                 "'pdf.distinctPageSizes' counts the size of every page."));
         }
 
-        if (outline?.Length == OutlineLimit && CountOutline(document.Outlines) is int total and > OutlineLimit)
+        if (outline?.Length == OutlineLimit && PdfMutationSupport.CountOutline(document.Outlines) is int total and > OutlineLimit)
         {
             warnings.Add(EnvelopeParts.ListTruncated(
                 "outline",
@@ -167,16 +167,17 @@ internal static class PdfInfoProjection
     private static PdfOutlineItem[] Outline(Document document)
     {
         var results = new List<PdfOutlineItem>();
-        AppendOutline(document.Outlines, level: 1, parentPath: null, results);
+        AppendOutline(document.Outlines, level: 1, parentIndex: null, results);
         return results.ToArray();
     }
 
     private static void AppendOutline(
         IEnumerable<OutlineItemCollection> items,
         int level,
-        string? parentPath,
+        string? parentIndex,
         List<PdfOutlineItem> results)
     {
+        int position = 0;
         foreach (OutlineItemCollection item in items)
         {
             if (results.Count >= OutlineLimit)
@@ -184,20 +185,18 @@ internal static class PdfInfoProjection
                 return;
             }
 
-            string path = PdfMutationSupport.OutlinePath(parentPath, item.Title);
+            position++;
+            string index = PdfMutationSupport.OutlineIndex(parentIndex, position);
             results.Add(new PdfOutlineItem
             {
                 Title = item.Title ?? string.Empty,
                 Level = level,
-                Path = path,
+                Index = index,
                 Page = PdfNavigationCensus.DestinationPage(item) is > 0 and int page ? page : null,
             });
-            AppendOutline(item, level + 1, path, results);
+            AppendOutline(item, level + 1, index, results);
         }
     }
-
-    private static int CountOutline(IEnumerable<OutlineItemCollection> items) =>
-        items.Sum(static item => 1 + CountOutline(item));
 
     private static PdfFormSummary Form(Document document)
     {
