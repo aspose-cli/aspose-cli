@@ -86,8 +86,12 @@ public sealed record PdfOutlineItem
     public required string Title { get; init; }
     public required int Level { get; init; }
 
-    /// <summary>The slash-separated title path that <c>delete_bookmarks</c> and <c>add_bookmark</c> accept.</summary>
-    public required string Path { get; init; }
+    /// <summary>
+    /// The bookmark's 1-based positions from the top level down, joined by '/': "2/1" is the
+    /// first child of the second top-level bookmark. <c>delete_bookmarks.indexes</c> and
+    /// <c>add_bookmark.parent</c> accept it.
+    /// </summary>
+    public required string Index { get; init; }
 
     /// <summary>The page the bookmark opens, or null when its destination is not a page of the document.</summary>
     public int? Page { get; init; }

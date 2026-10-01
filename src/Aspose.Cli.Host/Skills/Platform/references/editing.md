@@ -120,7 +120,7 @@ inspection:
 |-------|---------|
 | `details.subject` | What was looked up, such as `sheet` or `bookmark` |
 | `details.requested` | The name, number or range as you wrote it |
-| `details.availableCount` | How many targets of that kind exist |
+| `details.availableCount` | How many targets of that kind exist; for a nested target, how many exist at the level where the request ran out |
 | `details.available` | The existing names in document order, at most 50; present for named targets |
 | `details.suggestions` | Up to three existing names closest to the request, best first |
 

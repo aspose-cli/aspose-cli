@@ -95,12 +95,12 @@
       "description": "Bookmarks in reading order, depth first; a LIST_TRUNCATED warning names the total when there are more.",
       "items": {
         "type": "object",
-        "required": ["title", "level", "path"],
+        "required": ["title", "level", "index"],
         "additionalProperties": false,
         "properties": {
           "title": { "type": "string" },
           "level": { "type": "integer", "minimum": 1 },
-          "path": { "type": "string", "description": "The slash-separated title path that delete_bookmarks.path and add_bookmark.parent accept." },
+          "index": { "type": "string", "pattern": "^[1-9][0-9]*(/[1-9][0-9]*)*$", "description": "The bookmark's 1-based positions from the top level down, joined by '/': 2/1 is the first child of the second top-level bookmark. delete_bookmarks.indexes and add_bookmark.parent accept it." },
           "page": { "type": "integer", "minimum": 1, "description": "The page the bookmark opens; omitted when its destination is not a page of the document." }
         }
       }

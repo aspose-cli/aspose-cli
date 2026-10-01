@@ -86,13 +86,21 @@ internal sealed partial class PdfMutationHandlers
     {
         if (operation.All)
         {
-            int count = _document.Outlines.Count;
+            int count = CountOutline(_document.Outlines);
             _document.Outlines.Delete();
             return count;
         }
 
-        DeleteOutline(Outline(_document.Outlines, operation.Path!));
-        return 1;
+        // Resolve every index against the outline as it stands before any deletion, so a
+        // missing one changes nothing and the order of the list does not matter.
+        OutlineItemCollection[] items = [.. operation.Indexes!.Select(index => Outline(_document.Outlines, index))];
+        int removed = items.Sum(static item => 1 + CountOutline(item));
+        foreach (OutlineItemCollection item in items)
+        {
+            DeleteOutline(item);
+        }
+
+        return removed;
     }
 
     public long Apply(AddAttachmentOp operation)

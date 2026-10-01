@@ -35,8 +35,21 @@ operations of the batch left it: an insert, delete or move changes the pages
 that later operations name. `pdf inspect` and `pdf query pages` report targets
 under the names the operations take: each page's `page`, each label range's
 `startPage`, `style`, `prefix` and `startingValue`, and each bookmark's `page`
-and `path`, the slash-separated title path that `delete_bookmarks.path` and
-`add_bookmark.parent` accept.
+and `index`, the 1-based positions joined by `/` that `delete_bookmarks.indexes`
+and `add_bookmark.parent` accept: `"2/1"` is the first child of the second
+top-level bookmark. Titles are never parsed, so bookmarks with duplicate titles,
+titles containing `/` or empty titles are addressed the same way.
+
+Bookmarks follow the same rule as pages. `add_bookmark` always adds the last child
+of its parent, or the last top-level bookmark, so it never renumbers
+existing bookmarks. Like `delete_pages.pages`, `delete_bookmarks.indexes`
+resolves every index against the outline as it stands before the operation,
+then removes them all with their children; a missing index removes none of
+them. List every bookmark to delete in one `delete_bookmarks` operation, with
+indexes read from one `pdf inspect --detail outline`; list a parent without its
+children. Later operations of the batch see the renumbered outline; put
+`add_bookmark` operations that name a parent before the deletion, or reinspect
+and edit in a second batch.
 
 Rectangles must lie within the visible page box. Reinspect geometry and review
 after changing crop, size or rotation, because later rectangles follow the new

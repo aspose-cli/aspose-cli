@@ -518,78 +518,181 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
-    public void Bookmarks_UnknownPathListsTitlePathsAndDuplicateTitlesAreRefused()
+    public void Bookmarks_IndexesPastALevelReportThatLevel()
     {
         using var fixture = new PdfEngineFixture();
-        string input = fixture.CreateDocument("outline.pdf", pages: 1);
-        string outlined = fixture.File("outline.out.pdf");
-        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        string input = Outlined(fixture, "levels.pdf", static document =>
         {
-            Ops =
-            [
-                new AddBookmarkOp { Title = "Intro", Page = 1 },
-                new AddBookmarkOp { Title = "Scope", Page = 1, Parent = "Intro" },
-                new AddBookmarkOp { Title = "Results", Page = 1 },
-                new AddBookmarkOp { Title = "Results", Page = 1 },
-            ],
-        }, new PdfEditRequest { OutputPath = outlined });
+            OutlineItemCollection intro = Bookmark(document, "Intro", 1);
+            intro.Add(Bookmark(document, "Scope", 1));
+            intro.Add(Bookmark(document, "Terms", 2));
+            document.Outlines.Add(intro);
+            document.Outlines.Add(Bookmark(document, "Results", 2));
+            document.Outlines.Add(Bookmark(document, "Appendix", 3));
+        });
 
-        PdfEditResult result = fixture.Engine.ApplyOps(outlined, new PdfOpsBatch
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops =
             [
-                new DeleteBookmarksOp { Path = "intro/scope" },
-                new AddBookmarkOp { Title = "Detail", Page = 1, Parent = "Results" },
+                new DeleteBookmarksOp { Indexes = ["9"] },
+                new DeleteBookmarksOp { Indexes = ["1/5"] },
+                new DeleteBookmarksOp { Indexes = ["9/1"] },
+                new AddBookmarkOp { Title = "Detail", Page = 1, Parent = "2/1" },
             ],
         }, new PdfEditRequest
         {
-            OutputPath = fixture.File("outline.failed.pdf"),
+            OutputPath = fixture.File("levels.failed.pdf"),
             Options = new EditCommandOptions { BestEffort = true },
         });
 
-        OpError missing = result.Applied[0].Error!;
-        Assert.Equal("BOOKMARK_NOT_FOUND", missing.Code);
         Assert.Equal(
-            ["Intro", "Intro/Scope", "Results"],
-            missing.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>()));
-        Assert.Equal("Intro/Scope", missing.Details["suggestions"]![0]!.GetValue<string>());
-        OpError ambiguous = result.Applied[1].Error!;
-        Assert.Equal(ErrorCodes.OpsInvalid.Name, ambiguous.Code);
-        Assert.Contains("ambiguous", ambiguous.Message, StringComparison.Ordinal);
+            [
+                "9 3 Use a top-level bookmark from 1 through 3.",
+                "1/5 2 Bookmark 1 has 2 child bookmarks; use 1/1 through 1/2.",
+                "9/1 3 Use a top-level bookmark from 1 through 3.",
+                "2/1 0 Bookmark 2 has no child bookmarks.",
+            ],
+            result.Applied.Select(static applied =>
+            {
+                OpError error = applied.Error!;
+                Assert.Equal("BOOKMARK_NOT_FOUND", error.Code);
+                return $"{error.Details!["requested"]!.GetValue<string>()} "
+                    + $"{error.Details["availableCount"]!.GetValue<int>()} {error.Hint}";
+            }));
     }
 
     [Fact]
-    public void Bookmarks_ReadPathsAndPagesAddressEdits()
+    public void Bookmarks_ReadIndexesAndPagesAddressEdits()
     {
         using var fixture = new PdfEngineFixture();
-        string input = fixture.CreateDocument("paths.pdf", pages: 2);
-        string outlined = fixture.File("paths.out.pdf");
+        string input = fixture.CreateDocument("indexes.pdf", pages: 2);
+        string outlined = fixture.File("indexes.out.pdf");
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops =
             [
                 new AddBookmarkOp { Title = "Intro", Page = 1 },
-                new AddBookmarkOp { Title = "Scope", Page = 2, Parent = "Intro" },
+                new AddBookmarkOp { Title = "Scope", Page = 2, Parent = "1" },
             ],
         }, new PdfEditRequest { OutputPath = outlined });
 
-        PdfOutlineItem[] outline = [.. fixture.Engine.GetInfo(outlined, new PdfInfoRequest { Details = ["outline"] }).Outline!];
-        Assert.Equal(["Intro", "Intro/Scope"], outline.Select(static item => item.Path));
-        Assert.Equal([1, 2], outline.Select(static item => item.Page));
+        PdfOutlineItem[] outline = OutlineOf(fixture, outlined);
+        Assert.Equal(["1 Intro 1", "1/1 Scope 2"], outline.Select(static item => $"{item.Index} {item.Title} {item.Page}"));
 
-        string edited = fixture.File("paths.edited.pdf");
+        string edited = fixture.File("indexes.edited.pdf");
         fixture.Engine.ApplyOps(outlined, new PdfOpsBatch
         {
             Ops =
             [
-                new DeleteBookmarksOp { Path = outline[1].Path },
-                new AddBookmarkOp { Title = "Detail", Page = outline[1].Page!.Value, Parent = outline[0].Path },
+                new DeleteBookmarksOp { Indexes = [outline[1].Index] },
+                new AddBookmarkOp { Title = "Detail", Page = outline[1].Page!.Value, Parent = outline[0].Index },
             ],
         }, new PdfEditRequest { OutputPath = edited });
 
-        PdfOutlineItem[] after = [.. fixture.Engine.GetInfo(edited, new PdfInfoRequest { Details = ["outline"] }).Outline!];
-        Assert.Equal(["Intro", "Intro/Detail"], after.Select(static item => item.Path));
-        Assert.Equal([1, 2], after.Select(static item => item.Page));
+        Assert.Equal(
+            ["1 Intro 1", "1/1 Detail 2"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    [Fact]
+    public void Bookmarks_ATitleWithASlashIsDeletedWithoutTouchingTheNestedLookalike()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Outlined(fixture, "slash.pdf", static document =>
+        {
+            OutlineItemCollection a = Bookmark(document, "A", 1);
+            a.Add(Bookmark(document, "B", 2));
+            document.Outlines.Add(a);
+            document.Outlines.Add(Bookmark(document, "A/B", 3));
+        });
+        PdfOutlineItem slashed = Assert.Single(OutlineOf(fixture, input), static item => item.Title == "A/B");
+        Assert.Equal("2", slashed.Index);
+
+        string edited = fixture.File("slash.edited.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { Indexes = [slashed.Index] }],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(
+            ["1 A 1", "1/1 B 2"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    [Fact]
+    public void Bookmarks_SameTitledSiblingsAreEditedOneAtATime()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Outlined(fixture, "twins.pdf", static document =>
+        {
+            document.Outlines.Add(Bookmark(document, "Results", 1));
+            document.Outlines.Add(Bookmark(document, "Results", 2));
+        });
+        PdfOutlineItem[] outline = OutlineOf(fixture, input);
+
+        string edited = fixture.File("twins.edited.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new DeleteBookmarksOp { Indexes = [outline[1].Index] },
+                new AddBookmarkOp { Title = "Detail", Page = 3, Parent = outline[0].Index },
+            ],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(
+            ["1 Results 1", "1/1 Detail 3"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    [Fact]
+    public void Bookmarks_AnEmptyTitleIsAddressable()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Outlined(fixture, "untitled.pdf", static document =>
+        {
+            document.Outlines.Add(Bookmark(document, string.Empty, 1));
+            document.Outlines.Add(Bookmark(document, "Removed", 2));
+        });
+        PdfOutlineItem[] outline = OutlineOf(fixture, input);
+        Assert.Equal(string.Empty, outline[0].Title);
+
+        string edited = fixture.File("untitled.edited.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new AddBookmarkOp { Title = "Child", Page = 3, Parent = outline[0].Index },
+                new DeleteBookmarksOp { Indexes = [outline[1].Index] },
+            ],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(
+            ["1  1", "1/1 Child 3"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    [Fact]
+    public void Bookmarks_ADeletionRenumbersLaterSiblingsForTheRestOfTheBatch()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Outlined(fixture, "renumber.pdf", static document =>
+        {
+            document.Outlines.Add(Bookmark(document, "First", 1));
+            document.Outlines.Add(Bookmark(document, "Second", 2));
+            document.Outlines.Add(Bookmark(document, "Third", 3));
+        });
+
+        string edited = fixture.File("renumber.edited.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { Indexes = ["1"] }, new DeleteBookmarksOp { Indexes = ["1"] }],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(
+            ["1 Third 3"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
     }
 
     [Fact]
@@ -608,13 +711,165 @@ public sealed class PdfMutateTests
         string edited = fixture.File("shared.edited.pdf");
         fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
-            Ops = [new DeleteBookmarksOp { Path = "Results" }],
+            Ops = [new DeleteBookmarksOp { Indexes = ["2"] }],
         }, new PdfEditRequest { OutputPath = edited });
 
         Assert.Equal(
-            ["1 Parent 1", "2 Results 2", "1 Tail 1"],
-            OutlineOf(fixture, edited).Select(static item => $"{item.Level} {item.Title} {item.Page}"));
+            ["1 Parent 1", "1/1 Results 2", "2 Tail 1"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
     }
+
+    [Fact]
+    public void Bookmarks_OneOperationDeletesSameTitledSiblingsAndKeepsTheirNamesake()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Outlined(fixture, "siblings.pdf", static document =>
+        {
+            document.Outlines.Add(Bookmark(document, "Results", 1));
+            document.Outlines.Add(Bookmark(document, "Results", 2));
+            document.Outlines.Add(Bookmark(document, "Results", 3));
+        });
+
+        string edited = fixture.File("siblings.edited.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { Indexes = ["1", "2"] }],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(
+            ["1 Results 3"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    [Fact]
+    public void Bookmarks_OneOperationDeletesChildrenOfDifferentParents()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = ListedOutline(fixture, "children.pdf");
+
+        string edited = fixture.File("children.edited.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { Indexes = ["4/1", "2/1"] }],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(
+            ["1 First 1", "2 Second 2", "3 Third 3", "4 Fourth 1", "4/1 Fourth.B 3"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    [Fact]
+    public void Bookmarks_DeleteRemovesTheChildrenButNotTheirNamesakes()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Outlined(fixture, "subtree.pdf", static document =>
+        {
+            OutlineItemCollection parent = Bookmark(document, "Parent", 1);
+            parent.Add(Bookmark(document, "Results", 2));
+            document.Outlines.Add(parent);
+            document.Outlines.Add(Bookmark(document, "Results", 3));
+        });
+
+        string edited = fixture.File("subtree.edited.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { Indexes = ["1"] }],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(
+            ["1 Results 3"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    /// <summary>
+    /// Indexes read from one inspect name the bookmarks they named there, in any order: the
+    /// deletion of one listed bookmark does not shift another onto a later sibling.
+    /// </summary>
+    [Theory]
+    [InlineData("2", "3")]
+    [InlineData("3", "2")]
+    public void Bookmarks_OneOperationDeletesEveryListedIndexAsInspected(string first, string second)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = ListedOutline(fixture, "listed.pdf");
+
+        string edited = fixture.File("listed.edited.pdf");
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { Indexes = [first, second] }],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        // Second, its child and Third.
+        Assert.Equal(3, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(
+            ["1 First 1", "2 Fourth 1", "2/1 Fourth.A 2", "2/2 Fourth.B 3"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    [Fact]
+    public void Bookmarks_DeletingAllCountsEveryBookmark()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = ListedOutline(fixture, "all.pdf");
+
+        string edited = fixture.File("all.edited.pdf");
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { All = true }],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(7, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Empty(OutlineOf(fixture, edited));
+    }
+
+    [Fact]
+    public void Bookmarks_AMissingIndexDeletesNoneOfTheList()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = ListedOutline(fixture, "partial.pdf");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { Indexes = ["1", "2/5"] }],
+        }, new PdfEditRequest { OutputPath = fixture.File("partial.failed.pdf") }));
+        Assert.Equal("BOOKMARK_NOT_FOUND", error.Code.Name);
+        Assert.Equal("2/5", error.Details!["requested"]!.GetValue<string>());
+
+        string edited = fixture.File("partial.edited.pdf");
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new DeleteBookmarksOp { Indexes = ["1", "2/5"] },
+                new AddBookmarkOp { Title = "Added", Page = 1, Parent = "1" },
+            ],
+        }, new PdfEditRequest
+        {
+            OutputPath = edited,
+            Options = new EditCommandOptions { BestEffort = true },
+        });
+
+        Assert.Equal("BOOKMARK_NOT_FOUND", result.Applied[0].Error!.Code);
+        Assert.Equal(OpStatuses.Ok, result.Applied[1].Status);
+        Assert.Equal(
+            ["1 First 1", "1/1 Added 1", "2 Second 2", "2/1 Second.A 2", "3 Third 3", "4 Fourth 1", "4/1 Fourth.A 2", "4/2 Fourth.B 3"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
+    }
+
+    /// <summary>Four top-level bookmarks; the second has one child and the fourth two.</summary>
+    private static string ListedOutline(PdfEngineFixture fixture, string fileName) =>
+        Outlined(fixture, fileName, static document =>
+        {
+            document.Outlines.Add(Bookmark(document, "First", 1));
+            OutlineItemCollection second = Bookmark(document, "Second", 2);
+            second.Add(Bookmark(document, "Second.A", 2));
+            document.Outlines.Add(second);
+            document.Outlines.Add(Bookmark(document, "Third", 3));
+            OutlineItemCollection fourth = Bookmark(document, "Fourth", 1);
+            fourth.Add(Bookmark(document, "Fourth.A", 2));
+            fourth.Add(Bookmark(document, "Fourth.B", 3));
+            document.Outlines.Add(fourth);
+        });
 
     private static string Outlined(PdfEngineFixture fixture, string fileName, Action<Document> outline)
     {
