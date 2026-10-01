@@ -91,7 +91,7 @@ internal sealed partial class PdfMutationHandlers
             return count;
         }
 
-        Outline(_document.Outlines, operation.Path!).Delete();
+        DeleteOutline(Outline(_document.Outlines, operation.Path!));
         return 1;
     }
 

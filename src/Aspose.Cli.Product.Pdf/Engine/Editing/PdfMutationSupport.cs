@@ -98,6 +98,17 @@ internal static class PdfMutationSupport
     }
 
     /// <summary>
+    /// Removes exactly <paramref name="item"/> with its children. Known issue
+    /// PDF-OUTLINE-DELETE-TITLE (KNOWN-ISSUES.md): <see cref="OutlineItemCollection.Delete()"/>
+    /// removes bookmarks by title, so the item first takes a title no other bookmark has.
+    /// </summary>
+    internal static void DeleteOutline(OutlineItemCollection item)
+    {
+        item.Title = $"__delete_{Guid.NewGuid():N}";
+        item.Delete();
+    }
+
+    /// <summary>
     /// The title path <see cref="Outline"/> resolves for a bookmark titled <paramref name="title"/>
     /// below the bookmark at <paramref name="parentPath"/>, or at the top level when it is null.
     /// </summary>

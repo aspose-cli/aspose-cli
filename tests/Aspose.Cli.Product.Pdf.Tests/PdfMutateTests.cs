@@ -593,6 +593,50 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
+    public void Bookmarks_DeleteRemovesOnlyTheSelectedBookmarkOfASharedTitle()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = Outlined(fixture, "shared.pdf", static document =>
+        {
+            OutlineItemCollection parent = Bookmark(document, "Parent", 1);
+            parent.Add(Bookmark(document, "Results", 2));
+            document.Outlines.Add(parent);
+            document.Outlines.Add(Bookmark(document, "Results", 3));
+            document.Outlines.Add(Bookmark(document, "Tail", 1));
+        });
+
+        string edited = fixture.File("shared.edited.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new DeleteBookmarksOp { Path = "Results" }],
+        }, new PdfEditRequest { OutputPath = edited });
+
+        Assert.Equal(
+            ["1 Parent 1", "2 Results 2", "1 Tail 1"],
+            OutlineOf(fixture, edited).Select(static item => $"{item.Level} {item.Title} {item.Page}"));
+    }
+
+    private static string Outlined(PdfEngineFixture fixture, string fileName, Action<Document> outline)
+    {
+        string path = fixture.File(fileName);
+        using var document = new Document();
+        for (int page = 1; page <= 3; page++)
+        {
+            document.Pages.Add();
+        }
+
+        outline(document);
+        document.Save(path);
+        return path;
+    }
+
+    private static OutlineItemCollection Bookmark(Document document, string title, int page) =>
+        new(document.Outlines) { Title = title, Destination = new FitExplicitDestination(document.Pages[page]) };
+
+    private static PdfOutlineItem[] OutlineOf(PdfEngineFixture fixture, string path) =>
+        [.. fixture.Engine.GetInfo(path, new PdfInfoRequest { Details = ["outline"] }).Outline!];
+
+    [Fact]
     public void PageTargets_PastTheDocumentReportThePageCount()
     {
         using var fixture = new PdfEngineFixture();
