@@ -225,7 +225,9 @@ public sealed class MaxItemsAttribute(int count) : ValueConstraintAttribute
 /// it with ECMAScript semantics and restores three ECMA-262 meanings that .NET's ECMAScript
 /// mode lacks: <c>$</c> matches only at the very end, never before a final line break;
 /// <c>\s</c> and <c>\S</c> include Unicode white space; and <c>.</c> excludes every line
-/// terminator. <c>\S</c> inside a character class is rejected.
+/// terminator. <c>\S</c> inside a character class is rejected. A rejection states
+/// <see cref="Meaning"/> when it is set, so the reason tells what the value stands for and where
+/// it comes from rather than only the expression; the schema publishes the pattern either way.
 /// </summary>
 [AttributeUsage(AttributeTargets.Property)]
 public sealed class PatternAttribute(string pattern) : ValueConstraintAttribute
@@ -239,8 +241,18 @@ public sealed class PatternAttribute(string pattern) : ValueConstraintAttribute
     /// <summary>The regular expression.</summary>
     public string Pattern { get; } = pattern;
 
+    /// <summary>
+    /// What a matching value is, phrased to follow the value's field path, such as
+    /// <c>must be an identifier the inspect command reports, such as "a-1"</c>; null to state
+    /// only the pattern. The rejection appends the pattern to it.
+    /// </summary>
+    public string? Meaning { get; set; }
+
     /// <inheritdoc />
-    public override string? Check(object value) => _regex.IsMatch((string)value) ? null : $"must match the pattern {Pattern}";
+    public override string? Check(object value) =>
+        _regex.IsMatch((string)value) ? null
+        : Meaning is null ? $"must match the pattern {Pattern}"
+        : $"{Meaning} (pattern {Pattern})";
 
     /// <inheritdoc />
     public override void Describe(JsonObject schema, OperationValue value) => schema["pattern"] = Pattern;

@@ -58,6 +58,8 @@ public sealed record PlaceOp : TargetOp
 
     [JsonScalar] public IReadOnlyList<object?>? Cells { get; init; }
 
+    [Pattern("^[a-z]+$", Meaning = "must be a lowercase tag such as \"draft\"")] public IReadOnlyList<string>? Tags { get; init; }
+
     public IReadOnlyDictionary<string, string>? Labels { get; init; }
 
     [AllowedValues(typeof(Shades))] public string Shade { get; init; } = Shades.Light;
