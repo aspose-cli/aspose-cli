@@ -21,10 +21,11 @@ Windows x64 with:
 2. After a catalog, identity or dependency change, run `scripts/sync.ps1`. It regenerates
    `eng/generated`, the solution and the lock files from `eng/products.json` (whose row order is
    the display order) and `eng/distribution.json` (read in code through `DistributionInfo`).
-3. Run `scripts/test.ps1 -Configuration Release` while you work and
-   `scripts/test.ps1 -Configuration Release -Scope Affected` before you push, licensed when you
-   can, because CI runs without a license (see [Tests](#tests)). Commits inside a branch need no
-   run of their own.
+3. While you work, run the tests each commit reaches. Before you push, run
+   `scripts/test.ps1 -Configuration Release -Scope Full` with a license, or `-Scope Affected`
+   when you have none, because CI runs without a license and skips the licensed cases (see
+   [Tests](#tests)). Use the built CLI the way its Skills describe for the workflows you changed;
+   passing tests do not show that an agent can do the task.
 4. For publishing or installer changes, check `scripts/install-local.ps1`, which publishes and
    installs a development build (`-Update` and `-Uninstall` work as in `install.ps1`).
 5. Open a pull request as described below.
@@ -32,33 +33,35 @@ Windows x64 with:
 ## Pull requests
 
 Every change reaches `master` through a pull request that passes the two required checks:
-`verify` runs the tests and `conventions` checks the branch name and the title.
+`verify` runs the tests and `conventions` checks the branch name, the title and every commit
+subject.
 
-- **One concern per pull request**, split by responsibility rather than by file, with its tests,
-  schemas, Skills and docs in the same change. Keep a mechanical refactor apart from a behavior
-  change. Size follows from the concern; there is no line limit.
-- **Branch:** `<type>/<kebab-case-summary>` from the latest `master`, for example
-  `fix/backup-disclosure`. GitHub's own `revert-<number>-<branch>` and `dependabot/...`
-  branches are accepted too.
-- **Title:** `<type>(<scope>): <summary>`, imperative, starting in lower case, no final period,
-  at most 65 characters; GitHub appends ` (#N)` when it becomes the squash commit. Types: `feat`,
-  `fix`, `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`, `revert`. The scope is
-  optional: `sdk`, `host`, `cli`, `app`, `cells`, `pdf`, `slides`, `words`, `skills`,
-  `install`, `release`, `deps`. Retitle a GitHub-generated revert as
-  `revert: <original summary>`.
-- **Description:** fill in the template; leave out how the change was produced.
-- **Conflicts:** rebase on `master`; take lock files and `eng/generated` from `master` and rerun
-  `scripts/sync.ps1` rather than merging them by hand.
-- **Merge** by squash, with the title as the whole commit message. Commits inside a branch are
-  not kept, so their messages only need to be short.
-- **Pull requests that touch the same code or regenerate the same snapshots** merge one at a
-  time, each rebased on the one before; the `Fast` run on `master` checks what merged.
+- **One stage per pull request, one concern per commit.** A pull request carries a stage of
+  related work. Each commit is one concern, split by responsibility rather than by file, with
+  its tests, schemas, Skills and docs; it builds on its own and passes the tests it reaches.
+  Keep a mechanical refactor apart from a behavior change, in its own commit. Fold review
+  fixes into the commit they fix, so the history reads as the finished work.
+- **Branch:** `<type>/<kebab-case-summary>` or `stage/<kebab-case-summary>` from the latest
+  `master`, for example `fix/backup-disclosure` or `stage/coded-verification`. GitHub's own
+  `revert-<number>-<branch>` and `dependabot/...` branches are accepted too.
+- **Title and commit subjects:** `<type>(<scope>): <summary>`, imperative, starting in lower case,
+  no final period, at most 65 characters. The title summarizes the stage. Types: `feat`, `fix`,
+  `refactor`, `perf`, `test`, `docs`, `build`, `ci`, `chore`, `revert`. The scope is optional:
+  `sdk`, `host`, `cli`, `app`, `cells`, `pdf`, `slides`, `words`, `skills`, `install`,
+  `release`, `deps`. Retitle a GitHub-generated revert as `revert: <original summary>`; its
+  `Revert "…"` commit subject is accepted.
+- **Description:** fill in the template, with one line per commit; leave out how the change was
+  produced.
+- **Conflicts and updates:** rebase on `master`, never merge it in; take lock files and
+  `eng/generated` from `master` and rerun `scripts/sync.ps1` rather than merging them by hand.
+- **Merge** by rebase, so each commit lands on `master` as written. The branch must be up to date
+  with `master`, so `verify` checks what will land.
 - **A red `master` comes first.** Find the pull request that broke it and fix or revert it
   before merging anything else, unless the failure is flaky.
 - **A failure the change cannot reach may be flaky,** on a pull request or on `master`. Rerun the
-  failed job once. If it passes, the test is flaky: make it reliable in its own `test/` pull
-  request, merged before other work, relaxing only the test's own timing, never a product
-  check. If it fails again, it is a real failure.
+  failed job once. If it passes, the test is flaky: make it reliable in its own `test(...)`
+  commit, ahead of other work, relaxing only the test's own timing, never a product check. If it
+  fails again, it is a real failure.
 - **Dependabot** opens one pull request a month that updates the pinned actions; merge it
   like any other once CI passes.
 
@@ -73,7 +76,7 @@ one of four scopes:
 | `Fast` (default) | Every test without a category | While you work; a few minutes |
 | `Changed` | Only the test projects a change reaches, plus the architecture tests | Pull-request CI |
 | `Affected` | `Fast`, plus every test of the projects your change reaches since the merge base with `-Base` (default `master`) | Before a push |
-| `Full` | Every test, with a required license | Before a release and after an SDK update |
+| `Full` | Every test, with a required license | Before a push, a release and after an SDK update |
 
 A test that takes several seconds by nature carries `[Category(TestCategory.Slow)]`; the
 installer and Playwright tests carry `Installer` and `Browser`. The run lists every test without a
@@ -187,8 +190,8 @@ The workflows rely on these repository settings:
   `contents: write` in its one job.
 - **A tag ruleset** protects `v*`. `release.yml` runs only when `github.ref_protected` is true,
   so a tag pushed without it builds nothing.
-- **Pull requests** allow only squash merging, with the pull request title as the default
-  commit message, allow auto-merge, and delete head branches after merging.
-- **A branch ruleset** on `master`, with no bypass, requires a pull request and the `verify` and
-  `conventions` checks (the branch need not be up to date), requires linear history and blocks
-  force pushes and deletion.
+- **Pull requests** allow only rebase merging, without auto-merge, and delete head branches
+  after merging.
+- **A branch ruleset** on `master`, with no bypass, requires a pull request merged by rebase and
+  the `verify` and `conventions` checks on a branch that is up to date, requires linear history
+  and blocks force pushes and deletion.
