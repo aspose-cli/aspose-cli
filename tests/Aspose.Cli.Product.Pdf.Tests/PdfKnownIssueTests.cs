@@ -147,6 +147,29 @@ public sealed class PdfKnownIssueTests
             $"for a name tree with only EmbeddedFiles, Names threw {names?.GetType().Name ?? "nothing"} and Count threw {count?.GetType().Name ?? "nothing"}");
     }
 
+    [LicensedFact]
+    public void TaggedContent_RewritesTheDocumentWhenRead()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("plain.pdf", pages: 1);
+        string archive = fixture.File("archive.pdf");
+        using (var document = new Document(input))
+        {
+            using var log = new MemoryStream();
+            document.Convert(log, PdfFormat.PDF_A_2B, ConvertErrorAction.Delete);
+            document.Save(archive);
+        }
+
+        using var reopened = new Document(archive);
+        bool declaredBefore = reopened.IsPdfaCompliant;
+        _ = reopened.TaggedContent.RootElement.ChildElements.Count;
+
+        KnownIssue.Reproduces(
+            "PDF-TAGGED-CONTENT-WRITES",
+            declaredBefore && !reopened.IsPdfaCompliant && reopened.Info.Title == "Tagged PDF",
+            $"reading TaggedContent changed IsPdfaCompliant from {declaredBefore} to {reopened.IsPdfaCompliant} and the title to '{reopened.Info.Title}'");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

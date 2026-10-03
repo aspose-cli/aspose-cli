@@ -44,7 +44,7 @@ internal static class PdfInfoProjection
                 "Split at top-level bookmarks with 'aspose-cli pdf split --by-bookmarks' and inspect each part's outline."));
         }
 
-        return new PdfInfoResult
+        var result = new PdfInfoResult
         {
             Source = Source(path, includeFingerprint: true),
             Pdf = new PdfSummary
@@ -54,7 +54,7 @@ internal static class PdfInfoProjection
                 Version = Version(document.Version),
                 Encrypted = document.IsEncrypted,
                 Linearized = document.IsLinearized,
-                Tagged = IsTagged(document),
+                Tagged = false,
                 PdfaCompliant = document.IsPdfaCompliant,
                 FormType = form.Type,
                 AttachmentCount = document.EmbeddedFiles.Count,
@@ -73,6 +73,10 @@ internal static class PdfInfoProjection
             Metadata = details.Contains("metadata") ? Metadata(document) : null,
             Warnings = warnings.Count == 0 ? null : warnings,
         };
+
+        // Reading the structure tree rewrites the document's metadata and PDF/A identification
+        // (PDF-TAGGED-CONTENT-WRITES), so it is read last; the inspected document is never saved.
+        return result with { Pdf = result.Pdf with { Tagged = IsTagged(document) } };
     }
 
     public static SourceInfo Source(string path, bool includeFingerprint = false) => new()
