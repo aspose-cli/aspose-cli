@@ -106,6 +106,25 @@ new table can match the document's tables.
 }
 ```
 
+Inserted paragraphs and tables take their font from styles: a paragraph without
+`style`, and a table's text, use Normal. A template that sets its font only on
+runs, such as Microsoft YaHei over a Normal in another font, therefore gives
+inserted text, CJK text in particular, a different font. Compare
+`inspect --detail fonts` of the template and the output. To match, put the body
+font into the styles first, in the same batch: `define_style` on `Normal`
+changes Normal and the styles based on it, and `set_default_font` changes every
+paragraph and character style. Both set the Latin and the East Asian font.
+
+```json
+{
+  "ops": [
+    { "op": "define_style", "name": "Normal", "font": "Microsoft YaHei" },
+    { "op": "insert_paragraphs", "at": { "block": 2 }, "position": "after",
+      "paragraphs": [ { "text": "New clause text." } ] }
+  ]
+}
+```
+
 ## Tables across pages
 
 `format_table` sets how the one table `at` addresses breaks across pages;
