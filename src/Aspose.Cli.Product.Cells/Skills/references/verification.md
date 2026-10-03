@@ -51,7 +51,11 @@ reviewed. A sheet too large for one image contributes its first rows, and the
 still reviewed. Cells checks report codes such as `CELLS_FORMULA_ERROR`,
 `CELLS_POPULATED_COLUMNS_NARROW` and `CELLS_VALUES_CLIPPED` (text cut off by
 the next cell, or a number too wide to show in full, measured with Excel's
-column widths). For a file a person opens, the look also grades the design
+column widths). The check compares the width the engine measures for each
+value with its column, while the sheet image is drawn separately, so an image
+can show a listed value whole, as seen with text that mixes Chinese and Latin
+characters. If such a value is still listed after auto-fit, give its column an
+explicit width. For a file a person opens, the look also grades the design
 checklist in `aspose-cli docs cells/design-system`, section 12. Render large
 sheets as windows with `--sheet` and `--range`.
 
