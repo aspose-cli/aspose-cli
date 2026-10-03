@@ -89,6 +89,27 @@ public sealed class WordsTrackChangesTests
     }
 
     [Fact]
+    public void InspectRevisions_ListsATrackedCommentParagraphMarkWithoutItsText()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.Temp.File("tracked-comment.docx");
+        var document = new Document();
+        new DocumentBuilder(document).Write("Clause.");
+        document.StartTrackRevisions("Ann", new DateTime(2026, 9, 1, 10, 0, 0));
+        var comment = new Comment(document, "Ann", "A", DateTime.Now);
+        comment.AppendChild(new Paragraph(document));
+        comment.FirstParagraph!.AppendChild(new Run(document, "Note"));
+        document.FirstSection.Body.FirstParagraph!.AppendChild(comment);
+        document.StopTrackRevisions();
+        document.Save(input);
+
+        DocumentInfoResult info = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["revisions"] });
+
+        // The SDK groups no revisions inside comments, so the mark and the run are listed apart.
+        Assert.Equal(["insertion:", "insertion:Note"], info.Revisions!.Select(static r => $"{r.Type}:{r.Text}"));
+    }
+
+    [Fact]
     public void InspectRevisions_ListsEachChangeInDocumentOrder()
     {
         using var fixture = new WordsFixture();

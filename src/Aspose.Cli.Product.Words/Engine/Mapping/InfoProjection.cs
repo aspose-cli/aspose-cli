@@ -139,7 +139,8 @@ internal static class InfoProjection
     /// revision per run and paragraph mark and joins adjacent revisions of one type and author
     /// into a <see cref="RevisionGroup"/>, so a grouped change is listed once, at its first
     /// revision, with the group's text. <see cref="RevisionCollection.Groups"/> itself is not in
-    /// document order, and style definition changes and moves belong to no group. A style
+    /// document order, and style definition changes, moves and the revisions inside comments
+    /// belong to no group. A style
     /// definition change is listed on its own; a move is joined by <see cref="Moves"/>. A
     /// deletion followed by an insertion stays two entries.
     /// </summary>
@@ -155,7 +156,9 @@ internal static class InfoProjection
             .Select(revision => (revision, revision.RevisionType switch
             {
                 RevisionType.Moving => moves[revision],
-                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text ?? revision.ParentNode.GetText(),
+                // An ungrouped revision of a paragraph is its mark alone, which has no text.
+                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text
+                    ?? (revision.ParentNode is Paragraph ? null : revision.ParentNode.GetText()),
                 // Format changes carry a description of the formatting, not document text.
                 _ => null,
             }))
