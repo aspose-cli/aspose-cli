@@ -49,8 +49,11 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 `words compare` refuses inputs that already contain revisions (`DOCUMENT_HAS_REVISIONS`); list them with `--detail revisions` above. To compare anyway, make reviewed copies first, explicitly accept or reject revisions there, then compare:
 
 ```powershell
-aspose-cli words compare original.docx changed.docx --out redline.docx --output json
+aspose-cli words compare original.docx changed.docx --out redline.docx --author "Legal Review" --output json
 ```
+
+The redline's revisions are attributed to `--author`, or to `Aspose CLI`
+without it.
 
 The result counts the revisions by type and lists up to 50 `samples`, one per
 revision run or paragraph mark, with the `type` names `--detail revisions`

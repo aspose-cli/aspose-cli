@@ -7451,6 +7451,21 @@
           "hidden": false,
           "options": [
             {
+              "name": "--author",
+              "aliases": [],
+              "type": "string",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": false,
+              "allowedValues": [],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Author of the redline's revisions; default: Aspose CLI."
+            },
+            {
               "name": "--font-dir",
               "aliases": [],
               "type": "string[]",
@@ -16222,6 +16237,21 @@
       "description": "Semantically compare two documents and optionally save a redline.",
       "hidden": false,
       "options": [
+        {
+          "name": "--author",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": false,
+          "allowedValues": [],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Author of the redline's revisions; default: Aspose CLI."
+        },
         {
           "name": "--font-dir",
           "aliases": [],
