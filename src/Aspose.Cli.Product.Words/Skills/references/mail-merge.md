@@ -36,7 +36,10 @@ case the field stays `«Name»` in every repetition. Find leftovers with
 A template field that some rows give no value reports `MERGE_VALUE_MISSING`,
 listing each field with its 1-based row numbers, such as
 `Salary: record 2; Bonus: records 1, 3`. A row number is also the merged copy,
-or with `regions` the region repetition, that has the gap. With `regions` only
+or with `regions` the region repetition, that has the gap. Each merged copy
+appends the template's sections, so with a one-section template record N is
+section N of the output: read it with `words query blocks <file> --section N`.
+A template of S sections puts record N in sections `(N-1)*S+1` to `N*S`. With `regions` only
 the fields inside the region are checked. An empty string is a value and is not
 reported, nor is a data field the template does not use, and `--verify` still
 reports `ok`. Supply the values or confirm with the user that the result is
