@@ -250,6 +250,7 @@ internal sealed class ViewerServiceHost : IDisposable
             Effect = request.Effect,
             Password = request.Password,
             License = request.License,
+            EvaluationRequested = request.EvaluationRequested,
             FontDirectories = request.FontDirectories,
             MaxInputBytes = request.MaxInputBytes,
         }, ViewerDocuments.PreviewHolder, deadline);

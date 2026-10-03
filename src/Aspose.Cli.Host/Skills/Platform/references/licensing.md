@@ -16,7 +16,7 @@ aspose-cli license status --output json
 | Field | Meaning |
 |-------|---------|
 | `mode` | `licensed`, `evaluation`, or `invalid` when a configured source was rejected |
-| `source` | The effective source, such as `flag`, `env:ASPOSE_PDF_LICENSE_PATH`, `project:words` or `user:cells` |
+| `source` | The effective source, such as `flag`, `env:ASPOSE_PDF_LICENSE_PATH`, `project:words` or `user:cells`; `requested` under `--license-mode evaluation` |
 | `path` | The license file behind a file source |
 | `problem`, `hint` | Why a configured source is invalid, and how to fix it |
 | `userLicenseInstalled` | Whether a product license is installed for this user |
@@ -93,3 +93,25 @@ retry unchanged input.
   deliverable from the original, unmarked inputs.
 
 The product overview lists what evaluation mode changes in its own documents.
+
+## Self-check the evaluation disclosure
+
+To see what a user without a license gets, run the command with
+`--license-mode evaluation`. It reads no license source, not even a broken
+one, so the command runs in evaluation mode while every configured license
+stays in place:
+
+```powershell
+aspose-cli words convert report.docx --to pdf --out eval-check.pdf --license-mode evaluation --output json
+aspose-cli license status --license-mode evaluation --output json
+```
+
+The result reports `license.mode: "evaluation"` and the `EVAL_MODE` and
+`EVAL_INPUT_TRUNCATED` warnings as it would without a license, except that
+`EVAL_MODE` names the request as the cause; `license status` names the source
+`requested`, and `doctor` says the mode was requested. Write to a scratch output, never over a
+deliverable. The option applies to one command (and to every call an MCP
+server started with it runs, unless a call chooses otherwise); it cannot be
+combined with `--license`. `preview` opens such a document as its own, never
+reusing a licensed one. `license install`, `license remove` and `app` refuse
+it, because their effect outlives the command.

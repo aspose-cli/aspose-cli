@@ -62,6 +62,16 @@ public sealed class StartupLicenseNoticeTests
     }
 
     [Fact]
+    public void RequestedEvaluation_IsMarkedAsRequested()
+    {
+        using var workspace = new TempWorkspace();
+        CliResult result = workspace.Run("words", "--help", "--license-mode", "evaluation", "--output", "table");
+
+        Assert.Equal(0, result.ExitCode);
+        Assert.Equal("license: words=evaluation (requested)", result.StdErr.Trim());
+    }
+
+    [Fact]
     public void Quiet_SuppressesTheStartupNotice()
     {
         using var workspace = new TempWorkspace();

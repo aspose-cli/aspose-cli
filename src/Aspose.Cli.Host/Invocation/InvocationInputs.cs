@@ -27,13 +27,18 @@ internal sealed class InvocationInputs : IDisposable
             || (message.WorkDirectory is not null && !Path.IsPathFullyQualified(message.WorkDirectory))
             || (message.LicensePath is not null && !Path.IsPathFullyQualified(message.LicensePath))
             || message.MaxInputBytes is <= 0 or > InputSizeGuard.MaximumBytes
-            || (message.WorkDirectory is null && (message.LicensePath is not null || message.MaxInputBytes is not null)))
+            || (message.EvaluationRequested && message.LicensePath is not null)
+            || (message.WorkDirectory is null
+                && (message.LicensePath is not null || message.MaxInputBytes is not null || message.EvaluationRequested)))
         {
             throw new InvalidDataException("The inherited invocation values are invalid.");
         }
         Inherited = message.WorkDirectory is null ? null : new GlobalValues(
             OutputMode.Json, false, false, message.LicensePath, message.WorkDirectory, null,
-            message.MaxInputBytes ?? InputSizeGuard.DefaultMaxBytes);
+            message.MaxInputBytes ?? InputSizeGuard.DefaultMaxBytes)
+        {
+            EvaluationRequested = message.EvaluationRequested,
+        };
         _replies = replies;
         _requests = requests;
         _previous = Ambient.Value;
@@ -96,6 +101,7 @@ internal sealed class InvocationInputs : IDisposable
 }
 
 internal sealed record InvocationStartMessage(
-    int Version, string? WorkDirectory, string? LicensePath, long? MaxInputBytes);
+    int Version, string? WorkDirectory, string? LicensePath, long? MaxInputBytes,
+    bool EvaluationRequested = false);
 internal sealed record EnvironmentValueRequest(string Name, long MaximumCharacters);
 internal sealed record EnvironmentValueReply(string? Value, long? OversizedCharacters = null);

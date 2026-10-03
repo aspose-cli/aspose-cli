@@ -78,6 +78,7 @@ internal static class PreviewCommand
                 License = context.Globals.LicensePath is { } license
                     ? Path.GetFullPath(license, context.Paths.BaseDirectory)
                     : null,
+                EvaluationRequested = context.Globals.EvaluationRequested,
                 FontDirectories = fonts.IsAmbient ? null : fonts.Directories,
             },
             port,

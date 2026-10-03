@@ -77,7 +77,9 @@ internal static class ViewRenderWorker
             deadline.ThrowIfExpired("render-admission");
             CommandContext context = CompositionRoot.Create(catalog, globals with
             {
-                LicensePath = request.License ?? globals.LicensePath,
+                // Each document carries its own request; the worker's default never makes one.
+                LicensePath = request.EvaluationRequested ? null : request.License ?? globals.LicensePath,
+                EvaluationRequested = request.EvaluationRequested,
                 MaxInputBytes = request.MaxInputBytes,
             }, deadline);
             if (request.SourceOrigin is { } origin)

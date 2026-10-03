@@ -1,4 +1,5 @@
 using System.CommandLine;
+using System.CommandLine.Parsing;
 using System.Diagnostics;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk.Contracts;
@@ -6,6 +7,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Results;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -204,6 +206,11 @@ internal sealed class CommandExecutor
         ExecutionScope? scope = null;
         try
         {
+            if (globals.EvaluationRequested
+                && parseResult.CommandResult.Command.Policy().RefusesEvaluationRequest)
+            {
+                throw GlobalOptions.EvaluationRequestRefused(CommandPath(parseResult.CommandResult));
+            }
             scope = ExecutionScope.Create(
                 _host,
                 parseResult,
@@ -359,6 +366,18 @@ internal sealed class CommandExecutor
         return TimeSpan.FromSeconds(seconds);
     }
 
+    /// <summary>The command's words below the root, for example <c>license install</c>.</summary>
+    private static string CommandPath(CommandResult command)
+    {
+        var names = new Stack<string>();
+        for (SymbolResult? current = command; current is CommandResult result && result.Parent is not null;
+            current = current.Parent)
+        {
+            names.Push(result.Command.Name);
+        }
+        return string.Join(' ', names);
+    }
+
     private sealed class ExecutionScope : IDisposable
     {
         private readonly IOutputWriter _writer;
@@ -431,6 +450,11 @@ internal sealed class CommandExecutor
             ResultEnvelope result,
             bool detectPartial)
         {
+            if (Globals.EvaluationRequested)
+            {
+                // Products disclose evaluation mode; only the host knows it was asked for.
+                result = result with { Warnings = EnvelopeParts.ForRequestedEvaluation(result.Warnings) };
+            }
             int exitCode = Complete(() => _writer.WriteResult(result));
             return detectPartial
                 && result is IPartialOutcome { HasFailures: true }

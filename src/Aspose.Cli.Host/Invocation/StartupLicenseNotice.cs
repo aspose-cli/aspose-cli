@@ -2,6 +2,7 @@ using Aspose.Cli.Host.Licensing;
 using Aspose.Cli.Host.Output;
 using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -36,7 +37,9 @@ internal static class StartupLicenseNotice
         IEnumerable<ProductLicenseStatus> products = status.Products.Where(
             static product => product.Applicable);
         string summary = string.Join("; ", products.Select(
-            static product => $"{product.Product}={product.Mode}"));
+            static product => product.Source == LicenseResolution.RequestedSourceLabel
+                ? $"{product.Product}={product.Mode} (requested)"
+                : $"{product.Product}={product.Mode}"));
         string detail = status.Products.Any(static product => product.Problem is not null)
             ? $" (run '{DistributionInfo.CommandName} license status' for details)"
             : string.Empty;

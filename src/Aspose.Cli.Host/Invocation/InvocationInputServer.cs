@@ -30,7 +30,8 @@ internal sealed class InvocationInputServer : IDisposable
         _replies.DisposeLocalCopyOfClientHandle();
         _requests.DisposeLocalCopyOfClientHandle();
         await ProcessPipeMessages.WriteAsync(_replies, new InvocationStartMessage(
-            1, inherited?.WorkDir, inherited?.LicensePath, inherited?.MaxInputBytes),
+            1, inherited?.WorkDir, inherited?.LicensePath, inherited?.MaxInputBytes,
+            inherited?.EvaluationRequested == true),
             cancellationToken, InvocationInputs.MaximumMessageBytes).ConfigureAwait(false);
         while (true)
         {

@@ -16,6 +16,12 @@ public sealed class ProductActivationContext
     /// <summary>Resolved explicit license path selected for this invocation.</summary>
     public required string? LicensePath { get; init; }
 
+    /// <summary>
+    /// True when the command asked for evaluation mode (<c>--license-mode evaluation</c>): no
+    /// license source is read, not even a broken one.
+    /// </summary>
+    public bool EvaluationRequested { get; init; }
+
     /// <summary>Explicit validated configuration changes for a license command result.</summary>
     public UserLicenseChanges? UserLicenseChanges { get; init; }
 

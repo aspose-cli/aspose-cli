@@ -136,6 +136,16 @@ internal static class DoctorCommand
 
         int licensed = applicable.Count(static license =>
             license.Mode == LicenseModes.Licensed);
+        if (applicable.All(static license => license.Source == LicenseResolution.RequestedSourceLabel))
+        {
+            return new DoctorCheck
+            {
+                Name = "license",
+                Status = DoctorStatuses.Warn,
+                Detail = $"evaluation mode requested with --license-mode evaluation; no license read for the {applicable.Length} products",
+                Hint = "Drop --license-mode evaluation to apply the configured licenses.",
+            };
+        }
         return licensed == applicable.Length
             ? new DoctorCheck
             {
