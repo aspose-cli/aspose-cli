@@ -299,6 +299,13 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
                 location,
                 Hint));
         }
+        if (chart.PrintedPages > 1 && !chart.Hidden)
+        {
+            findings.Add(CellsReviewChecks.ChartSplitAcrossPages.Finding(
+                $"The chart reaches {chart.PrintedPages} printed pages, so printing and PDF export split it.",
+                location,
+                "Fit the sheet on fewer pages with set_page_setup (fitToWidth 1 and fitToHeight 0, or orientation landscape), or move or resize the chart, then review again."));
+        }
     }
 
     private static ReviewCoverageMetric Metric(string name, long value, string unit) => new()

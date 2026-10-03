@@ -179,6 +179,11 @@
             "summary": "A chart object is hidden and provides no visible evidence."
           },
           {
+            "code": "CELLS_CHART_SPLIT_ACROSS_PAGES",
+            "severity": "warning",
+            "summary": "A chart reaches more than one printed page, so printing and PDF export split it."
+          },
+          {
             "code": "CELLS_CHART_TOO_SMALL",
             "severity": "warning",
             "summary": "A chart is narrower than 120 or shorter than 80 pixels."
@@ -14437,6 +14442,7 @@
           "allowedValues": [
             "CELLS_CHART_ANCHORED_IN_HIDDEN_CELLS",
             "CELLS_CHART_HIDDEN",
+            "CELLS_CHART_SPLIT_ACROSS_PAGES",
             "CELLS_CHART_TOO_SMALL",
             "CELLS_CHART_WITHOUT_SERIES",
             "CELLS_FORMULA_ERROR",
@@ -18288,6 +18294,15 @@
       "messageTemplateId": "cells.chart-not-found.message.v1",
       "hintTemplateId": "cells.chart-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "CHART_SPLIT_ACROSS_PAGES",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.chart-split-across-pages.message.v1",
+      "hintTemplateId": "cells.chart-split-across-pages.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "CHART_TITLE_OVERLAID",

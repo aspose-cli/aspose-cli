@@ -106,6 +106,7 @@ internal sealed class CellsProductionService
             { throw CellsErrors.TextExportEvaluationLimit(request.TargetFormatId, active.Name, first.Name); }
         }
 
+        Warning? chartsSplit = request.TargetFormatId is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheet) : null;
         int refsBefore = _saver.CountRefFormulas(workbook);
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, request.OutputPath, licenseState,
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet);
@@ -132,7 +133,7 @@ internal sealed class CellsProductionService
             // Only a text export without --sheet writes one sheet chosen by default; the other
             // formats write every sheet.
             Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
-                loaded.SkippedSheetWarning(request.SheetName is null && request.TargetFormatId is "csv" or "tsv" or "md"), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded,
+                loaded.SkippedSheetWarning(request.SheetName is null && request.TargetFormatId is "csv" or "tsv" or "md"), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, chartsSplit,
                 CellsEvaluation.DescribeAddedNotice(licenseState, request.TargetFormatId), .. textLayout]),
         };
     }

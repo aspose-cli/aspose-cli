@@ -38,6 +38,9 @@ internal static class CellsDiagnostics
     /// <summary>A delimited text input has a preamble before its header, empty rows or a total row.</summary>
     internal const string TextTableLayout = "TEXT_TABLE_LAYOUT";
 
+    /// <summary>A PDF export splits a chart across pages.</summary>
+    internal const string ChartSplitAcrossPages = "CHART_SPLIT_ACROSS_PAGES";
+
     /// <summary>An import copied formulas that read a link without cached values, and their results changed.</summary>
     internal const string ExternalLinkCacheMissing = "EXTERNAL_LINK_CACHE_MISSING";
 
@@ -71,6 +74,7 @@ internal static class CellsDiagnostics
         Warning(EvaluationNoticeAdded),
         Warning(TextTableLayout),
         Warning(ExternalLinkCacheMissing),
+        Warning(ChartSplitAcrossPages),
         DiffTruncated,
         FormulaErrors,
     ];

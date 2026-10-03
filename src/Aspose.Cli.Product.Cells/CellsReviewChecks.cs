@@ -75,6 +75,11 @@ internal static class CellsReviewChecks
         ReviewSeverities.Warning,
         "A print area does not intersect a chart on its worksheet.");
 
+    public static ReviewCheck ChartSplitAcrossPages { get; } = new(
+        "CELLS_CHART_SPLIT_ACROSS_PAGES",
+        ReviewSeverities.Warning,
+        "A chart reaches more than one printed page, so printing and PDF export split it.");
+
     public static ReviewCheck ChartHidden { get; } = new(
         "CELLS_CHART_HIDDEN",
         ReviewSeverities.Warning,
@@ -130,6 +135,7 @@ internal static class CellsReviewChecks
         ChartTooSmall,
         ChartWithoutSeries,
         ChartAnchoredInHiddenCells,
+        ChartSplitAcrossPages,
         FormulaError,
         VbaPresent,
         ReviewTruncated,

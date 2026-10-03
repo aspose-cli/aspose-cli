@@ -117,7 +117,10 @@ aspose-cli cells convert book.xlsx --to csv --sheet Sales
 aspose-cli cells render book.xlsx --all-sheets --out book.png
 ```
 
-`cells convert` takes `--sheet` for csv, tsv, md and pdf. `cells render`
+`cells convert` takes `--sheet` for csv, tsv, md and pdf. A PDF that splits a
+chart across pages warns `CHART_SPLIT_ACROSS_PAGES` (review reports
+`CELLS_CHART_SPLIT_ACROSS_PAGES`); fit the sheet with `set_page_setup`
+(`fitToWidth` 1, `fitToHeight` 0, or landscape) first. `cells render`
 writes png, jpeg or svg, taken from `--to` or the `--out` extension; an `--out`
 extension that is not an image extension, or that contradicts `--to`, is a usage
 error.

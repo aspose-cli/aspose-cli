@@ -261,6 +261,23 @@ public sealed class CellsCliTests : IDisposable
         Assert.Null(CellsEvaluation.DescribeAddedNotice(Aspose.Cli.Sdk.Licensing.LicenseState.Evaluation, "pdf"));
     }
 
+    [Fact]
+    public void ConvertToPdf_WarnsAboutAChartItSplitsAcrossPages()
+    {
+        CellsReviewTests.CreateWideChartWorkbook(_workspace.File("split.xlsx"), fitToOnePageWide: false);
+        CellsReviewTests.CreateWideChartWorkbook(_workspace.File("fitted.xlsx"), fitToOnePageWide: true);
+
+        JsonNode split = _workspace.Run("cells", "convert", "split.xlsx", "--to", "pdf", "--out", "split.pdf", "--output", "json").Json();
+        JsonNode fitted = _workspace.Run("cells", "convert", "fitted.xlsx", "--to", "pdf", "--out", "fitted.pdf", "--output", "json").Json();
+
+        JsonNode warning = Assert.Single(split["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "CHART_SPLIT_ACROSS_PAGES")!;
+        Assert.Equal("'Data'", warning["location"]!.GetValue<string>());
+        Assert.Contains("'Wide' on sheet 'Data' (2 pages)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain(fitted["warnings"]?.AsArray() ?? [],
+            static warning => warning!["code"]!.GetValue<string>() == "CHART_SPLIT_ACROSS_PAGES");
+    }
+
     private static JsonNode Notice(JsonNode result) =>
         Assert.Single(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_NOTICE_ADDED")!;
 

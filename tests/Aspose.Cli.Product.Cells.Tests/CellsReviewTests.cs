@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cells.Charts;
+using Aspose.Cells.Rendering;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Views;
 using Aspose.Cli.TestKit;
@@ -107,6 +108,79 @@ public sealed class CellsReviewTests
         Assert.DoesNotContain("explicit width", clipped["Latin"], StringComparison.Ordinal);
         Assert.Contains("explicit width", clipped["Mixed"], StringComparison.Ordinal);
     }
+    [Fact]
+    public void ChartPages_DoNotCountTheCellAChartEndsExactlyAt()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        sheet.Cells[150, 40].PutValue("far corner");
+        CellArea first = sheet.GetPrintingPageBreaks(new ImageOrPrintOptions())[0];
+        Chart flush = sheet.Charts[sheet.Charts.Add(ChartType.Column, 1, 1, first.EndRow + 1, first.EndColumn + 1)];
+        Chart over = sheet.Charts[sheet.Charts.Add(ChartType.Column, 1, 1, first.EndRow + 1, first.EndColumn + 1)];
+        over.ChartObject.LowerDeltaX = 512;
+        over.ChartObject.LowerDeltaY = 128;
+        Assert.Equal(0, flush.ChartObject.LowerDeltaX);
+        Assert.Equal(0, flush.ChartObject.LowerDeltaY);
+
+        IReadOnlyList<(Chart Chart, int Pages)> pages = PrintedPages.ChartPages(sheet);
+
+        Assert.Equal(1, pages[0].Pages);
+        Assert.Equal(4, pages[1].Pages);
+    }
+
+    [Fact]
+    public void Review_ReportsAChartThatPrintingSplitsAcrossPages()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("split-chart.xlsx");
+        CreateWideChartWorkbook(input, fitToOnePageWide: false);
+        string fitted = fixture.Temp.File("fitted-chart.xlsx");
+        CreateWideChartWorkbook(fitted, fitToOnePageWide: true);
+
+        ReviewFinding split = Assert.Single(Review(fixture, input),
+            static finding => finding.Code == "CELLS_CHART_SPLIT_ACROSS_PAGES");
+        Assert.Equal("Data chart 'Wide'", split.Location);
+        Assert.Contains("2 printed pages", split.Message, StringComparison.Ordinal);
+        Assert.Contains("fitToWidth", split.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain(Review(fixture, fitted),
+            static finding => finding.Code == "CELLS_CHART_SPLIT_ACROSS_PAGES");
+    }
+
+    /// <summary>A sheet whose chart spans columns D to Q, past the first portrait page.</summary>
+    internal static void CreateWideChartWorkbook(string path, bool fitToOnePageWide)
+    {
+        using var workbook = new Workbook();
+        Worksheet data = workbook.Worksheets[0];
+        data.Name = "Data";
+        data.Cells["A1"].PutValue("Month");
+        data.Cells["B1"].PutValue("Sales");
+        for (int row = 1; row <= 4; row++)
+        {
+            data.Cells[row, 0].PutValue("M" + row);
+            data.Cells[row, 1].PutValue(row * 10);
+        }
+        Chart chart = data.Charts[data.Charts.Add(ChartType.Column, 1, 3, 20, 16)];
+        chart.Name = "Wide";
+        chart.NSeries.Add("Data!B2:B5", true);
+        if (fitToOnePageWide)
+        {
+            data.PageSetup.FitToPagesWide = 1;
+            data.PageSetup.FitToPagesTall = 0;
+        }
+        workbook.Save(path);
+    }
+
+    private static IReadOnlyList<ReviewFinding> Review(CellsFixture fixture, string input)
+    {
+        var adapter = new CellsViewAdapter();
+        var request = new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 10, Purpose = ViewPurpose.Evidence };
+        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
+        return adapter.Assess(fixture.Engine, input, request, rendered).Findings!;
+    }
+
     private static void CreateLayoutProblemWorkbook(string path)
     {
         using var workbook = new Workbook();

@@ -79,4 +79,7 @@ internal sealed record CellsReviewChartLayout
     public required bool AnchoredInHiddenCells { get; init; }
 
     public required bool ExcludedByPrintArea { get; init; }
+
+    /// <summary>The number of printed pages the chart reaches; more than one splits it in a PDF.</summary>
+    public required int PrintedPages { get; init; }
 }

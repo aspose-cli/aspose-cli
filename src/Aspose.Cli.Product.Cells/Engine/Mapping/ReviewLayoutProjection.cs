@@ -244,7 +244,7 @@ internal static class ReviewLayoutProjection
         IReadOnlyList<RangeRef> printRanges)
     {
         var charts = new List<CellsReviewChartLayout>(sheet.Charts.Count);
-        foreach (Chart chart in sheet.Charts)
+        foreach ((Chart chart, int pages) in PrintedPages.ChartPages(sheet))
         {
             ChartShape shape = chart.ChartObject;
             var chartRange = new RangeRef(
@@ -260,6 +260,7 @@ internal static class ReviewLayoutProjection
                 AnchoredInHiddenCells = AnchoredInHiddenCells(sheet, chartRange),
                 ExcludedByPrintArea = printRanges.Count > 0
                     && !printRanges.Any(area => Intersects(area, chartRange)),
+                PrintedPages = pages,
             });
         }
         return charts;
