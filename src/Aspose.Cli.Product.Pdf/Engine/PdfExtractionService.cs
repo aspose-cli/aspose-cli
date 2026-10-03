@@ -333,7 +333,7 @@ internal sealed class PdfExtractionService
         string expanded = template
             .Replace("{stem}", SafeName(stem), StringComparison.Ordinal)
             .Replace("{n}", part.Index.ToString("000", System.Globalization.CultureInfo.InvariantCulture), StringComparison.Ordinal)
-            .Replace("{pages}", SafeName(PageRangeText(part.Pages)), StringComparison.Ordinal)
+            .Replace("{pages}", PageRangeText(part.Pages).Replace(',', '_'), StringComparison.Ordinal)
             .Replace("{bookmark}", bookmark, StringComparison.Ordinal);
         if (expanded.Contains('{', StringComparison.Ordinal) || expanded.Contains('}', StringComparison.Ordinal)
             || !string.Equals(expanded, Path.GetFileName(expanded), StringComparison.Ordinal)
