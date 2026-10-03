@@ -133,7 +133,7 @@ internal sealed class WordsProductionService
                     WordsSavePipeline.Options("png", pages: [pageNumber], dpi: dpi)));
             parts.Add(new ViewPart
             {
-                Id = string.Create(CultureInfo.InvariantCulture, $"page-{page}"),
+                Id = WordsViews.PagePart(page),
                 Label = string.Create(CultureInfo.InvariantCulture, $"Page {page}"),
                 File = file,
                 Kind = ViewPartKinds.Image,

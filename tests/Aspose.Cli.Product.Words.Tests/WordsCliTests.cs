@@ -106,20 +106,29 @@ public sealed class WordsCliTests : IDisposable
         var comment = new Comment(document, "Reviewer", "R", DateTime.UnixEpoch);
         comment.SetText("Confirm the clause.");
         builder.CurrentParagraph.AppendChild(comment);
+        builder.InsertBreak(BreakType.PageBreak);
+        builder.Write("Second page.");
         document.Save(_workspace.File("findings.docx"));
 
         CliResult reviewed = _workspace.Run(
             "review", "findings.docx", "--out", "evidence", "--output", "json");
 
         Assert.True(reviewed.ExitCode is 0 or 8, reviewed.StdErr);
-        string[] codes = JsonNode.Parse(reviewed.StdOut)!["findings"]!
-            .AsArray()
+        JsonArray findings = JsonNode.Parse(reviewed.StdOut)!["findings"]!.AsArray();
+        string[] codes = findings
             .Select(static finding => finding!["code"]!.GetValue<string>())
             .ToArray();
         Assert.Contains("WORDS_TEXT_TOO_SMALL", codes);
         Assert.Contains("WORDS_TEXT_TOO_LARGE", codes);
         Assert.Contains("WORDS_REVISIONS_PRESENT", codes);
         Assert.Contains("WORDS_COMMENTS_PRESENT", codes);
+        // A page finding's evidence is its page's image; a document finding's is every page.
+        string[] Evidence(string code) => findings
+            .Single(finding => finding!["code"]!.GetValue<string>() == code)!["evidence"]!.AsArray()
+            .Select(static path => Path.GetFileName(path!.GetValue<string>()))
+            .ToArray();
+        Assert.Equal(["page-0001.png"], Evidence("WORDS_TEXT_TOO_SMALL"));
+        Assert.Equal(["page-0001.png", "page-0002.png"], Evidence("WORDS_REVISIONS_PRESENT"));
 
         CliResult filtered = _workspace.Run(
             "review", "findings.docx", "--out", "filtered", "--code", "WORDS_TEXT_TOO_SMALL", "--output", "json");

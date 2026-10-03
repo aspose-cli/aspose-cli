@@ -101,33 +101,38 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
         foreach (WordsReviewPageLayout page in layout.Pages)
         {
             string location = $"page {page.Page}";
+            string part = WordsViews.PagePart(page.Page);
             if (!HasVisibleContent(page))
             {
                 findings.Add(WordsReviewChecks.PageBlank.Finding(
                     "The fixed-page layout contains no visible body text, table rows, or drawing objects.",
                     location,
-                    RepairHint));
+                    RepairHint,
+                    part));
             }
             else if (IsExtremelyLowUtilization(page))
             {
                 findings.Add(WordsReviewChecks.PageUtilizationLow.Finding(
                     $"Visible body content occupies only {page.ContentAreaRatio:P1} of the page bounding area.",
                     location,
-                    RepairHint));
+                    RepairHint,
+                    part));
             }
             if (page.MinimumFontSize is > 0 and < 7)
             {
                 findings.Add(WordsReviewChecks.TextTooSmall.Finding(
                     $"Visible body text uses a minimum font size of {page.MinimumFontSize:0.#} pt.",
                     location,
-                    RepairHint));
+                    RepairHint,
+                    part));
             }
             if (page.MaximumFontSize is > 72)
             {
                 findings.Add(WordsReviewChecks.TextTooLarge.Finding(
                     $"Visible body text uses a maximum font size of {page.MaximumFontSize:0.#} pt.",
                     location,
-                    RepairHint));
+                    RepairHint,
+                    part));
             }
             if (page.OutsideObjects > 0)
             {
@@ -135,14 +140,16 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
                 findings.Add(WordsReviewChecks.ObjectOutsidePage.Finding(
                     $"{page.OutsideObjects} drawing object(s) extend beyond the physical page boundary: {names}.",
                     location,
-                    RepairHint));
+                    RepairHint,
+                    part));
             }
             if (page.ExplicitPageBreaks > 1)
             {
                 findings.Add(WordsReviewChecks.PageBreaksExcessive.Finding(
                     $"The page contains {page.ExplicitPageBreaks} explicit page-break controls.",
                     location,
-                    RepairHint));
+                    RepairHint,
+                    part));
             }
         }
 
@@ -151,7 +158,8 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
             findings.Add(WordsReviewChecks.HeadingOrphaned.Finding(
                 $"Heading level {heading.Level} '{heading.Text}' follows prior page content but its body starts on the next page.",
                 $"page {heading.Page}, block {heading.Block}",
-                RepairHint));
+                RepairHint,
+                WordsViews.PagePart(heading.Page)));
         }
     }
 
