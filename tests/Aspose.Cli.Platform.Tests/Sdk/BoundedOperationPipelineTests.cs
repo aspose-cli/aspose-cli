@@ -134,6 +134,40 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(CliErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
     }
 
+    public static TheoryData<Exception> FileAccessFailures() => new()
+    {
+        // HRESULT_FROM_WIN32(ERROR_SHARING_VIOLATION): another program holds the file.
+        new IOException("The process cannot access the file 'a.csv'.", unchecked((int)0x80070020)),
+        new UnauthorizedAccessException("Access to the path 'a.csv' is denied."),
+        new FileNotFoundException("Could not find file 'a.csv'."),
+        new DirectoryNotFoundException("Could not find a part of the path 'x\\a.csv'."),
+    };
+
+    [Theory]
+    [MemberData(nameof(FileAccessFailures))]
+    public void Run_BlamesFileAccessNotTheDocumentWhenTheEngineCannotOpenAFile(Exception cause)
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, (_, _) =>
+            throw new EngineOpException("in use", cause)));
+
+        Assert.Equal(ErrorCodes.FeatureUnsupported, error.Code);
+        Assert.DoesNotContain("may not support", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("close", error.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Run_KeepsTheFeatureHintWhenTheEngineReadsTruncatedData()
+    {
+        TestBatch batch = Catalog.Prepare(new TestBatch { Ops = [Note()] });
+
+        CliException error = Assert.Throws<CliException>(() => Run(batch, bestEffort: false, (_, _) =>
+            throw new EngineOpException("truncated", new EndOfStreamException("Unable to read beyond the end."))));
+
+        Assert.Equal(CliErrors.EngineFailed("any", new InvalidOperationException()).Hint, error.Hint);
+    }
+
     private static IReadOnlyList<BoundedOperationOutcome> Run(
         TestBatch batch, bool bestEffort, Func<TestOp, int, AppliedOperation> apply) =>
         BoundedOperationRunner.Run(Catalog, batch.Ops, bestEffort, deadline: null, apply, static (_, _) => ["test/attempted"]);

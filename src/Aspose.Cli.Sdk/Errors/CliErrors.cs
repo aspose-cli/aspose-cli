@@ -257,11 +257,21 @@ public static partial class CliErrors
     public static CliException EngineFailed(string message, Exception innerException, JsonObject? details = null) => new(
         ErrorCodes.FeatureUnsupported,
         message,
-        hint: "The engine may not support a feature this document uses: simplify or remove that content or operation, "
-            + "or retry with a standard copy of the document or another output format. If other documents fail the "
-            + "same way, the local environment (for example its installed fonts) is the cause, not the document.",
+        // A file the engine could not open says nothing about the document's features; truncated
+        // or malformed data (EndOfStreamException, other IOExceptions) does.
+        hint: IsFileAccessFailure(innerException) || IsFileAccessFailure(innerException.InnerException)
+            ? "The engine could not open a file the message names: close any program that holds it, check that it "
+                + "can be read, and run the command again."
+            : "The engine may not support a feature this document uses: simplify or remove that content or operation, "
+                + "or retry with a standard copy of the document or another output format. If other documents fail the "
+                + "same way, the local environment (for example its installed fonts) is the cause, not the document.",
         details: details,
         innerException: innerException);
+
+    private static bool IsFileAccessFailure(Exception? exception) => exception is UnauthorizedAccessException
+        or FileNotFoundException
+        or DirectoryNotFoundException
+        || exception is IOException io && FileAccessProbe.IsSharingViolation(io);
 
     public static CliException OutputExists(string path) => new(
         ErrorCodes.OutputExists,
