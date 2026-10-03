@@ -62,8 +62,9 @@ internal sealed class PdfFormService
     /// <summary>
     /// Projects one field. A check box reports its appearance states and, when it has exactly
     /// one state besides Off, that state as the value that checks it. The engine lists a radio
-    /// group as one field per button under the group's name; each reports the group's values
-    /// as its options and its own value as the one that selects it, and each has its own
+    /// group as one field per button under the group's name; each reports the group's selected
+    /// value as its value, the group's values as its options and its own value as the one that
+    /// selects it, and each has its own
     /// rectangle. A field whose page evaluation mode hides is added to <paramref name="unpaged"/>.
     /// </summary>
     private static PdfFormField Project(Document document, Field field, List<string> unpaged)
@@ -72,6 +73,7 @@ internal sealed class PdfFormService
         IReadOnlyList<string>? options = null;
         IReadOnlyList<string>? states = null;
         string? onValue = null;
+        string? value = field.Value;
         switch (field)
         {
             case ChoiceField choice:
@@ -84,7 +86,9 @@ internal sealed class PdfFormService
                 onValue = on.Length == 1 ? on[0] : null;
                 break;
             case RadioButtonOptionField button:
-                options = RadioGroup(button) is { } group ? ChoiceValues(group) : null;
+                RadioButtonField? group = RadioGroup(button);
+                options = group is null ? null : ChoiceValues(group);
+                value = group?.Value ?? value;
                 onValue = string.IsNullOrEmpty(button.OptionName) ? null : button.OptionName;
                 break;
         }
@@ -93,7 +97,7 @@ internal sealed class PdfFormService
         {
             Name = field.FullName,
             Type = FieldType(field),
-            Value = field.Value,
+            Value = value,
             Options = options,
             States = states,
             OnValue = onValue,

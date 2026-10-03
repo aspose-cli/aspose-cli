@@ -319,6 +319,8 @@ public sealed record PdfFormField
 
     /// <summary>The field kind; one of <see cref="PdfFormFieldTypes"/>.</summary>
     public required string Type { get; init; }
+
+    /// <summary>The field's value; for a radio button, the value its group has selected.</summary>
     public string? Value { get; init; }
 
     /// <summary>

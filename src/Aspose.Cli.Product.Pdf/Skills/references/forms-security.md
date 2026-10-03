@@ -20,8 +20,9 @@ it on the page: when names do not say which label a field belongs to, match the
 A check box accepts only its `states`: set its `onValue` to check it and `Off`
 to clear it. A box whose widgets export several values has no `onValue`; set
 the state of the widget to check. A radio group is listed as one `radio-option`
-field per button under the group's name: `options` holds the group's values and
-`onValue` the value that selects that button. Any other value, `Off` included,
+field per button under the group's name: `value` holds the group's selection,
+`options` the group's values and `onValue` the value that selects that button.
+Any other value, `Off` included,
 is refused. A `value` of `null` clears any field: a radio group selects no
 button, a check box is unchecked and any other field is emptied.
 

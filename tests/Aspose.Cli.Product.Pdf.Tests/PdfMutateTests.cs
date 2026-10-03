@@ -1086,6 +1086,10 @@ public sealed class PdfMutateTests
         var group = (RadioButtonField)reopened.Form["color"];
         Assert.Equal("Blue", group.Value);
         Assert.Equal(2, group.Selected);
+        // Every button of the group reports the group's selection as its value.
+        Assert.All(
+            fixture.Engine.ReadForm(output, new PdfFormReadRequest()).Fields.Where(static field => field.Name == "color"),
+            static button => Assert.Equal("Blue", button.Value));
     }
 
     [Theory]
