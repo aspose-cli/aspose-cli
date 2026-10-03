@@ -175,7 +175,7 @@
     "layers": { "type": "array", "items": { "type": "string" } },
     "metadata": {
       "type": "object",
-      "description": "Document information and XMP properties as the file stores them; XMP keys start with xmp:. creationDate and modificationDate are ISO 8601: in UTC ending in Z when the stored date states an offset, without Z when it states none, and the stored text unchanged when it is not a PDF date.",
+      "description": "Document information and XMP properties as the file stores them; XMP keys start with xmp:. creationDate and modificationDate are ISO 8601 with a fraction of a second only when it is not zero, as XMP writes dates (2026-10-01T06:01:53Z): in UTC ending in Z when the stored date states an offset, without Z when it states none, and the stored text unchanged when it is not a PDF date.",
       "additionalProperties": { "type": ["string", "null"] }
     },
     "license": { "type": "object" },

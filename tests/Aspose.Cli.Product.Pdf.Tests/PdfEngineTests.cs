@@ -91,10 +91,10 @@ public sealed class PdfEngineTests
     }
 
     [Theory]
-    [InlineData("D:20261003100000+05'30'", "2026-10-03T04:30:00.0000000Z")]
-    [InlineData("D:20261003011908Z00'00'", "2026-10-03T01:19:08.0000000Z")]
-    [InlineData("D:20260930225834-07'00'", "2026-10-01T05:58:34.0000000Z")]
-    [InlineData("D:20261003", "2026-10-03T00:00:00.0000000")]
+    [InlineData("D:20261003100000+05'30'", "2026-10-03T04:30:00Z")]
+    [InlineData("D:20261003011908Z00'00'", "2026-10-03T01:19:08Z")]
+    [InlineData("D:20260930225834-07'00'", "2026-10-01T05:58:34Z")]
+    [InlineData("D:20261003", "2026-10-03T00:00:00")]
     [InlineData("3 October 2026", "3 October 2026")]
     public void Info_ReadsADocumentDateAtTheOffsetItStates(string stored, string expected)
     {

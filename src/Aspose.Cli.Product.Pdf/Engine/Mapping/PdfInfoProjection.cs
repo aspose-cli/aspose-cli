@@ -342,7 +342,14 @@ internal static class PdfInfoProjection
     }
 
     private static string? Date(DateTime value) =>
-        value == default ? null : value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
+        value == default ? null : Iso(value.ToUniversalTime());
+
+    /// <summary>
+    /// ISO 8601 without a fraction of a second that is zero, as XMP writes dates: UTC ends in
+    /// Z, a date without an offset has none.
+    /// </summary>
+    private static string Iso(DateTime value) =>
+        value.ToString("yyyy-MM-dd'T'HH:mm:ss.FFFFFFFK", CultureInfo.InvariantCulture);
 
     /// <summary>
     /// A document information date in UTC, read from its stored text: the engine's
@@ -373,17 +380,17 @@ internal static class PdfInfoProjection
             var clock = new DateTime(Part("y", 0), Part("M", 1), Part("d", 1), Part("h", 0), Part("m", 0), Part("s", 0), DateTimeKind.Unspecified);
             if (match.Groups["z"].Success)
             {
-                return DateTime.SpecifyKind(clock, DateTimeKind.Utc).ToString("O", CultureInfo.InvariantCulture);
+                return Iso(DateTime.SpecifyKind(clock, DateTimeKind.Utc));
             }
 
             if (!match.Groups["sign"].Success)
             {
-                return clock.ToString("O", CultureInfo.InvariantCulture);
+                return Iso(clock);
             }
 
             var offset = new TimeSpan(Part("oh", 0), Part("om", 0), 0);
             var stated = new DateTimeOffset(clock, match.Groups["sign"].Value == "-" ? -offset : offset);
-            return stated.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
+            return Iso(stated.UtcDateTime);
         }
         catch (ArgumentOutOfRangeException)
         {
