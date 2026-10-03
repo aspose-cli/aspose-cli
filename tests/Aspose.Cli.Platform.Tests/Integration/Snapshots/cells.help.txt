@@ -77,26 +77,26 @@ Arguments:
   <file>  Workbook to convert.
 
 Options:
-  --to <csv|html|json|md|mhtml|ods|pdf|tsv|xls|xlsb|xlsm|xlsx|xps> (REQUIRED)  Target format: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md.
-  --sheet <sheet>                                                              Convert only this sheet (supported for csv, tsv, md, pdf).
-  --encoding <encoding>                                                        Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused).
-  --culture <culture>                                                          Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused).
-  -o, --out <out>                                                              Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input).
-  --overwrite                                                                  Replace the output file if it already exists.
-  --password <password>                                                        Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                                                Name of an environment variable holding the password for the workbook.
-  --password-stdin                                                             Read the password for the workbook from the first line of stdin.
-  --encrypt <encrypt>                                                          Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>                                                  Name of an environment variable holding the password for the output file.
-  --font-dir <font-dir>                                                        Local font directory searched in addition to the system fonts; repeat for more.
-  -?, -h, --help                                                               Show help and usage information
-  -f, --output <compact|json|markdown|table>                                   Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                                                  Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                                                Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                                                          Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                                                          Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                                                          Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>                                          Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --to <to> (REQUIRED)                        Target format: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md. Values: csv, html, json, md, mhtml, ods, pdf, tsv, xls, xlsb, xlsm, xlsx, xps.
+  --sheet <sheet>                             Convert only this sheet (supported for csv, tsv, md, pdf).
+  --encoding <encoding>                       Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused).
+  --culture <culture>                         Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused).
+  -o, --out <out>                             Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input).
+  --overwrite                                 Replace the output file if it already exists.
+  --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the workbook.
+  --password-stdin                            Read the password for the workbook from the first line of stdin.
+  --encrypt <encrypt>                         Password for the output file. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                 Name of an environment variable holding the password for the output file.
+  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli cells convert sales.csv --to xlsx
@@ -193,20 +193,20 @@ Arguments:
   <file>  Workbook to inspect (xlsx, xlsm, xlsb, xls, ods, csv, ...).
 
 Options:
-  --preview                                                      Include a small sample of display values for each sheet.
-  --preview-rows <preview-rows>                                  Number of preview rows per sheet (1-100). [default: 5]
-  --detail <charts|errors|fonts|names|pivots|tables|validation>  Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation. Repeatable.
-  --password <password>                                          Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                                  Name of an environment variable holding the password for the workbook.
-  --password-stdin                                               Read the password for the workbook from the first line of stdin.
-  -?, -h, --help                                                 Show help and usage information
-  -f, --output <compact|json|markdown|table>                     Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                                    Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                                  Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                                            Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                                            Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                                            Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>                            Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --preview                                   Include a small sample of display values for each sheet.
+  --preview-rows <preview-rows>               Number of preview rows per sheet (1-100). [default: 5]
+  --detail <detail>                           Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation. Repeatable. Values: charts, errors, fonts, names, pivots, tables, validation.
+  --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the workbook.
+  --password-stdin                            Read the password for the workbook from the first line of stdin.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli cells inspect book.xlsx --output json

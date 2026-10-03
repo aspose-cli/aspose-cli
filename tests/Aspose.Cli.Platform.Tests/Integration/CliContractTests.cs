@@ -337,6 +337,30 @@ $", result.StdOut);
         AssertSnapshot("host.help.txt", CollectHelp(paths));
     }
 
+    /// <summary>
+    /// A long value list moves from the option label into the description, so it cannot widen the
+    /// option column of every row; capabilities still list every value.
+    /// </summary>
+    [Theory]
+    [InlineData("--code <code>", "Accepts ", "review")]
+    [InlineData("--to <to>", "Values: azw3, doc, ", "words", "convert")]
+    public void Help_KeepsLongValueListsOutOfTheOptionColumn(string label, string description, params string[] command)
+    {
+        CliResult result = _workspace.Run([.. command, "--help"]);
+
+        Assert.Equal(0, result.ExitCode);
+        string[] options = [.. result.StdOut.Split('\n')
+            .SkipWhile(static line => !line.StartsWith("Options:", StringComparison.Ordinal))
+            .Skip(1)
+            .TakeWhile(static line => line.Trim().Length > 0)];
+        Assert.NotEmpty(options);
+        Assert.All(options, line => Assert.True(
+            line.TrimStart().IndexOf("  ", StringComparison.Ordinal) < 48,
+            $"The option column is too wide: {line[..Math.Min(line.Length, 120)]}"));
+        string row = Assert.Single(options, line => line.TrimStart().StartsWith(label, StringComparison.Ordinal));
+        Assert.Contains(description, row, StringComparison.Ordinal);
+    }
+
     /// <summary>Runs <c>--help</c> for each command path, relative to the root, and joins the outputs.</summary>
     private string CollectHelp(IEnumerable<string[]> paths)
     {
