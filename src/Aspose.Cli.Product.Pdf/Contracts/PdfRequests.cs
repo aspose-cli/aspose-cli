@@ -121,6 +121,10 @@ public sealed record PdfEditRequest
     public string? BackupPath { get; init; }
     public EditCommandOptions Options { get; init; } = new();
     public string? Password { get; init; }
+
+    /// <summary>Whether to read the staged output back against the effect of each operation.</summary>
+    public bool Verify { get; init; }
+
     /// <summary>The operations' secrets by the environment variable their <c>*Env</c> fields name.</summary>
     public IReadOnlyDictionary<string, string>? OpSecrets { get; init; }
 }

@@ -24,12 +24,16 @@ top-left origin against the visible, rotated page box.
    aspose-cli pdf query pages input.pdf --pages 1-5 --mode layout --output json
    ```
 
-3. Put all related changes in one `pdf edit` batch
+3. Put all related changes in one `pdf edit` batch with `--verify`
    ([editing](references/editing.md)):
 
    ```powershell
-   aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --output json
+   aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --verify --output json
    ```
+
+   Without a license the engine reads at most four pages and four items of each
+   list, so a check that has to read more pages, bookmarks, fields or attachments
+   fails the edit with `EVALUATION_LIMIT` and publishes nothing.
 
 4. Convert to PDF/A, then validate the result separately; conversion success
    does not imply conformance ([standards](references/pdf-standards.md)).

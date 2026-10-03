@@ -19,6 +19,20 @@
       "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/mutation-receipt.schema.json"
     },
     "pagesTouched": { "type": "array", "items": { "type": "integer", "minimum": 1 } },
+    "verification": {
+      "type": "object",
+      "description": "Present with --verify: the staged output read back against the effect of each form, redaction, bookmark, metadata, attachment and page operation.",
+      "required": ["ok", "issues", "checkedOps"],
+      "additionalProperties": false,
+      "properties": {
+        "ok": { "type": "boolean" },
+        "issues": {
+          "type": "array",
+          "items": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/verification-issue.schema.json" }
+        },
+        "checkedOps": { "type": "array", "items": { "type": "string" }, "description": "In batch order, the ids of the operations whose every recorded effect was read back; an operation left out was not fully checked." }
+      }
+    },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   },

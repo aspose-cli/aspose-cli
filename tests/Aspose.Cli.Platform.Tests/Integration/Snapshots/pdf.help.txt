@@ -116,6 +116,7 @@ Options:
   --if-match <if-match>                       Require the current input SHA-256 fingerprint before editing.
   --dry-run                                   Resolve and apply operations in memory without writing.
   --best-effort                               Keep successful operations, report failures, and exit 8.
+  --verify                                    Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation.
   -o, --out <out>                             Output path. Default: the input path with '.out' inserted before the extension.
   --overwrite                                 Replace the output file if it already exists.
   --in-place                                  Modify the input file itself atomically.

@@ -288,8 +288,20 @@ public sealed record PdfEditResult() : ResultEnvelope(PdfSchemaIds.EditResult, 2
     public BackupInfo? Backup { get; init; }
     public MutationReceipt? Mutation { get; init; }
     public IReadOnlyList<int>? PagesTouched { get; init; }
+    public PdfEditVerification? Verification { get; init; }
     [JsonIgnore]
-    public bool HasFailures => Applied.Any(static item => item.Status == OpStatuses.Failed);
+    public bool HasFailures => Applied.Any(static item => item.Status == OpStatuses.Failed)
+        || Verification is { Ok: false };
+}
+
+/// <summary>What --verify read back from the staged output.</summary>
+public sealed record PdfEditVerification
+{
+    public required bool Ok { get; init; }
+    public required IReadOnlyList<VerificationIssue> Issues { get; init; }
+
+    /// <summary>In batch order, the ids of the operations whose every recorded effect was read back.</summary>
+    public required IReadOnlyList<string> CheckedOps { get; init; }
 }
 
 /// <summary>PDF form field inventory.</summary>

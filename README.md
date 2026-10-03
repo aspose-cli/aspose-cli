@@ -32,7 +32,7 @@ bundled guides. The Skills `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-sli
   `--if-match` refuses a file that changed since it was read, and `--dry-run` writes nothing.
   No other command writes over one of its inputs.
 - **Verification.** `aspose-cli review <file>` writes an evidence directory with an image of
-  every sheet, slide or page and its layout findings; Cells and Words `edit --verify` report
+  every sheet, slide or page and its layout findings; Cells, PDF and Words `edit --verify` report
   semantic evidence before publication.
 - **A stable contract.** In JSON mode a command writes one result to stdout or one error to
   stderr, with a stable code and exit code.
