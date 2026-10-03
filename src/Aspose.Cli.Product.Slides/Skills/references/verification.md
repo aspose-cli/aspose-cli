@@ -28,7 +28,8 @@ often much taller placeholder), laid-out text cut off by a slide edge (`SLIDES_T
 for example a long title in a bottom-anchored placeholder that wraps upward off the slide) or
 spilling out of a shape that does not grow to fit it (`SLIDES_TEXT_OVERFLOWS_SHAPE`), empty
 placeholders that PowerPoint shows as prompts while editing (`SLIDES_PLACEHOLDER_EMPTY`), blank or
-duplicate slides and content density. Text in rotated shapes and vertical text is not measured.
+duplicate slides and content density (judged by object count alone on a slide whose text
+evaluation mode replaced). Text in rotated shapes and vertical text is not measured.
 After fixing one kind of finding, a later round can focus on it while you still open every image:
 
 ```powershell

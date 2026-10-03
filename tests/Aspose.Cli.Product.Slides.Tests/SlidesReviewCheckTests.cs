@@ -53,6 +53,35 @@ public sealed class SlidesReviewCheckTests
     }
 
     [Fact]
+    public void TextEvaluationModeReplaced_DoesNotMakeASlideDense()
+    {
+        // Evaluation mode replaces every text longer than five characters with its start and the
+        // SDK's truncation marker, so a 25-cell table reads as about 1,500 characters.
+        string cells = string.Join(' ', Enumerable.Repeat($"¥1,20... {SlidesEngineSupport.EvaluationTruncationMarker}.", 25));
+        SlideData slide = Slide(
+            1,
+            Shape(1, new(40, 22, 640, 58), $"投资与回报... {SlidesEngineSupport.EvaluationTruncationMarker}."),
+            Shape(2, new(40, 100, 640, 144), cells, type: "table"));
+        Assert.True(slide.Shapes.Sum(static shape => shape.Text!.Length) >= 1400);
+
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze([slide], Width, Height);
+
+        Assert.DoesNotContain(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.ContentDensityHigh.Code);
+        Assert.Equal(0, analysis.HighDensitySlides);
+    }
+
+    [Fact]
+    public void ManyObjects_MakeASlideDenseEvenWhenEvaluationModeReplacedTheirText()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(1, [.. Enumerable.Range(1, 18).Select(id => Shape(id, new(id * 30, 400, 20, 20), $"Item ... {SlidesEngineSupport.EvaluationTruncationMarker}."))])],
+            Width,
+            Height);
+
+        Assert.Contains(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.ContentDensityHigh.Code);
+    }
+
+    [Fact]
     public void TextRect_IsWhereTheTextIsLaidOutOnTheSlide()
     {
         using var presentation = new Aspose.Slides.Presentation();

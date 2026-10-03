@@ -221,6 +221,11 @@ internal static class SlidesReviewAnalyzer
             : (string.Join(" and ", passed.Select(static edge => edge.Edge)), passed.Max(static edge => edge.Points));
     }
 
+    /// <summary>
+    /// Density counts content objects and their characters. Text that evaluation mode replaced
+    /// with the SDK's truncation marker has lost its length, so on such a slide only the object
+    /// count is judged; the review's EVAL_INPUT_TRUNCATED warning discloses the replacement.
+    /// </summary>
     private static void AnalyzeDensity(
         SlideData slide,
         double slideWidth,
@@ -229,14 +234,16 @@ internal static class SlidesReviewAnalyzer
     {
         SlideShapeData[] content = slide.Shapes.Where(IsContent).ToArray();
         int characters = content.Sum(static shape => shape.Text?.Length ?? 0);
+        bool textMeasured = !TextReplacedByEvaluation(slide);
         bool high = content.Length >= 18
-            || characters >= 1400
-            || (content.Length >= 12 && characters >= 800);
+            || (textMeasured && (characters >= 1400 || (content.Length >= 12 && characters >= 800)));
         if (high)
         {
             result.HighDensitySlides++;
             result.Findings.Add(SlidesReviewChecks.ContentDensityHigh.Finding(
-                $"The slide contains {content.Length} content objects and {characters} text characters; inspect readability and consider splitting it.",
+                textMeasured
+                    ? $"The slide contains {content.Length} content objects and {characters} text characters; inspect readability and consider splitting it."
+                    : $"The slide contains {content.Length} content objects; inspect readability and consider splitting it.",
                 Location(slide.Slide),
                 Hint));
             return;
@@ -244,7 +251,8 @@ internal static class SlidesReviewAnalyzer
 
         bool hasRichMedia = content.Any(static shape => shape.Type is "chart" or "table" or "image" or "video");
         double occupied = BoundingArea(content) / Math.Max(1, slideWidth * slideHeight);
-        if (content.Length >= 3
+        if (textMeasured
+            && content.Length >= 3
             && !hasRichMedia
             && characters is > 0 and < 40
             && occupied < 0.12)
@@ -346,10 +354,7 @@ internal static class SlidesReviewAnalyzer
 
     private static string? Fingerprint(SlideData slide)
     {
-        if (slide.ContentTruncated
-            || slide.Shapes.Any(static shape => shape.Text?.Contains(
-                SlidesEngineSupport.EvaluationTruncationMarker,
-                StringComparison.OrdinalIgnoreCase) == true))
+        if (slide.ContentTruncated || TextReplacedByEvaluation(slide))
         {
             return null;
         }
@@ -369,6 +374,11 @@ internal static class SlidesReviewAnalyzer
         }
         return value.ToString();
     }
+
+    private static bool TextReplacedByEvaluation(SlideData slide) =>
+        slide.Shapes.Any(static shape => shape.Text?.Contains(
+            SlidesEngineSupport.EvaluationTruncationMarker,
+            StringComparison.OrdinalIgnoreCase) == true);
 
     private static string Normalize(string? text) => string.IsNullOrWhiteSpace(text)
         ? string.Empty
