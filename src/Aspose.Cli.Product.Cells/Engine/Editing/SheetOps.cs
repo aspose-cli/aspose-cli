@@ -7,7 +7,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
 /// <summary>
 /// Sheet-level ops: adding, renaming, deleting, showing/hiding and freezing
-/// panes. None report a cell count.
+/// panes. Adding counts the one sheet it adds; the others report no count.
 /// </summary>
 internal static class SheetOps
 {
@@ -21,7 +21,7 @@ internal static class SheetOps
             sheet.MoveTo(position);
         }
 
-        return null;
+        return 1;
     }
 
     public static long? RenameSheet(Worksheet sheet, RenameSheetOp op)

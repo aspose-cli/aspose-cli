@@ -129,6 +129,21 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void AddingAndImportingASheetEachCountTheSheetTheyAdd()
+    {
+        string source = CreateSource("counted-source.xlsx");
+
+        EditResult result = ApplyResult(
+            _fixture.CreateSalesWorkbook("counted.xlsx"),
+            $$"""
+            { "op": "add_sheet", "name": "Blank" },
+            { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}} }
+            """);
+
+        Assert.Equal([1L, 1L], result.Applied.Select(static outcome => outcome.ItemsAffected));
+    }
+
+    [Fact]
     public void ImportSheet_DefaultsToTheSourcesFirstSheetAndItsName()
     {
         string source = CreateSource("default-source.xlsx");

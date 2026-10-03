@@ -140,7 +140,8 @@ internal static class ImportOps
             throw;
         }
 
-        return null;
+        // The one sheet it adds.
+        return 1;
     }
 
     /// <summary>
