@@ -58,7 +58,6 @@ internal static class CompositionRoot
         GlobalValues globals,
         OperationDeadline? deadline = null,
         ResourceBudgetLedger? resourceBudgets = null,
-        Func<string, ILicenseGate>? runtimeLicenses = null,
         UserLicenseChanges? licenseChanges = null)
     {
         ArgumentNullException.ThrowIfNull(catalog);
@@ -80,7 +79,7 @@ internal static class CompositionRoot
                 globals,
                 workDir,
                 effectiveBudgets,
-                runtimeLicenses, licenseChanges),
+                licenseChanges),
             Catalog = catalog,
         };
     }
@@ -89,7 +88,6 @@ internal static class CompositionRoot
         GlobalValues globals,
         string workDirectory,
         ResourceBudgetLedger resourceBudgets,
-        Func<string, ILicenseGate>? runtimeLicenses = null,
         UserLicenseChanges? licenseChanges = null)
     {
         var writer = new SafeFileWriter(resourceBudgets);
@@ -98,7 +96,6 @@ internal static class CompositionRoot
             WorkDirectory = workDirectory,
             LicensePath = ResolveLicensePath(globals.LicensePath, workDirectory),
             EvaluationRequested = globals.EvaluationRequested,
-            RuntimeLicenseForProduct = runtimeLicenses,
             UserLicenseChanges = licenseChanges,
             ConfigDirectory = Aspose.Cli.Sdk.Configuration.ConfigurationPaths.UserDirectory(),
             EnvironmentVariable = Environment.GetEnvironmentVariable,

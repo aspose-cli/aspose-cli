@@ -106,10 +106,6 @@ internal static class ProductLicenseGateFactory
         ArgumentNullException.ThrowIfNull(context);
         ArgumentException.ThrowIfNullOrWhiteSpace(productId);
         ArgumentNullException.ThrowIfNull(factory);
-        if (context.RuntimeLicenseForProduct is { } runtime)
-        {
-            return runtime(productId);
-        }
         if (context.EvaluationRequested)
         {
             // An explicit request, not a fall back: no source is read, so none can fail.
