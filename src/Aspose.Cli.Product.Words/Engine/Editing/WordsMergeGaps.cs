@@ -56,8 +56,7 @@ internal static class WordsMergeGaps
     /// </summary>
     internal static Warning? Find(
         IReadOnlyList<string> fields,
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows,
-        bool regions)
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
     {
         var gaps = new List<string>();
         foreach (string field in fields)
@@ -78,9 +77,7 @@ internal static class WordsMergeGaps
             Message = string.Create(
                 CultureInfo.InvariantCulture,
                 $"mail_merge had no value for {gaps.Count} template merge field(s) in some records: {string.Join("; ", gaps)}."),
-            Hint = (regions
-                ? "In the region, a null value, or a key that only some records lack, merges as blank text; a key no record has leaves the field as its «Name» placeholder. "
-                : "A null value merges as blank text, and a key a record lacks leaves the field as its «Name» placeholder in that record's copy. ")
+            Hint = "A null value or a missing key merges as blank text. "
                 + "Supply the missing values in the merge data, or confirm that the result is acceptable.",
         };
     }

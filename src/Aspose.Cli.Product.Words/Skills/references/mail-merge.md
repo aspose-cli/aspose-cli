@@ -27,11 +27,9 @@ row: a data file holding only a CSV header or `[]` fails the op with
 }
 ```
 
-A null value (JSON `null`, or a CSV row shorter than the header) merges as
-blank text. A key a row lacks leaves that field as `«Name»` in the row's copy;
-with `regions`, it merges as blank text unless no row has the key, in which
-case the field stays `«Name»` in every repetition. Find leftovers with
-`words query search <file> --pattern "«"`.
+A null value (JSON `null`, or a CSV row shorter than the header) and a key a
+row lacks both merge as blank text, with or without `regions`; no `«Name»`
+placeholder is left. With `regions`, merge fields outside the region stay.
 
 A template field that some rows give no value reports `MERGE_VALUE_MISSING`,
 listing each field with its 1-based row numbers, such as

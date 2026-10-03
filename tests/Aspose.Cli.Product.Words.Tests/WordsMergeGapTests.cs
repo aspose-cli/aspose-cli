@@ -36,6 +36,8 @@ public sealed class WordsMergeGapTests
         Assert.Contains("Ava 100", merged.Sections[0].Body.GetText(), StringComparison.Ordinal);
         Assert.Contains("Noah", merged.Sections[1].Body.GetText(), StringComparison.Ordinal);
         Assert.DoesNotContain("100", merged.Sections[1].Body.GetText(), StringComparison.Ordinal);
+        // A missing key merges as blank text, as a null value does.
+        Assert.DoesNotContain("«", merged.GetText(), StringComparison.Ordinal);
     }
 
     [Theory]
@@ -138,10 +140,10 @@ public sealed class WordsMergeGapTests
     }
 
     [Theory]
-    [InlineData("null", "Qty: record 2.", false)]
-    [InlineData("missing", "Qty: record 2.", false)]
-    [InlineData("missingEverywhere", "Qty: records 1, 2.", true)]
-    public void RegionMerge_WarnsOnlyAboutTheRegionFields(string gap, string expected, bool placeholderKept)
+    [InlineData("null", "Qty: record 2.")]
+    [InlineData("missing", "Qty: record 2.")]
+    [InlineData("missingEverywhere", "Qty: records 1, 2.")]
+    public void RegionMerge_WarnsOnlyAboutTheRegionFields(string gap, string expected)
     {
         using var fixture = new WordsFixture();
         var document = new Document();
@@ -176,11 +178,11 @@ public sealed class WordsMergeGapTests
         Warning warning = Assert.Single(result.Warnings ?? [], static w => w.Code == WordsDiagnostics.MergeValueMissing);
         Assert.EndsWith(": " + expected, warning.Message, StringComparison.Ordinal);
         Assert.DoesNotContain("Title", warning.Message, StringComparison.Ordinal);
-        Assert.StartsWith("In the region", warning.Hint, StringComparison.Ordinal);
-        // A key some records have merges blank elsewhere; a key no record has keeps the field.
+        // A missing key merges blank even when no record has it; fields outside the region stay.
         string text = new Document(output).GetText();
         Assert.Contains("Gadget ", text, StringComparison.Ordinal);
-        Assert.Equal(placeholderKept, text.Contains("«Qty»", StringComparison.Ordinal));
+        Assert.DoesNotContain("«Qty»", text, StringComparison.Ordinal);
+        Assert.Contains("«Title»", text, StringComparison.Ordinal);
     }
 
     // One paragraph holding the fields, separated by spaces.

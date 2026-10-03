@@ -10,6 +10,7 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
+using Aspose.Words.MailMerging;
 using Aspose.Words.Replacing;
 using Aspose.Words.Tables;
 using SkiaSharp;
@@ -303,7 +304,7 @@ internal sealed partial class WordsMutationHandlers
         {
             string region = SingleRegion(_document);
             _loader.EnsureNodeCapacity(_document, rows.Count * RegionNodeCount(_document, region));
-            Warning? regionGaps = WordsMergeGaps.Find(WordsMergeGaps.TemplateFields(_document, region), rows, regions: true);
+            Warning? regionGaps = WordsMergeGaps.Find(WordsMergeGaps.TemplateFields(_document, region), rows);
             ExecuteRegionMerge(_document, region, rows);
             AddWarning(regionGaps);
             return rows.Count;
@@ -311,7 +312,7 @@ internal sealed partial class WordsMutationHandlers
 
         // Every further row appends one copy of the whole template.
         _loader.EnsureNodeCapacity(_document, (rows.Count - 1L) * _document.GetChildNodes(NodeType.Any, true).Count);
-        Warning? gaps = WordsMergeGaps.Find(WordsMergeGaps.TemplateFields(_document, region: null), rows, regions: false);
+        Warning? gaps = WordsMergeGaps.Find(WordsMergeGaps.TemplateFields(_document, region: null), rows);
         Document template = _document.Clone();
         ExecuteMergeRow(_document, rows[0]);
         for (int index = 1; index < rows.Count; index++)
@@ -341,8 +342,12 @@ internal sealed partial class WordsMutationHandlers
         }
     }
 
-    internal static void ExecuteMergeRow(Document document, IReadOnlyDictionary<string, string?> row) =>
+    // A template field the row has no key for merges as blank text, as a null value does.
+    internal static void ExecuteMergeRow(Document document, IReadOnlyDictionary<string, string?> row)
+    {
+        document.MailMerge.CleanupOptions = MailMergeCleanupOptions.RemoveUnusedFields;
         document.MailMerge.Execute(row.Keys.ToArray(), row.Values.Cast<object?>().ToArray());
+    }
 
     /// <summary>
     /// The one merge region the flat rows feed. Several regions would need hierarchical data,
@@ -439,6 +444,8 @@ internal sealed partial class WordsMutationHandlers
             table.Rows.Add(data);
         }
 
+        // A region field no record has a key for merges as blank text; fields outside the region stay.
+        document.MailMerge.CleanupOptions = MailMergeCleanupOptions.RemoveUnusedFields;
         document.MailMerge.ExecuteWithRegions(table);
     }
 
