@@ -182,7 +182,7 @@ internal static class PreviewCommand
             };
             var product = new Option<string?>("--product")
             {
-                Description = "Explicit product selection; normally determined by bounded content detection.",
+                Description = "Product that reads the file; by default, the one whose format the file's content matches.",
             }.WithInput(InputKind.None);
             product.AcceptOnlyFromAmong(
                 catalog.Products.Select(static item => item.Manifest.Id).ToArray());

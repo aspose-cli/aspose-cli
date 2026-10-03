@@ -14311,7 +14311,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Explicit product selection; normally determined by bounded content detection."
+          "description": "Product that reads the file; by default, the one whose format the file's content matches."
         },
         {
           "name": "--view",
@@ -14608,7 +14608,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Explicit product override; normally inferred from bounded content evidence."
+          "description": "Product that reads the file; by default, the one whose format the file's content matches."
         },
         {
           "name": "--view",
@@ -14644,7 +14644,7 @@
           "required": true,
           "hasDefault": false,
           "allowedValues": [],
-          "description": "Source file to review; bounded content evidence selects the product."
+          "description": "Source file to review; its content decides which product reads it."
         }
       ]
     },

@@ -33,7 +33,7 @@ internal static class ReviewCommand
         };
         var product = new Option<string?>("--product")
         {
-            Description = "Explicit product override; normally inferred from bounded content evidence.",
+            Description = "Product that reads the file; by default, the one whose format the file's content matches.",
         }.WithInput(InputKind.None);
         product.AcceptOnlyFromAmong(
             catalog.Products
@@ -66,7 +66,7 @@ internal static class ReviewCommand
         var standard = new StandardOptions(new CommandTraits
         {
             Input = new InputDocument(
-                "Source file to review; bounded content evidence selects the product.", "the review source"),
+                "Source file to review; its content decides which product reads it.", "the review source"),
             UsesFonts = true,
         });
         Command command = standard.CreateCommand(

@@ -445,10 +445,9 @@ public static partial class CliErrors
 
         return new CliException(
             ErrorCodes.FormatMismatch,
-            $"The extension of '{Path.GetFileName(path)}' declares product "
-                + $"'{declaredProduct}', but its content strongly matches: "
-                + $"{string.Join(", ", detectedProducts)}.",
-            hint: "Correct the file extension, or invoke the intended product command explicitly after verifying the file source.",
+            $"'{Path.GetFileName(path)}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
+                + $"but its content looks like {LooksLike(detectedProducts)}.",
+            hint: "Check where the file came from. " + ProductChoiceHint(detectedProducts),
             details: new JsonObject
             {
                 ["path"] = path,
@@ -458,8 +457,8 @@ public static partial class CliErrors
     }
 
     /// <summary>
-    /// Creates a fail-closed error when bounded content evidence cannot
-    /// validate the extension owner.
+    /// Creates a fail-closed error when the file's content does not show which product reads
+    /// it: it does not match the format its extension names, or no product recognizes it.
     /// </summary>
     public static CliException FormatUnrecognized(
         string path,
@@ -471,20 +470,18 @@ public static partial class CliErrors
             detectedProducts.Select(static value => JsonValue.Create(value)).ToArray());
         var available = new JsonArray(
             candidates.Select(static value => JsonValue.Create(value)).ToArray());
-        string declaration = declaredProduct is null
-            ? "No generic owner could be proven"
-            : $"The declared owner '{declaredProduct}' could not be validated";
-        string hint = detectedProducts.Count switch
-        {
-            0 => "Verify the file content, or invoke the intended product command explicitly. Generic routing does not fall back to an extension.",
-            1 => $"The content looks like a {detectedProducts[0]} document. Give the file its real extension, or select the product "
-                + $"explicitly: --product {detectedProducts[0]} where the command offers it, or the {detectedProducts[0]} commands.",
-            _ => $"The content looks like one of: {string.Join(", ", detectedProducts)}. Give the file its real extension, or select "
-                + "the product explicitly: --product <id> where the command offers it, or that product's commands.",
-        };
+        string file = Path.GetFileName(path);
+        string message = declaredProduct is null
+            ? $"The content of '{file}' does not show which product reads it."
+            : $"'{file}' has the {Path.GetExtension(path)} extension of a {declaredProduct} document, "
+                + "but its content does not look like one.";
+        string hint = detectedProducts.Count == 0
+            ? "Check what the file really is, or run the intended product's command on it explicitly. "
+                + "The product is never chosen from the extension alone."
+            : $"The content looks like {LooksLike(detectedProducts)}. " + ProductChoiceHint(detectedProducts);
         return new CliException(
             ErrorCodes.FormatMismatch,
-            $"{declaration} from the bounded content of '{Path.GetFileName(path)}'.",
+            message,
             hint: hint,
             details: new JsonObject
             {
@@ -495,6 +492,16 @@ public static partial class CliErrors
             });
     }
 
+    private static string LooksLike(IReadOnlyList<string> products) => products.Count == 1
+        ? $"a {products[0]} document"
+        : $"a document of one of: {string.Join(", ", products)}";
+
+    private static string ProductChoiceHint(IReadOnlyList<string> products) => products.Count == 1
+        ? $"Give the file its real extension, or select the product explicitly: --product {products[0]} where "
+            + $"the command offers it, or the {products[0]} commands."
+        : "Give the file its real extension, or select the product explicitly: --product <id> where the command "
+            + "offers it, or that product's commands.";
+
     /// <summary>Creates an ambiguous strong-content recognition error.</summary>
     public static CliException FormatAmbiguous(
         string path,
@@ -504,9 +511,10 @@ public static partial class CliErrors
 
         return new CliException(
             ErrorCodes.FormatAmbiguous,
-            $"The content of '{Path.GetFileName(path)}' strongly matches multiple products: "
+            $"The content of '{Path.GetFileName(path)}' looks like a document of more than one product: "
                 + $"{string.Join(", ", candidates)}.",
-            hint: "Choose the intended product explicitly; generic app/preview routing will not guess.",
+            hint: "Select the intended product explicitly: --product <id> where the command offers it, or that "
+                + "product's commands. The CLI does not guess between them.",
             details: new JsonObject
             {
                 ["path"] = path,
