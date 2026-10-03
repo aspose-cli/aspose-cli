@@ -36,6 +36,9 @@ internal static class CellsDiagnostics
     /// <summary>A delimited text input has a preamble before its header, empty rows or a total row.</summary>
     internal const string TextTableLayout = "TEXT_TABLE_LAYOUT";
 
+    /// <summary>An import copied formulas that read a link without cached values, and their results changed.</summary>
+    internal const string ExternalLinkCacheMissing = "EXTERNAL_LINK_CACHE_MISSING";
+
     /// <summary>Verification: the edit changed more cells than verification lists.</summary>
     internal static readonly DiagnosticDescriptor DiffTruncated = DiagnosticDescriptor.Verification("DIFF_TRUNCATED", "cells");
 
@@ -64,6 +67,7 @@ internal static class CellsDiagnostics
         Warning(EvaluationSheetAdded),
         Warning(EvaluationSheetSkipped),
         Warning(TextTableLayout),
+        Warning(ExternalLinkCacheMissing),
         DiffTruncated,
         FormulaErrors,
     ];

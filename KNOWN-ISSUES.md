@@ -37,6 +37,19 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   `import_range`.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-COPY-EXTERNAL-CACHE
+
+- **Defect:** `Worksheet.Copy` and `Range.Copy` from another workbook, when a copied formula
+  reads a third workbook through a link that caches no values (such as a link written while the
+  linked file was absent), give the destination's link an empty cache. The formula evaluates to
+  `#REF!` in the source but, once the destination is calculated, reads the linked cells as empty,
+  usually as 0.
+- **CLI behavior:** `import_sheet` and `import_range` with `"content": "all"` warn
+  `EXTERNAL_LINK_CACHE_MISSING` with the copied cells whose result changed this way.
+- **Workaround:** replace those formulas with `set_formula` or `set_values`, or save the source
+  in Excel with the linked workbook available so the link caches its values.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ## Aspose.PDF.Drawing 26.8.0
 
 ### PDF-HTML-EGRESS

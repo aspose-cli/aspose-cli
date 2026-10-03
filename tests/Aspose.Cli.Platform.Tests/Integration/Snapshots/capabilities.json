@@ -18310,6 +18310,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "EXTERNAL_LINK_CACHE_MISSING",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.external-link-cache-missing.message.v1",
+      "hintTemplateId": "cells.external-link-cache-missing.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "EXTRACT_BUDGET_EXCEEDED",
       "owner": "common",
       "severity": "error",

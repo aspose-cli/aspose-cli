@@ -22,12 +22,18 @@ internal sealed class CellsImportSources(
     IReadOnlyDictionary<string, string>? secrets) : IDisposable
 {
     private readonly Dictionary<string, LoadedWorkbook> _opened = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<Warning> _imports = [];
 
     internal ResourceBudgetLedger Budgets => budgets;
 
-    /// <summary>The warnings of the opened sources, such as resources they could not load.</summary>
+    /// <summary>
+    /// The warnings of the opened sources, such as resources they could not load, and of the
+    /// imports that read them.
+    /// </summary>
     internal IReadOnlyList<Warning>? Warnings() =>
-        EnvelopeParts.CombineWarnings([.. _opened.Values.Select(static loaded => loaded.Warnings())]);
+        EnvelopeParts.CombineWarnings([.. _opened.Values.Select(static loaded => loaded.Warnings()), _imports]);
+
+    internal void Warn(Warning warning) => _imports.Add(warning);
 
     internal Workbook Open(string path, string? passwordEnv)
     {
@@ -75,6 +81,11 @@ internal static class ImportOps
             });
         }
 
+        if (everything)
+        {
+            WarnUncachedLinks(source, origin, toSheet, to.Start.Row - from.Start.Row, to.Start.Column - from.Start.Column, sources);
+        }
+
         return from.CellCount;
     }
 
@@ -105,6 +116,7 @@ internal static class ImportOps
                 sheet.Copy(origin, new CopyOptions());
             }
 
+            WarnUncachedLinks(source, origin.Cells, sheet, 0, 0, sources);
             if (op.Position is { } position)
             {
                 sheet.MoveTo(position);
@@ -119,6 +131,83 @@ internal static class ImportOps
         }
 
         return null;
+    }
+
+    /// <summary>
+    /// Warns about copied formulas that read another workbook through a link without cached
+    /// values. In the source they evaluate to an error such as #REF!, but the copy gives the link
+    /// an empty cache, so here they evaluate as if the linked cells were empty, usually to 0
+    /// (known issue CELLS-COPY-EXTERNAL-CACHE, KNOWN-ISSUES.md). Only the copied cells of a
+    /// source with links are scanned, and only their formulas that show an error and read a link
+    /// are evaluated, without calculating other cells or writing a result back, so the edit's
+    /// own recalculation, or --no-recalc, decides what the output stores.
+    /// </summary>
+    private static void WarnUncachedLinks(
+        Workbook source,
+        System.Collections.IEnumerable copiedFrom,
+        Worksheet to,
+        int rowOffset,
+        int columnOffset,
+        CellsImportSources sources)
+    {
+        if (source.Worksheets.ExternalLinks.Count == 0)
+        {
+            return;
+        }
+
+        var evaluation = new CalculationOptions { Recursive = false };
+        var changed = new List<string>();
+        var files = new SortedSet<string>(StringComparer.OrdinalIgnoreCase);
+        long scanned = 0;
+        foreach (Cell cell in copiedFrom)
+        {
+            if (++scanned % 4096 == 0)
+            {
+                sources.Budgets.Deadline.ThrowIfExpired("import-links");
+            }
+
+            if (!cell.IsFormula || cell.Type != CellValueType.IsError)
+            {
+                continue;
+            }
+
+            string[] linked = (cell.GetPrecedents()?.Cast<ReferredArea>() ?? [])
+                .Where(static precedent => precedent.IsExternalLink)
+                .Select(static precedent => Path.GetFileName(precedent.ExternalFileName))
+                .ToArray();
+            if (linked.Length == 0
+                || to.Cells.CheckCell(cell.Row + rowOffset, cell.Column + columnOffset) is not { IsFormula: true } copied)
+            {
+                continue;
+            }
+
+            // Evaluates the copied formula on its sheet; Recursive = false reads other cells'
+            // stored values instead of calculating them, so no cell changes.
+            if (to.CalculateFormula("=ISERROR(" + copied.Formula[1..] + ")", evaluation) is false)
+            {
+                changed.Add(copied.Name);
+                files.UnionWith(linked);
+            }
+        }
+        if (changed.Count == 0)
+        {
+            return;
+        }
+
+        const int Listed = 10;
+        string sheet = Sheets.QuotedName(to.Name);
+        string cells = string.Join(", ", changed.Take(Listed)) + (changed.Count > Listed ? $" and {changed.Count - Listed} more" : string.Empty);
+        sources.Warn(new Warning
+        {
+            Code = CellsDiagnostics.ExternalLinkCacheMissing,
+            Message = $"{changed.Count} imported formula(s) on '{to.Name}' ({cells}) read {string.Join(", ", files)} through a link "
+                + "that caches no values: in the source they show an error such as #REF!, but here they read the linked cells as empty, "
+                + "usually as 0, and so do the formulas that depend on them.",
+            Hint = "Recalculation never opens the linked workbook. Replace these formulas with set_formula or set_values, or open the "
+                + "source in Excel with the linked workbook available and save it so the link caches its values.",
+            Docs = "cells/editing",
+            Location = sheet + "!" + changed[0],
+        });
     }
 
     /// <summary>
