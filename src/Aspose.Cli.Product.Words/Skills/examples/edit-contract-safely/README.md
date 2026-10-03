@@ -18,7 +18,8 @@ The source keeps the thirty-day notice period. The output holds the
 forty-five-day period as tracked revisions by Legal Ops and their comment on
 the Termination heading, and `verification`
 reports `semanticChangesDetected` with a nonzero `revisionCount`. Review reports
-`WORDS_REVISIONS_PRESENT`: leave the revisions for the user to accept or reject.
+`WORDS_REVISIONS_PRESENT` and `WORDS_COMMENTS_PRESENT`: leave the revisions and
+the comment for the user to resolve.
 
 `words compare` needs revision-free inputs, so compare copies only after the
 user has decided on the revisions.

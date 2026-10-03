@@ -32,6 +32,7 @@ internal static class WordsContractSamples
             RevisionsPresent = true,
             RevisionCount = 2,
             RevisionAuthors = ["Reviewer"],
+            CommentCount = 1,
             Protection = "none",
             Signed = false,
         },

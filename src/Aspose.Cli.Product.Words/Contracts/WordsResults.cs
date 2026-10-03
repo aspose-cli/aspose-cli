@@ -35,6 +35,7 @@ public sealed record DocumentSummary
     public required bool RevisionsPresent { get; init; }
     public required int RevisionCount { get; init; }
     public required IReadOnlyList<string> RevisionAuthors { get; init; }
+    public required int CommentCount { get; init; }
     public required string Protection { get; init; }
     public required bool Signed { get; init; }
 }

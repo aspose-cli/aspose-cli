@@ -1,6 +1,7 @@
 # Revisions and comparison
 
 Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
+`document.commentCount`,
 `document.protection` and `document.signed` in the `words inspect` result.
 Editing a document that already has revisions reports `TRACKED_CHANGES_PRESENT`
 while a Word format output still contains revisions; disclose them. A batch

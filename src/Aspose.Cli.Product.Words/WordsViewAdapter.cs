@@ -69,6 +69,14 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
                 RepairHint));
         }
 
+        if (info.Document.CommentCount > 0)
+        {
+            findings.Add(WordsReviewChecks.CommentsPresent.Finding(
+                $"The document contains {info.Document.CommentCount} comment(s).",
+                "document",
+                "Disclose the comments; remove them with remove_comments only when the user asks."));
+        }
+
         return new ProductReviewAssessment
         {
             Findings = findings,

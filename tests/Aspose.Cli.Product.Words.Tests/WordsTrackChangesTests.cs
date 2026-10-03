@@ -78,6 +78,7 @@ public sealed class WordsTrackChangesTests
         DocumentInfoResult info = fixture.Engine.GetInfo(commented, new DocumentInfoRequest { Details = ["comments", "revisions"] });
 
         Assert.Equal("Check the figure.", Assert.Single(info.Comments!).Text);
+        Assert.Equal(1, info.Document.CommentCount);
         Assert.Equal(["deletion:twelve", "insertion:fifteen"], info.Revisions!.Select(static r => $"{r.Type}:{r.Text}"));
 
         string removed = fixture.Temp.File("removed.docx");
