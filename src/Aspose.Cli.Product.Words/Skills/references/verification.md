@@ -50,6 +50,9 @@ checks are listed with `aspose-cli capabilities words --output json` under
 - `WORDS_OBJECT_OUTSIDE_PAGE`: a floating image or shape crosses the page edge.
 - `WORDS_REVISIONS_PRESENT` (info): tracked revisions are shown; never accept
   them as a visual repair.
+- `WORDS_COMMENTS_PRESENT` (info): the document keeps comments
+  (`document.commentCount` in `words inspect`); disclose them, and remove them
+  with `remove_comments` only when the user asks.
 
 ```powershell
 aspose-cli review output.docx --out output.review-2 --code WORDS_HEADING_ORPHANED --code WORDS_PAGE_BLANK --output json

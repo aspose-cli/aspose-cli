@@ -6804,6 +6804,11 @@
             "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
           },
           {
+            "code": "WORDS_COMMENTS_PRESENT",
+            "severity": "info",
+            "summary": "The document contains comments, which a delivered document usually should not keep."
+          },
+          {
             "code": "WORDS_DOCUMENT_EMPTY",
             "severity": "warning",
             "summary": "The document has no readable text, tables or images."
@@ -14417,6 +14422,7 @@
             "SLIDES_TEXT_OVERFLOWS_SHAPE",
             "SLIDES_TEXT_OVERLAPS_OBJECT",
             "SLIDES_TEXT_TOO_SMALL",
+            "WORDS_COMMENTS_PRESENT",
             "WORDS_DOCUMENT_EMPTY",
             "WORDS_HEADING_ORPHANED",
             "WORDS_OBJECT_OUTSIDE_PAGE",

@@ -103,6 +103,9 @@ public sealed class WordsCliTests : IDisposable
         builder.Font.Size = 12;
         builder.Writeln("Tracked clause.");
         document.StopTrackRevisions();
+        var comment = new Comment(document, "Reviewer", "R", DateTime.UnixEpoch);
+        comment.SetText("Confirm the clause.");
+        builder.CurrentParagraph.AppendChild(comment);
         document.Save(_workspace.File("findings.docx"));
 
         CliResult reviewed = _workspace.Run(
@@ -116,6 +119,7 @@ public sealed class WordsCliTests : IDisposable
         Assert.Contains("WORDS_TEXT_TOO_SMALL", codes);
         Assert.Contains("WORDS_TEXT_TOO_LARGE", codes);
         Assert.Contains("WORDS_REVISIONS_PRESENT", codes);
+        Assert.Contains("WORDS_COMMENTS_PRESENT", codes);
 
         CliResult filtered = _workspace.Run(
             "review", "findings.docx", "--out", "filtered", "--code", "WORDS_TEXT_TOO_SMALL", "--output", "json");

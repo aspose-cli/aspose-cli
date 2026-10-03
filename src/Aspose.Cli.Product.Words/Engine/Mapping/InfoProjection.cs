@@ -45,6 +45,7 @@ internal static class InfoProjection
                 RevisionCount = document.Revisions.Count,
                 RevisionAuthors = document.Revisions.Cast<Revision>().Select(static r => r.Author)
                     .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
+                CommentCount = document.GetChildNodes(NodeType.Comment, true).Count,
                 Protection = WordsProtection.ToMode(document.ProtectionType),
                 Signed = loaded.Format.HasDigitalSignature,
             },
