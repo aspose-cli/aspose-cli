@@ -26,7 +26,8 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 ```
 
 - One entry is one change: adjacent runs and paragraph marks that one author
-  inserted, deleted or moved are listed together. `type` is `insertion`, `deletion`,
+  inserted, deleted or moved are listed together, except inside comment text,
+  where each run and paragraph mark is its own entry. `type` is `insertion`, `deletion`,
   `formatChange`, `styleDefinitionChange` or `moving`.
 - `text` is the new text of an insertion and the original text of a deletion.
   Format and style definition changes have no `text`; read the `block` instead.
