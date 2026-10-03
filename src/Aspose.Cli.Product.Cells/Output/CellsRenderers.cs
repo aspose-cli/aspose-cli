@@ -77,14 +77,7 @@ internal static class CellsRenderers
         string[] columns,
         Func<T, string[]> row)
     {
-        if (items is null)
-        {
-            return;
-        }
-
-        surface.Out.WriteLine();
-        surface.Out.WriteLine($"{heading}: {(items.Count == 0 ? "none" : TableText.Int(items.Count))}");
-        if (items.Count == 0)
+        if (items is null || !ResultText.Section(surface, heading, items.Count == 0))
         {
             return;
         }

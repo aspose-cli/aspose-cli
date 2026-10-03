@@ -182,12 +182,13 @@ public sealed class CellsCliTests : IDisposable
             "cells", "inspect", "book.xlsx", "--detail", "names", "errors", "charts", "--output", format);
 
         Assert.True(inspected.ExitCode == 0, inspected.StdErr);
-        Assert.Contains("charts:", inspected.StdOut, StringComparison.Ordinal);
+        string Heading(string title) => format == "markdown" ? $"### {title}" : $"{title}:";
+        Assert.Contains(Heading("charts"), inspected.StdOut, StringComparison.Ordinal);
         Assert.Contains("column", inspected.StdOut, StringComparison.Ordinal);
-        Assert.Contains("names:", inspected.StdOut, StringComparison.Ordinal);
+        Assert.Contains(Heading("names"), inspected.StdOut, StringComparison.Ordinal);
         Assert.Contains("SalesTotal", inspected.StdOut, StringComparison.Ordinal);
         Assert.Contains("=Data!$B$2:$B$3", inspected.StdOut, StringComparison.Ordinal);
-        Assert.Contains("formula errors:", inspected.StdOut, StringComparison.Ordinal);
+        Assert.Contains(Heading("formula errors"), inspected.StdOut, StringComparison.Ordinal);
         Assert.Contains("#DIV/0!", inspected.StdOut, StringComparison.Ordinal);
     }
 
