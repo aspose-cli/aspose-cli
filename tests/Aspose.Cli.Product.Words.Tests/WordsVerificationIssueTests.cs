@@ -82,10 +82,20 @@ public sealed class WordsVerificationIssueTests
     [InlineData("flatopc")]
     public void Hint_ForAWordFormatOutput_DoesNotAdviseSavingToAWordFormat(string format)
     {
-        string hint = WordsMutationService.KeepStateHint("fields", format);
+        string hint = WordsMutationService.KeepStateHint("fields", format, WordsFormats.WordIds);
 
         Assert.DoesNotContain("save to", hint, StringComparison.Ordinal);
         Assert.Contains($"did not survive save and reopen in {format}", hint, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("odt")]
+    [InlineData("rtf")]
+    public void Hint_ForRevisionsInAFormatThatStoresThem_DoesNotAdviseAnotherFormat(string format)
+    {
+        string hint = WordsMutationService.KeepStateHint("tracked revisions", format, WordsFormats.RevisionIds);
+
+        Assert.DoesNotContain("save to", hint, StringComparison.Ordinal);
     }
 
     [Fact]

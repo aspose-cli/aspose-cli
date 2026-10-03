@@ -265,7 +265,7 @@ internal sealed class WordsMutationService
             issues.Add(VerificationIssue.Of(
                 WordsDiagnostics.FieldCountChanged,
                 $"Field count changed during save/reopen: expected {expected.FieldCount}, found {fieldCount}.",
-                hint: KeepStateHint("fields", format)));
+                hint: KeepStateHint("fields", format, WordsFormats.WordIds)));
         }
 
         if (revisionCount != expected.RevisionCount)
@@ -273,7 +273,7 @@ internal sealed class WordsMutationService
             issues.Add(VerificationIssue.Of(
                 WordsDiagnostics.RevisionCountChanged,
                 $"Revision count changed during save/reopen: expected {expected.RevisionCount}, found {revisionCount}.",
-                hint: KeepStateHint("tracked revisions", format)));
+                hint: KeepStateHint("tracked revisions", format, WordsFormats.RevisionIds)));
         }
 
         if (!string.Equals(protection, expected.Protection, StringComparison.Ordinal))
@@ -281,7 +281,7 @@ internal sealed class WordsMutationService
             issues.Add(VerificationIssue.Of(
                 WordsDiagnostics.ProtectionChanged,
                 $"Protection changed during save/reopen: expected {expected.Protection}, found {protection}.",
-                hint: KeepStateHint("protection", format)));
+                hint: KeepStateHint("protection", format, WordsFormats.WordIds)));
         }
 
         Document comparisonBaseline = baseline.Clone();
@@ -308,11 +308,12 @@ internal sealed class WordsMutationService
     }
 
     /// <summary>
-    /// Advises a Word format only when the output is not one; otherwise the state was lost by
-    /// a save that already used a Word format, and repeating it would not help.
+    /// The hint for state lost in <paramref name="format"/>. Advises another format only when
+    /// <paramref name="format"/> is not one of <paramref name="keepingFormats"/>; otherwise a
+    /// format that can keep the state lost it, and saving to another would not help.
     /// </summary>
-    internal static string KeepStateHint(string state, string format) =>
-        WordsFormats.WordIds.Contains(format, StringComparer.Ordinal)
+    internal static string KeepStateHint(string state, string format, IReadOnlyList<string> keepingFormats) =>
+        keepingFormats.Contains(format, StringComparer.Ordinal)
             ? $"The {state} did not survive save and reopen in {format}; check the output with 'aspose-cli words inspect' before relying on it."
             : $"{format} may not keep {state}; save to docx or another Word format and verify again.";
 
