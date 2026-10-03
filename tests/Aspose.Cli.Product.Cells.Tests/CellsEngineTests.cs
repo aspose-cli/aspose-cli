@@ -215,6 +215,27 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void ALinkTheBatchStoresByFileNameAloneIsDisclosedOnce()
+    {
+        string source = _fixture.CreateSalesWorkbook("relative-link.xlsx");
+        string beside = System.Text.Json.JsonSerializer.Serialize(
+            "='" + Path.GetDirectoryName(source) + "\\[fx.xlsx]Rates'!$B$2");
+        string output = _fixture.Temp.File("relative-link.out.xlsx");
+
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps($$"""{"ops":[{"op":"set_formula","sheet":"Data","range":"E5","formula":{{beside}}},{"op":"set_formula","sheet":"Data","range":"E6","formula":"='C:\\far\\[far.xlsx]Rates'!$B$2"}]}"""),
+            new EditRequest { OutputPath = output, Overwrite = true });
+        EditResult again = _fixture.Engine.ApplyOps(output,
+            ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E7","formula":"='[fx.xlsx]Rates'!$B$3"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("relative-link-again.out.xlsx"), Overwrite = true });
+
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
+        Assert.Contains("fx.xlsx", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("far.xlsx", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(again.Warnings ?? [], static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
+    }
+
+    [Fact]
     public void GetInfo_ReportsSheetStructure()
     {
         string path = _fixture.CreateSalesWorkbook("info.xlsx");

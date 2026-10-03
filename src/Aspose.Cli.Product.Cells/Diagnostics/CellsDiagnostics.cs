@@ -44,6 +44,9 @@ internal static class CellsDiagnostics
     /// <summary>An import copied formulas that read a link without cached values, and their results changed.</summary>
     internal const string ExternalLinkCacheMissing = "EXTERNAL_LINK_CACHE_MISSING";
 
+    /// <summary>An edit added a link that the output stores as a file name relative to its folder.</summary>
+    internal const string ExternalLinkRelative = "EXTERNAL_LINK_RELATIVE";
+
     /// <summary>Verification: the edit changed more cells than verification lists.</summary>
     internal static readonly DiagnosticDescriptor DiffTruncated = DiagnosticDescriptor.Verification("DIFF_TRUNCATED", "cells");
 
@@ -74,6 +77,7 @@ internal static class CellsDiagnostics
         Warning(EvaluationNoticeAdded),
         Warning(TextTableLayout),
         Warning(ExternalLinkCacheMissing),
+        Warning(ExternalLinkRelative),
         Warning(ChartSplitAcrossPages),
         DiffTruncated,
         FormulaErrors,

@@ -116,6 +116,37 @@ public sealed class CellsKnownIssueTests
     }
 
     [LicensedFact]
+    public void ALinkToAFileBesideTheOpenedWorkbook_IsSavedAsARelativePathMissingTarget()
+    {
+        using var fixture = new CellsFixture();
+        string opened = fixture.Temp.File(Path.Combine("opened", "book.xlsx"));
+        Directory.CreateDirectory(Path.GetDirectoryName(opened)!);
+        using (var created = new Workbook())
+        {
+            created.Save(opened, SaveFormat.Xlsx);
+        }
+        string saved = fixture.Temp.File(Path.Combine("elsewhere", "book.xlsx"));
+        Directory.CreateDirectory(Path.GetDirectoryName(saved)!);
+
+        using (var workbook = new Workbook(opened))
+        {
+            workbook.Worksheets[0].Cells["A1"].Formula = "='" + Path.GetDirectoryName(opened) + "\\[fx.xlsx]Rates'!$B$2";
+            workbook.Save(saved, SaveFormat.Xlsx);
+        }
+
+        using var package = System.IO.Compression.ZipFile.OpenRead(saved);
+        using var rels = new StreamReader(package.GetEntry("xl/externalLinks/_rels/externalLink1.xml.rels")!.Open());
+        System.Xml.Linq.XElement link = System.Xml.Linq.XDocument.Parse(rels.ReadToEnd()).Root!.Elements().Single();
+        string type = (string)link.Attribute("Type")!;
+        string target = (string)link.Attribute("Target")!;
+
+        KnownIssue.Reproduces(
+            "CELLS-LINK-RELATIVE-TARGET",
+            type.EndsWith("/xlPathMissing", StringComparison.Ordinal) && target == "fx.xlsx",
+            $"the link to the opened folder's fx.xlsx, saved to another folder, has type {type} and target {target}");
+    }
+
+    [LicensedFact]
     public void ValueWidth_MeasuresEastAsianTextInALatinFontNarrowerThanAutoFitAndRendering()
     {
         using var workbook = new Workbook();

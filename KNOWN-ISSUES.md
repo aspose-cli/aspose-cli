@@ -51,6 +51,19 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   in Excel with the linked workbook available so the link caches its values.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-LINK-RELATIVE-TARGET
+
+- **Defect:** a formula that reads a workbook by its full path, when that workbook is in the
+  folder the edited workbook was opened from, gets a link to the file name alone. An xlsx output
+  stores it as the relative target `fx.xlsx` with the relationship type `xlPathMissing`, so once
+  saved to another folder the link no longer names the file in the input's folder. How Excel
+  resolves an `xlPathMissing` target is unverified.
+- **CLI behavior:** `cells edit` warns `EXTERNAL_LINK_RELATIVE` with the stored targets when the
+  batch adds a link whose target is a file name without a folder.
+- **Workaround:** keep the linked workbook in the output's folder, or bring its values in with
+  `import_range` instead of a link.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ### CELLS-WIDTH-EAST-ASIAN
 
 - **Defect:** `Cell.GetWidthOfValue` (and `CellsHelper.GetTextWidth`) measures East Asian

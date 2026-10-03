@@ -18473,6 +18473,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "EXTERNAL_LINK_RELATIVE",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.external-link-relative.message.v1",
+      "hintTemplateId": "cells.external-link-relative.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "EXTRACT_BUDGET_EXCEEDED",
       "owner": "common",
       "severity": "error",

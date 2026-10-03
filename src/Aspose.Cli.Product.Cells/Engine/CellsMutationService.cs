@@ -70,10 +70,12 @@ internal sealed class CellsMutationService
             loaded.IsEncrypted ? options.Password : null);
         using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
         var protection = new CellsProtectionTracker();
+        string[] linksBefore = LinkSources(workbook);
         (IReadOnlyList<BoundedOperationOutcome> applied, bool defaultedToActiveSheet) = ApplyOperations(
             workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs, importSources, protection);
         Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
         Warning? unenforced = protection.Warning(format);
+        Warning? relativeLinks = RelativeLinkWarning(workbook, linksBefore);
         if (options.Recalculate)
         {
             workbook.CalculateFormula();
@@ -85,13 +87,22 @@ internal sealed class CellsMutationService
         {
             saved = _saver.Stage(transaction, workbook, savePlan, options.OutputPath, options.Overwrite,
                 options.BackupPath, precondition, verifyReopen: true);
+        }
+
+        IReadOnlyList<Warning>? warnings = options.Options.DryRun
+            ? EnvelopeParts.CombineWarnings(loaded.Warnings(skippedSheet, unenforced, relativeLinks), importSources.Warnings())
+            : EnvelopeParts.CombineWarnings(
+                CombineWarnings(licenseState, loaded.Resources.CoverageWarning, skippedSheet, unenforced, relativeLinks, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded,
+                    CellsEvaluation.DescribeAddedNotice(licenseState, format)),
+                importSources.Warnings(),
+                EnvelopeParts.BackupWarnings(saved?.Backup));
+        if (transaction is not null)
+        {
             if (options.Verify)
             {
-                verification = _verifier.Verify(saved.Candidate, baseline!.Path, filePath,
-                    options.Password, savePlan.OutputPassword, batch,
-                    EnvelopeParts.CombineWarnings(
-                        CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning),
-                        importSources.Warnings()));
+                // Verification reports the warnings that make the output incomplete as issues.
+                verification = _verifier.Verify(saved!.Candidate, baseline!.Path, filePath,
+                    options.Password, savePlan.OutputPassword, batch, warnings);
             }
             transaction.Commit();
         }
@@ -106,12 +117,7 @@ internal sealed class CellsMutationService
             Backup = saved?.Backup,
             Verification = verification,
             License = EnvelopeParts.License(licenseState),
-            Warnings = options.Options.DryRun ? EnvelopeParts.CombineWarnings(loaded.Warnings(skippedSheet, unenforced), importSources.Warnings())
-                : EnvelopeParts.CombineWarnings(
-                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, skippedSheet, unenforced, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded,
-                        CellsEvaluation.DescribeAddedNotice(licenseState, format)),
-                    importSources.Warnings(),
-                    EnvelopeParts.BackupWarnings(saved?.Backup)),
+            Warnings = warnings,
         };
     }
 
@@ -148,5 +154,34 @@ internal sealed class CellsMutationService
             },
             (op, _) => OpsFootprint.OutcomeTargets(op));
         return (applied, handlers.DefaultedToActiveSheet);
+    }
+
+    private static string[] LinkSources(Workbook workbook) =>
+        workbook.Worksheets.ExternalLinks.Cast<ExternalLink>()
+            .Where(static link => link.Type == ExternalLinkType.External)
+            .Select(static link => link.DataSource)
+            .ToArray();
+
+    /// <summary>
+    /// Discloses links the batch added whose target is a file name without a folder, which the
+    /// output stores relative to its own folder. A link written with the full path of a file in
+    /// the input's folder is stored this way too (known issue CELLS-LINK-RELATIVE-TARGET,
+    /// KNOWN-ISSUES.md).
+    /// </summary>
+    private static Warning? RelativeLinkWarning(Workbook workbook, string[] before)
+    {
+        string[] added = LinkSources(workbook)
+            .Where(source => !string.IsNullOrEmpty(source)
+                && Path.GetFileName(source) == source
+                && !before.Contains(source, StringComparer.OrdinalIgnoreCase))
+            .ToArray();
+        return added.Length == 0 ? null : new Warning
+        {
+            Code = CellsDiagnostics.ExternalLinkRelative,
+            Message = $"The output stores the target of its new link(s) as {string.Join(", ", added)}: a file name without a folder, "
+                + "relative to the output's folder. A link written with the full path of a file in the input's folder is stored this way too.",
+            Hint = "Keep the linked workbook(s) in the same folder as the output, or bring their values in with import_range instead of a link.",
+            Docs = "cells/editing",
+        };
     }
 }

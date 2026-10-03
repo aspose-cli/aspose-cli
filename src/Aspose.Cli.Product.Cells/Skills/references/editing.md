@@ -158,8 +158,10 @@ cells:
 - A formula you write that reads another workbook
   (`='C:\data\[fx.xlsx]Rates'!$B$2`) creates a link without cached values,
   since the CLI never opens the linked file: it stays `#REF!`, which `--verify`
-  reports, until Excel updates the link. A link to a file in the workbook's
-  own folder is stored by file name alone (`='[fx.xlsx]Rates'!$B$2`). To use
+  reports, until Excel updates the link. A link to a file in the folder the
+  workbook was opened from is stored by file name alone
+  (`='[fx.xlsx]Rates'!$B$2`), relative to the output's folder; the edit warns
+  `EXTERNAL_LINK_RELATIVE`, so keep the linked file beside the output. To use
   the linked values, bring them in with `import_range` instead.
 - An encrypted source needs `passwordEnv`. Sources open once per batch; the
   edited file can be a source, read as it is on disk before the edit.
