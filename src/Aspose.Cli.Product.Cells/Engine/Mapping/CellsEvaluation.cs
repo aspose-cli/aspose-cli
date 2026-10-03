@@ -1,6 +1,7 @@
 using System.Text.RegularExpressions;
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Licensing;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -69,6 +70,30 @@ internal static partial class CellsEvaluation
             Hint = "Keep the sheet: it discloses evaluation output, and a license avoids it. Later commands that default to the active sheet skip it and warn EVALUATION_SHEET_SKIPPED; --sheet chooses any sheet.",
             Docs = "cells/troubleshooting",
             Location = added,
+        };
+    }
+
+    /// <summary>
+    /// Discloses the evaluation notice an unlicensed save writes into a data output as content,
+    /// where a reader takes it for data: a last row of CSV and TSV, a closing Markdown heading,
+    /// JSON records and warning sheets. Other formats carry it as a watermark, which
+    /// <c>EVAL_MODE</c> discloses; null for them and for a licensed save.
+    /// </summary>
+    internal static Warning? DescribeAddedNotice(LicenseState licenseState, string formatId)
+    {
+        string? where = licenseState != LicenseState.Evaluation ? null : formatId switch
+        {
+            "csv" or "tsv" => $"as the last row of the {formatId} output, after the data",
+            "md" => "as a heading after the table in the md output",
+            "json" => "in the json output, as a {\"watermark\": ...} record after the records of each sheet that has data rows and as the entry of each 'Evaluation Warning' sheet",
+            _ => null,
+        };
+        return where is null ? null : new Warning
+        {
+            Code = CellsDiagnostics.EvaluationNoticeAdded,
+            Message = $"Evaluation mode wrote the notice '{Notice}...' {where}; it is not workbook data.",
+            Hint = "Tell the user, and remove the notice before anything reads the output as data; a license avoids it.",
+            Docs = "cells/troubleshooting",
         };
     }
 

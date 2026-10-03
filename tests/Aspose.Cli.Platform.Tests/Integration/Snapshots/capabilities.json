@@ -18366,6 +18366,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "EVALUATION_NOTICE_ADDED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.evaluation-notice-added.message.v1",
+      "hintTemplateId": "cells.evaluation-notice-added.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "EVALUATION_SHEET_ADDED",
       "owner": "cells",
       "severity": "warning",

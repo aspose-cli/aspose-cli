@@ -132,7 +132,8 @@ internal sealed class CellsProductionService
             // Only a text export without --sheet writes one sheet chosen by default; the other
             // formats write every sheet.
             Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
-                loaded.SkippedSheetWarning(request.SheetName is null && request.TargetFormatId is "csv" or "tsv" or "md"), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, .. textLayout]),
+                loaded.SkippedSheetWarning(request.SheetName is null && request.TargetFormatId is "csv" or "tsv" or "md"), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded,
+                CellsEvaluation.DescribeAddedNotice(licenseState, request.TargetFormatId), .. textLayout]),
         };
     }
 
@@ -161,7 +162,8 @@ internal sealed class CellsProductionService
             Output = saved.Output,
             Sheets = request.SheetNames,
             License = EnvelopeParts.License(licenseState),
-            Warnings = CombineWarnings(licenseState, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, saved.EvaluationSheetAdded),
+            Warnings = CombineWarnings(licenseState, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, saved.EvaluationSheetAdded,
+                CellsEvaluation.DescribeAddedNotice(licenseState, saved.Format)),
         };
     }
 

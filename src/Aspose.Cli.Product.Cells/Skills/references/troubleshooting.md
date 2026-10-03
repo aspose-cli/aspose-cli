@@ -34,6 +34,7 @@ to workbooks.
 | `EXTERNAL_LINK_CACHE_MISSING` | `import_sheet` or `import_range` (`all`) copied formulas that read another workbook through a link that caches no values. They show `#REF!` in the source but read the linked cells as empty, usually 0, here; the message lists them and `location` names the first. Replace them with `set_formula` or `set_values`. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
 | `EVALUATION_SHEET_ADDED` | An evaluation save added the warning sheet `location` names and made it the active sheet in place of the one the message names; see below. |
+| `EVALUATION_NOTICE_ADDED` | An evaluation save wrote its notice into a CSV, TSV, Markdown or JSON output as content (a last row, a heading, records and warning sheets); it is not data. See below. |
 | `EVALUATION_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
 | `PROTECTION_NOT_ENFORCED` | The edit changed a protected sheet (`location` names it when there is one) or the protected workbook structure; protection guides Excel only, so the edit went through it. Confirm the change is authorized. |
 | `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes, rows that hold at most one value each (`1:2`: the header is the row after them), empty rows lie inside the table, or a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`). The rows are imported as they are; see below. |
@@ -79,10 +80,14 @@ gains an "Evaluation Warning" sheet plus watermark content. Disclose it
   sheet order.
 - Each further save adds another ("Evaluation Warning (1)", ...); `inspect`
   lists them. Do not delete them.
-- Data projections carry the marks too: a CSV gains a trailing watermark row,
-  Markdown a trailing `# Evaluation Only` heading, whole-workbook JSON the
-  warning sheets.
-- CSV, TSV and Markdown export only the first worksheet (`EVALUATION_LIMIT`
-  above).
+- Data outputs carry the notice as content, and the result warns
+  `EVALUATION_NOTICE_ADDED`: CSV and TSV gain an `Evaluation Only. ...` last
+  row after the data, Markdown a closing `# Evaluation Only. ...` heading, and
+  JSON a `{"watermark": ...}` record after the records of each sheet with data
+  rows, plus the warning sheets. Remove it before anything reads the output as data.
+- CSV, TSV and Markdown export only the first worksheet. Without `--sheet` the
+  first sheet is written even when another one is active, and
+  `SHEETS_DROPPED` names it; `--sheet` naming another sheet fails with
+  `EVALUATION_LIMIT` and writes nothing.
 - A licensed re-save does not remove existing marks. Rebuild the licensed
   deliverable from the original unmarked inputs.

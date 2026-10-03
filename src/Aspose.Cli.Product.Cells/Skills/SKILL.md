@@ -128,8 +128,10 @@ error.
 Saved workbooks gain an "Evaluation Warning" sheet that becomes the active
 sheet (`EVALUATION_SHEET_ADDED`); commands that default to the active sheet
 then use the first other sheet (`EVALUATION_SHEET_SKIPPED`). CSV, TSV and
-Markdown export only the first worksheet
-(`EVALUATION_LIMIT`). Effects and fixes: `aspose-cli docs cells/troubleshooting`.
+Markdown export only the first worksheet (`SHEETS_DROPPED` names it;
+`--sheet` naming another one is `EVALUATION_LIMIT`), and CSV, TSV, Markdown
+and JSON output gain the evaluation notice as content
+(`EVALUATION_NOTICE_ADDED`). Effects and fixes: `aspose-cli docs cells/troubleshooting`.
 
 ## Pitfalls
 

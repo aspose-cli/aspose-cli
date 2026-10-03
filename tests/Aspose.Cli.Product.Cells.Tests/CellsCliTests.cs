@@ -222,7 +222,7 @@ public sealed class CellsCliTests : IDisposable
     /// the in-process engine suite needs a license.
     /// </summary>
     [Fact]
-    public void Evaluation_DisclosesTheWatermarkAndRefusesASilentSheetSubstitution()
+    public void Evaluation_DisclosesTheWatermarkAndTheNoticeInDataAndRefusesASilentSheetSubstitution()
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Dashboard,Detail").ExitCode);
         Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place",
@@ -233,7 +233,6 @@ public sealed class CellsCliTests : IDisposable
             "--sheet", "Detail", "--out", "report.csv", "--overwrite", "--output", "json");
         CliResult converted = _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv",
             "--out", "first.csv", "--output", "json");
-        CliResult inspected = _workspace.Run("cells", "inspect", "book.xlsx", "--output", "json");
 
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
@@ -247,9 +246,23 @@ public sealed class CellsCliTests : IDisposable
         JsonNode watermark = Assert.Single(result["warnings"]!.AsArray(),
             static warning => warning!["code"]!.GetValue<string>() == "EVAL_MODE")!;
         Assert.False(string.IsNullOrWhiteSpace(watermark["hint"]?.GetValue<string>()));
-        Assert.True(inspected.ExitCode == 0, inspected.StdErr);
-        Assert.Equal("evaluation", JsonNode.Parse(inspected.StdOut)!["license"]!["mode"]!.GetValue<string>());
+        // Without --sheet the first sheet is exported, and the evaluation notice becomes its last row.
+        Assert.Contains("Only worksheet 'Dashboard' was exported", Assert.Single(result["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "SHEETS_DROPPED")!["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.StartsWith("Evaluation Only.", File.ReadAllLines(_workspace.File("first.csv"))[^1], StringComparison.Ordinal);
+        Assert.Contains("last row", Notice(result)["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        CliResult json = _workspace.Run("cells", "convert", "book.xlsx", "--to", "json", "--out", "book.json", "--output", "json");
+        Assert.Contains("\"Evaluation Warning\"", File.ReadAllText(_workspace.File("book.json")), StringComparison.Ordinal);
+        Assert.Contains("\"watermark\"", Notice(JsonNode.Parse(json.StdOut)!)["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        CliResult edited = _workspace.Run("cells", "edit", "book.xlsx", "--out", "edited.tsv", "--set", "Dashboard!B1=1", "--output", "json");
+        Assert.StartsWith("Evaluation Only.", File.ReadAllLines(_workspace.File("edited.tsv"))[^1], StringComparison.Ordinal);
+        _ = Notice(JsonNode.Parse(edited.StdOut)!);
+        // A watermarked format carries the notice as a watermark, which EVAL_MODE already discloses.
+        Assert.Null(CellsEvaluation.DescribeAddedNotice(Aspose.Cli.Sdk.Licensing.LicenseState.Evaluation, "pdf"));
     }
+
+    private static JsonNode Notice(JsonNode result) =>
+        Assert.Single(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_NOTICE_ADDED")!;
 
     /// <summary>
     /// An evaluation save adds a warning sheet and activates it; the save says so, and later
