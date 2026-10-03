@@ -60,17 +60,20 @@ internal sealed class WordsMutationService
         SourceInfo input = InfoProjection.Source(filePath, loaded);
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
-        IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded, batch);
-        IReadOnlyList<int> originalPages = ResolveOriginalPages(loaded.Document, resolved);
+        Node[] blocksBefore = BodyBlocks(loaded.Document).ToArray();
+        var blocks = new DocumentBlockIndex(loaded.Document, loaded.Evaluation);
+        IReadOnlyList<ResolvedWordsOp> resolved = WordsAnchorResolver.Resolve(loaded.Document, blocks, batch);
         Document? baseline = request.Verify ? loaded.Document.Clone() : null;
         WordsRevisionTracking? tracking = request.TrackChanges
             ? new WordsRevisionTracking(loaded.Document, request.Author!)
             : null;
         tracking?.Start();
         var operationWarnings = new List<Warning>();
+        var changed = new List<Node>();
         IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(loaded, resolved, request, operationInputs, tracking, operationWarnings);
+            ApplyOperations(loaded, resolved, blocks, request, operationInputs, tracking, operationWarnings, changed);
         tracking?.Stop();
+        IReadOnlyList<int> pagesTouched = TouchedPages(loaded.Document, blocksBefore, resolved, changed);
 
         _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
@@ -109,7 +112,7 @@ internal sealed class WordsMutationService
             DryRun = request.Options.DryRun,
             Applied = outcomes,
             Backup = backup,
-            PagesTouched = originalPages.Count == 0 ? null : originalPages,
+            PagesTouched = pagesTouched.Count == 0 ? null : pagesTouched,
             Verification = verification,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), operationWarnings, MutationWarnings(
@@ -162,19 +165,29 @@ internal sealed class WordsMutationService
     private IReadOnlyList<BoundedOperationOutcome> ApplyOperations(
         LoadedDocument loaded,
         IReadOnlyList<ResolvedWordsOp> resolved,
+        DocumentBlockIndex blocks,
         WordsEditRequest request,
         InputResourceScope operationInputs,
         WordsRevisionTracking? tracking,
-        List<Warning> warnings)
+        List<Warning> warnings,
+        List<Node> changed)
     {
         return BoundedOperationRunner.Run(
             WordsOp.Catalog,
             resolved.Select(static item => item.Op).ToArray(),
             request.Options.BestEffort,
             deadline: null,
-            (_, index) => new AppliedOperation(
-                new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings).Run(),
-                resolved[index].Targets),
+            (_, index) =>
+            {
+                // An operation without a block address, such as replace_text, names the
+                // original blocks that hold the nodes it changed.
+                var nodes = new List<Node>();
+                long count = new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings, nodes).Run();
+                changed.AddRange(nodes);
+                return new AppliedOperation(
+                    count,
+                    nodes.Count == 0 ? resolved[index].Targets : WordsAnchorResolver.Targets(blocks, nodes, target: null));
+            },
             (_, index) => resolved[index].Targets);
     }
 
@@ -228,18 +241,57 @@ internal sealed class WordsMutationService
         return (output, backup, verification);
     }
 
-    private static IReadOnlyList<int> ResolveOriginalPages(Document document, IReadOnlyList<ResolvedWordsOp> operations)
+    /// <summary>
+    /// The pages of the edited document that the batch changed: every page of the blocks and
+    /// sections the operations addressed, of the nodes they recorded as changed and of the blocks
+    /// they inserted, and for each block they removed, the page of the next original block that
+    /// remains. A change in a header or footer touches every page of its section.
+    /// </summary>
+    private static IReadOnlyList<int> TouchedPages(
+        Document document,
+        IReadOnlyList<Node> blocksBefore,
+        IReadOnlyList<ResolvedWordsOp> operations,
+        IEnumerable<Node> changed)
     {
         document.UpdatePageLayout();
         var collector = new LayoutCollector(document);
-        return operations.SelectMany(static item => item.Nodes)
-            .Where(static node => node.ParentNode is not null)
-            .Select(collector.GetStartPageIndex)
-            .Where(static page => page > 0)
-            .Distinct()
-            .Order()
-            .ToArray();
+        var before = new HashSet<Node>(blocksBefore);
+        var pages = new SortedSet<int>();
+        IEnumerable<Node> nodes = operations.SelectMany(static item => item.Nodes.Concat<Node>(item.Sections))
+            .Concat(changed)
+            .Concat(BodyBlocks(document).Where(block => !before.Contains(block)))
+            .Where(node => Attached(document, node))
+            .Select(static node => node.GetAncestor(NodeType.HeaderFooter)?.ParentNode ?? node)
+            .Distinct();
+        foreach (Node node in nodes)
+        {
+            for (int page = collector.GetStartPageIndex(node); page > 0 && page <= collector.GetEndPageIndex(node); page++)
+            {
+                pages.Add(page);
+            }
+        }
+
+        Node? next = null;
+        for (int index = blocksBefore.Count - 1; index >= 0; index--)
+        {
+            if (Attached(document, blocksBefore[index]))
+            {
+                next = blocksBefore[index];
+            }
+            else if ((next is null ? document.PageCount : collector.GetStartPageIndex(next)) is > 0 and int page)
+            {
+                pages.Add(page);
+            }
+        }
+
+        return pages.ToArray();
     }
+
+    private static IEnumerable<Node> BodyBlocks(Document document) =>
+        document.Sections.Cast<Section>().SelectMany(static section => DocumentBlockIndex.BodyBlocks(section.Body));
+
+    private static bool Attached(Document document, Node node) =>
+        ReferenceEquals(node.GetAncestor(NodeType.Document), document);
 
     /// <summary>
     /// Reports save-and-reopen evidence for the staged candidate. A comparison that

@@ -21,6 +21,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     private readonly IReadOnlyDictionary<string, string>? _secrets;
     private readonly WordsRevisionTracking? _tracking;
     private readonly ICollection<Warning> _warnings;
+    private readonly ICollection<Node> _changed;
 
     /// <summary>Creates the handlers of one resolved operation.</summary>
     /// <param name="loaded">The document being edited.</param>
@@ -31,6 +32,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     /// <param name="secrets">The operations' secrets by environment variable name.</param>
     /// <param name="tracking">The edit's revision tracking, or null when changes are not tracked.</param>
     /// <param name="warnings">Collects the warnings operations disclose about their result.</param>
+    /// <param name="changed">Collects the nodes an operation without a block address changed.</param>
     internal WordsMutationHandlers(
         LoadedDocument loaded,
         ResolvedWordsOp resolved,
@@ -39,7 +41,8 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         InputResourceScope operationInputs,
         IReadOnlyDictionary<string, string>? secrets,
         WordsRevisionTracking? tracking,
-        ICollection<Warning> warnings)
+        ICollection<Warning> warnings,
+        ICollection<Node> changed)
     {
         _loaded = loaded;
         _document = loaded.Document;
@@ -50,6 +53,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         _secrets = secrets;
         _tracking = tracking;
         _warnings = warnings;
+        _changed = changed;
     }
 
     /// <summary>The operation's target blocks.</summary>

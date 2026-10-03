@@ -30,8 +30,14 @@ aspose-cli words compare baseline.docx output.docx --output json
 ```
 
 Read the blocks the batch reported in `applied[].targets`, and blocks that
-follow insertions. `words compare` needs revision-free inputs
-([revisions](revisions.md)).
+follow insertions. `replace_text` names the original body blocks whose text,
+comments or footnotes it changed, and `document` when it changed none of them.
+`pagesTouched` lists the output pages the batch changed: those of the blocks
+and sections it addressed or inserted, of replaced text, and of the content
+that took the place of removed blocks; a header or footer change touches every
+page of its section. An operation whose only target is `document`, such as
+`add_watermark` or `mail_merge`, can change any page. `words compare` needs
+revision-free inputs ([revisions](revisions.md)).
 
 ## Visual review
 

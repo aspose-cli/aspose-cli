@@ -15,7 +15,7 @@
       "items": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/operation-outcome.schema.json" }
     },
     "backup": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/backup.schema.json" },
-    "pagesTouched": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "uniqueItems": true },
+    "pagesTouched": { "type": "array", "items": { "type": "integer", "minimum": 1 }, "uniqueItems": true, "description": "The output pages the batch changed: those of the blocks and sections the operations addressed or inserted, of replaced text, and of the content that took the place of removed blocks. An operation whose only target is document can change any page." },
     "verification": {
       "type": "object",
       "required": ["ok", "issues"],

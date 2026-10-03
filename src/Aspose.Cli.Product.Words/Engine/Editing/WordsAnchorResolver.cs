@@ -12,10 +12,8 @@ namespace Aspose.Cli.Product.Words.Engine.Editing;
 /// </summary>
 internal static class WordsAnchorResolver
 {
-    public static IReadOnlyList<ResolvedWordsOp> Resolve(LoadedDocument loaded, WordsOpsBatch batch)
+    public static IReadOnlyList<ResolvedWordsOp> Resolve(Document document, DocumentBlockIndex index, WordsOpsBatch batch)
     {
-        Document document = loaded.Document;
-        var index = new DocumentBlockIndex(document, loaded.Evaluation);
         var resolved = new List<ResolvedWordsOp>(batch.Ops.Count);
         foreach (WordsOp op in batch.Ops)
         {
@@ -125,7 +123,8 @@ internal static class WordsAnchorResolver
         return [matches[nth - 1].Node];
     }
 
-    private static IReadOnlyList<string> Targets(
+    /// <summary>The addresses of the original blocks that hold <paramref name="nodes"/>.</summary>
+    internal static IReadOnlyList<string> Targets(
         DocumentBlockIndex index,
         IReadOnlyList<Node> nodes,
         WordsTarget? target)
@@ -148,7 +147,6 @@ internal static class WordsAnchorResolver
             ? [$"blocks/{ranges}"]
             : ["document"];
     }
-
 
     private static WordsTarget? TargetOf(WordsOp op) => op switch
     {

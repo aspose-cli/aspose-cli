@@ -22,11 +22,12 @@ internal sealed partial class WordsMutationHandlers
     /// <summary>
     /// Replaces matches in the stories of the op's scope, as search reads them: field codes
     /// and text a tracked change deletes are not text, and a match in a comment or footnote
-    /// belongs to that note's scope, not to the body or header that anchors it.
+    /// belongs to that note's scope, not to the body or header that anchors it. Each replacement
+    /// records its paragraph as changed.
     /// </summary>
     public long Apply(ReplaceTextOp operation)
     {
-        var callback = new ScopedReplacingCallback(operation.MaxReplacementCount);
+        var callback = new ScopedReplacingCallback(operation.MaxReplacementCount, _changed);
         var options = new FindReplaceOptions
         {
             MatchCase = operation.MatchCase,
@@ -55,7 +56,7 @@ internal sealed partial class WordsMutationHandlers
         return replaced;
     }
 
-    private sealed class ScopedReplacingCallback(int? maximum) : IReplacingCallback
+    private sealed class ScopedReplacingCallback(int? maximum, ICollection<Node> changed) : IReplacingCallback
     {
         private int _accepted;
 
@@ -72,6 +73,7 @@ internal sealed partial class WordsMutationHandlers
             }
 
             _accepted++;
+            changed.Add(args.MatchNode.GetAncestor(NodeType.Paragraph) ?? args.MatchNode);
             return ReplaceAction.Replace;
         }
     }

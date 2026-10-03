@@ -474,6 +474,108 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void Edit_ReportsTheBlocksReplaceTextChangedAndTheOutputPagesOfTrackedChanges()
+    {
+        string input = CreateThreePages("tracked-pages.docx");
+        var batch = new WordsOpsBatch
+        {
+            Ops =
+            [
+                new ReplaceTextOp { Find = "Alpha", Replace = "First" },
+                new ReplaceTextOp { Find = "Gamma", Replace = "Third" },
+                new AddCommentOp { At = new WordsTarget { Find = "Beta" }, Author = "Reviewer", Text = "Check" },
+            ],
+        };
+
+        WordsEditResult result = _fixture.Engine.ApplyOps(input, batch, new WordsEditRequest
+        {
+            OutputPath = _fixture.Temp.File("tracked-pages-out.docx"),
+            TrackChanges = true,
+            Author = "Reviewer",
+        });
+
+        Assert.Equal(["block/1"], result.Applied[0].Targets);
+        Assert.Equal(["block/3"], result.Applied[1].Targets);
+        Assert.Equal(["block/2"], result.Applied[2].Targets);
+        Assert.Equal([1, 2, 3], result.PagesTouched);
+    }
+
+    [Fact]
+    public void Edit_ReportsTheOutputPagesOfInsertedContentAndOfTheContentAfterADeletion()
+    {
+        string input = CreateThreePages("moved-pages.docx");
+        var batch = new WordsOpsBatch
+        {
+            Ops =
+            [
+                new DeleteBlocksOp { Target = new WordsTarget { Block = 2 } },
+                new InsertParagraphsOp
+                {
+                    At = new WordsTarget { Block = 3 },
+                    Position = "after",
+                    Paragraphs = [new ParagraphInput { Text = "Delta clause." }],
+                },
+            ],
+        };
+
+        WordsEditResult result = _fixture.Engine.ApplyOps(input, batch, new WordsEditRequest
+        {
+            OutputPath = _fixture.Temp.File("moved-pages-out.docx"),
+        });
+
+        // Gamma takes the place of the deleted Beta on page 2, and Delta follows it there.
+        Assert.Equal([2], result.PagesTouched);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Edit_ReportsThePageOfTheAnchorOfANoteReplaceTextChanged(bool footnote)
+    {
+        // Runs licensed and in evaluation mode alike: the evaluation banner must not shift pages.
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Alpha clause.");
+        builder.ParagraphFormat.PageBreakBefore = true;
+        builder.Write("Beta clause.");
+        if (footnote)
+        {
+            builder.InsertFootnote(Aspose.Words.Notes.FootnoteType.Footnote, "Kappa note.");
+        }
+        else
+        {
+            builder.CurrentParagraph.AppendChild(new Comment(document, "Reviewer", "R", DateTime.Today)).SetText("Kappa note.");
+        }
+
+        builder.Writeln();
+        builder.Write("Gamma clause.");
+        string input = _fixture.Temp.File($"note-pages-{Guid.NewGuid():N}.docx");
+        document.Save(input);
+
+        WordsEditResult result = _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "Kappa", Replace = "Lambda", Scope = WordsTextScopes.All }] },
+            new WordsEditRequest { OutputPath = _fixture.Temp.File($"note-pages-out-{Guid.NewGuid():N}.docx") });
+
+        Assert.Equal(1, result.Applied[0].ItemsAffected);
+        Assert.Equal([2], result.PagesTouched);
+    }
+
+    /// <summary>Three paragraphs, Alpha, Beta and Gamma, each starting its own page.</summary>
+    private string CreateThreePages(string fileName)
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Alpha clause.");
+        builder.ParagraphFormat.PageBreakBefore = true;
+        builder.Writeln("Beta clause.");
+        builder.Write("Gamma clause.");
+        string path = _fixture.Temp.File(fileName);
+        document.Save(path);
+        return path;
+    }
+
+    [Fact]
     public void Edit_RejectsDeleteThenReferenceBeforeWriting()
     {
         string input = _fixture.CreateReport();
