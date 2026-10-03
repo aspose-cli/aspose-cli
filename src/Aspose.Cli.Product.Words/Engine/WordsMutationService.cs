@@ -67,8 +67,9 @@ internal sealed class WordsMutationService
             ? new WordsRevisionTracking(loaded.Document, request.Author!)
             : null;
         tracking?.Start();
+        var operationWarnings = new List<Warning>();
         IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(loaded, resolved, request, operationInputs, tracking);
+            ApplyOperations(loaded, resolved, request, operationInputs, tracking, operationWarnings);
         tracking?.Stop();
 
         _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
@@ -101,7 +102,7 @@ internal sealed class WordsMutationService
             PagesTouched = originalPages.Count == 0 ? null : originalPages,
             Verification = verification,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), MutationWarnings(
+            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), operationWarnings, MutationWarnings(
                 state,
                 format,
                 // The input's revisions are disclosed while the output still contains revisions,
@@ -153,7 +154,8 @@ internal sealed class WordsMutationService
         IReadOnlyList<ResolvedWordsOp> resolved,
         WordsEditRequest request,
         InputResourceScope operationInputs,
-        WordsRevisionTracking? tracking)
+        WordsRevisionTracking? tracking,
+        List<Warning> warnings)
     {
         return BoundedOperationRunner.Run(
             WordsOp.Catalog,
@@ -161,7 +163,7 @@ internal sealed class WordsMutationService
             request.Options.BestEffort,
             deadline: null,
             (_, index) => new AppliedOperation(
-                new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking).Run(),
+                new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings).Run(),
                 resolved[index].Targets),
             (_, index) => resolved[index].Targets);
     }

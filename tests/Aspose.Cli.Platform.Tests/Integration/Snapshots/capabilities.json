@@ -18694,6 +18694,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "MERGE_VALUE_MISSING",
+      "owner": "words",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "words.merge-value-missing.message.v1",
+      "hintTemplateId": "words.merge-value-missing.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "MHTML_RESOURCE_COVERAGE_UNVERIFIED",
       "owner": "cells",
       "severity": "warning",

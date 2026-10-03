@@ -4,6 +4,7 @@ using System.Text;
 using System.Text.Json;
 using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Words;
@@ -302,12 +303,15 @@ internal sealed partial class WordsMutationHandlers
         {
             string region = SingleRegion(_document);
             _loader.EnsureNodeCapacity(_document, rows.Count * RegionNodeCount(_document, region));
+            Warning? regionGaps = WordsMergeGaps.Find(WordsMergeGaps.TemplateFields(_document, region), rows, regions: true);
             ExecuteRegionMerge(_document, region, rows);
+            AddWarning(regionGaps);
             return rows.Count;
         }
 
         // Every further row appends one copy of the whole template.
         _loader.EnsureNodeCapacity(_document, (rows.Count - 1L) * _document.GetChildNodes(NodeType.Any, true).Count);
+        Warning? gaps = WordsMergeGaps.Find(WordsMergeGaps.TemplateFields(_document, region: null), rows, regions: false);
         Document template = _document.Clone();
         ExecuteMergeRow(_document, rows[0]);
         for (int index = 1; index < rows.Count; index++)
@@ -324,7 +328,17 @@ internal sealed partial class WordsMutationHandlers
             _document.AppendDocument(letter, ImportFormatMode.KeepSourceFormatting);
         }
 
+        AddWarning(gaps);
         return rows.Count;
+    }
+
+    // Discloses a merge's blank fields once the merge succeeded.
+    private void AddWarning(Warning? warning)
+    {
+        if (warning is not null)
+        {
+            _warnings.Add(warning);
+        }
     }
 
     internal static void ExecuteMergeRow(Document document, IReadOnlyDictionary<string, string?> row) =>
