@@ -249,10 +249,9 @@ internal static class ImportOps
         }
     }
 
-    // Visible, workbook-scoped names; hidden and _xl names are the engine's and Excel's own.
+    // Visible, workbook-scoped names; hidden names are Excel's own.
     private static IEnumerable<Name> WorkbookNames(Workbook workbook) =>
-        workbook.Worksheets.Names.Cast<Name>().Where(static name =>
-            name.SheetIndex == 0 && name.IsVisible && !name.Text.StartsWith("_xl", StringComparison.OrdinalIgnoreCase));
+        DefinedNames.Of(workbook).Where(static name => name.SheetIndex == 0 && name.IsVisible);
 
     private static bool RefersOnlyTo(Name name, Worksheet sheet) =>
         name.GetReferredAreas(true) is { Length: > 0 } areas

@@ -46,7 +46,7 @@ internal static class InfoProjection
             SheetCount = sheets.Count,
             Sheets = sheets,
             HasVba = workbook.HasMacro,
-            DefinedNameCount = DefinedNames(workbook).Count(),
+            DefinedNameCount = DefinedNames.Of(workbook).Count(),
             StructureProtected = Sheets.StructureProtected(workbook),
             StructurePasswordProtected = Sheets.StructureProtected(workbook) && workbook.IsWorkbookProtectedWithPassword,
             Author = Normalize(workbook.BuiltInDocumentProperties.Author),
@@ -112,15 +112,10 @@ internal static class InfoProjection
         return rows;
     }
 
-    // The engine keeps a placeholder name, such as _xlfn.XLOOKUP, for each newer function a formula
-    // calls; the file does not define it.
-    private static IEnumerable<Name> DefinedNames(Workbook workbook) =>
-        workbook.Worksheets.Names.Cast<Name>().Where(static name => !name.Text.StartsWith("_xlfn.", StringComparison.OrdinalIgnoreCase));
-
     private static IReadOnlyList<DefinedNameInfo> BuildDefinedNames(Workbook workbook)
     {
         var names = new List<DefinedNameInfo>();
-        foreach (Name name in DefinedNames(workbook))
+        foreach (Name name in DefinedNames.Of(workbook))
         {
             // Once a name's target sheet is deleted the SDK returns a null
             // RefersTo (26.9.0; the SDK is not nullable-annotated so the compiler

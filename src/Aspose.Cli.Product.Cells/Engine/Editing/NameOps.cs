@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
@@ -28,19 +29,8 @@ internal static class NameOps
 
     /// <summary>
     /// The names a caller can address, in collection order: the full text, which carries the
-    /// sheet prefix of a sheet-scoped name, and never the hidden names Excel keeps for itself.
+    /// sheet prefix of a sheet-scoped name, and never the hidden or _xl names Excel keeps for itself.
     /// </summary>
-    private static List<string> VisibleNames(Workbook workbook)
-    {
-        var names = new List<string>();
-        foreach (Name name in workbook.Worksheets.Names)
-        {
-            if (name.IsVisible)
-            {
-                names.Add(name.FullText);
-            }
-        }
-
-        return names;
-    }
+    private static List<string> VisibleNames(Workbook workbook) =>
+        [.. DefinedNames.Of(workbook).Where(static name => name.IsVisible).Select(static name => name.FullText)];
 }
