@@ -51,6 +51,23 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
     }
 
     [Fact]
+    public void Edit_WritingOnlyUnlockedCellsOfAProtectedSheetDoesNotWarn()
+    {
+        _ = Unenforced(book.Edit("form.xlsx", """{"op":"format_range","sheet":"Data","range":"A1:A2","style":{"locked":false}}"""));
+
+        JsonNode EditForm(string output, string ops) => book.Workspace.Run(
+            "cells", "edit", "form.xlsx", "--out", output, "--output", "json", "--ops", $$"""{"ops":[{{ops}}]}""").Json();
+
+        Assert.DoesNotContain(
+            Warnings(EditForm("filled.xlsx",
+                """{"op":"set_values","sheet":"Data","range":"A1","values":[[1],[2]]},{"op":"set_formula","sheet":"Data","range":"A2","formula":"=A1*2"},{"op":"clear_range","sheet":"Data","range":"A1"}""")),
+            static warning => Code(warning) == "PROTECTION_NOT_ENFORCED");
+        // A locked cell, or a change other than contents, still goes through protection.
+        _ = Unenforced(EditForm("locked.xlsx", """{"op":"set_values","sheet":"Data","range":"A2","values":[[1],[2]]}"""));
+        _ = Unenforced(EditForm("formatted.xlsx", """{"op":"format_range","sheet":"Data","range":"A1","style":{"bold":true}}"""));
+    }
+
+    [Fact]
     public void Protect_WarnsOnlyWhenItReprotectsWhatIsProtected()
     {
         Warning sheet = Unenforced(book.Edit("reprotected-sheet.xlsx",

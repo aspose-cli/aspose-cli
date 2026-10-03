@@ -1,5 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
@@ -14,7 +15,8 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// unprotects a sheet before changing it went through no protection. Protecting again what is
 /// already protected changes that protection too: protect_workbook replaces a structure
 /// protection without a password (the engine refuses one with a password), and protect_sheet
-/// replaces a sheet's protection settings but keeps its existing password.
+/// replaces a sheet's protection settings but keeps its existing password. Writing the contents
+/// of unlocked cells only is what Excel allows on a protected sheet, so it goes through nothing.
 /// </summary>
 internal sealed class CellsProtectionTracker
 {
@@ -43,7 +45,7 @@ internal sealed class CellsProtectionTracker
                 or SetSheetVisibilityOp or SetTabColorOp or ProtectWorkbookOp:
                 return new ProtectedChange(null, Sheets.StructureProtected(workbook), KeptPassword: false);
             default:
-                return ChangedSheet(workbook, op) is { IsProtected: true } sheet
+                return ChangedSheet(workbook, op) is { IsProtected: true } sheet && !WritesUnlockedCellsOnly(sheet, op)
                     ? new ProtectedChange(sheet.Name, Structure: false,
                         KeptPassword: op is ProtectSheetOp && sheet.Protection.IsProtectedWithPassword)
                     : default;
@@ -101,6 +103,30 @@ internal sealed class CellsProtectionTracker
                 + kept,
             Location = _sheets.Count == 1 && !_structure ? Sheets.QuotedName(_sheets[0]) : null,
         };
+    }
+
+    /// <summary>Whether the operation changes only the contents of cells Excel leaves unlocked on a protected sheet.</summary>
+    private static bool WritesUnlockedCellsOnly(Worksheet sheet, CellsOp op)
+    {
+        if (op is not (SetValuesOp or SetFormulaOp or ClearRangeOp { What: ClearTargets.Contents })
+            || OpsFootprint.TargetOf(op)?.Range is not { } target)
+        {
+            return false;
+        }
+
+        RangeRef range = A1.ParseRange(target).Range;
+        for (int row = range.Start.Row; row <= range.End.Row; row++)
+        {
+            for (int column = range.Start.Column; column <= range.End.Column; column++)
+            {
+                if (sheet.Cells.GetCellStyle(row, column).IsLocked)
+                {
+                    return false;
+                }
+            }
+        }
+
+        return true;
     }
 
     private static void AddOnce(List<string> sheets, string sheet)

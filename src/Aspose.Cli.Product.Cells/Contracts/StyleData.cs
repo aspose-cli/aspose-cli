@@ -42,6 +42,12 @@ public sealed record StyleData
 
     /// <summary>The indent level; 0 removes the indent.</summary>
     [Minimum(0), Maximum(250)] public int? Indent { get; init; }
+
+    /// <summary>
+    /// Whether Excel keeps the cell read-only once its sheet is protected. Every cell is locked
+    /// unless set false, as for the input cells of a protected form; a read reports only false.
+    /// </summary>
+    public bool? Locked { get; init; }
 }
 
 /// <summary>

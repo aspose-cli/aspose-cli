@@ -88,7 +88,8 @@
         "numberFormat": { "type": "string" },
         "hAlign": { "enum": ["left", "center", "right"] },
         "vAlign": { "enum": ["top", "middle", "bottom"] },
-        "wrap": { "type": "boolean" }
+        "wrap": { "type": "boolean" },
+        "locked": { "type": "boolean" }
       }
     },
     "sourceInfo": {

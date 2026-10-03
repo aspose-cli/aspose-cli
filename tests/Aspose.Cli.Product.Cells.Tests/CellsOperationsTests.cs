@@ -183,6 +183,41 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.DoesNotContain(secret, ProductJsonContext.Definition.Serialize(result), StringComparison.Ordinal);
     }
     [Fact]
+    public void SheetProtection_LeavesCellsFormattedUnlockedEditable()
+    {
+        string source = _fixture.CreateSalesWorkbook("input-cells.xlsx");
+        EditResult result = Apply(
+            source,
+            """
+            { "ops": [
+              { "op": "format_range", "sheet": "Data", "range": "B2:C2", "style": { "locked": false, "bg": "#FFF2CC" } },
+              { "op": "protect_sheet", "sheet": "Data" }
+            ] }
+            """,
+            "input-cells.out.xlsx");
+
+        using (var workbook = new Workbook(result.Output!.Path))
+        {
+            Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
+            Assert.True(workbook.Worksheets["Data"].IsProtected);
+            Assert.False(cells["B2"].GetStyle().IsLocked);
+            Assert.True(cells["B3"].GetStyle().IsLocked);
+        }
+
+        WorkbookReadResult read = _fixture.Engine.Read(
+            result.Output.Path,
+            new ReadRequest
+            {
+                SheetName = "Data",
+                Range = global::Aspose.Cli.Product.Cells.Contracts.Addressing.A1.ParseRange("B2:B3").Range,
+                Scope = ReadScope.Full,
+                MaxCells = 10,
+            });
+        Assert.False(read.Styles![Assert.IsType<string>(read.Sheet.Cells![0][0].StyleId)].Locked);
+        Assert.Null(read.Sheet.Cells[1][0].StyleId);
+    }
+
+    [Fact]
     public void ChartCosmetics_PersistThroughSaveAndReopen()
     {
         string source = _fixture.CreateSalesWorkbook("chart.xlsx");

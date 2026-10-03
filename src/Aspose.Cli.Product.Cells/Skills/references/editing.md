@@ -270,11 +270,13 @@ show in renders and reads; give the location column a header.
 - `insert_image` refuses an SVG that names a network address, and any SVGZ,
   with `FEATURE_UNSUPPORTED`, because the engine would fetch the address.
   Embed the SVG's images or supply a raster image.
-- `protect_sheet` locks every cell with action-level `allow` exceptions; a
-  sheet locked except its input cells is not expressible.
+- `protect_sheet` locks every cell with action-level `allow` exceptions,
+  except the cells `format_range` set `"locked": false`: format a form's
+  input cells that way first, so Excel lets users fill them in.
 - Protection guides Excel, not the CLI: an edit changes a protected sheet or a
   protected workbook structure without its password and warns
-  `PROTECTION_NOT_ENFORCED`. `cells inspect` reports `protected` and
+  `PROTECTION_NOT_ENFORCED`, except when it only writes or clears the contents
+  of unlocked cells, as Excel allows. `cells inspect` reports `protected` and
   `passwordProtected` per sheet and `structureProtected` for the workbook.
   Confirm such a change is authorized, or run `unprotect_sheet` with its
   `passwordEnv` first; unprotecting checks the password and refuses a wrong

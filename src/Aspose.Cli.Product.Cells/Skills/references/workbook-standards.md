@@ -281,9 +281,6 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 What the v2 ops cannot express — say so rather than faking it:
 
-- No per-cell lock: `protect_sheet` locks every cell (with verb-level
-  `allow` exceptions), so "locked sheet except the input cells" is not
-  expressible.
 - Page `header`/`footer` set the center section only; left/right sections
   are not expressible.
 - `set_sheet_view` gridlines are a VIEW setting: Excel and the live preview

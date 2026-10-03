@@ -129,6 +129,12 @@ internal static class StyleWriter
             flag.Indent = true;
         }
 
+        if (data.Locked is { } locked)
+        {
+            style.IsLocked = locked;
+            flag.Locked = true;
+        }
+
         return flag;
     }
 

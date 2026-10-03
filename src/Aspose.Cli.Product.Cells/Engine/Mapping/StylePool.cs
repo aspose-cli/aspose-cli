@@ -78,6 +78,7 @@ internal sealed class StylePool
         Underline = style.Font.Underline == FontUnderlineType.None ? null : true,
         Strikethrough = style.Font.IsStrikeout ? true : null,
         Indent = style.IndentLevel == 0 ? null : style.IndentLevel,
+        Locked = style.IsLocked ? null : false,
     };
 
     private static string? NumberFormatOf(Style style)

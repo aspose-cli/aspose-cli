@@ -2881,6 +2881,10 @@
           "type": "integer",
           "minimum": 0,
           "maximum": 250
+        },
+        "locked": {
+          "description": "Whether Excel keeps the cell read-only once its sheet is protected. Every cell is locked unless set false, as for the input cells of a protected form; a read reports only false.",
+          "type": "boolean"
         }
       },
       "allOf": [
