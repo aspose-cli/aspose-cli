@@ -274,10 +274,12 @@ show in renders and reads; give the location column a header.
   `PROTECTION_NOT_ENFORCED`. `cells inspect` reports `protected` and
   `passwordProtected` per sheet and `structureProtected` for the workbook.
   Confirm such a change is authorized, or run `unprotect_sheet` with its
-  `passwordEnv` first; unprotecting checks the password. Protecting again
-  what is protected warns too: `protect_sheet` replaces the allowed actions but
-  keeps a sheet's existing password, and `protect_workbook` fails on a
-  structure protected with a password; unprotect first to change a password.
+  `passwordEnv` first; unprotecting checks the password and refuses a wrong
+  one with `PASSWORD_INVALID`, a missing one with `PASSWORD_REQUIRED`.
+  Protecting again what is protected warns too: `protect_sheet` replaces the
+  allowed actions but keeps a sheet's existing password, and `protect_workbook`
+  fails on a structure protected with a password; unprotect first to change a
+  password.
 
 ## Sheets and view
 

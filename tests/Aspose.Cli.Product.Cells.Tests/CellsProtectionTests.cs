@@ -68,6 +68,31 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
         Assert.DoesNotContain("kept the existing password", structure.Message, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void Unprotect_RefusesAWrongOrMissingPasswordAsAPasswordError()
+    {
+        JsonNode wrong = Refused(book.Run("unprotect-wrong.xlsx",
+            $$"""{"op":"unprotect_sheet","sheet":"Data","passwordEnv":"{{OtherPasswordVariable}}"}"""));
+        Assert.Equal("PASSWORD_INVALID", wrong["code"]!.GetValue<string>());
+        Assert.Contains("sheet 'Data'", wrong["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("\"passwordEnv\"", wrong["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+
+        JsonNode missing = Refused(book.Run("unprotect-missing.xlsx", """{"op":"unprotect_sheet","sheet":"Data"}"""));
+        Assert.Equal("PASSWORD_REQUIRED", missing["code"]!.GetValue<string>());
+
+        // The structure has no password, so unprotecting it needs none; a wrong one is refused alike.
+        JsonNode structure = Refused(book.Run("unprotect-structure.xlsx",
+            $$"""{"op":"protect_workbook","passwordEnv":"{{PasswordVariable}}"},{"op":"unprotect_workbook","passwordEnv":"{{OtherPasswordVariable}}"}"""));
+        Assert.Equal("PASSWORD_INVALID", structure["code"]!.GetValue<string>());
+        Assert.Contains("workbook structure", structure["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    private static JsonNode Refused(CliResult result)
+    {
+        Assert.Equal(3, result.ExitCode);
+        return JsonNode.Parse(result.StdErr)!["error"]!;
+    }
+
     private static Warning Unenforced(JsonNode result)
     {
         JsonNode warning = Assert.Single(Warnings(result), static warning => Code(warning) == "PROTECTION_NOT_ENFORCED");
@@ -105,12 +130,15 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
         public JsonNode Created { get; }
 
         /// <summary>Edits book.xlsx into <paramref name="output"/>, or in place when it is null.</summary>
-        public JsonNode Edit(string? output, string ops)
+        public JsonNode Edit(string? output, string ops) => Run(output, ops).Json();
+
+        /// <summary>Runs the edit of <see cref="Edit"/> without requiring it to succeed.</summary>
+        public CliResult Run(string? output, string ops)
         {
             string[] target = output is null ? ["--in-place"] : ["--out", output];
             return Workspace.RunWithEnv(
                 new Dictionary<string, string?> { [PasswordVariable] = "sheet-secret", [OtherPasswordVariable] = "other-secret" },
-                ["cells", "edit", "book.xlsx", .. target, "--output", "json", "--ops", $$"""{"ops":[{{ops}}]}"""]).Json();
+                ["cells", "edit", "book.xlsx", .. target, "--output", "json", "--ops", $$"""{"ops":[{{ops}}]}"""]);
         }
 
         public void Dispose() => Workspace.Dispose();

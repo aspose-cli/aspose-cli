@@ -1,6 +1,7 @@
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
 
@@ -34,15 +35,17 @@ internal static class ProtectOps
     public static long? UnprotectSheet(Worksheet sheet, UnprotectSheetOp op, IReadOnlyDictionary<string, string>? secrets)
     {
         string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
-        if (password is null)
+        Unprotect(() =>
         {
-            sheet.Unprotect();
-        }
-        else
-        {
-            sheet.Unprotect(password);
-        }
-
+            if (password is null)
+            {
+                sheet.Unprotect();
+            }
+            else
+            {
+                sheet.Unprotect(password);
+            }
+        }, $"sheet '{sheet.Name}'", password);
         return null;
     }
 
@@ -54,8 +57,28 @@ internal static class ProtectOps
 
     public static long? UnprotectWorkbook(Workbook workbook, UnprotectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
     {
-        workbook.Unprotect(OperationSecrets.Resolve(secrets, op.PasswordEnv) ?? string.Empty);
+        string? password = OperationSecrets.Resolve(secrets, op.PasswordEnv);
+        Unprotect(() => workbook.Unprotect(password ?? string.Empty), "the workbook structure", password);
         return null;
+    }
+
+    /// <summary>Reports a password the protection does not accept as a password error, not an engine failure.</summary>
+    private static void Unprotect(Action unprotect, string target, string? password)
+    {
+        try
+        {
+            unprotect();
+        }
+        catch (CellsException exception) when (exception.Code == ExceptionType.IncorrectPassword)
+        {
+            throw password is null
+                ? new CliException(ErrorCodes.PasswordRequired, $"The protection of {target} has a password.",
+                    hint: "Ask the user for the password, store it in an environment variable and name that variable in the operation's \"passwordEnv\" field.",
+                    innerException: exception)
+                : new CliException(ErrorCodes.PasswordInvalid, $"The provided password does not unprotect {target}.",
+                    hint: "Ask the user to double-check the password, store it in an environment variable and name that variable in the operation's \"passwordEnv\" field.",
+                    innerException: exception);
+        }
     }
 
     private static void Allow(Protection protection, string action)
