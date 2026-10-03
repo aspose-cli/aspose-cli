@@ -102,10 +102,17 @@ internal static partial class CellsTextImport
         };
     }
 
+    /// <summary>
+    /// Decodes the whole file in blocks with one stateful decoder, so a character whose bytes
+    /// straddle two blocks is decoded across them. GetCharCount keeps no state between calls and
+    /// would refuse such a character as invalid.
+    /// </summary>
     private static void EnsureUtf8(string path, ResourceBudgetLedger budgets)
     {
-        Decoder decoder = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true).GetDecoder();
+        var encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false, throwOnInvalidBytes: true);
+        Decoder decoder = encoding.GetDecoder();
         byte[] buffer = new byte[1 << 16];
+        char[] characters = new char[encoding.GetMaxCharCount(buffer.Length)];
         long offset = 0;
         using FileStream stream = File.OpenRead(path);
         try
@@ -114,15 +121,17 @@ internal static partial class CellsTextImport
             while ((read = stream.Read(buffer, 0, buffer.Length)) > 0)
             {
                 budgets.Deadline.ThrowIfExpired("text-encoding");
-                decoder.GetCharCount(buffer.AsSpan(0, read), flush: false);
+                decoder.GetChars(buffer, 0, read, characters, 0, flush: false);
                 offset += read;
             }
 
-            decoder.GetCharCount([], flush: true);
+            decoder.GetChars([], 0, 0, characters, 0, flush: true);
         }
         catch (DecoderFallbackException exception)
         {
-            throw CellsErrors.TextEncodingInvalid(path, offset + Math.Max(0, exception.Index));
+            // Index is relative to the current block and is negative when the invalid sequence
+            // began with bytes the decoder carried over from the previous block.
+            throw CellsErrors.TextEncodingInvalid(path, Math.Max(0, offset + exception.Index));
         }
     }
 
