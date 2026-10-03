@@ -182,9 +182,12 @@ one should restart.
 
 Every output that can be loaded as a document is reopened before publication.
 An `--out` in `txt`, `md`, `html` or `html-fixed` reports `LOSSY_CONVERSION`:
-such a format cannot hold every Word feature, such as fields, revisions or
-protection. Any output other than a Word format, `rtf`, `odt` or `ott` also
-reports `LOSSY_CONVERSION` for the tracked changes it cannot keep as revisions.
+such a format cannot hold every Word feature, such as styles, headers or
+fields. Any output other than a Word format, `rtf`, `odt` or `ott` also
+reports `LOSSY_CONVERSION` for the tracked changes it cannot keep as revisions,
+and any output other than a Word format, PDF included, for the editing
+restrictions it cannot keep; restrict a PDF with the `encrypt` operation of
+`aspose-cli pdf edit`.
 A `txt` or `md` output also writes comment text into the body and
 deleted text beside inserted text, each reported by its own `LOSSY_CONVERSION`
 (`words convert` reports them too); add `remove_comments`, and

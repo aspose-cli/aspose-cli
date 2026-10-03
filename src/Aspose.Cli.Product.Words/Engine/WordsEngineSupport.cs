@@ -111,6 +111,16 @@ internal static class WordsEngineSupport
             };
         }
 
+        if (document.ProtectionType != ProtectionType.NoProtection && !WordsFormats.WordIds.Contains(format, StringComparer.Ordinal))
+        {
+            yield return new Warning
+            {
+                Code = WarningCodes.LossyConversion,
+                Message = $"The {format} output cannot keep the {WordsProtection.ToMode(document.ProtectionType)} editing restrictions of the document.",
+                Hint = "Keep a DOCX copy to keep them; restrict a PDF with the encrypt operation of 'aspose-cli pdf edit'.",
+            };
+        }
+
         if (!text)
         {
             yield break;

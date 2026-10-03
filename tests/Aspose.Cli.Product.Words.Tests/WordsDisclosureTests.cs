@@ -1,3 +1,4 @@
+using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.TestKit;
@@ -75,12 +76,37 @@ public sealed class WordsDisclosureTests
         WordsEditResult text = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.txt") });
         WordsEditResult word = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
 
-        Assert.Contains(text.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
+        // One LOSSY_CONVERSION names the restrictions; the format's own one names other features.
+        Warning lost = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion
+            && Regex.IsMatch(warning.Message + warning.Hint, "restrict|protect", RegexOptions.IgnoreCase));
+        Assert.Contains("cannot keep the readOnly editing restrictions", lost.Message, StringComparison.Ordinal);
         Warning restriction = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced);
-        Assert.Contains("txt", restriction.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain("output keeps", restriction.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain(word.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
         Assert.Contains("output keeps the restrictions", Assert.Single(word.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced).Hint, StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData("pdf", true)]
+    [InlineData("odt", true)]
+    [InlineData("docx", false)]
+    public void ConvertingARestrictedDocument_DisclosesRestrictionsTheOutputCannotKeep(string format, bool lost)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        new DocumentBuilder(source).Write("Locked text");
+        source.Protect(ProtectionType.ReadOnly, "owner");
+        string input = fixture.Temp.File("locked.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
+        {
+            TargetFormatId = format,
+            OutputPath = fixture.Temp.File("converted." + format),
+        });
+
+        Assert.Equal(lost, (converted.Warnings ?? []).Any(static warning => warning.Code == WarningCodes.LossyConversion
+            && warning.Message.Contains("cannot keep the readOnly editing restrictions", StringComparison.Ordinal)));
     }
 
     [Theory]

@@ -397,9 +397,10 @@ internal sealed class WordsMutationService
             {
                 Code = WarningCodes.ProtectionNotEnforced,
                 Message = $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.",
+                // LOSSY_CONVERSION discloses restrictions a non-Word output cannot keep.
                 Hint = WordsFormats.WordIds.Contains(format, StringComparer.Ordinal)
                     ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect."
-                    : $"Confirm the change is authorized. A {format} output may not keep the restrictions; save to docx or another Word format to keep them.",
+                    : "Confirm the change is authorized.",
             });
         }
 
