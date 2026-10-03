@@ -68,6 +68,33 @@ public sealed class AppPreviewBrowserTests(ITestOutputHelper output)
         });
 
     [Fact]
+    public Task FirstLoad_SaysTheWorkspaceIsLoadingRatherThanThatNoFileIsOpen() =>
+        BrowserApp.Run("first-load", output, async ui =>
+        {
+            var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+            await ui.Page.RouteAsync("**/api/status", async route =>
+            {
+                await release.Task;
+                await route.ContinueAsync();
+            });
+            try
+            {
+                await ui.Page.ReloadAsync(new() { WaitUntil = WaitUntilState.DOMContentLoaded });
+                await Assertions.Expect(ui.Page.Locator("#preview-loading")).ToBeVisibleAsync();
+                await Assertions.Expect(ui.Page.Locator("#preview-empty")).ToBeHiddenAsync();
+                release.SetResult();
+                await ui.WaitForPreview("first.csv", "workbook");
+                await Assertions.Expect(ui.Page.Locator("#preview-loading")).ToBeHiddenAsync();
+                await Assertions.Expect(ui.Page.Locator("#preview-empty")).ToBeHiddenAsync();
+            }
+            finally
+            {
+                release.TrySetResult();
+                await ui.Page.UnrouteAsync("**/api/status");
+            }
+        });
+
+    [Fact]
     public Task StatusCapturedBeforeSaving_CannotUndoTheCommittedPreview() =>
         BrowserApp.Run("stale-status", output, async ui =>
         {

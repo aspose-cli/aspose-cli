@@ -73,6 +73,40 @@ public sealed class CellsReviewTests
         Assert.Equal("1 populated row(s) are hidden; sample: 2.", hiddenRows.Message);
     }
 
+    [Fact]
+    public void Review_ClippedEastAsianText_AlsoSuggestsAnExplicitWidth()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("clipped-scripts.xlsx");
+        using (var workbook = new Workbook())
+        {
+            // Two-character columns clip either text in any font, so no East Asian font is needed.
+            Worksheet latin = workbook.Worksheets[0];
+            latin.Name = "Latin";
+            latin.Cells["A1"].PutValue("Accessories");
+            latin.Cells["B1"].PutValue(10600);
+            latin.Cells.SetColumnWidth(0, 2);
+            Worksheet mixed = workbook.Worksheets[workbook.Worksheets.Add()];
+            mixed.Name = "Mixed";
+            mixed.Cells["A1"].PutValue("配件 Accessories");
+            mixed.Cells["B1"].PutValue(10600);
+            mixed.Cells.SetColumnWidth(0, 2);
+            workbook.Save(input);
+        }
+
+        var adapter = new CellsViewAdapter();
+        var request = new ViewRenderRequest { View = CellsViews.Sheets, MaxPartCount = 10, Purpose = ViewPurpose.Evidence };
+        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
+        ProductReviewAssessment assessment = adapter.Assess(fixture.Engine, input, request, rendered);
+
+        Dictionary<string, string> clipped = assessment.Findings!
+            .Where(static finding => finding.Code == "CELLS_VALUES_CLIPPED")
+            .ToDictionary(static finding => finding.Location!, static finding => finding.Message, StringComparer.Ordinal);
+        Assert.Equal(["Latin", "Mixed"], clipped.Keys.Order(StringComparer.Ordinal));
+        Assert.DoesNotContain("explicit width", clipped["Latin"], StringComparison.Ordinal);
+        Assert.Contains("explicit width", clipped["Mixed"], StringComparison.Ordinal);
+    }
     private static void CreateLayoutProblemWorkbook(string path)
     {
         using var workbook = new Workbook();

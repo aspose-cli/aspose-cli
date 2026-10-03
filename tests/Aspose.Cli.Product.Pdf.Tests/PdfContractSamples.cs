@@ -30,7 +30,7 @@ internal static class PdfContractSamples
             Encrypted = true,
             Linearized = false,
             Tagged = true,
-            PdfaCompliant = false,
+            PdfaProfile = "pdfa-2b",
             FormType = "acro",
             AttachmentCount = 1,
             Signed = true,
@@ -241,6 +241,12 @@ internal static class PdfContractSamples
         Backup = new BackupInfo { Path = "D:/data/report.backup.pdf", Created = true, SizeBytes = 52000, LastWriteUtc = new DateTimeOffset(2026, 9, 1, 0, 0, 0, TimeSpan.Zero), HoldsReplacedVersion = true },
         Mutation = new MutationReceipt { Verification = "reopened" },
         PagesTouched = [1],
+        Verification = new PdfEditVerification
+        {
+            Ok = false,
+            Issues = [new VerificationIssue { Code = "PDF_REDACTED_TEXT_FOUND", Message = "Page 1 of the output still has 1 match(es) of the redacted pattern 'Secret'.", Location = "pdf/page/1", Hint = "Search the output." }],
+            CheckedOps = ["op-0001"],
+        },
         License = Licensed,
     };
 

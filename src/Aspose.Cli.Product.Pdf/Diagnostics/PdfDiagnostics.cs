@@ -28,8 +28,36 @@ internal static class PdfDiagnostics
     /// <summary>An HTML import allowed network resources and the importer requested them.</summary>
     internal const string NetworkResourcesRequested = "NETWORK_RESOURCES_REQUESTED";
 
+    /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
+    internal static readonly DiagnosticDescriptor FieldValueMismatch = Verification("PDF_FIELD_VALUE_MISMATCH");
+
+    /// <summary>The output still contains text that redact_text redacted.</summary>
+    internal static readonly DiagnosticDescriptor RedactedTextFound = Verification("PDF_REDACTED_TEXT_FOUND");
+
+    /// <summary>The output's bookmarks differ from what the bookmark operations left.</summary>
+    internal static readonly DiagnosticDescriptor BookmarkMismatch = Verification("PDF_BOOKMARK_MISMATCH");
+
+    /// <summary>A document information entry differs from what set_metadata set.</summary>
+    internal static readonly DiagnosticDescriptor MetadataMismatch = Verification("PDF_METADATA_MISMATCH");
+
+    /// <summary>An attachment is missing, still present or a different size than the batch left it.</summary>
+    internal static readonly DiagnosticDescriptor AttachmentMismatch = Verification("PDF_ATTACHMENT_MISMATCH");
+
+    /// <summary>The output's page count differs from what the page operations left.</summary>
+    internal static readonly DiagnosticDescriptor PageCountMismatch = Verification("PDF_PAGE_COUNT_MISMATCH");
+
+    /// <summary>An operation's effect could not be read back, so it was not checked.</summary>
+    internal static readonly DiagnosticDescriptor VerificationIncomplete = Verification("PDF_VERIFICATION_INCOMPLETE");
+
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
+        FieldValueMismatch,
+        RedactedTextFound,
+        BookmarkMismatch,
+        MetadataMismatch,
+        AttachmentMismatch,
+        PageCountMismatch,
+        VerificationIncomplete,
         DiagnosticDescriptor.Error(SignCertInvalid, "pdf", "input"),
         DiagnosticDescriptor.Error(FormXfaUnsupported, "pdf", "format"),
         DiagnosticDescriptor.Error(PdfaConversionFailed, "pdf", "format"),
@@ -39,4 +67,7 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(NavigationDegraded, "pdf", "warning"),
         DiagnosticDescriptor.Warning(NetworkResourcesRequested, "pdf", "warning"),
     ];
+
+    private static DiagnosticDescriptor Verification(string code) =>
+        DiagnosticDescriptor.Verification(code, "pdf");
 }

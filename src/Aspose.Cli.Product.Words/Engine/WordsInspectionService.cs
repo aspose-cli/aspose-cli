@@ -47,7 +47,7 @@ internal sealed class WordsInspectionService
         }
 
         Document compared = leftLoaded.Document.Clone();
-        compared.Compare(rightLoaded.Document, "Aspose CLI", DateTime.Now, new CompareOptions
+        compared.Compare(rightLoaded.Document, request.Author ?? "Aspose CLI", DateTime.Now, new CompareOptions
         {
             IgnoreFormatting = request.IgnoreFormatting,
             Granularity = Granularity.WordLevel,
@@ -76,8 +76,10 @@ internal sealed class WordsInspectionService
             },
             Samples = revisions.Take(SampleLimit).Select(static revision => new RevisionSample
             {
-                Type = revision.RevisionType.ToString(),
-                Text = Truncate(WordsText.Clean(revision.ParentNode?.GetText() ?? string.Empty), 300),
+                Type = InfoProjection.RevisionTypeName(revision.RevisionType),
+                Text = InfoProjection.NodeText(revision) is { } text && WordsText.Clean(text) is { Length: > 0 } clean
+                    ? Truncate(clean, 300)
+                    : null,
             }).ToArray(),
             Output = output,
             License = EnvelopeParts.License(state),

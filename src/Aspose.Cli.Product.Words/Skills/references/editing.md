@@ -38,14 +38,17 @@ aspose-cli schema v2/words/ops --operation insert_table
 - `--track-changes` requires `--author` and records content insertions and
   deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not
   section breaks), `delete_blocks`, `set_table_cell`, `repeat_table_row`,
-  `append_document`, `add_comment` and `remove_comments`. Every other operation would change the
-  document without a revision, so a tracked batch that contains one fails with
-  `OPTION_INVALID` before anything changes; run it in a separate batch.
+  `append_document`. A tracked batch can also hold `add_comment` and
+  `remove_comments`: a comment is a review annotation of its own, so it is added
+  or removed outright and is never listed as a revision. Every other operation
+  would change the document without a revision, so a tracked batch that
+  contains one fails with `OPTION_INVALID` before anything changes; run it in a
+  separate batch.
 
 ## Text
 
 - `set_text` replaces the inline content of paragraphs and keeps their style;
-  use `set_table_cell` for table cells. With a `bookmark` target, or
+  use `set_table_cell` for table cells. With `"at": {"bookmark": "Name"}`, or
   `--set bookmark:Name=text`, it replaces only the text the bookmark encloses,
   anywhere including table cells: the bookmark and the rest of its paragraph
   remain, the new text takes the format of the bookmark's first run, and a
@@ -131,7 +134,10 @@ set. `--track-changes` cannot record it.
 ## Headers, footers and page numbers
 
 `set_header` and `set_footer` replace the selected kind, including its fields,
-in one section or every section. Apply footer text before `set_page_numbers`.
+in one section or every section. Their content is exactly one of `markdown` or
+`paragraphs`, and these `paragraphs` are plain strings, one per paragraph, such
+as `["Contract C-2026-014", "Confidential"]`; `insert_paragraphs` instead takes
+`{"text": ..., "style": ...}` objects. Apply footer text before `set_page_numbers`.
 Page numbering targets only the primary header or footer, reuses its first
 PAGE field or appends one in a new paragraph, and keeps the other content. A
 `start` restarts numbering in each selected section; name a `section` when only
@@ -141,7 +147,8 @@ one should restart.
 
 - Editing restrictions (`protect`) are not encryption: they guide Word's user
   interface and do not bind the CLI. Editing a restricted document succeeds,
-  reports `PROTECTION_NOT_ENFORCED` and keeps the restrictions. `unprotect`
+  reports `PROTECTION_NOT_ENFORCED` and keeps the restrictions in a Word
+  format output. `unprotect`
   with `passwordEnv` checks the password and fails with `DOCUMENT_PROTECTED`
   when it is wrong; without `passwordEnv` it removes the restrictions whatever
   their password, so use it only when the user owns that decision.
@@ -155,6 +162,8 @@ one should restart.
 ## Save and verify
 
 Every output that can be loaded as a document is reopened before publication.
-`--verify` adds the semantic checks described in
+An `--out` in `txt`, `md`, `html` or `html-fixed` reports `LOSSY_CONVERSION`:
+such a format cannot hold every Word feature, such as fields, revisions or
+protection. `--verify` adds the semantic checks described in
 [verification](verification.md); it does not render pages and cannot be used
 for outputs that are not documents.

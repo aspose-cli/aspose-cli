@@ -458,6 +458,152 @@ public sealed class ProductFileRouterTests
     }
 
     [Fact]
+    public async Task OwnerMismatch_NamesAProductWhoseSignatureFitsSeveralOfItsFormats()
+    {
+        ProductCatalog catalog = ProductCatalog.Build(
+        [
+            Module("owner", ".owned", Match(FileRecognitionKind.NoMatch)),
+            new StaticModule(TieProduct()),
+        ]);
+        string path = CreateFile(".owned", "same"u8.ToArray());
+        try
+        {
+            CliException error = await Assert.ThrowsAsync<CliException>(
+                async () => await new ProductFileRouter(catalog).RouteAsync(path));
+
+            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+            Assert.Equal("ambiguous-format", Assert.Single(error.Details!["detected"]!.AsArray())!.GetValue<string>());
+            Assert.Contains("--product ambiguous-format", error.Hint, StringComparison.Ordinal);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExplicitProduct_ResolvesIndeterminateContentButNotAMismatch()
+    {
+        ProductCatalog catalog = ProductCatalog.Build(
+        [
+            Module("one", ".one", Match(FileRecognitionKind.Indeterminate)),
+            Module("two", ".two", Match(FileRecognitionKind.NoMatch)),
+        ]);
+        string indeterminate = CreateFile(".one");
+        string path = CreateFile(".two");
+        try
+        {
+            FileRouteResult result = await new ProductFileRouter(catalog).ResolveAsync(
+                new FileRouteRequest(indeterminate) { ExplicitProductId = "one" });
+            Assert.Equal("one", result.Product.Manifest.Id);
+            Assert.True(result.Explicit);
+
+            CliException error = await Assert.ThrowsAsync<CliException>(
+                async () => await new ProductFileRouter(catalog).ResolveAsync(
+                    new FileRouteRequest(path) { ExplicitProductId = "two" }));
+            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+        }
+        finally
+        {
+            File.Delete(indeterminate);
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task ExplicitProduct_LeavesAFormatWithoutRecognitionRulesToTheEngine()
+    {
+        ProductCatalog catalog = ProductCatalog.Build([new StaticModule(TieProduct())]);
+        string other = CreateFile(".gamma", "same"u8.ToArray());
+        string declared = CreateFile(".alpha", "different"u8.ToArray());
+        try
+        {
+            FileRouteResult result = await new ProductFileRouter(catalog).ResolveAsync(
+                new FileRouteRequest(other) { ExplicitProductId = "ambiguous-format" });
+            Assert.Equal("ambiguous-format", result.Product.Manifest.Id);
+            Assert.True(result.Explicit);
+
+            CliException error = await Assert.ThrowsAsync<CliException>(
+                async () => await new ProductFileRouter(catalog).ResolveAsync(
+                    new FileRouteRequest(declared) { ExplicitProductId = "ambiguous-format" }));
+            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+        }
+        finally
+        {
+            File.Delete(other);
+            File.Delete(declared);
+        }
+    }
+
+    [Fact]
+    public async Task ExplicitProduct_StillChecksTheRulesOfAFormatItNeverRoutesGenerically()
+    {
+        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
+        [
+            new FormatDescriptor("alpha", FormatUse.Input, ".alpha") { Ownership = RouteOwnership.Default },
+        ],
+        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
+        {
+            ["alpha"] = FileFormatRecognition.Match(FileProbePattern.AsciiBytesAt(0, "alpha"), "alpha signature"),
+        });
+        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(Manifest("explicit-rules"))
+            .Formats(
+            [
+                .. formats,
+                FormatDescriptor.Input("delta", 1, ".delta") with
+                {
+                    Recognition = FileFormatRecognition.Match(
+                        FileProbePattern.AsciiBytesAt(0, "delta"), "delta signature"),
+                },
+            ]);
+        Complete(builder, "explicit-rules");
+        ProductCatalog catalog = ProductCatalog.Build([new StaticModule(builder.Build())]);
+        string matching = CreateFile(".delta", "delta"u8.ToArray());
+        string contradicting = CreateFile(".delta", "other"u8.ToArray());
+        try
+        {
+            FileRouteResult result = await new ProductFileRouter(catalog).ResolveAsync(
+                new FileRouteRequest(matching) { ExplicitProductId = "explicit-rules" });
+            Assert.Equal("delta", result.FormatId);
+
+            CliException error = await Assert.ThrowsAsync<CliException>(
+                async () => await new ProductFileRouter(catalog).ResolveAsync(
+                    new FileRouteRequest(contradicting) { ExplicitProductId = "explicit-rules" }));
+            Assert.Equal(ErrorCodes.FormatMismatch, error.Code);
+        }
+        finally
+        {
+            File.Delete(matching);
+            File.Delete(contradicting);
+        }
+    }
+
+    /// <summary>
+    /// A product whose two default formats share one signature, plus an input format without
+    /// recognition rules that only an explicit selection reaches.
+    /// </summary>
+    private static ProductDefinition TieProduct()
+    {
+        FileProbePattern signature = FileProbePattern.AsciiBytesAt(0, "same");
+        IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(
+        [
+            new FormatDescriptor("alpha", FormatUse.Input, ".alpha") { Ownership = RouteOwnership.Default },
+            new FormatDescriptor("beta", FormatUse.Input, ".beta") { Ownership = RouteOwnership.Default },
+            FormatDescriptor.Input("gamma", 2, ".gamma"),
+        ],
+        new Dictionary<string, FileFormatRecognition>(StringComparer.Ordinal)
+        {
+            ["alpha"] = FileFormatRecognition.Match(signature, "same signature"),
+            ["beta"] = FileFormatRecognition.Match(signature, "same signature"),
+        });
+        ProductDefinitionBuilder<ITestPort> builder = ExtProduct.Define<ITestPort>(
+                Manifest("ambiguous-format"))
+            .Formats(formats);
+        Complete(builder, "ambiguous-format");
+        return builder.Build();
+    }
+
+    [Fact]
     public async Task TruncatedZipWithoutDeclaredMarkerRemainsIndeterminateAtForty()
     {
         IReadOnlyList<FormatDescriptor> formats = FileFormatRecognition.AttachTo(

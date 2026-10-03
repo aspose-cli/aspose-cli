@@ -26,7 +26,7 @@
     },
     "pdf": {
       "type": "object",
-      "required": ["pageCount", "distinctPageSizes", "version", "encrypted", "linearized", "tagged", "pdfaCompliant", "formType", "attachmentCount", "signed", "passwordType"],
+      "required": ["pageCount", "distinctPageSizes", "version", "encrypted", "linearized", "tagged", "formType", "attachmentCount", "signed", "passwordType"],
       "additionalProperties": false,
       "properties": {
         "pageCount": { "type": "integer", "minimum": 0 },
@@ -47,7 +47,7 @@
         "encrypted": { "type": "boolean" },
         "linearized": { "type": "boolean" },
         "tagged": { "type": "boolean" },
-        "pdfaCompliant": { "type": "boolean" },
+        "pdfaProfile": { "type": "string", "pattern": "^pdfa-[1-4][abuef]?$", "description": "The PDF/A profile the file declares in its metadata, such as pdfa-2b; absent when it declares none. A declaration is not a check: pdf validate --profile verifies conformance." },
         "formType": { "enum": ["none", "acro", "xfa"] },
         "attachmentCount": { "type": "integer", "minimum": 0 },
         "signed": { "type": "boolean" },
@@ -173,7 +173,11 @@
       }
     },
     "layers": { "type": "array", "items": { "type": "string" } },
-    "metadata": { "type": "object", "additionalProperties": { "type": ["string", "null"] } },
+    "metadata": {
+      "type": "object",
+      "description": "Document information and XMP properties as the file stores them; XMP keys start with xmp:. creationDate and modificationDate are ISO 8601: in UTC ending in Z when the stored date states an offset, without Z when it states none, and the stored text unchanged when it is not a PDF date.",
+      "additionalProperties": { "type": ["string", "null"] }
+    },
     "license": { "type": "object" },
     "warnings": { "type": "array" }
   },

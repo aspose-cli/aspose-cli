@@ -35,6 +35,7 @@ public sealed record DocumentSummary
     public required bool RevisionsPresent { get; init; }
     public required int RevisionCount { get; init; }
     public required IReadOnlyList<string> RevisionAuthors { get; init; }
+    public required int CommentCount { get; init; }
     public required string Protection { get; init; }
     public required bool Signed { get; init; }
 }
@@ -249,7 +250,8 @@ public sealed record RevisionCounts
 public sealed record RevisionSample
 {
     public required string Type { get; init; }
-    public required string Text { get; init; }
+    /// <summary>The revision run's text; absent for a paragraph mark.</summary>
+    public string? Text { get; init; }
 }
 
 /// <summary>One window of search hits; its <c>window</c> counts hits and continues with <c>--skip</c>.</summary>

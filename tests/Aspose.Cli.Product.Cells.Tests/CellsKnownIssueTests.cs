@@ -91,6 +91,30 @@ public sealed class CellsKnownIssueTests
             "the destination sheet's own formula still reads its workbook-level name after the copy");
     }
 
+    [LicensedFact]
+    public void CopyingASheetFromAnotherWorkbook_GivesALinkWithoutCachedValuesAnEmptyCache()
+    {
+        using var source = new Workbook();
+        Cell linked = source.Worksheets[0].Cells["A1"];
+        linked.Formula = "='[missing-rates.xlsx]Rates'!$B$2";
+        source.CalculateFormula();
+
+        using var target = new Workbook();
+        Worksheet copy = target.Worksheets[target.Worksheets.Add()];
+        copy.Copy(source.Worksheets[0], new CopyOptions());
+        target.Worksheets[0].Cells.CreateRange("B1").Copy(
+            source.Worksheets[0].Cells.CreateRange("A1"), new PasteOptions { PasteType = PasteType.All });
+        target.CalculateFormula();
+        Cell sheetCopy = copy.Cells["A1"];
+        Cell rangeCopy = target.Worksheets[0].Cells["B1"];
+
+        KnownIssue.Reproduces(
+            "CELLS-COPY-EXTERNAL-CACHE",
+            linked.Type == CellValueType.IsError
+                && sheetCopy.Type != CellValueType.IsError && rangeCopy.Type != CellValueType.IsError,
+            $"the source evaluates to {linked.Value}, the sheet copy to {sheetCopy.Value} and the range copy to {rangeCopy.Value}");
+    }
+
     /// <summary>The documented refusal: skip every resource and supply no stream.</summary>
     private sealed class RefuseEveryResource : IStreamProvider
     {

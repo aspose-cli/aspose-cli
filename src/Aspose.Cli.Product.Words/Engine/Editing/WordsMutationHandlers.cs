@@ -1,4 +1,5 @@
 using Aspose.Cli.Product.Words.Engine.Mapping;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Words;
 
@@ -19,6 +20,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     private readonly InputResourceScope _operationInputs;
     private readonly IReadOnlyDictionary<string, string>? _secrets;
     private readonly WordsRevisionTracking? _tracking;
+    private readonly ICollection<Warning> _warnings;
 
     /// <summary>Creates the handlers of one resolved operation.</summary>
     /// <param name="loaded">The document being edited.</param>
@@ -28,6 +30,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     /// <param name="operationInputs">Opens and charges the images that operations insert.</param>
     /// <param name="secrets">The operations' secrets by environment variable name.</param>
     /// <param name="tracking">The edit's revision tracking, or null when changes are not tracked.</param>
+    /// <param name="warnings">Collects the warnings operations disclose about their result.</param>
     internal WordsMutationHandlers(
         LoadedDocument loaded,
         ResolvedWordsOp resolved,
@@ -35,7 +38,8 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         InputSource inputs,
         InputResourceScope operationInputs,
         IReadOnlyDictionary<string, string>? secrets,
-        WordsRevisionTracking? tracking)
+        WordsRevisionTracking? tracking,
+        ICollection<Warning> warnings)
     {
         _loaded = loaded;
         _document = loaded.Document;
@@ -45,6 +49,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         _operationInputs = operationInputs;
         _secrets = secrets;
         _tracking = tracking;
+        _warnings = warnings;
     }
 
     /// <summary>The operation's target blocks.</summary>

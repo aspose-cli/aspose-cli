@@ -27,8 +27,20 @@ row: a data file holding only a CSV header or `[]` fails the op with
 }
 ```
 
-A field the rows do not name stays in the output and reads as `«Name»`; find
-leftovers with `words query search <file> --pattern "«"`. Check representative
+A null value (JSON `null`, or a CSV row shorter than the header) merges as
+blank text. A key a row lacks leaves that field as `«Name»` in the row's copy;
+with `regions`, it merges as blank text unless no row has the key, in which
+case the field stays `«Name»` in every repetition. Find leftovers with
+`words query search <file> --pattern "«"`.
+
+A template field that some rows give no value reports `MERGE_VALUE_MISSING`,
+listing each field with its 1-based row numbers, such as
+`Salary: record 2; Bonus: records 1, 3`. A row number is also the merged copy,
+or with `regions` the region repetition, that has the gap. With `regions` only
+the fields inside the region are checked. An empty string is a value and is not
+reported, nor is a data field the template does not use, and `--verify` still
+reports `ok`. Supply the values or confirm with the user that the result is
+acceptable. Check representative
 outputs for long values, CJK or right-to-left text and pagination. The
 [mail-merge example](../examples/mail-merge-letters/README.md) merges a CSV
 file into a letter.

@@ -9,6 +9,7 @@ internal static class EditCommand
     private static readonly BoundedEditDefinition<PdfOp, PdfOpsBatch> Definition = new()
     {
         Contracts = ProductJsonContext.Definition,
+        VerifyDescription = "Read the staged output back and check the effect of each form, redaction, bookmark, metadata, attachment and page operation.",
     };
 
     public static Command Create(IProductCommandHost<IPdfEngine> host) =>
@@ -29,6 +30,7 @@ internal static class EditCommand
                 BackupPath = edit.Target.BackupPath,
                 Options = edit.Options,
                 Password = standard.InputPassword,
+                Verify = edit.Verify,
                 OpSecrets = edit.Secrets,
             }));
 }

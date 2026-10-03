@@ -19,12 +19,18 @@ internal enum CommandExecutionOwnership { Worker, Service, ParentHandoff }
 /// </param>
 /// <param name="EnvironmentVariables">Extra environment variables a supervised worker receives.</param>
 /// <param name="OutputBytesLimit">A command-specific output byte limit.</param>
+/// <param name="RefusesEvaluationRequest">
+/// Whether the command refuses <c>--license-mode evaluation</c> because its effect outlives the
+/// command, such as the installed licenses or the shared App. The refusal comes before any input
+/// is read.
+/// </param>
 internal sealed record CommandInvocationPolicy(
     string? ProductId = null,
     CommandExecutionOwnership Execution = CommandExecutionOwnership.Worker,
     bool McpAllowed = false,
     IReadOnlyList<string>? EnvironmentVariables = null,
-    long? OutputBytesLimit = null);
+    long? OutputBytesLimit = null,
+    bool RefusesEvaluationRequest = false);
 
 internal static class CommandInvocationPolicies
 {

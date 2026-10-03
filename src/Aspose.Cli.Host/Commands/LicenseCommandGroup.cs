@@ -64,7 +64,7 @@ internal static class LicenseCommandGroup
             string source = context.Paths.ResolveInput(parse.GetRequiredValue(file));
             return LicenseManager.Install(context, source, requestedProduct);
         }));
-        return install;
+        return install.WithInvocationPolicy(new CommandInvocationPolicy(RefusesEvaluationRequest: true));
     }
 
     private static Command CreateRemove(
@@ -82,7 +82,7 @@ internal static class LicenseCommandGroup
             string? selected = parse.GetValue(product);
             return LicenseManager.RemoveAndReport(context, selected);
         }));
-        return remove;
+        return remove.WithInvocationPolicy(new CommandInvocationPolicy(RefusesEvaluationRequest: true));
     }
 
     private static Option<string?> ProductOption(

@@ -1,9 +1,12 @@
 # Revisions and comparison
 
 Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
+`document.commentCount`,
 `document.protection` and `document.signed` in the `words inspect` result.
-Editing a document that already has revisions reports `TRACKED_CHANGES_PRESENT`;
-disclose them.
+Editing a document that already has revisions reports `TRACKED_CHANGES_PRESENT`
+while a Word format output still contains revisions; disclose them. A batch
+that accepts or rejects every revision does not report it, and an output such
+as `txt` that drops revisions reports `LOSSY_CONVERSION` instead.
 
 Use `--track-changes --author "Name"` when the requested edit must remain reviewable.
 `set_table_cell` supports tracked replacement while retaining the cell's structure;
@@ -26,7 +29,8 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 ```
 
 - One entry is one change: adjacent runs and paragraph marks that one author
-  inserted, deleted or moved are listed together. `type` is `insertion`, `deletion`,
+  inserted, deleted or moved are listed together, except inside comment text,
+  where each run and paragraph mark is its own entry. `type` is `insertion`, `deletion`,
   `formatChange`, `styleDefinitionChange` or `moving`.
 - `text` is the new text of an insertion and the original text of a deletion.
   Format and style definition changes have no `text`; read the `block` instead.
@@ -46,7 +50,14 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 `words compare` refuses inputs that already contain revisions (`DOCUMENT_HAS_REVISIONS`); list them with `--detail revisions` above. To compare anyway, make reviewed copies first, explicitly accept or reject revisions there, then compare:
 
 ```powershell
-aspose-cli words compare original.docx changed.docx --out redline.docx --output json
+aspose-cli words compare original.docx changed.docx --out redline.docx --author "Legal Review" --output json
 ```
+
+The redline's revisions are attributed to `--author`, or to `Aspose CLI`
+without it.
+
+The result counts the revisions by type and lists up to 50 `samples`, one per
+revision run or paragraph mark, with the `type` names `--detail revisions`
+uses; a paragraph mark's sample has no `text`.
 
 Editing a signed document invalidates its signature and emits `SIGNATURE_INVALIDATED`; the resulting file must be reviewed and re-signed.

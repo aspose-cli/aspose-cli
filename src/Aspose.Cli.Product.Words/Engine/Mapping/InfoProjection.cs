@@ -45,6 +45,7 @@ internal static class InfoProjection
                 RevisionCount = document.Revisions.Count,
                 RevisionAuthors = document.Revisions.Cast<Revision>().Select(static r => r.Author)
                     .Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray(),
+                CommentCount = document.GetChildNodes(NodeType.Comment, true).Count,
                 Protection = WordsProtection.ToMode(document.ProtectionType),
                 Signed = loaded.Format.HasDigitalSignature,
             },
@@ -139,7 +140,8 @@ internal static class InfoProjection
     /// revision per run and paragraph mark and joins adjacent revisions of one type and author
     /// into a <see cref="RevisionGroup"/>, so a grouped change is listed once, at its first
     /// revision, with the group's text. <see cref="RevisionCollection.Groups"/> itself is not in
-    /// document order, and style definition changes and moves belong to no group. A style
+    /// document order, and style definition changes, moves and the revisions inside comments
+    /// belong to no group. A style
     /// definition change is listed on its own; a move is joined by <see cref="Moves"/>. A
     /// deletion followed by an insertion stays two entries.
     /// </summary>
@@ -155,7 +157,7 @@ internal static class InfoProjection
             .Select(revision => (revision, revision.RevisionType switch
             {
                 RevisionType.Moving => moves[revision],
-                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text ?? revision.ParentNode.GetText(),
+                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text ?? NodeText(revision),
                 // Format changes carry a description of the formatting, not document text.
                 _ => null,
             }))
@@ -167,6 +169,14 @@ internal static class InfoProjection
             "Split the document with 'words split --by section' and inspect each part with '--detail revisions'.",
             warnings);
     }
+
+    /// <summary>
+    /// The text of the one node a revision changes, or null for a paragraph: a paragraph's own
+    /// revision is its mark alone, which has no text, while the SDK would return the whole
+    /// paragraph's text.
+    /// </summary>
+    internal static string? NodeText(Revision revision) =>
+        revision.ParentNode is Paragraph or null ? null : revision.ParentNode.GetText();
 
     /// <summary>
     /// Joins the move revisions into one move per side: its source (moved from) and its
@@ -288,7 +298,7 @@ internal static class InfoProjection
         };
     }
 
-    private static string RevisionTypeName(RevisionType type) => type switch
+    internal static string RevisionTypeName(RevisionType type) => type switch
     {
         RevisionType.Insertion => "insertion",
         RevisionType.Deletion => "deletion",

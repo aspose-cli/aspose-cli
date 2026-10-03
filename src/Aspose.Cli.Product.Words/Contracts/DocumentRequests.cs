@@ -79,6 +79,8 @@ public sealed record WordsEditRequest
 public sealed record WordsCompareRequest
 {
     public bool IgnoreFormatting { get; init; }
+    /// <summary>The author of the redline's revisions; null records <c>Aspose CLI</c>.</summary>
+    public string? Author { get; init; }
     public string? OutputPath { get; init; }
     public bool Overwrite { get; init; }
     public string? LeftPassword { get; init; }

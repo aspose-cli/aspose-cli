@@ -15,6 +15,102 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 
 public sealed class PdfEngineTests
 {
+    [Theory]
+    [InlineData(Sdk.Extensibility.Output.TableFormat.Plain)]
+    [InlineData(Sdk.Extensibility.Output.TableFormat.Markdown)]
+    public void Info_TableAndMarkdown_ShowEveryRequestedDetail(Sdk.Extensibility.Output.TableFormat format)
+    {
+        using var fixture = new PdfEngineFixture();
+        string path = fixture.CreateDocument(pages: 2);
+        using (var document = new Document(path))
+        {
+            var chapter = new OutlineItemCollection(document.Outlines) { Title = "Chapter", Destination = new FitExplicitDestination(document.Pages[1]) };
+            chapter.Add(new OutlineItemCollection(document.Outlines) { Title = "Section", Destination = new FitExplicitDestination(document.Pages[2]) });
+            document.Outlines.Add(chapter);
+            document.EmbeddedFiles.Add("data.csv", new FileSpecification(new MemoryStream("a,b\n"u8.ToArray()), "data.csv", "Data") { Name = "data.csv", UnicodeName = "data.csv" });
+            document.Info.Title = "Annual report";
+            document.Save(path);
+        }
+
+        PdfInfoResult info = fixture.Engine.GetInfo(path, new PdfInfoRequest
+        {
+            Details = ["outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata"],
+        });
+        using var writer = new StringWriter();
+        Output.PdfRenderers.Render(info, new Sdk.Extensibility.Output.TableSurface(writer, format));
+        string text = writer.ToString();
+
+        string heading = format == Sdk.Extensibility.Output.TableFormat.Markdown ? "### " : string.Empty;
+        foreach (string section in new[] { "outline", "forms", "attachments", "fonts", "permissions", "signatures", "layers", "metadata" })
+        {
+            Assert.Contains(heading + section, text, StringComparison.Ordinal);
+        }
+
+        Assert.Contains("1/1", text, StringComparison.Ordinal);
+        Assert.Contains("Section", text, StringComparison.Ordinal);
+        Assert.Contains("data.csv", text, StringComparison.Ordinal);
+        Assert.Contains(info.Fonts![0].Name, text, StringComparison.Ordinal);
+        Assert.Contains("Annual report", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Create_FromHtml_TakesTheTitleFromTheHtmlAndInventsNoOtherMetadata()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("report.html");
+        File.WriteAllText(input, """
+            <!DOCTYPE html><html><head><meta charset="utf-8">
+            <title>
+              2026 Q3 运营报告 &amp; East
+            </title><meta name="author" content="Operations"></head>
+            <body><h1>Report</h1></body></html>
+            """);
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = fixture.File("report.pdf") });
+
+        PdfInfoResult info = fixture.Engine.GetInfo(result.Output.Path, new PdfInfoRequest { Details = ["metadata"] });
+        Assert.Equal("2026 Q3 运营报告 & East", info.Metadata!["title"]);
+        Assert.Null(info.Metadata["author"]);
+        Assert.Null(info.Metadata["subject"]);
+        Assert.DoesNotContain(info.Metadata.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Create_FromMarkdown_InventsNoMetadata()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("notes.md");
+        File.WriteAllText(input, "# Notes\n\nBody text.\n");
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { TextPath = input, Markdown = true, OutputPath = fixture.File("notes.pdf") });
+
+        PdfInfoResult info = fixture.Engine.GetInfo(result.Output.Path, new PdfInfoRequest { Details = ["metadata"] });
+        Assert.Null(info.Metadata!["title"]);
+        Assert.Null(info.Metadata["author"]);
+        Assert.Null(info.Metadata["subject"]);
+    }
+
+    [Theory]
+    [InlineData("D:20261003100000+05'30'", "2026-10-03T04:30:00.0000000Z")]
+    [InlineData("D:20261003011908Z00'00'", "2026-10-03T01:19:08.0000000Z")]
+    [InlineData("D:20260930225834-07'00'", "2026-10-01T05:58:34.0000000Z")]
+    [InlineData("D:20261003", "2026-10-03T00:00:00.0000000")]
+    [InlineData("3 October 2026", "3 October 2026")]
+    public void Info_ReadsADocumentDateAtTheOffsetItStates(string stored, string expected)
+    {
+        using var fixture = new PdfEngineFixture();
+        string path = fixture.CreateDocument(pages: 1);
+        using (var document = new Document(path))
+        {
+            document.Info["CreationDate"] = stored;
+            document.Save(path);
+        }
+
+        PdfInfoResult result = fixture.Engine.GetInfo(path, new PdfInfoRequest { Details = ["metadata"] });
+
+        Assert.Equal(expected, result.Metadata!["creationDate"]);
+    }
+
     [Fact]
     public void Info_ProjectsAllM1Details()
     {

@@ -9,6 +9,10 @@ small 3-statement model — `model.xlsx`, sheets `Assumptions` / `PnL` /
 `Summary`; every recipe ran against the real engine, and every quoted
 number is an engine read-back, not arithmetic.
 
+Recipes pass their ops inline (`--ops '{...}'`) for brevity, as a POSIX shell
+takes them. In PowerShell, save each batch to a file and pass its path
+instead (`aspose-cli docs troubleshooting`, Windows PowerShell).
+
 ## The three zones
 
 Every model separates Inputs (assumption sheets), Calc (statement sheets)

@@ -11,6 +11,10 @@ Recipes below assume a report book (`Sales` summary, `Config` assumptions,
 fold them into a larger batch. In-place edits to a user-supplied file take
 `--backup --verify` on the first edit (`aspose-cli docs cells/editing`).
 
+Recipes pass their ops inline (`--ops '{...}'`) for brevity, as a POSIX shell
+takes them. In PowerShell, save each batch to a file and pass its path
+instead (`aspose-cli docs troubleshooting`, Windows PowerShell).
+
 ## Column widths
 
 Widths are saved in the file; nothing re-fits when the user opens it, and a

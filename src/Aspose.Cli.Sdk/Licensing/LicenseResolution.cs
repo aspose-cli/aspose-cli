@@ -32,6 +32,11 @@ public enum LicenseSourceKind
 
     /// <summary>A product-specific file under the user's <c>licenses</c> directory.</summary>
     ProductUserFile,
+
+    /// <summary>
+    /// <c>--license-mode evaluation</c>: the command asked for evaluation mode, so no source was read.
+    /// </summary>
+    EvaluationRequested,
 }
 
 /// <summary>Outcome of the license resolution chain.</summary>
@@ -45,7 +50,7 @@ public sealed record LicenseResolution(LicenseSourceKind Kind, string? Path)
     internal string? ContentPath { get; init; }
 
     /// <summary>A license source was found (it may still fail validation).</summary>
-    public bool IsConfigured => Kind != LicenseSourceKind.None;
+    public bool IsConfigured => Kind is not (LicenseSourceKind.None or LicenseSourceKind.EvaluationRequested);
 
     /// <summary>The environment variable containing base64 license content, when applicable.</summary>
     public string? Base64EnvironmentVariable => Kind switch
@@ -55,7 +60,10 @@ public sealed record LicenseResolution(LicenseSourceKind Kind, string? Path)
         _ => null,
     };
 
-    /// <summary>Stable label used in <c>license status</c> output; null when not configured.</summary>
+    /// <summary>
+    /// Stable label used in <c>license status</c> output; null when nothing is configured, and
+    /// <c>requested</c> when the command asked for evaluation mode.
+    /// </summary>
     public string? SourceLabel => Kind switch
     {
         LicenseSourceKind.None => null,
@@ -68,9 +76,16 @@ public sealed record LicenseResolution(LicenseSourceKind Kind, string? Path)
         LicenseSourceKind.ProductEnvPath => "env:" + LicenseResolver.ProductEnvPathName(ProductId!),
         LicenseSourceKind.ProductProjectFile => "project:" + ProductId,
         LicenseSourceKind.ProductUserFile => "user:" + ProductId,
+        LicenseSourceKind.EvaluationRequested => RequestedSourceLabel,
         _ => throw new InvalidOperationException($"Unhandled license source kind: {Kind}"),
     };
 
+    /// <summary>The <see cref="SourceLabel"/> of a command that asked for evaluation mode.</summary>
+    public const string RequestedSourceLabel = "requested";
+
     /// <summary>The no-license resolution.</summary>
     public static LicenseResolution None { get; } = new(LicenseSourceKind.None, null);
+
+    /// <summary>The resolution of a command that requested evaluation mode.</summary>
+    public static LicenseResolution EvaluationRequested { get; } = new(LicenseSourceKind.EvaluationRequested, null);
 }

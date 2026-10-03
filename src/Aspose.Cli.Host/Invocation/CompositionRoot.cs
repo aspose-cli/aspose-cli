@@ -97,6 +97,7 @@ internal static class CompositionRoot
         {
             WorkDirectory = workDirectory,
             LicensePath = ResolveLicensePath(globals.LicensePath, workDirectory),
+            EvaluationRequested = globals.EvaluationRequested,
             RuntimeLicenseForProduct = runtimeLicenses,
             UserLicenseChanges = licenseChanges,
             ConfigDirectory = Aspose.Cli.Sdk.Configuration.ConfigurationPaths.UserDirectory(),

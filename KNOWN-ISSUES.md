@@ -37,6 +37,19 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   `import_range`.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-COPY-EXTERNAL-CACHE
+
+- **Defect:** `Worksheet.Copy` and `Range.Copy` from another workbook, when a copied formula
+  reads a third workbook through a link that caches no values (such as a link written while the
+  linked file was absent), give the destination's link an empty cache. The formula evaluates to
+  `#REF!` in the source but, once the destination is calculated, reads the linked cells as empty,
+  usually as 0.
+- **CLI behavior:** `import_sheet` and `import_range` with `"content": "all"` warn
+  `EXTERNAL_LINK_CACHE_MISSING` with the copied cells whose result changed this way.
+- **Workaround:** replace those formulas with `set_formula` or `set_values`, or save the source
+  in Excel with the linked workbook available so the link caches its values.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ## Aspose.PDF.Drawing 26.8.0
 
 ### PDF-HTML-EGRESS
@@ -66,6 +79,14 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** re-create the counted bookmarks and links with `add_bookmark` and `add_link`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-PDFA-ATTACHMENT-TYPE
+
+- **Defect:** `Document.Convert` to PDF/A-3B gives every attachment that has no media type the
+  type `application/pdf`, whatever its content.
+- **CLI behavior:** `pdf convert --to pdfa-3b` labels such an attachment
+  `application/octet-stream` unless its content is a PDF; a declared type is kept.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-OUTLINE-DELETE-TITLE
 
 - **Defect:** `OutlineItemCollection.Delete()` removes bookmarks by title rather than the item
@@ -73,6 +94,32 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   different one, and when bookmarks at different levels share the title it can remove several.
 - **CLI behavior:** none visible; `delete_bookmarks` gives each selected bookmark a unique title
   before deleting it, so exactly the selected bookmarks and their children are removed.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-NAMES-WITHOUT-DESTS
+
+- **Defect:** `Document.NamedDestinations.Names` and `Count` throw `NullReferenceException` when
+  the catalog's name tree has no `Dests` entry, for example a tree that holds only attachments.
+- **CLI behavior:** none visible; such a document is read as having no named destinations, so
+  `pdf edit`, `pdf merge` and `pdf convert --to pdfa-*` accept it.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-TAGGED-CONTENT-WRITES
+
+- **Defect:** reading `Document.TaggedContent` rewrites the loaded document: it sets an empty
+  title to `Tagged PDF`, creates XMP metadata dated now that declares PDF/UA (`pdfuaid:part` 1)
+  and drops the PDF/A identification, so `IsPdfaCompliant` turns false.
+- **CLI behavior:** none visible; `pdf inspect` reads the structure tree after every other
+  property and never saves the inspected document.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-IMPORT-INFO-PLACEHOLDER
+
+- **Defect:** the HTML and Markdown importers set the document title, author and subject to
+  `Aspose`, whatever the source states; the HTML `title` element is ignored.
+- **CLI behavior:** `pdf create --from-html` takes the title from the HTML `title` element and
+  `--from-text` Markdown leaves it empty; both leave the author and subject empty.
+- **Workaround:** set the other fields with a `set_metadata` edit.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0

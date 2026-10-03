@@ -31,7 +31,11 @@ public sealed record PdfSummary
     public required bool Encrypted { get; init; }
     public required bool Linearized { get; init; }
     public required bool Tagged { get; init; }
-    public required bool PdfaCompliant { get; init; }
+    /// <summary>
+    /// The PDF/A profile the file declares, such as <c>pdfa-2b</c>, or null when it declares none.
+    /// A declaration is not a check: <c>pdf validate --profile</c> verifies conformance.
+    /// </summary>
+    public string? PdfaProfile { get; init; }
     public required string FormType { get; init; }
     public required int AttachmentCount { get; init; }
     public required bool Signed { get; init; }
@@ -284,8 +288,20 @@ public sealed record PdfEditResult() : ResultEnvelope(PdfSchemaIds.EditResult, 2
     public BackupInfo? Backup { get; init; }
     public MutationReceipt? Mutation { get; init; }
     public IReadOnlyList<int>? PagesTouched { get; init; }
+    public PdfEditVerification? Verification { get; init; }
     [JsonIgnore]
-    public bool HasFailures => Applied.Any(static item => item.Status == OpStatuses.Failed);
+    public bool HasFailures => Applied.Any(static item => item.Status == OpStatuses.Failed)
+        || Verification is { Ok: false };
+}
+
+/// <summary>What --verify read back from the staged output.</summary>
+public sealed record PdfEditVerification
+{
+    public required bool Ok { get; init; }
+    public required IReadOnlyList<VerificationIssue> Issues { get; init; }
+
+    /// <summary>In batch order, the ids of the operations whose every recorded effect was read back.</summary>
+    public required IReadOnlyList<string> CheckedOps { get; init; }
 }
 
 /// <summary>PDF form field inventory.</summary>

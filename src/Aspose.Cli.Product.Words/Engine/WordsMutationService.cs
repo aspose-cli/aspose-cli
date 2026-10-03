@@ -67,8 +67,9 @@ internal sealed class WordsMutationService
             ? new WordsRevisionTracking(loaded.Document, request.Author!)
             : null;
         tracking?.Start();
+        var operationWarnings = new List<Warning>();
         IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(loaded, resolved, request, operationInputs, tracking);
+            ApplyOperations(loaded, resolved, request, operationInputs, tracking, operationWarnings);
         tracking?.Stop();
 
         _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
@@ -101,9 +102,13 @@ internal sealed class WordsMutationService
             PagesTouched = originalPages.Count == 0 ? null : originalPages,
             Verification = verification,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), MutationWarnings(
+            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), operationWarnings, MutationWarnings(
                 state,
-                inputHadRevisions,
+                format,
+                // The input's revisions are disclosed while the output still contains revisions,
+                // which a Word format keeps; LOSSY_CONVERSION covers the formats that drop them.
+                inputHadRevisions && loaded.Document.Revisions.Count > 0
+                    && WordsFormats.WordIds.Contains(format, StringComparer.Ordinal),
                 inputWasSigned,
                 inputProtection,
                 loaded.RemoteResourcesBlocked,
@@ -136,7 +141,8 @@ internal sealed class WordsMutationService
     /// Whether Word can record the operation as tracked changes. Aspose.Words tracks the
     /// insertion and deletion of content only; formatting, styles, lists, page setup,
     /// properties, protection, merges, field updates, header replacement and section
-    /// structure would change silently, and resolving revisions is not itself an edit.
+    /// structure would change silently, and resolving revisions is not itself an edit. Comments
+    /// are review annotations rather than revisions, so their operations apply untracked.
     /// </summary>
     private static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
         or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp { Kind: "page" } or InsertImageOp or InsertTableOp
@@ -148,7 +154,8 @@ internal sealed class WordsMutationService
         IReadOnlyList<ResolvedWordsOp> resolved,
         WordsEditRequest request,
         InputResourceScope operationInputs,
-        WordsRevisionTracking? tracking)
+        WordsRevisionTracking? tracking,
+        List<Warning> warnings)
     {
         return BoundedOperationRunner.Run(
             WordsOp.Catalog,
@@ -156,7 +163,7 @@ internal sealed class WordsMutationService
             request.Options.BestEffort,
             deadline: null,
             (_, index) => new AppliedOperation(
-                new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking).Run(),
+                new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings).Run(),
                 resolved[index].Targets),
             (_, index) => resolved[index].Targets);
     }
@@ -301,16 +308,17 @@ internal sealed class WordsMutationService
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         LicenseState state,
-        bool inputHadRevisions,
+        string format,
+        bool revisionsKept,
         bool inputWasSigned,
         ProtectionType inputProtection,
         int remoteResourcesBlocked,
         bool evaluationInputTruncated)
     {
         var extra = new List<Warning>();
-        if (inputHadRevisions)
+        if (revisionsKept)
         {
-            extra.Add(new Warning { Code = WordsDiagnostics.TrackedChangesPresent, Message = "The document contains tracked changes.", Hint = "Disclose them and accept or reject only when explicitly requested." });
+            extra.Add(new Warning { Code = WordsDiagnostics.TrackedChangesPresent, Message = "The input has tracked changes, and the output still contains tracked changes.", Hint = "Disclose them and accept or reject only when explicitly requested." });
         }
 
         if (inputWasSigned)
@@ -325,8 +333,15 @@ internal sealed class WordsMutationService
             {
                 Code = WordsDiagnostics.ProtectionNotEnforced,
                 Message = $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.",
-                Hint = "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect.",
+                Hint = WordsFormats.WordIds.Contains(format, StringComparer.Ordinal)
+                    ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect."
+                    : $"Confirm the change is authorized. A {format} output may not keep the restrictions; save to docx or another Word format to keep them.",
             });
+        }
+
+        if (LossyConversion(format) is { } lossy)
+        {
+            extra.Add(lossy);
         }
 
         if (LocalDocumentResourceLoader.OmissionWarning(remoteResourcesBlocked) is { } omitted)

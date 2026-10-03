@@ -25,6 +25,30 @@ public static class EnvelopeParts
         Docs = "licensing",
     };
 
+    /// <summary>
+    /// The evaluation-mode warning of a command that asked for evaluation mode
+    /// (<c>--license-mode evaluation</c>): the same disclosure, naming the request as its cause.
+    /// </summary>
+    public static Warning RequestedEvaluationWatermark { get; } = new()
+    {
+        Code = WarningCodes.EvalMode,
+        Message = "Evaluation mode, requested with --license-mode evaluation: the produced file contains an Aspose "
+            + "evaluation watermark and some operations are limited.",
+        Hint = "No license was read, on request. Tell the user if this file is delivered; drop --license-mode evaluation "
+            + "to apply the configured license.",
+        Docs = "licensing",
+    };
+
+    /// <summary>
+    /// The warnings of a command that asked for evaluation mode: each <c>EVAL_MODE</c> warning
+    /// becomes <see cref="RequestedEvaluationWatermark"/>; every other warning is kept.
+    /// </summary>
+    public static IReadOnlyList<Warning>? ForRequestedEvaluation(IReadOnlyList<Warning>? warnings) =>
+        warnings?.Any(static warning => warning.Code == WarningCodes.EvalMode) == true
+            ? [.. warnings.Select(static warning =>
+                warning.Code == WarningCodes.EvalMode ? RequestedEvaluationWatermark : warning)]
+            : warnings;
+
     /// <summary>Maps the license state to the contract representation.</summary>
     public static LicenseInfo License(LicenseState state) => new()
     {

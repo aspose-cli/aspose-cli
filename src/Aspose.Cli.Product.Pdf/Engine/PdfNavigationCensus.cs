@@ -34,9 +34,26 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
             }
         }
 
-        int named = document.NamedDestinations.Names
+        int named = NamedDestinationNames(document)
             .Count(name => !Resolves(document, document.NamedDestinations[name]));
         return new PdfNavigationCensus(bookmarks, links, named);
+    }
+
+    /// <summary>
+    /// The names of the document's named destinations. The engine throws
+    /// <see cref="NullReferenceException"/> for a name tree without a Dests entry, such as one
+    /// that holds only attachments (PDF-NAMES-WITHOUT-DESTS); that document has none.
+    /// </summary>
+    internal static string[] NamedDestinationNames(Document document)
+    {
+        try
+        {
+            return document.NamedDestinations.Names;
+        }
+        catch (NullReferenceException exception) when (exception.TargetSite?.DeclaringType?.Assembly == typeof(Document).Assembly)
+        {
+            return [];
+        }
     }
 
     /// <summary>What <paramref name="after"/> has broken that <paramref name="before"/> had not.</summary>

@@ -1,7 +1,8 @@
 # PDF editing
 
 `pdf edit` applies one ops batch; atomicity, `--best-effort`, `--dry-run`,
-`--if-match`, output and backups work as `aspose-cli docs editing` describes.
+`--if-match`, `--verify`, output and backups work as `aspose-cli docs editing`
+describes; [verification](verification.md) lists what `--verify` checks.
 PDF operations address fixed pages, rectangles, annotations, form fields,
 metadata and security, never paragraphs, worksheets or formulas. Print one
 operation's fields, types, defaults and allowed values with
@@ -9,7 +10,7 @@ operation's fields, types, defaults and allowed values with
 
 ```powershell
 aspose-cli schema v2/pdf/ops --operation add_page_numbers --output json
-aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --output json
+aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --verify --output json
 ```
 
 ## Operations by task

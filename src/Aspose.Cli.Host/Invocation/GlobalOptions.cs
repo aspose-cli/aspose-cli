@@ -13,6 +13,12 @@ namespace Aspose.Cli.Host.Invocation;
 /// </summary>
 internal sealed class GlobalOptions
 {
+    /// <summary>The <c>--license-mode</c> value that resolves the license sources in order.</summary>
+    internal const string AutoLicenseMode = "auto";
+
+    /// <summary>The <c>--license-mode</c> value that reads no license source.</summary>
+    internal const string EvaluationLicenseMode = "evaluation";
+
     /// <summary>The accepted <c>--output</c> values, in help order.</summary>
     private static readonly IReadOnlyDictionary<string, OutputMode> OutputModes =
         new Dictionary<string, OutputMode>(StringComparer.Ordinal)
@@ -53,6 +59,13 @@ internal sealed class GlobalOptions
                 Description = "Path to an Aspose license file; overrides every other license source.",
                 Recursive = true,
             }.WithInput(InputKind.None);
+            LicenseMode = new Option<string?>(GlobalOptionNames.LicenseMode)
+            {
+                Description = "auto (default) resolves the license sources in order; evaluation reads none of them "
+                    + "and runs this command in evaluation mode. Cannot be combined with --license.",
+                Recursive = true,
+            }.WithInput(InputKind.None);
+            LicenseMode.AcceptOnlyFromAmong(AutoLicenseMode, EvaluationLicenseMode);
         }
 
         WorkDir = new Option<string?>(GlobalOptionNames.WorkDir)
@@ -83,6 +96,8 @@ internal sealed class GlobalOptions
 
     public Option<string?>? License { get; }
 
+    public Option<string?>? LicenseMode { get; }
+
     public Option<string?> WorkDir { get; }
 
     public Option<int?> Timeout { get; }
@@ -98,6 +113,10 @@ internal sealed class GlobalOptions
         {
             root.Options.Add(License);
         }
+        if (LicenseMode is not null)
+        {
+            root.Options.Add(LicenseMode);
+        }
         root.Options.Add(WorkDir);
         root.Options.Add(Timeout);
         root.Options.Add(MaxInputBytes);
@@ -112,7 +131,26 @@ internal sealed class GlobalOptions
         string baseDirectory = inherited?.WorkDir ?? Directory.GetCurrentDirectory();
         string workDirectory = Path.GetFullPath(parseResult.GetValue(WorkDir) ?? baseDirectory, baseDirectory);
         string? explicitLicense = License is null ? null : parseResult.GetValue(License);
-        string? licensePath = explicitLicense is null ? inherited?.LicensePath
+        if (explicitLicense is not null && string.IsNullOrWhiteSpace(explicitLicense))
+        {
+            // An empty path would otherwise resolve to the work directory.
+            throw CliErrors.OptionInvalid(GlobalOptionNames.License,
+                "the value is empty",
+                "Pass the path of an Aspose license file, or omit --license to use the other license sources.");
+        }
+        string? requestedMode = LicenseMode is null ? null : parseResult.GetValue(LicenseMode);
+        if (requestedMode == EvaluationLicenseMode && explicitLicense is not null)
+        {
+            throw CliErrors.OptionInvalid(GlobalOptionNames.LicenseMode,
+                "evaluation mode reads no license, so it cannot be combined with --license",
+                "Drop --license to run in evaluation mode, or drop --license-mode to apply the license.");
+        }
+        // A value given on this command replaces the inherited one, as --license does.
+        bool evaluationRequested = requestedMode is null
+            ? explicitLicense is null && inherited?.EvaluationRequested == true
+            : requestedMode == EvaluationLicenseMode;
+        string? licensePath = evaluationRequested ? null
+            : explicitLicense is null ? inherited?.LicensePath
             : Path.GetFullPath(explicitLicense, workDirectory);
         long? requestedInputBytes = parseResult.GetValue(MaxInputBytes);
         if (inherited is not null && requestedInputBytes > inherited.MaxInputBytes)
@@ -129,7 +167,10 @@ internal sealed class GlobalOptions
             licensePath,
             workDirectory,
             parseResult.GetValue(Timeout),
-            maxInputBytes);
+            maxInputBytes)
+        {
+            EvaluationRequested = evaluationRequested,
+        };
         ServiceStartSecrets? service =
             ServiceStartSecretChannel.Current;
         return service is null
@@ -138,8 +179,16 @@ internal sealed class GlobalOptions
             {
                 WorkDir = service.WorkDirectory,
                 LicensePath = service.LicensePath,
+                // A service's own default is configured; each document carries its own request.
+                EvaluationRequested = false,
             };
     }
+
+    /// <summary>The refusal of <c>--license-mode evaluation</c> by a command whose effect outlives it.</summary>
+    internal static CliException EvaluationRequestRefused(string command) =>
+        CliErrors.OptionInvalid(GlobalOptionNames.LicenseMode,
+            $"'{command}' does not run one command's documents, so evaluation mode cannot apply to it",
+            $"Drop --license-mode from '{command}'; use it on the document commands whose output you check.");
 
     /// <summary>
     /// Best-effort read of the output mode and quiet flag for rendering a parse
@@ -258,4 +307,11 @@ internal sealed record GlobalValues(
     string? LicensePath,
     string? WorkDir,
     int? TimeoutSeconds,
-    long MaxInputBytes);
+    long MaxInputBytes)
+{
+    /// <summary>
+    /// <c>--license-mode evaluation</c>: no license source is read; <see cref="LicensePath"/> is
+    /// then null.
+    /// </summary>
+    public bool EvaluationRequested { get; init; }
+}

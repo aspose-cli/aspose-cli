@@ -46,6 +46,55 @@ internal static class CellsRenderers
                 surface.Out.WriteLine("  " + string.Join(" | ", row.Select(static value => value ?? string.Empty)));
             }
         }
+
+        RenderInfoDetails(workbook, surface);
+    }
+
+    /// <summary>Each list --detail requested, as a table under its own heading.</summary>
+    private static void RenderInfoDetails(WorkbookSummary workbook, TableSurface surface)
+    {
+        WriteDetail(surface, "names", workbook.DefinedNames, ["name", "refers to"],
+            static name => [name.Name, name.RefersTo]);
+        WriteDetail(surface, "formula errors", workbook.FormulaErrors, ["sheet", "cell", "error"],
+            static error => [error.Sheet, error.Cell, error.Error]);
+        WriteDetail(surface, "validations", workbook.Validations, ["sheet", "range", "type"],
+            static validation => [validation.Sheet, validation.Range, validation.Type]);
+        WriteDetail(surface, "fonts", workbook.Fonts, ["font"], static font => [font]);
+        WriteDetail(surface, "tables", workbook.Tables, ["sheet", "name", "range"],
+            static item => [item.Sheet, item.Name, item.Range]);
+        WriteDetail(surface, "charts", workbook.Charts, ["sheet", "index", "name", "type"],
+            static chart => [chart.Sheet, TableText.Int(chart.Index), chart.Name, chart.Type]);
+        WriteDetail(surface, "pivots", workbook.Pivots, ["sheet", "name", "range"],
+            static pivot => [pivot.Sheet, pivot.Name, pivot.Range]);
+    }
+
+    // A requested list that came back empty still prints its heading, so "none" is visible.
+    private static void WriteDetail<T>(
+        TableSurface surface,
+        string heading,
+        IReadOnlyList<T>? items,
+        string[] columns,
+        Func<T, string[]> row)
+    {
+        if (items is null)
+        {
+            return;
+        }
+
+        surface.Out.WriteLine();
+        surface.Out.WriteLine($"{heading}: {(items.Count == 0 ? "none" : TableText.Int(items.Count))}");
+        if (items.Count == 0)
+        {
+            return;
+        }
+
+        var table = new TextTable(columns);
+        foreach (T item in items)
+        {
+            table.AddRow(row(item));
+        }
+
+        table.WriteTo(surface.Out, surface.Format);
     }
 
     public static void Render(WorkbookReadResult read, TableSurface surface)

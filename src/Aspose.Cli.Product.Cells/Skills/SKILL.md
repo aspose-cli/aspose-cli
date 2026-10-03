@@ -46,8 +46,10 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output json
 - `--scope values` (default), `formulas` (adds `f`), `styles` (a
   deduplicated style pool) or `full`. Style fields read back under the names
   `format_range` writes.
-- Give explicit bounds; `A:A` is refused. An over-budget read returns a
-  summary and a `window.next` command for the next page.
+- Give explicit bounds; `A:A` is refused. A read without `--range` of a sheet
+  larger than `--max-cells` returns a summary and a `window.next` command for
+  the first page; an explicit `--range` larger than that fails with
+  `RANGE_TOO_LARGE`, and its hint is that command. Follow each `window.next`.
 - CSV and TSV inputs are read as UTF-8 with invariant number and date formats.
   A file that needs anything else is refused rather than misread:
   `INPUT_ENCODING_INVALID` for other encodings (typical of Chinese ERP exports),
@@ -133,7 +135,7 @@ Markdown export only the first worksheet
 
 | pitfall | do this instead |
 |---------|-----------------|
-| Windows PowerShell strips inner quotes from inline `--ops` JSON | Escape them as `\"`, pipe the document through `--ops -`, or use `--set` |
+| Inline `--ops` JSON in PowerShell | Write the ops to a file, or use `--set` for single cells; why: `aspose-cli docs troubleshooting`, Windows PowerShell |
 | A workbook open in Excel | Reads work; the in-place save fails with `OUTPUT_UNWRITABLE`. Ask the user to close it |
 | `set_values` with `"2026-04-03"` | Stored as text; write `=DATE(2026,4,3)` |
 | A bigger font on a title row | The row keeps its height; auto-fit it with `resize_rows` and no `height` |

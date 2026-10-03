@@ -28,6 +28,31 @@ public sealed class PdfHardeningTests
     }
 
     [Theory]
+    [InlineData(null, "PASSWORD_REQUIRED")]
+    [InlineData("wrong", "PASSWORD_INVALID")]
+    public void InsertPagesFrom_AnEncryptedSourcesPasswordErrorPointsAtPasswordEnv(string? password, string code)
+    {
+        using var fixture = new PdfEngineFixture();
+        string source = fixture.CreateEncryptedDocument("user-secret", "owner-secret", $"encrypted-{code}.pdf");
+        string input = fixture.CreateDocument($"insert-{code}.pdf", pages: 1);
+        string output = fixture.File($"insert-{code}.out.pdf");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input,
+            new PdfOpsBatch { Ops = [new InsertPagesFromOp { Path = source, At = 1, PasswordEnv = password is null ? null : "SOURCE_PWD" }] },
+            new PdfEditRequest
+            {
+                OutputPath = output,
+                OpSecrets = password is null ? null : new Dictionary<string, string> { ["SOURCE_PWD"] = password },
+            }));
+
+        Assert.Equal(code, error.Code.Name);
+        Assert.Contains("\"passwordEnv\"", error.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
+        Assert.Equal(source, error.Details!["path"]!.GetValue<string>());
+        Assert.False(File.Exists(output));
+    }
+
+    [Theory]
     [InlineData("(?=Portable)")]
     [InlineData("Portable|(?=page)")]
     public void ZeroWidthRegex_IsRejectedBeforeTheSdkMutation(string pattern)

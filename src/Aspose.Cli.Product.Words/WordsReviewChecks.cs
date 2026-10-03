@@ -15,6 +15,11 @@ internal static class WordsReviewChecks
         ReviewSeverities.Info,
         "The document contains tracked revisions, which a visual-only repair must not accept.");
 
+    public static ReviewCheck CommentsPresent { get; } = new(
+        "WORDS_COMMENTS_PRESENT",
+        ReviewSeverities.Info,
+        "The document contains comments, which a delivered document usually should not keep.");
+
     public static ReviewCheck PageBlank { get; } = new(
         "WORDS_PAGE_BLANK",
         ReviewSeverities.Warning,
@@ -54,6 +59,7 @@ internal static class WordsReviewChecks
     [
         DocumentEmpty,
         RevisionsPresent,
+        CommentsPresent,
         PageBlank,
         PageUtilizationLow,
         TextTooSmall,

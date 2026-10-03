@@ -159,6 +159,38 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("      hint: ", edited.StdOut, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("table")]
+    [InlineData("markdown")]
+    public void Inspect_HumanOutputShowsTheRequestedDetails(string format)
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        File.WriteAllText(
+            _workspace.File("ops.json"),
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A1:B3", "values": [["Region","Sales"],["East",10],["West",20]] },
+              { "op": "set_formula", "sheet": "Data", "range": "C2", "formula": "=1/0" },
+              { "op": "define_name", "name": "SalesTotal", "refersTo": "=Data!$B$2:$B$3" },
+              { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:B3", "at": "E2:J12", "title": "Sales" }
+            ] }
+            """);
+        CliResult edited = _workspace.Run("cells", "edit", "book.xlsx", "--ops", "ops.json", "--in-place", "--output", "json");
+        Assert.True(edited.ExitCode == 0, edited.StdErr);
+
+        CliResult inspected = _workspace.Run(
+            "cells", "inspect", "book.xlsx", "--detail", "names", "errors", "charts", "--output", format);
+
+        Assert.True(inspected.ExitCode == 0, inspected.StdErr);
+        Assert.Contains("charts:", inspected.StdOut, StringComparison.Ordinal);
+        Assert.Contains("column", inspected.StdOut, StringComparison.Ordinal);
+        Assert.Contains("names:", inspected.StdOut, StringComparison.Ordinal);
+        Assert.Contains("SalesTotal", inspected.StdOut, StringComparison.Ordinal);
+        Assert.Contains("=Data!$B$2:$B$3", inspected.StdOut, StringComparison.Ordinal);
+        Assert.Contains("formula errors:", inspected.StdOut, StringComparison.Ordinal);
+        Assert.Contains("#DIV/0!", inspected.StdOut, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Edit_AnUnknownFieldNamesTheAcceptedFieldsAndTheLikelyOne()
     {

@@ -109,6 +109,93 @@ public sealed class PdfKnownIssueTests
             $"deleting the second of two bookmarks titled Results kept the one on page {keptPage}");
     }
 
+    [LicensedFact]
+    public void PdfaConversion_TypesAnUntypedAttachmentAsPdf()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = PdfNavigationTests.CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
+        string output = fixture.File("archive.pdf");
+        using (var document = new Document(input))
+        {
+            using var log = new MemoryStream();
+            document.Convert(log, PdfFormat.PDF_A_3B, ConvertErrorAction.Delete);
+            document.Save(output);
+        }
+
+        using var archived = new Document(output);
+        string? type = archived.EmbeddedFiles.Cast<FileSpecification>().Single().MIMEType;
+
+        KnownIssue.Reproduces(
+            "PDF-PDFA-ATTACHMENT-TYPE",
+            type == "application/pdf",
+            $"converting an untyped CSV attachment to PDF/A-3B typed it '{type}'");
+    }
+
+    [LicensedFact]
+    public void NamedDestinations_ThrowForANameTreeWithoutDests()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = PdfNavigationTests.CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
+
+        using var document = new Document(input);
+        Exception? names = Record.Exception(() => document.NamedDestinations.Names);
+        Exception? count = Record.Exception(() => document.NamedDestinations.Count);
+
+        KnownIssue.Reproduces(
+            "PDF-NAMES-WITHOUT-DESTS",
+            names is NullReferenceException && count is NullReferenceException,
+            $"for a name tree with only EmbeddedFiles, Names threw {names?.GetType().Name ?? "nothing"} and Count threw {count?.GetType().Name ?? "nothing"}");
+    }
+
+    [LicensedFact]
+    public void TaggedContent_RewritesTheDocumentWhenRead()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("plain.pdf", pages: 1);
+        string archive = fixture.File("archive.pdf");
+        using (var document = new Document(input))
+        {
+            using var log = new MemoryStream();
+            document.Convert(log, PdfFormat.PDF_A_2B, ConvertErrorAction.Delete);
+            document.Save(archive);
+        }
+
+        using var reopened = new Document(archive);
+        bool declaredBefore = reopened.IsPdfaCompliant;
+        _ = reopened.TaggedContent.RootElement.ChildElements.Count;
+
+        KnownIssue.Reproduces(
+            "PDF-TAGGED-CONTENT-WRITES",
+            declaredBefore && !reopened.IsPdfaCompliant && reopened.Info.Title == "Tagged PDF",
+            $"reading TaggedContent changed IsPdfaCompliant from {declaredBefore} to {reopened.IsPdfaCompliant} and the title to '{reopened.Info.Title}'");
+    }
+
+    [LicensedFact]
+    public void HtmlAndMarkdownImports_SetAPlaceholderTitleAuthorAndSubject()
+    {
+        using var fixture = new PdfEngineFixture();
+        string html = fixture.File("titled.html");
+        File.WriteAllText(html, """
+            <html><head><title>Real title</title><meta name="author" content="Jane"></head>
+            <body><p>Body</p></body></html>
+            """);
+        string markdown = fixture.File("notes.md");
+        File.WriteAllText(markdown, "# Notes\n\nBody\n");
+
+        using var fromHtml = new Document(html, new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar));
+        using var fromMarkdown = new Document(markdown, new MdLoadOptions());
+        string[] values =
+        [
+            fromHtml.Info.Title, fromHtml.Info.Author, fromHtml.Info.Subject,
+            fromMarkdown.Info.Title, fromMarkdown.Info.Author, fromMarkdown.Info.Subject,
+        ];
+
+        KnownIssue.Reproduces(
+            "PDF-IMPORT-INFO-PLACEHOLDER",
+            values.All(static value => value == "Aspose"),
+            $"the imports set title, author and subject to [{string.Join(", ", values)}]");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

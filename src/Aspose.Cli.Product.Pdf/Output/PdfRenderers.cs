@@ -13,7 +13,7 @@ internal static class PdfRenderers
         surface.Out.WriteLine($"{result.Source.Path} ({result.Source.Format}, {TableText.Bytes(result.Source.SizeBytes)})");
         surface.Out.WriteLine(
             $"pages: {pdf.PageCount}   version: {pdf.Version}   encrypted: {TableText.YesNo(pdf.Encrypted)}   "
-            + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A: {TableText.YesNo(pdf.PdfaCompliant)}");
+            + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A declared: {pdf.PdfaProfile ?? "no"}");
         surface.Out.WriteLine(
             $"form: {pdf.FormType}   attachments: {pdf.AttachmentCount}   signed: {TableText.YesNo(pdf.Signed)}   "
             + $"password access: {pdf.PasswordType}");
@@ -49,6 +49,123 @@ internal static class PdfRenderers
             }
 
             table.WriteTo(surface.Out, surface.Format);
+        }
+
+        RenderDetails(result, surface);
+    }
+
+    /// <summary>The sections --detail asked for, in the order the JSON result lists them.</summary>
+    private static void RenderDetails(PdfInfoResult result, TableSurface surface)
+    {
+        if (result.Outline is { } outline)
+        {
+            var table = new TextTable("index", "title", "page");
+            foreach (PdfOutlineItem item in outline)
+            {
+                table.AddRow(
+                    item.Index,
+                    new string(' ', 2 * (item.Level - 1)) + item.Title,
+                    item.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
+            }
+
+            Section(surface, "outline", outline.Count, table);
+        }
+
+        if (result.Forms is { } forms)
+        {
+            Heading(surface, "forms");
+            surface.Out.WriteLine($"{forms.Type}: {forms.FieldCount} field(s){(forms.ReadOnly ? ", read-only" : string.Empty)}");
+        }
+
+        if (result.Attachments is { } attachments)
+        {
+            var table = new TextTable("name", "type", "size");
+            foreach (PdfAttachmentInfo attachment in attachments)
+            {
+                table.AddRow(
+                    attachment.Name,
+                    attachment.MimeType ?? string.Empty,
+                    attachment.SizeBytes is long size ? TableText.Bytes(size) : string.Empty);
+            }
+
+            Section(surface, "attachments", attachments.Count, table);
+        }
+
+        if (result.Fonts is { } fonts)
+        {
+            var table = new TextTable("font", "embedded", "subset");
+            foreach (PdfFontInfo font in fonts)
+            {
+                table.AddRow(font.Name, TableText.YesNo(font.Embedded), TableText.YesNo(font.Subset));
+            }
+
+            Section(surface, "fonts", fonts.Count, table);
+        }
+
+        if (result.Permissions is { } permissions)
+        {
+            Heading(surface, "permissions");
+            surface.Out.WriteLine(
+                $"open password: {TableText.YesNo(permissions.HasOpenPassword)}   owner password: {TableText.YesNo(permissions.HasOwnerPassword)}   "
+                + $"owner access: {TableText.YesNo(permissions.OwnerAccess)}");
+            surface.Out.WriteLine(
+                $"print: {TableText.YesNo(permissions.Print)}   copy: {TableText.YesNo(permissions.Copy)}   modify: {TableText.YesNo(permissions.Modify)}   "
+                + $"annotate: {TableText.YesNo(permissions.Annotate)}   fill forms: {TableText.YesNo(permissions.FillForms)}   "
+                + $"accessibility: {TableText.YesNo(permissions.ExtractAccessibility)}   assemble: {TableText.YesNo(permissions.Assemble)}   "
+                + $"high-resolution print: {TableText.YesNo(permissions.PrintHighResolution)}");
+        }
+
+        if (result.Signatures is { } signatures)
+        {
+            var table = new TextTable("field", "signed", "valid");
+            foreach (PdfSignatureInfo signature in signatures)
+            {
+                table.AddRow(
+                    signature.Name,
+                    TableText.YesNo(signature.Signed),
+                    signature.Valid is bool valid ? TableText.YesNo(valid) : string.Empty);
+            }
+
+            Section(surface, "signatures", signatures.Count, table);
+        }
+
+        if (result.Layers is { } layers)
+        {
+            Heading(surface, "layers");
+            surface.Out.WriteLine(layers.Count == 0 ? "none" : string.Join(", ", layers));
+        }
+
+        if (result.Metadata is { } metadata)
+        {
+            var table = new TextTable("property", "value");
+            foreach ((string key, string? value) in metadata)
+            {
+                table.AddRow(key, value ?? string.Empty);
+            }
+
+            Section(surface, "metadata", metadata.Count, table);
+        }
+    }
+
+    private static void Section(TableSurface surface, string title, int count, TextTable table)
+    {
+        Heading(surface, title);
+        if (count == 0)
+        {
+            surface.Out.WriteLine("none");
+            return;
+        }
+
+        table.WriteTo(surface.Out, surface.Format);
+    }
+
+    private static void Heading(TableSurface surface, string title)
+    {
+        surface.Out.WriteLine();
+        surface.Out.WriteLine(surface.Format == TableFormat.Markdown ? $"### {title}" : $"{title}:");
+        if (surface.Format == TableFormat.Markdown)
+        {
+            surface.Out.WriteLine();
         }
     }
 
@@ -118,6 +235,22 @@ internal static class PdfRenderers
         if (result.PagesTouched is { Count: > 0 } pages)
         {
             surface.Out.WriteLine($"pages touched: {string.Join(", ", pages)}");
+        }
+
+        if (result.Verification is { } verification)
+        {
+            surface.Out.WriteLine(
+                $"verification: {(verification.Ok ? "ok" : "needs attention")} "
+                + $"({verification.CheckedOps.Count} operation(s) read back: {(verification.CheckedOps.Count == 0 ? "none" : string.Join(", ", verification.CheckedOps))})");
+            foreach (VerificationIssue issue in verification.Issues)
+            {
+                string location = issue.Location is null ? string.Empty : $" [{issue.Location}]";
+                surface.Out.WriteLine($"  {issue.Code}{location}: {issue.Message}");
+                if (issue.Hint is { } hint)
+                {
+                    surface.Out.WriteLine($"    hint: {hint}");
+                }
+            }
         }
     }
 

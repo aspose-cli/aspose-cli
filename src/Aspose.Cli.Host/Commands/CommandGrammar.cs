@@ -2,6 +2,7 @@ using System.CommandLine;
 using System.CommandLine.Completions;
 using System.Globalization;
 using System.Reflection;
+using Aspose.Cli.Host.Invocation;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -132,7 +133,7 @@ internal static class CommandGrammar
         string commandPath,
         IReadOnlyDictionary<string, ProductCapabilities>? products)
     {
-        IReadOnlyList<string> declared = ReadOptionCompletions(option);
+        IReadOnlyList<string> declared = OptionCompletions.Read(option);
         if (declared.Count > 0)
         {
             return declared;
@@ -166,24 +167,6 @@ internal static class CommandGrammar
         return ReadAllowedValues(
             option.CompletionSources.Concat(
                 ReadOptionArgumentCompletionSources(option)));
-    }
-
-    private static IReadOnlyList<string> ReadOptionCompletions(Option option)
-    {
-        try
-        {
-            return option.GetCompletions(CompletionContext.Empty)
-                .Select(static item => item.InsertText)
-                .Where(static value => !string.IsNullOrWhiteSpace(value))
-                .Select(static value => value!)
-                .Distinct(StringComparer.Ordinal)
-                .Order(StringComparer.Ordinal)
-                .ToArray();
-        }
-        catch (Exception)
-        {
-            return [];
-        }
     }
 
     private static IReadOnlyList<string> ReadAllowedValues(Argument argument)

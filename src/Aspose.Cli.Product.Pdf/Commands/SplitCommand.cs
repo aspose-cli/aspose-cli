@@ -19,7 +19,7 @@ internal static class SplitCommand
         var name = new Option<string>("--name-template")
         {
             DefaultValueFactory = _ => "{stem}.{n}.pdf",
-            Description = "File name using {stem}, {n}, {pages} or {bookmark}.",
+            Description = "File name using {stem}, {n} (001), {pages} (1-3, separate spans joined by _ as in 1-3_7) or {bookmark}.",
         }.WithInput(InputKind.None);
         return StandardCommand.Create(
             host,

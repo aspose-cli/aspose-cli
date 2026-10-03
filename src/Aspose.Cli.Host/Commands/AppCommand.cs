@@ -96,7 +96,9 @@ internal static class AppCommand
             });
         });
 
-        return app.WithInvocationPolicy(new CommandInvocationPolicy(Execution: CommandExecutionOwnership.Service));
+        // The App is one shared workspace that follows the configured license.
+        return app.WithInvocationPolicy(new CommandInvocationPolicy(
+            Execution: CommandExecutionOwnership.Service, RefusesEvaluationRequest: true));
     }
 
     private static Command CreateStatus(CommandExecutor executor, GlobalOptions globals)

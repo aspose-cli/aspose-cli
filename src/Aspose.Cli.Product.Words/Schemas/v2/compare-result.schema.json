@@ -25,11 +25,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["type", "text"],
+        "required": ["type"],
         "additionalProperties": false,
         "properties": {
-          "type": { "type": "string" },
-          "text": { "type": "string" }
+          "type": { "enum": ["insertion", "deletion", "formatChange", "styleDefinitionChange", "moving"] },
+          "text": { "type": "string", "description": "The text of the revision's run, cut to 300 characters and an ellipsis; absent for a paragraph mark." }
         }
       }
     },

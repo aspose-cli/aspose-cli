@@ -8,6 +8,10 @@ any file a human will open; skip it for machine-to-machine data files. Every
 recipe is one executable ops batch — fold them into your larger batches —
 and the pass is only done after the eyes loop (section 12).
 
+Recipes pass their ops inline (`--ops '{...}'`) for brevity, as a POSIX shell
+takes them. In PowerShell, save each batch to a file and pass its path
+instead (`aspose-cli docs troubleshooting`, Windows PowerShell).
+
 ## 1. When this applies — and when the file overrides you
 
 Two regimes:

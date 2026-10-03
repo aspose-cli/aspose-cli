@@ -30,6 +30,8 @@ public sealed class SlidesReviewCheckTests
             Slide(8, Shape(1, new(100, 100, 200, 200), "Body"), Occluder(2, new(100, 100, 200, 200))),
             Slide(9, BodyWithLines(1, new(60, 150, 400, 60)), Shape(2, new(60, 195, 600, 280), type: "table")),
             Slide(10, Shape(1, new(60, 100, 600, 300)) with { Placeholder = "body" }),
+            Slide(11, TitleWithLines(1, new(40, 22, 640, 58), new(52, -24, 616, 100))),
+            Slide(12, TitleWithLines(1, new(400, 100, 200, 40), new(410, 104, 180, 108))),
         ];
 
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(slides, Width, Height);
@@ -64,6 +66,99 @@ public sealed class SlidesReviewCheckTests
         Assert.InRange(rect.Height, 10, 60);
         Assert.True(rect.X >= 100 && rect.X + rect.Width <= 500);
     }
+
+    [Fact]
+    public void TextPushedAboveTheSlide_IsTextOutsideTheSlideOnly()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(1, TitleWithLines(1, new(40, 22, 640, 58), new(52, -24, 616, 100)))],
+            Width,
+            Height);
+
+        ReviewFinding finding = Assert.Single(analysis.Findings);
+        Assert.Equal(SlidesReviewChecks.TextOutsideSlide.Code, finding.Code);
+        Assert.Contains("top", finding.Message, StringComparison.Ordinal);
+        Assert.Equal(1, analysis.TextOutsideSlide);
+    }
+
+    [Fact]
+    public void TextSpillingOutOfItsShapeInsideTheSlide_IsTextOverflowingTheShape()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(1, TitleWithLines(1, new(400, 100, 200, 40), new(410, 104, 180, 108)))],
+            Width,
+            Height);
+
+        ReviewFinding finding = Assert.Single(analysis.Findings);
+        Assert.Equal(SlidesReviewChecks.TextOverflowsShape.Code, finding.Code);
+        Assert.Equal(1, analysis.TextOverflows);
+    }
+
+    [Fact]
+    public void TextThatFitsOrResizesItsShape_IsNotReported()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [
+                Slide(1,
+                    TitleWithLines(1, new(40, 22, 640, 58), new(47, 43, 316, 34)),
+                    TitleWithLines(2, new(100, 300, 200, 30), new(60, 296, 280, 38)) with { TextResizesShape = true }),
+            ],
+            Width,
+            Height);
+
+        Assert.Empty(analysis.Findings);
+    }
+
+    [Fact]
+    public void LongTitleGrowingAboveTheSlide_IsReportedOnlyAfterItIsSet()
+    {
+        // The default design anchors the title at the bottom of a one-line frame near the top
+        // edge, so a title that wraps onto three lines grows upward off the slide.
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("outline.md");
+        File.WriteAllText(markdown, "# Proposal\n\nSales team\n\n## Next steps\n\n- Confirm the pilot site\n- Sign the letter of intent\n");
+        string deck = fixture.File("deck.pptx");
+        string edited = fixture.File("deck.long-title.pptx");
+        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
+        fixture.Engine.ApplyOps(
+            deck,
+            new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new SetTitleOp
+                    {
+                        Slide = 2,
+                        Text = "下一步 Next steps：确认试点仓库、签署意向书 LOI、启动需求调研（两周内完成） within two weeks of approval by the steering committee",
+                    },
+                ],
+            },
+            new PresentationEditRequest { OutputPath = edited });
+
+        SlidesReviewAnalysis before = Review(fixture, deck);
+        SlidesReviewAnalysis after = Review(fixture, edited);
+
+        Assert.DoesNotContain(before.Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
+        ReviewFinding finding = Assert.Single(after.Findings, static finding => finding.Code == SlidesReviewChecks.TextOutsideSlide.Code);
+        Assert.Equal("slide 2", finding.Location);
+        Assert.Contains("top edge", finding.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain(after.Findings, static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);
+    }
+
+    private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)
+    {
+        PresentationSummary info = fixture.Engine.GetInfo(path, new PresentationInfoRequest()).Presentation;
+        PresentationReadResult read = fixture.Engine.Read(path, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+        return SlidesReviewAnalyzer.Analyze(read.Slides, info.WidthPoints, info.HeightPoints);
+    }
+
+    private static SlideShapeData TitleWithLines(long id, Rect frame, Rect lines) =>
+        Shape(id, frame, "A title long enough to wrap onto several lines") with
+        {
+            ShapeName = "Title",
+            Placeholder = "title",
+            TextRect = new SlideRect { X = lines.X, Y = lines.Y, Width = lines.Width, Height = lines.Height },
+        };
 
     private static SlideShapeData BodyWithLines(long id, Rect lines) =>
         Shape(id, new(lines.X, lines.Y, lines.Width, 350), "Two lines of summary text above the table") with

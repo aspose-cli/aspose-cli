@@ -32,7 +32,7 @@ bundled guides. The Skills `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-sli
   `--if-match` refuses a file that changed since it was read, and `--dry-run` writes nothing.
   No other command writes over one of its inputs.
 - **Verification.** `aspose-cli review <file>` writes an evidence directory with an image of
-  every sheet, slide or page and its layout findings; Cells and Words `edit --verify` report
+  every sheet, slide or page and its layout findings; Cells, PDF and Words `edit --verify` report
   semantic evidence before publication.
 - **A stable contract.** In JSON mode a command writes one result to stdout or one error to
   stderr, with a stable code and exit code.
@@ -66,7 +66,8 @@ A license is taken from `--license`, then `ASPOSE_<PRODUCT>_LICENSE_B64` or
 `ASPOSE_<PRODUCT>_LICENSE_PATH`, then `ASPOSE_LICENSE_B64` or `ASPOSE_LICENSE_PATH`, then
 `.aspose/licenses/<product>.lic` or `.aspose/license.lic` in the working directory, then the
 licenses installed for the user. An invalid configured license is an error, not a silent fall
-back to evaluation.
+back to evaluation. `--license-mode evaluation` runs one command in evaluation mode without
+reading any of these sources, for checking what evaluation output looks like.
 
 ## Install
 

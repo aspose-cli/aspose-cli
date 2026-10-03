@@ -57,6 +57,110 @@ public sealed class WordsTrackChangesTests
     }
 
     [Fact]
+    public void TrackedBatch_AddsAndRemovesCommentsWithoutRevisions()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.CreateReport();
+        string commented = fixture.Temp.File("commented.docx");
+        var tracked = new WordsEditRequest { OutputPath = commented, TrackChanges = true, Author = "Reviewer" };
+
+        fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new ReplaceTextOp { Find = "twelve", Replace = "fifteen" },
+                    new AddCommentOp { At = new WordsTarget { Block = 2 }, Author = "Reviewer", Text = "Check the figure." },
+                ],
+            },
+            tracked);
+        DocumentInfoResult info = fixture.Engine.GetInfo(commented, new DocumentInfoRequest { Details = ["comments", "revisions"] });
+
+        Assert.Equal("Check the figure.", Assert.Single(info.Comments!).Text);
+        Assert.Equal(1, info.Document.CommentCount);
+        Assert.Equal(["deletion:twelve", "insertion:fifteen"], info.Revisions!.Select(static r => $"{r.Type}:{r.Text}"));
+
+        string removed = fixture.Temp.File("removed.docx");
+        fixture.Engine.ApplyOps(commented, new WordsOpsBatch { Ops = [new RemoveCommentsOp()] }, tracked with { OutputPath = removed });
+        var document = new Document(removed);
+
+        Assert.Equal(0, document.GetChildNodes(NodeType.Comment, true).Count);
+        Assert.Equal(2, document.Revisions.Count);
+    }
+
+    [Fact]
+    public void InspectRevisions_ListsATrackedCommentParagraphMarkWithoutItsText()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.Temp.File("tracked-comment.docx");
+        var document = new Document();
+        new DocumentBuilder(document).Write("Clause.");
+        document.StartTrackRevisions("Ann", new DateTime(2026, 9, 1, 10, 0, 0));
+        var comment = new Comment(document, "Ann", "A", DateTime.Now);
+        comment.AppendChild(new Paragraph(document));
+        comment.FirstParagraph!.AppendChild(new Run(document, "Note"));
+        document.FirstSection.Body.FirstParagraph!.AppendChild(comment);
+        document.StopTrackRevisions();
+        document.Save(input);
+
+        DocumentInfoResult info = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["revisions"] });
+
+        // The SDK groups no revisions inside comments, so the mark and the run are listed apart.
+        Assert.Equal(["insertion:", "insertion:Note"], info.Revisions!.Select(static r => $"{r.Type}:{r.Text}"));
+    }
+
+    [Fact]
+    public void Compare_NamesSampleTypesAsTheRevisionListDoes()
+    {
+        using var fixture = new WordsFixture();
+        string left = fixture.CreateReport("left.docx");
+        string right = fixture.Temp.File("right.docx");
+        var changed = new Document(left);
+        changed.Range.Replace("twelve", "ten");
+        changed.Save(right);
+
+        WordsCompareResult result = fixture.Engine.Compare(left, right, new WordsCompareRequest());
+
+        Assert.Equal(["deletion:twelve", "insertion:ten"], result.Samples.Select(static s => $"{s.Type}:{s.Text}"));
+    }
+
+    [Theory]
+    [InlineData(null, "Aspose CLI")]
+    [InlineData("Ann Legal", "Ann Legal")]
+    public void Compare_AttributesTheRedlineToTheAuthor(string? author, string expected)
+    {
+        using var fixture = new WordsFixture();
+        string left = fixture.CreateReport("left.docx");
+        string right = fixture.Temp.File("right.docx");
+        var changed = new Document(left);
+        changed.Range.Replace("twelve", "ten");
+        changed.Save(right);
+        string output = fixture.Temp.File("redline.docx");
+
+        fixture.Engine.Compare(left, right, new WordsCompareRequest { OutputPath = output, Author = author });
+
+        Assert.Equal([expected], new Document(output).Revisions.Select(static r => r.Author).Distinct());
+    }
+
+    [Fact]
+    public void Compare_SamplesAParagraphMarkWithoutItsParagraphText()
+    {
+        using var fixture = new WordsFixture();
+        string left = fixture.CreateReport("left.docx");
+        string right = fixture.Temp.File("right.docx");
+        var changed = new Document(left);
+        changed.FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Single(static p => p.GetText().StartsWith("Operations", StringComparison.Ordinal)).Remove();
+        changed.Save(right);
+
+        WordsCompareResult result = fixture.Engine.Compare(left, right, new WordsCompareRequest());
+
+        // The deleted paragraph's mark is one sample without text and its run another.
+        Assert.Equal(["deletion:", "deletion:Operations remained stable."], result.Samples.Select(static s => $"{s.Type}:{s.Text}"));
+    }
+
+    [Fact]
     public void InspectRevisions_ListsEachChangeInDocumentOrder()
     {
         using var fixture = new WordsFixture();

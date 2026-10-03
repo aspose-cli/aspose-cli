@@ -26,10 +26,16 @@ internal static class SlidesReviewProjection
     /// <summary>
     /// The area the shape's laid-out text occupies, in slide points. A placeholder is usually far
     /// taller than its text, so its frame alone cannot tell whether the text runs into a table.
+    /// The paragraph rectangles are relative to the unrotated frame, so text in a rotated shape
+    /// or in vertical text is not projected.
     /// </summary>
     internal static SlideRect? TextRect(IShape shape)
     {
-        if (shape is not IAutoShape { TextFrame: { } frame } || string.IsNullOrWhiteSpace(frame.Text))
+        if (shape is not IAutoShape { TextFrame: { } frame }
+            || string.IsNullOrWhiteSpace(frame.Text)
+            || shape.Rotation % 360 != 0
+            || frame.TextFrameFormat.GetEffective().TextVerticalType
+                is not (TextVerticalType.Horizontal or TextVerticalType.NotDefined))
         {
             return null;
         }
@@ -48,4 +54,9 @@ internal static class SlidesReviewProjection
             ? new SlideRect { X = shape.X + area.X, Y = shape.Y + area.Y, Width = area.Width, Height = area.Height }
             : null;
     }
+
+    /// <summary>Whether the shape grows to fit its text, so its stored frame may lag behind the text.</summary>
+    internal static bool TextResizesShape(IShape shape) =>
+        shape is IAutoShape { TextFrame: { } frame }
+        && frame.TextFrameFormat.GetEffective().AutofitType == TextAutofitType.Shape;
 }

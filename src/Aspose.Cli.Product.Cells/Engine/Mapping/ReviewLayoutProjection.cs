@@ -108,6 +108,7 @@ internal static class ReviewLayoutProjection
         Aspose.Cells.Cells cells = sheet.Cells;
         var samples = new List<string>();
         int count = 0;
+        bool eastAsian = false;
         foreach (Cell cell in cells)
         {
             if (cell.Value is null or "" || cell.IsMerged || cells.IsColumnHidden(cell.Column))
@@ -142,15 +143,18 @@ internal static class ReviewLayoutProjection
             if (samples.Count < MaxDimensionSamples)
             {
                 samples.Add(cell.Name);
+                eastAsian |= !number && cell.StringValue.Any(IsEastAsian);
             }
         }
 
-        return new CellsReviewCellSet(count, samples);
+        return new CellsReviewCellSet(count, samples, eastAsian);
     }
 
     // Column widths are measured in characters of the default font; East Asian characters take two.
     private static int DisplayUnits(string text) =>
-        text.Sum(static character => character >= '⺀' ? 2 : 1);
+        text.Sum(static character => IsEastAsian(character) ? 2 : 1);
+
+    private static bool IsEastAsian(char character) => character >= '⺀';
 
     private static DimensionScan InspectColumns(
         Worksheet sheet,

@@ -95,6 +95,41 @@ public sealed class McpProtocolTests
         }
     }
 
+    [Fact]
+    public async Task Execute_InheritsTheServersEvaluationModeUntilACallChoosesAnother()
+    {
+        using var temp = new TempDirectory();
+        string work = temp.File("work");
+        Directory.CreateDirectory(work);
+        File.WriteAllText(Path.Combine(work, "input.csv"), "Name,Value\nA,42\n");
+        // A broken source that evaluation mode never reads.
+        var variables = new Dictionary<string, string?>
+        {
+            ["ASPOSE_CELLS_LICENSE_B64"] = Convert.ToBase64String(Encoding.UTF8.GetBytes("synthetic environment fixture")),
+        };
+        await using var server = await McpTestServer.Start(temp.Path, work, variables, ["--license-mode", "evaluation"]);
+        foreach (bool supervised in new[] { false, true })
+        {
+            string[] args = ["cells", "inspect", "input.csv", "--output=json"];
+            if (supervised) { args = ["--timeout=10", .. args]; }
+            JsonNode inherited = reply(await server.Execute(args));
+            Assert.Equal("evaluation", inherited["license"]!["mode"]!.GetValue<string>());
+
+            JsonNode status = reply(await server.Execute(["license", "status", "--product", "cells", "--output=json"]));
+            Assert.Equal("requested", status["products"]![0]!["source"]!.GetValue<string>());
+
+            JsonNode replaced = Error(await server.Execute([.. args, "--license-mode=auto"]));
+            Assert.Equal("LICENSE_INVALID", replaced["code"]!.GetValue<string>());
+        }
+
+        static JsonNode reply(JsonNode response)
+        {
+            JsonNode execution = response["result"]!["structuredContent"]!;
+            Assert.True(execution["exitCode"]!.GetValue<int>() == 0, execution["stderr"]?.GetValue<string>());
+            return JsonNode.Parse(execution["stdout"]!.GetValue<string>())!;
+        }
+    }
+
     [Theory]
     [InlineData(false)]
     [InlineData(true)]
