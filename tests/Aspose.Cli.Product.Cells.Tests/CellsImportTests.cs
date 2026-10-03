@@ -329,6 +329,35 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
     }
 
+    [Theory]
+    [InlineData(null, "PASSWORD_REQUIRED")]
+    [InlineData("wrong", "PASSWORD_INVALID")]
+    public void Import_AnEncryptedSourcesPasswordErrorPointsAtPasswordEnv(string? password, string code)
+    {
+        string source = CreateSource($"encrypted-{code}.xlsx");
+        using (var workbook = new Workbook(source))
+        {
+            workbook.Settings.Password = "right";
+            workbook.Save(source, SaveFormat.Xlsx);
+        }
+
+        string passwordEnv = password is null ? string.Empty : """, "passwordEnv": "SOURCE_PWD" """;
+        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(
+            _fixture.CreateSalesWorkbook($"encrypted-{code}-target.xlsx"),
+            Parse($$"""{ "ops": [ { "op": "import_sheet", "sheet": "Totals", "path": {{Json(source)}}{{passwordEnv}} } ] }"""),
+            new EditRequest
+            {
+                OutputPath = _fixture.Temp.File($"encrypted-{code}.out.xlsx"),
+                Overwrite = true,
+                OpSecrets = password is null ? null : new Dictionary<string, string> { ["SOURCE_PWD"] = password },
+            }));
+
+        Assert.Equal(code, error.Code.Name);
+        Assert.Contains("\"passwordEnv\"", error.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("--password-env", error.Hint, StringComparison.Ordinal);
+        Assert.Equal(source, error.Details!["path"]!.GetValue<string>());
+    }
+
     [Fact]
     public void ImportRange_ValuesOfAThirdWorkbookReferenceAddNoLink()
     {
