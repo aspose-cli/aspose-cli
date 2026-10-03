@@ -69,7 +69,8 @@ lists every bookmark and attachment and counts every form field; `query forms`
 lists every field but leaves out the `page` of one on a later page and names it
 in `EVAL_INPUT_TRUNCATED`. Any other command that needs a later page fails with
 `EVALUATION_LIMIT` (exit 7) before writing anything.
-Limit it with `--pages 1-4`, or tell the user a PDF license is needed.
+Limit it with `--pages 1-4`, keep the inputs of a `merge` to 4 pages in total,
+or tell the user a PDF license is needed.
 
 ## References
 

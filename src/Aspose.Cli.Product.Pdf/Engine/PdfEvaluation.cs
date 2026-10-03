@@ -20,8 +20,12 @@ internal static class PdfEvaluation
     // The SDK reports the limit only with this message on an IndexOutOfRangeException.
     private const string LimitMessage = "can be viewed in evaluation mode";
 
-    /// <summary>Runs a PDF command, refusing it with EVALUATION_LIMIT when it reads past the limit.</summary>
-    internal static T Run<T>(ILicenseGate licenseGate, Func<T> command)
+    /// <summary>
+    /// Runs a PDF command, refusing it with EVALUATION_LIMIT when it reads past the limit. A
+    /// command that has no <c>--pages</c> states why it needs a later page and what the user
+    /// can do instead.
+    /// </summary>
+    internal static T Run<T>(ILicenseGate licenseGate, Func<T> command, string? cause = null, string? remedy = null)
     {
         try
         {
@@ -31,8 +35,8 @@ internal static class PdfEvaluation
         {
             throw new CliException(
                 ErrorCodes.EvaluationLimit,
-                $"Evaluation mode lets the PDF engine read only the first {VisiblePages} pages of a document; this command needs a later page.",
-                hint: "Apply an Aspose.PDF license. Without one, only pages 1-4 can be read: a command that takes --pages can be limited to them. No output was written.",
+                $"Evaluation mode lets the PDF engine read only the first {VisiblePages} pages of a document; {cause ?? "this command needs a later page"}.",
+                hint: $"Apply an Aspose.PDF license. Without one, {remedy ?? $"only pages 1-{VisiblePages} can be read: a command that takes --pages can be limited to them"}. No output was written.",
                 docs: "licensing",
                 innerException: exception);
         }

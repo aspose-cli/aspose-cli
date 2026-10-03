@@ -72,7 +72,11 @@ internal sealed class PdfEngine : IPdfEngine, IPdfReviewLayoutPort
         PdfEvaluation.Run(_licenseGate, () => _production.Create(request));
 
     public PdfWriteResult Merge(PdfMergeRequest request) =>
-        PdfEvaluation.Run(_licenseGate, () => _production.Merge(request));
+        PdfEvaluation.Run(
+            _licenseGate,
+            () => _production.Merge(request),
+            cause: "merging reads every page of the inputs, and together they have more",
+            remedy: $"merge inputs that have at most {PdfEvaluation.VisiblePages} pages together");
 
     public PdfSplitResult Split(string filePath, PdfSplitRequest request) =>
         PdfEvaluation.Run(_licenseGate, () => _extraction.Split(filePath, request));

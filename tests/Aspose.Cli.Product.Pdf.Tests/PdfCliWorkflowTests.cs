@@ -165,6 +165,27 @@ public sealed class PdfCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void EvaluationMode_RefusesAMergeOfMoreThanFourPagesWithAMergeHint()
+    {
+        using (var fixture = new PdfEngineFixture())
+        {
+            File.Copy(fixture.CreateRawDocument("east.pdf", pages: 3), _workspace.File("east.pdf"));
+            File.Copy(fixture.CreateRawDocument("south.pdf", pages: 3), _workspace.File("south.pdf"));
+        }
+
+        CliResult merge = _workspace.Run(
+            "pdf", "merge", "east.pdf", "south.pdf", "--out", "merged.pdf", "--output", "json");
+
+        Assert.Equal(7, merge.ExitCode);
+        JsonNode error = JsonNode.Parse(merge.StdErr)!["error"]!;
+        Assert.Equal("EVALUATION_LIMIT", error["code"]!.GetValue<string>());
+        Assert.Contains("together", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("merge inputs that have at most 4 pages together", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain("--pages", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("merged.pdf")));
+    }
+
+    [Fact]
     public void EvaluationMode_ListsEveryBookmarkOfALongerDocument()
     {
         // Six pages and six bookmarks, one per page, written without the engine.
