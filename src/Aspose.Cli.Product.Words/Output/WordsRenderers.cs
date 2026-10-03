@@ -132,10 +132,8 @@ internal static class WordsRenderers
         DocumentInfoResult result,
         TableSurface surface)
     {
-        if (result.Sections is { Count: > 0 } sections)
+        if (result.Sections is { } sections && ResultText.Section(surface, "sections", sections.Count == 0))
         {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine("sections:");
             var table = new TextTable("section", "orientation", "page size", "margins (t/r/b/l)");
             foreach (SectionData section in sections)
             {
@@ -150,10 +148,8 @@ internal static class WordsRenderers
             table.WriteTo(surface.Out, surface.Format);
         }
 
-        if (result.Outline is { Count: > 0 } outline)
+        if (result.Outline is { } outline && ResultText.Section(surface, "outline", outline.Count == 0))
         {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine("outline:");
             var table = new TextTable("block", "level", "heading");
             foreach (OutlineItem item in outline)
             {
@@ -171,10 +167,8 @@ internal static class WordsRenderers
         DocumentInfoResult result,
         TableSurface surface)
     {
-        if (result.Fields is { Count: > 0 } fields)
+        if (result.Fields is { } fields && ResultText.Section(surface, "fields", fields.Count == 0))
         {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine("fields:");
             var table = new TextTable("block", "type", "code", "result");
             foreach (FieldData field in fields)
             {
@@ -188,10 +182,8 @@ internal static class WordsRenderers
             table.WriteTo(surface.Out, surface.Format);
         }
 
-        if (result.Comments is { Count: > 0 } comments)
+        if (result.Comments is { } comments && ResultText.Section(surface, "comments", comments.Count == 0))
         {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine("comments:");
             var table = new TextTable("block", "author", "text");
             foreach (CommentData comment in comments)
             {
@@ -204,10 +196,8 @@ internal static class WordsRenderers
             table.WriteTo(surface.Out, surface.Format);
         }
 
-        if (result.Revisions is { Count: > 0 } revisions)
+        if (result.Revisions is { } revisions && ResultText.Section(surface, "revisions", revisions.Count == 0))
         {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine("revisions:");
             var table = new TextTable("block", "type", "author", "date", "text");
             foreach (RevisionData revision in revisions)
             {
@@ -227,10 +217,8 @@ internal static class WordsRenderers
         DocumentInfoResult result,
         TableSurface surface)
     {
-        if (result.Images is { Count: > 0 } images)
+        if (result.Images is { } images && ResultText.Section(surface, "images", images.Count == 0))
         {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine("images:");
             var table = new TextTable("block", "name", "size");
             foreach (ImageData image in images)
             {
@@ -243,10 +231,8 @@ internal static class WordsRenderers
             table.WriteTo(surface.Out, surface.Format);
         }
 
-        if (result.Tables is { Count: > 0 } tables)
+        if (result.Tables is { } tables && ResultText.Section(surface, "tables", tables.Count == 0))
         {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine("tables:");
             var table = new TextTable("block", "rows", "columns", "style");
             foreach (TableData item in tables)
             {
@@ -265,10 +251,8 @@ internal static class WordsRenderers
         DocumentInfoResult result,
         TableSurface surface)
     {
-        if (result.Properties is { Count: > 0 } properties)
+        if (result.Properties is { } properties && ResultText.Section(surface, "properties", properties.Count == 0))
         {
-            surface.Out.WriteLine();
-            surface.Out.WriteLine("properties:");
             var table = new TextTable("name", "value");
             foreach ((string name, string? value) in properties.OrderBy(
                          static property => property.Key,
@@ -286,13 +270,10 @@ internal static class WordsRenderers
         IReadOnlyList<string>? values,
         TableSurface surface)
     {
-        if (values is not { Count: > 0 })
+        if (values is not null && ResultText.Section(surface, label, values.Count == 0))
         {
-            return;
+            surface.Out.WriteLine(string.Join(", ", values));
         }
-
-        surface.Out.WriteLine();
-        surface.Out.WriteLine($"{label}: {string.Join(", ", values)}");
     }
 
     private static string Points(double value) =>
