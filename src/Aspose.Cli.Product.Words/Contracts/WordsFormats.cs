@@ -56,6 +56,13 @@ public static class WordsFormats
     public static IReadOnlyList<string> WordIds { get; } =
         ["doc", "dot", "docx", "docm", "dotx", "dotm", "flatopc", "wordml"];
 
+    /// <summary>
+    /// Formats that store tracked changes as revisions a reviewer can accept or reject: the
+    /// Word formats, RTF and OpenDocument text. Other outputs show or drop the changes.
+    /// </summary>
+    public static IReadOnlyList<string> RevisionIds { get; } =
+        [.. WordIds, "rtf", "odt", "ott"];
+
     public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
 
     /// <summary>

@@ -95,7 +95,7 @@ internal sealed class WordsProductionService
             Outputs = outputs,
             Dpi = request.TargetFormatId == "svg" ? null : request.Dpi,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded, request.TargetFormatId),
+            Warnings = OutputWarnings(state, loaded, request.TargetFormatId, rendered: true),
         };
     }
 

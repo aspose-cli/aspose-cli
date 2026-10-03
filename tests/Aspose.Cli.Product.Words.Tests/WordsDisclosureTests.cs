@@ -85,6 +85,8 @@ public sealed class WordsDisclosureTests
     [Theory]
     [InlineData(true, "docx", false)]
     [InlineData(false, "docx", true)]
+    [InlineData(false, "rtf", true)]
+    [InlineData(false, "odt", true)]
     [InlineData(false, "txt", false)]
     public void EditingARevisedDocument_DisclosesTheRevisionsTheOutputKeeps(bool accept, string extension, bool disclosed)
     {
@@ -107,6 +109,70 @@ public sealed class WordsDisclosureTests
 
         Assert.Equal(disclosed, (result.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.TrackedChangesPresent));
         Assert.Equal(disclosed, new Document(output).HasRevisions);
+    }
+
+    [Theory]
+    [InlineData("docx", true, false)]
+    [InlineData("rtf", true, false)]
+    [InlineData("odt", true, false)]
+    [InlineData("html", false, true)]
+    [InlineData("epub", false, true)]
+    [InlineData("pdf", false, true)]
+    // A text output names the deleted text it mixes into the body instead.
+    [InlineData("txt", false, false)]
+    public void SavingARevisedDocument_DisclosesWhetherTheOutputKeepsTheRevisions(string format, bool kept, bool dropped)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("The notice period is thirty days.");
+        builder.Write("Other text.");
+        source.StartTrackRevisions("Ann", DateTime.Now);
+        source.Range.Replace("thirty", "sixty");
+        source.StopTrackRevisions();
+        string input = fixture.Temp.File("revised.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
+        {
+            TargetFormatId = format,
+            OutputPath = fixture.Temp.File("converted." + format),
+        });
+        WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new ReplaceTextOp { Find = "Other", Replace = "More" }],
+        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited." + format) });
+
+        foreach (IReadOnlyList<Warning>? warnings in new[] { converted.Warnings, edited.Warnings })
+        {
+            Assert.Equal(kept, (warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.TrackedChangesPresent));
+            Assert.Equal(dropped, (warnings ?? []).Any(static warning => warning.Code == WarningCodes.LossyConversion
+                && warning.Message.Contains("cannot keep tracked changes", StringComparison.Ordinal)));
+        }
+    }
+
+    [Fact]
+    public void RenderingARevisedDocument_DoesNotReportLostRevisions()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Write("The notice period is thirty days.");
+        source.StartTrackRevisions("Ann", DateTime.Now);
+        source.Range.Replace("thirty", "sixty");
+        source.StopTrackRevisions();
+        string input = fixture.Temp.File("revised.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        // A render shows the document as it looks; the source keeps its revisions.
+        WordsRenderResult rendered = fixture.Engine.Render(input, new WordsRenderRequest
+        {
+            TargetFormatId = "png",
+            OutputPath = fixture.Temp.File("page.png"),
+        });
+
+        Assert.DoesNotContain(rendered.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
+        Assert.DoesNotContain(rendered.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.TrackedChangesPresent);
     }
 
     [Theory]

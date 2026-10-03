@@ -27,8 +27,9 @@ The error envelope, exit codes, not-found details and shared codes such as
 
 - `PROTECTION_NOT_ENFORCED`: the document has editing restrictions; the edit
   succeeded and the restrictions remain in a Word format output.
-- `TRACKED_CHANGES_PRESENT`: the edited document already had revisions and
-  a Word format output still contains revisions; disclose them.
+- `TRACKED_CHANGES_PRESENT`: the edited or converted document already had
+  revisions and the output, in a Word format, `rtf`, `odt` or `ott`, still
+  contains them; disclose them ([revisions](revisions.md)).
 - `MERGE_VALUE_MISSING`: `mail_merge` data has no value for a template field
   in the listed records ([mail merge](mail-merge.md)).
 - `DOCUMENT_ENCRYPTION_REMOVED`: the output format cannot be encrypted.

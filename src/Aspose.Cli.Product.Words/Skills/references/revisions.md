@@ -3,12 +3,12 @@
 Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
 `document.commentCount`,
 `document.protection` and `document.signed` in the `words inspect` result.
-Editing a document that already has revisions reports `TRACKED_CHANGES_PRESENT`
-while a Word format output still contains revisions; disclose them. A batch
-that accepts or rejects every revision does not report it, and an output such
-as `txt` that drops revisions reports `LOSSY_CONVERSION` instead. A `txt` or
-`md` output writes deleted text beside the inserted text, which a further
-`LOSSY_CONVERSION` names.
+Editing or converting a document that already has revisions reports
+`TRACKED_CHANGES_PRESENT` while the output still contains them; disclose them.
+Only a Word format, `rtf`, `odt` or `ott` output stores revisions. A batch that
+accepts or rejects every revision does not report it. Any other output reports
+`LOSSY_CONVERSION` instead: it cannot keep the changes as revisions, and a
+`txt` or `md` output writes deleted text beside the inserted text.
 
 Use `--track-changes --author "Name"` when the requested edit must remain reviewable.
 `set_table_cell` supports tracked replacement while retaining the cell's structure;

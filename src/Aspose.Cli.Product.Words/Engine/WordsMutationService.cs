@@ -106,10 +106,9 @@ internal sealed class WordsMutationService
                 state,
                 loaded.Document,
                 format,
-                // The input's revisions are disclosed while the output still contains revisions,
-                // which a Word format keeps; LOSSY_CONVERSION covers the formats that drop them.
-                inputHadRevisions && loaded.Document.Revisions.Count > 0
-                    && WordsFormats.WordIds.Contains(format, StringComparer.Ordinal),
+                // The input's revisions are disclosed while the output still contains revisions;
+                // LOSSY_CONVERSION covers the formats that cannot store them.
+                inputHadRevisions && KeepsRevisions(loaded.Document, format),
                 inputWasSigned,
                 inputProtection,
                 loaded.RemoteResourcesBlocked,
@@ -320,7 +319,7 @@ internal sealed class WordsMutationService
         var extra = new List<Warning>();
         if (revisionsKept)
         {
-            extra.Add(new Warning { Code = WordsDiagnostics.TrackedChangesPresent, Message = "The input has tracked changes, and the output still contains tracked changes.", Hint = "Disclose them and accept or reject only when explicitly requested." });
+            extra.Add(TrackedChangesPresent);
         }
 
         if (inputWasSigned)
