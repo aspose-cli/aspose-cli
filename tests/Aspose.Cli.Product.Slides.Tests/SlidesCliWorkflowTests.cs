@@ -75,6 +75,27 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void Review_FindingOnOneSlide_HasThatSlidesImageAsEvidence()
+    {
+        CreateDeck(_workspace.File("deck.pptx"));
+        using (var presentation = new Presentation(_workspace.File("deck.pptx")))
+        {
+            presentation.Slides[1].Shapes.AddAutoShape(ShapeType.Rectangle, 600, 200, 300, 80).TextFrame.Text = "Off the edge";
+            presentation.Save(_workspace.File("deck.pptx"), SaveFormat.Pptx);
+        }
+
+        CliResult review = _workspace.Run(
+            "review", "deck.pptx", "--out", "evidence", "--code", "SLIDES_SHAPE_OUTSIDE_SLIDE", "--output", "json");
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray())!;
+        Assert.Equal("slide 2", finding["location"]!.GetValue<string>());
+        Assert.Equal(
+            ["artifacts/slide-0002.png"],
+            finding["evidence"]!.AsArray().Select(static path => path!.GetValue<string>()));
+    }
+
+    [Fact]
     public void QuerySlides_NextSpellsRemainingSlidesAsRangesAndRereadsACutSlide()
     {
         using (var presentation = new Presentation())

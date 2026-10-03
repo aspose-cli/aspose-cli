@@ -46,6 +46,7 @@ internal static class SlidesReviewAnalyzer
             if (firstByFingerprint.TryGetValue(fingerprint, out int first))
             {
                 result.DuplicateSlides++;
+                // A duplicate concerns two slides, so it names no single part and keeps every image as evidence.
                 result.Findings.Add(SlidesReviewChecks.SlideDuplicate.Finding(
                     $"Slide {slide.Slide} has the same meaningful content and geometry as slide {first}; inspect both before removing either one.",
                     Location(slide.Slide),
@@ -70,12 +71,13 @@ internal static class SlidesReviewAnalyzer
             result.Findings.Add(SlidesReviewChecks.SlideBlank.Finding(
                 "The slide has no visible authored content; confirm that it is intentional.",
                 Location(slide.Slide),
-                Hint));
+                Hint,
+                Part(slide)));
         }
 
         foreach (SlideShapeData shape in slide.Shapes)
         {
-            AddShapeFindings(slide.Slide, shape, slideWidth, slideHeight, result);
+            AddShapeFindings(slide, shape, slideWidth, slideHeight, result);
         }
         AnalyzeDensity(slide, slideWidth, slideHeight, result);
         AnalyzeOverlaps(slide, slideWidth, slideHeight, result);
@@ -105,7 +107,8 @@ internal static class SlidesReviewAnalyzer
                 result.Findings.Add(SlidesReviewChecks.TextOverlapsObject.Finding(
                     $"The text of '{Label(text)}' runs into {other.Type} '{Label(other)}' ({overlap / Math.Max(1, Area(lines)):P0} of the text area); move or shorten one of them.",
                     Location(slide.Slide),
-                    Hint));
+                    Hint,
+                    Part(slide)));
                 break;
             }
         }
@@ -122,12 +125,13 @@ internal static class SlidesReviewAnalyzer
             result.Findings.Add(SlidesReviewChecks.PlaceholderEmpty.Finding(
                 $"Placeholder '{Label(shape)}' is empty; PowerPoint shows its prompt text while the deck is edited. Delete it or fill it.",
                 Location(slide.Slide),
-                Hint));
+                Hint,
+                Part(slide)));
         }
     }
 
     private static void AddShapeFindings(
-        int slideNumber,
+        SlideData slide,
         SlideShapeData shape,
         double slideWidth,
         double slideHeight,
@@ -142,12 +146,13 @@ internal static class SlidesReviewAnalyzer
             result.OutsideShapes++;
             result.Findings.Add(SlidesReviewChecks.ShapeOutsideSlide.Finding(
                 $"Shape '{Label(shape)}' extends outside the slide.",
-                Location(slideNumber),
-                Hint));
+                Location(slide.Slide),
+                Hint,
+                Part(slide)));
         }
         else
         {
-            AddTextPlacementFindings(slideNumber, shape, slideWidth, slideHeight, result);
+            AddTextPlacementFindings(slide, shape, slideWidth, slideHeight, result);
         }
 
         double minimum = shape.Runs?
@@ -160,8 +165,9 @@ internal static class SlidesReviewAnalyzer
             result.SmallTextShapes++;
             result.Findings.Add(SlidesReviewChecks.TextTooSmall.Finding(
                 $"Shape '{Label(shape)}' contains text below 12 pt.",
-                Location(slideNumber),
-                Hint));
+                Location(slide.Slide),
+                Hint,
+                Part(slide)));
         }
     }
 
@@ -173,7 +179,7 @@ internal static class SlidesReviewAnalyzer
     /// checked again here.
     /// </summary>
     private static void AddTextPlacementFindings(
-        int slideNumber,
+        SlideData slide,
         SlideShapeData shape,
         double slideWidth,
         double slideHeight,
@@ -184,14 +190,15 @@ internal static class SlidesReviewAnalyzer
             return;
         }
 
-        var slide = new SlideRect { X = 0, Y = 0, Width = slideWidth, Height = slideHeight };
-        if (Overshoot(text, slide, TextSlideTolerance) is { } cut)
+        var page = new SlideRect { X = 0, Y = 0, Width = slideWidth, Height = slideHeight };
+        if (Overshoot(text, page, TextSlideTolerance) is { } cut)
         {
             result.TextOutsideSlide++;
             result.Findings.Add(SlidesReviewChecks.TextOutsideSlide.Finding(
                 string.Create(CultureInfo.InvariantCulture, $"The text of '{Label(shape)}' runs {cut.Points:0} pt past the {cut.Edges} edge of the slide, which cuts it off; shorten the text, reduce its size, or enlarge the shape away from that edge."),
-                Location(slideNumber),
-                Hint));
+                Location(slide.Slide),
+                Hint,
+                Part(slide)));
             return;
         }
 
@@ -200,8 +207,9 @@ internal static class SlidesReviewAnalyzer
             result.TextOverflows++;
             result.Findings.Add(SlidesReviewChecks.TextOverflowsShape.Finding(
                 string.Create(CultureInfo.InvariantCulture, $"The text of '{Label(shape)}' spills {spill.Points:0} pt out of the {spill.Edges} of its shape; shorten the text, reduce its size, or enlarge the shape."),
-                Location(slideNumber),
-                Hint));
+                Location(slide.Slide),
+                Hint,
+                Part(slide)));
         }
     }
 
@@ -245,7 +253,8 @@ internal static class SlidesReviewAnalyzer
                     ? $"The slide contains {content.Length} content objects and {characters} text characters; inspect readability and consider splitting it."
                     : $"The slide contains {content.Length} content objects; inspect readability and consider splitting it.",
                 Location(slide.Slide),
-                Hint));
+                Hint,
+                Part(slide)));
             return;
         }
 
@@ -261,7 +270,8 @@ internal static class SlidesReviewAnalyzer
             result.Findings.Add(SlidesReviewChecks.ContentDensityLow.Finding(
                 $"Three or more content objects occupy only {occupied:P0} of the slide with very little text; inspect for content stranded in a corner.",
                 Location(slide.Slide),
-                Hint));
+                Hint,
+                Part(slide)));
         }
     }
 
@@ -301,7 +311,8 @@ internal static class SlidesReviewAnalyzer
                     result.Findings.Add(SlidesReviewChecks.ChartCovered.Finding(
                         $"Opaque foreground shape '{Label(upper)}' covers {covered:P0} of chart '{Label(lower)}'; verify the rendered slide before changing it.",
                         Location(slide.Slide),
-                        Hint));
+                        Hint,
+                        Part(slide)));
                     break;
                 }
                 if (covered >= SevereCoverage)
@@ -310,7 +321,8 @@ internal static class SlidesReviewAnalyzer
                     result.Findings.Add(SlidesReviewChecks.ShapesOverlap.Finding(
                         $"Opaque foreground shape '{Label(upper)}' covers {covered:P0} of content shape '{Label(lower)}'; verify that this is intentional.",
                         Location(slide.Slide),
-                        Hint));
+                        Hint,
+                        Part(slide)));
                     break;
                 }
             }
@@ -414,6 +426,9 @@ internal static class SlidesReviewAnalyzer
     private static string Label(SlideShapeData shape) => shape.ShapeName ?? shape.ShapeId.ToString(CultureInfo.InvariantCulture);
 
     private static string Location(int slide) => string.Create(CultureInfo.InvariantCulture, $"slide {slide}");
+
+    /// <summary>The view part of the slide a finding concerns, so its evidence is that slide's image.</summary>
+    private static string Part(SlideData slide) => SlidesViews.PartId(slide.SlideId);
 }
 
 internal sealed class SlidesReviewAnalysis

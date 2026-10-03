@@ -75,7 +75,7 @@ internal sealed class SlidesProductionService
             string? notes = Notes(slide);
             parts.Add(new ViewPart
             {
-                Id = string.Create(CultureInfo.InvariantCulture, $"slide-{slide.SlideId}"),
+                Id = SlidesViews.PartId(slide.SlideId),
                 Label = Title(slide) ?? string.Create(CultureInfo.InvariantCulture, $"Slide {number}"),
                 File = file,
                 Kind = ViewPartKinds.Image,
