@@ -457,7 +457,7 @@ internal sealed class PdfProductionService
 
             if (request.PreserveBookmarks)
             {
-                bookmarks += CopyOutline(source, source.Outlines, merged.Outlines, merged, offset);
+                bookmarks += CopyOutline(source, source.Outlines, merged.Outlines, merged, page => offset + page);
             }
 
             inputs.Add(PdfInfoProjection.Source(path));
@@ -909,48 +909,6 @@ internal sealed class PdfProductionService
         }
 
         return bytes;
-    }
-
-    /// <summary>
-    /// Copies an outline into the merged document, pointing each bookmark at its page with
-    /// a Fit destination, and returns how many working bookmarks lost fidelity: a location
-    /// or zoom other than Fit, or a named destination the merged document does not carry.
-    /// </summary>
-    private static int CopyOutline(
-        Document source,
-        IEnumerable<OutlineItemCollection> items,
-        ICollection<OutlineItemCollection> target,
-        Document document,
-        int pageOffset)
-    {
-        int degraded = 0;
-        foreach (OutlineItemCollection item in items)
-        {
-            var copied = new OutlineItemCollection(document.Outlines)
-            {
-                Title = item.Title,
-                Bold = item.Bold,
-                Italic = item.Italic,
-                Color = item.Color,
-            };
-            IAppointment? destination = PdfNavigationCensus.Target(item.Destination, item.Action);
-            int page = PdfNavigationCensus.DestinationPage(item);
-            if (page > 0)
-            {
-                copied.Destination = new FitExplicitDestination(document.Pages[pageOffset + page]);
-            }
-
-            if (PdfNavigationCensus.Resolves(source, destination)
-                && (page == 0 || destination is not FitExplicitDestination))
-            {
-                degraded++;
-            }
-
-            degraded += CopyOutline(source, item, copied, document, pageOffset);
-            target.Add(copied);
-        }
-
-        return degraded;
     }
 
 }

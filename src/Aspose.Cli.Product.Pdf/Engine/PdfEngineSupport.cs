@@ -8,6 +8,7 @@ using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Pdf;
+using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Text;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
@@ -32,6 +33,58 @@ internal static class PdfEngineSupport
             selected.Dispose();
             throw;
         }
+    }
+
+    /// <summary>
+    /// Copies an outline into a document assembled from copied pages, pointing each bookmark at
+    /// its page there with a Fit destination, and returns how many working bookmarks lost
+    /// fidelity: a location or zoom other than Fit, or a named destination the document does not
+    /// carry. <paramref name="pageOf"/> maps a source page to its page in the document, or to 0
+    /// when the document does not hold it; such a bookmark is left out and its children take
+    /// its place.
+    /// </summary>
+    internal static int CopyOutline(
+        Document source,
+        IEnumerable<OutlineItemCollection> items,
+        ICollection<OutlineItemCollection> target,
+        Document document,
+        Func<int, int> pageOf)
+    {
+        int degraded = 0;
+        foreach (OutlineItemCollection item in items)
+        {
+            int page = PdfNavigationCensus.DestinationPage(item);
+            int copiedPage = page > 0 ? pageOf(page) : 0;
+            if (page > 0 && copiedPage == 0)
+            {
+                degraded += CopyOutline(source, item, target, document, pageOf);
+                continue;
+            }
+
+            var copied = new OutlineItemCollection(document.Outlines)
+            {
+                Title = item.Title,
+                Bold = item.Bold,
+                Italic = item.Italic,
+                Color = item.Color,
+            };
+            if (copiedPage > 0)
+            {
+                copied.Destination = new FitExplicitDestination(document.Pages[copiedPage]);
+            }
+
+            IAppointment? destination = PdfNavigationCensus.Target(item.Destination, item.Action);
+            if (PdfNavigationCensus.Resolves(source, destination)
+                && (page == 0 || destination is not FitExplicitDestination))
+            {
+                degraded++;
+            }
+
+            degraded += CopyOutline(source, item, copied, document, pageOf);
+            target.Add(copied);
+        }
+
+        return degraded;
     }
 
     internal static Page PageAt(Document document, int page) =>

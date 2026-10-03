@@ -56,7 +56,7 @@ For redaction, search every relevant page, inspect the redacted regions in the
 review images, and check images, annotations, metadata and attachments as
 needed. Search provides no redaction certification.
 
-After `move_pages`, `delete_pages` or `pdf merge`, check each affected bookmark,
+After `move_pages`, `delete_pages`, `pdf merge` or `pdf split`, check each affected bookmark,
 local link and named destination against the original target, including
 destination type, coordinates and zoom. A `NAVIGATION_DEGRADED` warning counts
 the entries left without their exact target; its absence covers only the page

@@ -20,10 +20,19 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
     internal static PdfNavigationCensus Unresolved(Document document)
     {
         int bookmarks = CountUnresolved(document, document.Outlines);
+        int links = UnresolvedLinks(document, Enumerable.Range(1, document.Pages.Count));
+        int named = NamedDestinationNames(document)
+            .Count(name => !Resolves(document, document.NamedDestinations[name]));
+        return new PdfNavigationCensus(bookmarks, links, named);
+    }
+
+    /// <summary>The link annotations on the pages whose destination does not lead to a page.</summary>
+    internal static int UnresolvedLinks(Document document, IEnumerable<int> pages)
+    {
         int links = 0;
-        foreach (Page page in document.Pages)
+        foreach (int page in pages)
         {
-            foreach (Annotation annotation in page.Annotations)
+            foreach (Annotation annotation in document.Pages[page].Annotations)
             {
                 if (annotation is LinkAnnotation link
                     && Target(link.Destination, link.Action) is { } target
@@ -34,9 +43,7 @@ internal readonly record struct PdfNavigationCensus(int Bookmarks, int Links, in
             }
         }
 
-        int named = NamedDestinationNames(document)
-            .Count(name => !Resolves(document, document.NamedDestinations[name]));
-        return new PdfNavigationCensus(bookmarks, links, named);
+        return links;
     }
 
     /// <summary>

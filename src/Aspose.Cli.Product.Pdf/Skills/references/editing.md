@@ -71,7 +71,10 @@ except a destination with a coordinate of 0: the SDK reads an omitted coordinate
 as 0, so the CLI cannot rebuild it exactly and leaves it without a target.
 `delete_pages` leaves navigation to deleted pages without a target. `pdf merge`
 points each copied bookmark at its page with Fit zoom (other locations and zooms
-are lost) and does not carry named destinations. Each publishes its output with
+are lost) and does not carry named destinations. `pdf split` does the same with
+the bookmarks of each part's pages; a bookmark whose parent opens a page of
+another part moves up in its place, and links to another part lead nowhere.
+Each publishes its output with
 a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead where
 they did. Re-create them with `add_bookmark` and `add_link`, or reorder pages
 before adding navigation, then follow the destination checks in

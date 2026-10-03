@@ -2,6 +2,7 @@ using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.TestKit;
 using Aspose.Pdf;
+using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Text;
 using Xunit;
 
@@ -153,6 +154,60 @@ public sealed class PdfArtifactWorkflowTests
         Assert.Equal(
             ["region-p1-3.pdf", "region-p1_3-4.pdf", "region-p2.pdf"],
             split.Outputs.Select(static part => Path.GetFileName(part.Output.Path)));
+    }
+
+    [Fact]
+    public void Split_KeepsTheBookmarksOfEachPartAndDisclosesTheirLostLocation()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("regions.pdf", pages: 4);
+        using (var document = new Document(input))
+        {
+            OutlineItemCollection east = Bookmark(document, document.Outlines, "East", new FitExplicitDestination(document.Pages[1]));
+            Bookmark(document, east, "East details", new FitExplicitDestination(document.Pages[2]));
+            OutlineItemCollection south = Bookmark(document, document.Outlines, "South", new FitExplicitDestination(document.Pages[3]));
+            Bookmark(document, south, "South details", new XYZExplicitDestination(document.Pages[4], 0, 600, 1));
+            document.Save(input);
+        }
+
+        PdfSplitResult byBookmarks = fixture.Engine.Split(input, new PdfSplitRequest
+        {
+            ByBookmarks = true,
+            OutputDirectory = fixture.File("regions"),
+        });
+        PdfSplitResult byPage = fixture.Engine.Split(input, new PdfSplitRequest
+        {
+            Every = 1,
+            OutputDirectory = fixture.File("pages"),
+        });
+
+        Assert.Equal(
+            ["East(1) > East details(2)", "South(1) > South details(2)"],
+            byBookmarks.Outputs.Select(static part => Outline(part.Output.Path)));
+        // A bookmark whose parent opens a page of another part moves up to the top level.
+        Assert.Equal(
+            ["East(1)", "East details(1)", "South(1)", "South details(1)"],
+            byPage.Outputs.Select(static part => Outline(part.Output.Path)));
+        Warning degraded = Assert.Single(byBookmarks.Warnings!, static warning => warning.Code == "NAVIGATION_DEGRADED");
+        Assert.StartsWith("1 bookmark(s), 0 link(s) and 0 named destination(s)", degraded.Message, StringComparison.Ordinal);
+    }
+
+    private static OutlineItemCollection Bookmark(
+        Document document, ICollection<OutlineItemCollection> parent, string title, IAppointment destination)
+    {
+        var item = new OutlineItemCollection(document.Outlines) { Title = title, Destination = destination };
+        parent.Add(item);
+        return item;
+    }
+
+    /// <summary>The outline of a PDF as titles and pages, a child after its parent's ' > '.</summary>
+    private static string Outline(string path)
+    {
+        using var document = new Document(path);
+        static IEnumerable<string> Items(IEnumerable<OutlineItemCollection> items, string prefix) =>
+            items.SelectMany(item => Items(item, $"{prefix}{item.Title}({((ExplicitDestination)item.Destination).PageNumber}) > ")
+                .DefaultIfEmpty($"{prefix}{item.Title}({((ExplicitDestination)item.Destination).PageNumber})"));
+        return string.Join(" | ", Items(document.Outlines, string.Empty));
     }
 
     [Fact]

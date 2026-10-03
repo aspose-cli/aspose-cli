@@ -58,6 +58,9 @@ internal sealed class PdfExtractionService
         string stem = Path.GetFileNameWithoutExtension(filePath);
         var targets = new List<(SplitPart Part, string Path)>();
         var names = new HashSet<string>(OperatingSystem.IsWindows() ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
+        int bookmarks = 0;
+        int links = 0;
+        int namedDestinations = 0;
         foreach (SplitPart part in parts)
         {
             string name = SplitName(request.NameTemplate, stem, part);
@@ -71,13 +74,31 @@ internal sealed class PdfExtractionService
             string target = Path.Combine(root, name);
             writer.Stage(target, request.Overwrite, staged =>
             {
-                using Document selected = Select(loaded.Document, part.Pages);
+                Document source = loaded.Document;
+                int[] pages = [.. part.Pages];
+                using Document selected = Select(source, pages);
+                // A part keeps the bookmarks of its pages; what leads elsewhere is counted.
+                bookmarks += CopyOutline(source, source.Outlines, selected.Outlines, selected,
+                    page => Array.IndexOf(pages, page) + 1);
+                links += Math.Max(0, PdfNavigationCensus.UnresolvedLinks(selected, Enumerable.Range(1, pages.Length))
+                    - PdfNavigationCensus.UnresolvedLinks(source, pages));
+                namedDestinations += PdfNavigationCensus.NamedDestinationNames(source).Count(name =>
+                    source.NamedDestinations[name] is ExplicitDestination destination
+                    && pages.Contains(destination.PageNumber));
                 selected.Save(staged);
             });
             targets.Add((part, target));
         }
 
         IReadOnlyList<long> sizes = writer.Commit();
+        List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];
+        if (new PdfNavigationCensus(bookmarks, links, namedDestinations).ToWarning(
+                "lost their exact target in the parts: bookmarks open their page at Fit zoom, links to a page of another part lead nowhere, and named destinations are not carried into the parts",
+                "Re-create location-sensitive bookmarks (add_bookmark) and links (add_link) on the parts that need them.")
+            is { } degraded)
+        {
+            warnings.Add(degraded);
+        }
         return new PdfSplitResult
         {
             Input = PdfInfoProjection.Source(filePath),
@@ -89,7 +110,7 @@ internal sealed class PdfExtractionService
                 Output = BuildOutput(item.Path, "pdf", sizes[index]),
             }).ToArray(),
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.OutputWarnings(state),
+            Warnings = warnings.Count == 0 ? null : warnings,
         };
     }
 
