@@ -112,6 +112,13 @@ internal sealed class GlobalOptions
         string baseDirectory = inherited?.WorkDir ?? Directory.GetCurrentDirectory();
         string workDirectory = Path.GetFullPath(parseResult.GetValue(WorkDir) ?? baseDirectory, baseDirectory);
         string? explicitLicense = License is null ? null : parseResult.GetValue(License);
+        if (explicitLicense is not null && string.IsNullOrWhiteSpace(explicitLicense))
+        {
+            // An empty path would otherwise resolve to the work directory.
+            throw CliErrors.OptionInvalid(GlobalOptionNames.License,
+                "the value is empty",
+                "Pass the path of an Aspose license file, or omit --license to use the other license sources.");
+        }
         string? licensePath = explicitLicense is null ? inherited?.LicensePath
             : Path.GetFullPath(explicitLicense, workDirectory);
         long? requestedInputBytes = parseResult.GetValue(MaxInputBytes);

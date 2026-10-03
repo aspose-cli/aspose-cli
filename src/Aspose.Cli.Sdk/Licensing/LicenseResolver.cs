@@ -27,7 +27,9 @@ public static class LicenseResolver
     /// <param name="getEnvironmentVariable">Environment lookup (injected for testability).</param>
     /// <param name="workingDirectory">Base directory for project-level files.</param>
     /// <param name="userConfigDirectory">Directory of user-level files.</param>
-    /// <exception cref="CliException"><c>LICENSE_FILE_NOT_FOUND</c> when an explicit source is broken.</exception>
+    /// <exception cref="CliException">
+    /// <c>LICENSE_FILE_NOT_FOUND</c> when an explicit source names a missing file or a directory.
+    /// </exception>
     public static LicenseResolution Resolve(
         string? flagPath,
         string productId,
@@ -41,12 +43,13 @@ public static class LicenseResolver
         ArgumentException.ThrowIfNullOrEmpty(userConfigDirectory);
         string product = NormalizeProductId(productId);
 
-        if (!string.IsNullOrWhiteSpace(flagPath))
+        if (flagPath is not null)
         {
-            string full = Path.GetFullPath(flagPath, workingDirectory);
-            return File.Exists(full)
-                ? new LicenseResolution(LicenseSourceKind.Flag, full)
-                : throw CliErrors.LicenseFileNotFound(full, "--license");
+            // The Host refuses an empty --license value; it never means "use the other sources".
+            ArgumentException.ThrowIfNullOrWhiteSpace(flagPath);
+            return new LicenseResolution(
+                LicenseSourceKind.Flag,
+                ConfiguredFile(Path.GetFullPath(flagPath, workingDirectory), "--license"));
         }
 
         string base64Name = ProductEnvBase64Name(product);
@@ -155,13 +158,17 @@ public static class LicenseResolver
             return null;
         }
 
-        string full = Path.GetFullPath(value, workingDirectory);
-        return File.Exists(full)
-            ? productId is null
-                ? new LicenseResolution(kind, full)
-                : ProductResolution(kind, productId, full)
-            : throw CliErrors.LicenseFileNotFound(full, "env:" + variableName);
+        string full = ConfiguredFile(Path.GetFullPath(value, workingDirectory), "env:" + variableName);
+        return productId is null
+            ? new LicenseResolution(kind, full)
+            : ProductResolution(kind, productId, full);
     }
+
+    /// <summary>The configured license file, or the error that says why the source is broken.</summary>
+    private static string ConfiguredFile(string full, string source) =>
+        File.Exists(full) ? full
+        : Directory.Exists(full) ? throw CliErrors.LicensePathIsDirectory(full, source)
+        : throw CliErrors.LicenseFileNotFound(full, source);
 
     private static string ProductProjectLicensePath(string workingDirectory, string productId) =>
         Path.GetFullPath(

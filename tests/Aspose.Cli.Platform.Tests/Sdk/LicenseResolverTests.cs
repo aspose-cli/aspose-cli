@@ -112,6 +112,38 @@ public sealed class LicenseResolverTests : IDisposable
         Assert.Equal(ErrorCodes.LicenseFileNotFound, exception.Code);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Resolve_SourcePointingAtADirectory_SaysItIsADirectory(bool environment)
+    {
+        string directory = _temp.File("work");
+        CreateFile("user-config/license.lic");
+        if (environment)
+        {
+            _environment[LicenseResolver.EnvPathName] = directory;
+        }
+
+        CliException exception = Assert.Throws<CliException>(() => Resolve(environment ? null : directory));
+
+        Assert.Equal(ErrorCodes.LicenseFileNotFound, exception.Code);
+        Assert.Contains("is a directory, not a license file", exception.Message, StringComparison.Ordinal);
+        Assert.Equal(directory, exception.Details!["path"]!.GetValue<string>());
+        Assert.Equal(
+            environment ? "env:" + LicenseResolver.EnvPathName : "--license",
+            exception.Details["source"]!.GetValue<string>());
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("  ")]
+    public void Resolve_AnEmptyFlagNeverFallsBackToOtherSources(string flag)
+    {
+        CreateFile("user-config/license.lic");
+
+        Assert.ThrowsAny<ArgumentException>(() => Resolve(flag));
+    }
+
     [Fact]
     public void Resolve_Base64BeatsEnvPath()
     {
