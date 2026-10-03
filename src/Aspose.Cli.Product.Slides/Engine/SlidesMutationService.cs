@@ -67,7 +67,7 @@ internal sealed class SlidesMutationService
             SlidesTouched = touched.Count == 0 ? null : touched.Order().ToArray(),
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
-                ? InputWarnings(state, loaded)
+                ? InputWarnings(state, loaded, textRead: false)
                 : EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded), EnvelopeParts.BackupWarnings(publication.Backup)),
         };
     }

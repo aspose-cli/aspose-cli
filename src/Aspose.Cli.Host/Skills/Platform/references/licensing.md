@@ -85,8 +85,9 @@ retry unchanged input.
   so the result is incomplete. On a read, the text you get back is the
   engine's replacement ("...text has been truncated due to evaluation version
   limitation"), not what the file holds: check the file's text in rendered
-  images instead, and do not report the file as damaged. A command that loads
-  such an input and saves writes the replacement into its output.
+  images instead, and do not report the file as damaged. Whether a saved
+  output carries the replacement depends on the product; its Skill says which
+  outputs do.
 - Reads (`inspect`, `query`) add no marks and carry no `EVAL_MODE` warning;
   input, resource and engine limits still apply.
 - Detect evaluation from the JSON `warnings` array. With `--output table`,
@@ -109,8 +110,9 @@ aspose-cli words convert report.docx --to pdf --out eval-check.pdf --license-mod
 aspose-cli license status --license-mode evaluation --output json
 ```
 
-The result reports `license.mode: "evaluation"` and the `EVAL_MODE` and
-`EVAL_INPUT_TRUNCATED` warnings as it would without a license, except that
+The result reports `license.mode: "evaluation"`, the `EVAL_MODE` warning and,
+where evaluation mode changed what the result holds, `EVAL_INPUT_TRUNCATED`, as
+it would without a license, except that
 `EVAL_MODE` names the request as the cause; `license status` names the source
 `requested`, and `doctor` says the mode was requested. Write to a scratch output, never over a
 deliverable. The option applies to one command (and to every call an MCP

@@ -77,7 +77,7 @@ internal sealed class SlidesExtractionService
             What = request.What,
             Items = items,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded),
+            Warnings = OutputWarnings(state, loaded, textRead: request.What != PresentationExtractKinds.Media),
         };
     }
 

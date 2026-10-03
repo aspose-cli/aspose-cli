@@ -183,7 +183,7 @@ internal sealed class SlidesProductionService
         LoadedPresentation loaded,
         string targetFormatId)
     {
-        var warnings = OutputWarnings(state, loaded)?.ToList() ?? [];
+        var warnings = OutputWarnings(state, loaded, textRead: targetFormatId == "md")?.ToList() ?? [];
         if (targetFormatId is "html" or "html5" or "md")
         {
             warnings.Add(new Warning

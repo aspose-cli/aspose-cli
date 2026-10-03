@@ -56,9 +56,11 @@ Details: [design system](references/design-system.md).
 ## Slides-specific rules
 
 - The license product id is `slides`: `aspose-cli license install Aspose.Slides.lic --product slides`.
-  Evaluation output is watermarked and may truncate text (`aspose-cli docs licensing`). Each
-  evaluation save adds another watermark text box to every slide, which later reads and reviews
-  see as content (for example `SLIDES_TEXT_OVERLAPS_OBJECT` over a table).
+  Evaluation output is watermarked (`aspose-cli docs licensing`). Evaluation mode reads text
+  longer than five characters cut short, so reads, reviews, `extract` of text or notes and
+  Markdown conversion warn `EVAL_INPUT_TRUNCATED`; the presentations, PDFs and images it saves
+  keep the full text. Each evaluation save adds another watermark text box to every slide, which
+  later reads and reviews see as content (for example `SLIDES_TEXT_OVERLAPS_OBJECT` over a table).
 - Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
   `edit` or `convert` output is `OPTION_INVALID`.
 - Chart titles, labels and data are not text: `query`, `search` and `replace_text` never see

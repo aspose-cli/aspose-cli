@@ -24,8 +24,8 @@ internal static class SlidesEngineSupport
     internal static Warning EvaluationInputWarning { get; } = new()
     {
         Code = WarningCodes.EvalInputTruncated,
-        Message = "Aspose.Slides evaluation mode replaced presentation text while loading the input.",
-        Hint = "Do not treat the returned text or converted output as complete; apply a license and retry.",
+        Message = "Aspose.Slides evaluation mode reads text longer than five characters as its first characters and a truncation notice, so the text in this result is not the presentation's text.",
+        Hint = "Check the text in rendered slide images, which show it in full, or apply a license and retry. Presentations, PDFs and images the CLI saves keep the full text.",
     };
 
     internal static void RemoveUnselectedSlides(Presentation presentation, IReadOnlyList<int> slides)
@@ -214,8 +214,8 @@ internal static class SlidesEngineSupport
     }
 
     /// <summary>Warnings about what a result read from the loaded presentation may be missing.</summary>
-    internal static IReadOnlyList<Warning>? InputWarnings(LicenseState state, LoadedPresentation loaded) =>
-        Warnings(state, loaded, output: false);
+    internal static IReadOnlyList<Warning>? InputWarnings(LicenseState state, LoadedPresentation loaded, bool textRead = true) =>
+        Warnings(state, loaded, output: false, textRead);
 
     /// <summary>
     /// Whether a shape is the watermark text box an evaluation save adds to every slide: a
@@ -437,11 +437,16 @@ internal static class SlidesEngineSupport
         }
     }
 
-    /// <summary>Input warnings plus the evaluation watermark of an output produced from the presentation.</summary>
-    internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedPresentation loaded) =>
-        Warnings(state, loaded, output: true);
+    /// <summary>
+    /// The warnings of an output produced from the presentation, with its evaluation watermark.
+    /// Evaluation mode cuts text short only where it is read, so the output warns of it only
+    /// when the output holds text the CLI read, as extracted text and Markdown do; saved
+    /// presentations, PDFs and images keep the full text.
+    /// </summary>
+    internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedPresentation loaded, bool textRead = false) =>
+        Warnings(state, loaded, output: true, textRead);
 
-    private static IReadOnlyList<Warning>? Warnings(LicenseState state, LoadedPresentation loaded, bool output)
+    private static IReadOnlyList<Warning>? Warnings(LicenseState state, LoadedPresentation loaded, bool output, bool textRead)
     {
         var warnings = new List<Warning>();
         if (output && state == LicenseState.Evaluation)
@@ -449,7 +454,7 @@ internal static class SlidesEngineSupport
             warnings.Add(EnvelopeParts.EvaluationWatermark);
         }
 
-        if (state == LicenseState.Evaluation && EvaluationInputTruncated(loaded.Presentation))
+        if (textRead && state == LicenseState.Evaluation && EvaluationInputTruncated(loaded.Presentation))
         {
             warnings.Add(EvaluationInputWarning);
         }

@@ -81,6 +81,29 @@ public sealed class SlidesHardeningTests
     }
 
     [Fact]
+    public void EvaluationTextWarning_MarksOnlyResultsThatCarryTheCutShortText()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("cut-short.pptx", slides: 1);
+        string markdown = fixture.File("cut-short.md");
+        File.WriteAllText(markdown, "# A title longer than five characters\n\n- A bullet longer than five characters\n");
+        bool evaluation = fixture.LicenseState == Sdk.Licensing.LicenseState.Evaluation;
+
+        Assert.Equal(evaluation, CutShort(fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Text }).Warnings));
+        Assert.Equal(evaluation, CutShort(fixture.Engine.Extract(input, new PresentationExtractRequest { What = PresentationExtractKinds.Text, OutputDirectory = fixture.File("text") }).Warnings));
+        Assert.Equal(evaluation, CutShort(fixture.Engine.Convert(input, new PresentationConvertRequest { TargetFormatId = "md", OutputPath = fixture.File("cut-short.out.md") }).Warnings));
+        Assert.False(CutShort(fixture.Engine.Convert(input, new PresentationConvertRequest { TargetFormatId = "pdf", OutputPath = fixture.File("cut-short.pdf") }).Warnings));
+        Assert.False(CutShort(fixture.Engine.Create(new NewPresentationRequest { OutputPath = fixture.File("created.pptx"), MarkdownPath = markdown }).Warnings));
+        Assert.False(CutShort(fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch { Ops = [new SlidesSetPropertiesOp { Title = "Briefing" }] },
+            new PresentationEditRequest { OutputPath = fixture.File("edited.pptx") }).Warnings));
+
+        static bool CutShort(IReadOnlyList<Warning>? warnings) =>
+            warnings?.Any(static warning => warning.Code == WarningCodes.EvalInputTruncated) == true;
+    }
+
+    [Fact]
     public void UnboundedHighDpiBatch_IsRejectedBeforeWriting()
     {
         using var fixture = new SlidesEngineFixture();
