@@ -10,6 +10,12 @@ internal static class CompareCommand
     public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
         var ignoreFormatting = new Option<bool>("--ignore-formatting") { Description = "Ignore formatting-only changes." };
+        var granularity = new Option<string>("--granularity")
+        {
+            Description = "Unit a change is marked in: word, or char for Chinese or Japanese text.",
+            DefaultValueFactory = _ => "word",
+        }.WithInput(InputKind.None);
+        granularity.AcceptOnlyFromAmong("word", "char");
         var author = new Option<string?>("--author") { Description = "Author of the redline's revisions; default: Aspose CLI." }.WithInput(InputKind.None);
         return StandardCommand.Create(
             host,
@@ -22,7 +28,7 @@ internal static class CompareCommand
                 Output = OutputTarget.File("Optional redline output; its extension selects the format, such as .docx or .pdf."),
                 UsesFonts = true,
             },
-            [ignoreFormatting, author],
+            [ignoreFormatting, granularity, author],
             (parse, standard) =>
             {
                 string? name = parse.GetValue(author);
@@ -37,6 +43,7 @@ internal static class CompareCommand
                 return standard.OpenEngine().Compare(standard.Input, standard.Other, new WordsCompareRequest
                 {
                     IgnoreFormatting = parse.GetValue(ignoreFormatting),
+                    Granularity = parse.GetValue(granularity)!,
                     Author = name,
                     OutputPath = standard.RequestedOutputPath(),
                     Overwrite = standard.Overwrite,

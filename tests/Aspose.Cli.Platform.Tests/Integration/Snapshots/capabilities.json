@@ -7510,6 +7510,25 @@
               "description": "Local font directory searched in addition to the system fonts; repeat for more."
             },
             {
+              "name": "--granularity",
+              "aliases": [],
+              "type": "string",
+              "minimumArity": 1,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": true,
+              "default": "word",
+              "allowedValues": [
+                "char",
+                "word"
+              ],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Unit a change is marked in: word, or char for Chinese or Japanese text."
+            },
+            {
               "name": "--ignore-formatting",
               "aliases": [],
               "type": "boolean",
@@ -16334,6 +16353,25 @@
           "valueSource": "command-line",
           "inputKind": "none",
           "description": "Local font directory searched in addition to the system fonts; repeat for more."
+        },
+        {
+          "name": "--granularity",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "word",
+          "allowedValues": [
+            "char",
+            "word"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Unit a change is marked in: word, or char for Chinese or Japanese text."
         },
         {
           "name": "--ignore-formatting",

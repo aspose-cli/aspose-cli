@@ -79,6 +79,8 @@ public sealed record WordsEditRequest
 public sealed record WordsCompareRequest
 {
     public bool IgnoreFormatting { get; init; }
+    /// <summary>The unit a change is marked in: <c>word</c> or <c>char</c>.</summary>
+    public string Granularity { get; init; } = "word";
     /// <summary>The author of the redline's revisions; null records <c>Aspose CLI</c>.</summary>
     public string? Author { get; init; }
     public string? OutputPath { get; init; }

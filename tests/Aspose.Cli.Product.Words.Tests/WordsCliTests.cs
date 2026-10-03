@@ -264,6 +264,28 @@ public sealed class WordsCliTests : IDisposable
         Assert.Equal(retained, File.ReadAllBytes(_workspace.File("retained.pdf")));
     }
 
+    [Theory]
+    [InlineData(null, "deletion:合同期限为三年|insertion:合同期限为五年")]
+    [InlineData("char", "deletion:三|insertion:五")]
+    public void Compare_GranularityCharMarksASingleChangedChineseCharacter(string? granularity, string expected)
+    {
+        foreach ((string name, string text) in new[] { ("left.docx", "合同期限为三年。"), ("right.docx", "合同期限为五年。") })
+        {
+            var document = new Document();
+            new DocumentBuilder(document).Write(text);
+            document.Save(_workspace.File(name));
+        }
+
+        string[] option = granularity is null ? [] : ["--granularity", granularity];
+        CliResult compared = _workspace.Run(["words", "compare", "left.docx", "right.docx", "--output", "json", .. option]);
+
+        Assert.True(compared.ExitCode == 0, compared.StdErr);
+        Assert.Equal(
+            expected,
+            string.Join('|', JsonNode.Parse(compared.StdOut)!["samples"]!.AsArray()
+                .Select(static sample => $"{sample!["type"]!.GetValue<string>()}:{sample["text"]?.GetValue<string>()}")));
+    }
+
     public void Dispose() => _workspace.Dispose();
 
     private static IEnumerable<string> Snippets(JsonNode result) =>

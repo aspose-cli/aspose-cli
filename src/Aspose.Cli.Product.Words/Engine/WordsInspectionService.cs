@@ -50,7 +50,7 @@ internal sealed class WordsInspectionService
         compared.Compare(rightLoaded.Document, request.Author ?? "Aspose CLI", DateTime.Now, new CompareOptions
         {
             IgnoreFormatting = request.IgnoreFormatting,
-            Granularity = Granularity.WordLevel,
+            Granularity = request.Granularity == "char" ? Granularity.CharLevel : Granularity.WordLevel,
         });
         Revision[] revisions = compared.Revisions.Cast<Revision>().ToArray();
         OutputInfo? output = null;

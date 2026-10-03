@@ -67,6 +67,11 @@ aspose-cli words compare original.docx changed.docx --out redline.docx --author 
 The redline's revisions are attributed to `--author`, or to `Aspose CLI`
 without it.
 
+`--granularity word` (the default) marks whole changed words. Chinese and
+Japanese text has no spaces between words, so a one-character edit marks the
+whole run of text; pass `--granularity char` to mark only the changed
+characters.
+
 The result counts the revisions by type and lists up to 50 `samples`, one per
 revision run or paragraph mark, with the `type` names `--detail revisions`
 uses; a paragraph mark's sample has no `text`.

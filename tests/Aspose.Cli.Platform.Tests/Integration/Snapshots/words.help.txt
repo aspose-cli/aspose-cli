@@ -50,6 +50,7 @@ Arguments:
 
 Options:
   --ignore-formatting                         Ignore formatting-only changes.
+  --granularity <char|word>                   Unit a change is marked in: word, or char for Chinese or Japanese text. [default: word]
   --author <author>                           Author of the redline's revisions; default: Aspose CLI.
   -o, --out <out>                             Optional redline output; its extension selects the format, such as .docx or .pdf.
   --overwrite                                 Replace the output file if it already exists.
