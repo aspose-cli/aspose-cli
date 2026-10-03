@@ -373,20 +373,68 @@ public sealed record AddBookmarkOp : PdfOp
 
     [Minimum(1)] public required int Page { get; init; }
 
-    /// <summary>The slash-separated title path of the parent bookmark; a top-level bookmark when omitted.</summary>
-    [MinLength(1)] public string? Parent { get; init; }
+    /// <summary>
+    /// The index of the parent bookmark, as <c>pdf inspect --detail outline</c> reports it:
+    /// 1-based positions joined by '/', so "2/1" is the first child of the second top-level
+    /// bookmark. The new bookmark is appended after the parent's existing children, or after
+    /// the existing top-level bookmarks when omitted, so no existing index changes.
+    /// </summary>
+    [Pattern(BookmarkIndex.Pattern, Meaning = BookmarkIndex.Meaning)] public string? Parent { get; init; }
 }
 
-/// <summary>Deletes one bookmark with its children, or every bookmark.</summary>
+/// <summary>
+/// Deletes the listed bookmarks with their children, or every bookmark. An index must not
+/// repeat or lie inside another listed bookmark, which already deletes its children.
+/// </summary>
 [Operation("delete_bookmarks")]
-[ExactlyOneOf("path", "all")]
+[ExactlyOneOf("indexes", "all")]
 public sealed record DeleteBookmarksOp : PdfOp
 {
-    /// <summary>The slash-separated title path of the bookmark.</summary>
-    [MinLength(1)] public string? Path { get; init; }
+    /// <summary>
+    /// The indexes of the bookmarks, as <c>pdf inspect --detail outline</c> reports them: 1-based
+    /// positions joined by '/', so "2/1" is the first child of the second top-level bookmark.
+    /// Every index resolves against the outline as it stands before this operation, so their
+    /// order does not matter, and all of them are deleted together; later operations in the
+    /// batch address the renumbered outline.
+    /// </summary>
+    [MinItems(1), Pattern(BookmarkIndex.Pattern, Meaning = BookmarkIndex.Meaning)]
+    public IReadOnlyList<string>? Indexes { get; init; }
 
     /// <summary>Whether every bookmark is deleted.</summary>
     public bool All { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        if (Indexes is null)
+        {
+            return this;
+        }
+
+        var seen = new HashSet<string>(StringComparer.Ordinal);
+        foreach (string index in Indexes)
+        {
+            OperationInvalidException.Require(
+                seen.Add(index), $"indexes must not repeat \"{index}\"", $"Remove the repeated \"{index}\".");
+            if (Indexes.FirstOrDefault(other => index.StartsWith(other + "/", StringComparison.Ordinal)) is { } parent)
+            {
+                throw new OperationInvalidException(
+                    $"indexes must not list \"{index}\" with \"{parent}\": deleting bookmark {parent} already deletes its children",
+                    $"Remove \"{index}\" from indexes.");
+            }
+        }
+
+        return this;
+    }
+}
+
+/// <summary>The bookmark index that <c>pdf inspect --detail outline</c> reports and the bookmark operations take.</summary>
+internal static class BookmarkIndex
+{
+    internal const string Pattern = @"^[1-9][0-9]*(/[1-9][0-9]*)*$";
+
+    internal const string Meaning =
+        "must be a bookmark index as pdf inspect --detail outline reports it, 1-based positions joined by '/' such as \"2/1\"";
 }
 
 /// <summary>Embeds a file as a document attachment.</summary>

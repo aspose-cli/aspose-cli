@@ -1,6 +1,6 @@
 name: Pull request
-# Checks the branch name and title against CONTRIBUTING.md. It reruns when the title is edited,
-# which does not rerun CI.
+# Checks the branch name, the title and every commit subject against CONTRIBUTING.md. It reruns
+# when the title is edited, which does not rerun CI.
 on:
   pull_request:
     types: [opened, edited, reopened, synchronize]
@@ -11,25 +11,44 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Check the branch name and title
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+      - name: Check the branch name, title and commit subjects
         env:
           BRANCH: ${{ github.head_ref }}
           TITLE: ${{ github.event.pull_request.title }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
         run: |
           types='feat|fix|refactor|perf|test|docs|build|ci|chore|revert'
           scopes='sdk|host|cli|app|cells|pdf|slides|words|skills|install|release|deps'
+          subject="^($types)(\(($scopes)\))?: [a-z0-9].*[^.]$"
+          dependabot=false
+          case "$BRANCH" in dependabot/*) dependabot=true ;; esac
           status=0
-          if ! printf '%s' "$BRANCH" | grep -Eq "^(($types)/[a-z0-9]+(-[a-z0-9]+)*|revert-[0-9]+-.+|dependabot/.+)$"; then
-            echo "::error::Branch '$BRANCH' must be <type>/<kebab-case-summary> (CONTRIBUTING.md#pull-requests)."
+          if ! printf '%s' "$BRANCH" | grep -Eq "^(($types|stage)/[a-z0-9]+(-[a-z0-9]+)*|revert-[0-9]+-.+|dependabot/.+)$"; then
+            echo "::error::Branch '$BRANCH' must be <type>/<kebab-case-summary> or stage/<kebab-case-summary> (CONTRIBUTING.md#pull-requests)."
             status=1
           fi
-          if ! printf '%s' "$TITLE" | grep -Eq "^($types)(\(($scopes)\))?: [a-z0-9].*[^.]$"; then
-            echo "::error::Title '$TITLE' must be <type>(<scope>): <summary> starting in lower case, without a final period (CONTRIBUTING.md#pull-requests)."
-            status=1
-          fi
-          # Dependabot writes its own titles, which can be longer.
-          if [ "${#TITLE}" -gt 65 ] && [ "${BRANCH#dependabot/}" = "$BRANCH" ]; then
-            echo "::error::Title is ${#TITLE} characters; the limit is 65."
-            status=1
-          fi
+          # check NAME TEXT: the conventional form and, except for Dependabot, the length limit.
+          check() {
+            if ! printf '%s' "$2" | grep -Eq "$subject"; then
+              echo "::error::$1 '$2' must be <type>(<scope>): <summary> starting in lower case, without a final period (CONTRIBUTING.md#pull-requests)."
+              status=1
+            fi
+            if [ "${#2}" -gt 65 ] && [ "$dependabot" = false ]; then
+              echo "::error::$1 '$2' is ${#2} characters; the limit is 65."
+              status=1
+            fi
+          }
+          check Title "$TITLE"
+          # Rebase merging keeps every commit, so every subject follows the title's form; a
+          # GitHub-generated revert keeps its own subject. A merge of master fails here too.
+          subjects=$(git log --format=%s "origin/$GITHUB_BASE_REF..$HEAD")
+          while IFS= read -r line; do
+            case "$line" in ''|'Revert "'*) continue ;; esac
+            check "Commit subject" "$line"
+          done <<< "$subjects"
           exit $status

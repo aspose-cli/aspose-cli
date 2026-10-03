@@ -46,6 +46,23 @@ public sealed class OperationContractTests
     public void Pattern_UsesEcma262WhiteSpaceAndLineTerminators(string pattern, string value, bool matches) =>
         Assert.Equal(matches, new PatternAttribute(pattern).Check(value) is null);
 
+    /// <summary>A pattern with a meaning explains a rejection in its own words; the schema still states only the pattern.</summary>
+    [Fact]
+    public void Pattern_StatesItsMeaningWhenItRejects()
+    {
+        var plain = new PatternAttribute("^a+$");
+        var explained = new PatternAttribute("^a+$") { Meaning = "must be a run of a's such as \"aa\"" };
+
+        Assert.Equal("must match the pattern ^a+$", plain.Check("b"));
+        Assert.Equal("must be a run of a's such as \"aa\" (pattern ^a+$)", explained.Check("b"));
+        Assert.Null(explained.Check("aa"));
+
+        var schema = new JsonObject();
+        explained.Describe(schema, new OperationValue { Kind = OperationValueKind.String });
+        Assert.Equal("^a+$", Assert.Single(schema).Value!.GetValue<string>());
+        Assert.True(schema.ContainsKey("pattern"));
+    }
+
     /// <summary>Each constraint accepts and rejects exactly what the schema it writes accepts and rejects.</summary>
     [Theory]
     [MemberData(nameof(Constraints))]
@@ -114,6 +131,7 @@ public sealed class OperationContractTests
     [InlineData("""{"op":"place","pages":"1","all":true,"style":{}}""", "style must set at least one member")]
     [InlineData("""{"op":"place","pages":"1","all":true,"style":{"size":3}}""", "style must set font when it sets size")]
     [InlineData("""{"op":"place","pages":"1","all":true,"cells":[1,null,{}]}""", "cells[2] must be a string, number, Boolean or null")]
+    [InlineData("""{"op":"place","pages":"1","all":true,"tags":["draft","Final"]}""", "tags[1] must be a lowercase tag such as \"draft\" (pattern ^[a-z]+$)")]
     [InlineData("""{"op":"place","pages":"1","all":true,"labels":{"a":"x","a":"y"}}""", "labels.a is duplicated")]
     [InlineData("""{"op":"place","pages":"1","all":true,"labels":{"a":null}}""", "labels.a must not be null")]
     [InlineData("""{"op":"place","pages":"1","all":true,"shade":"grey"}""", "shade must be one of: light, dark")]

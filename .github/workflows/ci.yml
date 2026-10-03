@@ -19,7 +19,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: 'true'
 jobs:
   # No license reaches CI: the commercial SDKs run in evaluation mode and the cases that need a
-  # license are skipped. The licensed Full scope runs locally before a release (CONTRIBUTING.md).
+  # license are skipped. The licensed Full scope runs locally before a push (CONTRIBUTING.md).
   verify:
     runs-on: windows-latest
     timeout-minutes: 60

@@ -72,6 +72,43 @@ public sealed class PdfKnownIssueTests
             $"/XYZ null null null reads as {omitted.Left} {omitted.Top} {omitted.Zoom}");
     }
 
+    [LicensedFact]
+    public void OutlineDelete_RemovesBookmarksByTitle()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("same-titles.pdf");
+        using (var document = new Document())
+        {
+            Page first = document.Pages.Add();
+            Page second = document.Pages.Add();
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines)
+            {
+                Title = "Results",
+                Destination = new FitExplicitDestination(first),
+            });
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines)
+            {
+                Title = "Results",
+                Destination = new FitExplicitDestination(second),
+            });
+            document.Save(input);
+        }
+
+        string output = fixture.File("same-titles.out.pdf");
+        using (var document = new Document(input))
+        {
+            document.Outlines.Skip(1).First().Delete();
+            document.Save(output);
+        }
+
+        using var reopened = new Document(output);
+        int keptPage = ((ExplicitDestination)reopened.Outlines.Single().Destination).PageNumber;
+        KnownIssue.Reproduces(
+            "PDF-OUTLINE-DELETE-TITLE",
+            keptPage == 2,
+            $"deleting the second of two bookmarks titled Results kept the one on page {keptPage}");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {
