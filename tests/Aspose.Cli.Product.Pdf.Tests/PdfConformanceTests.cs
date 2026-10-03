@@ -196,6 +196,41 @@ public sealed class PdfConformanceTests
         Assert.True(fixture.Engine.Validate(output, new PdfValidateRequest { Profile = "pdfa-2b" }).Valid);
     }
 
+    [Fact]
+    public void Inspect_OfAnArchive_ReportsTheFileAsItIs()
+    {
+        using var fixture = new PdfEngineFixture();
+        string output = Assert.Single(fixture.Engine.Convert(CreateArchivable(fixture), new PdfConvertRequest
+        {
+            TargetFormatId = "pdfa-2b",
+            OutputPath = fixture.File("archive.pdf"),
+        }).Outputs).Path;
+        var request = new PdfInfoRequest { Details = ["metadata"] };
+
+        PdfInfoResult first = fixture.Engine.GetInfo(output, request);
+        PdfInfoResult second = fixture.Engine.GetInfo(output, request);
+
+        Assert.True(first.Pdf.PdfaCompliant);
+        Assert.False(first.Pdf.Tagged);
+        Assert.Equal("2", first.Metadata!["xmp:pdfaid:part"]);
+        Assert.Equal("B", first.Metadata["xmp:pdfaid:conformance"]);
+        Assert.DoesNotContain("xmp:pdfuaid:part", first.Metadata.Keys);
+        Assert.Equal("Quarterly results", first.Metadata["title"]);
+        Assert.Equal(first.Metadata, second.Metadata);
+    }
+
+    [Fact]
+    public void Inspect_OfADocumentWithoutXmp_ReportsNoXmpProperties()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("plain.pdf", pages: 1);
+
+        PdfInfoResult result = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["metadata"] });
+
+        Assert.DoesNotContain(result.Metadata!.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
+        Assert.NotEqual("Tagged PDF", result.Metadata["title"]);
+    }
+
     /// <summary>
     /// Two pages, three bookmarks (one nested), a page label, a title and three attachments:
     /// a typed CSV, an untyped binary and an untyped PDF/A document.

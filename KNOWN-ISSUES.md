@@ -91,6 +91,15 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   `pdf edit`, `pdf merge` and `pdf convert --to pdfa-*` accept it.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-TAGGED-CONTENT-WRITES
+
+- **Defect:** reading `Document.TaggedContent` rewrites the loaded document: it sets an empty
+  title to `Tagged PDF`, creates XMP metadata dated now that declares PDF/UA (`pdfuaid:part` 1)
+  and drops the PDF/A identification, so `IsPdfaCompliant` turns false.
+- **CLI behavior:** none visible; `pdf inspect` reads the structure tree after every other
+  property and never saves the inspected document.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-CHART-TITLE
