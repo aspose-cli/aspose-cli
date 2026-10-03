@@ -47,6 +47,8 @@ internal static class InfoProjection
             Sheets = sheets,
             HasVba = workbook.HasMacro,
             DefinedNameCount = workbook.Worksheets.Names.Count,
+            StructureProtected = Sheets.StructureProtected(workbook),
+            StructurePasswordProtected = Sheets.StructureProtected(workbook) && workbook.IsWorkbookProtectedWithPassword,
             Author = Normalize(workbook.BuiltInDocumentProperties.Author),
             Title = Normalize(workbook.BuiltInDocumentProperties.Title),
             DefinedNames = WantsDetail(request, InfoDetails.Names) ? BuildDefinedNames(workbook) : null,
@@ -76,6 +78,8 @@ internal static class InfoProjection
             RowCount = usedRange?.RowCount ?? 0,
             ColumnCount = usedRange?.ColumnCount ?? 0,
             Hidden = !sheet.IsVisible,
+            Protected = sheet.IsProtected,
+            PasswordProtected = sheet.IsProtected && sheet.Protection.IsProtectedWithPassword,
             ChartCount = sheet.Charts.Count,
             PivotTableCount = sheet.PivotTables.Count,
             // A used range implies data; its (0,0) origin makes End the old max row/column.

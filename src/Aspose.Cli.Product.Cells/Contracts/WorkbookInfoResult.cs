@@ -45,6 +45,15 @@ public sealed record WorkbookSummary
     /// <summary>Number of defined names in the workbook.</summary>
     public required int DefinedNameCount { get; init; }
 
+    /// <summary>
+    /// <c>true</c> when the workbook structure is protected: Excel then refuses to add, delete,
+    /// rename, move or hide sheets. Edits are not held to it; see PROTECTION_NOT_ENFORCED.
+    /// </summary>
+    public required bool StructureProtected { get; init; }
+
+    /// <summary><c>true</c> when removing the structure protection needs a password.</summary>
+    public required bool StructurePasswordProtected { get; init; }
+
     /// <summary>Document author from built-in properties; omitted when empty.</summary>
     public string? Author { get; init; }
 
@@ -208,6 +217,15 @@ public sealed record SheetInfo
 
     /// <summary><c>true</c> when the sheet is hidden.</summary>
     public required bool Hidden { get; init; }
+
+    /// <summary>
+    /// <c>true</c> when the sheet is protected: Excel then lets users change only unlocked cells
+    /// and the actions the protection allows. Edits are not held to it; see PROTECTION_NOT_ENFORCED.
+    /// </summary>
+    public required bool Protected { get; init; }
+
+    /// <summary><c>true</c> when removing the sheet's protection needs a password.</summary>
+    public required bool PasswordProtected { get; init; }
 
     /// <summary>Number of charts on the sheet.</summary>
     public required int ChartCount { get; init; }

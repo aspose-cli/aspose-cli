@@ -74,6 +74,10 @@ internal static class Sheets
     public static string Reference(Worksheet sheet, RangeRef range) =>
         QuotedName(sheet) + "!" + A1.FormatRange(range);
 
+    /// <summary>Whether the workbook structure is protected against adding, deleting, renaming, moving and hiding sheets.</summary>
+    public static bool StructureProtected(Workbook workbook) =>
+        workbook.Settings.ProtectionType is ProtectionType.Structure or ProtectionType.All;
+
     /// <summary>The sheet's name quoted for a reference, embedded apostrophes doubled.</summary>
     public static string QuotedName(Worksheet sheet) => QuotedName(sheet.Name);
 

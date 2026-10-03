@@ -13,10 +13,10 @@ internal static class CellsRenderers
         WorkbookSummary workbook = info.Workbook;
         surface.Out.WriteLine($"{workbook.Name} ({info.Source.Format}, {TableText.Bytes(info.Source.SizeBytes)})");
         surface.Out.WriteLine(
-            $"sheets: {workbook.SheetCount}   vba: {TableText.YesNo(workbook.HasVba)}   defined names: {workbook.DefinedNameCount}");
+            $"sheets: {workbook.SheetCount}   vba: {TableText.YesNo(workbook.HasVba)}   defined names: {workbook.DefinedNameCount}   structure protected: {TableText.YesNo(workbook.StructureProtected)}");
         surface.Out.WriteLine();
 
-        var table = new TextTable("name", "position", "used range", "rows", "cols", "hidden", "charts", "pivots");
+        var table = new TextTable("name", "position", "used range", "rows", "cols", "hidden", "protected", "charts", "pivots");
         foreach (SheetInfo sheet in workbook.Sheets)
         {
             table.AddRow(
@@ -26,6 +26,7 @@ internal static class CellsRenderers
                 TableText.Int(sheet.RowCount),
                 TableText.Int(sheet.ColumnCount),
                 TableText.YesNo(sheet.Hidden),
+                TableText.YesNo(sheet.Protected),
                 TableText.Int(sheet.ChartCount),
                 TableText.Int(sheet.PivotTableCount));
         }

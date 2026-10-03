@@ -20,7 +20,7 @@
     },
     "workbook": {
       "type": "object",
-      "required": ["name", "sheetCount", "sheets", "hasVba", "definedNameCount"],
+      "required": ["name", "sheetCount", "sheets", "hasVba", "definedNameCount", "structureProtected", "structurePasswordProtected"],
       "properties": {
         "name": { "type": "string" },
         "sheetCount": { "type": "integer", "minimum": 0 },
@@ -30,6 +30,8 @@
         },
         "hasVba": { "type": "boolean" },
         "definedNameCount": { "type": "integer", "minimum": 0 },
+        "structureProtected": { "type": "boolean" },
+        "structurePasswordProtected": { "type": "boolean" },
         "author": { "type": "string" },
         "title": { "type": "string" },
         "definedNames": {
@@ -82,7 +84,7 @@
     },
     "sheetInfo": {
       "type": "object",
-      "required": ["name", "position", "rowCount", "columnCount", "hidden", "chartCount", "pivotTableCount"],
+      "required": ["name", "position", "rowCount", "columnCount", "hidden", "protected", "passwordProtected", "chartCount", "pivotTableCount"],
       "properties": {
         "name": { "type": "string" },
         "position": { "type": "integer", "minimum": 0 },
@@ -90,6 +92,8 @@
         "rowCount": { "type": "integer", "minimum": 0 },
         "columnCount": { "type": "integer", "minimum": 0 },
         "hidden": { "type": "boolean" },
+        "protected": { "type": "boolean" },
+        "passwordProtected": { "type": "boolean" },
         "chartCount": { "type": "integer", "minimum": 0 },
         "pivotTableCount": { "type": "integer", "minimum": 0 },
         "preview": {

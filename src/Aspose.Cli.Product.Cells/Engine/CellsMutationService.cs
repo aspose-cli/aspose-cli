@@ -69,9 +69,11 @@ internal sealed class CellsMutationService
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(format, options.OutputPath, licenseState, options.EncryptPassword,
             loaded.IsEncrypted ? options.Password : null);
         using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
+        var protection = new CellsProtectionTracker();
         (IReadOnlyList<BoundedOperationOutcome> applied, bool defaultedToActiveSheet) = ApplyOperations(
-            workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs, importSources);
+            workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs, importSources, protection);
         Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
+        Warning? unenforced = protection.Warning(format);
         if (options.Recalculate)
         {
             workbook.CalculateFormula();
@@ -102,9 +104,9 @@ internal sealed class CellsMutationService
             Backup = saved?.Backup,
             Verification = verification,
             License = EnvelopeParts.License(licenseState),
-            Warnings = options.Options.DryRun ? EnvelopeParts.CombineWarnings(loaded.Warnings(skippedSheet), importSources.Warnings())
+            Warnings = options.Options.DryRun ? EnvelopeParts.CombineWarnings(loaded.Warnings(skippedSheet, unenforced), importSources.Warnings())
                 : EnvelopeParts.CombineWarnings(
-                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, skippedSheet, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded),
+                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, skippedSheet, unenforced, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded),
                     importSources.Warnings(),
                     EnvelopeParts.BackupWarnings(saved?.Backup)),
         };
@@ -112,7 +114,9 @@ internal sealed class CellsMutationService
 
     /// <summary>
     /// Runs the batch through the SDK runner, one handler call per operation, and says whether
-    /// an operation that names no sheet was applied to the active sheet.
+    /// an operation that names no sheet was applied to the active sheet. Each successful
+    /// operation that changed a protected sheet or structure is recorded in
+    /// <paramref name="protection"/>.
     /// </summary>
     private (IReadOnlyList<BoundedOperationOutcome> Applied, bool DefaultedToActiveSheet) ApplyOperations(
         Workbook workbook,
@@ -120,7 +124,8 @@ internal sealed class CellsMutationService
         bool bestEffort,
         IReadOnlyDictionary<string, string>? secrets,
         InputResourceScope inputs,
-        CellsImportSources sources)
+        CellsImportSources sources,
+        CellsProtectionTracker protection)
     {
         var handlers = new CellsMutationHandlers(workbook, secrets, inputs, sources);
         IReadOnlyList<BoundedOperationOutcome> applied = BoundedOperationRunner.Run(
@@ -133,7 +138,10 @@ internal sealed class CellsMutationService
                 // Charge the cells an operation writes before it writes them: a tiny op over a
                 // whole sheet must fail on the budget, not after billions of assignments.
                 _budgets.Consume(CellsBudgetDomains.Cells, OpsFootprint.CellCost(op), "items", "edit");
-                return new AppliedOperation(handlers.Run(op) ?? 0, OpsFootprint.OutcomeTargets(op));
+                ProtectedChange protectedTarget = CellsProtectionTracker.Observe(workbook, op);
+                long affected = handlers.Run(op) ?? 0;
+                protection.Record(protectedTarget);
+                return new AppliedOperation(affected, OpsFootprint.OutcomeTargets(op));
             },
             (op, _) => OpsFootprint.OutcomeTargets(op));
         return (applied, handlers.DefaultedToActiveSheet);

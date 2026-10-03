@@ -266,6 +266,15 @@ show in renders and reads; give the location column a header.
   Embed the SVG's images or supply a raster image.
 - `protect_sheet` locks every cell with action-level `allow` exceptions; a
   sheet locked except its input cells is not expressible.
+- Protection guides Excel, not the CLI: an edit changes a protected sheet or a
+  protected workbook structure without its password and warns
+  `PROTECTION_NOT_ENFORCED`. `cells inspect` reports `protected` and
+  `passwordProtected` per sheet and `structureProtected` for the workbook.
+  Confirm such a change is authorized, or run `unprotect_sheet` with its
+  `passwordEnv` first; unprotecting checks the password. Protecting again
+  what is protected warns too: `protect_sheet` replaces the allowed actions but
+  keeps a sheet's existing password, and `protect_workbook` fails on a
+  structure protected with a password; unprotect first to change a password.
 
 ## Sheets and view
 
