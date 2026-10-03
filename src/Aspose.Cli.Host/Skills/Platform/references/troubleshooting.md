@@ -113,7 +113,9 @@ aspose-cli capabilities --output json
 - `FORMAT_UNSUPPORTED`: `capabilities` lists the formats each product loads,
   converts and renders.
 - `FORMAT_MISMATCH`: the extension disagrees with the content; check the real
-  file type.
+  file type. `details.detected` names the product the content looks like:
+  rename the file, or pass `--product <id>` to `review` or `preview`, which
+  then lets that engine read it.
 - `FORMAT_AMBIGUOUS`: the input can be read more than one way. Several products
   recognize it (pass `--product`), or a text input's numbers depend on its
   culture (the hint names the option that reads it).

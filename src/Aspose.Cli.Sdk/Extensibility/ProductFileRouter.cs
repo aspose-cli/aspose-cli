@@ -184,14 +184,10 @@ public sealed class ProductFileRouter
                 or FileRecognitionKind.Encrypted
                 or FileRecognitionKind.Failed)
         {
-            string[] detected = StrongMatches(recognitions)
-                .Where(entry => entry.Product != extensionOwner)
-                .Select(static entry => entry.Product.Manifest.Id)
-                .ToArray();
             throw CliErrors.FormatUnrecognized(
                 fullPath,
                 extensionOwner.Manifest.Id,
-                detected,
+                Detected(recognitions, extensionOwner),
                 CandidateIds(candidates));
         }
 
@@ -245,7 +241,7 @@ public sealed class ProductFileRouter
         throw CliErrors.FormatUnrecognized(
             fullPath,
             declaredProduct: null,
-            detectedProducts: [],
+            Detected(recognitions, except: null),
             CandidateIds(candidates));
     }
 
@@ -272,7 +268,20 @@ public sealed class ProductFileRouter
                     .ToArray());
         }
 
-        if (product.Files.Recognizer is null)
+        // Content is checked against the rules of the formats this extension declares. A format
+        // without any rule leaves the content to the engine; a format with rules never skips them.
+        FormatDescriptor[] declared = product.Formats
+            .Where(format => format.Uses.HasFlag(FormatUse.Input)
+                && format.Extensions.Any(candidate => string.Equals(
+                    ProductCatalog.NormalizeExtension(candidate),
+                    ProductCatalog.NormalizeExtension(extension),
+                    StringComparison.Ordinal)))
+            .ToArray();
+        bool customRules = declared.Any(static format => format.Recognizer is not null);
+        FormatDescriptor[] declarativeRules = declared
+            .Where(static format => format.Recognition is not null)
+            .ToArray();
+        if (!customRules && declarativeRules.Length == 0)
         {
             return new FileRouteResult
             {
@@ -283,12 +292,13 @@ public sealed class ProductFileRouter
             };
         }
 
-        IReadOnlyList<RecognitionEntry> entries = await RecognizeAsync(
-            [product],
-            session,
-            cancellationToken).ConfigureAwait(false);
-        RecognitionEntry entry = entries.Single();
-        if (entry.Recognition.Kind != FileRecognitionKind.Match)
+        RecognitionEntry entry = customRules
+            ? (await RecognizeAsync([product], session, cancellationToken).ConfigureAwait(false)).Single()
+            : new RecognitionEntry(product, Strongest(declarativeRules
+                .Select(format => format.Recognition!.Evaluate(format.Id, session.Prefix.Span))));
+        // The explicit selection settles evidence that is real but not conclusive; content
+        // that contradicts the product still fails closed.
+        if (entry.Recognition.Kind is not (FileRecognitionKind.Match or FileRecognitionKind.Indeterminate))
         {
             throw CliErrors.FormatUnrecognized(
                 session.FullPath,
@@ -447,6 +457,36 @@ public sealed class ProductFileRouter
             .OrderByDescending(static entry => entry.Recognition.Confidence)
             .ThenBy(static entry => entry.Product.Manifest.Id, StringComparer.Ordinal)
             .ToArray();
+
+    /// <summary>
+    /// Products the content points to, for the error that refuses the route: every strong match,
+    /// and every strong signature that fits several formats of one product.
+    /// </summary>
+    private static string[] Detected(
+        IEnumerable<RecognitionEntry> recognitions,
+        ProductDefinition? except) =>
+        recognitions
+            .Where(entry => entry.Product != except
+                && (entry.Recognition.Kind == FileRecognitionKind.Match
+                    || (entry.Recognition.Kind == FileRecognitionKind.Indeterminate
+                        && entry.Recognition.Confidence >= DeclarativeFormatRecognizer.StrongConfidence)))
+            .OrderByDescending(static entry => entry.Recognition.Confidence)
+            .ThenBy(static entry => entry.Product.Manifest.Id, StringComparer.Ordinal)
+            .Select(static entry => entry.Product.Manifest.Id)
+            .ToArray();
+
+    /// <summary>The strongest of several rule results: a match, then indeterminate evidence, then no match.</summary>
+    private static FileRecognition Strongest(IEnumerable<FileRecognition> results) =>
+        results
+            .OrderBy(static result => result.Kind switch
+            {
+                FileRecognitionKind.Match => 0,
+                FileRecognitionKind.Indeterminate => 1,
+                _ => 2,
+            })
+            .ThenByDescending(static result => result.Confidence)
+            .ThenBy(static result => result.FormatId, StringComparer.Ordinal)
+            .First();
 
     private static IReadOnlyList<string> CandidateIds(
         IEnumerable<ProductDefinition> products) =>
