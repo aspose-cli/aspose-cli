@@ -121,6 +121,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
     [Theory]
     [InlineData("docx")]
     [InlineData("html")]
+    [InlineData("pdfa-2b")]
     public void EvaluationMode_ConvertsTheFirstPagesOfALongerDocument(string format)
     {
         using (var fixture = new PdfEngineFixture())
@@ -128,14 +129,17 @@ public sealed class PdfCliWorkflowTests : IDisposable
             File.Copy(fixture.CreateRawDocument("six.pdf", pages: 6), _workspace.File("six.pdf"));
         }
 
+        string output = $"six-{format}.{(format.StartsWith("pdfa", StringComparison.Ordinal) ? "pdf" : format)}";
         CliResult convert = _workspace.Run(
-            "pdf", "convert", "six.pdf", "--to", format, "--pages", "1-2", "--out", $"six.{format}", "--output", "json");
+            "pdf", "convert", "six.pdf", "--to", format, "--pages", "1-2", "--out", output, "--output", "json");
 
         Assert.True(convert.ExitCode == 0, convert.StdErr);
-        Assert.True(new FileInfo(_workspace.File($"six.{format}")).Length > 0);
-        Assert.Contains(
+        Assert.True(new FileInfo(_workspace.File(output)).Length > 0);
+        JsonNode copied = Assert.Single(
             JsonNode.Parse(convert.StdOut)!["warnings"]!.AsArray(),
-            static warning => warning!["message"]!.GetValue<string>().Contains("none of the document properties", StringComparison.Ordinal));
+            static warning => warning!["message"]!.GetValue<string>().Contains("were copied into a new one", StringComparison.Ordinal))!;
+        Assert.Equal("LOSSY_CONVERSION", copied["code"]!.GetValue<string>());
+        Assert.Contains("bookmarks, attachments and document properties", copied["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
     [Fact]

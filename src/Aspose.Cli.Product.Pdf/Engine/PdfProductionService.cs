@@ -504,7 +504,7 @@ internal sealed class PdfProductionService
             "png" or "jpeg" or "svg" => ConvertPages(loaded.Document, pages, request),
             "tiff" => [ConvertTiff(loaded.Document, pages, request)],
             "txt" => [ConvertText(loaded.Document, pages, request)],
-            "pdfa-1b" or "pdfa-2b" or "pdfa-3b" => [ConvertPdfa(loaded.Document, pages, request, warnings)],
+            "pdfa-1b" or "pdfa-2b" or "pdfa-3b" => [ConvertPdfa(loaded.Document, pages, request, state, warnings)],
             _ => [ConvertDocument(loaded.Document, pages, request, state, warnings)],
         };
 
@@ -530,9 +530,8 @@ internal sealed class PdfProductionService
 
     /// <summary>
     /// Converts the opened document itself, which this command never saves back, so the
-    /// document properties reach formats that carry them; a page copy has none. Evaluation
-    /// mode cannot delete a page after the ones it shows, so there the selected pages of a
-    /// longer document are copied, and the properties left behind are disclosed.
+    /// document properties reach formats that carry them; a page copy, which evaluation mode
+    /// may need, has none.
     /// </summary>
     private OutputInfo ConvertDocument(
         Document document,
@@ -541,21 +540,9 @@ internal sealed class PdfProductionService
         LicenseState state,
         List<Warning> warnings)
     {
-        bool copy = state == LicenseState.Evaluation
-            && document.Pages.Count > PdfEvaluation.VisiblePages
-            && pages.Count < document.Pages.Count;
-        using Document? copied = copy ? Select(document, pages) : null;
+        using Document? copied = NarrowToSelection(document, pages, state, warnings, out PdfNavigationCensus degraded);
         Document selected = copied ?? document;
-        if (copy)
-        {
-            warnings.Add(new Warning
-            {
-                Code = WarningCodes.LossyConversion,
-                Message = $"Evaluation mode cannot remove the pages after page {PdfEvaluation.VisiblePages} from the document, so the selected pages were copied into a new one and the output has none of the document properties, such as its title, author or subject.",
-                Hint = "Apply an Aspose.PDF license to keep the document properties.",
-            });
-        }
-        else if (UnselectedNavigation(DeleteUnselected(document, pages)) is { } navigation)
+        if (UnselectedNavigation(degraded) is { } navigation)
         {
             warnings.Add(navigation);
         }
@@ -592,6 +579,37 @@ internal sealed class PdfProductionService
     }
 
     /// <summary>
+    /// Narrows the opened document to the pages --pages selected, and counts the navigation
+    /// that led to the others. Evaluation mode cannot delete a page after the ones it shows,
+    /// so there the selected pages of a longer document are copied into a new document, which
+    /// is returned, and what the copy leaves behind is disclosed.
+    /// </summary>
+    private static Document? NarrowToSelection(
+        Document document,
+        IReadOnlyList<int> pages,
+        LicenseState state,
+        List<Warning> warnings,
+        out PdfNavigationCensus degraded)
+    {
+        if (state == LicenseState.Evaluation
+            && document.Pages.Count > PdfEvaluation.VisiblePages
+            && pages.Count < document.Pages.Count)
+        {
+            degraded = default;
+            warnings.Add(new Warning
+            {
+                Code = WarningCodes.LossyConversion,
+                Message = $"Evaluation mode cannot remove the pages after page {PdfEvaluation.VisiblePages} from the document, so the selected pages were copied into a new one, which has none of the document's bookmarks, attachments and document properties, such as its title, author or subject.",
+                Hint = "Apply an Aspose.PDF license to keep them.",
+            });
+            return Select(document, pages);
+        }
+
+        degraded = DeleteUnselected(document, pages);
+        return null;
+    }
+
+    /// <summary>
     /// Deletes the pages --pages did not select from the opened document, and counts the
     /// navigation that led to them.
     /// </summary>
@@ -622,13 +640,15 @@ internal sealed class PdfProductionService
     /// <summary>
     /// Converts the opened document itself, which this command never saves back, so the
     /// outline, attachments, metadata and page labels reach the archive; a page copy carries
-    /// none of them. The engine removes what the profile does not allow, and each removed
-    /// attachment or bookmark is reported on its own.
+    /// none of them, which evaluation mode discloses when it has to copy pages. The engine
+    /// removes what the profile does not allow, and each removed attachment or bookmark is
+    /// reported on its own.
     /// </summary>
     private OutputInfo ConvertPdfa(
-        Document document,
+        Document opened,
         IReadOnlyList<int> pages,
         PdfConvertRequest request,
+        LicenseState state,
         List<Warning> warnings)
     {
         string profile = request.TargetFormatId;
@@ -642,7 +662,8 @@ internal sealed class PdfProductionService
 
         // Navigation is counted around the page deletion alone; a bookmark the conversion
         // removes is reported with the outline below.
-        PdfNavigationCensus degraded = DeleteUnselected(document, pages);
+        using Document? copied = NarrowToSelection(opened, pages, state, warnings, out PdfNavigationCensus degraded);
+        Document document = copied ?? opened;
 
         // PDF/A forbids encryption; the engine cannot convert an encrypted document.
         if (document.IsEncrypted)
