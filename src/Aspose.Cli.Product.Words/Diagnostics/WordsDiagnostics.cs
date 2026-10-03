@@ -20,6 +20,7 @@ internal static class WordsDiagnostics
     internal const string LayoutMayDiffer = "LAYOUT_MAY_DIFFER";
     internal const string LinkedImagesSkipped = "LINKED_IMAGES_SKIPPED";
     internal const string ProtectionNotEnforced = "PROTECTION_NOT_ENFORCED";
+    internal const string MergeValueMissing = "MERGE_VALUE_MISSING";
 
     internal static readonly DiagnosticDescriptor FieldCountChanged = Verification("FIELD_COUNT_CHANGED");
     internal static readonly DiagnosticDescriptor RevisionCountChanged = Verification("REVISION_COUNT_CHANGED");
@@ -39,6 +40,7 @@ internal static class WordsDiagnostics
         Warning(LayoutMayDiffer),
         Warning(LinkedImagesSkipped),
         Warning(ProtectionNotEnforced),
+        Warning(MergeValueMissing),
         FieldCountChanged,
         RevisionCountChanged,
         ProtectionChanged,
