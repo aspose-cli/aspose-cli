@@ -474,10 +474,18 @@ public static partial class CliErrors
         string declaration = declaredProduct is null
             ? "No generic owner could be proven"
             : $"The declared owner '{declaredProduct}' could not be validated";
+        string hint = detectedProducts.Count switch
+        {
+            0 => "Verify the file content, or invoke the intended product command explicitly. Generic routing does not fall back to an extension.",
+            1 => $"The content looks like a {detectedProducts[0]} document. Give the file its real extension, or select the product "
+                + $"explicitly: --product {detectedProducts[0]} where the command offers it, or the {detectedProducts[0]} commands.",
+            _ => $"The content looks like one of: {string.Join(", ", detectedProducts)}. Give the file its real extension, or select "
+                + "the product explicitly: --product <id> where the command offers it, or that product's commands.",
+        };
         return new CliException(
             ErrorCodes.FormatMismatch,
             $"{declaration} from the bounded content of '{Path.GetFileName(path)}'.",
-            hint: "Verify the file content, or invoke the intended product command explicitly. Generic routing does not fall back to an extension.",
+            hint: hint,
             details: new JsonObject
             {
                 ["path"] = path,

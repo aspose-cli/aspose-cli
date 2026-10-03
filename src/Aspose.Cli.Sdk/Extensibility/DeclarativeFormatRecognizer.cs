@@ -6,6 +6,9 @@ namespace Aspose.Cli.Sdk.Extensibility;
 internal sealed class DeclarativeFormatRecognizer(
     IReadOnlyList<FormatDescriptor> formats) : IFileRecognizer
 {
+    /// <summary>The lowest confidence that proves a format without a declared extension.</summary>
+    internal const int StrongConfidence = 90;
+
     private readonly FormatDescriptor[] _formats = formats
         .Where(static format =>
             format.Uses.HasFlag(FormatUse.Input)
@@ -72,7 +75,7 @@ internal sealed class DeclarativeFormatRecognizer(
             && result.Confidence == best.Confidence) == 1;
         if (!extensionGrounded
             && (best.Kind != FileRecognitionKind.Match
-                || best.Confidence < 90
+                || best.Confidence < StrongConfidence
                 || !uniqueStrongestMatch))
         {
             return ValueTask.FromResult(new FileRecognition

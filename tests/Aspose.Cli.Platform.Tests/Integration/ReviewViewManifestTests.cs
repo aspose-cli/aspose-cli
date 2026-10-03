@@ -60,6 +60,26 @@ public sealed class ReviewViewManifestTests
         }
     }
 
+    [Fact]
+    public void Review_OfAWordDocumentNamedPdf_NamesWordsAndHonorsTheExplicitProduct()
+    {
+        using var workspace = new TempWorkspace();
+        CreateSample(workspace, "doc.docx");
+        File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
+
+        CliResult generic = workspace.Run("review", "renamed.pdf", "--out", "generic", "--output", "json");
+        Assert.Equal(6, generic.ExitCode);
+        JsonNode error = JsonNode.Parse(generic.StdErr)!["error"]!;
+        Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
+        Assert.Equal("words", Assert.Single(error["details"]!["detected"]!.AsArray())!.GetValue<string>());
+        Assert.Contains("--product words", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+
+        CliResult selected = workspace.Run(
+            "review", "renamed.pdf", "--product", "words", "--out", "selected", "--output", "json");
+        Assert.True(selected.ExitCode == 0, selected.StdErr);
+        Assert.Equal("words", JsonNode.Parse(selected.StdOut)!["product"]!.GetValue<string>());
+    }
+
     private static void CreateSample(TempWorkspace workspace, string file)
     {
         switch (Path.GetExtension(file))
