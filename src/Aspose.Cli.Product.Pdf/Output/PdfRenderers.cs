@@ -249,7 +249,7 @@ internal static class PdfRenderers
     public static void Render(PdfFormResult result, TableSurface surface)
     {
         surface.Out.WriteLine($"{result.Type} form: {result.Fields.Count} field(s)");
-        var table = new TextTable("name", "type", "value", "on value", "accepts", "page", "flags");
+        var table = new TextTable("name", "type", "value", "on value", "accepts", "page", "rectangle", "flags");
         foreach (PdfFormField field in result.Fields)
         {
             table.AddRow(
@@ -259,6 +259,7 @@ internal static class PdfRenderers
                 field.OnValue ?? string.Empty,
                 string.Join(", ", field.States ?? field.Options ?? []),
                 field.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty,
+                field.Rect is { } rect ? Rectangle(rect) : string.Empty,
                 string.Join(", ", new[]
                 {
                     field.ReadOnly ? "read-only" : null,
@@ -282,7 +283,7 @@ internal static class PdfRenderers
             table.AddRow(
                 TableText.Int(hit.Page),
                 TableText.Int(hit.Occurrence),
-                $"{Points(hit.Rect.X)},{Points(hit.Rect.Y)} {Points(hit.Rect.Width)}x{Points(hit.Rect.Height)}",
+                Rectangle(hit.Rect),
                 hit.Context ?? hit.Snippet);
         }
 
@@ -308,4 +309,8 @@ internal static class PdfRenderers
 
     private static string Points(double value) =>
         value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    /// <summary>A rectangle as its top-left corner and size, such as <c>72,202 20x20</c>.</summary>
+    private static string Rectangle(PdfRect rect) =>
+        $"{Points(rect.X)},{Points(rect.Y)} {Points(rect.Width)}x{Points(rect.Height)}";
 }

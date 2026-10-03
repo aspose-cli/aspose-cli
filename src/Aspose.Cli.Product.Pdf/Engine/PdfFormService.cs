@@ -46,7 +46,7 @@ internal sealed class PdfFormService
         Form form = loaded.Document.Form;
         var unpaged = new List<string>();
         var fields = form.Fields.OrderBy(static field => field.FullName, StringComparer.Ordinal)
-            .Select(field => Project(field, unpaged))
+            .Select(field => Project(loaded.Document, field, unpaged))
             .ToArray();
         return new PdfFormResult
         {
@@ -63,11 +63,12 @@ internal sealed class PdfFormService
     /// Projects one field. A check box reports its appearance states and, when it has exactly
     /// one state besides Off, that state as the value that checks it. The engine lists a radio
     /// group as one field per button under the group's name; each reports the group's values
-    /// as its options and its own value as the one that selects it. A field whose page
-    /// evaluation mode hides is added to <paramref name="unpaged"/>.
+    /// as its options and its own value as the one that selects it, and each has its own
+    /// rectangle. A field whose page evaluation mode hides is added to <paramref name="unpaged"/>.
     /// </summary>
-    private static PdfFormField Project(Field field, List<string> unpaged)
+    private static PdfFormField Project(Document document, Field field, List<string> unpaged)
     {
+        int? page = PageOf(field, unpaged);
         IReadOnlyList<string>? options = null;
         IReadOnlyList<string>? states = null;
         string? onValue = null;
@@ -98,7 +99,8 @@ internal sealed class PdfFormService
             OnValue = onValue,
             ReadOnly = field.ReadOnly,
             Required = field.Required,
-            Page = PageOf(field, unpaged),
+            Page = page,
+            Rect = page is int number && field.Rect is { } rect ? ToContractRect(document.Pages[number], rect) : null,
         };
     }
 

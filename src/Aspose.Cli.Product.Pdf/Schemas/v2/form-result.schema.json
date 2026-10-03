@@ -22,7 +22,8 @@
           "states": { "type": "array", "items": { "type": "string" }, "description": "A check box's appearance states, Off first; set_form_field accepts only these." },
           "onValue": { "type": "string", "description": "The value that checks a check box, when it has exactly one state besides Off, or that selects a radio button." },
           "readOnly": { "type": "boolean" }, "required": { "type": "boolean" },
-          "page": { "type": "integer", "minimum": 1, "description": "The page of the field's widget; absent when it has none or, in evaluation mode, lies past the pages the engine shows, which EVAL_INPUT_TRUNCATED then names." }
+          "page": { "type": "integer", "minimum": 1, "description": "The page of the field's widget; absent when it has none or, in evaluation mode, lies past the pages the engine shows, which EVAL_INPUT_TRUNCATED then names." },
+          "rect": { "$ref": "#/$defs/rect", "description": "The field's widget on that page, in points from its top-left corner; for a radio button, the button. Present only with page." }
         }
       }
     },
@@ -32,6 +33,13 @@
     "source": {
       "type": "object", "required": ["path", "format", "sizeBytes"], "additionalProperties": false,
       "properties": { "path": { "type": "string" }, "format": { "const": "pdf" }, "sizeBytes": { "type": "integer", "minimum": 0 } }
+    },
+    "rect": {
+      "type": "object", "required": ["x", "y", "width", "height"], "additionalProperties": false,
+      "properties": {
+        "x": { "type": "number" }, "y": { "type": "number" },
+        "width": { "type": "number", "minimum": 0 }, "height": { "type": "number", "minimum": 0 }
+      }
     }
   }
 }

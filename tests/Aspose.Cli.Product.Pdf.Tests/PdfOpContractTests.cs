@@ -142,6 +142,28 @@ public sealed class PdfOpContractTests
             form.Fields.Select(static field => (field.Name, field.Type)));
     }
 
+    [Fact]
+    public void ReadForm_GivesTheRectangleOfEachFieldFromTheTopLeftOfItsPage()
+    {
+        using var fixture = new PdfEngineFixture();
+        string path = fixture.File("boxes.pdf");
+        double height;
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            height = page.Rect.Height;
+            document.Form.Add(new CheckboxField(page, new Rectangle(72, 620, 92, 640)) { PartialName = "first" });
+            document.Form.Add(new CheckboxField(page, new Rectangle(300, 500, 316, 516)) { PartialName = "second" });
+            document.Save(path);
+        }
+
+        PdfFormResult form = fixture.Engine.ReadForm(path, new PdfFormReadRequest());
+
+        Assert.Equal(
+            [("first", 72d, height - 640, 20d, 20d), ("second", 300d, height - 516, 16d, 16d)],
+            form.Fields.Select(static field => (field.Name, field.Rect!.X, field.Rect.Y, field.Rect.Width, field.Rect.Height)));
+    }
+
     private static bool IsSchemaValid(string json)
     {
         using JsonDocument document = JsonDocument.Parse(json);

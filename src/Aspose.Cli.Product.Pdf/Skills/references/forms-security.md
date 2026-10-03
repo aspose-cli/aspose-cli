@@ -13,7 +13,9 @@ aspose-cli pdf extract cover.filled.pdf --what forms --to json --out form-result
 `set_form_field` addresses an AcroForm field by its exact full name. Each field's
 `type` is one of `text` (including date, number, password and rich-text boxes),
 `checkbox`, `radio`, `radio-option`, `combobox`, `listbox`, `button`, `signature`
-or `other`.
+or `other`. Its `page` and `rect` (points from the page's top-left corner) place
+it on the page: when names do not say which label a field belongs to, match the
+`rect` to the label's position (`pdf query search` gives each text's `rect`).
 
 A check box accepts only its `states`: set its `onValue` to check it and `Off`
 to clear it. A box whose widgets export several values has no `onValue`; set

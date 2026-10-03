@@ -344,6 +344,12 @@ public sealed record PdfFormField
     /// past the pages the engine shows, which EVAL_INPUT_TRUNCATED then names.
     /// </summary>
     public int? Page { get; init; }
+
+    /// <summary>
+    /// The field's widget on that page, in points from its top-left corner; for a radio button,
+    /// the button. Present only with <see cref="Page"/>.
+    /// </summary>
+    public PdfRect? Rect { get; init; }
 }
 
 /// <summary>The product vocabulary of form field kinds, independent of the engine's class names.</summary>
