@@ -40,7 +40,7 @@ internal sealed class PdfNavigationRetarget
         var pages = new HashSet<int>(replaced);
         retarget.CaptureOutlines(document.Outlines, pages);
 
-        foreach (string name in document.NamedDestinations.Names)
+        foreach (string name in PdfNavigationCensus.NamedDestinationNames(document))
         {
             if (Exact(document.NamedDestinations[name]) is { } named && pages.Contains(named.Page))
             {

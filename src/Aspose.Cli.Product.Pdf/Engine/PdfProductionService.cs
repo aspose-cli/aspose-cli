@@ -438,7 +438,7 @@ internal sealed class PdfProductionService
             Document source = loaded.Document;
             brokenInputLinks += PdfNavigationCensus.Unresolved(source).Links;
             // The merged document carries no named destinations, so every working one is lost.
-            namedDestinations += source.NamedDestinations.Names.Count(name =>
+            namedDestinations += PdfNavigationCensus.NamedDestinationNames(source).Count(name =>
                 PdfNavigationCensus.Resolves(source, source.NamedDestinations[name]));
             int offset = merged.Pages.Count;
             foreach (Page page in source.Pages)

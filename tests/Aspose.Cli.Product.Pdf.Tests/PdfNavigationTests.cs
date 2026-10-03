@@ -127,6 +127,36 @@ public sealed class PdfNavigationTests
     }
 
     [Fact]
+    public void AnEdit_OfADocumentWhoseNameTreeHoldsOnlyAttachments_Succeeds()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
+
+        PdfEditResult result = fixture.Engine.ApplyOps(input,
+            new PdfOpsBatch { Ops = [new SetMetadataOp { Title = "Kept" }] },
+            new PdfEditRequest { OutputPath = fixture.File("attachments.out.pdf") });
+
+        Assert.DoesNotContain(result.Warnings ?? [], static item => item.Code == "NAVIGATION_DEGRADED");
+        using var edited = new Document(result.Output!.Path);
+        Assert.Single(edited.EmbeddedFiles);
+    }
+
+    /// <summary>One page and one attachment: the name tree has EmbeddedFiles and no Dests.</summary>
+    internal static string CreateAttachmentOnlyNameTree(PdfEngineFixture fixture, string name)
+    {
+        string path = fixture.File(name);
+        using var document = new Document();
+        document.Pages.Add().Paragraphs.Add(new TextFragment("Attachments only"));
+        document.EmbeddedFiles.Add("figures.csv", new FileSpecification(new MemoryStream("a,b\n"u8.ToArray()), "figures.csv", "Figures")
+        {
+            Name = "figures.csv",
+            UnicodeName = "figures.csv",
+        });
+        document.Save(path);
+        return path;
+    }
+
+    [Fact]
     public void Merge_CountsBookmarksReducedToFitAndDroppedNamedDestinations()
     {
         using var fixture = new PdfEngineFixture();
