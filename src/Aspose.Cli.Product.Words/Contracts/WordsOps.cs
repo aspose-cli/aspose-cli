@@ -492,10 +492,11 @@ public sealed record SetPropertiesOp : WordsOp
     public IReadOnlyDictionary<string, string?>? Custom { get; init; }
 }
 
-/// <summary>Adds a text or image watermark; color applies to a text watermark only.</summary>
+/// <summary>Adds a text or image watermark; color and font apply to a text watermark only.</summary>
 [Operation("add_watermark")]
 [ExactlyOneOf("text", "imagePath")]
 [DependentRequired("color", "text")]
+[DependentRequired("font", "text")]
 public sealed record AddWatermarkOp : WordsOp
 {
     /// <summary>The watermark text; Word holds at most 200 characters.</summary>
@@ -509,6 +510,9 @@ public sealed record AddWatermarkOp : WordsOp
 
     /// <summary>A #RRGGBB or named text color.</summary>
     public string? Color { get; init; }
+
+    /// <summary>The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.</summary>
+    [MinLength(1)] public string? Font { get; init; }
 }
 
 /// <summary>Removes the document watermark.</summary>

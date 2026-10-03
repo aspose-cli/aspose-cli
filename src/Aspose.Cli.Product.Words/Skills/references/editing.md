@@ -78,7 +78,7 @@ aspose-cli schema v2/words/ops --operation insert_table
 | Add content | `insert_paragraphs` (styled paragraphs, list items), `insert_markdown`, `insert_table`, `insert_image`, `insert_hyperlink`, `insert_field`, `insert_toc`, `insert_bookmark` (a paragraph's visible text), `append_document` |
 | Remove content | `delete_blocks` |
 | Styles and formatting | `set_style` (apply an existing style), `define_style` (create or update one), `format_text` (runs of target blocks), `format_table` (how one table breaks across pages), `apply_list` (one new bullet or numbered list), `set_default_font` |
-| Sections and pages | `insert_break` (page break, or split the section), `add_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `add_watermark`, `remove_watermark` |
+| Sections and pages | `insert_break` (page break, or split the section), `add_section`, `delete_section` (never the last one), `set_page_setup`, `set_header`, `set_footer`, `set_page_numbers`, `add_watermark` (text in `font`; East Asian text otherwise in the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei), `remove_watermark` |
 | Review annotations | `add_comment`, `remove_comments`, `accept_revisions`, `reject_revisions` |
 | Fields and data | `update_fields` (tables of contents, or every field and the layout), `mail_merge` ([mail merge](mail-merge.md)) |
 | Document state | `set_properties`, `protect`, `unprotect` |

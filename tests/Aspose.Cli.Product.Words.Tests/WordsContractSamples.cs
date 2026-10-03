@@ -406,6 +406,7 @@ internal static class WordsContractSamples
                 Text = "DRAFT",
                 Faded = false,
                 Color = "#808080",
+                Font = "Arial",
             },
             new RemoveWatermarkOp(),
             new ProtectOp { Mode = "readOnly", PasswordEnv = "WORDS_PROTECT_PASSWORD" },

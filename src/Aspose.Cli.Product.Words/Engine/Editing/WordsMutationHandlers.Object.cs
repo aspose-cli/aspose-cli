@@ -141,6 +141,21 @@ internal sealed partial class WordsMutationHandlers
                 options.Color = ParseColor(operation.Color);
             }
 
+            // A watermark has one font for all its text, and the SDK's default font has no East
+            // Asian glyphs. Only a document set up for Chinese, Japanese or Korean surely names
+            // an East Asian default font; another may name a Latin one there.
+            Aspose.Words.Font defaults = _document.Styles.DefaultFont;
+            string? documentFont = WordsFonts.IsEastAsianLanguage(defaults.LocaleIdFarEast) && !string.IsNullOrEmpty(defaults.NameFarEast)
+                ? defaults.NameFarEast
+                : null;
+            string? font = operation.Font ?? (WordsFonts.HasEastAsian(operation.Text)
+                ? documentFont ?? WordsFonts.EastAsianFallback
+                : null);
+            if (font is not null)
+            {
+                options.FontFamily = font;
+            }
+
             _document.Watermark.SetText(operation.Text, options);
             return 1;
         }

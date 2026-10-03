@@ -261,7 +261,7 @@
       ]
     },
     "add_watermark": {
-      "description": "Adds a text or image watermark; color applies to a text watermark only.",
+      "description": "Adds a text or image watermark; color and font apply to a text watermark only.",
       "type": "object",
       "required": [
         "op"
@@ -294,6 +294,11 @@
         "color": {
           "description": "A #RRGGBB or named text color.",
           "type": "string"
+        },
+        "font": {
+          "description": "The text font; when omitted, East Asian text takes the default East Asian font of a Chinese, Japanese or Korean document, or else Microsoft YaHei.",
+          "type": "string",
+          "minLength": 1
         }
       },
       "allOf": [
@@ -314,6 +319,13 @@
         {
           "dependentRequired": {
             "color": [
+              "text"
+            ]
+          }
+        },
+        {
+          "dependentRequired": {
+            "font": [
               "text"
             ]
           }

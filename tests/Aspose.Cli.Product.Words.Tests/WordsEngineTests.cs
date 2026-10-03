@@ -528,6 +528,57 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Theory]
+    [InlineData(null, "内部资料", 2052, "SimSun")]
+    [InlineData(null, "内部资料", 1033, "Microsoft YaHei")]
+    [InlineData("KaiTi", "内部资料", 2052, "KaiTi")]
+    [InlineData(null, "DRAFT", 2052, null)]
+    public void AddWatermark_DrawsTextInItsFontOrEastAsianTextInAnEastAsianFont(string? font, string text, int eastAsianLanguage, string? expected)
+    {
+        var document = new Document();
+        document.Styles.DefaultFont.NameFarEast = "SimSun";
+        document.Styles.DefaultFont.LocaleIdFarEast = eastAsianLanguage;
+        new DocumentBuilder(document).Write("Body");
+        string input = _fixture.Temp.File($"watermark-{Guid.NewGuid():N}.docx");
+        document.Save(input);
+        string output = _fixture.Temp.File($"watermarked-{Guid.NewGuid():N}.docx");
+
+        _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new AddWatermarkOp { Text = text, Font = font }] },
+            new WordsEditRequest { OutputPath = output });
+
+        // The SDK writes the watermark into each header of the section.
+        string[] fonts = new Document(output).GetChildNodes(NodeType.Shape, true)
+            .Cast<Aspose.Words.Drawing.Shape>()
+            .Where(shape => shape.TextPath.Text == text)
+            .Select(static shape => shape.TextPath.FontFamily)
+            .Distinct()
+            .ToArray();
+        Assert.Equal([expected ?? new TextWatermarkOptions().FontFamily], fonts);
+    }
+
+    [Fact]
+    public void AddWatermark_DrawsEastAsianTextOfACreatedDocumentInAnEastAsianFont()
+    {
+        string input = _fixture.Temp.File($"created-{Guid.NewGuid():N}.docx");
+        _fixture.Engine.Create(new NewDocumentRequest { OutputPath = input });
+        string output = _fixture.Temp.File($"created-watermarked-{Guid.NewGuid():N}.docx");
+
+        _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new AddWatermarkOp { Text = "内部资料" }] },
+            new WordsEditRequest { OutputPath = output });
+
+        string font = new Document(output).GetChildNodes(NodeType.Shape, true)
+            .Cast<Aspose.Words.Drawing.Shape>()
+            .Where(static shape => shape.TextPath.Text == "内部资料")
+            .Select(static shape => shape.TextPath.FontFamily)
+            .Distinct()
+            .Single();
+        Assert.Equal("Microsoft YaHei", font);
+    }
+
+    [Theory]
     [InlineData(false)]
     [InlineData(true)]
     public void Edit_ReportsThePageOfTheAnchorOfANoteReplaceTextChanged(bool footnote)

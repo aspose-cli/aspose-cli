@@ -44,6 +44,15 @@ internal static class WordsFonts
         return names.Order(StringComparer.Ordinal).ToArray();
     }
 
+    /// <summary>Whether a text holds a character Word draws with the East Asian font.</summary>
+    internal static bool HasEastAsian(string text) => text.EnumerateRunes().Any(IsEastAsian);
+
+    /// <summary>The East Asian font of the default template, for text with no other.</summary>
+    internal const string EastAsianFallback = "Microsoft YaHei";
+
+    /// <summary>Whether a Windows language identifier is Chinese, Japanese or Korean.</summary>
+    internal static bool IsEastAsianLanguage(int localeId) => (localeId & 0x3FF) is 0x04 or 0x11 or 0x12;
+
     private static bool IsEastAsian(Rune rune) => rune.Value is
         >= 0x1100 and <= 0x11FF        // Hangul Jamo
         or >= 0x2E80 and <= 0x9FFF     // CJK radicals, kana, Hangul compatibility, ideographs
