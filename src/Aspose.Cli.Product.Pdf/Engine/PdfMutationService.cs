@@ -123,16 +123,32 @@ internal sealed class PdfMutationService
                 {
                     outputPassword = null;
                 }
-                return new AppliedOperation(affected, OperationTargets(op, operationPages));
+                return new AppliedOperation(affected, OperationTargets(op, operationPages, document));
             },
-            (op, _) => OperationTargets(op, []));
+            (op, _) => OperationTargets(op, [], applied: null));
         return (outcomes, outputPassword);
     }
 
+    /// <summary>
+    /// The targets an operation reports. A bookmark operation that succeeded names each bookmark
+    /// it added or deleted by its index, a deleted one as it was before the deletion.
+    /// </summary>
     private static IReadOnlyList<string> OperationTargets(
         PdfOp operation,
-        IReadOnlyCollection<int> pages)
+        IReadOnlyCollection<int> pages,
+        Document? applied)
     {
+        if (applied is not null)
+        {
+            switch (operation)
+            {
+                case AddBookmarkOp add:
+                    return [$"pdf/bookmark/{Editing.PdfMutationSupport.NewBookmarkIndex(applied, add.Parent)}"];
+                case DeleteBookmarksOp { Indexes: { } indexes }:
+                    return [.. indexes.Select(static index => $"pdf/bookmark/{index}")];
+            }
+        }
+
         if (pages.Count is > 0 and <= 100)
         {
             return pages

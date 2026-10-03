@@ -428,13 +428,10 @@ internal sealed class PdfEditVerifier
     }
 
     /// <summary>The index of the bookmark add_bookmark just appended below <paramref name="parent"/>.</summary>
-    private static string NewBookmarkIndex(Document document, string? parent)
-    {
-        int position = parent is null
-            ? document.Outlines.Count
-            : Find(document.Outlines, parent)?.Count ?? throw new InvalidOperationException($"Bookmark {parent} was not found.");
-        return PdfMutationSupport.OutlineIndex(parent, position);
-    }
+    private static string NewBookmarkIndex(Document document, string? parent) =>
+        parent is null || Find(document.Outlines, parent) is not null
+            ? PdfMutationSupport.NewBookmarkIndex(document, parent)
+            : throw new InvalidOperationException($"Bookmark {parent} was not found.");
 
     private static OutlineItemCollection? Find(IEnumerable<OutlineItemCollection> items, string index)
     {

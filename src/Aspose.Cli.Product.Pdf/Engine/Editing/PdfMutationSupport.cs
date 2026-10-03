@@ -114,6 +114,10 @@ internal static class PdfMutationSupport
             ? position.ToString(CultureInfo.InvariantCulture)
             : $"{parentIndex}/{position.ToString(CultureInfo.InvariantCulture)}";
 
+    /// <summary>The index of the bookmark add_bookmark just appended below <paramref name="parent"/>.</summary>
+    internal static string NewBookmarkIndex(Document document, string? parent) =>
+        OutlineIndex(parent, parent is null ? document.Outlines.Count : Outline(document.Outlines, parent).Count);
+
     private static string OutlineHint(string? parentIndex, int count) => (parentIndex, count) switch
     {
         (null, 0) => "The document has no bookmarks.",

@@ -799,8 +799,9 @@ public sealed class PdfMutateTests
             Ops = [new DeleteBookmarksOp { Indexes = [first, second] }],
         }, new PdfEditRequest { OutputPath = edited });
 
-        // Second, its child and Third.
+        // Second, its child and Third, each addressed as it was before the deletion.
         Assert.Equal(3, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal([$"pdf/bookmark/{first}", $"pdf/bookmark/{second}"], result.Applied[0].Targets);
         Assert.Equal(
             ["1 First 1", "2 Fourth 1", "2/1 Fourth.A 2", "2/2 Fourth.B 3"],
             OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));
@@ -819,6 +820,7 @@ public sealed class PdfMutateTests
         }, new PdfEditRequest { OutputPath = edited });
 
         Assert.Equal(7, Assert.Single(result.Applied).ItemsAffected);
+        Assert.Equal(["pdf/bookmark"], result.Applied[0].Targets);
         Assert.Empty(OutlineOf(fixture, edited));
     }
 
@@ -850,7 +852,9 @@ public sealed class PdfMutateTests
         });
 
         Assert.Equal("BOOKMARK_NOT_FOUND", result.Applied[0].Error!.Code);
+        Assert.Equal(["pdf/bookmark"], result.Applied[0].Targets);
         Assert.Equal(OpStatuses.Ok, result.Applied[1].Status);
+        Assert.Equal(["pdf/bookmark/1/1"], result.Applied[1].Targets);
         Assert.Equal(
             ["1 First 1", "1/1 Added 1", "2 Second 2", "2/1 Second.A 2", "3 Third 3", "4 Fourth 1", "4/1 Fourth.A 2", "4/2 Fourth.B 3"],
             OutlineOf(fixture, edited).Select(static item => $"{item.Index} {item.Title} {item.Page}"));

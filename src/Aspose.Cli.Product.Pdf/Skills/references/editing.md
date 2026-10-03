@@ -50,7 +50,9 @@ them. List every bookmark to delete in one `delete_bookmarks` operation, with
 indexes read from one `pdf inspect --detail outline`; list a parent without its
 children. Later operations of the batch see the renumbered outline; put
 `add_bookmark` operations that name a parent before the deletion, or reinspect
-and edit in a second batch.
+and edit in a second batch. Each applied operation's `targets` name the
+bookmarks it added or deleted as `pdf/bookmark/<index>`, a deleted one by the
+index it had before the deletion; `"all": true` reports `pdf/bookmark`.
 
 Rectangles must lie within the visible page box. Reinspect geometry and review
 after changing crop, size or rotation, because later rectangles follow the new
