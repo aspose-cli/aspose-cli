@@ -68,11 +68,12 @@ public sealed record OutlineItem
     public required string Text { get; init; }
 }
 
-/// <summary>One field summary.</summary>
+/// <summary>One field summary; <c>Scope</c> names the story that holds it, as for a revision.</summary>
 public sealed record FieldData
 {
     public required string Type { get; init; }
-    public required int Block { get; init; }
+    public string? Scope { get; init; }
+    public int? Block { get; init; }
     public string? Code { get; init; }
     public string? Result { get; init; }
 }
@@ -100,10 +101,11 @@ public sealed record RevisionData
     public string? Text { get; init; }
 }
 
-/// <summary>One embedded image summary; its size is in points.</summary>
+/// <summary>One embedded image summary; its size is in points. <c>Scope</c> names the story that holds it in inspect.</summary>
 public sealed record ImageData
 {
-    public required int Block { get; init; }
+    public string? Scope { get; init; }
+    public int? Block { get; init; }
     public string? Name { get; init; }
     public required double Width { get; init; }
     public required double Height { get; init; }

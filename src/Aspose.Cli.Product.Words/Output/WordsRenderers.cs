@@ -173,7 +173,7 @@ internal static class WordsRenderers
             foreach (FieldData field in fields)
             {
                 table.AddRow(
-                    TableText.Int(field.Block),
+                    field.Block is { } block ? TableText.Int(block) : "-",
                     field.Type,
                     field.Code ?? "-",
                     field.Result ?? "-");
@@ -223,7 +223,7 @@ internal static class WordsRenderers
             foreach (ImageData image in images)
             {
                 table.AddRow(
-                    TableText.Int(image.Block),
+                    image.Block is { } block ? TableText.Int(block) : "-",
                     image.Name ?? "-",
                     $"{Points(image.Width)} x {Points(image.Height)} pt");
             }

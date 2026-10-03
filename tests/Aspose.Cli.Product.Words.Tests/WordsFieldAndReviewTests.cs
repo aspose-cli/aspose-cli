@@ -35,6 +35,31 @@ public sealed class WordsFieldAndReviewTests
     }
 
     [Fact]
+    public void Inspect_NamesTheStoryOfFieldsAndImagesAndTheBlockOfThoseInTheBody()
+    {
+        using var fixture = new WordsFixture();
+        byte[] png = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==");
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.InsertField("MERGEFIELD Name");
+        builder.InsertImage(png);
+        builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+        builder.InsertField("PAGE");
+        builder.InsertImage(png);
+        string input = fixture.Temp.File("stories.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        DocumentInfoResult info = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["fields", "images"] });
+
+        Assert.Equal(
+            ["FieldMergeField:body:1", "FieldPage:headersFooters:"],
+            info.Fields!.Where(static f => f.Type is "FieldMergeField" or "FieldPage").Select(static f => $"{f.Type}:{f.Scope}:{f.Block}").Order(StringComparer.Ordinal));
+        Assert.Equal(
+            ["body:1", "headersFooters:"],
+            info.Images!.Where(static i => i.Width < 2).Select(static i => $"{i.Scope}:{i.Block}").Order(StringComparer.Ordinal));
+    }
+
+    [Fact]
     public void RemoveComments_RemovesEveryCommentAndItsRange()
     {
         using var fixture = new WordsFixture();

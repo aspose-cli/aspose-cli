@@ -115,7 +115,8 @@ internal static class InfoProjection
             field => new ContractFieldData
             {
                 Type = field.Type.ToString(),
-                Block = index.FindBlock(field.Start) ?? 0,
+                Scope = WordsStories.ScopeOf(field.Start),
+                Block = index.FindBlock(field.Start),
                 Code = field.GetFieldCode(),
                 Result = field.Result,
             },
@@ -315,7 +316,8 @@ internal static class InfoProjection
             document.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage).ToArray(),
             shape => new ContractImageData
             {
-                Block = index.FindBlock(shape) ?? 0,
+                Scope = WordsStories.ScopeOf(shape),
+                Block = index.FindBlock(shape),
                 Name = shape.Name,
                 Width = shape.Width,
                 Height = shape.Height,

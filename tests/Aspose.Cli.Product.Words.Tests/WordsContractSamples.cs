@@ -50,7 +50,7 @@ internal static class WordsContractSamples
         ],
         Outline = [new OutlineItem { Block = 1, HeadingLevel = 1, Text = "Executive summary" }],
         Styles = ["Normal", "Heading 1"],
-        Fields = [new FieldData { Type = "FieldDate", Block = 3, Code = " DATE ", Result = "9/26/2026" }],
+        Fields = [new FieldData { Type = "FieldDate", Scope = "body", Block = 3, Code = " DATE ", Result = "9/26/2026" }],
         Bookmarks = ["Summary"],
         Comments = [new CommentData { Author = "Reviewer", Text = "Check the figure.", Block = 2 }],
         Revisions =
@@ -58,7 +58,7 @@ internal static class WordsContractSamples
             new RevisionData { Type = "deletion", Author = "Reviewer", Date = "2026-09-01T10:30:00", Block = 2, Text = "thirty" },
             new RevisionData { Type = "insertion", Author = "Reviewer", Date = "2026-09-01T10:30:00", Block = 2, Text = "sixty" },
         ],
-        Images = [new ImageData { Block = 4, Name = "Picture 1", Width = 144, Height = 96 }],
+        Images = [new ImageData { Scope = "body", Block = 4, Name = "Picture 1", Width = 144, Height = 96 }],
         Tables = [new TableData { Block = 5, RowCount = 2, ColumnCount = 2, Style = "Table Grid" }],
         License = Licensed,
     };

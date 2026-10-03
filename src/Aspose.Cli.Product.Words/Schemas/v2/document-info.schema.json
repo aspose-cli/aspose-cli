@@ -73,11 +73,12 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["type", "block"],
+        "required": ["type", "scope"],
         "additionalProperties": false,
         "properties": {
           "type": { "type": "string" },
-          "block": { "type": "integer", "minimum": 0, "description": "The body block that holds the field; 0 outside the body." },
+          "scope": { "enum": ["body", "headersFooters", "footnotes", "comments"], "description": "The story that holds the field, named as query search names its scopes." },
+          "block": { "type": "integer", "minimum": 1, "description": "The body block that holds the field, or that anchors the comment or note holding it; absent in headers and footers." },
           "code": { "type": "string" },
           "result": { "type": "string" }
         }
@@ -118,10 +119,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["block", "width", "height"],
+        "required": ["scope", "width", "height"],
         "additionalProperties": false,
         "properties": {
-          "block": { "type": "integer", "minimum": 0, "description": "The body block that holds the image; 0 outside the body." },
+          "scope": { "enum": ["body", "headersFooters", "footnotes", "comments"], "description": "The story that holds the image, named as query search names its scopes." },
+          "block": { "type": "integer", "minimum": 1, "description": "The body block that holds the image, or that anchors the comment or note holding it; absent in headers and footers." },
           "name": { "type": "string" },
           "width": { "type": "number", "minimum": 0, "description": "The width in points." },
           "height": { "type": "number", "minimum": 0, "description": "The height in points." }
