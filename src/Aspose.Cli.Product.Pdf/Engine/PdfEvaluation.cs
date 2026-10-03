@@ -6,14 +6,15 @@ using Aspose.Cli.Sdk.Licensing;
 namespace Aspose.Cli.Product.Pdf.Engine;
 
 /// <summary>
-/// Aspose.PDF in evaluation mode exposes at most four items of any collection: the first four
-/// pages of a document and of its bookmarks, fields, annotations and other lists. Reading past
-/// them throws, so a command that needs more is refused as an evaluation limit, and a read that
-/// stays within them says that it saw only part of the document.
+/// Aspose.PDF in evaluation mode exposes only the first four pages of a document: reading a
+/// later page throws, although the engine's message speaks of any collection. The outline, the
+/// attachments and the count of form fields stay complete, but finding the page of a field on a
+/// later page throws too. A command that needs a later page is refused as an evaluation limit,
+/// and a read that stays within the first pages says that it saw only part of the document.
 /// </summary>
 internal static class PdfEvaluation
 {
-    internal const int VisibleItems = 4;
+    internal const int VisiblePages = 4;
 
     // The SDK reports the limit only with this message on an IndexOutOfRangeException.
     private const string LimitMessage = "can be viewed in evaluation mode";
@@ -29,7 +30,7 @@ internal static class PdfEvaluation
         {
             throw new CliException(
                 ErrorCodes.EvaluationLimit,
-                $"Evaluation mode lets the PDF engine read at most {VisibleItems} pages of a document and {VisibleItems} items of any other list, such as bookmarks or form fields; this command needs more.",
+                $"Evaluation mode lets the PDF engine read only the first {VisiblePages} pages of a document; this command needs a later page.",
                 hint: "Apply an Aspose.PDF license. Without one, only pages 1-4 can be read: a command that takes --pages can be limited to them. No output was written.",
                 docs: "licensing",
                 innerException: exception);
@@ -38,13 +39,13 @@ internal static class PdfEvaluation
 
     /// <summary>The disclosure for a read of a document with more pages than evaluation mode shows.</summary>
     internal static Warning? InputTruncated(LicenseState state, int pages) =>
-        state == LicenseState.Evaluation && pages > VisibleItems
+        state == LicenseState.Evaluation && pages > VisiblePages
             ? new Warning
             {
                 Code = WarningCodes.EvalInputTruncated,
                 Message = string.Create(
                     CultureInfo.InvariantCulture,
-                    $"Evaluation mode shows only the first {VisibleItems} of {pages} pages, and at most {VisibleItems} items of any other list, so page sizes, bookmarks, fields and attachments describe only part of the document."),
+                    $"Evaluation mode shows only the first {VisiblePages} of {pages} pages, so page sizes and page content describe only those pages; bookmarks, attachments and the form field count are complete."),
                 Hint = "Apply an Aspose.PDF license to read the whole document.",
                 AffectsCompleteness = true,
             }

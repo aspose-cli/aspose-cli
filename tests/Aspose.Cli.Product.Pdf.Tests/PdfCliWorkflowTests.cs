@@ -161,6 +161,141 @@ public sealed class PdfCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void EvaluationMode_ListsEveryBookmarkOfALongerDocument()
+    {
+        // Six pages and six bookmarks, one per page, written without the engine.
+        const int count = 6;
+        var objects = new List<string>
+        {
+            "<< /Type /Catalog /Pages 2 0 R /Outlines 3 0 R >>",
+            $"<< /Type /Pages /Count {count} /Kids [{string.Join(' ', Enumerable.Range(0, count).Select(static index => $"{4 + index} 0 R"))}] >>",
+            $"<< /Type /Outlines /First {4 + count} 0 R /Last {3 + (2 * count)} 0 R /Count {count} >>",
+        };
+        int content = 4 + (2 * count);
+        for (int index = 0; index < count; index++)
+        {
+            objects.Add($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents {content} 0 R >>");
+        }
+
+        for (int index = 0; index < count; index++)
+        {
+            int self = 4 + count + index;
+            string previous = index > 0 ? $" /Prev {self - 1} 0 R" : string.Empty;
+            string next = index < count - 1 ? $" /Next {self + 1} 0 R" : string.Empty;
+            objects.Add($"<< /Title (Chapter {index + 1}) /Parent 3 0 R{previous}{next} /Dest [{4 + index} 0 R /Fit] >>");
+        }
+
+        objects.Add("<< /Length 0 >>\nstream\n\nendstream");
+        WriteRawPdf("chapters.pdf", objects);
+
+        CliResult inspect = _workspace.Run("pdf", "inspect", "chapters.pdf", "--detail", "outline", "--output", "json");
+
+        Assert.True(inspect.ExitCode == 0, inspect.StdErr);
+        JsonNode result = JsonNode.Parse(inspect.StdOut)!;
+        Assert.Equal(
+            Enumerable.Range(1, count).Select(static number => $"Chapter {number}"),
+            result["outline"]!.AsArray().Select(static item => item!["title"]!.GetValue<string>()));
+        JsonNode truncated = Assert.Single(
+            result["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!;
+        Assert.Contains("bookmarks, attachments and the form field count are complete", truncated["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void EvaluationMode_CountsEveryFieldAndListsEveryAttachmentOfALongerDocument(bool fieldsOnLaterPages)
+    {
+        // Six pages, six text fields and six attachments, written without the engine. The
+        // fields lie one per page, or on the first four pages only.
+        const int count = 6;
+        int Page(int index) => 3 + index;
+        int FieldPage(int index) => fieldsOnLaterPages ? index : Math.Min(index, 3);
+        int Widget(int index) => 4 + count + index;
+        int Specification(int index) => 4 + (2 * count) + index;
+        int Embedded(int index) => 4 + (3 * count) + index;
+        string References(IEnumerable<int> indexes, Func<int, int> number) =>
+            string.Join(' ', indexes.Select(index => $"{number(index)} 0 R"));
+        IEnumerable<int> all = Enumerable.Range(0, count);
+        string names = string.Join(' ', all.Select(index => $"(file{index + 1}.txt) {Specification(index)} 0 R"));
+        var objects = new List<string>
+        {
+            $"<< /Type /Catalog /Pages 2 0 R /AcroForm << /Fields [{References(all, Widget)}] >> /Names << /EmbeddedFiles << /Names [{names}] >> >> >>",
+            $"<< /Type /Pages /Count {count} /Kids [{References(all, Page)}] >>",
+        };
+        int content = 3 + count;
+        for (int page = 0; page < count; page++)
+        {
+            string widgets = References(all.Where(index => FieldPage(index) == page), Widget);
+            objects.Add($"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents {content} 0 R /Annots [{widgets}] >>");
+        }
+
+        objects.Add("<< /Length 0 >>\nstream\n\nendstream");
+        for (int index = 0; index < count; index++)
+        {
+            objects.Add($"<< /Type /Annot /Subtype /Widget /FT /Tx /T (Field{index + 1}) /V (Value {index + 1}) /Rect [72 {100 * (index + 1)} 300 {(100 * (index + 1)) + 20}] /P {Page(FieldPage(index))} 0 R >>");
+        }
+
+        for (int index = 0; index < count; index++)
+        {
+            objects.Add($"<< /Type /Filespec /F (file{index + 1}.txt) /UF (file{index + 1}.txt) /EF << /F {Embedded(index)} 0 R >> >>");
+        }
+
+        for (int index = 0; index < count; index++)
+        {
+            objects.Add($"<< /Type /EmbeddedFile /Length 6 >>\nstream\nfile {index + 1}\nendstream");
+        }
+
+        WriteRawPdf("fields.pdf", objects);
+
+        CliResult inspect = _workspace.Run(
+            "pdf", "inspect", "fields.pdf", "--detail", "forms", "--detail", "attachments", "--output", "json");
+        CliResult forms = _workspace.Run("pdf", "query", "forms", "fields.pdf", "--output", "json");
+
+        Assert.True(inspect.ExitCode == 0, inspect.StdErr);
+        JsonNode result = JsonNode.Parse(inspect.StdOut)!;
+        Assert.Equal(count, result["forms"]!["fieldCount"]!.GetValue<int>());
+        Assert.Equal(
+            Enumerable.Range(1, count).Select(static number => $"file{number}.txt"),
+            result["attachments"]!.AsArray().Select(static item => item!["name"]!.GetValue<string>()));
+        Assert.Contains(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED");
+        if (fieldsOnLaterPages)
+        {
+            Assert.Equal(7, forms.ExitCode);
+            Assert.Equal("EVALUATION_LIMIT", JsonNode.Parse(forms.StdErr)!["error"]!["code"]!.GetValue<string>());
+        }
+        else
+        {
+            Assert.True(forms.ExitCode == 0, forms.StdErr);
+            Assert.Equal(
+                Enumerable.Range(1, count).Select(static number => $"Value {number}"),
+                JsonNode.Parse(forms.StdOut)!["fields"]!.AsArray().Select(static item => item!["value"]!.GetValue<string>()).Order(StringComparer.Ordinal));
+        }
+    }
+
+    /// <summary>Writes numbered objects, the first being the catalog, as a PDF with a cross-reference table.</summary>
+    private void WriteRawPdf(string fileName, IReadOnlyList<string> objects)
+    {
+        var pdf = new System.Text.StringBuilder("%PDF-1.7\n");
+        var offsets = new List<int>();
+        for (int index = 0; index < objects.Count; index++)
+        {
+            offsets.Add(pdf.Length);
+            pdf.Append($"{index + 1} 0 obj\n{objects[index]}\nendobj\n");
+        }
+
+        int xref = pdf.Length;
+        pdf.Append($"xref\n0 {objects.Count + 1}\n0000000000 65535 f \n");
+        foreach (int offset in offsets)
+        {
+            pdf.Append($"{offset:0000000000} 00000 n \n");
+        }
+
+        pdf.Append($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
+        File.WriteAllBytes(_workspace.File(fileName), System.Text.Encoding.ASCII.GetBytes(pdf.ToString()));
+    }
+
+    [Fact]
     public void QueryPages_NextRereadsACutPageAndRaisesTheBudgetForAPageThatAloneExceedsIt()
     {
         using (var document = new Document())

@@ -31,9 +31,9 @@ top-left origin against the visible, rotated page box.
    aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --verify --output json
    ```
 
-   Without a license the engine reads at most four pages and four items of each
-   list, so a check that has to read more pages, bookmarks, fields or attachments
-   fails the edit with `EVALUATION_LIMIT` and publishes nothing.
+   Without a license the engine reads only the first four pages, so an edit or
+   check that has to read a later page fails with `EVALUATION_LIMIT` and
+   publishes nothing.
 
 4. Convert to PDF/A, then validate the result separately; conversion success
    does not imply conformance ([standards](references/pdf-standards.md)).
@@ -64,9 +64,10 @@ the size of the page in view, zoom and a mark on what a change touched
 results carry `EVAL_MODE`; a license installed later does not remove watermarks
 already saved into a PDF, so regenerate that file from its original inputs
 (`aspose-cli docs licensing`). Evaluation mode also reads only the first 4 pages
-of a document and 4 items of any other list, such as bookmarks or form fields:
-`inspect` of a longer PDF warns `EVAL_INPUT_TRUNCATED`, and a command that
-needs more fails with `EVALUATION_LIMIT` (exit 7) before writing anything.
+of a document. `inspect` of a longer PDF warns `EVAL_INPUT_TRUNCATED` and still
+lists every bookmark and attachment and counts every form field; a command that
+needs a later page, such as `query forms` when a field lies on one, fails with
+`EVALUATION_LIMIT` (exit 7) before writing anything.
 Limit it with `--pages 1-4`, or tell the user a PDF license is needed.
 
 ## References

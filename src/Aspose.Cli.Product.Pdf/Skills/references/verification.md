@@ -37,9 +37,8 @@ watermarks, links, `redact_area`, page geometry, page labels,
 `remove_metadata`, encryption, `optimize`) have no reliable read-back and are
 not checked: render or search the output for them. In evaluation mode the
 matches inside the watermark sentence the engine stamps on each page do not
-count as remaining redacted text, and a check that needs more than four pages,
-bookmarks, fields or attachments fails the command with `EVALUATION_LIMIT` and
-publishes nothing.
+count as remaining redacted text, and a check that has to read a page after the
+fourth fails the command with `EVALUATION_LIMIT` and publishes nothing.
 
 ## Content
 

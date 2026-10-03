@@ -542,7 +542,7 @@ internal sealed class PdfProductionService
         List<Warning> warnings)
     {
         bool copy = state == LicenseState.Evaluation
-            && document.Pages.Count > PdfEvaluation.VisibleItems
+            && document.Pages.Count > PdfEvaluation.VisiblePages
             && pages.Count < document.Pages.Count;
         using Document? copied = copy ? Select(document, pages) : null;
         Document selected = copied ?? document;
@@ -551,7 +551,7 @@ internal sealed class PdfProductionService
             warnings.Add(new Warning
             {
                 Code = WarningCodes.LossyConversion,
-                Message = $"Evaluation mode cannot remove the pages after page {PdfEvaluation.VisibleItems} from the document, so the selected pages were copied into a new one and the output has none of the document properties, such as its title, author or subject.",
+                Message = $"Evaluation mode cannot remove the pages after page {PdfEvaluation.VisiblePages} from the document, so the selected pages were copied into a new one and the output has none of the document properties, such as its title, author or subject.",
                 Hint = "Apply an Aspose.PDF license to keep the document properties.",
             });
         }
