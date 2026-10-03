@@ -36,7 +36,8 @@ aspose-cli schema v2/slides/ops --operation insert_chart
 - `set_title`, `set_body` and `set_text` fill placeholders the layout already styles; prefer
   them to `set_shape_style`, which overrides every run of one shape.
 - A shape's text in `query slides`, `query search` and `extract --what text` includes its table
-  cells, group children and SmartArt nodes.
+  cells, group children and SmartArt nodes. Extracted text and notes put each paragraph on its
+  own line; lines are separated by line feeds.
 - `replace_text` matches within one paragraph at a time, in shapes and speaker notes. Only the
   matched characters change: the replacement takes the formatting of the first matched
   character, and other runs keep theirs. Evaluation mode reads text longer than five

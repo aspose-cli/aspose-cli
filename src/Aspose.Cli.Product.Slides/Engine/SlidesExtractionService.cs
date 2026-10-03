@@ -47,7 +47,7 @@ internal sealed class SlidesExtractionService
                 string? text = request.What == PresentationExtractKinds.Notes
                     ? Notes(slide)
                     : string.Join(
-                        Environment.NewLine,
+                        "\n",
                         slide.Shapes.Select(ShapeText).Where(static value => value is not null));
                 if (string.IsNullOrWhiteSpace(text))
                 {

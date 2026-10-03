@@ -164,11 +164,20 @@ internal static class SlidesEngineSupport
         return result;
     }
 
-    /// <summary>The text a shape shows: its own frame, table cells, group children and SmartArt nodes.</summary>
+    /// <summary>
+    /// The text a shape shows: its own frame, table cells, group children and SmartArt nodes,
+    /// one paragraph or line break per line.
+    /// </summary>
     internal static string? ShapeText(IShape shape) =>
         EmptyToNull(string.Join(
             "\n",
-            TextFrames(shape).Select(static frame => frame.Text).Where(static text => !string.IsNullOrWhiteSpace(text))));
+            TextFrames(shape).Select(static frame => Lines(frame.Text)).Where(static text => !string.IsNullOrWhiteSpace(text))));
+
+    /// <summary>
+    /// Ends each line of engine text with a line feed: the engine ends paragraphs with a
+    /// carriage return and line breaks with a vertical tab. Offsets into the text stay valid.
+    /// </summary>
+    private static string? Lines(string? text) => text?.Replace('\r', '\n').Replace('\v', '\n');
 
     /// <summary>
     /// Every text frame a shape shows, in reading order: its own frame, each table cell
@@ -315,7 +324,7 @@ internal static class SlidesEngineSupport
     }
 
     internal static string? Notes(ISlide slide) =>
-        EmptyToNull(slide.NotesSlideManager.NotesSlide?.NotesTextFrame?.Text);
+        EmptyToNull(Lines(slide.NotesSlideManager.NotesSlide?.NotesTextFrame?.Text));
 
     internal static IComment[] Comments(Presentation presentation) =>
         presentation.CommentAuthors

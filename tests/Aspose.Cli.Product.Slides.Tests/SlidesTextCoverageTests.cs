@@ -94,6 +94,32 @@ public sealed class SlidesTextCoverageTests
     }
 
     [Fact]
+    public void ExtractedTextAndSearchHits_EndEveryParagraphWithOneLineFeed()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("paragraphs.pptx");
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 20, 20, 200, 80).TextFrame.Text = "ab\rcd";
+            slide.Shapes.AddAutoShape(ShapeType.Rectangle, 20, 120, 200, 40).TextFrame.Text = "ef";
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+
+        SlidesExtractResult extract = fixture.Engine.Extract(
+            input,
+            new PresentationExtractRequest { What = PresentationExtractKinds.Text, OutputDirectory = fixture.File("text") });
+        SlidesSearchResult search = fixture.Engine.Search(
+            input,
+            new PresentationSearchRequest { Query = new SearchQuery(TextSearch.Create("cd", regex: false, caseSensitive: true), 100, PresentationSearchScopes.Shapes) });
+
+        string text = File.ReadAllText(Assert.Single(extract.Items).Path);
+        Assert.DoesNotContain('\r', text);
+        Assert.Contains("ab\ncd\nef", text, StringComparison.Ordinal);
+        Assert.Equal("ab\ncd", Assert.Single(search.Hits).Text);
+    }
+
+    [Fact]
     public void ReplaceText_RefusesTextThatEvaluationModeCutShort()
     {
         using var fixture = new SlidesEngineFixture();
