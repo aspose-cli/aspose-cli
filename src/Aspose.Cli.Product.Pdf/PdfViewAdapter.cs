@@ -110,7 +110,8 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             findings.Add(PdfReviewChecks.TextOutsidePage.Finding(
                 $"{page.OutsideTextFragments} text fragment(s) extend beyond the page rectangle and may be clipped.",
                 $"page {page.Page}",
-                Hint));
+                Hint,
+                PdfViews.PagePart(page.Page)));
         }
     }
 
@@ -128,7 +129,8 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                     string.Create(CultureInfo.InvariantCulture,
                         $"Page size {page.WidthPoints:0.##} x {page.HeightPoints:0.##} pt is unusual and may preview poorly."),
                     $"page {page.Page}",
-                    Hint));
+                    Hint,
+                    PdfViews.PagePart(page.Page)));
             }
         }
         return unusualPages;
@@ -164,7 +166,8 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             findings.Add(PdfReviewChecks.PageWithoutReadableContent.Finding(
                 "The page has no readable text and was not identified as a scanned page; inspect it for unintended blank output.",
                 $"page {page.Page}",
-                Hint));
+                Hint,
+                PdfViews.PagePart(page.Page)));
         }
         return new TextAnalysis(emptyPages, lowUtilizationPages);
     }
@@ -190,14 +193,16 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             findings.Add(PdfReviewChecks.PageUtilizationLow.Finding(
                 "The page contains very little readable content; inspect for an unintended sparse page or pagination break.",
                 $"page {page.Page}",
-                Hint));
+                Hint,
+                PdfViews.PagePart(page.Page)));
         }
         if (page.Truncated)
         {
             findings.Add(PdfReviewChecks.TextAnalysisTruncated.Finding(
                 "Text analysis reached its extraction budget; visual evidence remains available but structural text checks are incomplete.",
                 $"page {page.Page}",
-                Hint));
+                Hint,
+                PdfViews.PagePart(page.Page)));
         }
         return lowUtilization;
     }

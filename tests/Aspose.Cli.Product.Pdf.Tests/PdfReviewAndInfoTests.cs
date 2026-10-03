@@ -48,6 +48,11 @@ public sealed class PdfReviewAndInfoTests
             static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_SIZE_UNUSUAL")!;
         Assert.Equal("page 2", finding["location"]!.GetValue<string>());
         Assert.Contains("60 x 40 pt", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        // The evidence is the image of that page alone.
+        Assert.EndsWith(
+            "page-0002.png",
+            Assert.Single(finding["evidence"]!.AsArray())!.GetValue<string>(),
+            StringComparison.Ordinal);
     }
 
     [Fact]

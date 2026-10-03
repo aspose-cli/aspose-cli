@@ -68,7 +68,7 @@ internal sealed class PdfProductionService
                 stream => RenderPage(loaded.Document, number, "png", dpi, stream));
             parts.Add(new ViewPart
             {
-                Id = string.Create(CultureInfo.InvariantCulture, $"page-{pageNumber}"),
+                Id = PdfViews.PagePart(pageNumber),
                 Label = string.Create(CultureInfo.InvariantCulture, $"Page {pageNumber}"),
                 File = file,
                 Kind = ViewPartKinds.Image,
