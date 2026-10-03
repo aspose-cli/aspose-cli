@@ -14,6 +14,8 @@ public sealed class WordsMergeGapTests
     [InlineData("null.json", """[{"Name":"Ava","Salary":"100"},{"Name":"Noah","Salary":null}]""")]
     [InlineData("missing.json", """[{"Name":"Ava","Salary":"100"},{"Name":"Noah"}]""")]
     [InlineData("short.csv", "Name,Salary\nAva,100\nNoah\n")]
+    [InlineData("blank.csv", "Name,Salary\nAva,100\nNoah,\n")]
+    [InlineData("quoted.csv", "Name,Salary\nAva,100\nNoah,\"\"\n")]
     public void MailMerge_WarnsAboutEachTemplateFieldARecordLeavesBlank(string dataName, string data)
     {
         using var fixture = new WordsFixture();

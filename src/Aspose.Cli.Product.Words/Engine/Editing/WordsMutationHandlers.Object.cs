@@ -486,7 +486,8 @@ internal sealed partial class WordsMutationHandlers
 
     /// <summary>
     /// Reads merge rows, by column or property name, from a JSON array of flat objects or a CSV
-    /// file with a header row; a header row alone is no rows.
+    /// file with a header row; a header row alone is no rows. CSV cannot tell an empty value
+    /// from a missing one, so an empty cell is null, as a cell past the end of a short row is.
     /// </summary>
     internal static IReadOnlyList<IReadOnlyDictionary<string, string?>> ReadMergeRows(
         string path,
@@ -506,7 +507,7 @@ internal sealed partial class WordsMutationHandlers
             }
 
             return lines.Skip(1).Select(row => (IReadOnlyDictionary<string, string?>)lines[0]
-                .Select((name, index) => (name, value: index < row.Length ? row[index] : null))
+                .Select((name, index) => (name, value: index < row.Length && row[index].Length > 0 ? row[index] : null))
                 .ToDictionary(static pair => pair.name, static pair => pair.value, StringComparer.Ordinal)).ToArray();
         }
 
