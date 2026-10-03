@@ -273,6 +273,26 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void GetInfo_ListsOnlyTheNamesTheWorkbookDefines()
+    {
+        // The engine keeps a placeholder name for each newer function a formula calls, such as
+        // _xlfn.XLOOKUP; the saved file does not define it.
+        string path = _fixture.Temp.File("future-functions.xlsx");
+        using (var workbook = new Aspose.Cells.Workbook())
+        {
+            workbook.Worksheets[0].Cells["A1"].Formula = "=XLOOKUP(1,B1:B2,C1:C2)";
+            workbook.Worksheets.Names.Add("Threshold");
+            workbook.Worksheets.Names["Threshold"].RefersTo = "=Sheet1!$B$1";
+            workbook.Save(path);
+        }
+
+        WorkbookInfoResult result = _fixture.Engine.GetInfo(path, new InfoRequest { Details = [InfoDetails.Names] });
+
+        Assert.Equal(1, result.Workbook.DefinedNameCount);
+        Assert.Equal("Threshold", Assert.Single(result.Workbook.DefinedNames!).Name);
+    }
+
+    [Fact]
     public void GetInfo_WithDetails_ReturnsNamesFormulaErrorsAndFonts()
     {
         string path = _fixture.CreateWorkbookWithDetails("details.xlsx");
