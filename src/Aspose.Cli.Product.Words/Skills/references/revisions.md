@@ -52,4 +52,8 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 aspose-cli words compare original.docx changed.docx --out redline.docx --output json
 ```
 
+The result counts the revisions by type and lists up to 50 `samples`, one per
+revision run or paragraph mark, with the `type` names `--detail revisions`
+uses; a paragraph mark's sample has no `text`.
+
 Editing a signed document invalidates its signature and emits `SIGNATURE_INVALIDATED`; the resulting file must be reviewed and re-signed.

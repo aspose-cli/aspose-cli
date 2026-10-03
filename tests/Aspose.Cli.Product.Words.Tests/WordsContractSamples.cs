@@ -162,7 +162,7 @@ internal static class WordsContractSamples
         Right = new SourceInfo { Path = "D:/data/b.docx", Format = "docx", SizeBytes = 10100 },
         Identical = false,
         Revisions = new RevisionCounts { InsertionCount = 1, DeletionCount = 0, FormatChangeCount = 0, MoveCount = 0 },
-        Samples = [new RevisionSample { Type = "Insertion", Text = "new clause" }],
+        Samples = [new RevisionSample { Type = "insertion", Text = "new clause" }],
         License = Licensed,
     };
 

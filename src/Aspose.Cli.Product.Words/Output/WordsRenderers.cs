@@ -73,7 +73,7 @@ internal static class WordsRenderers
             var table = new TextTable("type", "sample");
             foreach (RevisionSample sample in result.Samples)
             {
-                table.AddRow(sample.Type, sample.Text);
+                table.AddRow(sample.Type, sample.Text ?? string.Empty);
             }
 
             table.WriteTo(surface.Out, surface.Format);
