@@ -331,7 +331,7 @@ internal sealed class WordsMutationService
             // Editing restrictions guide Word's UI; they are not encryption and do not bind the SDK.
             extra.Add(new Warning
             {
-                Code = WordsDiagnostics.ProtectionNotEnforced,
+                Code = WarningCodes.ProtectionNotEnforced,
                 Message = $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.",
                 Hint = WordsFormats.WordIds.Contains(format, StringComparer.Ordinal)
                     ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect."

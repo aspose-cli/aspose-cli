@@ -19011,11 +19011,11 @@
     },
     {
       "code": "PROTECTION_NOT_ENFORCED",
-      "owner": "words",
+      "owner": "common",
       "severity": "warning",
       "category": "warning",
-      "messageTemplateId": "words.protection-not-enforced.message.v1",
-      "hintTemplateId": "words.protection-not-enforced.hint.v1",
+      "messageTemplateId": "common.protection-not-enforced.message.v1",
+      "hintTemplateId": "common.protection-not-enforced.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

@@ -48,6 +48,9 @@ public static partial class WarningCodes
     /// <summary>An in-place edit kept an existing backup that holds an earlier version than the file it replaced.</summary>
     public const string BackupPredatesEdit = "BACKUP_PREDATES_EDIT";
 
+    /// <summary>An edit went through restrictions the input declares but the engine does not enforce.</summary>
+    public const string ProtectionNotEnforced = "PROTECTION_NOT_ENFORCED";
+
     /// <summary>Every common warning code in this SDK build.</summary>
     public static IReadOnlyList<string> All { get; } =
     [
@@ -58,5 +61,6 @@ public static partial class WarningCodes
         EvalInputTruncated,
         ListTruncated,
         BackupPredatesEdit,
+        ProtectionNotEnforced,
     ];
 }

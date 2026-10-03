@@ -56,7 +56,7 @@ public sealed class WordsDisclosureTests
             Ops = [new ReplaceTextOp { Find = "Locked", Replace = "Changed" }],
         }, new WordsEditRequest { OutputPath = output });
 
-        Assert.Contains(result.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.ProtectionNotEnforced);
+        Assert.Contains(result.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced);
         Assert.Equal(ProtectionType.ReadOnly, new Document(output).ProtectionType);
     }
 
@@ -75,11 +75,11 @@ public sealed class WordsDisclosureTests
         WordsEditResult word = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
 
         Assert.Contains(text.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
-        Warning restriction = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.ProtectionNotEnforced);
+        Warning restriction = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced);
         Assert.Contains("txt", restriction.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain("output keeps", restriction.Hint, StringComparison.Ordinal);
         Assert.DoesNotContain(word.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
-        Assert.Contains("output keeps the restrictions", Assert.Single(word.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.ProtectionNotEnforced).Hint, StringComparison.Ordinal);
+        Assert.Contains("output keeps the restrictions", Assert.Single(word.Warnings ?? [], static warning => warning.Code == WarningCodes.ProtectionNotEnforced).Hint, StringComparison.Ordinal);
     }
 
     [Theory]
