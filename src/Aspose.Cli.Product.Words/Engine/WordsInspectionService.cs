@@ -47,7 +47,7 @@ internal sealed class WordsInspectionService
         }
 
         Document compared = leftLoaded.Document.Clone();
-        compared.Compare(rightLoaded.Document, "Aspose CLI", DateTime.Now, new CompareOptions
+        compared.Compare(rightLoaded.Document, request.Author ?? "Aspose CLI", DateTime.Now, new CompareOptions
         {
             IgnoreFormatting = request.IgnoreFormatting,
             Granularity = Granularity.WordLevel,

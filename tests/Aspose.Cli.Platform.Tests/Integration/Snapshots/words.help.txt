@@ -49,6 +49,7 @@ Arguments:
 
 Options:
   --ignore-formatting                         Ignore formatting-only changes.
+  --author <author>                           Author of the redline's revisions; default: Aspose CLI.
   -o, --out <out>                             Optional redline output; its extension selects the format, such as .docx or .pdf.
   --overwrite                                 Replace the output file if it already exists.
   --left-password <left-password>             Password for the original document. Discouraged: visible in the process list; prefer --left-password-env.
@@ -67,7 +68,7 @@ Options:
 
 Examples:
   aspose-cli words compare original.docx changed.docx --output json
-  aspose-cli words compare original.docx changed.docx --out redline.docx
+  aspose-cli words compare original.docx changed.docx --out redline.docx --author "Legal Review"
 
 
 ## aspose-cli words convert --help

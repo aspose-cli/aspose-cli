@@ -124,6 +124,24 @@ public sealed class WordsTrackChangesTests
         Assert.Equal(["deletion:twelve", "insertion:ten"], result.Samples.Select(static s => $"{s.Type}:{s.Text}"));
     }
 
+    [Theory]
+    [InlineData(null, "Aspose CLI")]
+    [InlineData("Ann Legal", "Ann Legal")]
+    public void Compare_AttributesTheRedlineToTheAuthor(string? author, string expected)
+    {
+        using var fixture = new WordsFixture();
+        string left = fixture.CreateReport("left.docx");
+        string right = fixture.Temp.File("right.docx");
+        var changed = new Document(left);
+        changed.Range.Replace("twelve", "ten");
+        changed.Save(right);
+        string output = fixture.Temp.File("redline.docx");
+
+        fixture.Engine.Compare(left, right, new WordsCompareRequest { OutputPath = output, Author = author });
+
+        Assert.Equal([expected], new Document(output).Revisions.Select(static r => r.Author).Distinct());
+    }
+
     [Fact]
     public void Compare_SamplesAParagraphMarkWithoutItsParagraphText()
     {
