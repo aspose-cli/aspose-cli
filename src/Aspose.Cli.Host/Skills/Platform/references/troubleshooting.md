@@ -142,7 +142,21 @@ aspose-cli capabilities --output json
 
 ## Windows PowerShell
 
-- Windows PowerShell 5.1 strips inner double quotes from inline JSON passed to
-  a native command; write `--ops` JSON to a file or pipe it through `--ops -`.
-- Its `>` redirection re-encodes stdout as UTF-16; parse stdout directly or
-  use PowerShell 7.
+How PowerShell hands an `--ops` document to `aspose-cli` depends on its version
+and on `$PSNativeCommandArgumentPassing`:
+
+| shell | inline `'{"ops":...}'` | inline with `\"` | piped to `--ops -` | ops file |
+|-------|------------------------|------------------|--------------------|----------|
+| Windows PowerShell 5.1 | quotes stripped, `OPS_INVALID` | `USAGE_ERROR` or `OPS_INVALID` | non-ASCII text becomes `?`, no error | works |
+| PowerShell 7.3+, `Windows` (default) or `Standard` | works | `OPS_INVALID` | works | works |
+| PowerShell 7, `Legacy` | quotes stripped, `OPS_INVALID` | works | works | works |
+
+- Write the ops document to a file and pass its path: that works in every
+  shell, in UTF-8 with or without a byte order mark and in the UTF-16 that
+  `Out-File` and `>` write in Windows PowerShell 5.1. Never escape quotes as
+  `\"`; whether that helps depends on the shell.
+- Windows PowerShell 5.1 pipes text to a native command as ASCII
+  (`$OutputEncoding`), so `--ops -` silently turns Chinese and other non-ASCII
+  text into `?`.
+- Windows PowerShell 5.1's `>` redirection re-encodes stdout as UTF-16; parse
+  stdout directly or use PowerShell 7.

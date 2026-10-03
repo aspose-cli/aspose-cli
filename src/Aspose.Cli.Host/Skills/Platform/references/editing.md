@@ -46,9 +46,10 @@ A PDF batch, for example:
 - Optional top-level fields: `schema` (checked when present),
   `schemaVersion` (`2`) and `ifMatch` (the input's SHA-256 fingerprint).
 - `--ops` takes a file path, `-` for stdin, or the JSON itself when the value
-  starts with `{` or `[`. Windows PowerShell strips inner double quotes from
-  inline JSON passed to a native command; write the document to a file or pipe
-  it through `--ops -`.
+  starts with `{` or `[`. Write the document to a file and pass its path: in
+  PowerShell, inline JSON and piped text reach the CLI intact or not depending
+  on the version and `$PSNativeCommandArgumentPassing` (`aspose-cli docs
+  troubleshooting`, Windows PowerShell).
 
 ## Atomic, best-effort and dry run
 
