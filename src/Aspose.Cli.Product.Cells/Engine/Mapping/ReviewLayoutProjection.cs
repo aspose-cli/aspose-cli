@@ -122,6 +122,9 @@ internal static class ReviewLayoutProjection
                 continue;
             }
 
+            // GetWidthOfValue measures East Asian text in a font without its glyphs unlike
+            // AutoFit and rendering (known issue CELLS-WIDTH-EAST-ASIAN, KNOWN-ISSUES.md); the
+            // finding says so when its samples hold such text.
             if (DisplayUnits(cell.StringValue) <= cells.GetColumnWidth(cell.Column)
                 || cell.GetWidthOfValue() <= cells.GetColumnWidthPixel(cell.Column))
             {

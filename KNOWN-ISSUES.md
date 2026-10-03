@@ -50,6 +50,21 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   in Excel with the linked workbook available so the link caches its values.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-WIDTH-EAST-ASIAN
+
+- **Defect:** `Cell.GetWidthOfValue` (and `CellsHelper.GetTextWidth`) measures East Asian
+  characters with the metrics of the cell's font when that font has no glyphs for them, such
+  as Calibri or Arial, while `AutoFitColumn` and rendering draw them with a fallback font. The
+  measured width is then up to half the drawn width, or, for mixed text such as
+  `配件 Accessories`, can exceed the auto-fitted column by a pixel.
+- **CLI behavior:** review's `CELLS_VALUES_CLIPPED` measures with `GetWidthOfValue`, so it can
+  miss East Asian text that is cut off or list mixed text that fits; when its samples hold East
+  Asian text, its message says the measurement is unreliable for them and asks to check the
+  sheet image.
+- **Workaround:** give such text a font with East Asian glyphs (for example Microsoft YaHei),
+  which all three measure alike, or set the column width explicitly.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ## Aspose.PDF.Drawing 26.8.0
 
 ### PDF-HTML-EGRESS

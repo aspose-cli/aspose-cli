@@ -115,6 +115,35 @@ public sealed class CellsKnownIssueTests
             $"the source evaluates to {linked.Value}, the sheet copy to {sheetCopy.Value} and the range copy to {rangeCopy.Value}");
     }
 
+    [LicensedFact]
+    public void ValueWidth_MeasuresEastAsianTextInALatinFontNarrowerThanAutoFitAndRendering()
+    {
+        using var workbook = new Workbook();
+        Worksheet sheet = workbook.Worksheets[0];
+        Cell latin = Put(sheet, 0, "Accessories");
+        Cell eastAsian = Put(sheet, 1, "配件配件配件配件");
+        sheet.AutoFitColumns();
+        // AutoFit adds the same padding to every value it measures in one font.
+        int padding = sheet.Cells.GetColumnWidthPixel(0) - latin.GetWidthOfValue();
+        int shortfall = sheet.Cells.GetColumnWidthPixel(1) - padding - eastAsian.GetWidthOfValue();
+
+        KnownIssue.Reproduces(
+            "CELLS-WIDTH-EAST-ASIAN",
+            shortfall > 10,
+            $"GetWidthOfValue measures the East Asian text {eastAsian.GetWidthOfValue()}px wide, {shortfall}px short of the width AutoFit gives it");
+
+        static Cell Put(Worksheet sheet, int column, string text)
+        {
+            Cell cell = sheet.Cells[0, column];
+            cell.PutValue(text);
+            Style style = cell.GetStyle();
+            style.Font.Name = "Calibri";
+            style.Font.Size = 10;
+            cell.SetStyle(style);
+            return cell;
+        }
+    }
+
     /// <summary>The documented refusal: skip every resource and supply no stream.</summary>
     private sealed class RefuseEveryResource : IStreamProvider
     {

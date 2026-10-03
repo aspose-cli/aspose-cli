@@ -163,7 +163,7 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
                 $"{sheet.ClippedCells.Count} cell value(s) are wider than their columns; sample: {string.Join(", ", sheet.ClippedCells.Samples)}. "
                     + "Widen the columns (resize_columns without a width auto-fits) or wrap the text."
                     + (sheet.ClippedCells.SamplesHaveEastAsianText
-                        ? " If a value with East Asian text is still listed after auto-fit, give its column an explicit width."
+                        ? " East Asian text in a font without East Asian glyphs is measured unreliably, so check those values in the sheet image; if one is cut off after auto-fit, give its column an explicit width."
                         : string.Empty),
                 sheet.Name,
                 Hint));
