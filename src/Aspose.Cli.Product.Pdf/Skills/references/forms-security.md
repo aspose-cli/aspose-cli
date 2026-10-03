@@ -19,12 +19,15 @@ A check box accepts only its `states`: set its `onValue` to check it and `Off`
 to clear it. A box whose widgets export several values has no `onValue`; set
 the state of the widget to check. A radio group is listed as one `radio-option`
 field per button under the group's name: `options` holds the group's values and
-`onValue` the value that selects that button. Any other value is refused.
+`onValue` the value that selects that button. Any other value, `Off` included,
+is refused. A `value` of `null` clears any field: a radio group selects no
+button, a check box is unchecked and any other field is emptied.
 
 ```json
 { "ops": [
   { "op": "set_form_field", "name": "agree", "value": "Checked" },
-  { "op": "set_form_field", "name": "color", "value": "Blue" }
+  { "op": "set_form_field", "name": "color", "value": "Blue" },
+  { "op": "set_form_field", "name": "notes", "value": null }
 ] }
 ```
 

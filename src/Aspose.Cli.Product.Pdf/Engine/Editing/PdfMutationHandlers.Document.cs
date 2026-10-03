@@ -156,13 +156,13 @@ internal sealed partial class PdfMutationHandlers
     {
         EnsureAcroForm(_document);
         Field field = FormField(_document, operation.Name);
-        if (RejectedFieldValue(field, operation.Value) is { } rejected)
+        if (operation.Value is not null && RejectedFieldValue(field, operation.Value) is { } rejected)
         {
             throw new OperationInvalidException(rejected);
         }
 
         // The name of a radio group resolves to its first button; the group holds the selection.
-        (PdfFormService.RadioGroup(field) ?? field).Value = operation.Value;
+        (PdfFormService.RadioGroup(field) ?? field).Value = operation.Value ?? ClearedFieldValue(field);
         return 1;
     }
 

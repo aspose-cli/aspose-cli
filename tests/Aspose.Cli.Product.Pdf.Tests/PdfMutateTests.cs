@@ -1088,20 +1088,63 @@ public sealed class PdfMutateTests
         Assert.Equal(2, group.Selected);
     }
 
-    [Fact]
-    public void SetFormField_RefusesAValueThatSelectsNoRadioButton()
+    [Theory]
+    [InlineData("Green")]
+    [InlineData("Off")]
+    public void SetFormField_RefusesAValueThatSelectsNoRadioButton(string value)
     {
         using var fixture = new PdfEngineFixture();
         string input = ChoiceDocument(fixture);
 
         CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
             input,
-            new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "color", Value = "Green" }] },
+            new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "color", Value = value }] },
             new PdfEditRequest { OutputPath = fixture.File("choices.invalid.pdf") }));
 
         Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
         Assert.Contains("Red, Blue", error.Message, StringComparison.Ordinal);
         Assert.False(File.Exists(fixture.File("choices.invalid.pdf")));
+    }
+
+    [Fact]
+    public void SetFormField_ClearsEveryFieldKindWithANullValue()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("filled.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            var color = new RadioButtonField(page) { PartialName = "color" };
+            color.Add(new RadioButtonOptionField(page, new Rectangle(72, 620, 92, 640)) { OptionName = "Red" });
+            color.Add(new RadioButtonOptionField(page, new Rectangle(112, 620, 132, 640)) { OptionName = "Blue" });
+            document.Form.Add(color);
+            document.Form.Add(new CheckboxField(page, new Rectangle(72, 560, 92, 580)) { PartialName = "agree" });
+            document.Form.Add(new TextBoxField(page, new Rectangle(72, 500, 200, 520)) { PartialName = "name" });
+            var size = new ComboBoxField(page, new Rectangle(72, 440, 200, 460)) { PartialName = "size" };
+            size.AddOption("Small");
+            size.AddOption("Large");
+            document.Form.Add(size);
+            color.Value = "Blue";
+            ((CheckboxField)document.Form["agree"]).Checked = true;
+            ((Field)document.Form["name"]).Value = "Bob";
+            size.Value = "Large";
+            document.Save(input);
+        }
+
+        string output = fixture.File("cleared.pdf");
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [.. new[] { "color", "agree", "name", "size" }.Select(static name => new SetFormFieldOp { Name = name, Value = null })],
+        }, new PdfEditRequest { OutputPath = output, Verify = true });
+
+        Assert.True(result.Verification!.Ok);
+        using var reopened = new Document(output);
+        var group = (RadioButtonField)reopened.Form["color"];
+        Assert.Equal("Off", group.Value);
+        Assert.Equal(-1, group.Selected);
+        Assert.False(((CheckboxField)reopened.Form["agree"]).Checked);
+        Assert.Equal(string.Empty, ((Field)reopened.Form["name"]).Value);
+        Assert.Equal(string.Empty, ((Field)reopened.Form["size"]).Value);
     }
 
     /// <summary>

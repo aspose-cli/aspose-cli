@@ -949,7 +949,11 @@
           "minLength": 1
         },
         "value": {
-          "type": "string"
+          "description": "The value to set; null clears the field: a radio group selects no button, a check box is unchecked and any other field is emptied.",
+          "type": [
+            "string",
+            "null"
+          ]
         }
       }
     },

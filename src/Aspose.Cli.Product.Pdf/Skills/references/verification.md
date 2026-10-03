@@ -16,7 +16,7 @@ checked, even when part of its effect was.
 
 | Operation | Read back | Issue code |
 | --- | --- | --- |
-| `set_form_field` | the field holds the value set | `PDF_FIELD_VALUE_MISMATCH` |
+| `set_form_field` | the field holds the value set, or is clear after `null` | `PDF_FIELD_VALUE_MISMATCH` |
 | `redact_text` | the pattern no longer matches the text of its pages | `PDF_REDACTED_TEXT_FOUND` |
 | `add_bookmark` | its index holds its title and page | `PDF_BOOKMARK_MISMATCH` |
 | `add_bookmark`, `delete_bookmarks` | the bookmark count | `PDF_BOOKMARK_MISMATCH` |

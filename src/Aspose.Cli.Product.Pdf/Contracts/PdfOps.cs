@@ -479,7 +479,11 @@ public sealed record SetFormFieldOp : PdfOp
 {
     [MinLength(1)] public required string Name { get; init; }
 
-    public required string Value { get; init; }
+    /// <summary>
+    /// The value to set; null clears the field: a radio group selects no button, a check box
+    /// is unchecked and any other field is emptied.
+    /// </summary>
+    public required string? Value { get; init; }
 }
 
 /// <summary>Flattens form fields into page content: the named fields, or every field.</summary>

@@ -74,7 +74,9 @@ internal sealed class PdfEditVerifier
         switch (operation)
         {
             case SetFormFieldOp field:
-                Replace(_fields, field.Name, new Expected<string>(id, field.Value));
+                Replace(_fields, field.Name, new Expected<string>(
+                    id,
+                    field.Value ?? PdfMutationSupport.ClearedFieldValue(PdfMutationSupport.FormField(document, field.Name))));
                 break;
             case FlattenFormsOp flatten:
                 foreach (string name in flatten.Fields ?? [.. _fields.Keys])

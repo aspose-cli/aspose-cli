@@ -165,6 +165,13 @@ internal static class PdfMutationSupport
     }
 
     /// <summary>
+    /// The value that clears a form field: <c>Off</c> selects no button of a radio group and
+    /// unchecks a check box; any other field is emptied.
+    /// </summary>
+    internal static string ClearedFieldValue(Field field) =>
+        field is CheckboxField || PdfFormService.RadioGroup(field) is not null ? "Off" : string.Empty;
+
+    /// <summary>
     /// Explains why a form field cannot display a value, or null when it can.
     /// A check box renders only the states its appearance dictionary defines, so any
     /// other value is stored and read back while the box itself stays empty. A radio group
