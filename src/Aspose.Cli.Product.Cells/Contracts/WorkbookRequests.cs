@@ -72,6 +72,9 @@ public sealed record ConvertRequest
 
     /// <summary>How a delimited text input is decoded and its numbers and dates parsed.</summary>
     public TextImportOptions? TextImport { get; init; }
+
+    /// <summary>Whether a CSV or TSV output starts with a UTF-8 byte order mark.</summary>
+    public bool ByteOrderMark { get; init; }
 }
 
 /// <summary>

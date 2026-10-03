@@ -788,6 +788,25 @@
           "hidden": false,
           "options": [
             {
+              "name": "--bom",
+              "aliases": [],
+              "type": "boolean",
+              "minimumArity": 0,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": true,
+              "default": "false",
+              "allowedValues": [
+                "False",
+                "True"
+              ],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one."
+            },
+            {
               "name": "--culture",
               "aliases": [],
               "type": "string",
@@ -10496,6 +10515,25 @@
       "description": "Convert a workbook to another format.",
       "hidden": false,
       "options": [
+        {
+          "name": "--bom",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one."
+        },
         {
           "name": "--culture",
           "aliases": [],

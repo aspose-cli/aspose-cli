@@ -218,6 +218,23 @@ public sealed class CellsCliTests : IDisposable
         Assert.Null(sort["suggestion"]);
     }
 
+    [Fact]
+    public void Convert_StartsATextOutputWithAByteOrderMarkOnRequest()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "edit", "book.xlsx", "--in-place", "--set", "Data!A1=交易").ExitCode);
+
+        Assert.Equal(0, _workspace.Run("cells", "convert", "book.xlsx", "--to", "csv", "--sheet", "Data", "--out", "plain.csv").ExitCode);
+        Assert.Equal(0, _workspace.Run("cells", "convert", "book.xlsx", "--to", "tsv", "--sheet", "Data", "--bom", "--out", "excel.tsv").ExitCode);
+        CliResult refused = _workspace.Run("cells", "convert", "book.xlsx", "--to", "xlsx", "--bom", "--out", "copy.xlsx", "--output", "json");
+
+        Assert.Equal([0xE4, 0xBA, 0xA4], File.ReadAllBytes(_workspace.File("plain.csv"))[..3]);
+        Assert.Equal([0xEF, 0xBB, 0xBF, 0xE4, 0xBA, 0xA4], File.ReadAllBytes(_workspace.File("excel.tsv"))[..6]);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("--bom", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     /// <summary>
     /// Every CLI child runs in evaluation mode, the only place Cells evaluation is tested:
     /// the in-process engine suite needs a license.

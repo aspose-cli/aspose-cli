@@ -117,7 +117,9 @@ aspose-cli cells convert book.xlsx --to csv --sheet Sales
 aspose-cli cells render book.xlsx --all-sheets --out book.png
 ```
 
-`cells convert` takes `--sheet` for csv, tsv, md and pdf. A PDF that splits a
+`cells convert` takes `--sheet` for csv, tsv, md and pdf. CSV and TSV output is
+UTF-8 without a byte order mark; add `--bom` when a person will open the file in
+Excel, which otherwise misreads non-English text. A PDF that splits a
 chart across pages warns `CHART_SPLIT_ACROSS_PAGES` (review reports
 `CELLS_CHART_SPLIT_ACROSS_PAGES`); fit the sheet with `set_page_setup`
 (`fitToWidth` 1, `fitToHeight` 0, or landscape) first. `cells render`

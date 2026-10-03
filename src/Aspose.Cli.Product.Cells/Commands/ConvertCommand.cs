@@ -25,6 +25,11 @@ internal static class ConvertCommand
             Description = "Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. "
                 + "Default: invariant formats (a decimal comma is refused).",
         }.WithInput(InputKind.None);
+        var bom = new Option<bool>("--bom")
+        {
+            Description = "Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text "
+                + "correctly. Default: UTF-8 without one.",
+        };
         return StandardCommand.Create(
             host,
             "convert",
@@ -40,7 +45,7 @@ internal static class ConvertCommand
                     $"Target format: {string.Join(", ", CellsFormats.Definitions.IdsFor(FormatUse.Convert))}.",
                     CellsFormats.Definitions),
             },
-            [sheet, encoding, culture],
+            [sheet, encoding, culture, bom],
             (parse, standard) =>
             {
                 string format = standard.TargetFormat();
@@ -53,6 +58,12 @@ internal static class ConvertCommand
                         "--sheet",
                         $"the '{format}' format always converts the whole workbook",
                         $"Drop --sheet, or use one of: {string.Join(", ", CellsFormats.SheetScopedConvertIds)}.");
+                }
+
+                bool byteOrderMark = parse.GetValue(bom);
+                if (byteOrderMark && format is not ("csv" or "tsv"))
+                {
+                    throw CliErrors.OptionInvalid("--bom", $"a '{format}' output is not CSV or TSV text", "Drop --bom.");
                 }
 
                 string? encryptPassword = standard.EncryptPassword(format);
@@ -68,12 +79,14 @@ internal static class ConvertCommand
                     TextImport = encodingName is null && cultureName is null
                         ? null
                         : new TextImportOptions { Encoding = encodingName, Culture = cultureName },
+                    ByteOrderMark = byteOrderMark,
                 });
             }).WithExamples(
             [
                 "cells convert sales.csv --to xlsx",
                 "cells convert erp-export.csv --to xlsx --encoding gb18030",
                 "cells convert partner-orders.csv --to xlsx --culture de-DE",
+                "cells convert book.xlsx --to csv --bom --out for-excel.csv",
                 "cells convert book.xlsx --to pdf --out report.pdf",
                 "cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf",
             ]);

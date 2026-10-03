@@ -109,7 +109,7 @@ internal sealed class CellsProductionService
         Warning? chartsSplit = request.TargetFormatId is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheet) : null;
         int refsBefore = _saver.CountRefFormulas(workbook);
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, request.OutputPath, licenseState,
-            request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet);
+            request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet, request.ByteOrderMark);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
         Warning? evaluationSheetAdded = null;
         long sizeBytes = _saver.Write(request.OutputPath, request.Overwrite,

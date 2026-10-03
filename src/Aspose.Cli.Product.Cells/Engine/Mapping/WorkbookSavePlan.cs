@@ -1,3 +1,4 @@
+using System.Text;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cells;
@@ -15,7 +16,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// option the caller passed (<see cref="Sdk.Extensibility.Commanding.StandardInvocation.EncryptPassword"/>).
     /// </remarks>
     internal static WorkbookSavePlan Create(string formatId, string outputPath, LicenseState licenseState,
-        string? encryptPassword = null, string? inputPassword = null, int? selectedSheet = null)
+        string? encryptPassword = null, string? inputPassword = null, int? selectedSheet = null, bool byteOrderMark = false)
     {
         bool encryptable = CellsFormats.EncryptableIds.Contains(formatId, StringComparer.Ordinal);
         if (encryptPassword is not null && !encryptable)
@@ -28,7 +29,10 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         {
             "html" => new HtmlSaveOptions { SaveAsSingleFile = true, ExportImagesAsBase64 = true },
             "csv" or "tsv" => new TxtSaveOptions(format)
-            { FormatStrategy = CellValueFormatStrategy.None, TrimLeadingBlankRowAndColumn = false },
+            {
+                FormatStrategy = CellValueFormatStrategy.None, TrimLeadingBlankRowAndColumn = false,
+                Encoding = new UTF8Encoding(encoderShouldEmitUTF8Identifier: byteOrderMark),
+            },
             "md" => new MarkdownSaveOptions { FormatStrategy = CellValueFormatStrategy.None },
             "pdf" when selectedSheet is { } sheet => new PdfSaveOptions { SheetSet = new SheetSet([sheet]) },
             _ => null,

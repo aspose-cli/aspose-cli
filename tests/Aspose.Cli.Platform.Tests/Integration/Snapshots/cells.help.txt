@@ -83,6 +83,7 @@ Options:
   --sheet <sheet>                             Convert only this sheet (supported for csv, tsv, md, pdf).
   --encoding <encoding>                       Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused).
   --culture <culture>                         Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused).
+  --bom                                       Start a CSV or TSV output with a UTF-8 byte order mark, so Excel reads its non-English text correctly. Default: UTF-8 without one.
   -o, --out <out>                             Output path. Default: the input path with the target extension (with '.out' inserted when that would overwrite the input).
   --overwrite                                 Replace the output file if it already exists.
   --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
@@ -105,6 +106,7 @@ Examples:
   aspose-cli cells convert sales.csv --to xlsx
   aspose-cli cells convert erp-export.csv --to xlsx --encoding gb18030
   aspose-cli cells convert partner-orders.csv --to xlsx --culture de-DE
+  aspose-cli cells convert book.xlsx --to csv --bom --out for-excel.csv
   aspose-cli cells convert book.xlsx --to pdf --out report.pdf
   aspose-cli cells convert book.xlsx --to pdf --font-dir fonts --out report.pdf
 
