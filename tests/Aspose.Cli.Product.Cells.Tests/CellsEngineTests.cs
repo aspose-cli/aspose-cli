@@ -162,6 +162,21 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void VerificationCountsEveryCellAnAnchoredMatrixWroteAsRequested()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-anchored-matrix.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_values","sheet":"Data","range":"A5","values":[["West",900],["North",700]]}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-anchored-matrix.out.xlsx"), Verify = true });
+
+        EditVerification verification = result.Verification!;
+        Assert.Equal(["A5", "B5", "A6", "B6"], verification.DirectChanges.Select(static change => change.Cell));
+        Assert.Empty(verification.OtherChanges);
+        Assert.Equal("A5:B6", Assert.Single(verification.RequestedTargets).Range);
+        Assert.Equal(["Data!A5:B6"], Assert.Single(result.Applied).Targets);
+    }
+
+    [Fact]
     public void CleanVerificationReportsAnEmptyIssueList()
     {
         string source = _fixture.CreateSalesWorkbook("verify-clean.xlsx");

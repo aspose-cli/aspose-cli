@@ -95,7 +95,7 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
             ] }
             """,
             "conditional.out.xlsx");
-        Assert.Equal(["Data!A1"], result.Applied[0].Targets);
+        Assert.Equal(["Data!A1:A3"], result.Applied[0].Targets);
         Assert.Equal(["Data!A1:A3"], result.Applied[1].Targets);
 
         using (var reopened = new Workbook(result.Output!.Path))

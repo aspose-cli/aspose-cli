@@ -94,7 +94,8 @@ internal static class OpsFootprint
         // Range ops spotlight the range they edited. SetAutoFilter and
         // SetPrintArea carry an optional range (null clears/removes) and
         // degrade to the sheet as a whole when it is absent.
-        SetValuesOp o => new CellsEditTarget(o.Sheet, o.Range),
+        // An anchor cell spans the matrix written from it.
+        SetValuesOp o => new CellsEditTarget(o.Sheet, MatrixRange(o.Range, o.Values)),
         SetFormulaOp o => new CellsEditTarget(o.Sheet, o.Range),
         ClearRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
         FormatRangeOp o => new CellsEditTarget(o.Sheet, o.Range),
@@ -222,6 +223,31 @@ internal static class OpsFootprint
             // Best effort: an unparsable destination (conceivable under
             // --best-effort) still hints at the op's sheet.
             return new CellsEditTarget(sheet, null);
+        }
+    }
+
+    /// <summary>
+    /// The range <paramref name="values"/> fill from the top-left cell of <paramref name="range"/>,
+    /// clipped to the grid; the range as given when it is unparsable or the matrix is empty, which
+    /// only a failed operation under --best-effort can carry.
+    /// </summary>
+    private static string MatrixRange(string range, IReadOnlyList<IReadOnlyList<object?>> values)
+    {
+        if (values is not [{ Count: > 0 } first, ..])
+        {
+            return range;
+        }
+
+        try
+        {
+            CellRef anchor = A1.ParseRange(range).Range.Start;
+            return A1.FormatRange(new RangeRef(anchor, new CellRef(
+                Math.Min(anchor.Row + values.Count, A1.MaxRows) - 1,
+                Math.Min(anchor.Column + first.Count, A1.MaxColumns) - 1)));
+        }
+        catch (CliException)
+        {
+            return range;
         }
     }
 
