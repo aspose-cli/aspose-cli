@@ -104,9 +104,20 @@ public sealed class CellsProtectionTests(CellsProtectionTests.ProtectedBook book
         Assert.Contains("workbook structure", structure["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
-    private static JsonNode Refused(CliResult result)
+    [Fact]
+    public void Protect_RefusesAStructureProtectedWithAPasswordAsAnInvalidOperation()
     {
-        Assert.Equal(3, result.ExitCode);
+        JsonNode error = Refused(book.Run("reprotect-password.xlsx",
+            $$"""{"op":"protect_workbook","passwordEnv":"{{PasswordVariable}}"},{"op":"protect_workbook"}"""), exitCode: 4);
+
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal(1, error["details"]!["index"]!.GetValue<int>());
+        Assert.Contains("unprotect_workbook", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    private static JsonNode Refused(CliResult result, int exitCode = 3)
+    {
+        Assert.Equal(exitCode, result.ExitCode);
         return JsonNode.Parse(result.StdErr)!["error"]!;
     }
 

@@ -1,6 +1,7 @@
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
+using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Cells.Engine.Editing;
@@ -51,6 +52,10 @@ internal static class ProtectOps
 
     public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
     {
+        OperationInvalidException.Require(
+            !(Sheets.StructureProtected(workbook) && workbook.IsWorkbookProtectedWithPassword),
+            "the workbook structure is already protected with a password",
+            "Run unprotect_workbook with that password's passwordEnv first, then protect_workbook.");
         workbook.Protect(ProtectionType.Structure, OperationSecrets.Resolve(secrets, op.PasswordEnv));
         return null;
     }

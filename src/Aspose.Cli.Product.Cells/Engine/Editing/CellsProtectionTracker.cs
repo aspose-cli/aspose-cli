@@ -14,7 +14,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// as it stands when each operation runs: unprotecting checks the password, so a batch that
 /// unprotects a sheet before changing it went through no protection. Protecting again what is
 /// already protected changes that protection too: protect_workbook replaces a structure
-/// protection without a password (the engine refuses one with a password), and protect_sheet
+/// protection without a password (one with a password is refused), and protect_sheet
 /// replaces a sheet's protection settings but keeps its existing password. Writing the contents
 /// of unlocked cells only is what Excel allows on a protected sheet, so it goes through nothing.
 /// </summary>

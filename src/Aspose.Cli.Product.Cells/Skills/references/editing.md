@@ -283,8 +283,8 @@ show in renders and reads; give the location column a header.
   one with `PASSWORD_INVALID`, a missing one with `PASSWORD_REQUIRED`.
   Protecting again what is protected warns too: `protect_sheet` replaces the
   allowed actions but keeps a sheet's existing password, and `protect_workbook`
-  fails on a structure protected with a password; unprotect first to change a
-  password.
+  refuses a structure protected with a password (`OPS_INVALID`); unprotect
+  first to change a password.
 
 ## Sheets and view
 
