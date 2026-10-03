@@ -17,6 +17,32 @@ public static class ResultText
         surface.Out.WriteLine($"wrote {output.Path} ({output.Format}, {TableText.Bytes(output.SizeBytes)}{suffix})");
     }
 
+    /// <summary>
+    /// Starts a requested detail section: a blank line, then <c>### TITLE</c> in markdown or
+    /// <c>TITLE:</c> in plain text, then <c>none</c> when the section is empty.
+    /// </summary>
+    /// <returns>Whether the caller should write the section content.</returns>
+    public static bool Section(TableSurface surface, string title, bool empty = false)
+    {
+        surface.Out.WriteLine();
+        if (surface.Format == TableFormat.Markdown)
+        {
+            surface.Out.WriteLine($"### {title}");
+            surface.Out.WriteLine();
+        }
+        else
+        {
+            surface.Out.WriteLine($"{title}:");
+        }
+
+        if (empty)
+        {
+            surface.Out.WriteLine("none");
+        }
+
+        return !empty;
+    }
+
     /// <summary>Writes the backup line when an in-place edit made or kept one.</summary>
     public static void Backup(TableSurface surface, BackupInfo? backup)
     {

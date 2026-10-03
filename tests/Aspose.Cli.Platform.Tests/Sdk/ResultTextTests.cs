@@ -74,10 +74,24 @@ public sealed class ResultTextTests
         Assert.Equal("dry run: 1 of 1 op(s) applied; nothing was written", Lines(text)[0]);
     }
 
-    private static string Render(Action<TableSurface> render)
+    [Theory]
+    [InlineData(TableFormat.Plain, false, "\nfonts:\n")]
+    [InlineData(TableFormat.Plain, true, "\nfonts:\nnone\n")]
+    [InlineData(TableFormat.Markdown, false, "\n### fonts\n\n")]
+    [InlineData(TableFormat.Markdown, true, "\n### fonts\n\nnone\n")]
+    public void Section_WritesTheHeadingForTheFormatAndNoneWhenEmpty(TableFormat format, bool empty, string expected)
+    {
+        bool writeContent = true;
+        string text = Render(surface => writeContent = ResultText.Section(surface, "fonts", empty), format);
+
+        Assert.Equal(expected.Replace("\n", Environment.NewLine, StringComparison.Ordinal), text);
+        Assert.Equal(!empty, writeContent);
+    }
+
+    private static string Render(Action<TableSurface> render, TableFormat format = TableFormat.Plain)
     {
         using var writer = new StringWriter();
-        render(new TableSurface(writer, TableFormat.Plain));
+        render(new TableSurface(writer, format));
         return writer.ToString();
     }
 
