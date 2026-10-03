@@ -193,6 +193,22 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
+    public void Edit_RefusesAFormulaTheEngineCannotParseAsAnInvalidOperation()
+    {
+        Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);
+
+        CliResult refused = _workspace.Run(
+            "cells", "edit", "book.xlsx", "--in-place", "--output", "json", "--ops",
+            """{"ops":[{"op":"set_formula","sheet":"Data","range":"A1:A2","formula":"=SUM(B1;B2)"}]}""");
+
+        Assert.Equal(4, refused.ExitCode);
+        JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
+        Assert.Equal("OPS_INVALID", error["code"]!.GetValue<string>());
+        Assert.Contains("=SUM(B1;B2)", error["details"]!["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("commas", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Edit_AnUnknownFieldNamesTheAcceptedFieldsAndTheLikelyOne()
     {
         Assert.Equal(0, _workspace.Run("cells", "create", "book.xlsx", "--sheets", "Data").ExitCode);

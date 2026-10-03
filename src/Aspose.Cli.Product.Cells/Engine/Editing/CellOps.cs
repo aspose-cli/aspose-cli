@@ -1,5 +1,6 @@
 using System.Text.RegularExpressions;
 using Aspose.Cells;
+using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -30,6 +31,20 @@ internal static partial class CellOps
     }
 
     public static long SetFormula(Worksheet sheet, SetFormulaOp op)
+    {
+        try
+        {
+            return WriteFormula(sheet, op);
+        }
+        catch (CellsException exception) when (exception.Code == ExceptionType.Formula)
+        {
+            throw new OperationInvalidException($"the formula {op.Formula} does not parse: {exception.Message}",
+                "Write the formula as Excel's English formula bar shows it: English function names and commas "
+                    + "between arguments, as in =SUM(B2:B10).");
+        }
+    }
+
+    private static long WriteFormula(Worksheet sheet, SetFormulaOp op)
     {
         RangeRef range = Range(op.Range);
         Cell anchor = sheet.Cells[range.Start.Row, range.Start.Column];
