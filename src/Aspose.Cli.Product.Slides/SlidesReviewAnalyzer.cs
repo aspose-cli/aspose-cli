@@ -9,6 +9,10 @@ namespace Aspose.Cli.Product.Slides;
 internal static class SlidesReviewAnalyzer
 {
     private const double GeometryTolerance = 0.5;
+
+    // Laid-out lines include their line spacing, which can sit a little outside the glyphs.
+    private const double TextSlideTolerance = 2;
+    private const double TextShapeTolerance = 4;
     internal const double SevereCoverage = 0.80;
     internal const double ChartCoverage = 0.30;
     private const string Hint = "Inspect the rendered evidence, adjust only confirmed layout defects, save, and review again.";
@@ -141,6 +145,10 @@ internal static class SlidesReviewAnalyzer
                 Location(slideNumber),
                 Hint));
         }
+        else
+        {
+            AddTextPlacementFindings(slideNumber, shape, slideWidth, slideHeight, result);
+        }
 
         double minimum = shape.Runs?
             .Where(static run => !string.IsNullOrWhiteSpace(run.Text) && run.Size is > 0)
@@ -155,6 +163,62 @@ internal static class SlidesReviewAnalyzer
                 Location(slideNumber),
                 Hint));
         }
+    }
+
+    /// <summary>
+    /// The frame of a shape says nothing about where its text ends up: a bottom-anchored title
+    /// that wraps onto more lines grows upward, past its frame and off the top of the slide.
+    /// Text cut off by a slide edge is reported alone; otherwise text spilling out of a shape
+    /// that does not grow to fit it is reported. A shape already outside the slide is not
+    /// checked again here.
+    /// </summary>
+    private static void AddTextPlacementFindings(
+        int slideNumber,
+        SlideShapeData shape,
+        double slideWidth,
+        double slideHeight,
+        SlidesReviewAnalysis result)
+    {
+        if (shape.TextRect is not { } text)
+        {
+            return;
+        }
+
+        var slide = new SlideRect { X = 0, Y = 0, Width = slideWidth, Height = slideHeight };
+        if (Overshoot(text, slide, TextSlideTolerance) is { } cut)
+        {
+            result.TextOutsideSlide++;
+            result.Findings.Add(SlidesReviewChecks.TextOutsideSlide.Finding(
+                string.Create(CultureInfo.InvariantCulture, $"The text of '{Label(shape)}' runs {cut.Points:0} pt past the {cut.Edges} edge of the slide, which cuts it off; shorten the text, reduce its size, or enlarge the shape away from that edge."),
+                Location(slideNumber),
+                Hint));
+            return;
+        }
+
+        if (!shape.TextResizesShape && Overshoot(text, shape.Rect, TextShapeTolerance) is { } spill)
+        {
+            result.TextOverflows++;
+            result.Findings.Add(SlidesReviewChecks.TextOverflowsShape.Finding(
+                string.Create(CultureInfo.InvariantCulture, $"The text of '{Label(shape)}' spills {spill.Points:0} pt out of the {spill.Edges} of its shape; shorten the text, reduce its size, or enlarge the shape."),
+                Location(slideNumber),
+                Hint));
+        }
+    }
+
+    /// <summary>The edges of <paramref name="bounds"/> that <paramref name="inner"/> passes by more than the tolerance, and by how much at most.</summary>
+    private static (string Edges, double Points)? Overshoot(SlideRect inner, SlideRect bounds, double tolerance)
+    {
+        (string Edge, double Points)[] edges =
+        [
+            ("top", bounds.Y - inner.Y),
+            ("bottom", inner.Y + inner.Height - (bounds.Y + bounds.Height)),
+            ("left", bounds.X - inner.X),
+            ("right", inner.X + inner.Width - (bounds.X + bounds.Width)),
+        ];
+        (string Edge, double Points)[] passed = edges.Where(edge => edge.Points > tolerance).ToArray();
+        return passed.Length == 0
+            ? null
+            : (string.Join(" and ", passed.Select(static edge => edge.Edge)), passed.Max(static edge => edge.Points));
     }
 
     private static void AnalyzeDensity(
@@ -354,5 +418,7 @@ internal sealed class SlidesReviewAnalysis
     public int HighDensitySlides { get; set; }
     public int LowDensitySlides { get; set; }
     public int TextOverlaps { get; set; }
+    public int TextOutsideSlide { get; set; }
+    public int TextOverflows { get; set; }
     public int EmptyPlaceholders { get; set; }
 }

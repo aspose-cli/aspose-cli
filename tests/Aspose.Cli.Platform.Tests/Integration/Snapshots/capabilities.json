@@ -4788,6 +4788,16 @@
             "summary": "A slide repeats the meaningful content and geometry of an earlier slide."
           },
           {
+            "code": "SLIDES_TEXT_OUTSIDE_SLIDE",
+            "severity": "warning",
+            "summary": "Laid-out text runs past a slide edge, where the slide cuts it off."
+          },
+          {
+            "code": "SLIDES_TEXT_OVERFLOWS_SHAPE",
+            "severity": "warning",
+            "summary": "Laid-out text spills out of a shape that does not grow to fit it."
+          },
+          {
             "code": "SLIDES_TEXT_OVERLAPS_OBJECT",
             "severity": "warning",
             "summary": "Laid-out text runs into a table or chart on the same slide."
@@ -14388,6 +14398,8 @@
             "SLIDES_SHAPE_OUTSIDE_SLIDE",
             "SLIDES_SLIDE_BLANK",
             "SLIDES_SLIDE_DUPLICATE",
+            "SLIDES_TEXT_OUTSIDE_SLIDE",
+            "SLIDES_TEXT_OVERFLOWS_SHAPE",
             "SLIDES_TEXT_OVERLAPS_OBJECT",
             "SLIDES_TEXT_TOO_SMALL",
             "WORDS_DOCUMENT_EMPTY",

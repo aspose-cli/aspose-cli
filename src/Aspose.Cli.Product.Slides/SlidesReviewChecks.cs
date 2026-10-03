@@ -51,6 +51,16 @@ internal static class SlidesReviewChecks
         ReviewSeverities.Warning,
         "Laid-out text runs into a table or chart on the same slide.");
 
+    public static ReviewCheck TextOutsideSlide { get; } = new(
+        "SLIDES_TEXT_OUTSIDE_SLIDE",
+        ReviewSeverities.Warning,
+        "Laid-out text runs past a slide edge, where the slide cuts it off.");
+
+    public static ReviewCheck TextOverflowsShape { get; } = new(
+        "SLIDES_TEXT_OVERFLOWS_SHAPE",
+        ReviewSeverities.Warning,
+        "Laid-out text spills out of a shape that does not grow to fit it.");
+
     public static ReviewCheck PlaceholderEmpty { get; } = new(
         "SLIDES_PLACEHOLDER_EMPTY",
         ReviewSeverities.Info,
@@ -67,6 +77,8 @@ internal static class SlidesReviewChecks
         ChartCovered,
         ShapesOverlap,
         TextOverlapsObject,
+        TextOutsideSlide,
+        TextOverflowsShape,
         PlaceholderEmpty,
     ];
 }
