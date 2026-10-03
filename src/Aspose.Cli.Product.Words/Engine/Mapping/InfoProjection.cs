@@ -48,6 +48,7 @@ internal static class InfoProjection
                 CommentCount = document.GetChildNodes(NodeType.Comment, true).Count,
                 Protection = WordsProtection.ToMode(document.ProtectionType),
                 Signed = loaded.Format.HasDigitalSignature,
+                HasMacros = loaded.Format.HasMacros,
             },
             Sections = details.Contains("sections") ? Sections(document) : null,
             Outline = details.Contains("outline") || request.IncludePreview ? Outline(index, warnings) : null,

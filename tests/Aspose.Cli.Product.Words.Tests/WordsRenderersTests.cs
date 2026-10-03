@@ -23,7 +23,7 @@ public sealed class WordsRenderersTests
             {
                 SectionCount = 1, BlockCount = 1, ParagraphCount = 1, TableCount = 0, PageCount = 1, WordCount = 2,
                 RevisionsPresent = false, RevisionCount = 0, RevisionAuthors = [], CommentCount = 0,
-                Protection = "none", Signed = false,
+                Protection = "none", Signed = false, HasMacros = false,
             },
             Styles = ["Normal", "Heading 1"],
             Bookmarks = [],

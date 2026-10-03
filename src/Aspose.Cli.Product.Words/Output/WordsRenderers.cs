@@ -15,7 +15,7 @@ internal static class WordsRenderers
             $"sections: {document.SectionCount}   blocks: {document.BlockCount} "
             + $"({document.ParagraphCount} paragraphs, {document.TableCount} tables)   "
             + $"pages: {document.PageCount}   words: {document.WordCount}");
-        surface.Out.WriteLine($"revisions: {document.RevisionCount}   protection: {document.Protection}   signed: {TableText.YesNo(document.Signed)}");
+        surface.Out.WriteLine($"revisions: {document.RevisionCount}   protection: {document.Protection}   signed: {TableText.YesNo(document.Signed)}   macros: {TableText.YesNo(document.HasMacros)}");
         RenderInfoDetails(result, surface);
     }
 

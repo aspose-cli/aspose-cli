@@ -38,6 +38,7 @@ public sealed record DocumentSummary
     public required int CommentCount { get; init; }
     public required string Protection { get; init; }
     public required bool Signed { get; init; }
+    public required bool HasMacros { get; init; }
 }
 
 /// <summary>One document section.</summary>

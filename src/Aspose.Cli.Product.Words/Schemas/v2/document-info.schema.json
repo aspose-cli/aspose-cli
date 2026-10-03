@@ -11,7 +11,7 @@
     "source": { "type": "object" },
     "document": {
       "type": "object",
-      "required": ["sectionCount", "blockCount", "paragraphCount", "tableCount", "pageCount", "wordCount", "revisionsPresent", "revisionCount", "revisionAuthors", "commentCount", "protection", "signed"],
+      "required": ["sectionCount", "blockCount", "paragraphCount", "tableCount", "pageCount", "wordCount", "revisionsPresent", "revisionCount", "revisionAuthors", "commentCount", "protection", "signed", "hasMacros"],
       "additionalProperties": false,
       "properties": {
         "sectionCount": { "type": "integer", "minimum": 0 },
@@ -25,7 +25,8 @@
         "revisionAuthors": { "type": "array", "items": { "type": "string" } },
         "commentCount": { "type": "integer", "minimum": 0, "description": "The comments in the document, replies included; list them with --detail comments." },
         "protection": { "enum": ["none", "readOnly", "comments", "trackedChanges", "forms"], "description": "The editing restriction: none, or the protect operation mode that sets it; every SDK protection type maps to one of these." },
-        "signed": { "type": "boolean" }
+        "signed": { "type": "boolean" },
+        "hasMacros": { "type": "boolean", "description": "Whether the document holds macros (a VBA project); an output other than docm, dotm, doc, dot or wordml drops them and reports MACROS_DROPPED." }
       }
     },
     "sections": {

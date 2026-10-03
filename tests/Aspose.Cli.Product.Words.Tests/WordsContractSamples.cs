@@ -35,6 +35,7 @@ internal static class WordsContractSamples
             CommentCount = 1,
             Protection = "none",
             Signed = false,
+            HasMacros = false,
         },
         Sections =
         [

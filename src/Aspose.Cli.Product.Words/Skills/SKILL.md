@@ -107,7 +107,8 @@ More: [document standards](references/document-standards.md).
 
 Besides the shared disclosures, tell the user about tracked changes and
 comments left in the output, invalidated signatures (`SIGNATURE_INVALIDATED`),
-dropped macros (`MACROS_DROPPED`), removed encryption
+dropped macros (`MACROS_DROPPED`; `inspect` reports `document.hasMacros`
+before any conversion), removed encryption
 (`DOCUMENT_ENCRYPTION_REMOVED`) and lossy conversion. In evaluation mode,
 `EVAL_INPUT_TRUNCATED` means only part of an input, template or appended
 document was loaded, so the result is incomplete. A Words license is installed

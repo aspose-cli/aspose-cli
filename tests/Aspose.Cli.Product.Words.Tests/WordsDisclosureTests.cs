@@ -354,6 +354,15 @@ public sealed class WordsDisclosureTests
         Assert.False(new Document(compared.Output!.Path).HasMacros);
     }
 
+    [Fact]
+    public void InspectingAMacroDocument_ReportsItsMacros()
+    {
+        using var fixture = new WordsFixture();
+
+        Assert.True(fixture.Engine.GetInfo(MacroDocument(fixture), new DocumentInfoRequest()).Document.HasMacros);
+        Assert.False(fixture.Engine.GetInfo(fixture.CreateReport(), new DocumentInfoRequest()).Document.HasMacros);
+    }
+
     private static string MacroDocument(WordsFixture fixture)
     {
         var source = new Document();
