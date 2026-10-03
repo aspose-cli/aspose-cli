@@ -89,7 +89,9 @@ internal sealed class CellsMutationService
             {
                 verification = _verifier.Verify(saved.Candidate, baseline!.Path, filePath,
                     options.Password, savePlan.OutputPassword, batch,
-                    CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning));
+                    EnvelopeParts.CombineWarnings(
+                        CombineWarnings(licenseState, loaded.Resources.CoverageWarning, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning),
+                        importSources.Warnings()));
             }
             transaction.Commit();
         }

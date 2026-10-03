@@ -45,7 +45,8 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   `#REF!` in the source but, once the destination is calculated, reads the linked cells as empty,
   usually as 0.
 - **CLI behavior:** `import_sheet` and `import_range` with `"content": "all"` warn
-  `EXTERNAL_LINK_CACHE_MISSING` with the copied cells whose result changed this way.
+  `EXTERNAL_LINK_CACHE_MISSING` with the copied cells whose result changed this way;
+  `--verify` reports it as a verification issue, so the edit exits 8.
 - **Workaround:** replace those formulas with `set_formula` or `set_values`, or save the source
   in Excel with the linked workbook available so the link caches its values.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)

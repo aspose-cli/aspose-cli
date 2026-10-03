@@ -23,7 +23,11 @@ public sealed record Warning
     /// <summary>Stable product-owned address of the affected item, when known.</summary>
     public string? Location { get; init; }
 
-    /// <summary>Whether this condition makes the produced visual evidence incomplete.</summary>
+    /// <summary>
+    /// Whether this condition leaves the output or its visual evidence incomplete, or different
+    /// from the input; a review counts it against coverage and an edit's verification reports it
+    /// as an issue.
+    /// </summary>
     [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingDefault)]
     public bool AffectsCompleteness { get; init; }
 }

@@ -287,6 +287,22 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void Import_VerificationReportsALinkWithoutCachedValuesAsAnIssue()
+    {
+        string source = CreateUncachedLinkSource("verify-uncached-source.xlsx");
+
+        EditResult result = ApplyResult(
+            _fixture.CreateSalesWorkbook("verify-uncached.xlsx"),
+            $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""",
+            verify: true);
+
+        Assert.False(result.Verification!.Ok);
+        VerificationIssue issue = Assert.Single(result.Verification.Issues, static issue => issue.Code == "EXTERNAL_LINK_CACHE_MISSING");
+        Assert.Equal("'Linked'!A1", issue.Location);
+        Assert.Contains(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+    }
+
+    [Fact]
     public void Import_TheCacheCheckChangesNoStoredValueWithoutRecalculation()
     {
         string source = CreateUncachedLinkSource("no-recalc-uncached-source.xlsx");
@@ -527,12 +543,12 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
 
     private Workbook Apply(string path, string operations) => new(ApplyResult(path, operations).Output!.Path);
 
-    private EditResult ApplyResult(string path, string operations, bool recalculate = true)
+    private EditResult ApplyResult(string path, string operations, bool recalculate = true, bool verify = false)
     {
         EditResult result = _fixture.Engine.ApplyOps(
             path,
             Parse($$"""{ "ops": [ {{operations}} ] }"""),
-            new EditRequest { OutputPath = _fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), Overwrite = true, Recalculate = recalculate });
+            new EditRequest { OutputPath = _fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), Overwrite = true, Recalculate = recalculate, Verify = verify });
         Assert.All(result.Applied, static outcome => Assert.Equal(OpStatuses.Ok, outcome.Status));
         return result;
     }

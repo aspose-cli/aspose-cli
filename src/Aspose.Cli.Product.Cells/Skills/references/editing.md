@@ -152,8 +152,9 @@ cells:
 - A reference to a third workbook keeps its link and is not read through it, so
   recalculation uses the values the link cached. A link that caches no values
   shows `#REF!` in the source but reads as empty, usually 0, once imported;
-  the import warns `EXTERNAL_LINK_CACHE_MISSING` with those cells. Replace
-  them with `set_formula` or `set_values`.
+  the import warns `EXTERNAL_LINK_CACHE_MISSING` with those cells, and
+  `--verify` reports it as an issue. Replace them with `set_formula` or
+  `set_values`.
 - A formula you write that reads another workbook
   (`='C:\data\[fx.xlsx]Rates'!$B$2`) creates a link without cached values,
   since the CLI never opens the linked file: it stays `#REF!`, which `--verify`
@@ -302,7 +303,8 @@ rules.
 `cells edit --verify` compares a temporary snapshot of the input with the staged
 output before publishing and reports `verification` with `directChanges`,
 `formulaResultChanges`, `otherChanges`, `formulaErrors` and `issues`. Formula
-errors, sheet loss, grid truncation or an incomplete scan keep the edited file
+errors, sheet loss, grid truncation, imported formulas whose results changed
+(`EXTERNAL_LINK_CACHE_MISSING`) or an incomplete scan keep the edited file
 and exit 8 with `verification.ok: false`. Issue codes: `FORMULA_ERRORS` (the
 edited workbook has formula errors; `location` is the cell when there is one),
 `DIFF_TRUNCATED` (more than 1000 changed cells, so the change lists are

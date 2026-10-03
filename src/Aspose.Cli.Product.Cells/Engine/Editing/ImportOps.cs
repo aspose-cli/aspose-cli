@@ -211,6 +211,8 @@ internal static class ImportOps
         sources.Warn(new Warning
         {
             Code = CellsDiagnostics.ExternalLinkCacheMissing,
+            // --verify reports it as a verification issue: the output's results differ from the source's.
+            AffectsCompleteness = true,
             Message = $"{changed.Count} imported formula(s) on '{to.Name}' ({cells}) read {string.Join(", ", files)} through a link "
                 + "that caches no values: in the source they show an error such as #REF!, but here they read the linked cells as empty, "
                 + "usually as 0, and so do the formulas that depend on them.",
