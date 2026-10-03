@@ -136,7 +136,8 @@ internal sealed class WordsMutationService
     /// Whether Word can record the operation as tracked changes. Aspose.Words tracks the
     /// insertion and deletion of content only; formatting, styles, lists, page setup,
     /// properties, protection, merges, field updates, header replacement and section
-    /// structure would change silently, and resolving revisions is not itself an edit.
+    /// structure would change silently, and resolving revisions is not itself an edit. Comments
+    /// are review annotations rather than revisions, so their operations apply untracked.
     /// </summary>
     private static bool IsTrackable(WordsOp op) => op is ReplaceTextOp or SetTextOp or InsertParagraphsOp
         or InsertMarkdownOp or DeleteBlocksOp or InsertBreakOp { Kind: "page" } or InsertImageOp or InsertTableOp

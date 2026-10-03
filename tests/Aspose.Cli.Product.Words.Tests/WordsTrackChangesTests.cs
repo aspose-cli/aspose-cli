@@ -57,6 +57,38 @@ public sealed class WordsTrackChangesTests
     }
 
     [Fact]
+    public void TrackedBatch_AddsAndRemovesCommentsWithoutRevisions()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.CreateReport();
+        string commented = fixture.Temp.File("commented.docx");
+        var tracked = new WordsEditRequest { OutputPath = commented, TrackChanges = true, Author = "Reviewer" };
+
+        fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new ReplaceTextOp { Find = "twelve", Replace = "fifteen" },
+                    new AddCommentOp { At = new WordsTarget { Block = 2 }, Author = "Reviewer", Text = "Check the figure." },
+                ],
+            },
+            tracked);
+        DocumentInfoResult info = fixture.Engine.GetInfo(commented, new DocumentInfoRequest { Details = ["comments", "revisions"] });
+
+        Assert.Equal("Check the figure.", Assert.Single(info.Comments!).Text);
+        Assert.Equal(["deletion:twelve", "insertion:fifteen"], info.Revisions!.Select(static r => $"{r.Type}:{r.Text}"));
+
+        string removed = fixture.Temp.File("removed.docx");
+        fixture.Engine.ApplyOps(commented, new WordsOpsBatch { Ops = [new RemoveCommentsOp()] }, tracked with { OutputPath = removed });
+        var document = new Document(removed);
+
+        Assert.Equal(0, document.GetChildNodes(NodeType.Comment, true).Count);
+        Assert.Equal(2, document.Revisions.Count);
+    }
+
+    [Fact]
     public void InspectRevisions_ListsEachChangeInDocumentOrder()
     {
         using var fixture = new WordsFixture();
