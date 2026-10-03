@@ -105,7 +105,7 @@ public sealed class TextTableLayoutTests : IDisposable
 
         Assert.Equal(3, warnings.Length);
         Assert.Contains("header is probably row 3; rows 1-2", Text(warnings[0], "message"), StringComparison.Ordinal);
-        Assert.Contains("--range A3:D3", Text(warnings[0], "hint"), StringComparison.Ordinal);
+        Assert.Contains("'cells query range <file> --sheet \"erp\" --range A3:D3'", Text(warnings[0], "hint"), StringComparison.Ordinal);
         Assert.Equal("1:2", Text(warnings[0], "location"));
         Assert.Contains("Row 6 is empty", Text(warnings[1], "message"), StringComparison.Ordinal);
         Assert.Equal("6:6", Text(warnings[1], "location"));
@@ -116,6 +116,10 @@ public sealed class TextTableLayoutTests : IDisposable
         JsonNode converted = _workspace.Run(
             "cells", "convert", "erp.csv", "--to", "xlsx", "--out", "erp.xlsx", "--output", "json").Json();
         Assert.Equal(3, LayoutWarnings(converted).Length);
+        // The hinted command works as written on the converted workbook too.
+        JsonNode header = _workspace.Run(
+            "cells", "query", "range", "erp.xlsx", "--sheet", "erp", "--range", "A3:D3", "--output", "json").Json();
+        Assert.Equal("日期", header["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
     }
 
     [Fact]

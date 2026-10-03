@@ -76,7 +76,7 @@ internal static class TextTableLayout
         }
 
         (IReadOnlyList<TextRowShape> head, IReadOnlyList<TextRowShape> tail) = ReadShapes(sheet, used, budgets);
-        return Describe(Detect(head, tail), used.End.Column, capped: tail.Count > 0);
+        return Describe(Detect(head, tail), sheet.Name, used.End.Column, capped: tail.Count > 0);
     }
 
     /// <summary>
@@ -142,25 +142,28 @@ internal static class TextTableLayout
         return TotalLabels.Contains(compact);
     }
 
-    /// <summary>Words the findings as warnings; rows are reported one-based, as A1 row references.</summary>
-    internal static IReadOnlyList<Warning> Describe(IReadOnlyList<TextTableFinding> findings, int lastColumn, bool capped)
+    /// <summary>
+    /// Words the findings on sheet <paramref name="sheetName"/> as warnings; rows are reported
+    /// one-based, as A1 row references.
+    /// </summary>
+    internal static IReadOnlyList<Warning> Describe(IReadOnlyList<TextTableFinding> findings, string sheetName, int lastColumn, bool capped)
     {
         string last = A1.ColumnName(lastColumn);
         return [.. findings.Select(finding => finding.Kind switch
         {
-            TextTableFindingKind.Preamble => Preamble(finding, last),
+            TextTableFindingKind.Preamble => Preamble(finding, sheetName, last),
             TextTableFindingKind.BlankRows => BlankRows(finding, last, capped),
             _ => TotalRows(finding),
         })];
     }
 
-    private static Warning Preamble(TextTableFinding finding, string lastColumn)
+    private static Warning Preamble(TextTableFinding finding, string sheetName, string lastColumn)
     {
         int header = finding.HeaderRow + 1;
         string rows = finding.Rows.Count == 1 ? "row 1 looks" : $"rows 1-{finding.Rows.Count} look";
         return Build(
             $"The table header is probably row {header}; {rows} like a title, notes or empty lines, not data.",
-            $"Read the header with 'cells query range <file> --range A{header}:{lastColumn}{header}' and start data ranges, formulas and sorts at row {header + 1}, not row 2.",
+            $"Read the header with 'cells query range <file> --sheet \"{sheetName}\" --range A{header}:{lastColumn}{header}' and start data ranges, formulas and sorts at row {header + 1}, not row 2.",
             RowReference(1, finding.Rows.Count));
     }
 

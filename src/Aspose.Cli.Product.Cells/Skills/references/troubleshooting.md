@@ -45,7 +45,8 @@ CSV import keeps every row, so `cells inspect` and `cells convert` warn
 `TEXT_TABLE_LAYOUT` for each finding, and each hint names the ranges to use:
 
 - Read the header row the message names with
-  `cells query range <file> --range A3:F3`, and start data ranges, formulas and
+  `cells query range <file> --sheet "<sheet>" --range A3:F3` (a text file's
+  one sheet is named after the file), and start data ranges, formulas and
   sorts on the row after it.
 - Give sorts, filters and charts the whole table range rather than a range
   that stops at an empty row, or remove empty rows in the converted workbook
