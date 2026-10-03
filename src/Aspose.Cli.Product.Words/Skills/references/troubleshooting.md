@@ -26,9 +26,9 @@ The error envelope, exit codes, not-found details and shared codes such as
 ## Warnings
 
 - `PROTECTION_NOT_ENFORCED`: the document has editing restrictions; the edit
-  succeeded and the restrictions remain.
+  succeeded and the restrictions remain in a Word format output.
 - `TRACKED_CHANGES_PRESENT`: the edited document already had revisions and
-  the output still contains revisions; disclose them.
+  a Word format output still contains revisions; disclose them.
 - `DOCUMENT_ENCRYPTION_REMOVED`: the output format cannot be encrypted.
 - `MACROS_DROPPED`: the output format does not keep macros; convert to `docm`
   or `dotm` to keep them.

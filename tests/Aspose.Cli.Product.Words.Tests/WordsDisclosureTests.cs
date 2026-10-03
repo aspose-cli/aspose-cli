@@ -60,10 +60,33 @@ public sealed class WordsDisclosureTests
         Assert.Equal(ProtectionType.ReadOnly, new Document(output).ProtectionType);
     }
 
+    [Fact]
+    public void EditingIntoAFormatThatCannotHoldWordFeatures_DisclosesTheLoss()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        new DocumentBuilder(source).Write("Locked text");
+        source.Protect(ProtectionType.ReadOnly, "owner");
+        string input = fixture.Temp.File("locked.docx");
+        source.Save(input, SaveFormat.Docx);
+        var batch = new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "Locked", Replace = "Changed" }] };
+
+        WordsEditResult text = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.txt") });
+        WordsEditResult word = fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
+
+        Assert.Contains(text.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
+        Warning restriction = Assert.Single(text.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.ProtectionNotEnforced);
+        Assert.Contains("txt", restriction.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("output keeps", restriction.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain(word.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
+        Assert.Contains("output keeps the restrictions", Assert.Single(word.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.ProtectionNotEnforced).Hint, StringComparison.Ordinal);
+    }
+
     [Theory]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
-    public void EditingARevisedDocument_DisclosesTheRevisionsTheOutputKeeps(bool accept, bool disclosed)
+    [InlineData(true, "docx", false)]
+    [InlineData(false, "docx", true)]
+    [InlineData(false, "txt", false)]
+    public void EditingARevisedDocument_DisclosesTheRevisionsTheOutputKeeps(bool accept, string extension, bool disclosed)
     {
         using var fixture = new WordsFixture();
         var source = new Document();
@@ -75,7 +98,7 @@ public sealed class WordsDisclosureTests
         source.StopTrackRevisions();
         string input = fixture.Temp.File("revised.docx");
         source.Save(input, SaveFormat.Docx);
-        string output = fixture.Temp.File("edited.docx");
+        string output = fixture.Temp.File("edited." + extension);
 
         WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {

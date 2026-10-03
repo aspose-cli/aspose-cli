@@ -38,9 +38,9 @@ internal static class WordsEngineSupport
         var extra = new List<Warning>();
         extra.AddRange(InputWarnings(loaded) ?? []);
 
-        if (format is "txt" or "md" or "html" or "html-fixed")
+        if (LossyConversion(format) is { } lossy)
         {
-            extra.Add(new Warning { Code = WarningCodes.LossyConversion, Message = $"Conversion to {format} cannot preserve every Word feature.", Hint = "Keep a DOCX copy when styles, headers, fields or revisions matter." });
+            extra.Add(lossy);
         }
 
         if (loaded.Format.HasMacros && format is not "docm" and not "dotm")
@@ -50,6 +50,11 @@ internal static class WordsEngineSupport
 
         return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
     }
+
+    /// <summary>The warning for an output format that cannot hold every Word feature, or null.</summary>
+    internal static Warning? LossyConversion(string format) => format is "txt" or "md" or "html" or "html-fixed"
+        ? new Warning { Code = WarningCodes.LossyConversion, Message = $"Conversion to {format} cannot preserve every Word feature.", Hint = "Keep a DOCX copy when styles, headers, fields or revisions matter." }
+        : null;
 
     internal static IReadOnlyList<Warning>? CompareWarnings(
         LicenseState state,
