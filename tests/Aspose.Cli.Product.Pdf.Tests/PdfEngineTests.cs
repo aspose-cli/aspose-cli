@@ -15,6 +15,43 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 
 public sealed class PdfEngineTests
 {
+    [Fact]
+    public void Create_FromHtml_TakesTheTitleFromTheHtmlAndInventsNoOtherMetadata()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("report.html");
+        File.WriteAllText(input, """
+            <!DOCTYPE html><html><head><meta charset="utf-8">
+            <title>
+              2026 Q3 运营报告 &amp; East
+            </title><meta name="author" content="Operations"></head>
+            <body><h1>Report</h1></body></html>
+            """);
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = fixture.File("report.pdf") });
+
+        PdfInfoResult info = fixture.Engine.GetInfo(result.Output.Path, new PdfInfoRequest { Details = ["metadata"] });
+        Assert.Equal("2026 Q3 运营报告 & East", info.Metadata!["title"]);
+        Assert.Null(info.Metadata["author"]);
+        Assert.Null(info.Metadata["subject"]);
+        Assert.DoesNotContain(info.Metadata.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void Create_FromMarkdown_InventsNoMetadata()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("notes.md");
+        File.WriteAllText(input, "# Notes\n\nBody text.\n");
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { TextPath = input, Markdown = true, OutputPath = fixture.File("notes.pdf") });
+
+        PdfInfoResult info = fixture.Engine.GetInfo(result.Output.Path, new PdfInfoRequest { Details = ["metadata"] });
+        Assert.Null(info.Metadata!["title"]);
+        Assert.Null(info.Metadata["author"]);
+        Assert.Null(info.Metadata["subject"]);
+    }
+
     [Theory]
     [InlineData("D:20261003100000+05'30'", "2026-10-03T04:30:00.0000000Z")]
     [InlineData("D:20261003011908Z00'00'", "2026-10-03T01:19:08.0000000Z")]

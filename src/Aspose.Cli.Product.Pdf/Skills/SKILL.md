@@ -49,7 +49,8 @@ and its remedy, including `--allow-network-resources` for trusted HTML.
 
 HTML form controls become AcroForm fields. A text `<input>` keeps its `name`;
 other controls get generated names, so read them with `pdf query forms` before
-filling.
+filling. The HTML `<title>` becomes the PDF title; a PDF made from HTML or
+Markdown has no author or subject until a `set_metadata` edit sets them.
 
 ## Preview and licensing
 
