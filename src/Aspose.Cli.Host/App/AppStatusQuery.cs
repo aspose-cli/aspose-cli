@@ -25,8 +25,6 @@ internal sealed class AppStatusQuery
         string,
         IReadOnlyList<AppPreviewView>> _previewViews;
     private readonly object _fontDiagnosticGate = new();
-    private AppDiagnosticView? _fontDiagnostic;
-    private string? _fontDiagnosticProduct;
     private AppDiagnosticView? _storageDiagnostic;
 
     internal AppStatusQuery(
@@ -158,36 +156,25 @@ internal sealed class AppStatusQuery
                     $"{product.Manifest.Id}: font diagnostics are not available",
                     "Verify font availability and substitution on the target system when visual fidelity matters.");
             }
-            if (_fontDiagnostic is not null
-                && string.Equals(
-                    _fontDiagnosticProduct,
-                    product.Manifest.Id,
-                    StringComparison.Ordinal))
-            {
-                return _fontDiagnostic;
-            }
-
+            // The gateway keeps the answer until the license changes.
             try
             {
                 FontListResult fonts = _cli.Fonts(product.Manifest.Id);
                 string fallback =
                     fonts.DefaultFont ?? "engine default";
-                _fontDiagnostic = new AppDiagnosticView(
+                return new AppDiagnosticView(
                     "Fonts",
                     "ok",
                     $"{product.Manifest.Id}: {fonts.Sources.Count} source(s); fallback {fallback}");
             }
             catch (Exception)
             {
-                _fontDiagnostic = new AppDiagnosticView(
+                return new AppDiagnosticView(
                     "Fonts",
                     "warn",
                     $"{product.Manifest.Id}: font discovery is unavailable",
                     "Repair the license configuration, then reopen Settings.");
             }
-
-            _fontDiagnosticProduct = product.Manifest.Id;
-            return _fontDiagnostic;
         }
     }
 

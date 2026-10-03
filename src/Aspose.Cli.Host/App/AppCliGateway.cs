@@ -31,8 +31,13 @@ internal sealed class AppCliGateway
     private readonly string _workDirectory;
     private LicenseStatusResult? _license;
     private string? _licenseFingerprint;
-    private readonly Dictionary<string, FontListResult> _fonts = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, FontAnswer> _fonts = new(StringComparer.Ordinal);
+    private int _fontGeneration;
     private readonly Func<IReadOnlyList<string>, ChildProcessResult> _run;
+    private readonly TimeProvider _clock;
+
+    /// <summary>How long a failed font read answers the status polls before it is asked again.</summary>
+    internal static readonly TimeSpan FontFailureRetryInterval = TimeSpan.FromSeconds(30);
 
     public AppCliGateway(ProductCatalog catalog, GlobalValues globals, string configDirectory)
         : this(catalog, globals, configDirectory, run: null)
@@ -40,12 +45,15 @@ internal sealed class AppCliGateway
     }
 
     /// <param name="run">Runs one CLI command; tests replace the child process.</param>
+    /// <param name="clock">Times a kept font failure; tests replace the system clock.</param>
     internal AppCliGateway(
         ProductCatalog catalog,
         GlobalValues globals,
         string configDirectory,
-        Func<IReadOnlyList<string>, ChildProcessResult>? run)
+        Func<IReadOnlyList<string>, ChildProcessResult>? run,
+        TimeProvider? clock = null)
     {
+        _clock = clock ?? TimeProvider.System;
         _catalog = catalog ?? throw new ArgumentNullException(nameof(catalog));
         _globals = globals ?? throw new ArgumentNullException(nameof(globals));
         _configDirectory = configDirectory;
@@ -78,6 +86,8 @@ internal sealed class AppCliGateway
                 CommonSchemaIds.LicenseStatus);
             lock (_gate)
             {
+                // Font discovery depends on the license: a changed one is asked afresh too.
+                if (_licenseFingerprint is not null) { ClearFonts(); }
                 _license = status;
                 _licenseFingerprint = fingerprint;
             }
@@ -117,23 +127,50 @@ internal sealed class AppCliGateway
 
     /// <summary>
     /// The font sources one product renders with. Fonts change far more
-    /// rarely than licences, so the first answer is kept for the session.
+    /// rarely than licences, so an answer is kept until a licence change,
+    /// which font discovery depends on. A failure answers the status polls
+    /// for <see cref="FontFailureRetryInterval"/> only, so a transient one
+    /// (a timeout) is asked again when Settings is reopened.
     /// </summary>
     public FontListResult Fonts(string productId)
     {
+        int generation;
         lock (_gate)
         {
-            if (_fonts.TryGetValue(productId, out FontListResult? cached))
+            if (_fonts.TryGetValue(productId, out FontAnswer? cached)
+                && (cached.Result is not null || _clock.GetUtcNow() - cached.At < FontFailureRetryInterval))
             {
-                return cached;
+                return cached.Result ?? throw cached.Failure!;
             }
+            generation = _fontGeneration;
         }
-        FontListResult fonts = Read(
-            ["fonts", "list", "--product", productId],
-            SdkJsonContext.Default.FontListResult,
-            CommonSchemaIds.FontList);
-        lock (_gate) { _fonts[productId] = fonts; }
-        return fonts;
+        FontAnswer answer;
+        try
+        {
+            answer = new FontAnswer(Read(
+                ["fonts", "list", "--product", productId],
+                SdkJsonContext.Default.FontListResult,
+                CommonSchemaIds.FontList), null, _clock.GetUtcNow());
+        }
+        catch (CliException failure)
+        {
+            answer = new FontAnswer(null, failure, _clock.GetUtcNow());
+        }
+        lock (_gate)
+        {
+            // An answer read under a licence that changed meanwhile is not kept.
+            if (generation == _fontGeneration) { _fonts[productId] = answer; }
+        }
+        return answer.Result ?? throw answer.Failure!;
+    }
+
+    private sealed record FontAnswer(FontListResult? Result, CliException? Failure, DateTimeOffset At);
+
+    /// <summary>Forgets every font answer; the caller holds <see cref="_gate"/>.</summary>
+    private void ClearFonts()
+    {
+        _fonts.Clear();
+        _fontGeneration++;
     }
 
     /// <summary>A licence change here: the next status reads it afresh, and fonts follow.</summary>
@@ -143,7 +180,7 @@ internal sealed class AppCliGateway
         {
             _license = null;
             _licenseFingerprint = null;
-            _fonts.Clear();
+            ClearFonts();
         }
     }
 
