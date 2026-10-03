@@ -54,7 +54,7 @@ internal sealed class SlidesMutationService
         Presentation presentation = loaded.Presentation;
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = SlidesMutationHandlers.ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
-        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched);
+        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched, state);
         EditPublication publication = Publish(loaded, request, format, precondition);
 
         return new SlidesEditResult
@@ -76,7 +76,8 @@ internal sealed class SlidesMutationService
         Presentation presentation,
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved,
         bool bestEffort,
-        ISet<uint> touched) =>
+        ISet<uint> touched,
+        LicenseState state) =>
         BoundedOperationRunner.Run(
             SlidesOp.Catalog,
             resolved.Select(static item => item.Op).ToArray(),
@@ -86,7 +87,8 @@ internal sealed class SlidesMutationService
             {
                 SlidesMutationHandlers.ResolvedSlidesOp item = resolved[index];
                 var operationTouched = new SortedSet<uint>();
-                long affected = new SlidesMutationHandlers(_resourceBudgets.Inputs, _loader, presentation, item, operationTouched).Run();
+                long affected = new SlidesMutationHandlers(
+                    _resourceBudgets.Inputs, _loader, presentation, item, operationTouched, state == LicenseState.Evaluation).Run();
                 touched.UnionWith(operationTouched);
                 return new AppliedOperation(affected, OperationTargets(item, operationTouched));
             },

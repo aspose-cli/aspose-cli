@@ -217,6 +217,16 @@ internal static class SlidesEngineSupport
     internal static IReadOnlyList<Warning>? InputWarnings(LicenseState state, LoadedPresentation loaded) =>
         Warnings(state, loaded, output: false);
 
+    /// <summary>
+    /// Whether a shape is the watermark text box an evaluation save adds to every slide: a
+    /// select- and position-locked shape, not a placeholder, whose text starts with the
+    /// evaluation notice, which evaluation mode itself reads cut short.
+    /// </summary>
+    internal static bool IsEvaluationWatermark(IShape shape) =>
+        shape is IAutoShape { Placeholder: null, TextFrame: { } frame } box
+        && box.ShapeLock is { SelectLocked: true, PositionLocked: true }
+        && frame.Text?.StartsWith("Evalu", StringComparison.Ordinal) == true;
+
     internal static bool EvaluationInputTruncated(Presentation presentation) =>
         presentation.Slides.Any(slide =>
             slide.Shapes.Any(shape =>

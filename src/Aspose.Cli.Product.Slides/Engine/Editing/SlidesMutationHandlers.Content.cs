@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.RegularExpressions;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Slides;
 using static Aspose.Cli.Product.Slides.Engine.SlidesEngineSupport;
@@ -25,27 +26,28 @@ internal sealed partial class SlidesMutationHandlers
     /// Replaces matches inside each paragraph of every shape (including table cells, group
     /// children and SmartArt nodes) and speaker notes. Only the matched characters change:
     /// replacement text takes the formatting of the first matched character, and every
-    /// other run and paragraph keeps its own formatting.
+    /// other run and paragraph keeps its own formatting. Evaluation mode reads longer text as
+    /// its first characters and a truncation notice, so the operation is refused when it would
+    /// search such text rather than reporting that nothing matched; the watermark text box an
+    /// evaluation save added is left alone.
     /// </summary>
     public long Apply(SlidesReplaceTextOp operation)
     {
         Regex? regex = operation.Regex ? SafeRegex.Create(operation.Find, operation.MatchCase) : null;
+        if (_evaluation && _presentation.Slides.SelectMany(slide => Frames(slide, operation.Scope)).Any(static frame =>
+                frame.Text?.Contains(EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase) == true))
+        {
+            throw new CliException(
+                ErrorCodes.EvaluationLimit,
+                "Evaluation mode lets replace_text see only the first characters of longer text, so it cannot find or replace the presentation's text.",
+                hint: "Apply an Aspose.Slides license and retry; set_text, set_title and set_body replace a shape's whole text without matching it.",
+                docs: "licensing");
+        }
+
         long count = 0;
         foreach (ISlide slide in _presentation.Slides)
         {
-            var frames = new List<ITextFrame>();
-            if (operation.Scope is PresentationSearchScopes.Shapes or PresentationSearchScopes.All)
-            {
-                frames.AddRange(slide.Shapes.SelectMany(TextFrames));
-            }
-
-            if (operation.Scope is PresentationSearchScopes.Notes or PresentationSearchScopes.All
-                && slide.NotesSlideManager.NotesSlide?.NotesTextFrame is { } notes)
-            {
-                frames.Add(notes);
-            }
-
-            long replaced = frames
+            long replaced = Frames(slide, operation.Scope)
                 .SelectMany(static frame => frame.Paragraphs)
                 .Sum(paragraph => (long)Replace(paragraph, operation, regex));
             if (replaced > 0)
@@ -56,6 +58,18 @@ internal sealed partial class SlidesMutationHandlers
         }
 
         return count;
+    }
+
+    /// <summary>The text frames of a slide that a search scope reaches: its shapes, its speaker notes, or both.</summary>
+    private IEnumerable<ITextFrame> Frames(ISlide slide, string scope)
+    {
+        IEnumerable<ITextFrame> shapes = scope is PresentationSearchScopes.Shapes or PresentationSearchScopes.All
+            ? slide.Shapes.Where(shape => !_evaluation || !IsEvaluationWatermark(shape)).SelectMany(TextFrames)
+            : [];
+        return scope is PresentationSearchScopes.Notes or PresentationSearchScopes.All
+            && slide.NotesSlideManager.NotesSlide?.NotesTextFrame is { } notes
+            ? shapes.Append(notes)
+            : shapes;
     }
 
     private static int Replace(IParagraph paragraph, SlidesReplaceTextOp op, Regex? regex)

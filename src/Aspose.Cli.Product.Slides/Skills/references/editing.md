@@ -39,7 +39,9 @@ aspose-cli schema v2/slides/ops --operation insert_chart
   cells, group children and SmartArt nodes.
 - `replace_text` matches within one paragraph at a time, in shapes and speaker notes. Only the
   matched characters change: the replacement takes the formatting of the first matched
-  character, and other runs keep theirs.
+  character, and other runs keep theirs. Evaluation mode reads text longer than five
+  characters cut short, so there `replace_text` fails with `EVALUATION_LIMIT` instead of
+  matching nothing.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `query slides --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and

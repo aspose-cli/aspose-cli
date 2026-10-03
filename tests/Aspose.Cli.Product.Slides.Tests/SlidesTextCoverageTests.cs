@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Export;
 using Aspose.Slides.SmartArt;
@@ -90,6 +91,27 @@ public sealed class SlidesTextCoverageTests
         Assert.Contains("tq", text, StringComparison.Ordinal);
         Assert.Contains("gq", text, StringComparison.Ordinal);
         Assert.Contains("sq", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void ReplaceText_RefusesTextThatEvaluationModeCutShort()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("long-text.pptx", slides: 1);
+        string output = fixture.File("long-text-replaced.pptx");
+        var batch = new SlidesOpsBatch { Ops = [new SlidesReplaceTextOp { Find = "Slide 1", Replace = "Intro" }] };
+        var request = new PresentationEditRequest { OutputPath = output };
+
+        if (fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed)
+        {
+            Assert.Equal(1, Assert.Single(fixture.Engine.ApplyOps(input, batch, request).Applied).ItemsAffected);
+            return;
+        }
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(input, batch, request));
+        Assert.Equal(ErrorCodes.EvaluationLimit, error.Code);
+        Assert.Contains("replace_text", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
     }
 
     private static IAutoShape Styled(Presentation deck) =>

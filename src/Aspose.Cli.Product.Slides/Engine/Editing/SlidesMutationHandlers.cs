@@ -18,6 +18,7 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     private readonly Presentation _presentation;
     private readonly ResolvedSlidesOp _target;
     private readonly ISet<uint> _touched;
+    private readonly bool _evaluation;
 
     /// <summary>Creates the handlers of one operation.</summary>
     /// <param name="inputs">Reads and charges the files that operations read.</param>
@@ -25,18 +26,21 @@ internal sealed partial class SlidesMutationHandlers : ISlidesOpHandler<long>
     /// <param name="presentation">The presentation being edited.</param>
     /// <param name="target">The operation with the targets it resolved before the batch started.</param>
     /// <param name="touched">Receives the ids of the slides the operation changes.</param>
+    /// <param name="evaluation">Whether the engine runs in evaluation mode, which cuts text short when it is read.</param>
     internal SlidesMutationHandlers(
         InputSource inputs,
         SlidesPresentationLoader loader,
         Presentation presentation,
         ResolvedSlidesOp target,
-        ISet<uint> touched)
+        ISet<uint> touched,
+        bool evaluation)
     {
         _inputs = inputs;
         _loader = loader;
         _presentation = presentation;
         _target = target;
         _touched = touched;
+        _evaluation = evaluation;
     }
 
     /// <summary>The resolved target slide of a slide or shape operation.</summary>
