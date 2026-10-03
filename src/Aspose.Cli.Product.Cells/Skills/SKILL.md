@@ -133,7 +133,7 @@ Markdown export only the first worksheet
 
 | pitfall | do this instead |
 |---------|-----------------|
-| Windows PowerShell strips inner quotes from inline `--ops` JSON | Escape them as `\"`, pipe the document through `--ops -`, or use `--set` |
+| Inline `--ops` JSON in PowerShell | Write the ops to a file, or use `--set` for single cells; why: `aspose-cli docs troubleshooting`, Windows PowerShell |
 | A workbook open in Excel | Reads work; the in-place save fails with `OUTPUT_UNWRITABLE`. Ask the user to close it |
 | `set_values` with `"2026-04-03"` | Stored as text; write `=DATE(2026,4,3)` |
 | A bigger font on a title row | The row keeps its height; auto-fit it with `resize_rows` and no `height` |
