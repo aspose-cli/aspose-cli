@@ -62,6 +62,9 @@ internal sealed record ViewerOpenRequest(long MaxInputBytes = Aspose.Cli.Sdk.IO.
     /// <summary>Explicit license file, or null for the configured sources.</summary>
     public string? License { get; init; }
 
+    /// <summary>True for <c>--license-mode evaluation</c>: no license source is read.</summary>
+    public bool EvaluationRequested { get; init; }
+
     /// <summary>Explicit font directories, or null for the ambient environment.</summary>
     public IReadOnlyList<string>? FontDirectories { get; init; }
 }

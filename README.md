@@ -66,7 +66,8 @@ A license is taken from `--license`, then `ASPOSE_<PRODUCT>_LICENSE_B64` or
 `ASPOSE_<PRODUCT>_LICENSE_PATH`, then `ASPOSE_LICENSE_B64` or `ASPOSE_LICENSE_PATH`, then
 `.aspose/licenses/<product>.lic` or `.aspose/license.lic` in the working directory, then the
 licenses installed for the user. An invalid configured license is an error, not a silent fall
-back to evaluation.
+back to evaluation. `--license-mode evaluation` runs one command in evaluation mode without
+reading any of these sources, for checking what evaluation output looks like.
 
 ## Install
 

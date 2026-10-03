@@ -16,6 +16,8 @@ internal static class LicenseFingerprint
     public static string Of(LicenseResolution resolution)
     {
         ArgumentNullException.ThrowIfNull(resolution);
+        // Requested evaluation applies nothing, as no source does, so a renderer serves both
+        // without recycling; the viewer keeps their documents apart by their open options.
         if (!resolution.IsConfigured)
         {
             return "none";

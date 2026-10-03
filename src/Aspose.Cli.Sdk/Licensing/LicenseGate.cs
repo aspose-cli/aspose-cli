@@ -110,6 +110,12 @@ internal static class ProductLicenseGateFactory
         {
             return runtime(productId);
         }
+        if (context.EvaluationRequested)
+        {
+            // An explicit request, not a fall back: no source is read, so none can fail.
+            return factory(LicenseResolution.EvaluationRequested)
+                ?? throw new InvalidOperationException($"Product '{productId}' returned no license gate.");
+        }
         try
         {
             LicenseResolution resolution = LicenseResolver.Resolve(

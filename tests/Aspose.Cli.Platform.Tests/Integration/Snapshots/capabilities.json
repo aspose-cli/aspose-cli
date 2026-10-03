@@ -9942,6 +9942,24 @@
           "description": "Path to an Aspose license file; overrides every other license source."
         },
         {
+          "name": "--license-mode",
+          "aliases": [],
+          "type": "string",
+          "minimumArity": 1,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": true,
+          "hasDefault": false,
+          "allowedValues": [
+            "auto",
+            "evaluation"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license."
+        },
+        {
           "name": "--max-input-bytes",
           "aliases": [],
           "type": "long",

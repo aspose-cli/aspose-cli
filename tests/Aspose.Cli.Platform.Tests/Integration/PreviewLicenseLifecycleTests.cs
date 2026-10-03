@@ -67,6 +67,47 @@ public sealed class PreviewLicenseLifecycleTests : IDisposable
         Assert.Equal(2, DocumentIds().Length);
     }
 
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void EvaluationRequest_OpensItsOwnDocumentAndIsReusedOnlyByTheSameRequest()
+    {
+        JsonNode configured = Start();
+
+        JsonNode requested = _workspace.Run(
+            "preview", "book.xlsx", "--license-mode", "evaluation", "--output", "json").Json();
+        JsonNode again = _workspace.Run(
+            "preview", "book.xlsx", "--license-mode", "evaluation", "--output", "json").Json();
+
+        Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
+        Assert.False(requested["reused"]!.GetValue<bool>());
+        Assert.NotEqual(configured["id"]!.GetValue<string>(), requested["id"]!.GetValue<string>());
+        Assert.True(again["reused"]!.GetValue<bool>());
+        Assert.Equal(requested["id"]!.GetValue<string>(), again["id"]!.GetValue<string>());
+        Assert.True(Start()["reused"]!.GetValue<bool>());
+        Assert.Equal(2, DocumentIds().Length);
+    }
+
+    [Category(TestCategory.Slow)]
+    [LicensedFact]
+    public void EvaluationRequest_RendersInEvaluationBesideTheLicensedDocument()
+    {
+        using var license = new PrivateLicense();
+        JsonNode licensed = _workspace.Run(
+            "preview", "book.xlsx", "--license", license.Path, "--output", "json").Json();
+
+        JsonNode requested = _workspace.Run(
+            "preview", "book.xlsx", "--license-mode", "evaluation", "--output", "json").Json();
+        JsonNode relicensed = _workspace.Run(
+            "preview", "book.xlsx", "--license", license.Path, "--output", "json").Json();
+
+        Assert.Equal("licensed", licensed["license"]!["mode"]!.GetValue<string>());
+        Assert.Equal("evaluation", requested["license"]!["mode"]!.GetValue<string>());
+        Assert.NotEqual(licensed["id"]!.GetValue<string>(), requested["id"]!.GetValue<string>());
+        Assert.Equal(licensed["pid"]!.GetValue<int>(), requested["pid"]!.GetValue<int>());
+        Assert.True(relicensed["reused"]!.GetValue<bool>());
+        Assert.Equal("licensed", relicensed["license"]!["mode"]!.GetValue<string>());
+    }
+
     private JsonNode Start() =>
         _workspace.Run("preview", "book.xlsx", "--output", "json").Json();
 

@@ -10,6 +10,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -70,6 +71,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -104,6 +106,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -125,6 +128,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -148,6 +152,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -174,6 +179,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -195,6 +201,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -216,6 +223,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -248,6 +256,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -267,6 +276,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -285,6 +295,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -316,6 +327,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -335,6 +347,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -354,6 +367,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -372,6 +386,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -393,6 +408,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -423,6 +439,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -453,6 +470,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -476,6 +494,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -506,6 +525,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -535,6 +555,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -556,6 +577,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -589,6 +611,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -607,6 +630,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -625,6 +649,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -652,6 +677,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
@@ -673,6 +699,7 @@ Options:
   -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
   -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
   --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
   --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
   --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
   --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
