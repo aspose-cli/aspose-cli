@@ -255,6 +255,80 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.Equal(2d, imported.DoubleValue);
     }
 
+    [Theory]
+    [InlineData("""{ "op": "import_range", "sheet": "Second", "path": "{source}", "from": "Linked!A1:A2", "to": "Second!B2", "content": "all" }""", "Second", "B2")]
+    [InlineData("""{ "op": "import_sheet", "sheet": "Linked", "path": "{source}", "name": "Copied" }""", "Copied", "A1")]
+    public void Import_WarnsWhenALinkWithoutCachedValuesNoLongerEvaluatesToAnError(string operation, string sheet, string cell)
+    {
+        string source = CreateUncachedLinkSource(sheet + "-uncached-source.xlsx");
+
+        EditResult result = ApplyResult(
+            _fixture.CreateSalesWorkbook(sheet + "-uncached.xlsx"),
+            operation.Replace("\"{source}\"", Json(source), StringComparison.Ordinal));
+
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+        Assert.Equal($"'{sheet}'!{cell}", warning.Location);
+        Assert.Contains("missing-rates.xlsx", warning.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Import_TheCacheCheckChangesNoStoredValueWithoutRecalculation()
+    {
+        string source = CreateUncachedLinkSource("no-recalc-uncached-source.xlsx");
+
+        EditResult result = ApplyResult(
+            _fixture.CreateSalesWorkbook("no-recalc-uncached.xlsx"),
+            $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""",
+            recalculate: false);
+
+        using var output = new Workbook(result.Output!.Path);
+        Aspose.Cells.Cells cells = output.Worksheets["Linked"].Cells;
+        Assert.Equal(("#REF!", "#REF!"), (cells["A1"].StringValue, cells["A2"].StringValue));
+        Assert.Contains(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+    }
+
+    [Fact]
+    public void ImportRange_ChecksOnlyTheImportedCells()
+    {
+        string source = CreateUncachedLinkSource("outside-uncached-source.xlsx");
+
+        EditResult result = ApplyResult(
+            _fixture.CreateSalesWorkbook("outside-uncached.xlsx"),
+            $$"""{ "op": "import_range", "sheet": "Second", "path": {{Json(source)}}, "from": "Linked!B1:B2", "to": "Second!B2", "content": "all" }""");
+
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+    }
+
+    /// <summary>
+    /// A source whose Linked!A1 reads a workbook that never existed, written as set_formula
+    /// writes it, so the link caches nothing: A1 and A2 (=A1*2) show #REF!. B1:B2 hold values.
+    /// </summary>
+    private string CreateUncachedLinkSource(string fileName)
+    {
+        string source = _fixture.Temp.File(fileName);
+        using var workbook = new Workbook();
+        Worksheet linked = workbook.Worksheets[0];
+        linked.Name = "Linked";
+        linked.Cells["A1"].Formula = "='[missing-rates.xlsx]Rates'!$B$2";
+        linked.Cells["A2"].Formula = "=A1*2";
+        linked.Cells["B1"].PutValue("plain");
+        linked.Cells["B2"].PutValue(3);
+        workbook.CalculateFormula();
+        workbook.Save(source, SaveFormat.Xlsx);
+        return source;
+    }
+    [Fact]
+    public void Import_ALinkWithCachedValuesAddsNoCacheWarning()
+    {
+        string source = CreateThirdPartyLinkedSource("linked-cached-warning");
+
+        EditResult result = ApplyResult(
+            _fixture.CreateSalesWorkbook("linked-cached-warning-target.xlsx"),
+            $$"""{ "op": "import_sheet", "sheet": "Linked", "path": {{Json(source)}} }""");
+
+        Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == "EXTERNAL_LINK_CACHE_MISSING");
+    }
+
     [Fact]
     public void ImportRange_ValuesOfAThirdWorkbookReferenceAddNoLink()
     {
@@ -407,13 +481,15 @@ public sealed class CellsImportTests : IClassFixture<CellsFixture>
         Assert.Null(workbook.Worksheets["Two"]);
     }
 
-    private Workbook Apply(string path, string operations)
+    private Workbook Apply(string path, string operations) => new(ApplyResult(path, operations).Output!.Path);
+
+    private EditResult ApplyResult(string path, string operations, bool recalculate = true)
     {
         EditResult result = _fixture.Engine.ApplyOps(
             path,
             Parse($$"""{ "ops": [ {{operations}} ] }"""),
-            new EditRequest { OutputPath = _fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), Overwrite = true });
+            new EditRequest { OutputPath = _fixture.Temp.File(Path.GetFileNameWithoutExtension(path) + ".out.xlsx"), Overwrite = true, Recalculate = recalculate });
         Assert.All(result.Applied, static outcome => Assert.Equal(OpStatuses.Ok, outcome.Status));
-        return new Workbook(result.Output!.Path);
+        return result;
     }
 }

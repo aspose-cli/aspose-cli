@@ -150,7 +150,10 @@ cells:
   `import_sheet` refuses a source whose workbook-level name this workbook
   defines differently.
 - A reference to a third workbook keeps its link and is not read through it, so
-  recalculation uses the values the link cached.
+  recalculation uses the values the link cached. A link that caches no values
+  shows `#REF!` in the source but reads as empty, usually 0, once imported;
+  the import warns `EXTERNAL_LINK_CACHE_MISSING` with those cells. Replace
+  them with `set_formula` or `set_values`.
 - An encrypted source needs `passwordEnv`. Sources open once per batch; the
   edited file can be a source, read as it is on disk before the edit.
 
