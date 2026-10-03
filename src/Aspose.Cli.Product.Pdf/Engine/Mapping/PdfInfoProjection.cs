@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Product.Pdf.Engine.Editing;
 using Aspose.Cli.Sdk.Contracts;
@@ -314,10 +315,10 @@ internal static class PdfInfoProjection
         var values = new SortedDictionary<string, string?>(StringComparer.Ordinal)
         {
             ["author"] = EmptyToNull(document.Info.Author),
-            ["creationDate"] = InfoDate(() => document.Info.CreationDate),
+            ["creationDate"] = InfoDate(document.Info, "CreationDate"),
             ["creator"] = EmptyToNull(document.Info.Creator),
             ["keywords"] = EmptyToNull(document.Info.Keywords),
-            ["modificationDate"] = InfoDate(() => document.Info.ModDate),
+            ["modificationDate"] = InfoDate(document.Info, "ModDate"),
             ["producer"] = EmptyToNull(document.Info.Producer),
             ["subject"] = EmptyToNull(document.Info.Subject),
             ["title"] = EmptyToNull(document.Info.Title),
@@ -334,15 +335,48 @@ internal static class PdfInfoProjection
     private static string? Date(DateTime value) =>
         value == default ? null : value.ToUniversalTime().ToString("O", CultureInfo.InvariantCulture);
 
-    private static string? InfoDate(Func<DateTime> read)
+    /// <summary>
+    /// A document information date in UTC, read from its stored text: the engine's
+    /// <see cref="DocumentInfo.CreationDate"/> keeps the clock time and drops the offset. A
+    /// date without an offset is reported without one; text that is not a PDF date as stored.
+    /// </summary>
+    private static string? InfoDate(DocumentInfo info, string key) =>
+        info.TryGetValue(key, out string? stored) && !string.IsNullOrWhiteSpace(stored)
+            ? PdfDate(stored.Trim()) ?? stored.Trim()
+            : null;
+
+    /// <summary>Parses <c>D:YYYYMMDDHHmmSSOHH'mm'</c>, where every part after the year is optional.</summary>
+    private static string? PdfDate(string text)
     {
+        Match match = Regex.Match(
+            text,
+            @"^(?:D:)?(?<y>\d{4})(?<M>\d{2})?(?<d>\d{2})?(?<h>\d{2})?(?<m>\d{2})?(?<s>\d{2})?(?:(?<z>Z)(?:00'?(?:00'?)?)?|(?<sign>[+-])(?<oh>\d{2})(?:'?(?<om>\d{2})'?)?)?$",
+            RegexOptions.CultureInvariant);
+        if (!match.Success)
+        {
+            return null;
+        }
+
+        int Part(string name, int fallback) =>
+            match.Groups[name].Success ? int.Parse(match.Groups[name].Value, CultureInfo.InvariantCulture) : fallback;
         try
         {
-            return Date(read());
+            var clock = new DateTime(Part("y", 0), Part("M", 1), Part("d", 1), Part("h", 0), Part("m", 0), Part("s", 0), DateTimeKind.Unspecified);
+            if (match.Groups["z"].Success)
+            {
+                return DateTime.SpecifyKind(clock, DateTimeKind.Utc).ToString("O", CultureInfo.InvariantCulture);
+            }
+
+            if (!match.Groups["sign"].Success)
+            {
+                return clock.ToString("O", CultureInfo.InvariantCulture);
+            }
+
+            var offset = new TimeSpan(Part("oh", 0), Part("om", 0), 0);
+            var stated = new DateTimeOffset(clock, match.Groups["sign"].Value == "-" ? -offset : offset);
+            return stated.UtcDateTime.ToString("O", CultureInfo.InvariantCulture);
         }
-        catch (Exception exception) when (
-            exception is InvalidOperationException
-            || exception.GetType().Assembly.GetName().Name == "Aspose.PDF")
+        catch (ArgumentOutOfRangeException)
         {
             return null;
         }
