@@ -100,6 +100,15 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   property and never saves the inspected document.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-IMPORT-INFO-PLACEHOLDER
+
+- **Defect:** the HTML and Markdown importers set the document title, author and subject to
+  `Aspose`, whatever the source states; the HTML `title` element is ignored.
+- **CLI behavior:** `pdf create --from-html` takes the title from the HTML `title` element and
+  `--from-text` Markdown leaves it empty; both leave the author and subject empty.
+- **Workaround:** set the other fields with a `set_metadata` edit.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-CHART-TITLE

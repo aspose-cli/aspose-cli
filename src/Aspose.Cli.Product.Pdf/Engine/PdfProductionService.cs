@@ -249,7 +249,7 @@ internal sealed class PdfProductionService
                 "The Markdown importer follows local file references inside fetched resources without any resource hook, so network resources stay refused for Markdown; convert the Markdown to HTML first.");
         }
 
-        EnsureCreationInputs(_resourceBudgets, request);
+        byte[]? html = EnsureCreationInputs(_resourceBudgets, request);
         // The Markdown importer resolves the Markdown's relative references against the
         // working directory and reads files itself; the check holds them until the save.
         using MarkdownImportResources? markdown = request.Markdown && request.TextPath is { } markdownPath
@@ -263,6 +263,15 @@ internal sealed class PdfProductionService
                 ? CreateFromHtml(request.HtmlPath, request, resources!)
                 : CreateFromText(request.TextPath!, request.Markdown, request);
         resources?.ThrowIfFailed();
+        if (request.HtmlPath is not null || request.Markdown)
+        {
+            // Both importers set the title, author and subject to a placeholder
+            // (PDF-IMPORT-INFO-PLACEHOLDER); keep only the title the HTML states.
+            document.Info.Title = html is null ? string.Empty : HtmlDocumentTitle.Read(html) ?? string.Empty;
+            document.Info.Author = string.Empty;
+            document.Info.Subject = string.Empty;
+        }
+
         long size = _writer.Write(request.OutputPath, request.Overwrite, path =>
         {
             try { document.Save(path); }
@@ -799,7 +808,8 @@ internal sealed class PdfProductionService
         }).ToArray();
     }
 
-    private static void EnsureCreationInputs(
+    /// <summary>Checks every creation input and returns the HTML input's bytes, if any.</summary>
+    private static byte[]? EnsureCreationInputs(
         ResourceBudgetLedger resourceBudgets,
         NewPdfRequest request)
     {
@@ -818,19 +828,26 @@ internal sealed class PdfProductionService
             InputSizeGuard.Ensure(resourceBudgets, path);
         }
 
-        // The HTML importer reaches the network before any resource policy applies; refuse
-        // first unless the caller allowed it. Markdown is checked with its local references.
-        if (request.HtmlPath is { } html && !request.AllowNetworkResources)
-        {
-            NetworkReferenceGuard.EnsureNone(
-                resourceBudgets.Inputs.ReadAllBytes(html), "HTML input", html, optIn: "--allow-network-resources");
-        }
-
         foreach (string image in request.ImagePaths ?? [])
         {
             using Stream content = resourceBudgets.Inputs.OpenFile(image);
             NetworkReferenceGuard.EnsureNoneInImage(content, image);
         }
+
+        if (request.HtmlPath is not { } html)
+        {
+            return null;
+        }
+
+        // The HTML importer reaches the network before any resource policy applies; refuse
+        // first unless the caller allowed it. Markdown is checked with its local references.
+        byte[] bytes = resourceBudgets.Inputs.ReadAllBytes(html);
+        if (!request.AllowNetworkResources)
+        {
+            NetworkReferenceGuard.EnsureNone(bytes, "HTML input", html, optIn: "--allow-network-resources");
+        }
+
+        return bytes;
     }
 
     /// <summary>

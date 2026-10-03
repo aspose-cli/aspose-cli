@@ -170,6 +170,32 @@ public sealed class PdfKnownIssueTests
             $"reading TaggedContent changed IsPdfaCompliant from {declaredBefore} to {reopened.IsPdfaCompliant} and the title to '{reopened.Info.Title}'");
     }
 
+    [LicensedFact]
+    public void HtmlAndMarkdownImports_SetAPlaceholderTitleAuthorAndSubject()
+    {
+        using var fixture = new PdfEngineFixture();
+        string html = fixture.File("titled.html");
+        File.WriteAllText(html, """
+            <html><head><title>Real title</title><meta name="author" content="Jane"></head>
+            <body><p>Body</p></body></html>
+            """);
+        string markdown = fixture.File("notes.md");
+        File.WriteAllText(markdown, "# Notes\n\nBody\n");
+
+        using var fromHtml = new Document(html, new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar));
+        using var fromMarkdown = new Document(markdown, new MdLoadOptions());
+        string[] values =
+        [
+            fromHtml.Info.Title, fromHtml.Info.Author, fromHtml.Info.Subject,
+            fromMarkdown.Info.Title, fromMarkdown.Info.Author, fromMarkdown.Info.Subject,
+        ];
+
+        KnownIssue.Reproduces(
+            "PDF-IMPORT-INFO-PLACEHOLDER",
+            values.All(static value => value == "Aspose"),
+            $"the imports set title, author and subject to [{string.Join(", ", values)}]");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {
