@@ -82,24 +82,24 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --to <azw3|doc|docm|docx|dot|dotm|dotx|epub|flatopc|html|html-fixed|md|mhtml|mobi|odt|openxps|ott|pcl|pdf|ps|rtf|txt|wordml|xps> (REQUIRED)  Target document format.
-  --pages <pages>                                                                                                                              1-based pages for fixed-page targets only.
-  -o, --out <out>                                                                                                                              Output path; defaults to a sibling using the target extension.
-  --overwrite                                                                                                                                  Replace the output file if it already exists.
-  --password <password>                                                                                                                        Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                                                                                                                Name of an environment variable holding the password for the document.
-  --password-stdin                                                                                                                             Read the password for the document from the first line of stdin.
-  --encrypt <encrypt>                                                                                                                          Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
-  --encrypt-env <encrypt-env>                                                                                                                  Name of an environment variable holding the password for the output document.
-  --font-dir <font-dir>                                                                                                                        Local font directory searched in addition to the system fonts; repeat for more.
-  -?, -h, --help                                                                                                                               Show help and usage information
-  -f, --output <compact|json|markdown|table>                                                                                                   Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                                                                                                                  Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                                                                                                                Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                                                                                                                          Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                                                                                                                          Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                                                                                                                          Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>                                                                                                          Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --to <to> (REQUIRED)                        Target document format. Values: azw3, doc, docm, docx, dot, dotm, dotx, epub, flatopc, html, html-fixed, md, mhtml, mobi, odt, openxps, ott, pcl, pdf, ps, rtf, txt, wordml, xps.
+  --pages <pages>                             1-based pages for fixed-page targets only.
+  -o, --out <out>                             Output path; defaults to a sibling using the target extension.
+  --overwrite                                 Replace the output file if it already exists.
+  --password <password>                       Password for the document. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the document.
+  --password-stdin                            Read the password for the document from the first line of stdin.
+  --encrypt <encrypt>                         Password for the output document. Discouraged: visible in the process list; prefer --encrypt-env.
+  --encrypt-env <encrypt-env>                 Name of an environment variable holding the password for the output document.
+  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli words convert contract.docx --to pdf
@@ -230,20 +230,20 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --preview                                                                                              Include a bounded outline preview.
-  --detail <bookmarks|comments|fields|fonts|images|outline|properties|revisions|sections|styles|tables>  Extra structural projections; repeatable.
-  --password <password>                                                                                  Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                                                                          Name of an environment variable holding the password for the document.
-  --password-stdin                                                                                       Read the password for the document from the first line of stdin.
-  --font-dir <font-dir>                                                                                  Local font directory searched in addition to the system fonts; repeat for more.
-  -?, -h, --help                                                                                         Show help and usage information
-  -f, --output <compact|json|markdown|table>                                                             Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                                                                            Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                                                                          Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                                                                                    Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                                                                                    Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                                                                                    Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>                                                                    Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --preview                                   Include a bounded outline preview.
+  --detail <detail>                           Extra structural projections; repeatable. Values: bookmarks, comments, fields, fonts, images, outline, properties, revisions, sections, styles, tables.
+  --password <password>                       Password for the document. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the document.
+  --password-stdin                            Read the password for the document from the first line of stdin.
+  --font-dir <font-dir>                       Local font directory searched in addition to the system fonts; repeat for more.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli words inspect contract.docx --output json
@@ -316,23 +316,23 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --pattern <pattern> (REQUIRED)                        Text to find, or a regular expression with --regex.
-  --regex                                               Treat the pattern as a culture-invariant regular expression with a one-second budget.
-  --case-sensitive                                      Match letter case exactly.
-  --scope <all|body|comments|footnotes|headersFooters>  Search scope: body (the main text, without the comments and footnotes it anchors), headersFooters, footnotes (with endnotes), comments or all. [default: body]
-  --max-hits <max-hits>                                 Maximum returned hits (1-10000). [default: 100]
-  --skip <skip>                                         Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
-  --password <password>                                 Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>                         Name of an environment variable holding the password for the document.
-  --password-stdin                                      Read the password for the document from the first line of stdin.
-  -?, -h, --help                                        Show help and usage information
-  -f, --output <compact|json|markdown|table>            Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                           Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                                         Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                                   Path to an Aspose license file; overrides every other license source.
-  --workdir <workdir>                                   Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                                   Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>                   Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --pattern <pattern> (REQUIRED)              Text to find, or a regular expression with --regex.
+  --regex                                     Treat the pattern as a culture-invariant regular expression with a one-second budget.
+  --case-sensitive                            Match letter case exactly.
+  --scope <scope>                             Search scope: body (the main text, without the comments and footnotes it anchors), headersFooters, footnotes (with endnotes), comments or all. Values: all, body, comments, footnotes, headersFooters. [default: body]
+  --max-hits <max-hits>                       Maximum returned hits (1-10000). [default: 100]
+  --skip <skip>                               Matches to pass over before the returned hits; a truncated search's window.next sets it. [default: 0]
+  --password <password>                       Password for the document. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>               Name of an environment variable holding the password for the document.
+  --password-stdin                            Read the password for the document from the first line of stdin.
+  -?, -h, --help                              Show help and usage information
+  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                         Path to an Aspose license file; overrides every other license source.
+  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli words query search contract.docx --pattern TODO --scope all
