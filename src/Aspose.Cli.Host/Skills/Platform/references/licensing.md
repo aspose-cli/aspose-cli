@@ -37,7 +37,10 @@ For each product, the first source that is set wins (`<PRODUCT>` is `CELLS`,
 3. `ASPOSE_LICENSE_B64`, then `ASPOSE_LICENSE_PATH`.
 4. `.aspose/licenses/<product>.lic`, then `.aspose/license.lic`, in the working
    directory.
-5. The product license, then the shared license, installed for this user.
+5. The product license, then the shared license, installed for this user, in
+   the configuration directory: `%APPDATA%\aspose-cli`, or the absolute
+   directory named by `ASPOSE_CLI_CONFIG_DIR`. Windows locates `%APPDATA%`
+   itself, so changing the `APPDATA` variable does not move it.
 
 A configured source that is broken (a missing path, a directory, a rejected
 file) is an error, never a silent fall back to evaluation mode. An empty
