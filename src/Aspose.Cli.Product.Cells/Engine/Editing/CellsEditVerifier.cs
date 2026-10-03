@@ -1,3 +1,4 @@
+using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -41,6 +42,8 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                 hint: "Split the edit into smaller batches so each one changes fewer cells."));
         }
         (IReadOnlyList<CellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
+        errors = errors.Select(error => IsPreexisting(error, baseline.Workbook, candidate.Workbook)
+            ? error with { Preexisting = true } : error).ToArray();
         bool errorsCapped = errorTotal > errors.Count;
         if (errorsCapped)
         {
@@ -49,10 +52,12 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         }
         if (errorTotal > 0)
         {
+            int preexisting = errors.Count(static error => error.Preexisting == true);
             issues.Add(VerificationIssue.Of(CellsDiagnostics.FormulaErrors,
-                errorsCapped
+                (errorsCapped
                     ? $"The edited workbook contains {errorTotal} formula error(s); formulaErrors lists the first {errors.Count}."
-                    : $"The edited workbook contains {errorTotal} formula error(s).",
+                    : $"The edited workbook contains {errorTotal} formula error(s).")
+                + (preexisting > 0 ? $" {preexisting} of the listed error(s) were already in the input." : ""),
                 location: errorTotal == 1 ? Sheets.QuotedName(errors[0].Sheet) + "!" + errors[0].Cell : null,
                 hint: errorsCapped
                     ? "Fix the cells listed in formulaErrors, then edit again with --verify to list the rest."
@@ -146,6 +151,17 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         }
 
         return false;
+    }
+
+    /// <summary>Whether the input cell had the same formula and the same error value.</summary>
+    private static bool IsPreexisting(CellError error, Workbook baseline, Workbook candidate)
+    {
+        CellRef address = A1.ParseCell(error.Cell);
+        Cell? before = baseline.Worksheets[error.Sheet]?.Cells.CheckCell(address.Row, address.Column);
+        Cell after = candidate.Worksheets[error.Sheet].Cells.CheckCell(address.Row, address.Column);
+        return before is { Type: CellValueType.IsError }
+            && string.Equals(before.StringValue, error.Error, StringComparison.Ordinal)
+            && string.Equals(before.Formula, after.Formula, StringComparison.Ordinal);
     }
 
     private static bool HasUnchangedFormulaWithChangedResult(CellDiff cell) =>

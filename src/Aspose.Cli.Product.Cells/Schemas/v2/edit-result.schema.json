@@ -146,7 +146,8 @@
       "properties": {
         "sheet": { "type": "string" },
         "cell": { "type": "string" },
-        "error": { "type": "string" }
+        "error": { "type": "string" },
+        "preexisting": { "const": true, "description": "The input cell had the same formula and the same error value." }
       }
     },
     "licenseInfo": {

@@ -320,7 +320,7 @@ internal static class CellsContractSamples
                 },
             ],
             OtherChanges = [],
-            FormulaErrors = [new CellError { Sheet = "Sales", Cell = "D2", Error = "#DIV/0!" }],
+            FormulaErrors = [new CellError { Sheet = "Sales", Cell = "D2", Error = "#DIV/0!", Preexisting = true }],
             Truncated = false,
             Issues =
             [

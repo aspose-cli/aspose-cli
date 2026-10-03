@@ -103,6 +103,12 @@ public sealed record CellError
 
     /// <summary>The error value, e.g. <c>#REF!</c>, <c>#DIV/0!</c>, <c>#VALUE!</c>.</summary>
     public required string Error { get; init; }
+
+    /// <summary>
+    /// <c>true</c> in edit verification when the input cell had the same formula and the same
+    /// error value; omitted otherwise.
+    /// </summary>
+    public bool? Preexisting { get; init; }
 }
 
 /// <summary>A table (list object) in a workbook.</summary>

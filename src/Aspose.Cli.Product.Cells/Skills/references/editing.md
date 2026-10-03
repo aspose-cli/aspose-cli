@@ -310,6 +310,8 @@ edited workbook has formula errors; `location` is the cell when there is one),
 `DIFF_TRUNCATED` (more than 1000 changed cells, so the change lists are
 incomplete), `LIST_TRUNCATED` (`formulaErrors` holds only the first 1000), or
 the code of a completeness warning such as `SHEETS_DROPPED`; `capabilities`
-lists every code. A reopen error, budget failure or
+lists every code. A formula error whose input cell had the same formula and
+the same error carries `preexisting: true`; it still fails verification, so
+fix it or tell the user it predates the edit. A reopen error, budget failure or
 cancellation aborts publication. `--verify` needs the final recalculation, so
 it cannot accompany `--dry-run` or `--no-recalc`.

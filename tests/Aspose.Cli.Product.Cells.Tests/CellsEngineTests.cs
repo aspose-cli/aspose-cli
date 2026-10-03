@@ -127,6 +127,32 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void VerificationMarksAFormulaErrorTheInputAlreadyHad()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-preexisting-error.xlsx");
+        using (var workbook = new Aspose.Cells.Workbook(source))
+        {
+            Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
+            cells["E5"].Formula = "=1/0";
+            cells["E6"].Formula = "=1/0";
+            workbook.CalculateFormula();
+            workbook.Save(source);
+        }
+
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E6:E7","formula":"=2/0"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-preexisting-error.out.xlsx"), Verify = true });
+
+        Assert.False(result.Verification!.Ok);
+        Assert.Equal(
+            [("E5", true), ("E6", (bool?)null), ("E7", null)],
+            result.Verification.FormulaErrors.Select(static error => (error.Cell, error.Preexisting)));
+        VerificationIssue issue = Assert.Single(result.Verification.Issues);
+        Assert.Equal("FORMULA_ERRORS", issue.Code);
+        Assert.EndsWith("1 of the listed error(s) were already in the input.", issue.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void VerificationPointsACappedFormulaErrorListAtTheEditResult()
     {
         string source = _fixture.CreateSalesWorkbook("verify-formula-errors-capped.xlsx");
