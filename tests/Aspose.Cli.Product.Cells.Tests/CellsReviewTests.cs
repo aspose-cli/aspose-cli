@@ -64,6 +64,15 @@ public sealed class CellsReviewTests
                 .Select(static finding => finding.Code)
                 .Distinct(StringComparer.Ordinal)
                 .Order(StringComparer.Ordinal));
+        // Each finding about one sheet names its image; the hidden sheet has none to name.
+        Assert.All(findings, static finding => Assert.Equal(
+            finding.Code switch
+            {
+                "CELLS_SHEET_EMPTY" => "Blank",
+                "CELLS_SHEET_HIDDEN" => "Secret",
+                _ => "Data",
+            },
+            finding.Part));
         ReviewFinding hiddenColumns = Assert.Single(
             findings,
             static finding => finding.Code == "CELLS_POPULATED_COLUMNS_HIDDEN");
@@ -149,7 +158,7 @@ public sealed class CellsReviewTests
             static finding => finding.Code == "CELLS_CHART_SPLIT_ACROSS_PAGES");
     }
 
-    /// <summary>A sheet whose chart spans columns D to Q, past the first portrait page.</summary>
+    /// <summary>A sheet whose chart spans columns D to Q, past the first portrait page, and a sheet of notes.</summary>
     internal static void CreateWideChartWorkbook(string path, bool fitToOnePageWide)
     {
         using var workbook = new Workbook();
@@ -170,6 +179,7 @@ public sealed class CellsReviewTests
             data.PageSetup.FitToPagesWide = 1;
             data.PageSetup.FitToPagesTall = 0;
         }
+        workbook.Worksheets.Add("Notes").Cells["A1"].PutValue("Monthly sales");
         workbook.Save(path);
     }
 

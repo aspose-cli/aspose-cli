@@ -112,7 +112,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             findings.Add(CellsReviewChecks.SheetHidden.Finding(
                 $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence.",
                 sheet.Name,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         foreach (SheetInfo sheet in visible.Where(sheet =>
                      sheet.UsedRange is null
@@ -121,7 +122,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             findings.Add(CellsReviewChecks.SheetEmpty.Finding(
                 $"Visible worksheet '{sheet.Name}' is empty; its PNG is a blank placeholder.",
                 sheet.Name,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         foreach (CellsReviewSheetLayout sheet in layout.Sheets.Where(sheet =>
                      visible.Any(visibleSheet =>
@@ -134,7 +136,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             findings.Add(CellsReviewChecks.FormulaError.Finding(
                 $"Formula evaluates to {error.Error}.",
                 $"{error.Sheet}!{error.Cell}",
-                Hint));
+                Hint,
+                part: error.Sheet));
         }
         if (info.Workbook.HasVba)
         {
@@ -166,7 +169,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
                         ? " East Asian text in a font without East Asian glyphs is measured unreliably, so check those values in the sheet image; if one is cut off after auto-fit, give its column an explicit width."
                         : string.Empty),
                 sheet.Name,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         AddPrintAreaFindings(findings, sheet);
         AddChartFindings(findings, sheet);
@@ -183,7 +187,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             findings.Add(CellsReviewChecks.UsedRangeSparse.Finding(
                 $"Only {density:0.##}% of the {sheet.UsedAreaCells} cells in the used area contain data; inspect for stray far-away content or excessive whitespace.",
                 sheet.Name,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
     }
 
@@ -213,7 +218,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
                 findings.Add(check.Finding(
                     $"{set.Count} {description}; sample: {string.Join(", ", set.Samples.Select(name))}.",
                     sheet.Name,
-                    Hint));
+                    Hint,
+                    part: sheet.Name));
             }
         }
     }
@@ -230,21 +236,24 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             findings.Add(CellsReviewChecks.PrintAreaInvalid.Finding(
                 $"The saved print area '{sheet.PrintArea}' could not be interpreted as bounded A1 ranges.",
                 sheet.Name,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         else if (sheet.PrintAreaExcludesContent)
         {
             findings.Add(CellsReviewChecks.PrintAreaExcludesContent.Finding(
                 $"The print area '{sheet.PrintArea}' does not contain all populated cells ({sheet.ContentRange}).",
                 sheet.Name,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         if (sheet.PrintAreaExcessive)
         {
             findings.Add(CellsReviewChecks.PrintAreaExcessive.Finding(
                 $"The print area '{sheet.PrintArea}' is more than 20 times the populated content bounds ({sheet.ContentRange}).",
                 sheet.Name,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
     }
 
@@ -269,42 +278,48 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             findings.Add(CellsReviewChecks.ChartHidden.Finding(
                 "The chart object is hidden and will not provide visible evidence.",
                 location,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         if (chart.WidthPixels < 120 || chart.HeightPixels < 80)
         {
             findings.Add(CellsReviewChecks.ChartTooSmall.Finding(
                 $"The chart is only {chart.WidthPixels} x {chart.HeightPixels} pixels and may be unreadable.",
                 location,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         if (chart.SeriesCount == 0)
         {
             findings.Add(CellsReviewChecks.ChartWithoutSeries.Finding(
                 "The chart has no data series.",
                 location,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         if (chart.AnchoredInHiddenCells)
         {
             findings.Add(CellsReviewChecks.ChartAnchoredInHiddenCells.Finding(
                 "A chart anchor touches hidden rows or columns; inspect whether the object remains visible after reopening.",
                 location,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         if (chart.ExcludedByPrintArea)
         {
             findings.Add(CellsReviewChecks.PrintAreaExcludesChart.Finding(
                 $"The print area '{sheet.PrintArea}' does not intersect this chart.",
                 location,
-                Hint));
+                Hint,
+                part: sheet.Name));
         }
         if (chart.PrintedPages > 1 && !chart.Hidden)
         {
             findings.Add(CellsReviewChecks.ChartSplitAcrossPages.Finding(
                 $"The chart reaches {chart.PrintedPages} printed pages, so printing and PDF export split it.",
                 location,
-                "Fit the sheet on fewer pages with set_page_setup (fitToWidth 1 and fitToHeight 0, or orientation landscape), or move or resize the chart, then review again."));
+                "Fit the sheet on fewer pages with set_page_setup (fitToWidth 1 and fitToHeight 0, or orientation landscape), or move or resize the chart, then review again.",
+                part: sheet.Name));
         }
     }
 

@@ -262,7 +262,7 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
-    public void ConvertToPdf_WarnsAboutAChartItSplitsAcrossPages()
+    public void ConvertAndReview_ReportAChartAPdfSplitsAcrossPages()
     {
         CellsReviewTests.CreateWideChartWorkbook(_workspace.File("split.xlsx"), fitToOnePageWide: false);
         CellsReviewTests.CreateWideChartWorkbook(_workspace.File("fitted.xlsx"), fitToOnePageWide: true);
@@ -276,6 +276,14 @@ public sealed class CellsCliTests : IDisposable
         Assert.Contains("'Wide' on sheet 'Data' (2 pages)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.DoesNotContain(fitted["warnings"]?.AsArray() ?? [],
             static warning => warning!["code"]!.GetValue<string>() == "CHART_SPLIT_ACROSS_PAGES");
+
+        // Review reports it too, with the image of that sheet alone as evidence.
+        CliResult review = _workspace.Run("review", "split.xlsx", "--out", _workspace.File("review"), "--output", "json");
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
+            static finding => finding!["code"]!.GetValue<string>() == "CELLS_CHART_SPLIT_ACROSS_PAGES")!;
+        string evidence = Assert.Single(finding["evidence"]!.AsArray())!.GetValue<string>();
+        Assert.EndsWith("sheet-0001.png", evidence, StringComparison.Ordinal);
     }
 
     private static JsonNode Notice(JsonNode result) =>
