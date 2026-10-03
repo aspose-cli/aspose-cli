@@ -89,6 +89,9 @@
         "hAlign": { "enum": ["left", "center", "right"] },
         "vAlign": { "enum": ["top", "middle", "bottom"] },
         "wrap": { "type": "boolean" },
+        "underline": { "type": "boolean" },
+        "strikethrough": { "type": "boolean" },
+        "indent": { "type": "integer", "minimum": 0 },
         "locked": { "type": "boolean" }
       }
     },
