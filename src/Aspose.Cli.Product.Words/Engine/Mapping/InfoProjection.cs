@@ -156,9 +156,7 @@ internal static class InfoProjection
             .Select(revision => (revision, revision.RevisionType switch
             {
                 RevisionType.Moving => moves[revision],
-                // An ungrouped revision of a paragraph is its mark alone, which has no text.
-                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text
-                    ?? (revision.ParentNode is Paragraph ? null : revision.ParentNode.GetText()),
+                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text ?? NodeText(revision),
                 // Format changes carry a description of the formatting, not document text.
                 _ => null,
             }))
@@ -170,6 +168,14 @@ internal static class InfoProjection
             "Split the document with 'words split --by section' and inspect each part with '--detail revisions'.",
             warnings);
     }
+
+    /// <summary>
+    /// The text of the one node a revision changes, or null for a paragraph: a paragraph's own
+    /// revision is its mark alone, which has no text, while the SDK would return the whole
+    /// paragraph's text.
+    /// </summary>
+    internal static string? NodeText(Revision revision) =>
+        revision.ParentNode is Paragraph or null ? null : revision.ParentNode.GetText();
 
     /// <summary>
     /// Joins the move revisions into one move per side: its source (moved from) and its
@@ -291,7 +297,7 @@ internal static class InfoProjection
         };
     }
 
-    private static string RevisionTypeName(RevisionType type) => type switch
+    internal static string RevisionTypeName(RevisionType type) => type switch
     {
         RevisionType.Insertion => "insertion",
         RevisionType.Deletion => "deletion",

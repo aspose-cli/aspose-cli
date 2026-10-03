@@ -110,6 +110,38 @@ public sealed class WordsTrackChangesTests
     }
 
     [Fact]
+    public void Compare_NamesSampleTypesAsTheRevisionListDoes()
+    {
+        using var fixture = new WordsFixture();
+        string left = fixture.CreateReport("left.docx");
+        string right = fixture.Temp.File("right.docx");
+        var changed = new Document(left);
+        changed.Range.Replace("twelve", "ten");
+        changed.Save(right);
+
+        WordsCompareResult result = fixture.Engine.Compare(left, right, new WordsCompareRequest());
+
+        Assert.Equal(["deletion:twelve", "insertion:ten"], result.Samples.Select(static s => $"{s.Type}:{s.Text}"));
+    }
+
+    [Fact]
+    public void Compare_SamplesAParagraphMarkWithoutItsParagraphText()
+    {
+        using var fixture = new WordsFixture();
+        string left = fixture.CreateReport("left.docx");
+        string right = fixture.Temp.File("right.docx");
+        var changed = new Document(left);
+        changed.FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Single(static p => p.GetText().StartsWith("Operations", StringComparison.Ordinal)).Remove();
+        changed.Save(right);
+
+        WordsCompareResult result = fixture.Engine.Compare(left, right, new WordsCompareRequest());
+
+        // The deleted paragraph's mark is one sample without text and its run another.
+        Assert.Equal(["deletion:", "deletion:Operations remained stable."], result.Samples.Select(static s => $"{s.Type}:{s.Text}"));
+    }
+
+    [Fact]
     public void InspectRevisions_ListsEachChangeInDocumentOrder()
     {
         using var fixture = new WordsFixture();
