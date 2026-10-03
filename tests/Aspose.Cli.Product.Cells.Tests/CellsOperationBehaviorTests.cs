@@ -16,13 +16,35 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
     private static readonly Dictionary<string, (string Ops, Action<Workbook> Assert)> Cases = new(StringComparer.Ordinal)
     {
         ["set_formula"] = (
-            """{ "op": "set_formula", "sheet": "Data", "range": "D2:D3", "formula": "=B2+C2" }""",
+            """
+            { "op": "set_formula", "sheet": "Data", "range": "D2:D3", "formula": "=B2+C2" },
+            { "op": "set_formula", "sheet": "Data", "range": "E2", "formula": "=SUM(B2:C2)" },
+            { "op": "set_formula", "sheet": "Second", "range": "A3", "formula": "=FILTER(Data!A1:C3,Data!A1:A3<>\"East\")" },
+            { "op": "set_formula", "sheet": "Second", "range": "E1", "formula": "=FILTER(Data!B2:B3,Data!A2:A3=\"East\")" },
+            { "op": "set_values", "sheet": "Second", "range": "G2", "values": [["keep"]] },
+            { "op": "set_formula", "sheet": "Second", "range": "G1", "formula": "=FILTER(Data!A1:A3,Data!A1:A3<>\"East\")" }
+            """,
             static workbook =>
             {
                 Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
                 Assert.Equal("=B2+C2", cells["D2"].Formula);
                 Assert.Equal("=B3+C3", cells["D3"].Formula);
                 Assert.Equal(2700d, cells["D2"].DoubleValue);
+                // A single-cell formula with a single result stays an ordinary formula...
+                Assert.Equal(2700d, cells["E2"].DoubleValue);
+                Assert.False(cells["E2"].IsArrayFormula);
+                // ...and one whose result is an array spills like Excel 365.
+                Aspose.Cells.Cells second = workbook.Worksheets["Second"].Cells;
+                Assert.True(second["A3"].IsDynamicArrayFormula);
+                Assert.Equal("Region", second["A3"].StringValue);
+                Assert.Equal("Total", second["A4"].StringValue);
+                Assert.Equal(1500d, second["C4"].DoubleValue);
+                // A function whose result follows the data stays dynamic while it returns one cell.
+                Assert.True(second["E1"].IsDynamicArrayFormula);
+                Assert.Equal(1200d, second["E1"].DoubleValue);
+                // A spill onto a cell that holds a value keeps the value and shows #SPILL!.
+                Assert.Equal("keep", second["G2"].StringValue);
+                Assert.Equal("#SPILL!", second["G1"].StringValue);
             }),
         ["clear_range"] = (
             """{ "op": "clear_range", "sheet": "Data", "range": "A1:C1", "what": "formats" }""",

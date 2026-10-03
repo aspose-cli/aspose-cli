@@ -112,7 +112,10 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
   `"2026-04-03"` stays text and ignores a date format; write dates as
   `=DATE(2026,4,3)` (`aspose-cli docs cells/workbook-standards`).
 - `set_formula` writes the formula of the range's top-left cell and fills it:
-  relative references shift per cell, `$` references stay.
+  relative references shift per cell, `$` references stay. Set a formula
+  whose result is an array (`FILTER`, `UNIQUE`, `SORT`) on one cell: like
+  Excel 365 it spills into the cells beside and below it, or is `#SPILL!`
+  (a `FORMULA_ERRORS` verification issue) when they are not empty.
 - Inserting or deleting rows and columns updates formula references as in
   Excel.
 

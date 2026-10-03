@@ -33,7 +33,9 @@ public sealed record SetValuesOp : CellsOp
 
 /// <summary>
 /// Sets a formula on every cell of a range with Excel fill semantics: relative references shift
-/// per cell, absolute (<c>$</c>) references stay.
+/// per cell, absolute (<c>$</c>) references stay. Like Excel 365, a formula set on a single cell
+/// whose result is an array, such as FILTER, UNIQUE or SORT, spills into the cells beside and
+/// below it, or shows #SPILL! when they are not empty.
 /// </summary>
 [Operation("set_formula")]
 public sealed record SetFormulaOp : CellsOp
