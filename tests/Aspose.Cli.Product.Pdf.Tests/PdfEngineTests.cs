@@ -381,6 +381,69 @@ public sealed class PdfEngineTests
     }
 
     [Theory]
+    [InlineData(null, 3)]
+    [InlineData("2-3", 2)]
+    public void Convert_DocumentFormatsKeepTheDocumentProperties(string? pages, int pageCount)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("titled.pdf", 3);
+        using (var document = new Document(input))
+        {
+            document.Info.Title = "Quarterly title";
+            document.Info.Subject = "Quarterly subject";
+            document.Save(input);
+        }
+        string output = fixture.File("titled.xps");
+
+        fixture.Engine.Convert(input, new PdfConvertRequest
+        {
+            TargetFormatId = "xps",
+            OutputPath = output,
+            Pages = pages is null ? null : CliPageRange.Parse(pages),
+        });
+
+        using var package = System.IO.Compression.ZipFile.OpenRead(output);
+        using var core = new StreamReader(package.GetEntry("docProps/core.xml")!.Open());
+        string properties = core.ReadToEnd();
+        Assert.Contains("Quarterly title", properties, StringComparison.Ordinal);
+        Assert.Contains("Quarterly subject", properties, StringComparison.Ordinal);
+        Assert.Equal(pageCount, package.Entries.Count(static entry => entry.FullName.EndsWith(".fpage", StringComparison.Ordinal)));
+    }
+
+    [Theory]
+    [InlineData("1-2", true)]
+    [InlineData("1-3", false)]
+    public void Convert_DocumentFormatsDiscloseNavigationToUnselectedPages(string pages, bool degraded)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("chapters.pdf", 3);
+        using (var document = new Document(input))
+        {
+            document.Outlines.Add(new OutlineItemCollection(document.Outlines)
+            {
+                Title = "Appendix",
+                Destination = new FitExplicitDestination(document.Pages[3]),
+            });
+            document.Save(input);
+        }
+
+        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest
+        {
+            TargetFormatId = "docx",
+            OutputPath = fixture.File("chapters.docx"),
+            Pages = CliPageRange.Parse(pages),
+        });
+
+        Warning? warning = result.Warnings?.SingleOrDefault(static item => item.Code == "NAVIGATION_DEGRADED");
+        Assert.Equal(degraded, warning is not null);
+        if (warning is not null)
+        {
+            Assert.StartsWith("1 bookmark(s), 0 link(s)", warning.Message, StringComparison.Ordinal);
+            Assert.Contains("--pages did not select", warning.Message, StringComparison.Ordinal);
+        }
+    }
+
+    [Theory]
     [InlineData("docx")]
     [InlineData("xlsx")]
     [InlineData("pptx")]

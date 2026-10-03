@@ -118,6 +118,26 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Equal(original, File.ReadAllBytes(input));
     }
 
+    [Theory]
+    [InlineData("docx")]
+    [InlineData("html")]
+    public void EvaluationMode_ConvertsTheFirstPagesOfALongerDocument(string format)
+    {
+        using (var fixture = new PdfEngineFixture())
+        {
+            File.Copy(fixture.CreateRawDocument("six.pdf", pages: 6), _workspace.File("six.pdf"));
+        }
+
+        CliResult convert = _workspace.Run(
+            "pdf", "convert", "six.pdf", "--to", format, "--pages", "1-2", "--out", $"six.{format}", "--output", "json");
+
+        Assert.True(convert.ExitCode == 0, convert.StdErr);
+        Assert.True(new FileInfo(_workspace.File($"six.{format}")).Length > 0);
+        Assert.Contains(
+            JsonNode.Parse(convert.StdOut)!["warnings"]!.AsArray(),
+            static warning => warning!["message"]!.GetValue<string>().Contains("none of the document properties", StringComparison.Ordinal));
+    }
+
     [Fact]
     public void EvaluationMode_DisclosesAPartialInspectAndRefusesReadingPastTheFourthPage()
     {

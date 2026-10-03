@@ -505,7 +505,7 @@ internal sealed class PdfProductionService
             "tiff" => [ConvertTiff(loaded.Document, pages, request)],
             "txt" => [ConvertText(loaded.Document, pages, request)],
             "pdfa-1b" or "pdfa-2b" or "pdfa-3b" => [ConvertPdfa(loaded.Document, pages, request, warnings)],
-            _ => [ConvertDocument(loaded.Document, pages, request)],
+            _ => [ConvertDocument(loaded.Document, pages, request, state, warnings)],
         };
 
         if (request.TargetFormatId is not ("xps" or "svg" or "png" or "jpeg" or "tiff" or "pdfa-1b" or "pdfa-2b" or "pdfa-3b"))
@@ -528,9 +528,38 @@ internal sealed class PdfProductionService
         };
     }
 
-    private OutputInfo ConvertDocument(Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
+    /// <summary>
+    /// Converts the opened document itself, which this command never saves back, so the
+    /// document properties reach formats that carry them; a page copy has none. Evaluation
+    /// mode cannot delete a page after the ones it shows, so there the selected pages of a
+    /// longer document are copied, and the properties left behind are disclosed.
+    /// </summary>
+    private OutputInfo ConvertDocument(
+        Document document,
+        IReadOnlyList<int> pages,
+        PdfConvertRequest request,
+        LicenseState state,
+        List<Warning> warnings)
     {
-        using Document selected = Select(source, pages);
+        bool copy = state == LicenseState.Evaluation
+            && document.Pages.Count > PdfEvaluation.VisibleItems
+            && pages.Count < document.Pages.Count;
+        using Document? copied = copy ? Select(document, pages) : null;
+        Document selected = copied ?? document;
+        if (copy)
+        {
+            warnings.Add(new Warning
+            {
+                Code = WarningCodes.LossyConversion,
+                Message = $"Evaluation mode cannot remove the pages after page {PdfEvaluation.VisibleItems} from the document, so the selected pages were copied into a new one and the output has none of the document properties, such as its title, author or subject.",
+                Hint = "Apply an Aspose.PDF license to keep the document properties.",
+            });
+        }
+        else if (UnselectedNavigation(DeleteUnselected(document, pages)) is { } navigation)
+        {
+            warnings.Add(navigation);
+        }
+
         SaveFormat format = request.TargetFormatId switch
         {
             "docx" => SaveFormat.DocX,
@@ -562,6 +591,27 @@ internal sealed class PdfProductionService
         return BuildOutput(request.OutputPath, request.TargetFormatId, size);
     }
 
+    /// <summary>
+    /// Deletes the pages --pages did not select from the opened document, and counts the
+    /// navigation that led to them.
+    /// </summary>
+    private static PdfNavigationCensus DeleteUnselected(Document document, IReadOnlyList<int> pages)
+    {
+        int[] excluded = Enumerable.Range(1, document.Pages.Count).Except(pages).ToArray();
+        if (excluded.Length == 0)
+        {
+            return default;
+        }
+
+        PdfNavigationCensus before = PdfNavigationCensus.Unresolved(document);
+        document.Pages.Delete(excluded);
+        return PdfNavigationCensus.Degraded(before, PdfNavigationCensus.Unresolved(document));
+    }
+
+    private static Warning? UnselectedNavigation(PdfNavigationCensus degraded) => degraded.ToWarning(
+        "lead to pages that --pages did not select",
+        "Select every page the navigation needs, or delete those bookmarks and links in a 'pdf edit' batch before converting.");
+
     private OutputInfo ConvertText(Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
     {
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
@@ -592,14 +642,7 @@ internal sealed class PdfProductionService
 
         // Navigation is counted around the page deletion alone; a bookmark the conversion
         // removes is reported with the outline below.
-        int[] excluded = Enumerable.Range(1, document.Pages.Count).Except(pages).ToArray();
-        PdfNavigationCensus degraded = default;
-        if (excluded.Length > 0)
-        {
-            PdfNavigationCensus before = PdfNavigationCensus.Unresolved(document);
-            document.Pages.Delete(excluded);
-            degraded = PdfNavigationCensus.Degraded(before, PdfNavigationCensus.Unresolved(document));
-        }
+        PdfNavigationCensus degraded = DeleteUnselected(document, pages);
 
         // PDF/A forbids encryption; the engine cannot convert an encrypted document.
         if (document.IsEncrypted)
@@ -655,10 +698,7 @@ internal sealed class PdfProductionService
             });
         }
 
-        if (degraded.ToWarning(
-                "lead to pages that --pages did not select",
-                "Select every page the navigation needs, or delete those bookmarks and links in a 'pdf edit' batch before converting.")
-            is { } navigation)
+        if (UnselectedNavigation(degraded) is { } navigation)
         {
             warnings.Add(navigation);
         }
