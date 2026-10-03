@@ -103,7 +103,8 @@ internal sealed class WordsMutationService
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), MutationWarnings(
                 state,
-                inputHadRevisions,
+                // The input's revisions are disclosed while the output still contains revisions.
+                inputHadRevisions && loaded.Document.Revisions.Count > 0,
                 inputWasSigned,
                 inputProtection,
                 loaded.RemoteResourcesBlocked,
@@ -302,16 +303,16 @@ internal sealed class WordsMutationService
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         LicenseState state,
-        bool inputHadRevisions,
+        bool revisionsKept,
         bool inputWasSigned,
         ProtectionType inputProtection,
         int remoteResourcesBlocked,
         bool evaluationInputTruncated)
     {
         var extra = new List<Warning>();
-        if (inputHadRevisions)
+        if (revisionsKept)
         {
-            extra.Add(new Warning { Code = WordsDiagnostics.TrackedChangesPresent, Message = "The document contains tracked changes.", Hint = "Disclose them and accept or reject only when explicitly requested." });
+            extra.Add(new Warning { Code = WordsDiagnostics.TrackedChangesPresent, Message = "The input has tracked changes, and the output still contains tracked changes.", Hint = "Disclose them and accept or reject only when explicitly requested." });
         }
 
         if (inputWasSigned)

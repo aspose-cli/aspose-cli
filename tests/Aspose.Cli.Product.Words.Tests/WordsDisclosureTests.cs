@@ -60,6 +60,32 @@ public sealed class WordsDisclosureTests
         Assert.Equal(ProtectionType.ReadOnly, new Document(output).ProtectionType);
     }
 
+    [Theory]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public void EditingARevisedDocument_DisclosesTheRevisionsTheOutputKeeps(bool accept, bool disclosed)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("The notice period is thirty days.");
+        builder.Write("Other text.");
+        source.StartTrackRevisions("Ann", DateTime.Now);
+        source.Range.Replace("thirty", "sixty");
+        source.StopTrackRevisions();
+        string input = fixture.Temp.File("revised.docx");
+        source.Save(input, SaveFormat.Docx);
+        string output = fixture.Temp.File("edited.docx");
+
+        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = accept ? [new AcceptRevisionsOp()] : [new ReplaceTextOp { Find = "Other", Replace = "More" }],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Assert.Equal(disclosed, (result.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.TrackedChangesPresent));
+        Assert.Equal(disclosed, new Document(output).HasRevisions);
+    }
+
     [Fact]
     public void SplitByHeading_KeepsPageSetupAndHeaders()
     {
