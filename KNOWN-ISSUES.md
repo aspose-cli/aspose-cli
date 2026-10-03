@@ -66,6 +66,14 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** re-create the counted bookmarks and links with `add_bookmark` and `add_link`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-PDFA-ATTACHMENT-TYPE
+
+- **Defect:** `Document.Convert` to PDF/A-3B gives every attachment that has no media type the
+  type `application/pdf`, whatever its content.
+- **CLI behavior:** `pdf convert --to pdfa-3b` labels such an attachment
+  `application/octet-stream` unless its content is a PDF; a declared type is kept.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-OUTLINE-DELETE-TITLE
 
 - **Defect:** `OutlineItemCollection.Delete()` removes bookmarks by title rather than the item
@@ -80,7 +88,7 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Defect:** `Document.NamedDestinations.Names` and `Count` throw `NullReferenceException` when
   the catalog's name tree has no `Dests` entry, for example a tree that holds only attachments.
 - **CLI behavior:** none visible; such a document is read as having no named destinations, so
-  `pdf edit` and `pdf merge` accept it.
+  `pdf edit`, `pdf merge` and `pdf convert --to pdfa-*` accept it.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0

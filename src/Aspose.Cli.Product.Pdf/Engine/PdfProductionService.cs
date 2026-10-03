@@ -489,18 +489,17 @@ internal sealed class PdfProductionService
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
+        List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];
         IReadOnlyList<OutputInfo> outputs = request.TargetFormatId switch
         {
             "png" or "jpeg" or "svg" => ConvertPages(loaded.Document, pages, request),
             "tiff" => [ConvertTiff(loaded.Document, pages, request)],
             "txt" => [ConvertText(loaded.Document, pages, request)],
-            "pdfa-1b" or "pdfa-2b" or "pdfa-3b" => [ConvertPdfa(loaded.Document, pages, request)],
+            "pdfa-1b" or "pdfa-2b" or "pdfa-3b" => [ConvertPdfa(loaded.Document, pages, request, warnings)],
             _ => [ConvertDocument(loaded.Document, pages, request)],
         };
 
-        List<Warning> warnings = [.. EnvelopeParts.OutputWarnings(state) ?? []];
-
-        if (request.TargetFormatId is not ("xps" or "svg" or "png" or "jpeg" or "tiff"))
+        if (request.TargetFormatId is not ("xps" or "svg" or "png" or "jpeg" or "tiff" or "pdfa-1b" or "pdfa-2b" or "pdfa-3b"))
         {
             warnings.Add(new Warning
             {
@@ -561,26 +560,165 @@ internal sealed class PdfProductionService
         return BuildOutput(request.OutputPath, "txt", size);
     }
 
-    private OutputInfo ConvertPdfa(Document source, IReadOnlyList<int> pages, PdfConvertRequest request)
+    /// <summary>
+    /// Converts the opened document itself, which this command never saves back, so the
+    /// outline, attachments, metadata and page labels reach the archive; a page copy carries
+    /// none of them. The engine removes what the profile does not allow, and each removed
+    /// attachment or bookmark is reported on its own.
+    /// </summary>
+    private OutputInfo ConvertPdfa(
+        Document document,
+        IReadOnlyList<int> pages,
+        PdfConvertRequest request,
+        List<Warning> warnings)
     {
-        using Document selected = Select(source, pages);
-        PdfFormat format = request.TargetFormatId switch
+        string profile = request.TargetFormatId;
+        PdfFormat format = profile switch
         {
             "pdfa-1b" => PdfFormat.PDF_A_1B,
             "pdfa-2b" => PdfFormat.PDF_A_2B,
             "pdfa-3b" => PdfFormat.PDF_A_3B,
-            _ => throw CliErrors.FormatUnsupported(request.TargetFormatId, PdfFormats.PdfaConvertIds),
+            _ => throw CliErrors.FormatUnsupported(profile, PdfFormats.PdfaConvertIds),
         };
 
+        // Navigation is counted around the page deletion alone; a bookmark the conversion
+        // removes is reported with the outline below.
+        int[] excluded = Enumerable.Range(1, document.Pages.Count).Except(pages).ToArray();
+        PdfNavigationCensus degraded = default;
+        if (excluded.Length > 0)
+        {
+            PdfNavigationCensus before = PdfNavigationCensus.Unresolved(document);
+            document.Pages.Delete(excluded);
+            degraded = PdfNavigationCensus.Degraded(before, PdfNavigationCensus.Unresolved(document));
+        }
+
+        // PDF/A forbids encryption; the engine cannot convert an encrypted document.
+        if (document.IsEncrypted)
+        {
+            document.Decrypt();
+        }
+
+        string[] attachments = AttachmentNames(document);
+        FileSpecification[] untyped = document.EmbeddedFiles
+            .Where(static file => string.IsNullOrEmpty(file.MIMEType))
+            .ToArray();
+        int bookmarks = Editing.PdfMutationSupport.CountOutline(document.Outlines);
+        int changed = 0;
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
         {
             using var log = new MemoryStream();
             PdfComplianceLog.EnsureConverted(
-                selected.Convert(log, format, ConvertErrorAction.Delete), log, request.TargetFormatId);
-            selected.Save(temp);
+                document.Convert(log, format, ConvertErrorAction.Delete), log, profile);
+            // The identification it writes and the attachments, reported below, are not counted.
+            changed = PdfComplianceLog.Parse(log)
+                .Count(static problem => problem.Section is not ("Metadata" or "EmbeddedFiles"));
+            // Only PDF/A-3 keeps attachments that are not PDF documents.
+            if (format == PdfFormat.PDF_A_3B)
+            {
+                LabelUntypedAttachments(document, untyped);
+            }
+
+            document.Save(temp);
         });
-        return BuildOutput(request.OutputPath, request.TargetFormatId, size);
+
+        foreach (string removed in attachments.Except(AttachmentNames(document), StringComparer.Ordinal))
+        {
+            warnings.Add(new Warning
+            {
+                Code = WarningCodes.LossyConversion,
+                Location = $"attachment {removed}",
+                Message = $"Attachment '{removed}' was removed: {AttachmentRule(profile)}.",
+                Hint = profile == "pdfa-3b"
+                    ? "Deliver the file alongside the archive."
+                    : "Convert to pdfa-3b to keep attachments, or deliver the file alongside the archive.",
+            });
+        }
+
+        int lostBookmarks = bookmarks - Editing.PdfMutationSupport.CountOutline(document.Outlines);
+        if (lostBookmarks > 0)
+        {
+            warnings.Add(new Warning
+            {
+                Code = WarningCodes.LossyConversion,
+                Location = "outline",
+                Message = $"{lostBookmarks} bookmark(s) were removed by the conversion to {profile}.",
+                Hint = "Compare 'pdf inspect --detail outline' of both files and re-create the missing bookmarks with add_bookmark.",
+            });
+        }
+
+        if (degraded.ToWarning(
+                "lead to pages that --pages did not select",
+                "Select every page the navigation needs, or delete those bookmarks and links in a 'pdf edit' batch before converting.")
+            is { } navigation)
+        {
+            warnings.Add(navigation);
+        }
+
+        if (changed > 0)
+        {
+            warnings.Add(new Warning
+            {
+                Code = WarningCodes.LossyConversion,
+                Message = $"Conversion to {profile} changed {changed} item(s) the profile does not allow, such as fonts that were not embedded, transparency, actions or prohibited annotation entries.",
+                Hint = $"Run 'pdf validate <original> --profile {profile}' to list them, and compare the pages of both files.",
+            });
+        }
+
+        return BuildOutput(request.OutputPath, profile, size);
     }
+
+    /// <summary>
+    /// The conversion labels every attachment that had no media type <c>application/pdf</c>
+    /// (PDF-PDFA-ATTACHMENT-TYPE); one that is not a PDF is labelled
+    /// <c>application/octet-stream</c>, the type of unidentified data, instead.
+    /// </summary>
+    private static void LabelUntypedAttachments(Document document, IReadOnlyCollection<FileSpecification> untyped)
+    {
+        foreach (FileSpecification file in document.EmbeddedFiles)
+        {
+            if (untyped.Contains(file) && !StartsAsPdf(file))
+            {
+                file.MIMEType = "application/octet-stream";
+            }
+        }
+    }
+
+    private static bool StartsAsPdf(FileSpecification file)
+    {
+        Stream? contents = file.Contents;
+        if (contents is null)
+        {
+            return false;
+        }
+
+        if (contents.CanSeek)
+        {
+            contents.Position = 0;
+        }
+
+        Span<byte> head = stackalloc byte[1024];
+        int read = contents.ReadAtLeast(head, head.Length, throwOnEndOfStream: false);
+        if (contents.CanSeek)
+        {
+            contents.Position = 0;
+        }
+
+        return head[..read].IndexOf("%PDF-"u8) >= 0;
+    }
+
+    private static string[] AttachmentNames(Document document) =>
+        document.EmbeddedFiles
+            .Select(static file => file.UnicodeName ?? file.Name)
+            .Where(static name => !string.IsNullOrEmpty(name))
+            .ToArray();
+
+    /// <summary>Why the profile does not keep an attachment.</summary>
+    private static string AttachmentRule(string profile) => profile switch
+    {
+        "pdfa-1b" => "PDF/A-1 does not allow attachments",
+        "pdfa-2b" => "PDF/A-2 allows only attachments that are PDF/A documents",
+        _ => $"the engine could not make it conform to {profile}",
+    };
 
     private IReadOnlyList<OutputInfo> ConvertPages(
         Document document,
