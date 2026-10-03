@@ -338,6 +338,11 @@ public sealed record PdfFormField
 
     public required bool ReadOnly { get; init; }
     public required bool Required { get; init; }
+
+    /// <summary>
+    /// The page of the field's widget; absent when it has none or, in evaluation mode, lies
+    /// past the pages the engine shows, which EVAL_INPUT_TRUNCATED then names.
+    /// </summary>
     public int? Page { get; init; }
 }
 

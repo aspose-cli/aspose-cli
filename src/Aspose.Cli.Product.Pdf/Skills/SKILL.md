@@ -65,8 +65,9 @@ results carry `EVAL_MODE`; a license installed later does not remove watermarks
 already saved into a PDF, so regenerate that file from its original inputs
 (`aspose-cli docs licensing`). Evaluation mode also reads only the first 4 pages
 of a document. `inspect` of a longer PDF warns `EVAL_INPUT_TRUNCATED` and still
-lists every bookmark and attachment and counts every form field; a command that
-needs a later page, such as `query forms` when a field lies on one, fails with
+lists every bookmark and attachment and counts every form field; `query forms`
+lists every field but leaves out the `page` of one on a later page and names it
+in `EVAL_INPUT_TRUNCATED`. Any other command that needs a later page fails with
 `EVALUATION_LIMIT` (exit 7) before writing anything.
 Limit it with `--pages 1-4`, or tell the user a PDF license is needed.
 

@@ -44,8 +44,9 @@ internal sealed class PdfFormService
         LicenseState state = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
         Form form = loaded.Document.Form;
+        var unpaged = new List<string>();
         var fields = form.Fields.OrderBy(static field => field.FullName, StringComparer.Ordinal)
-            .Select(static field => Project(field))
+            .Select(field => Project(field, unpaged))
             .ToArray();
         return new PdfFormResult
         {
@@ -54,6 +55,7 @@ internal sealed class PdfFormService
             ReadOnly = form.HasXfa,
             Fields = fields,
             License = EnvelopeParts.License(state),
+            Warnings = unpaged.Count > 0 ? [PdfEvaluation.FieldsWithoutPage(loaded.Document.Pages.Count, unpaged)] : null,
         };
     }
 
@@ -61,9 +63,10 @@ internal sealed class PdfFormService
     /// Projects one field. A check box reports its appearance states and, when it has exactly
     /// one state besides Off, that state as the value that checks it. The engine lists a radio
     /// group as one field per button under the group's name; each reports the group's values
-    /// as its options and its own value as the one that selects it.
+    /// as its options and its own value as the one that selects it. A field whose page
+    /// evaluation mode hides is added to <paramref name="unpaged"/>.
     /// </summary>
-    private static PdfFormField Project(Field field)
+    private static PdfFormField Project(Field field, List<string> unpaged)
     {
         IReadOnlyList<string>? options = null;
         IReadOnlyList<string>? states = null;
@@ -95,8 +98,21 @@ internal sealed class PdfFormService
             OnValue = onValue,
             ReadOnly = field.ReadOnly,
             Required = field.Required,
-            Page = field.PageIndex > 0 ? field.PageIndex : null,
+            Page = PageOf(field, unpaged),
         };
+    }
+
+    private static int? PageOf(Field field, List<string> unpaged)
+    {
+        try
+        {
+            return field.PageIndex > 0 ? field.PageIndex : null;
+        }
+        catch (Exception exception) when (PdfEvaluation.IsCollectionLimit(exception))
+        {
+            unpaged.Add(field.FullName);
+            return null;
+        }
     }
 
     /// <summary>The check box state that leaves it unchecked.</summary>

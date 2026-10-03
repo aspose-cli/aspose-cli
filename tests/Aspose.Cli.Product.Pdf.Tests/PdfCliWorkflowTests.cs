@@ -263,17 +263,25 @@ public sealed class PdfCliWorkflowTests : IDisposable
             Enumerable.Range(1, count).Select(static number => $"file{number}.txt"),
             result["attachments"]!.AsArray().Select(static item => item!["name"]!.GetValue<string>()));
         Assert.Contains(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED");
+        Assert.True(forms.ExitCode == 0, forms.StdErr);
+        JsonNode read = JsonNode.Parse(forms.StdOut)!;
+        JsonArray fields = read["fields"]!.AsArray();
+        Assert.Equal(
+            all.Select(static index => $"Value {index + 1}"),
+            fields.Select(static item => item!["value"]!.GetValue<string>()));
+        // A field on a page past the fourth keeps its value but has no page.
+        Assert.Equal(
+            all.Select(index => FieldPage(index) < 4 ? FieldPage(index) + 1 : (int?)null),
+            fields.Select(static item => item!["page"]?.GetValue<int>()));
+        JsonNode[] truncated = [.. (read["warnings"]?.AsArray() ?? []).Where(
+            static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!];
         if (fieldsOnLaterPages)
         {
-            Assert.Equal(7, forms.ExitCode);
-            Assert.Equal("EVALUATION_LIMIT", JsonNode.Parse(forms.StdErr)!["error"]!["code"]!.GetValue<string>());
+            Assert.Contains("of 6 pages, so these fields have no page: Field5, Field6.", Assert.Single(truncated)["message"]!.GetValue<string>(), StringComparison.Ordinal);
         }
         else
         {
-            Assert.True(forms.ExitCode == 0, forms.StdErr);
-            Assert.Equal(
-                Enumerable.Range(1, count).Select(static number => $"Value {number}"),
-                JsonNode.Parse(forms.StdOut)!["fields"]!.AsArray().Select(static item => item!["value"]!.GetValue<string>()).Order(StringComparer.Ordinal));
+            Assert.Empty(truncated);
         }
     }
 

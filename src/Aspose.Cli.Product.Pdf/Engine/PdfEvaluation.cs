@@ -8,9 +8,10 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 /// <summary>
 /// Aspose.PDF in evaluation mode exposes only the first four pages of a document: reading a
 /// later page throws, although the engine's message speaks of any collection. The outline, the
-/// attachments and the count of form fields stay complete, but finding the page of a field on a
-/// later page throws too. A command that needs a later page is refused as an evaluation limit,
-/// and a read that stays within the first pages says that it saw only part of the document.
+/// attachments and the form fields stay complete, but finding the page of a field on a later
+/// page throws too: the field is listed without its page. Any other command that needs a later
+/// page is refused as an evaluation limit, and a read that stays within the first pages says
+/// that it saw only part of the document.
 /// </summary>
 internal static class PdfEvaluation
 {
@@ -51,7 +52,17 @@ internal static class PdfEvaluation
             }
             : null;
 
-    private static bool IsCollectionLimit(Exception exception)
+    /// <summary>The disclosure for form fields listed without the page evaluation mode hides.</summary>
+    internal static Warning FieldsWithoutPage(int pages, IEnumerable<string> names) => new()
+    {
+        Code = WarningCodes.EvalInputTruncated,
+        Message = string.Create(
+            CultureInfo.InvariantCulture,
+            $"Evaluation mode shows only the first {VisiblePages} of {pages} pages, so these fields have no page: {string.Join(", ", names)}."),
+        Hint = "Apply an Aspose.PDF license to read the whole document.",
+    };
+
+    internal static bool IsCollectionLimit(Exception exception)
     {
         for (Exception? current = exception; current is not null; current = current.InnerException)
         {
