@@ -486,6 +486,10 @@
         "rect": {
           "description": "Where the picture goes; when omitted it keeps its aspect ratio, centered in 80% by 75% of the slide.",
           "$ref": "#/$defs/slidesRectInput"
+        },
+        "altText": {
+          "description": "The picture's alternative text, which screen readers and exported PDFs carry.",
+          "type": "string"
         }
       },
       "allOf": [

@@ -11,7 +11,7 @@
     "source": { "type": "object" },
     "scope": { "enum": ["text", "shapes", "full"] },
     "slideCount": { "type": "integer", "minimum": 0, "description": "How many slides the presentation holds." },
-    "slides": { "type": "array", "items": { "type": "object", "properties": { "contentTruncated": { "type": "boolean", "description": "The shared max-chars budget covers title, text, runs, requested notes and comments, including repeated projections; re-read this slide with a larger budget for omitted content." }, "shapes": { "type": "array", "items": { "type": "object", "properties": { "shapeId": { "type": "integer", "minimum": 1, "description": "Positive persistent identifier within this slide; edit operations accept it as shapeId." } } } } } } },
+    "slides": { "type": "array", "items": { "type": "object", "properties": { "contentTruncated": { "type": "boolean", "description": "The shared max-chars budget covers title, text, runs, requested notes and comments, including repeated projections; re-read this slide with a larger budget for omitted content." }, "shapes": { "type": "array", "items": { "type": "object", "properties": { "shapeId": { "type": "integer", "minimum": 1, "description": "Positive persistent identifier within this slide; edit operations accept it as shapeId." }, "altText": { "type": "string", "description": "The shape's alternative text, which screen readers and exported PDFs carry." } } } } } } },
     "window": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/result-window.schema.json" },
     "license": { "type": "object" },
     "warnings": { "type": "array" }

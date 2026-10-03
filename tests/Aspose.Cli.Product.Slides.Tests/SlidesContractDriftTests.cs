@@ -95,6 +95,25 @@ public sealed class SlidesContractDriftTests
         Assert.Contains("--what media", warning.Hint, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void InsertImage_SetsAltTextThatShapeReadsReport()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("alt.pptx", slides: 1);
+        string picture = fixture.File("logo.png");
+        File.WriteAllBytes(picture, Png(40));
+        string output = fixture.File("alt.out.pptx");
+
+        fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch { Ops = [new SlidesInsertImageOp { Slide = 1, Path = picture, AltText = "Logo" }] },
+            new PresentationEditRequest { OutputPath = output });
+        PresentationReadResult read = fixture.Engine.Read(output, new PresentationReadRequest { Scope = PresentationReadScopes.Shapes });
+
+        SlideShapeData image = Assert.Single(Assert.Single(read.Slides).Shapes, static shape => shape.Type == "image");
+        Assert.Equal("Logo", image.AltText);
+    }
+
     private static byte[] Png(int size)
     {
         using var source = new Presentation();

@@ -303,6 +303,9 @@ public sealed record SlidesInsertImageOp : SlideTargetOp
 
     /// <summary>Where the picture goes; when omitted it keeps its aspect ratio, centered in 80% by 75% of the slide.</summary>
     public SlidesRectInput? Rect { get; init; }
+
+    /// <summary>The picture's alternative text, which screen readers and exported PDFs carry.</summary>
+    public string? AltText { get; init; }
 }
 
 /// <summary>Inserts a shape.</summary>

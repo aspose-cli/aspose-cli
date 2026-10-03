@@ -16,7 +16,12 @@ internal sealed partial class SlidesMutationHandlers
         RectangleF rect = operation.Rect is { } given
             ? new RectangleF((float)given.X, (float)given.Y, (float)given.Width, (float)given.Height)
             : SlidesAuthoring.Fit(image, SlidesAuthoring.Canvas(Slide, new RectangleF(0.1f, 0.125f, 0.8f, 0.75f)));
-        Slide.Shapes.AddPictureFrame(ShapeType.Rectangle, rect.X, rect.Y, rect.Width, rect.Height, image);
+        IPictureFrame picture = Slide.Shapes.AddPictureFrame(ShapeType.Rectangle, rect.X, rect.Y, rect.Width, rect.Height, image);
+        if (operation.AltText is not null)
+        {
+            picture.AlternativeText = operation.AltText;
+        }
+
         _touched.Add(Slide.SlideId);
         return 1;
     }

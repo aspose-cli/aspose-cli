@@ -4709,7 +4709,7 @@
           "command": "edit",
           "inputSchema": "v2/slides/ops",
           "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-          "contractFingerprint": "sha256:ecb93aa624069519006fd3e764f76ea7e012887289409d7dbb6643b1ac1209e6",
+          "contractFingerprint": "sha256:cbc8a349dbdd3fc964f8508a2542b161f1f01520d247b12c8bc2eac90316955a",
           "maximumOperationCount": 256,
           "ops": [
             "add_section",

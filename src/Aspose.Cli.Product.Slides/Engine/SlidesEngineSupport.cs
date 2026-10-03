@@ -92,6 +92,7 @@ internal static class SlidesEngineSupport
                     ShapeName = EmptyToNull(shape.Name),
                     Type = ShapeTypeName(shape),
                     Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
+                    AltText = EmptyToNull(shape.AlternativeText),
                     Text = text,
                     Runs = scope == PresentationReadScopes.Full ? Runs(shape, ref remaining, ref contentTruncated) : null,
                     ZOrder = zOrder++,

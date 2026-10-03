@@ -149,6 +149,9 @@ public sealed record SlideShapeData
 
     /// <summary>The placeholder role, which set_text and the other shape operations accept as placeholder when it is one they name.</summary>
     public string? Placeholder { get; init; }
+
+    /// <summary>The shape's alternative text, which screen readers and exported PDFs carry.</summary>
+    public string? AltText { get; init; }
     public string? Text { get; init; }
     public IReadOnlyList<SlideTextRunData>? Runs { get; init; }
     public required SlideRect Rect { get; init; }

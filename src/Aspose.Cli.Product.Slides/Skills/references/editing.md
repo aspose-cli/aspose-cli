@@ -47,6 +47,9 @@ aspose-cli schema v2/slides/ops --operation insert_chart
   character counts; read note text with `query slides --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
   style come from the template.
+- `query slides --scope shapes` reports each shape's `altText`, which `replace_text` does not
+  reach. To replace a picture, `delete_shape` it and `insert_image` the new one at its `rect`
+  with an `altText`.
 
 ## Charts
 

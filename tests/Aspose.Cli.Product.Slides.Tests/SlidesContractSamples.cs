@@ -194,6 +194,7 @@ internal static class SlidesContractSamples
                 Slide = 2,
                 Path = "D:/data/chart.png",
                 Rect = new SlidesRectInput { X = 72, Y = 120, Width = 300, Height = 180 },
+                AltText = "Revenue by quarter",
             },
             new InsertShapeOp
             {
