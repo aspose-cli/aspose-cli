@@ -54,9 +54,13 @@ internal static class ExtractCommand
                     });
                 }
 
-                if (format is not null || standard.RequestedOutputPath() is not null)
+                string? formOption = format is not null ? "--to" : standard.RequestedOutputPath() is not null ? "--out" : null;
+                if (formOption is not null)
                 {
-                    throw CliErrors.OptionInvalid("--to/--out", "form-output options are only valid with --what forms", "Remove them or use --what forms.");
+                    throw CliErrors.OptionInvalid(
+                        formOption,
+                        "it applies to form data and is valid only with --what forms",
+                        $"Name the directory that receives the {kind} with --out-dir instead.");
                 }
 
                 if (string.Equals(kind, "attachments", StringComparison.Ordinal) && pageText is not null)

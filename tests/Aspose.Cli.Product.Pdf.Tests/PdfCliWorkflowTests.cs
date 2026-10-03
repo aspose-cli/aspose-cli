@@ -210,5 +210,27 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Null(rest["window"]!["next"]);
     }
 
+    [Theory]
+    [InlineData("attachments", "--out", "files")]
+    [InlineData("images", "--to", "json")]
+    public void Extract_NamesTheFormOutputOptionGivenAndPointsToOutDir(string what, string option, string value)
+    {
+        using (var document = new Document())
+        {
+            document.Pages.Add();
+            document.Save(_workspace.File("source.pdf"));
+        }
+
+        CliResult result = _workspace.Run(
+            "pdf", "extract", "source.pdf", "--what", what, option, value, "--output", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.StartsWith($"Invalid use of {option}:", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains($"--out-dir", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain(option == "--out" ? "--to" : "--out ", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     public void Dispose() => _workspace.Dispose();
 }
