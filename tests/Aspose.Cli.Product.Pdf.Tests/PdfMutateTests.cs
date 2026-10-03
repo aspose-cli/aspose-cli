@@ -364,6 +364,106 @@ public sealed class PdfMutateTests
         Assert.False(decrypted.IsEncrypted);
     }
 
+    [Theory]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "metadata", "keeps the input's encryption")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "field", null)]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.ModifyTextAnnotations, "field", null)]
+    [InlineData("reader", Permissions.PrintDocument, "field", "keeps the input's encryption")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.AssembleDocument, "rotate", null)]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.AssembleDocument, "metadata", "keeps the input's encryption")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.ModifyTextAnnotations, "rotate", "keeps the input's encryption")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "decrypt", "is not encrypted")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "encrypt", "encrypt operation set")]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.ModifyContent, "metadata", null)]
+    [InlineData("reader", Permissions.PrintDocument | Permissions.ModifyContent, "decrypt", "is not encrypted")]
+    [InlineData("owner", Permissions.PrintDocument | Permissions.FillForm, "metadata", null)]
+    [InlineData("owner", Permissions.PrintDocument, "decrypt", null)]
+    public void Edit_DisclosesAModificationItsUserPermissionsForbid(
+        string password, Permissions granted, string change, string? hint)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("restricted.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            document.Form.Add(new TextBoxField(page, new Rectangle(72, 650, 280, 680)) { PartialName = "Customer" });
+            document.Encrypt("reader", "owner", granted, CryptoAlgorithm.AESx256);
+            document.Save(input);
+        }
+
+        string output = fixture.File("restricted.out.pdf");
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                change switch
+                {
+                    "metadata" => new SetMetadataOp { Title = "Changed" },
+                    "field" => new SetFormFieldOp { Name = "Customer", Value = "Contoso" },
+                    "rotate" => new RotatePagesOp { Pages = "1", Angle = 90 },
+                    "decrypt" => new DecryptPdfOp(),
+                    _ => new EncryptPdfOp
+                    {
+                        UserPasswordEnv = "PDF_USER",
+                        OwnerPasswordEnv = "PDF_OWNER",
+                        Permissions = new PdfPermissionsInput { Print = true, Modify = true },
+                    },
+                },
+            ],
+        }, new PdfEditRequest
+        {
+            OutputPath = output,
+            Password = password,
+            OpSecrets = new Dictionary<string, string> { ["PDF_USER"] = "new-reader", ["PDF_OWNER"] = "new-owner" },
+        });
+
+        Warning? warning = result.Warnings?.SingleOrDefault(static item => item.Code == WarningCodes.ProtectionNotEnforced);
+        Assert.Equal(hint is not null, warning is not null);
+        if (warning is not null)
+        {
+            Assert.Contains("user password", warning.Message, StringComparison.Ordinal);
+            Assert.Contains("changed it", warning.Message, StringComparison.Ordinal);
+            Assert.Contains(hint!, warning.Hint, StringComparison.Ordinal);
+        }
+
+        if (change == "decrypt")
+        {
+            using var decrypted = new Document(output);
+            Assert.False(decrypted.IsEncrypted);
+        }
+    }
+
+    [Fact]
+    public void Edit_DryRunDisclosesTheUnpermittedChangeItWouldMake()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("restricted.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add();
+            document.Encrypt("reader", "owner", Permissions.PrintDocument, CryptoAlgorithm.AESx256);
+            document.Save(input);
+        }
+
+        string output = fixture.File("restricted.out.pdf");
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new SetMetadataOp { Title = "Changed" }, new DecryptPdfOp()],
+        }, new PdfEditRequest
+        {
+            OutputPath = output,
+            Password = "reader",
+            Options = new EditCommandOptions { DryRun = true },
+        });
+
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code == WarningCodes.ProtectionNotEnforced);
+        Assert.Contains("do not allow set_metadata, decrypt;", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("would change it", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("changed it", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("would not be encrypted", warning.Hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
     [Fact]
     public void Edit_DryRunAtomicFailureAndContinueHaveExplicitOutcomes()
     {

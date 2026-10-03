@@ -39,3 +39,12 @@ The error envelope, exit codes and shared codes are in
 - `OUTPUT_EXISTS` from `split` or `extract --out-dir`: one existing file refuses
   the whole run and nothing is published; `--overwrite` replaces only the files
   the command writes.
+- `PROTECTION_NOT_ENFORCED`: the input was opened with its user password and its
+  permissions (`pdf inspect --detail permissions`) forbid a change, but the
+  engine does not enforce them, so the edit was applied (or, with `--dry-run`,
+  would be). Filling fields needs `fillForms`, `annotate` or `modify`; inserting,
+  moving, rotating or deleting pages and adding bookmarks need `assemble` or
+  `modify`; other changes need `modify`; `encrypt` and `decrypt` always need the
+  owner password. Confirm the owner authorized the change. The hint says whether
+  the output keeps the input's encryption, is decrypted, or carries the
+  passwords and permissions of an `encrypt` operation.

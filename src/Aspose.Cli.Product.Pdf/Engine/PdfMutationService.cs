@@ -59,6 +59,9 @@ internal sealed class PdfMutationService
         FileFingerprints.EnsureUnchanged(filePath, precondition.Fingerprint, input.Fingerprint!);
         FileFingerprints.EnsureMatch(filePath, request.Options.IfMatch, input.Fingerprint!);
         bool signatures = loaded.Document.Form.SignaturesExist;
+        Permissions? userPermissions = loaded.PasswordType == PasswordType.User && loaded.Document.IsEncrypted
+            ? (Permissions)loaded.Document.Permissions
+            : null;
         var touched = new SortedSet<int>();
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
@@ -70,6 +73,11 @@ internal sealed class PdfMutationService
         try { publication = Publish(loaded.Document, request, outputPassword, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes);
+        if (UnpermittedChange(userPermissions, outcomes, request.Options.DryRun) is { } protection)
+        {
+            warnings.Add(protection);
+        }
+
         if (navigation.ToWarning(
                 "no longer lead to a page: they targeted deleted pages, or moved pages at a position with a coordinate of 0, which the SDK cannot tell apart from an omitted one",
                 "Re-create the affected bookmarks (add_bookmark) and links (add_link) after the page change, or reorder pages before adding navigation.")
@@ -240,6 +248,63 @@ internal sealed class PdfMutationService
 
         return warnings;
     }
+
+    /// <summary>
+    /// The engine applies every operation to a document opened with its user password, whatever
+    /// its permissions say, so a change they do not allow is disclosed. As the PDF standard
+    /// defines them, filling fields is allowed by the fill-forms or annotation permission, page
+    /// assembly (inserting, moving, rotating and deleting pages, creating bookmarks) by the
+    /// assemble permission, any other change by the modify permission, and changing the
+    /// encryption only by the owner password.
+    /// </summary>
+    private static Warning? UnpermittedChange(
+        Permissions? permissions, IReadOnlyCollection<BoundedOperationOutcome> outcomes, bool dryRun)
+    {
+        if (permissions is not { } granted)
+        {
+            return null;
+        }
+
+        string[] applied = outcomes
+            .Where(static item => item.Status == OpStatuses.Ok && item.ItemsAffected > 0)
+            .Select(static item => item.Op)
+            .ToArray();
+        string[] changes = applied
+            .Where(op => !Permitted(op, granted))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
+        if (changes.Length == 0)
+        {
+            return null;
+        }
+
+        string? encryption = applied.LastOrDefault(static op => op is "encrypt" or "decrypt");
+        string output = (encryption, dryRun) switch
+        {
+            ("decrypt", false) => "The output is not encrypted, so it no longer restricts anyone.",
+            ("decrypt", true) => "The output would not be encrypted, so it would no longer restrict anyone.",
+            ("encrypt", false) => "The output is encrypted with the passwords and permissions the encrypt operation set.",
+            ("encrypt", true) => "The output would be encrypted with the passwords and permissions the encrypt operation set.",
+            (_, false) => "The output keeps the input's encryption and permissions; edit with the owner password to change them.",
+            (_, true) => "The output would keep the input's encryption and permissions; edit with the owner password to change them.",
+        };
+        return new Warning
+        {
+            Code = WarningCodes.ProtectionNotEnforced,
+            Message = $"The input was opened with its user password, whose permissions do not allow {string.Join(", ", changes)}; the engine does not enforce them, so "
+                + (dryRun ? "the batch would change it if it were not a dry run." : "the batch changed it."),
+            Hint = $"Confirm that the document's owner authorized the change. {output}",
+        };
+    }
+
+    private static bool Permitted(string op, Permissions granted) => op switch
+    {
+        "encrypt" or "decrypt" => false,
+        "set_form_field" => (granted & (Permissions.ModifyContent | Permissions.FillForm | Permissions.ModifyTextAnnotations)) != 0,
+        "rotate_pages" or "delete_pages" or "move_pages" or "insert_pages_from" or "insert_blank_page" or "add_bookmark" =>
+            (granted & (Permissions.ModifyContent | Permissions.AssembleDocument)) != 0,
+        _ => granted.HasFlag(Permissions.ModifyContent),
+    };
 
     private sealed record Publication(
         OutputInfo? Output,
