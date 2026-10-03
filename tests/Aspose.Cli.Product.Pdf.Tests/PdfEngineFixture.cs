@@ -60,7 +60,8 @@ public sealed class PdfEngineFixture : IDisposable
     }
 
     public string CreateRawDocument(string fileName, int pages,
-        IReadOnlySet<int>? textPages = null, IReadOnlySet<int>? imagePages = null, int imageSide = 1)
+        IReadOnlySet<int>? textPages = null, IReadOnlySet<int>? imagePages = null, int imageSide = 1,
+        int imagePoints = 160)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(pages, 1);
         string path = File(fileName);
@@ -94,7 +95,7 @@ public sealed class PdfEngineFixture : IDisposable
             if (imagePages?.Contains(pageNumber) == true)
             {
                 resources += $" /XObject << /Im1 {imageObject} 0 R >>";
-                content += "\nq 160 0 0 160 72 400 cm /Im1 Do Q";
+                content += $"\nq {imagePoints} 0 0 {imagePoints} 72 {560 - imagePoints} cm /Im1 Do Q";
             }
             objects.Add(
                 $"<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] "

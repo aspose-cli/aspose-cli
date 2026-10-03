@@ -2280,12 +2280,12 @@
           {
             "code": "PDF_PAGE_UTILIZATION_LOW",
             "severity": "warning",
-            "summary": "A page carries very little readable text, which may indicate an unintended sparse page or pagination break."
+            "summary": "A page carries very little readable text and no images covering a quarter of it, which may indicate an unintended sparse page or pagination break."
           },
           {
             "code": "PDF_PAGE_WITHOUT_READABLE_CONTENT",
             "severity": "warning",
-            "summary": "A page has no readable text and was not identified as a scanned page, so it may be unintentionally blank."
+            "summary": "A page has no readable text, no images covering a quarter of it and does not look scanned, so it may be unintentionally blank."
           },
           {
             "code": "PDF_TEXT_ANALYSIS_TRUNCATED",

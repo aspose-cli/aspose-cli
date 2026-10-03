@@ -64,6 +64,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         int unusualPages = AnalyzePageSizes(layout, findings);
         TextAnalysis text = AnalyzeText(
             read,
+            layout,
             info.Forms?.FieldCount ?? 0,
             findings);
         FormAnalysis forms = AnalyzeForms(
@@ -142,29 +143,38 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         || page.WidthPoints > 2_880
         || page.HeightPoints > 2_880;
 
+    /// <summary>
+    /// Pages whose images cover at least this share of the page carry their content as images,
+    /// like a slide with a picture; the text checks treat them, and suspected scans, as image pages.
+    /// </summary>
+    private const double PicturedPageCoverage = 0.25;
+
     private static TextAnalysis AnalyzeText(
         PdfReadResult read,
+        PdfReviewLayout layout,
         int formFields,
         ICollection<ReviewFinding> findings)
     {
-        HashSet<int> suspectedScans = (read.ScannedPagesSuspected ?? [])
+        HashSet<int> imagePages = (read.ScannedPagesSuspected ?? [])
+            .Concat(layout.Pages.Where(static page => page.ImageCoverage >= PicturedPageCoverage)
+                .Select(static page => page.Page))
             .ToHashSet();
         int emptyPages = 0;
         int lowUtilizationPages = 0;
         foreach (PdfPageText page in read.Pages)
         {
-            if (HasReadableOrScannedContent(page, suspectedScans))
+            if (HasTextOrImageContent(page, imagePages))
             {
                 lowUtilizationPages += AnalyzeTextPage(
                     page,
-                    suspectedScans,
+                    imagePages,
                     formFields,
                     findings);
                 continue;
             }
             emptyPages++;
             findings.Add(PdfReviewChecks.PageWithoutReadableContent.Finding(
-                "The page has no readable text and was not identified as a scanned page; inspect it for unintended blank output.",
+                "The page has no readable text, no images covering a quarter of it and does not look scanned; inspect it for unintended blank output.",
                 $"page {page.Page}",
                 Hint,
                 PdfViews.PagePart(page.Page)));
@@ -172,26 +182,26 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         return new TextAnalysis(emptyPages, lowUtilizationPages);
     }
 
-    private static bool HasReadableOrScannedContent(
+    private static bool HasTextOrImageContent(
         PdfPageText page,
-        IReadOnlySet<int> suspectedScans) =>
+        IReadOnlySet<int> imagePages) =>
         !string.IsNullOrWhiteSpace(page.Text)
-        || suspectedScans.Contains(page.Page);
+        || imagePages.Contains(page.Page);
 
     private static int AnalyzeTextPage(
         PdfPageText page,
-        IReadOnlySet<int> suspectedScans,
+        IReadOnlySet<int> imagePages,
         int formFields,
         ICollection<ReviewFinding> findings)
     {
         int lowUtilization = 0;
-        if (!suspectedScans.Contains(page.Page)
+        if (!imagePages.Contains(page.Page)
             && formFields == 0
             && page.Text.Trim().Length is > 0 and < 24)
         {
             lowUtilization = 1;
             findings.Add(PdfReviewChecks.PageUtilizationLow.Finding(
-                "The page contains very little readable content; inspect for an unintended sparse page or pagination break.",
+                "The page carries very little readable text and no images covering a quarter of it; inspect for an unintended sparse page or pagination break.",
                 $"page {page.Page}",
                 Hint,
                 PdfViews.PagePart(page.Page)));

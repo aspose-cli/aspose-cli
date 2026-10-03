@@ -17,17 +17,17 @@ internal static class PdfReviewChecks
         ReviewSeverities.Warning,
         "A page is narrower or shorter than 72 pt, or wider or taller than 2880 pt, and may preview poorly.");
 
-    /// <summary>An unscanned page has no readable text.</summary>
+    /// <summary>A page that does not look scanned has neither readable text nor images over a quarter of it.</summary>
     public static ReviewCheck PageWithoutReadableContent { get; } = new(
         "PDF_PAGE_WITHOUT_READABLE_CONTENT",
         ReviewSeverities.Warning,
-        "A page has no readable text and was not identified as a scanned page, so it may be unintentionally blank.");
+        "A page has no readable text, no images covering a quarter of it and does not look scanned, so it may be unintentionally blank.");
 
-    /// <summary>A text page without form fields carries very little readable text.</summary>
+    /// <summary>A page without form fields or images over a quarter of it carries very little readable text.</summary>
     public static ReviewCheck PageUtilizationLow { get; } = new(
         "PDF_PAGE_UTILIZATION_LOW",
         ReviewSeverities.Warning,
-        "A page carries very little readable text, which may indicate an unintended sparse page or pagination break.");
+        "A page carries very little readable text and no images covering a quarter of it, which may indicate an unintended sparse page or pagination break.");
 
     /// <summary>Text extraction for a page reached its budget.</summary>
     public static ReviewCheck TextAnalysisTruncated { get; } = new(

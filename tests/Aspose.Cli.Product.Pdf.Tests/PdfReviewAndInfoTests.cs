@@ -56,6 +56,25 @@ public sealed class PdfReviewAndInfoTests
     }
 
     [Fact]
+    public void Review_CountsALargeImageAsPageContent()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        // Pages 1 and 2 carry one short line of text, pages 1 and 3 an image over a third of the page.
+        string input = fixture.CreateRawDocument("pictures.pdf", pages: 3,
+            textPages: new HashSet<int> { 1, 2 }, imagePages: new HashSet<int> { 1, 3 }, imagePoints: 400);
+
+        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        Assert.Equal(
+            [("PDF_PAGE_UTILIZATION_LOW", "page 2")],
+            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray()
+                .Select(static item => (item!["code"]!.GetValue<string>(), item["location"]!.GetValue<string>()))
+                .Where(static item => item.Item1.StartsWith("PDF_PAGE_", StringComparison.Ordinal)));
+    }
+
+    [Fact]
     public void Review_DeclaresEveryCheckItsAssessmentReports()
     {
         IReadOnlyList<ReviewCheck> declared = new PdfViewAdapter().Checks;

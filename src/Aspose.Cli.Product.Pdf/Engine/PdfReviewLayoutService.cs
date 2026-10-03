@@ -55,7 +55,18 @@ internal sealed class PdfReviewLayoutService
             }
         }
         Rectangle displayed = page.GetPageRect(considerRotation: true);
-        return new PdfReviewPageLayout(pageNumber, displayed.Width, displayed.Height, fragments, outsideFragments);
+        return new PdfReviewPageLayout(
+            pageNumber, displayed.Width, displayed.Height, fragments, outsideFragments, ImageCoverage(page));
+    }
+
+    /// <summary>The share of the page its image placements cover, overlaps counted twice, at most 1.</summary>
+    private static double ImageCoverage(Page page)
+    {
+        var absorber = new ImagePlacementAbsorber { IsReadOnlyMode = true };
+        page.Accept(absorber);
+        double area = absorber.ImagePlacements.Sum(static placement =>
+            placement.Rectangle.Width * placement.Rectangle.Height);
+        return Math.Min(1d, area / Math.Max(1d, page.Rect.Width * page.Rect.Height));
     }
 
     private static bool IsOutsidePage(Rectangle text, Rectangle page) =>

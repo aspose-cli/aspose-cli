@@ -87,8 +87,9 @@ and contrast. PDF review findings worth acting on:
   Text operations that name a `font`, and a visible signature, need that font here.
 - `PDF_FORM_APPEARANCE_REVIEW_REQUIRED`: open the pages with fields and look for
   stale, clipped or missing values.
-- `PDF_PAGE_WITHOUT_READABLE_CONTENT`: a page without text that was not
-  identified as scanned; look at it, it may be unintentionally blank. A blank or
+- `PDF_PAGE_WITHOUT_READABLE_CONTENT` and `PDF_PAGE_UTILIZATION_LOW`: a page
+  with no or very little text, no images covering a quarter of it and that does
+  not look scanned; look at it, it may be unintentionally blank or sparse. A blank or
   image-only page also has no font resources, so `fonts check` returns an empty
   `fonts` array for it.
 
