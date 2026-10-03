@@ -3,8 +3,9 @@
 Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
 `document.protection` and `document.signed` in the `words inspect` result.
 Editing a document that already has revisions reports `TRACKED_CHANGES_PRESENT`
-while the output still contains revisions; disclose them. A batch that accepts or
-rejects every revision does not report it.
+while a Word format output still contains revisions; disclose them. A batch
+that accepts or rejects every revision does not report it, and an output such
+as `txt` that drops revisions reports `LOSSY_CONVERSION` instead.
 
 Use `--track-changes --author "Name"` when the requested edit must remain reviewable.
 `set_table_cell` supports tracked replacement while retaining the cell's structure;

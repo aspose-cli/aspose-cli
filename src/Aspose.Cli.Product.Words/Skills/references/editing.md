@@ -144,7 +144,8 @@ one should restart.
 
 - Editing restrictions (`protect`) are not encryption: they guide Word's user
   interface and do not bind the CLI. Editing a restricted document succeeds,
-  reports `PROTECTION_NOT_ENFORCED` and keeps the restrictions. `unprotect`
+  reports `PROTECTION_NOT_ENFORCED` and keeps the restrictions in a Word
+  format output. `unprotect`
   with `passwordEnv` checks the password and fails with `DOCUMENT_PROTECTED`
   when it is wrong; without `passwordEnv` it removes the restrictions whatever
   their password, so use it only when the user owns that decision.
@@ -158,6 +159,8 @@ one should restart.
 ## Save and verify
 
 Every output that can be loaded as a document is reopened before publication.
-`--verify` adds the semantic checks described in
+An `--out` in `txt`, `md`, `html` or `html-fixed` reports `LOSSY_CONVERSION`:
+such a format cannot hold every Word feature, such as fields, revisions or
+protection. `--verify` adds the semantic checks described in
 [verification](verification.md); it does not render pages and cannot be used
 for outputs that are not documents.

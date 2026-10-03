@@ -103,8 +103,11 @@ internal sealed class WordsMutationService
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), MutationWarnings(
                 state,
-                // The input's revisions are disclosed while the output still contains revisions.
-                inputHadRevisions && loaded.Document.Revisions.Count > 0,
+                format,
+                // The input's revisions are disclosed while the output still contains revisions,
+                // which a Word format keeps; LOSSY_CONVERSION covers the formats that drop them.
+                inputHadRevisions && loaded.Document.Revisions.Count > 0
+                    && WordsFormats.WordIds.Contains(format, StringComparer.Ordinal),
                 inputWasSigned,
                 inputProtection,
                 loaded.RemoteResourcesBlocked,
@@ -303,6 +306,7 @@ internal sealed class WordsMutationService
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         LicenseState state,
+        string format,
         bool revisionsKept,
         bool inputWasSigned,
         ProtectionType inputProtection,
@@ -327,8 +331,15 @@ internal sealed class WordsMutationService
             {
                 Code = WordsDiagnostics.ProtectionNotEnforced,
                 Message = $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.",
-                Hint = "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect.",
+                Hint = WordsFormats.WordIds.Contains(format, StringComparer.Ordinal)
+                    ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect."
+                    : $"Confirm the change is authorized. A {format} output may not keep the restrictions; save to docx or another Word format to keep them.",
             });
+        }
+
+        if (LossyConversion(format) is { } lossy)
+        {
+            extra.Add(lossy);
         }
 
         if (LocalDocumentResourceLoader.OmissionWarning(remoteResourcesBlocked) is { } omitted)
