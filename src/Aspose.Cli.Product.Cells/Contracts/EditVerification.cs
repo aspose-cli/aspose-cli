@@ -21,7 +21,10 @@ public sealed record EditVerification
     /// <summary>Formula errors found anywhere in the edited workbook.</summary>
     public required IReadOnlyList<CellError> FormulaErrors { get; init; }
 
-    /// <summary><c>true</c> when the cell-diff budget was reached.</summary>
+    /// <summary>
+    /// <c>true</c> when the edit changed more than 1000 cells, so the change lists hold only the
+    /// first 1000; the checks behind <see cref="Ok"/> still cover every cell.
+    /// </summary>
     public required bool Truncated { get; init; }
 
     /// <summary>Verification problems, empty when <see cref="Ok"/>; an edit artifact is preserved when this list is non-empty.</summary>

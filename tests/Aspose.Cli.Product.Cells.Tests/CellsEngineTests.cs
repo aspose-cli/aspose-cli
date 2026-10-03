@@ -172,19 +172,27 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void VerificationReportsATruncatedDiff()
+    public void VerificationOfALargeEditListsTheFirstChangesAndStillChecksEveryCell()
     {
+        // A sort or a large write cannot be split; the change lists are capped, while the
+        // formula-error scan that decides verification still covers the whole workbook.
         string source = _fixture.CreateSalesWorkbook("verify-diff-truncated.xlsx");
         string rows = string.Join(",", Enumerable.Range(1, 1001).Select(static value => $"[{value}]"));
         EditResult result = _fixture.Engine.ApplyOps(source,
             ParseOps($$"""{"ops":[{"op":"set_values","sheet":"Second","range":"B1","values":[{{rows}}]}]}"""),
             new EditRequest { OutputPath = _fixture.Temp.File("verify-diff-truncated.out.xlsx"), Verify = true });
 
-        Assert.False(result.Verification!.Ok);
+        Assert.True(result.Verification!.Ok);
         Assert.True(result.Verification.Truncated);
-        VerificationIssue issue = Assert.Single(result.Verification.Issues);
-        Assert.Equal("DIFF_TRUNCATED", issue.Code);
-        Assert.Null(issue.Location);
+        Assert.Equal(1000, result.Verification.DirectChanges.Count);
+        Assert.Empty(result.Verification.Issues);
+
+        EditResult broken = _fixture.Engine.ApplyOps(source,
+            ParseOps($$"""{"ops":[{"op":"set_values","sheet":"Second","range":"B1","values":[{{rows}}]},{"op":"set_formula","sheet":"Second","range":"C1002","formula":"=1/0"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-diff-truncated-error.out.xlsx"), Verify = true });
+
+        Assert.False(broken.Verification!.Ok);
+        Assert.Equal("'Second'!C1002", Assert.Single(broken.Verification.Issues).Location);
     }
 
     [Fact]

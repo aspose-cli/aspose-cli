@@ -34,13 +34,9 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
         issues.AddRange(CompletenessIssues(candidate.Warnings()));
         DiffComparer.Result diff = DiffComparer.Compare(budgets, baseline.Workbook, candidate.Workbook,
             includeFormulas: true, MaxDiffs);
+        // The change lists are evidence capped at MaxDiffs cells (Truncated); they decide nothing,
+        // so a large edit such as a sort still passes when the checks below find no issue.
         Classify(diff, footprint, direct, formulaResults, other);
-        if (diff.Truncated)
-        {
-            issues.Add(VerificationIssue.Of(CellsDiagnostics.DiffTruncated,
-                $"The edit changed more than {MaxDiffs} cells, so verification could not list every change.",
-                hint: "Split the edit into smaller batches so each one changes fewer cells."));
-        }
         (IReadOnlyList<CellError> errors, int errorTotal) = InfoProjection.ScanFormulaErrors(budgets, candidate.Workbook);
         errors = errors.Select(error => IsPreexisting(error, baseline.Workbook, candidate.Workbook)
             ? error with { Preexisting = true } : error).ToArray();

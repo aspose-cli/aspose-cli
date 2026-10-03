@@ -47,9 +47,6 @@ internal static class CellsDiagnostics
     /// <summary>An edit added a link that the output stores as a file name relative to its folder.</summary>
     internal const string ExternalLinkRelative = "EXTERNAL_LINK_RELATIVE";
 
-    /// <summary>Verification: the edit changed more cells than verification lists.</summary>
-    internal static readonly DiagnosticDescriptor DiffTruncated = DiagnosticDescriptor.Verification("DIFF_TRUNCATED", "cells");
-
     /// <summary>Verification: the edited workbook contains formula errors.</summary>
     internal static readonly DiagnosticDescriptor FormulaErrors = DiagnosticDescriptor.Verification("FORMULA_ERRORS", "cells");
 
@@ -79,7 +76,6 @@ internal static class CellsDiagnostics
         Warning(ExternalLinkCacheMissing),
         Warning(ExternalLinkRelative),
         Warning(ChartSplitAcrossPages),
-        DiffTruncated,
         FormulaErrors,
     ];
 

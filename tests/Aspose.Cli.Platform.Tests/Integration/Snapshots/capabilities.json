@@ -18370,15 +18370,6 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
-      "code": "DIFF_TRUNCATED",
-      "owner": "cells",
-      "severity": "warning",
-      "category": "verification",
-      "messageTemplateId": "cells.diff-truncated.message.v1",
-      "hintTemplateId": "cells.diff-truncated.hint.v1",
-      "detailsSchemaId": "v2/common/diagnostic-details"
-    },
-    {
       "code": "DOCUMENT_ENCRYPTION_REMOVED",
       "owner": "words",
       "severity": "warning",

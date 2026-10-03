@@ -314,11 +314,13 @@ errors, sheet loss, grid truncation, imported formulas whose results changed
 (`EXTERNAL_LINK_CACHE_MISSING`) or an incomplete scan keep the edited file
 and exit 8 with `verification.ok: false`. Issue codes: `FORMULA_ERRORS` (the
 edited workbook has formula errors; `location` is the cell when there is one),
-`DIFF_TRUNCATED` (more than 1000 changed cells, so the change lists are
-incomplete), `LIST_TRUNCATED` (`formulaErrors` holds only the first 1000), or
-the code of a completeness warning such as `SHEETS_DROPPED`; `capabilities`
-lists every code. A formula error whose input cell had the same formula and
-the same error carries `preexisting: true`; it still fails verification, so
-fix it or tell the user it predates the edit. A reopen error, budget failure or
+`LIST_TRUNCATED` (`formulaErrors` holds only the first 1000), or the code of a
+completeness warning such as `SHEETS_DROPPED`; `capabilities` lists every
+code. A formula error whose input cell had the same formula and the same
+error carries `preexisting: true`; it still fails verification, so fix it or
+tell the user it predates the edit. An edit that changes more than 1000 cells,
+such as a large `sort_range`, lists only the first 1000 changes with
+`truncated: true`; the checks still cover every cell, so it passes when they
+find nothing. A reopen error, budget failure or
 cancellation aborts publication. `--verify` needs the final recalculation, so
 it cannot accompany `--dry-run` or `--no-recalc`.
