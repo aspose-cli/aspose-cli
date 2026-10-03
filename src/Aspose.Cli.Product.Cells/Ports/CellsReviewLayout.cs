@@ -54,10 +54,14 @@ internal sealed record CellsReviewDimensionSet(
     int Count,
     IReadOnlyList<int> Samples);
 
-/// <summary>Cells in one layout condition: how many there are and the A1 names of the first few.</summary>
+/// <summary>
+/// Cells in one layout condition: how many there are, the A1 names of the first few, and whether
+/// one of those holds East Asian text.
+/// </summary>
 internal sealed record CellsReviewCellSet(
     int Count,
-    IReadOnlyList<string> Samples);
+    IReadOnlyList<string> Samples,
+    bool SamplesHaveEastAsianText = false);
 
 /// <summary>Layout facts for one chart on a worksheet.</summary>
 internal sealed record CellsReviewChartLayout
