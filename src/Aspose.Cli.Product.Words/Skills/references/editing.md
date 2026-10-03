@@ -48,7 +48,7 @@ aspose-cli schema v2/words/ops --operation insert_table
 ## Text
 
 - `set_text` replaces the inline content of paragraphs and keeps their style;
-  use `set_table_cell` for table cells. With a `bookmark` target, or
+  use `set_table_cell` for table cells. With `"at": {"bookmark": "Name"}`, or
   `--set bookmark:Name=text`, it replaces only the text the bookmark encloses,
   anywhere including table cells: the bookmark and the rest of its paragraph
   remain, the new text takes the format of the bookmark's first run, and a
@@ -134,7 +134,10 @@ set. `--track-changes` cannot record it.
 ## Headers, footers and page numbers
 
 `set_header` and `set_footer` replace the selected kind, including its fields,
-in one section or every section. Apply footer text before `set_page_numbers`.
+in one section or every section. Their content is exactly one of `markdown` or
+`paragraphs`, and these `paragraphs` are plain strings, one per paragraph, such
+as `["Contract C-2026-014", "Confidential"]`; `insert_paragraphs` instead takes
+`{"text": ..., "style": ...}` objects. Apply footer text before `set_page_numbers`.
 Page numbering targets only the primary header or footer, reuses its first
 PAGE field or appends one in a new paragraph, and keeps the other content. A
 `start` restarts numbering in each selected section; name a `section` when only
