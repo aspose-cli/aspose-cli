@@ -30,7 +30,7 @@ internal static class PdfContractSamples
             Encrypted = true,
             Linearized = false,
             Tagged = true,
-            PdfaCompliant = false,
+            PdfaProfile = "pdfa-2b",
             FormType = "acro",
             AttachmentCount = 1,
             Signed = true,

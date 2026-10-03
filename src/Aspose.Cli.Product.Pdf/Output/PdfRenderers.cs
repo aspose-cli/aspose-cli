@@ -13,7 +13,7 @@ internal static class PdfRenderers
         surface.Out.WriteLine($"{result.Source.Path} ({result.Source.Format}, {TableText.Bytes(result.Source.SizeBytes)})");
         surface.Out.WriteLine(
             $"pages: {pdf.PageCount}   version: {pdf.Version}   encrypted: {TableText.YesNo(pdf.Encrypted)}   "
-            + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A: {TableText.YesNo(pdf.PdfaCompliant)}");
+            + $"tagged: {TableText.YesNo(pdf.Tagged)}   PDF/A declared: {pdf.PdfaProfile ?? "no"}");
         surface.Out.WriteLine(
             $"form: {pdf.FormType}   attachments: {pdf.AttachmentCount}   signed: {TableText.YesNo(pdf.Signed)}   "
             + $"password access: {pdf.PasswordType}");

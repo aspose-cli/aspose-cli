@@ -56,7 +56,7 @@ internal static class PdfInfoProjection
                 Encrypted = document.IsEncrypted,
                 Linearized = document.IsLinearized,
                 Tagged = false,
-                PdfaCompliant = document.IsPdfaCompliant,
+                PdfaProfile = DeclaredPdfa(document.PdfFormat),
                 FormType = form.Type,
                 AttachmentCount = document.EmbeddedFiles.Count,
                 Signed = signatures.Any(static item => item.Signed),
@@ -90,6 +90,15 @@ internal static class PdfInfoProjection
 
     private static string Version(string version) =>
         version.Replace("v_", string.Empty, StringComparison.Ordinal).Replace('_', '.');
+
+    /// <summary>The declared PDF/A part and conformance, such as <c>PDF_A_2B</c> as <c>pdfa-2b</c>.</summary>
+    private static string? DeclaredPdfa(PdfFormat format)
+    {
+        string name = format.ToString();
+        return name.StartsWith("PDF_A_", StringComparison.Ordinal)
+            ? "pdfa-" + name["PDF_A_".Length..].Replace("_", string.Empty, StringComparison.Ordinal).ToLowerInvariant()
+            : null;
+    }
 
     private static bool IsTagged(Document document)
     {

@@ -31,7 +31,11 @@ public sealed record PdfSummary
     public required bool Encrypted { get; init; }
     public required bool Linearized { get; init; }
     public required bool Tagged { get; init; }
-    public required bool PdfaCompliant { get; init; }
+    /// <summary>
+    /// The PDF/A profile the file declares, such as <c>pdfa-2b</c>, or null when it declares none.
+    /// A declaration is not a check: <c>pdf validate --profile</c> verifies conformance.
+    /// </summary>
+    public string? PdfaProfile { get; init; }
     public required string FormType { get; init; }
     public required int AttachmentCount { get; init; }
     public required bool Signed { get; init; }
