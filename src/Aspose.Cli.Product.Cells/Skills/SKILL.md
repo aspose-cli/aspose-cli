@@ -46,8 +46,10 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output json
 - `--scope values` (default), `formulas` (adds `f`), `styles` (a
   deduplicated style pool) or `full`. Style fields read back under the names
   `format_range` writes.
-- Give explicit bounds; `A:A` is refused. An over-budget read returns a
-  summary and a `window.next` command for the next page.
+- Give explicit bounds; `A:A` is refused. A read without `--range` of a sheet
+  larger than `--max-cells` returns a summary and a `window.next` command for
+  the first page; an explicit `--range` larger than that fails with
+  `RANGE_TOO_LARGE`, and its hint is that command. Follow each `window.next`.
 - CSV and TSV inputs are read as UTF-8 with invariant number and date formats.
   A file that needs anything else is refused rather than misread:
   `INPUT_ENCODING_INVALID` for other encodings (typical of Chinese ERP exports),
