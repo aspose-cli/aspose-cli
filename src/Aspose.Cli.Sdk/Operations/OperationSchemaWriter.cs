@@ -222,6 +222,11 @@ internal sealed class OperationSchemaWriter
         }
 
         Value(schema, property.Value, PlacedConstraint.Declared(property.Constraints), path);
+        if (property.Required && property.Value.Nullable)
+        {
+            schema = AllowNull(schema);
+        }
+
         if (property.Default is not null)
         {
             schema["default"] = JsonNode.Parse(property.Default);

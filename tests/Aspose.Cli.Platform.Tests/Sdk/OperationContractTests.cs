@@ -175,6 +175,22 @@ public sealed class OperationContractTests
         Assert.Equal(valid, Published.Value.Evaluate(document.RootElement).IsValid);
     }
 
+    /// <summary>A required member whose type admits null must be present and may be null; an optional one is omitted, never null.</summary>
+    [Theory]
+    [InlineData("""{"op":"label","text":null}""", true)]
+    [InlineData("""{"op":"label","text":"a"}""", true)]
+    [InlineData("""{"op":"label","text":""}""", false)]
+    [InlineData("""{"op":"label"}""", false)]
+    [InlineData("""{"op":"note","text":null}""", false)]
+    public void NullableRequiredMember_ParserAndSchemaAgree(string operation, bool valid)
+    {
+        using JsonDocument document = JsonDocument.Parse($$"""{"ops":[{{operation}}]}""");
+
+        Assert.Equal(valid, !Parse(operation).StartsWith("error: ", StringComparison.Ordinal));
+        Assert.Equal(valid, Published.Value.Evaluate(document.RootElement).IsValid);
+        Assert.Equal("""["string","null"]""", Schema()["$defs"]!["label"]!["properties"]!["text"]!["type"]!.ToJsonString());
+    }
+
     [Fact]
     public void Schema_IsDeterministicAndStatesEveryDeclaredRule()
     {

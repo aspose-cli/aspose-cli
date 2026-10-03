@@ -98,6 +98,13 @@ public sealed record SetOp : TestOp
     [Minimum(0)] public required int Value { get; init; }
 }
 
+/// <summary>Labels the target; a null text removes the label.</summary>
+[Operation("label")]
+public sealed record LabelOp : TestOp
+{
+    [MinLength(1)] public required string? Text { get; init; }
+}
+
 [Operation("link")]
 public sealed record LinkOp : TestOp
 {
@@ -115,6 +122,7 @@ public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 
 [JsonSourceGenerationOptions(PropertyNamingPolicy = JsonKnownNamingPolicy.CamelCase, DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull)]
 [JsonSerializable(typeof(TestBatch))]
+[JsonSerializable(typeof(LabelOp))]
 [JsonSerializable(typeof(LinkOp))]
 [JsonSerializable(typeof(NoteOp))]
 [JsonSerializable(typeof(PlaceOp))]

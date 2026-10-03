@@ -126,9 +126,11 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
             }
 
             OperationProperty? property = record.Properties.FirstOrDefault(property => member.NameEquals(property.Name));
-            if (member.Value.ValueKind == JsonValueKind.Null && (property is not null || (isOperation && member.NameEquals("id"))))
+            if (member.Value.ValueKind == JsonValueKind.Null
+                && ((property is not null && !(property.Required && property.Value.Nullable)) || (isOperation && member.NameEquals("id"))))
             {
-                // An optional member is omitted, never null, as the schema states.
+                // An optional member is omitted, never null, as the schema states; only a
+                // required member whose type admits null may be null.
                 throw new JsonException($"{Join(path, member.Name)} must not be null");
             }
 
