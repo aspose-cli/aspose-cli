@@ -111,6 +111,30 @@ public sealed class ReviewEvidenceWriterTests
     }
 
     [Fact]
+    public void Write_PointsAFindingAtThePartItConcerns()
+    {
+        using var temp = new TempDirectory();
+        var check = new ReviewCheck("TEST_PAGE_ODD", ReviewSeverities.Warning, "Flags a page.");
+        var assessment = new ProductReviewAssessment
+        {
+            Findings =
+            [
+                check.Finding("Second page.", "page 2", part: "part-1"),
+                check.Finding("Whole document."),
+                check.Finding("Unrendered page.", "page 3", part: "part-2"),
+            ],
+        };
+
+        ReviewResult result = Write(temp, temp.File("review"), 2, 3, ["page-1.png", "page-2.png"], assessment);
+
+        Assert.Equal(["artifacts/page-2.png"], result.Findings[0].Evidence);
+        Assert.Equal(["artifacts/page-1.png", "artifacts/page-2.png"], result.Findings[1].Evidence);
+        Assert.Equal(["artifacts/view.json"], result.Findings[2].Evidence);
+        JsonObject manifest = JsonNode.Parse(File.ReadAllText(result.Manifest))!.AsObject();
+        Assert.Null(manifest["findings"]![0]!["part"]);
+    }
+
+    [Fact]
     public void Write_PublishesTheViewManifestWithPartDigests()
     {
         using var temp = new TempDirectory();

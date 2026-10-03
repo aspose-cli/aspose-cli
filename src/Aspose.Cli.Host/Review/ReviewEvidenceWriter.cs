@@ -162,7 +162,7 @@ internal static class ReviewEvidenceWriter
         IReadOnlyList<Warning>? warnings = EnvelopeParts.CombineWarnings(
             EnvelopeParts.OutputWarnings(license),
             EnvelopeParts.CombineWarnings(manifest.Warnings, assessment.Warnings));
-        IReadOnlyList<ReviewFinding> findings = AssociateEvidence(assessment.Findings ?? [], artifacts);
+        IReadOnlyList<ReviewFinding> findings = AssociateEvidence(assessment.Findings ?? [], artifacts, manifest.Parts);
         IReadOnlyList<ReviewFinding> reported = codes is null
             ? findings
             : [.. findings.Where(finding => codes.Contains(finding.Code, StringComparer.Ordinal))];
@@ -202,10 +202,28 @@ internal static class ReviewEvidenceWriter
         };
     }
 
+    // A finding about one part points at that part's rendering, or at the view entry when the
+    // coverage limit left the part unrendered; one about the whole document points at every
+    // rendering (or, with none, at the view entry).
     private static IReadOnlyList<ReviewFinding> AssociateEvidence(
         IReadOnlyList<ReviewFinding> findings,
-        IReadOnlyList<ReviewArtifact> artifacts)
+        IReadOnlyList<ReviewArtifact> artifacts,
+        IReadOnlyList<ViewPart> parts)
     {
+        Dictionary<string, string> partEvidence = new(StringComparer.Ordinal);
+        foreach (ViewPart part in parts)
+        {
+            string path = ArtifactsBase + part.File;
+            if (IsVisualEvidence(path))
+            {
+                partEvidence.TryAdd(part.Id, path);
+            }
+        }
+
+        string[] entry = artifacts
+            .Where(static artifact => artifact.Role == "entry")
+            .Select(static artifact => artifact.Path)
+            .ToArray();
         string[] evidence = artifacts
             .Where(static artifact => artifact.Role == "evidence"
                 && IsVisualEvidence(artifact.Path))
@@ -213,14 +231,16 @@ internal static class ReviewEvidenceWriter
             .ToArray();
         if (evidence.Length == 0)
         {
-            evidence = artifacts
-                .Where(static artifact => artifact.Role == "entry")
-                .Select(static artifact => artifact.Path)
-                .ToArray();
+            evidence = entry;
         }
         return findings.Select(finding => finding.Evidence is { Count: > 0 }
                 ? finding
-                : finding with { Evidence = evidence })
+                : finding with
+                {
+                    Evidence = finding.Part is not { } id ? evidence
+                        : partEvidence.TryGetValue(id, out string? path) ? [path]
+                        : entry,
+                })
             .ToArray();
     }
 

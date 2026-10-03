@@ -86,6 +86,13 @@ public sealed record ReviewFinding
 
     /// <summary>Reported artifact paths that provide visual evidence for this finding.</summary>
     public IReadOnlyList<string>? Evidence { get; init; }
+
+    /// <summary>
+    /// Id of the view part the finding is about, for example <c>page-3</c>; the review writer
+    /// turns it into <see cref="Evidence"/>. Without one, the finding concerns the whole document.
+    /// </summary>
+    [JsonIgnore]
+    public string? Part { get; init; }
 }
 
 /// <summary>One deterministic product-owned coverage measurement.</summary>

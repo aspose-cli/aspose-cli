@@ -33,7 +33,9 @@ instead of the user's folder.
 1. Read the result. `artifacts[]` lists each image (`role: "evidence"`) with
    the sheet, page or slide it shows in `label`. `findings[]` carry `code`,
    `severity` (`error`, `warning`, `info`), `message`, `location`, `hint` and
-   the `evidence` images.
+   the `evidence` images: the one image of the page, sheet or slide the finding
+   concerns, every image for a finding about the whole document, or
+   `artifacts/view.json` when its page was not rendered.
 2. Read `coverage`: `expectedItemCount`, `renderedItemCount`, `omittedItemCount`,
    `truncated` and `complete`. `--max-items` (default 256) caps the images;
    anything omitted is unreviewed.
