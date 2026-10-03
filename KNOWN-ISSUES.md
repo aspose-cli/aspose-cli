@@ -151,6 +151,26 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** set the other fields with a `set_metadata` edit.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-HTML-FORM-NAMES
+
+- **Defect:** the HTML importer keeps the `name` of single-line text inputs only. It names check
+  boxes, radio groups, selects, text areas and buttons itself (such as `field_#0`, `field_1` and
+  `radio`) and drops their `value` attributes: a check box is checked with `Yes` and radio buttons
+  take the values `Item0`, `Item1` and so on. `HtmlLoadOptions` has no option to keep them.
+- **CLI behavior:** `pdf create --from-html` warns `LOSSY_CONVERSION` with the generated names;
+  `pdf query forms` gives every field's `page` and `rect`.
+- **Workaround:** match each generated field to the label beside it by its `rect` before filling.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
+### PDF-HTML-FORM-INPUTS
+
+- **Defect:** the HTML importer drops inputs of type `email`, `tel`, `url`, `time`,
+  `datetime-local`, `month`, `week`, `color`, `range` and `file`: they become no form field.
+- **CLI behavior:** `pdf create --from-html` counts such `<input>` tags in the HTML and names
+  their types in its `LOSSY_CONVERSION` warning.
+- **Workaround:** give those inputs `type="text"`.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-ATTACHMENT-NAME-OPENS-FILE
 
 - **Defect:** the `FileSpecification.Name` setter opens the file its value names, relative to

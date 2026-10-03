@@ -1,6 +1,7 @@
 using System.Globalization;
 using System.Net;
 using System.Text;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
@@ -279,6 +280,10 @@ internal sealed class PdfProductionService
         });
         var warnings = EnvelopeParts.OutputWarnings(state)?.ToList() ?? [];
         warnings.AddRange(resources?.Warnings ?? []);
+        if (html is not null && FormLosses(document, html) is { } losses)
+        {
+            warnings.Add(losses);
+        }
 
         return new PdfWriteResult
         {
@@ -358,6 +363,51 @@ internal sealed class PdfProductionService
             resources.ThrowIfFailed();
             throw;
         }
+    }
+
+    /// <summary>The input types the HTML importer drops without a field (PDF-HTML-FORM-INPUTS).</summary>
+    private static readonly Regex DroppedInput = new(
+        """<input\b[^>]*?\stype\s*=\s*["']?(email|tel|url|time|datetime-local|month|week|color|range|file)\b""",
+        RegexOptions.IgnoreCase | RegexOptions.CultureInvariant,
+        TimeSpan.FromSeconds(1));
+
+    /// <summary>An HTML comment, whose inputs the importer does not see.</summary>
+    private static readonly Regex HtmlComment = new("<!--.*?-->", RegexOptions.Singleline, TimeSpan.FromSeconds(1));
+
+    /// <summary>
+    /// The HTML importer keeps the name of a single-line text input only; it names every other
+    /// control itself and drops its HTML value (PDF-HTML-FORM-NAMES), and it drops some input
+    /// types entirely (PDF-HTML-FORM-INPUTS), which the HTML shows. Both are disclosed, so the
+    /// fields are matched to their labels by position before filling.
+    /// </summary>
+    private static Warning? FormLosses(Document document, byte[] html)
+    {
+        string[] names = document.Form.Fields
+            .Where(static field => field is not Aspose.Pdf.Forms.TextBoxField { Multiline: false })
+            .Select(static field => $"'{field.FullName}'")
+            .Distinct(StringComparer.Ordinal)
+            .Order(StringComparer.Ordinal)
+            .ToArray();
+        string[] dropped = DroppedInput.Matches(HtmlComment.Replace(Encoding.UTF8.GetString(html), string.Empty))
+            .Select(static match => match.Groups[1].Value.ToLowerInvariant())
+            .ToArray();
+        var losses = new List<string>(2);
+        if (names.Length > 0)
+        {
+            losses.Add($"these form fields have generated names and lost their HTML values: {string.Join(", ", names)}");
+        }
+
+        if (dropped.Length > 0)
+        {
+            losses.Add($"it dropped {dropped.Length} input(s) of type {string.Join(", ", dropped.Distinct(StringComparer.Ordinal))}, which have no field");
+        }
+
+        return losses.Count == 0 ? null : new Warning
+        {
+            Code = WarningCodes.LossyConversion,
+            Message = $"The HTML importer keeps the name and value of single-line text inputs only: {string.Join("; ", losses)}.",
+            Hint = "Read the fields with 'pdf query forms' and match each field's page and rect to the label beside it before filling; give a dropped input type=\"text\" to keep it as a field.",
+        };
     }
 
     private static Document CreateFromText(string path, bool markdown, NewPdfRequest request)

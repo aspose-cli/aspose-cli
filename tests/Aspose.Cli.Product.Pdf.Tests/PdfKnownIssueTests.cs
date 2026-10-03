@@ -197,6 +197,52 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void HtmlImport_NamesFormControlsOtherThanTextInputsItself()
+    {
+        using var fixture = new PdfEngineFixture();
+        string html = fixture.File("form.html");
+        File.WriteAllText(html, """
+            <html><body><form>
+            <input type="text" name="company"/>
+            <input type="radio" name="kind" value="maker"/> Maker
+            <input type="radio" name="kind" value="seller"/> Seller
+            <input type="checkbox" name="iso9001" value="yes"/> ISO 9001
+            <select name="region"><option value="east">East</option></select>
+            </form></body></html>
+            """);
+
+        using var document = new Document(html, new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar));
+        string[] names = [.. document.Form.Fields.Select(static field => field.FullName).Distinct()];
+        string[] radioValues = [.. document.Form.Fields.OfType<Aspose.Pdf.Forms.RadioButtonOptionField>()
+            .Select(static button => button.OptionName)];
+
+        KnownIssue.Reproduces(
+            "PDF-HTML-FORM-NAMES",
+            names.Contains("company") && !names.Intersect(["kind", "iso9001", "region"]).Any()
+                && !radioValues.Intersect(["maker", "seller"]).Any(),
+            $"the import named the fields [{string.Join(", ", names)}] and gave the radio buttons the values [{string.Join(", ", radioValues)}]");
+    }
+
+    [LicensedFact]
+    public void HtmlImport_DropsSomeInputTypesWithoutAField()
+    {
+        using var fixture = new PdfEngineFixture();
+        string html = fixture.File("contact.html");
+        string[] types = ["email", "tel", "url", "time", "datetime-local", "month", "week", "color", "range", "file"];
+        File.WriteAllText(html, "<html><body><form><p><input type=\"text\" name=\"company\"/></p>"
+            + string.Concat(types.Select(static type => $"<p><input type=\"{type}\" name=\"{type}\" value=\"x\"/></p>"))
+            + "</form></body></html>");
+
+        using var document = new Document(html, new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar));
+        string[] names = [.. document.Form.Fields.Select(static field => field.FullName)];
+
+        KnownIssue.Reproduces(
+            "PDF-HTML-FORM-INPUTS",
+            names.SequenceEqual(["company"]),
+            $"the import of a text input and inputs of type {string.Join(", ", types)} made the fields [{string.Join(", ", names)}]");
+    }
+
+    [LicensedFact]
     public void AttachmentName_OpensTheFileItNames()
     {
         using var fixture = new PdfEngineFixture();

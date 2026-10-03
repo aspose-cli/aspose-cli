@@ -51,9 +51,13 @@ reference them by relative path, and run `pdf create --from-text` from the Markd
 file's directory. [Troubleshooting](references/troubleshooting.md) lists each refusal
 and its remedy, including `--allow-network-resources` for trusted HTML.
 
-HTML form controls become AcroForm fields. A text `<input>` keeps its `name`;
-other controls get generated names, so read them with `pdf query forms` before
-filling. The HTML `<title>` becomes the PDF title; a PDF made from HTML or
+HTML form controls become AcroForm fields. A single-line text `<input>` keeps
+its `name`; other controls get generated names and lose their `value`s, and
+inputs of type `email`, `tel`, `url`, `time`, `month`, `week`, `color`, `range`
+or `file` are dropped;
+`LOSSY_CONVERSION` lists both. Use `type="text"` for an input that must stay a
+field, read the fields with `pdf query forms` and match each field's `rect` to
+its label before filling. The HTML `<title>` becomes the PDF title; a PDF made from HTML or
 Markdown has no author or subject until a `set_metadata` edit sets them.
 
 ## Preview and licensing

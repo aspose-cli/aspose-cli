@@ -399,6 +399,52 @@ public sealed class PdfCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void CreateFromHtml_DisclosesTheFieldsTheImporterNamedItself()
+    {
+        File.WriteAllText(_workspace.File("form.html"), """
+            <html><body><form>
+            <input type="text" name="company"/>
+            <input type="radio" name="kind" value="maker"/> Maker
+            <input type="radio" name="kind" value="seller"/> Seller
+            <input type="checkbox" name="iso9001" value="yes"/> ISO 9001
+            </form></body></html>
+            """);
+        File.WriteAllText(_workspace.File("text.html"), """<html><body><form><input type="text" name="company"/></form></body></html>""");
+        File.WriteAllText(_workspace.File("contact.html"), """
+            <html><body><form>
+            <input type="text" name="company"/>
+            <input type="email" name="mail"/> <input type="EMAIL" name="copy"/> <input name="phone" type='tel'/>
+            <input data-type="url" type="text" name="site"/>
+            <!-- <input type="file" name="upload"/> -->
+            </form></body></html>
+            """);
+
+        CliResult form = _workspace.Run("pdf", "create", "form.pdf", "--from-html", "form.html", "--output", "json");
+        CliResult text = _workspace.Run("pdf", "create", "text.pdf", "--from-html", "text.html", "--output", "json");
+        CliResult contact = _workspace.Run("pdf", "create", "contact.pdf", "--from-html", "contact.html", "--output", "json");
+        CliResult fields = _workspace.Run("pdf", "query", "forms", "form.pdf", "--output", "json");
+
+        Assert.True(form.ExitCode == 0, form.StdErr);
+        JsonNode lossy = Assert.Single(
+            JsonNode.Parse(form.StdOut)!["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!;
+        JsonArray read = JsonNode.Parse(fields.StdOut)!["fields"]!.AsArray();
+        string[] generated = [.. read.Select(static field => field!["name"]!.GetValue<string>()).Where(static name => name != "company").Distinct()];
+        Assert.NotEmpty(generated);
+        Assert.All(generated, name => Assert.Contains($"'{name}'", lossy["message"]!.GetValue<string>(), StringComparison.Ordinal));
+        Assert.Contains("rect", lossy["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.True(text.ExitCode == 0, text.StdErr);
+        Assert.DoesNotContain("LOSSY_CONVERSION", text.StdOut, StringComparison.Ordinal);
+        // The importer drops some input types without a field; the HTML shows which.
+        Assert.True(contact.ExitCode == 0, contact.StdErr);
+        string dropped = Assert.Single(
+            JsonNode.Parse(contact.StdOut)!["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["message"]!.GetValue<string>();
+        Assert.Contains("dropped 3 input(s) of type email, tel", dropped, StringComparison.Ordinal);
+        Assert.DoesNotContain("generated names", dropped, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void QuerySearch_GivesTheTextAroundEachHit()
     {
         using (var document = new Document())
