@@ -38,7 +38,7 @@ internal static class WordsEngineSupport
     /// <summary>
     /// The warnings for writing a loaded document to a format. A page render passes
     /// <paramref name="rendered"/>: an image shows the document as it looks and is never a copy
-    /// of it, so it is not told that it drops the source's revisions.
+    /// of it, so it is not told that it drops the source's revisions or macros.
     /// </summary>
     internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedDocument loaded, string format, bool rendered = false)
     {
@@ -55,13 +55,22 @@ internal static class WordsEngineSupport
             extra.Add(TrackedChangesPresent);
         }
 
-        if (loaded.Format.HasMacros && format is not "docm" and not "dotm")
+        if (!rendered && MacrosDropped(loaded, format) is { } macros)
         {
-            extra.Add(new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source contains macros which the target format does not preserve.", Hint = "Convert to docm/dotm to preserve macros." });
+            extra.Add(macros);
         }
 
         return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
     }
+
+    /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>
+    internal static Warning? MacrosDropped(LoadedDocument source, string format) =>
+        source.Format.HasMacros && !KeepsMacros(format)
+            ? new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source contains macros which the target format does not preserve.", Hint = "Save to docm or dotm to preserve macros." }
+            : null;
+
+    /// <summary>Whether a format keeps the macros of the document saved in it.</summary>
+    internal static bool KeepsMacros(string format) => WordsFormats.MacroIds.Contains(format, StringComparer.Ordinal);
 
     /// <summary>Discloses the revisions an output that stores them still contains.</summary>
     internal static Warning TrackedChangesPresent { get; } = new()

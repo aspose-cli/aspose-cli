@@ -73,6 +73,7 @@ internal sealed class WordsMutationService
         tracking?.Stop();
 
         _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
+        WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
 
         (OutputInfo? output, BackupInfo? backup, WordsVerification? verification) =
             Persist(
@@ -85,13 +86,22 @@ internal sealed class WordsMutationService
                 saveOptions,
                 outputPassword);
         baseline?.Cleanup();
-        IReadOnlyList<Warning>? outputWarnings = loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun
-            ? [new Warning
+        var outputWarnings = new List<Warning>();
+        if (loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun)
+        {
+            outputWarnings.Add(new Warning
             {
                 Code = WordsDiagnostics.EncryptionRemoved,
                 Message = $"The '{format}' output cannot retain the source document encryption.",
                 Hint = "Use an encryption-capable document output to keep password protection.",
-            }] : null;
+            });
+        }
+
+        if (MacrosDropped(loaded, format) is { } macros)
+        {
+            outputWarnings.Add(macros);
+        }
+
         return new WordsEditResult
         {
             Input = input,

@@ -58,6 +58,7 @@ internal sealed class WordsInspectionService
         {
             string format = WordsFormats.ForOutput(request.OutputPath, leftLoaded.FormatId);
             SaveOptions options = WordsSavePipeline.Options(format);
+            WordsSavePipeline.RemoveMacrosUnlessKept(compared, format);
             long size = _writer.Write(request.OutputPath, request.Overwrite, temp => compared.Save(temp, options));
             output = BuildOutput(request.OutputPath, format, size);
         }
@@ -85,6 +86,7 @@ internal sealed class WordsInspectionService
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
                 CompareWarnings(state, leftLoaded, rightLoaded, output is not null),
+                output is not null && MacrosDropped(leftLoaded, output.Format) is { } macros ? [macros] : null,
                 revisions.Length > SampleLimit
                     ? [EnvelopeParts.ListTruncated("samples", SampleLimit, revisions.Length, "Write the redline with --out to review every revision.")]
                     : null),

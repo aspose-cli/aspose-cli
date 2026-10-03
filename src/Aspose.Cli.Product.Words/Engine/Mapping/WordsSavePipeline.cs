@@ -6,6 +6,20 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
 internal static class WordsSavePipeline
 {
+    /// <summary>
+    /// Removes the macros of a document about to be saved in a format that cannot keep them.
+    /// The SDK refuses to write a macro-free Office Open XML format while a document has a VBA
+    /// project, and asks for <see cref="Document.RemoveMacros"/>; every other such format would
+    /// drop them anyway. Callers disclose the loss as MACROS_DROPPED.
+    /// </summary>
+    public static void RemoveMacrosUnlessKept(Document document, string formatId)
+    {
+        if (document.HasMacros && !WordsFormats.MacroIds.Contains(formatId, StringComparer.Ordinal))
+        {
+            document.RemoveMacros();
+        }
+    }
+
     public static SaveOptions Options(string formatId, string? password = null, IReadOnlyList<int>? pages = null, int? dpi = null)
     {
         SaveFormat format = WordsFormatMapper.ToSaveFormat(formatId);

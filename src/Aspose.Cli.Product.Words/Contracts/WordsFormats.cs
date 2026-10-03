@@ -63,6 +63,9 @@ public static class WordsFormats
     public static IReadOnlyList<string> RevisionIds { get; } =
         [.. WordIds, "rtf", "odt", "ott"];
 
+    /// <summary>Formats that keep a document's macros (its VBA project).</summary>
+    public static IReadOnlyList<string> MacroIds { get; } = ["doc", "dot", "docm", "dotm", "wordml"];
+
     public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
 
     /// <summary>

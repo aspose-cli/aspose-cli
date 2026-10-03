@@ -33,8 +33,9 @@ The error envelope, exit codes, not-found details and shared codes such as
 - `MERGE_VALUE_MISSING`: `mail_merge` data has no value for a template field
   in the listed records ([mail merge](mail-merge.md)).
 - `DOCUMENT_ENCRYPTION_REMOVED`: the output format cannot be encrypted.
-- `MACROS_DROPPED`: the output format does not keep macros; convert to `docm`
-  or `dotm` to keep them.
+- `MACROS_DROPPED`: the source has macros and the output of `convert`, `edit`,
+  `create`, `split` or `compare` was written without them. Only `doc`, `dot`,
+  `docm`, `dotm` and `wordml` keep macros; save to `docm` or `dotm` to keep them.
 - `LAYOUT_MAY_DIFFER`: `words split` can reflow complex layouts slightly;
   review the split pages.
 - `LINKED_IMAGES_SKIPPED`: linked images store no bytes in the document, so

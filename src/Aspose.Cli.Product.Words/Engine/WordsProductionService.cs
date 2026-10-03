@@ -47,6 +47,7 @@ internal sealed class WordsProductionService
         using LoadedDocument loaded = _loader.Open(filePath, request.Password);
         IReadOnlyList<int>? pages = request.Pages?.Resolve(loaded.Document.PageCount);
         SaveOptions options = WordsSavePipeline.Options(request.TargetFormatId, request.EncryptPassword, pages);
+        WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, request.TargetFormatId);
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp =>
         {
             try { loaded.Document.Save(temp, options); }
@@ -164,6 +165,7 @@ internal sealed class WordsProductionService
         using CreatedDocument created = Build(request);
         string formatId = WordsFormats.ForOutput(request.OutputPath);
         SaveOptions options = WordsSavePipeline.Options(formatId, request.EncryptPassword);
+        WordsSavePipeline.RemoveMacrosUnlessKept(created.Document, formatId);
         long size = _writer.Write(request.OutputPath, request.Overwrite, temp => created.Save(temp, options));
 
         return new WordsCreateResult
@@ -261,9 +263,9 @@ internal sealed class WordsProductionService
             extra.Add(EvaluationTruncated);
         }
 
-        if (created.HasMacros && format is not "docm" and not "dotm")
+        if (created.HasMacros && !KeepsMacros(format))
         {
-            extra.Add(new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source template contains macros which the target format does not preserve.", Hint = "Create a docm/dotm output to preserve macros." });
+            extra.Add(new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source template contains macros which the target format does not preserve.", Hint = "Create a docm or dotm output to preserve macros." });
         }
 
         if (created.WasSigned)

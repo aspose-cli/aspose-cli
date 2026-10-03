@@ -1,3 +1,4 @@
+using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Words;
@@ -26,6 +27,7 @@ internal sealed class WordsSplitWriter : IDisposable
     {
         string name = $"part-{index:000}.docx";
         string target = Path.Combine(_outputDirectory, name);
+        WordsSavePipeline.RemoveMacrosUnlessKept(document, "docx");
         _transaction.Stage(
             target,
             _overwrite,

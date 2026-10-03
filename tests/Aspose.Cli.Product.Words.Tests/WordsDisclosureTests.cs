@@ -2,6 +2,7 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.TestKit;
 using Aspose.Words;
+using Aspose.Words.Vba;
 using Aspose.Words.Saving;
 using Xunit;
 
@@ -239,6 +240,107 @@ public sealed class WordsDisclosureTests
         source.StopTrackRevisions();
         string input = fixture.Temp.File("commented-revision.docx");
         source.Save(input, SaveFormat.Docx);
+        return input;
+    }
+
+    [Theory]
+    [InlineData("docx", true)]
+    [InlineData("pdf", true)]
+    [InlineData("docm", false)]
+    [InlineData("doc", false)]
+    public void SavingAMacroDocument_DisclosesTheMacrosTheOutputDrops(string format, bool dropped)
+    {
+        using var fixture = new WordsFixture();
+        string input = MacroDocument(fixture);
+
+        WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
+        {
+            TargetFormatId = format,
+            OutputPath = fixture.Temp.File("converted." + format),
+        });
+        WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new ReplaceTextOp { Find = "Macro", Replace = "Edited" }],
+        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited." + format) });
+
+        Assert.Equal(dropped, (converted.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.MacrosDropped));
+        Assert.Equal(dropped, (edited.Warnings ?? []).Any(static warning => warning.Code == WordsDiagnostics.MacrosDropped));
+        if (format is "docx" or "docm" or "doc")
+        {
+            Assert.Equal(!dropped, new Document(edited.Output!.Path).HasMacros);
+        }
+    }
+
+    [Theory]
+    [InlineData("dot", ".dot")]
+    [InlineData("wordml", ".xml")]
+    public void ConvertingAMacroDocument_ToALegacyWordFormat_KeepsTheMacros(string format, string extension)
+    {
+        using var fixture = new WordsFixture();
+        string input = MacroDocument(fixture);
+
+        WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
+        {
+            TargetFormatId = format,
+            OutputPath = fixture.Temp.File("converted" + extension),
+        });
+
+        Assert.DoesNotContain(converted.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
+        var reopened = new Document(converted.Output!.Path);
+        Assert.True(reopened.HasMacros);
+        Assert.Contains("Sub Hello()", reopened.VbaProject.Modules["Module1"].SourceCode, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RenderingAMacroDocument_DoesNotReportDroppedMacros()
+    {
+        using var fixture = new WordsFixture();
+        string input = MacroDocument(fixture);
+
+        WordsRenderResult rendered = fixture.Engine.Render(input, new WordsRenderRequest
+        {
+            TargetFormatId = "png",
+            OutputPath = fixture.Temp.File("page.png"),
+        });
+
+        Assert.DoesNotContain(rendered.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
+    }
+
+    [Fact]
+    public void SplittingAndComparingAMacroDocument_DropTheMacrosOfADocxOutput()
+    {
+        using var fixture = new WordsFixture();
+        string input = MacroDocument(fixture);
+
+        WordsSplitResult split = fixture.Engine.Split(input, new WordsSplitRequest
+        {
+            By = "section",
+            OutputDirectory = fixture.Temp.File("parts"),
+        });
+        WordsCompareResult compared = fixture.Engine.Compare(input, input, new WordsCompareRequest
+        {
+            OutputPath = fixture.Temp.File("redline.docx"),
+        });
+
+        Assert.Contains(split.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
+        Assert.False(new Document(Assert.Single(split.Outputs).Output.Path).HasMacros);
+        Assert.Contains(compared.Warnings ?? [], static warning => warning.Code == WordsDiagnostics.MacrosDropped);
+        Assert.False(new Document(compared.Output!.Path).HasMacros);
+    }
+
+    private static string MacroDocument(WordsFixture fixture)
+    {
+        var source = new Document();
+        new DocumentBuilder(source).Write("Macro text");
+        source.VbaProject = new VbaProject { Name = "Project" };
+        source.VbaProject.Modules.Add(new VbaModule
+        {
+            Name = "Module1",
+            Type = VbaModuleType.ProceduralModule,
+            SourceCode = "Sub Hello()\r\nEnd Sub\r\n",
+        });
+        string input = fixture.Temp.File("macros.docm");
+        source.Save(input, SaveFormat.Docm);
         return input;
     }
 
