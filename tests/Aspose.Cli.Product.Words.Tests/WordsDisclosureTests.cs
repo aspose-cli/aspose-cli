@@ -109,6 +109,73 @@ public sealed class WordsDisclosureTests
         Assert.Equal(disclosed, new Document(output).HasRevisions);
     }
 
+    [Theory]
+    [InlineData("txt", true)]
+    [InlineData("md", true)]
+    [InlineData("html", false)]
+    [InlineData("docx", false)]
+    public void SavingToText_DisclosesTheCommentsAndDeletionsMixedIntoTheBody(string format, bool mixed)
+    {
+        using var fixture = new WordsFixture();
+        string input = CommentedRevision(fixture);
+
+        WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
+        {
+            TargetFormatId = format,
+            OutputPath = fixture.Temp.File("converted." + format),
+        });
+        WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new ReplaceTextOp { Find = "Other", Replace = "More" }],
+        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited." + format) });
+
+        foreach (IReadOnlyList<Warning>? warnings in new[] { converted.Warnings, edited.Warnings })
+        {
+            string[] messages = (warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion)
+                .Select(static warning => warning.Message).ToArray();
+            Assert.Equal(mixed, messages.Any(message => message.Contains($"{format} output writes the text of 1 comment(s) into the body", StringComparison.Ordinal)));
+            Assert.Equal(mixed, messages.Any(message => message.Contains("deleted and moved-from text", StringComparison.Ordinal)));
+        }
+    }
+
+    [Fact]
+    public void SavingToText_AfterRemovingCommentsAndAcceptingRevisions_MixesNothing()
+    {
+        using var fixture = new WordsFixture();
+        string input = CommentedRevision(fixture);
+        string output = fixture.Temp.File("clean.txt");
+
+        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new RemoveCommentsOp(), new AcceptRevisionsOp()],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Warning lossy = Assert.Single(result.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
+        Assert.Equal("Conversion to txt cannot preserve every Word feature.", lossy.Message);
+        string text = File.ReadAllText(output);
+        Assert.DoesNotContain("Reviewer note", text, StringComparison.Ordinal);
+        Assert.Contains("sixty days", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("thirty", text, StringComparison.Ordinal);
+    }
+
+    private static string CommentedRevision(WordsFixture fixture)
+    {
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("The notice period is thirty days.");
+        builder.Write("Other text.");
+        var comment = new Comment(source, "Ann", "A", DateTime.Now);
+        comment.AppendChild(new Paragraph(source));
+        comment.FirstParagraph!.AppendChild(new Run(source, "Reviewer note"));
+        source.FirstSection.Body.FirstParagraph!.AppendChild(comment);
+        source.StartTrackRevisions("Ann", DateTime.Now);
+        source.Range.Replace("thirty", "sixty");
+        source.StopTrackRevisions();
+        string input = fixture.Temp.File("commented-revision.docx");
+        source.Save(input, SaveFormat.Docx);
+        return input;
+    }
+
     [Fact]
     public void SplitByHeading_KeepsPageSetupAndHeaders()
     {

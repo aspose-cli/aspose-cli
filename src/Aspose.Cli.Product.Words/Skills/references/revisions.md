@@ -6,7 +6,9 @@ Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
 Editing a document that already has revisions reports `TRACKED_CHANGES_PRESENT`
 while a Word format output still contains revisions; disclose them. A batch
 that accepts or rejects every revision does not report it, and an output such
-as `txt` that drops revisions reports `LOSSY_CONVERSION` instead.
+as `txt` that drops revisions reports `LOSSY_CONVERSION` instead. A `txt` or
+`md` output writes deleted text beside the inserted text, which a further
+`LOSSY_CONVERSION` names.
 
 Use `--track-changes --author "Name"` when the requested edit must remain reviewable.
 `set_table_cell` supports tracked replacement while retaining the cell's structure;

@@ -164,6 +164,10 @@ one should restart.
 Every output that can be loaded as a document is reopened before publication.
 An `--out` in `txt`, `md`, `html` or `html-fixed` reports `LOSSY_CONVERSION`:
 such a format cannot hold every Word feature, such as fields, revisions or
-protection. `--verify` adds the semantic checks described in
+protection. A `txt` or `md` output also writes comment text into the body and
+deleted text beside inserted text, each reported by its own `LOSSY_CONVERSION`
+(`words convert` reports them too); add `remove_comments`, and
+`accept_revisions` or `reject_revisions` as the reviewer decides, to the same
+batch to leave them out. `--verify` adds the semantic checks described in
 [verification](verification.md); it does not render pages and cannot be used
 for outputs that are not documents.

@@ -104,6 +104,7 @@ internal sealed class WordsMutationService
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), operationWarnings, MutationWarnings(
                 state,
+                loaded.Document,
                 format,
                 // The input's revisions are disclosed while the output still contains revisions,
                 // which a Word format keeps; LOSSY_CONVERSION covers the formats that drop them.
@@ -308,6 +309,7 @@ internal sealed class WordsMutationService
 
     private static IReadOnlyList<Warning>? MutationWarnings(
         LicenseState state,
+        Document document,
         string format,
         bool revisionsKept,
         bool inputWasSigned,
@@ -339,10 +341,7 @@ internal sealed class WordsMutationService
             });
         }
 
-        if (LossyConversion(format) is { } lossy)
-        {
-            extra.Add(lossy);
-        }
+        extra.AddRange(ConversionWarnings(document, format));
 
         if (LocalDocumentResourceLoader.OmissionWarning(remoteResourcesBlocked) is { } omitted)
         {

@@ -173,3 +173,26 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   such value, before the engine starts.
 - **Workaround:** remove the named values; Windows writes only string values there.
 - **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
+
+## Aspose.Words 26.9.0
+
+### WORDS-TEXT-COMMENTS
+
+- **Defect:** saving to plain text or Markdown writes each comment's text into the body, as a
+  paragraph beside the one that anchors the comment, where it reads as document text.
+  `TxtSaveOptions` and `MarkdownSaveOptions` have no option to leave comments out.
+- **CLI behavior:** `words convert` and `words edit` with a `txt` or `md` output warn
+  `LOSSY_CONVERSION` with the number of comments written into the body.
+- **Workaround:** add `remove_comments` to a `words edit` batch whose `--out` is the text file.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
+
+### WORDS-TEXT-DELETIONS
+
+- **Defect:** saving a document with tracked changes to plain text or Markdown writes deleted and
+  moved-from text beside the text that replaces it, so the output reads as neither the original
+  nor the revised document.
+- **CLI behavior:** `words convert` and `words edit` with a `txt` or `md` output warn
+  `LOSSY_CONVERSION` when the saved document has tracked deletions or moves.
+- **Workaround:** add `accept_revisions` or `reject_revisions`, as the reviewer decides, to a
+  `words edit` batch whose `--out` is the text file.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
