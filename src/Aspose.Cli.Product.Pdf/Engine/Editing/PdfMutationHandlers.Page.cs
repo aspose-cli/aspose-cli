@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Pdf;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using static Aspose.Cli.Product.Pdf.Engine.Editing.PdfMutationSupport;
@@ -74,7 +75,7 @@ internal sealed partial class PdfMutationHandlers
         EnsureInsertionPosition(_document, operation.At);
 
         string? password = OperationSecrets.Resolve(_secrets, operation.PasswordEnv);
-        using LoadedPdf source = _loader.Open(operation.Path, password);
+        using LoadedPdf source = OpenSource(operation.Path, password);
         IReadOnlyList<int> pages = operation.Pages is null
             ? Enumerable.Range(1, source.Document.Pages.Count).ToArray()
             : Resolve(source.Document, operation.Pages);
@@ -86,6 +87,19 @@ internal sealed partial class PdfMutationHandlers
         }
 
         return pages.Count;
+    }
+
+    // The source's password comes from the operation's passwordEnv, not a command option.
+    private LoadedPdf OpenSource(string path, string? password)
+    {
+        try
+        {
+            return _loader.Open(path, password);
+        }
+        catch (CliException error) when (CliErrors.IsPasswordError(error))
+        {
+            throw CliErrors.ForOperationSource(error, "passwordEnv");
+        }
     }
 
     public long Apply(InsertBlankPageOp operation)

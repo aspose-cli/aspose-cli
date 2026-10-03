@@ -3,6 +3,7 @@ using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
@@ -39,7 +40,16 @@ internal sealed class CellsImportSources(
     {
         if (!_opened.TryGetValue(path, out LoadedWorkbook? loaded))
         {
-            loaded = loader.Open(path, OperationSecrets.Resolve(secrets, passwordEnv));
+            try
+            {
+                loaded = loader.Open(path, OperationSecrets.Resolve(secrets, passwordEnv));
+            }
+            catch (CliException error) when (CliErrors.IsPasswordError(error))
+            {
+                // The loader names the command's password option; a source's comes from its operation.
+                throw CliErrors.ForOperationSource(error, "passwordEnv");
+            }
+
             _opened.Add(path, loaded);
         }
 
