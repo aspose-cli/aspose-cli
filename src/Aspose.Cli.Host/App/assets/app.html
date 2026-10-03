@@ -102,7 +102,11 @@
       </div>
       <div id="document-tabs" class="document-tabs" role="tablist" aria-label="Open documents" hidden></div>
       <div id="preview-notice-mount"></div>
-      <div id="preview-empty" class="empty-state">
+      <div id="preview-loading" class="empty-state" role="status">
+        <h1 tabindex="-1">Loading the workspace</h1>
+        <p id="preview-loading-detail">Reading which file is open.</p>
+      </div>
+      <div id="preview-empty" class="empty-state" hidden>
         <h1 tabindex="-1">No file is open</h1>
         <p>Choose a supported file to start its local preview.</p>
         <button class="button primary" type="button" data-route="/home">Go to workspace</button>

@@ -156,7 +156,9 @@
     polling = window.setInterval(loadStatus, visible === 'preview' ? 2500 : 15000);
     if (moveFocus) {
       window.requestAnimationFrame(function () {
-        var heading = $(visible + '-view').querySelector('h1');
+        var heading = Array.prototype.find.call($(visible + '-view').querySelectorAll('h1'), function (candidate) {
+          return candidate.offsetParent !== null;
+        });
         if (heading) {
           heading.focus({ preventScroll: true });
         }
@@ -189,6 +191,9 @@
       if (epoch === statusEpoch) {
         setActivity('Disconnected');
         toast(error.message, true);
+        if (!status) {
+          $('preview-loading-detail').textContent = 'The workspace did not answer; it retries shortly.';
+        }
       }
     }
   }
@@ -657,6 +662,8 @@
         : 'Local preview';
     var frame = $('preview-frame');
     var empty = $('preview-empty');
+    // Until the first status arrives the page cannot know whether a file is open.
+    $('preview-loading').hidden = true;
     if (status.previewUrl) {
       empty.hidden = true;
       frame.hidden = false;
