@@ -232,15 +232,36 @@ internal sealed partial class WordsMutationHandlers
         }
 
         string initials = string.Concat(operation.Author.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(static part => char.ToUpperInvariant(part[0])));
-        var comment = new Comment(_document, operation.Author, initials, DateTime.Now);
-        comment.AppendChild(new Paragraph(_document));
-        comment.FirstParagraph!.AppendChild(new Run(_document, operation.Text));
-        var start = new CommentRangeStart(_document, comment.Id);
-        var end = new CommentRangeEnd(_document, comment.Id);
-        paragraph.PrependChild(start);
-        paragraph.AppendChild(end);
-        paragraph.AppendChild(comment);
+        Untracked(() =>
+        {
+            var comment = new Comment(_document, operation.Author, initials, DateTime.Now);
+            comment.AppendChild(new Paragraph(_document));
+            comment.FirstParagraph!.AppendChild(new Run(_document, operation.Text));
+            var start = new CommentRangeStart(_document, comment.Id);
+            var end = new CommentRangeEnd(_document, comment.Id);
+            paragraph.PrependChild(start);
+            paragraph.AppendChild(end);
+            paragraph.AppendChild(comment);
+        });
         return 1;
+    }
+
+    /// <summary>
+    /// Changes comments outside revision tracking: a comment is a review annotation of its own,
+    /// not a tracked change. Under tracking the SDK would record an added comment's text as
+    /// insertions and leave a removed comment in place.
+    /// </summary>
+    private void Untracked(Action change)
+    {
+        _tracking?.Stop();
+        try
+        {
+            change();
+        }
+        finally
+        {
+            _tracking?.Start();
+        }
     }
 
     public long Apply(RemoveCommentsOp operation)
@@ -255,10 +276,13 @@ internal sealed partial class WordsMutationHandlers
             .Concat(_document.GetChildNodes(NodeType.CommentRangeEnd, true).Cast<CommentRangeEnd>()
                 .Where(end => ids.Contains(end.Id)))
             .ToArray();
-        foreach (Node node in comments.Concat(anchors))
+        Untracked(() =>
         {
-            node.Remove();
-        }
+            foreach (Node node in comments.Concat(anchors))
+            {
+                node.Remove();
+            }
+        });
 
         return comments.LongLength;
     }

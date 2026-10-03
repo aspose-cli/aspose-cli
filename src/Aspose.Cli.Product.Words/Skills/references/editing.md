@@ -38,9 +38,12 @@ aspose-cli schema v2/words/ops --operation insert_table
 - `--track-changes` requires `--author` and records content insertions and
   deletions: `replace_text`, `set_text`, `insert_*` (page breaks only, not
   section breaks), `delete_blocks`, `set_table_cell`, `repeat_table_row`,
-  `append_document`, `add_comment` and `remove_comments`. Every other operation would change the
-  document without a revision, so a tracked batch that contains one fails with
-  `OPTION_INVALID` before anything changes; run it in a separate batch.
+  `append_document`. A tracked batch can also hold `add_comment` and
+  `remove_comments`: a comment is a review annotation of its own, so it is added
+  or removed outright and is never listed as a revision. Every other operation
+  would change the document without a revision, so a tracked batch that
+  contains one fails with `OPTION_INVALID` before anything changes; run it in a
+  separate batch.
 
 ## Text
 
