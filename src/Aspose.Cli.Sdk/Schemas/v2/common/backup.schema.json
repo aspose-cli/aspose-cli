@@ -23,7 +23,8 @@
     "lastWriteUtc": {
       "type": "string",
       "format": "date-time",
-      "description": "When the content the backup holds was last written, in UTC."
+      "pattern": "Z$",
+      "description": "When the content the backup holds was last written, in UTC with the Z designator."
     },
     "holdsReplacedVersion": {
       "type": "boolean",

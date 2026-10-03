@@ -1,3 +1,6 @@
+using System.Text.Json.Serialization;
+using Aspose.Cli.Sdk.Serialization;
+
 namespace Aspose.Cli.Sdk.Contracts;
 
 /// <summary>Stable, never-overwritten safety backup created before an in-place mutation.</summary>
@@ -12,7 +15,8 @@ public sealed record BackupInfo
     /// <summary>Backup file size in bytes.</summary>
     public required long SizeBytes { get; init; }
 
-    /// <summary>When the content the backup holds was last written, in UTC.</summary>
+    /// <summary>When the content the backup holds was last written, in UTC with the Z designator.</summary>
+    [JsonConverter(typeof(UtcTimestampJsonConverter))]
     public required DateTimeOffset LastWriteUtc { get; init; }
 
     /// <summary>
