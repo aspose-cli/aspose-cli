@@ -23,8 +23,8 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 
 ```json
 "revisions": [
-  { "type": "deletion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "block": 1, "text": "thirty" },
-  { "type": "insertion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "block": 1, "text": "sixty" }
+  { "type": "deletion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "thirty" },
+  { "type": "insertion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "sixty" }
 ]
 ```
 
@@ -32,14 +32,23 @@ aspose-cli words inspect contract.docx --detail revisions --output json
   inserted, deleted or moved are listed together, except inside comment text,
   where each run and paragraph mark is its own entry. `type` is `insertion`, `deletion`,
   `formatChange`, `styleDefinitionChange` or `moving`.
+- `document.revisionCount` counts the revisions the document stores, one per
+  run, paragraph mark or other changed node, so it is usually larger than the
+  number of entries: a two-run insertion is one entry and two revisions.
+- `scope` names the story that holds the change, as `query search` names its
+  scopes: `body`, `headersFooters`, `footnotes` or `comments`. A change inside a
+  comment's text belongs to the comment, not to the body around it, even though
+  its `block` is the block that anchors the comment. Style definition changes
+  have no `scope`.
 - `text` is the new text of an insertion and the original text of a deletion.
   Format and style definition changes have no `text`; read the `block` instead.
   A move is listed twice, once at its source and once at its destination, each
   with the moved text. A paragraph mark inserted or deleted on its own, as when
   a paragraph is split or joined, has no `text`.
 - `date` is the time the document records, without a time zone; it is absent
-  when the document records none. `block` is absent for changes outside the
-  body, such as in headers, and for style definitions.
+  when the document records none. `block` is the body block that holds the
+  change or anchors the comment or note that holds it; it is absent in headers
+  and footers and for style definitions.
 - A replacement is a deletion followed by an insertion by the same author in the
   same block: read the pair above as "thirty" replaced by "sixty".
 - Long texts are cut at 300 characters; read the block for the full text. More

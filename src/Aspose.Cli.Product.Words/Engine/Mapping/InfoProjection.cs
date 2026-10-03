@@ -293,6 +293,7 @@ internal static class InfoProjection
             Date = revision.DateTime == DateTime.MinValue
                 ? null
                 : revision.DateTime.ToString("yyyy-MM-dd'T'HH:mm:ss", CultureInfo.InvariantCulture),
+            Scope = style ? null : WordsStories.ScopeOf(revision.ParentNode),
             Block = style ? null : index.FindBlock(revision.ParentNode),
             Text = string.IsNullOrEmpty(text) ? null : text,
         };

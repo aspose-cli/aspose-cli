@@ -98,7 +98,7 @@
     },
     "revisions": {
       "type": "array",
-      "description": "The tracked changes in document order, one entry per change. A replacement is a deletion followed by an insertion.",
+      "description": "The tracked changes in document order, one entry per change. A replacement is a deletion followed by an insertion. document.revisionCount counts the revisions the document stores, one per run, paragraph mark or other changed node, so it can exceed the entries here.",
       "items": {
         "type": "object",
         "required": ["type", "author"],
@@ -107,7 +107,8 @@
           "type": { "enum": ["insertion", "deletion", "formatChange", "styleDefinitionChange", "moving"] },
           "author": { "type": "string" },
           "date": { "type": "string", "description": "The date and time the document records, as ISO 8601 yyyy-MM-ddTHH:mm:ss without a time zone; absent when none is recorded." },
-          "block": { "type": "integer", "minimum": 1, "description": "The body block that holds the change; absent outside the body and for style definition changes." },
+          "scope": { "enum": ["body", "headersFooters", "footnotes", "comments"], "description": "The story that holds the change, named as query search names its scopes; absent for style definition changes." },
+          "block": { "type": "integer", "minimum": 1, "description": "The body block that holds the change, or that anchors the comment or note holding it; absent in headers and footers and for style definition changes." },
           "text": { "type": "string", "description": "The text an insertion adds, a deletion removes or a move relocates; a longer text is cut to 300 characters and an ellipsis; absent for format and style definition changes." }
         }
       }

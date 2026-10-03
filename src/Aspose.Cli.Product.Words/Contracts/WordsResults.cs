@@ -86,13 +86,15 @@ public sealed record CommentData
 
 /// <summary>
 /// One tracked change in document order: its type, author, the date the document records and
-/// the text it inserts, deletes or moves.
+/// the text it inserts, deletes or moves. <c>Scope</c> names the story that holds it, in the
+/// scope vocabulary of search; a style definition change has none.
 /// </summary>
 public sealed record RevisionData
 {
     public required string Type { get; init; }
     public required string Author { get; init; }
     public string? Date { get; init; }
+    public string? Scope { get; init; }
     public int? Block { get; init; }
     public string? Text { get; init; }
 }

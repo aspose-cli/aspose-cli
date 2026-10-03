@@ -70,6 +70,16 @@ internal static class WordsStories
         return null;
     }
 
+    /// <summary>The scope name of the story a node belongs to, or null outside every story.</summary>
+    internal static string? ScopeOf(Node? node) => node is null ? null : Of(node) switch
+    {
+        Comment => WordsTextScopes.Comments,
+        Footnote => WordsTextScopes.Footnotes,
+        HeaderFooter => WordsTextScopes.HeadersFooters,
+        Body => WordsTextScopes.Body,
+        _ => null,
+    };
+
     /// <summary>
     /// A story's search units: a note as a whole, otherwise each paragraph not nested in another
     /// paragraph. A text box's paragraphs are read with the paragraph that anchors the box.

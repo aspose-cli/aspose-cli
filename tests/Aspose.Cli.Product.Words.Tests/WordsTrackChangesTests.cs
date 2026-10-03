@@ -90,13 +90,21 @@ public sealed class WordsTrackChangesTests
     }
 
     [Fact]
-    public void InspectRevisions_ListsATrackedCommentParagraphMarkWithoutItsText()
+    public void InspectRevisions_NamesTheStoryOfEachChange()
     {
         using var fixture = new WordsFixture();
         string input = fixture.Temp.File("tracked-comment.docx");
         var document = new Document();
-        new DocumentBuilder(document).Write("Clause.");
+        var builder = new DocumentBuilder(document);
+        builder.Write("Clause.");
+        builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+        builder.Write("Draft");
         document.StartTrackRevisions("Ann", new DateTime(2026, 9, 1, 10, 0, 0));
+        builder.Write(" two");
+        builder.MoveToDocumentEnd();
+        builder.Write(" Added");
+        builder.Font.Bold = true;
+        builder.Write(" in two runs.");
         var comment = new Comment(document, "Ann", "A", DateTime.Now);
         comment.AppendChild(new Paragraph(document));
         comment.FirstParagraph!.AppendChild(new Run(document, "Note"));
@@ -106,8 +114,15 @@ public sealed class WordsTrackChangesTests
 
         DocumentInfoResult info = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["revisions"] });
 
-        // The SDK groups no revisions inside comments, so the mark and the run are listed apart.
-        Assert.Equal(["insertion:", "insertion:Note"], info.Revisions!.Select(static r => $"{r.Type}:{r.Text}"));
+        // The body's two inserted runs are one change. The SDK groups no revisions inside
+        // comments, so the comment's paragraph mark and run are listed apart, at the block
+        // that anchors the comment. The SDK lists the header's change before or after the
+        // body's depending on the license state, so the entries are compared in any order.
+        Assert.Equal(
+            ["body:1:insertion: Added in two runs.", "comments:1:insertion:", "comments:1:insertion:Note", "headersFooters::insertion: two"],
+            info.Revisions!.Select(static r => $"{r.Scope}:{r.Block}:{r.Type}:{r.Text}").Order(StringComparer.Ordinal));
+        // revisionCount counts the stored revisions, one per run and paragraph mark.
+        Assert.Equal(5, info.Document.RevisionCount);
     }
 
     [Fact]
@@ -187,10 +202,10 @@ public sealed class WordsTrackChangesTests
 
         Assert.Equal(
             [
-                new RevisionData { Type = "deletion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Block = 1, Text = "thirty" },
-                new RevisionData { Type = "insertion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Block = 1, Text = "sixty" },
-                new RevisionData { Type = "deletion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Block = 2, Text = "This clause is removed." },
-                new RevisionData { Type = "insertion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Block = 2, Text = "New governing law clause." },
+                new RevisionData { Type = "deletion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "thirty" },
+                new RevisionData { Type = "insertion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "sixty" },
+                new RevisionData { Type = "deletion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "This clause is removed." },
+                new RevisionData { Type = "insertion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "New governing law clause." },
             ],
             info.Revisions);
     }
@@ -224,12 +239,12 @@ public sealed class WordsTrackChangesTests
         const string BobDate = "2026-09-02T08:00:00";
         Assert.Equal(
             [
-                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Block = 2, Text = "Alpha beta gamma." },
-                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Block = 3, Text = "Alpha beta gamma." },
-                new RevisionData { Type = "insertion", Author = "Bob", Date = BobDate, Block = 4 },
-                new RevisionData { Type = "deletion", Author = "Bob", Date = BobDate, Block = 5 },
-                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Block = 7, Text = "Whole para\rSecond" },
-                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Block = 10, Text = "Whole para\rSecond" },
+                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 2, Text = "Alpha beta gamma." },
+                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 3, Text = "Alpha beta gamma." },
+                new RevisionData { Type = "insertion", Author = "Bob", Date = BobDate, Scope = "body", Block = 4 },
+                new RevisionData { Type = "deletion", Author = "Bob", Date = BobDate, Scope = "body", Block = 5 },
+                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 7, Text = "Whole para\rSecond" },
+                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 10, Text = "Whole para\rSecond" },
             ],
             info.Revisions);
     }
