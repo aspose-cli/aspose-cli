@@ -5,8 +5,12 @@ using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
-/// <summary>One problem from the SDK's PDF/A compliance log.</summary>
-internal sealed record PdfComplianceProblem(string Severity, string? Clause, int? Page, bool Convertible, string Message)
+/// <summary>
+/// One problem from the SDK's PDF/A compliance log. <paramref name="Section"/> is the log's
+/// grouping, such as <c>Fonts</c>, <c>Metadata</c> or <c>EmbeddedFiles</c>.
+/// </summary>
+internal sealed record PdfComplianceProblem(
+    string Severity, string? Clause, int? Page, bool Convertible, string Message, string? Section)
 {
     /// <summary>A one-line statement such as <c>6.3.4 (error, page 1): Font 'Helvetica' is not embedded</c>.</summary>
     public override string ToString()
@@ -64,7 +68,8 @@ internal static class PdfComplianceLog
                     ? page
                     : null,
                 !string.Equals((string?)problem.Attribute("Convertable"), "False", StringComparison.OrdinalIgnoreCase),
-                problem.Value.Trim()))
+                problem.Value.Trim(),
+                problem.Parent?.Name.LocalName))
             .ToArray();
     }
 }

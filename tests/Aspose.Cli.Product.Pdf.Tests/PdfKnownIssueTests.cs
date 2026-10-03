@@ -110,6 +110,28 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void PdfaConversion_TypesAnUntypedAttachmentAsPdf()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = PdfNavigationTests.CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
+        string output = fixture.File("archive.pdf");
+        using (var document = new Document(input))
+        {
+            using var log = new MemoryStream();
+            document.Convert(log, PdfFormat.PDF_A_3B, ConvertErrorAction.Delete);
+            document.Save(output);
+        }
+
+        using var archived = new Document(output);
+        string? type = archived.EmbeddedFiles.Cast<FileSpecification>().Single().MIMEType;
+
+        KnownIssue.Reproduces(
+            "PDF-PDFA-ATTACHMENT-TYPE",
+            type == "application/pdf",
+            $"converting an untyped CSV attachment to PDF/A-3B typed it '{type}'");
+    }
+
+    [LicensedFact]
     public void NamedDestinations_ThrowForANameTreeWithoutDests()
     {
         using var fixture = new PdfEngineFixture();

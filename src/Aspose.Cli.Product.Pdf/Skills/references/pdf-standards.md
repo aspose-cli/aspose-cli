@@ -11,8 +11,25 @@ aspose-cli pdf convert report.pdf --to pdfa-2b --out report.archive.pdf --output
 aspose-cli pdf validate report.archive.pdf --profile pdfa-2b --output json
 ```
 
-Conversion removes content the profile does not allow, so compare the candidate
-with the original before delivery. When the engine cannot make the document
+Conversion keeps the document's parts the profile allows and changes or removes
+the rest:
+
+| Content | pdfa-1b | pdfa-2b | pdfa-3b |
+| --- | --- | --- | --- |
+| Bookmarks, document title, page labels | kept | kept | kept |
+| Attachments that are PDF/A documents | removed | kept | kept |
+| Other attachments | removed | removed | kept |
+
+PDF/A-3 needs a media type on every attachment: one the source declares is kept,
+an untyped PDF becomes `application/pdf` and any other untyped attachment
+`application/octet-stream`. Each removed attachment is a `LOSSY_CONVERSION`
+warning whose `location` names it, and a removed bookmark is one with
+`location: outline`; a further `LOSSY_CONVERSION` warning counts the other
+changes, which `pdf validate` on the original lists. With `--pages`, bookmarks
+and links to pages left out lose their target, counted by `NAVIGATION_DEGRADED`.
+Compare the candidate with the original (`pdf inspect --detail outline
+attachments`, and its pages) before delivery.
+When the engine cannot make the document
 conform at all, the command fails with `PDFA_CONVERSION_FAILED`, writes no
 output and lists what it could not fix in `error.details.problems`. PDF/A must
 embed every font, so a font missing here fails the conversion; pass the
