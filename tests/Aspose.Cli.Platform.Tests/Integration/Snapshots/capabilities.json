@@ -9364,7 +9364,6 @@
     "v2/common/font-check",
     "v2/common/font-list",
     "v2/common/license-status",
-    "v2/common/mutation-receipt",
     "v2/common/not-found-details",
     "v2/common/operation-outcome",
     "v2/common/preview-session",

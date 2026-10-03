@@ -118,7 +118,6 @@ public sealed class PdfMutateTests
             ],
         }, new PdfEditRequest { OutputPath = output });
 
-        Assert.Equal("reopened", result.Mutation?.Verification);
         Assert.NotNull(result.Input.Fingerprint);
         Assert.NotNull(result.Output?.Fingerprint);
         Assert.All(result.Applied, static operation =>
@@ -253,7 +252,6 @@ public sealed class PdfMutateTests
             Ops = [new SetFormFieldOp { Name = "Customer", Value = "Contoso" }],
         }, new PdfEditRequest { OutputPath = filled });
         Assert.Equal(["pdf/form"], Assert.Single(filledResult.Applied).Targets);
-        Assert.Equal("reopened", filledResult.Mutation?.Verification);
         Assert.NotNull(filledResult.Input.Fingerprint);
         Assert.NotNull(filledResult.Output?.Fingerprint);
         Assert.Equal("Contoso", fixture.Engine.ReadForm(filled, new PdfFormReadRequest()).Fields.Single().Value);

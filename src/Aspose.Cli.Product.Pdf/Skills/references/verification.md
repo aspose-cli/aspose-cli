@@ -1,8 +1,8 @@
 # PDF verification
 
 Follow the delivery checklist and review protocol in `aspose-cli docs verification`.
-Every `pdf edit` reopens its output before publishing it
-(`mutation.verification: "reopened"`); this page adds the PDF evidence to collect.
+Every `pdf edit` reopens its output before publishing it; this page adds the
+PDF evidence to collect.
 
 ## Edit verification
 

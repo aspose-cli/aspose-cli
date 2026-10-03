@@ -166,9 +166,6 @@ public sealed class CommonSchemaContractTests
                 "v2/common/file-fingerprint",
                 """{"sha256":"0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef"}"""),
             (
-                "v2/common/mutation-receipt",
-                """{"verification":"reopened"}"""),
-            (
                 "v2/common/view",
                 """{"schema":"https://schemas.aspose.com/aspose-cli/v2/common/view.schema.json","schemaVersion":2,"view":"pages","sourceFormat":"docx","sourceSizeBytes":10,"totalPartCount":2,"parts":[{"id":"page-1","label":"Page 1","file":"page-0001.png","kind":"image","width":816,"height":1056,"hidden":false,"digest":"sha256:0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef","properties":{"notes":"Speaker notes"},"elements":[{"id":"shape-3","kind":"paragraph","box":{"x":96,"y":96.5,"width":624,"height":20},"digest":"f00d","label":"Hello","level":1}]}]}"""),
         ];
@@ -185,7 +182,6 @@ public sealed class CommonSchemaContractTests
     [Theory]
     [InlineData("v2/common/backup", typeof(BackupInfo))]
     [InlineData("v2/common/file-fingerprint", typeof(FileFingerprint))]
-    [InlineData("v2/common/mutation-receipt", typeof(MutationReceipt))]
     [InlineData("v2/common/operation-outcome", typeof(BoundedOperationOutcome))]
     [InlineData("v2/common/verification-issue", typeof(VerificationIssue))]
     public void CommonResultSchema_RequiresExactlyTheRecordsNonNullableMembers(

@@ -95,7 +95,6 @@ internal sealed class PdfMutationService
             DryRun = request.Options.DryRun,
             Applied = outcomes,
             Backup = publication.Backup,
-            Mutation = publication.Mutation,
             PagesTouched = touched.Count == 0 ? null : touched.ToArray(),
             Verification = publication.Verification,
             License = EnvelopeParts.License(state),
@@ -187,7 +186,6 @@ internal sealed class PdfMutationService
     {
         OutputInfo? output = null;
         BackupInfo? backup = null;
-        MutationReceipt? mutation = null;
         PdfEditVerification? verification = null;
         if (!request.Options.DryRun)
         {
@@ -206,7 +204,6 @@ internal sealed class PdfMutationService
             {
                 Fingerprint = write.Fingerprint,
             };
-            mutation = new MutationReceipt { Verification = "reopened" };
             backup = write.Backup;
             if (verifier is not null)
             {
@@ -221,7 +218,7 @@ internal sealed class PdfMutationService
             transaction.Commit();
         }
 
-        return new Publication(output, backup, mutation, verification);
+        return new Publication(output, backup, verification);
     }
 
     private static List<Warning> BuildWarnings(
@@ -309,6 +306,5 @@ internal sealed class PdfMutationService
     private sealed record Publication(
         OutputInfo? Output,
         BackupInfo? Backup,
-        MutationReceipt? Mutation,
         PdfEditVerification? Verification);
 }

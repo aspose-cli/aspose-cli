@@ -286,7 +286,6 @@ public sealed record PdfEditResult() : ResultEnvelope(PdfSchemaIds.EditResult, 2
     public required bool DryRun { get; init; }
     public required IReadOnlyList<BoundedOperationOutcome> Applied { get; init; }
     public BackupInfo? Backup { get; init; }
-    public MutationReceipt? Mutation { get; init; }
     public IReadOnlyList<int>? PagesTouched { get; init; }
     public PdfEditVerification? Verification { get; init; }
     [JsonIgnore]
