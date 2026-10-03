@@ -137,6 +137,25 @@ public sealed class PdfArtifactWorkflowTests
     }
 
     [Fact]
+    public void Split_SpellsPagesAsRangesInNamesAndResults()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("region.pdf", pages: 4);
+
+        PdfSplitResult split = fixture.Engine.Split(input, new PdfSplitRequest
+        {
+            PageGroups = [Sdk.Addressing.PageRange.Parse("1-3"), Sdk.Addressing.PageRange.Parse("1,3-4"), Sdk.Addressing.PageRange.Parse("2")],
+            OutputDirectory = fixture.File("parts"),
+            NameTemplate = "{stem}-p{pages}.pdf",
+        });
+
+        Assert.Equal(["1-3", "1,3-4", "2"], split.Outputs.Select(static part => part.Pages));
+        Assert.Equal(
+            ["region-p1-3.pdf", "region-p1_3-4.pdf", "region-p2.pdf"],
+            split.Outputs.Select(static part => Path.GetFileName(part.Output.Path)));
+    }
+
+    [Fact]
     public void Split_RejectsANameTemplateThatRepeatsANameBeforeWriting()
     {
         using var fixture = new PdfEngineFixture();
