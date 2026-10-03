@@ -154,6 +154,12 @@ cells:
   shows `#REF!` in the source but reads as empty, usually 0, once imported;
   the import warns `EXTERNAL_LINK_CACHE_MISSING` with those cells. Replace
   them with `set_formula` or `set_values`.
+- A formula you write that reads another workbook
+  (`='C:\data\[fx.xlsx]Rates'!$B$2`) creates a link without cached values,
+  since the CLI never opens the linked file: it stays `#REF!`, which `--verify`
+  reports, until Excel updates the link. A link to a file in the workbook's
+  own folder is stored by file name alone (`='[fx.xlsx]Rates'!$B$2`). To use
+  the linked values, bring them in with `import_range` instead.
 - An encrypted source needs `passwordEnv`. Sources open once per batch; the
   edited file can be a source, read as it is on disk before the edit.
 
