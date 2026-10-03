@@ -26,6 +26,9 @@ internal sealed class PdfInspectionService
     /// <summary>The most validation issues one result lists.</summary>
     private const int ListedIssues = 100;
 
+    /// <summary>The most characters a search hit's context shows on each side of the match.</summary>
+    private const int ContextRadius = 40;
+
     private readonly ILicenseGate _licenseGate;
     private readonly PdfDocumentLoader _loader;
 
@@ -49,14 +52,40 @@ internal sealed class PdfInspectionService
         {
             Page page = loaded.Document.Pages[number];
             int occurrence = 0;
-            foreach (TextFragment fragment in MatchText(page, text.Pattern, text.Expression is not null, text.CaseSensitive,
-                static reason => CliErrors.OptionInvalid("--pattern", reason, "Use a pattern that matches at least one character.")))
+            TextFragmentCollection fragments = MatchText(page, text.Pattern, text.Expression is not null, text.CaseSensitive,
+                static reason => CliErrors.OptionInvalid("--pattern", reason, "Use a pattern that matches at least one character."));
+            // The engine's hits carry no surrounding text; the page's plain text gives it when
+            // it holds the same number of matches, which then pair up in reading order. A pair
+            // whose texts differ gets none. The text is extracted only for a hit that is kept.
+            string? pageText = null;
+            IReadOnlyList<(int Start, int Length)> found = [];
+            string? Context(int index, string snippet)
+            {
+                if (pageText is null)
+                {
+                    pageText = ExtractText(page, PdfReadModes.Plain);
+                    found = text.Find(pageText);
+                }
+
+                if (found.Count != fragments.Count)
+                {
+                    return null;
+                }
+
+                (int start, int length) = found[index];
+                return string.Equals(pageText.Substring(start, length), snippet, StringComparison.OrdinalIgnoreCase)
+                    ? TextSearch.Preview(pageText, start, length, ContextRadius).ReplaceLineEndings(" ")
+                    : null;
+            }
+
+            foreach (TextFragment fragment in fragments)
             {
                 int current = ++occurrence;
                 if (!hits.Offer(() => new PdfSearchHit
                 {
                     Page = number,
                     Snippet = fragment.Text,
+                    Context = Context(current - 1, fragment.Text),
                     Rect = ToContractRect(page, fragment.Rectangle),
                     Occurrence = current,
                 }))

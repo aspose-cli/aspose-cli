@@ -386,7 +386,17 @@ public sealed record PdfSearchResult() : ResultEnvelope(PdfSchemaIds.SearchResul
 public sealed record PdfSearchHit
 {
     public required int Page { get; init; }
+
+    /// <summary>The matched text.</summary>
     public required string Snippet { get; init; }
+
+    /// <summary>
+    /// The page text around the match, up to 40 characters on each side, with line breaks as
+    /// spaces and an ellipsis where it is cut; absent when the page's plain text does not show
+    /// the hits the engine found.
+    /// </summary>
+    public string? Context { get; init; }
+
     public required PdfRect Rect { get; init; }
     public required int Occurrence { get; init; }
 }

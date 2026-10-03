@@ -283,7 +283,7 @@ internal static class PdfRenderers
                 TableText.Int(hit.Page),
                 TableText.Int(hit.Occurrence),
                 $"{Points(hit.Rect.X)},{Points(hit.Rect.Y)} {Points(hit.Rect.Width)}x{Points(hit.Rect.Height)}",
-                hit.Snippet);
+                hit.Context ?? hit.Snippet);
         }
 
         table.WriteTo(surface.Out, surface.Format);

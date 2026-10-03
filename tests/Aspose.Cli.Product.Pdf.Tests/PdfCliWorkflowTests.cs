@@ -398,6 +398,28 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.Null(rest["window"]!["next"]);
     }
 
+    [Fact]
+    public void QuerySearch_GivesTheTextAroundEachHit()
+    {
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            page.Paragraphs.Add(new TextFragment("Clause 7. The supplier shall pay a penalty of 0.5% for each day of delay."));
+            page.Paragraphs.Add(new TextFragment("Clause 9. No penalty applies to force majeure."));
+            document.Save(_workspace.File("contract.pdf"));
+        }
+
+        CliResult search = _workspace.Run(
+            "pdf", "query", "search", "contract.pdf", "--pattern", "penalty", "--output", "json");
+
+        Assert.True(search.ExitCode == 0, search.StdErr);
+        JsonArray hits = JsonNode.Parse(search.StdOut)!["hits"]!.AsArray();
+        Assert.Equal(["penalty", "penalty"], hits.Select(static hit => hit!["snippet"]!.GetValue<string>()));
+        string[] contexts = [.. hits.Select(static hit => hit!["context"]!.GetValue<string>())];
+        Assert.Contains("shall pay a penalty of 0.5%", contexts[0], StringComparison.Ordinal);
+        Assert.Contains("No penalty applies", contexts[1], StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("attachments", "--out", "files")]
     [InlineData("images", "--to", "json")]

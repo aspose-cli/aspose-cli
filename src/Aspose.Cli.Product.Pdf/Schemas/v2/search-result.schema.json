@@ -13,7 +13,8 @@
       "items": {
         "type": "object", "required": ["page", "snippet", "rect", "occurrence"], "additionalProperties": false,
         "properties": {
-          "page": { "type": "integer", "minimum": 1 }, "snippet": { "type": "string" },
+          "page": { "type": "integer", "minimum": 1 }, "snippet": { "type": "string", "description": "The matched text." },
+          "context": { "type": "string", "description": "The page text around the match, up to 40 characters on each side, with line breaks as spaces and an ellipsis where it is cut; absent when the page's plain text does not show the hits the engine found, or when the text it pairs with this hit by order differs from the match (ignoring case)." },
           "rect": { "$ref": "#/$defs/rect" }, "occurrence": { "type": "integer", "minimum": 1 }
         }
       }
