@@ -78,6 +78,38 @@ public sealed class ProductFileRouterTests
     }
 
     [Fact]
+    public async Task Detect_NamesEveryProductTheContentMatchesWhateverTheExtension()
+    {
+        ProductCatalog catalog = ProductCatalog.Build(
+        [
+            Module("owner", ".owned", Match(FileRecognitionKind.NoMatch)),
+            Module("detector", ".detected", new StaticRecognizer((_, _) => ValueTask.FromResult(
+                new FileRecognition { Kind = FileRecognitionKind.Match, FormatId = "docx", Confidence = 90 }))),
+            // Strong evidence that fits several formats names the product but no format.
+            Module("one", ".one", new StaticRecognizer((_, _) => ValueTask.FromResult(
+                new FileRecognition { Kind = FileRecognitionKind.Indeterminate, FormatId = "dotm", Confidence = 95 }))),
+            Module("two", ".two", Match(FileRecognitionKind.Indeterminate)),
+        ]);
+        string path = CreateFile(".owned");
+        try
+        {
+            IReadOnlyList<FileDetection> detected = await new ProductFileRouter(catalog).DetectAsync(path);
+
+            Assert.Equal([new FileDetection("one", null), new FileDetection("detector", "docx")], detected);
+        }
+        finally
+        {
+            File.Delete(path);
+        }
+    }
+
+    [Fact]
+    public async Task Detect_ReturnsNothingForAMissingFile() =>
+        Assert.Empty(await new ProductFileRouter(ProductCatalog.Build(
+            [Module("one", ".one", Match(FileRecognitionKind.Match))]))
+            .DetectAsync(Path.Combine(Path.GetTempPath(), $"aspose-router-{Guid.NewGuid():N}.one")));
+
+    [Fact]
     public async Task MultipleStrongMatches_AreAmbiguous()
     {
         ProductCatalog catalog = ProductCatalog.Build(

@@ -72,7 +72,9 @@ aspose-cli capabilities --output json
   to close it and retry the same command; nothing was written.
 - `FILE_ACCESS_DENIED`: the process may not read the file.
 - `FILE_CORRUPT`: the content is not a readable document of that type.
-  Renaming a file does not change its format.
+  Renaming a file does not change its format. When the content looks like a
+  format another product reads, `details.detected` names that product and the
+  hint names its command; use it, or give the file its real extension.
 - `FILE_TOO_LARGE`, `INPUT_BUDGET_EXCEEDED`: the input exceeds a resource
   budget; `--max-input-bytes` raises the size limit up to its hard maximum.
 - `INPUT_CHANGED`: the file no longer matches `--if-match` or `ifMatch`, or

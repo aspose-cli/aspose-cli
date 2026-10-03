@@ -58,6 +58,11 @@ public sealed record FileRouteResult
     public string? Evidence { get; init; }
 }
 
+/// <summary>A product, and its format when known, that a file's content looks like.</summary>
+/// <param name="ProductId">The product whose recognizer matched the content.</param>
+/// <param name="FormatId">The format the recognizer named, such as <c>docx</c>.</param>
+public sealed record FileDetection(string ProductId, string? FormatId);
+
 /// <summary>
 /// Deterministic, operation-aware generic file router. A generic route is
 /// selected only by positive bounded content evidence; extension ownership is
@@ -126,6 +131,39 @@ public sealed class ProductFileRouter
             session,
             operation,
             cancellationToken).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Names the products whose content recognizers positively recognize the file, strongest first,
+    /// whatever its extension or the operation. It explains why a product could not open the file,
+    /// so it never fails: a file that cannot be read, or a probe that runs out of time, detects
+    /// nothing.
+    /// </summary>
+    public async ValueTask<IReadOnlyList<FileDetection>> DetectAsync(
+        string path,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        try
+        {
+            FileProbeSession session = await CreateSessionAsync(
+                Path.GetFullPath(path),
+                cancellationToken).ConfigureAwait(false);
+            IReadOnlyList<RecognitionEntry> recognitions = await RecognizeAsync(
+                _catalog.Products.Where(static product => product.Files.Recognizer is not null).ToArray(),
+                session,
+                cancellationToken).ConfigureAwait(false);
+            return DetectedEntries(recognitions, except: null)
+                .Select(static entry => new FileDetection(
+                    entry.Product.Manifest.Id,
+                    // Evidence that fits several of the product's formats proves none of them.
+                    entry.Recognition.Kind == FileRecognitionKind.Match ? entry.Recognition.FormatId : null))
+                .ToArray();
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or CliException)
+        {
+            return [];
+        }
     }
 
     private async ValueTask<FileRouteResult> ResolveGenericAsync(
@@ -465,15 +503,20 @@ public sealed class ProductFileRouter
     private static string[] Detected(
         IEnumerable<RecognitionEntry> recognitions,
         ProductDefinition? except) =>
+        DetectedEntries(recognitions, except)
+            .Select(static entry => entry.Product.Manifest.Id)
+            .ToArray();
+
+    private static IEnumerable<RecognitionEntry> DetectedEntries(
+        IEnumerable<RecognitionEntry> recognitions,
+        ProductDefinition? except) =>
         recognitions
             .Where(entry => entry.Product != except
                 && (entry.Recognition.Kind == FileRecognitionKind.Match
                     || (entry.Recognition.Kind == FileRecognitionKind.Indeterminate
                         && entry.Recognition.Confidence >= DeclarativeFormatRecognizer.StrongConfidence)))
             .OrderByDescending(static entry => entry.Recognition.Confidence)
-            .ThenBy(static entry => entry.Product.Manifest.Id, StringComparer.Ordinal)
-            .Select(static entry => entry.Product.Manifest.Id)
-            .ToArray();
+            .ThenBy(static entry => entry.Product.Manifest.Id, StringComparer.Ordinal);
 
     /// <summary>The strongest of several rule results: a match, then indeterminate evidence, then no match.</summary>
     private static FileRecognition Strongest(IEnumerable<FileRecognition> results) =>

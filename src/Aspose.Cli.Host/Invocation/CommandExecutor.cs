@@ -227,7 +227,8 @@ internal sealed class CommandExecutor
                 writer,
                 globals,
                 stopwatch,
-                _host.EngineFailures.Translate(exception) ?? exception,
+                CorruptInputDetection.Explain(
+                    _host.EngineFailures.Translate(exception) ?? exception, parseResult, globals, _host.Catalog),
                 scope?.Deadline,
                 scope?.ResultWritten == true);
         }
