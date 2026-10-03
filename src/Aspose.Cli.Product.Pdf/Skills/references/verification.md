@@ -4,6 +4,43 @@ Follow the delivery checklist and review protocol in `aspose-cli docs verificati
 Every `pdf edit` reopens its output before publishing it
 (`mutation.verification: "reopened"`); this page adds the PDF evidence to collect.
 
+## Edit verification
+
+`pdf edit --verify` reads the staged output back against the effect of each
+applied operation. Any issue makes `verification.ok` false and the command exit
+8; the output is still published so you can inspect it. Each issue message
+starts with the ids and names of the operations it concerns, and never repeats
+redacted text. `verification.checkedOps` lists, in batch order, the operations
+whose every recorded effect was read back; an operation it omits was not fully
+checked, even when part of its effect was.
+
+| Operation | Read back | Issue code |
+| --- | --- | --- |
+| `set_form_field` | the field holds the value set | `PDF_FIELD_VALUE_MISMATCH` |
+| `redact_text` | the pattern no longer matches the text of its pages | `PDF_REDACTED_TEXT_FOUND` |
+| `add_bookmark` | its index holds its title and page | `PDF_BOOKMARK_MISMATCH` |
+| `add_bookmark`, `delete_bookmarks` | the bookmark count | `PDF_BOOKMARK_MISMATCH` |
+| `set_metadata` | each document information entry set | `PDF_METADATA_MISMATCH` |
+| `add_attachment`, `remove_attachment` | an attachment of the name holds the embedded length, or none has the name | `PDF_ATTACHMENT_MISMATCH` |
+| `insert_blank_page`, `insert_pages_from`, `delete_pages`, `move_pages` | the page count | `PDF_PAGE_COUNT_MISMATCH` |
+
+`PDF_VERIFICATION_INCOMPLETE` reports a page a `redact_text` pattern could not be
+checked on within its time budget; search that page with `pdf query search`.
+
+The batch is checked as a whole: only the last value set for a field, entry or
+attachment is checked, a flattened field or a deleted page's fields are not, a
+bookmark position is not checked after `delete_bookmarks` renumbers the outline,
+and page-scoped redactions and bookmark pages are not checked after a page
+operation renumbers the pages. `add_attachment` with a name the document already
+uses adds a second attachment of that name. Other operations (stamps,
+watermarks, links, `redact_area`, page geometry, page labels,
+`remove_metadata`, encryption, `optimize`) have no reliable read-back and are
+not checked: render or search the output for them. In evaluation mode the
+matches inside the watermark sentence the engine stamps on each page do not
+count as remaining redacted text, and a check that needs more than four pages,
+bookmarks, fields or attachments fails the command with `EVALUATION_LIMIT` and
+publishes nothing.
+
 ## Content
 
 ```powershell

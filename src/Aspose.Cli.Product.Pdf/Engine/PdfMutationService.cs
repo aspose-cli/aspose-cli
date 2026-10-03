@@ -6,6 +6,7 @@ using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Licensing;
@@ -29,17 +30,20 @@ internal sealed class PdfMutationService
     private readonly SafeFileWriter _writer;
     private readonly PdfDocumentLoader _loader;
     private readonly InputSource _inputs;
+    private readonly OperationDeadline _deadline;
 
     internal PdfMutationService(
         ILicenseGate licenseGate,
         SafeFileWriter writer,
         PdfDocumentLoader loader,
-        InputSource inputs)
+        InputSource inputs,
+        OperationDeadline deadline)
     {
         _licenseGate = licenseGate ?? throw new ArgumentNullException(nameof(licenseGate));
         _writer = writer ?? throw new ArgumentNullException(nameof(writer));
         _loader = loader;
         _inputs = inputs;
+        _deadline = deadline;
     }
 
     /// <summary>Opens the document, runs the batch through the mutation handlers and publishes the result.</summary>
@@ -57,12 +61,13 @@ internal sealed class PdfMutationService
         bool signatures = loaded.Document.Form.SignaturesExist;
         var touched = new SortedSet<int>();
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
+        PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
         (IReadOnlyList<BoundedOperationOutcome> outcomes, string? outputPassword) =
-            ApplyOperations(loaded.Document, batch, request, touched, operationInputs);
+            ApplyOperations(loaded.Document, batch, request, touched, operationInputs, verifier);
         PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         Publication publication;
-        try { publication = Publish(loaded.Document, request, outputPassword, precondition); }
+        try { publication = Publish(loaded.Document, request, outputPassword, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes);
         if (navigation.ToWarning(
@@ -84,6 +89,7 @@ internal sealed class PdfMutationService
             Backup = publication.Backup,
             Mutation = publication.Mutation,
             PagesTouched = touched.Count == 0 ? null : touched.ToArray(),
+            Verification = publication.Verification,
             License = EnvelopeParts.License(state),
             Warnings = warnings.Count == 0 ? null : warnings,
         };
@@ -94,7 +100,8 @@ internal sealed class PdfMutationService
         PdfOpsBatch batch,
         PdfEditRequest request,
         ISet<int> touched,
-        InputResourceScope operationInputs)
+        InputResourceScope operationInputs,
+        PdfEditVerifier? verifier)
     {
         string? outputPassword = request.Password;
         IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
@@ -106,6 +113,7 @@ internal sealed class PdfMutationService
             {
                 var operationPages = new SortedSet<int>();
                 long affected = new PdfMutationHandlers(_loader, operationInputs, document, request.OpSecrets, operationPages).Run(op);
+                verifier?.Record(op, op.Id!, affected, document);
                 touched.UnionWith(operationPages);
                 if (op is EncryptPdfOp encrypt)
                 {
@@ -149,11 +157,14 @@ internal sealed class PdfMutationService
         Document document,
         PdfEditRequest request,
         string? outputPassword,
-        FileWritePrecondition precondition)
+        FileWritePrecondition precondition,
+        PdfEditVerifier? verifier,
+        LicenseState state)
     {
         OutputInfo? output = null;
         BackupInfo? backup = null;
         MutationReceipt? mutation = null;
+        PdfEditVerification? verification = null;
         if (!request.Options.DryRun)
         {
             using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "pdf-edit");
@@ -173,10 +184,20 @@ internal sealed class PdfMutationService
             };
             mutation = new MutationReceipt { Verification = "reopened" };
             backup = write.Backup;
+            if (verifier is not null)
+            {
+                // Issues are reported, not refused: the output is published and the command exits 8.
+                verification = write.Read(candidate =>
+                {
+                    using LoadedPdf reopened = _loader.OpenPublishedCandidate(candidate, outputPassword);
+                    return verifier.Verify(reopened.Document, state, _deadline);
+                });
+            }
+
             transaction.Commit();
         }
 
-        return new Publication(output, backup, mutation);
+        return new Publication(output, backup, mutation, verification);
     }
 
     private static List<Warning> BuildWarnings(
@@ -207,5 +228,6 @@ internal sealed class PdfMutationService
     private sealed record Publication(
         OutputInfo? Output,
         BackupInfo? Backup,
-        MutationReceipt? Mutation);
+        MutationReceipt? Mutation,
+        PdfEditVerification? Verification);
 }

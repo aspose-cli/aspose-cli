@@ -236,6 +236,22 @@ internal static class PdfRenderers
         {
             surface.Out.WriteLine($"pages touched: {string.Join(", ", pages)}");
         }
+
+        if (result.Verification is { } verification)
+        {
+            surface.Out.WriteLine(
+                $"verification: {(verification.Ok ? "ok" : "needs attention")} "
+                + $"({verification.CheckedOps.Count} operation(s) read back: {(verification.CheckedOps.Count == 0 ? "none" : string.Join(", ", verification.CheckedOps))})");
+            foreach (VerificationIssue issue in verification.Issues)
+            {
+                string location = issue.Location is null ? string.Empty : $" [{issue.Location}]";
+                surface.Out.WriteLine($"  {issue.Code}{location}: {issue.Message}");
+                if (issue.Hint is { } hint)
+                {
+                    surface.Out.WriteLine($"    hint: {hint}");
+                }
+            }
+        }
     }
 
     public static void Render(PdfFormResult result, TableSurface surface)
