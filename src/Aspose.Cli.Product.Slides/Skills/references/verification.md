@@ -24,16 +24,19 @@ aspose-cli review deck.revised.pptx --out deck.review-1 --output json
 The Slides checks (`SLIDES_*` in `capabilities` under `review.checks`) flag shapes outside the
 slide, text below 12 pt, overlapping shapes, covered charts, laid-out text running into a table
 or chart (`SLIDES_TEXT_OVERLAPS_OBJECT`, judged from where the text actually sits, not from its
-often much taller placeholder), empty placeholders that PowerPoint shows as prompts while editing
-(`SLIDES_PLACEHOLDER_EMPTY`), blank or duplicate slides and content density. After fixing one
-kind of finding, a later round can focus on it while you still open every image:
+often much taller placeholder), laid-out text cut off by a slide edge (`SLIDES_TEXT_OUTSIDE_SLIDE`,
+for example a long title in a bottom-anchored placeholder that wraps upward off the slide) or
+spilling out of a shape that does not grow to fit it (`SLIDES_TEXT_OVERFLOWS_SHAPE`), empty
+placeholders that PowerPoint shows as prompts while editing (`SLIDES_PLACEHOLDER_EMPTY`), blank or
+duplicate slides and content density. Text in rotated shapes and vertical text is not measured.
+After fixing one kind of finding, a later round can focus on it while you still open every image:
 
 ```powershell
 aspose-cli review deck.revised.pptx --out deck.review-2 --code SLIDES_SHAPE_OUTSIDE_SLIDE --code SLIDES_TEXT_TOO_SMALL --output json
 ```
 
-Checks do not see everything. In every image, look at title hierarchy, text overflowing its
-placeholder, image crops and distortion, chart categories and labels, table legibility, footer
+Checks do not see everything. In every image, look at title hierarchy, text in rotated shapes,
+text in tables, image crops and distortion, chart categories and labels, table legibility, footer
 and slide-number placement, contrast, missing CJK glyphs, hidden slides and ordering.
 
 ## Fonts

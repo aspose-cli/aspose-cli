@@ -65,6 +65,8 @@ internal sealed class SlidesViewAdapter : IProductViewAdapter<ISlidesEngine>
                 Metric("highDensitySlides", analysis.HighDensitySlides, "slides"),
                 Metric("lowDensitySlides", analysis.LowDensitySlides, "slides"),
                 Metric("textOverlaps", analysis.TextOverlaps, "shapes"),
+                Metric("textOutsideSlide", analysis.TextOutsideSlide, "shapes"),
+                Metric("textOverflows", analysis.TextOverflows, "shapes"),
                 Metric("emptyPlaceholders", analysis.EmptyPlaceholders, "placeholders"),
             ],
         };

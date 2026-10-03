@@ -96,6 +96,7 @@ internal static class SlidesEngineSupport
                     ZOrder = zOrder++,
                     HasOpaqueFill = SlidesReviewProjection.HasOpaqueFill(shape),
                     TextRect = scope == PresentationReadScopes.Full ? SlidesReviewProjection.TextRect(shape) : null,
+                    TextResizesShape = scope == PresentationReadScopes.Full && SlidesReviewProjection.TextResizesShape(shape),
                     Rect = new SlideRect
                     {
                         X = shape.X,
