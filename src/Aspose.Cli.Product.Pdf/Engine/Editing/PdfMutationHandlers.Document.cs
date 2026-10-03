@@ -108,9 +108,10 @@ internal sealed partial class PdfMutationHandlers
         EnsureFile(operation.Path);
         string name = operation.Name ?? Path.GetFileName(operation.Path);
         Stream stream = _inputs.OpenFile(operation.Path);
+        // PDF-ATTACHMENT-NAME-OPENS-FILE: the constructor names the file; the Name setter would
+        // open the file of that name in the working directory.
         var specification = new FileSpecification(stream, name, operation.Description ?? string.Empty)
         {
-            Name = name,
             UnicodeName = name,
         };
         _document.EmbeddedFiles.Add(name, specification);

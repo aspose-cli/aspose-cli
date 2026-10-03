@@ -122,6 +122,15 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** set the other fields with a `set_metadata` edit.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-ATTACHMENT-NAME-OPENS-FILE
+
+- **Defect:** the `FileSpecification.Name` setter opens the file its value names, relative to
+  the process working directory, for reading and writing. It throws when that file is open
+  elsewhere, for example as the stream the specification was built from.
+- **CLI behavior:** none visible; `add_attachment` names the attachment through the
+  `FileSpecification` constructor and never sets `Name`, so the working directory is not read.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-CHART-TITLE

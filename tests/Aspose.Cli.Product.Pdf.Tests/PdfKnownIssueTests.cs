@@ -196,6 +196,24 @@ public sealed class PdfKnownIssueTests
             $"the imports set title, author and subject to [{string.Join(", ", values)}]");
     }
 
+    [LicensedFact]
+    public void AttachmentName_OpensTheFileItNames()
+    {
+        using var fixture = new PdfEngineFixture();
+        string attachment = fixture.File("vendor-bank.csv");
+        File.WriteAllText(attachment, "bank,account\n");
+
+        using var stream = new FileStream(attachment, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var specification = new FileSpecification(stream, "vendor-bank.csv", string.Empty);
+        // An absolute name stands for a relative one resolved against the working directory.
+        Exception? error = Record.Exception(() => specification.Name = attachment);
+
+        KnownIssue.Reproduces(
+            "PDF-ATTACHMENT-NAME-OPENS-FILE",
+            error is IOException,
+            $"setting Name to a file opened for reading threw {error?.GetType().Name ?? "nothing"}");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {
