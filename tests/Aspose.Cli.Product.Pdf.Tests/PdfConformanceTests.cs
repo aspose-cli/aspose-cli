@@ -210,7 +210,7 @@ public sealed class PdfConformanceTests
         PdfInfoResult first = fixture.Engine.GetInfo(output, request);
         PdfInfoResult second = fixture.Engine.GetInfo(output, request);
 
-        Assert.True(first.Pdf.PdfaCompliant);
+        Assert.Equal("pdfa-2b", first.Pdf.PdfaProfile);
         Assert.False(first.Pdf.Tagged);
         Assert.Equal("2", first.Metadata!["xmp:pdfaid:part"]);
         Assert.Equal("B", first.Metadata["xmp:pdfaid:conformance"]);
@@ -229,6 +229,7 @@ public sealed class PdfConformanceTests
 
         Assert.DoesNotContain(result.Metadata!.Keys, static key => key.StartsWith("xmp:", StringComparison.Ordinal));
         Assert.NotEqual("Tagged PDF", result.Metadata["title"]);
+        Assert.Null(result.Pdf.PdfaProfile);
     }
 
     /// <summary>
