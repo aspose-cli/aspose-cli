@@ -564,6 +564,13 @@ public static partial class CliErrors
         details: new JsonObject { ["path"] = path, ["source"] = source },
         docs: "licensing");
 
+    public static CliException LicensePathIsDirectory(string path, string source) => new(
+        ErrorCodes.LicenseFileNotFound,
+        $"License path configured via {source} is a directory, not a license file: {path}",
+        hint: "Name the license file itself, such as Aspose.Total.lic, or remove the setting to run in evaluation mode.",
+        details: new JsonObject { ["path"] = path, ["source"] = source },
+        docs: "licensing");
+
     public static CliException LicenseInvalid(string source, string reason, Exception? inner = null) => new(
         ErrorCodes.LicenseInvalid,
         $"The license configured via {source} was rejected: {reason}",

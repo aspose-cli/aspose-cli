@@ -28,6 +28,40 @@ public sealed class LicenseManagementTests
             product => Assert.Equal("evaluation", product!["mode"]!.GetValue<string>()));
     }
 
+    [Theory]
+    [InlineData("")]
+    [InlineData(" ")]
+    public void EmptyLicenseOption_IsRefusedAsEmptyInsteadOfNamingTheWorkDirectory(string value)
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("input.csv"), "Name,Value\nA,42\n");
+
+        CliResult result = workspace.Run("cells", "inspect", "input.csv", "--license", value, "--output", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.Equal("--license", error["details"]!["option"]!.GetValue<string>());
+        Assert.Contains("value is empty", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void LicenseOptionNamingADirectory_SaysItIsADirectory()
+    {
+        using var workspace = new TempWorkspace();
+        File.WriteAllText(workspace.File("input.csv"), "Name,Value\nA,42\n");
+        string directory = workspace.File("licenses");
+        Directory.CreateDirectory(directory);
+
+        CliResult result = workspace.Run("cells", "inspect", "input.csv", "--license", "licenses", "--output", "json");
+
+        Assert.Equal(7, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("LICENSE_FILE_NOT_FOUND", error["code"]!.GetValue<string>());
+        Assert.Contains("is a directory, not a license file", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(directory, error["details"]!["path"]!.GetValue<string>());
+    }
+
     [Fact]
     public void SelectedConfigurationDirectoryWithForeignFiles_IsRefusedAndLeftUntouched()
     {

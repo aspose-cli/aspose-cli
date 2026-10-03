@@ -39,8 +39,10 @@ For each product, the first source that is set wins (`<PRODUCT>` is `CELLS`,
    directory.
 5. The product license, then the shared license, installed for this user.
 
-A configured source that is broken (a missing path, a rejected file) is an
-error, never a silent fall back to evaluation mode.
+A configured source that is broken (a missing path, a directory, a rejected
+file) is an error, never a silent fall back to evaluation mode. An empty
+`--license` value is refused with `OPTION_INVALID`; an empty environment
+variable counts as unset.
 
 ## Install and remove
 
@@ -63,7 +65,7 @@ change, the viewer service applies the new license on its next render
 
 | Code | Meaning |
 |------|---------|
-| `LICENSE_FILE_NOT_FOUND` | The path configured by `details.source` does not exist |
+| `LICENSE_FILE_NOT_FOUND` | The path configured by `details.source` does not exist or is a directory |
 | `LICENSE_INVALID` | The engine rejected the file configured by `details.source`; `details.reason` says why |
 | `EVALUATION_LIMIT` | An evaluation restriction prevents the requested operation, which is refused before any output is written |
 
