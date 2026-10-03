@@ -1,3 +1,5 @@
+using Aspose.Slides;
+using Aspose.Slides.Export;
 using Xunit;
 
 namespace Aspose.Cli.Product.Slides.Tests;
@@ -194,6 +196,38 @@ public sealed class SlidesReviewCheckTests
         fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
 
         Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
+    }
+
+    [Fact]
+    public void EvaluationWatermarkOverATable_IsLeftOutOnlyByAnEvaluationReview()
+    {
+        // A box shaped like the watermark an evaluation save adds, which an evaluation save adds
+        // once more: an evaluation review leaves both out, a licensed review judges the copy.
+        using var fixture = new SlidesEngineFixture();
+        string deck = fixture.File("watermarked.pptx");
+        using (var presentation = new Presentation())
+        {
+            ISlide slide = presentation.Slides[0];
+            IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 100, 100, 400, 80);
+            box.FillFormat.FillType = FillType.NoFill;
+            box.TextFrame.Text = "Evaluation only.\nCreated with Aspose.Slides.";
+            box.ShapeLock.SelectLocked = true;
+            box.ShapeLock.PositionLocked = true;
+            slide.Shapes.AddTable(100, 100, [200, 200], [100, 100]);
+            presentation.Save(deck, SaveFormat.Pptx);
+        }
+
+        SlidesReviewAnalysis analysis = Review(fixture, deck);
+
+        if (fixture.LicenseState == Sdk.Licensing.LicenseState.Licensed)
+        {
+            Assert.Equal(0, analysis.ExcludedEvaluationWatermarks);
+            Assert.Contains(analysis.Findings, static finding => finding.Code == SlidesReviewChecks.TextOverlapsObject.Code);
+            return;
+        }
+
+        Assert.Equal(2, analysis.ExcludedEvaluationWatermarks);
+        Assert.Empty(analysis.Findings);
     }
 
     private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)

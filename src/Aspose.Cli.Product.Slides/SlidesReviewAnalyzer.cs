@@ -17,12 +17,22 @@ internal static class SlidesReviewAnalyzer
     internal const double ChartCoverage = 0.30;
     private const string Hint = "Inspect the rendered evidence, adjust only confirmed layout defects, save, and review again.";
 
+    /// <summary>
+    /// Analyzes the slides. The watermark text boxes that evaluation saves add, which only an
+    /// evaluation-mode read marks, are left out and counted.
+    /// </summary>
     public static SlidesReviewAnalysis Analyze(
         IReadOnlyList<SlideData> slides,
         double slideWidth,
         double slideHeight)
     {
-        var result = new SlidesReviewAnalysis();
+        var result = new SlidesReviewAnalysis
+        {
+            ExcludedEvaluationWatermarks = slides.Sum(static slide => slide.Shapes.Count(static shape => shape.EvaluationWatermark)),
+        };
+        slides = slides
+            .Select(static slide => slide with { Shapes = slide.Shapes.Where(static shape => !shape.EvaluationWatermark).ToArray() })
+            .ToArray();
         AnalyzeDuplicates(slides, result);
         foreach (SlideData slide in slides)
         {
@@ -446,4 +456,5 @@ internal sealed class SlidesReviewAnalysis
     public int TextOutsideSlide { get; set; }
     public int TextOverflows { get; set; }
     public int EmptyPlaceholders { get; set; }
+    public int ExcludedEvaluationWatermarks { get; init; }
 }

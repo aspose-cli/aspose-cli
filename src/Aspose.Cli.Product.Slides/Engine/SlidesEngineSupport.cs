@@ -62,6 +62,7 @@ internal static class SlidesEngineSupport
         string scope,
         bool includeNotes,
         IReadOnlyList<IComment> comments,
+        bool evaluation,
         ref int remaining)
     {
         bool includeShapes = scope is PresentationReadScopes.Shapes or PresentationReadScopes.Full;
@@ -97,6 +98,7 @@ internal static class SlidesEngineSupport
                     HasOpaqueFill = SlidesReviewProjection.HasOpaqueFill(shape),
                     TextRect = scope == PresentationReadScopes.Full ? SlidesReviewProjection.TextRect(shape) : null,
                     TextAutofits = scope == PresentationReadScopes.Full && SlidesReviewProjection.TextAutofits(shape),
+                    EvaluationWatermark = evaluation && IsEvaluationWatermark(shape),
                     Rect = new SlideRect
                     {
                         X = shape.X,

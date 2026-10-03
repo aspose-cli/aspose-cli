@@ -60,7 +60,9 @@ Details: [design system](references/design-system.md).
   longer than five characters cut short, so reads, reviews, `extract` of text or notes and
   Markdown conversion warn `EVAL_INPUT_TRUNCATED`; the presentations, PDFs and images it saves
   keep the full text. Each evaluation save adds another watermark text box to every slide, which
-  later reads and reviews see as content (for example `SLIDES_TEXT_OVERLAPS_OBJECT` over a table).
+  reads list as content. A review in evaluation mode leaves those boxes out and counts them in its
+  `excludedEvaluationWatermarks` coverage metric; a licensed review judges them like any shape
+  (for example `SLIDES_TEXT_OVERLAPS_OBJECT` over a table), so rebuild the deck with a license.
 - Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
   `edit` or `convert` output is `OPTION_INVALID`.
 - Chart titles, labels and data are not text: `query`, `search` and `replace_text` never see

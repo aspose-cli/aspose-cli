@@ -164,6 +164,9 @@ public sealed record SlideShapeData
 
     /// <summary>Whether the shape resizes to fit its text or shrinks its text on overflow, so text beyond its stored frame is not an overflow.</summary>
     internal bool TextAutofits { get; init; }
+
+    /// <summary>Whether an evaluation-mode read found the shape to be the watermark text box an evaluation save added.</summary>
+    internal bool EvaluationWatermark { get; init; }
 }
 
 /// <summary>One text run with effective formatting used by the full projection.</summary>
