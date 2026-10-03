@@ -58,10 +58,10 @@ public sealed class TextTable
         int[] widths = new int[_headers.Length];
         for (int column = 0; column < _headers.Length; column++)
         {
-            widths[column] = _headers[column].Length;
+            widths[column] = TextWidth.Of(_headers[column]);
             foreach (string[] row in _rows)
             {
-                widths[column] = Math.Max(widths[column], row[column].Length);
+                widths[column] = Math.Max(widths[column], TextWidth.Of(row[column]));
             }
         }
 
@@ -99,7 +99,7 @@ public sealed class TextTable
             // The last column is not padded to avoid trailing whitespace.
             builder.Append(column == cells.Length - 1
                 ? cells[column]
-                : cells[column].PadRight(widths[column]));
+                : TextWidth.PadRight(cells[column], widths[column]));
         }
 
         return builder.ToString();
