@@ -75,6 +75,14 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   before deleting it, so exactly the selected bookmarks and their children are removed.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-NAMES-WITHOUT-DESTS
+
+- **Defect:** `Document.NamedDestinations.Names` and `Count` throw `NullReferenceException` when
+  the catalog's name tree has no `Dests` entry, for example a tree that holds only attachments.
+- **CLI behavior:** none visible; such a document is read as having no named destinations, so
+  `pdf edit` and `pdf merge` accept it.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-CHART-TITLE

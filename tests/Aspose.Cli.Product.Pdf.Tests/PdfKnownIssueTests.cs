@@ -109,6 +109,22 @@ public sealed class PdfKnownIssueTests
             $"deleting the second of two bookmarks titled Results kept the one on page {keptPage}");
     }
 
+    [LicensedFact]
+    public void NamedDestinations_ThrowForANameTreeWithoutDests()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = PdfNavigationTests.CreateAttachmentOnlyNameTree(fixture, "attachments.pdf");
+
+        using var document = new Document(input);
+        Exception? names = Record.Exception(() => document.NamedDestinations.Names);
+        Exception? count = Record.Exception(() => document.NamedDestinations.Count);
+
+        KnownIssue.Reproduces(
+            "PDF-NAMES-WITHOUT-DESTS",
+            names is NullReferenceException && count is NullReferenceException,
+            $"for a name tree with only EmbeddedFiles, Names threw {names?.GetType().Name ?? "nothing"} and Count threw {count?.GetType().Name ?? "nothing"}");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {
