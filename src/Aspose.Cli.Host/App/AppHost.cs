@@ -31,6 +31,7 @@ internal sealed partial class AppHost : IDisposable
     private readonly int _port;
     private string _route = AppRoutes.Home;
     private bool _disposed;
+    private int _warming;
 
     /// <summary>The products this App opens files with.</summary>
     internal ProductCatalog Catalog => _catalog;
@@ -107,6 +108,12 @@ internal sealed partial class AppHost : IDisposable
             }
         }
         _log.Write($"app mounted on loopback port {_port}");
+        if (Interlocked.Exchange(ref _warming, 1) == 0)
+        {
+            // The browser's first status follows; let it find the license and fonts answered.
+            _ = Task.Run(_status.Warm).ContinueWith(
+                static task => _ = task.Exception, TaskContinuationOptions.OnlyOnFaulted);
+        }
         return Result(reused: false);
     }, deadline?.Token ?? CancellationToken.None);
 

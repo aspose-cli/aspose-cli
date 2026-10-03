@@ -156,7 +156,8 @@ internal sealed class AppStatusQuery
                     $"{product.Manifest.Id}: font diagnostics are not available",
                     "Verify font availability and substitution on the target system when visual fidelity matters.");
             }
-            // The gateway keeps the answer until the license changes.
+            // The gateway keeps an answer until the license changes and a failure for a short
+            // while; the gate keeps a warm-up and the first status from starting the same child twice.
             try
             {
                 FontListResult fonts = _cli.Fonts(product.Manifest.Id);
@@ -175,6 +176,29 @@ internal sealed class AppStatusQuery
                     $"{product.Manifest.Id}: font discovery is unavailable",
                     "Repair the license configuration, then reopen Settings.");
             }
+        }
+    }
+
+    /// <summary>
+    /// Reads the license and font state the first status reports, so the page that waits for
+    /// that status does not also wait for the two CLI children that answer it.
+    /// </summary>
+    internal void Warm()
+    {
+        ProductDefinition product = _catalog.ResolveById(
+            _sessions.Snapshot?.ProductId ?? _catalog.DefaultProductId());
+        // The two children are independent, so the status waits for the slower one only.
+        Parallel.Invoke(
+            () => Quietly(() => _cli.LicenseStatus()),
+            () => FontDiagnostic(product));
+    }
+
+    private static void Quietly(Action read)
+    {
+        try { read(); }
+        catch (Exception exception) when (exception is not OutOfMemoryException)
+        {
+            // The status itself asks again and reports the failure.
         }
     }
 
