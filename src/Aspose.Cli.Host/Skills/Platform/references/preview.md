@@ -22,8 +22,10 @@ aspose-cli preview stop --all --output json
 ```
 
 `preview status <id>` and `preview stop <id>` address one document. `status`
-lists each open document with its `revision`; `stop --all` closes every
-document and ends the service.
+lists each open document in `sessions[]`, with the same `id`, `product`,
+`url`, `file` and `view` as the start result and its current `revision`;
+`stop` names the closed documents in `stopped[]` and those still open in
+`sessions[]`; `stop --all` closes every document and ends the service.
 
 ## The viewer service
 
