@@ -68,12 +68,15 @@ internal static class PdfRenderers
                     item.Page?.ToString(CultureInfo.InvariantCulture) ?? string.Empty);
             }
 
-            Section(surface, "outline", outline.Count, table);
+            if (ResultText.Section(surface, "outline", outline.Count == 0))
+            {
+                table.WriteTo(surface.Out, surface.Format);
+            }
         }
 
         if (result.Forms is { } forms)
         {
-            Heading(surface, "forms");
+            ResultText.Section(surface, "forms");
             surface.Out.WriteLine($"{forms.Type}: {forms.FieldCount} field(s){(forms.ReadOnly ? ", read-only" : string.Empty)}");
         }
 
@@ -88,7 +91,10 @@ internal static class PdfRenderers
                     attachment.SizeBytes is long size ? TableText.Bytes(size) : string.Empty);
             }
 
-            Section(surface, "attachments", attachments.Count, table);
+            if (ResultText.Section(surface, "attachments", attachments.Count == 0))
+            {
+                table.WriteTo(surface.Out, surface.Format);
+            }
         }
 
         if (result.Fonts is { } fonts)
@@ -99,12 +105,15 @@ internal static class PdfRenderers
                 table.AddRow(font.Name, TableText.YesNo(font.Embedded), TableText.YesNo(font.Subset));
             }
 
-            Section(surface, "fonts", fonts.Count, table);
+            if (ResultText.Section(surface, "fonts", fonts.Count == 0))
+            {
+                table.WriteTo(surface.Out, surface.Format);
+            }
         }
 
         if (result.Permissions is { } permissions)
         {
-            Heading(surface, "permissions");
+            ResultText.Section(surface, "permissions");
             surface.Out.WriteLine(
                 $"open password: {TableText.YesNo(permissions.HasOpenPassword)}   owner password: {TableText.YesNo(permissions.HasOwnerPassword)}   "
                 + $"owner access: {TableText.YesNo(permissions.OwnerAccess)}");
@@ -126,13 +135,15 @@ internal static class PdfRenderers
                     signature.Valid is bool valid ? TableText.YesNo(valid) : string.Empty);
             }
 
-            Section(surface, "signatures", signatures.Count, table);
+            if (ResultText.Section(surface, "signatures", signatures.Count == 0))
+            {
+                table.WriteTo(surface.Out, surface.Format);
+            }
         }
 
-        if (result.Layers is { } layers)
+        if (result.Layers is { } layers && ResultText.Section(surface, "layers", layers.Count == 0))
         {
-            Heading(surface, "layers");
-            surface.Out.WriteLine(layers.Count == 0 ? "none" : string.Join(", ", layers));
+            surface.Out.WriteLine(string.Join(", ", layers));
         }
 
         if (result.Metadata is { } metadata)
@@ -143,29 +154,10 @@ internal static class PdfRenderers
                 table.AddRow(key, value ?? string.Empty);
             }
 
-            Section(surface, "metadata", metadata.Count, table);
-        }
-    }
-
-    private static void Section(TableSurface surface, string title, int count, TextTable table)
-    {
-        Heading(surface, title);
-        if (count == 0)
-        {
-            surface.Out.WriteLine("none");
-            return;
-        }
-
-        table.WriteTo(surface.Out, surface.Format);
-    }
-
-    private static void Heading(TableSurface surface, string title)
-    {
-        surface.Out.WriteLine();
-        surface.Out.WriteLine(surface.Format == TableFormat.Markdown ? $"### {title}" : $"{title}:");
-        if (surface.Format == TableFormat.Markdown)
-        {
-            surface.Out.WriteLine();
+            if (ResultText.Section(surface, "metadata", metadata.Count == 0))
+            {
+                table.WriteTo(surface.Out, surface.Format);
+            }
         }
     }
 
