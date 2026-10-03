@@ -137,7 +137,7 @@ public sealed class SlidesReviewCheckTests
             [
                 Slide(1,
                     TitleWithLines(1, new(40, 22, 640, 58), new(47, 43, 316, 34)),
-                    TitleWithLines(2, new(100, 300, 200, 30), new(60, 296, 280, 38)) with { TextResizesShape = true }),
+                    TitleWithLines(2, new(100, 300, 200, 30), new(60, 296, 280, 38)) with { TextAutofits = true }),
             ],
             Width,
             Height);
@@ -179,6 +179,21 @@ public sealed class SlidesReviewCheckTests
         Assert.Equal("slide 2", finding.Location);
         Assert.Contains("top edge", finding.Message, StringComparison.Ordinal);
         Assert.DoesNotContain(after.Findings, static finding => finding.Code == SlidesReviewChecks.ShapeOutsideSlide.Code);
+    }
+
+    [Fact]
+    public void BodyThatShrinksTextOnOverflow_IsNotReportedAsOverflowing()
+    {
+        // Markdown bodies shrink their text on overflow, which rendering applies but the
+        // engine's paragraph layout does not, so the laid-out lines run past the frame.
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("long-bullets.md");
+        File.WriteAllText(markdown, "## Short title\n\n" + string.Concat(Enumerable.Range(1, 12).Select(static item =>
+            $"- 培训 Training {item}：每季度一次线下集训，线上课程全年开放 on-demand courses for every partner\n")));
+        string deck = fixture.File("long-bullets.pptx");
+        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
+
+        Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
     }
 
     private static SlidesReviewAnalysis Review(SlidesEngineFixture fixture, string path)

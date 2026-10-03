@@ -59,7 +59,7 @@ internal static class SlidesReviewChecks
     public static ReviewCheck TextOverflowsShape { get; } = new(
         "SLIDES_TEXT_OVERFLOWS_SHAPE",
         ReviewSeverities.Warning,
-        "Laid-out text spills out of a shape that does not grow to fit it.");
+        "Laid-out text spills out of a shape that neither grows to fit it nor shrinks it on overflow.");
 
     public static ReviewCheck PlaceholderEmpty { get; } = new(
         "SLIDES_PLACEHOLDER_EMPTY",

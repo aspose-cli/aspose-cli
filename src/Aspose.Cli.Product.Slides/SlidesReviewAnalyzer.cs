@@ -175,8 +175,8 @@ internal static class SlidesReviewAnalyzer
     /// The frame of a shape says nothing about where its text ends up: a bottom-anchored title
     /// that wraps onto more lines grows upward, past its frame and off the top of the slide.
     /// Text cut off by a slide edge is reported alone; otherwise text spilling out of a shape
-    /// that does not grow to fit it is reported. A shape already outside the slide is not
-    /// checked again here.
+    /// that neither grows to fit it nor shrinks it on overflow is reported. A shape already
+    /// outside the slide is not checked again here.
     /// </summary>
     private static void AddTextPlacementFindings(
         SlideData slide,
@@ -202,7 +202,7 @@ internal static class SlidesReviewAnalyzer
             return;
         }
 
-        if (!shape.TextResizesShape && Overshoot(text, shape.Rect, TextShapeTolerance) is { } spill)
+        if (!shape.TextAutofits && Overshoot(text, shape.Rect, TextShapeTolerance) is { } spill)
         {
             result.TextOverflows++;
             result.Findings.Add(SlidesReviewChecks.TextOverflowsShape.Finding(

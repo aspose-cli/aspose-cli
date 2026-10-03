@@ -162,8 +162,8 @@ public sealed record SlideShapeData
     /// <summary>Where the shape's text is laid out, in slide points; null for a shape without text.</summary>
     internal SlideRect? TextRect { get; init; }
 
-    /// <summary>Whether the shape resizes to fit its text, so text beyond its stored frame is not an overflow.</summary>
-    internal bool TextResizesShape { get; init; }
+    /// <summary>Whether the shape resizes to fit its text or shrinks its text on overflow, so text beyond its stored frame is not an overflow.</summary>
+    internal bool TextAutofits { get; init; }
 }
 
 /// <summary>One text run with effective formatting used by the full projection.</summary>

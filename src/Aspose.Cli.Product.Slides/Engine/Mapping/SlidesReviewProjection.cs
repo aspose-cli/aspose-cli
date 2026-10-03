@@ -55,8 +55,12 @@ internal static class SlidesReviewProjection
             : null;
     }
 
-    /// <summary>Whether the shape grows to fit its text, so its stored frame may lag behind the text.</summary>
-    internal static bool TextResizesShape(IShape shape) =>
+    /// <summary>
+    /// Whether the shape grows to fit its text, so its stored frame may lag behind the text, or
+    /// shrinks its text on overflow, which the laid-out lines do not reflect
+    /// (SLIDES-AUTOFIT-RECT).
+    /// </summary>
+    internal static bool TextAutofits(IShape shape) =>
         shape is IAutoShape { TextFrame: { } frame }
-        && frame.TextFrameFormat.GetEffective().AutofitType == TextAutofitType.Shape;
+        && frame.TextFrameFormat.GetEffective().AutofitType is TextAutofitType.Shape or TextAutofitType.Normal;
 }

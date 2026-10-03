@@ -162,6 +162,18 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
+### SLIDES-AUTOFIT-RECT
+
+- **Defect:** in a text frame that shrinks its text on overflow, `IParagraph.GetRect` reports
+  laid-out lines that end past the right edge of the frame once the text overflows, while
+  rendering shrinks the text and draws every line inside the frame. No public API exposes the
+  font scale that rendering applies.
+- **CLI behavior:** `review` does not report `SLIDES_TEXT_OVERFLOWS_SHAPE` for a shape that
+  shrinks its text on overflow, as Markdown body placeholders do; text cut off by a slide edge is
+  still reported.
+- **Workaround:** check such shapes in the rendered review images.
+- **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
+
 ### SLIDES-CHART-TITLE
 
 - **Defect:** loading a chart whose automatic title is implicit (no `c:title`,

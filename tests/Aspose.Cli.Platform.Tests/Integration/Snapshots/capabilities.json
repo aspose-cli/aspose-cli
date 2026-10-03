@@ -4838,7 +4838,7 @@
           {
             "code": "SLIDES_TEXT_OVERFLOWS_SHAPE",
             "severity": "warning",
-            "summary": "Laid-out text spills out of a shape that does not grow to fit it."
+            "summary": "Laid-out text spills out of a shape that neither grows to fit it nor shrinks it on overflow."
           },
           {
             "code": "SLIDES_TEXT_OVERLAPS_OBJECT",

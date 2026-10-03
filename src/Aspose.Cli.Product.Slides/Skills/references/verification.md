@@ -26,7 +26,8 @@ slide, text below 12 pt, overlapping shapes, covered charts, laid-out text runni
 or chart (`SLIDES_TEXT_OVERLAPS_OBJECT`, judged from where the text actually sits, not from its
 often much taller placeholder), laid-out text cut off by a slide edge (`SLIDES_TEXT_OUTSIDE_SLIDE`,
 for example a long title in a bottom-anchored placeholder that wraps upward off the slide) or
-spilling out of a shape that does not grow to fit it (`SLIDES_TEXT_OVERFLOWS_SHAPE`), empty
+spilling out of a shape that neither grows to fit it nor shrinks it on overflow
+(`SLIDES_TEXT_OVERFLOWS_SHAPE`), empty
 placeholders that PowerPoint shows as prompts while editing (`SLIDES_PLACEHOLDER_EMPTY`), blank or
 duplicate slides and content density (judged by object count alone on a slide whose text
 evaluation mode replaced). Text in rotated shapes and vertical text is not measured.

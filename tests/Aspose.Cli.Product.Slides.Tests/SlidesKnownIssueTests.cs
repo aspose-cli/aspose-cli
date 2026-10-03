@@ -31,6 +31,35 @@ public sealed class SlidesKnownIssueTests
         Path.Combine(RepositoryPaths.Root, "tests", "Aspose.Cli.Product.Slides.Tests", "Assets", "implicit-chart-title.pptx");
 
     [LicensedFact]
+    public void TextThatShrinksOnOverflow_IsLaidOutPastTheRightOfItsFrame()
+    {
+        using var fixture = new SlidesEngineFixture();
+        using var presentation = new Presentation();
+        IAutoShape body = presentation.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 100, 640, 257);
+        body.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.Normal;
+        body.TextFrame.Paragraphs.Clear();
+        for (int item = 0; item < 12; item++)
+        {
+            var paragraph = new Paragraph();
+            paragraph.ParagraphFormat.MarginLeft = 34;
+            paragraph.ParagraphFormat.Indent = -27;
+            paragraph.ParagraphFormat.Bullet.Type = BulletType.Symbol;
+            paragraph.ParagraphFormat.Bullet.Char = '•';
+            paragraph.Portions.Add(new Portion("培训 Training 10：每季度一次线下集训，线上课程全年开放 on-demand courses for every partner"));
+            paragraph.Portions[0].PortionFormat.FontHeight = 18;
+            body.TextFrame.Paragraphs.Add(paragraph);
+        }
+
+        double right = body.TextFrame.Paragraphs.Max(static paragraph => paragraph.GetRect().Right);
+        double textRight = body.Width - body.TextFrame.TextFrameFormat.GetEffective().MarginRight;
+
+        KnownIssue.Reproduces(
+            "SLIDES-AUTOFIT-RECT",
+            right > textRight,
+            $"the widest laid-out line ends at {right} pt, inside the frame's text area ending at {textRight} pt");
+    }
+
+    [LicensedFact]
     public void ImplicitAutomaticTitle_LoadsAsATitleOverThePlot()
     {
         using var fixture = new SlidesEngineFixture();
