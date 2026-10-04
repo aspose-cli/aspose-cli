@@ -65,8 +65,11 @@ Details: [design system](references/design-system.md).
   (for example `SLIDES_TEXT_OVERLAPS_OBJECT` over a table), so rebuild the deck with a license.
 - Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
   `edit` or `convert` output is `OPTION_INVALID`.
-- Chart titles, labels and data are not text: `query`, `search` and `replace_text` never see
-  them, so confirm charts in the rendered review images.
+- Chart titles, labels and data are not shape text: `query`, `search` and `replace_text` never
+  see them, and `query` gives a table's cells as one text. After `update_chart_data` or
+  `set_table_cell`, read chart values and table cells back from a Markdown conversion
+  ([Slides verification](references/verification.md#charts-and-tables)), then confirm the
+  rendering in the review images.
 
 ## References
 

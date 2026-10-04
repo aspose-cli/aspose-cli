@@ -15,6 +15,22 @@ aspose-cli slides query search deck.revised.pptx --pattern TODO --scope all --ou
 formatting metadata do not count. Check each slide's `contentTruncated`; `window.next` resumes
 at a slide the budget cut short and doubles `--max-chars` when that slide alone exceeded it.
 
+### Charts and tables
+
+`query` reports a chart only as a shape and a table's cells as one text in reading order. A
+Markdown conversion reads both back by position: each table as a Markdown table, row by row
+and column by column, and each chart as its type, its title and a table of its values, one row
+per category and one column per series:
+
+```powershell
+aspose-cli slides convert deck.revised.pptx --to md --slides 4-6 --out deck.revised.md --output json
+```
+
+Compare these values with the ones the batch wrote before you report them. Evaluation mode
+cuts short text longer than five characters here too, such as titles and table cells, while
+chart values stay whole. The review images remain the check for how a chart draws its values:
+axis ranges, labels and clipping.
+
 ## Appearance
 
 ```powershell
