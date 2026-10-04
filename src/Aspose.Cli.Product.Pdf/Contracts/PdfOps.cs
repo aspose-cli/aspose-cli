@@ -452,6 +452,13 @@ public sealed record AddAttachmentOp : PdfOp
     [MinLength(1)] public string? Name { get; init; }
 
     public string? Description { get; init; }
+
+    /// <summary>
+    /// The media type stored with the attachment, such as "image/png", which archives and viewers
+    /// read to identify it and PDF/A-3 keeps; none when omitted.
+    /// </summary>
+    [Pattern(@"^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$", Meaning = "must be a media type, such as \"image/png\"")]
+    public string? MimeType { get; init; }
 }
 
 /// <summary>Removes a document attachment by name.</summary>

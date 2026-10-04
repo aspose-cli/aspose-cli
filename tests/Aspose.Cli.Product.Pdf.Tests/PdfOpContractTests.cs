@@ -29,6 +29,8 @@ public sealed class PdfOpContractTests
     [InlineData("""{"op":"flatten_forms","fields":[]}""")]
     [InlineData("""{"op":"flatten_forms","all":true}""")]
     [InlineData("""{"op":"add_attachment","path":" "}""")]
+    [InlineData("""{"op":"add_attachment","path":"scan.png","mimeType":"png"}""")]
+    [InlineData("""{"op":"add_attachment","path":"scan.png","mimeType":"image/png; q=1"}""")]
     [InlineData("""{"op":"set_metadata","custom":{"author":null}}""")]
     [InlineData("""{"op":"add_bookmark","title":"Intro","page":1,"parent":""}""")]
     [InlineData("""{"op":"add_bookmark","title":"Intro","page":1,"parent":"1/"}""")]

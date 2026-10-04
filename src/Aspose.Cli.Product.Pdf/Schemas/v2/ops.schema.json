@@ -149,6 +149,11 @@
         },
         "description": {
           "type": "string"
+        },
+        "mimeType": {
+          "description": "The media type stored with the attachment, such as \"image/png\", which archives and viewers read to identify it and PDF/A-3 keeps; none when omitted.",
+          "type": "string",
+          "pattern": "^[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*/[A-Za-z0-9][A-Za-z0-9!#$&^_.+-]*$"
         }
       }
     },

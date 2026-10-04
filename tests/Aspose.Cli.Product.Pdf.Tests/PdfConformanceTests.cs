@@ -161,6 +161,39 @@ public sealed class PdfConformanceTests
         }
     }
 
+    /// <summary>The media type add_attachment declares is stored and kept by PDF/A-3.</summary>
+    [Fact]
+    public void AddAttachment_DeclaresAMediaTypeThatPdfa3Keeps()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("plain.pdf", pages: 1);
+        string scan = fixture.File("license-scan.png");
+        File.WriteAllBytes(scan, [0x89, (byte)'P', (byte)'N', (byte)'G', 0x0D, 0x0A, 0x1A, 0x0A]);
+        string attached = fixture.File("attached.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new AddAttachmentOp { Path = scan, MimeType = "image/png" },
+                new AddAttachmentOp { Path = scan, Name = "untyped.png" },
+            ],
+        }, new PdfEditRequest { OutputPath = attached });
+
+        Assert.Equal(
+            [("license-scan.png", "image/png"), ("untyped.png", null)],
+            MediaTypes(attached));
+
+        string archive = fixture.File("archive.pdf");
+        fixture.Engine.Convert(attached, new PdfConvertRequest { TargetFormatId = "pdfa-3b", OutputPath = archive });
+        Assert.Equal(
+            [("license-scan.png", "image/png"), ("untyped.png", "application/octet-stream")],
+            MediaTypes(archive));
+
+        (string, string?)[] MediaTypes(string path) => [.. fixture.Engine
+            .GetInfo(path, new PdfInfoRequest { Details = ["attachments"] }).Attachments!
+            .Select(static item => (item.Name, item.MimeType))];
+    }
+
     [Fact]
     public void PdfaConversionLog_GroupsTheIdentificationAndTheAttachments()
     {

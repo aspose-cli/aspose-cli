@@ -114,6 +114,10 @@ internal sealed partial class PdfMutationHandlers
         {
             UnicodeName = name,
         };
+        if (operation.MimeType is not null)
+        {
+            specification.MIMEType = operation.MimeType;
+        }
         _document.EmbeddedFiles.Add(name, specification);
         return 1;
     }
