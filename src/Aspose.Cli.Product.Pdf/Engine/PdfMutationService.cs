@@ -278,8 +278,8 @@ internal sealed class PdfMutationService
                 Code = PdfDiagnostics.RedactionTextMoved,
                 Message = (textMoved.Count == 1 ? "Operation " : "Operations ") + string.Join(", ", textMoved)
                     + " moved the text that followed what was removed on its line to the left, so part of it may now lie under the cover.",
-                Hint = "Compare those pages with the input in 'aspose-cli review'. The moved text is still in the file and searchable; "
-                    + "to keep the line in place, redact the source document and create the PDF again.",
+                Hint = "Run 'aspose-cli review' on the output: PDF_TEXT_COVERED names the pages where text lies hidden under a cover. "
+                    + "The moved text is still in the file and searchable; to keep the line visible, redact the source document and create the PDF again.",
             });
         }
 

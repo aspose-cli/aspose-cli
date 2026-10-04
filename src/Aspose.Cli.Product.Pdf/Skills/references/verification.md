@@ -32,7 +32,8 @@ verified or not, names such operations in a `REDACTION_NO_MATCH` warning: the
 text it was meant to remove may still be on the page under a different
 extracted form ([redaction](editing.md#redaction)). Likewise, a
 `REDACTION_TEXT_MOVED` warning names the redactions that moved the rest of a
-line under their cover, which no read-back check catches; review those pages.
+line under their cover, which no read-back check catches; `review` names the
+pages where text lies under a cover with `PDF_TEXT_COVERED`.
 
 The batch is checked as a whole: only the last value set for a field, entry or
 attachment is checked, the value of a flattened field or a deleted page's fields is not, a
@@ -103,6 +104,10 @@ and contrast. PDF review findings worth acting on:
   saved is flagged too, and the finding names the product whose license is
   needed. Pages past review's text budget are not checked;
   `PDF_TEXT_ANALYSIS_TRUNCATED` marks the page where the budget ran out.
+- `PDF_TEXT_COVERED`: text lies under an opaque box painted over it, such as
+  the cover a redaction leaves, so the file holds text the page does not show.
+  After a redaction it is the text the engine moved under the cover
+  ([redaction](editing.md#redaction)).
 - `PDF_PAGE_WITHOUT_READABLE_CONTENT` and `PDF_PAGE_UTILIZATION_LOW`: a page
   with no or very little text, no images covering a quarter of it and that does
   not look scanned; look at it, it may be unintentionally blank or sparse. A blank or

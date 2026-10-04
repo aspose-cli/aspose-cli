@@ -11,6 +11,12 @@ internal static class PdfReviewChecks
         ReviewSeverities.Warning,
         "Text fragments extend beyond the page rectangle and may be clipped.");
 
+    /// <summary>Text lies under an opaque box painted over it, such as a redaction cover.</summary>
+    public static ReviewCheck TextCovered { get; } = new(
+        "PDF_TEXT_COVERED",
+        ReviewSeverities.Warning,
+        "Text lies under an opaque box painted over it, such as a redaction cover, so it is in the file but not visible on the page.");
+
     /// <summary>A page is smaller than one inch or larger than 40 inches on a side.</summary>
     public static ReviewCheck PageSizeUnusual { get; } = new(
         "PDF_PAGE_SIZE_UNUSUAL",
@@ -69,6 +75,7 @@ internal static class PdfReviewChecks
     public static IReadOnlyList<ReviewCheck> All { get; } =
     [
         TextOutsidePage,
+        TextCovered,
         PageSizeUnusual,
         PageWithoutReadableContent,
         PageWithoutTextLayer,

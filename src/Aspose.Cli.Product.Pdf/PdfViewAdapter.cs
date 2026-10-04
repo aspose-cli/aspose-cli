@@ -61,6 +61,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         });
         var findings = new List<ReviewFinding>();
         AnalyzeTextBounds(layout, findings);
+        AnalyzeCoveredText(layout, findings);
         AnalyzeWatermarks(read, findings);
         int unusualPages = AnalyzePageSizes(layout, findings);
         TextAnalysis text = AnalyzeText(
@@ -93,6 +94,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 Metric("scannedPages", scannedPages.Count, "pages"),
                 Metric("lowUtilizationPages", text.LowUtilizationPages, "pages"),
                 Metric("outsideTextFragments", layout.Pages.Sum(static page => page.OutsideTextFragments), "fragments"),
+                Metric("coveredTextFragments", layout.Pages.Sum(static page => page.CoveredTextFragments), "fragments"),
                 Metric("unusualPageSizes", unusualPages, "pages"),
                 Metric("unembeddedFonts", unembeddedFonts, "fonts"),
                 Metric("formFields", forms.Fields, "fields"),
@@ -115,6 +117,24 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 $"{page.OutsideTextFragments} text fragment(s) extend beyond the page rectangle and may be clipped.",
                 $"page {page.Page}",
                 Hint,
+                PdfViews.PagePart(page.Page)));
+        }
+    }
+
+    /// <summary>
+    /// The pages where text lies under an opaque box. A redaction leaves such a box, and the
+    /// engine moves the text after a removed value under it (PDF-REDACT-TEXT-SHIFT).
+    /// </summary>
+    private static void AnalyzeCoveredText(
+        PdfReviewLayout layout,
+        ICollection<ReviewFinding> findings)
+    {
+        foreach (PdfReviewPageLayout page in layout.Pages.Where(static page => page.CoveredTextFragments > 0))
+        {
+            findings.Add(PdfReviewChecks.TextCovered.Finding(
+                $"{page.CoveredTextFragments} text fragment(s) lie under an opaque box, such as a redaction cover, so the page does not show them although the file still contains them.",
+                $"page {page.Page}",
+                "Compare the page image with the text 'pdf query pages' reads. When a redaction moved the text beside a removed value under its cover, redact the source document and create the PDF again; that text cannot be moved back in the PDF.",
                 PdfViews.PagePart(page.Page)));
         }
     }

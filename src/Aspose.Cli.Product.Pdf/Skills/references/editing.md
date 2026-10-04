@@ -94,17 +94,19 @@ the pattern into a regular expression or cover the text with `redact_area`.
 
 The engine removes redacted text without keeping its width, so text on the
 same line that was written to follow it, without a position of its own, moves
-left under the cover. Word-made PDFs write their lines that way. A
-`REDACTION_TEXT_MOVED` warning names each `redact_text` or `redact_area`
-operation and the pages on which this happened: compare those pages with the
-input in `review`. The check follows runs that keep their whole text, so a
-run that the redaction cut can move unnoticed: no warning does not prove that
-nothing moved, so review the redacted pages anyway. The moved text is still in
-the file and searchable; to keep the line in place, redact the source document
-and create the PDF again.
+left under the cover and no longer shows on the page. Word-made PDFs write
+their lines that way, so labels and punctuation after a value, such as
+`，手机号：`, disappear under the black box. A `REDACTION_TEXT_MOVED` warning
+names each `redact_text` or `redact_area` operation and the pages on which
+this happened. The check follows runs that keep their whole text, so a run
+that the redaction cut can move unnoticed: no warning does not prove that
+nothing moved. `review` reports `PDF_TEXT_COVERED` on every page where text lies
+under such a cover. The moved text is still in the file and searchable, and
+nothing in the PDF can move it back: to keep the line visible, redact the
+source document and create the PDF again.
 
-When only the PDF exists, nothing keeps the rest of such a line in place, but
-the values can still be removed without losing the text beside them:
+When only the PDF exists, the values can still all be removed, at the cost of
+the text that follows them on their lines:
 
 - Prefer `redact_text`. Each operation searches the page as the earlier ones
   left it and removes its matches on a page from the last to the first, so
@@ -116,8 +118,9 @@ the values can still be removed without losing the text beside them:
   the rest of the line and an area taken from the original would then miss
   part of the value it was meant to cover.
 
-Then `review` the pages named by `REDACTION_TEXT_MOVED`, and run
-`pdf query search` for each value to confirm that none is left.
+Then run `pdf query search` for each value to confirm that none is left, and
+`review` the output: tell the user which pages `PDF_TEXT_COVERED` names, because
+their text is hidden there.
 
 The engine reads a visible gap between characters as a space, so extracted
 text can hold spaces the source never had: Word separates Chinese, Japanese or

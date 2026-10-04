@@ -116,6 +116,83 @@ public sealed class PdfReviewAndInfoTests
     }
 
     /// <summary>
+    /// A redaction moves the text after the value it removes left, under its cover
+    /// (PDF-REDACT-TEXT-SHIFT): the text is still in the file, but the page no longer shows it.
+    /// </summary>
+    [Fact]
+    public void Review_FlagsTextThatARedactionCoverHides()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.CreateRawDocument("runs.pdf", pages: 2, textContent: PdfMutateTests.ConsecutiveRuns);
+        string output = fixture.File("runs.redacted.pdf");
+        fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new RedactTextOp { Pattern = "Jane Roe", Pages = "1" },
+                    // Nothing follows "order." on its line, so no text moves under its cover.
+                    new RedactTextOp { Pattern = "order.", Pages = "2" },
+                ],
+            },
+            new PdfEditRequest { OutputPath = output });
+
+        CliResult review = workspace.Run(["review", output, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        JsonNode finding = Assert.Single(
+            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_COVERED")!;
+        Assert.Equal("page 1", finding["location"]!.GetValue<string>());
+        Assert.Contains("source document", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// Text drawn on a filled box after the box, such as a heading on a shaded band that follows
+    /// other text, is visible; only the text drawn before a box lies under it.
+    /// </summary>
+    [Fact]
+    public void Review_CountsOnlyTheTextDrawnBeforeABoxAsCovered()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.CreateRawDocument("band.pdf", pages: 1,
+            textContent: "BT /F1 12 Tf 72 720 Td (Text above the band) Tj ET BT /F1 12 Tf 72 680 Td (Under the band) Tj ET");
+        string banded = fixture.File("banded.pdf");
+        using (var document = new Document(input))
+        {
+            Page page = document.Pages[1];
+            XForm band = XForm.CreateNewForm(page, document);
+            band.BBox = new Rectangle(0, 0, 400, 30);
+            band.Contents.Clear(); // The new form starts with a copy of the page's contents.
+            band.Contents.Add(new Aspose.Pdf.Operators.SetRGBColor(0.8, 0.8, 0.8));
+            band.Contents.Add(new Aspose.Pdf.Operators.Re(0, 0, 400, 30));
+            band.Contents.Add(new Aspose.Pdf.Operators.Fill());
+            page.Resources.Forms.Add(band);
+            page.Contents.Add(new Aspose.Pdf.Operators.GSave());
+            page.Contents.Add(new Aspose.Pdf.Operators.ConcatenateMatrix(1, 0, 0, 1, 60, 670));
+            page.Contents.Add(new Aspose.Pdf.Operators.Do(band.Name));
+            page.Contents.Add(new Aspose.Pdf.Operators.GRestore());
+            page.Contents.Add(new Aspose.Pdf.Operators.BT());
+            page.Contents.Add(new Aspose.Pdf.Operators.SelectFont("F1", 12));
+            page.Contents.Add(new Aspose.Pdf.Operators.MoveTextPosition(250, 680));
+            page.Contents.Add(new Aspose.Pdf.Operators.ShowText("Heading on the band"));
+            page.Contents.Add(new Aspose.Pdf.Operators.ET());
+            document.Save(banded);
+        }
+
+        CliResult review = workspace.Run(["review", banded, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        JsonNode finding = Assert.Single(
+            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_COVERED")!;
+        Assert.StartsWith("1 text fragment(s)", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// The sentence an unlicensed save stamps on every page, as a later licensed run reads it,
     /// on one line or wrapped onto several, as Aspose.Words wraps its footer in a wide font.
     /// </summary>

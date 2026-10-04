@@ -2318,6 +2318,11 @@
             "summary": "Text extraction reached its budget, so the structural text checks of a page are incomplete."
           },
           {
+            "code": "PDF_TEXT_COVERED",
+            "severity": "warning",
+            "summary": "Text lies under an opaque box painted over it, such as a redaction cover, so it is in the file but not visible on the page."
+          },
+          {
             "code": "PDF_TEXT_OUTSIDE_PAGE",
             "severity": "warning",
             "summary": "Text fragments extend beyond the page rectangle and may be clipped."
@@ -14606,6 +14611,7 @@
             "PDF_PAGE_WITHOUT_READABLE_CONTENT",
             "PDF_PAGE_WITHOUT_TEXT_LAYER",
             "PDF_TEXT_ANALYSIS_TRUNCATED",
+            "PDF_TEXT_COVERED",
             "PDF_TEXT_OUTSIDE_PAGE",
             "SLIDES_CHART_COVERED",
             "SLIDES_CONTENT_DENSITY_HIGH",

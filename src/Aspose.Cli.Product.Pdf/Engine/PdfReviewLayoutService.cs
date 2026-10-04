@@ -1,7 +1,9 @@
 using Aspose.Cli.Product.Pdf.Engine.Mapping;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Pdf;
+using Aspose.Pdf.Operators;
 using Aspose.Pdf.Text;
+using Aspose.Pdf.Vector;
 
 namespace Aspose.Cli.Product.Pdf.Engine;
 
@@ -40,23 +42,97 @@ internal sealed class PdfReviewLayoutService
     {
         var absorber = new TextFragmentAbsorber();
         page.Accept(absorber);
-        int fragments = 0;
-        int outsideFragments = 0;
-        foreach (TextFragment fragment in absorber.TextFragments)
-        {
-            if (string.IsNullOrWhiteSpace(fragment.Text))
-            {
-                continue;
-            }
-            fragments++;
-            if (IsOutsidePage(fragment.Rectangle, page.Rect))
-            {
-                outsideFragments++;
-            }
-        }
+        Rectangle[] text = [.. absorber.TextFragments
+            .Where(static fragment => !string.IsNullOrWhiteSpace(fragment.Text))
+            .Select(static fragment => fragment.Rectangle)];
         Rectangle displayed = page.GetPageRect(considerRotation: true);
         return new PdfReviewPageLayout(
-            pageNumber, displayed.Width, displayed.Height, fragments, outsideFragments, ImageCoverage(page));
+            pageNumber,
+            displayed.Width,
+            displayed.Height,
+            text.Length,
+            text.Count(fragment => IsOutsidePage(fragment, page.Rect)),
+            ImageCoverage(page),
+            text.Length == 0 ? 0 : CoveredFragments(page));
+    }
+
+    /// <summary>
+    /// The text fragments whose centre lies under an opaque box drawn after them: a form XObject
+    /// that only fills one rectangle, as a redaction leaves. The text drawn before a box is the
+    /// text of the page with its content cut off at the box, so a copy of the page is cut from
+    /// the last box to the first.
+    /// </summary>
+    private static int CoveredFragments(Page page)
+    {
+        if (!page.Resources.Forms.Any(IsBox))
+        {
+            return 0;
+        }
+
+        using var copy = new Document();
+        Page cut = copy.Pages.Add(page);
+        (int Index, Rectangle Area)[] boxes;
+        using (var graphics = new GraphicsAbsorber())
+        {
+            graphics.Visit(cut);
+            boxes = [.. graphics.Elements
+                .OfType<XFormPlacement>()
+                .Where(static placement => placement.Parent is null && IsBox(placement.XForm))
+                .Select(static placement => (placement.Operators[0].Index, placement.Rectangle))
+                .OrderByDescending(static box => box.Index)];
+        }
+
+        var covered = new HashSet<(string, double, double)>();
+        foreach ((int index, Rectangle area) in boxes)
+        {
+            for (int op = cut.Contents.Count; op >= index; op--)
+            {
+                cut.Contents.Delete(op);
+            }
+
+            var before = new TextFragmentAbsorber();
+            cut.Accept(before);
+            foreach (TextFragment fragment in before.TextFragments)
+            {
+                if (!string.IsNullOrWhiteSpace(fragment.Text) && Contains(area, fragment.Rectangle))
+                {
+                    covered.Add((fragment.Text, fragment.Rectangle.LLX, fragment.Rectangle.LLY));
+                }
+            }
+        }
+
+        return covered.Count;
+    }
+
+    private static bool IsBox(XForm form)
+    {
+        int rectangles = 0;
+        int fills = 0;
+        foreach (Operator op in form.Contents)
+        {
+            switch (op)
+            {
+                case Re:
+                    rectangles++;
+                    break;
+                case Fill or EOFill or FillStroke or EOFillStroke or ClosePathFillStroke or ClosePathEOFillStroke:
+                    fills++;
+                    break;
+                case GSave or GRestore or SetColorOperator or SetLineWidth:
+                    break;
+                default:
+                    return false;
+            }
+        }
+
+        return rectangles == 1 && fills == 1;
+    }
+
+    private static bool Contains(Rectangle box, Rectangle text)
+    {
+        double x = (text.LLX + text.URX) / 2;
+        double y = (text.LLY + text.URY) / 2;
+        return x > box.LLX && x < box.URX && y > box.LLY && y < box.URY;
     }
 
     /// <summary>The share of the page its image placements cover, overlaps counted twice, at most 1.</summary>
