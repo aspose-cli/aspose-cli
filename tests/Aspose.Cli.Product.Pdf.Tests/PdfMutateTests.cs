@@ -12,6 +12,40 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 
 public sealed class PdfMutateTests
 {
+    [Fact]
+    public void MarginText_KeepsItsMarginWhenItsCharactersNeedAnotherFont()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("cjk-margins.pdf", pages: 1);
+        string output = fixture.File("cjk-margins.out.pdf");
+
+        // The default font has no CJK glyphs, so the engine draws this text in a wider one.
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new AddPageNumbersOp { Format = "第 {n} 页 / 共 {N} 页", Position = PdfPositions.BottomRight },
+                new AddHeaderTextOp { Text = "机密文件", Position = PdfPositions.TopLeft },
+            ],
+        }, new PdfEditRequest { OutputPath = output });
+
+        using var reopened = new Document(output);
+        Page page = reopened.Pages[1];
+        Rectangle number = Fragment(page, "第 1 页 / 共 1 页");
+        Rectangle header = Fragment(page, "机密文件");
+        Assert.Equal(page.Rect.URX - 24, number.URX, 1d);
+        Assert.Equal(page.Rect.LLY + 24, number.LLY, 1d);
+        Assert.Equal(page.Rect.LLX + 24, header.LLX, 1d);
+        Assert.Equal(page.Rect.URY - 24, header.URY, 1d);
+
+        static Rectangle Fragment(Page page, string text)
+        {
+            var absorber = new TextFragmentAbsorber(text);
+            page.Accept(absorber);
+            return Assert.Single(absorber.TextFragments).Rectangle;
+        }
+    }
+
     [Theory]
     [InlineData(0)]
     [InlineData(90)]

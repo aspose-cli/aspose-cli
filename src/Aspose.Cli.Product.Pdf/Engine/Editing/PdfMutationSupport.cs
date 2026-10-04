@@ -42,23 +42,26 @@ internal static class PdfMutationSupport
         return PdfColor.FromRgb(red / 255d, green / 255d, blue / 255d);
     }
 
-    internal static void ApplyPosition(Page page, TextStamp stamp, string position)
+    /// <summary>
+    /// Aligns a margin stamp 24 pt inside an edge of the displayed page. The engine aligns the
+    /// text it draws, so the width is that of the font it substitutes for characters the
+    /// stamp's font lacks, such as CJK text in the default font.
+    /// </summary>
+    internal static void ApplyPosition(TextStamp stamp, string position)
     {
         const double edgeMargin = 24;
-        float fontSize = stamp.TextState.FontSize > 0 ? stamp.TextState.FontSize : 12;
-        double textWidth = stamp.TextState.Font.MeasureString(stamp.Value, fontSize);
-        double textHeight = fontSize * 1.25;
-        Rectangle box = page.Rect;
-        stamp.HorizontalAlignment = HorizontalAlignment.None;
-        stamp.VerticalAlignment = VerticalAlignment.None;
-        stamp.XIndent = position.EndsWith("left", StringComparison.Ordinal)
-            ? box.LLX + edgeMargin
+        stamp.HorizontalAlignment = position.EndsWith("left", StringComparison.Ordinal)
+            ? HorizontalAlignment.Left
             : position.EndsWith("right", StringComparison.Ordinal)
-                ? box.URX - edgeMargin - textWidth
-                : box.LLX + ((box.Width - textWidth) / 2);
-        stamp.YIndent = position.StartsWith("top", StringComparison.Ordinal)
-            ? box.URY - edgeMargin - textHeight
-            : box.LLY + edgeMargin;
+                ? HorizontalAlignment.Right
+                : HorizontalAlignment.Center;
+        stamp.VerticalAlignment = position.StartsWith("top", StringComparison.Ordinal)
+            ? VerticalAlignment.Top
+            : VerticalAlignment.Bottom;
+        stamp.LeftMargin = edgeMargin;
+        stamp.RightMargin = edgeMargin;
+        stamp.TopMargin = edgeMargin;
+        stamp.BottomMargin = edgeMargin;
     }
 
     /// <summary>

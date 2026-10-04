@@ -205,7 +205,7 @@ internal sealed partial class PdfMutationHandlers
             stamp.TextState.Font = FontRepository.FindFont(font);
         }
 
-        ApplyPosition(page, stamp, position);
+        ApplyPosition(stamp, position);
         page.AddStamp(stamp);
     }
 
