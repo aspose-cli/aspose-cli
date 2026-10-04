@@ -244,6 +244,19 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void ALinkNamedLikeASheetSuggestsTheSheet()
+    {
+        string source = _fixture.CreateSalesWorkbook("sheet-typo.xlsx");
+
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"E5","formula":"='Secnd'!A1"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("sheet-typo.out.xlsx") });
+
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "EXTERNAL_LINK_RELATIVE");
+        Assert.StartsWith("No sheet is named 'Secnd'; did you mean 'Second'?", warning.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void GetInfo_ReportsSheetStructure()
     {
         string path = _fixture.CreateSalesWorkbook("info.xlsx");

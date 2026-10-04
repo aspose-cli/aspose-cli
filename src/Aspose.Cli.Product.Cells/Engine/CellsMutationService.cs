@@ -8,6 +8,7 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Text;
 using static Aspose.Cli.Product.Cells.Engine.CellsEngineSupport;
 
 namespace Aspose.Cli.Product.Cells.Engine;
@@ -166,7 +167,8 @@ internal sealed class CellsMutationService
     /// Discloses links the batch added whose target is a file name without a folder, which the
     /// output stores relative to its own folder. A link written with the full path of a file in
     /// the input's folder is stored this way too (known issue CELLS-LINK-RELATIVE-TARGET,
-    /// KNOWN-ISSUES.md).
+    /// KNOWN-ISSUES.md). A reference to a sheet the workbook does not have becomes such a link,
+    /// so a target close to a sheet name is named as the likely typo.
     /// </summary>
     private static Warning? RelativeLinkWarning(Workbook workbook, string[] before)
     {
@@ -175,13 +177,27 @@ internal sealed class CellsMutationService
                 && Path.GetFileName(source) == source
                 && !before.Contains(source, StringComparer.OrdinalIgnoreCase))
             .ToArray();
-        return added.Length == 0 ? null : new Warning
+        if (added.Length == 0)
+        {
+            return null;
+        }
+
+        string typos = string.Concat(added.Select(source => SheetTypo(workbook, source)));
+        return new Warning
         {
             Code = CellsDiagnostics.ExternalLinkRelative,
             Message = $"The output stores the target of its new link(s) as {string.Join(", ", added)}: a file name without a folder, "
                 + "relative to the output's folder. A link written with the full path of a file in the input's folder is stored this way too.",
-            Hint = "Keep the linked workbook(s) in the same folder as the output, or bring their values in with import_range instead of a link.",
+            Hint = typos + (typos.Length > 0 ? "For a real link, keep" : "Keep")
+                + " the linked workbook(s) in the same folder as the output, or bring their values in with import_range instead of a link.",
             Docs = "cells/editing",
         };
     }
+
+    // A workbook file name has an extension; a mistyped sheet name has none.
+    private static string SheetTypo(Workbook workbook, string source) =>
+        Path.GetExtension(source).Length == 0
+        && NameSuggestions.Closest(source, workbook.Worksheets.Cast<Worksheet>().Select(static sheet => sheet.Name)) is [string closest, ..]
+            ? $"No sheet is named '{source}'; did you mean '{closest}'? Correct the formula's sheet name. "
+            : string.Empty;
 }
