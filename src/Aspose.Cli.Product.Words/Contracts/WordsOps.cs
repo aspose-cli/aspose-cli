@@ -441,7 +441,14 @@ public sealed record DefineStyleOp : WordsOp
 
     [MinLength(1)] public string? BasedOn { get; init; }
 
+    /// <summary>The font of Latin and East Asian text.</summary>
     [MinLength(1)] public string? Font { get; init; }
+
+    /// <summary>The font of Latin text, in place of font's.</summary>
+    [MinLength(1)] public string? LatinFont { get; init; }
+
+    /// <summary>The font of Chinese, Japanese and Korean text, in place of font's.</summary>
+    [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
     [ExclusiveMinimum(0)] public double? Size { get; init; }
@@ -471,9 +478,17 @@ public sealed record ApplyListOp : WordsOp
 
 /// <summary>Sets the font of every paragraph and character style.</summary>
 [Operation("set_default_font")]
+[AtLeastOneOf("font", "latinFont", "eastAsianFont")]
 public sealed record SetDefaultFontOp : WordsOp
 {
-    [MinLength(1)] public required string Font { get; init; }
+    /// <summary>The font of Latin and East Asian text.</summary>
+    [MinLength(1)] public string? Font { get; init; }
+
+    /// <summary>The font of Latin text, in place of font's.</summary>
+    [MinLength(1)] public string? LatinFont { get; init; }
+
+    /// <summary>The font of Chinese, Japanese and Korean text, in place of font's.</summary>
+    [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points; sizes are kept when omitted.</summary>
     [ExclusiveMinimum(0)] public double? Size { get; init; }

@@ -386,6 +386,8 @@ internal static class WordsContractSamples
                 Name = "Report Callout",
                 BasedOn = "Normal",
                 Font = "Arial",
+                LatinFont = "Calibri",
+                EastAsianFont = "SimSun",
                 Size = 11,
                 Bold = true,
                 Color = "#1F4E79",
@@ -398,7 +400,7 @@ internal static class WordsContractSamples
                 Kind = "number",
                 Level = 1,
             },
-            new SetDefaultFontOp { Font = "Arial", Size = 11 },
+            new SetDefaultFontOp { Font = "Arial", LatinFont = "Calibri", EastAsianFont = "SimSun", Size = 11 },
             new SetPropertiesOp
             {
                 Title = "Quarterly report",

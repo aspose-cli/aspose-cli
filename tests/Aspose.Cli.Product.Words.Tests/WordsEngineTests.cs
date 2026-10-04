@@ -220,6 +220,33 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void Styles_TakeLatinAndEastAsianFontsSeparately()
+    {
+        string input = _fixture.Temp.File("bilingual.docx");
+        var builder = new DocumentBuilder();
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Write("Title");
+        builder.Document.Save(input);
+        string output = _fixture.Temp.File("bilingual-fonts.docx");
+
+        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new SetDefaultFontOp { EastAsianFont = "SimHei" },
+                new DefineStyleOp { Name = "Normal", Font = "SimSun", LatinFont = "Times New Roman" },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        var document = new Document(output);
+        Aspose.Words.Font normal = document.Styles[StyleIdentifier.Normal].Font;
+        Aspose.Words.Font heading = document.Styles[StyleIdentifier.Heading1].Font;
+        Assert.Equal(("Times New Roman", "Times New Roman", "SimSun"), (normal.NameAscii, normal.NameOther, normal.NameFarEast));
+        Assert.Equal("SimHei", heading.NameFarEast);
+        Assert.NotEqual("SimHei", heading.NameAscii);
+    }
+
+    [Fact]
     public void MissingTextAnchors_IgnoreSpacesAndPreferBodyTextOverContentsEntries()
     {
         string input = _fixture.Temp.File("contents.docx");

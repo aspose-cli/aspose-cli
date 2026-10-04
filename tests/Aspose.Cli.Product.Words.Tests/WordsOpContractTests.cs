@@ -35,6 +35,7 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[{"code":{"a":1}}]}""")]
     [InlineData("""{"op":"mail_merge","inline":[{"Name":["Ava"]}]}""")]
     [InlineData("""{"op":"format_table","at":{"block":1}}""")]
+    [InlineData("""{"op":"set_default_font","size":11}""")]
     [InlineData("""{"op":"format_table","at":{"block":1},"headerRowCount":-1}""")]
     [InlineData("""{"op":"format_table","at":{"block":1},"keepTogether":"yes"}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
@@ -56,6 +57,7 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"repeat_table_row","at":{"block":1},"items":[{"code":null,"price":1}]}""")]
     [InlineData("""{"op":"add_section","position":"after","after":1}""")]
     [InlineData("""{"op":"add_section"}""")]
+    [InlineData("""{"op":"set_default_font","eastAsianFont":"SimSun"}""")]
     [InlineData("""{"op":"repeat_table_row","at":{"find":"{{code}}"},"items":[]}""")]
     [InlineData("""{"op":"repeat_table_row","at":{"block":2},"row":2,"items":[{"code":"A-1","extra":""}]}""")]
     [InlineData("""{"op":"repeat_table_row","at":{"block":2},"path":"items.csv"}""")]

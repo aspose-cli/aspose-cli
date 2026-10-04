@@ -122,7 +122,9 @@ inserted text, CJK text in particular, a different font. Compare
 `inspect --detail fonts` of the template and the output. To match, put the body
 font into the styles first, in the same batch: `define_style` on `Normal`
 changes Normal and the styles based on it, and `set_default_font` changes every
-paragraph and character style. Both set the Latin and the East Asian font.
+paragraph and character style. Their `font` sets the Latin and the East Asian
+font; `latinFont` and `eastAsianFont` set one of them, as a template that sets
+Chinese text in SimSun and English text in Times New Roman needs.
 
 ```json
 {

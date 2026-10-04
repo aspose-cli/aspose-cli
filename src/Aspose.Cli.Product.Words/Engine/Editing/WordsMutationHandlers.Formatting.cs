@@ -89,11 +89,7 @@ internal sealed partial class WordsMutationHandlers
             style.BaseStyleName = operation.BasedOn;
         }
 
-        if (operation.Font is not null)
-        {
-            style.Font.Name = operation.Font;
-        }
-
+        SetFonts(style.Font, operation.Font, operation.LatinFont, operation.EastAsianFont);
         if (operation.Size is not null)
         {
             style.Font.Size = operation.Size.Value;
@@ -128,7 +124,7 @@ internal sealed partial class WordsMutationHandlers
         {
             if (style.Type is StyleType.Paragraph or StyleType.Character)
             {
-                style.Font.Name = operation.Font;
+                SetFonts(style.Font, operation.Font, operation.LatinFont, operation.EastAsianFont);
                 if (operation.Size is not null)
                 {
                     style.Font.Size = operation.Size.Value;
@@ -137,6 +133,26 @@ internal sealed partial class WordsMutationHandlers
         }
 
         return 1;
+    }
+
+    // One font for every script, then the Latin (ASCII and other Latin) or East Asian font in its place.
+    private static void SetFonts(Aspose.Words.Font font, string? name, string? latin, string? eastAsian)
+    {
+        if (name is not null)
+        {
+            font.Name = name;
+        }
+
+        if (latin is not null)
+        {
+            font.NameAscii = latin;
+            font.NameOther = latin;
+        }
+
+        if (eastAsian is not null)
+        {
+            font.NameFarEast = eastAsian;
+        }
     }
 }
 

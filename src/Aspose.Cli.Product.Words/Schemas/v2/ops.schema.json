@@ -422,6 +422,17 @@
           "minLength": 1
         },
         "font": {
+          "description": "The font of Latin and East Asian text.",
+          "type": "string",
+          "minLength": 1
+        },
+        "latinFont": {
+          "description": "The font of Latin text, in place of font's.",
+          "type": "string",
+          "minLength": 1
+        },
+        "eastAsianFont": {
+          "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
           "type": "string",
           "minLength": 1
         },
@@ -1177,8 +1188,7 @@
       "description": "Sets the font of every paragraph and character style.",
       "type": "object",
       "required": [
-        "op",
-        "font"
+        "op"
       ],
       "additionalProperties": false,
       "properties": {
@@ -1189,6 +1199,17 @@
           "const": "set_default_font"
         },
         "font": {
+          "description": "The font of Latin and East Asian text.",
+          "type": "string",
+          "minLength": 1
+        },
+        "latinFont": {
+          "description": "The font of Latin text, in place of font's.",
+          "type": "string",
+          "minLength": 1
+        },
+        "eastAsianFont": {
+          "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
           "type": "string",
           "minLength": 1
         },
@@ -1197,7 +1218,28 @@
           "type": "number",
           "exclusiveMinimum": 0
         }
-      }
+      },
+      "allOf": [
+        {
+          "anyOf": [
+            {
+              "required": [
+                "font"
+              ]
+            },
+            {
+              "required": [
+                "latinFont"
+              ]
+            },
+            {
+              "required": [
+                "eastAsianFont"
+              ]
+            }
+          ]
+        }
+      ]
     },
     "set_footer": {
       "description": "Replaces one kind of section footer with paragraphs or with Markdown.",
