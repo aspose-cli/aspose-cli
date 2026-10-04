@@ -42,6 +42,41 @@ public sealed class WordsFieldAndReviewTests
         }
     }
 
+    [Theory]
+    [InlineData(true, "1 paragraph(s) hold the evaluation text a run without a license saved into the file, with its watermark. The document also ends with the notice that evaluation mode cut the document short there")]
+    [InlineData(false, "The document ends with the notice that evaluation mode cut the document short there")]
+    public void Review_SaysWhenEvaluationModeCutTheSavedDocumentShort(bool banner, string message)
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        if (banner)
+        {
+            builder.Writeln("Created with an evaluation copy of Aspose.Words. To remove all limitations, you can use Free Temporary License https://products.aspose.com/words/temporary-license/");
+        }
+
+        builder.Writeln("Clause one.");
+        builder.Write("This document was truncated here because it was created in the Evaluation Mode.");
+        string input = fixture.Temp.File("truncated.docx");
+        document.Save(input);
+        var adapter = new WordsViewAdapter();
+        var request = new ViewRenderRequest { View = WordsViews.Pages, MaxPartCount = 4, Purpose = ViewPurpose.Evidence };
+
+        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
+        ReviewFinding[] findings = [.. adapter.Assess(fixture.Engine, input, request, rendered).Findings!
+            .Where(static finding => finding.Code == "WORDS_EVALUATION_MARKS")];
+
+        // Without a license, opening the document adds the marks itself, so it is not checked.
+        if (fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed)
+        {
+            Assert.StartsWith(message, Assert.Single(findings).Message, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.Empty(findings);
+        }
+    }
+
     [Fact]
     public void InsertToc_UpdatesOnlyTheInsertedTableOfContents()
     {

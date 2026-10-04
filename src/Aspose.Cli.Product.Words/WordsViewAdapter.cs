@@ -69,10 +69,14 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
                 "Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides."));
         }
 
-        if (layout.EvaluationMarks > 0)
+        if (layout.EvaluationMarks > 0 || layout.EvaluationTruncated)
         {
+            const string Truncated = "the notice that evaluation mode cut the document short there, so the content after it is missing.";
+            string marks = $"{layout.EvaluationMarks} paragraph(s) hold the evaluation text a run without a license saved into the file, with its watermark.";
             findings.Add(WordsReviewChecks.EvaluationMarks.Finding(
-                $"{layout.EvaluationMarks} paragraph(s) hold the evaluation text a run without a license saved into the file, with its watermark.",
+                layout.EvaluationMarks == 0 ? $"The document ends with {Truncated}"
+                    : layout.EvaluationTruncated ? $"{marks} The document also ends with {Truncated}"
+                    : marks,
                 "document",
                 "Regenerate the document from its original inputs with an Aspose.Words license; editing this file keeps the marks."));
         }

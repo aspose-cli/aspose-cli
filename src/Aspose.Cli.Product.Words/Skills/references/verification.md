@@ -64,7 +64,9 @@ checks are listed with `aspose-cli capabilities words --output json` under
 - `WORDS_EVALUATION_MARKS`: a run without a license saved its banner, footer
   sentence and watermark into the file, and a license does not remove them;
   regenerate the document from its original inputs with the license before
-  delivery. Only a licensed review checks it, because opening a document
+  delivery. When the message says evaluation mode cut the document short, the
+  content after its truncation notice, such as later merge records, is
+  missing, so removing the marks does not repair it. Only a licensed review checks it, because opening a document
   without a license adds the marks itself.
 - `WORDS_COMMENTS_PRESENT` (info): the document keeps comments
   (`document.commentCount` in `words inspect`); disclose them, and remove them

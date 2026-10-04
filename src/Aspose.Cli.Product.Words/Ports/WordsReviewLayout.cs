@@ -1,13 +1,15 @@
 namespace Aspose.Cli.Product.Words.Ports;
 
 /// <summary>
-/// Bounded deterministic facts from the real Words page-layout model, and the number of
-/// paragraphs that hold text evaluation mode saved into the file, counted only with a license.
+/// Bounded deterministic facts from the real Words page-layout model, the number of paragraphs
+/// that hold text evaluation mode saved into the file, and whether the file holds the notice
+/// that evaluation mode cut it short; the last two are read only with a license.
 /// </summary>
 internal sealed record WordsReviewLayout(
     IReadOnlyList<WordsReviewPageLayout> Pages,
     IReadOnlyList<WordsReviewHeadingLayout> OrphanedHeadings,
-    int EvaluationMarks);
+    int EvaluationMarks,
+    bool EvaluationTruncated);
 
 /// <summary>Layout facts for one rendered page.</summary>
 internal sealed record WordsReviewPageLayout

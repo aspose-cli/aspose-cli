@@ -56,7 +56,8 @@ internal sealed class WordsReviewLayoutService
         return new WordsReviewLayout(
             pages.Select(static page => page.ToContract()).ToArray(),
             headings,
-            evaluationMarks);
+            evaluationMarks,
+            !evaluation && WordsEvaluation.IsTruncated(document));
     }
 
     private static void CollectLayoutEntities(
