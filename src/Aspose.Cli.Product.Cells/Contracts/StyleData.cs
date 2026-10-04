@@ -23,11 +23,13 @@ public sealed record StyleData
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The solid background fill color.</summary>
+    [MistakenFor("backgroundColor", "bgColor", "fillColor", "background", "fill")]
     [HexColor] public string? Bg { get; init; }
 
     /// <summary>The number format code, such as 0.0%.</summary>
     [MinLength(1)] public string? NumberFormat { get; init; }
 
+    [MistakenFor("horizontalAlignment", "alignment", "align", "textAlign")]
     [AllowedValues(typeof(HorizontalAlignments))] public string? HAlign { get; init; }
 
     [AllowedValues(typeof(VerticalAlignments))] public string? VAlign { get; init; }
@@ -71,6 +73,7 @@ public sealed record ConditionalStyle
     [HexColor] public string? Color { get; init; }
 
     /// <summary>The solid background fill color.</summary>
+    [MistakenFor("backgroundColor", "bgColor", "fillColor", "background", "fill")]
     [HexColor] public string? Bg { get; init; }
 
     /// <summary>The number format code, such as 0.0%.</summary>
