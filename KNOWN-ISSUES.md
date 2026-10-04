@@ -266,6 +266,19 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   their lines stays hidden under the cover.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-ENCRYPTED-INFO-TEXT
+
+- **Defect:** a document information entry (title, author, subject, keywords or a custom entry)
+  set in a session whose save encrypts the file is written with only the low byte of each
+  character, so text beyond Latin-1, such as `采购申请`, reads back garbled. Entries read from the
+  file and entries written to a file saved without encryption are kept.
+- **CLI behavior:** a `pdf edit` batch that has `set_metadata` and `encrypt` saves the edited
+  document without encryption, reopens it and encrypts that copy. On an encrypted input,
+  `set_metadata` with text beyond Latin-1 that no later `encrypt` follows is refused with
+  `OPS_INVALID`, because the CLI cannot encrypt a copy with passwords it does not all know.
+- **Workaround:** add `encrypt` after `set_metadata` in the same batch.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-AUTOFIT-RECT

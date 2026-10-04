@@ -193,8 +193,15 @@ internal sealed partial class PdfMutationHandlers
 
     public long Apply(EncryptPdfOp operation)
     {
-        string owner = OperationSecrets.Resolve(_secrets, operation.OwnerPasswordEnv)!;
-        string user = OperationSecrets.Resolve(_secrets, operation.UserPasswordEnv) ?? string.Empty;
+        Encrypt(_document, operation, _secrets);
+        return 1;
+    }
+
+    /// <summary>Encrypts a document with AES-256 and the passwords and permissions an operation names.</summary>
+    internal static void Encrypt(Document document, EncryptPdfOp operation, IReadOnlyDictionary<string, string>? secrets)
+    {
+        string owner = OperationSecrets.Resolve(secrets, operation.OwnerPasswordEnv)!;
+        string user = OperationSecrets.Resolve(secrets, operation.UserPasswordEnv) ?? string.Empty;
         Permissions permissions = (Permissions)0;
         if (operation.Permissions.Print)
         {
@@ -235,8 +242,7 @@ internal sealed partial class PdfMutationHandlers
         {
             permissions |= Permissions.PrintingQuality;
         }
-        _document.Encrypt(user, owner, permissions, CryptoAlgorithm.AESx256);
-        return 1;
+        document.Encrypt(user, owner, permissions, CryptoAlgorithm.AESx256);
     }
 
     public long Apply(DecryptPdfOp operation)

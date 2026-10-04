@@ -50,6 +50,8 @@ output with `pdf inspect --detail permissions`: `print`, `copy` and the other
 permission fields state what the file grants readers without the owner
 password, also when `--password-env` opened it with the owner password, and
 `ownerAccess` whether this run may change the file regardless of them.
+`set_metadata` with text beyond Latin-1, such as Chinese, is refused on an
+encrypted input unless an `encrypt` operation follows it in the same batch.
 `hasOpenPassword` and `hasOwnerPassword` state which passwords the file has, and
 `passwordType` which one this run opened it with: a file with only an owner
 password opens with `none`, and anyone can open it within its permissions. The CLI

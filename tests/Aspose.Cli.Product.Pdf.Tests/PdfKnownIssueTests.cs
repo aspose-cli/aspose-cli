@@ -355,6 +355,27 @@ public sealed class PdfKnownIssueTests
         }
     }
 
+    [LicensedFact]
+    public void EncryptedSave_GarblesDocumentInformationBeyondLatin1()
+    {
+        using var fixture = new PdfEngineFixture();
+        string output = fixture.File("encrypted.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add();
+            document.Info.Subject = "采购申请";
+            document.Encrypt(string.Empty, "owner", Permissions.PrintDocument, CryptoAlgorithm.AESx256);
+            document.Save(output);
+        }
+
+        using var reopened = new Document(output, "owner");
+
+        KnownIssue.Reproduces(
+            "PDF-ENCRYPTED-INFO-TEXT",
+            reopened.Info.Subject != "采购申请",
+            $"the subject '采购申请' reads '{reopened.Info.Subject}'");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

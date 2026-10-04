@@ -66,12 +66,15 @@ internal sealed class PdfMutationService
         var textMoved = new List<string>();
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
-        (IReadOnlyList<BoundedOperationOutcome> outcomes, string? outputPassword) =
+        (IReadOnlyList<BoundedOperationOutcome> outcomes, string? outputPassword, EncryptPdfOp? encryption) =
             ApplyOperations(loaded.Document, batch, request, touched, textMoved, operationInputs, verifier);
+        // PDF-ENCRYPTED-INFO-TEXT: document information set in this batch survives only an
+        // encryption applied to a reopened copy.
+        EncryptPdfOp? encryptCopy = batch.Ops.Any(static op => op is SetMetadataOp) ? encryption : null;
         PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         Publication publication;
-        try { publication = Publish(loaded.Document, request, outputPassword, precondition, verifier, state); }
+        try { publication = Publish(loaded.Document, request, outputPassword, encryptCopy, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes, textMoved);
         if (UnpermittedChange(userPermissions, outcomes, request.Options.DryRun) is { } protection)
@@ -103,7 +106,7 @@ internal sealed class PdfMutationService
         };
     }
 
-    private (IReadOnlyList<BoundedOperationOutcome> Outcomes, string? OutputPassword) ApplyOperations(
+    private (IReadOnlyList<BoundedOperationOutcome> Outcomes, string? OutputPassword, EncryptPdfOp? Encryption) ApplyOperations(
         Document document,
         PdfOpsBatch batch,
         PdfEditRequest request,
@@ -113,13 +116,21 @@ internal sealed class PdfMutationService
         PdfEditVerifier? verifier)
     {
         string? outputPassword = request.Password;
+        EncryptPdfOp? encryption = null;
         IReadOnlyList<BoundedOperationOutcome> outcomes = BoundedOperationRunner.Run(
             PdfOp.Catalog,
             batch.Ops,
             request.Options.BestEffort,
             deadline: null,
-            (op, _) =>
+            (op, index) =>
             {
+                // A later encrypt makes the save encrypt a copy, which keeps the text.
+                if (op is SetMetadataOp metadata && encryption is null && document.IsEncrypted
+                    && !batch.Ops.Skip(index + 1).Any(static later => later is EncryptPdfOp))
+                {
+                    RefuseTextTheEncryptionGarbles(metadata);
+                }
+
                 var operationPages = new SortedSet<int>();
                 var movedPages = new SortedSet<int>();
                 long affected = new PdfMutationHandlers(_loader, operationInputs, document, request.OpSecrets, operationPages, movedPages).Run(op);
@@ -132,15 +143,40 @@ internal sealed class PdfMutationService
                 if (op is EncryptPdfOp encrypt)
                 {
                     outputPassword = OperationSecrets.Resolve(request.OpSecrets, encrypt.UserPasswordEnv);
+                    encryption = encrypt;
                 }
                 else if (op is DecryptPdfOp)
                 {
                     outputPassword = null;
+                    encryption = null;
                 }
                 return new AppliedOperation(affected, OperationTargets(op, operationPages, document));
             },
             (op, _) => OperationTargets(op, [], applied: null));
-        return (outcomes, outputPassword);
+        return (outcomes, outputPassword, encryption);
+    }
+
+    /// <summary>
+    /// PDF-ENCRYPTED-INFO-TEXT: the engine writes document information beyond Latin-1 into an
+    /// encrypted file garbled, and the encryption the input keeps when no later operation
+    /// encrypts cannot be applied to a copy, because its passwords are not all known.
+    /// </summary>
+    private static void RefuseTextTheEncryptionGarbles(SetMetadataOp metadata)
+    {
+        string[] values =
+        [
+            metadata.Title ?? string.Empty,
+            metadata.Author ?? string.Empty,
+            metadata.Subject ?? string.Empty,
+            metadata.Keywords ?? string.Empty,
+            .. metadata.Custom?.Values ?? [],
+        ];
+        if (values.Any(static value => value.Any(static character => character > '\u00FF')))
+        {
+            throw new OperationInvalidException(
+                "the input stays encrypted, and the PDF engine garbles document information with characters beyond Latin-1 that it writes into an encrypted file",
+                "Add an encrypt operation after set_metadata in the same batch: the batch then encrypts a copy that keeps the text.");
+        }
     }
 
     /// <summary>
@@ -187,6 +223,7 @@ internal sealed class PdfMutationService
         Document document,
         PdfEditRequest request,
         string? outputPassword,
+        EncryptPdfOp? encryptCopy,
         FileWritePrecondition precondition,
         PdfEditVerifier? verifier,
         LicenseState state)
@@ -204,7 +241,7 @@ internal sealed class PdfMutationService
                 precondition,
                 temp =>
                 {
-                    document.Save(temp);
+                    Save(document, temp, encryptCopy, request.OpSecrets);
                     using LoadedPdf reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
                 });
             output = BuildOutput(request.OutputPath, "pdf", write.SizeBytes) with
@@ -226,6 +263,27 @@ internal sealed class PdfMutationService
         }
 
         return new Publication(output, backup, verification);
+    }
+
+    /// <summary>
+    /// Saves the edited document. PDF-ENCRYPTED-INFO-TEXT: with an encryption to apply to a
+    /// copy, the document is saved without encryption, reopened and encrypted, so the document
+    /// information the batch set is written as read from a file.
+    /// </summary>
+    private static void Save(Document document, string path, EncryptPdfOp? encryptCopy, IReadOnlyDictionary<string, string>? secrets)
+    {
+        if (encryptCopy is null)
+        {
+            document.Save(path);
+            return;
+        }
+
+        document.Decrypt();
+        using var plain = new MemoryStream();
+        document.Save(plain);
+        using var copy = new Document(plain);
+        Editing.PdfMutationHandlers.Encrypt(copy, encryptCopy, secrets);
+        copy.Save(path);
     }
 
     private static List<Warning> BuildWarnings(

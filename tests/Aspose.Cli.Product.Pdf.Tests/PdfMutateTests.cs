@@ -396,6 +396,81 @@ public sealed class PdfMutateTests
         Assert.False(decrypted.IsEncrypted);
     }
 
+    /// <summary>
+    /// The engine garbles document information beyond Latin-1 that it writes into an encrypted
+    /// file (PDF-ENCRYPTED-INFO-TEXT), so a batch that sets it and encrypts encrypts a copy.
+    /// </summary>
+    [Fact]
+    public void Edit_KeepsMetadataBeyondLatin1InABatchThatEncrypts()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("plain.pdf", pages: 1);
+        string output = fixture.File("secured.pdf");
+
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops =
+            [
+                new SetMetadataOp { Author = "张伟", Subject = "采购申请", Custom = new Dictionary<string, string> { ["Dept"] = "采购部" } },
+                new EncryptPdfOp { OwnerPasswordEnv = "PDF_OWNER", Permissions = new PdfPermissionsInput { Print = true } },
+            ],
+        }, new PdfEditRequest
+        {
+            OutputPath = output,
+            Verify = true,
+            OpSecrets = new Dictionary<string, string> { ["PDF_OWNER"] = "owner" },
+        });
+
+        Assert.True(result.Verification!.Ok);
+        using var reopened = new Document(output, "owner");
+        Assert.True(reopened.IsEncrypted);
+        Assert.Equal(Permissions.PrintDocument, (Permissions)reopened.Permissions);
+        Assert.Equal(("张伟", "采购申请", "采购部"), (reopened.Info.Author, reopened.Info.Subject, reopened.Info["Dept"]));
+        // Saving the copy too does not stamp a second evaluation notice.
+        Assert.Equal(
+            fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Evaluation ? 1 : 0,
+            System.Text.RegularExpressions.Regex.Count(PageText(reopened.Pages[1]), "Evaluation Only"));
+    }
+
+    /// <summary>
+    /// An input that stays encrypted cannot take document information beyond Latin-1
+    /// (PDF-ENCRYPTED-INFO-TEXT); a batch that encrypts after setting it, with or without
+    /// decrypting first, can.
+    /// </summary>
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Edit_RefusesMetadataBeyondLatin1ForAnInputThatStaysEncrypted(bool decryptFirst)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateEncryptedDocument(string.Empty, "owner", "secured.pdf");
+        var secrets = new Dictionary<string, string> { ["PDF_OWNER"] = "owner" };
+        string output = fixture.File("secured.out.pdf");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new SetMetadataOp { Subject = "采购申请" }, new RotatePagesOp { Pages = "1", Angle = 90 }] },
+            new PdfEditRequest { OutputPath = output, Password = "owner" }));
+        fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch
+            {
+                Ops =
+                [
+                    .. decryptFirst ? new PdfOp[] { new DecryptPdfOp() } : [],
+                    new SetMetadataOp { Subject = "采购申请", Keywords = "Café" },
+                    new EncryptPdfOp { OwnerPasswordEnv = "PDF_OWNER" },
+                ],
+            },
+            new PdfEditRequest { OutputPath = output, Password = "owner", OpSecrets = secrets });
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("encrypt", error.Hint, StringComparison.Ordinal);
+        using var reopened = new Document(output, "owner");
+        Assert.True(reopened.IsEncrypted);
+        Assert.Equal("采购申请", reopened.Info.Subject);
+    }
+
     [Theory]
     [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "metadata", "keeps the input's encryption")]
     [InlineData("reader", Permissions.PrintDocument | Permissions.FillForm, "field", null)]
