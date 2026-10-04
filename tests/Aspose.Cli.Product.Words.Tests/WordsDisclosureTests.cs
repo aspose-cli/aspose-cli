@@ -63,6 +63,36 @@ public sealed class WordsDisclosureTests
     }
 
     [Fact]
+    public void ConvertingOrEditingADocumentAnUnlicensedSaveMarked_WarnsThatTheOutputKeepsTheMarks()
+    {
+        using var fixture = new WordsFixture();
+        // The banner and footer sentence an unlicensed save writes, as a later licensed run reads them.
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln(BannerText);
+        builder.Write("Clause one.");
+        builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+        builder.Write("Evaluation Only. Created with Aspose.Words. Copyright 2003-2026 Aspose Pty Ltd.");
+        string input = fixture.Temp.File("marked.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
+        {
+            TargetFormatId = "pdf",
+            OutputPath = fixture.Temp.File("marked.pdf"),
+        });
+        WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new ReplaceTextOp { Find = "one", Replace = "two" }],
+        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
+
+        // Without a license, opening the document adds the marks itself, and EVAL_MODE says so.
+        int expected = fixture.LicenseState == LicenseState.Licensed ? 1 : 0;
+        Assert.Equal(expected, (converted.Warnings ?? []).Count(static warning => warning.Code == "EVALUATION_MARKS_PRESENT"));
+        Assert.Equal(expected, (edited.Warnings ?? []).Count(static warning => warning.Code == "EVALUATION_MARKS_PRESENT"));
+    }
+
+    [Fact]
     public void EditingIntoAFormatThatCannotHoldWordFeatures_DisclosesTheLoss()
     {
         using var fixture = new WordsFixture();

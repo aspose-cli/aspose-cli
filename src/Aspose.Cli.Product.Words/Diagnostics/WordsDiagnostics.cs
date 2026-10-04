@@ -20,6 +20,8 @@ internal static class WordsDiagnostics
     internal const string LayoutMayDiffer = "LAYOUT_MAY_DIFFER";
     internal const string LinkedImagesSkipped = "LINKED_IMAGES_SKIPPED";
     internal const string MergeValueMissing = "MERGE_VALUE_MISSING";
+    /// <summary>A licensed output keeps the evaluation marks an unlicensed save wrote into its input.</summary>
+    internal const string EvaluationMarksPresent = "EVALUATION_MARKS_PRESENT";
 
     internal static readonly DiagnosticDescriptor FieldCountChanged = Verification("FIELD_COUNT_CHANGED");
     internal static readonly DiagnosticDescriptor RevisionCountChanged = Verification("REVISION_COUNT_CHANGED");
@@ -40,6 +42,7 @@ internal static class WordsDiagnostics
         Warning(LayoutMayDiffer),
         Warning(LinkedImagesSkipped),
         Warning(MergeValueMissing),
+        Warning(EvaluationMarksPresent),
         FieldCountChanged,
         RevisionCountChanged,
         ProtectionChanged,

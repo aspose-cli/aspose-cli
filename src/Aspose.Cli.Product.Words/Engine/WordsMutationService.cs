@@ -109,6 +109,11 @@ internal sealed class WordsMutationService
             outputWarnings.Add(macros);
         }
 
+        if (EvaluationMarks(loaded) is { } marks)
+        {
+            outputWarnings.Add(marks);
+        }
+
         if (truncation is not null)
         {
             outputWarnings.Add(new Warning

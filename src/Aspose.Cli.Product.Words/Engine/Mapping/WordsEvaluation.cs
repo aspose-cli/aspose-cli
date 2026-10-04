@@ -6,8 +6,9 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 /// <summary>
 /// The one place that recognizes what Aspose.Words evaluation mode adds to a document: the
 /// banner paragraph before the first block, the truncation notice, and the watermark text
-/// in the page layout. Callers consult it only when the license state is evaluation, so a
-/// licensed document that merely quotes these phrases is never misread.
+/// in the page layout. Callers skip such content only when the license state is evaluation, so
+/// a licensed document that merely quotes these phrases never loses blocks; with a license,
+/// review and the output warnings report the marks an earlier unlicensed save left.
 /// </summary>
 internal static class WordsEvaluation
 {
@@ -26,6 +27,13 @@ internal static class WordsEvaluation
     internal static bool IsMark(Paragraph paragraph) =>
         IsBanner(paragraph)
         || paragraph.GetText().TrimStart().StartsWith("Evaluation Only. Created with Aspose.Words.", StringComparison.Ordinal);
+
+    /// <summary>Whether a save without a license wrote its banner, footer sentence or truncation notice into a document.</summary>
+    internal static bool IsMarked(Document document) => MarkCount(document) > 0 || IsTruncated(document);
+
+    /// <summary>The paragraphs of a document that are <see cref="IsMark">evaluation marks</see>.</summary>
+    internal static int MarkCount(Document document) =>
+        document.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>().Count(IsMark);
 
     /// <summary>
     /// The banner paragraphs an evaluation-saved document carries before its first block.

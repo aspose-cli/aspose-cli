@@ -52,7 +52,7 @@ internal sealed class WordsReviewLayoutService
         // Without a license, opening the document adds these marks itself.
         int evaluationMarks = evaluation
             ? 0
-            : document.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>().Count(WordsEvaluation.IsMark);
+            : WordsEvaluation.MarkCount(document);
         return new WordsReviewLayout(
             pages.Select(static page => page.ToContract()).ToArray(),
             headings,

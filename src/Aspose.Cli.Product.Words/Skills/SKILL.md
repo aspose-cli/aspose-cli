@@ -153,8 +153,9 @@ records): the output then keeps only its first sections, ends with the
 engine's truncation notice, and `--verify` reports `OUTPUT_TRUNCATED`. The
 result is incomplete whatever `itemsAffected` says. A license installed later
 does not remove the evaluation banner, footer and watermark already saved into
-a file; a licensed `review` reports them as `WORDS_EVALUATION_MARKS`, and the
-file is regenerated from its original inputs. A Words license is installed
+a file; a licensed `review` reports them as `WORDS_EVALUATION_MARKS`, a
+licensed `convert` or `edit` of such a file warns `EVALUATION_MARKS_PRESENT`,
+and the file is regenerated from its original inputs. A Words license is installed
 with `aspose-cli license install Aspose.Words.lic --product words`; licensing
 in general: `aspose-cli docs licensing`.
 

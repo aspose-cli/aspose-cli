@@ -18522,6 +18522,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "EVALUATION_MARKS_PRESENT",
+      "owner": "words",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "words.evaluation-marks-present.message.v1",
+      "hintTemplateId": "words.evaluation-marks-present.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "EVALUATION_NOTICE_ADDED",
       "owner": "cells",
       "severity": "warning",

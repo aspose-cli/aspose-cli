@@ -61,6 +61,11 @@ internal static class WordsEngineSupport
             extra.Add(macros);
         }
 
+        if (EvaluationMarks(loaded) is { } marks)
+        {
+            extra.Add(marks);
+        }
+
         return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
     }
 
@@ -87,6 +92,21 @@ internal static class WordsEngineSupport
         Message = "A PDF input is rebuilt as flowing text, and its headers and footers are guessed: they may become body text, or headers and footers in which a number, such as a version number, becomes a page-number field; the new layout may add pages.",
         Hint = "Check the headers, footers and fields with 'aspose-cli words inspect <file> --detail sections fields' and the body with 'words query blocks'; correct them with 'words edit' and set_header, set_footer, set_page_numbers or delete_blocks.",
     };
+
+    /// <summary>
+    /// The warning for a document that holds the marks a save without a license wrote into it,
+    /// which an output keeps, or null. Without a license, opening a document adds the marks
+    /// itself, and EVAL_MODE says so.
+    /// </summary>
+    internal static Warning? EvaluationMarks(LoadedDocument loaded) =>
+        !loaded.Evaluation && WordsEvaluation.IsMarked(loaded.Document)
+            ? new Warning
+            {
+                Code = WordsDiagnostics.EvaluationMarksPresent,
+                Message = "The document holds the evaluation banner, footer text or truncation notice that a save without a license wrote into it, and the output keeps them; a license does not remove them.",
+                Hint = "Regenerate the document from its original inputs with an Aspose.Words license; editing this file keeps the marks.",
+            }
+            : null;
 
     /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>
     internal static Warning? MacrosDropped(LoadedDocument source, string format) =>
