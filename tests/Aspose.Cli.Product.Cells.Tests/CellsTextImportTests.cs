@@ -28,7 +28,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
 
         CliException refused = Assert.Throws<CliException>(() => _fixture.Engine.Read(path, new ReadRequest()));
         Assert.Equal(ErrorCodes.InputEncodingInvalid, refused.Code);
-        Assert.Contains("--encoding gb18030", refused.Hint, StringComparison.Ordinal);
+        Assert.Contains($"cells convert \"{path}\" --to xlsx --encoding gb18030", refused.Hint, StringComparison.Ordinal);
 
         WorkbookReadResult read = ImportAndRead(path, new TextImportOptions { Encoding = "gb18030" });
         Assert.Equal("华东一区", read.Sheet!.Cells![1][0].V?.ToString());
@@ -44,6 +44,7 @@ public sealed class CellsTextImportTests : IClassFixture<CellsFixture>
         CliException refused = Assert.Throws<CliException>(() => _fixture.Engine.Read(path, new ReadRequest()));
         Assert.Equal(ErrorCodes.FormatAmbiguous, refused.Code);
         Assert.Equal("2,71", refused.Details!["sample"]!.GetValue<string>());
+        Assert.Contains($"cells convert \"{path}\" --to xlsx --culture de-DE", refused.Hint, StringComparison.Ordinal);
 
         WorkbookReadResult read = ImportAndRead(path, new TextImportOptions { Culture = "de-DE" });
         Assert.Equal("2.71", read.Sheet!.Cells![1][1].V?.ToString());

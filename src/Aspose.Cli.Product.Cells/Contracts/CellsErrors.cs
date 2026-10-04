@@ -75,7 +75,7 @@ public static class CellsErrors
     internal static CliException TextEncodingInvalid(string path, long offset) => new(
         ErrorCodes.InputEncodingInvalid,
         $"'{Path.GetFileName(path)}' is not UTF-8 text (invalid byte at offset {offset}); read as UTF-8, its text would be replaced.",
-        hint: $"Import it with its encoding: aspose-cli cells convert \"{Path.GetFileName(path)}\" --to xlsx --encoding gb18030 "
+        hint: $"Import it with its encoding: aspose-cli cells convert \"{path}\" --to xlsx --encoding gb18030 "
             + "(Chinese Windows and ERP exports; use big5, shift_jis, windows-1252 or another name for other sources).",
         details: new JsonObject { ["path"] = path, ["offset"] = offset });
 
@@ -83,7 +83,7 @@ public static class CellsErrors
     internal static CliException TextNumbersAmbiguous(string path, string sample, int line) => new(
         ErrorCodes.FormatAmbiguous,
         $"'{Path.GetFileName(path)}' writes numbers such as '{sample}' (line {line}) with a decimal comma; read with invariant formats they would become different numbers.",
-        hint: $"Import it with its culture: aspose-cli cells convert \"{Path.GetFileName(path)}\" --to xlsx --culture de-DE "
+        hint: $"Import it with its culture: aspose-cli cells convert \"{path}\" --to xlsx --culture de-DE "
             + "(or another culture that writes a decimal comma). The culture also reads its dates.",
         details: new JsonObject { ["path"] = path, ["sample"] = sample, ["line"] = line });
 
