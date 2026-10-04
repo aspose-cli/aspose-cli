@@ -21,14 +21,28 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
         Edit(ChineseData,
             """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}]}""");
 
-        AssertChineseCaptions(Read("A1:E4"));
+        AssertChineseCaptions(Read("A1:G6"));
 
         Edit("""{"op":"set_values","sheet":"Data","range":"C2","values":[[30]]}""",
             """{"op":"refresh_pivot","sheet":"Pivot"}""");
 
-        string[][] refreshed = Read("A1:E4");
+        string[][] refreshed = Read("A1:G6");
         AssertChineseCaptions(refreshed);
-        Assert.Equal("30", refreshed[2][2]);
+        Assert.Equal("30", refreshed[3][1]);
+    }
+
+    /// <summary>Like Excel, several value fields are columns: one row per item and one grand-total row.</summary>
+    [Fact]
+    public void SeveralValueFields_AreColumns()
+    {
+        CreateReport();
+        Edit(ChineseData,
+            """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}]}""");
+
+        string[][] cells = Read("A1:C6");
+        Assert.Equal(["地区", "求和项:不含税净额", "计数项:数量"], cells[1]);
+        Assert.Equal(["总计", "30.5", "2"], cells[4]);
+        Assert.Equal(["", "", ""], cells[5]);
     }
 
     [Fact]
@@ -38,11 +52,11 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
         Edit(ChineseData,
             """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额"},{"field":"数量","function":"count"}],"captions":"en"}""");
 
-        string[][] cells = Read("A1:E4");
-        Assert.Equal("Data", cells[1][1]);
-        Assert.Equal("Grand Total", cells[1][4]);
+        string[][] cells = Read("A1:G6");
+        Assert.Equal("Data", cells[0][2]);
+        Assert.Equal("Grand Total", cells[5][0]);
         Assert.Equal("Sum of 不含税净额", cells[2][1]);
-        Assert.Equal("Count of 数量", cells[3][1]);
+        Assert.Equal("Count of 数量", cells[2][2]);
     }
 
     [Fact]
@@ -52,11 +66,11 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
         Edit("""{"op":"set_values","sheet":"Data","range":"A1","values":[["Region","Product","Amount","Units"],["North","A",10.5,1],["South","B",20,2]]}""",
             """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["Region"],"columns":["Product"],"values":[{"field":"Amount"},{"field":"Units","function":"max"}]}""");
 
-        string[][] cells = Read("A1:E4");
-        Assert.Equal("Data", cells[1][1]);
-        Assert.Equal("Grand Total", cells[1][4]);
+        string[][] cells = Read("A1:G6");
+        Assert.Equal("Data", cells[0][2]);
+        Assert.Equal("Grand Total", cells[5][0]);
         Assert.Equal("Sum of Amount", cells[2][1]);
-        Assert.Equal("Max of Units", cells[3][1]);
+        Assert.Equal("Max of Units", cells[2][2]);
     }
 
     [Fact]
@@ -66,11 +80,9 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
         Edit(ChineseData,
             """{"op":"create_pivot","sheet":"Pivot","sourceRange":"Data!A1:D3","at":"A1","rows":["地区"],"columns":["产品"],"values":[{"field":"不含税净额","label":"净额合计"},{"field":"数量","function":"average","label":"Average units"},{"field":"不含税净额","function":"min"}]}""");
 
-        string[][] cells = Read("A1:E5");
-        Assert.Equal("总计", cells[1][4]);
-        Assert.Equal("净额合计", cells[2][1]);
-        Assert.Equal("Average units", cells[3][1]);
-        Assert.Equal("最小值项:不含税净额", cells[4][1]);
+        string[][] cells = Read("A1:D6");
+        Assert.Equal("总计", cells[5][0]);
+        Assert.Equal(["地区", "净额合计", "Average units", "最小值项:不含税净额"], cells[2]);
     }
 
     [Theory]
@@ -96,10 +108,10 @@ public sealed class CellsPivotCaptionCliTests : IDisposable
 
     private static void AssertChineseCaptions(string[][] cells)
     {
-        Assert.Equal("值", cells[1][1]);
-        Assert.Equal("总计", cells[1][4]);
+        Assert.Equal("值", cells[0][2]);
+        Assert.Equal("总计", cells[5][0]);
         Assert.Equal("求和项:不含税净额", cells[2][1]);
-        Assert.Equal("计数项:数量", cells[3][1]);
+        Assert.Equal("计数项:数量", cells[2][2]);
     }
 
     private void CreateReport() =>

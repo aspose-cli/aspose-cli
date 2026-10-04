@@ -96,6 +96,18 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   text.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-PIVOT-TOTAL-CAPTION
+
+- **Defect:** a pivot with a column field and two or more value fields labels each value
+  field's grand-total column with the word of `PivotGlobalizationSettings.GetTextOfTotal`
+  before the caption (`Total Sum of Amount`); overriding the word gives `汇总 求和项:金额`, never
+  Excel's Simplified Chinese form `求和项:金额汇总`, and no pivot caption property sets it.
+- **CLI behavior:** `create_pivot` keeps the engine's `Total <caption>` in every caption
+  language; `aspose-cli docs cells/editing` says so.
+- **Workaround:** leave out the column field, so the value fields are the columns and the one
+  grand-total row reads `总计`, or summarize with `SUMIFS` formulas.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ## Aspose.PDF.Drawing 26.8.0
 
 ### PDF-HTML-EGRESS

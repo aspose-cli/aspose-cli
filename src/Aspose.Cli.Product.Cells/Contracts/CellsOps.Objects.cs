@@ -137,7 +137,7 @@ public sealed record CreatePivotOp : CellsOp
     /// <summary>The header names of the column fields.</summary>
     [MinItems(1)] public IReadOnlyList<string>? Columns { get; init; }
 
-    /// <summary>The value fields with their aggregation.</summary>
+    /// <summary>The value fields with their aggregation; two or more are columns, after the column fields, as in Excel.</summary>
     [MinItems(1)] public required IReadOnlyList<PivotValueField> Values { get; init; }
 
     /// <summary>

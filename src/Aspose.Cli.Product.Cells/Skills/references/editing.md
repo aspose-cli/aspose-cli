@@ -226,7 +226,8 @@ cells:
   `{ "field": "不含税净额", "label": "净额合计" }`. A label that repeats a source
   header or another value field's caption, ignoring case, is refused, as Excel
   refuses it.
-- With two or more value fields, the grand-total row of each value field reads
+- Two or more value fields are columns, as in Excel, after any column fields.
+  With a column field, the grand-total column of each value field reads
   `Total <caption>` in every language; no pivot caption holds that word.
 - `query range` the target area to read the aggregated numbers.
 

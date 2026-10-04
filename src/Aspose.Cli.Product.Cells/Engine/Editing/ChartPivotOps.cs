@@ -93,6 +93,14 @@ internal static class ChartPivotOps
                 dataFields.Add(pivot.DataFields[fieldIndex]);
             }
 
+            // Like Excel, several value fields are columns, after any column fields. With a column
+            // field, each value field's grand-total column keeps the engine's English
+            // "Total <caption>" (known issue CELLS-PIVOT-TOTAL-CAPTION, KNOWN-ISSUES.md).
+            if (dataFields.Count > 1)
+            {
+                pivot.AddFieldToArea(PivotFieldType.Column, pivot.ValuesField);
+            }
+
             ApplyCaptions(pivot, op, dataFields);
         }
         catch (OperationInvalidException)

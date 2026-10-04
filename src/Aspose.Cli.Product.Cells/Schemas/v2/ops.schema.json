@@ -585,7 +585,7 @@
           }
         },
         "values": {
-          "description": "The value fields with their aggregation.",
+          "description": "The value fields with their aggregation; two or more are columns, after the column fields, as in Excel.",
           "type": "array",
           "minItems": 1,
           "items": {

@@ -235,6 +235,56 @@ public sealed class CellsKnownIssueTests
         }
     }
 
+    /// <summary>
+    /// A pivot with a column field and two value fields labels each value field's grand-total
+    /// column with the word of <see cref="Aspose.Cells.Settings.PivotGlobalizationSettings.GetTextOfTotal"/>
+    /// before the caption, so Excel's Simplified Chinese form, the caption followed by 汇总, is out of reach.
+    /// </summary>
+    [LicensedFact]
+    public void PivotGrandTotalColumns_PutTheTotalWordBeforeTheCaption()
+    {
+        using var fixture = new CellsFixture();
+        _ = fixture.LicenseState;
+        using var workbook = new Workbook();
+        workbook.Settings.GlobalizationSettings = new ChineseTotals();
+        Worksheet data = workbook.Worksheets[0];
+        object[][] rows = [["地区", "产品", "金额", "数量"], ["北京", "甲", 10, 1], ["上海", "乙", 20, 2]];
+        for (int row = 0; row < rows.Length; row++)
+        {
+            for (int column = 0; column < 4; column++)
+            {
+                data.Cells[row, column].PutValue(rows[row][column]);
+            }
+        }
+
+        Worksheet sheet = workbook.Worksheets.Add("Pivot");
+        Aspose.Cells.Pivot.PivotTable pivot = sheet.PivotTables[sheet.PivotTables.Add("=Sheet1!A1:D3", "A1", "P")];
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Row, "地区");
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Column, "产品");
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Data, "金额");
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Data, "数量");
+        pivot.DataFields[0].DisplayName = "求和项:金额";
+        pivot.DataFields[1].DisplayName = "求和项:数量";
+        pivot.AddFieldToArea(Aspose.Cells.Pivot.PivotFieldType.Column, pivot.ValuesField);
+        pivot.CalculateData();
+
+        string[] labels = [.. sheet.Cells.Cast<Cell>().Select(static cell => cell.StringValue).Where(static text => text.Contains("汇总", StringComparison.Ordinal))];
+        KnownIssue.Reproduces(
+            "CELLS-PIVOT-TOTAL-CAPTION",
+            labels.SequenceEqual(["汇总 求和项:金额", "汇总 求和项:数量"]),
+            $"the grand-total columns read [{string.Join(", ", labels)}]");
+    }
+
+    private sealed class ChineseTotals : GlobalizationSettings
+    {
+        public ChineseTotals() => PivotSettings = new ChinesePivotTotals();
+    }
+
+    private sealed class ChinesePivotTotals : Aspose.Cells.Settings.PivotGlobalizationSettings
+    {
+        public override string GetTextOfTotal() => "汇总";
+    }
+
     /// <summary>The documented refusal: skip every resource and supply no stream.</summary>
     private sealed class RefuseEveryResource : IStreamProvider
     {
