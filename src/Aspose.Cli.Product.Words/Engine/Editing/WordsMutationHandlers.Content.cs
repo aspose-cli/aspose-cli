@@ -141,8 +141,9 @@ internal sealed partial class WordsMutationHandlers
     /// <summary>
     /// Inserts paragraphs at a block boundary. A paragraph without <c>style</c> continues the
     /// paragraph before the insertion point (see <see cref="Continue"/>). A paragraph with
-    /// <c>listLevel</c> joins the anchor's list when the anchor is a list paragraph, otherwise
-    /// one bullet list shared by the operation's list paragraphs.
+    /// <c>listLevel</c> joins the anchor's list when the anchor is a list paragraph, with the
+    /// indents of that list's items at its level (see <see cref="ListPeer"/>), otherwise one
+    /// bullet list shared by the operation's list paragraphs.
     /// </summary>
     public long Apply(InsertParagraphsOp operation)
     {
@@ -165,15 +166,70 @@ internal sealed partial class WordsMutationHandlers
 
             if (input.ListLevel is int level)
             {
+                Paragraph? peer = list is null ? null : ListPeer(list, level);
                 list ??= _document.Lists.Add(ListTemplate.BulletDefault);
                 paragraph.ListFormat.List = list;
                 paragraph.ListFormat.ListLevelNumber = level;
+                if (peer is not null && HasOwnIndent(peer))
+                {
+                    paragraph.ParagraphFormat.LeftIndent = peer.ParagraphFormat.LeftIndent;
+                    paragraph.ParagraphFormat.FirstLineIndent = peer.ParagraphFormat.FirstLineIndent;
+                }
             }
 
             InsertRelative(Anchor, ref cursor, paragraph, operation.Position);
         }
 
         return operation.Paragraphs.Count;
+    }
+
+    /// <summary>
+    /// The item of <paramref name="list"/> at <paramref name="level"/> whose indents a new item
+    /// takes: the anchor, else the nearest such paragraph before it, else after it, among the
+    /// anchor's siblings. Documents converted from RTF often hold an item's indent on the
+    /// paragraph rather than on its list level, so the level alone would misalign the new item.
+    /// </summary>
+    /// <summary>
+    /// Whether a list item's indents differ from its list level's, as when they are set on the
+    /// paragraph. An item that follows its level gives a new item nothing to copy, so the new
+    /// item keeps following the level too. Indents are stored in twentieths of a point.
+    /// </summary>
+    private static bool HasOwnIndent(Paragraph item)
+    {
+        Aspose.Words.Lists.ListLevel level = item.ListFormat.ListLevel;
+        return Math.Abs(item.ParagraphFormat.LeftIndent - level.TextPosition) >= 0.05
+            || Math.Abs(item.ParagraphFormat.FirstLineIndent - (level.NumberPosition - level.TextPosition)) >= 0.05;
+    }
+
+    private Paragraph? ListPeer(Aspose.Words.Lists.List list, int level)
+    {
+        bool IsPeer(Node? node) =>
+            node is Paragraph { IsListItem: true } paragraph
+            && paragraph.ListFormat.List?.ListId == list.ListId
+            && paragraph.ListFormat.ListLevelNumber == level;
+
+        if (IsPeer(Anchor))
+        {
+            return (Paragraph)Anchor;
+        }
+
+        for (Node? node = Anchor.PreviousSibling; node is not null; node = node.PreviousSibling)
+        {
+            if (IsPeer(node))
+            {
+                return (Paragraph)node;
+            }
+        }
+
+        for (Node? node = Anchor.NextSibling; node is not null; node = node.NextSibling)
+        {
+            if (IsPeer(node))
+            {
+                return (Paragraph)node;
+            }
+        }
+
+        return null;
     }
 
     /// <summary>

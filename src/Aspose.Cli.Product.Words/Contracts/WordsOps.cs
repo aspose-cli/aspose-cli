@@ -59,7 +59,7 @@ public sealed record ParagraphInput
     /// </summary>
     [MinLength(1)] public string? Style { get; init; }
 
-    /// <summary>Makes the paragraph a list item at this level: in the anchor's list when the anchor is a list item, otherwise in one new bullet list.</summary>
+    /// <summary>Makes the paragraph a list item at this level: in the anchor's list, with the indents its nearest item at this level sets on itself, when the anchor is a list item, otherwise in one new bullet list.</summary>
     [Minimum(0), Maximum(8)] public int? ListLevel { get; init; }
 }
 

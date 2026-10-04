@@ -124,8 +124,12 @@ outside a field such as a hyperlink, without a character style, so a clause
 inserted between clauses matches them. After a paragraph whose
 style names another next style, such as a heading, it takes that style alone;
 it continues no list, page break before or tracked change, and at the start of
-the body or after a table it takes Normal. Compare its `paragraphFormat` and
-`runs` in `words query blocks --scope full` with its neighbours'.
+the body or after a table it takes Normal. A paragraph with `listLevel` after a
+list item, such as a new clause 2.3 after 2.2, joins that list and takes the
+left and first-line indents of the anchor or of its nearest item at that
+level when that item sets its own, as RTF conversions often do; otherwise it
+follows the list level's indents like its neighbours. Compare its `paragraphFormat` and `runs` in
+`words query blocks --scope full` with its neighbours'.
 
 A paragraph with `style`, inserted Markdown and a table's text take their font
 from styles. A template that sets its font only on runs, such as Microsoft
