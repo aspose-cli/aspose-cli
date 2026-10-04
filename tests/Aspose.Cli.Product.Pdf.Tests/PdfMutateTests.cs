@@ -564,6 +564,31 @@ public sealed class PdfMutateTests
     }
 
     [Fact]
+    public void Edit_SaysAFileWithOnlyAnOwnerPasswordWasOpenedWithoutAPassword()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("print-only.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add();
+            document.Encrypt(string.Empty, "owner", Permissions.PrintDocument, CryptoAlgorithm.AESx256);
+            document.Save(input);
+        }
+
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new SetMetadataOp { Title = "Changed" }],
+        }, new PdfEditRequest { OutputPath = fixture.File("print-only.out.pdf") });
+
+        Warning warning = Assert.Single(result.Warnings!, static item => item.Code == WarningCodes.ProtectionNotEnforced);
+        Assert.StartsWith(
+            "The input has no open password and was opened without its owner password, so its reader permissions apply; they do not allow set_metadata;",
+            warning.Message,
+            StringComparison.Ordinal);
+        Assert.DoesNotContain("user password", warning.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Edit_DryRunDisclosesTheUnpermittedChangeItWouldMake()
     {
         using var fixture = new PdfEngineFixture();

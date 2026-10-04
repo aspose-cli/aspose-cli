@@ -39,7 +39,8 @@ The error envelope, exit codes and shared codes are in
 - `OUTPUT_EXISTS` from `split` or `extract --out-dir`: one existing file refuses
   the whole run and nothing is published; `--overwrite` replaces only the files
   the command writes.
-- `PROTECTION_NOT_ENFORCED`: the input was opened with its user password and its
+- `PROTECTION_NOT_ENFORCED`: the input was opened without its owner password
+  (with its user password, or with none when it has no open password) and its
   permissions (`pdf inspect --detail permissions`) forbid a change, but the
   engine does not enforce them, so the edit was applied (or, with `--dry-run`,
   would be). Filling fields needs `fillForms`, `annotate` or `modify`; inserting,

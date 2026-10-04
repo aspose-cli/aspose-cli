@@ -62,6 +62,8 @@ internal sealed class PdfMutationService
         Permissions? userPermissions = loaded.PasswordType == PasswordType.User && loaded.Document.IsEncrypted
             ? (Permissions)loaded.Document.Permissions
             : null;
+        // A file with only an owner password opens with its empty user password, without one given.
+        bool openPassword = userPermissions is not null && new Aspose.Pdf.Facades.PdfFileInfo(loaded.Document).HasOpenPassword;
         var touched = new SortedSet<int>();
         var textMoved = new List<string>();
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
@@ -77,7 +79,7 @@ internal sealed class PdfMutationService
         try { publication = Publish(loaded.Document, request, outputPassword, encryptCopy, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
         List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes, textMoved);
-        if (UnpermittedChange(userPermissions, outcomes, request.Options.DryRun) is { } protection)
+        if (UnpermittedChange(userPermissions, openPassword, outcomes, request.Options.DryRun) is { } protection)
         {
             warnings.Add(protection);
         }
@@ -345,15 +347,16 @@ internal sealed class PdfMutationService
     }
 
     /// <summary>
-    /// The engine applies every operation to a document opened with its user password, whatever
-    /// its permissions say, so a change they do not allow is disclosed. As the PDF standard
+    /// The engine applies every operation to a document opened without its owner password,
+    /// whatever its permissions say, so a change they do not allow is disclosed. The message says
+    /// whether the user password opened it or the file has no open password. As the PDF standard
     /// defines them, filling fields is allowed by the fill-forms or annotation permission, page
     /// assembly (inserting, moving, rotating and deleting pages, creating bookmarks) by the
     /// assemble permission, any other change by the modify permission, and changing the
     /// encryption only by the owner password.
     /// </summary>
     private static Warning? UnpermittedChange(
-        Permissions? permissions, IReadOnlyCollection<BoundedOperationOutcome> outcomes, bool dryRun)
+        Permissions? permissions, bool openPassword, IReadOnlyCollection<BoundedOperationOutcome> outcomes, bool dryRun)
     {
         if (permissions is not { } granted)
         {
@@ -383,10 +386,13 @@ internal sealed class PdfMutationService
             (_, false) => "The output keeps the input's encryption and permissions; edit with the owner password to change them.",
             (_, true) => "The output would keep the input's encryption and permissions; edit with the owner password to change them.",
         };
+        string opened = openPassword
+            ? "The input was opened with its user password, whose permissions"
+            : "The input has no open password and was opened without its owner password, so its reader permissions apply; they";
         return new Warning
         {
             Code = WarningCodes.ProtectionNotEnforced,
-            Message = $"The input was opened with its user password, whose permissions do not allow {string.Join(", ", changes)}; the engine does not enforce them, so "
+            Message = $"{opened} do not allow {string.Join(", ", changes)}; the engine does not enforce them, so "
                 + (dryRun ? "the batch would change it if it were not a dry run." : "the batch changed it."),
             Hint = $"Confirm that the document's owner authorized the change. {output}",
         };
