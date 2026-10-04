@@ -27,7 +27,8 @@ internal static class InfoCommand
         var detail = new Option<string[]>("--detail")
         {
             Description = "Extra sections: names (defined names), errors (formula-error scan), "
-                + "fonts (fonts used), tables, charts, pivots, validation. Repeatable.",
+                + "fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, "
+                + "print area and page setup of each sheet). Repeatable.",
             AllowMultipleArgumentsPerToken = true,
         }.WithInput(InputKind.None);
         detail.AcceptOnlyFromAmong([.. InfoDetails.All]);

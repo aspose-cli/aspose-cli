@@ -505,6 +505,47 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void GetInfo_ReadsBackTheSheetLayoutTheOperationsSet()
+    {
+        string path = _fixture.Temp.File("layout.xlsx");
+        _fixture.Engine.ApplyOps(_fixture.CreateSalesWorkbook("layout-source.xlsx"),
+            ParseOps("""
+                {"ops":[
+                  {"op":"freeze_panes","sheet":"Data","cell":"B2"},
+                  {"op":"group_rows","sheet":"Data","from":2,"to":6},
+                  {"op":"group_rows","sheet":"Data","from":3,"to":4,"collapse":true},
+                  {"op":"group_rows","sheet":"Data","from":9,"to":10},
+                  {"op":"group_columns","sheet":"Data","from":"D","to":"E"},
+                  {"op":"set_autofilter","sheet":"Data","range":"A1:C3"},
+                  {"op":"set_print_area","sheet":"Data","range":"A1:C3","titleRows":"1"},
+                  {"op":"set_page_setup","sheet":"Data","orientation":"landscape","fitToWidth":1,"fitToHeight":0,
+                   "header":"Roster","footer":"Page &P of &N"}
+                ]}
+                """),
+            new EditRequest { OutputPath = path });
+
+        WorkbookInfoResult result = _fixture.Engine.GetInfo(path, new InfoRequest { Details = [InfoDetails.Layout] });
+
+        SheetLayoutInfo data = Assert.Single(result.Workbook.Layouts!, static layout => layout.Sheet == "Data");
+        Assert.Equal("B2", data.FreezePanes);
+        Assert.Equal(
+            [(2, 6, 1, false), (9, 10, 1, false), (3, 4, 2, true)],
+            data.RowGroups!.Select(static group => (group.From, group.To, group.Level, group.Collapsed)));
+        Assert.Equal([("D", "E", 1, false)], data.ColumnGroups!.Select(static group => (group.From, group.To, group.Level, group.Collapsed)));
+        Assert.Equal("A1:C3", data.AutoFilter);
+        Assert.Equal("A1:C3", data.PrintArea);
+        Assert.Equal("1:1", data.TitleRows);
+        Assert.Null(data.TitleColumns);
+        Assert.Equal("landscape", data.Orientation);
+        Assert.Equal((1, 0, null), (data.FitToWidth, data.FitToHeight, data.Scale));
+        Assert.Equal(("Roster", "Page &P of &N"), (data.Header, data.Footer));
+
+        SheetLayoutInfo plain = Assert.Single(result.Workbook.Layouts!, static layout => layout.Sheet == "Second");
+        Assert.Equal(new SheetLayoutInfo { Sheet = "Second", Orientation = "portrait", Scale = 100 }, plain);
+        Assert.Null(_fixture.Engine.GetInfo(path, new InfoRequest()).Workbook.Layouts);
+    }
+
+    [Fact]
     public void GetInfo_ReportsTheLicensedMode()
     {
         string path = _fixture.CreateSalesWorkbook("license.xlsx");

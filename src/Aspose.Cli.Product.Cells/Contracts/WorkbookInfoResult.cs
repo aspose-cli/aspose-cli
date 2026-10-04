@@ -80,6 +80,94 @@ public sealed record WorkbookSummary
 
     /// <summary>Data validations; present only with <c>--detail validation</c>.</summary>
     public IReadOnlyList<ValidationInfo>? Validations { get; init; }
+
+    /// <summary>The layout of every sheet, in workbook order; present only with <c>--detail layout</c>.</summary>
+    public IReadOnlyList<SheetLayoutInfo>? Layouts { get; init; }
+}
+
+/// <summary>
+/// The view and print layout of one sheet, in the terms of the operations that set it:
+/// freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup.
+/// A field is omitted when the sheet does not have that setting.
+/// </summary>
+public sealed record SheetLayoutInfo
+{
+    /// <summary>The sheet's name.</summary>
+    public required string Sheet { get; init; }
+
+    /// <summary>
+    /// The top-left cell of the scrolling pane when panes are frozen, as freeze_panes takes it:
+    /// <c>A2</c> freezes row 1, <c>B2</c> row 1 and column A.
+    /// </summary>
+    public string? FreezePanes { get; init; }
+
+    /// <summary>Row outline groups, outer levels first, each a run of rows at its level or deeper.</summary>
+    public IReadOnlyList<RowGroupInfo>? RowGroups { get; init; }
+
+    /// <summary>Column outline groups, outer levels first, each a run of columns at its level or deeper.</summary>
+    public IReadOnlyList<ColumnGroupInfo>? ColumnGroups { get; init; }
+
+    /// <summary>The range the sheet's AutoFilter covers, header row included.</summary>
+    public string? AutoFilter { get; init; }
+
+    /// <summary>The print area, such as <c>A1:H50</c>; several areas are comma-separated.</summary>
+    public string? PrintArea { get; init; }
+
+    /// <summary>The rows repeated on every printed page, such as <c>1:2</c>.</summary>
+    public string? TitleRows { get; init; }
+
+    /// <summary>The columns repeated on every printed page, such as <c>A:B</c>.</summary>
+    public string? TitleColumns { get; init; }
+
+    /// <summary>The page orientation: <c>portrait</c> or <c>landscape</c>.</summary>
+    public required string Orientation { get; init; }
+
+    /// <summary>The number of pages the printout fits across, 0 automatic; present when it fits to pages.</summary>
+    public int? FitToWidth { get; init; }
+
+    /// <summary>The number of pages the printout fits down, 0 automatic; present when it fits to pages.</summary>
+    public int? FitToHeight { get; init; }
+
+    /// <summary>The zoom percentage; present when the printout does not fit to pages.</summary>
+    public int? Scale { get; init; }
+
+    /// <summary>The center header text, with Excel codes such as &amp;P.</summary>
+    public string? Header { get; init; }
+
+    /// <summary>The center footer text, with Excel codes such as &amp;P and &amp;N.</summary>
+    public string? Footer { get; init; }
+}
+
+/// <summary>A row outline group.</summary>
+public sealed record RowGroupInfo
+{
+    /// <summary>The first row of the group (1-based).</summary>
+    public required int From { get; init; }
+
+    /// <summary>The last row of the group (1-based).</summary>
+    public required int To { get; init; }
+
+    /// <summary>The outline level, 1 for the outermost group.</summary>
+    public required int Level { get; init; }
+
+    /// <summary><c>true</c> when every row of the group is hidden, as a collapsed group's rows are.</summary>
+    public required bool Collapsed { get; init; }
+}
+
+/// <summary>A column outline group.</summary>
+public sealed record ColumnGroupInfo
+{
+    /// <summary>The first column of the group.</summary>
+    public required string From { get; init; }
+
+    /// <summary>The last column of the group.</summary>
+    public required string To { get; init; }
+
+    /// <summary>The outline level, 1 for the outermost group.</summary>
+    public required int Level { get; init; }
+
+    /// <summary><c>true</c> when every column of the group is hidden, as a collapsed group's columns are.</summary>
+    public required bool Collapsed { get; init; }
 }
 
 /// <summary>A workbook-scoped defined name.</summary>
@@ -196,8 +284,14 @@ public static class InfoDetails
     /// <summary>Data validations in the workbook.</summary>
     public const string Validation = "validation";
 
+    /// <summary>
+    /// The layout of each sheet: frozen panes, outline groups, AutoFilter, print area and
+    /// titles, orientation, scaling, header and footer.
+    /// </summary>
+    public const string Layout = "layout";
+
     /// <summary>Every detail id, in documentation order.</summary>
-    public static IReadOnlyList<string> All { get; } = [Names, Errors, Fonts, Tables, Charts, Pivots, Validation];
+    public static IReadOnlyList<string> All { get; } = [Names, Errors, Fonts, Tables, Charts, Pivots, Validation, Layout];
 }
 
 /// <summary>Structural summary of one worksheet.</summary>

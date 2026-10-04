@@ -61,6 +61,11 @@
         "validations": {
           "type": "array",
           "items": { "$ref": "#/$defs/validationInfo" }
+        },
+        "layouts": {
+          "type": "array",
+          "description": "The layout of every sheet, in workbook order; present only with --detail layout.",
+          "items": { "$ref": "#/$defs/sheetLayoutInfo" }
         }
       }
     },
@@ -176,6 +181,51 @@
             { "pattern": "^[a-z][A-Za-z0-9]*$" }
           ]
         }
+      }
+    },
+    "sheetLayoutInfo": {
+      "type": "object",
+      "description": "The view and print layout of one sheet in the fields of freeze_panes, group_rows, group_columns, set_autofilter, set_print_area and set_page_setup; a field is omitted when the sheet lacks that setting.",
+      "required": ["sheet", "orientation"],
+      "properties": {
+        "sheet": { "type": "string" },
+        "freezePanes": { "type": "string", "description": "Top-left cell of the scrolling pane when panes are frozen, as freeze_panes takes it." },
+        "rowGroups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "level", "collapsed"],
+            "properties": {
+              "from": { "type": "integer", "minimum": 1 },
+              "to": { "type": "integer", "minimum": 1 },
+              "level": { "type": "integer", "minimum": 1 },
+              "collapsed": { "type": "boolean" }
+            }
+          }
+        },
+        "columnGroups": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to", "level", "collapsed"],
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "level": { "type": "integer", "minimum": 1 },
+              "collapsed": { "type": "boolean" }
+            }
+          }
+        },
+        "autoFilter": { "type": "string" },
+        "printArea": { "type": "string" },
+        "titleRows": { "type": "string" },
+        "titleColumns": { "type": "string" },
+        "orientation": { "enum": ["portrait", "landscape"] },
+        "fitToWidth": { "type": "integer", "minimum": 0 },
+        "fitToHeight": { "type": "integer", "minimum": 0 },
+        "scale": { "type": "integer" },
+        "header": { "type": "string" },
+        "footer": { "type": "string" }
       }
     },
     "licenseInfo": {

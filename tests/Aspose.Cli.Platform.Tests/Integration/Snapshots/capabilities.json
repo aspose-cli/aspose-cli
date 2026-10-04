@@ -1513,6 +1513,7 @@
                 "charts",
                 "errors",
                 "fonts",
+                "layout",
                 "names",
                 "pivots",
                 "tables",
@@ -1521,7 +1522,7 @@
               "secret": false,
               "valueSource": "command-line",
               "inputKind": "none",
-              "description": "Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation. Repeatable."
+              "description": "Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, print area and page setup of each sheet). Repeatable."
             },
             {
               "name": "--password",
@@ -11289,6 +11290,7 @@
             "charts",
             "errors",
             "fonts",
+            "layout",
             "names",
             "pivots",
             "tables",
@@ -11297,7 +11299,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation. Repeatable."
+          "description": "Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, print area and page setup of each sheet). Repeatable."
         },
         {
           "name": "--password",

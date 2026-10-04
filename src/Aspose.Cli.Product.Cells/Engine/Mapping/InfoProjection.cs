@@ -12,7 +12,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>
 /// Builds the <c>cells inspect</c> projection: the workbook summary and the
 /// optional detail sections (defined names, formula errors, fonts, tables,
-/// charts, pivots, validations). Detail scans are budgeted so a pathological
+/// charts, pivots, validations, sheet layouts). Detail scans are budgeted so a pathological
 /// workbook cannot make <c>info</c> unaffordable.
 /// </summary>
 internal static class InfoProjection
@@ -58,6 +58,7 @@ internal static class InfoProjection
             Charts = WantsDetail(request, InfoDetails.Charts) ? BuildCharts(workbook) : null,
             Pivots = WantsDetail(request, InfoDetails.Pivots) ? BuildPivots(workbook) : null,
             Validations = WantsDetail(request, InfoDetails.Validation) ? BuildValidations(workbook) : null,
+            Layouts = WantsDetail(request, InfoDetails.Layout) ? SheetLayoutProjection.Build(budgets, workbook) : null,
         };
 
         return (summary, errorsTruncated);

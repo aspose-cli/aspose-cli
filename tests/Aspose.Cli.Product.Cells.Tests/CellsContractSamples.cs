@@ -83,6 +83,25 @@ internal static class CellsContractSamples
             Charts = [new ChartInfo { Sheet = "Sales", Index = 0, Name = "Chart 1", Type = "column" }],
             Pivots = [new PivotInfo { Sheet = "Summary", Name = "PivotTable1", Range = "A1:D10" }],
             Validations = [new ValidationInfo { Sheet = "Sales", Range = "C2:C100", Type = "list" }],
+            Layouts =
+            [
+                new SheetLayoutInfo
+                {
+                    Sheet = "Sales",
+                    FreezePanes = "A2",
+                    RowGroups = [new RowGroupInfo { From = 2, To = 10, Level = 1, Collapsed = false }],
+                    ColumnGroups = [new ColumnGroupInfo { From = "D", To = "E", Level = 1, Collapsed = true }],
+                    AutoFilter = "A1:G120",
+                    PrintArea = "A1:G120",
+                    TitleRows = "1:1",
+                    Orientation = "landscape",
+                    FitToWidth = 1,
+                    FitToHeight = 0,
+                    Header = "Sales",
+                    Footer = "Page &P of &N",
+                },
+                new SheetLayoutInfo { Sheet = "Empty", Orientation = "portrait", Scale = 100 },
+            ],
         },
         License = Licensed,
     };

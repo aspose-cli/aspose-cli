@@ -67,7 +67,31 @@ internal static class CellsRenderers
             static chart => [chart.Sheet, TableText.Int(chart.Index), chart.Name, chart.Type]);
         WriteDetail(surface, "pivots", workbook.Pivots, ["sheet", "name", "range"],
             static pivot => [pivot.Sheet, pivot.Name, pivot.Range]);
+        WriteDetail(surface, "layouts", workbook.Layouts,
+            ["sheet", "freeze", "row groups", "column groups", "filter", "print area", "titles", "page", "header", "footer"],
+            static layout =>
+            [
+                layout.Sheet,
+                layout.FreezePanes ?? "-",
+                Groups(layout.RowGroups, static group => (Span: $"{group.From}:{group.To}", group.Level, group.Collapsed)),
+                Groups(layout.ColumnGroups, static group => (Span: $"{group.From}:{group.To}", group.Level, group.Collapsed)),
+                layout.AutoFilter ?? "-",
+                layout.PrintArea ?? "-",
+                string.Join(' ', new[] { layout.TitleRows, layout.TitleColumns }.OfType<string>().DefaultIfEmpty("-")),
+                layout.Orientation + (layout.Scale is { } scale
+                    ? $" {scale}%"
+                    : $" fit {layout.FitToWidth}x{layout.FitToHeight}"),
+                layout.Header ?? "-",
+                layout.Footer ?? "-",
+            ]);
     }
+
+    // Outline groups as "2:20 L1, 3:4 L2 collapsed".
+    private static string Groups<T>(IReadOnlyList<T>? groups, Func<T, (string Span, int Level, bool Collapsed)> describe) =>
+        groups is null
+            ? "-"
+            : string.Join(", ", groups.Select(describe).Select(static group =>
+                $"{group.Span} L{group.Level}{(group.Collapsed ? " collapsed" : string.Empty)}"));
 
     // A requested list that came back empty still prints its heading, so "none" is visible.
     private static void WriteDetail<T>(

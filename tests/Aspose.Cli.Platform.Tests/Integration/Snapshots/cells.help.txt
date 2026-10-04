@@ -202,7 +202,7 @@ Arguments:
 Options:
   --preview                                   Include a small sample of display values for each sheet.
   --preview-rows <preview-rows>               Number of preview rows per sheet (1-100). [default: 5]
-  --detail <detail>                           Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation. Repeatable. Values: charts, errors, fonts, names, pivots, tables, validation.
+  --detail <detail>                           Extra sections: names (defined names), errors (formula-error scan), fonts (fonts used), tables, charts, pivots, validation, layout (frozen panes, outline groups, filter, print area and page setup of each sheet). Repeatable. Values: charts, errors, fonts, layout, names, pivots, tables, validation.
   --password <password>                       Password for the workbook. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the workbook.
   --password-stdin                            Read the password for the workbook from the first line of stdin.
