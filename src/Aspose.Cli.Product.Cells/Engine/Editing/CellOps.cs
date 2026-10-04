@@ -1,4 +1,3 @@
-using System.Text.RegularExpressions;
 using Aspose.Cells;
 using Aspose.Cli.Sdk.Operations;
 using Aspose.Cli.Product.Cells.Contracts;
@@ -13,7 +12,7 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 /// copying, formatting and merging. Each returns the count of cells it touched
 /// where that is meaningful.
 /// </summary>
-internal static partial class CellOps
+internal static class CellOps
 {
     public static long SetValues(Worksheet sheet, SetValuesOp op)
     {
@@ -49,50 +48,31 @@ internal static partial class CellOps
 
     private static long WriteFormula(Worksheet sheet, SetFormulaOp op)
     {
+        // Like Excel 365, every cell gets a dynamic-array formula: array arithmetic inside a
+        // function (MAX(B2*rates-deductions)) evaluates over whole ranges rather than by implicit
+        // intersection, and a result larger than one cell spills or shows #SPILL!. Filling a range
+        // shifts relative references per cell by sharing the anchor's R1C1 form.
         RangeRef range = Range(op.Range);
         Cell anchor = sheet.Cells[range.Start.Row, range.Start.Column];
-        if (range.CellCount == 1)
+        anchor.SetDynamicArrayFormula(op.Formula, new FormulaParseOptions(), calculateValue: false);
+        if (range.CellCount > 1)
         {
-            // Like Excel 365, a formula whose result is an array (B2:B9*2) or follows the data
-            // (FILTER, even while it matches one cell) spills into its neighbors; any other
-            // formula with a single result stays an ordinary formula.
-            CellArea spill = anchor.SetDynamicArrayFormula(op.Formula, new FormulaParseOptions(), calculateValue: false);
-            if (spill.StartRow == spill.EndRow && spill.StartColumn == spill.EndColumn
-                && !DynamicArrayFunctionCall().IsMatch(QuotedText().Replace(op.Formula, string.Empty)))
+            string shared = anchor.R1C1Formula;
+            FormulaParseOptions r1c1 = new() { R1C1Style = true };
+            for (int row = range.Start.Row; row <= range.End.Row; row++)
             {
-                anchor.Formula = op.Formula;
-            }
-
-            return 1;
-        }
-
-        // Excel fill semantics: shift relative references per cell by sharing the anchor's R1C1 form.
-        anchor.Formula = op.Formula;
-        string shared = anchor.R1C1Formula;
-        for (int row = range.Start.Row; row <= range.End.Row; row++)
-        {
-            for (int column = range.Start.Column; column <= range.End.Column; column++)
-            {
-                if (row != range.Start.Row || column != range.Start.Column)
+                for (int column = range.Start.Column; column <= range.End.Column; column++)
                 {
-                    sheet.Cells[row, column].R1C1Formula = shared;
+                    if (row != range.Start.Row || column != range.Start.Column)
+                    {
+                        sheet.Cells[row, column].SetDynamicArrayFormula(shared, r1c1, calculateValue: false);
+                    }
                 }
             }
         }
 
         return range.CellCount;
     }
-
-    // Excel's functions whose result size follows their arguments' data. The list only decides
-    // whether a formula with a single-cell result stays dynamic; a larger result spills anyway.
-    [GeneratedRegex(@"\b(FILTER|UNIQUE|SORT|SORTBY|SEQUENCE|RANDARRAY|TEXTSPLIT|VSTACK|HSTACK|TOCOL|TOROW"
-        + @"|WRAPROWS|WRAPCOLS|TAKE|DROP|CHOOSEROWS|CHOOSECOLS|EXPAND|MAKEARRAY|MAP|SCAN|BYROW|BYCOL)\s*\(",
-        RegexOptions.IgnoreCase)]
-    private static partial Regex DynamicArrayFunctionCall();
-
-    // String literals and quoted sheet names, which may contain a function name.
-    [GeneratedRegex(@"""[^""]*""|'[^']*'")]
-    private static partial Regex QuotedText();
 
     public static long Clear(Worksheet sheet, ClearRangeOp op)
     {

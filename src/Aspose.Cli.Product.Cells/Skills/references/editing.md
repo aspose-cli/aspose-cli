@@ -112,10 +112,16 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
   `"2026-04-03"` stays text and ignores a date format; write dates as
   `=DATE(2026,4,3)` (`aspose-cli docs cells/workbook-standards`).
 - `set_formula` writes the formula of the range's top-left cell and fills it:
-  relative references shift per cell, `$` references stay. Set a formula
-  whose result is an array (`FILTER`, `UNIQUE`, `SORT`) on one cell: like
-  Excel 365 it spills into the cells beside and below it, or is `#SPILL!`
-  (a `FORMULA_ERRORS` verification issue) when they are not empty.
+  relative references shift per cell, `$` references stay. Every cell
+  evaluates like Excel 365: array arithmetic inside a function covers the
+  whole ranges, as in `=MAX(B2*$F$2:$F$8-$G$2:$G$8)`, with no need for
+  `SUMPRODUCT`. Set a formula whose result is an array (`FILTER`, `UNIQUE`,
+  `B2:B9*2`) on one cell: it spills into the cells beside and below it, or is
+  `#SPILL!` (a `FORMULA_ERRORS` verification issue) when they are not empty.
+  Each cell gets its own dynamic-array formula, which Excel before 365 and
+  LibreOffice show as a legacy array formula `{=...}`. Fill a range only with
+  a formula that returns one value: a spilling formula filled over a range is
+  `#SPILL!` in every cell but the last.
 - Inserting or deleting rows and columns updates formula references as in
   Excel.
 

@@ -22,7 +22,12 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
             { "op": "set_formula", "sheet": "Second", "range": "A3", "formula": "=FILTER(Data!A1:C3,Data!A1:A3<>\"East\")" },
             { "op": "set_formula", "sheet": "Second", "range": "E1", "formula": "=FILTER(Data!B2:B3,Data!A2:A3=\"East\")" },
             { "op": "set_values", "sheet": "Second", "range": "G2", "values": [["keep"]] },
-            { "op": "set_formula", "sheet": "Second", "range": "G1", "formula": "=FILTER(Data!A1:A3,Data!A1:A3<>\"East\")" }
+            { "op": "set_formula", "sheet": "Second", "range": "G1", "formula": "=FILTER(Data!A1:A3,Data!A1:A3<>\"East\")" },
+            { "op": "set_values", "sheet": "Second", "range": "I1", "values": [[0.03, 0], [0.1, 210], [0.2, 1410], [0.25, 2660], [0.3, 4410]] },
+            { "op": "set_values", "sheet": "Second", "range": "L1", "values": [[41092.29]] },
+            { "op": "set_values", "sheet": "Second", "range": "L7", "values": [[9400]] },
+            { "op": "set_formula", "sheet": "Second", "range": "M1", "formula": "=MAX(L1*$I$1:$I$5-$J$1:$J$5)" },
+            { "op": "set_formula", "sheet": "Second", "range": "M6:M7", "formula": "=MAX(L6*$I$1:$I$5-$J$1:$J$5)" }
             """,
             static workbook =>
             {
@@ -30,10 +35,8 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 Assert.Equal("=B2+C2", cells["D2"].Formula);
                 Assert.Equal("=B3+C3", cells["D3"].Formula);
                 Assert.Equal(2700d, cells["D2"].DoubleValue);
-                // A single-cell formula with a single result stays an ordinary formula...
                 Assert.Equal(2700d, cells["E2"].DoubleValue);
-                Assert.False(cells["E2"].IsArrayFormula);
-                // ...and one whose result is an array spills like Excel 365.
+                // Like Excel 365, a result that is an array spills...
                 Aspose.Cells.Cells second = workbook.Worksheets["Second"].Cells;
                 Assert.True(second["A3"].IsDynamicArrayFormula);
                 Assert.Equal("Region", second["A3"].StringValue);
@@ -45,6 +48,12 @@ public sealed class CellsOperationBehaviorTests : IClassFixture<CellsFixture>
                 // A spill onto a cell that holds a value keeps the value and shows #SPILL!.
                 Assert.Equal("keep", second["G2"].StringValue);
                 Assert.Equal("#SPILL!", second["G1"].StringValue);
+                // ...and array arithmetic inside a function covers whole ranges, without implicit
+                // intersection, on a single cell and on every cell of a filled range.
+                Assert.Equal(7917.687, second["M1"].DoubleValue, 6);
+                Assert.Equal(0d, second["M6"].DoubleValue);
+                Assert.Equal(730d, second["M7"].DoubleValue, 6);
+                Assert.Equal("=MAX(L7*$I$1:$I$5-$J$1:$J$5)", second["M7"].Formula);
             }),
         ["clear_range"] = (
             """{ "op": "clear_range", "sheet": "Data", "range": "A1:C1", "what": "formats" }""",

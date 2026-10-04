@@ -63,7 +63,7 @@
           "command": "edit",
           "inputSchema": "v2/cells/ops",
           "operationSchema": "aspose-cli schema v2/cells/ops --operation <op>",
-          "contractFingerprint": "sha256:613ba3dd712ee3e077a66f8760827d299358a0ea6591a94daf6c275eb9f5606e",
+          "contractFingerprint": "sha256:1aeb4a5b4d655bc8c1e59ecb68eba3a4ae8bc8c187ffd85e01c78ae89f987e36",
           "maximumOperationCount": 10000,
           "ops": [
             "add_comment",
