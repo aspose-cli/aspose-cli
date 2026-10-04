@@ -333,7 +333,7 @@
       ]
     },
     "append_document": {
-      "description": "Appends a local document.",
+      "description": "Appends the sections of a local document, each with the headers and footers it defines; a kind it does not define continues from the section before it.",
       "type": "object",
       "required": [
         "op",
@@ -354,6 +354,7 @@
           "pattern": "\\S"
         },
         "importFormatMode": {
+          "description": "Which definition a style both documents name takes: the appended document's (keepSource) or this document's (useDestination). Headers and footers are not styles and come with their sections either way.",
           "type": "string",
           "enum": [
             "keepSource",

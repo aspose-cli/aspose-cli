@@ -167,6 +167,13 @@ and font of the first paragraph they replace, including one a section
 continues from an earlier section, or take Word's Header or Footer style when
 there is none; `insert_paragraphs` instead takes
 `{"text": ..., "style": ...}` objects. Markdown takes the document's styles. Apply footer text before `set_page_numbers`.
+`append_document` brings the appended document's sections with the headers
+and footers they define, and `importFormatMode` decides only styles. A
+section that defines no header or footer of a kind continues the one before
+it, so after appending a chapter whose template had a header, the next
+appended chapter without one shows that header too. Check the result with
+`inspect --detail sections`; to give the whole document one header and
+footer, follow with `set_header` and `set_footer` without a `section`.
 Page numbering targets only the primary header or footer, reuses its first
 PAGE field or appends one in a new paragraph, and keeps the other content. A
 `start` restarts numbering in each selected section; name a `section` when only

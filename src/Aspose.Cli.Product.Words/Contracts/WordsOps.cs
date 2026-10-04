@@ -569,13 +569,14 @@ public sealed record RemoveCommentsOp : WordsOp
     [MinLength(1)] public string? Author { get; init; }
 }
 
-/// <summary>Appends a local document.</summary>
+/// <summary>Appends the sections of a local document, each with the headers and footers it defines; a kind it does not define continues from the section before it.</summary>
 [Operation("append_document")]
 public sealed record AppendDocumentOp : WordsOp
 {
     /// <summary>The document, relative to the working directory.</summary>
     [InputPath] public required string Path { get; init; }
 
+    /// <summary>Which definition a style both documents name takes: the appended document's (keepSource) or this document's (useDestination). Headers and footers are not styles and come with their sections either way.</summary>
     [AllowedValues("keepSource", "useDestination")] public string ImportFormatMode { get; init; } = "keepSource";
 }
 
