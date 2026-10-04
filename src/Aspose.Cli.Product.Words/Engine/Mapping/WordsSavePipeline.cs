@@ -50,6 +50,12 @@ internal static class WordsSavePipeline
                 text.PreserveTableLayout = true;
                 text.ExportHeadersFootersMode = TxtExportHeadersFootersMode.None;
                 break;
+            // RTF stores each image once, in its own format such as PNG. The copy the SDK adds
+            // for old readers is an uncompressed metafile, which makes a document with a few
+            // photos many times larger; Word, LibreOffice and current readers read the first.
+            case RtfSaveOptions rtf:
+                rtf.ExportImagesForOldReaders = false;
+                break;
         }
 
         if (pages is not null)

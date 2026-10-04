@@ -23,6 +23,11 @@ it may share one paragraph (`WORDS-PDF-CJK-LINE-END`): read the blocks before
 editing, and find phrases with a regex that allows that space, such as
 `甲 ?乙双方`.
 
+An `rtf` output stores each image once, in its own format such as PNG, without
+the uncompressed metafile copy for old readers that would make it many times
+larger; Word and LibreOffice read it, but a reader that knows only metafiles
+shows no images.
+
 ## Document model
 
 - A **block** is a body paragraph or table, numbered from 1. The paragraphs and

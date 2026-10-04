@@ -32,6 +32,29 @@ public sealed class WordsOutputFormatTests
     }
 
     [Fact]
+    public void ConvertToRtf_StoresImagesOnceInTheirOwnFormat()
+    {
+        // The SDK would also store each image as an uncompressed metafile for old RTF readers,
+        // which makes a document with a few photos a hundred times larger.
+        using var fixture = new WordsFixture();
+        using var bitmap = new SkiaSharp.SKBitmap(800, 800);
+        bitmap.Erase(SkiaSharp.SKColors.SteelBlue);
+        using SkiaSharp.SKData png = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Png, 100);
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Org chart");
+        builder.InsertImage(png.ToArray());
+        string input = fixture.Temp.File("picture.docx");
+        document.Save(input);
+        string output = fixture.Temp.File("picture.rtf");
+
+        fixture.Engine.Convert(input, new WordsConvertRequest { TargetFormatId = "rtf", OutputPath = output });
+
+        Assert.True(new FileInfo(output).Length < 100_000, $"{new FileInfo(output).Length} bytes");
+        Assert.Single(new Document(output).FirstSection.Body.GetChildNodes(NodeType.Shape, true).Cast<Aspose.Words.Drawing.Shape>(), static shape => shape.HasImage);
+    }
+
+    [Fact]
     public void InPlaceEditOfWordML_StaysWordML()
     {
         using var fixture = new WordsFixture();
