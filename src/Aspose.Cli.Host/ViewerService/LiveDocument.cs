@@ -365,8 +365,7 @@ internal sealed class LiveDocument : IDisposable
             throw CliErrors.FileNotFound(_source);
         }
         FileUnlockProbe.WaitReadable(_source, UnlockAttempts, UnlockInitialDelay, cancellationToken);
-        using var input = new FileStream(_source, FileMode.Open, FileAccess.Read, FileShare.Read,
-            81920, FileOptions.Asynchronous | FileOptions.SequentialScan);
+        using FileStream input = InputFiles.OpenRead(_source, FileOptions.Asynchronous | FileOptions.SequentialScan);
         using var output = new FileStream(_copy, FileMode.Create, FileAccess.Write, FileShare.None,
             81920, FileOptions.Asynchronous);
         BoundedStreamCopy.CopyAsync(input, output, _options.MaxInputBytes,

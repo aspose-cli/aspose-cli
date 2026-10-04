@@ -78,6 +78,9 @@ internal sealed record FilePublicationMetadata(FileAttributes Attributes)
     public static FilePublicationMetadata Capture(string path) =>
         new(File.GetAttributes(path));
 
+    public static FilePublicationMetadata Capture(SafeFileHandle handle) =>
+        new(File.GetAttributes(handle));
+
     public void Apply(string path) =>
         File.SetAttributes(path, Attributes & ~FileAttributes.Directory & ~FileAttributes.ReparsePoint);
 
@@ -260,14 +263,13 @@ internal sealed record FilePublicationSnapshot(
 
         try
         {
-            FileShare share = OperatingSystem.IsWindows()
-                ? FileShare.Read
-                : FileShare.Read | FileShare.Delete;
+            // Everything is read from this one handle, so another process may still replace
+            // or delete the path meanwhile, as a concurrent in-place edit does.
             using SafeFileHandle handle = File.OpenHandle(
                 path,
                 FileMode.Open,
                 FileAccess.Read,
-                share,
+                FileShare.Read | FileShare.Delete,
                 FileOptions.SequentialScan);
             FilePhysicalIdentity? identity =
                 FilePublicationOwnedDelete.TryGetIdentity(handle);
@@ -277,14 +279,14 @@ internal sealed record FilePublicationSnapshot(
                     $"Could not establish the physical identity of '{path}'.");
             }
             long length = RandomAccess.GetLength(handle);
-            long lastWriteUtcTicks = File.GetLastWriteTimeUtc(path).Ticks;
+            long lastWriteUtcTicks = File.GetLastWriteTimeUtc(handle).Ticks;
             string hash;
             using (var stream = new FileStream(handle, FileAccess.Read))
             {
                 hash = Convert.ToHexString(SHA256.HashData(stream));
                 long verifiedLength = stream.Length;
                 long verifiedLastWriteUtcTicks =
-                    File.GetLastWriteTimeUtc(path).Ticks;
+                    File.GetLastWriteTimeUtc(handle).Ticks;
                 if (length != verifiedLength
                     || lastWriteUtcTicks != verifiedLastWriteUtcTicks)
                 {
@@ -296,7 +298,7 @@ internal sealed record FilePublicationSnapshot(
                     length,
                     verifiedLastWriteUtcTicks,
                     hash,
-                    FilePublicationMetadata.Capture(path),
+                    FilePublicationMetadata.Capture(handle),
                     identity);
             }
         }

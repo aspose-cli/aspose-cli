@@ -49,19 +49,14 @@ public sealed class InputSource
 
     internal void ThrowIfFailed() => _budgets.ThrowIfFailed();
 
+    /// <summary>Opens a bounded read of a file with <see cref="InputFiles.OpenRead"/>.</summary>
     public Stream OpenFile(string path)
     {
         _budgets.ThrowIfFailed();
         _budgets.Deadline.ThrowIfExpired("file-open");
         string full = Path.GetFullPath(path);
         _budgets.VerifyAdmission(full);
-        var stream = new FileStream(
-            full,
-            FileMode.Open,
-            FileAccess.Read,
-            FileShare.Read,
-            bufferSize: 64 * 1024,
-            FileOptions.SequentialScan);
+        FileStream stream = InputFiles.OpenRead(full);
         long observedLength = stream.Length;
         if (observedLength > _budgets.Limit(ResourceBudgetKinds.InputBytes))
         {
