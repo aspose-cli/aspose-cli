@@ -60,7 +60,8 @@ internal static class CellsEngineSupport
         FileFormatInfo detected;
         try
         {
-            detected = FileFormatUtil.DetectFileFormat(path);
+            using FileStream input = InputFiles.OpenRead(path);
+            detected = FileFormatUtil.DetectFileFormat(input);
         }
         catch
         {

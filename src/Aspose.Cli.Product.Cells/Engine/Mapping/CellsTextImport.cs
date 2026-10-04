@@ -91,7 +91,7 @@ internal static partial class CellsTextImport
     private static Encoding? ByteOrderMark(string path)
     {
         Span<byte> prefix = stackalloc byte[3];
-        using FileStream stream = File.OpenRead(path);
+        using FileStream stream = InputFiles.OpenRead(path);
         int read = stream.ReadAtLeast(prefix, prefix.Length, throwOnEndOfStream: false);
         return prefix[..read] switch
         {
@@ -114,7 +114,7 @@ internal static partial class CellsTextImport
         byte[] buffer = new byte[1 << 16];
         char[] characters = new char[encoding.GetMaxCharCount(buffer.Length)];
         long offset = 0;
-        using FileStream stream = File.OpenRead(path);
+        using FileStream stream = InputFiles.OpenRead(path);
         try
         {
             int read;
@@ -142,7 +142,7 @@ internal static partial class CellsTextImport
     /// </summary>
     private static void RejectDecimalCommas(string path, char separator, Encoding encoding)
     {
-        using var reader = new StreamReader(path, encoding, detectEncodingFromByteOrderMarks: true);
+        using var reader = new StreamReader(InputFiles.OpenRead(path), encoding, detectEncodingFromByteOrderMarks: true);
         char[] window = new char[NumberScanCharacters];
         int length = reader.ReadBlock(window, 0, window.Length);
         int lineNumber = 0;

@@ -83,7 +83,18 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         {
             LoadOptions options = plan.ToLoadOptions(resources);
             options.Password = password;
-            workbook = new Workbook(path, options);
+            using (FileStream input = InputFiles.OpenRead(path))
+            {
+                workbook = new Workbook(input, options);
+            }
+            // A stream carries no name: relative links and resources resolve against the file
+            // name, and a delimited text sheet is named after the file, as the path loader does;
+            // a file name without a stem keeps the engine's default sheet name.
+            workbook.FileName = path;
+            if (plan.Separator is not null && Path.GetFileNameWithoutExtension(path) is { Length: > 0 } stem)
+            {
+                workbook.Worksheets[0].Name = stem.Replace('[', '(').Replace(']', ')')[..Math.Min(stem.Length, 31)];
+            }
             resources.MaterializeLinkedPictures(workbook);
             resources.ThrowIfFailed();
             resourceBudgets.EnsureWithin(CellsBudgetDomains.Sheets,
@@ -147,7 +158,8 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         FileFormatInfo detected;
         try
         {
-            detected = FileFormatUtil.DetectFileFormat(path);
+            using FileStream input = InputFiles.OpenRead(path);
+            detected = FileFormatUtil.DetectFileFormat(input);
         }
         catch (Exception exception) when (exception is not CliException)
         {
@@ -257,7 +269,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         byte[] prefix;
         try
         {
-            using FileStream stream = File.OpenRead(path);
+            using FileStream stream = InputFiles.OpenRead(path);
             int length = (int)Math.Min(8192, stream.Length);
             prefix = new byte[length];
             int read = stream.Read(prefix, 0, length);
@@ -300,7 +312,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         Span<byte> head = stackalloc byte[4];
         try
         {
-            using FileStream stream = File.OpenRead(path);
+            using FileStream stream = InputFiles.OpenRead(path);
             return stream.ReadAtLeast(head, head.Length, throwOnEndOfStream: false) == head.Length
                 && head.SequenceEqual("PK\u0003\u0004"u8);
         }
@@ -315,7 +327,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
         byte[] prefix;
         try
         {
-            using FileStream stream = File.OpenRead(path);
+            using FileStream stream = InputFiles.OpenRead(path);
             int length = (int)Math.Min(4096, stream.Length);
             prefix = new byte[length];
             int read = stream.Read(prefix, 0, length);

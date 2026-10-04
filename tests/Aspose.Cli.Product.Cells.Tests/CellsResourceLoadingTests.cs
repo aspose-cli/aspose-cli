@@ -12,6 +12,49 @@ namespace Aspose.Cli.Product.Cells.Tests;
 
 public sealed class CellsResourceLoadingTests
 {
+    /// <summary>
+    /// Another command's in-place edit holds the input open with delete access while it
+    /// replaces the file; a load at that moment still reads the input.
+    /// </summary>
+    [Fact]
+    public void Load_ReadsAnInputThatAnInPlaceEditIsReplacing()
+    {
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("book.csv");
+        File.WriteAllText(input, "Region,Revenue\nEast,1\n");
+        var loader = new CellsWorkbookLoader(ProductTestBudgets.Create<CellsModule>());
+
+        using (new FileStream(input, FileMode.Open, FileAccess.Read,
+                   FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
+        {
+            using LoadedWorkbook loaded = loader.Open(input, null);
+            Assert.Equal("East", loaded.Workbook.Worksheets[0].Cells["A2"].StringValue);
+        }
+    }
+
+    /// <summary>
+    /// A delimited text sheet is named after its file as the engine's path load names it; a file
+    /// name without a stem keeps the engine's default sheet name.
+    /// </summary>
+    [Theory]
+    [InlineData("book.csv", "book")]
+    [InlineData("book [2024].csv", "book (2024)")]
+    [InlineData("a file name longer than thirty-one characters.csv", "a file name longer than thirty-")]
+    [InlineData("'quoted'.csv", "'quoted'")]
+    [InlineData("'.csv", "'")]
+    [InlineData(".csv", "Sheet1")]
+    public void Load_NamesADelimitedTextSheetAfterItsFile(string name, string sheet)
+    {
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File(name);
+        File.WriteAllText(input, "Region,Revenue\nEast,1\n");
+        var loader = new CellsWorkbookLoader(ProductTestBudgets.Create<CellsModule>());
+
+        using LoadedWorkbook loaded = loader.Open(input, null);
+
+        Assert.Equal(sheet, loaded.Workbook.Worksheets[0].Name);
+    }
+
     [Theory]
     [InlineData("html")]
     [InlineData("xls")]
