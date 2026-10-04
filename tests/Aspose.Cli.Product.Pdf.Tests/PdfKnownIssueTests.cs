@@ -260,6 +260,24 @@ public sealed class PdfKnownIssueTests
             $"setting Name to a file opened for reading threw {error?.GetType().Name ?? "nothing"}");
     }
 
+    [LicensedFact]
+    public void TextSearch_ReadsAGapBetweenRunsAsASpace()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = PdfMutateTests.WriteSpacedRuns(fixture, "autospace.pdf", "2026", "年", "10", "月");
+
+        using var document = new Document(input);
+        var absorber = new Aspose.Pdf.Text.TextAbsorber();
+        document.Pages[1].Accept(absorber);
+        var search = new Aspose.Pdf.Text.TextFragmentAbsorber("2026年10月");
+        document.Pages[1].Accept(search);
+
+        KnownIssue.Reproduces(
+            "PDF-TEXT-GAP-SPACE",
+            absorber.Text.Contains("2026 年", StringComparison.Ordinal) && search.TextFragments.Count == 0,
+            $"runs 3 points apart extract as '{absorber.Text.Trim()}', and a search for them without spaces found {search.TextFragments.Count}");
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

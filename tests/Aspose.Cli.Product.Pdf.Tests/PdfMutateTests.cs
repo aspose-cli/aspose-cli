@@ -1245,6 +1245,86 @@ public sealed class PdfMutateTests
         Assert.Contains("pdf query search", warning.Hint, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void SearchAndRedaction_MatchLiteralTextAcrossGapsBetweenEastAsianAndOtherCharacters()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = WriteSpacedRuns(fixture, "autospace.pdf", "Due", "2026", "年", "10", "月", "31", "日");
+
+        PdfSearchHit hit = Assert.Single(fixture.Engine.Search(input, Find("2026年10月31日")).Hits);
+        Assert.Matches(@"^2026\s*年\s*10\s*月\s*31\s*日$", hit.Snippet);
+        // Only the boundaries between East Asian and other characters take a gap.
+        Assert.Empty(fixture.Engine.Search(input, Find("Due2026")).Hits);
+
+        string output = fixture.File("autospace.out.pdf");
+        PdfEditResult edited = fixture.Engine.ApplyOps(input,
+            new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = "2026年10月31日" }] },
+            new PdfEditRequest { OutputPath = output, Verify = true });
+
+        Assert.Equal(1, Assert.Single(edited.Applied).ItemsAffected);
+        Assert.True(edited.Verification!.Ok);
+        string text = fixture.Engine.Read(output, new PdfReadRequest()).Pages[0].Text;
+        Assert.Contains("Due", text, StringComparison.Ordinal);
+        // The evaluation watermark names a year, so the check reads the East Asian characters.
+        Assert.DoesNotContain("年", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("日", text, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void SearchAndRedaction_DoNotMatchLiteralTextAcrossALineBreak()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("twolines.pdf");
+        using (var document = new Document())
+        {
+            var builder = new TextBuilder(document.Pages.Add());
+            Aspose.Pdf.Text.Font font = FontRepository.FindFont("SimSun");
+            foreach ((string run, double y) in new[] { ("Due 2026年", 700.0), ("10月31日", 680.0) })
+            {
+                var fragment = new TextFragment(run) { Position = new Position(72, y) };
+                fragment.TextState.Font = font;
+                fragment.TextState.FontSize = 12;
+                builder.AppendText(fragment);
+            }
+
+            document.Save(input);
+        }
+
+        Assert.Single(fixture.Engine.Search(input, Find("2026年")).Hits);
+        Assert.Empty(fixture.Engine.Search(input, Find("2026年10月")).Hits);
+
+        PdfEditResult edited = fixture.Engine.ApplyOps(input,
+            new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = "2026年10月" }] },
+            new PdfEditRequest { OutputPath = fixture.File("twolines.out.pdf"), Verify = true });
+
+        Assert.Equal(0, Assert.Single(edited.Applied).ItemsAffected);
+        Assert.Single(edited.Warnings!, static warning => warning.Code == "REDACTION_NO_MATCH");
+    }
+
+    /// <summary>
+    /// One line of runs, each placed 3 points after the previous one ends, the space Word's
+    /// automatic spacing leaves between East Asian text and digits.
+    /// </summary>
+    internal static string WriteSpacedRuns(PdfEngineFixture fixture, string fileName, params string[] runs)
+    {
+        string path = fixture.File(fileName);
+        using var document = new Document();
+        var builder = new TextBuilder(document.Pages.Add());
+        Aspose.Pdf.Text.Font font = FontRepository.FindFont("SimSun");
+        double x = 72;
+        foreach (string run in runs)
+        {
+            var fragment = new TextFragment(run) { Position = new Position(x, 700) };
+            fragment.TextState.Font = font;
+            fragment.TextState.FontSize = 12;
+            builder.AppendText(fragment);
+            x += font.MeasureString(run, 12) + 3;
+        }
+
+        document.Save(path);
+        return path;
+    }
+
     /// <summary>Every fill colour the page sets, including inside its forms.</summary>
     private static IReadOnlyList<Aspose.Pdf.Operators.SetRGBColor> FillColours(Page page)
     {

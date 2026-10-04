@@ -292,7 +292,11 @@ public sealed record AddLinkOp : PdfOp
 [Operation("redact_text")]
 public sealed record RedactTextOp : PdfOp
 {
-    /// <summary>The text to find, matched case-sensitively.</summary>
+    /// <summary>
+    /// The text to find, matched case-sensitively. Literal text also matches with up to two
+    /// spaces, never a line break, where an East Asian character meets another character, as
+    /// extracted text can hold there.
+    /// </summary>
     [MinLength(1)] public required string Pattern { get; init; }
 
     /// <summary>Whether the pattern is a .NET regular expression rather than literal text.</summary>

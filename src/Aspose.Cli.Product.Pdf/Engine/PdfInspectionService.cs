@@ -48,6 +48,8 @@ internal sealed class PdfInspectionService
         IReadOnlyList<int> pages = request.Pages?.Resolve(loaded.Document.Pages.Count)
             ?? Enumerable.Range(1, loaded.Document.Pages.Count).ToArray();
         SearchHits<PdfSearchHit> hits = request.Query.Collect<PdfSearchHit>();
+        // The page text is searched with the expression the engine matched.
+        Regex matching = TextPattern(text.Pattern, text.Expression is not null, text.CaseSensitive);
         foreach (int number in pages)
         {
             Page page = loaded.Document.Pages[number];
@@ -58,13 +60,13 @@ internal sealed class PdfInspectionService
             // it holds the same number of matches, which then pair up in reading order. A pair
             // whose texts differ gets none. The text is extracted only for a hit that is kept.
             string? pageText = null;
-            IReadOnlyList<(int Start, int Length)> found = [];
+            IReadOnlyList<Match> found = [];
             string? Context(int index, string snippet)
             {
                 if (pageText is null)
                 {
                     pageText = ExtractText(page, PdfReadModes.Plain);
-                    found = text.Find(pageText);
+                    found = matching.Matches(pageText);
                 }
 
                 if (found.Count != fragments.Count)
@@ -72,7 +74,7 @@ internal sealed class PdfInspectionService
                     return null;
                 }
 
-                (int start, int length) = found[index];
+                (int start, int length) = (found[index].Index, found[index].Length);
                 return string.Equals(pageText.Substring(start, length), snippet, StringComparison.OrdinalIgnoreCase)
                     ? TextSearch.Preview(pageText, start, length, ContextRadius).ReplaceLineEndings(" ")
                     : null;

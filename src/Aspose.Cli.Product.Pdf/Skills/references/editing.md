@@ -92,6 +92,15 @@ can be encoded or compressed. A `REDACTION_NO_MATCH` warning names each
 with `pdf query search`, and when it shows on the page but is not found, widen
 the pattern into a regular expression or cover the text with `redact_area`.
 
+The engine reads a visible gap between characters as a space, so extracted
+text can hold spaces the source never had: Word separates Chinese, Japanese or
+Korean text from digits and Latin letters with such a gap, and `2026年10月31日`
+extracts as `2026年 10月 31日`. Literal patterns of `redact_text` and
+`pdf query search` therefore also match with up to two spaces, never a line
+break, wherever an East Asian character meets another character. A regular
+expression is matched as written: allow the gaps with ` *`, for example
+`合同 *PO-\d+`.
+
 ### Scanned pages
 
 A page without a text layer (`pdf query pages` reports

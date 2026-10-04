@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Text;
 using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility.Output;
 using Aspose.Cli.Sdk.Text;
 using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Product.Pdf.Engine.Mapping;
@@ -174,10 +175,44 @@ internal static class PdfEngineSupport
         };
     }
 
+    /// <summary>
+    /// The expression that search, redact_text and its verification match. Literal text also
+    /// matches with up to two spaces, never a line break, wherever an East Asian character meets
+    /// another character: the engine reads the gap that automatic spacing leaves there, such as
+    /// Word's between Chinese and digits, as a space (known issue PDF-TEXT-GAP-SPACE in
+    /// KNOWN-ISSUES.md).
+    /// </summary>
+    internal static Regex TextPattern(string pattern, bool regex, bool caseSensitive)
+    {
+        if (regex)
+        {
+            return SafeRegex.Create(pattern, caseSensitive);
+        }
+
+        var expression = new StringBuilder();
+        Rune? previous = null;
+        foreach (Rune rune in pattern.EnumerateRunes())
+        {
+            if (previous is { } before && !Rune.IsWhiteSpace(before) && !Rune.IsWhiteSpace(rune)
+                && IsEastAsian(before) != IsEastAsian(rune))
+            {
+                expression.Append(@"[^\S\r\n]{0,2}");
+            }
+
+            expression.Append(Regex.Escape(rune.ToString()));
+            previous = rune;
+        }
+
+        return SafeRegex.Create(expression.ToString(), caseSensitive);
+
+        // East Asian Wide and Fullwidth characters: ideographs, kana, Hangul and fullwidth forms.
+        static bool IsEastAsian(Rune rune) => TextWidth.Of(rune) == 2;
+    }
+
     internal static TextFragmentCollection MatchText(
         Page page, string pattern, bool regex, bool caseSensitive, Func<string, Exception> invalidPattern)
     {
-        Regex expression = SafeRegex.Create(regex ? pattern : Regex.Escape(pattern), caseSensitive);
+        Regex expression = TextPattern(pattern, regex, caseSensitive);
         try
         {
             // The SDK overflows on contextual zero-width matches. Reject them before

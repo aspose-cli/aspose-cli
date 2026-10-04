@@ -171,6 +171,21 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** give those inputs `type="text"`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-TEXT-GAP-SPACE
+
+- **Defect:** text extraction and `TextFragmentAbsorber` read a horizontal gap of about a
+  sixth of an em or more between two text runs as a space, and search the text with those
+  spaces; no `TextSearchOptions` or `TextExtractionOptions` setting turns this off. Word leaves
+  such a gap between East Asian text and digits or Latin letters (automatic spacing), so
+  `2026年10月31日` in a Word-made PDF extracts as `2026年 10月 31日` (two spaces in the plain
+  mode) and a search for it finds nothing.
+- **CLI behavior:** literal patterns of `pdf query search` and `redact_text`, and the
+  `redact_text` verification, also match with up to two spaces, never a line break, wherever an
+  East Asian character meets another character. A `redact_text` operation that matches nothing
+  is named in a `REDACTION_NO_MATCH` warning.
+- **Workaround:** in a regular expression, allow the gaps with ` *`.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-ATTACHMENT-NAME-OPENS-FILE
 
 - **Defect:** the `FileSpecification.Name` setter opens the file its value names, relative to

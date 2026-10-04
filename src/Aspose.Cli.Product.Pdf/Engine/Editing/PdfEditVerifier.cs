@@ -88,7 +88,7 @@ internal sealed class PdfEditVerifier
             case RedactTextOp redact:
                 _redactions.Add(new RedactionExpectation(
                     id,
-                    SafeRegex.Create(redact.Regex ? redact.Pattern : Regex.Escape(redact.Pattern), caseSensitive: true),
+                    TextPattern(redact.Pattern, redact.Regex, caseSensitive: true),
                     redact.Pages is null ? null : PdfMutationSupport.Resolve(document, redact.Pages)));
                 break;
             case SetMetadataOp metadata:
