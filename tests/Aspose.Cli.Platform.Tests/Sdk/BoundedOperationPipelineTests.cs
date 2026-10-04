@@ -1,4 +1,5 @@
-﻿using Aspose.Cli.Sdk;
+﻿using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Operations;
@@ -54,6 +55,48 @@ public sealed class BoundedOperationPipelineTests
         Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
         Assert.Equal(allowed.Split(','), error.Details["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
         Assert.Equal(suggestion, error.Details["suggestion"]?.GetValue<string>());
+    }
+
+    [Fact]
+    public void Prepare_ReportsEveryInvalidOperationAtOnce()
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Prepare(
+            new TestBatch { Ops = [Set(-1), Note(), Set(-2)] }));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal([0, 2], error.Details["errors"]!.AsArray().Select(static item => item!["index"]!.GetValue<int>()));
+        Assert.All(error.Details["errors"]!.AsArray(), item => Assert.Equal("value must be at least 0", item!["reason"]!.GetValue<string>()));
+        Assert.Contains("1 more operation is invalid", error.Message, StringComparison.Ordinal);
+        Assert.Null(Assert.Throws<CliException>(() => Catalog.Prepare(new TestBatch { Ops = [Set(-1)] })).Details!["errors"]);
+    }
+
+    [Fact]
+    public void Parse_ReportsEveryInvalidOperationAtOnce()
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
+            """{"ops":[{"op":"set","value":-1},{"op":"note","text":"a"},{"op":"set","value":"x"},{"op":"sett"}]}""",
+            TestContracts.Json));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        JsonArray errors = error.Details["errors"]!.AsArray();
+        Assert.Equal([0, 2, 3], errors.Select(static item => item!["index"]!.GetValue<int>()));
+        Assert.Equal("value must be at least 0", errors[0]!["reason"]!.GetValue<string>());
+        Assert.Equal("set", errors[1]!["op"]!.GetValue<string>());
+        Assert.Equal("value must be a whole number", errors[1]!["reason"]!.GetValue<string>());
+        Assert.Equal("set", errors[2]!["suggestion"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Parse_ReportsALaterOperationTheSerializerCannotRead()
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
+            """{"ops":[{"op":"set","value":"x"},{"op":"probe","mode":"unsupported"}]}""", TestContracts.Json));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal([0, 1], error.Details!["errors"]!.AsArray().Select(static item => item!["index"]!.GetValue<int>()));
+        Assert.Equal("probe", error.Details["errors"]![1]!["op"]!.GetValue<string>());
     }
 
     [Theory]

@@ -45,6 +45,26 @@ internal static class OperationErrors
     }
 
     /// <summary>
+    /// Rejects every invalid operation of a batch at once, so a caller fixes them in one pass.
+    /// The first failure leads; with more than one, <c>details.errors</c> lists the details of each.
+    /// </summary>
+    internal static CliException InvalidAll(IReadOnlyList<CliException> failures)
+    {
+        CliException first = failures[0];
+        if (failures.Count == 1)
+        {
+            return first;
+        }
+
+        JsonObject details = first.Details!.DeepClone().AsObject();
+        details["errors"] = new JsonArray([.. failures.Select(static failure => failure.Details!.DeepClone())]);
+        int more = failures.Count - 1;
+        string others = more == 1 ? "1 more operation is invalid" : $"{more} more operations are invalid";
+        return new CliException(ErrorCodes.OpsInvalid, $"{first.Message}; {others}, listed in details.errors",
+            hint: first.Hint, details: details);
+    }
+
+    /// <summary>
     /// Rejects an entry whose op names no operation of the vocabulary, listing the operations in
     /// <c>available</c> and, when one is likely meant, naming it in <c>suggestion</c>.
     /// </summary>

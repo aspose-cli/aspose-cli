@@ -114,7 +114,7 @@ public sealed class OperationCatalog<TOp>
     }
 
     /// <summary>Parses, validates and identifies an operation document.</summary>
-    /// <exception cref="CliException"><c>OPS_INVALID</c>, with the index of a failing operation.</exception>
+    /// <exception cref="CliException"><c>OPS_INVALID</c>, with the index of the first failing operation and, when several fail, each in <c>details.errors</c>.</exception>
     public TBatch Parse<TBatch>(string json, ProductJsonDefinition contracts)
         where TBatch : BoundedOperationEnvelope<TOp>
     {
@@ -130,8 +130,7 @@ public sealed class OperationCatalog<TOp>
         {
             batch = contracts.Deserialize<TBatch>(json);
         }
-        catch (Exception exception) when (
-            exception is JsonException or InvalidOperationException or NotSupportedException)
+        catch (Exception exception) when (IsRejection(exception))
         {
             throw Rejected(document.RootElement, typeof(TBatch), contracts.LocalOptions, exception as JsonException);
         }
@@ -144,7 +143,7 @@ public sealed class OperationCatalog<TOp>
     /// operations without one. Each operation is checked against its declared constraints,
     /// then its own <see cref="BoundedOperation.Validated"/> rules, which may normalize it.
     /// </summary>
-    /// <exception cref="CliException"><c>OPS_INVALID</c>, with the index of a failing operation.</exception>
+    /// <exception cref="CliException"><c>OPS_INVALID</c>, with the index of the first failing operation and, when several fail, each in <c>details.errors</c>.</exception>
     public TBatch Prepare<TBatch>(TBatch batch)
         where TBatch : BoundedOperationEnvelope<TOp>
     {
@@ -161,25 +160,18 @@ public sealed class OperationCatalog<TOp>
             static (operation, id) => (TOp)((BoundedOperation)operation with { Id = id }),
             Invalid);
         var validated = new TOp[identified.Count];
+        var failures = new List<CliException>();
         for (int index = 0; index < identified.Count; index++)
         {
-            TOp operation = identified[index];
-            OperationRecord record = DescriptorOf(operation).Record;
-            try
+            if (Validate(index, identified[index], out validated[index]!) is { } failure)
             {
-                OperationContractValidator.Check(record, operation);
-                validated[index] = operation.Validated() as TOp
-                    ?? throw new InvalidOperationException($"{operation.GetType().Name}.Validated() must return a {typeof(TOp).Name}.");
+                failures.Add(failure);
             }
-            catch (OperationInvalidException rejection)
-            {
-                throw OperationErrors.InvalidAt(index, record.Name, rejection.Message, rejection.Hint ?? DefaultHint);
-            }
-            catch (CliException failure) when (!failure.IsInvocationFailure)
-            {
-                // A shared value parser (a page range, an address) rejected a field.
-                throw OperationErrors.InvalidAt(index, record.Name, failure.Message, failure.Hint ?? DefaultHint, failure.Code);
-            }
+        }
+
+        if (failures.Count > 0)
+        {
+            throw OperationErrors.InvalidAll(failures);
         }
 
         return (TBatch)((BoundedOperationEnvelope<TOp>)batch with { SchemaVersion = 2, Ops = validated });
@@ -187,6 +179,33 @@ public sealed class OperationCatalog<TOp>
 
     /// <summary>The operation most likely meant by a name the vocabulary does not declare, or null.</summary>
     internal string? Closest(string name) => NameSuggestions.Closest(name, Names).FirstOrDefault();
+
+    /// <summary>
+    /// Checks one operation against its declared constraints, then its own
+    /// <see cref="BoundedOperation.Validated"/> rules, which may normalize it.
+    /// </summary>
+    /// <returns>The <c>OPS_INVALID</c> failure of the operation at <paramref name="index"/>, or null when it is valid.</returns>
+    private CliException? Validate(int index, TOp operation, out TOp? validated)
+    {
+        OperationRecord record = DescriptorOf(operation).Record;
+        validated = null;
+        try
+        {
+            OperationContractValidator.Check(record, operation);
+            validated = operation.Validated() as TOp
+                ?? throw new InvalidOperationException($"{operation.GetType().Name}.Validated() must return a {typeof(TOp).Name}.");
+            return null;
+        }
+        catch (OperationInvalidException rejection)
+        {
+            return OperationErrors.InvalidAt(index, record.Name, rejection.Message, rejection.Hint ?? DefaultHint);
+        }
+        catch (CliException failure) when (!failure.IsInvocationFailure)
+        {
+            // A shared value parser (a page range, an address) rejected a field.
+            return OperationErrors.InvalidAt(index, record.Name, failure.Message, failure.Hint ?? DefaultHint, failure.Code);
+        }
+    }
 
     /// <summary>Finds a named operation's record.</summary>
     internal bool TryGetOperation(string name, [NotNullWhen(true)] out OperationRecord? record)
@@ -220,19 +239,51 @@ public sealed class OperationCatalog<TOp>
     /// <summary>
     /// Restates a serializer rejection for the agent. The operation converter already words its
     /// failures in wire terms and the serializer records the failing operation's position, so
-    /// such a failure keeps its text and gains the index and name; any other failure is
-    /// explained from the document against the envelope contract.
+    /// such a failure keeps its text and gains the index and name, and every other invalid
+    /// operation is reported with it; any other failure is explained from the document
+    /// against the envelope contract.
     /// </summary>
     private CliException Rejected(JsonElement root, Type batchType, JsonSerializerOptions options, JsonException? rejection)
     {
         if (OperationIndex(rejection?.Path) is { } index)
         {
-            return InvalidAt(root, index, rejection!);
+            // The serializer stops at the first operation that does not fit its contract; each
+            // operation of a batch within the limit is read on its own, and checked when it
+            // fits, so the error names every invalid operation.
+            JsonTypeInfo info = options.GetTypeInfo(typeof(TOp));
+            JsonElement ops = root.GetProperty("ops");
+            var failures = new List<CliException>();
+            int count = ops.GetArrayLength() <= MaximumOperationCount ? ops.GetArrayLength() : 0;
+            for (int current = 0; current < count; current++)
+            {
+                TOp operation;
+                try
+                {
+                    operation = (TOp)ops[current].Deserialize(info)!;
+                }
+                catch (Exception failure) when (IsRejection(failure))
+                {
+                    failures.Add(InvalidAt(root, current, failure as JsonException
+                        ?? JsonContractDiagnostics.Explain(ops[current], typeof(TOp), options, failurePath: null)));
+                    continue;
+                }
+
+                if (Validate(current, operation, out _) is { } invalid)
+                {
+                    failures.Add(invalid);
+                }
+            }
+
+            return OperationErrors.InvalidAll(failures.Count > 0 ? failures : [InvalidAt(root, index, rejection!)]);
         }
 
         JsonException reason = JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path);
         return OperationErrors.Invalid(reason.Message, DefaultHint, reason as AllowedFieldsException);
     }
+
+    /// <summary>Whether the serializer rejected the document's content rather than failed itself.</summary>
+    private static bool IsRejection(Exception exception) =>
+        exception is JsonException or InvalidOperationException or NotSupportedException;
 
     private static int? OperationIndex(string? path)
     {

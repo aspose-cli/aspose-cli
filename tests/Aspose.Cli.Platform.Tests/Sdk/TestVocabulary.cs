@@ -1,3 +1,4 @@
+using System.Text.Json;
 using System.Text.Json.Serialization;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
@@ -123,6 +124,22 @@ public sealed record SecretOp : TestOp
     [SecretEnv] public string? PasswordEnv { get; init; }
 }
 
+/// <summary>Reads a mode whose converter cannot read the value "unsupported".</summary>
+[Operation("probe")]
+public sealed record ProbeOp : TestOp
+{
+    [JsonConverter(typeof(RefusingConverter))] public string? Mode { get; init; }
+}
+
+/// <summary>A converter that fails outside the JSON exceptions, as a serializer limit does.</summary>
+public sealed class RefusingConverter : JsonConverter<string>
+{
+    public override string Read(ref Utf8JsonReader reader, Type typeToConvert, JsonSerializerOptions options) =>
+        reader.GetString() is "unsupported" ? throw new NotSupportedException("unsupported mode") : reader.GetString()!;
+
+    public override void Write(Utf8JsonWriter writer, string value, JsonSerializerOptions options) => writer.WriteStringValue(value);
+}
+
 /// <summary>The test batch, declared as a product declares its batch, with no strictness of its own.</summary>
 public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 
@@ -133,6 +150,7 @@ public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 [JsonSerializable(typeof(NoteOp))]
 [JsonSerializable(typeof(PaintOp))]
 [JsonSerializable(typeof(PlaceOp))]
+[JsonSerializable(typeof(ProbeOp))]
 [JsonSerializable(typeof(SecretOp))]
 [JsonSerializable(typeof(SetOp))]
 [JsonSerializable(typeof(ShiftOp))]

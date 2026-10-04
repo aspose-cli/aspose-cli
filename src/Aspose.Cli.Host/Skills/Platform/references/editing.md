@@ -59,8 +59,9 @@ A PDF batch, for example:
   accepts: ...`). An unknown field also lists the fields its operation,
   nested object or top-level document accepts in `details.allowedFields`, and an
   unknown `op` lists the operations in `details.available`; when one is likely
-  meant, `details.suggestion` names it. Fix that entry and run the whole batch
-  again.
+  meant, `details.suggestion` names it. When several entries fail the same
+  check, `details.errors` lists the same details for each of them. Fix those
+  entries and run the whole batch again.
 - **`--best-effort`.** Successful operations are kept and saved; each failed
   entry in `applied[]` has `status: "failed"` and an `error` with `code`,
   `message`, `hint` and `details`. The command exits 8 when any operation
