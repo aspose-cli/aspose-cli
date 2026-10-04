@@ -98,8 +98,8 @@ public sealed record RotatePagesOp : PdfOp
 {
     [PageRange] public required string Pages { get; init; }
 
-    /// <summary>The rotation in degrees, clockwise.</summary>
-    [AllowedValues(90, 180, 270)] public required int Angle { get; init; }
+    /// <summary>The rotation in degrees, clockwise; 0 sets a page upright.</summary>
+    [AllowedValues(0, 90, 180, 270)] public required int Angle { get; init; }
 }
 
 /// <summary>Deletes pages; a PDF must keep at least one page.</summary>

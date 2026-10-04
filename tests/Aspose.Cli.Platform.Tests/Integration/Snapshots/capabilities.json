@@ -2253,7 +2253,7 @@
           "command": "edit",
           "inputSchema": "v2/pdf/ops",
           "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-          "contractFingerprint": "sha256:b458d150f0b752990d29238dfd3bea85ee95d6e592a89999f6ef635bea232801",
+          "contractFingerprint": "sha256:28bb73ff6c1885a91c3cb181c12470bddd5db81f8b2e77b340f23294ab480e16",
           "maximumOperationCount": 256,
           "ops": [
             "add_attachment",

@@ -13,10 +13,11 @@ internal sealed partial class PdfMutationHandlers
         IReadOnlyList<int> pages = Resolve(_document, operation.Pages);
         Rotation rotation = operation.Angle switch
         {
+            0 => Rotation.None,
             90 => Rotation.on90,
             180 => Rotation.on180,
             270 => Rotation.on270,
-            _ => throw new OperationInvalidException("Rotation must be 90, 180 or 270 degrees."),
+            _ => throw new OperationInvalidException("Rotation must be 0, 90, 180 or 270 degrees."),
         };
         foreach (int number in pages)
         {

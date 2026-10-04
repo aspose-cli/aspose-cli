@@ -16,7 +16,7 @@ aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --v
 ## Operations by task
 
 - Pages: `insert_blank_page`, `insert_pages_from` (pages of another PDF),
-  `delete_pages`, `move_pages`, `rotate_pages` (absolute angle),
+  `delete_pages`, `move_pages`, `rotate_pages` (absolute angle; 0 sets a page upright),
   `set_page_size`, `crop_pages` (changes the visible box only).
 - Stamps: `add_header_text`, `add_footer_text`, `add_page_numbers`,
   `add_watermark_text`, `add_watermark_image`, `add_stamp_image`.

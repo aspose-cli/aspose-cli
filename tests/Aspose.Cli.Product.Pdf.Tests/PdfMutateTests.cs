@@ -88,6 +88,29 @@ public sealed class PdfMutateTests
         Assert.Contains("PUBLIC", text, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void RotatePages_SetsARotatedPageUprightWithAngleZero()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("rotated.pdf");
+        using (var document = new Document())
+        {
+            document.Pages.Add().Rotate = Rotation.on180;
+            document.Pages.Add().Rotate = Rotation.on90;
+            document.Save(input);
+        }
+
+        string output = fixture.File("upright.pdf");
+        fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new RotatePagesOp { Pages = "1-2", Angle = 0 }],
+        }, new PdfEditRequest { OutputPath = output });
+
+        Assert.All(
+            fixture.Engine.GetInfo(output, new PdfInfoRequest { IncludePreview = true }).Pages!,
+            static page => Assert.Equal(0, page.Rotation));
+    }
+
     [Theory]
     [InlineData("(?<=SECRET: )1234", true)]
     [InlineData("SECRET: 1234", false)]

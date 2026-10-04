@@ -923,9 +923,10 @@
           "$ref": "#/$defs/pages"
         },
         "angle": {
-          "description": "The rotation in degrees, clockwise.",
+          "description": "The rotation in degrees, clockwise; 0 sets a page upright.",
           "type": "integer",
           "enum": [
+            0,
             90,
             180,
             270
