@@ -279,7 +279,8 @@ public sealed class PdfEngineTests
         });
         Assert.Equal("owner", owner.Pdf.PasswordType);
         Assert.True(owner.Permissions!.OwnerAccess);
-        Assert.True(owner.Permissions.Copy);
+        // The permissions are the ones the file grants readers, whatever password opened it.
+        Assert.False(owner.Permissions.Copy);
     }
 
     [Fact]
@@ -306,6 +307,7 @@ public sealed class PdfEngineTests
         Assert.False(normal.Permissions.OwnerAccess);
         Assert.Equal("owner", owner.Pdf.PasswordType);
         Assert.True(owner.Permissions!.OwnerAccess);
+        Assert.Equal(normal.Permissions with { OwnerAccess = true }, owner.Permissions);
     }
 
     [Fact]

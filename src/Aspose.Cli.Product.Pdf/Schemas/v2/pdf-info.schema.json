@@ -151,15 +151,15 @@
       "properties": {
         "hasOpenPassword": { "type": "boolean", "description": "Whether the file needs a password to open." },
         "hasOwnerPassword": { "type": "boolean", "description": "Whether the file has an owner password, which lifts its permissions." },
-        "ownerAccess": { "type": "boolean", "description": "Whether this run may change the file regardless of its permissions: it is not encrypted or was opened with the owner password." },
-        "print": { "type": "boolean" },
-        "copy": { "type": "boolean" },
-        "modify": { "type": "boolean" },
-        "annotate": { "type": "boolean" },
-        "fillForms": { "type": "boolean" },
-        "extractAccessibility": { "type": "boolean" },
-        "assemble": { "type": "boolean" },
-        "printHighResolution": { "type": "boolean" }
+        "ownerAccess": { "type": "boolean", "description": "Whether this run may change the file regardless of its permissions: it is not encrypted or was opened with the owner password. The permissions below still state what the file grants readers." },
+        "print": { "type": "boolean", "description": "Whether the file lets readers print it. Like every permission below, this is what the file grants anyone without the owner password, whatever password this run used; true for a file that is not encrypted." },
+        "copy": { "type": "boolean", "description": "Whether the file lets readers copy or extract its text and images." },
+        "modify": { "type": "boolean", "description": "Whether the file lets readers change its content." },
+        "annotate": { "type": "boolean", "description": "Whether the file lets readers add or change annotations and fill form fields." },
+        "fillForms": { "type": "boolean", "description": "Whether the file lets readers fill its form fields, even when annotate is false." },
+        "extractAccessibility": { "type": "boolean", "description": "Whether the file lets accessibility tools extract its text and images." },
+        "assemble": { "type": "boolean", "description": "Whether the file lets readers insert, delete, rotate and move pages and create bookmarks." },
+        "printHighResolution": { "type": "boolean", "description": "Whether the file lets readers print it at full quality; when false and print is true, printing may be degraded." }
       }
     },
     "signatures": {

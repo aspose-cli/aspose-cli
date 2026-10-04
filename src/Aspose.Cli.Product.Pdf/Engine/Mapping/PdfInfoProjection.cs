@@ -262,24 +262,23 @@ internal static class PdfInfoProjection
             ? "none"
             : loaded.PasswordType.ToString().ToLowerInvariant();
 
+    /// <summary>
+    /// The passwords of the file and the permissions it grants readers without the owner
+    /// password, also when this run opened it with the owner password, which lifts them.
+    /// </summary>
     private static PdfPermissionInfo Permissions(Document document, PasswordType passwordType)
     {
         var permissions = (Aspose.Pdf.Permissions)document.Permissions;
-        bool owner = passwordType is PasswordType.Owner or PasswordType.None;
-        bool hasOpenPassword;
-        bool hasOwnerPassword;
         var fileInfo = new PdfFileInfo(document);
-        hasOpenPassword = fileInfo.HasOpenPassword;
-        hasOwnerPassword = fileInfo.HasEditPassword;
 
         bool Allowed(Aspose.Pdf.Permissions value) =>
-            !document.IsEncrypted || owner || permissions.HasFlag(value);
+            !document.IsEncrypted || permissions.HasFlag(value);
 
         return new PdfPermissionInfo
         {
-            HasOpenPassword = hasOpenPassword,
-            HasOwnerPassword = hasOwnerPassword,
-            OwnerAccess = owner,
+            HasOpenPassword = fileInfo.HasOpenPassword,
+            HasOwnerPassword = fileInfo.HasEditPassword,
+            OwnerAccess = passwordType is PasswordType.Owner or PasswordType.None,
             Print = Allowed(Aspose.Pdf.Permissions.PrintDocument),
             Copy = Allowed(Aspose.Pdf.Permissions.ExtractContent),
             Modify = Allowed(Aspose.Pdf.Permissions.ModifyContent),
