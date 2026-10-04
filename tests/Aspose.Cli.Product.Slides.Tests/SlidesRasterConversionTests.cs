@@ -87,6 +87,25 @@ public sealed class SlidesRasterConversionTests
         Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "png*"));
     }
 
+    /// <summary>A single slide is refused an output without an extension, as several slides are.</summary>
+    [Fact]
+    public void RenderImage_OfOneSlideWithoutAnExtensionIsRefused()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 2);
+        string output = fixture.File("slides");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Render(input, new PresentationRenderRequest
+        {
+            TargetFormatId = "png",
+            OutputPath = output,
+        }));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Contains(output + ".png", error.Hint, StringComparison.Ordinal);
+        Assert.False(Path.Exists(output));
+    }
+
     [Theory]
     [InlineData("png", false)]
     [InlineData("jpeg", false)]

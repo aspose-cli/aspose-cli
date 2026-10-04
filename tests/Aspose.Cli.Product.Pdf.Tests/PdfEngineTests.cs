@@ -504,4 +504,23 @@ public sealed class PdfEngineTests
             Assert.Contains(result.Warnings!, static warning => warning.Code == WarningCodes.EvalMode);
         }
     }
+
+    /// <summary>A single page is refused an output without an extension, as several pages are.</summary>
+    [Theory]
+    [InlineData("render")]
+    [InlineData("convert")]
+    public void ImageOutput_OfOnePageWithoutAnExtensionIsRefused(string command)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument(pages: 2);
+        string output = fixture.File("pages");
+
+        CliException error = Assert.Throws<CliException>(() => command == "render"
+            ? fixture.Engine.Render(input, new PdfRenderRequest { TargetFormatId = "png", OutputPath = output })
+            : (object)fixture.Engine.Convert(input, new PdfConvertRequest { TargetFormatId = "png", OutputPath = output, Pages = CliPageRange.Parse("1") }));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Contains(output + ".png", error.Hint, StringComparison.Ordinal);
+        Assert.False(Path.Exists(output));
+    }
 }

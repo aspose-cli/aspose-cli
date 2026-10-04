@@ -112,9 +112,7 @@ internal sealed class PdfProductionService
         var staged = new List<(int Page, string Path)>();
         foreach (int pageNumber in pages)
         {
-            string path = pages.Count == 1
-                ? Path.GetFullPath(request.OutputPath)
-                : PartOutputPath.For(request.OutputPath, PartOutputPath.Page, pageNumber, request.TargetFormatId);
+            string path = PartOutputPath.For(request.OutputPath, PartOutputPath.Page, pageNumber, pages.Count, request.TargetFormatId);
             writer.Stage(path, request.Overwrite, stagedPath =>
             {
                 using FileStream stream = File.Create(stagedPath);
@@ -888,9 +886,7 @@ internal sealed class PdfProductionService
         var paths = new List<string>(pages.Count);
         foreach (int pageNumber in pages)
         {
-            string path = pages.Count == 1
-                ? request.OutputPath
-                : PartOutputPath.For(request.OutputPath, PartOutputPath.Page, pageNumber, request.TargetFormatId);
+            string path = PartOutputPath.For(request.OutputPath, PartOutputPath.Page, pageNumber, pages.Count, request.TargetFormatId);
             writer.Stage(path, request.Overwrite, temp =>
             {
                 using FileStream stream = File.Create(temp);

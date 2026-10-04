@@ -80,9 +80,7 @@ internal sealed class WordsProductionService
             long width = (long)Math.Ceiling(info.WidthInPoints / 72d * request.Dpi);
             long height = (long)Math.Ceiling(info.HeightInPoints / 72d * request.Dpi);
             RenderPixelGuard.EnsureFits(_resourceBudgets, width, height, request.Dpi, RenderHint);
-            string path = pages.Count == 1
-                ? request.OutputPath
-                : PartOutputPath.For(request.OutputPath, PartOutputPath.Page, page, request.TargetFormatId);
+            string path = PartOutputPath.For(request.OutputPath, PartOutputPath.Page, page, pages.Count, request.TargetFormatId);
             SaveOptions options = WordsSavePipeline.Options(request.TargetFormatId, pages: [page], dpi: request.Dpi);
             long size = transaction.Stage(path, request.Overwrite, temp => loaded.Document.Save(temp, options)).SizeBytes;
             outputs.Add(new PageOutput { Page = page, Output = BuildOutput(path, request.TargetFormatId, size) });

@@ -466,6 +466,24 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         _fixture.Engine.Read(path, new DocumentReadRequest { MaxBlocks = 1000 })
             .Blocks.Select(static block => block.Text ?? $"table {block.RowCount}x{block.ColumnCount}").ToArray();
 
+    /// <summary>A single page is refused an output without an extension, as several pages are.</summary>
+    [Fact]
+    public void Render_OfOnePageWithoutAnExtensionIsRefused()
+    {
+        string input = _fixture.CreateReport();
+        string output = _fixture.Temp.File("pages-" + Guid.NewGuid().ToString("N"));
+
+        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.Render(input, new WordsRenderRequest
+        {
+            TargetFormatId = "png",
+            OutputPath = output,
+        }));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Contains(output + ".png", error.Hint, StringComparison.Ordinal);
+        Assert.False(Path.Exists(output));
+    }
+
     [Fact]
     public void ConvertRenderAndExtract_ProduceRealOutputs()
     {
