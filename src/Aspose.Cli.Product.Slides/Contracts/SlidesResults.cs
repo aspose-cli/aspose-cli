@@ -182,7 +182,12 @@ public sealed record SlideShapeData
 public sealed record SlideTextRunData
 {
     public required string Text { get; init; }
+
+    /// <summary>The font of the run's Latin text.</summary>
     public string? Font { get; init; }
+
+    /// <summary>The font of the run's Chinese, Japanese and Korean text.</summary>
+    public string? EastAsianFont { get; init; }
     public double? Size { get; init; }
     public bool? Bold { get; init; }
     public bool? Italic { get; init; }

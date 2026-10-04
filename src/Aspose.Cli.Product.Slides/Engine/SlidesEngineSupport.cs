@@ -279,6 +279,7 @@ internal static class SlidesEngineSupport
                 {
                     Text = text,
                     Font = EmptyToNull(effective.LatinFont?.FontName),
+                    EastAsianFont = EmptyToNull(effective.EastAsianFont?.FontName),
                     Size = effective.FontHeight,
                     Bold = effective.FontBold,
                     Italic = effective.FontItalic,

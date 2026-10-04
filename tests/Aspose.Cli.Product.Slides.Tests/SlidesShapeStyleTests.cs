@@ -104,6 +104,28 @@ public sealed class SlidesShapeStyleTests
     }
 
     [Fact]
+    public void FullRead_ReportsTheFontOfLatinAndEastAsianText()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("fonts.pptx");
+        using (var source = new Presentation())
+        {
+            IAutoShape box = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 300, 60);
+            box.TextFrame.Text = "Fonts";
+            IPortionFormat format = box.TextFrame.Paragraphs[0].Portions[0].PortionFormat;
+            format.LatinFont = new FontData("Calibri");
+            format.EastAsianFont = new FontData("SimSun");
+            source.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
+        }
+
+        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+
+        SlideTextRunData run = Assert.Single(read.Slides[0].Shapes.Single(static shape => !shape.EvaluationWatermark).Runs!);
+        Assert.Equal("Calibri", run.Font);
+        Assert.Equal("SimSun", run.EastAsianFont);
+    }
+
+    [Fact]
     public void ShapeWithoutText_RefusesATextStyle()
     {
         using var fixture = new SlidesEngineFixture();
