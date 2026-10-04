@@ -114,7 +114,7 @@
       "additionalProperties": false,
       "properties": {
         "type": { "enum": ["none", "acro", "xfa"] },
-        "fieldCount": { "type": "integer", "minimum": 0 },
+        "fieldCount": { "type": "integer", "minimum": 0, "description": "The number of field names, so a radio group is one field however many buttons pdf query forms lists for it; review counts fields the same way." },
         "readOnly": { "type": "boolean" }
       }
     },

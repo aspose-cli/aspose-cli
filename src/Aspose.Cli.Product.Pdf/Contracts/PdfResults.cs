@@ -106,6 +106,7 @@ public sealed record PdfOutlineItem
 public sealed record PdfFormSummary
 {
     public required string Type { get; init; }
+    /// <summary>The number of field names; a radio group is one field.</summary>
     public required int FieldCount { get; init; }
     public required bool ReadOnly { get; init; }
 }

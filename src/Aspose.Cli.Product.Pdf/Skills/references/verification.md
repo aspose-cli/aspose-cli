@@ -93,7 +93,8 @@ and contrast. PDF review findings worth acting on:
   `edit` and `sign`; HTML and text sources resolve CSS `font-family` from it too.
   Text operations that name a `font`, and a visible signature, need that font here.
 - `PDF_FORM_APPEARANCE_REVIEW_REQUIRED`: open the pages with fields and look for
-  stale, clipped or missing values.
+  stale, clipped or missing values. It counts fields by name, as `fieldCount`
+  does, so a radio group is one field.
 - `PDF_EVALUATION_WATERMARK`: a run without a license saved its watermark into
   the page, and a license does not remove it; regenerate the file from its
   original inputs with the license before delivery. The check matches the

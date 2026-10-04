@@ -219,7 +219,8 @@ internal static class PdfInfoProjection
         return new PdfFormSummary
         {
             Type = type,
-            FieldCount = document.Form.Fields.Length,
+            // A radio group's buttons share its name and are one field.
+            FieldCount = document.Form.Fields.Select(static field => field.FullName).Distinct(StringComparer.Ordinal).Count(),
             ReadOnly = xfa,
         };
     }

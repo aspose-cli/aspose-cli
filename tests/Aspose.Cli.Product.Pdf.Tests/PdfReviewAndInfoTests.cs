@@ -175,6 +175,39 @@ public sealed class PdfReviewAndInfoTests
         }
     }
 
+    /// <summary>Inspect and review count form fields by name, so a radio group is one field.</summary>
+    [Fact]
+    public void InspectAndReview_CountARadioGroupAsOneField()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.File("form.pdf");
+        using (var document = new Document())
+        {
+            Page page = document.Pages.Add();
+            document.Form.Add(new Aspose.Pdf.Forms.TextBoxField(page, new Rectangle(72, 700, 300, 720)) { PartialName = "company" });
+            var color = new Aspose.Pdf.Forms.RadioButtonField(page) { PartialName = "color" };
+            foreach ((string option, double x) in new[] { ("Red", 72.0), ("Green", 112.0), ("Blue", 152.0) })
+            {
+                color.Add(new Aspose.Pdf.Forms.RadioButtonOptionField(page, new Rectangle(x, 620, x + 20, 640)) { OptionName = option });
+            }
+            document.Form.Add(color);
+            document.Save(input);
+        }
+
+        PdfInfoResult info = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["forms"] });
+        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.Equal(2, info.Forms!.FieldCount);
+        Assert.Equal(2, fixture.Engine.ReadForm(input, new PdfFormReadRequest()).Fields.Select(static field => field.Name).Distinct().Count());
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        JsonNode result = JsonNode.Parse(review.StdOut)!;
+        Assert.Contains(result["findings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "PDF_FORM_APPEARANCE_REVIEW_REQUIRED"
+            && item["message"]!.GetValue<string>().Contains("2 form field(s)", StringComparison.Ordinal));
+        Assert.Equal(2, result["coverage"]!["metrics"]!.AsArray()
+            .Single(static metric => metric!["name"]!.GetValue<string>() == "formFields")!["value"]!.GetValue<int>());
+    }
+
     [Fact]
     public void Review_DeclaresEveryCheckItsAssessmentReports()
     {

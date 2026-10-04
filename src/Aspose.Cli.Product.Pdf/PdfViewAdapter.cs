@@ -273,8 +273,11 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         {
             Password = password,
         });
-        int fieldsWithoutPage = form.Fields.Count(field =>
-            field.Page is null or < 1 || field.Page > pages);
+        int fieldsWithoutPage = form.Fields
+            .Where(field => field.Page is null or < 1 || field.Page > pages)
+            .Select(static field => field.Name)
+            .Distinct(StringComparer.Ordinal)
+            .Count();
         findings.Add(PdfReviewChecks.FormAppearanceReviewRequired.Finding(
             $"The PDF contains {formFields} form field(s); inspect every rendered field appearance for stale, clipped, or missing values.",
             "document",

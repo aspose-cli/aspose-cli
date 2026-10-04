@@ -25,6 +25,8 @@ field per button under the group's name: `value` holds the group's selection,
 Any other value, `Off` included,
 is refused. A `value` of `null` clears any field: a radio group selects no
 button, a check box is unchecked and any other field is emptied.
+Fields are counted by name: `fieldCount` of `pdf inspect --detail forms` and the
+count `review` reports take a radio group as one field.
 
 ```json
 { "ops": [
