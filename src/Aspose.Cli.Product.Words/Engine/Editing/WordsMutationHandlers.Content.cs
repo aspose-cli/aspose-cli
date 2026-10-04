@@ -53,6 +53,18 @@ internal sealed partial class WordsMutationHandlers
             }
         }
 
+        // Like a verification issue, the warning never repeats the find text.
+        if (replaced == 0)
+        {
+            _warnings.Add(new Warning
+            {
+                Code = WarningCodes.ReplaceNoMatch,
+                Message = $"replace_text matched no text in scope '{operation.Scope}', so nothing was replaced.",
+                Hint = "Search with 'words query search' and the same pattern and scope, or --scope all for headers, footers, "
+                    + "footnotes and comments. Field codes and text a tracked change deletes are never matched.",
+            });
+        }
+
         return replaced;
     }
 

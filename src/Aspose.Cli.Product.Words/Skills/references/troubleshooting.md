@@ -37,6 +37,9 @@ The error envelope, exit codes, not-found details and shared codes such as
   `remove_comments` changed nothing because no revision or comment has that
   `author`; names match exactly, and the hint lists the document's. Do not
   report the decision as made; correct the name and run the batch again.
+- `REPLACE_NO_MATCH`: `replace_text` found nothing in its `scope` and changed
+  nothing. Search with `words query search` and the same pattern; text in
+  headers, footers, footnotes or comments needs its `scope`.
 - `MERGE_VALUE_MISSING`: `mail_merge` data has no value for a template field
   in the listed records ([mail merge](mail-merge.md)).
 - `DOCUMENT_ENCRYPTION_REMOVED`: the output format cannot be encrypted.

@@ -63,7 +63,8 @@ aspose-cli schema v2/words/ops --operation insert_table
   format of the text where the match starts; when that text has no Chinese,
   Japanese or Korean characters, such as an amount in digits, East Asian
   characters of the new text take the East Asian font of the nearest East
-  Asian text in the paragraph.
+  Asian text in the paragraph. A `replace_text` that matches nothing changes
+  nothing and reports `REPLACE_NO_MATCH`.
 - `repeat_table_row` expands a template row of the table `at` addresses (such
   as `{"find":"{{code}}"}`): one copy per item, in order, in place of the
   template row. Without `row`, the template is the table's one row with a

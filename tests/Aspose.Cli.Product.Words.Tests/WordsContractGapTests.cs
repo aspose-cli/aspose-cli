@@ -160,6 +160,28 @@ public sealed class WordsContractGapTests
     }
 
     [Fact]
+    public void ReplaceText_WarnsWhenItMatchesNothing()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.CreateReport();
+        string output = fixture.Temp.File("unmatched.docx");
+
+        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new ReplaceTextOp { Find = "eleven percent", Replace = "ten percent" },
+                new ReplaceTextOp { Find = "twelve", Replace = "ten" },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Assert.Equal([0L, 1L], result.Applied.Select(static applied => applied.ItemsAffected));
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "REPLACE_NO_MATCH");
+        Assert.Contains("replace_text matched no text", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("eleven", warning.Message + warning.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void BodySearch_ExcludesCommentsAndFootnotesAndAllReportsEachHitOnce()
     {
         using var fixture = new WordsFixture();
