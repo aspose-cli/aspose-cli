@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Globalization;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
 using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
@@ -17,6 +18,7 @@ internal sealed partial class SlidesMutationHandlers
             ? new RectangleF((float)given.X, (float)given.Y, (float)given.Width, (float)given.Height)
             : SlidesAuthoring.Fit(image, SlidesAuthoring.Canvas(Slide, new RectangleF(0.1f, 0.125f, 0.8f, 0.75f)));
         IPictureFrame picture = Slide.Shapes.AddPictureFrame(ShapeType.Rectangle, rect.X, rect.Y, rect.Width, rect.Height, image);
+        NameInserted(picture, "picture");
         if (operation.AltText is not null)
         {
             picture.AlternativeText = operation.AltText;
@@ -43,6 +45,7 @@ internal sealed partial class SlidesMutationHandlers
             (float)operation.Rect.Y,
             (float)operation.Rect.Width,
             (float)operation.Rect.Height);
+        NameInserted(shape, operation.Kind);
         if (operation.Text is not null)
         {
             shape.TextFrame!.Text = operation.Text;
@@ -66,6 +69,7 @@ internal sealed partial class SlidesMutationHandlers
             operation.Rect.Height,
             operation.RowCount,
             operation.ColumnCount);
+        NameInserted(table, "table");
         if (operation.Data is not null)
         {
             for (int row = 0; row < operation.Data.Count; row++)
@@ -109,6 +113,7 @@ internal sealed partial class SlidesMutationHandlers
             (float)operation.Rect.Width,
             (float)operation.Rect.Height,
             true);
+        NameInserted(chart, "chart");
         PopulateChart(chart, type, operation.Categories, operation.Series);
         chart.HasTitle = operation.Title is not null;
         if (operation.Title is not null)
@@ -149,6 +154,13 @@ internal sealed partial class SlidesMutationHandlers
         _touched.Add(Slide.SlideId);
         return 1;
     }
+
+    /// <summary>
+    /// Names an inserted shape by its kind and slide-scoped shapeId, such as <c>rectangle 5</c>,
+    /// so shapes inserted on one slide have names that tell them apart.
+    /// </summary>
+    private static void NameInserted(IShape shape, string kind) =>
+        shape.Name = string.Create(CultureInfo.InvariantCulture, $"{kind} {shape.OfficeInteropShapeId}");
 
     /// <summary>Fills a newly inserted chart; existing charts are updated by <see cref="SlidesChartData"/>.</summary>
     private static void PopulateChart(

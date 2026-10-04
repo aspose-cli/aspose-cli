@@ -51,6 +51,19 @@ public sealed class SlidesReviewCheckTests
     }
 
     [Fact]
+    public void Findings_NameEachShapeWithItsShapeId()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(1, Shape(4, new(100, 100, 200, 200), "Body"), Occluder(7, new(100, 100, 200, 200)))],
+            Width,
+            Height);
+
+        ReviewFinding finding = Assert.Single(analysis.Findings);
+        Assert.Contains("'Shape 7' (shapeId 7)", finding.Message, StringComparison.Ordinal);
+        Assert.Contains("'Shape 4' (shapeId 4)", finding.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void TextAboveATable_IsNotAnOverlap()
     {
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(

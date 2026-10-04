@@ -115,7 +115,7 @@ internal static class SlidesReviewAnalyzer
 
                 result.TextOverlaps++;
                 result.Findings.Add(SlidesReviewChecks.TextOverlapsObject.Finding(
-                    $"The text of '{Label(text)}' runs into {other.Type} '{Label(other)}' ({overlap / Math.Max(1, Area(lines)):P0} of the text area); move or shorten one of them.",
+                    $"The text of {Label(text)} runs into {other.Type} {Label(other)} ({overlap / Math.Max(1, Area(lines)):P0} of the text area); move or shorten one of them.",
                     Location(slide.Slide),
                     Hint,
                     Part(slide)));
@@ -133,7 +133,7 @@ internal static class SlidesReviewAnalyzer
         {
             result.EmptyPlaceholders++;
             result.Findings.Add(SlidesReviewChecks.PlaceholderEmpty.Finding(
-                $"Placeholder '{Label(shape)}' is empty; PowerPoint shows its prompt text while the deck is edited. Delete it or fill it.",
+                $"Placeholder {Label(shape)} is empty; PowerPoint shows its prompt text while the deck is edited. Delete it or fill it.",
                 Location(slide.Slide),
                 Hint,
                 Part(slide)));
@@ -155,7 +155,7 @@ internal static class SlidesReviewAnalyzer
         {
             result.OutsideShapes++;
             result.Findings.Add(SlidesReviewChecks.ShapeOutsideSlide.Finding(
-                $"Shape '{Label(shape)}' extends outside the slide.",
+                $"Shape {Label(shape)} extends outside the slide.",
                 Location(slide.Slide),
                 Hint,
                 Part(slide)));
@@ -174,7 +174,7 @@ internal static class SlidesReviewAnalyzer
         {
             result.SmallTextShapes++;
             result.Findings.Add(SlidesReviewChecks.TextTooSmall.Finding(
-                $"Shape '{Label(shape)}' contains text below 12 pt.",
+                $"Shape {Label(shape)} contains text below 12 pt.",
                 Location(slide.Slide),
                 Hint,
                 Part(slide)));
@@ -205,7 +205,7 @@ internal static class SlidesReviewAnalyzer
         {
             result.TextOutsideSlide++;
             result.Findings.Add(SlidesReviewChecks.TextOutsideSlide.Finding(
-                string.Create(CultureInfo.InvariantCulture, $"The text of '{Label(shape)}' runs {cut.Points:0} pt past the {cut.Edges} edge of the slide, which cuts it off; shorten the text, reduce its size, or enlarge the shape away from that edge."),
+                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} runs {cut.Points:0} pt past the {cut.Edges} edge of the slide, which cuts it off; shorten the text, reduce its size, or enlarge the shape away from that edge."),
                 Location(slide.Slide),
                 Hint,
                 Part(slide)));
@@ -216,7 +216,7 @@ internal static class SlidesReviewAnalyzer
         {
             result.TextOverflows++;
             result.Findings.Add(SlidesReviewChecks.TextOverflowsShape.Finding(
-                string.Create(CultureInfo.InvariantCulture, $"The text of '{Label(shape)}' spills {spill.Points:0} pt out of the {spill.Edges} of its shape; shorten the text, reduce its size, or enlarge the shape."),
+                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} spills {spill.Points:0} pt out of the {spill.Edges} of its shape; shorten the text, reduce its size, or enlarge the shape."),
                 Location(slide.Slide),
                 Hint,
                 Part(slide)));
@@ -319,7 +319,7 @@ internal static class SlidesReviewAnalyzer
                 {
                     result.CoveredCharts++;
                     result.Findings.Add(SlidesReviewChecks.ChartCovered.Finding(
-                        $"Opaque foreground shape '{Label(upper)}' covers {covered:P0} of chart '{Label(lower)}'; verify the rendered slide before changing it.",
+                        $"Opaque foreground shape {Label(upper)} covers {covered:P0} of chart {Label(lower)}; verify the rendered slide before changing it.",
                         Location(slide.Slide),
                         Hint,
                         Part(slide)));
@@ -329,7 +329,7 @@ internal static class SlidesReviewAnalyzer
                 {
                     result.SevereOverlaps++;
                     result.Findings.Add(SlidesReviewChecks.ShapesOverlap.Finding(
-                        $"Opaque foreground shape '{Label(upper)}' covers {covered:P0} of content shape '{Label(lower)}'; verify that this is intentional.",
+                        $"Opaque foreground shape {Label(upper)} covers {covered:P0} of content shape {Label(lower)}; verify that this is intentional.",
                         Location(slide.Slide),
                         Hint,
                         Part(slide)));
@@ -433,7 +433,10 @@ internal static class SlidesReviewAnalyzer
 
     private static double Area(SlideRect rect) => Math.Max(0, rect.Width) * Math.Max(0, rect.Height);
 
-    private static string Label(SlideShapeData shape) => shape.ShapeName ?? shape.ShapeId.ToString(CultureInfo.InvariantCulture);
+    /// <summary>A shape as findings name it: its name, when it has one, and the shapeId that edit operations address.</summary>
+    private static string Label(SlideShapeData shape) => string.IsNullOrEmpty(shape.ShapeName)
+        ? string.Create(CultureInfo.InvariantCulture, $"shapeId {shape.ShapeId}")
+        : string.Create(CultureInfo.InvariantCulture, $"'{shape.ShapeName}' (shapeId {shape.ShapeId})");
 
     private static string Location(int slide) => string.Create(CultureInfo.InvariantCulture, $"slide {slide}");
 

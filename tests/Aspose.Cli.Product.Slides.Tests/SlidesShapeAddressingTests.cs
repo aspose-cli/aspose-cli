@@ -238,6 +238,55 @@ public sealed class SlidesShapeAddressingTests
     }
 
     [Fact]
+    public void InsertedShapes_AreNamedByKindAndShapeId()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 1);
+        string image = fixture.File("pixel.png");
+        File.WriteAllBytes(image, Convert.FromBase64String(
+            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="));
+        var rect = new SlidesRectInput { X = 40, Y = 120, Width = 200, Height = 100 };
+        string output = fixture.File("named.pptx");
+
+        fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new InsertShapeOp { Slide = 1, Kind = "rectangle", Rect = rect },
+                    new InsertShapeOp { Slide = 1, Kind = "rectangle", Rect = rect },
+                    new SlidesInsertImageOp { Slide = 1, Path = image, Rect = rect },
+                    new SlidesInsertTableOp { Slide = 1, Rect = rect, RowCount = 1, ColumnCount = 1 },
+                    new InsertChartOp
+                    {
+                        Slide = 1,
+                        Kind = "column",
+                        Rect = rect,
+                        Categories = ["A"],
+                        Series = [new SlidesChartSeriesInput { Name = "S", Values = [1] }],
+                    },
+                ],
+            },
+            new PresentationEditRequest { OutputPath = output });
+
+        PresentationReadResult read = fixture.Engine.Read(output, new PresentationReadRequest
+        {
+            Slides = PageRange.Parse("1"), Scope = PresentationReadScopes.Shapes,
+        });
+        Assert.Equal(
+            ["rectangle", "rectangle", "picture", "table", "chart"],
+            read.Slides[0].Shapes!
+                .Where(static shape => shape.ShapeName != "Title 1" && !shape.EvaluationWatermark)
+                .Select(static shape =>
+                {
+                    string name = Assert.IsType<string>(shape.ShapeName);
+                    Assert.EndsWith($" {shape.ShapeId}", name, StringComparison.Ordinal);
+                    return name[..name.IndexOf(' ', StringComparison.Ordinal)];
+                }));
+    }
+
+    [Fact]
     public void SetShapeBounds_MovesAndResizesAShapeAndKeepsOmittedSides()
     {
         using var fixture = new SlidesEngineFixture();

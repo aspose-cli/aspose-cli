@@ -31,8 +31,10 @@ aspose-cli schema v2/slides/ops --operation insert_chart
 | Data | `update_chart_data` |
 | Document | `set_properties` |
 
-`set_shape_bounds` moves or resizes a shape in place, keeping its id, name, style and text;
-omitted sides keep their values. Use it when a review finding asks to move or enlarge a shape.
+Inserted shapes, pictures, tables and charts are named by kind and shapeId, such as
+`rectangle 5`. `set_shape_bounds` moves or resizes a shape in place, keeping its id, name,
+style and text; omitted sides keep their values. Use it when a review finding asks to move or
+enlarge a shape.
 
 ## Text and notes
 
