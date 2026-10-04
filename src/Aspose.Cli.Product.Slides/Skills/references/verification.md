@@ -23,7 +23,7 @@ aspose-cli review deck.revised.pptx --out deck.review-1 --output json
 
 The Slides checks (`SLIDES_*` in `capabilities` under `review.checks`) flag shapes outside the
 slide, text below 12 pt, overlapping shapes, covered charts, laid-out text running into a table
-or chart (`SLIDES_TEXT_OVERLAPS_OBJECT`, judged from where the text actually sits, not from its
+or chart or hidden by an opaque shape in front of it, however small (`SLIDES_TEXT_OVERLAPS_OBJECT`, judged from where the text actually sits, not from its
 often much taller placeholder), laid-out text cut off by a slide edge (`SLIDES_TEXT_OUTSIDE_SLIDE`,
 for example a long title in a bottom-anchored placeholder that wraps upward off the slide) or
 spilling out of a shape that neither grows to fit it nor shrinks it on overflow

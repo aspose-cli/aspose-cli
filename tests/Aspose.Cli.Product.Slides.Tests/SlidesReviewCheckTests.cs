@@ -75,6 +75,32 @@ public sealed class SlidesReviewCheckTests
     }
 
     [Fact]
+    public void SmallOpaqueShapeInFrontOfText_CoversTheText()
+    {
+        // A badge far smaller than the body still hides the words beneath it.
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(1, BodyWithLines(1, new(45, 105, 400, 80)), Occluder(2, new(300, 105, 120, 60)))],
+            Width,
+            Height);
+
+        ReviewFinding finding = Assert.Single(analysis.Findings);
+        Assert.Equal(SlidesReviewChecks.TextOverlapsObject.Code, finding.Code);
+        Assert.Contains("'Shape 2' (shapeId 2)", finding.Message, StringComparison.Ordinal);
+        Assert.Equal(1, analysis.TextOverlaps);
+    }
+
+    [Fact]
+    public void OpaqueShapeBehindText_DoesNotCoverIt()
+    {
+        SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(
+            [Slide(1, Occluder(1, new(300, 105, 120, 60)), BodyWithLines(2, new(45, 105, 400, 80)))],
+            Width,
+            Height);
+
+        Assert.Empty(analysis.Findings);
+    }
+
+    [Fact]
     public void TextEvaluationModeReplaced_DoesNotMakeASlideDense()
     {
         // Evaluation mode replaces every text longer than five characters with its start and the

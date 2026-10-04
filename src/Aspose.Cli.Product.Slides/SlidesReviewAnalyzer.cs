@@ -91,21 +91,28 @@ internal static class SlidesReviewAnalyzer
         }
         AnalyzeDensity(slide, slideWidth, slideHeight, result);
         AnalyzeOverlaps(slide, slideWidth, slideHeight, result);
-        AnalyzeTextOverObjects(slide, result);
+        AnalyzeTextOverObjects(slide, slideWidth, slideHeight, result);
         AnalyzeEmptyPlaceholders(slide, result);
     }
 
     /// <summary>
-    /// Text laid out over a table or chart is garbled whichever is in front. The frames cannot
-    /// show it, since a placeholder is usually far taller than its text, so this compares the
-    /// laid-out text with the object. Text over a picture is left alone: captions often are.
+    /// Text laid out over a table or chart is garbled whichever is in front, and an opaque shape
+    /// in front of text hides it however small the shape is. The frames cannot show it, since a
+    /// placeholder is usually far taller than its text, so this compares the laid-out text with
+    /// the object. Text over a picture is left alone: captions often are.
     /// </summary>
-    private static void AnalyzeTextOverObjects(SlideData slide, SlidesReviewAnalysis result)
+    private static void AnalyzeTextOverObjects(
+        SlideData slide,
+        double slideWidth,
+        double slideHeight,
+        SlidesReviewAnalysis result)
     {
+        double slideArea = Math.Max(1, slideWidth * slideHeight);
         foreach (SlideShapeData text in slide.Shapes.Where(static shape => shape.TextRect is not null && !IsDecorative(shape)))
         {
             SlideRect lines = text.TextRect!;
-            foreach (SlideShapeData other in slide.Shapes.Where(shape => shape.Type is "table" or "chart" && shape.ShapeId != text.ShapeId))
+            foreach (SlideShapeData other in slide.Shapes.Where(shape => shape.ShapeId != text.ShapeId
+                && (shape.Type is "table" or "chart" || shape.ZOrder > text.ZOrder && IsOccluder(shape, slideArea))))
             {
                 double overlap = IntersectionArea(lines, other.Rect);
                 if (overlap < 0.10 * Math.Max(1, Area(lines)))

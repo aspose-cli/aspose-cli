@@ -49,7 +49,7 @@ internal static class SlidesReviewChecks
     public static ReviewCheck TextOverlapsObject { get; } = new(
         "SLIDES_TEXT_OVERLAPS_OBJECT",
         ReviewSeverities.Warning,
-        "Laid-out text runs into a table or chart on the same slide.");
+        "Laid-out text runs into a table or chart, or an opaque shape in front of it covers the text.");
 
     public static ReviewCheck TextOutsideSlide { get; } = new(
         "SLIDES_TEXT_OUTSIDE_SLIDE",

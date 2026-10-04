@@ -4849,7 +4849,7 @@
           {
             "code": "SLIDES_TEXT_OVERLAPS_OBJECT",
             "severity": "warning",
-            "summary": "Laid-out text runs into a table or chart on the same slide."
+            "summary": "Laid-out text runs into a table or chart, or an opaque shape in front of it covers the text."
           },
           {
             "code": "SLIDES_TEXT_TOO_SMALL",
