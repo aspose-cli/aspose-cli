@@ -64,6 +64,13 @@ aspose-cli capabilities --output json
 
 ## Shared codes
 
+**Usage (exit 2)**
+
+- `USAGE_ERROR`: the command line cannot run as written. An unknown option
+  names the closest options in its hint. A `convert` or `render` `--to` that
+  contradicts the `--out` extension, such as `--to pdf --out a.docx`, is
+  refused; match the extension to the format.
+
 **Input (exit 3)**
 
 - `FILE_NOT_FOUND`: relative paths resolve against `--workdir`, or the current

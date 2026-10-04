@@ -319,10 +319,18 @@ public sealed class StandardCommandTests : IDisposable
             },
             (_, standard) => Result(standard.TargetFormat()));
 
-        Assert.Equal("md", Run(command, "report.test", "--to", "Markdown", "--out", "page.docx"));
+        Assert.Equal("md", Run(command, "report.test", "--to", "Markdown", "--out", "page.MD"));
+        Assert.Equal("md", Run(command, "report.test", "--to", "md", "--out", "page.markdown"));
         Assert.Equal("docx", Run(command, "report.test", "--to", "DOCX"));
         Assert.NotEmpty(command.Parse(["report.test"]).Errors);
         Assert.NotEmpty(command.Parse(["report.test", "--to", "png"]).Errors);
+        foreach (string extension in new[] { "docx", "png" })
+        {
+            CliException conflict = RunFailing(command, "report.test", "--to", "md", "--out", $"page.{extension}");
+            Assert.Equal(ErrorCodes.UsageError, conflict.Code);
+            Assert.Contains($"--to md contradicts --out 'page.{extension}'", conflict.Message, StringComparison.Ordinal);
+            Assert.Contains("the .md extension", conflict.Message, StringComparison.Ordinal);
+        }
     }
 
     [Theory]

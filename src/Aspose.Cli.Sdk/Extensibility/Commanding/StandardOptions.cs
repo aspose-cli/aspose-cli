@@ -602,28 +602,27 @@ public class StandardInvocation
         Declared(_options.OutputFile, "output file").Resolve(_parse, Paths, DeclaredInputs());
 
     /// <summary>
-    /// The target format id that <c>--to</c> names by its id or an alias in any case. For a
-    /// render command it must not contradict the render format that the <c>--out</c> extension
-    /// names; when it is omitted that format is used, so <c>--out page.svg</c> writes SVG rather
-    /// than the default's bytes under an .svg name, and otherwise the default. An <c>--out</c>
-    /// extension that names no render format, such as a convert format's, is refused rather than
-    /// given image bytes; an output name without an extension is accepted.
+    /// The target format id that <c>--to</c> names by its id or an alias in any case. It must
+    /// not contradict a format of the product that the <c>--out</c> extension names, so one
+    /// format's bytes are never written under another format's extension; an alias extension
+    /// of the same format such as .jpeg, and an extension that names no format of the product,
+    /// are accepted. When a render command omits <c>--to</c>, the render format the
+    /// <c>--out</c> extension names is used, so <c>--out page.svg</c> writes SVG, and otherwise
+    /// the default; an <c>--out</c> extension that names no render format, such as a convert
+    /// format's, is refused rather than given image bytes.
     /// </summary>
-    /// <exception cref="CliException"><c>USAGE_ERROR</c> when the <c>--out</c> extension names no render format, or a render <c>--to</c> and the extension name different formats.</exception>
+    /// <exception cref="CliException"><c>USAGE_ERROR</c> when a render <c>--out</c> extension names no render format, or <c>--to</c> and the extension name different formats.</exception>
     public string TargetFormat()
     {
         Option<string> to = Declared(_options.To, "target format");
         TargetFormat target = _options.Target!;
         string requested = _parse.GetRequiredValue(to);
-        FormatDescriptor? format = target.Formats.Named(target.Use, requested);
-        if (target.Use != FormatUse.Render)
-        {
-            return format!.Id;
-        }
-
-        string? extension = _options.OutputFile!.RequestedExtension(_parse);
-        IReadOnlyList<FormatDescriptor> named = extension is null ? [] : target.Formats.WithExtension(FormatUse.Render, extension);
-        if (extension is not null && named.Count == 0)
+        FormatDescriptor format = target.Formats.Named(target.Use, requested)!;
+        string? extension = _options.OutputFile?.RequestedExtension(_parse);
+        FormatDescriptor[] named = extension is null ? []
+            : [.. target.Formats.Where(candidate => candidate.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase))];
+        if (target.Use == FormatUse.Render && extension is not null
+            && !named.Any(static candidate => candidate.Uses.HasFlag(FormatUse.Render)))
         {
             string[] extensions = target.Formats
                 .Where(static candidate => candidate.Uses.HasFlag(FormatUse.Render))
@@ -637,22 +636,22 @@ public class StandardInvocation
             ]);
         }
 
-        if (_parse.GetResult(to) is not { Implicit: false })
+        if (target.Use == FormatUse.Render && _parse.GetResult(to) is not { Implicit: false })
         {
-            return named.FirstOrDefault()?.Id ?? format!.Id;
+            return named.FirstOrDefault(static candidate => candidate.Uses.HasFlag(FormatUse.Render))?.Id ?? format.Id;
         }
 
-        if (named.Count > 0 && !named.Contains(format))
+        if (named.Length > 0 && !named.Contains(format))
         {
             throw CliErrors.Usage(
             [
-                $"{to.Name} {requested} contradicts {StandardOptionNames.Out} '{_parse.GetValue(_options.OutputFile.Option)}', "
+                $"{to.Name} {requested} contradicts {StandardOptionNames.Out} '{_parse.GetValue(_options.OutputFile!.Option)}', "
                     + $"whose {extension} extension names {string.Join(" or ", named.Select(static match => match.Id))}; "
-                    + "drop one of them or make them agree",
+                    + $"give the output the {target.Formats.ExtensionFor(format.Id)} extension or change {to.Name}",
             ]);
         }
 
-        return format!.Id;
+        return format.Id;
     }
 
     /// <summary>The file a creating command writes, named by its <c>file</c> argument.</summary>

@@ -18,7 +18,7 @@ public sealed class OutputIsInputContractTests
     /// </summary>
     private static readonly Dictionary<string, (string[] Arguments, string Parameter)> Cases = new(StringComparer.Ordinal)
     {
-        ["file"] = (["cells", "convert", "book.xlsx", "--to", "csv", "--out", "./BOOK.xlsx"], "--out"),
+        ["file"] = (["cells", "convert", "book.xlsx", "--to", "xlsx", "--out", "./BOOK.xlsx"], "--out"),
         ["required file over product inputs"] = (["pdf", "merge", "doc.pdf", "other.pdf", "--out", "./OTHER.pdf"], "--out"),
         ["file or directory"] = (["pdf", "extract", "doc.pdf", "--what", "forms", "--to", "json", "--out", "./DOC.pdf"], "--out"),
         ["file named by a product option"] = (["pdf", "sign", "doc.pdf", "--certificate", "cert.pfx", "--certificate-password-env", "CERT_PASSWORD", "--out", "./CERT.pfx"], "--out"),
