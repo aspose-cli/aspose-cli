@@ -51,6 +51,7 @@ public sealed class SlidesResourceLoadingTests
         Assert.All(rendered.Outputs, static item => Assert.True(item.Output.SizeBytes > 0));
         Assert.All(converted.Outputs, static output => Assert.True(new FileInfo(output.Path).Length > 0));
         Assert.Equal(1, view.TotalPartCount);
+        Assert.False(view.SourceEncrypted);
         // Output that needed the linked picture discloses that it was left out.
         Assert.Contains(rendered.Warnings!, IsOmission);
         Assert.Contains(converted.Warnings!, IsOmission);

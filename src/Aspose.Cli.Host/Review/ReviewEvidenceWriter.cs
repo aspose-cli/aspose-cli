@@ -176,6 +176,7 @@ internal static class ReviewEvidenceWriter
             View = manifest.View,
             SourceFormat = manifest.SourceFormat,
             SourceSizeBytes = manifest.SourceSizeBytes,
+            SourceEncrypted = manifest.SourceEncrypted,
             VisualInspectionRequired = visualInspectionRequired,
             Coverage = new ReviewCoverage
             {

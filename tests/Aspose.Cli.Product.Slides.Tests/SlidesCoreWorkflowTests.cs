@@ -43,6 +43,7 @@ public sealed class SlidesCoreWorkflowTests
         Assert.Equal(SlidesViews.Slides, manifest.View);
         Assert.Equal("pptx", manifest.SourceFormat);
         Assert.Equal(new FileInfo(input).Length, manifest.SourceSizeBytes);
+        Assert.True(manifest.SourceEncrypted);
         Assert.Equal(2, manifest.TotalPartCount);
         // The evaluation watermark carries the SDK's truncation marker, so evaluation discloses possible truncation.
         string[] expected = fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed

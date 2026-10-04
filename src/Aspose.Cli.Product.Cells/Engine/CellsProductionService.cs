@@ -484,6 +484,7 @@ internal sealed class CellsProductionService
                 View = CellsViews.Workbook,
                 SourceFormat = source.Format,
                 SourceSizeBytes = source.SizeBytes,
+                SourceEncrypted = loaded.IsEncrypted,
                 TotalPartCount = 1,
                 Parts =
                 [
@@ -532,6 +533,7 @@ internal sealed class CellsProductionService
             View = CellsViews.Sheets,
             SourceFormat = source.Format,
             SourceSizeBytes = source.SizeBytes,
+            SourceEncrypted = loaded.IsEncrypted,
             TotalPartCount = visible.Length,
             Parts = parts,
             Warnings = loaded.Warnings([.. partial]),

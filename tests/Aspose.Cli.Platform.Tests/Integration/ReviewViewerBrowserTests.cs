@@ -236,6 +236,7 @@ public sealed class ReviewViewerBrowserTests(ITestOutputHelper output)
                     View = "pages",
                     SourceFormat = "test",
                     SourceSizeBytes = 1,
+                    SourceEncrypted = false,
                     TotalPartCount = parts.Length,
                     Parts = parts,
                 };

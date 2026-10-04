@@ -31,6 +31,7 @@ internal sealed class TestProductViewAdapter<TPort>(
             View = request.View,
             SourceFormat = "test",
             SourceSizeBytes = 0,
+            SourceEncrypted = false,
             TotalPartCount = 0,
             Parts = [],
         };

@@ -94,6 +94,7 @@ internal sealed class SlidesProductionService
             View = SlidesViews.Slides,
             SourceFormat = loaded.FormatId,
             SourceSizeBytes = new FileInfo(filePath).Length,
+            SourceEncrypted = presentation.ProtectionManager.IsEncrypted,
             TotalPartCount = total,
             Parts = parts,
             Warnings = InputWarnings(state, loaded),

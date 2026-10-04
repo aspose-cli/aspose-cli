@@ -93,6 +93,9 @@ public sealed record ViewManifest
     /// <summary>Size of the source document in bytes.</summary>
     public required long SourceSizeBytes { get; init; }
 
+    /// <summary>Whether the source document is encrypted.</summary>
+    public required bool SourceEncrypted { get; init; }
+
     /// <summary>Parts the document contains, including parts beyond the render bound.</summary>
     public required int TotalPartCount { get; init; }
 

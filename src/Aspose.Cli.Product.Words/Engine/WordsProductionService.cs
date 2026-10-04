@@ -147,6 +147,7 @@ internal sealed class WordsProductionService
             View = WordsViews.Pages,
             SourceFormat = loaded.FormatId,
             SourceSizeBytes = new FileInfo(filePath).Length,
+            SourceEncrypted = loaded.Format.IsEncrypted,
             TotalPartCount = total,
             Parts = parts,
             Warnings = InputWarnings(loaded),

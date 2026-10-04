@@ -89,6 +89,7 @@ internal sealed class PdfProductionService
             View = PdfViews.Pages,
             SourceFormat = "pdf",
             SourceSizeBytes = new FileInfo(filePath).Length,
+            SourceEncrypted = loaded.Document.IsEncrypted,
             TotalPartCount = total,
             Parts = parts,
         };

@@ -243,6 +243,27 @@ public sealed class ReviewEvidenceWriterTests
         Assert.Contains("AsposeViewer.start({ base: \"artifacts/\" })", html, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Write_ReportsWhetherTheSourceIsEncrypted(bool encrypted)
+    {
+        using var temp = new TempDirectory();
+
+        ReviewResult result = ReviewEvidenceWriter.Write(
+            temp.File("source.test"), "test", temp.File("review"), 1, true, Presentation,
+            artifacts =>
+            {
+                artifacts.Write("page.png", static stream => stream.Write(PngHeader));
+                return Manifest(1, ["page.png"]) with { SourceEncrypted = encrypted };
+            },
+            static _ => new ProductReviewAssessment(), LicenseState.NotApplicable,
+            new ContractJsonSerializer([]), Aspose.Cli.Sdk.Tests.TestBudgets.Create());
+
+        Assert.Equal(encrypted, result.SourceEncrypted);
+        Assert.Equal(encrypted, JsonNode.Parse(File.ReadAllText(result.Manifest))!["sourceEncrypted"]!.GetValue<bool>());
+    }
+
     [Fact]
     public void Write_DocumentTextCannotEndTheViewerDataBlock()
     {
@@ -351,6 +372,7 @@ public sealed class ReviewEvidenceWriterTests
         View = "pages",
         SourceFormat = "test",
         SourceSizeBytes = 1,
+        SourceEncrypted = false,
         TotalPartCount = totalPartCount,
         Parts = files.Select(static (file, index) => new ViewPart
         {

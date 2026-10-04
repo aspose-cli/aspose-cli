@@ -277,6 +277,7 @@ internal static class CommonRenderers
         surface.Out.WriteLine($"review:  {review.OutputDirectory}");
         surface.Out.WriteLine($"product: {review.Product}");
         surface.Out.WriteLine($"view:    {review.View}");
+        surface.Out.WriteLine($"source:  {review.SourceFormat}, encrypted: {TableText.YesNo(review.SourceEncrypted)}");
         surface.Out.WriteLine($"index:   {review.Index}");
         surface.Out.WriteLine($"manifest:{review.Manifest}");
         surface.Out.WriteLine(

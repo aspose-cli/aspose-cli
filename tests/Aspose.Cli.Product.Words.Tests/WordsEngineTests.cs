@@ -548,6 +548,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
 
         Assert.Equal(WordsViews.Pages, manifest.View);
         Assert.Equal("docx", manifest.SourceFormat);
+        Assert.True(manifest.SourceEncrypted);
         Assert.Null(manifest.Warnings);
         ViewPart first = manifest.Parts[0];
         Assert.Equal("page-0001.png", first.File);

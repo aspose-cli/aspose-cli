@@ -314,6 +314,7 @@ public sealed class CellsCliTests : IDisposable
         // Review reports it too, with the image of that sheet alone as evidence.
         CliResult review = _workspace.Run("review", "split.xlsx", "--out", _workspace.File("review"), "--output", "json");
         Assert.True(review.ExitCode == 0, review.StdErr);
+        Assert.False(JsonNode.Parse(review.StdOut)!["sourceEncrypted"]!.GetValue<bool>());
         JsonNode finding = Assert.Single(JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
             static finding => finding!["code"]!.GetValue<string>() == "CELLS_CHART_SPLIT_ACROSS_PAGES")!;
         string evidence = Assert.Single(finding["evidence"]!.AsArray())!.GetValue<string>();
@@ -454,6 +455,7 @@ public sealed class CellsCliTests : IDisposable
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.True(opened.ExitCode == 0, opened.StdErr);
         Assert.Equal("cells", JsonNode.Parse(opened.StdOut)!["product"]!.GetValue<string>());
+        Assert.True(JsonNode.Parse(opened.StdOut)!["sourceEncrypted"]!.GetValue<bool>());
     }
 
     [Fact]

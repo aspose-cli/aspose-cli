@@ -43,6 +43,7 @@ public sealed class PdfReviewAndInfoTests
         CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
 
         Assert.True(review.ExitCode == 0, review.StdErr);
+        Assert.False(JsonNode.Parse(review.StdOut)!["sourceEncrypted"]!.GetValue<bool>());
         JsonNode finding = Assert.Single(
             JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_SIZE_UNUSUAL")!;
@@ -53,6 +54,21 @@ public sealed class PdfReviewAndInfoTests
             "page-0002.png",
             Assert.Single(finding["evidence"]!.AsArray())!.GetValue<string>(),
             StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void Review_SaysTheSourceIsEncrypted()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.CreateEncryptedDocument("reader", "owner", "locked.pdf");
+
+        CliResult review = workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_PASSWORD"] = "reader" },
+            "review", input, "--out", workspace.File("review"), "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output", "json");
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        Assert.True(JsonNode.Parse(review.StdOut)!["sourceEncrypted"]!.GetValue<bool>());
     }
 
     [Fact]

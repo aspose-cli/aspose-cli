@@ -15,6 +15,7 @@
     "view",
     "sourceFormat",
     "sourceSizeBytes",
+    "sourceEncrypted",
     "visualInspectionRequired",
     "coverage",
     "artifacts",
@@ -31,6 +32,7 @@
     "view": { "type": "string", "minLength": 1 },
     "sourceFormat": { "type": "string", "minLength": 1 },
     "sourceSizeBytes": { "type": "integer", "minimum": 0 },
+    "sourceEncrypted": { "type": "boolean", "description": "Whether the reviewed document is encrypted." },
     "visualInspectionRequired": { "type": "boolean" },
     "coverage": {
       "type": "object",

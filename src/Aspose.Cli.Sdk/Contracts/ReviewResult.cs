@@ -21,6 +21,9 @@ public sealed record ReviewResult() : ResultEnvelope(CommonSchemaIds.Review, 2),
 
     public required long SourceSizeBytes { get; init; }
 
+    /// <summary>Whether the reviewed document is encrypted.</summary>
+    public required bool SourceEncrypted { get; init; }
+
     public required bool VisualInspectionRequired { get; init; }
 
     public required ReviewCoverage Coverage { get; init; }

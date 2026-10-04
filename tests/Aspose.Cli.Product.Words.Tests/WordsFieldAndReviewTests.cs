@@ -29,6 +29,7 @@ public sealed class WordsFieldAndReviewTests
         ReviewFinding[] findings = [.. adapter.Assess(fixture.Engine, input, request, rendered).Findings!
             .Where(static finding => finding.Code == "WORDS_EVALUATION_MARKS")];
 
+        Assert.False(rendered.SourceEncrypted);
         // Without a license, opening the document adds the marks itself, so it is not checked.
         if (fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed)
         {

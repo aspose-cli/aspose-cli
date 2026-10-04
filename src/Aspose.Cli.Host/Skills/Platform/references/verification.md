@@ -38,7 +38,8 @@ instead of the user's folder.
    `artifacts/view.json` when its page was not rendered.
 2. Read `coverage`: `expectedItemCount`, `renderedItemCount`, `omittedItemCount`,
    `truncated` and `complete`. `--max-items` (default 256) caps the images;
-   anything omitted is unreviewed.
+   anything omitted is unreviewed. `sourceEncrypted` says whether the reviewed
+   file is encrypted, as evidence for a delivery that must be.
 3. Open every evidence image with your image-reading tool and look. Findings
    point you at likely defects; they do not replace looking. Check clipping,
    overlap, missing glyphs, contrast, charts against their data, and page or

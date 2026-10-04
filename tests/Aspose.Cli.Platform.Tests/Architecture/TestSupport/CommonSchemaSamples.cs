@@ -275,6 +275,7 @@ internal static class CommonSchemaSamples
         View = "default",
         SourceFormat = "bin",
         SourceSizeBytes = 4096,
+        SourceEncrypted = false,
         VisualInspectionRequired = true,
         Coverage = new ReviewCoverage
         {
