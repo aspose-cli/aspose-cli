@@ -104,6 +104,74 @@ public sealed class SlidesShapeStyleTests
     }
 
     [Fact]
+    public void LatinAndEastAsianFonts_ReplaceTheFontOfTheirScriptOnly()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string seed = Seed(fixture, "fonts-seed.pptx", new InsertShapeOp
+        {
+            Slide = 1,
+            Kind = "rectangle",
+            Rect = new SlidesRectInput { X = 40, Y = 120, Width = 400, Height = 80 },
+            Text = "中文 Latin",
+        });
+
+        string output = Style(fixture, seed, "fonts.pptx", Shape<IAutoShape>(seed, "rectangle"), new SlidesShapeStyleInput
+        {
+            Font = "SimSun",
+            LatinFont = "Calibri",
+        });
+
+        using var deck = new Presentation(output);
+        IPortionFormat format = Text(deck, "rectangle");
+        Assert.Equal("Calibri", format.LatinFont.FontName);
+        Assert.Equal("SimSun", format.EastAsianFont.FontName);
+        Assert.Equal("SimSun", format.ComplexScriptFont.FontName);
+    }
+
+    [Fact]
+    public void ThemeFontReferences_ReturnTextToTheTemplateFonts()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string seed = Seed(fixture, "theme-seed.pptx", new InsertShapeOp
+        {
+            Slide = 1,
+            Kind = "rectangle",
+            Rect = new SlidesRectInput { X = 40, Y = 120, Width = 400, Height = 80 },
+            Text = "中文 Latin",
+            Style = new SlidesShapeStyleInput { Font = "Comic Sans MS" },
+        });
+        string themeLatin;
+        string themeEastAsian;
+        using (var source = new Presentation(seed))
+        {
+            IFontsEffectiveData body = source.Slides[0].CreateThemeEffective().FontScheme.Minor;
+            themeLatin = body.LatinFont.FontName;
+            themeEastAsian = body.EastAsianFont.FontName;
+        }
+
+        string output = Style(fixture, seed, "theme.pptx", Shape<IAutoShape>(seed, "rectangle"), new SlidesShapeStyleInput
+        {
+            LatinFont = "+mn-lt",
+            EastAsianFont = "+mn-ea",
+        });
+
+        using (var deck = new Presentation(output))
+        {
+            IPortionFormat format = Text(deck, "rectangle");
+            Assert.Equal("+mn-lt", format.LatinFont.FontName);
+            Assert.Equal("+mn-ea", format.EastAsianFont.FontName);
+        }
+
+        PresentationReadResult read = fixture.Engine.Read(output, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+        SlideTextRunData run = read.Slides[0].Shapes
+            .Where(static shape => shape.ShapeName?.StartsWith("rectangle", StringComparison.Ordinal) == true)
+            .SelectMany(static shape => shape.Runs!)
+            .First();
+        Assert.Equal(themeLatin, run.Font);
+        Assert.Equal(themeEastAsian, run.EastAsianFont);
+    }
+
+    [Fact]
     public void FullRead_ReportsTheFontOfLatinAndEastAsianText()
     {
         using var fixture = new SlidesEngineFixture();
@@ -183,4 +251,18 @@ public sealed class SlidesShapeStyleTests
         using var presentation = new Presentation(path);
         return (long)presentation.Slides[0].Shapes.OfType<TShape>().Single().OfficeInteropShapeId;
     }
+
+    /// <summary>The one shape of the type whose name starts with the prefix, leaving out the fixture's title.</summary>
+    private static long Shape<TShape>(string path, string namePrefix)
+        where TShape : IShape
+    {
+        using var presentation = new Presentation(path);
+        return (long)presentation.Slides[0].Shapes.OfType<TShape>()
+            .Single(shape => shape.Name.StartsWith(namePrefix, StringComparison.Ordinal)).OfficeInteropShapeId;
+    }
+
+    private static IPortionFormat Text(Presentation deck, string namePrefix) =>
+        deck.Slides[0].Shapes.OfType<IAutoShape>()
+            .Single(shape => shape.Name.StartsWith(namePrefix, StringComparison.Ordinal))
+            .TextFrame.Paragraphs[0].Portions[0].PortionFormat;
 }

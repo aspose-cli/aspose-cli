@@ -40,7 +40,8 @@ internal sealed partial class SlidesMutationHandlers
     private static void ApplyStyle(IShape shape, SlidesShapeStyleInput style)
     {
         IBasePortionFormat[]? text = TextFormats(shape);
-        bool styleText = style.Font is not null || style.Size is not null || style.Bold is not null || style.Color is not null;
+        bool styleText = style.Font is not null || style.LatinFont is not null || style.EastAsianFont is not null
+            || style.Size is not null || style.Bold is not null || style.Color is not null;
         if (styleText && text is null)
         {
             throw new OperationInvalidException(
@@ -60,15 +61,23 @@ internal sealed partial class SlidesMutationHandlers
 
         foreach (IBasePortionFormat format in text ?? [])
         {
+            // PowerPoint picks a portion's font per character script, so font sets every
+            // script's font: setting the Latin font alone would leave East Asian and
+            // complex-script text on the theme font. A theme reference such as "+mn-lt"
+            // is stored as written and resolved through the theme.
+            if ((style.LatinFont ?? style.Font) is { } latin)
+            {
+                format.LatinFont = new FontData(latin);
+            }
+
+            if ((style.EastAsianFont ?? style.Font) is { } eastAsian)
+            {
+                format.EastAsianFont = new FontData(eastAsian);
+            }
+
             if (style.Font is not null)
             {
-                // PowerPoint picks a portion's font per character script. Setting
-                // the Latin font alone leaves East Asian and complex-script text
-                // on the theme font, so the requested change never appears.
-                var font = new FontData(style.Font);
-                format.LatinFont = font;
-                format.EastAsianFont = font;
-                format.ComplexScriptFont = font;
+                format.ComplexScriptFont = new FontData(style.Font);
             }
 
             if (style.Size is not null)

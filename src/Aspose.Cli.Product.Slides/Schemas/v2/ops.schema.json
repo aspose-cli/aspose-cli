@@ -1742,8 +1742,19 @@
           "$ref": "#/$defs/color"
         },
         "font": {
-          "description": "A font name, applied to Latin, East Asian and complex-script text.",
-          "type": "string"
+          "description": "A font name for Latin, East Asian and complex-script text.",
+          "type": "string",
+          "pattern": "^[^+]"
+        },
+        "latinFont": {
+          "description": "The font of Latin text, in place of font's: a font name, or the theme's heading font \"+mj-lt\" or body font \"+mn-lt\", which returns the text to the template's font.",
+          "type": "string",
+          "pattern": "^(?:\\+m[jn]-lt$|[^+])"
+        },
+        "eastAsianFont": {
+          "description": "The font of Chinese, Japanese and Korean text, in place of font's: a font name, or the theme's heading font \"+mj-ea\" or body font \"+mn-ea\", which returns the text to the template's font.",
+          "type": "string",
+          "pattern": "^(?:\\+m[jn]-ea$|[^+])"
         },
         "size": {
           "description": "The font size in points.",

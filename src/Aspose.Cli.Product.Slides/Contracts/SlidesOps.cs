@@ -114,8 +114,24 @@ public sealed record SlidesShapeStyleInput
 
     [HexColor] public string? Line { get; init; }
 
-    /// <summary>A font name, applied to Latin, East Asian and complex-script text.</summary>
+    /// <summary>A font name for Latin, East Asian and complex-script text.</summary>
+    [Pattern(@"^[^+]", Meaning = "must be a font name; give theme fonts such as \"+mn-lt\" in latinFont and eastAsianFont")]
     public string? Font { get; init; }
+
+    /// <summary>
+    /// The font of Latin text, in place of font's: a font name, or the theme's heading font
+    /// "+mj-lt" or body font "+mn-lt", which returns the text to the template's font.
+    /// </summary>
+    [Pattern(@"^(?:\+m[jn]-lt$|[^+])", Meaning = "must be a font name, or \"+mj-lt\" or \"+mn-lt\" for the theme's Latin heading or body font")]
+    public string? LatinFont { get; init; }
+
+    /// <summary>
+    /// The font of Chinese, Japanese and Korean text, in place of font's: a font name, or the
+    /// theme's heading font "+mj-ea" or body font "+mn-ea", which returns the text to the
+    /// template's font.
+    /// </summary>
+    [Pattern(@"^(?:\+m[jn]-ea$|[^+])", Meaning = "must be a font name, or \"+mj-ea\" or \"+mn-ea\" for the theme's East Asian heading or body font")]
+    public string? EastAsianFont { get; init; }
 
     /// <summary>The font size in points.</summary>
     [ExclusiveMinimum(0), Maximum(400)] public double? Size { get; init; }

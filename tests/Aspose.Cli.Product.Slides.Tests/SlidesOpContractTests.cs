@@ -31,6 +31,10 @@ public sealed class SlidesOpContractTests
     [InlineData("""{"op":"apply_layout","slides":"1","layout":" "}""")]
     [InlineData("""{"op":"add_slide","layout":""}""")]
     [InlineData("""{"op":"append_presentation","path":" "}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"font":"+mn-lt"}}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"latinFont":"+mn-ea"}}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"eastAsianFont":"+mj-lt"}}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"latinFont":""}}""")]
     public void ParserAndSchema_RejectTheSameInvalidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -44,6 +48,8 @@ public sealed class SlidesOpContractTests
     [Theory]
     [InlineData("""{"op":"set_text","slideId":256,"placeholder":"body","text":"x"}""")]
     [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"bold":false}}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"latinFont":"+mj-lt","eastAsianFont":"+mn-ea"}}""")]
+    [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2,"style":{"font":"Microsoft YaHei","latinFont":"Calibri"}}""")]
     [InlineData("""{"op":"set_footer","showNumber":false}""")]
     [InlineData("""{"op":"insert_chart","slide":1,"kind":"scatter","rect":{"x":0,"y":0,"width":10,"height":10},"categories":["a"],"series":[{"name":"s","values":[1],"xValues":[2]}]}""")]
     [InlineData("""{"op":"replace_text","find":" ","replace":"_"}""")]

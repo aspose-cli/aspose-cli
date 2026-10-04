@@ -19,6 +19,12 @@ restyle them.
    stated or inherited), tell the user and have the
    template fixed once; restyle the affected placeholders with `set_shape_style` only when the
    user accepts that exception for this deck.
+5. An inherited deck often overrides the theme fonts shape by shape (`slides query slides
+   --scope full` reports each run's Latin `font` and its `eastAsianFont`). Return that text to
+   the template's fonts rather than naming a font: `set_shape_style` with `latinFont` `+mn-lt`
+   and `eastAsianFont` `+mn-ea` for body text, `+mj-lt` and `+mj-ea` for titles. These refer to
+   the theme's body and heading fonts, so the text follows the template even after its theme
+   changes.
 
 ## Content rules
 
