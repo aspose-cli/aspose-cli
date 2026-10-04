@@ -394,6 +394,29 @@ public sealed class AtomicOutputSetWriterTests
     }
 
     [Fact]
+    [SupportedOSPlatform("windows")]
+    public void TargetHeldOpenByAnotherApplicationIsUnwritableAndUntouched()
+    {
+        Requires.Windows();
+        using var temp = new TempDirectory();
+        string target = temp.File("target.txt");
+        File.WriteAllText(target, "original");
+        using var set = new AtomicOutputSetWriter(TestBudgets.Writer(), temp.Path, "test");
+        set.Stage(target, overwrite: true, staged => File.WriteAllText(staged, "replacement"));
+
+        CliException error;
+        using (new FileStream(target, FileMode.Open, FileAccess.Read, FileShare.Read))
+        {
+            error = Assert.Throws<CliException>(() => set.Commit());
+        }
+
+        Assert.Equal(ErrorCodes.OutputUnwritable, error.Code);
+        Assert.True(error.Details!["recoveryComplete"]!.GetValue<bool>());
+        Assert.Equal("original", File.ReadAllText(target));
+        Assert.Equal(["target.txt"], Directory.EnumerateFileSystemEntries(temp.Path).Select(Path.GetFileName));
+    }
+
+    [Fact]
     public void SuccessfulOverwritePreservesPortableMetadata()
     {
         using var temp = new TempDirectory();

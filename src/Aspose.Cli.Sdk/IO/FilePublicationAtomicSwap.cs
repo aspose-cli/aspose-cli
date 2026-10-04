@@ -68,11 +68,19 @@ internal static class FilePublicationAtomicSwap
     {
         string displacedPath = retainedDisplacedPath
             ?? CreateSiblingPath(target, "displaced");
-        File.Replace(
-            temporary,
-            target,
-            displacedPath,
-            ignoreMetadataErrors: false);
+        try
+        {
+            File.Replace(
+                temporary,
+                target,
+                displacedPath,
+                ignoreMetadataErrors: false);
+        }
+        catch (IOException exception) when (FileAccessProbe.IsSharingViolation(exception))
+        {
+            throw CliErrors.OutputUnwritable(
+                target, "another application has the file open", exception, "replace");
+        }
         FilePublicationSnapshot published;
         try
         {

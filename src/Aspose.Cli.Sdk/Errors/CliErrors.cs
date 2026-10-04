@@ -310,6 +310,7 @@ public static partial class CliErrors
             "backup" => "The safety backup could not be created, so the file was not replaced. "
                 + "Check the directory permissions and available disk space, then retry.",
             "write" => "Check that the output directory is writable and has enough free disk space.",
+            "replace" => "Ask the user to close the file in the other application, then retry; it was not changed.",
             _ => "Check that the directory exists and the process has write permission.",
         },
         details: new JsonObject
