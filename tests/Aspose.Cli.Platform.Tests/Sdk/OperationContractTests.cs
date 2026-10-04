@@ -145,6 +145,8 @@ public sealed class OperationContractTests
     [InlineData("""{"op":"shift"}""", "the operation must set to when mode is absolute")]
     [InlineData("""{"op":"shift","mode":"relative"}""", "the operation must set by when mode is relative")]
     [InlineData("""{"op":"shift","to":1,"by":2}""", "the operation must not set by unless mode is relative")]
+    [InlineData("""{"op":"set"}""", "the required field 'value' is missing")]
+    [InlineData("""{"op":"paint"}""", "the required field 'shades' is missing; it takes: light, dark")]
     public void Parse_RejectsABrokenRuleByItsWirePath(string operation, string reason) =>
         Assert.Equal("error: " + reason, Parse(operation));
 

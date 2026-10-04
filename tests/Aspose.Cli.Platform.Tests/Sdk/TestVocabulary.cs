@@ -111,6 +111,12 @@ public sealed record LinkOp : TestOp
     [InputPath] public required string Path { get; init; }
 }
 
+[Operation("paint")]
+public sealed record PaintOp : TestOp
+{
+    [MinItems(1), AllowedValues(typeof(Shades))] public required IReadOnlyList<string> Shades { get; init; }
+}
+
 [Operation("secret")]
 public sealed record SecretOp : TestOp
 {
@@ -125,6 +131,7 @@ public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 [JsonSerializable(typeof(LabelOp))]
 [JsonSerializable(typeof(LinkOp))]
 [JsonSerializable(typeof(NoteOp))]
+[JsonSerializable(typeof(PaintOp))]
 [JsonSerializable(typeof(PlaceOp))]
 [JsonSerializable(typeof(SecretOp))]
 [JsonSerializable(typeof(SetOp))]

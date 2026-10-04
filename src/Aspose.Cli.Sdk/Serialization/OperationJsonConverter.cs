@@ -151,6 +151,13 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
 
         foreach (OperationProperty property in record.Properties)
         {
+            if (property.Required && !value.TryGetProperty(property.Name, out _))
+            {
+                throw JsonContractDiagnostics.MissingField(
+                    Join(path, property.Name),
+                    property.Constraints.OfType<AllowedValuesAttribute>().FirstOrDefault()?.Listed);
+            }
+
             if (property.Default is not null && !value.TryGetProperty(property.Name, out _))
             {
                 using JsonDocument fallback = JsonDocument.Parse(property.Default);

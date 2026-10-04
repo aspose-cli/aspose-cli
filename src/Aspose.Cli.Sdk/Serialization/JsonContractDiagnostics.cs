@@ -110,7 +110,7 @@ internal static class JsonContractDiagnostics
         {
             if (property.IsRequired && !Declares(value, property.Name, names))
             {
-                return new JsonException($"the required field '{Join(path, property.Name)}' is missing");
+                return MissingField(Join(path, property.Name));
             }
         }
 
@@ -189,6 +189,10 @@ internal static class JsonContractDiagnostics
             .Select(static property => property.Name)];
         return AllowedFieldsException.UnknownField(path, name, path.Length == 0 ? "the document" : path, allowed, missing);
     }
+
+    /// <summary>Rejects an object that omits the required field <paramref name="field"/>, naming the values it takes when they are fixed.</summary>
+    public static JsonException MissingField(string field, string? allowedValues = null) =>
+        new($"the required field '{field}' is missing" + (allowedValues is null ? string.Empty : $"; it takes: {allowedValues}"));
 
     private static bool Declares(JsonElement value, string name, StringComparer names) =>
         value.EnumerateObject().Any(member => names.Equals(member.Name, name));

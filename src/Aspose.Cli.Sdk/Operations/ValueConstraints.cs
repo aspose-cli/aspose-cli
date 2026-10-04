@@ -334,9 +334,12 @@ public class AllowedValuesAttribute : ValueConstraintAttribute
     /// <summary>The allowed values in published order.</summary>
     public IReadOnlyList<object> Values { get; }
 
+    /// <summary>The allowed values as a message lists them, such as <c>light, dark</c>.</summary>
+    public string Listed => string.Join(", ", Values.Select(Spell));
+
     /// <inheritdoc />
     public override string? Check(object value) =>
-        Values.Any(allowed => Same(allowed, value)) ? null : $"must be one of: {string.Join(", ", Values.Select(Spell))}";
+        Values.Any(allowed => Same(allowed, value)) ? null : $"must be one of: {Listed}";
 
     /// <inheritdoc />
     public override void Describe(JsonObject schema, OperationValue value) =>
