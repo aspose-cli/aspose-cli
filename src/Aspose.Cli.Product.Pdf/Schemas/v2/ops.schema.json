@@ -646,7 +646,7 @@
           "const": "flatten_forms"
         },
         "fields": {
-          "description": "The full names of the fields to flatten; every field when omitted.",
+          "description": "The full names of the fields to flatten, each with every widget of the name, such as all buttons of a radio group; every field when omitted.",
           "type": "array",
           "minItems": 1,
           "items": {

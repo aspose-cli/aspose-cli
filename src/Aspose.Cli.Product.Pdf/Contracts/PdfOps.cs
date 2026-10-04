@@ -494,7 +494,7 @@ public sealed record SetFormFieldOp : PdfOp
 [Operation("flatten_forms")]
 public sealed record FlattenFormsOp : PdfOp
 {
-    /// <summary>The full names of the fields to flatten; every field when omitted.</summary>
+    /// <summary>The full names of the fields to flatten, each with every widget of the name, such as all buttons of a radio group; every field when omitted.</summary>
     [MinItems(1), MinLength(1)] public IReadOnlyList<string>? Fields { get; init; }
 }
 

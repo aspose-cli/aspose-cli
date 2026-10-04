@@ -17,6 +17,7 @@ checked, even when part of its effect was.
 | Operation | Read back | Issue code |
 | --- | --- | --- |
 | `set_form_field` | the field holds the value set, or is clear after `null` | `PDF_FIELD_VALUE_MISMATCH` |
+| `flatten_forms` | no field of a flattened name remains, or no field at all without `fields` | `PDF_FIELD_NOT_FLATTENED` |
 | `redact_text` | the pattern no longer matches the text of its pages | `PDF_REDACTED_TEXT_FOUND` |
 | `add_bookmark` | its index holds its title and page | `PDF_BOOKMARK_MISMATCH` |
 | `add_bookmark`, `delete_bookmarks` | the bookmark count | `PDF_BOOKMARK_MISMATCH` |
@@ -34,7 +35,7 @@ extracted form ([redaction](editing.md#redaction)). Likewise, a
 line under their cover, which no read-back check catches; review those pages.
 
 The batch is checked as a whole: only the last value set for a field, entry or
-attachment is checked, a flattened field or a deleted page's fields are not, a
+attachment is checked, the value of a flattened field or a deleted page's fields is not, a
 bookmark position is not checked after `delete_bookmarks` renumbers the outline,
 and page-scoped redactions and bookmark pages are not checked after a page
 operation renumbers the pages. `add_attachment` with a name the document already

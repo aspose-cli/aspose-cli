@@ -101,9 +101,9 @@ public sealed class PdfConformanceTests
         Assert.Contains("flatten_forms", error.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
 
-        // The remedy the hint names makes the conversion conform.
+        // The remedy the hint names, flattening only the named fields, makes the conversion conform.
         string flattened = fixture.File("form.flat.pdf");
-        fixture.Engine.ApplyOps(form, new PdfOpsBatch { Ops = [new FlattenFormsOp()] }, new PdfEditRequest { OutputPath = flattened });
+        fixture.Engine.ApplyOps(form, new PdfOpsBatch { Ops = [new FlattenFormsOp { Fields = ["radio"] }] }, new PdfEditRequest { OutputPath = flattened });
         fixture.Engine.Convert(flattened, new PdfConvertRequest { TargetFormatId = "pdfa-2b", OutputPath = output });
         Assert.True(fixture.Engine.Validate(output, new PdfValidateRequest { Profile = "pdfa-2b" }).Valid);
     }

@@ -177,13 +177,14 @@ internal sealed partial class PdfMutationHandlers
         }
 
         // Resolve every name first: a missing field must reject the operation before any change.
-        Field[] fields = operation.Fields.Select(name => FormField(_document, name)).ToArray();
-        foreach (Field field in fields)
+        // A radio group lists each of its buttons under the group's name; the group flattens them all.
+        Field[][] fields = [.. operation.Fields.Distinct(StringComparer.Ordinal).Select(name => FormFields(_document, name))];
+        foreach (Field[] named in fields)
         {
-            field.Flatten();
+            (PdfFormService.RadioGroup(named[0]) ?? named[0]).Flatten();
         }
 
-        return fields.Length;
+        return fields.Sum(static named => named.Length);
     }
 
     public long Apply(EncryptPdfOp operation)

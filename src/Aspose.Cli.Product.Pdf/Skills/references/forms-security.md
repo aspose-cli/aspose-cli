@@ -37,7 +37,8 @@ button, a check box is unchecked and any other field is emptied.
 `query forms` reports XFA as `type: "xfa"` and `readOnly: true`;
 filling, flattening and form export reject it with `FORM_XFA_UNSUPPORTED`.
 Flattening is the `flatten_forms` operation, for named fields or every field; use
-it only when those fields should no longer be editable.
+it only when those fields should no longer be editable. Naming a radio group
+flattens every button `query forms` lists under that name.
 
 ## Encryption
 

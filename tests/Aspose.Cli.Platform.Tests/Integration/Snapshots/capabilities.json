@@ -2185,7 +2185,7 @@
           "command": "edit",
           "inputSchema": "v2/pdf/ops",
           "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-          "contractFingerprint": "sha256:9966f50ea7cc0089a5e4042b08b23642fddeb96e4e5c6120a92ab162aa950858",
+          "contractFingerprint": "sha256:939951d09e10e75e9c9a25c694563a15595fa4d6de12dbd5af671ef8183f168e",
           "maximumOperationCount": 256,
           "ops": [
             "add_attachment",
@@ -19038,6 +19038,15 @@
       "category": "verification",
       "messageTemplateId": "pdf.pdf-bookmark-mismatch.message.v1",
       "hintTemplateId": "pdf.pdf-bookmark-mismatch.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "PDF_FIELD_NOT_FLATTENED",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "verification",
+      "messageTemplateId": "pdf.pdf-field-not-flattened.message.v1",
+      "hintTemplateId": "pdf.pdf-field-not-flattened.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {

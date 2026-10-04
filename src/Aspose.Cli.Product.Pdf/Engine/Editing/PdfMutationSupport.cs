@@ -128,17 +128,27 @@ internal static class PdfMutationSupport
         _ => $"Bookmark {parentIndex} has {count} child bookmarks; use {parentIndex}/1 through {parentIndex}/{count}.",
     };
 
-    /// <summary>The AcroForm field with a full name, or <c>FIELD_NOT_FOUND</c> listing every full name.</summary>
-    internal static Field FormField(Document document, string name) =>
-        document.Form.Fields.FirstOrDefault(field => string.Equals(field.FullName, name, StringComparison.Ordinal))
-        ?? throw CliErrors.NotFound(
-            PdfDiagnostics.FieldNotFound,
-            "form field",
-            name,
-            document.Form.Fields
-                .Select(static field => field.FullName)
-                .Where(static fullName => !string.IsNullOrEmpty(fullName))
-                .ToArray());
+    /// <summary>The first AcroForm field with a full name, or <c>FIELD_NOT_FOUND</c> listing every full name.</summary>
+    internal static Field FormField(Document document, string name) => FormFields(document, name)[0];
+
+    /// <summary>
+    /// Every AcroForm field with a full name, such as each button of a radio group, or
+    /// <c>FIELD_NOT_FOUND</c> listing every full name.
+    /// </summary>
+    internal static Field[] FormFields(Document document, string name)
+    {
+        Field[] fields = [.. document.Form.Fields.Where(field => string.Equals(field.FullName, name, StringComparison.Ordinal))];
+        return fields.Length > 0
+            ? fields
+            : throw CliErrors.NotFound(
+                PdfDiagnostics.FieldNotFound,
+                "form field",
+                name,
+                document.Form.Fields
+                    .Select(static field => field.FullName)
+                    .Where(static fullName => !string.IsNullOrEmpty(fullName))
+                    .ToArray());
+    }
 
     /// <summary>
     /// Refuses a position past the end of the document; pages insert before positions 1

@@ -1092,6 +1092,26 @@ public sealed class PdfMutateTests
             static button => Assert.Equal("Blue", button.Value));
     }
 
+    [Fact]
+    public void FlattenForms_FlattensEveryButtonOfANamedRadioGroup()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = ChoiceDocument(fixture);
+        string output = fixture.File("choices.flat.pdf");
+
+        PdfEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new FlattenFormsOp { Fields = ["color"] }] },
+            new PdfEditRequest { OutputPath = output, Verify = true });
+
+        Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.Equal(["op-0001"], result.Verification.CheckedOps);
+        Assert.Equal(
+            ["agree", "multi"],
+            fixture.Engine.ReadForm(output, new PdfFormReadRequest()).Fields.Select(static field => field.Name));
+    }
+
     [Theory]
     [InlineData("Green")]
     [InlineData("Off")]

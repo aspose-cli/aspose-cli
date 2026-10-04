@@ -37,6 +37,9 @@ internal static class PdfDiagnostics
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
     internal static readonly DiagnosticDescriptor FieldValueMismatch = Verification("PDF_FIELD_VALUE_MISMATCH");
 
+    /// <summary>The output still has a form field that flatten_forms flattened.</summary>
+    internal static readonly DiagnosticDescriptor FieldNotFlattened = Verification("PDF_FIELD_NOT_FLATTENED");
+
     /// <summary>The output still contains text that redact_text redacted.</summary>
     internal static readonly DiagnosticDescriptor RedactedTextFound = Verification("PDF_REDACTED_TEXT_FOUND");
 
@@ -58,6 +61,7 @@ internal static class PdfDiagnostics
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         FieldValueMismatch,
+        FieldNotFlattened,
         RedactedTextFound,
         BookmarkMismatch,
         MetadataMismatch,

@@ -216,6 +216,7 @@ public sealed class PdfEditVerificationTests
     public static TheoryData<string> Unapplied =>
     [
         "set_form_field",
+        "flatten_forms",
         "redact_text",
         "add_bookmark",
         "delete_bookmarks",
@@ -243,6 +244,7 @@ public sealed class PdfEditVerificationTests
         (PdfOp op, long affected, string code) = operation switch
         {
             "set_form_field" => ((PdfOp)new SetFormFieldOp { Name = "Customer", Value = "Contoso" }, 1L, "PDF_FIELD_VALUE_MISMATCH"),
+            "flatten_forms" => (new FlattenFormsOp { Fields = ["Customer"] }, 1L, "PDF_FIELD_NOT_FLATTENED"),
             "redact_text" => (new RedactTextOp { Pattern = "Secret" }, 1L, "PDF_REDACTED_TEXT_FOUND"),
             "add_bookmark" => (new AddBookmarkOp { Title = "Appendix", Page = 2 }, 1L, "PDF_BOOKMARK_MISMATCH"),
             "delete_bookmarks" => (new DeleteBookmarksOp { Indexes = ["1"] }, 1L, "PDF_BOOKMARK_MISMATCH"),
@@ -278,6 +280,23 @@ public sealed class PdfEditVerificationTests
                 new FlattenFormsOp(),
             ],
         }, Request(fixture, "superseded.pdf"));
+
+        Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
+        Assert.Equal(["op-0002", "op-0004"], result.Verification.CheckedOps);
+    }
+
+    [Fact]
+    public void Verify_SkipsAFlattenThatInsertedPagesBringFieldsAfter()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = CreateDocument(fixture);
+        string source = fixture.File("source.pdf");
+        File.Copy(input, source);
+
+        PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
+        {
+            Ops = [new FlattenFormsOp(), new InsertPagesFromOp { Path = source, At = 3 }],
+        }, Request(fixture, "inserted.pdf"));
 
         Assert.True(result.Verification!.Ok, string.Join("; ", result.Verification.Issues.Select(static issue => issue.Message)));
         Assert.Equal(["op-0002"], result.Verification.CheckedOps);

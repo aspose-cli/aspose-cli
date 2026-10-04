@@ -16,7 +16,7 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// <summary>
 /// Records what each applied operation of a batch should leave in the output, then reads the
 /// staged output back and reports every expectation it does not meet. Only effects with a
-/// reliable read-back are recorded: form field values, redacted text, bookmarks, document
+/// reliable read-back are recorded: form field values, flattened fields, redacted text, bookmarks, document
 /// information, attachments and the page count. The batch is checked as a whole: an
 /// expectation a later operation supersedes (the same field, key or attachment set again, the
 /// outline or the pages renumbered) is dropped, and an operation is reported as checked only
@@ -31,6 +31,7 @@ internal sealed class PdfEditVerifier
     private readonly Dictionary<string, Expected<string>> _metadata = new(StringComparer.Ordinal);
     private readonly Dictionary<string, Expected<long?>> _addedAttachments = new(StringComparer.Ordinal);
     private readonly Dictionary<string, string> _removedAttachments = new(StringComparer.Ordinal);
+    private readonly List<Expected<IReadOnlyList<string>?>> _flattened = [];
     private readonly List<RedactionExpectation> _redactions = [];
     private readonly List<BookmarkExpectation> _bookmarks = [];
     private readonly List<string> _pageOps = [];
@@ -79,6 +80,7 @@ internal sealed class PdfEditVerifier
                     Drop(_fields, name);
                 }
 
+                _flattened.Add(new Expected<IReadOnlyList<string>?>(id, flatten.Fields));
                 break;
             case RedactTextOp redact:
                 _redactions.Add(new RedactionExpectation(
@@ -174,6 +176,13 @@ internal sealed class PdfEditVerifier
                     }
                 }
 
+                if (operation is InsertPagesFromOp)
+                {
+                    // The inserted pages may bring form fields of their own.
+                    _incomplete.UnionWith(_flattened.Select(static flatten => flatten.Id));
+                    _flattened.Clear();
+                }
+
                 break;
         }
     }
@@ -184,6 +193,7 @@ internal sealed class PdfEditVerifier
         var issues = new List<VerificationIssue>();
         VerifyPages(output, issues);
         VerifyFields(output, issues);
+        VerifyFlattened(output, issues);
         VerifyRedactions(output, license, deadline, issues);
         VerifyBookmarks(output, issues);
         VerifyMetadata(output, issues);
@@ -235,6 +245,28 @@ internal sealed class PdfEditVerifier
                         : $"form field '{name}' reads '{actual}' in the output, not '{expected.Value}'",
                     location: $"pdf/form/{name}",
                     hint: "Read the field with 'pdf query forms' and check the value against the field's options or states."));
+            }
+        }
+    }
+
+    /// <summary>A flattened field leaves no field of its name, and flattening every field leaves none.</summary>
+    private void VerifyFlattened(Document output, List<VerificationIssue> issues)
+    {
+        foreach (Expected<IReadOnlyList<string>?> flatten in _flattened)
+        {
+            _checked.Add(flatten.Id);
+            string[] remaining = [.. output.Form.Fields
+                .Select(static field => field.FullName)
+                .Where(name => flatten.Value?.Contains(name, StringComparer.Ordinal) ?? true)
+                .Distinct(StringComparer.Ordinal)];
+            if (remaining.Length > 0)
+            {
+                issues.Add(Issue(
+                    PdfDiagnostics.FieldNotFlattened,
+                    [flatten.Id],
+                    $"the output still has the form field(s) {string.Join(", ", remaining.Select(static name => $"'{name}'"))}",
+                    location: "pdf/form",
+                    hint: "List the remaining fields with 'pdf query forms' and flatten them again."));
             }
         }
     }
