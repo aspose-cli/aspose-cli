@@ -98,6 +98,9 @@ public sealed record PdfExtractRequest
     public PageRange? Pages { get; init; }
     public bool Overwrite { get; init; }
     public string? Password { get; init; }
+
+    /// <summary>Whether each table's UTF-8 CSV starts with a byte order mark.</summary>
+    public bool ByteOrderMark { get; init; }
 }
 
 /// <summary>Stable PDF read projection modes.</summary>

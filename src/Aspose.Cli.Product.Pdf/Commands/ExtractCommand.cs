@@ -15,6 +15,11 @@ internal static class ExtractCommand
         var pages = new Option<string?>("--pages") { Description = "Optional page range for images, text or tables." }.WithInput(InputKind.None);
         var to = new Option<string?>("--to") { Description = "Form export format: json, fdf or xfdf; only with --what forms." }.WithInput(InputKind.None);
         to.AcceptOnlyFromAmong("json", "fdf", "xfdf");
+        var bom = new Option<bool>("--bom")
+        {
+            Description = "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text "
+                + "correctly; only with --what tables. Default: UTF-8 without one.",
+        };
         return StandardCommand.Create(
             host,
             "extract",
@@ -26,13 +31,19 @@ internal static class ExtractCommand
                     "Form-data output file; only with --what forms. Default extension follows --to.",
                     "Safe extraction directory; required unless --what forms."),
             },
-            [what, pages, to],
+            [what, pages, to, bom],
             (parse, standard) =>
             {
                 // Every usage check runs before the input is resolved or read.
                 string kind = parse.GetRequiredValue(what);
                 string? pageText = parse.GetValue(pages);
                 string? format = parse.GetValue(to);
+                bool byteOrderMark = parse.GetValue(bom);
+                if (byteOrderMark && kind != "tables")
+                {
+                    throw CliErrors.OptionInvalid("--bom", $"--what {kind} writes no CSV tables", "Drop --bom.");
+                }
+
                 if (string.Equals(kind, "forms", StringComparison.Ordinal))
                 {
                     if (pageText is not null || standard.RequestedOutputDirectory is not null)
@@ -77,6 +88,7 @@ internal static class ExtractCommand
                     Pages = range,
                     Overwrite = standard.Overwrite,
                     Password = standard.InputPassword,
+                    ByteOrderMark = byteOrderMark,
                 });
             });
     }

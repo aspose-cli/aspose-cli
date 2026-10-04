@@ -509,5 +509,25 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.DoesNotContain(option == "--out" ? "--to" : "--out ", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("text")]
+    [InlineData("forms")]
+    public void Extract_RefusesAByteOrderMarkForOutputOtherThanTables(string what)
+    {
+        using (var document = new Document())
+        {
+            document.Pages.Add();
+            document.Save(_workspace.File("source.pdf"));
+        }
+
+        CliResult result = _workspace.Run(
+            "pdf", "extract", "source.pdf", "--what", what, "--bom", "--output", "json");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
+        Assert.StartsWith("Invalid use of --bom:", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     public void Dispose() => _workspace.Dispose();
 }

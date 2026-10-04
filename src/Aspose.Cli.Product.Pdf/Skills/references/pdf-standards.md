@@ -59,7 +59,9 @@ annotations or signatures.
 
 Table extraction is best effort. Extracted tables carry page and rectangle
 context, but `confidence` is a fixed 0.5, not a calibrated score; check the
-values against the source.
+values against the source. Each table is a UTF-8 CSV file without a byte order
+mark; add `--bom` when a person will open it in Excel, which otherwise reads
+non-English text in the system code page.
 
 The CLI does not linearize PDFs; `pdf inspect` reports an existing file's
 `pdf.linearized` state.

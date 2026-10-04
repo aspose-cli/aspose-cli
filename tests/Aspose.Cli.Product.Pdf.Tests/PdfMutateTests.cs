@@ -612,6 +612,29 @@ public sealed class PdfMutateTests
         Assert.Contains(
             tables.Items,
             table => File.ReadAllText(table.Path).Contains("Revenue", StringComparison.Ordinal));
+        Assert.All(tables.Items, static table => Assert.NotEqual(0xEF, File.ReadAllBytes(table.Path)[0]));
+    }
+
+    [Fact]
+    public void ExtractTables_StartsEachCsvWithAByteOrderMarkOnRequest()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = TableDocument(fixture);
+
+        PdfExtractResult tables = fixture.Engine.Extract(input, new PdfExtractRequest
+        {
+            What = "tables",
+            OutputDirectory = fixture.File("tables"),
+            ByteOrderMark = true,
+        });
+
+        Assert.NotEmpty(tables.Items);
+        Assert.All(tables.Items, static table =>
+        {
+            byte[] bytes = File.ReadAllBytes(table.Path);
+            Assert.Equal([0xEF, 0xBB, 0xBF], bytes[..3]);
+            Assert.Equal(bytes.LongLength, table.SizeBytes);
+        });
     }
 
     [Fact]

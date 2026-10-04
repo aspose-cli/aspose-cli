@@ -3154,6 +3154,25 @@
           "hidden": false,
           "options": [
             {
+              "name": "--bom",
+              "aliases": [],
+              "type": "boolean",
+              "minimumArity": 0,
+              "maximumArity": 1,
+              "required": false,
+              "recursive": false,
+              "hasDefault": true,
+              "default": "false",
+              "allowedValues": [
+                "False",
+                "True"
+              ],
+              "secret": false,
+              "valueSource": "command-line",
+              "inputKind": "none",
+              "description": "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one."
+            },
+            {
               "name": "--out",
               "aliases": [
                 "-o"
@@ -12734,6 +12753,25 @@
       "description": "Extract bounded PDF assets, text, tables or form data.",
       "hidden": false,
       "options": [
+        {
+          "name": "--bom",
+          "aliases": [],
+          "type": "boolean",
+          "minimumArity": 0,
+          "maximumArity": 1,
+          "required": false,
+          "recursive": false,
+          "hasDefault": true,
+          "default": "false",
+          "allowedValues": [
+            "False",
+            "True"
+          ],
+          "secret": false,
+          "valueSource": "command-line",
+          "inputKind": "none",
+          "description": "Start each table's CSV with a UTF-8 byte order mark, so Excel reads its non-English text correctly; only with --what tables. Default: UTF-8 without one."
+        },
         {
           "name": "--out",
           "aliases": [

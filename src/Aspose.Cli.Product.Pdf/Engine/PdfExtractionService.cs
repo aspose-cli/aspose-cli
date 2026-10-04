@@ -137,7 +137,7 @@ internal sealed class PdfExtractionService
             "images" => ExtractImages(loaded.Document, pages, guard, _resourceBudgets),
             "attachments" => ExtractAttachments(loaded.Document, guard),
             "text" => ExtractTextArtifact(loaded.Document, pages, guard),
-            "tables" => ExtractTables(loaded.Document, pages, guard),
+            "tables" => ExtractTables(loaded.Document, pages, guard, request.ByteOrderMark),
             _ => throw new InvalidOperationException("The extraction registry and handler are out of sync."),
         };
         guard.Commit();
@@ -247,7 +247,8 @@ internal sealed class PdfExtractionService
     private static IReadOnlyList<PdfExtractedItem> ExtractTables(
         Document document,
         IReadOnlyList<int> pages,
-        ExtractionGuard guard)
+        ExtractionGuard guard,
+        bool byteOrderMark)
     {
         var items = new List<PdfExtractedItem>();
         int number = 0;
@@ -267,7 +268,7 @@ internal sealed class PdfExtractionService
                             cell.TextFragments.Select(static fragment => fragment.Text))))));
                 }
 
-                byte[] bytes = Encoding.UTF8.GetBytes(csv.ToString());
+                byte[] bytes = [.. byteOrderMark ? Encoding.UTF8.Preamble : [], .. Encoding.UTF8.GetBytes(csv.ToString())];
                 string path = guard.WriteAllBytes($"table-{++number:000}.csv", bytes);
                 items.Add(new PdfExtractedItem
                 {
