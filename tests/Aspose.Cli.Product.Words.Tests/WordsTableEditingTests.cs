@@ -280,6 +280,26 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void RepeatTableRow_SuggestsAnUnusedItemKeyCloseToAMissingPlaceholder()
+    {
+        string input = CreateTemplate("repeat-typo.docx");
+
+        CliException error = Assert.Throws<CliException>(() => _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new RepeatTableRowOp
+                {
+                    At = new WordsTarget { Find = "{{code}}" },
+                    Items = [new Dictionary<string, string> { ["code"] = "A-100", ["naem"] = "Widget", ["price"] = "1" }],
+                },
+            ],
+        }, new WordsEditRequest { OutputPath = _fixture.Temp.File("repeat-typo-changed.docx") }));
+
+        Assert.Contains("item 1 has no value for {{name}} (did you mean its unused key 'naem'?)", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void RepeatTableRow_WithNoItems_RemovesTheTemplateRow()
     {
         string input = CreateTemplate("repeat-none.docx");

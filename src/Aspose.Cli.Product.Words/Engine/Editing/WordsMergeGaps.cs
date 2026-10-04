@@ -1,5 +1,6 @@
 using System.Globalization;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Fields;
 
@@ -59,6 +60,10 @@ internal static class WordsMergeGaps
         IReadOnlyList<IReadOnlyDictionary<string, string?>> rows)
     {
         var gaps = new List<string>();
+        string[] unused = rows.SelectMany(static row => row.Keys)
+            .Where(key => !fields.Contains(key, StringComparer.OrdinalIgnoreCase))
+            .Distinct(StringComparer.Ordinal)
+            .ToArray();
         foreach (string field in fields)
         {
             int[] records = Enumerable.Range(0, rows.Count)
@@ -67,7 +72,7 @@ internal static class WordsMergeGaps
                 .ToArray();
             if (records.Length > 0)
             {
-                gaps.Add($"{field}: {Records(records)}");
+                gaps.Add($"{field}: {Records(records)}{Suggestion(field, unused, "the unused data field")}");
             }
         }
 
@@ -78,9 +83,17 @@ internal static class WordsMergeGaps
                 CultureInfo.InvariantCulture,
                 $"mail_merge had no value for {gaps.Count} template merge field(s) in some records: {string.Join("; ", gaps)}."),
             Hint = "A null value or a missing key merges as blank text. "
-                + "Supply the missing values in the merge data, or confirm that the result is acceptable.",
+                + "Supply the missing values in the merge data, rename a misspelled data field to its template field, "
+                + "or confirm that the result is acceptable.",
         };
     }
+
+    /// <summary>
+    /// Names the unused data key closest to a template field, such as a misspelled column, as
+    /// " (did you mean {kind} 'key'?)", or returns an empty string when none is close.
+    /// </summary>
+    internal static string Suggestion(string field, IEnumerable<string> unused, string kind) =>
+        NameSuggestions.Closest(field, unused) is [var key, ..] ? $" (did you mean {kind} '{key}'?)" : string.Empty;
 
     private static string? Value(IReadOnlyDictionary<string, string?> row, string field) =>
         row.TryGetValue(field, out string? value)

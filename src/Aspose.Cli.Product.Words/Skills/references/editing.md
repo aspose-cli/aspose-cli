@@ -64,8 +64,9 @@ aspose-cli schema v2/words/ops --operation insert_table
   row); a null or missing CSV value is empty text. Each placeholder takes the
   item's value as literal text in the placeholder's formatting, and the copies
   keep the row's height, borders, shading and cell widths. An item without a
-  key for one of the row's placeholders fails the operation; extra keys are
-  ignored, and no items removes the template row. A tracked batch records
+  key for one of the row's placeholders fails the operation, naming an extra
+  key close to the placeholder as a likely misspelling; extra keys are
+  otherwise ignored, and no items removes the template row. A tracked batch records
   each copy as a row insertion and the template row as a deletion.
 - Inline Markdown loads local resources under the edited document's directory;
   remote and escaping resources are omitted and reported.

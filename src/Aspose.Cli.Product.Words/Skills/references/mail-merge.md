@@ -43,8 +43,10 @@ appends the template's sections, so with a one-section template record N is
 section N of the output: read it with `words query blocks <file> --section N`.
 A template of S sections puts record N in sections `(N-1)*S+1` to `N*S`. With `regions` only
 the fields inside the region are checked. A JSON empty string is a value and is
-not reported, nor is a data field the template does not use, and `--verify` still
-reports `ok`. Supply the values or confirm with the user that the result is
+not reported, and `--verify` still reports `ok`. A data field the template does
+not use is named only when it is close to a blank template field, as a likely
+misspelling: `Salary: records 1, 2 (did you mean the unused data field 'Salery'?)`.
+Supply the values or confirm with the user that the result is
 acceptable. Check representative
 outputs for long values, CJK or right-to-left text and pagination. The
 [mail-merge example](../examples/mail-merge-letters/README.md) merges a CSV
