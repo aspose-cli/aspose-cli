@@ -66,7 +66,7 @@ internal static class WordsEngineSupport
 
     /// <summary>
     /// The warning for a document saved from a PDF input, or null. PDF loading rebuilds the pages
-    /// as flowing text and cannot recover headers and footers (WORDS-PDF-HEADER-FOOTER).
+    /// as flowing text and guesses the headers and footers (WORDS-PDF-HEADER-FOOTER).
     /// </summary>
     internal static IReadOnlyList<Warning>? PdfInputWarnings(LoadedDocument loaded) =>
         loaded.FormatId == "pdf" ? [PdfInputReflowed] : null;
@@ -74,8 +74,8 @@ internal static class WordsEngineSupport
     private static Warning PdfInputReflowed { get; } = new()
     {
         Code = WarningCodes.LossyConversion,
-        Message = "A PDF input is rebuilt as flowing text: its headers and footers, such as page numbers, become body text, and the new layout may add pages.",
-        Hint = "Review the output; with 'aspose-cli words edit', remove the stray paragraphs and restore them with set_header, set_footer or set_page_numbers.",
+        Message = "A PDF input is rebuilt as flowing text, and its headers and footers are guessed: they may become body text, or headers and footers in which a number, such as a version number, becomes a page-number field; the new layout may add pages.",
+        Hint = "Check the headers, footers and fields with 'aspose-cli words inspect <file> --detail sections fields' and the body with 'words query blocks'; correct them with 'words edit' and set_header, set_footer, set_page_numbers or delete_blocks.",
     };
 
     /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>

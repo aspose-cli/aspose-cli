@@ -10,11 +10,14 @@ word-processing documents. This Skill holds what is specific to Words; the
 session start, the rules every product shares and the delivery checklist are in
 `aspose-cli docs overview`.
 
-A PDF input is rebuilt as flowing text: its headers and footers, such as page
-numbers, become body text and the layout may add pages, which `convert`,
-`split` and `edit` report as `LOSSY_CONVERSION` (known SDK issue
-`WORDS-PDF-HEADER-FOOTER`); review the output and restore them with
-`set_header`, `set_footer` or `set_page_numbers`.
+A PDF input is rebuilt as flowing text, and the engine guesses its headers
+and footers: they may become body text, or real headers and footers in which
+a number, such as the "1" of a version "第 1 版", becomes a page-number field
+that counts up on later pages; the layout may also add pages. `convert`,
+`split` and `edit` report this as `LOSSY_CONVERSION` (known SDK issue
+`WORDS-PDF-HEADER-FOOTER`). Check the output with `inspect --detail sections
+fields` and correct it with `set_header`, `set_footer`, `set_page_numbers` or
+`delete_blocks`.
 
 ## Document model
 

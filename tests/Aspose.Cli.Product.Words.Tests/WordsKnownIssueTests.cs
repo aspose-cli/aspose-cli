@@ -69,29 +69,48 @@ public sealed class WordsKnownIssueTests
     }
 
     [Fact]
-    public void PdfLoad_MovesFooterIntoBodyAndAddsAPage()
+    public void PdfLoad_GuessesHeadersAndFootersAndTurnsTheirNumbersIntoPageFields()
     {
         using var fixture = new WordsFixture();
+
+        // One page: the footer becomes the last body paragraph, on a page of its own.
+        (int onePageSource, Document onePage) = LoadThroughPdf(clauses: 30, HeaderFooterType.FooterPrimary);
+        string last = onePage.FirstSection.Body.LastParagraph!.GetText().Trim();
+        // Two pages: the header stays a header, and its version number becomes a PAGE field too.
+        // (A header, because evaluation mode writes a sentence of its own into the footer.)
+        (int twoPageSource, Document twoPages) = LoadThroughPdf(clauses: 80, HeaderFooterType.HeaderPrimary);
+        HeaderFooter header = twoPages.FirstSection.HeadersFooters[HeaderFooterType.HeaderPrimary];
+        int pageFields = header?.Range.Fields.Cast<Aspose.Words.Fields.Field>()
+            .Count(static field => field.Type == Aspose.Words.Fields.FieldType.FieldPage) ?? 0;
+
+        KnownIssue.Reproduces(
+            "WORDS-PDF-HEADER-FOOTER",
+            onePageSource == 1 && onePage.PageCount > onePageSource && last.EndsWith('1')
+                && twoPageSource == 2 && pageFields >= 2,
+            $"one page: {onePage.PageCount} pages, last body paragraph '{last}'; "
+                + $"two pages: header '{header?.GetText().Trim()}' with {pageFields} PAGE fields");
+    }
+
+    /// <summary>
+    /// Saves a document of numbered clauses whose header or footer reads "Version 1  Page {PAGE}"
+    /// as PDF and loads the PDF back; returns the source's page count and the loaded document.
+    /// </summary>
+    private static (int SourcePages, Document Loaded) LoadThroughPdf(int clauses, HeaderFooterType story)
+    {
         var document = new Document();
         var builder = new DocumentBuilder(document);
-        for (int clause = 1; clause <= 30; clause++)
+        for (int clause = 1; clause <= clauses; clause++)
         {
             builder.Writeln($"Clause {clause}.");
         }
-        builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+        builder.MoveToHeaderFooter(story);
+        builder.Write("Version 1    Page ");
         builder.InsertField("PAGE");
         int sourcePages = document.PageCount;
         using var pdf = new MemoryStream();
         document.Save(pdf, SaveFormat.Pdf);
         pdf.Position = 0;
-
-        var loaded = new Document(pdf, new Aspose.Words.Loading.PdfLoadOptions());
-        string last = loaded.FirstSection.Body.LastParagraph!.GetText().Trim();
-
-        KnownIssue.Reproduces(
-            "WORDS-PDF-HEADER-FOOTER",
-            sourcePages == 1 && loaded.PageCount > sourcePages && last.EndsWith('1'),
-            $"source pages: {sourcePages}; loaded pages: {loaded.PageCount}; last body paragraph: '{last}'");
+        return (sourcePages, new Document(pdf, new Aspose.Words.Loading.PdfLoadOptions()));
     }
 
     private static string SaveText(Document document, SaveOptions options)

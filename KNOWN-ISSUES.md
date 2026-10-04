@@ -339,13 +339,18 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 
 ### WORDS-PDF-HEADER-FOOTER
 
-- **Defect:** loading a PDF writes the text of its headers and footers, such as a footer page
-  number, into the body as ordinary paragraphs, and the rebuilt layout can push them onto a page
-  of their own: a one-page PDF with a footer page number loads as two pages. `PdfLoadOptions`
-  has only `PageIndex`, `PageCount` and `SkipPdfImages`, so no option keeps headers and footers.
+- **Defect:** loading a PDF guesses its headers and footers. In a PDF of one page they are
+  written into the body as ordinary paragraphs, and the rebuilt layout can push them onto a
+  page of their own: a one-page PDF with a footer page number loads as two pages. In a longer
+  PDF, text repeated at the top or bottom of the pages becomes a real header or footer, but a
+  number in it that matches a page number becomes a `PAGE` field, so a footer reading
+  "Version 1  Page 1" turns into two page fields and reads "Version 2" on the second page.
+  `PdfLoadOptions` has only `PageIndex`, `PageCount` and `SkipPdfImages`, so no option keeps
+  headers and footers as text.
 - **CLI behavior:** `words convert`, `words split` and `words edit` of a PDF input warn
-  `LOSSY_CONVERSION` that headers and footers become body text and that the layout may add
-  pages.
-- **Workaround:** remove the stray paragraphs with `words edit` and restore them with
-  `set_header`, `set_footer` or `set_page_numbers`.
+  `LOSSY_CONVERSION` that headers and footers may become body text or page-number fields and
+  that the layout may add pages.
+- **Workaround:** read the headers, footers and fields with `words inspect --detail sections
+  fields`, then restore them with `set_header`, `set_footer` or `set_page_numbers` and remove
+  body paragraphs that held them with `delete_blocks`.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)

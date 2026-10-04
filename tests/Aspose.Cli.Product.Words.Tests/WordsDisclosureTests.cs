@@ -110,7 +110,7 @@ public sealed class WordsDisclosureTests
     }
 
     [Fact]
-    public void SavingAPdfInput_DisclosesThatHeadersAndFootersBecomeBodyText()
+    public void SavingAPdfInput_DisclosesThatHeadersAndFootersAreGuessed()
     {
         using var fixture = new WordsFixture();
         var source = new Document();
@@ -132,7 +132,8 @@ public sealed class WordsDisclosureTests
         }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
 
         Warning lossy = Assert.Single(fromPdf.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
-        Assert.Contains("headers and footers", lossy.Message, StringComparison.Ordinal);
+        Assert.Contains("may become body text, or headers and footers in which a number", lossy.Message, StringComparison.Ordinal);
+        Assert.Contains("--detail sections fields", lossy.Hint, StringComparison.Ordinal);
         Assert.Equal(lossy, Assert.Single(edited.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion));
         Assert.DoesNotContain(fromDocx.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
     }
