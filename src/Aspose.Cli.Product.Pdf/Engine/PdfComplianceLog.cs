@@ -51,7 +51,7 @@ internal static class PdfComplianceLog
     /// Rejects a converted document that validation of its saved file finds not conforming,
     /// although the conversion reported success (known issue PDF-PDFA-RADIO-APPEARANCE in
     /// KNOWN-ISSUES.md). Annotation appearance problems (clause 6.3.3) name the button fields on
-    /// their pages, which flattening the form removes.
+    /// their pages that have one appearance for all their states, which flattening removes.
     /// </summary>
     internal static void EnsureConformant(bool valid, MemoryStream log, string profile, Func<int, IEnumerable<string>> buttonFieldsOnPage)
     {
@@ -71,7 +71,7 @@ internal static class PdfComplianceLog
             problems,
             $"the converted file still has {problems.Length} problem(s) the conversion did not fix",
             fields.Length > 0
-                ? $"The pages with appearance problems hold the button fields {string.Join(", ", fields)}. Flatten them first, with a 'pdf edit' batch of flatten_forms (the fields stop being fillable), then convert again."
+                ? $"The button fields {string.Join(", ", fields)} have one appearance for all their states, which the profile rejects. Flatten them first, with a 'pdf edit' batch of flatten_forms (the fields stop being fillable), then convert again."
                 : "Fix the reported problems in the source, or convert to plain PDF.");
     }
 

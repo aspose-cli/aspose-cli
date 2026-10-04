@@ -75,7 +75,7 @@ public sealed class PdfConformanceTests
     }
 
     [Fact]
-    public void APdfaConversionWhoseOutputDoesNotValidate_NamesTheButtonFieldsAndIsNotPublished()
+    public void APdfaConversionWhoseOutputDoesNotValidate_NamesTheRadioGroupsAndIsNotPublished()
     {
         using var fixture = new PdfEngineFixture();
         string html = fixture.File("form.html");
@@ -83,6 +83,7 @@ public sealed class PdfConformanceTests
             <html><body><form>
             <input type="text" name="company"/>
             <input type="radio" name="kind" value="maker"/> Maker <input type="radio" name="kind" value="seller"/> Seller
+            <input type="checkbox" name="urgent"/> Urgent
             </form></body></html>
             """);
         string form = fixture.Engine.Create(new NewPdfRequest { HtmlPath = html, OutputPath = fixture.File("form.pdf") }).Output.Path;
@@ -97,7 +98,9 @@ public sealed class PdfConformanceTests
         Assert.Equal("PDFA_CONVERSION_FAILED", error.Code.Name);
         Assert.Contains("6.3.3", Assert.Single(error.Details!["problems"]!.AsArray())!.GetValue<string>(), StringComparison.Ordinal);
         Assert.Contains("'radio'", error.Hint, StringComparison.Ordinal);
+        // Text fields and check boxes, whose appearances have a state each, conform as they are.
         Assert.DoesNotContain("'company'", error.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("'field_", error.Hint, StringComparison.Ordinal);
         Assert.Contains("flatten_forms", error.Hint, StringComparison.Ordinal);
         Assert.False(File.Exists(output));
 

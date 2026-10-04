@@ -816,12 +816,14 @@ internal sealed class PdfProductionService
     }
 
     /// <summary>
-    /// The full names of the check boxes and radio groups on a page; the form lists a radio
-    /// group as its buttons.
+    /// The full names of the check boxes and radio groups on a page whose normal appearance is
+    /// one stream rather than one per state, which clause 6.3.3 rejects; the form lists a radio
+    /// group as its buttons. The SDK names an appearance per state <c>N.&lt;state&gt;</c>.
     /// </summary>
     private static IEnumerable<string> ButtonFields(Document document, int page) => document.Form.Fields
         .Where(field => field is (Aspose.Pdf.Forms.CheckboxField or Aspose.Pdf.Forms.RadioButtonField or Aspose.Pdf.Forms.RadioButtonOptionField)
-            && field.PageIndex == page)
+            && field.PageIndex == page
+            && (PdfFormService.RadioGroup(field) ?? field).Appearance.Keys.Contains("N"))
         .Select(static field => field.FullName);
 
     /// <summary>

@@ -216,9 +216,9 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   validation of the saved file then fails clause 6.3.3 (the appearance of a button field must be
   a subdictionary of states).
 - **CLI behavior:** `pdf convert --to pdfa-*` validates the file it converted and fails with
-  `PDFA_CONVERSION_FAILED` when it does not conform, naming the check boxes and radio groups on
-  the pages of appearance problems in the hint.
-- **Workaround:** flatten the form (`flatten_forms`) before converting.
+  `PDFA_CONVERSION_FAILED` when it does not conform, naming in the hint the check boxes and radio
+  groups on the pages of appearance problems that have one appearance for all their states.
+- **Workaround:** flatten the named fields (`flatten_forms`) before converting.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ### PDF-TEXT-GAP-SPACE
