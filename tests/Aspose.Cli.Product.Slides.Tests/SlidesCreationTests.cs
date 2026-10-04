@@ -92,6 +92,24 @@ public sealed class SlidesCreationTests
     }
 
     [Fact]
+    public void BuiltInDesign_GivesContentTextOneSizeOnEveryLayout()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string output = fixture.File("design.pptx");
+        fixture.Engine.Create(new NewPresentationRequest { OutputPath = output });
+
+        using var deck = new Presentation(output);
+        (string Layout, float Size)[] sizes = deck.LayoutSlides
+            .SelectMany(static layout => layout.Shapes.OfType<IAutoShape>()
+                .Where(static shape => shape.Placeholder?.Type == PlaceholderType.Object)
+                .Select(shape => (layout.Name, shape.TextFrame.Paragraphs[0].Portions[0].PortionFormat.GetEffective().FontHeight)))
+            .ToArray();
+
+        Assert.Contains(sizes, static size => size.Layout == "Two Content");
+        Assert.Single(sizes.Select(static size => size.Size).Distinct());
+    }
+
+    [Fact]
     public void SlideSelection_OnAPresentationWithoutSlides_ReportsSlideNotFound()
     {
         using var fixture = new SlidesEngineFixture();

@@ -12,7 +12,12 @@ restyle them.
    for CJK text.
 3. To change the look, edit the template in PowerPoint once and reuse it; never compensate slide
    by slide with `set_shape_style`. `slides create base.pptx` writes the built-in design as a
-   starting point.
+   starting point; its content placeholders give body text one size on every layout.
+4. The CLI does not edit masters or layouts. When a supplied template's layouts disagree, for
+   example a Two Content body larger than a Title and Content body
+   (`slides query slides --scope full` reports each run's size), tell the user and have the
+   template fixed once; restyle the affected placeholders with `set_shape_style` only when the
+   user accepts that exception for this deck.
 
 ## Content rules
 
