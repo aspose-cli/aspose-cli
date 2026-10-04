@@ -5,34 +5,33 @@ namespace Aspose.Cli.Product.Cells;
 /// <summary>Product-owned bounded signatures for generic workbook routing.</summary>
 internal static class CellsFormatRecognition
 {
-    private static readonly FileProbePattern CompoundFile =
-        FileProbePattern.BytesAt(
-            0,
-            0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1);
+    private static readonly FileFormatRecognition CompoundWorkbook =
+        FileFormatRecognition.Match(
+            FileProbePattern.BytesAt(
+                0,
+                0xD0, 0xCF, 0x11, 0xE0, 0xA1, 0xB1, 0x1A, 0xE1),
+            "OLE compound-file signature with extension-qualified format",
+            70);
 
-    private static readonly FileProbePattern SpreadsheetPackage =
-        FileProbePattern.ZipContainsAny(
-            "xl/",
-            "application/vnd.openxmlformats-officedocument.spreadsheetml");
+    // A password-encrypted package is an OLE compound file that holds the encrypted ZIP.
+    private static readonly FileFormatRecognition SpreadsheetPackage =
+        FileFormatRecognition.FirstOf(
+            FileFormatRecognition.Match(
+                FileProbePattern.ZipContainsAny(
+                    "xl/",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml"),
+                "spreadsheet package marker"),
+            CompoundWorkbook);
 
     internal static IReadOnlyDictionary<string, FileFormatRecognition>
         Rules
     { get; } = new Dictionary<string, FileFormatRecognition>(
         StringComparer.Ordinal)
     {
-        ["xlsx"] = FileFormatRecognition.Match(
-            SpreadsheetPackage,
-            "spreadsheet package marker"),
-        ["xlsm"] = FileFormatRecognition.Match(
-            SpreadsheetPackage,
-            "spreadsheet package marker"),
-        ["xlsb"] = FileFormatRecognition.Match(
-            SpreadsheetPackage,
-            "spreadsheet package marker"),
-        ["xls"] = FileFormatRecognition.Match(
-            CompoundFile,
-            "OLE compound-file signature with extension-qualified format",
-            70),
+        ["xlsx"] = SpreadsheetPackage,
+        ["xlsm"] = SpreadsheetPackage,
+        ["xlsb"] = SpreadsheetPackage,
+        ["xls"] = CompoundWorkbook,
         ["ods"] = FileFormatRecognition.Match(
             FileProbePattern.ZipContainsAny(
                 "application/vnd.oasis.opendocument.spreadsheet"),

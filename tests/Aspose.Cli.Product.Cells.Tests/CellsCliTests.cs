@@ -435,6 +435,22 @@ public sealed class CellsCliTests : IDisposable
     }
 
     [Fact]
+    public void Review_RecognizesAnEncryptedWorkbookByItsExtension()
+    {
+        var variables = new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_PASSWORD"] = Secret };
+        Assert.Equal(0, _workspace.RunWithEnv(variables,
+            "cells", "create", "secret.xlsx", "--sheets", "Data", "--encrypt-env", "ASPOSE_CLI_TEST_PASSWORD").ExitCode);
+
+        CliResult locked = _workspace.Run("review", "secret.xlsx", "--out", _workspace.File("locked"), "--output", "json");
+        CliResult opened = _workspace.RunWithEnv(variables,
+            "review", "secret.xlsx", "--out", _workspace.File("opened"), "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output", "json");
+
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
+        Assert.True(opened.ExitCode == 0, opened.StdErr);
+        Assert.Equal("cells", JsonNode.Parse(opened.StdOut)!["product"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Convert_EncryptsAProtectableOutputAndNamesTheOptionForAnyOther()
     {
         File.WriteAllText(_workspace.File("sales.csv"), "Region,Revenue\nEast,1200\n");
