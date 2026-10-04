@@ -40,6 +40,35 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
             result.Hits.SelectMany(static hit => Needles(hit.Snippet)).Order());
     }
 
+    [Fact]
+    public void Search_NamesTheSectionOfAHeaderHitAndGivesItNoBlock()
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("First body");
+        builder.InsertBreak(BreakType.SectionBreakNewPage);
+        builder.Writeln("Second body needle");
+        foreach (Section section in document.Sections)
+        {
+            var header = new HeaderFooter(document, HeaderFooterType.HeaderPrimary);
+            header.AppendChild(new Paragraph(document));
+            header.FirstParagraph!.AppendChild(new Run(document, $"Contract {document.Sections.IndexOf(section) + 1} needle"));
+            section.HeadersFooters.Add(header);
+        }
+        string input = _fixture.Temp.File("section-headers.docx");
+        document.Save(input);
+
+        WordsSearchResult result = _fixture.Engine.Search(input, WordsFixture.Search("needle", "all"));
+
+        WordsSearchHit body = Assert.Single(result.Hits, static hit => hit.Scope == "body");
+        Assert.Equal(2, body.Section);
+        Assert.NotNull(body.Block);
+        WordsSearchHit[] headers = result.Hits.Where(static hit => hit.Scope == "headersFooters").ToArray();
+        Assert.Equal([1, 2], headers.Select(static hit => hit.Section));
+        Assert.All(headers, static hit => Assert.Null(hit.Block));
+        Assert.Contains("Contract 2 needle", headers[1].Snippet, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("body", new[] { "Body pin", "Box pin" })]
     [InlineData("headersFooters", new[] { "Header pin", "Footer pin" })]

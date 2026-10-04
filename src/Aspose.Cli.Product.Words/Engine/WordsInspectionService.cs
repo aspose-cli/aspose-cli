@@ -123,15 +123,12 @@ internal sealed class WordsInspectionService
         };
     }
 
-    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text)
-    {
-        int block = index.FindBlock(node) ?? 0;
-        return new WordsSearchHit
+    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text) =>
+        new()
         {
-            Block = block,
-            Section = block == 0 ? 0 : index.Get(block).Section,
+            Block = index.FindBlock(node),
+            Section = node.Document.GetChildNodes(NodeType.Section, false).IndexOf(node.GetAncestor(NodeType.Section)) + 1,
             Scope = scope,
             Snippet = Truncate(text, 300),
         };
-    }
 }

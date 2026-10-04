@@ -91,7 +91,7 @@ internal static class WordsRenderers
         var table = new TextTable("block", "section", "scope", "text");
         foreach (WordsSearchHit hit in result.Hits)
         {
-            table.AddRow(TableText.Int(hit.Block), TableText.Int(hit.Section), hit.Scope, hit.Snippet);
+            table.AddRow(hit.Block is { } block ? TableText.Int(block) : "-", TableText.Int(hit.Section), hit.Scope, hit.Snippet);
         }
 
         table.WriteTo(surface.Out, surface.Format);

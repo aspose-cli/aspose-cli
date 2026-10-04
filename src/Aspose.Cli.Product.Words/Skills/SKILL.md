@@ -15,8 +15,9 @@ session start, the rules every product shares and the delivery checklist are in
 - A **block** is a body paragraph or table, numbered from 1. The paragraphs and
   tables inside a block-level content control, such as a table of contents,
   are blocks too. Images, fields, hyperlinks and breaks belong to their
-  paragraph; `inspect` names the `scope` of each image, field and revision
-  and gives no `block` in headers and footers. A **section** carries page setup, headers and footers, numbered
+  paragraph; `inspect` names the `scope` of each image, field and revision,
+  and `query search` the `scope` and `section` of each hit; neither gives a
+  `block` in headers and footers. A **section** carries page setup, headers and footers, numbered
   from 1.
 - Block text, search snippets and `heading`/`find` addresses use the text a
   reader sees: field results rather than field codes, without text a tracked

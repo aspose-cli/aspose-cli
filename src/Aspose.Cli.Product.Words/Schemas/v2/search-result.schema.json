@@ -13,11 +13,11 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["block", "section", "scope", "snippet"],
+        "required": ["section", "scope", "snippet"],
         "additionalProperties": false,
         "properties": {
-          "block": { "type": "integer", "minimum": 0 },
-          "section": { "type": "integer", "minimum": 0 },
+          "block": { "type": "integer", "minimum": 1, "description": "The body block that holds the hit; absent in headers and footers." },
+          "section": { "type": "integer", "minimum": 1, "description": "The section whose body, header or footer holds the hit." },
           "scope": { "enum": ["body", "headersFooters", "footnotes", "comments"] },
           "snippet": { "type": "string" }
         }

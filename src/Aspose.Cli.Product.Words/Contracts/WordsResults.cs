@@ -273,7 +273,10 @@ public sealed record WordsSearchResult() : ResultEnvelope(WordsSchemaIds.SearchR
 /// <summary>One search hit.</summary>
 public sealed record WordsSearchHit
 {
-    public required int Block { get; init; }
+    /// <summary>The body block that holds the hit; absent in headers and footers.</summary>
+    public int? Block { get; init; }
+
+    /// <summary>The section whose body, header or footer holds the hit.</summary>
     public required int Section { get; init; }
     public required string Scope { get; init; }
     public required string Snippet { get; init; }
