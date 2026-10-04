@@ -2258,6 +2258,11 @@
             "summary": "The product engine exposes no font diagnostics, so the fonts the document uses were not checked."
           },
           {
+            "code": "PDF_EVALUATION_WATERMARK",
+            "severity": "warning",
+            "summary": "A page carries the Aspose evaluation watermark that a save without a license stamped into the file; a license does not remove it."
+          },
+          {
             "code": "PDF_FONTS_NOT_EMBEDDED",
             "severity": "warning",
             "summary": "Font resources other than the standard 14 PDF fonts are not embedded, so rendering can vary between machines."
@@ -14521,6 +14526,7 @@
             "CELLS_VBA_PRESENT",
             "FONTS_MISSING_OR_SUBSTITUTED",
             "FONTS_NOT_CHECKED",
+            "PDF_EVALUATION_WATERMARK",
             "PDF_FONTS_NOT_EMBEDDED",
             "PDF_FORM_APPEARANCE_REVIEW_REQUIRED",
             "PDF_FORM_FIELD_PAGE_UNRESOLVED",

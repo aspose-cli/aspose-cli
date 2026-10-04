@@ -61,6 +61,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         });
         var findings = new List<ReviewFinding>();
         AnalyzeTextBounds(layout, findings);
+        AnalyzeWatermarks(layout, findings);
         int unusualPages = AnalyzePageSizes(layout, findings);
         TextAnalysis text = AnalyzeText(
             read,
@@ -112,6 +113,20 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 $"{page.OutsideTextFragments} text fragment(s) extend beyond the page rectangle and may be clipped.",
                 $"page {page.Page}",
                 Hint,
+                PdfViews.PagePart(page.Page)));
+        }
+    }
+
+    private static void AnalyzeWatermarks(
+        PdfReviewLayout layout,
+        ICollection<ReviewFinding> findings)
+    {
+        foreach (PdfReviewPageLayout page in layout.Pages.Where(static page => page.EvaluationWatermark))
+        {
+            findings.Add(PdfReviewChecks.EvaluationWatermark.Finding(
+                "The page carries the Aspose evaluation watermark, saved into the file by a run without a license.",
+                $"page {page.Page}",
+                "Regenerate the PDF from its original inputs with an Aspose.PDF license; editing this file keeps the watermark.",
                 PdfViews.PagePart(page.Page)));
         }
     }

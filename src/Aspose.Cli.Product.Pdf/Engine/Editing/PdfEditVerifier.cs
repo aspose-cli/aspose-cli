@@ -24,11 +24,6 @@ namespace Aspose.Cli.Product.Pdf.Engine.Editing;
 /// </summary>
 internal sealed class PdfEditVerifier
 {
-    // Evaluation mode stamps this sentence on every page each time it saves.
-    private static readonly Regex EvaluationWatermark = new(
-        @"Evaluation Only\. Created with Aspose\.PDF\. Copyright \d{4}-\d{4} Aspose Pty Ltd\.",
-        RegexOptions.CultureInvariant);
-
     private readonly List<(string Id, string Op)> _recorded = [];
     private readonly HashSet<string> _incomplete = new(StringComparer.Ordinal);
     private readonly HashSet<string> _checked = new(StringComparer.Ordinal);
@@ -458,7 +453,7 @@ internal sealed class PdfEditVerifier
     /// <summary>The evaluation watermark sentence the page carries, or null.</summary>
     private static string? Watermark(Page page)
     {
-        var absorber = new TextFragmentAbsorber(EvaluationWatermark, new TextSearchOptions(true));
+        var absorber = new TextFragmentAbsorber(PdfEvaluation.Watermark, new TextSearchOptions(true));
         page.Accept(absorber);
         return absorber.TextFragments.Count == 0 ? null : absorber.TextFragments[1].Text;
     }

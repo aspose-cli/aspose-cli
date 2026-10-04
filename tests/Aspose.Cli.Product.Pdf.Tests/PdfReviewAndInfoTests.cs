@@ -75,6 +75,34 @@ public sealed class PdfReviewAndInfoTests
     }
 
     [Fact]
+    public void Review_FlagsTheEvaluationWatermarkSavedIntoTheFile()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        // The sentence an unlicensed save stamps on every page, as a later licensed run reads it.
+        string input = fixture.CreateRawDocument("plain.pdf", pages: 2);
+        string stamped = fixture.File("stamped.pdf");
+        using (var document = new Document(input))
+        {
+            document.Pages[2].Paragraphs.Add(new Aspose.Pdf.Text.TextFragment(
+                "Evaluation Only. Created with Aspose.PDF. Copyright 2002-2026 Aspose Pty Ltd."));
+            document.Save(stamped);
+        }
+
+        CliResult review = workspace.Run(["review", stamped, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        JsonNode[] findings = [.. JsonNode.Parse(review.StdOut)!["findings"]!.AsArray()
+            .Where(static item => item!["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK")
+            .Select(static item => item!)];
+        // Without a license the test's own save stamps every page.
+        Assert.Equal(
+            fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed ? ["page 2"] : ["page 1", "page 2"],
+            findings.Select(static item => item["location"]!.GetValue<string>()));
+        Assert.All(findings, static item => Assert.Contains("license", item["hint"]!.GetValue<string>(), StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void Review_DeclaresEveryCheckItsAssessmentReports()
     {
         IReadOnlyList<ReviewCheck> declared = new PdfViewAdapter().Checks;

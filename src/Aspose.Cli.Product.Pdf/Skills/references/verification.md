@@ -91,6 +91,9 @@ and contrast. PDF review findings worth acting on:
   Text operations that name a `font`, and a visible signature, need that font here.
 - `PDF_FORM_APPEARANCE_REVIEW_REQUIRED`: open the pages with fields and look for
   stale, clipped or missing values.
+- `PDF_EVALUATION_WATERMARK`: a run without a license saved its watermark into
+  the page, and a license does not remove it; regenerate the file from its
+  original inputs with the license before delivery.
 - `PDF_PAGE_WITHOUT_READABLE_CONTENT` and `PDF_PAGE_UTILIZATION_LOW`: a page
   with no or very little text, no images covering a quarter of it and that does
   not look scanned; look at it, it may be unintentionally blank or sparse. A blank or

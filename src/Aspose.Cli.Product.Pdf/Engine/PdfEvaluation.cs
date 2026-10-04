@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.RegularExpressions;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Licensing;
@@ -16,6 +17,11 @@ namespace Aspose.Cli.Product.Pdf.Engine;
 internal static class PdfEvaluation
 {
     internal const int VisiblePages = 4;
+
+    /// <summary>The sentence evaluation mode stamps on every page each time it saves.</summary>
+    internal static readonly Regex Watermark = new(
+        @"Evaluation Only\. Created with Aspose\.PDF\. Copyright \d{4}-\d{4} Aspose Pty Ltd\.",
+        RegexOptions.CultureInvariant);
 
     // The SDK reports the limit only with this message on an IndexOutOfRangeException.
     private const string LimitMessage = "can be viewed in evaluation mode";
