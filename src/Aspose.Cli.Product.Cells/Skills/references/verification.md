@@ -160,7 +160,9 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output json
 - Cells pair by address. When rows were inserted or deleted, `ROWS_SHIFTED`
   names where (`1 row inserted at right row 9`): the cells below compare with
   the row that held their address before, so those differences are not edits.
-  For a row-for-row list, apply the same `insert_rows` or `delete_rows` to a
+  Rows match by their content or, when their first cell holds a label no
+  other row of the sheet starts with, by that label, so a statement whose
+  values all changed still aligns on its line names. For a row-for-row list, apply the same `insert_rows` or `delete_rows` to a
   copy of the left workbook and compare the copy. Columns are not aligned.
 - `--max-diffs` caps the listed cells; the summary still counts every
   difference and `LIST_TRUNCATED` reports the omission.

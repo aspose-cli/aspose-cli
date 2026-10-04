@@ -255,6 +255,41 @@ public sealed class CellsComparisonTests
         Assert.Empty(Compare(left, edited).Warnings);
     }
 
+    /// <summary>
+    /// A row whose first cell holds a label no other row of its sheet has keeps that label as its
+    /// identity, so a period comparison that changed every value still names the inserted row,
+    /// while a label that repeats, such as a region in a log, does not pair rows on its own.
+    /// </summary>
+    [Fact]
+    public void ARowInsertedWhileEveryValueChanged_IsNamedByItsUniqueLabel()
+    {
+        using var august = new Workbook();
+        using var september = new Workbook();
+        string[] lines = ["Revenue", "Cost of sales", "Gross profit", "Selling", "Admin", "Finance", "Profit before tax", "Tax", "Net profit"];
+        Fill(august.Worksheets[0], lines, factor: 1);
+        Fill(september.Worksheets[0], [.. lines[..5], "R&D (allocated)", .. lines[5..]], factor: 3);
+        using var log = new Workbook();
+        using var relabeled = new Workbook();
+        Fill(log.Worksheets[0], ["East", "West", "East", "West"], factor: 1);
+        Fill(relabeled.Worksheets[0], ["East", "East", "East", "West"], factor: 2);
+
+        Warning shift = Assert.Single(Compare(august, september).Warnings);
+
+        Assert.Contains("1 row inserted at right row 7", shift.Message, StringComparison.Ordinal);
+        Assert.Empty(Compare(log, relabeled).Warnings);
+
+        static void Fill(Worksheet sheet, string[] labels, int factor)
+        {
+            sheet.Cells["A1"].PutValue("Line");
+            sheet.Cells["B1"].PutValue("Amount");
+            for (int row = 0; row < labels.Length; row++)
+            {
+                sheet.Cells[row + 1, 0].PutValue(labels[row]);
+                sheet.Cells[row + 1, 1].PutValue((row + 1) * 1000 * factor);
+            }
+        }
+    }
+
     [Fact]
     public void ARenamedSheet_PairsWithTheSheetItWasAndListsItsCells()
     {

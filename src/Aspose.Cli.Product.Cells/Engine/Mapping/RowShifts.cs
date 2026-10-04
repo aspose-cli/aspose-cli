@@ -9,18 +9,20 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
 /// <summary>
 /// Finds the rows one side of a comparison inserted or deleted, which shift the rows below them
-/// so that cells compared by address pair different rows. Each row is identified by its content,
-/// a formula by its R1C1 text so that a moved formula still matches, and the two sheets' rows are
-/// aligned along their longest common subsequence. A run of unmatched rows that is longer on one
-/// side and is followed by matched rows inserted or deleted the difference.
+/// so that cells compared by address pair different rows. A row whose first cell holds a label,
+/// text that no other row of its sheet starts with, is identified by that label, so it matches
+/// however its values changed; any other row by its content, a formula by its R1C1 text so that
+/// a moved formula still matches. The two sheets' rows are aligned along their longest common
+/// subsequence. A run of unmatched rows that is longer on one side and is followed by matched
+/// rows inserted or deleted the difference.
 /// </summary>
 internal sealed class RowShifts
 {
     // Bounds the alignment table of the rows between the common first and last rows.
     private const long MaxAlignedPairs = 1_000_000;
 
-    private readonly Dictionary<int, StringBuilder> _left = [];
-    private readonly Dictionary<int, StringBuilder> _right = [];
+    private readonly Dictionary<int, Row> _left = [];
+    private readonly Dictionary<int, Row> _right = [];
 
     /// <summary>Adds one compared address; call in row, then column order.</summary>
     internal void Add(int row, int column, Cell? left, Cell? right)
@@ -110,32 +112,46 @@ internal sealed class RowShifts
         return $"{count} row{(count == 1 ? string.Empty : "s")} {change} {(exact ? "at" : "within")} {side} {rows}";
     }
 
-    private static void Append(Dictionary<int, StringBuilder> rows, int row, int column, Cell? cell)
+    private static void Append(Dictionary<int, Row> rows, int row, int column, Cell? cell)
     {
         if (cell is null || (cell.Type == CellValueType.IsNull && !cell.IsFormula))
         {
             return;
         }
 
-        StringBuilder text = CollectionsMarshal.GetValueRefOrAddDefault(rows, row, out _) ??= new StringBuilder();
-        text.Append(column).Append('\u0001')
+        // Cells arrive in column order, so the first one creates the row and gives its label.
+        Row entry = CollectionsMarshal.GetValueRefOrAddDefault(rows, row, out _) ??= new Row(
+            !cell.IsFormula && cell.Type == CellValueType.IsString ? $"{column}\u0001{cell.StringValue}" : null);
+        entry.Content.Append(column).Append('\u0001')
             .Append(cell.IsFormula ? cell.R1C1Formula : ComparisonValue.From(cell).ToString()).Append('\u0002');
     }
 
-    // Row r of the result identifies the content of row r; rows without content share one id.
-    private static int[] Ids(Dictionary<int, StringBuilder> rows, Dictionary<string, int> ids)
+    // Row r of the result identifies row r by its label when no other row of the sheet has it,
+    // otherwise by its content; rows without content share one id.
+    private static int[] Ids(Dictionary<int, Row> rows, Dictionary<string, int> ids)
     {
+        HashSet<string> unique = [.. rows.Values.Where(static row => row.Label is not null)
+            .CountBy(static row => row.Label!).Where(static label => label.Value == 1).Select(static label => label.Key)];
         int[] result = new int[rows.Count == 0 ? 0 : rows.Keys.Max() + 1];
-        foreach ((int row, StringBuilder text) in rows)
+        foreach ((int row, Row entry) in rows)
         {
-            string content = text.ToString();
-            if (!ids.TryGetValue(content, out int id))
+            string identity = entry.Label is { } label && unique.Contains(label) ? $"\u0003{label}" : entry.Content.ToString();
+            if (!ids.TryGetValue(identity, out int id))
             {
                 id = ids.Count + 1;
-                ids.Add(content, id);
+                ids.Add(identity, id);
             }
             result[row] = id;
         }
         return result;
+    }
+
+    /// <summary>
+    /// One row of one side: its content and its label, the column and text of its first cell
+    /// when that cell holds text.
+    /// </summary>
+    private sealed record Row(string? Label)
+    {
+        internal StringBuilder Content { get; } = new();
     }
 }
