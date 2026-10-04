@@ -257,3 +257,13 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** add `accept_revisions` or `reject_revisions`, as the reviewer decides, to a
   `words edit` batch whose `--out` is the text file.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
+
+### WORDS-PAGE-FIELD-LAYOUT
+
+- **Defect:** a page field (`PAGE`, `NUMPAGES`, `SECTIONPAGES`, `PAGEREF`) that
+  `DocumentBuilder.InsertField` inserts after the document was laid out, for example by reading
+  `Document.PageCount`, gets an empty result, and `Field.Update` leaves it empty until
+  `Document.UpdatePageLayout` rebuilds the layout.
+- **CLI behavior:** none visible; `insert_field` rebuilds the layout and updates such a field
+  when it has no result.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)

@@ -5,6 +5,7 @@ using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
+using Aspose.Words.Fields;
 using Aspose.Words.Layout;
 using Aspose.Words.Saving;
 using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
@@ -70,9 +71,11 @@ internal sealed class WordsMutationService
         tracking?.Start();
         var operationWarnings = new List<Warning>();
         var changed = new List<Node>();
+        var pageFields = new List<Field>();
         IReadOnlyList<BoundedOperationOutcome> outcomes =
-            ApplyOperations(loaded, resolved, blocks, request, operationInputs, tracking, operationWarnings, changed);
+            ApplyOperations(loaded, resolved, blocks, request, operationInputs, tracking, operationWarnings, changed, pageFields);
         tracking?.Stop();
+        UpdatePageFields(loaded.Document, pageFields);
         IReadOnlyList<int> pagesTouched = TouchedPages(loaded.Document, blocksBefore, resolved, changed);
 
         _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
@@ -181,7 +184,8 @@ internal sealed class WordsMutationService
         InputResourceScope operationInputs,
         WordsRevisionTracking? tracking,
         List<Warning> warnings,
-        List<Node> changed)
+        List<Node> changed,
+        List<Field> pageFields)
     {
         return BoundedOperationRunner.Run(
             WordsOp.Catalog,
@@ -193,7 +197,7 @@ internal sealed class WordsMutationService
                 // An operation without a block address, such as replace_text, names the
                 // original blocks that hold the nodes it changed.
                 var nodes = new List<Node>();
-                long count = new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings, nodes).Run();
+                long count = new WordsMutationHandlers(loaded, resolved[index], _loader, _inputs, operationInputs, request.OpSecrets, tracking, warnings, nodes, pageFields).Run();
                 changed.AddRange(nodes);
                 return new AppliedOperation(
                     count,
@@ -314,6 +318,24 @@ internal sealed class WordsMutationService
 
     private static IEnumerable<Node> BodyBlocks(Document document) =>
         document.Sections.Cast<Section>().SelectMany(static section => DocumentBlockIndex.BodyBlocks(section.Body));
+
+    /// <summary>
+    /// WORDS-PAGE-FIELD-LAYOUT: fills the page fields insert_field added, which get no result
+    /// until the layout is rebuilt, from one layout of the whole batch's result.
+    /// </summary>
+    private static void UpdatePageFields(Document document, IReadOnlyList<Field> pageFields)
+    {
+        if (pageFields.Count == 0)
+        {
+            return;
+        }
+
+        document.UpdatePageLayout();
+        foreach (Field field in pageFields.Where(field => Attached(document, field.Start)))
+        {
+            field.Update();
+        }
+    }
 
     private static bool Attached(Document document, Node node) =>
         ReferenceEquals(node.GetAncestor(NodeType.Document), document);

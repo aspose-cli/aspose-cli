@@ -93,7 +93,16 @@ internal sealed partial class WordsMutationHandlers
         Paragraph paragraph = InsertBuilderParagraph(_document, Anchor, operation.Position);
         var builder = new DocumentBuilder(_document);
         builder.MoveTo(paragraph);
-        builder.InsertField(operation.Code);
+        Field field = builder.InsertField(operation.Code);
+        // WORDS-PAGE-FIELD-LAYOUT: a page field inserted after the document was laid out, as
+        // every loaded document is, gets no result until the layout is rebuilt; the edit
+        // updates it once after the batch, from a single fresh layout.
+        if (field.Result.Length == 0 && field.Type is FieldType.FieldPage or FieldType.FieldNumPages
+                or FieldType.FieldSectionPages or FieldType.FieldPageRef)
+        {
+            _pageFields.Add(field);
+        }
+
         return 1;
     }
 

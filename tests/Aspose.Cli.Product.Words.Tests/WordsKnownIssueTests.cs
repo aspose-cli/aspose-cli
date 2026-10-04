@@ -54,6 +54,20 @@ public sealed class WordsKnownIssueTests
             $"txt: {text.Trim()}; md: {markdown.Trim()}");
     }
 
+    [Fact]
+    public void PageField_InsertedAfterLayoutHasNoResult()
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Clause one.");
+        _ = document.PageCount;
+        Aspose.Words.Fields.Field field = builder.InsertField("NUMPAGES");
+        field.Update();
+
+        KnownIssue.Reproduces("WORDS-PAGE-FIELD-LAYOUT", field.Result.Length == 0, $"result: '{field.Result}'");
+    }
+
     private static string SaveText(Document document, SaveOptions options)
     {
         using var stream = new MemoryStream();

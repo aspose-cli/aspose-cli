@@ -2,6 +2,7 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Words;
+using Aspose.Words.Fields;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
 
@@ -22,6 +23,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     private readonly WordsRevisionTracking? _tracking;
     private readonly ICollection<Warning> _warnings;
     private readonly ICollection<Node> _changed;
+    private readonly ICollection<Field> _pageFields;
 
     /// <summary>Creates the handlers of one resolved operation.</summary>
     /// <param name="loaded">The document being edited.</param>
@@ -33,6 +35,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
     /// <param name="tracking">The edit's revision tracking, or null when changes are not tracked.</param>
     /// <param name="warnings">Collects the warnings operations disclose about their result.</param>
     /// <param name="changed">Collects the nodes an operation without a block address changed.</param>
+    /// <param name="pageFields">Collects the inserted page fields to update after the batch.</param>
     internal WordsMutationHandlers(
         LoadedDocument loaded,
         ResolvedWordsOp resolved,
@@ -42,7 +45,8 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         IReadOnlyDictionary<string, string>? secrets,
         WordsRevisionTracking? tracking,
         ICollection<Warning> warnings,
-        ICollection<Node> changed)
+        ICollection<Node> changed,
+        ICollection<Field> pageFields)
     {
         _loaded = loaded;
         _document = loaded.Document;
@@ -54,6 +58,7 @@ internal sealed partial class WordsMutationHandlers : IWordsOpHandler<long>
         _tracking = tracking;
         _warnings = warnings;
         _changed = changed;
+        _pageFields = pageFields;
     }
 
     /// <summary>The operation's target blocks.</summary>

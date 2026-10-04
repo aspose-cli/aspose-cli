@@ -35,6 +35,27 @@ public sealed class WordsFieldAndReviewTests
     }
 
     [Fact]
+    public void InsertField_FillsEveryPageFieldOfTheBatch()
+    {
+        using var fixture = new WordsFixture();
+        string output = fixture.Temp.File("numpages.docx");
+
+        fixture.Engine.ApplyOps(fixture.CreateReport(), new WordsOpsBatch
+        {
+            Ops =
+            [
+                new InsertFieldOp { At = new WordsTarget { Block = 1 }, Position = "after", Code = "PAGE" },
+                new InsertFieldOp { At = new WordsTarget { Block = 1 }, Position = "after", Code = "NUMPAGES" },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        var document = new Document(output);
+        Field[] fields = document.Range.Fields.Cast<Field>().ToArray();
+        Assert.Equal("1", Assert.Single(fields, static field => field.Type == FieldType.FieldPage).Result);
+        Assert.Equal("1", Assert.Single(fields, static field => field.Type == FieldType.FieldNumPages).Result);
+    }
+
+    [Fact]
     public void Inspect_NamesTheStoryOfFieldsAndImagesAndTheBlockOfThoseInTheBody()
     {
         using var fixture = new WordsFixture();
