@@ -130,6 +130,33 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         Assert.Contains("withdrawn needle", document.GetText(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ReplaceText_DrawsNewEastAsianTextInTheEastAsianFontOfItsParagraph()
+    {
+        // As a PDF loads: the digits in runs whose fonts, East Asian included, are all Calibri.
+        var document = new Document();
+        Paragraph paragraph = document.FirstSection.Body.FirstParagraph;
+        foreach ((string text, string font) in new[] { ("合同总价人民币", "Microsoft YaHei"), (" 1,860,000.00 ", "Calibri"), ("元（大写：壹佰捌拾陆万元整 ）。", "Microsoft YaHei") })
+        {
+            var run = new Run(document, text);
+            run.Font.Name = font;
+            paragraph.AppendChild(run);
+        }
+        string input = _fixture.Temp.File("amount.docx");
+        document.Save(input);
+        string output = _fixture.Temp.File("amount-out.docx");
+
+        _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new ReplaceTextOp { Find = "1,860,000.00 元（大写：壹佰捌拾陆万元整 ）", Replace = "1,920,000.00 元（大写：壹佰玖拾贰万元整）" }] },
+            new WordsEditRequest { OutputPath = output });
+
+        Run replaced = new Document(output).GetChildNodes(NodeType.Run, true).Cast<Run>()
+            .Single(static run => run.Text.Contains("壹佰玖拾贰", StringComparison.Ordinal));
+        Assert.Equal("Microsoft YaHei", replaced.Font.NameFarEast);
+        Assert.Equal("Calibri", replaced.Font.Name);
+    }
+
     private static IEnumerable<string> Needles(string text) => Words(text, "needle");
 
     /// <summary>The "Label word" pairs in a text, such as "Body needle".</summary>

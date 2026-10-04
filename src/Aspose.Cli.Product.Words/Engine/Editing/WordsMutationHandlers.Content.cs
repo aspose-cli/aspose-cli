@@ -74,7 +74,36 @@ internal sealed partial class WordsMutationHandlers
 
             _accepted++;
             changed.Add(args.MatchNode.GetAncestor(NodeType.Paragraph) ?? args.MatchNode);
+            if (args.MatchNode is Run run)
+            {
+                KeepEastAsianFont(run, args.Replacement);
+            }
+
             return ReplaceAction.Replace;
+        }
+
+        /// <summary>
+        /// The SDK writes a replacement in the format of the run where the match starts. When that
+        /// run holds no East Asian text, its East Asian font may be a Latin one, as in the digits
+        /// of a loaded PDF, so East Asian text of the replacement takes the East Asian font of the
+        /// nearest East Asian text in the paragraph, after the match first. The run's own text is
+        /// unchanged, since it has no character that font draws.
+        /// </summary>
+        private static void KeepEastAsianFont(Run run, string replacement)
+        {
+            if (!WordsFonts.HasEastAsian(replacement) || WordsFonts.HasEastAsian(run.Text) || run.ParentParagraph is not { } paragraph)
+            {
+                return;
+            }
+
+            Run[] runs = [.. paragraph.GetChildNodes(NodeType.Run, true).Cast<Run>()];
+            int at = Array.IndexOf(runs, run);
+            Run? source = runs.Skip(at + 1).Concat(runs.Take(at).Reverse())
+                .FirstOrDefault(static candidate => WordsFonts.HasEastAsian(candidate.Text));
+            if (source is not null)
+            {
+                run.Font.NameFarEast = source.Font.NameFarEast;
+            }
         }
     }
 
