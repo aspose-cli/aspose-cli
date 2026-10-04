@@ -54,7 +54,7 @@ public static class StandardCommand
             {
                 return handler(parse, invocation);
             }
-            catch (CliException error) when (invocation.ForPairedInput(error) is { } restated && restated != error)
+            catch (CliException error) when (invocation.ForOutputFormat(invocation.ForPairedInput(error)) is { } restated && restated != error)
             {
                 throw restated;
             }

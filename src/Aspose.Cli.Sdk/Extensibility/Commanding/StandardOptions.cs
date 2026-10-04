@@ -1,5 +1,7 @@
 using System.CommandLine;
 using System.CommandLine.Parsing;
+using System.Runtime.CompilerServices;
+using System.Text.Json.Nodes;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Rendering;
@@ -172,6 +174,9 @@ public sealed record EncryptedOutput(
 public sealed class StandardOptions
 {
     private const string CreatedFileArgument = "file";
+
+    // The target format of every --to option, so a command can find the commands that write a format.
+    private static readonly ConditionalWeakTable<Option, TargetFormat> Targets = new();
 
     /// <summary>Maps the traits to their common parameters.</summary>
     /// <exception cref="ArgumentException">The traits contradict each other.</exception>
@@ -437,8 +442,13 @@ public sealed class StandardOptions
                 result.AddError($"Argument '{result.Tokens[^1].Value}' not recognized. Must be one of: {string.Join(", ", names)}.");
             }
         });
+        Targets.Add(option, target);
         return option;
     }
+
+    /// <summary>The format a <c>--to</c> option created here chooses among, or null for any other option.</summary>
+    internal static TargetFormat? TargetOf(Option option) =>
+        Targets.TryGetValue(option, out TargetFormat? target) ? target : null;
 
     // Two documents cannot share standard input, so neither password reads it.
     private static PasswordOptions PairedPassword(InputDocument document) =>
@@ -504,6 +514,89 @@ public class StandardInvocation
             : CliErrors.ForInput(error, argument.Name, password.EnvironmentOption);
     }
 
+    /// <summary>
+    /// Restates <c>FORMAT_UNSUPPORTED</c> about the format that a named output's extension asks
+    /// for, from a command that writes its output in that format rather than one chosen by
+    /// <c>--to</c>, such as an edit: the error names the option or argument and what the command
+    /// writes, and the hint the product's command that writes the format, found through the
+    /// <c>--to</c> formats of the commands beside it. An extension that names no format of the
+    /// product or that the input document shares, a format the command writes, and every other
+    /// error, are returned unchanged.
+    /// </summary>
+    internal CliException ForOutputFormat(CliException error)
+    {
+        if (error.Code != ErrorCodes.FormatUnsupported || _options.Target is not null
+            || error.Details?["requested"]?.GetValue<string>() is not { } requested
+            || error.Details["supported"] is not JsonArray supportedIds
+            || NamedOutput() is not var (parameter, output)
+            || Path.GetExtension(output) is not { Length: > 1 } extension
+            // An input of the same extension could be the file the error is about.
+            || (_options.Input is { } input
+                && string.Equals(Path.GetExtension(_parse.GetValue(input)), extension, StringComparison.OrdinalIgnoreCase))
+            || _parse.CommandResult.Parent is not CommandResult parent)
+        {
+            return error;
+        }
+
+        (string Command, TargetFormat Target)[] siblings =
+        [
+            .. parent.Command.Subcommands
+                .Where(command => !command.Hidden && command != _parse.CommandResult.Command)
+                .SelectMany(static command => command.Options
+                    .Select(StandardOptions.TargetOf)
+                    .OfType<TargetFormat>()
+                    .Select(target => (command.Name, target))),
+        ];
+        FormatDescriptor[] formats = [.. siblings.SelectMany(static sibling => sibling.Target.Formats).Distinct()];
+        FormatDescriptor[] named = [.. formats.Where(format => format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase))];
+        bool namesRequested = string.Equals(extension[1..], requested, StringComparison.OrdinalIgnoreCase)
+            || named.Any(format => string.Equals(format.Id, requested, StringComparison.OrdinalIgnoreCase));
+        string[] supported = [.. supportedIds.Select(static id => id!.GetValue<string>())];
+        // A command that writes the requested format, or the one the extension names, raised the
+        // error about another file, such as one an operation reads.
+        bool writesIt = supported.Any(id => string.Equals(id, requested, StringComparison.OrdinalIgnoreCase)
+            || string.Equals(id, extension[1..], StringComparison.OrdinalIgnoreCase)
+            || named.Any(format => string.Equals(format.Id, id, StringComparison.OrdinalIgnoreCase)));
+        if (named.Length == 0 || !namesRequested || writesIt)
+        {
+            return error;
+        }
+
+        string[] path = CommandPath();
+        string? producer = siblings
+            .Select(sibling => sibling.Target.Formats.WithExtension(sibling.Target.Use, extension) is [var format, ..]
+                ? string.Join(' ', [DistributionInfo.CommandName, .. path[..^1], sibling.Command, "<that file>", "--to", format.Id])
+                : null)
+            .FirstOrDefault(static line => line is not null);
+        return CliErrors.OutputFormatUnsupported(
+            parameter, output, string.Join(' ', path), requested, supported,
+            [.. supported.Select(ExtensionOf).Distinct(StringComparer.OrdinalIgnoreCase)], producer);
+
+        string ExtensionOf(string id) =>
+            formats.FirstOrDefault(format => string.Equals(format.Id, id, StringComparison.OrdinalIgnoreCase)) is { } format
+                ? format.OutputExtension ?? format.Extensions.FirstOrDefault() ?? "." + id
+                : "." + id;
+    }
+
+    /// <summary>The parameter naming the output file and the value the caller gave it, or null when none was named.</summary>
+    private (string Parameter, string Output)? NamedOutput() =>
+        _options.CreatedFile is { } created && _parse.GetValue(created) is { Length: > 0 } file ? (created.Name, file)
+        : _options.OutputFile is { } outputFile && _parse.GetValue(outputFile.Option) is { Length: > 0 } named ? (StandardOptionNames.Out, named)
+        : null;
+
+    /// <summary>The names of the invoked command and the commands it is under, below the root.</summary>
+    private string[] CommandPath()
+    {
+        var path = new List<string>();
+        for (CommandResult? command = _parse.CommandResult; command?.Parent is not null; command = command.Parent as CommandResult)
+        {
+            path.Add(command.Command.Name);
+        }
+
+        path.Reverse();
+        return [.. path];
+    }
+
     /// <summary>The resolved input document.</summary>
     /// <exception cref="CliException">The file does not exist.</exception>
     public string Input => _input ??= ResolveDocument(Declared(_options.Input, "input document"));
@@ -527,14 +620,7 @@ public class StandardInvocation
     /// </summary>
     public ContinuationCommand Continuation()
     {
-        var path = new List<string>();
-        for (CommandResult? command = _parse.CommandResult; command?.Parent is not null; command = command.Parent as CommandResult)
-        {
-            path.Add(command.Command.Name);
-        }
-
-        path.Reverse();
-        ContinuationCommand next = new ContinuationCommand([.. path]).Argument(Input);
+        ContinuationCommand next = new ContinuationCommand(CommandPath()).Argument(Input);
         if (_options.InputPassword is { } password && password.EnvironmentName(_parse) is { } variable)
         {
             next.Option(password.EnvironmentOption, variable);

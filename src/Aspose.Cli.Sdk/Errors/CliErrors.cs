@@ -468,6 +468,38 @@ public static partial class CliErrors
             details: new JsonObject { ["requested"] = requested, ["supported"] = ids });
     }
 
+    /// <summary>
+    /// The format an output's extension names is one the command does not write.
+    /// </summary>
+    /// <param name="parameter">The option or argument that names the output, such as <c>--out</c>.</param>
+    /// <param name="output">The output as the caller gave it.</param>
+    /// <param name="command">The command path after the executable name, such as <c>slides edit</c>.</param>
+    /// <param name="requested">The format id the extension names.</param>
+    /// <param name="supported">The format ids the command writes.</param>
+    /// <param name="extensions">The output extensions of <paramref name="supported"/>.</param>
+    /// <param name="producer">The command line that writes <paramref name="requested"/> from the command's output, or null.</param>
+    internal static CliException OutputFormatUnsupported(
+        string parameter,
+        string output,
+        string command,
+        string requested,
+        IReadOnlyList<string> supported,
+        IReadOnlyList<string> extensions,
+        string? producer)
+    {
+        string named = extensions.Count > 2
+            ? $"one of the extensions {string.Join(", ", extensions)}"
+            : $"the {string.Join(" or ", extensions)} extension";
+        string hint = $"Give {parameter} {named}"
+            + (producer is null ? "." : $", then run '{producer}' for {requested}.");
+        return new CliException(
+            ErrorCodes.FormatUnsupported,
+            $"{parameter} '{output}' asks for {requested}, which {DistributionInfo.CommandName} {command} does not write; "
+                + $"it writes {string.Join(", ", supported)}.",
+            hint,
+            details: new JsonObject { ["option"] = parameter, ["requested"] = requested, ["supported"] = Strings(supported) });
+    }
+
     /// <summary>Creates an extension/content ownership conflict error.</summary>
     public static CliException FormatMismatch(
         string path,

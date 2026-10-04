@@ -333,6 +333,49 @@ public sealed class StandardCommandTests : IDisposable
         }
     }
 
+    /// <summary>
+    /// A command that writes the format its output's extension names, and cannot write that one,
+    /// says so for the parameter that named it and points to the product command that can.
+    /// </summary>
+    [Theory]
+    [InlineData("new.pdf", "file 'new.pdf' asks for pdf, which aspose-cli test create does not write; it writes tst, tsx.",
+        "Give file the .tst or .tsx extension, then run 'aspose-cli test convert <that file> --to pdf' for pdf.")]
+    [InlineData("new.png", "file 'new.png' asks for png, which aspose-cli test create does not write; it writes tst, tsx.",
+        "Give file the .tst or .tsx extension.")]
+    [InlineData("new.foo", "Unsupported format 'foo'. Supported formats: tst, tsx", null)]
+    // The command writes tst, so an error about tst concerns another file, such as one an operation reads.
+    [InlineData("new.tst", "Unsupported format 'tst'. Supported formats: tst, tsx", null)]
+    public void UnsupportedOutputFormat_NamesTheParameterAndTheCommandThatWritesIt(string file, string message, string? hint)
+    {
+        FormatDescriptor[] formats =
+        [
+            FormatDescriptor.Declare("tst", FormatUse.Input | FormatUse.Convert, 0, 0, null, false, ".tst"),
+            FormatDescriptor.Declare("tsx", FormatUse.Input, 1, null, null, false, ".tsx"),
+            FormatDescriptor.Declare("pdf", FormatUse.Convert, null, 1, null, false, ".pdf"),
+            FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
+        ];
+        Command create = StandardCommand.Create(
+            _host, "create", "Creates.", new CommandTraits { Output = OutputTarget.CreatedFile("File to create.") }, [],
+            (_, standard) => throw CliErrors.FormatUnsupported(Path.GetExtension(standard.CreatedPath)[1..], ["tst", "tsx"]));
+        Command convert = StandardCommand.Create(
+            _host, "convert", "Converts.",
+            new CommandTraits { Input = Report, Output = OutputTarget.File("Output path."), Target = TargetFormat.Convert("Target format.", formats) },
+            [], (_, _) => Result());
+        var root = new RootCommand { new Command("test") { create, convert } };
+
+        _host.Error = null;
+        root.Parse(["test", "create", file]).Invoke();
+        CliException error = Assert.IsType<CliException>(_host.Error);
+
+        Assert.Equal(ErrorCodes.FormatUnsupported, error.Code);
+        Assert.Equal(message, error.Message);
+        if (hint is not null)
+        {
+            Assert.Equal(hint, error.Hint);
+            Assert.Equal("file", error.Details!["option"]!.GetValue<string>());
+        }
+    }
+
     [Theory]
     [InlineData("--encrypt", "secret")]
     [InlineData("--encrypt-env", "MISSING")]
