@@ -70,6 +70,28 @@ public sealed class WordsFieldAndReviewTests
     }
 
     [Fact]
+    public void InspectFields_ReadsResultsAsTheTextAReaderSees()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.InsertTableOfContents("\\o \"1-3\" \\h \\z \\u");
+        builder.InsertBreak(BreakType.PageBreak);
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Writeln("Scope");
+        builder.Writeln("Terms");
+        source.UpdateFields();
+        string input = fixture.Temp.File("toc-fields.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        DocumentInfoResult info = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["fields"] });
+
+        Assert.All(info.Fields!, static field => Assert.DoesNotContain(field.Result!, static c => c is '\u0013' or '\u0014' or '\u0015'));
+        Assert.Equal("Scope\t2\rTerms\t2", Assert.Single(info.Fields!, static field => field.Type == "FieldTOC").Result);
+        Assert.Equal("Scope\t2", info.Fields!.First(static field => field.Code!.Contains("_Toc", StringComparison.Ordinal)).Result);
+    }
+
+    [Fact]
     public void InsertField_FillsEveryPageFieldOfTheBatch()
     {
         using var fixture = new WordsFixture();

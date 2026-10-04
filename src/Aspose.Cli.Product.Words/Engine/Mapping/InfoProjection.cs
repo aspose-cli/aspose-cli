@@ -132,7 +132,7 @@ internal static class InfoProjection
                 Scope = WordsStories.ScopeOf(field.Start),
                 Block = index.FindBlock(field.Start),
                 Code = field.GetFieldCode(),
-                Result = field.Result,
+                Result = WordsText.ResultOf(field),
             },
             "fields",
             "Split the document with 'words split --by section' and inspect each part with '--detail fields'.",

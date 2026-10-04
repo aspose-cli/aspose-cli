@@ -32,6 +32,44 @@ internal static class WordsText
         return Clean(text.ToString());
     }
 
+    /// <summary>
+    /// The result of a field as a reader sees it: the results of the fields nested in it, such as
+    /// a table of contents' hyperlinks and page references, without their codes and marks.
+    /// </summary>
+    internal static string ResultOf(Field field)
+    {
+        var text = new StringBuilder();
+        var fields = new Stack<bool>();
+        int codes = 0;
+        foreach (char c in field.Result ?? string.Empty)
+        {
+            switch (c)
+            {
+                case ControlChar.FieldStartChar:
+                    fields.Push(true);
+                    codes++;
+                    break;
+                case ControlChar.FieldSeparatorChar when fields.TryPeek(out bool code) && code:
+                    fields.Pop();
+                    fields.Push(false);
+                    codes--;
+                    break;
+                case ControlChar.FieldEndChar when fields.TryPop(out bool code):
+                    codes -= code ? 1 : 0;
+                    break;
+                default:
+                    if (codes == 0)
+                    {
+                        text.Append(c);
+                    }
+
+                    break;
+            }
+        }
+
+        return Clean(text.ToString());
+    }
+
     /// <summary>The runs whose text <see cref="Of"/> reads from a node, in order.</summary>
     internal static IReadOnlyList<Run> VisibleRuns(Node node)
     {

@@ -94,7 +94,7 @@
           "scope": { "enum": ["body", "headersFooters", "footnotes", "comments"], "description": "The story that holds the field, named as query search names its scopes." },
           "block": { "type": "integer", "minimum": 1, "description": "The body block that holds the field, or that anchors the comment or note holding it; absent in headers and footers." },
           "code": { "type": "string" },
-          "result": { "type": "string" }
+          "result": { "type": "string", "description": "The result a reader sees, with the results of nested fields in place of their codes." }
         }
       }
     },
