@@ -12,6 +12,39 @@ public sealed class WordsEditSafetyTests
     private const string OriginalPassword = "synthetic-input-secret";
     private const string ReplacementPassword = "synthetic-output-secret";
 
+    [Fact]
+    public void Loader_ReadsAnInputThatAnInPlaceEditIsReplacing()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.CreateReport();
+
+        // Another command's in-place edit holds the input open with delete access while it
+        // replaces the file.
+        using (new FileStream(input, FileMode.Open, FileAccess.Read,
+                   FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
+        {
+            Assert.Equal(0, fixture.Engine.GetInfo(input, new DocumentInfoRequest()).Document.CommentCount);
+        }
+    }
+
+    [Fact]
+    public void UpdateFields_NamesTheInputFileInAFileNameField()
+    {
+        using var fixture = new WordsFixture();
+        string input = fixture.Temp.File("quarterly.docx");
+        string output = fixture.Temp.File("updated.docx");
+        var document = new Document();
+        new DocumentBuilder(document).InsertField("FILENAME", "stale");
+        document.Save(input);
+
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch { Ops = [new UpdateFieldsOp()] },
+            new WordsEditRequest { OutputPath = output });
+
+        var updated = new Document(output);
+        Assert.Equal("quarterly.docx", Assert.Single(updated.Range.Fields.Cast<Aspose.Words.Fields.Field>(),
+            static field => field.Type == Aspose.Words.Fields.FieldType.FieldFileName).Result);
+    }
+
     [Theory]
     [InlineData("docx", false, false)]
     [InlineData("docx", true, true)]

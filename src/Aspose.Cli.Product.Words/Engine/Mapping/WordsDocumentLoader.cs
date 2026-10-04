@@ -62,10 +62,29 @@ internal sealed class WordsDocumentLoader
 
     private LoadedDocument OpenCore(string path, string? password, IWarningCallback? warnings)
     {
+        FileStream input;
+        try
+        {
+            input = InputFiles.OpenRead(path);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            throw TranslateIo(path, ex);
+        }
+
+        using (input)
+        {
+            return OpenCore(input, path, password, warnings);
+        }
+    }
+
+    private LoadedDocument OpenCore(FileStream input, string path, string? password, IWarningCallback? warnings)
+    {
         FileFormatInfo detected;
         try
         {
-            detected = FileFormatUtil.DetectFileFormat(path);
+            detected = FileFormatUtil.DetectFileFormat(input);
+            input.Position = 0;
         }
         catch (Exception ex) when (ex is FileCorruptedException or UnsupportedFileFormatException)
         {
@@ -99,8 +118,10 @@ internal sealed class WordsDocumentLoader
         var resources = new LocalDocumentResourceLoader(path, _resourceBudgets);
         try
         {
-            Document document = Load(options => new Document(path, options),
+            Document document = Load(options => new Document(input, options),
                 detected.LoadFormat, resources, path, password, warnings);
+            // A stream carries no name; FILENAME fields name the file, as a path load does.
+            document.FieldOptions.FileName = path;
             return new LoadedDocument(document, detected, id, resources,
                 _licenseGate?.EnsureApplied() == LicenseState.Evaluation);
         }
