@@ -17,7 +17,11 @@ that counts up on later pages; the layout may also add pages. `convert`,
 `split` and `edit` report this as `LOSSY_CONVERSION` (known SDK issue
 `WORDS-PDF-HEADER-FOOTER`). Check the output with `inspect --detail sections
 fields` and correct it with `set_header`, `set_footer`, `set_page_numbers` or
-`delete_blocks`.
+`delete_blocks`. Chinese, Japanese or Korean text also gets a space wherever a
+line ended on the PDF page, and the lines of a heading and the clause after
+it may share one paragraph (`WORDS-PDF-CJK-LINE-END`): read the blocks before
+editing, and find phrases with a regex that allows that space, such as
+`甲 ?乙双方`.
 
 ## Document model
 

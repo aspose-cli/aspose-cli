@@ -91,6 +91,35 @@ public sealed class WordsKnownIssueTests
                 + $"two pages: header '{header?.GetText().Trim()}' with {pageFields} PAGE fields");
     }
 
+    [Fact]
+    public void PdfLoad_TurnsLineEndsInChineseTextIntoSpaces()
+    {
+        using var fixture = new WordsFixture();
+        const string clause = "甲乙双方经平等协商自愿签订本合同共同遵守本合同所列条款";
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Font.NameFarEast = "SimSun";
+        builder.Writeln("第一条 合同期限");
+        builder.Writeln(string.Concat(Enumerable.Repeat(clause, 4)));
+        builder.Writeln("第二条 工作内容");
+        using var pdf = new MemoryStream();
+        document.Save(pdf, SaveFormat.Pdf);
+        pdf.Position = 0;
+
+        var loaded = new Document(pdf, new Aspose.Words.Loading.PdfLoadOptions());
+        string text = loaded.FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Select(static paragraph => paragraph.GetText().Trim())
+            .FirstOrDefault(static paragraph => paragraph.Contains(clause[..4], StringComparison.Ordinal)) ?? string.Empty;
+        // The clauses have no spaces; only a heading merged into their paragraph may bring one.
+        string clauses = text.Replace("第一条 合同期限", string.Empty, StringComparison.Ordinal)
+            .Replace("第二条 工作内容", string.Empty, StringComparison.Ordinal);
+
+        KnownIssue.Reproduces(
+            "WORDS-PDF-CJK-LINE-END",
+            clauses.Trim().Contains(' ', StringComparison.Ordinal),
+            $"paragraph of the clauses: '{text}'");
+    }
+
     /// <summary>
     /// Saves a document of numbered clauses whose header or footer reads "Version 1  Page {PAGE}"
     /// as PDF and loads the PDF back; returns the source's page count and the loaded document.

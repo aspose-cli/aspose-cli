@@ -354,3 +354,16 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   fields`, then restore them with `set_header`, `set_footer` or `set_page_numbers` and remove
   body paragraphs that held them with `delete_blocks`.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
+
+### WORDS-PDF-CJK-LINE-END
+
+- **Defect:** loading a PDF ends each line of Chinese, Japanese or Korean text with a space, so
+  "甲乙双方" wrapped after "甲" loads as "甲 乙双方", and it may merge the lines of separate
+  paragraphs, such as a heading and the clause after it, into one paragraph. A space is right
+  between Latin words, not inside East Asian text, which has none. `PdfLoadOptions` has no
+  option for either.
+- **CLI behavior:** `words convert`, `words split` and `words edit` of a PDF input whose text
+  holds East Asian characters warn `LOSSY_CONVERSION` about the spaces and merged paragraphs.
+- **Workaround:** read the blocks before editing; find a phrase with a regex that allows a space
+  where a line may have ended, such as `甲 ?乙双方`, and remove a space only where it was read.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)

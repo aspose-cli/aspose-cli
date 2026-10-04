@@ -65,11 +65,21 @@ internal static class WordsEngineSupport
     }
 
     /// <summary>
-    /// The warning for a document saved from a PDF input, or null. PDF loading rebuilds the pages
-    /// as flowing text and guesses the headers and footers (WORDS-PDF-HEADER-FOOTER).
+    /// The warnings for a document saved from a PDF input, or null. PDF loading rebuilds the
+    /// pages as flowing text and guesses the headers and footers (WORDS-PDF-HEADER-FOOTER), and
+    /// it ends each line of Chinese, Japanese or Korean text with a space (WORDS-PDF-CJK-LINE-END).
     /// </summary>
     internal static IReadOnlyList<Warning>? PdfInputWarnings(LoadedDocument loaded) =>
-        loaded.FormatId == "pdf" ? [PdfInputReflowed] : null;
+        loaded.FormatId != "pdf" ? null
+        : WordsFonts.HasEastAsian(loaded.Document.GetText()) ? [PdfInputReflowed, PdfInputLineEnds]
+        : [PdfInputReflowed];
+
+    private static Warning PdfInputLineEnds { get; } = new()
+    {
+        Code = WarningCodes.LossyConversion,
+        Message = "The Chinese, Japanese or Korean text of the PDF input has a space wherever a line ended on its page, and lines of separate paragraphs, such as a heading and the clause after it, may be merged into one paragraph.",
+        Hint = "Read the blocks before editing, and find a phrase with a regex that allows a space where a line may have ended, such as '甲 ?乙双方'; remove a space only where you read it.",
+    };
 
     private static Warning PdfInputReflowed { get; } = new()
     {

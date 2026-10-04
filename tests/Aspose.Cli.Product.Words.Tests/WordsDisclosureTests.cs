@@ -138,6 +138,22 @@ public sealed class WordsDisclosureTests
         Assert.DoesNotContain(fromDocx.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
     }
 
+    [Fact]
+    public void SavingAChinesePdfInput_DisclosesTheSpacesAtItsLineEnds()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        new DocumentBuilder(source).Write("甲乙双方经平等协商，自愿签订本合同。");
+        string pdf = fixture.Temp.File("chinese.pdf");
+        source.Save(pdf, SaveFormat.Pdf);
+
+        WordsConvertResult converted = fixture.Engine.Convert(pdf, new WordsConvertRequest { TargetFormatId = "docx", OutputPath = fixture.Temp.File("chinese.docx") });
+
+        Warning[] lossy = [.. (converted.Warnings ?? []).Where(static warning => warning.Code == WarningCodes.LossyConversion)];
+        Assert.Equal(2, lossy.Length);
+        Assert.Contains("has a space wherever a line ended", lossy[1].Message, StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(true, "docx", false)]
     [InlineData(false, "docx", true)]
