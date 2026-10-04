@@ -27,8 +27,10 @@ internal static class SlidesReviewProjection
     /// <summary>
     /// The area the shape's laid-out text occupies, in slide points. A placeholder is usually far
     /// taller than its text, so its frame alone cannot tell whether the text runs into a table.
-    /// The paragraph rectangles are relative to the unrotated frame, so text in a rotated shape
-    /// or in vertical text is not projected.
+    /// It is the union of the runs' rectangles, which follow a frame that shrinks its text on
+    /// overflow; the paragraphs' rectangles do not (SLIDES-AUTOFIT-RECT). The rectangles are
+    /// relative to the unrotated frame, so text in a rotated shape or in vertical text is not
+    /// projected.
     /// </summary>
     internal static SlideRect? TextRect(IShape shape)
     {
@@ -42,9 +44,9 @@ internal static class SlidesReviewProjection
         }
 
         System.Drawing.RectangleF? bounds = null;
-        foreach (IParagraph paragraph in frame.Paragraphs)
+        foreach (IPortion portion in frame.Paragraphs.SelectMany(static paragraph => paragraph.Portions))
         {
-            System.Drawing.RectangleF rect = paragraph.GetRect();
+            System.Drawing.RectangleF rect = portion.GetRect();
             if (rect.Width > 0 && rect.Height > 0)
             {
                 bounds = bounds is { } union ? System.Drawing.RectangleF.Union(union, rect) : rect;
@@ -58,8 +60,7 @@ internal static class SlidesReviewProjection
 
     /// <summary>
     /// Whether the shape grows to fit its text, so its stored frame may lag behind the text, or
-    /// shrinks its text on overflow, which the laid-out lines do not reflect
-    /// (SLIDES-AUTOFIT-RECT).
+    /// shrinks its text on overflow, so rendering fits the text to the frame.
     /// </summary>
     internal static bool TextAutofits(IShape shape) =>
         shape is IAutoShape { TextFrame: { } frame }

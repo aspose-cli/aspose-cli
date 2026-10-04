@@ -285,12 +285,10 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 
 - **Defect:** in a text frame that shrinks its text on overflow, `IParagraph.GetRect` reports
   laid-out lines that end past the right edge of the frame once the text overflows, while
-  rendering shrinks the text and draws every line inside the frame. No public API exposes the
-  font scale that rendering applies.
-- **CLI behavior:** `review` does not report `SLIDES_TEXT_OVERFLOWS_SHAPE` for a shape that
-  shrinks its text on overflow, as Markdown body placeholders do; text cut off by a slide edge is
-  still reported.
-- **Workaround:** check such shapes in the rendered review images.
+  rendering shrinks the text and draws every line inside the frame. The runs' rectangles
+  (`IPortion.GetRect`) follow the shrunk text as rendering draws it.
+- **CLI behavior:** none visible; `review` measures where text sits from the rectangles of its
+  runs, so a body that shrinks its long lines is not reported as cut off by the slide edge.
 - **Reproduction:** [SlidesKnownIssueTests](tests/Aspose.Cli.Product.Slides.Tests/SlidesKnownIssueTests.cs)
 
 ### SLIDES-CHART-TITLE

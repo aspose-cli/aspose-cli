@@ -231,8 +231,7 @@ public sealed class SlidesReviewCheckTests
     [Fact]
     public void BodyThatShrinksTextOnOverflow_IsNotReportedAsOverflowing()
     {
-        // Markdown bodies shrink their text on overflow, which rendering applies but the
-        // engine's paragraph layout does not, so the laid-out lines run past the frame.
+        // Markdown bodies shrink their text on overflow, so rendering fits it to the frame.
         using var fixture = new SlidesEngineFixture();
         string markdown = fixture.File("long-bullets.md");
         File.WriteAllText(markdown, "## Short title\n\n" + string.Concat(Enumerable.Range(1, 12).Select(static item =>
@@ -241,6 +240,26 @@ public sealed class SlidesReviewCheckTests
         fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
 
         Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
+    }
+
+    [Fact]
+    public void BodyThatShrinksLongLinesToFit_IsMeasuredWhereItIsDrawn()
+    {
+        // The engine shrinks these lines to fit the frame; its paragraph rectangles end past the
+        // slide's right edge while the runs, as rendered, end well inside it (SLIDES-AUTOFIT-RECT).
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("bilingual-risks.md");
+        File.WriteAllText(markdown, "## 风险清单 Risk Register\n\n" + string.Concat(Enumerable.Range(1, 10).Select(static item =>
+            $"- 风险 {item}：跨市场数据合规要求不一致导致项目延期 Risk {item}: inconsistent cross-market data compliance delays delivery\n")));
+        string deck = fixture.File("bilingual-risks.pptx");
+        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
+
+        PresentationReadResult read = fixture.Engine.Read(deck, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+        SlideShapeData body = Assert.Single(read.Slides[0].Shapes, static shape => shape.Placeholder == "body");
+        SlideRect text = Assert.IsType<SlideRect>(body.TextRect);
+
+        Assert.InRange(text.X + text.Width, body.Rect.X, body.Rect.X + body.Rect.Width);
+        Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code.StartsWith("SLIDES_TEXT_O", StringComparison.Ordinal));
     }
 
     [Fact]
