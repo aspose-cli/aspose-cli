@@ -104,12 +104,16 @@ internal static class ReviewLayoutProjection
     /// <summary>
     /// Finds values wider than their column. Excel shows cut off text whose right-hand neighbor is
     /// filled (so it cannot spill over), and numbers, which it shows as #### or rounded; other
-    /// text spills over the empty cells to its right. Only values whose length could exceed the
-    /// column are measured.
+    /// text spills over the empty cells to its right. Only values whose length, scaled by their
+    /// font size, could exceed the column are measured.
     /// </summary>
     private static (CellsReviewCellSet Clipped, CellsReviewCellSet Overflowing) InspectWideValues(Worksheet sheet)
     {
         Aspose.Cells.Cells cells = sheet.Cells;
+        Workbook workbook = sheet.Workbook;
+        double standardFontSize = workbook.DefaultStyle.Font.Size;
+        double largestFontScale = Math.Max(1, Enumerable.Range(0, workbook.CountOfStylesInPool)
+            .Select(index => workbook.GetStyleInPool(index).Font.Size).DefaultIfEmpty(0).Max() / standardFontSize);
         var clipped = new CellSetBuilder();
         var overflowing = new CellSetBuilder();
         foreach (Cell cell in cells)
@@ -125,17 +129,22 @@ internal static class ReviewLayoutProjection
                 continue;
             }
 
-            // GetWidthOfValue measures East Asian text in a font without its glyphs unlike
-            // AutoFit and rendering (known issue CELLS-WIDTH-EAST-ASIAN, KNOWN-ISSUES.md); the
-            // finding says so when its samples hold such text.
-            if (DisplayUnits(cell.StringValue) <= cells.GetColumnWidth(cell.Column)
-                || cell.GetWidthOfValue() <= cells.GetColumnWidthPixel(cell.Column))
+            // A font larger than the standard one widens every character, so the largest font
+            // bounds the width before the cell's own style is read. GetWidthOfValue measures East
+            // Asian text in a font without its glyphs unlike AutoFit and rendering (known issue
+            // CELLS-WIDTH-EAST-ASIAN, KNOWN-ISSUES.md); the finding says so when its samples hold
+            // such text.
+            double units = DisplayUnits(cell.StringValue);
+            double columnWidth = cells.GetColumnWidth(cell.Column);
+            if (units * largestFontScale <= columnWidth)
             {
                 continue;
             }
 
             Style style = cell.GetStyle();
-            if (style.IsTextWrapped || style.ShrinkToFit)
+            if (style.IsTextWrapped || style.ShrinkToFit
+                || units * Math.Max(1, style.Font.Size / standardFontSize) <= columnWidth
+                || cell.GetWidthOfValue() <= cells.GetColumnWidthPixel(cell.Column))
             {
                 continue;
             }

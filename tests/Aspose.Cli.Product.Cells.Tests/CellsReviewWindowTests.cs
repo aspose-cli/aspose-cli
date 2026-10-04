@@ -32,14 +32,21 @@ public sealed class CellsReviewWindowTests : IClassFixture<CellsFixture>
             cells["A4"].SetStyle(wrapped);
             cells["A4"].PutValue("Wrapped text never spills or clips");
             cells["B4"].PutValue("West");
+            // Ten characters fit the column in the default font but show as #### at 18 points.
+            cells["D5"].PutValue(44573100);
+            Aspose.Cells.Style large = cells["D5"].GetStyle();
+            large.Font.Size = 18;
+            large.Custom = "#,##0";
+            cells["D5"].SetStyle(large);
+            cells.SetColumnWidth(3, 11);
             workbook.Save(path);
         }
 
         Ports.CellsReviewSheetLayout sheet = Assert.Single(
             ((Ports.ICellsReviewLayoutPort)_fixture.Engine).Inspect(path, null).Sheets);
 
-        Assert.Equal(2, sheet.ClippedCells.Count);
-        Assert.Equal(["A1", "A2"], sheet.ClippedCells.Samples);
+        Assert.Equal(3, sheet.ClippedCells.Count);
+        Assert.Equal(["A1", "A2", "D5"], sheet.ClippedCells.Samples);
     }
 
     [Category(TestCategory.Slow)]
