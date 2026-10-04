@@ -53,7 +53,7 @@ internal sealed class CellsInspectionService
             Summary = diff.Summary,
             Sheets = diff.Sheets.Count > 0 ? diff.Sheets : null,
             License = EnvelopeParts.License(licenseState),
-            Warnings = loaded.Warnings(other.Resources.CoverageWarning, CellsTruncated(diff)),
+            Warnings = loaded.Warnings([other.Resources.CoverageWarning, CellsTruncated(diff), .. diff.Warnings]),
         };
     }
 

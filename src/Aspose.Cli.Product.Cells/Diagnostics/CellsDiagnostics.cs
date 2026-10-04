@@ -47,6 +47,9 @@ internal static class CellsDiagnostics
     /// <summary>An edit added a link that the output stores as a file name relative to its folder.</summary>
     internal const string ExternalLinkRelative = "EXTERNAL_LINK_RELATIVE";
 
+    /// <summary>A comparison found rows one side inserted or deleted, which shift the cells below them.</summary>
+    internal const string RowsShifted = "ROWS_SHIFTED";
+
     /// <summary>Verification: the edited workbook contains formula errors.</summary>
     internal static readonly DiagnosticDescriptor FormulaErrors = DiagnosticDescriptor.Verification("FORMULA_ERRORS", "cells");
 
@@ -76,6 +79,7 @@ internal static class CellsDiagnostics
         Warning(ExternalLinkCacheMissing),
         Warning(ExternalLinkRelative),
         Warning(ChartSplitAcrossPages),
+        Warning(RowsShifted),
         FormulaErrors,
     ];
 

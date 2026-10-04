@@ -1,6 +1,7 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Execution;
 using Aspose.Cli.Sdk.IO;
@@ -210,6 +211,48 @@ public sealed class CellsComparisonTests
         Cell cell = sheet.Cells[row, column];
         if (value.Formula is { } formula) { cell.SetFormula(formula, value.Value); }
         else { cell.PutValue(value.Value); }
+    }
+
+    /// <summary>
+    /// A row inserted or deleted in the middle of a sheet shifts the rows below it, so cells
+    /// compared by address pair different rows; the comparison names where the rows shifted, and
+    /// an edit in place shifts nothing.
+    /// </summary>
+    [Fact]
+    public void AnInsertedOrDeletedRow_IsNamedAsAShift()
+    {
+        using var original = new Workbook();
+        Worksheet sheet = original.Worksheets[0];
+        sheet.Name = "Quote";
+        sheet.Cells["A1"].PutValue("Item");
+        sheet.Cells["B1"].PutValue("Amount");
+        for (int row = 2; row <= 5; row++)
+        {
+            sheet.Cells[$"A{row}"].PutValue($"Item {row - 1}");
+            sheet.Cells[$"B{row}"].PutValue(row * 100);
+        }
+        sheet.Cells["A7"].PutValue("Total");
+        sheet.Cells["B7"].Formula = "=SUM(B2:B5)";
+        sheet.Cells["A9"].PutValue("Valid for 30 days");
+        using Workbook left = Reload(original);
+        using Workbook inserted = Reload(original);
+        Worksheet changed = inserted.Worksheets[0];
+        changed.Cells.InsertRows(5, 1);
+        changed.Cells["A6"].PutValue("Support");
+        changed.Cells["B6"].PutValue(900);
+        changed.Cells["B2"].PutValue(250);
+        changed.Cells["A10"].PutValue("Valid for 15 days");
+        using Workbook right = Reload(inserted);
+        using Workbook edited = Reload(original);
+        edited.Worksheets[0].Cells["B2"].PutValue(250);
+
+        Warning shift = Assert.Single(Compare(left, right).Warnings);
+        Warning reverse = Assert.Single(Compare(right, left).Warnings);
+
+        Assert.Equal(("ROWS_SHIFTED", "Quote"), (shift.Code, shift.Location));
+        Assert.Contains("1 row inserted at right row 6", shift.Message, StringComparison.Ordinal);
+        Assert.Contains("1 row deleted at left row 6", reverse.Message, StringComparison.Ordinal);
+        Assert.Empty(Compare(left, edited).Warnings);
     }
 
     [Fact]

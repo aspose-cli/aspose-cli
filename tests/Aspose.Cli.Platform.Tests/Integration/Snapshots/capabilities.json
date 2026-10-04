@@ -19299,6 +19299,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "ROWS_SHIFTED",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.rows-shifted.message.v1",
+      "hintTemplateId": "cells.rows-shifted.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "SCANNED_PAGES_SUSPECTED",
       "owner": "pdf",
       "severity": "warning",

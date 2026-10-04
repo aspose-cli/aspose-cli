@@ -1,6 +1,7 @@
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
+using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -8,8 +9,9 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>Compares stored values over a bounded, sorted union of existing cell addresses.</summary>
 internal static class DiffComparer
 {
+    /// <param name="Warnings">The row shifts of each modified sheet (ROWS_SHIFTED).</param>
     public sealed record Result(
-        IReadOnlyList<SheetDiff> Sheets, DiffSummary Summary, bool Identical, bool Truncated);
+        IReadOnlyList<SheetDiff> Sheets, DiffSummary Summary, bool Identical, bool Truncated, IReadOnlyList<Warning> Warnings);
 
     public static Result Compare(
         ResourceBudgetLedger budgets, Workbook left, Workbook right, bool includeFormulas, int maxDiffs)
@@ -22,6 +24,7 @@ internal static class DiffComparer
         int modified = 0;
         int cellsDiffering = 0;
         int listed = 0;
+        var warnings = new List<Warning>();
         Dictionary<Worksheet, Worksheet> renames = Renames(left, right);
 
         foreach (Worksheet sheet in left.Worksheets)
@@ -47,6 +50,7 @@ internal static class DiffComparer
 
             long[] addresses = Addresses(budgets, leftSheet, rightSheet);
             var cells = new List<CellDiff>();
+            var shifts = new RowShifts();
             int before = cellsDiffering;
             foreach (long address in addresses)
             {
@@ -55,6 +59,7 @@ internal static class DiffComparer
                 int column = (int)(address & 0x3FFF);
                 Cell? a = leftSheet.Cells.CheckCell(row, column);
                 Cell? b = rightSheet.Cells.CheckCell(row, column);
+                shifts.Add(row, column, a, b);
                 ComparisonValue leftValue = ComparisonValue.From(a);
                 ComparisonValue rightValue = ComparisonValue.From(b);
                 string? leftFormula = includeFormulas && a?.IsFormula == true ? a.Formula : null;
@@ -76,6 +81,11 @@ internal static class DiffComparer
                         Right = rightValue.Side(rightFormula),
                     });
                 }
+            }
+
+            if (cellsDiffering != before && shifts.Describe(rightSheet.Name, budgets.Deadline) is { } shifted)
+            {
+                warnings.Add(shifted);
             }
 
             if (renames.ContainsKey(rightSheet))
@@ -100,7 +110,8 @@ internal static class DiffComparer
         };
         return new Result(sheets, summary,
             added == 0 && removed == 0 && renamed == 0 && cellsDiffering == 0,
-            listed < cellsDiffering);
+            listed < cellsDiffering,
+            warnings);
     }
 
     /// <summary>
