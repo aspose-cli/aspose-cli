@@ -111,6 +111,34 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.Single(final.Worksheets["Data"].ConditionalFormattings);
     }
 
+    /// <summary>
+    /// A cellValue rule matches text written as it is or quoted as an Excel string literal, as
+    /// Excel's own dialog takes both.
+    /// </summary>
+    [Fact]
+    public void CellValueConditionalFormat_MatchesPlainAndQuotedText()
+    {
+        string source = _fixture.CreateSalesWorkbook("conditional-text.xlsx");
+        EditResult result = Apply(
+            source,
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A1", "values": [["关注", "关注", "a\"b"]] },
+              { "op": "add_conditional_format", "sheet": "Data", "range": "A1",
+                "rule": { "kind": "cellValue", "operator": "equal", "value1": "关注" }, "style": { "bg": "#FFEB9C" } },
+              { "op": "add_conditional_format", "sheet": "Data", "range": "B1",
+                "rule": { "kind": "cellValue", "operator": "equal", "value1": "\"关注\"" }, "style": { "bg": "#FFEB9C" } },
+              { "op": "add_conditional_format", "sheet": "Data", "range": "C1",
+                "rule": { "kind": "cellValue", "operator": "equal", "value1": "\"a\"\"b\"" }, "style": { "bg": "#FFEB9C" } }
+            ] }
+            """,
+            "conditional-text.out.xlsx");
+
+        using var workbook = new Workbook(result.Output!.Path);
+        Aspose.Cells.Cells cells = workbook.Worksheets["Data"].Cells;
+        Assert.All(["A1", "B1", "C1"], name => Assert.NotNull(cells[name].GetConditionalFormattingResult()?.ConditionalStyle));
+    }
+
     [Theory]
     [InlineData("""{ "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "values": [{ "field": "Ghost" }] }""")]
     [InlineData("""{ "op": "create_pivot", "sheet": "Pivot", "sourceRange": "Data!A1:B3", "at": "A1", "rows": ["Ghost"], "values": [{ "field": "Amount" }] }""")]

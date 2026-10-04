@@ -2617,12 +2617,12 @@
           ]
         },
         "value1": {
-          "description": "The comparison value of a cellValue rule (the lower bound for between), or the formula of a formula rule, which anchors at the range's top-left cell and shifts per cell ($ parts stay fixed).",
+          "description": "The comparison value of a cellValue rule (the lower bound for between): a number, text as it is (Done) or quoted as in Excel (\"Done\"), or a formula after = (=$F$1). For a formula rule, the formula, which anchors at the range's top-left cell and shifts per cell ($ parts stay fixed).",
           "type": "string",
           "pattern": "\\S"
         },
         "value2": {
-          "description": "The upper bound of a between or notBetween cellValue rule.",
+          "description": "The upper bound of a between or notBetween cellValue rule, written as value1 is.",
           "type": "string",
           "pattern": "\\S"
         },

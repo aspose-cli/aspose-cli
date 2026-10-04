@@ -201,7 +201,9 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ```
 
 `value1`/`value2` take a literal **or** an `=`-led formula — the second form
-is how a threshold stops being a constant. The formula anchors on the range's
+is how a threshold stops being a constant. Text matches written as it is
+(`"value1":"OVERDUE"`) or quoted as in Excel's dialog
+(`"value1":"\"OVERDUE\""`). The formula anchors on the range's
 top-left cell and shifts per cell exactly like `set_formula` fill semantics,
 so mixed anchors (`$B2`) express a per-row, cross-column rule: flag every
 actual above *its own row's* target, in one op.

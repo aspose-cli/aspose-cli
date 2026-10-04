@@ -68,10 +68,19 @@ public sealed record AddConditionalFormatOp : CellsOp
         }
 
         // The engine stores a formula without the leading '=' as a string literal that never
-        // matches (probe-verified), so the prefix is added rather than the rule rejected.
-        return rule.Kind == ConditionalRuleKinds.Formula && !rule.Value1!.StartsWith('=')
-            ? this with { Rule = rule with { Value1 = "=" + rule.Value1 } }
-            : this;
+        // matches (probe-verified), so the prefix is added rather than the rule rejected. A
+        // cellValue comparison is a value, or a formula after '='; like Excel's dialog, text
+        // quoted as an Excel string literal ("Done") is that literal's formula.
+        return rule.Kind switch
+        {
+            ConditionalRuleKinds.Formula when !rule.Value1!.StartsWith('=') =>
+                this with { Rule = rule with { Value1 = "=" + rule.Value1 } },
+            ConditionalRuleKinds.CellValue =>
+                this with { Rule = rule with { Value1 = Comparison(rule.Value1), Value2 = Comparison(rule.Value2) } },
+            _ => this,
+        };
+
+        static string? Comparison(string? value) => value is ['"', .., '"'] ? "=" + value : value;
 
         static void Require(bool condition, string reason, string? hint = null) =>
             OperationInvalidException.Require(condition, reason, hint);
@@ -93,12 +102,14 @@ public sealed record ConditionalRule
     [AllowedValues(typeof(ValidationOperators))] public string? Operator { get; init; }
 
     /// <summary>
-    /// The comparison value of a cellValue rule (the lower bound for between), or the formula of
-    /// a formula rule, which anchors at the range's top-left cell and shifts per cell ($ parts stay fixed).
+    /// The comparison value of a cellValue rule (the lower bound for between): a number, text as
+    /// it is (Done) or quoted as in Excel ("Done"), or a formula after = (=$F$1). For a formula
+    /// rule, the formula, which anchors at the range's top-left cell and shifts per cell ($ parts
+    /// stay fixed).
     /// </summary>
     [Pattern(@"\S")] public string? Value1 { get; init; }
 
-    /// <summary>The upper bound of a between or notBetween cellValue rule.</summary>
+    /// <summary>The upper bound of a between or notBetween cellValue rule, written as value1 is.</summary>
     [Pattern(@"\S")] public string? Value2 { get; init; }
 
     /// <summary>The low-end color of a colorScale.</summary>
