@@ -19406,6 +19406,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "REPLACE_NO_MATCH",
+      "owner": "common",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "common.replace-no-match.message.v1",
+      "hintTemplateId": "common.replace-no-match.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "REVISION_COUNT_CHANGED",
       "owner": "words",
       "severity": "warning",
