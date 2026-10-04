@@ -12,7 +12,7 @@ internal static class NewCommand
     {
         var images = new Option<string[]>("--from-images")
         {
-            Description = "One or more image files, one per output page.",
+            Description = "One or more image files, one per page in the image's orientation, scaled without distortion.",
             AllowMultipleArgumentsPerToken = true,
         }.WithInput(InputKind.File);
         var html = new Option<string?>("--from-html") { Description = "HTML input file." }.WithInput(InputKind.File);

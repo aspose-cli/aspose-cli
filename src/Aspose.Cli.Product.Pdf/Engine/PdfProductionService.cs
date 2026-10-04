@@ -258,7 +258,7 @@ internal sealed class PdfProductionService
         using HtmlImportResources? resources = request.HtmlPath is { } htmlPath
             ? new HtmlImportResources(htmlPath, _resourceBudgets, request.AllowNetworkResources) : null;
         using Document document = request.ImagePaths is { Count: > 0 } images
-            ? CreateFromImages(images, request)
+            ? CreateFromImages(images, request, _resourceBudgets)
             : request.HtmlPath is not null
                 ? CreateFromHtml(request.HtmlPath, request, resources!)
                 : CreateFromText(request.TextPath!, request.Markdown, request);
@@ -294,13 +294,20 @@ internal sealed class PdfProductionService
         };
     }
 
-    private static Document CreateFromImages(IReadOnlyList<string> paths, NewPdfRequest request)
+    /// <summary>
+    /// One page per image. The page takes the named size in the image's orientation (landscape
+    /// for an image wider than it is tall), and the image keeps its aspect ratio: it is scaled to
+    /// fill the margin box in one dimension and centred in the other. The margins must leave a
+    /// content area on each page in the orientation it takes.
+    /// </summary>
+    private static Document CreateFromImages(
+        IReadOnlyList<string> paths, NewPdfRequest request, ResourceBudgetLedger resourceBudgets)
     {
         var document = new Document();
         try
         {
-            (double width, double height) = PdfPageSizes.Dimensions(request.PageSize);
-            ValidateMargins(request.Margins, width, height);
+            (double portraitWidth, double portraitHeight) = PdfPageSizes.Dimensions(request.PageSize);
+            PdfMargins margins = request.Margins;
             foreach (string path in paths)
             {
                 if (!File.Exists(path))
@@ -308,14 +315,29 @@ internal sealed class PdfProductionService
                     throw CliErrors.FileNotFound(path);
                 }
 
+                string fullPath = Path.GetFullPath(path);
+                (double imageWidth, double imageHeight) = PdfImageSize.Read(resourceBudgets.Inputs, fullPath);
+                bool landscape = imageWidth > imageHeight;
+                (double width, double height) = landscape
+                    ? (portraitHeight, portraitWidth)
+                    : (portraitWidth, portraitHeight);
+                ValidateMargins(margins, width, height, $"the {(landscape ? "landscape" : "portrait")} page of {Path.GetFileName(path)}");
+                double boxWidth = width - margins.Left - margins.Right;
+                double boxHeight = height - margins.Top - margins.Bottom;
+                double scale = Math.Min(boxWidth / imageWidth, boxHeight / imageHeight);
+                double horizontal = (boxWidth - imageWidth * scale) / 2;
+                double vertical = (boxHeight - imageHeight * scale) / 2;
+                var placed = new PdfMargins(
+                    margins.Top + vertical, margins.Right + horizontal, margins.Bottom + vertical, margins.Left + horizontal);
+
                 Page page = document.Pages.Add();
                 page.SetPageSize(width, height);
-                page.PageInfo.Margin = Margin(request.Margins);
+                page.PageInfo.Margin = Margin(placed);
                 page.Paragraphs.Add(new Aspose.Pdf.Image
                 {
-                    File = Path.GetFullPath(path),
-                    FixWidth = Math.Max(1, width - request.Margins.Left - request.Margins.Right),
-                    FixHeight = Math.Max(1, height - request.Margins.Top - request.Margins.Bottom),
+                    File = fullPath,
+                    FixWidth = Math.Max(1, width - placed.Left - placed.Right),
+                    FixHeight = Math.Max(1, height - placed.Top - placed.Bottom),
                 });
             }
 
@@ -931,7 +953,8 @@ internal sealed class PdfProductionService
         Left = margins.Left,
     };
 
-    private static void ValidateMargins(PdfMargins margins, double width, double height)
+    /// <summary>Refuses margins that leave no content area on a page, named by <paramref name="page"/> when given.</summary>
+    private static void ValidateMargins(PdfMargins margins, double width, double height, string? page = null)
     {
         if (margins.Top < 0 || margins.Right < 0 || margins.Bottom < 0 || margins.Left < 0
             || margins.Left + margins.Right >= width
@@ -939,7 +962,9 @@ internal sealed class PdfProductionService
         {
             throw CliErrors.OptionInvalid(
                 "--margins",
-                "values must be non-negative and leave a positive content area",
+                page is null
+                    ? "values must be non-negative and leave a positive content area"
+                    : $"values must be non-negative and leave a positive content area on {page}",
                 "Use smaller top,right,bottom,left values in points.");
         }
     }

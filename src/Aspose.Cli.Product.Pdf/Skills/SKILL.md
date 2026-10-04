@@ -60,6 +60,12 @@ field, read the fields with `pdf query forms` and match each field's `rect` to
 its label before filling. The HTML `<title>` becomes the PDF title; a PDF made from HTML or
 Markdown has no author or subject until a `set_metadata` edit sets them.
 
+`pdf create --from-images` puts each image on its own page of `--page-size`,
+turned to landscape for an image wider than it is tall. The image keeps its
+aspect ratio: it fills the space inside `--margins` in one dimension and is
+centred in the other. A photo's EXIF orientation counts, and an SVG without
+both a width and a height takes the proportions of its viewBox.
+
 ## Preview and licensing
 
 `aspose-cli preview report.pdf --open` shows the `pages` view: pages, thumbnails,

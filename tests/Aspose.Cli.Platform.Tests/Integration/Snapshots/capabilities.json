@@ -2886,7 +2886,7 @@
               "secret": false,
               "valueSource": "command-line",
               "inputKind": "file",
-              "description": "One or more image files, one per output page."
+              "description": "One or more image files, one per page in the image's orientation, scaled without distortion."
             },
             {
               "name": "--from-text",
@@ -12501,7 +12501,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "file",
-          "description": "One or more image files, one per output page."
+          "description": "One or more image files, one per page in the image's orientation, scaled without distortion."
         },
         {
           "name": "--from-text",

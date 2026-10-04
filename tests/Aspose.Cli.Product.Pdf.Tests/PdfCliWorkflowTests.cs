@@ -119,6 +119,23 @@ public sealed class PdfCliWorkflowTests : IDisposable
     }
 
     [Theory]
+    [InlineData("not an image")]
+    [InlineData("")]
+    public void Create_RefusesAnImageTheEngineCannotLoadAsAnEngineFailure(string content)
+    {
+        File.WriteAllText(_workspace.File("scan.png"), content);
+
+        CliResult created = _workspace.Run(
+            "pdf", "create", "scan.pdf", "--from-images", "scan.png", "--output", "json");
+
+        Assert.Equal(6, created.ExitCode);
+        JsonNode error = JsonNode.Parse(created.StdErr)!["error"]!;
+        Assert.Equal("FEATURE_UNSUPPORTED", error["code"]!.GetValue<string>());
+        Assert.Contains("Image loading failed", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(File.Exists(_workspace.File("scan.pdf")));
+    }
+
+    [Theory]
     [InlineData("docx")]
     [InlineData("html")]
     [InlineData("pdfa-2b")]

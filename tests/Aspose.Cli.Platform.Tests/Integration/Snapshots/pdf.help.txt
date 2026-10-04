@@ -82,7 +82,7 @@ Arguments:
   <file>  PDF path to create.
 
 Options:
-  --from-images <from-images>                 One or more image files, one per output page.
+  --from-images <from-images>                 One or more image files, one per page in the image's orientation, scaled without distortion.
   --from-html <from-html>                     HTML input file.
   --allow-network-resources                   Let the HTML importer request the network resources trusted --from-html input names; the result lists every address. Local references stay beneath the HTML directory.
   --from-text <from-text>                     UTF-8 text or Markdown input file.

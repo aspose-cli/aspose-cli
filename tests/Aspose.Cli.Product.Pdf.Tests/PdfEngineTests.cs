@@ -110,6 +110,151 @@ public sealed class PdfEngineTests
         Assert.Null(info.Metadata["subject"]);
     }
 
+    [Fact]
+    public void Create_FromImages_FitsEachImageUndistortedOnAPageInItsOrientation()
+    {
+        using var fixture = new PdfEngineFixture();
+        string landscape = fixture.File("landscape.bmp");
+        File.WriteAllBytes(landscape, Bitmap(200, 100));
+        string portrait = fixture.File("portrait.svg");
+        File.WriteAllText(portrait, """<svg xmlns="http://www.w3.org/2000/svg" width="100" height="300"><rect width="100" height="300" fill="#246"/></svg>""");
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest
+        {
+            ImagePaths = [landscape, portrait],
+            OutputPath = fixture.File("images.pdf"),
+            Margins = new PdfMargins(36, 36, 36, 36),
+        });
+
+        using var document = new Document(result.Output.Path);
+        // A4 turns to landscape for the wide image; each image fills the margin box in one
+        // dimension, keeps its aspect ratio and is centred in the other.
+        AssertPlaced(document.Pages[1], 842, 595, 2d);
+        AssertPlaced(document.Pages[2], 595, 842, 1d / 3);
+
+        static void AssertPlaced(Page page, double width, double height, double ratio)
+        {
+            Assert.Equal(width, page.Rect.Width, 0);
+            Assert.Equal(height, page.Rect.Height, 0);
+            var absorber = new ImagePlacementAbsorber();
+            page.Accept(absorber);
+            Rectangle placed = Assert.Single(absorber.ImagePlacements).Rectangle;
+            Assert.Equal(ratio, placed.Width / placed.Height, 2);
+            Assert.True(
+                Math.Abs(placed.Width - (width - 72)) < 1 || Math.Abs(placed.Height - (height - 72)) < 1,
+                $"The image {placed.Width}x{placed.Height} does not fill the margin box of {width}x{height}.");
+            Assert.Equal(width / 2, (placed.LLX + placed.URX) / 2, 0);
+            Assert.Equal(height / 2, (placed.LLY + placed.URY) / 2, 0);
+        }
+    }
+
+    [Fact]
+    public void Create_FromImages_ChecksTheMarginsForTheOrientationOfEachPage()
+    {
+        using var fixture = new PdfEngineFixture();
+        string portrait = fixture.File("portrait.bmp");
+        File.WriteAllBytes(portrait, Bitmap(100, 200));
+        string landscape = fixture.File("landscape.bmp");
+        File.WriteAllBytes(landscape, Bitmap(200, 100));
+        // 600 points of top and bottom margin fit A4 portrait (842 high), not landscape (595).
+        var margins = new PdfMargins(300, 36, 300, 36);
+
+        PdfWriteResult created = fixture.Engine.Create(new NewPdfRequest
+        {
+            ImagePaths = [portrait],
+            OutputPath = fixture.File("portrait.pdf"),
+            Margins = margins,
+        });
+        CliException refused = Assert.Throws<CliException>(() => fixture.Engine.Create(new NewPdfRequest
+        {
+            ImagePaths = [portrait, landscape],
+            OutputPath = fixture.File("mixed.pdf"),
+            Margins = margins,
+        }));
+
+        Assert.True(File.Exists(created.Output.Path));
+        Assert.Equal(ErrorCodes.OptionInvalid, refused.Code);
+        Assert.Contains("landscape.bmp", refused.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(fixture.File("mixed.pdf")));
+    }
+
+    [Theory]
+    [InlineData("""<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"><rect width="300" height="100" fill="#246"/></svg>""", 3d)]
+    [InlineData("""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 300"><rect width="100" height="300" fill="#246"/></svg>""", 1d / 3)]
+    public void Create_FromImages_SizesAnSvgByItsOwnProportions(string svg, double ratio)
+    {
+        using var fixture = new PdfEngineFixture();
+        string image = fixture.File("image.svg");
+        File.WriteAllText(image, svg);
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { ImagePaths = [image], OutputPath = fixture.File("svg.pdf") });
+
+        using var document = new Document(result.Output.Path);
+        Page page = document.Pages[1];
+        Assert.Equal(ratio > 1, page.Rect.Width > page.Rect.Height);
+        var absorber = new ImagePlacementAbsorber();
+        page.Accept(absorber);
+        Rectangle placed = Assert.Single(absorber.ImagePlacements).Rectangle;
+        Assert.Equal(ratio, placed.Width / placed.Height, 2);
+    }
+
+    /// <summary>
+    /// A camera stores a portrait photo as landscape pixels with an EXIF orientation that turns
+    /// it a quarter; the engine draws it turned, so its page is portrait.
+    /// </summary>
+    [Fact]
+    public void Create_FromImages_TurnsThePageForAnExifOrientedPhoto()
+    {
+        using var fixture = new PdfEngineFixture();
+        string photo = fixture.File("photo.jpg");
+        File.WriteAllBytes(photo, OrientedJpeg(200, 100, orientation: 6));
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { ImagePaths = [photo], OutputPath = fixture.File("photo.pdf") });
+
+        using var document = new Document(result.Output.Path);
+        Page page = document.Pages[1];
+        Assert.True(page.Rect.Height > page.Rect.Width, $"The page is {page.Rect.Width}x{page.Rect.Height}.");
+        var absorber = new ImagePlacementAbsorber();
+        page.Accept(absorber);
+        Rectangle placed = Assert.Single(absorber.ImagePlacements).Rectangle;
+        Assert.Equal(0.5, placed.Width / placed.Height, 2);
+    }
+
+    /// <summary>A JPEG of landscape pixels with an EXIF orientation tag.</summary>
+    private static byte[] OrientedJpeg(int width, int height, byte orientation)
+    {
+        using var bitmap = new SkiaSharp.SKBitmap(width, height);
+        bitmap.Erase(SkiaSharp.SKColors.SteelBlue);
+        byte[] jpeg = bitmap.Encode(SkiaSharp.SKEncodedImageFormat.Jpeg, 90).ToArray();
+        byte[] exif =
+        [
+            0xFF, 0xE1, 0x00, 0x22, (byte)'E', (byte)'x', (byte)'i', (byte)'f', 0, 0,
+            (byte)'I', (byte)'I', 0x2A, 0x00, 0x08, 0x00, 0x00, 0x00,
+            0x01, 0x00,
+            0x12, 0x01, 0x03, 0x00, 0x01, 0x00, 0x00, 0x00, orientation, 0x00, 0x00, 0x00,
+            0x00, 0x00, 0x00, 0x00,
+        ];
+        return [.. jpeg[..2], .. exif, .. jpeg[2..]];
+    }
+
+    private static byte[] Bitmap(int width, int height)
+    {
+        int stride = (width * 3 + 3) & ~3;
+        byte[] bytes = new byte[54 + stride * height];
+        bytes[0] = (byte)'B';
+        bytes[1] = (byte)'M';
+        BitConverter.GetBytes(bytes.Length).CopyTo(bytes, 2);
+        BitConverter.GetBytes(54).CopyTo(bytes, 10);
+        BitConverter.GetBytes(40).CopyTo(bytes, 14);
+        BitConverter.GetBytes(width).CopyTo(bytes, 18);
+        BitConverter.GetBytes(height).CopyTo(bytes, 22);
+        BitConverter.GetBytes((short)1).CopyTo(bytes, 26);
+        BitConverter.GetBytes((short)24).CopyTo(bytes, 28);
+        BitConverter.GetBytes(stride * height).CopyTo(bytes, 34);
+        Array.Fill(bytes, (byte)0x80, 54, stride * height);
+        return bytes;
+    }
+
     [Theory]
     [InlineData("D:20261003100000+05'30'", "2026-10-03T04:30:00Z")]
     [InlineData("D:20261003011908Z00'00'", "2026-10-03T01:19:08Z")]
