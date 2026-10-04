@@ -325,7 +325,8 @@ errors, sheet loss, grid truncation, imported formulas whose results changed
 and exit 8 with `verification.ok: false`. Issue codes: `FORMULA_ERRORS` (the
 edited workbook has formula errors; `location` is the cell when there is one;
 `#NAME?` usually means a localized or misspelled function name, and the hint
-asks for English function names),
+asks for English function names; with or without `--verify`, the warning
+`FORMULA_FUNCTION_UNKNOWN` names each unknown function and the closest one),
 `LIST_TRUNCATED` (`formulaErrors` holds only the first 1000), or the code of a
 completeness warning such as `SHEETS_DROPPED`; `capabilities` lists every
 code. A formula error whose input cell had the same formula and the same

@@ -29,11 +29,11 @@ internal static class CellOps
         return (long)op.Values.Count * op.Values[0].Count;
     }
 
-    public static long SetFormula(Worksheet sheet, SetFormulaOp op)
+    public static long SetFormula(Worksheet sheet, SetFormulaOp op, out Cell anchor)
     {
         try
         {
-            return WriteFormula(sheet, op);
+            return WriteFormula(sheet, op, out anchor);
         }
         catch (CellsException exception) when (exception.Code == ExceptionType.Formula)
         {
@@ -46,14 +46,14 @@ internal static class CellOps
     internal const string EnglishFormulaHint = "Write the formula as Excel's English formula bar shows it: English function names and commas "
         + "between arguments, as in =SUM(B2:B10).";
 
-    private static long WriteFormula(Worksheet sheet, SetFormulaOp op)
+    private static long WriteFormula(Worksheet sheet, SetFormulaOp op, out Cell anchor)
     {
         // Like Excel 365, every cell gets a dynamic-array formula: array arithmetic inside a
         // function (MAX(B2*rates-deductions)) evaluates over whole ranges rather than by implicit
         // intersection, and a result larger than one cell spills or shows #SPILL!. Filling a range
         // shifts relative references per cell by sharing the anchor's R1C1 form.
         RangeRef range = Range(op.Range);
-        Cell anchor = sheet.Cells[range.Start.Row, range.Start.Column];
+        anchor = sheet.Cells[range.Start.Row, range.Start.Column];
         anchor.SetDynamicArrayFormula(op.Formula, new FormulaParseOptions(), calculateValue: false);
         if (range.CellCount > 1)
         {

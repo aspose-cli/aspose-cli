@@ -47,6 +47,9 @@ internal static class CellsDiagnostics
     /// <summary>An edit added a link that the output stores as a file name relative to its folder.</summary>
     internal const string ExternalLinkRelative = "EXTERNAL_LINK_RELATIVE";
 
+    /// <summary>An edit wrote formulas that call functions the engine does not know.</summary>
+    internal const string FormulaFunctionUnknown = "FORMULA_FUNCTION_UNKNOWN";
+
     /// <summary>A comparison found rows one side inserted or deleted, which shift the cells below them.</summary>
     internal const string RowsShifted = "ROWS_SHIFTED";
 
@@ -78,6 +81,7 @@ internal static class CellsDiagnostics
         Warning(TextTableLayout),
         Warning(ExternalLinkCacheMissing),
         Warning(ExternalLinkRelative),
+        Warning(FormulaFunctionUnknown),
         Warning(ChartSplitAcrossPages),
         Warning(RowsShifted),
         FormulaErrors,

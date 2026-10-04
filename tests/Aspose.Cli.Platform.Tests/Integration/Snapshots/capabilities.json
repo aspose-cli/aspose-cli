@@ -18731,6 +18731,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "FORMULA_FUNCTION_UNKNOWN",
+      "owner": "cells",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "cells.formula-function-unknown.message.v1",
+      "hintTemplateId": "cells.formula-function-unknown.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "FORM_XFA_UNSUPPORTED",
       "owner": "pdf",
       "severity": "error",

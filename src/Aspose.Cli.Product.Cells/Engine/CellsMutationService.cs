@@ -72,11 +72,12 @@ internal sealed class CellsMutationService
         using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
         var protection = new CellsProtectionTracker();
         string[] linksBefore = LinkSources(workbook);
-        (IReadOnlyList<BoundedOperationOutcome> applied, bool defaultedToActiveSheet) = ApplyOperations(
+        (IReadOnlyList<BoundedOperationOutcome> applied, bool defaultedToActiveSheet, IReadOnlyList<Cell> formulaAnchors) = ApplyOperations(
             workbook, batch, options.Options.BestEffort, options.OpSecrets, operationInputs, importSources, protection);
         Warning? skippedSheet = loaded.SkippedSheetWarning(defaultedToActiveSheet);
         Warning? unenforced = protection.Warning(format);
         Warning? relativeLinks = RelativeLinkWarning(workbook, linksBefore);
+        Warning? unknownFunctions = UnknownFunctions.Warning(workbook, formulaAnchors);
         if (options.Recalculate)
         {
             workbook.CalculateFormula();
@@ -91,9 +92,9 @@ internal sealed class CellsMutationService
         }
 
         IReadOnlyList<Warning>? warnings = options.Options.DryRun
-            ? EnvelopeParts.CombineWarnings(loaded.Warnings(skippedSheet, unenforced, relativeLinks), importSources.Warnings())
+            ? EnvelopeParts.CombineWarnings(loaded.Warnings(skippedSheet, unenforced, relativeLinks, unknownFunctions), importSources.Warnings())
             : EnvelopeParts.CombineWarnings(
-                CombineWarnings(licenseState, loaded.Resources.CoverageWarning, skippedSheet, unenforced, relativeLinks, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded,
+                CombineWarnings(licenseState, loaded.Resources.CoverageWarning, skippedSheet, unenforced, relativeLinks, unknownFunctions, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded,
                     CellsEvaluation.DescribeAddedNotice(licenseState, format)),
                 importSources.Warnings(),
                 EnvelopeParts.BackupWarnings(saved?.Backup));
@@ -128,7 +129,7 @@ internal sealed class CellsMutationService
     /// operation that changed a protected sheet or structure is recorded in
     /// <paramref name="protection"/>.
     /// </summary>
-    private (IReadOnlyList<BoundedOperationOutcome> Applied, bool DefaultedToActiveSheet) ApplyOperations(
+    private (IReadOnlyList<BoundedOperationOutcome> Applied, bool DefaultedToActiveSheet, IReadOnlyList<Cell> FormulaAnchors) ApplyOperations(
         Workbook workbook,
         CellsOpsBatch batch,
         bool bestEffort,
@@ -154,7 +155,7 @@ internal sealed class CellsMutationService
                 return new AppliedOperation(affected, OpsFootprint.OutcomeTargets(op));
             },
             (op, _) => OpsFootprint.OutcomeTargets(op));
-        return (applied, handlers.DefaultedToActiveSheet);
+        return (applied, handlers.DefaultedToActiveSheet, handlers.FormulaAnchors);
     }
 
     private static string[] LinkSources(Workbook workbook) =>

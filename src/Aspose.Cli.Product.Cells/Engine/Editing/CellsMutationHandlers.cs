@@ -162,7 +162,15 @@ internal sealed class CellsMutationHandlers : ICellsOpHandler<long?>
     // Workbook-scoped: the operation's sheet is deliberately not resolved.
     public long? Apply(SetDefaultFontOp operation) => LookOps.SetDefaultFont(_workbook, operation);
 
-    public long? Apply(SetFormulaOp operation) => CellOps.SetFormula(Sheet(operation), operation);
+    /// <summary>The anchor cells set_formula wrote, which the batch checks for unknown functions.</summary>
+    internal List<Cell> FormulaAnchors { get; } = [];
+
+    public long? Apply(SetFormulaOp operation)
+    {
+        long written = CellOps.SetFormula(Sheet(operation), operation, out Cell anchor);
+        FormulaAnchors.Add(anchor);
+        return written;
+    }
 
     public long? Apply(SetHyperlinkOp operation) => HyperlinkOps.SetHyperlink(Sheet(operation), operation);
 

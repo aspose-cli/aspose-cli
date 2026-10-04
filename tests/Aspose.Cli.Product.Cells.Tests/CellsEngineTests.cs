@@ -283,6 +283,56 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void AMisspelledFunctionIsNamedWithTheClosestFunction()
+    {
+        string source = _fixture.CreateSalesWorkbook("function-typo.xlsx");
+
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""
+                {"ops":[
+                  {"op":"set_formula","sheet":"Data","range":"E2:E3","formula":"=summ(B2:C2)"},
+                  {"op":"set_formula","sheet":"Data","range":"E5","formula":"=IF(B2>0,VLOKUP(A2,A2:C3,2,FALSE),\"MYFUNC(\")"},
+                  {"op":"set_formula","sheet":"Data","range":"E6","formula":"=SUM(B2:C2)+FOOBAR(1)"},
+                  {"op":"set_formula","sheet":"Data","range":"E7","formula":"=SUM(B2:C3)"},
+                  {"op":"set_formula","sheet":"Data","range":"E8","formula":"=LET(fn,LAMBDA(a,a+1),fn(2))"}
+                ]}
+                """),
+            new EditRequest { OutputPath = _fixture.Temp.File("function-typo.out.xlsx") });
+
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
+        Assert.StartsWith(
+            "Aspose.Cells does not know the function(s) in 'Data'!E2: summ (did you mean SUM?); 'Data'!E5: VLOKUP (did you mean VLOOKUP?); 'Data'!E6: FOOBAR.",
+            warning.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void AnUnknownFunctionIsFoundWhereLaterOperationsMovedItsCell()
+    {
+        string source = _fixture.CreateSalesWorkbook("function-typo-moved.xlsx");
+
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""
+                {"ops":[
+                  {"op":"set_formula","range":"E2","formula":"=summ(B2:C2)"},
+                  {"op":"set_formula","sheet":"Second","range":"B1","formula":"=VLOKUP(1,A1:A2,1,FALSE)"},
+                  {"op":"set_formula","sheet":"Data","range":"E6","formula":"=FOOBAR(1)"},
+                  {"op":"set_active_sheet","sheet":"Second"},
+                  {"op":"rename_sheet","sheet":"Second","to":"Notes"},
+                  {"op":"delete_rows","sheet":"Data","at":6},
+                  {"op":"insert_rows","sheet":"Data","at":1,"count":2}
+                ]}
+                """),
+            new EditRequest { OutputPath = _fixture.Temp.File("function-typo-moved.out.xlsx") });
+
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
+        Assert.StartsWith(
+            "Aspose.Cells does not know the function(s) in 'Data'!E4: summ (did you mean SUM?); 'Notes'!B1: VLOKUP (did you mean VLOOKUP?).",
+            warning.Message,
+            StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void GetInfo_ReportsSheetStructure()
     {
         string path = _fixture.CreateSalesWorkbook("info.xlsx");
