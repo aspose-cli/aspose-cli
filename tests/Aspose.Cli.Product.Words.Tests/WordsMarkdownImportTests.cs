@@ -42,6 +42,22 @@ public sealed class WordsMarkdownImportTests
     }
 
     [Fact]
+    public void Create_ClosesEmphasisAfterPunctuationOnlyAsCommonMarkDoes()
+    {
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("struck.md");
+        // A closing delimiter after punctuation needs a space or punctuation after it; HTML tags do not.
+        File.WriteAllText(markdown, "施行。~~原《守则》~~同时废止。\n\n施行。<del>原《守则》</del>同时废止。\n");
+        string output = fixture.Temp.File("struck.docx");
+
+        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+
+        Paragraph[] paragraphs = [.. new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>().TakeLast(2)];
+        Assert.Equal("施行。~~原《守则》~~同时废止。", paragraphs[0].GetText().TrimEnd('\r'));
+        Assert.Equal("原《守则》", Assert.Single(paragraphs[1].Runs.Cast<Run>(), static run => run.Font.StrikeThrough).Text);
+    }
+
+    [Fact]
     public void Create_WithoutTemplate_BreaksChineseLinesByTheEastAsianRules()
     {
         using var fixture = new WordsFixture();

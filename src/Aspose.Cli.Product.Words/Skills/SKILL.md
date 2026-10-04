@@ -118,7 +118,11 @@ Windows, paging and compact output in general:
 - A template supplies styles, page setup, headers and footers; `--markdown` or
   `--text` supplies the body. Markdown headings map to Heading 1-6, quotes to
   Quote, lists to list paragraphs; only bold, italic and strike-through from
-  the Markdown survive as direct formatting.
+  the Markdown survive as direct formatting. As in CommonMark, a closing `**`
+  or `~~` right after punctuation, such as `》` or `）`, needs a space or
+  punctuation after it, so `~~原《守则》~~同时` stays literal; write
+  `<del>`, `<strong>` or `<em>` tags in Chinese text instead, and read the
+  result back for leftover markers.
 - Use the user's template when one exists; without `--template`,
   `words create` uses the built-in A4 design. `insert_markdown` and Markdown
   headers or footers import the same way, into the edited document's styles.
