@@ -108,7 +108,7 @@ internal sealed class CellsProductionService
 
         Warning? chartsSplit = request.TargetFormatId is "pdf" ? PrintedPages.SplitChartsWarning(workbook, selectedSheet) : null;
         int refsBefore = _saver.CountRefFormulas(workbook);
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, request.OutputPath, licenseState,
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, licenseState,
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet, request.ByteOrderMark);
         loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);

@@ -29,7 +29,9 @@ internal static class CellsFormatRecognition
         StringComparer.Ordinal)
     {
         ["xlsx"] = SpreadsheetPackage,
+        ["xltx"] = SpreadsheetPackage,
         ["xlsm"] = SpreadsheetPackage,
+        ["xltm"] = SpreadsheetPackage,
         ["xlsb"] = SpreadsheetPackage,
         ["xls"] = CompoundWorkbook,
         ["ods"] = FileFormatRecognition.Match(

@@ -14,7 +14,9 @@ internal static class FormatMapper
     public static SaveFormat ToSaveFormat(string formatId) => formatId switch
     {
         "xlsx" => SaveFormat.Xlsx,
+        "xltx" => SaveFormat.Xltx,
         "xlsm" => SaveFormat.Xlsm,
+        "xltm" => SaveFormat.Xltm,
         "xlsb" => SaveFormat.Xlsb,
         "xls" => SaveFormat.Excel97To2003,
         "ods" => SaveFormat.Ods,
@@ -29,19 +31,6 @@ internal static class FormatMapper
         _ => throw new ArgumentOutOfRangeException(
             nameof(formatId), formatId, "Format id is missing from the engine mapper."),
     };
-
-    /// <summary>
-    /// Maps a canonical convert format id and the output path to the engine save
-    /// format: the template extensions a workbook format declares (<c>.xltx</c>,
-    /// <c>.xltm</c>) keep the file a template.
-    /// </summary>
-    public static SaveFormat ToSaveFormat(string formatId, string outputPath) =>
-        (formatId, Path.GetExtension(outputPath).ToLowerInvariant()) switch
-        {
-            ("xlsx", ".xltx") => SaveFormat.Xltx,
-            ("xlsm", ".xltm") => SaveFormat.Xltm,
-            _ => ToSaveFormat(formatId),
-        };
 
     /// <summary>Maps a canonical render format id to the engine image type.</summary>
     public static ImageType ToImageType(string formatId) => formatId switch
@@ -60,7 +49,9 @@ internal static class FormatMapper
     public static string ToFormatId(FileFormatType type) => type switch
     {
         FileFormatType.Xlsx => "xlsx",
+        FileFormatType.Xltx => "xltx",
         FileFormatType.Xlsm => "xlsm",
+        FileFormatType.Xltm => "xltm",
         FileFormatType.Xlsb => "xlsb",
         FileFormatType.Excel97To2003 => "xls",
         FileFormatType.Ods => "ods",

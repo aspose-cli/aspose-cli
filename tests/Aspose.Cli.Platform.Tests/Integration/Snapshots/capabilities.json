@@ -40,7 +40,9 @@
       ],
       "convertFormats": [
         "xlsx",
+        "xltx",
         "xlsm",
+        "xltm",
         "xlsb",
         "xls",
         "ods",
@@ -129,7 +131,9 @@
       ],
       "loadFormats": [
         "xlsx",
+        "xltx",
         "xlsm",
+        "xltm",
         "xlsb",
         "xls",
         "ods",
@@ -584,8 +588,7 @@
         {
           "id": "xlsm",
           "extensions": [
-            ".xlsm",
-            ".xltm"
+            ".xlsm"
           ],
           "aliases": [],
           "uses": [
@@ -609,7 +612,54 @@
         {
           "id": "xlsx",
           "extensions": [
-            ".xlsx",
+            ".xlsx"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ],
+          "operations": [
+            "app",
+            "fonts",
+            "open",
+            "preview",
+            "review"
+          ],
+          "declaredOwnership": "default",
+          "finalOwner": "cells",
+          "genericAvailable": true,
+          "explicitAvailable": true,
+          "recognizerStrategy": "standard-signature-v1",
+          "maxProbeBytes": 65536
+        },
+        {
+          "id": "xltm",
+          "extensions": [
+            ".xltm"
+          ],
+          "aliases": [],
+          "uses": [
+            "input",
+            "convert"
+          ],
+          "operations": [
+            "app",
+            "fonts",
+            "open",
+            "preview",
+            "review"
+          ],
+          "declaredOwnership": "default",
+          "finalOwner": "cells",
+          "genericAvailable": true,
+          "explicitAvailable": true,
+          "recognizerStrategy": "standard-signature-v1",
+          "maxProbeBytes": 65536
+        },
+        {
+          "id": "xltx",
+          "extensions": [
             ".xltx"
           ],
           "aliases": [],
@@ -1017,12 +1067,14 @@
                 "xlsb",
                 "xlsm",
                 "xlsx",
+                "xltm",
+                "xltx",
                 "xps"
               ],
               "secret": false,
               "valueSource": "command-line",
               "inputKind": "none",
-              "description": "Target format: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md."
+              "description": "Target format: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md."
             }
           ],
           "arguments": [
@@ -1133,7 +1185,7 @@
           "path": "cells edit",
           "name": "edit",
           "aliases": [],
-          "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml.",
+          "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.",
           "hidden": false,
           "options": [
             {
@@ -10791,12 +10843,14 @@
             "xlsb",
             "xlsm",
             "xlsx",
+            "xltm",
+            "xltx",
             "xps"
           ],
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Target format: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md."
+          "description": "Target format: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md."
         }
       ],
       "arguments": [
@@ -10907,7 +10961,7 @@
       "path": "aspose-cli cells edit",
       "name": "edit",
       "aliases": [],
-      "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml.",
+      "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.",
       "hidden": false,
       "options": [
         {

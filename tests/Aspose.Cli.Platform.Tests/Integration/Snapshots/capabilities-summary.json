@@ -11,7 +11,9 @@
       "engineVersion": "<build>",
       "loadFormats": [
         "xlsx",
+        "xltx",
         "xlsm",
+        "xltm",
         "xlsb",
         "xls",
         "ods",
@@ -26,7 +28,9 @@
       ],
       "convertFormats": [
         "xlsx",
+        "xltx",
         "xlsm",
+        "xltm",
         "xlsb",
         "xls",
         "ods",
@@ -59,7 +63,7 @@
         },
         {
           "command": "edit",
-          "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml."
+          "description": "Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml."
         },
         {
           "command": "inspect",

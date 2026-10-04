@@ -14,19 +14,21 @@ public static class CellsFormats
     internal static readonly IReadOnlyList<FormatDescriptor> Definitions =
         FileFormatRecognition.AttachTo(
     [
-        FormatDescriptor.Declare("xlsx", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".xlsx", ".xltx"),
-        FormatDescriptor.Declare("xlsm", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".xlsm", ".xltm"),
-        FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".xlsb"),
-        FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".xls"),
-        FormatDescriptor.Declare("ods", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".ods"),
-        FormatDescriptor.Declare("csv", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".csv"),
-        FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, 6, 6, null, true, ".tsv"),
-        FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 7, 7, null, false, ".html", ".htm"),
-        FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, 8, 8, null, false, ".mhtml"),
-        FormatDescriptor.Declare("pdf", FormatUse.Input | FormatUse.Convert, 9, 9, null, false, ".pdf"),
-        FormatDescriptor.Declare("xps", FormatUse.Input | FormatUse.Convert, 10, 10, null, false, ".xps"),
-        FormatDescriptor.Declare("json", FormatUse.Input | FormatUse.Convert, 11, 11, null, false, ".json"),
-        FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, 12, 12, null, false, ".md")
+        FormatDescriptor.Declare("xlsx", FormatUse.Input | FormatUse.Convert, 0, 0, null, true, ".xlsx"),
+        FormatDescriptor.Declare("xltx", FormatUse.Input | FormatUse.Convert, 1, 1, null, true, ".xltx"),
+        FormatDescriptor.Declare("xlsm", FormatUse.Input | FormatUse.Convert, 2, 2, null, true, ".xlsm"),
+        FormatDescriptor.Declare("xltm", FormatUse.Input | FormatUse.Convert, 3, 3, null, true, ".xltm"),
+        FormatDescriptor.Declare("xlsb", FormatUse.Input | FormatUse.Convert, 4, 4, null, true, ".xlsb"),
+        FormatDescriptor.Declare("xls", FormatUse.Input | FormatUse.Convert, 5, 5, null, true, ".xls"),
+        FormatDescriptor.Declare("ods", FormatUse.Input | FormatUse.Convert, 6, 6, null, true, ".ods"),
+        FormatDescriptor.Declare("csv", FormatUse.Input | FormatUse.Convert, 7, 7, null, true, ".csv"),
+        FormatDescriptor.Declare("tsv", FormatUse.Input | FormatUse.Convert, 8, 8, null, true, ".tsv"),
+        FormatDescriptor.Declare("html", FormatUse.Input | FormatUse.Convert, 9, 9, null, false, ".html", ".htm"),
+        FormatDescriptor.Declare("mhtml", FormatUse.Input | FormatUse.Convert, 10, 10, null, false, ".mhtml"),
+        FormatDescriptor.Declare("pdf", FormatUse.Input | FormatUse.Convert, 11, 11, null, false, ".pdf"),
+        FormatDescriptor.Declare("xps", FormatUse.Input | FormatUse.Convert, 12, 12, null, false, ".xps"),
+        FormatDescriptor.Declare("json", FormatUse.Input | FormatUse.Convert, 13, 13, null, false, ".json"),
+        FormatDescriptor.Declare("md", FormatUse.Input | FormatUse.Convert, 14, 14, null, false, ".md")
             with { Aliases = ["markdown"] },
         FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
         FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg")
@@ -36,11 +38,11 @@ public static class CellsFormats
 
     /// <summary>Workbook formats whose edited output can be reopened and verified.</summary>
     public static IReadOnlyList<string> EditIds { get; } = Array.AsReadOnly(new[]
-    { "xlsx", "xlsm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml" });
+    { "xlsx", "xltx", "xlsm", "xltm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml" });
 
     /// <summary>Workbook formats that can carry a password.</summary>
     public static IReadOnlyList<string> EncryptableIds { get; } = Array.AsReadOnly(new[]
-    { "xlsx", "xlsm", "xlsb", "xls", "ods" });
+    { "xlsx", "xltx", "xlsm", "xltm", "xlsb", "xls", "ods" });
 
     /// <summary>The convert format whose id, alias or declared extension a path carries; xlsx without one.</summary>
     /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when the extension names no format.</exception>

@@ -15,8 +15,8 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     public CellsOutputFormatTests(CellsFixture fixture) => _fixture = fixture;
 
     [Theory]
-    [InlineData(".xltx", SaveFormat.Xltx, "xlsx", FileFormatType.Xltx)]
-    [InlineData(".xltm", SaveFormat.Xltm, "xlsm", FileFormatType.Xltm)]
+    [InlineData(".xltx", SaveFormat.Xltx, "xltx", FileFormatType.Xltx)]
+    [InlineData(".xltm", SaveFormat.Xltm, "xltm", FileFormatType.Xltm)]
     public void EditingATemplateInPlace_KeepsItATemplate(string extension, SaveFormat format, string formatId, FileFormatType detected)
     {
         string path = _fixture.Temp.File("template" + extension);
@@ -45,16 +45,19 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
-    public void ConvertingToATemplatePath_WritesATemplate()
+    public void ConvertingToXltx_WritesATemplateAndReportsIt()
     {
         string output = _fixture.Temp.File("converted.xltx");
 
-        _fixture.Engine.Convert(_fixture.CreateSalesWorkbook("convert-source.xlsx"), new ConvertRequest
+        ConvertResult result = _fixture.Engine.Convert(_fixture.CreateSalesWorkbook("convert-source.xlsx"), new ConvertRequest
         {
-            TargetFormatId = "xlsx",
+            TargetFormatId = "xltx",
             OutputPath = output,
             Overwrite = true,
         });
+
+        Assert.Equal("xltx", result.Output.Format);
+        Assert.Equal(FileFormatType.Xltx, FileFormatUtil.DetectFileFormat(output).FileFormatType);
 
         using ZipArchive package = ZipFile.OpenRead(output);
         using Stream types = package.GetEntry("[Content_Types].xml")!.Open();
@@ -63,6 +66,13 @@ public sealed class CellsOutputFormatTests : IClassFixture<CellsFixture>
             static node => (string?)node.Attribute("PartName") == "/xl/workbook.xml"
                 && ((string?)node.Attribute("ContentType"))!.Contains("template", StringComparison.Ordinal));
     }
+
+    [Theory]
+    [InlineData("book.xltx", "xltx")]
+    [InlineData("book.xltm", "xltm")]
+    [InlineData("book.xlsx", "xlsx")]
+    public void AnOutputPath_NamesItsTemplateFormat(string path, string format) =>
+        Assert.Equal(format, CellsFormats.ForOutputPath(path));
 
     private EditResult Apply(string source, string output) =>
         _fixture.Engine.ApplyOps(

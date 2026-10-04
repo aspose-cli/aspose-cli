@@ -80,7 +80,9 @@ public sealed class CellsModuleTests
             new Dictionary<string, byte[]>(StringComparer.Ordinal)
             {
                 ["xlsx"] = ProductRoutingContract.ZipMarker("xl/workbook.xml"),
+                ["xltx"] = ProductRoutingContract.ZipMarker("xl/workbook.xml"),
                 ["xlsm"] = ProductRoutingContract.ZipMarker("xl/workbook.xml"),
+                ["xltm"] = ProductRoutingContract.ZipMarker("xl/workbook.xml"),
                 ["xlsb"] = ProductRoutingContract.ZipMarker("xl/workbook.bin"),
                 ["xls"] = ProductRoutingContract.CompoundFile(),
                 ["ods"] = ProductRoutingContract.ZipMarker(

@@ -306,9 +306,9 @@ show in renders and reads; give the location column a header.
 
 ## Output formats and encryption
 
-`cells edit` writes xlsx, xlsm, xlsb, xls, ods, csv, tsv, html and mhtml; use
+`cells edit` writes xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html and mhtml; use
 `cells convert` for other formats. HTML output embeds its images. Editing an
-encrypted workbook keeps its password in xlsx, xlsm, xlsb, xls and ods output;
+encrypted workbook keeps its password in xlsx, xltx, xlsm, xltm, xlsb, xls and ods output;
 `--encrypt-env` changes it. Other outputs cannot be encrypted: they drop the
 encryption with a `WORKBOOK_ENCRYPTION_REMOVED` warning, and `--encrypt-env`
 on them is `OPTION_INVALID`. A single-sheet output of a multi-sheet workbook

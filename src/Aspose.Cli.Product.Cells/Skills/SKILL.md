@@ -117,6 +117,8 @@ aspose-cli cells convert book.xlsx --to csv --sheet Sales
 aspose-cli cells render book.xlsx --all-sheets --out book.png
 ```
 
+`cells convert book.xlsx --to xltx` saves an Excel template (xltm keeps macros);
+new workbooks made from it in Excel start with its sheets, styles and protection.
 `cells convert` takes `--sheet` for csv, tsv, md and pdf. CSV and TSV output is
 UTF-8 without a byte order mark; add `--bom` when a person will open the file in
 Excel, which otherwise misreads non-English text. A PDF that splits a

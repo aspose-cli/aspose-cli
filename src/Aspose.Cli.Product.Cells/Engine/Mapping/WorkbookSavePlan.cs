@@ -15,7 +15,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
     /// The commands reject an output password for a format that cannot carry one, naming the
     /// option the caller passed (<see cref="Sdk.Extensibility.Commanding.StandardInvocation.EncryptPassword"/>).
     /// </remarks>
-    internal static WorkbookSavePlan Create(string formatId, string outputPath, LicenseState licenseState,
+    internal static WorkbookSavePlan Create(string formatId, LicenseState licenseState,
         string? encryptPassword = null, string? inputPassword = null, int? selectedSheet = null, bool byteOrderMark = false)
     {
         bool encryptable = CellsFormats.EncryptableIds.Contains(formatId, StringComparer.Ordinal);
@@ -24,7 +24,7 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
             throw new InvalidOperationException($"An output password reached the '{formatId}' format, which cannot carry one.");
         }
 
-        SaveFormat format = FormatMapper.ToSaveFormat(formatId, outputPath);
+        SaveFormat format = FormatMapper.ToSaveFormat(formatId);
         SaveOptions? options = formatId switch
         {
             "html" => new HtmlSaveOptions { SaveAsSingleFile = true, ExportImagesAsBase64 = true },

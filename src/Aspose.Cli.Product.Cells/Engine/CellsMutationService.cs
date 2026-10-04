@@ -67,7 +67,7 @@ internal sealed class CellsMutationService
 
         using CellsEditBaseline? baseline = options.Verify
             ? CellsEditBaseline.Capture(filePath, precondition, _budgets) : null;
-        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(format, options.OutputPath, licenseState, options.EncryptPassword,
+        WorkbookSavePlan savePlan = WorkbookSavePlan.Create(format, licenseState, options.EncryptPassword,
             loaded.IsEncrypted ? options.Password : null);
         using var importSources = new CellsImportSources(_loader, _budgets, options.OpSecrets);
         var protection = new CellsProtectionTracker();

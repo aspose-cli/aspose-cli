@@ -20,7 +20,7 @@ Commands:
   inspect <file>          Show structure and metadata of a workbook.
   query                   Read bounded workbook data without mutating the source file.
   create <file>           Create a new workbook.
-  edit <file>             Apply a batch of edit ops atomically. Editable outputs: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml.
+  edit <file>             Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.
   compare <left> <right>  Compare stored workbook values and optional formula text; dates use raw serial numbers.
   convert <file>          Convert a workbook to another format.
   render <file>           Render a sheet, a range, or every visible sheet to images.
@@ -79,7 +79,7 @@ Arguments:
   <file>  Workbook to convert.
 
 Options:
-  --to <to> (REQUIRED)                        Target format: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md. Values: csv, html, json, md, mhtml, ods, pdf, tsv, xls, xlsb, xlsm, xlsx, xps.
+  --to <to> (REQUIRED)                        Target format: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml, pdf, xps, json, md. Values: csv, html, json, md, mhtml, ods, pdf, tsv, xls, xlsb, xlsm, xlsx, xltm, xltx, xps.
   --sheet <sheet>                             Convert only this sheet (supported for csv, tsv, md, pdf).
   --encoding <encoding>                       Text encoding of a CSV or TSV input, such as gb18030, big5, shift_jis or windows-1252. Default: its byte order mark, else UTF-8 (other bytes are refused).
   --culture <culture>                         Culture whose number and date formats a CSV or TSV input uses, such as de-DE for '1.234,56'. Default: invariant formats (a decimal comma is refused).
@@ -142,7 +142,7 @@ Examples:
 
 ## aspose-cli cells edit --help
 Description:
-  Apply a batch of edit ops atomically. Editable outputs: xlsx, xlsm, xlsb, xls, ods, csv, tsv, html, mhtml.
+  Apply a batch of edit ops atomically. Editable outputs: xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.
 
 Usage:
   aspose-cli cells edit <file> [options]
