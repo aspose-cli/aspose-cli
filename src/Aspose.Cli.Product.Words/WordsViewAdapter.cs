@@ -64,9 +64,9 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
         if (info.Document.RevisionsPresent)
         {
             findings.Add(WordsReviewChecks.RevisionsPresent.Finding(
-                "Tracked revisions are present and must not be accepted as a visual-only repair.",
+                $"The document contains {info.Document.RevisionCount} tracked revision(s), which must not be accepted as a visual-only repair.",
                 "document",
-                RepairHint));
+                "Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides."));
         }
 
         if (layout.EvaluationMarks > 0)

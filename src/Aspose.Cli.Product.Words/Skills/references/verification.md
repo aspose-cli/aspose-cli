@@ -59,7 +59,8 @@ checks are listed with `aspose-cli capabilities words --output json` under
   ([editing](editing.md)).
 - `WORDS_OBJECT_OUTSIDE_PAGE`: a floating image or shape crosses the page edge.
 - `WORDS_REVISIONS_PRESENT` (info): tracked revisions are shown; never accept
-  them as a visual repair.
+  them as a visual repair. Disclose them, and accept or reject them only as
+  the user decides.
 - `WORDS_EVALUATION_MARKS`: a run without a license saved its banner, footer
   sentence and watermark into the file, and a license does not remove them;
   regenerate the document from its original inputs with the license before

@@ -129,6 +129,9 @@ public sealed class WordsCliTests : IDisposable
             .ToArray();
         Assert.Equal(["page-0001.png"], Evidence("WORDS_TEXT_TOO_SMALL"));
         Assert.Equal(["page-0001.png", "page-0002.png"], Evidence("WORDS_REVISIONS_PRESENT"));
+        Assert.Equal(
+            "Disclose the revisions; accept or reject them with accept_revisions or reject_revisions only when the user decides.",
+            findings.Single(static finding => finding!["code"]!.GetValue<string>() == "WORDS_REVISIONS_PRESENT")!["hint"]!.GetValue<string>());
 
         CliResult filtered = _workspace.Run(
             "review", "findings.docx", "--out", "filtered", "--code", "WORDS_TEXT_TOO_SMALL", "--output", "json");
