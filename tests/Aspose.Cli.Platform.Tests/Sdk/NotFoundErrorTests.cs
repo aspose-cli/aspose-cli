@@ -31,6 +31,15 @@ public sealed class NotFoundErrorTests
     public void Closest_PrefersTheContainedNameThatEndsACompoundFieldName(string requested, string[] expected) =>
         Assert.Equal(expected, NameSuggestions.Closest(requested, ["font", "name", "size", "color", "border", "bold"], fieldNames: true));
 
+    [Theory]
+    [InlineData("subtitle", new[] { "title", "body" }, new string[0])]
+    [InlineData("Sub title", new[] { "title" }, new[] { "title" })]
+    [InlineData("Quarter", new[] { "Quarterly report" }, new[] { "Quarterly report" })]
+    [InlineData("销售额汇总表", new[] { "销售额", "利润表" }, new[] { "销售额" })]
+    public void Closest_SuggestsANameInsideTheRequestOnlyWhenItIsAWholeWordOfIt(
+        string requested, string[] candidates, string[] expected) =>
+        Assert.Equal(expected, NameSuggestions.Closest(requested, candidates));
+
     [Fact]
     public void Closest_KeepsTheOrderOfContainingNamesOtherThanFieldNames() =>
         Assert.Equal(["Sales 2026", "Old Sales"], NameSuggestions.Closest("Sales", ["Sales 2026", "Old Sales"]));

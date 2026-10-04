@@ -3,8 +3,8 @@ namespace Aspose.Cli.Sdk.Text;
 /// <summary>
 /// Ranks the existing names closest to a name that was not found, so a caller can correct a
 /// typo or a casing slip in one step. Ranking is deterministic: a match that ignores case and
-/// surrounding white space comes first, then names that contain the request or are contained
-/// in it (for field names, those ending the other first), then names within a small edit
+/// surrounding white space comes first, then names that contain the request or are a whole
+/// word of it (for field names, those ending the other first), then names within a small edit
 /// distance; ties keep the candidates' order.
 /// </summary>
 public static class NameSuggestions
@@ -31,6 +31,7 @@ public static class NameSuggestions
         ArgumentNullException.ThrowIfNull(requested);
         ArgumentNullException.ThrowIfNull(candidates);
 
+        string trimmed = requested.Trim();
         string wanted = Normalize(requested);
         if (wanted.Length == 0)
         {
@@ -50,7 +51,7 @@ public static class NameSuggestions
 
             string name = Normalize(candidate);
             int? rank = name == wanted ? 0
-                : Overlaps(wanted, name) ? (fieldNames && !EndsWithEither(wanted, name) ? 2 : 1)
+                : Overlaps(trimmed, candidate.Trim()) ? (fieldNames && !EndsWithEither(wanted, name) ? 2 : 1)
                 : Distance(wanted, name, allowedDistance) is int distance ? 2 + distance
                 : null;
             if (rank is int value)
@@ -71,10 +72,43 @@ public static class NameSuggestions
 
     private static string Normalize(string value) => value.Trim().ToUpperInvariant();
 
-    // One name contains the other, so a request such as "Sales" finds "Sales 2026".
-    private static bool Overlaps(string left, string right) =>
-        Math.Min(left.Length, right.Length) >= MinimumOverlap
-        && (left.Contains(right, StringComparison.Ordinal) || right.Contains(left, StringComparison.Ordinal));
+    // The name contains the request, so a request such as "Sales" finds "Sales 2026", or it is a
+    // whole word of the request: "fontSize" holds the field "size", but "subtitle" is another
+    // word than "title".
+    private static bool Overlaps(string requested, string name)
+    {
+        if (Math.Min(requested.Length, name.Length) < MinimumOverlap)
+        {
+            return false;
+        }
+
+        if (name.Contains(requested, StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        for (int start = requested.IndexOf(name, StringComparison.OrdinalIgnoreCase);
+            start >= 0;
+            start = requested.IndexOf(name, start + 1, StringComparison.OrdinalIgnoreCase))
+        {
+            if (IsWordBoundary(requested, start) && IsWordBoundary(requested, start + name.Length))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    // A word starts or ends at either end of the text, next to a character that is not a cased
+    // letter, and where a lower-case letter meets an upper-case one, as in "fontSize". Scripts
+    // without case, such as Chinese, mark no word edges, so any character may start a word.
+    private static bool IsWordBoundary(string text, int index) =>
+        index == 0 || index == text.Length
+        || !IsCased(text[index - 1]) || !IsCased(text[index])
+        || (char.IsLower(text[index - 1]) && char.IsUpper(text[index]));
+
+    private static bool IsCased(char value) => char.IsLower(value) || char.IsUpper(value);
 
     // The last word of a compound field name says what it is: "fontSize" is a size, not a font.
     private static bool EndsWithEither(string left, string right) =>
