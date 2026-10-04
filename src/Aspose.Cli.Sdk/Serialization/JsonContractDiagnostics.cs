@@ -14,7 +14,8 @@ internal static class JsonContractDiagnostics
     /// <summary>
     /// Returns the first field that does not fit the contract, or a reason that names the
     /// serializer's failure path when the value's shape is correct. The exception's message is
-    /// the reason; an unknown field is an <see cref="UnknownFieldException"/>.
+    /// the reason; an unknown field, or another kind of value where an object belongs, is an
+    /// <see cref="AllowedFieldsException"/> that names the fields the object accepts.
     /// </summary>
     /// <param name="value">The rejected JSON value.</param>
     /// <param name="type">The contract type the value was read as.</param>
@@ -62,7 +63,9 @@ internal static class JsonContractDiagnostics
     {
         if (value.ValueKind != JsonValueKind.Object)
         {
-            return Expected(path, "an object");
+            return path.Length == 0 || info.Properties.Count == 0
+                ? Expected(path, "an object")
+                : AllowedFieldsException.NotAnObject(path, [.. info.Properties.Select(static property => property.Name)]);
         }
 
         StringComparer names = options.PropertyNameCaseInsensitive ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal;
@@ -177,14 +180,14 @@ internal static class JsonContractDiagnostics
     }
 
     /// <summary>Rejects a member the object's contract does not declare.</summary>
-    private static UnknownFieldException UnknownField(
+    private static AllowedFieldsException UnknownField(
         JsonElement value, JsonTypeInfo info, StringComparer names, string path, string name)
     {
         string[] allowed = [.. info.Properties.Select(static property => property.Name)];
         string[] missing = [.. info.Properties
             .Where(property => property.IsRequired && !Declares(value, property.Name, names))
             .Select(static property => property.Name)];
-        return UnknownFieldException.For(path, name, path.Length == 0 ? "the document" : path, allowed, missing);
+        return AllowedFieldsException.UnknownField(path, name, path.Length == 0 ? "the document" : path, allowed, missing);
     }
 
     private static bool Declares(JsonElement value, string name, StringComparer names) =>

@@ -53,6 +53,23 @@ public sealed class BoundedOperationPipelineTests
     }
 
     [Theory]
+    [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":"bold"}]}""",
+        "style must be an object with the fields: font, size, bold", "font,size,bold")]
+    [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"box":[2]}]}""",
+        "box must be an object with the fields: width", "width")]
+    public void Parse_NamesTheFieldsOfAnObjectGivenAnotherKindOfValue(string document, string reason, string allowed)
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(document, TestContracts.Json));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Equal("place", error.Details["op"]!.GetValue<string>());
+        Assert.Equal(reason, error.Details["reason"]!.GetValue<string>());
+        Assert.Equal(allowed.Split(','), error.Details["allowedFields"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Null(error.Details["suggestion"]);
+    }
+
+    [Theory]
     [InlineData("""{"ops":[{"op":"set","value":1}],"extra":1}""",
         "unknown field 'extra'; the document accepts: schema, schemaVersion, ifMatch, ops", null)]
     [InlineData("""{"op":[{"op":"set","value":1}]}""",

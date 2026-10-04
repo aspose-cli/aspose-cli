@@ -12,22 +12,22 @@ namespace Aspose.Cli.Sdk.Operations;
 internal static class OperationErrors
 {
     /// <summary>
-    /// Rejects the document as a whole. An unknown field adds <c>allowedFields</c> and, when one
-    /// is likely meant, <c>suggestion</c>.
+    /// Rejects the document as a whole. An unknown field, or another kind of value where an
+    /// object belongs, adds <c>allowedFields</c> and, when one is likely meant, <c>suggestion</c>.
     /// </summary>
-    internal static CliException Invalid(string reason, string hint, UnknownFieldException? field = null)
+    internal static CliException Invalid(string reason, string hint, AllowedFieldsException? field = null)
     {
         var details = new JsonObject { ["reason"] = reason };
-        AddUnknownField(details, field);
+        AddAllowedFields(details, field);
         return new CliException(ErrorCodes.OpsInvalid, $"The operation document is invalid: {reason}", hint: hint, details: details);
     }
 
     /// <summary>
     /// Rejects one operation; <paramref name="name"/> is null when the entry names no known
-    /// operation. An unknown field adds details as <see cref="Invalid"/> does.
+    /// operation. An unknown or mistyped field adds details as <see cref="Invalid"/> does.
     /// </summary>
     internal static CliException InvalidAt(
-        int index, string? name, string reason, string hint, ErrorCode? cause = null, UnknownFieldException? field = null)
+        int index, string? name, string reason, string hint, ErrorCode? cause = null, AllowedFieldsException? field = null)
     {
         var details = new JsonObject { ["index"] = index };
         if (name is not null)
@@ -39,12 +39,12 @@ internal static class OperationErrors
         {
             details["cause"] = cause.Name;
         }
-        AddUnknownField(details, field);
+        AddAllowedFields(details, field);
         string subject = name is null ? $"Operation {index}" : $"Operation {index} ({name})";
         return new CliException(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}", hint: hint, details: details);
     }
 
-    private static void AddUnknownField(JsonObject details, UnknownFieldException? field)
+    private static void AddAllowedFields(JsonObject details, AllowedFieldsException? field)
     {
         if (field is null)
         {

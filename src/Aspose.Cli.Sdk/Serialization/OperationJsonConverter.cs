@@ -64,10 +64,10 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         catch (JsonException rejection)
         {
             // The serializer's own text names CLR types; restate the failure in wire terms.
-            // A fresh exception has no path, so the enclosing read records the op's position.
+            // The explanation is a fresh exception without a path, so the enclosing read
+            // records the op's position, and it keeps the fields an object accepts.
             using JsonDocument rejected = JsonDocument.Parse(fields);
-            throw new JsonException(
-                JsonContractDiagnostics.Explain(rejected.RootElement, record.Type, strict, rejection.Path).Message, rejection);
+            throw JsonContractDiagnostics.Explain(rejected.RootElement, record.Type, strict, rejection.Path);
         }
     }
 
@@ -163,7 +163,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
     }
 
     /// <summary>Rejects a member the record does not declare; an operation also accepts <c>op</c> and <c>id</c>.</summary>
-    private static UnknownFieldException UnknownField(
+    private static AllowedFieldsException UnknownField(
         JsonElement value, OperationRecord record, string path, string name, bool isOperation)
     {
         string[] allowed = [.. isOperation ? ["op", "id"] : Array.Empty<string>(),
@@ -171,7 +171,7 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         string[] missing = [.. record.Properties
             .Where(property => property.Required && !value.TryGetProperty(property.Name, out _))
             .Select(static property => property.Name)];
-        return UnknownFieldException.For(path, name, isOperation ? record.Name : path, allowed, missing);
+        return AllowedFieldsException.UnknownField(path, name, isOperation ? record.Name : path, allowed, missing);
     }
 
     private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)

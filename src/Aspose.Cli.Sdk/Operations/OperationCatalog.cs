@@ -224,11 +224,11 @@ public sealed class OperationCatalog<TOp>
         if (OperationIndex(rejection?.Path) is { } index)
         {
             return OperationErrors.InvalidAt(
-                index, KnownNameAt(root, index), rejection!.Message, DefaultHint, field: rejection as UnknownFieldException);
+                index, KnownNameAt(root, index), rejection!.Message, DefaultHint, field: rejection as AllowedFieldsException);
         }
 
         JsonException reason = JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path);
-        return OperationErrors.Invalid(reason.Message, DefaultHint, reason as UnknownFieldException);
+        return OperationErrors.Invalid(reason.Message, DefaultHint, reason as AllowedFieldsException);
     }
 
     private static int? OperationIndex(string? path)
