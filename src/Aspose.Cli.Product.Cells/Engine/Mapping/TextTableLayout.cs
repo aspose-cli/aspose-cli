@@ -117,6 +117,7 @@ internal static class TextTableLayout
             header = narrower;
         }
 
+        header = SkipPreambleBlocks(head, filled, header, width);
         int lastRow = filled[^1].Row;
         var findings = new List<TextTableFinding>();
         if (header.Row > 0 && header.Row <= MaxPreambleRows && lastRow > header.Row)
@@ -148,6 +149,41 @@ internal static class TextTableLayout
         }
 
         return findings;
+    }
+
+    /// <summary>
+    /// Moves the header past the blocks of notes an export writes before its table, such as an
+    /// "export time, query" row of several values: a block that ends in an empty row is notes when
+    /// the first row after the empty rows is wider than every row of the block, wide enough for a
+    /// header, and holds no number, as a header does. A block of data rows split by an empty row
+    /// fails the test, because its rows are as wide as the rows after it or hold numbers.
+    /// </summary>
+    private static TextRowShape SkipPreambleBlocks(
+        IReadOnlyList<TextRowShape> head, TextRowShape[] filled, TextRowShape header, int width)
+    {
+        while (header.Row <= MaxPreambleRows)
+        {
+            int blockEnd = header.Row;
+            while (blockEnd + 1 < head.Count && head[blockEnd + 1].Filled > 0)
+            {
+                blockEnd++;
+            }
+
+            int blockWidth = filled.Where(shape => shape.Row >= header.Row && shape.Row <= blockEnd).Max(static shape => shape.Filled);
+            if (blockEnd + 1 >= head.Count
+                || filled.FirstOrDefault(shape => shape.Row > blockEnd) is not { Filled: > 0 } next
+                || next.Row > MaxPreambleRows
+                || next.NumberColumn is not null
+                || next.Filled <= blockWidth
+                || next.Filled * 2 <= width)
+            {
+                return header;
+            }
+
+            header = next;
+        }
+
+        return header;
     }
 
     internal static bool IsTotalLabel(string? text)

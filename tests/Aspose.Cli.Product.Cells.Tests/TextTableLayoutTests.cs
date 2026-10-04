@@ -24,6 +24,33 @@ public sealed class TextTableLayoutTests : IDisposable
         Assert.Equal([0, 1], finding.Rows);
     }
 
+    [Theory]
+    [InlineData(3)]
+    [InlineData(8)]
+    public void Detect_FindsTheHeaderAfterAnExportRowOfSeveralValuesAndAnEmptyRow(int width)
+    {
+        // An ERP export: a title, an "export time, query" row of two values, an empty row, then the header.
+        TextTableFinding finding = Assert.Single(TextTableLayout.Detect(
+            Shapes((1, "标题 Title"), (2, "导出时间: 2026-10-02"), (0, null), (width, "编码"), (width, "A1"), (width, "A2")), []));
+
+        Assert.Equal(TextTableFindingKind.Preamble, finding.Kind);
+        Assert.Equal(3, finding.HeaderRow);
+        Assert.Equal([0, 1, 2], finding.Rows);
+    }
+
+    [Fact]
+    public void Detect_KeepsAHeaderWhoseBlockAfterAnEmptyRowStartsWithNumbers()
+    {
+        TextTableFinding finding = Assert.Single(TextTableLayout.Detect(
+        [
+            new TextRowShape(0, 2, "Name"), new TextRowShape(1, 2, "Ann", 1), new TextRowShape(2, 0, null),
+            new TextRowShape(3, 3, "Bob", 1), new TextRowShape(4, 3, "Eve", 1),
+        ], []));
+
+        Assert.Equal(TextTableFindingKind.BlankRows, finding.Kind);
+        Assert.Equal(0, finding.HeaderRow);
+    }
+
     [Fact]
     public void Detect_ListsEmptyRowsInsideTheTableButNotAfterIt()
     {
@@ -145,6 +172,23 @@ public sealed class TextTableLayoutTests : IDisposable
         JsonNode header = _workspace.Run(
             "cells", "query", "range", "erp.xlsx", "--sheet", "erp", "--range", "A3:D3", "--output", "json").Json();
         Assert.Equal("日期", header["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Convert_FindsTheHeaderAfterAnExportTimeRowAndAnEmptyRow()
+    {
+        File.WriteAllText(_workspace.File("preamble.csv"),
+            "标题 Title,,\n导出时间: 2026-10-02,条件: 全部,\n,,\n编码,名称,数量\nA1,螺栓,\"1,200\"\nA2,垫片,300\n",
+            new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
+        JsonNode[] warnings = LayoutWarnings(_workspace.Run(
+            "cells", "convert", "preamble.csv", "--to", "xlsx", "--out", "preamble.xlsx", "--output", "json").Json());
+
+        // The empty row lies before the header, so it is part of the preamble, not of the table.
+        JsonNode warning = Assert.Single(warnings);
+        Assert.Contains("header is probably row 4; rows 1-3", Text(warning, "message"), StringComparison.Ordinal);
+        Assert.Contains("--range A4:C4' and start data ranges, formulas and sorts at row 5", Text(warning, "hint"), StringComparison.Ordinal);
+        Assert.Equal("1:3", Text(warning, "location"));
     }
 
     [Fact]
