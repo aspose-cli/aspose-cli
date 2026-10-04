@@ -51,7 +51,7 @@ Arguments:
 Options:
   --to <to> (REQUIRED)                        Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions. Values: gif, html, html5, jpeg, md, odp, pdf, png, ppt, pptm, pptx, svg, tiff, xps.
   --slides <slides>                           Optional 1-based slide range.
-  -o, --out <out>                             Output path; defaults to a sibling using the target extension.
+  -o, --out <out>                             Output path; defaults to a sibling using the target extension; multi-slide image output adds .sN before the extension.
   --overwrite                                 Replace the output file if it already exists.
   --password <password>                       Password for the presentation. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the presentation.

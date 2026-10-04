@@ -69,6 +69,24 @@ public sealed class SlidesRasterConversionTests
         Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "oversized.s*"));
     }
 
+    [Fact]
+    public void ConvertImages_RefusesAnOutputWithoutAnExtensionToNumberSlidesBefore()
+    {
+        // An --out such as deliver\png reads as a folder, yet would yield png.s1, png.s2 beside it.
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 2);
+        string output = fixture.File("png");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(input, new PresentationConvertRequest
+        {
+            TargetFormatId = "png",
+            OutputPath = output,
+        }));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Empty(Directory.GetFiles(fixture.Temp.Path, "png*"));
+    }
+
     [Theory]
     [InlineData("png", false)]
     [InlineData("jpeg", false)]

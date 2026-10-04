@@ -17,7 +17,7 @@ internal static class ConvertCommand
             new CommandTraits
             {
                 Input = SlidesCommands.Presentation,
-                Output = OutputTarget.File("Output path; defaults to a sibling using the target extension."),
+                Output = OutputTarget.File("Output path; defaults to a sibling using the target extension; multi-slide image output adds .sN before the extension."),
                 Encrypt = SlidesCommands.EncryptedPresentation,
                 UsesFonts = true,
                 Target = TargetFormat.Convert("Target presentation export format. PNG and JPEG use 192 DPI; use slides render for custom dimensions.", SlidesFormats.Definitions),

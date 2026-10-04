@@ -5365,7 +5365,7 @@
               "secret": false,
               "valueSource": "command-line",
               "inputKind": "none",
-              "description": "Output path; defaults to a sibling using the target extension."
+              "description": "Output path; defaults to a sibling using the target extension; multi-slide image output adds .sN before the extension."
             },
             {
               "name": "--overwrite",
@@ -14942,7 +14942,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "Output path; defaults to a sibling using the target extension."
+          "description": "Output path; defaults to a sibling using the target extension; multi-slide image output adds .sN before the extension."
         },
         {
           "name": "--overwrite",
