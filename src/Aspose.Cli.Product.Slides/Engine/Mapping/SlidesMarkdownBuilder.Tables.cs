@@ -137,25 +137,34 @@ internal static partial class SlidesMarkdownBuilder
         };
 
     /// <summary>
-    /// Places the table in the first content placeholder that holds no text, full width at
-    /// its top, and reports a table that ends below that area.
+    /// Places the table across the width of the content placeholder, under the body text when
+    /// the slide has some, gives each column the width its content needs, and reports a table
+    /// that ends below that area.
     /// </summary>
-    private static Warning? AddTable(ISlide slide, int number, MarkdownTable source, IAutoShape[] content, bool besideText)
+    private static Warning? AddTable(ISlide slide, int number, MarkdownTable source, IAutoShape[] content, IAutoShape? body)
     {
-        IAutoShape? frame = content.FirstOrDefault(static shape => string.IsNullOrEmpty(shape.TextFrame?.Text));
-        RectangleF box = frame is null
-            ? SlidesAuthoring.Canvas(
-                slide,
-                besideText ? new RectangleF(0.55f, 0.25f, 0.38f, 0.62f) : new RectangleF(0.07f, 0.25f, 0.86f, 0.65f))
+        IAutoShape? frame = body ?? content.FirstOrDefault(static shape => string.IsNullOrEmpty(shape.TextFrame?.Text));
+        RectangleF area = frame is null
+            ? SlidesAuthoring.Canvas(slide, new RectangleF(0.07f, 0.25f, 0.86f, 0.65f))
             : new RectangleF(frame.X, frame.Y, frame.Width, frame.Height);
+        if (body is not null)
+        {
+            // The body keeps the height its text needs; the table takes the rest of the area.
+            body.Height = Math.Min(TextHeight(body), area.Height);
+        }
+
+        float top = body is null ? area.Y : body.Y + body.Height;
+        var box = new RectangleF(area.X, top, area.Width, area.Bottom - top);
         int rows = source.Rows.Count;
         int columns = source.Alignments.Count;
+
+        // Every column starts as wide as the area, so each cell's text lies on one line.
         ITable table = SlidesAuthoring.AddTable(
             slide,
             box.X,
             box.Y,
-            box.Width,
-            Math.Min(box.Height, rows * DefaultRowHeight),
+            box.Width * columns,
+            Math.Max(rows, Math.Min(box.Height, rows * DefaultRowHeight)),
             rows,
             columns);
         table.Name = "Table";
@@ -172,9 +181,14 @@ internal static partial class SlidesMarkdownBuilder
             }
         }
 
-        if (frame is not null)
+        float[] widths = ColumnWidths(
+            Enumerable.Range(0, columns)
+                .Select(column => Enumerable.Range(0, rows).Max(row => ContentWidth(table[column, row])))
+                .ToArray(),
+            box.Width);
+        for (int column = 0; column < columns; column++)
         {
-            slide.Shapes.Remove(frame);
+            table.Columns[column].Width = widths[column];
         }
 
         // Rows grow with their text at the table style's font size, so the laid-out height
@@ -190,6 +204,43 @@ internal static partial class SlidesMarkdownBuilder
                 Hint = "Split the table across slides under the same heading or shorten its cells, then review the slide.",
                 Location = string.Create(CultureInfo.InvariantCulture, $"slide {number}"),
             };
+    }
+
+    /// <summary>
+    /// Shares the width among columns: narrowest first, each column takes the width its content
+    /// needs up to an equal share of what is left, so a wide column cannot squeeze a short label
+    /// onto two lines. Width left over is spread in proportion.
+    /// </summary>
+    private static float[] ColumnWidths(float[] needed, float total)
+    {
+        var widths = new float[needed.Length];
+        float left = total;
+        int open = needed.Length;
+        foreach (int column in Enumerable.Range(0, needed.Length).OrderBy(column => needed[column]))
+        {
+            widths[column] = Math.Min(needed[column], left / open--);
+            left -= widths[column];
+        }
+
+        float used = widths.Sum();
+        return widths.Select(width => width * total / used).ToArray();
+    }
+
+    /// <summary>
+    /// The width a cell's text needs on one line, with the cell's insets and a point to spare,
+    /// since a column exactly as wide as its text can still wrap it.
+    /// </summary>
+    private static float ContentWidth(ICell cell) =>
+        cell.TextFrame.Paragraphs.Max(static paragraph => paragraph.GetRect().Width)
+        + (float)(cell.MarginLeft + cell.MarginRight) + 1;
+
+    /// <summary>The height a shape's laid-out text needs, with the shape's insets.</summary>
+    private static float TextHeight(IAutoShape shape)
+    {
+        RectangleF[] lines = shape.TextFrame.Paragraphs.Select(static paragraph => paragraph.GetRect()).ToArray();
+        ITextFrameFormatEffectiveData format = shape.TextFrame.TextFrameFormat.GetEffective();
+        return lines.Max(static line => line.Bottom) - lines.Min(static line => line.Top)
+            + (float)(format.MarginTop + format.MarginBottom);
     }
 
     // |---|:--:|--:| with optional outer pipes.

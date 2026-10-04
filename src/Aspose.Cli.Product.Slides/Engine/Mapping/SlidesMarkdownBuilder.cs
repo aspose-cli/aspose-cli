@@ -42,9 +42,10 @@ internal static partial class SlidesMarkdownBuilder
 
             // Pictures and tables take content placeholders; Parse keeps them off title slides.
             IAutoShape[] content = SlidesPlaceholders.Content(slide);
+            IAutoShape? body = null;
             if (item.Blocks.Count > 0)
             {
-                IAutoShape body = SlidesAuthoring.Body(slide, includeSubtitle: item.TitleSlide);
+                body = SlidesAuthoring.Body(slide, includeSubtitle: item.TitleSlide);
                 body.Name = SlidesAuthoring.BodyName;
                 SlidesAuthoring.WriteParagraphs(body.TextFrame, item.Blocks);
                 body.TextFrame.TextFrameFormat.AutofitType = TextAutofitType.Normal;
@@ -56,7 +57,7 @@ internal static partial class SlidesMarkdownBuilder
             }
 
             if (item.Table is not null
-                && AddTable(slide, presentation.Slides.Count, item.Table, content, besideText: item.Blocks.Count > 0) is { } overflow)
+                && AddTable(slide, presentation.Slides.Count, item.Table, content, body) is { } overflow)
             {
                 warnings.Add(overflow);
             }
@@ -250,7 +251,7 @@ internal static partial class SlidesMarkdownBuilder
         SlideLayoutType type = item switch
         {
             { TitleSlide: true } => SlideLayoutType.Title,
-            { HasObject: true, Blocks.Count: > 0 } => SlideLayoutType.TwoObjects,
+            { Image: not null, Blocks.Count: > 0 } => SlideLayoutType.TwoObjects,
             { HasObject: false, Blocks.Count: 0 } => SlideLayoutType.TitleOnly,
             _ => SlideLayoutType.TitleAndObject,
         };

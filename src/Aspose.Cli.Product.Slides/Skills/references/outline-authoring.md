@@ -47,9 +47,12 @@ Deals by stage
 | **Won** | A\|B | 12 |
 ```
 
-- The table fills the width of the free content placeholder, top-aligned. Text
-  before or after it on the slide goes to the body, and the slide uses Two
-  Content (text first, table second) as it does for a picture.
+- The table spans the width of the content placeholder, top-aligned. Text
+  before or after it on the slide goes to the body, which keeps only the height
+  its text needs, with the table below it. Each column is as wide as its content
+  needs, so short labels and numbers stay on one line, and the widest columns
+  share what is left. For another arrangement, such as text beside the table,
+  move the body and the table afterwards with `set_shape_bounds`.
 - A slide holds one picture or table. A further table, or a picture after a
   table, starts a continuation slide with the same title, which also takes the
   content that follows. A title slide's subtitle holds text only, so a table or

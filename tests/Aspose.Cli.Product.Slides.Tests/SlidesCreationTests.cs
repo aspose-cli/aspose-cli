@@ -203,7 +203,7 @@ public sealed class SlidesCreationTests
 
         Assert.DoesNotContain(result.Warnings ?? [], static warning => warning.Code == SlidesDiagnostics.TableOverflow);
         using var deck = new Presentation(output);
-        Assert.Equal(["Title and Content", "Two Content"], deck.Slides.Select(static slide => slide.LayoutSlide.Name));
+        Assert.Equal(["Title and Content", "Title and Content"], deck.Slides.Select(static slide => slide.LayoutSlide.Name));
 
         ITable table = Assert.Single(deck.Slides[0].Shapes.OfType<ITable>());
         IShape area = deck.Slides[0].LayoutSlide.Shapes.Single(static shape => shape.Placeholder?.Type == PlaceholderType.Object);
@@ -221,14 +221,51 @@ public sealed class SlidesCreationTests
         });
         Assert.DoesNotContain(deck.Slides[0].Shapes, static shape => shape.Placeholder?.Type == PlaceholderType.Object);
 
-        // With body text the table takes the second content placeholder.
+        // Body text sits above the table, which still spans the content area.
         ISlide mixed = deck.Slides[1];
         IAutoShape text = mixed.Shapes.OfType<IAutoShape>().Single(static shape => shape.Name == "Body");
         Assert.Single(text.TextFrame.Paragraphs);
         ITable shares = Assert.Single(mixed.Shapes.OfType<ITable>());
         Assert.Equal(TextAlignment.NotDefined, shares[0, 1].TextFrame.Paragraphs[0].ParagraphFormat.Alignment);
         Assert.Equal(TextAlignment.Center, shares[1, 1].TextFrame.Paragraphs[0].ParagraphFormat.Alignment);
-        Assert.True(shares.X >= text.X + text.Width);
+        Assert.Equal((area.X, area.Y), (text.X, text.Y));
+        Assert.InRange(text.Height, 1, 80);
+        Assert.Equal(text.Y + text.Height, shares.Y, 0.5f);
+        Assert.Equal(area.X, shares.X, 0.5f);
+        Assert.Equal(area.Width, shares.Width, 0.5f);
+    }
+
+    [Fact]
+    public void Markdown_TableColumnsFollowTheirContent()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("columns.md");
+        File.WriteAllText(
+            markdown,
+            """
+            ## 分产品线营收
+            各产品线 Q3 营收（万元）
+            | 产品线 | 说明 | Q3 |
+            |:--|:--|--:|
+            | 软件授权 | 年度订阅与永久授权，包含续约客户和新签客户的全部许可收入，以及渠道伙伴代理销售的授权 | 1,410 |
+            | 实施服务 | 项目交付 | 930 |
+            """);
+        string output = fixture.File("columns.pptx");
+
+        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = output });
+
+        using var deck = new Presentation(output);
+        ITable table = Assert.Single(deck.Slides[0].Shapes.OfType<ITable>());
+        // Short labels and numbers keep one line; the long description takes the spare width
+        // and wraps. Lines are compared by height, since cells do not count their lines.
+        float line = table[1, 0].TextFrame.Paragraphs[0].GetRect().Height;
+        Assert.All(Enumerable.Range(0, 3), row =>
+        {
+            Assert.Equal(line, table[0, row].TextFrame.Paragraphs[0].GetRect().Height, 1f);
+            Assert.Equal(line, table[2, row].TextFrame.Paragraphs[0].GetRect().Height, 1f);
+        });
+        Assert.True(table[1, 1].TextFrame.Paragraphs[0].GetRect().Height > 1.5 * line);
+        Assert.True(table.Columns[1].Width > table.Columns[0].Width + table.Columns[2].Width);
     }
 
     [Fact]
