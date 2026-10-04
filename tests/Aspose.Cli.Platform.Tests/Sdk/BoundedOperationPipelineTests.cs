@@ -117,6 +117,20 @@ public sealed class BoundedOperationPipelineTests
     }
 
     [Theory]
+    [InlineData("""{"op":"stamp","text":"DRAFT"}""", "stamp_text")]
+    [InlineData("""{"op":"stamp","image":"seal.png","id":"a"}""", "stamp_image")]
+    [InlineData("""{"op":"stamp"}""", "stamp_image")]
+    [InlineData("""{"op":"stamp","colour":"red"}""", "stamp_image")]
+    public void Parse_SuggestsTheClosestOperationThatAcceptsTheGivenFields(string operation, string suggestion)
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
+            $$"""{"ops":[{{operation}}]}""", TestContracts.Json));
+
+        Assert.Equal(suggestion, error.Details!["suggestion"]?.GetValue<string>());
+        Assert.EndsWith($"(did you mean '{suggestion}'?)", error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Theory]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":"bold"}]}""",
         "style must be an object with the fields: font, size, bold", "font,size,bold")]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"box":[2]}]}""",

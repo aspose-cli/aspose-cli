@@ -177,8 +177,24 @@ public sealed class OperationCatalog<TOp>
         return (TBatch)((BoundedOperationEnvelope<TOp>)batch with { SchemaVersion = 2, Ops = validated });
     }
 
-    /// <summary>The operation most likely meant by a name the vocabulary does not declare, or null.</summary>
-    internal string? Closest(string name) => NameSuggestions.Closest(name, Names).FirstOrDefault();
+    /// <summary>
+    /// The operation most likely meant by an entry whose op name the vocabulary does not declare,
+    /// or null: among the names closest to it, the first whose operation accepts every field the
+    /// entry gives, else the closest name. A name alone cannot tell <c>add_watermark</c> with a
+    /// text field from one with an image; the fields the caller wrote can.
+    /// </summary>
+    /// <param name="name">The unknown op name.</param>
+    /// <param name="entry">The entry that names it.</param>
+    internal string? Closest(string name, JsonElement entry)
+    {
+        IReadOnlyList<string> closest = NameSuggestions.Closest(name, Names);
+        string[] given = entry.ValueKind == JsonValueKind.Object
+            ? [.. entry.EnumerateObject().Select(static field => field.Name).Where(static field => field is not ("op" or "id"))]
+            : [];
+        return closest.FirstOrDefault(candidate => given.All(field =>
+                _byName[candidate].Record.Properties.Any(property => property.Name == field)))
+            ?? closest.FirstOrDefault();
+    }
 
     /// <summary>
     /// Checks one operation against its declared constraints, then its own
@@ -314,7 +330,7 @@ public sealed class OperationCatalog<TOp>
     /// </summary>
     private CliException InvalidAt(JsonElement root, int index, JsonException failure) =>
         NameAt(root, index) is { } name && !_byName.ContainsKey(name)
-            ? OperationErrors.UnknownAt(index, failure.Message, DefaultHint, Names, Closest(name))
+            ? OperationErrors.UnknownAt(index, failure.Message, DefaultHint, Names, Closest(name, root.GetProperty("ops")[index]))
             : OperationErrors.InvalidAt(
                 index, KnownNameAt(root, index), failure.Message, DefaultHint, field: failure as AllowedFieldsException);
 

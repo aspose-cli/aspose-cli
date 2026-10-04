@@ -124,6 +124,18 @@ public sealed record SecretOp : TestOp
     [SecretEnv] public string? PasswordEnv { get; init; }
 }
 
+[Operation("stamp_image")]
+public sealed record StampImageOp : TestOp
+{
+    [MinLength(1)] public required string Image { get; init; }
+}
+
+[Operation("stamp_text")]
+public sealed record StampTextOp : TestOp
+{
+    [MinLength(1)] public required string Text { get; init; }
+}
+
 /// <summary>Reads a mode whose converter cannot read the value "unsupported".</summary>
 [Operation("probe")]
 public sealed record ProbeOp : TestOp
@@ -154,6 +166,8 @@ public sealed record TestBatch : BoundedOperationEnvelope<TestOp>;
 [JsonSerializable(typeof(SecretOp))]
 [JsonSerializable(typeof(SetOp))]
 [JsonSerializable(typeof(ShiftOp))]
+[JsonSerializable(typeof(StampImageOp))]
+[JsonSerializable(typeof(StampTextOp))]
 public sealed partial class TestOpsJsonContext : JsonSerializerContext;
 
 public static class TestContracts
