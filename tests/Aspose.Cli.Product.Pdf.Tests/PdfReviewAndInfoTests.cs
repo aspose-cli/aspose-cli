@@ -99,18 +99,26 @@ public sealed class PdfReviewAndInfoTests
             .Single(static metric => metric!["name"]!.GetValue<string>() == "scannedPages")!["value"]!.GetValue<int>());
     }
 
-    [Fact]
-    public void Review_FlagsTheEvaluationWatermarkSavedIntoTheFile()
+    /// <summary>
+    /// The sentence an unlicensed save stamps on every page, as a later licensed run reads it,
+    /// on one line or wrapped onto several, as Aspose.Words wraps its footer in a wide font.
+    /// </summary>
+    [Theory]
+    [InlineData("Evaluation Only. Created with Aspose.PDF. Copyright 2002-2026 Aspose Pty Ltd.")]
+    [InlineData("Evaluation Only. Created with Aspose.Words. Copyright 2003-2026 Aspose Pty", "Ltd.")]
+    [InlineData("Evaluation Only. Created with", "Aspose.Words. Copyright", "2003-2026 Aspose", "Pty Ltd.")]
+    public void Review_FlagsTheEvaluationWatermarkSavedIntoTheFile(params string[] lines)
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();
-        // The sentence an unlicensed save stamps on every page, as a later licensed run reads it.
         string input = fixture.CreateRawDocument("plain.pdf", pages: 2);
         string stamped = fixture.File("stamped.pdf");
         using (var document = new Document(input))
         {
-            document.Pages[2].Paragraphs.Add(new Aspose.Pdf.Text.TextFragment(
-                "Evaluation Only. Created with Aspose.PDF. Copyright 2002-2026 Aspose Pty Ltd."));
+            foreach (string line in lines)
+            {
+                document.Pages[2].Paragraphs.Add(new Aspose.Pdf.Text.TextFragment(line));
+            }
             document.Save(stamped);
         }
 
