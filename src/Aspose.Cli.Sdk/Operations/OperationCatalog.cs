@@ -232,8 +232,21 @@ public sealed class OperationCatalog<TOp>
         }
         catch (JsonException exception)
         {
-            throw Invalid($"the document is not valid JSON: {exception.Message}");
+            throw Invalid($"the document is not valid JSON: {SyntaxError(exception)}");
         }
+    }
+
+    /// <summary>
+    /// The reader's explanation with its position counted from one, as editors count: the
+    /// reader's own message ends with zero-based line and byte numbers.
+    /// </summary>
+    private static string SyntaxError(JsonException exception)
+    {
+        int suffix = exception.Message.IndexOf(" LineNumber:", StringComparison.Ordinal);
+        string reason = suffix < 0 ? exception.Message : exception.Message[..suffix];
+        return exception is { LineNumber: long line, BytePositionInLine: long position }
+            ? $"{reason} (line {line + 1}, byte {position + 1})"
+            : reason;
     }
 
     /// <summary>

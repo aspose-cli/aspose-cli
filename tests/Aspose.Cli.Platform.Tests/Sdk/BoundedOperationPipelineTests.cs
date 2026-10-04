@@ -153,6 +153,18 @@ public sealed class BoundedOperationPipelineTests
     }
 
     [Fact]
+    public void Parse_NumbersTheLineOfASyntaxErrorFromOne()
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
+            "{\"ops\":[\n  {\"op\":\"note\",\"text\":\"\\d\"}\n]}", TestContracts.Json));
+
+        string reason = error.Details!["reason"]!.GetValue<string>();
+        Assert.StartsWith("the document is not valid JSON: 'd' is an invalid escapable character", reason, StringComparison.Ordinal);
+        Assert.EndsWith("(line 2, byte 25)", reason, StringComparison.Ordinal);
+        Assert.DoesNotContain("LineNumber", reason, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Prepare_EnforcesTheDeclaredOperationLimit()
     {
         CliException error = Assert.Throws<CliException>(() => Catalog.Prepare(
