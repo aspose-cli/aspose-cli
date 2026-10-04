@@ -376,6 +376,60 @@ public sealed class PdfKnownIssueTests
             $"the subject '采购申请' reads '{reopened.Info.Subject}'");
     }
 
+    [LicensedFact]
+    public void Rendering_LeavesOutThinGlyphStrokesBelow300Dpi()
+    {
+        using var fixture = new PdfEngineFixture();
+        string path = fixture.File("underscores.pdf");
+        using (var document = new Document())
+        {
+            // The same line at six sub-pixel offsets.
+            for (int index = 0; index < 6; index++)
+            {
+                var stamp = new TextStamp("签字 ________") { XIndent = 24, YIndent = 20 + index * 0.17 };
+                stamp.TextState.Font = Aspose.Pdf.Text.FontRepository.FindFont("SimSun");
+                document.Pages.Add().AddStamp(stamp);
+            }
+            document.Save(path);
+        }
+
+        using var reopened = new Document(path);
+        int missing150 = MissingUnderscores(reopened, 150);
+        int missing300 = MissingUnderscores(reopened, 300);
+
+        KnownIssue.Reproduces(
+            "PDF-RENDER-THIN-GLYPH",
+            missing150 > 0 && missing300 == 0,
+            $"the underscores are missing on {missing150} of 6 pages at 150 DPI and {missing300} at 300 DPI");
+
+        static int MissingUnderscores(Document document, int dpi)
+        {
+            int missing = 0;
+            foreach (Page page in document.Pages)
+            {
+                var absorber = new Aspose.Pdf.Text.TextFragmentAbsorber("________");
+                page.Accept(absorber);
+                Rectangle box = absorber.TextFragments[1].Rectangle;
+                using var png = new MemoryStream();
+                new Aspose.Pdf.Devices.PngDevice(new Aspose.Pdf.Devices.Resolution(dpi)).Process(page, png);
+                png.Position = 0;
+                using SkiaSharp.SKBitmap bitmap = SkiaSharp.SKBitmap.Decode(png);
+                double scale = dpi / 72d;
+                bool drawn = false;
+                for (int x = (int)((box.LLX + 1) * scale); x < (int)((box.URX - 1) * scale) && !drawn; x++)
+                {
+                    for (int y = (int)((page.Rect.Height - box.URY) * scale); y < (int)((page.Rect.Height - box.LLY + 3) * scale); y++)
+                    {
+                        drawn |= bitmap.GetPixel(x, y).Red < 250;
+                    }
+                }
+                missing += drawn ? 0 : 1;
+            }
+
+            return missing;
+        }
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

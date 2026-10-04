@@ -86,7 +86,12 @@ aspose-cli review report.final.pdf --out report.review-1 --output json
 
 Check page order and size, crop and rotation, clipping, images, tables, headers
 and footers, stamps, form field appearances, annotations, redaction appearance
-and contrast. PDF review findings worth acting on:
+and contrast. The engine drops some thin glyph strokes, such as the underscores
+of a signature line, when it renders below about 300 DPI. Review images are
+150 DPI, scaled down from a 300 DPI render unless the page is too large for
+that, so such a line shows as a light grey line; `pdf render` draws exactly the `--dpi` it is given, so render with
+`--dpi 300` to look at thin lines or small print closely.
+PDF review findings worth acting on:
 
 - `PDF_FONTS_NOT_EMBEDDED`: a font the PDF uses without embedding it is drawn
   from the fonts installed here. Pass the delivered fonts with the same

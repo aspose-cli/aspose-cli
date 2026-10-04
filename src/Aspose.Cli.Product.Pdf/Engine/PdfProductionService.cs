@@ -16,6 +16,7 @@ using Aspose.Pdf;
 using Aspose.Pdf.Annotations;
 using Aspose.Pdf.Devices;
 using Aspose.Pdf.Text;
+using SkiaSharp;
 using static Aspose.Cli.Product.Pdf.Engine.PdfEngineSupport;
 using DrawingImageFormat = Aspose.Pdf.Drawing.ImageFormat;
 
@@ -55,7 +56,8 @@ internal sealed class PdfProductionService
         ArgumentNullException.ThrowIfNull(artifacts);
         _ = _licenseGate.EnsureApplied();
         using LoadedPdf loaded = _loader.Open(filePath, request.Password);
-        int dpi = request.Purpose == ViewPurpose.Display ? displayDpi : evidenceDpi;
+        bool evidence = request.Purpose != ViewPurpose.Display;
+        int dpi = evidence ? evidenceDpi : displayDpi;
         int total = loaded.Document.Pages.Count;
         int count = Math.Min(total, request.MaxPartCount);
         var parts = new List<ViewPart>(count);
@@ -66,7 +68,17 @@ internal sealed class PdfProductionService
             int number = pageNumber;
             artifacts.Write(
                 file,
-                stream => RenderPage(loaded.Document, number, "png", dpi, stream));
+                stream =>
+                {
+                    if (evidence)
+                    {
+                        RenderEvidencePage(loaded.Document, number, dpi, stream);
+                    }
+                    else
+                    {
+                        RenderPage(loaded.Document, number, "png", dpi, stream);
+                    }
+                });
             parts.Add(new ViewPart
             {
                 Id = PdfViews.PagePart(pageNumber),
@@ -191,6 +203,38 @@ internal sealed class PdfProductionService
             default:
                 throw CliErrors.FormatUnsupported(format, PdfFormats.RenderIds);
         }
+    }
+
+    /// <summary>
+    /// PDF-RENDER-THIN-GLYPH: the engine drops thin glyph strokes, such as the underscores of a
+    /// signature line, at some positions below about 300 DPI. Review evidence is rendered at twice
+    /// its resolution and scaled down by averaging, so such a stroke shows as grey at the
+    /// evidence size. A page whose double-size raster exceeds the pixel budget renders directly.
+    /// </summary>
+    private void RenderEvidencePage(Document document, int pageNumber, int dpi, Stream stream)
+    {
+        Page page = document.Pages[pageNumber];
+        int sampled = dpi * 2;
+        long width = (long)Math.Ceiling(page.Rect.Width / 72d * sampled);
+        long height = (long)Math.Ceiling(page.Rect.Height / 72d * sampled);
+        long maxPixels = _resourceBudgets.Limit(ResourceBudgetKinds.RasterPixels);
+        if (width <= 0 || height <= 0 || width > maxPixels / height)
+        {
+            RenderPage(document, pageNumber, "png", dpi, stream);
+            return;
+        }
+
+        using var raster = new MemoryStream();
+        new PngDevice(new Resolution(sampled)).Process(page, raster);
+        raster.Position = 0;
+        using SKBitmap full = SKBitmap.Decode(raster)
+            ?? throw new InvalidOperationException("The rendered page image could not be decoded.");
+        // At exactly half the size, linear filtering averages each 2 x 2 block of pixels.
+        var info = new SKImageInfo((full.Width + 1) / 2, (full.Height + 1) / 2, full.ColorType, full.AlphaType);
+        using SKBitmap scaled = full.Resize(info, new SKSamplingOptions(SKFilterMode.Linear, SKMipmapMode.None))
+            ?? throw new InvalidOperationException("The rendered page image could not be scaled.");
+        using SKData encoded = scaled.Encode(SKEncodedImageFormat.Png, 100);
+        encoded.SaveTo(stream);
     }
 
     /// <summary>Validates the requested grid, which only raster output carries.</summary>

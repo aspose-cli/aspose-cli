@@ -279,6 +279,18 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** add `encrypt` after `set_metadata` in the same batch.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-RENDER-THIN-GLYPH
+
+- **Defect:** `PngDevice` and the other raster devices leave out thin glyph strokes, such as
+  the underscores of SimSun, at some positions on the page below about 300 DPI: the line is not
+  drawn at all, not even as grey. Paths of the same thickness are drawn.
+- **CLI behavior:** `review` renders its 150 DPI evidence at 300 DPI and scales it down, so such
+  a line shows as grey; a page whose 300 DPI raster exceeds the pixel budget is rendered at
+  150 DPI. `pdf render`, `pdf convert` to images and the `preview` pages draw at the resolution
+  they use.
+- **Workaround:** render the page with `pdf render --dpi 300` or higher.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-AUTOFIT-RECT

@@ -193,6 +193,57 @@ public sealed class PdfReviewAndInfoTests
     }
 
     /// <summary>
+    /// PDF-RENDER-THIN-GLYPH: the engine drops the thin underscores of SimSun at some positions
+    /// below about 300 DPI. Review evidence keeps its size and still shows them.
+    /// </summary>
+    [Fact]
+    public void Review_EvidenceShowsThinUnderscores()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.File("signature.pdf");
+        using (var document = new Document())
+        {
+            for (int index = 0; index < 4; index++)
+            {
+                var stamp = new TextStamp("签字区：甲方 ________ 乙方 ________") { XIndent = 24, YIndent = 20 + index * 0.17 };
+                stamp.TextState.Font = Aspose.Pdf.Text.FontRepository.FindFont("SimSun");
+                document.Pages.Add().AddStamp(stamp);
+            }
+            document.Save(input);
+        }
+
+        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        using var reopened = new Document(input);
+        for (int pageNumber = 1; pageNumber <= 4; pageNumber++)
+        {
+            using SkiaSharp.SKBitmap evidence = SkiaSharp.SKBitmap.Decode(
+                Path.Combine(workspace.File("review"), "artifacts", $"page-{pageNumber:0000}.png"));
+            Page page = reopened.Pages[pageNumber];
+            double scale = evidence.Width / page.Rect.Width;
+            Assert.Equal(Math.Ceiling(page.Rect.Width * 150 / 72), evidence.Width, 1d);
+            var absorber = new Aspose.Pdf.Text.TextFragmentAbsorber("________");
+            page.Accept(absorber);
+            Assert.Equal(2, absorber.TextFragments.Count);
+            foreach (Aspose.Pdf.Text.TextFragment fragment in absorber.TextFragments)
+            {
+                Rectangle box = fragment.Rectangle;
+                int darkest = 255;
+                for (int x = (int)((box.LLX + 1) * scale); x < (int)((box.URX - 1) * scale); x++)
+                {
+                    for (int y = (int)((page.Rect.Height - box.URY) * scale); y < Math.Min(evidence.Height, (int)((page.Rect.Height - box.LLY + 3) * scale)); y++)
+                    {
+                        darkest = Math.Min(darkest, evidence.GetPixel(x, y).Red);
+                    }
+                }
+                Assert.True(darkest < 230, $"The underscores on page {pageNumber} are missing from the evidence (darkest {darkest}).");
+            }
+        }
+    }
+
+    /// <summary>
     /// The sentence an unlicensed save stamps on every page, as a later licensed run reads it,
     /// on one line or wrapped onto several, as Aspose.Words wraps its footer in a wide font.
     /// </summary>
