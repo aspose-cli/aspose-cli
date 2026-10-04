@@ -192,6 +192,42 @@ public sealed class PdfArtifactWorkflowTests
         Assert.StartsWith("1 bookmark(s), 0 link(s) and 0 named destination(s)", degraded.Message, StringComparison.Ordinal);
     }
 
+    /// <summary>Each part numbers its pages with the labels they had in the input.</summary>
+    [Fact]
+    public void Split_KeepsThePageLabelsOfEachPart()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("labelled.pdf");
+        fixture.Engine.ApplyOps(
+            fixture.CreateDocument("plain.pdf", pages: 4),
+            new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new SetPageLabelsOp
+                    {
+                        Ranges =
+                        [
+                            new PdfPageLabelRange { StartPage = 1, Prefix = "East-" },
+                            new PdfPageLabelRange { StartPage = 3, Prefix = "South-", Style = "roman-lower", StartingValue = 5 },
+                        ],
+                    },
+                ],
+            },
+            new PdfEditRequest { OutputPath = input });
+
+        PdfSplitResult split = fixture.Engine.Split(input, new PdfSplitRequest
+        {
+            PageGroups = [Sdk.Addressing.PageRange.Parse("2-4"), Sdk.Addressing.PageRange.Parse("1,4")],
+            OutputDirectory = fixture.File("parts"),
+        });
+
+        Assert.Equal(
+            ["1:East-arabic2 2:South-roman-lower5", "1:East-arabic1 2:South-roman-lower6"],
+            split.Outputs.Select(part => string.Join(" ", fixture.Engine.GetInfo(part.Output.Path, new PdfInfoRequest()).PageLabels!
+                .Select(static label => $"{label.StartPage}:{label.Prefix}{label.Style}{label.StartingValue}"))));
+    }
+
     private static OutlineItemCollection Bookmark(
         Document document, ICollection<OutlineItemCollection> parent, string title, IAppointment destination)
     {

@@ -74,6 +74,7 @@ points each copied bookmark at its page with Fit zoom (other locations and zooms
 are lost) and does not carry named destinations. `pdf split` does the same with
 the bookmarks of each part's pages; a bookmark whose parent opens a page of
 another part moves up in its place, and links to another part lead nowhere.
+Each part keeps the page labels its pages had, such as `South-1` to `South-3`.
 Each publishes its output with
 a `NAVIGATION_DEGRADED` warning that counts the entries that no longer lead where
 they did. Re-create them with `add_bookmark` and `add_link`, or reorder pages

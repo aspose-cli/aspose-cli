@@ -77,6 +77,7 @@ internal sealed class PdfExtractionService
                 Document source = loaded.Document;
                 int[] pages = [.. part.Pages];
                 using Document selected = Select(source, pages);
+                CopyPageLabels(source, selected, pages);
                 // A part keeps the bookmarks of its pages; what leads elsewhere is counted.
                 bookmarks += CopyOutline(source, source.Outlines, selected.Outlines, selected,
                     page => Array.IndexOf(pages, page) + 1);
@@ -347,6 +348,43 @@ internal sealed class PdfExtractionService
             return new SplitPart(bookmarkIndexOffset + index + 1, pages, bookmark.Title);
         }));
         return parts;
+    }
+
+    /// <summary>
+    /// Labels each page of a part as it was labelled in the source. A label range starts at the
+    /// part's first page and wherever a page does not follow the previous one in the same source
+    /// range; a source page before the first range is numbered as the reader shows it.
+    /// </summary>
+    private static void CopyPageLabels(Document source, Document part, IReadOnlyList<int> pages)
+    {
+        int[] starts = [.. source.PageLabels.GetPages().Order()];
+        if (starts.Length == 0)
+        {
+            return;
+        }
+
+        int previous = -2;
+        int previousStart = -1;
+        for (int index = 0; index < pages.Count; index++)
+        {
+            int page = pages[index] - 1;
+            int start = starts.LastOrDefault(candidate => candidate <= page, -1);
+            if (start != previousStart || page != previous + 1)
+            {
+                PageLabel label = start < 0
+                    ? new PageLabel { NumberingStyle = NumberingStyle.NumeralsArabic }
+                    : source.PageLabels.GetLabel(start);
+                part.PageLabels.UpdateLabel(index, new PageLabel
+                {
+                    Prefix = label.Prefix,
+                    NumberingStyle = label.NumberingStyle,
+                    StartingValue = label.StartingValue + page - Math.Max(start, 0),
+                });
+            }
+
+            previous = page;
+            previousStart = start;
+        }
     }
 
     private static string SplitName(string template, string stem, SplitPart part)
