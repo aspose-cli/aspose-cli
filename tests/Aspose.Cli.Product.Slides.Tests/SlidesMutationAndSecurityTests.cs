@@ -223,6 +223,39 @@ public sealed class SlidesMutationAndSecurityTests
     }
 
     [Fact]
+    public void SetFooter_TargetsOnlySlidesWhoseLayoutShowsAFooter()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("footerless-source.pptx");
+        string output = fixture.File("footerless-output.pptx");
+        uint shown;
+        using (var presentation = new Presentation())
+        {
+            // A title layout often hides footers by having no footer, number or date placeholder.
+            ILayoutSlide footerless = presentation.LayoutSlides[0];
+            foreach (IShape shape in footerless.Shapes.Where(static shape => shape.Placeholder?.Type
+                         is PlaceholderType.Footer or PlaceholderType.SlideNumber or PlaceholderType.DateAndTime).ToArray())
+            {
+                footerless.Shapes.Remove(shape);
+            }
+
+            shown = presentation.Slides.AddEmptySlide(presentation.LayoutSlides[1]).SlideId;
+            presentation.Slides[0].LayoutSlide = footerless;
+            presentation.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
+        }
+
+        SlidesEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch { Ops = [new SetFooterOp { Text = "Confidential", ShowNumber = true }] },
+            new PresentationEditRequest { OutputPath = output });
+
+        BoundedOperationOutcome applied = Assert.Single(result.Applied);
+        Assert.Equal(1, applied.ItemsAffected);
+        Assert.Equal([$"slide/{shown}"], applied.Targets);
+        Assert.Equal([shown], result.SlidesTouched);
+    }
+
+    [Fact]
     public void SetFooter_ActivatesLayoutPlaceholdersInsideAScaledCanvasAndKeepsExplicitGeometry()
     {
         using var fixture = new SlidesEngineFixture();

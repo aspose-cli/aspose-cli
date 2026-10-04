@@ -82,8 +82,10 @@ internal sealed partial class SlidesMutationHandlers
 
     public long Apply(SetFooterOp operation)
     {
+        long changed = 0;
         foreach (ISlide slide in Slides)
         {
+            string before = FooterState(slide);
             IBaseSlideHeaderFooterManager manager = slide.HeaderFooterManager.AsIBaseSlideHeaderFooterManager;
             if (operation.Text is not null)
             {
@@ -102,11 +104,24 @@ internal sealed partial class SlidesMutationHandlers
             }
 
             FillEmptyFooters(slide, operation);
-            _touched.Add(slide.SlideId);
+            if (FooterState(slide) != before)
+            {
+                _touched.Add(slide.SlideId);
+                changed++;
+            }
         }
 
-        return Slides.Count;
+        return changed;
     }
+
+    /// <summary>
+    /// The footer, number and date placeholders a slide shows, with their text. A slide whose
+    /// layout has none of them, as a title layout often hides footers, shows nothing new.
+    /// </summary>
+    private static string FooterState(ISlide slide) => string.Join('\n', slide.Shapes
+        .Where(static shape => shape.Placeholder?.Type
+            is PlaceholderType.Footer or PlaceholderType.SlideNumber or PlaceholderType.DateAndTime)
+        .Select(static shape => $"{shape.Placeholder!.Type}:{(shape as IAutoShape)?.TextFrame?.Text}"));
 
     // A footer placeholder activated from the layout starts empty; give it the requested text.
     private static void FillEmptyFooters(ISlide slide, SetFooterOp op)

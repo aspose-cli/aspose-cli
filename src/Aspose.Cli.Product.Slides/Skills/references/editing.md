@@ -51,7 +51,8 @@ enlarge a shape.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `query slides --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and
-  style come from the template.
+  style come from the template. A layout without them, as title layouts often hide footers,
+  shows nothing, so its slides are left out of the operation's `targets`.
 - `query slides --scope shapes` reports each shape's `altText`, which `replace_text` does not
   reach. To replace a picture, `delete_shape` it and `insert_image` the new one at its `rect`
   with an `altText`.
