@@ -109,6 +109,34 @@ public sealed class WordsDisclosureTests
             && warning.Message.Contains("cannot keep the readOnly editing restrictions", StringComparison.Ordinal)));
     }
 
+    [Fact]
+    public void SavingAPdfInput_DisclosesThatHeadersAndFootersBecomeBodyText()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Write("Clause one.");
+        builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+        builder.InsertField("PAGE");
+        string pdf = fixture.Temp.File("contract.pdf");
+        string docx = fixture.Temp.File("contract.docx");
+        source.Save(pdf, SaveFormat.Pdf);
+        source.Save(docx, SaveFormat.Docx);
+
+        WordsConvertResult fromPdf = fixture.Engine.Convert(pdf, new WordsConvertRequest { TargetFormatId = "docx", OutputPath = fixture.Temp.File("from-pdf.docx") });
+        WordsConvertResult fromDocx = fixture.Engine.Convert(docx, new WordsConvertRequest { TargetFormatId = "docx", OutputPath = fixture.Temp.File("from-docx.docx") });
+
+        WordsEditResult edited = fixture.Engine.ApplyOps(pdf, new WordsOpsBatch
+        {
+            Ops = [new ReplaceTextOp { Find = "one", Replace = "two" }],
+        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited.docx") });
+
+        Warning lossy = Assert.Single(fromPdf.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
+        Assert.Contains("headers and footers", lossy.Message, StringComparison.Ordinal);
+        Assert.Equal(lossy, Assert.Single(edited.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion));
+        Assert.DoesNotContain(fromDocx.Warnings ?? [], static warning => warning.Code == WarningCodes.LossyConversion);
+    }
+
     [Theory]
     [InlineData(true, "docx", false)]
     [InlineData(false, "docx", true)]

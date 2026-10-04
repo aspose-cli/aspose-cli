@@ -129,7 +129,7 @@ internal sealed class WordsMutationService
             PagesTouched = pagesTouched.Count == 0 ? null : pagesTouched,
             Verification = verification,
             License = EnvelopeParts.License(state),
-            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), operationWarnings, MutationWarnings(
+            Warnings = EnvelopeParts.CombineWarnings(outputWarnings, EnvelopeParts.BackupWarnings(backup), operationWarnings, PdfInputWarnings(loaded), MutationWarnings(
                 state,
                 loaded.Document,
                 format,

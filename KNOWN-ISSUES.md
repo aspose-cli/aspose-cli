@@ -303,3 +303,16 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **CLI behavior:** none visible; `insert_field` rebuilds the layout and updates such a field
   when it has no result.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
+
+### WORDS-PDF-HEADER-FOOTER
+
+- **Defect:** loading a PDF writes the text of its headers and footers, such as a footer page
+  number, into the body as ordinary paragraphs, and the rebuilt layout can push them onto a page
+  of their own: a one-page PDF with a footer page number loads as two pages. `PdfLoadOptions`
+  has only `PageIndex`, `PageCount` and `SkipPdfImages`, so no option keeps headers and footers.
+- **CLI behavior:** `words convert`, `words split` and `words edit` of a PDF input warn
+  `LOSSY_CONVERSION` that headers and footers become body text and that the layout may add
+  pages.
+- **Workaround:** remove the stray paragraphs with `words edit` and restore them with
+  `set_header`, `set_footer` or `set_page_numbers`.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)

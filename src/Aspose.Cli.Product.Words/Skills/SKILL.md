@@ -10,6 +10,12 @@ word-processing documents. This Skill holds what is specific to Words; the
 session start, the rules every product shares and the delivery checklist are in
 `aspose-cli docs overview`.
 
+A PDF input is rebuilt as flowing text: its headers and footers, such as page
+numbers, become body text and the layout may add pages, which `convert`,
+`split` and `edit` report as `LOSSY_CONVERSION` (known SDK issue
+`WORDS-PDF-HEADER-FOOTER`); review the output and restore them with
+`set_header`, `set_footer` or `set_page_numbers`.
+
 ## Document model
 
 - A **block** is a body paragraph or table, numbered from 1. The paragraphs and
