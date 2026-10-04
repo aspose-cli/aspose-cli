@@ -206,6 +206,32 @@ public sealed class SlidesChartPresentationTests
         AssertDoNotOverlap(chart.Legend, chart.PlotArea.AsIActualLayout);
     }
 
+    [Theory]
+    [InlineData("column", 330, true)]
+    [InlineData("line", 330, true)]
+    [InlineData("column", 640, false)]
+    public void CategoryLabelsWithoutRoomBetweenThem_AreSlanted(string kind, double width, bool slanted)
+    {
+        // The renderer draws labels that just fit edge to edge, as one run of text.
+        using var fixture = new SlidesEngineFixture();
+        string output = fixture.File($"{kind}-{width}.pptx");
+        fixture.Engine.ApplyOps(fixture.CreatePresentation($"seed-{kind}-{width}.pptx"), new SlidesOpsBatch
+        {
+            Ops = [new InsertChartOp
+            {
+                Slide = 1,
+                Kind = kind,
+                Rect = new SlidesRectInput { X = 40, Y = 95, Width = width, Height = 270 },
+                Categories = ["Q4 2025", "Q1 2026", "Q2 2026", "Q3 2026"],
+                Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [10850, 11200, 11960, 12800] }],
+            }],
+        }, new PresentationEditRequest { OutputPath = output });
+
+        using var reopened = new Presentation(output);
+        float angle = Chart(reopened).Axes.HorizontalAxis.TextFormat.TextBlockFormat.RotationAngle;
+        Assert.Equal(slanted, angle == -45);
+    }
+
     [Fact]
     public void Pie_VariesSliceColorsAndNamesTheCategoriesInALegend()
     {

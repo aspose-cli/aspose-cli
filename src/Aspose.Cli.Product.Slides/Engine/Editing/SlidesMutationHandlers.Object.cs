@@ -145,6 +145,11 @@ internal sealed partial class SlidesMutationHandlers
             {
                 categories.CategoryAxisType = CategoryAxisType.Text;
             }
+
+            if (type is ChartType.ClusteredColumn or ChartType.LineWithMarkers)
+            {
+                SlantCrowdedLabels(chart, categories, operation.Categories);
+            }
         }
 
         _touched.Add(Slide.SlideId);
@@ -300,6 +305,29 @@ internal sealed partial class SlidesMutationHandlers
             <= SlidesContrast.Ratio(dark, background.SolidFillColor))
         {
             fill.FillType = FillType.NotDefined;
+        }
+    }
+
+    /// <summary>
+    /// Slants the labels of a new chart's horizontal category axis when the widest one, with a
+    /// gap of one em, is wider than its share of the plot: the renderer draws labels that just
+    /// fit edge to edge, so they read as one run of text. Widths are estimated at the chart's
+    /// text size, a CJK character one em wide and any other character a little over half.
+    /// </summary>
+    private static void SlantCrowdedLabels(IChart chart, IAxis axis, IReadOnlyList<string> labels)
+    {
+        float size = chart.TextFormat.PortionFormat.FontHeight;
+        if (float.IsNaN(size))
+        {
+            return;
+        }
+
+        chart.ValidateChartLayout();
+        double share = chart.PlotArea.ActualWidth / labels.Count;
+        double widest = labels.Max(label => label.Sum(static character => character >= '⺀' ? 1.0 : 0.55)) * size;
+        if (widest + size > share)
+        {
+            axis.TextFormat.TextBlockFormat.RotationAngle = -45;
         }
     }
 

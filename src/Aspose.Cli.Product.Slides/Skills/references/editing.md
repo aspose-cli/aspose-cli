@@ -77,7 +77,9 @@ series, external or literal data, multi-level categories) fail with `CHART_DATA_
 stay unchanged; recreate them with `insert_chart`.
 
 New charts reserve space for their title and legend; a new pie colors each slice and names the
-categories in its legend. Their text keeps the chart style's color, unless the theme's
+categories in its legend. A new column or line chart slants its category labels by 45 degrees
+when, at the chart's text size, they would leave no room between them; to keep them level,
+widen the chart or shorten the categories. Their text keeps the chart style's color, unless the theme's
 background color contrasts more with the slide's solid background than the theme's text color
 does: then a chart on a dark slide gets that light text. `set_shape_style` restyles it. Adding a second series to a chart without a legend creates one
 outside the plot. For non-negative bar and column data, the automatic value
