@@ -74,6 +74,7 @@ internal static class InfoProjection
         Format = loaded.FormatId,
         SizeBytes = new FileInfo(path).Length,
         Fingerprint = FileFingerprints.Capture(path),
+        Encrypted = loaded.Format.IsEncrypted,
     };
 
     private static IReadOnlyList<SectionData> Sections(Document document, bool evaluation) =>

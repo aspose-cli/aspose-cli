@@ -208,7 +208,8 @@ one should restart.
   with `passwordEnv` checks the password and fails with `DOCUMENT_PROTECTED`
   when it is wrong; without `passwordEnv` it removes the restrictions whatever
   their password, so use it only when the user owns that decision.
-- An encrypted input needs `--password-env` to open. Its output keeps the
+- An encrypted input needs `--password-env` to open, and `inspect` reports
+  it as `source.encrypted`. Its output keeps the
   password when the output format supports encryption; `--encrypt-env`
   replaces it. A format that cannot be encrypted produces
   `DOCUMENT_ENCRYPTION_REMOVED`, and `--encrypt-env` with such a format is
