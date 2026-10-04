@@ -42,10 +42,13 @@ public sealed record DiffSummary
     /// <summary>Sheets present only on the left.</summary>
     public required int SheetsRemoved { get; init; }
 
+    /// <summary>Sheets the right renamed, paired by their internal id.</summary>
+    public required int SheetsRenamed { get; init; }
+
     /// <summary>Shared sheets whose cells differ.</summary>
     public required int SheetsModified { get; init; }
 
-    /// <summary>Total differing cells across all shared sheets.</summary>
+    /// <summary>Total differing cells across all shared and renamed sheets.</summary>
     public required int CellsDiffering { get; init; }
 }
 
@@ -55,10 +58,16 @@ public sealed record SheetDiff
     /// <summary>Sheet name.</summary>
     public required string Name { get; init; }
 
-    /// <summary>One of <c>added</c>, <c>removed</c> or <c>modified</c>.</summary>
+    /// <summary>
+    /// One of <c>added</c>, <c>removed</c>, <c>modified</c> or <c>renamed</c>: a sheet both sides
+    /// hold under different names, paired by its internal id.
+    /// </summary>
     public required string Status { get; init; }
 
-    /// <summary>Differing cells, for a modified sheet.</summary>
+    /// <summary>The sheet's name on the left, for a renamed sheet.</summary>
+    public string? From { get; init; }
+
+    /// <summary>Differing cells, for a modified or renamed sheet.</summary>
     public IReadOnlyList<CellDiff>? Cells { get; init; }
 }
 

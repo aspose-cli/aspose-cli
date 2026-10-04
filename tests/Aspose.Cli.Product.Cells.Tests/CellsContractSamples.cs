@@ -396,10 +396,11 @@ internal static class CellsContractSamples
         Left = new SourceInfo { Path = "D:/data/report.v2.xlsx", Format = "xlsx", SizeBytes = 24576, Fingerprint = Fingerprint },
         Right = new SourceInfo { Path = "D:/data/report.v2.xlsx", Format = "xlsx", SizeBytes = 24812, Fingerprint = Fingerprint },
         Identical = false,
-        Summary = new DiffSummary { SheetsAdded = 1, SheetsRemoved = 0, SheetsModified = 1, CellsDiffering = 2 },
+        Summary = new DiffSummary { SheetsAdded = 1, SheetsRemoved = 0, SheetsRenamed = 1, SheetsModified = 1, CellsDiffering = 2 },
         Sheets =
         [
             new SheetDiff { Name = "Notes", Status = "added" },
+            new SheetDiff { Name = "Costs 2026", Status = "renamed", From = "Costs", Cells = [] },
             new SheetDiff
             {
                 Name = "Sales",

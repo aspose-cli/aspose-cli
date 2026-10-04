@@ -195,7 +195,7 @@ internal static class CellsRenderers
         DiffSummary summary = diff.Summary;
         surface.Out.WriteLine(
             $"{diff.Left.Path} vs {diff.Right.Path}: {summary.CellsDiffering} cell(s) differ across " +
-            $"{summary.SheetsModified} sheet(s); +{summary.SheetsAdded} -{summary.SheetsRemoved} sheet(s)");
+            $"{summary.SheetsModified} sheet(s); +{summary.SheetsAdded} -{summary.SheetsRemoved} sheet(s), {summary.SheetsRenamed} renamed");
 
         if (diff.Sheets is { Count: > 0 } sheets)
         {
@@ -203,7 +203,7 @@ internal static class CellsRenderers
             var table = new TextTable("sheet", "status", "cells");
             foreach (SheetDiff sheet in sheets)
             {
-                table.AddRow(sheet.Name, sheet.Status, sheet.Cells is { } changed ? TableText.Int(changed.Count) : "-");
+                table.AddRow(sheet.Name, sheet.From is null ? sheet.Status : $"renamed from {sheet.From}", sheet.Cells is { } changed ? TableText.Int(changed.Count) : "-");
             }
 
             table.WriteTo(surface.Out, surface.Format);

@@ -82,13 +82,13 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
     {
         foreach (SheetDiff sheet in diff.Sheets ?? [])
         {
-            if (sheet.Status != "modified" || sheet.Cells is null)
+            if (sheet.Status != "modified")
             {
                 other.Add(new VerificationOtherChange { Sheet = sheet.Name, Status = sheet.Status });
-                continue;
             }
 
-            foreach (CellDiff cell in sheet.Cells)
+            // A renamed sheet lists its cell changes like a modified one.
+            foreach (CellDiff cell in sheet.Cells ?? [])
             {
                 var change = new VerifiedCellChange
                 {
@@ -97,7 +97,8 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                     Left = cell.Left,
                     Right = cell.Right,
                 };
-                if (IsRequested(sheet.Name, cell.Cell, targets))
+                if (IsRequested(sheet.Name, cell.Cell, targets)
+                    || (sheet.From is not null && IsRequested(sheet.From, cell.Cell, targets)))
                 {
                     direct.Add(change);
                 }

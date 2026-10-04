@@ -118,7 +118,7 @@
       "required": ["sheet", "status"],
       "properties": {
         "sheet": { "type": "string" },
-        "status": { "enum": ["added", "removed", "modified"] },
+        "status": { "enum": ["added", "removed", "modified", "renamed"] },
         "cell": { "type": "string" },
         "left": { "$ref": "#/$defs/cellSide" },
         "right": { "$ref": "#/$defs/cellSide" }

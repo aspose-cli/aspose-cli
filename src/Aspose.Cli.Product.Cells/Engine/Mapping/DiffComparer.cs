@@ -18,14 +18,16 @@ internal static class DiffComparer
         var sheets = new List<SheetDiff>();
         int added = 0;
         int removed = 0;
+        int renamed = 0;
         int modified = 0;
         int cellsDiffering = 0;
         int listed = 0;
+        Dictionary<Worksheet, Worksheet> renames = Renames(left, right);
 
         foreach (Worksheet sheet in left.Worksheets)
         {
             budgets.Deadline.ThrowIfExpired("compare");
-            if (right.Worksheets[sheet.Name] is null)
+            if (right.Worksheets[sheet.Name] is null && !renames.ContainsValue(sheet))
             {
                 removed++;
                 sheets.Add(new SheetDiff { Name = sheet.Name, Status = "removed" });
@@ -35,7 +37,7 @@ internal static class DiffComparer
         foreach (Worksheet rightSheet in right.Worksheets)
         {
             budgets.Deadline.ThrowIfExpired("compare");
-            Worksheet? leftSheet = left.Worksheets[rightSheet.Name];
+            Worksheet? leftSheet = left.Worksheets[rightSheet.Name] ?? renames.GetValueOrDefault(rightSheet);
             if (leftSheet is null)
             {
                 added++;
@@ -76,7 +78,12 @@ internal static class DiffComparer
                 }
             }
 
-            if (cellsDiffering != before)
+            if (renames.ContainsKey(rightSheet))
+            {
+                renamed++;
+                sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = "renamed", From = leftSheet.Name, Cells = cells });
+            }
+            else if (cellsDiffering != before)
             {
                 modified++;
                 sheets.Add(new SheetDiff { Name = rightSheet.Name, Status = "modified", Cells = cells });
@@ -87,12 +94,29 @@ internal static class DiffComparer
         {
             SheetsAdded = added,
             SheetsRemoved = removed,
+            SheetsRenamed = renamed,
             SheetsModified = modified,
             CellsDiffering = cellsDiffering,
         };
         return new Result(sheets, summary,
-            added == 0 && removed == 0 && cellsDiffering == 0,
+            added == 0 && removed == 0 && renamed == 0 && cellsDiffering == 0,
             listed < cellsDiffering);
+    }
+
+    /// <summary>
+    /// Pairs each right sheet whose name the left lacks with the left sheet of the same internal
+    /// id (TabId) whose name the right lacks: a rename keeps the id, so the pair is one sheet
+    /// under a new name. Ids that several such sheets share pair nothing.
+    /// </summary>
+    private static Dictionary<Worksheet, Worksheet> Renames(Workbook left, Workbook right)
+    {
+        ILookup<int, Worksheet> leftOnly = left.Worksheets.Cast<Worksheet>()
+            .Where(sheet => right.Worksheets[sheet.Name] is null).ToLookup(static sheet => sheet.TabId);
+        ILookup<int, Worksheet> rightOnly = right.Worksheets.Cast<Worksheet>()
+            .Where(sheet => left.Worksheets[sheet.Name] is null).ToLookup(static sheet => sheet.TabId);
+        return rightOnly
+            .Where(group => group.Count() == 1 && leftOnly[group.Key].Count() == 1)
+            .ToDictionary(static group => group.Single(), group => leftOnly[group.Key].Single());
     }
 
     private static long[] Addresses(

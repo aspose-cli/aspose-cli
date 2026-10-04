@@ -212,6 +212,40 @@ public sealed class CellsComparisonTests
         else { cell.PutValue(value.Value); }
     }
 
+    [Fact]
+    public void ARenamedSheet_PairsWithTheSheetItWasAndListsItsCells()
+    {
+        using var original = new Workbook();
+        original.Worksheets[0].Name = "Data";
+        original.Worksheets[original.Worksheets.Add()].Name = "Second";
+        original.Worksheets["Second"].Cells["A1"].PutValue("before");
+        using Workbook left = Reload(original);
+        using Workbook edited = Reload(original);
+        edited.Worksheets["Second"].Name = "Renamed";
+        edited.Worksheets["Renamed"].Cells["A1"].PutValue("after");
+        edited.Worksheets.RemoveAt("Data");
+        edited.Worksheets[edited.Worksheets.Add()].Name = "Other";
+        using Workbook right = Reload(edited);
+
+        DiffComparer.Result result = Compare(left, right);
+
+        Assert.Equal(["Data:removed:", "Renamed:renamed:Second", "Other:added:"],
+            result.Sheets.Where(static sheet => !sheet.Name.StartsWith("Evaluation", StringComparison.Ordinal))
+                .Select(static sheet => $"{sheet.Name}:{sheet.Status}:{sheet.From}"));
+        CellDiff cell = Assert.Single(result.Sheets.Single(static sheet => sheet.Status == "renamed").Cells!);
+        Assert.Equal(("A1", "before", "after"), (cell.Cell, cell.Left!.V, cell.Right!.V));
+        Assert.Equal(1, result.Summary.SheetsRenamed);
+        Assert.False(result.Identical);
+    }
+
+    private static Workbook Reload(Workbook workbook)
+    {
+        using var stream = new MemoryStream();
+        workbook.Save(stream, SaveFormat.Xlsx);
+        stream.Position = 0;
+        return new Workbook(stream);
+    }
+
     private static DiffComparer.Result Compare(Workbook left, Workbook right, bool formulas = true, int maximum = 100)
     {
         using var deadline = OperationDeadline.Start(null);

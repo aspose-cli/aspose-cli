@@ -63,7 +63,7 @@ public sealed record VerificationOtherChange
     /// <summary>Worksheet name.</summary>
     public required string Sheet { get; init; }
 
-    /// <summary>Sheet status: <c>added</c>, <c>removed</c>, or <c>modified</c>.</summary>
+    /// <summary>Sheet status: <c>added</c>, <c>removed</c>, <c>modified</c> or <c>renamed</c>.</summary>
     public required string Status { get; init; }
 
     /// <summary>A1 cell address for a cell-level change.</summary>

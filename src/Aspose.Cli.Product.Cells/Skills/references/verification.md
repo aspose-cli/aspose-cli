@@ -144,6 +144,11 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output json
   from the diff.
 - Read the whole list. Any difference you did not intend, such as a shifted
   formula or a cleared cell, is a finding to fix before delivery.
+- A renamed sheet pairs with the sheet it was (they keep one internal sheet
+  id): `status: "renamed"` with its old name in `from` and its cell changes,
+  in compare and in `--verify` alike. The pairing is meaningful only for two
+  versions of the same workbook; two unrelated workbooks can pair unrelated
+  sheets that happen to share an id.
 - `--max-diffs` caps the listed cells; the summary still counts every
   difference and `LIST_TRUNCATED` reports the omission.
 - Report the summary (sheets modified, cells differing) as value and formula

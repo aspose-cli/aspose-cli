@@ -13,10 +13,15 @@
     "identical": { "type": "boolean" },
     "summary": {
       "type": "object",
-      "required": ["sheetsAdded", "sheetsRemoved", "sheetsModified", "cellsDiffering"],
+      "required": ["sheetsAdded", "sheetsRemoved", "sheetsRenamed", "sheetsModified", "cellsDiffering"],
       "properties": {
         "sheetsAdded": { "type": "integer", "minimum": 0 },
         "sheetsRemoved": { "type": "integer", "minimum": 0 },
+        "sheetsRenamed": {
+          "type": "integer",
+          "minimum": 0,
+          "description": "Sheets the right holds under a new name, paired with the left sheet by their internal sheet id."
+        },
         "sheetsModified": { "type": "integer", "minimum": 0 },
         "cellsDiffering": {
           "type": "integer",
@@ -33,7 +38,8 @@
         "required": ["name", "status"],
         "properties": {
           "name": { "type": "string" },
-          "status": { "enum": ["added", "removed", "modified"] },
+          "status": { "enum": ["added", "removed", "modified", "renamed"] },
+          "from": { "type": "string", "description": "The sheet's name on the left, for a renamed sheet." },
           "cells": {
             "type": "array",
             "items": {

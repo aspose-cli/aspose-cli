@@ -211,6 +211,20 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void VerificationListsTheCellChangesOfASheetTheBatchRenamed()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-renamed.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_values","sheet":"Second","range":"A1","values":[["before"]]},{"op":"rename_sheet","sheet":"Second","to":"Notes"},{"op":"set_values","sheet":"Notes","range":"B1","values":[["after"]]}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-renamed.out.xlsx"), Verify = true });
+
+        EditVerification verification = result.Verification!;
+        Assert.Equal(["Notes!A1", "Notes!B1"], verification.DirectChanges.Select(static change => $"{change.Sheet}!{change.Cell}"));
+        VerificationOtherChange renamed = Assert.Single(verification.OtherChanges);
+        Assert.Equal(("Notes", "renamed"), (renamed.Sheet, renamed.Status));
+    }
+
+    [Fact]
     public void CleanVerificationReportsAnEmptyIssueList()
     {
         string source = _fixture.CreateSalesWorkbook("verify-clean.xlsx");
