@@ -10,7 +10,8 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <param name="Row">The zero-based row index.</param>
 /// <param name="Filled">The number of cells that hold a value other than blank text.</param>
 /// <param name="FirstText">The trimmed text of the leftmost cell that holds text, or null.</param>
-internal readonly record struct TextRowShape(int Row, int Filled, string? FirstText);
+/// <param name="NumberColumn">The zero-based column of the leftmost number, or null.</param>
+internal readonly record struct TextRowShape(int Row, int Filled, string? FirstText, int? NumberColumn = null);
 
 internal enum TextTableFindingKind
 {
@@ -24,13 +25,15 @@ internal enum TextTableFindingKind
     TotalRows,
 }
 
-/// <summary>One layout finding; rows are zero-based.</summary>
+/// <summary>One layout finding; rows and columns are zero-based.</summary>
+/// <param name="NumberColumn">For total rows, the column the first one holds a number in, or null.</param>
 internal sealed record TextTableFinding(
     TextTableFindingKind Kind,
     int HeaderRow,
     int LastRow,
     IReadOnlyList<int> Rows,
-    IReadOnlyList<string> Labels);
+    IReadOnlyList<string> Labels,
+    int? NumberColumn = null);
 
 /// <summary>
 /// Warns when a delimited text input is not a plain table that starts at row 1: a title or
@@ -124,7 +127,8 @@ internal static class TextTableLayout
         {
             findings.Add(new TextTableFinding(TextTableFindingKind.TotalRows, header.Row, lastRow,
                 [.. totals.Select(static shape => shape.Row)],
-                [.. totals.Select(static shape => shape.FirstText!).Distinct(StringComparer.Ordinal)]));
+                [.. totals.Select(static shape => shape.FirstText!).Distinct(StringComparer.Ordinal)],
+                totals[0].NumberColumn));
         }
 
         return findings;
@@ -187,10 +191,14 @@ internal static class TextTableLayout
             ? $"Row {first} is a total row ('{labels}')"
             : $"Rows {string.Join(", ", finding.Rows.Select(static row => (row + 1).ToString(CultureInfo.InvariantCulture)))} are total rows ('{labels}')";
         int dataStart = finding.HeaderRow + 2;
+        // The example sums a column the total row holds a number in, so it is never a text column.
+        string example = finding.NumberColumn is int column
+            ? $", for example =SUM({A1.ColumnName(column)}{dataStart}:{A1.ColumnName(column)}{first - 1}) for column {A1.ColumnName(column)}"
+            : string.Empty;
         return Build(
             $"{subject}; a sum or formula over a column that includes it counts the data twice, and sorts, pivots and charts take it for data.",
             first > dataStart
-                ? $"End data ranges at row {first - 1}, for example =SUM(C{dataStart}:C{first - 1}) for column C, and leave row {first} out of sorts, pivots and charts."
+                ? $"End data ranges at row {first - 1}{example}, and leave row {first} out of sorts, pivots and charts."
                 : $"Leave row {first} out of formulas, sorts, pivots and charts.",
             string.Join(",", finding.Rows.Select(static row => RowReference(row + 1, row + 1))));
     }
@@ -242,11 +250,17 @@ internal static class TextTableLayout
         int filled = 0;
         int textColumn = int.MaxValue;
         string? text = null;
+        int? numberColumn = null;
         foreach (Cell cell in row)
         {
             if (cell.Type == CellValueType.IsNull)
             {
                 continue;
+            }
+
+            if (cell.Type == CellValueType.IsNumeric && cell.Column < (numberColumn ?? int.MaxValue))
+            {
+                numberColumn = cell.Column;
             }
 
             if (cell.Type == CellValueType.IsString)
@@ -266,6 +280,6 @@ internal static class TextTableLayout
             filled++;
         }
 
-        return new TextRowShape(rowIndex, filled, text);
+        return new TextRowShape(rowIndex, filled, text, numberColumn);
     }
 }

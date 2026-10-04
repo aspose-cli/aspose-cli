@@ -1,5 +1,6 @@
 using System.Text;
 using System.Text.Json.Nodes;
+using Aspose.Cli.Sdk.Contracts;
 using Xunit;
 
 namespace Aspose.Cli.Product.Cells.Tests;
@@ -65,6 +66,15 @@ public sealed class TextTableLayoutTests : IDisposable
     }
 
     [Fact]
+    public void Describe_GivesNoSumExampleForATotalRowWithoutNumbers()
+    {
+        Warning warning = Assert.Single(TextTableLayout.Describe(
+            TextTableLayout.Detect(Shapes((3, "Region"), (3, "North"), (3, "South"), (1, "Total")), []), "Data", 2, capped: false));
+
+        Assert.StartsWith("End data ranges at row 3, and leave", warning.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Detect_ReportsNothingForAPlainTable()
     {
         Assert.Empty(TextTableLayout.Detect(
@@ -110,7 +120,8 @@ public sealed class TextTableLayoutTests : IDisposable
         Assert.Contains("Row 6 is empty", Text(warnings[1], "message"), StringComparison.Ordinal);
         Assert.Equal("6:6", Text(warnings[1], "location"));
         Assert.Contains("Row 8 is a total row ('合计')", Text(warnings[2], "message"), StringComparison.Ordinal);
-        Assert.Contains("End data ranges at row 7", Text(warnings[2], "hint"), StringComparison.Ordinal);
+        // The example sums the column the total row holds a number in, not a text column.
+        Assert.Contains("End data ranges at row 7, for example =SUM(D4:D7) for column D", Text(warnings[2], "hint"), StringComparison.Ordinal);
         Assert.Equal("8:8", Text(warnings[2], "location"));
 
         JsonNode converted = _workspace.Run(
