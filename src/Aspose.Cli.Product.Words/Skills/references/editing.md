@@ -115,12 +115,22 @@ new table can match the document's tables.
 }
 ```
 
-Inserted paragraphs and tables take their font from styles: a paragraph without
-`style`, and a table's text, use Normal. A template that sets its font only on
-runs, such as Microsoft YaHei over a Normal in another font, therefore gives
-inserted text, CJK text in particular, a different font. Compare
-`inspect --detail fonts` of the template and the output. To match, put the body
-font into the styles first, in the same batch: `define_style` on `Normal`
+An `insert_paragraphs` paragraph without `style` continues the paragraph
+before the insertion point, as Word's Enter does: it takes that paragraph's
+indents, spacing and alignment and the font, size and color of its last text
+outside a field such as a hyperlink, without a character style, so a clause
+inserted between clauses matches them. After a paragraph whose
+style names another next style, such as a heading, it takes that style alone;
+it continues no list, page break before or tracked change, and at the start of
+the body or after a table it takes Normal. Compare its `paragraphFormat` and
+`runs` in `words query blocks --scope full` with its neighbours'.
+
+A paragraph with `style`, inserted Markdown and a table's text take their font
+from styles. A template that sets its font only on runs, such as Microsoft
+YaHei over a Normal in another font, therefore gives such text, CJK text in
+particular, a different font. Compare `inspect --detail fonts` of the template
+and the output. To match, put the body font into the styles first, in the same
+batch: `define_style` on `Normal`
 changes Normal and the styles based on it, and `set_default_font` changes every
 paragraph and character style. Their `font` sets the Latin and the East Asian
 font; `latinFont` and `eastAsianFont` set one of them, as a template that sets
@@ -130,8 +140,8 @@ Chinese text in SimSun and English text in Times New Roman needs.
 {
   "ops": [
     { "op": "define_style", "name": "Normal", "font": "Microsoft YaHei" },
-    { "op": "insert_paragraphs", "at": { "block": 2 }, "position": "after",
-      "paragraphs": [ { "text": "New clause text." } ] }
+    { "op": "insert_table", "at": { "block": 2 }, "position": "after",
+      "rowCount": 1, "columnCount": 2, "cells": [ [ "Term", "Value" ] ] }
   ]
 }
 ```

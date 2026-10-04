@@ -1671,7 +1671,7 @@
           "type": "string"
         },
         "style": {
-          "description": "An existing paragraph style.",
+          "description": "An existing paragraph style. Without it, the paragraph continues the paragraph before the insertion point, as Word's Enter does: its indents, spacing, alignment and the font of its last text, or after a heading the heading style's next style.",
           "type": "string",
           "minLength": 1
         },

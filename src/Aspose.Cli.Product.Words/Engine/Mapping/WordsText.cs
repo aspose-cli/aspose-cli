@@ -71,15 +71,18 @@ internal static class WordsText
         return Clean(text.ToString());
     }
 
-    /// <summary>The runs whose text <see cref="Of"/> reads from a node, in order.</summary>
-    internal static IReadOnlyList<Run> VisibleRuns(Node node)
+    /// <summary>
+    /// The runs whose text <see cref="Of"/> reads from a node, in order; without
+    /// <paramref name="fieldResults"/>, only those outside fields, such as a hyperlink's text.
+    /// </summary>
+    internal static IReadOnlyList<Run> VisibleRuns(Node node, bool fieldResults = true)
     {
         var runs = new List<Run>();
-        Walk(node, runs.Add, paragraphStart: null, paragraphEnd: null);
+        Walk(node, runs.Add, paragraphStart: null, paragraphEnd: null, fieldResults);
         return runs;
     }
 
-    private static void Walk(Node node, Action<Run> visible, Action? paragraphStart, Action? paragraphEnd)
+    private static void Walk(Node node, Action<Run> visible, Action? paragraphStart, Action? paragraphEnd, bool fieldResults = true)
     {
         var fields = new Stack<bool>();
         int codes = 0;
@@ -104,7 +107,7 @@ internal static class WordsText
                     codes -= code ? 1 : 0;
                     return;
                 case Run run:
-                    if (codes == 0 && !run.IsDeleteRevision)
+                    if (codes == 0 && (fieldResults || fields.Count == 0) && !run.IsDeleteRevision)
                     {
                         visible(run);
                     }

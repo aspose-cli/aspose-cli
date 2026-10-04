@@ -52,7 +52,11 @@ public sealed record ParagraphInput
 {
     public required string Text { get; init; }
 
-    /// <summary>An existing paragraph style.</summary>
+    /// <summary>
+    /// An existing paragraph style. Without it, the paragraph continues the paragraph before the
+    /// insertion point, as Word's Enter does: its indents, spacing, alignment and the font of
+    /// its last text, or after a heading the heading style's next style.
+    /// </summary>
     [MinLength(1)] public string? Style { get; init; }
 
     /// <summary>Makes the paragraph a list item at this level: in the anchor's list when the anchor is a list item, otherwise in one new bullet list.</summary>

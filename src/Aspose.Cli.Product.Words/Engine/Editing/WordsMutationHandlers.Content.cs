@@ -135,20 +135,27 @@ internal sealed partial class WordsMutationHandlers
     }
 
     /// <summary>
-    /// Inserts paragraphs at a block boundary. A paragraph with <c>listLevel</c> joins the
-    /// anchor's list when the anchor is a list paragraph, otherwise one bullet list shared by
-    /// the operation's list paragraphs.
+    /// Inserts paragraphs at a block boundary. A paragraph without <c>style</c> continues the
+    /// paragraph before the insertion point (see <see cref="Continue"/>). A paragraph with
+    /// <c>listLevel</c> joins the anchor's list when the anchor is a list paragraph, otherwise
+    /// one bullet list shared by the operation's list paragraphs.
     /// </summary>
     public long Apply(InsertParagraphsOp operation)
     {
         Node cursor = Anchor;
+        Paragraph? before = (operation.Position == "after" ? Anchor : Anchor.PreviousSibling) as Paragraph;
         Aspose.Words.Lists.List? list = Anchor is Paragraph { IsListItem: true } item ? item.ListFormat.List : null;
         foreach (ParagraphInput input in operation.Paragraphs)
         {
-            var paragraph = new Paragraph(_document);
-            paragraph.AppendChild(new Run(_document, input.Text));
-            if (input.Style is not null)
+            Paragraph paragraph;
+            if (input.Style is null)
             {
+                paragraph = Continue(before, input.Text);
+            }
+            else
+            {
+                paragraph = new Paragraph(_document);
+                paragraph.AppendChild(new Run(_document, input.Text));
                 ApplyParagraphStyle(_document, paragraph, input.Style);
             }
 
@@ -164,6 +171,63 @@ internal sealed partial class WordsMutationHandlers
 
         return operation.Paragraphs.Count;
     }
+
+    /// <summary>
+    /// A paragraph of <paramref name="text"/> that continues <paramref name="before"/> as Word's
+    /// Enter does: in its paragraph format and the direct font of its last text outside fields,
+    /// or, after a paragraph whose style names another style to follow it, such as a heading, in
+    /// that style alone. A list and a page break before are not continued, nor is a tracked
+    /// change, which would make the new text another author's revision. Without a paragraph
+    /// before, it takes Normal.
+    /// </summary>
+    private Paragraph Continue(Paragraph? before, string text)
+    {
+        var paragraph = new Paragraph(_document);
+        var run = new Run(_document, text);
+        if (before is not null && !IsRevised(before))
+        {
+            if (before.ParagraphFormat.Style is { NextParagraphStyleName: { Length: > 0 } next } style && next != style.Name)
+            {
+                paragraph.ParagraphFormat.StyleName = next;
+            }
+            else
+            {
+                paragraph = (Paragraph)before.Clone(false);
+                paragraph.ListFormat.RemoveNumbers();
+                paragraph.ParagraphFormat.PageBreakBefore = false;
+                // The font continues without a character style, and never from a field result,
+                // such as a hyperlink's text, whose formatting belongs to the field.
+                if (WordsText.VisibleRuns(before, fieldResults: false).LastOrDefault(static candidate => !string.IsNullOrWhiteSpace(candidate.Text)) is { } last
+                    && !IsRevised(last))
+                {
+                    run = (Run)last.Clone(false);
+                    // The copy is detached, and setting its text while revisions are tracked
+                    // fails (WORDS-TRACKED-DETACHED-TEXT); its insertion is tracked instead.
+                    _tracking?.Stop();
+                    try
+                    {
+                        run.Text = text;
+                        run.Font.StyleIdentifier = StyleIdentifier.DefaultParagraphFont;
+                    }
+                    finally
+                    {
+                        _tracking?.Start();
+                    }
+                }
+            }
+        }
+
+        paragraph.AppendChild(run);
+        return paragraph;
+    }
+
+    private static bool IsRevised(Paragraph paragraph) =>
+        paragraph.IsInsertRevision || paragraph.IsDeleteRevision || paragraph.IsFormatRevision
+        || paragraph.IsMoveFromRevision || paragraph.IsMoveToRevision;
+
+    private static bool IsRevised(Run run) =>
+        run.IsInsertRevision || run.IsDeleteRevision || run.IsFormatRevision
+        || run.IsMoveFromRevision || run.IsMoveToRevision;
 
     public long Apply(InsertMarkdownOp operation)
     {

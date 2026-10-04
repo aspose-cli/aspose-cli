@@ -220,6 +220,105 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void InsertParagraphs_ContinueTheFormatOfTheParagraphBeforeThem()
+    {
+        string input = _fixture.Temp.File("clauses-format.docx");
+        var builder = new DocumentBuilder();
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading1;
+        builder.Writeln("Terms");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.ParagraphFormat.LeftIndent = 20;
+        builder.ParagraphFormat.SpaceAfter = 10;
+        builder.Font.Size = 14;
+        builder.Font.Color = System.Drawing.Color.Teal;
+        builder.Writeln("Clause one.");
+        builder.Document.StartTrackRevisions("Reviewer", DateTime.UnixEpoch);
+        builder.Writeln("Clause two.");
+        builder.Document.StopTrackRevisions();
+        builder.Write("Clause three.");
+        builder.Document.Save(input);
+        string output = _fixture.Temp.File("clauses-format-inserted.docx");
+
+        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new InsertParagraphsOp { At = new WordsTarget { Block = 1 }, Position = "after", Paragraphs = [new ParagraphInput { Text = "After heading." }] },
+                new InsertParagraphsOp { At = new WordsTarget { Block = 3 }, Position = "before", Paragraphs = [new ParagraphInput { Text = "Inserted clause." }] },
+                new InsertParagraphsOp { At = new WordsTarget { Block = 4 }, Position = "before", Paragraphs = [new ParagraphInput { Text = "After a revision." }] },
+                new InsertParagraphsOp { At = new WordsTarget { Block = 4 }, Position = "after", Paragraphs = [new ParagraphInput { Text = "Styled.", Style = "Quote" }] },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        var document = new Document(output);
+        Paragraph Find(string text) => document.FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Single(paragraph => paragraph.GetText().StartsWith(text, StringComparison.Ordinal));
+        Paragraph clause = Find("Inserted clause.");
+        Assert.Equal((20d, 10d, 14d, System.Drawing.Color.Teal.ToArgb()),
+            (clause.ParagraphFormat.LeftIndent, clause.ParagraphFormat.SpaceAfter, clause.Runs[0].Font.Size, clause.Runs[0].Font.Color.ToArgb()));
+        // A heading continues in its next style, Normal, as Word's Enter does.
+        Paragraph afterHeading = Find("After heading.");
+        Assert.Equal(("Normal", 0d, 12d), (afterHeading.ParagraphFormat.StyleName, afterHeading.ParagraphFormat.LeftIndent, afterHeading.Runs[0].Font.Size));
+        // A tracked change is never copied, so the new text carries no other author's revision.
+        Paragraph afterRevision = Find("After a revision.");
+        Assert.False(afterRevision.IsInsertRevision || afterRevision.Runs[0].IsInsertRevision);
+        Assert.Equal(0d, afterRevision.ParagraphFormat.LeftIndent);
+        Paragraph styled = Find("Styled.");
+        Assert.Equal("Quote", styled.ParagraphFormat.StyleName);
+        Assert.NotEqual(14d, styled.Runs[0].Font.Size);
+    }
+
+    [Fact]
+    public void InsertParagraphs_ContinueTheFormatOfTheParagraphBeforeThemAsATrackedInsertion()
+    {
+        string input = _fixture.Temp.File("tracked-format.docx");
+        var builder = new DocumentBuilder();
+        builder.ParagraphFormat.SpaceAfter = 10;
+        builder.Font.Size = 14;
+        builder.Writeln("Clause one.");
+        builder.Write("Clause two.");
+        builder.Document.Save(input);
+        string output = _fixture.Temp.File("tracked-format-inserted.docx");
+
+        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new InsertParagraphsOp { At = new WordsTarget { Block = 2 }, Position = "before", Paragraphs = [new ParagraphInput { Text = "Inserted clause." }] }],
+        }, new WordsEditRequest { OutputPath = output, TrackChanges = true, Author = "Reviewer" });
+
+        Paragraph inserted = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Single(static paragraph => paragraph.GetText().StartsWith("Inserted clause.", StringComparison.Ordinal));
+        Assert.Equal((10d, 14d), (inserted.ParagraphFormat.SpaceAfter, inserted.Runs[0].Font.Size));
+        Assert.True(inserted.Runs[0].IsInsertRevision);
+    }
+
+    [Fact]
+    public void InsertParagraphs_ContinueTheTextBeforeAHyperlinkThatEndsTheParagraph()
+    {
+        string input = _fixture.Temp.File("hyperlink-format.docx");
+        var builder = new DocumentBuilder();
+        builder.Font.Size = 14;
+        builder.Write("See ");
+        builder.Font.StyleIdentifier = StyleIdentifier.Hyperlink;
+        builder.Font.Size = 20;
+        builder.InsertHyperlink("the site", "https://example.com", false);
+        builder.Font.ClearFormatting();
+        builder.Writeln();
+        builder.Write("Clause two.");
+        builder.Document.Save(input);
+        string output = _fixture.Temp.File("hyperlink-format-inserted.docx");
+
+        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new InsertParagraphsOp { At = new WordsTarget { Block = 1 }, Position = "after", Paragraphs = [new ParagraphInput { Text = "Inserted clause." }] }],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Paragraph inserted = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Single(static paragraph => paragraph.GetText().StartsWith("Inserted clause.", StringComparison.Ordinal));
+        Assert.Equal((StyleIdentifier.DefaultParagraphFont, 14d, Underline.None),
+            (inserted.Runs[0].Font.StyleIdentifier, inserted.Runs[0].Font.Size, inserted.Runs[0].Font.Underline));
+    }
+
+    [Fact]
     public void FullRead_ReportsTheParagraphFormat()
     {
         string input = _fixture.Temp.File("paragraph-format.docx");

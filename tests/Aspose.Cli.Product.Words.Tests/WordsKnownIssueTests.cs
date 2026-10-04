@@ -55,6 +55,20 @@ public sealed class WordsKnownIssueTests
     }
 
     [Fact]
+    public void TrackedRevisions_FailToSetTheTextOfADetachedRun()
+    {
+        using var fixture = new WordsFixture();
+        var document = new Document();
+        new DocumentBuilder(document).Write("Clause one.");
+        var copy = (Run)document.FirstSection.Body.FirstParagraph!.Runs[0].Clone(false);
+        document.StartTrackRevisions("Ann", new DateTime(2026, 9, 1));
+
+        Exception? failure = Record.Exception(() => copy.Text = "Clause two.");
+
+        KnownIssue.Reproduces("WORDS-TRACKED-DETACHED-TEXT", failure is NullReferenceException, $"exception: {failure?.GetType().Name ?? "none"}");
+    }
+
+    [Fact]
     public void PageField_InsertedAfterLayoutHasNoResult()
     {
         using var fixture = new WordsFixture();
