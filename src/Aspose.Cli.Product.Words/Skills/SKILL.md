@@ -129,7 +129,10 @@ document was loaded, or that the edited document grew past what evaluation
 mode lays out and saves (about 200 paragraphs, as with a mail merge of many
 records): the output then keeps only its first sections, ends with the
 engine's truncation notice, and `--verify` reports `OUTPUT_TRUNCATED`. The
-result is incomplete whatever `itemsAffected` says. A Words license is installed
+result is incomplete whatever `itemsAffected` says. A license installed later
+does not remove the evaluation banner, footer and watermark already saved into
+a file; a licensed `review` reports them as `WORDS_EVALUATION_MARKS`, and the
+file is regenerated from its original inputs. A Words license is installed
 with `aspose-cli license install Aspose.Words.lic --product words`; licensing
 in general: `aspose-cli docs licensing`.
 

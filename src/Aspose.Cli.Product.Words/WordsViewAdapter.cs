@@ -69,6 +69,14 @@ internal sealed class WordsViewAdapter : IProductViewAdapter<IWordsEngine>
                 RepairHint));
         }
 
+        if (layout.EvaluationMarks > 0)
+        {
+            findings.Add(WordsReviewChecks.EvaluationMarks.Finding(
+                $"{layout.EvaluationMarks} paragraph(s) hold the evaluation text a run without a license saved into the file, with its watermark.",
+                "document",
+                "Regenerate the document from its original inputs with an Aspose.Words license; editing this file keeps the marks."));
+        }
+
         if (info.Document.CommentCount > 0)
         {
             findings.Add(WordsReviewChecks.CommentsPresent.Finding(

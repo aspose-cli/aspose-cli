@@ -1,12 +1,47 @@
 using Aspose.Words;
 using Aspose.Words.Fields;
 using Aspose.Words.Saving;
+using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Views;
 using Xunit;
 
 namespace Aspose.Cli.Product.Words.Tests;
 
 public sealed class WordsFieldAndReviewTests
 {
+    [Fact]
+    public void Review_ReportsEvaluationMarksSavedIntoTheFileOnlyWithALicense()
+    {
+        using var fixture = new WordsFixture();
+        // The banner and footer sentence an unlicensed save writes, as a later licensed run reads them.
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("Created with an evaluation copy of Aspose.Words. To remove all limitations, you can use Free Temporary License https://products.aspose.com/words/temporary-license/");
+        builder.Write("Clause one.");
+        builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
+        builder.Write("Evaluation Only. Created with Aspose.Words. Copyright 2003-2026 Aspose Pty Ltd.");
+        string input = fixture.Temp.File("marked.docx");
+        document.Save(input);
+        var adapter = new WordsViewAdapter();
+        var request = new ViewRenderRequest { View = WordsViews.Pages, MaxPartCount = 4, Purpose = ViewPurpose.Evidence };
+
+        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
+        ReviewFinding[] findings = [.. adapter.Assess(fixture.Engine, input, request, rendered).Findings!
+            .Where(static finding => finding.Code == "WORDS_EVALUATION_MARKS")];
+
+        // Without a license, opening the document adds the marks itself, so it is not checked.
+        if (fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed)
+        {
+            ReviewFinding finding = Assert.Single(findings);
+            Assert.StartsWith("2 paragraph(s)", finding.Message, StringComparison.Ordinal);
+            Assert.Contains("license", finding.Hint, StringComparison.Ordinal);
+        }
+        else
+        {
+            Assert.Empty(findings);
+        }
+    }
+
     [Fact]
     public void InsertToc_UpdatesOnlyTheInsertedTableOfContents()
     {

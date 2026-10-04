@@ -49,9 +49,14 @@ internal sealed class WordsReviewLayoutService
             collector,
             pageCount);
         collector.Document = null;
+        // Without a license, opening the document adds these marks itself.
+        int evaluationMarks = evaluation
+            ? 0
+            : document.GetChildNodes(NodeType.Paragraph, true).Cast<Paragraph>().Count(WordsEvaluation.IsMark);
         return new WordsReviewLayout(
             pages.Select(static page => page.ToContract()).ToArray(),
-            headings);
+            headings,
+            evaluationMarks);
     }
 
     private static void CollectLayoutEntities(

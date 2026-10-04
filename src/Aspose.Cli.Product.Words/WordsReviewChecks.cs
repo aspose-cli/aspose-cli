@@ -55,6 +55,11 @@ internal static class WordsReviewChecks
         ReviewSeverities.Warning,
         "A heading ends a page after prior content while its body starts on the next page.");
 
+    public static ReviewCheck EvaluationMarks { get; } = new(
+        "WORDS_EVALUATION_MARKS",
+        ReviewSeverities.Warning,
+        "The document holds the banner or footer text that a save without a license wrote into the file, such as 'Created with an evaluation copy of Aspose.Words'; a license does not remove it. Checked only with a license.");
+
     public static IReadOnlyList<ReviewCheck> All { get; } =
     [
         DocumentEmpty,
@@ -67,5 +72,6 @@ internal static class WordsReviewChecks
         ObjectOutsidePage,
         PageBreaksExcessive,
         HeadingOrphaned,
+        EvaluationMarks,
     ];
 }

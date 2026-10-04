@@ -6897,6 +6897,11 @@
             "summary": "The document has no readable text, tables or images."
           },
           {
+            "code": "WORDS_EVALUATION_MARKS",
+            "severity": "warning",
+            "summary": "The document holds the banner or footer text that a save without a license wrote into the file, such as 'Created with an evaluation copy of Aspose.Words'; a license does not remove it. Checked only with a license."
+          },
+          {
             "code": "WORDS_HEADING_ORPHANED",
             "severity": "warning",
             "summary": "A heading ends a page after prior content while its body starts on the next page."
@@ -14605,6 +14610,7 @@
             "SLIDES_TEXT_TOO_SMALL",
             "WORDS_COMMENTS_PRESENT",
             "WORDS_DOCUMENT_EMPTY",
+            "WORDS_EVALUATION_MARKS",
             "WORDS_HEADING_ORPHANED",
             "WORDS_OBJECT_OUTSIDE_PAGE",
             "WORDS_PAGE_BLANK",

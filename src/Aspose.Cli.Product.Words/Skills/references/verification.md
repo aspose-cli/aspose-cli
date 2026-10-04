@@ -60,6 +60,11 @@ checks are listed with `aspose-cli capabilities words --output json` under
 - `WORDS_OBJECT_OUTSIDE_PAGE`: a floating image or shape crosses the page edge.
 - `WORDS_REVISIONS_PRESENT` (info): tracked revisions are shown; never accept
   them as a visual repair.
+- `WORDS_EVALUATION_MARKS`: a run without a license saved its banner, footer
+  sentence and watermark into the file, and a license does not remove them;
+  regenerate the document from its original inputs with the license before
+  delivery. Only a licensed review checks it, because opening a document
+  without a license adds the marks itself.
 - `WORDS_COMMENTS_PRESENT` (info): the document keeps comments
   (`document.commentCount` in `words inspect`); disclose them, and remove them
   with `remove_comments` only when the user asks.
