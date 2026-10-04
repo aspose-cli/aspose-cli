@@ -30,6 +30,16 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void FullScopeRuns_JoinToTheBlockText()
+    {
+        string input = CreateAnnotatedParagraph();
+
+        DocumentReadResult read = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "full" });
+
+        Assert.Equal(Visible, string.Concat(read.Blocks[0].Runs!.Select(static run => run.Text)));
+    }
+
+    [Fact]
     public void SearchSnippetsAndFindAddresses_UseTheSameVisibleText()
     {
         string input = CreateAnnotatedParagraph();

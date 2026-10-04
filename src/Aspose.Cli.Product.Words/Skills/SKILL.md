@@ -19,8 +19,8 @@ session start, the rules every product shares and the delivery checklist are in
   and `query search` the `scope` and `section` of each hit; neither gives a
   `block` in headers and footers. A **section** carries page setup, headers and footers, numbered
   from 1.
-- Block text, search snippets and `heading`/`find` addresses use the text a
-  reader sees: field results rather than field codes, without text a tracked
+- Block text, `--scope full` runs, search snippets and `heading`/`find`
+  addresses use the text a reader sees: field results rather than field codes, without text a tracked
   change deletes, and without the comments and footnotes a paragraph anchors.
   Read those with `inspect --detail comments` or `query search --scope`, and
   tracked changes themselves with `inspect --detail revisions`

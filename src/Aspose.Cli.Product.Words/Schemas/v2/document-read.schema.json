@@ -26,6 +26,7 @@
           "headingLevel": { "type": "integer", "minimum": 1 },
           "runs": {
             "type": "array",
+            "description": "The runs of the visible text, in order: their text joins to the paragraph's text, without field codes, deleted text or anchored comments and footnotes.",
             "items": {
               "type": "object",
               "required": ["text"],

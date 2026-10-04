@@ -17,10 +17,34 @@ internal static class WordsText
     internal static string Of(Node node)
     {
         var text = new StringBuilder();
+        Walk(
+            node,
+            run => text.Append(run.Text),
+            paragraphStart: () =>
+            {
+                // A nested paragraph, such as a text box's, starts on a line of its own.
+                if (text.Length > 0 && text[^1] != ControlChar.ParagraphBreakChar)
+                {
+                    text.Append(ControlChar.ParagraphBreakChar);
+                }
+            },
+            paragraphEnd: () => text.Append(ControlChar.ParagraphBreakChar));
+        return Clean(text.ToString());
+    }
+
+    /// <summary>The runs whose text <see cref="Of"/> reads from a node, in order.</summary>
+    internal static IReadOnlyList<Run> VisibleRuns(Node node)
+    {
+        var runs = new List<Run>();
+        Walk(node, runs.Add, paragraphStart: null, paragraphEnd: null);
+        return runs;
+    }
+
+    private static void Walk(Node node, Action<Run> visible, Action? paragraphStart, Action? paragraphEnd)
+    {
         var fields = new Stack<bool>();
         int codes = 0;
         Append(node, isRoot: true);
-        return Clean(text.ToString());
 
         void Append(Node current, bool isRoot)
         {
@@ -43,15 +67,14 @@ internal static class WordsText
                 case Run run:
                     if (codes == 0 && !run.IsDeleteRevision)
                     {
-                        text.Append(run.Text);
+                        visible(run);
                     }
 
                     return;
                 case CompositeNode composite:
-                    // A nested paragraph, such as a text box's, starts on a line of its own.
-                    if (current is Paragraph && text.Length > 0 && text[^1] != ControlChar.ParagraphBreakChar)
+                    if (current is Paragraph)
                     {
-                        text.Append(ControlChar.ParagraphBreakChar);
+                        paragraphStart?.Invoke();
                     }
 
                     for (Node? child = composite.FirstChild; child is not null; child = child.NextSibling)
@@ -61,7 +84,7 @@ internal static class WordsText
 
                     if (current is Paragraph)
                     {
-                        text.Append(ControlChar.ParagraphBreakChar);
+                        paragraphEnd?.Invoke();
                     }
 
                     return;

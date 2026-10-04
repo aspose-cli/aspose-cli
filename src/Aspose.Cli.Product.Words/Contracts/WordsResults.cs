@@ -149,6 +149,10 @@ public sealed record BlockData
     public string? Text { get; init; }
     public string? Style { get; init; }
     public int? HeadingLevel { get; init; }
+    /// <summary>
+    /// The runs of the visible text, in order: their text joins to the paragraph's text, without
+    /// field codes, deleted text or anchored comments and footnotes.
+    /// </summary>
     public IReadOnlyList<RunData>? Runs { get; init; }
     public IReadOnlyList<ImageData>? Images { get; init; }
     public string? BreakAfter { get; init; }

@@ -80,7 +80,7 @@ internal static class ReadProjection
             var runs = scope == "full" ? new List<RunData>() : null;
             if (runs is not null)
             {
-                foreach (Run run in paragraph.Runs)
+                foreach (Run run in WordsText.VisibleRuns(paragraph))
                 {
                     if (runs.Count == 500 || remaining == 0 && run.Text.Length > 0)
                     {
