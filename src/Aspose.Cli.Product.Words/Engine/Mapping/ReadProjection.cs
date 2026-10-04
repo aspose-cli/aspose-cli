@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Tables;
@@ -17,6 +18,18 @@ internal static class ReadProjection
         {
             WordsSections.Get(loaded.Document, section);
             candidates = candidates.Where(entry => entry.Section == section).ToArray();
+            // Block numbers run through the whole document, so a range can miss the section.
+            if (request.Blocks is not null && candidates.Count == 0)
+            {
+                int[] held = index.Entries.Where(entry => entry.Section == section).Select(static entry => entry.Index).ToArray();
+                throw CliErrors.NotFoundAt(
+                    WordsDiagnostics.BlockNotFound,
+                    "block",
+                    request.Blocks.Text,
+                    index.Count,
+                    $"Section {section} holds block{(held.Length == 1 ? "" : "s")} {PageRange.Describe(held)}; "
+                    + "use a range inside it, or drop --blocks to read the whole section.");
+            }
         }
 
         if (request.Scope == "outline")

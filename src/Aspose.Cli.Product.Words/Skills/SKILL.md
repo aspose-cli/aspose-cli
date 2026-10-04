@@ -45,7 +45,8 @@ and formatting metadata do not count against it. Check `window.truncated` and
 each block's `contentTruncated`, and run `window.next` as given: it resumes at
 the block the budget cut short and doubles `--max-chars` when that block alone
 exceeded it. `--section` with `--blocks` reads only that section's blocks in
-the range. `extract --what text` writes the visible text of every block to one
+the range; block numbers run through the whole document, so a range with none
+of them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks. `extract --what text` writes the visible text of every block to one
 file, one line per paragraph. Windows, paging and compact output in general:
 `aspose-cli docs reading`.
 

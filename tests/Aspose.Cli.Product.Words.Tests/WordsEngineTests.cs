@@ -120,6 +120,27 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void ABlockRangeOutsideTheSection_IsBlockNotFoundNamingTheSectionBlocks()
+    {
+        string input = _fixture.CreateTwoSectionDocument();
+        int[] second = _fixture.Engine.Read(input, new DocumentReadRequest { Section = 2 })
+            .Blocks.Select(static block => block.Block).ToArray();
+
+        CliException read = Assert.Throws<CliException>(() =>
+            _fixture.Engine.Read(input, new DocumentReadRequest { Section = 2, Blocks = PageRange.Parse("1") }));
+        DocumentReadResult overlapping = _fixture.Engine.Read(
+            input, new DocumentReadRequest { Section = 2, Blocks = PageRange.Parse($"1-{second[0]}") });
+
+        Assert.Equal(WordsDiagnostics.BlockNotFound, read.Code);
+        Assert.Equal("1", read.Details!["requested"]!.GetValue<string>());
+        Assert.Equal(second[^1], read.Details["availableCount"]!.GetValue<int>());
+        Assert.Equal(
+            $"Section 2 holds blocks {second[0]}-{second[^1]}; use a range inside it, or drop --blocks to read the whole section.",
+            read.Hint);
+        Assert.Equal("Second section", Assert.Single(overlapping.Blocks).Text);
+    }
+
+    [Fact]
     public void MissingSectionsAndOccurrences_ReportHowManyExist()
     {
         string input = _fixture.CreateReport();
