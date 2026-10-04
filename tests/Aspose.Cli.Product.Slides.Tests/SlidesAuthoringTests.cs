@@ -244,6 +244,37 @@ public sealed class SlidesAuthoringTests
     }
 
     [Fact]
+    public void SetBody_ParagraphWithoutBullet_IsAPlainParagraph()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("layout.pptx");
+        fixture.Engine.Create(new NewPresentationRequest { OutputPath = input });
+        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        {
+            Ops = [new AddSlideOp { Layout = "Title and Content" }],
+        }, new PresentationEditRequest { OutputPath = input, Overwrite = true });
+        string edited = fixture.File("layout.plain.pptx");
+        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        {
+            Ops =
+            [
+                new SetBodyOp
+                {
+                    Slide = 2,
+                    Paragraphs = [new SlidesParagraphInput { Text = "Note", Bullet = false }, new SlidesParagraphInput { Text = "Point" }],
+                },
+            ],
+        }, new PresentationEditRequest { OutputPath = edited });
+
+        using var deck = new Presentation(edited);
+        IAutoShape body = Assert.Single(SlidesPlaceholders.Content(deck.Slides[1]));
+        IParagraph[] paragraphs = [.. body.TextFrame.Paragraphs];
+        Assert.Equal(BulletType.None, paragraphs[0].ParagraphFormat.GetEffective().Bullet.Type);
+        Assert.True(paragraphs[0].ParagraphFormat.GetEffective().Indent >= 0);
+        Assert.Equal(BulletType.NotDefined, paragraphs[1].ParagraphFormat.Bullet.Type);
+    }
+
+    [Fact]
     public void BodyPlaceholder_IsFilledInPlaceAndAddressedByItsRole()
     {
         using var fixture = new SlidesEngineFixture();

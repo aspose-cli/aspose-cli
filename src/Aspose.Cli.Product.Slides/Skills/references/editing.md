@@ -44,6 +44,8 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
 
 - `set_title`, `set_body` and `set_text` fill placeholders the layout already styles; prefer
   them to `set_shape_style`, which overrides every run of one shape.
+- `set_body` paragraphs take their level's bullet; give a paragraph `"bullet": false` to write it
+  plain, as a Markdown paragraph is. `set_text` keeps the placeholder's bullets on every line.
 - A shape's text in `query slides`, `query search` and `extract --what text` includes its table
   cells, group children and SmartArt nodes. Extracted text and notes put each paragraph on its
   own line; lines are separated by line feeds.

@@ -101,6 +101,9 @@ public sealed record SlidesParagraphInput
 
     /// <summary>The outline level, 0 for a top-level paragraph.</summary>
     [Minimum(0), Maximum(8)] public int Level { get; init; }
+
+    /// <summary>Whether the paragraph shows its level's bullet; false writes a plain paragraph without one.</summary>
+    public bool Bullet { get; init; } = true;
 }
 
 /// <summary>Visual styling of a slide shape and its text; it must set at least one property.</summary>

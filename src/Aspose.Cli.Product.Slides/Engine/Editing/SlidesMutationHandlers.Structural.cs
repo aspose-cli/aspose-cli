@@ -192,7 +192,7 @@ internal sealed partial class SlidesMutationHandlers
             operation.Paragraphs.Select(static input => new AuthoredParagraph(
                 [new AuthoredRun(input.Text)],
                 input.Level,
-                ParagraphList.Inherit)));
+                input.Bullet ? ParagraphList.Inherit : ParagraphList.None)));
 
         _touched.Add(Slide.SlideId);
         return operation.Paragraphs.Count;

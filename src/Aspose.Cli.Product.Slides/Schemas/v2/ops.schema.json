@@ -1693,6 +1693,11 @@
           "minimum": 0,
           "maximum": 8,
           "default": 0
+        },
+        "bullet": {
+          "description": "Whether the paragraph shows its level's bullet; false writes a plain paragraph without one.",
+          "type": "boolean",
+          "default": true
         }
       }
     },
