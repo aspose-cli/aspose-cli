@@ -299,8 +299,11 @@ public sealed class PdfEngineTests
             new PdfInfoRequest { Password = "owner-secret", Details = ["permissions"] });
 
         Assert.True(normal.Pdf.Encrypted);
-        Assert.Equal("user", normal.Pdf.PasswordType);
-        Assert.False(normal.Permissions!.OwnerAccess);
+        // The file has only an owner password, so it opened without one.
+        Assert.Equal("none", normal.Pdf.PasswordType);
+        Assert.False(normal.Permissions!.HasOpenPassword);
+        Assert.True(normal.Permissions.HasOwnerPassword);
+        Assert.False(normal.Permissions.OwnerAccess);
         Assert.Equal("owner", owner.Pdf.PasswordType);
         Assert.True(owner.Permissions!.OwnerAccess);
     }

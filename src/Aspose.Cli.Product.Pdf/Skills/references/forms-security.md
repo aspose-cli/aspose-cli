@@ -44,7 +44,10 @@ flattens every button `query forms` lists under that name.
 
 `encrypt` and `decrypt` are edit operations whose ops name environment
 variables, never password values (`aspose-cli docs editing`). Reopen protected
-output with `--password-env` and inspect `ownerAccess` and `permissions`. The CLI
+output with `--password-env` and inspect `ownerAccess` and `permissions`.
+`hasOpenPassword` and `hasOwnerPassword` state which passwords the file has, and
+`passwordType` which one this run opened it with: a file with only an owner
+password opens with `none`, and anyone can open it within its permissions. The CLI
 reports these flags and adds no permission preflight beyond the engine's; opening
 a PDF or completing an edit is not proof of owner authorization, so perform only
 authorized changes.

@@ -60,7 +60,7 @@ internal static class PdfInfoProjection
                 FormType = form.Type,
                 AttachmentCount = document.EmbeddedFiles.Count,
                 Signed = signatures.Any(static item => item.Signed),
-                PasswordType = loaded.PasswordType.ToString().ToLowerInvariant(),
+                PasswordType = OpenedWith(loaded),
             },
             Pages = includePages ? Pages(document) : null,
             PageLabels = PageLabels(document),
@@ -251,6 +251,15 @@ internal static class PdfInfoProjection
 
         return fonts.Values.OrderBy(static item => item.Name, StringComparer.Ordinal).ToArray();
     }
+
+    /// <summary>
+    /// The password the file was opened with. Aspose.PDF reports a file that has only an owner
+    /// password as opened with its empty user password; no password was given, so it is none.
+    /// </summary>
+    private static string OpenedWith(LoadedPdf loaded) =>
+        loaded.PasswordType == PasswordType.User && !new PdfFileInfo(loaded.Document).HasOpenPassword
+            ? "none"
+            : loaded.PasswordType.ToString().ToLowerInvariant();
 
     private static PdfPermissionInfo Permissions(Document document, PasswordType passwordType)
     {

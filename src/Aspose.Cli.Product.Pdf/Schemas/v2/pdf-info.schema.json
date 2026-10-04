@@ -51,7 +51,10 @@
         "formType": { "enum": ["none", "acro", "xfa"] },
         "attachmentCount": { "type": "integer", "minimum": 0 },
         "signed": { "type": "boolean" },
-        "passwordType": { "enum": ["none", "user", "owner"] }
+        "passwordType": {
+          "enum": ["none", "user", "owner"],
+          "description": "The password this run opened the file with: none when it needed none (an unencrypted file, or one with only an owner password), user for the open password, owner for the owner password. permissions.hasOpenPassword and hasOwnerPassword state which passwords the file has."
+        }
       }
     },
     "pages": {
@@ -146,9 +149,9 @@
       "required": ["hasOpenPassword", "hasOwnerPassword", "ownerAccess", "print", "copy", "modify", "annotate", "fillForms", "extractAccessibility", "assemble", "printHighResolution"],
       "additionalProperties": false,
       "properties": {
-        "hasOpenPassword": { "type": "boolean" },
-        "hasOwnerPassword": { "type": "boolean" },
-        "ownerAccess": { "type": "boolean" },
+        "hasOpenPassword": { "type": "boolean", "description": "Whether the file needs a password to open." },
+        "hasOwnerPassword": { "type": "boolean", "description": "Whether the file has an owner password, which lifts its permissions." },
+        "ownerAccess": { "type": "boolean", "description": "Whether this run may change the file regardless of its permissions: it is not encrypted or was opened with the owner password." },
         "print": { "type": "boolean" },
         "copy": { "type": "boolean" },
         "modify": { "type": "boolean" },

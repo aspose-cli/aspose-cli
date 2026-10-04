@@ -39,6 +39,7 @@ public sealed record PdfSummary
     public required string FormType { get; init; }
     public required int AttachmentCount { get; init; }
     public required bool Signed { get; init; }
+    /// <summary>The password the file was opened with: none, user or owner.</summary>
     public required string PasswordType { get; init; }
 }
 
