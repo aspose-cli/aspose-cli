@@ -65,6 +65,85 @@ internal static class SlidesReviewProjection
         shape is IAutoShape { TextFrame: { } frame }
         && frame.TextFrameFormat.GetEffective().AutofitType is TextAutofitType.Shape or TextAutofitType.Normal;
 
+    /// <summary>
+    /// The one solid color behind the text of a text shape or chart: its own opaque fill, else
+    /// that of the topmost filled shape beneath its center, on the slide or in the art its layout
+    /// and master show, else the slide's solid background. Null for other shapes, when a filled
+    /// shape beneath covers less than half of the shape, and when what shows through is a
+    /// picture, gradient, pattern, translucent fill, table, group or anything else without one
+    /// known color.
+    /// </summary>
+    internal static System.Drawing.Color? Backdrop(ISlide slide, IShape shape)
+    {
+        if (shape is not (IAutoShape { TextFrame: not null } or IChart))
+        {
+            return null;
+        }
+
+        float x = shape.X + (shape.Width / 2);
+        float y = shape.Y + (shape.Height / 2);
+        foreach (IShape below in Beneath(slide, shape))
+        {
+            if (!ReferenceEquals(below, shape)
+                && (x < below.X || x > below.X + below.Width || y < below.Y || y > below.Y + below.Height))
+            {
+                continue;
+            }
+
+            if (below is not (IAutoShape or IChart))
+            {
+                return null;
+            }
+
+            IFillFormatEffectiveData fill = below.FillFormat.GetEffective();
+            if (fill.FillType != FillType.NoFill)
+            {
+                return ReferenceEquals(below, shape) || Covered(shape, below) >= 0.5 ? Opaque(fill) : null;
+            }
+        }
+
+        return Opaque(slide.Background.GetEffective().FillFormat);
+    }
+
+    /// <summary>
+    /// The shape and what is drawn beneath it, topmost first: the slide's shapes, then the
+    /// shapes the layout and its master draw on the slide (their placeholders draw nothing).
+    /// </summary>
+    private static IEnumerable<IShape> Beneath(ISlide slide, IShape shape)
+    {
+        IEnumerable<IShape> beneath = slide.Shapes.Take(slide.Shapes.IndexOf(shape) + 1).Reverse();
+        if (slide.ShowMasterShapes && slide.LayoutSlide is { } layout)
+        {
+            beneath = beneath.Concat(Art(layout));
+            if (layout.ShowMasterShapes && layout.MasterSlide is { } master)
+            {
+                beneath = beneath.Concat(Art(master));
+            }
+        }
+
+        return beneath;
+
+        static IEnumerable<IShape> Art(IBaseSlide slide) =>
+            slide.Shapes.Where(static shape => shape.Placeholder is null).Reverse();
+    }
+
+    /// <summary>The share of the shape's frame that the other shape's frame covers.</summary>
+    private static double Covered(IShape shape, IShape other)
+    {
+        double width = Math.Min(shape.X + shape.Width, other.X + other.Width) - Math.Max(shape.X, other.X);
+        double height = Math.Min(shape.Y + shape.Height, other.Y + other.Height) - Math.Max(shape.Y, other.Y);
+        return Math.Max(0, width) * Math.Max(0, height) / Math.Max(1, shape.Width * shape.Height);
+    }
+
+    private static System.Drawing.Color? Opaque(IFillFormatEffectiveData fill) =>
+        fill.FillType == FillType.Solid && fill.SolidFillColor.A >= 230 ? fill.SolidFillColor : null;
+
+    /// <summary>The color a chart states for all its text; null for another shape or when the chart style decides it.</summary>
+    internal static System.Drawing.Color? ChartTextColor(IShape shape) =>
+        shape is IChart { TextFormat.PortionFormat.FillFormat: { FillType: FillType.Solid } fill }
+            ? fill.SolidFillColor.Color
+            : null;
+
     /// <summary>A color as <c>#RRGGBB</c>, without its transparency.</summary>
     internal static string Hex(System.Drawing.Color color) =>
         string.Create(CultureInfo.InvariantCulture, $"#{color.R:X2}{color.G:X2}{color.B:X2}");

@@ -1,6 +1,8 @@
+using System.Drawing;
 using System.Globalization;
 using System.Text;
 using Aspose.Cli.Product.Slides.Contracts;
+using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Product.Slides;
@@ -15,6 +17,9 @@ internal static class SlidesReviewAnalyzer
     private const double TextShapeTolerance = 4;
     internal const double SevereCoverage = 0.80;
     internal const double ChartCoverage = 0.30;
+
+    // WCAG's minimum for large text, which slide text usually is.
+    internal const double MinimumContrast = 3;
     private const string Hint = "Inspect the rendered evidence, adjust only confirmed layout defects, save, and review again.";
 
     /// <summary>
@@ -92,7 +97,44 @@ internal static class SlidesReviewAnalyzer
         AnalyzeDensity(slide, slideWidth, slideHeight, result);
         AnalyzeOverlaps(slide, slideWidth, slideHeight, result);
         AnalyzeTextOverObjects(slide, slideWidth, slideHeight, result);
+        AnalyzeContrast(slide, result);
         AnalyzeEmptyPlaceholders(slide, result);
+    }
+
+    /// <summary>
+    /// Text in a color too close to the one solid color behind it, such as a dark template title
+    /// on a slide given a dark background, or white text merged onto a white slide. The least
+    /// readable run of each shape is judged, or a chart's stated text color; text over a picture,
+    /// a gradient or a chart style's own text color is left to the image inspection.
+    /// </summary>
+    private static void AnalyzeContrast(SlideData slide, SlidesReviewAnalysis result)
+    {
+        foreach (SlideShapeData shape in slide.Shapes.Where(static shape => shape.Backdrop is not null && !IsDecorative(shape)))
+        {
+            Color backdrop = shape.Backdrop!.Value;
+            IEnumerable<Color> colors = shape.Type == "chart"
+                ? shape.ChartTextColor is { } chart ? [chart] : []
+                : (shape.Runs ?? [])
+                    .Where(static run => !string.IsNullOrWhiteSpace(run.Text) && run.Color is not null)
+                    .Select(static run => ColorTranslator.FromHtml(run.Color!));
+            (Color Text, double Ratio)[] low = colors
+                .Select(color => (Text: color, Ratio: SlidesContrast.Ratio(color, backdrop)))
+                .Where(static pair => pair.Ratio < MinimumContrast)
+                .OrderBy(static pair => pair.Ratio)
+                .Take(1)
+                .ToArray();
+            if (low.Length == 0)
+            {
+                continue;
+            }
+
+            result.LowContrastTexts++;
+            result.Findings.Add(SlidesReviewChecks.TextLowContrast.Finding(
+                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} is {SlidesReviewProjection.Hex(low[0].Text)} on {SlidesReviewProjection.Hex(backdrop)}, a contrast of {low[0].Ratio:0.0}:1; give the text a contrasting color with set_shape_style, or change what is behind it."),
+                Location(slide.Slide),
+                Hint,
+                Part(slide)));
+        }
     }
 
     /// <summary>
@@ -466,5 +508,6 @@ internal sealed class SlidesReviewAnalysis
     public int TextOutsideSlide { get; set; }
     public int TextOverflows { get; set; }
     public int EmptyPlaceholders { get; set; }
+    public int LowContrastTexts { get; set; }
     public int ExcludedEvaluationWatermarks { get; init; }
 }

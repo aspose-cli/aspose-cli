@@ -1,4 +1,5 @@
 using Aspose.Slides;
+using Aspose.Slides.Charts;
 using Aspose.Slides.Export;
 using Xunit;
 
@@ -34,6 +35,11 @@ public sealed class SlidesReviewCheckTests
             Slide(10, Shape(1, new(60, 100, 600, 300)) with { Placeholder = "body" }),
             Slide(11, TitleWithLines(1, new(40, 22, 640, 58), new(52, -24, 616, 100))),
             Slide(12, TitleWithLines(1, new(400, 100, 200, 40), new(410, 104, 180, 108))),
+            Slide(13, Shape(1, new(60, 100, 400, 60), "White") with
+            {
+                Runs = [new SlideTextRunData { Text = "White", Color = "#FFFFFF" }],
+                Backdrop = System.Drawing.Color.White,
+            }),
         ];
 
         SlidesReviewAnalysis analysis = SlidesReviewAnalyzer.Analyze(slides, Width, Height);
@@ -235,6 +241,108 @@ public sealed class SlidesReviewCheckTests
         fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = deck });
 
         Assert.DoesNotContain(Review(fixture, deck).Findings, static finding => finding.Code == SlidesReviewChecks.TextOverflowsShape.Code);
+    }
+
+    [Fact]
+    public void TextTheEyeCannotTellFromWhatIsBehindIt_HasTooLittleContrast()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string deck = fixture.File("contrast.pptx");
+        var navy = System.Drawing.Color.FromArgb(0x1B, 0x2A, 0x41);
+        using (var presentation = new Presentation())
+        {
+            ILayoutSlide blank = presentation.LayoutSlides.GetByType(SlideLayoutType.Blank);
+            presentation.Slides.RemoveAt(0);
+            ISlide[] slides = [.. Enumerable.Range(0, 6).Select(_ => presentation.Slides.AddEmptySlide(blank))];
+
+            // 1: theme-black text on a navy background; 2: white text on the white background.
+            slides[0].Background.Type = BackgroundType.OwnBackground;
+            slides[0].Background.FillFormat.FillType = FillType.Solid;
+            slides[0].Background.FillFormat.SolidFillColor.Color = navy;
+            TextBox(slides[0], "Quarterly revenue");
+            TextBox(slides[1], "Merged from a dark template", System.Drawing.Color.White);
+
+            // 3: theme text on white; 4: white text on its own navy fill; 5: white text over a navy panel.
+            TextBox(slides[2], "Readable");
+            IAutoShape filled = TextBox(slides[3], "Badge", System.Drawing.Color.White);
+            filled.FillFormat.FillType = FillType.Solid;
+            filled.FillFormat.SolidFillColor.Color = navy;
+            IAutoShape panel = slides[4].Shapes.AddAutoShape(ShapeType.Rectangle, 20, 80, 600, 200);
+            panel.FillFormat.FillType = FillType.Solid;
+            panel.FillFormat.SolidFillColor.Color = navy;
+            TextBox(slides[4], "On the panel", System.Drawing.Color.White);
+
+            // 6: a chart whose text is stated white, on the white background.
+            IChart chart = slides[5].Shapes.AddChart(ChartType.ClusteredColumn, 40, 80, 500, 300);
+            chart.TextFormat.PortionFormat.FillFormat.FillType = FillType.Solid;
+            chart.TextFormat.PortionFormat.FillFormat.SolidFillColor.Color = System.Drawing.Color.White;
+            presentation.Save(deck, SaveFormat.Pptx);
+        }
+
+        SlidesReviewAnalysis analysis = Review(fixture, deck);
+
+        ReviewFinding[] findings = [.. analysis.Findings.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code)];
+        Assert.Equal(["slide 1", "slide 2", "slide 6"], findings.Select(static finding => finding.Location));
+        Assert.Contains("#000000 on #1B2A41", findings[0].Message, StringComparison.Ordinal);
+        Assert.Contains("shapeId ", findings[1].Message, StringComparison.Ordinal);
+        Assert.Equal(3, analysis.LowContrastTexts);
+    }
+
+    [Fact]
+    public void TextOverTemplateArtOrASmallPatch_IsJudgedByWhatIsReallyBehindIt()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string deck = fixture.File("template-art.pptx");
+        var navy = System.Drawing.Color.FromArgb(0x1B, 0x2A, 0x41);
+        using (var presentation = new Presentation())
+        {
+            ILayoutSlide blank = presentation.LayoutSlides.GetByType(SlideLayoutType.Blank);
+            ILayoutSlide titled = presentation.LayoutSlides.GetByType(SlideLayoutType.TitleOnly);
+            Bar(presentation.Masters[0], new(0, 0, 720, 60));
+            Bar(titled, new(0, 80, 720, 120));
+            presentation.Slides.RemoveAt(0);
+
+            // 1: white text on the layout's navy bar; 2: white text on the master's navy bar.
+            TextBox(presentation.Slides.AddEmptySlide(titled), "On the layout bar", System.Drawing.Color.White);
+            TextBox(presentation.Slides.AddEmptySlide(blank), "On the master bar", System.Drawing.Color.White).Y = 0;
+
+            // 3: theme-black text on white, over a navy patch at its center.
+            ISlide patched = presentation.Slides.AddEmptySlide(blank);
+            Bar(patched, new(275, 130, 30, 20));
+            TextBox(patched, "Mostly on white");
+
+            // 4: white text on the white background is still reported.
+            TextBox(presentation.Slides.AddEmptySlide(blank), "Invisible", System.Drawing.Color.White);
+            presentation.Save(deck, SaveFormat.Pptx);
+
+            void Bar(IBaseSlide slide, Rect rect)
+            {
+                IAutoShape bar = slide.Shapes.AddAutoShape(ShapeType.Rectangle, (float)rect.X, (float)rect.Y, (float)rect.Width, (float)rect.Height);
+                bar.FillFormat.FillType = FillType.Solid;
+                bar.FillFormat.SolidFillColor.Color = navy;
+                bar.LineFormat.FillFormat.FillType = FillType.NoFill;
+            }
+        }
+
+        SlidesReviewAnalysis analysis = Review(fixture, deck);
+
+        Assert.Equal(
+            ["slide 4"],
+            analysis.Findings.Where(static finding => finding.Code == SlidesReviewChecks.TextLowContrast.Code).Select(static finding => finding.Location));
+    }
+
+    private static IAutoShape TextBox(ISlide slide, string text, System.Drawing.Color? color = null)
+    {
+        IAutoShape box = slide.Shapes.AddAutoShape(ShapeType.Rectangle, 40, 100, 500, 80, createFromTemplate: false);
+        box.AddTextFrame(text);
+        if (color is { } stated)
+        {
+            IPortionFormat format = box.TextFrame.Paragraphs[0].Portions[0].PortionFormat;
+            format.FillFormat.FillType = FillType.Solid;
+            format.FillFormat.SolidFillColor.Color = stated;
+        }
+
+        return box;
     }
 
     [Fact]

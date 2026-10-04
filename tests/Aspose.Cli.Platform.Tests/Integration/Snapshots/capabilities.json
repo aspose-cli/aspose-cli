@@ -4876,6 +4876,11 @@
             "summary": "A slide repeats the meaningful content and geometry of an earlier slide."
           },
           {
+            "code": "SLIDES_TEXT_LOW_CONTRAST",
+            "severity": "warning",
+            "summary": "Text has a contrast below 3:1 with the solid fill or background behind it, so it is hard to read."
+          },
+          {
             "code": "SLIDES_TEXT_OUTSIDE_SLIDE",
             "severity": "warning",
             "summary": "Laid-out text runs past a slide edge, where the slide cuts it off."
@@ -14610,6 +14615,7 @@
             "SLIDES_SHAPE_OUTSIDE_SLIDE",
             "SLIDES_SLIDE_BLANK",
             "SLIDES_SLIDE_DUPLICATE",
+            "SLIDES_TEXT_LOW_CONTRAST",
             "SLIDES_TEXT_OUTSIDE_SLIDE",
             "SLIDES_TEXT_OVERFLOWS_SHAPE",
             "SLIDES_TEXT_OVERLAPS_OBJECT",

@@ -168,6 +168,12 @@ public sealed record SlideShapeData
     /// <summary>Whether the shape resizes to fit its text or shrinks its text on overflow, so text beyond its stored frame is not an overflow.</summary>
     internal bool TextAutofits { get; init; }
 
+    /// <summary>The one solid color behind the text of a text shape or chart; null when no single color is known.</summary>
+    internal System.Drawing.Color? Backdrop { get; init; }
+
+    /// <summary>The color a chart states for its text; null when the chart style decides it.</summary>
+    internal System.Drawing.Color? ChartTextColor { get; init; }
+
     /// <summary>Whether an evaluation-mode read found the shape to be the watermark text box an evaluation save added.</summary>
     internal bool EvaluationWatermark { get; init; }
 }

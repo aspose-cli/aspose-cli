@@ -27,7 +27,12 @@ or chart or hidden by an opaque shape in front of it, however small (`SLIDES_TEX
 often much taller placeholder), laid-out text cut off by a slide edge (`SLIDES_TEXT_OUTSIDE_SLIDE`,
 for example a long title in a bottom-anchored placeholder that wraps upward off the slide) or
 spilling out of a shape that neither grows to fit it nor shrinks it on overflow
-(`SLIDES_TEXT_OVERFLOWS_SHAPE`), empty
+(`SLIDES_TEXT_OVERFLOWS_SHAPE`), text whose color has a contrast below 3:1 with the one solid
+color behind it: the shape's own fill, a filled shape beneath it on the slide or in its
+layout's or master's art, or the slide background (`SLIDES_TEXT_LOW_CONTRAST`, for example a
+dark template title on a slide given a dark background, or white text merged onto a white
+slide; a chart is judged by the text color it states, and text over a picture, a gradient or
+a filled shape covering less than half of it is not judged), empty
 placeholders that PowerPoint shows as prompts while editing (`SLIDES_PLACEHOLDER_EMPTY`), blank or
 duplicate slides and content density (judged by object count alone on a slide whose text
 evaluation mode replaced). Text in rotated shapes and vertical text is not measured. A

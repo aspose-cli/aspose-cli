@@ -71,6 +71,7 @@ internal static class SlidesEngineSupport
         var textBlocks = scope == PresentationReadScopes.Text ? new List<string>() : null;
         var shapes = new List<SlideShapeData>();
         int zOrder = 0;
+        bool full = scope == PresentationReadScopes.Full;
         foreach (IShape shape in slide.Shapes)
         {
             string? sourceText = ShapeText(shape);
@@ -94,11 +95,13 @@ internal static class SlidesEngineSupport
                     Placeholder = SlidesPlaceholders.Role(shape.Placeholder?.Type),
                     AltText = EmptyToNull(shape.AlternativeText),
                     Text = text,
-                    Runs = scope == PresentationReadScopes.Full ? Runs(shape, ref remaining, ref contentTruncated) : null,
+                    Runs = full ? Runs(shape, ref remaining, ref contentTruncated) : null,
                     ZOrder = zOrder++,
                     HasOpaqueFill = SlidesReviewProjection.HasOpaqueFill(shape),
-                    TextRect = scope == PresentationReadScopes.Full ? SlidesReviewProjection.TextRect(shape) : null,
-                    TextAutofits = scope == PresentationReadScopes.Full && SlidesReviewProjection.TextAutofits(shape),
+                    TextRect = full ? SlidesReviewProjection.TextRect(shape) : null,
+                    TextAutofits = full && SlidesReviewProjection.TextAutofits(shape),
+                    Backdrop = full ? SlidesReviewProjection.Backdrop(slide, shape) : null,
+                    ChartTextColor = full ? SlidesReviewProjection.ChartTextColor(shape) : null,
                     EvaluationWatermark = evaluation && IsEvaluationWatermark(shape),
                     Rect = new SlideRect
                     {

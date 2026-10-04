@@ -61,6 +61,11 @@ internal static class SlidesReviewChecks
         ReviewSeverities.Warning,
         "Laid-out text spills out of a shape that neither grows to fit it nor shrinks it on overflow.");
 
+    public static ReviewCheck TextLowContrast { get; } = new(
+        "SLIDES_TEXT_LOW_CONTRAST",
+        ReviewSeverities.Warning,
+        string.Create(CultureInfo.InvariantCulture, $"Text has a contrast below {SlidesReviewAnalyzer.MinimumContrast:0}:1 with the solid fill or background behind it, so it is hard to read."));
+
     public static ReviewCheck PlaceholderEmpty { get; } = new(
         "SLIDES_PLACEHOLDER_EMPTY",
         ReviewSeverities.Info,
@@ -79,6 +84,7 @@ internal static class SlidesReviewChecks
         TextOverlapsObject,
         TextOutsideSlide,
         TextOverflowsShape,
+        TextLowContrast,
         PlaceholderEmpty,
     ];
 }
