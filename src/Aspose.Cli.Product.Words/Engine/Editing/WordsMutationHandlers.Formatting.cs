@@ -47,11 +47,7 @@ internal sealed partial class WordsMutationHandlers
                 run.Font.Size = operation.Size.Value;
             }
 
-            if (operation.Font is not null)
-            {
-                run.Font.Name = operation.Font;
-            }
-
+            SetFonts(run.Font, operation.Font, operation.LatinFont, operation.EastAsianFont);
             if (operation.Color is not null)
             {
                 run.Font.Color = ParseColor(operation.Color);

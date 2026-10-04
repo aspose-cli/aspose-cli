@@ -601,6 +601,17 @@
           "type": "string"
         },
         "font": {
+          "description": "The font of Latin and East Asian text.",
+          "type": "string",
+          "minLength": 1
+        },
+        "latinFont": {
+          "description": "The font of Latin text, in place of font's.",
+          "type": "string",
+          "minLength": 1
+        },
+        "eastAsianFont": {
+          "description": "The font of Chinese, Japanese and Korean text, in place of font's.",
           "type": "string",
           "minLength": 1
         },

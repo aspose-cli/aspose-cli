@@ -423,7 +423,14 @@ public sealed record FormatTextOp : WordsOp
     /// <summary>A #RRGGBB or named color.</summary>
     public string? Color { get; init; }
 
+    /// <summary>The font of Latin and East Asian text.</summary>
     [MinLength(1)] public string? Font { get; init; }
+
+    /// <summary>The font of Latin text, in place of font's.</summary>
+    [MinLength(1)] public string? LatinFont { get; init; }
+
+    /// <summary>The font of Chinese, Japanese and Korean text, in place of font's.</summary>
+    [MinLength(1)] public string? EastAsianFont { get; init; }
 
     /// <summary>A #RRGGBB or named highlight color.</summary>
     public string? Highlight { get; init; }

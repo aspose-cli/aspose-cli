@@ -140,7 +140,12 @@ batch: `define_style` on `Normal`
 changes Normal and the styles based on it, and `set_default_font` changes every
 paragraph and character style. Their `font` sets the Latin and the East Asian
 font; `latinFont` and `eastAsianFont` set one of them, as a template that sets
-Chinese text in SimSun and English text in Times New Roman needs. Read them
+Chinese text in SimSun and English text in Times New Roman needs. Styles do not
+reach a font set on the text itself, as chapters appended from RTF, HTML or
+text usually carry (`inspect --detail fonts` still lists their fonts): give
+those blocks `format_text` with the same `font`, `latinFont` and
+`eastAsianFont` fields, for example
+`{"op":"format_text","target":{"blocks":"26-36"},"latinFont":"Arial","eastAsianFont":"SimSun"}`. Read them
 back as each run's `latinFont` and `eastAsianFont` in
 `words query blocks --scope full`; its `font` is the East Asian font when the
 run starts with a Chinese, Japanese or Korean character, otherwise the Latin

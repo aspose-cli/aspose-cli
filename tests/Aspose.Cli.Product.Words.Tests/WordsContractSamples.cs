@@ -385,6 +385,8 @@ internal static class WordsContractSamples
                 Size = 12,
                 Color = "#1F4E79",
                 Font = "Arial",
+                LatinFont = "Calibri",
+                EastAsianFont = "SimSun",
                 Highlight = "yellow",
             },
             new SetStyleOp

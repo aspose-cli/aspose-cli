@@ -391,6 +391,36 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void FormatText_SetsTheLatinAndEastAsianFontsOfRunsSeparately()
+    {
+        // Chapters merged from RTF, HTML or text carry their fonts on the runs, which styles
+        // cannot override.
+        string input = _fixture.Temp.File("direct-fonts.docx");
+        var builder = new DocumentBuilder();
+        builder.Font.NameAscii = "Courier New";
+        builder.Font.NameOther = "Courier New";
+        builder.Font.NameFarEast = "KaiTi";
+        builder.Writeln("第二章 Scope");
+        builder.Write("第三章 Terms");
+        builder.Document.Save(input);
+        string output = _fixture.Temp.File("direct-fonts-out.docx");
+
+        _fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new FormatTextOp { Target = new WordsTarget { Block = 1 }, LatinFont = "Arial", EastAsianFont = "SimSun" },
+                new FormatTextOp { Target = new WordsTarget { Block = 2 }, Font = "SimHei", EastAsianFont = "SimSun" },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        DocumentReadResult full = _fixture.Engine.Read(output, new DocumentReadRequest { Scope = "full" });
+        Assert.Equal(
+            [("Arial", "SimSun"), ("SimHei", "SimSun")],
+            full.Blocks.Where(static block => block.Text?.StartsWith('第') == true).Select(static block => (block.Runs![0].LatinFont, block.Runs![0].EastAsianFont)));
+    }
+
+    [Fact]
     public void MissingTextAnchors_IgnoreSpacesAndPreferBodyTextOverContentsEntries()
     {
         string input = _fixture.Temp.File("contents.docx");

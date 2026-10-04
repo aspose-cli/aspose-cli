@@ -58,6 +58,7 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"add_section","position":"after","after":1}""")]
     [InlineData("""{"op":"add_section"}""")]
     [InlineData("""{"op":"set_default_font","eastAsianFont":"SimSun"}""")]
+    [InlineData("""{"op":"format_text","target":{"blocks":"2-3"},"latinFont":"Arial","eastAsianFont":"SimSun"}""")]
     [InlineData("""{"op":"repeat_table_row","at":{"find":"{{code}}"},"items":[]}""")]
     [InlineData("""{"op":"repeat_table_row","at":{"block":2},"row":2,"items":[{"code":"A-1","extra":""}]}""")]
     [InlineData("""{"op":"repeat_table_row","at":{"block":2},"path":"items.csv"}""")]
