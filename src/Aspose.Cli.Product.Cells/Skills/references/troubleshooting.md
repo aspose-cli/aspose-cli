@@ -98,4 +98,5 @@ gains an "Evaluation Warning" sheet plus watermark content. Disclose it
   `SHEETS_DROPPED` names it; `--sheet` naming another sheet fails with
   `EVALUATION_LIMIT` and writes nothing.
 - A licensed re-save does not remove existing marks. Rebuild the licensed
-  deliverable from the original unmarked inputs.
+  deliverable from the original unmarked inputs. `review` reports each warning
+  sheet as `CELLS_EVALUATION_SHEET`, with or without a license.

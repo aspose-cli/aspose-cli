@@ -194,6 +194,11 @@
             "summary": "A chart has no data series."
           },
           {
+            "code": "CELLS_EVALUATION_SHEET",
+            "severity": "warning",
+            "summary": "A worksheet is the evaluation warning sheet that a save without a license added; a licensed re-save keeps it and the other evaluation marks."
+          },
+          {
             "code": "CELLS_FORMULA_ERROR",
             "severity": "error",
             "summary": "A formula evaluates to an error value."
@@ -14550,6 +14555,7 @@
             "CELLS_CHART_SPLIT_ACROSS_PAGES",
             "CELLS_CHART_TOO_SMALL",
             "CELLS_CHART_WITHOUT_SERIES",
+            "CELLS_EVALUATION_SHEET",
             "CELLS_FORMULA_ERROR",
             "CELLS_POPULATED_COLUMNS_HIDDEN",
             "CELLS_POPULATED_COLUMNS_NARROW",

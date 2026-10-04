@@ -41,6 +41,7 @@ internal static class ReviewLayoutProjection
             PopulatedCells = content.PopulatedCells,
             ContentRange = content.ContentRange is { } range ? A1.FormatRange(range) : null,
             HasVisualObjects = sheet.Shapes.Count > 0,
+            IsEvaluationWarning = CellsEvaluation.IsWarningSheet(sheet),
             HiddenPopulatedColumns = columns.Hidden.ToSet(),
             NarrowPopulatedColumns = columns.Small.ToSet(),
             WidePopulatedColumns = columns.Large.ToSet(),

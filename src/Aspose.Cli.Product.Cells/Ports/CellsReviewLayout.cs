@@ -20,6 +20,9 @@ internal sealed record CellsReviewSheetLayout
 
     public required bool HasVisualObjects { get; init; }
 
+    /// <summary>Whether the sheet is the warning sheet an evaluation save added.</summary>
+    public required bool IsEvaluationWarning { get; init; }
+
     public required CellsReviewDimensionSet HiddenPopulatedColumns { get; init; }
 
     public required CellsReviewDimensionSet NarrowPopulatedColumns { get; init; }

@@ -110,6 +110,11 @@ internal static class CellsReviewChecks
         ReviewSeverities.Warning,
         "The workbook contains VBA, which static images do not exercise.");
 
+    public static ReviewCheck EvaluationSheet { get; } = new(
+        "CELLS_EVALUATION_SHEET",
+        ReviewSeverities.Warning,
+        "A worksheet is the evaluation warning sheet that a save without a license added; a licensed re-save keeps it and the other evaluation marks.");
+
     public static ReviewCheck ReviewTruncated { get; } = new(
         "CELLS_REVIEW_TRUNCATED",
         ReviewSeverities.Warning,
@@ -138,6 +143,7 @@ internal static class CellsReviewChecks
         ChartSplitAcrossPages,
         FormulaError,
         VbaPresent,
+        EvaluationSheet,
         ReviewTruncated,
     ];
 }

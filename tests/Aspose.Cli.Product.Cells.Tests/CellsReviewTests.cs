@@ -117,6 +117,28 @@ public sealed class CellsReviewTests
         Assert.DoesNotContain("explicit width", clipped["Latin"], StringComparison.Ordinal);
         Assert.Contains("explicit width", clipped["Mixed"], StringComparison.Ordinal);
     }
+    /// <summary>
+    /// A workbook an evaluation save marked keeps its warning sheets when a licensed review opens
+    /// it; review reports each one, and nothing on an unmarked workbook.
+    /// </summary>
+    [Fact]
+    public void Review_ReportsTheEvaluationWarningSheetsOfAMarkedWorkbook()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheets", "Data", "--license-mode", "evaluation").ExitCode);
+        Assert.Equal(0, workspace.Run("cells", "edit", "marked.xlsx", "--set", "Data!A1=7", "--in-place", "--license-mode", "evaluation").ExitCode);
+        string unmarked = fixture.CreateSalesWorkbook("unmarked.xlsx");
+
+        Assert.Equal(
+            ["Evaluation Warning", "Evaluation Warning (1)"],
+            Review(fixture, workspace.File("marked.xlsx"))
+                .Where(static finding => finding.Code == "CELLS_EVALUATION_SHEET")
+                .Select(static finding => finding.Location!));
+        Assert.DoesNotContain(Review(fixture, unmarked), static finding => finding.Code == "CELLS_EVALUATION_SHEET");
+    }
+
     [Fact]
     public void ChartPages_DoNotCountTheCellAChartEndsExactlyAt()
     {

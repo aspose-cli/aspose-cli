@@ -8,9 +8,10 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>
 /// The one place that recognizes the worksheet Aspose.Cells evaluation mode adds to every
 /// workbook it saves: an "Evaluation Warning" sheet (or "Evaluation Warning (1)", ... when the
-/// name is taken) that holds only the evaluation notice and becomes the active sheet. The
-/// sheet is recognized only in a workbook the unlicensed engine opened, so a licensed workbook
-/// with a sheet of that name is never misread.
+/// name is taken) that holds only the evaluation notice and becomes the active sheet. Commands
+/// change their defaults for the sheet only in a workbook the unlicensed engine opened, so a
+/// licensed workbook with a sheet of that name keeps its active sheet; review reports the sheet
+/// in any mode (<see cref="IsWarningSheet"/>), because a licensed re-save keeps it.
 /// </summary>
 internal static partial class CellsEvaluation
 {
@@ -123,7 +124,8 @@ internal static partial class CellsEvaluation
         };
     }
 
-    private static bool IsWarningSheet(Worksheet sheet)
+    /// <summary>Whether <paramref name="sheet"/> is named like a warning sheet and holds only the notice.</summary>
+    internal static bool IsWarningSheet(Worksheet sheet)
     {
         if (sheet.Type != SheetType.Worksheet || !WarningSheetName().IsMatch(sheet.Name))
         {

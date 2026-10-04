@@ -139,6 +139,14 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
                 Hint,
                 part: error.Sheet));
         }
+        foreach (CellsReviewSheetLayout sheet in layout.Sheets.Where(static sheet => sheet.IsEvaluationWarning))
+        {
+            findings.Add(CellsReviewChecks.EvaluationSheet.Finding(
+                $"Worksheet '{sheet.Name}' is the evaluation warning sheet an Aspose.Cells save without a license added; the file carries evaluation marks.",
+                sheet.Name,
+                "Tell the user. A licensed re-save keeps the marks: rebuild the deliverable from the original unmarked inputs with a license.",
+                part: sheet.Name));
+        }
         if (info.Workbook.HasVba)
         {
             findings.Add(CellsReviewChecks.VbaPresent.Finding(
