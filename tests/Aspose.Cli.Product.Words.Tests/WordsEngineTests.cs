@@ -220,6 +220,29 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void FullRead_ReportsTheParagraphFormat()
+    {
+        string input = _fixture.Temp.File("paragraph-format.docx");
+        var builder = new DocumentBuilder();
+        builder.ParagraphFormat.Alignment = ParagraphAlignment.Justify;
+        builder.ParagraphFormat.LeftIndent = 20;
+        builder.ParagraphFormat.FirstLineIndent = -10;
+        builder.ParagraphFormat.SpaceAfter = 8;
+        builder.ParagraphFormat.LineSpacingRule = LineSpacingRule.Multiple;
+        builder.ParagraphFormat.LineSpacing = 18;
+        builder.Write("Clause text.");
+        builder.Document.Save(input);
+
+        DocumentReadResult full = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "full" });
+        DocumentReadResult text = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "text" });
+
+        ParagraphFormatData format = full.Blocks.Single(static block => block.Text == "Clause text.").ParagraphFormat!;
+        Assert.Equal(("justify", 20d, -10d, 8d, "multiple", 1.5),
+            (format.Alignment, format.LeftIndent, format.FirstLineIndent, format.SpaceAfter, format.LineSpacingRule, format.LineSpacing));
+        Assert.All(text.Blocks, static block => Assert.Null(block.ParagraphFormat));
+    }
+
+    [Fact]
     public void Styles_TakeLatinAndEastAsianFontsSeparately()
     {
         string input = _fixture.Temp.File("bilingual.docx");

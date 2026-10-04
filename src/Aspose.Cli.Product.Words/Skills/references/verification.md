@@ -33,7 +33,8 @@ aspose-cli words compare baseline.docx output.docx --output json
 ```
 
 Read the blocks the batch reported in `applied[].targets`, and blocks that
-follow insertions. `replace_text` names the original body blocks whose text,
+follow insertions. In `--scope full`, compare an inserted paragraph's `runs`
+fonts and `paragraphFormat` (indents, spacing, alignment) with its neighbours'. `replace_text` names the original body blocks whose text,
 comments or footnotes it changed, then each header and footer it changed as
 `section/<n>/<location>/<kind>`, and `document` when it changed none of them.
 `pagesTouched` lists the output pages the batch changed: those of the blocks

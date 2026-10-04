@@ -41,6 +41,22 @@
               }
             }
           },
+          "paragraphFormat": {
+            "type": "object",
+            "description": "The format a paragraph has, from its own settings and its style, in points; returned in full scope.",
+            "required": ["alignment", "leftIndent", "rightIndent", "firstLineIndent", "spaceBefore", "spaceAfter", "lineSpacingRule", "lineSpacing"],
+            "additionalProperties": false,
+            "properties": {
+              "alignment": { "type": "string", "description": "Such as left, center, right, justify or distributed." },
+              "leftIndent": { "type": "number" },
+              "rightIndent": { "type": "number" },
+              "firstLineIndent": { "type": "number", "description": "The first line's indent; negative for a hanging indent." },
+              "spaceBefore": { "type": "number" },
+              "spaceAfter": { "type": "number" },
+              "lineSpacingRule": { "enum": ["atLeast", "exactly", "multiple"] },
+              "lineSpacing": { "type": "number", "description": "Lines for the multiple rule, where 1 is single spacing; points otherwise." }
+            }
+          },
           "images": {
             "type": "array",
             "items": {

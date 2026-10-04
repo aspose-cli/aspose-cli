@@ -171,12 +171,35 @@ public sealed record BlockData
     /// field codes, deleted text or anchored comments and footnotes.
     /// </summary>
     public IReadOnlyList<RunData>? Runs { get; init; }
+
+    /// <summary>The paragraph's indents, spacing and alignment, returned in full scope.</summary>
+    public ParagraphFormatData? ParagraphFormat { get; init; }
     public IReadOnlyList<ImageData>? Images { get; init; }
     public string? BreakAfter { get; init; }
     public int? RowCount { get; init; }
     public int? ColumnCount { get; init; }
     public IReadOnlyList<IReadOnlyList<string>>? Cells { get; init; }
     public bool ContentTruncated { get; init; }
+}
+
+/// <summary>
+/// The format a paragraph has, from its own settings and its style, in points; returned in
+/// full scope.
+/// </summary>
+public sealed record ParagraphFormatData
+{
+    public required string Alignment { get; init; }
+    public required double LeftIndent { get; init; }
+    public required double RightIndent { get; init; }
+
+    /// <summary>The first line's indent; negative for a hanging indent.</summary>
+    public required double FirstLineIndent { get; init; }
+    public required double SpaceBefore { get; init; }
+    public required double SpaceAfter { get; init; }
+    public required string LineSpacingRule { get; init; }
+
+    /// <summary>Lines for the multiple rule, where 1 is single spacing; points otherwise.</summary>
+    public required double LineSpacing { get; init; }
 }
 
 /// <summary>Run-level formatting returned in full scope.</summary>

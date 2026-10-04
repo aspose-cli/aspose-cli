@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Words;
 using Aspose.Words.Drawing;
@@ -117,6 +118,7 @@ internal static class ReadProjection
                 Style = paragraph.ParagraphFormat.StyleName,
                 HeadingLevel = InfoProjection.HeadingLevel(paragraph),
                 Runs = runs,
+                ParagraphFormat = runs is null ? null : FormatOf(paragraph.ParagraphFormat),
                 Images = paragraph.GetChildNodes(NodeType.Shape, true).Cast<Shape>().Where(static shape => shape.HasImage)
                     .Select(shape => new ContractImageData
                     {
@@ -162,6 +164,19 @@ internal static class ReadProjection
             ContentTruncated = truncated,
         };
     }
+
+    private static ParagraphFormatData FormatOf(ParagraphFormat format) => new()
+    {
+        Alignment = JsonNamingPolicy.CamelCase.ConvertName(format.Alignment.ToString()),
+        LeftIndent = format.LeftIndent,
+        RightIndent = format.RightIndent,
+        FirstLineIndent = format.FirstLineIndent,
+        SpaceBefore = format.SpaceBefore,
+        SpaceAfter = format.SpaceAfter,
+        LineSpacingRule = JsonNamingPolicy.CamelCase.ConvertName(format.LineSpacingRule.ToString()),
+        // The SDK states a multiple in points of 12 per line.
+        LineSpacing = format.LineSpacingRule == LineSpacingRule.Multiple ? format.LineSpacing / 12 : format.LineSpacing,
+    };
 
     private static string Take(string value, ref int remaining, ref bool truncated)
     {

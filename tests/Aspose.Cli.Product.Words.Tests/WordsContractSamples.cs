@@ -80,6 +80,17 @@ internal static class WordsContractSamples
                 Style = "Heading 1",
                 HeadingLevel = 1,
                 Runs = [new RunData { Text = "Executive summary", Font = "Arial", Size = 16, Bold = true }],
+                ParagraphFormat = new ParagraphFormatData
+                {
+                    Alignment = "left",
+                    LeftIndent = 0,
+                    RightIndent = 0,
+                    FirstLineIndent = 0,
+                    SpaceBefore = 12,
+                    SpaceAfter = 6,
+                    LineSpacingRule = "multiple",
+                    LineSpacing = 1.15,
+                },
                 ContentTruncated = false,
             },
             new BlockData
