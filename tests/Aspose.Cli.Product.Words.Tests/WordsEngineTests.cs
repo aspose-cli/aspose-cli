@@ -303,7 +303,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                 [
                     new MailMergeOp
                     {
-                        Inline = [new Dictionary<string, string?> { ["Name"] = "Ava" }, new Dictionary<string, string?> { ["Name"] = "Noah" }],
+                        Inline = [new Dictionary<string, object?> { ["Name"] = "Ava" }, new Dictionary<string, object?> { ["Name"] = "Noah" }],
                     },
                 ],
             },
@@ -785,8 +785,8 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
                     {
                         Inline =
                         [
-                            new Dictionary<string, string?> { ["FirstName"] = "Ava" },
-                            new Dictionary<string, string?> { ["FirstName"] = "Noah" },
+                            new Dictionary<string, object?> { ["FirstName"] = "Ava" },
+                            new Dictionary<string, object?> { ["FirstName"] = "Noah" },
                         ],
                     },
                 ],

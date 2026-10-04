@@ -315,8 +315,9 @@ internal sealed partial class WordsMutationHandlers
 
     public long Apply(MailMergeOp operation)
     {
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows =
-            operation.Inline ?? ReadMergeRows(operation.Path!, _inputs);
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> rows = operation.Inline is { } inline
+            ? MergeRows(inline)
+            : ReadMergeRows(operation.Path!, _inputs);
         if (rows.Count == 0)
         {
             throw MergeDataInvalid(
@@ -647,8 +648,25 @@ internal sealed partial class WordsMutationHandlers
 
         return element.EnumerateObject().ToDictionary(
             static property => property.Name,
-            static property => property.Value.ValueKind == JsonValueKind.Null ? null : property.Value.ToString(),
+            static property => MergeValue(property.Value),
             StringComparer.Ordinal);
     }
+
+    /// <summary>Reads inline rows as the rows of a JSON data file.</summary>
+    internal static IReadOnlyList<IReadOnlyDictionary<string, string?>> MergeRows(
+        IReadOnlyList<IReadOnlyDictionary<string, object?>> rows) =>
+        [.. rows.Select(static row => (IReadOnlyDictionary<string, string?>)row.ToDictionary(
+            static pair => pair.Key,
+            static pair => pair.Value is JsonElement element ? MergeValue(element) : (string?)pair.Value,
+            StringComparer.Ordinal))];
+
+    // A string merges as itself and a number or Boolean as its JSON text; null is no value.
+    private static string? MergeValue(JsonElement value) => value.ValueKind switch
+    {
+        JsonValueKind.Null => null,
+        JsonValueKind.String => value.GetString(),
+        JsonValueKind.Number or JsonValueKind.True or JsonValueKind.False => value.GetRawText(),
+        _ => throw MergeDataInvalid("a merge value must be a string, number, Boolean or null", MergeDataShape),
+    };
 }
 

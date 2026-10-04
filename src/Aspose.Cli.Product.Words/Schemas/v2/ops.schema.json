@@ -929,7 +929,7 @@
           "pattern": "\\S"
         },
         "inline": {
-          "description": "Merge rows of field values by field name.",
+          "description": "Merge rows of field values by field name, read as a data file's are: a number or Boolean merges as its JSON text.",
           "type": "array",
           "minItems": 1,
           "items": {
@@ -937,6 +937,8 @@
             "additionalProperties": {
               "type": [
                 "string",
+                "number",
+                "boolean",
                 "null"
               ]
             }
@@ -1077,12 +1079,17 @@
           "minimum": 1
         },
         "items": {
-          "description": "Placeholder values by key, one object per row copy; an empty list removes the template row.",
+          "description": "Placeholder values by key, one object per row copy, read as a data file's are: a number or Boolean as its JSON text and null as empty text. An empty list removes the template row.",
           "type": "array",
           "items": {
             "type": "object",
             "additionalProperties": {
-              "type": "string"
+              "type": [
+                "string",
+                "number",
+                "boolean",
+                "null"
+              ]
             }
           }
         },

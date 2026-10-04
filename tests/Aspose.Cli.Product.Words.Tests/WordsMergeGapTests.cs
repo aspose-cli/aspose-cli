@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Words;
 using Xunit;
@@ -42,6 +43,30 @@ public sealed class WordsMergeGapTests
         Assert.DoesNotContain("«", merged.GetText(), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void MailMerge_TakesNumbersAndBooleansInlineAsInADataFile()
+    {
+        using var fixture = new WordsFixture();
+        string input = Template(fixture, "Name", "Salary", "Active");
+        const string Row = """{"Name":"Ava","Salary":28000.50,"Active":true}""";
+        string path = fixture.Temp.File("typed.json");
+        File.WriteAllText(path, $"[{Row}]");
+
+        string Merge(string data, string name)
+        {
+            string output = fixture.Temp.File(name);
+            WordsOpsBatch batch = WordsOp.Catalog.Parse<WordsOpsBatch>(
+                $$"""{"ops":[{"op":"mail_merge",{{data}}}]}""", Aspose.Cli.Generated.ProductJsonContext.Definition);
+            fixture.Engine.ApplyOps(input, batch, new WordsEditRequest { OutputPath = output });
+            return new Document(output).Sections[0].Body.GetText();
+        }
+
+        string inline = Merge($"\"inline\":[{Row}]", "inline.docx");
+
+        Assert.Contains("Ava 28000.50 true", inline, StringComparison.Ordinal);
+        Assert.Equal(inline, Merge($"\"path\":{JsonSerializer.Serialize(path)}", "file.docx"));
+    }
+
     [Theory]
     [InlineData(null, "Photo: record 1.")]
     [InlineData("Ref:No", "Ref:No: record 1.")]
@@ -60,7 +85,7 @@ public sealed class WordsMergeGapTests
             input,
             new WordsOpsBatch
             {
-                Ops = [new MailMergeOp { Inline = [new Dictionary<string, string?> { ["name"] = "Ava", [quoted ?? "Photo"] = null }] }],
+                Ops = [new MailMergeOp { Inline = [new Dictionary<string, object?> { ["name"] = "Ava", [quoted ?? "Photo"] = null }] }],
             },
             new WordsEditRequest { OutputPath = output });
 
@@ -85,9 +110,9 @@ public sealed class WordsMergeGapTests
                     {
                         Inline =
                         [
-                            new Dictionary<string, string?> { ["Name"] = "A", ["Salary"] = "1" },
-                            new Dictionary<string, string?> { ["Name"] = "B", ["Salary"] = null, ["Bonus"] = "2" },
-                            new Dictionary<string, string?> { ["Name"] = "C", ["Salary"] = "3" },
+                            new Dictionary<string, object?> { ["Name"] = "A", ["Salary"] = "1" },
+                            new Dictionary<string, object?> { ["Name"] = "B", ["Salary"] = null, ["Bonus"] = "2" },
+                            new Dictionary<string, object?> { ["Name"] = "C", ["Salary"] = "3" },
                         ],
                     },
                 ],
@@ -121,8 +146,8 @@ public sealed class WordsMergeGapTests
         using var fixture = new WordsFixture();
         string input = Template(fixture, "Name");
         string output = fixture.Temp.File("merged.docx");
-        IReadOnlyDictionary<string, string?>[] rows = Enumerable.Range(1, 13)
-            .Select(static _ => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?> { ["Name"] = null })
+        IReadOnlyDictionary<string, object?>[] rows = Enumerable.Range(1, 13)
+            .Select(static _ => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["Name"] = null })
             .ToArray();
 
         WordsEditResult result = fixture.Engine.ApplyOps(
@@ -149,7 +174,7 @@ public sealed class WordsMergeGapTests
                 [
                     new MailMergeOp
                     {
-                        Inline = [new Dictionary<string, string?> { ["name"] = "Ava", ["Salary"] = "", ["Unused"] = null }],
+                        Inline = [new Dictionary<string, object?> { ["name"] = "Ava", ["Salary"] = "", ["Unused"] = null }],
                     },
                 ],
             },
@@ -177,8 +202,8 @@ public sealed class WordsMergeGapTests
         string input = fixture.Temp.File("region.docx");
         document.Save(input);
         string output = fixture.Temp.File("merged.docx");
-        var first = new Dictionary<string, string?> { ["Item"] = "Widget" };
-        var second = new Dictionary<string, string?> { ["Item"] = "Gadget" };
+        var first = new Dictionary<string, object?> { ["Item"] = "Widget" };
+        var second = new Dictionary<string, object?> { ["Item"] = "Gadget" };
         if (gap != "missingEverywhere")
         {
             first["Qty"] = "2";

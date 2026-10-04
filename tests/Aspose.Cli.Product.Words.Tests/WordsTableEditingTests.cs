@@ -160,9 +160,9 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                     At = new WordsTarget { Find = "{{code}}" },
                     Items =
                     [
-                        new Dictionary<string, string> { ["code"] = "A-100", ["name"] = "Widget", ["price"] = "12.50" },
-                        new Dictionary<string, string> { ["code"] = "B-200", ["name"] = "Gadget", ["price"] = "7", ["unused"] = "x" },
-                        new Dictionary<string, string> { ["code"] = "C-300", ["name"] = "Gizmo", ["price"] = "" },
+                        new Dictionary<string, object?> { ["code"] = "A-100", ["name"] = "Widget", ["price"] = "12.50" },
+                        new Dictionary<string, object?> { ["code"] = "B-200", ["name"] = "Gadget", ["price"] = "7", ["unused"] = "x" },
+                        new Dictionary<string, object?> { ["code"] = "C-300", ["name"] = "Gizmo", ["price"] = "" },
                     ],
                 },
             ],
@@ -238,8 +238,8 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                     Row = 3,
                     Items =
                     [
-                        new Dictionary<string, string> { ["note"] = "First" },
-                        new Dictionary<string, string> { ["note"] = "Second" },
+                        new Dictionary<string, object?> { ["note"] = "First" },
+                        new Dictionary<string, object?> { ["note"] = "Second" },
                     ],
                 },
             ],
@@ -267,8 +267,8 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                     At = new WordsTarget { Find = "{{code}}" },
                     Items =
                     [
-                        new Dictionary<string, string> { ["code"] = "A-100", ["name"] = "Widget", ["price"] = "1" },
-                        new Dictionary<string, string> { ["code"] = "B-200" },
+                        new Dictionary<string, object?> { ["code"] = "A-100", ["name"] = "Widget", ["price"] = "1" },
+                        new Dictionary<string, object?> { ["code"] = "B-200" },
                     ],
                 },
             ],
@@ -291,7 +291,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 new RepeatTableRowOp
                 {
                     At = new WordsTarget { Find = "{{code}}" },
-                    Items = [new Dictionary<string, string> { ["code"] = "A-100", ["naem"] = "Widget", ["price"] = "1" }],
+                    Items = [new Dictionary<string, object?> { ["code"] = "A-100", ["naem"] = "Widget", ["price"] = "1" }],
                 },
             ],
         }, new WordsEditRequest { OutputPath = _fixture.Temp.File("repeat-typo-changed.docx") }));
@@ -365,7 +365,7 @@ public sealed class WordsTableEditingTests : IClassFixture<WordsFixture>
                 new RepeatTableRowOp
                 {
                     At = new WordsTarget { Find = "{{code}}" },
-                    Items = [new Dictionary<string, string> { ["code"] = code, ["name"] = name, ["price"] = "{{code}}" }],
+                    Items = [new Dictionary<string, object?> { ["code"] = code, ["name"] = name, ["price"] = "{{code}}" }],
                 },
             ],
         }, new WordsEditRequest { OutputPath = output });

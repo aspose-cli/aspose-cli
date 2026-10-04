@@ -3,7 +3,9 @@
 The `mail_merge` op fills a template's MERGEFIELD fields from rows given in a
 file (`path`) or in the batch (`inline`). A data file is a JSON array of flat
 objects or an RFC 4180 CSV file with a header row, whose quoted fields may
-contain commas, doubled quotes and line breaks. The data needs at least one
+contain commas, doubled quotes and line breaks. A JSON value, in a file or
+`inline`, is a string, number, Boolean or null; a number or Boolean merges as
+its JSON text, such as `28000` or `true`. The data needs at least one
 row: a data file holding only a CSV header or `[]` fails the op with
 `MERGE_DATA_INVALID`.
 

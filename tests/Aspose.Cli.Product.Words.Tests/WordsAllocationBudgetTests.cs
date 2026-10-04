@@ -37,8 +37,8 @@ public sealed class WordsAllocationBudgetTests
         using var fixture = new WordsFixture();
         string input = fixture.CreateReport();
         string output = fixture.Temp.File("merged.docx");
-        IReadOnlyDictionary<string, string?>[] rows = Enumerable.Range(0, 50)
-            .Select(static index => (IReadOnlyDictionary<string, string?>)new Dictionary<string, string?> { ["Name"] = $"N{index}" })
+        IReadOnlyDictionary<string, object?>[] rows = Enumerable.Range(0, 50)
+            .Select(static index => (IReadOnlyDictionary<string, object?>)new Dictionary<string, object?> { ["Name"] = $"N{index}" })
             .ToArray();
 
         CliException error = Assert.Throws<CliException>(() => Engine(fixture, nodes: 500).ApplyOps(
@@ -72,7 +72,7 @@ public sealed class WordsAllocationBudgetTests
             input,
             new WordsOpsBatch
             {
-                Ops = [new MailMergeOp { Regions = true, Inline = [new Dictionary<string, string?> { ["Name"] = "Ava" }] }],
+                Ops = [new MailMergeOp { Regions = true, Inline = [new Dictionary<string, object?> { ["Name"] = "Ava" }] }],
             },
             new WordsEditRequest { OutputPath = output }));
 

@@ -103,11 +103,9 @@ internal sealed partial class WordsMutationHandlers
         }
 
         Row template = TemplateRow(table, operation.Row);
-        IReadOnlyList<IReadOnlyDictionary<string, string?>> items = operation.Items?
-            .Select(static item => (IReadOnlyDictionary<string, string?>)item.ToDictionary(
-                static pair => pair.Key, static pair => (string?)pair.Value, StringComparer.Ordinal))
-            .ToArray()
-            ?? ReadMergeRows(operation.Path!, _inputs);
+        IReadOnlyList<IReadOnlyDictionary<string, string?>> items = operation.Items is { } inline
+            ? MergeRows(inline)
+            : ReadMergeRows(operation.Path!, _inputs);
         string[] keys = Placeholder.Matches(WordsText.Of(template))
             .Select(static match => match.Groups[1].Value)
             .Distinct(StringComparer.Ordinal)

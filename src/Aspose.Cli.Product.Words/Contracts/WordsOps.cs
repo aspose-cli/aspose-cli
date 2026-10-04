@@ -235,8 +235,11 @@ public sealed record RepeatTableRowOp : WordsOp
     /// <summary>The 1-based template row; when omitted, the table's one row that contains a <c>{{key}}</c> placeholder.</summary>
     [Minimum(1)] public int? Row { get; init; }
 
-    /// <summary>Placeholder values by key, one object per row copy; an empty list removes the template row.</summary>
-    public IReadOnlyList<IReadOnlyDictionary<string, string>>? Items { get; init; }
+    /// <summary>
+    /// Placeholder values by key, one object per row copy, read as a data file's are: a number
+    /// or Boolean as its JSON text and null as empty text. An empty list removes the template row.
+    /// </summary>
+    [JsonScalar] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Items { get; init; }
 
     /// <summary>A JSON array of flat objects, or a CSV file with a header row, relative to the working directory.</summary>
     [InputPath] public string? Path { get; init; }
@@ -588,8 +591,8 @@ public sealed record MailMergeOp : WordsOp
     /// <summary>A JSON array of flat objects, or a CSV file with a header row, relative to the working directory; it must hold at least one row.</summary>
     [InputPath] public string? Path { get; init; }
 
-    /// <summary>Merge rows of field values by field name.</summary>
-    [MinItems(1)] public IReadOnlyList<IReadOnlyDictionary<string, string?>>? Inline { get; init; }
+    /// <summary>Merge rows of field values by field name, read as a data file's are: a number or Boolean merges as its JSON text.</summary>
+    [MinItems(1), JsonScalar] public IReadOnlyList<IReadOnlyDictionary<string, object?>>? Inline { get; init; }
 
     /// <summary>Whether the rows repeat the template's one TableStart/TableEnd region.</summary>
     public bool Regions { get; init; }

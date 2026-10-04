@@ -68,7 +68,8 @@ aspose-cli schema v2/words/ops --operation insert_table
   `{{key}}` placeholder (spaces inside the braces are allowed); pass the
   1-based `row` when no row or several rows have one. Items come inline as
   `items` or from `path` (a JSON array of flat objects, or CSV with a header
-  row); a null or missing CSV value is empty text. Each placeholder takes the
+  row); a number or Boolean is its JSON text, and null or a missing CSV value
+  is empty text. Each placeholder takes the
   item's value as literal text in the placeholder's formatting, and the copies
   keep the row's height, borders, shading and cell widths. An item without a
   key for one of the row's placeholders fails the operation, naming an extra

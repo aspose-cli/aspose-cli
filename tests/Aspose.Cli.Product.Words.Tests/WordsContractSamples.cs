@@ -287,7 +287,7 @@ internal static class WordsContractSamples
                 Row = 2,
                 Items =
                 [
-                    new Dictionary<string, string> { ["code"] = "A-100", ["name"] = "Widget" },
+                    new Dictionary<string, object?> { ["code"] = "A-100", ["name"] = "Widget" },
                 ],
             },
             new FormatTableOp
@@ -435,7 +435,7 @@ internal static class WordsContractSamples
             {
                 Inline =
                 [
-                    new Dictionary<string, string?> { ["FirstName"] = "Ava" },
+                    new Dictionary<string, object?> { ["FirstName"] = "Ava" },
                 ],
                 Regions = false,
             },
