@@ -180,6 +180,9 @@ public sealed record SlideTextRunData
     public double? Size { get; init; }
     public bool? Bold { get; init; }
     public bool? Italic { get; init; }
+
+    /// <summary>The solid color the text is drawn in, stated or inherited, as #RRGGBB; null for text without a solid fill.</summary>
+    public string? Color { get; init; }
 }
 
 /// <summary>A slide rectangle in points from the top-left origin.</summary>

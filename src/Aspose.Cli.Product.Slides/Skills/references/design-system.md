@@ -15,7 +15,8 @@ restyle them.
    starting point; its content placeholders give body text one size on every layout.
 4. The CLI does not edit masters or layouts. When a supplied template's layouts disagree, for
    example a Two Content body larger than a Title and Content body
-   (`slides query slides --scope full` reports each run's size), tell the user and have the
+   (`slides query slides --scope full` reports each run's size and the `color` it is drawn in,
+   stated or inherited), tell the user and have the
    template fixed once; restyle the affected placeholders with `set_shape_style` only when the
    user accepts that exception for this deck.
 

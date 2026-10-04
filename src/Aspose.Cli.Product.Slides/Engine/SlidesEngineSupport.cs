@@ -279,6 +279,9 @@ internal static class SlidesEngineSupport
                     Size = effective.FontHeight,
                     Bold = effective.FontBold,
                     Italic = effective.FontItalic,
+                    Color = effective.FillFormat.FillType == FillType.Solid
+                        ? SlidesReviewProjection.Hex(effective.FillFormat.SolidFillColor)
+                        : null,
                 });
             }
         }

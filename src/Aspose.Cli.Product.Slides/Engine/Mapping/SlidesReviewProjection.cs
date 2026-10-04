@@ -1,3 +1,4 @@
+using System.Globalization;
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
@@ -63,4 +64,8 @@ internal static class SlidesReviewProjection
     internal static bool TextAutofits(IShape shape) =>
         shape is IAutoShape { TextFrame: { } frame }
         && frame.TextFrameFormat.GetEffective().AutofitType is TextAutofitType.Shape or TextAutofitType.Normal;
+
+    /// <summary>A color as <c>#RRGGBB</c>, without its transparency.</summary>
+    internal static string Hex(System.Drawing.Color color) =>
+        string.Create(CultureInfo.InvariantCulture, $"#{color.R:X2}{color.G:X2}{color.B:X2}");
 }

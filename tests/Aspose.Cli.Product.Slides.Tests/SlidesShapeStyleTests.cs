@@ -80,6 +80,30 @@ public sealed class SlidesShapeStyleTests
     }
 
     [Fact]
+    public void FullRead_ReportsTheColorEachRunIsDrawnIn()
+    {
+        // A stated color reads back as written; an inherited one as the theme resolves it.
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("colors.pptx");
+        using (var source = new Presentation())
+        {
+            IAutoShape stated = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 300, 60);
+            stated.TextFrame.Text = "Stated";
+            stated.TextFrame.Paragraphs[0].Portions[0].PortionFormat.FillFormat.FillType = FillType.Solid;
+            stated.TextFrame.Paragraphs[0].Portions[0].PortionFormat.FillFormat.SolidFillColor.Color = Color.FromArgb(0x1B, 0x2A, 0x41);
+            IAutoShape inherited = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 140, 300, 60, createFromTemplate: false);
+            inherited.AddTextFrame("Inherited");
+            source.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
+        }
+
+        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+
+        Assert.Equal(
+            ["#1B2A41", "#000000"],
+            read.Slides[0].Shapes.Where(static shape => !shape.EvaluationWatermark).Select(static shape => Assert.Single(shape.Runs!).Color));
+    }
+
+    [Fact]
     public void ShapeWithoutText_RefusesATextStyle()
     {
         using var fixture = new SlidesEngineFixture();
