@@ -1267,6 +1267,26 @@ public sealed class PdfMutateTests
             fixture.Engine.ReadForm(output, new PdfFormReadRequest()).Fields.Select(static field => field.Name));
     }
 
+    [Fact]
+    public void SetFormField_UnknownNameListsARadioGroupOnce()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = ChoiceDocument(fixture);
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new SetFormFieldOp { Name = "colour", Value = "Red" }] },
+            new PdfEditRequest { OutputPath = fixture.File("choices.missing.pdf") }));
+
+        Assert.Equal("FIELD_NOT_FOUND", error.Code.Name);
+        string[] available = [.. error.Details!["available"]!.AsArray().Select(static name => name!.GetValue<string>())];
+        Assert.Equal(["agree", "color", "multi"], available.Order(StringComparer.Ordinal));
+        Assert.Equal(3, error.Details["availableCount"]!.GetValue<int>());
+        Assert.Equal(
+            fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["forms"] }).Forms!.FieldCount,
+            error.Details["availableCount"]!.GetValue<int>());
+    }
+
     [Theory]
     [InlineData("Green")]
     [InlineData("Off")]

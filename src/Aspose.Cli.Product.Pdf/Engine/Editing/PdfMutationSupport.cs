@@ -136,7 +136,7 @@ internal static class PdfMutationSupport
 
     /// <summary>
     /// Every AcroForm field with a full name, such as each button of a radio group, or
-    /// <c>FIELD_NOT_FOUND</c> listing every full name.
+    /// <c>FIELD_NOT_FOUND</c> listing every full name once, so a radio group counts as one field.
     /// </summary>
     internal static Field[] FormFields(Document document, string name)
     {
@@ -150,6 +150,7 @@ internal static class PdfMutationSupport
                 document.Form.Fields
                     .Select(static field => field.FullName)
                     .Where(static fullName => !string.IsNullOrEmpty(fullName))
+                    .Distinct(StringComparer.Ordinal)
                     .ToArray());
     }
 
