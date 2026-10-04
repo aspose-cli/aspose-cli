@@ -33,6 +33,7 @@ internal static class ReviewLayoutProjection
         DimensionScan rows = InspectRows(sheet, content.OccupiedRows);
         PrintAreaScan print = InspectPrintArea(sheet, content.ContentRange);
         IReadOnlyList<CellsReviewChartLayout> charts = InspectCharts(sheet, print.Ranges);
+        (CellsReviewCellSet clipped, CellsReviewCellSet overflowing) = InspectWideValues(sheet);
 
         return new CellsReviewSheetLayout
         {
@@ -48,7 +49,8 @@ internal static class ReviewLayoutProjection
             HiddenPopulatedRows = rows.Hidden.ToSet(),
             ShortPopulatedRows = rows.Small.ToSet(),
             TallPopulatedRows = rows.Large.ToSet(),
-            ClippedCells = InspectClippedCells(sheet),
+            ClippedCells = clipped,
+            OverflowingCells = overflowing,
             PrintArea = print.Value,
             PrintAreaInvalid = print.Invalid,
             PrintAreaExcludesContent = print.ExcludesContent,
@@ -100,16 +102,16 @@ internal static class ReviewLayoutProjection
     }
 
     /// <summary>
-    /// Finds values wider than their column that Excel shows cut off: text whose right-hand
-    /// neighbor is filled (so it cannot spill over), and numbers, which Excel shows as #### or rounded.
-    /// Only values whose length could exceed the column are measured.
+    /// Finds values wider than their column. Excel shows cut off text whose right-hand neighbor is
+    /// filled (so it cannot spill over), and numbers, which it shows as #### or rounded; other
+    /// text spills over the empty cells to its right. Only values whose length could exceed the
+    /// column are measured.
     /// </summary>
-    private static CellsReviewCellSet InspectClippedCells(Worksheet sheet)
+    private static (CellsReviewCellSet Clipped, CellsReviewCellSet Overflowing) InspectWideValues(Worksheet sheet)
     {
         Aspose.Cells.Cells cells = sheet.Cells;
-        var samples = new List<string>();
-        int count = 0;
-        bool eastAsian = false;
+        var clipped = new CellSetBuilder();
+        var overflowing = new CellSetBuilder();
         foreach (Cell cell in cells)
         {
             if (cell.Value is null or "" || cell.IsMerged || cells.IsColumnHidden(cell.Column))
@@ -138,20 +140,63 @@ internal static class ReviewLayoutProjection
                 continue;
             }
 
-            if (!number && cells.CheckCell(cell.Row, cell.Column + 1) is not { Value: not (null or "") })
+            bool spills = !number && cells.CheckCell(cell.Row, cell.Column + 1) is not { Value: not (null or "") };
+            if (!spills)
             {
-                continue;
+                clipped.Add(cell.Name, !number && cell.StringValue.Any(IsEastAsian));
             }
-
-            count++;
-            if (samples.Count < MaxDimensionSamples)
+            else if (EndsNearColumnEdge(cells, cell))
             {
-                samples.Add(cell.Name);
-                eastAsian |= !number && cell.StringValue.Any(IsEastAsian);
+                overflowing.Add(cell.Name, cell.StringValue.Any(IsEastAsian));
             }
         }
 
-        return new CellsReviewCellSet(count, samples, eastAsian);
+        return (clipped.Build(), overflowing.Build());
+    }
+
+    /// <summary>
+    /// Whether text that spills over the empty cells to its right ends close to the right edge
+    /// of one of the columns it spans, where page layout can cut its last character (known issue
+    /// CELLS-OVERFLOW-EDGE). Page layout sizes columns up to about 6% apart from the cell model
+    /// that the widths here come from, so an edge counts as close within 6% of its distance
+    /// from the cell, and never less than 3 pixels.
+    /// </summary>
+    private static bool EndsNearColumnEdge(Aspose.Cells.Cells cells, Cell cell)
+    {
+        int end = cell.GetWidthOfValue();
+        int edge = 0;
+        for (int column = cell.Column; column < 16384; column++)
+        {
+            edge += cells.GetColumnWidthPixel(column);
+            if (Math.Abs(end - edge) <= Math.Max(3, edge * 0.06))
+            {
+                return true;
+            }
+            if (edge > end || cells.CheckCell(cell.Row, column + 1) is { Value: not (null or "") })
+            {
+                return false;
+            }
+        }
+        return false;
+    }
+
+    private sealed class CellSetBuilder
+    {
+        private readonly List<string> _samples = [];
+        private int _count;
+        private bool _eastAsian;
+
+        internal void Add(string name, bool eastAsian)
+        {
+            _count++;
+            if (_samples.Count < MaxDimensionSamples)
+            {
+                _samples.Add(name);
+                _eastAsian |= eastAsian;
+            }
+        }
+
+        internal CellsReviewCellSet Build() => new(_count, _samples, _eastAsian);
     }
 
     // Column widths are measured in characters of the default font; East Asian characters take two.

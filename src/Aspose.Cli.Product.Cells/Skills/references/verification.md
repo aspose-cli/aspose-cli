@@ -79,6 +79,14 @@ pdf` hides it the same way. Judge width, truncation and `###` from a
 `--range` render; use full-sheet images for layout, chart placement and page
 flow.
 
+The reverse also happens: text that spills over empty cells can lose part of
+its last character in a full-sheet image when it ends exactly on a column
+edge there (known issue CELLS-OVERFLOW-EDGE), while `--range` shows it whole.
+Review lists such text that ends close to a column edge as
+`CELLS_TEXT_OVERFLOWS`; check the end of each sample
+in the sheet image, and if one is cut, widen the column it starts in by one
+or two characters.
+
 ### Non-Latin text: never look below 150 DPI
 
 At 96-120 DPI the thin horizontal strokes of CJK glyphs fall under one pixel

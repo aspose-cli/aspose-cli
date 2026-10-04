@@ -269,6 +269,11 @@
             "summary": "A worksheet is hidden and therefore excluded from the visual evidence."
           },
           {
+            "code": "CELLS_TEXT_OVERFLOWS",
+            "severity": "info",
+            "summary": "Text spills over empty cells and ends close to a column edge, where a sheet image can cut its last character."
+          },
+          {
             "code": "CELLS_USED_RANGE_SPARSE",
             "severity": "warning",
             "summary": "Less than 1% of a worksheet's used area of at least 100 cells contains data."
@@ -14570,6 +14575,7 @@
             "CELLS_REVIEW_TRUNCATED",
             "CELLS_SHEET_EMPTY",
             "CELLS_SHEET_HIDDEN",
+            "CELLS_TEXT_OVERFLOWS",
             "CELLS_USED_RANGE_SPARSE",
             "CELLS_VALUES_CLIPPED",
             "CELLS_VBA_PRESENT",

@@ -175,6 +175,66 @@ public sealed class CellsKnownIssueTests
         }
     }
 
+    /// <summary>
+    /// Long text in A1 spills over the empty B1 and C1. For each width of column B, the right edge
+    /// of its ink is compared with its edge when B is wide enough to hold it: the page layout of a
+    /// whole-sheet render cuts it at some width, while the print-area layout of a range render
+    /// draws it in full at every width.
+    /// </summary>
+    [LicensedFact]
+    public void PageLayout_CutsOverflowingTextThatEndsAtAColumnEdge()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        _ = fixture.LicenseState;
+        double[] widths = [.. Enumerable.Range(0, 21).Select(static step => 24 + step * 0.25)];
+
+        double[] cutInPage = [.. widths.Where(width => InkRight(width, onlyArea: false) < InkRight(100, onlyArea: false))];
+        double[] cutInArea = [.. widths.Where(width => InkRight(width, onlyArea: true) < InkRight(100, onlyArea: true))];
+
+        KnownIssue.Reproduces(
+            "CELLS-OVERFLOW-EDGE",
+            cutInPage.Length > 0 && cutInArea.Length == 0,
+            $"page layout cut the text at column B widths [{string.Join(", ", cutInPage)}], print-area layout at [{string.Join(", ", cutInArea)}]");
+
+        int InkRight(double columnB, bool onlyArea)
+        {
+            using var workbook = new Workbook();
+            Style normal = workbook.DefaultStyle;
+            normal.Font.Name = "Microsoft YaHei";
+            normal.Font.Size = 10;
+            workbook.DefaultStyle = normal;
+            Worksheet sheet = workbook.Worksheets[0];
+            Cell text = sheet.Cells["A1"];
+            text.PutValue("查询条件：日期 2026-09-01 至 2026-09-30；部门：全部");
+            Style red = text.GetStyle();
+            red.Font.Color = System.Drawing.Color.Red;
+            text.SetStyle(red);
+            sheet.Cells["D1"].PutValue("end");
+            sheet.Cells.SetColumnWidth(0, 14);
+            sheet.Cells.SetColumnWidth(1, columnB);
+            sheet.Cells.SetColumnWidth(2, 12);
+            string path = fixture.Temp.File($"overflow-{columnB}-{onlyArea}.png");
+            new Aspose.Cells.Rendering.SheetRender(sheet, new Aspose.Cells.Rendering.ImageOrPrintOptions
+            {
+                ImageType = Aspose.Cells.Drawing.ImageType.Png,
+                OnePagePerSheet = true,
+                OnlyArea = onlyArea,
+            }).ToImage(0, path);
+            using SkiaSharp.SKBitmap image = SkiaSharp.SKBitmap.Decode(path);
+            int right = -1;
+            for (int pixel = 0; pixel < image.Width * image.Height; pixel++)
+            {
+                SkiaSharp.SKColor color = image.GetPixel(pixel % image.Width, pixel / image.Width);
+                if (color.Red > 150 && color.Green < 120 && color.Blue < 120)
+                {
+                    right = Math.Max(right, pixel % image.Width);
+                }
+            }
+            return right;
+        }
+    }
+
     /// <summary>The documented refusal: skip every resource and supply no stream.</summary>
     private sealed class RefuseEveryResource : IStreamProvider
     {

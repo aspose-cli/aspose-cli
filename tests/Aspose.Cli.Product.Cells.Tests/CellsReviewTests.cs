@@ -118,6 +118,43 @@ public sealed class CellsReviewTests
         Assert.Contains("explicit width", clipped["Mixed"], StringComparison.Ordinal);
     }
     /// <summary>
+    /// Text that spills over empty cells and ends close to a column edge, where page layout can
+    /// cut its last character (known issue CELLS-OVERFLOW-EDGE), is listed for a look at the
+    /// image; the same text ending far from an edge, and text the next cell cuts off, is not.
+    /// </summary>
+    [Fact]
+    public void Review_ListsSpillingTextThatEndsNearAColumnEdge()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        string input = fixture.Temp.File("overflow.xlsx");
+        const string text = "查询条件：日期 2026-09-01 至 2026-09-30；部门：全部";
+        using (var workbook = new Workbook())
+        {
+            Style normal = workbook.DefaultStyle;
+            normal.Font.Name = "Microsoft YaHei";
+            normal.Font.Size = 10;
+            workbook.DefaultStyle = normal;
+            Worksheet sheet = workbook.Worksheets[0];
+            sheet.Name = "Report";
+            sheet.Cells["A1"].PutValue(text);
+            sheet.Cells["A2"].PutValue(text);
+            sheet.Cells["B2"].PutValue(1200);
+            sheet.Cells["E1"].PutValue(text);
+            foreach ((int column, double width) in new[] { (0, 14d), (1, 26d), (2, 12d), (4, 14d), (5, 60d) })
+            {
+                sheet.Cells.SetColumnWidth(column, width);
+            }
+            workbook.Save(input);
+        }
+
+        ReviewFinding overflow = Assert.Single(Review(fixture, input), static finding => finding.Code == "CELLS_TEXT_OVERFLOWS");
+
+        Assert.Equal("Report", overflow.Location);
+        Assert.StartsWith("1 text value(s) spill over empty cells to their right and end close to a column edge; sample: A1.", overflow.Message, StringComparison.Ordinal);
+    }
+
+    /// <summary>
     /// A workbook an evaluation save marked keeps its warning sheets when a licensed review opens
     /// it; review reports each one, and nothing on an unmarked workbook.
     /// </summary>

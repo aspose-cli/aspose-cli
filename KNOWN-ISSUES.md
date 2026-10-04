@@ -79,6 +79,23 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   which all three measure alike, or set the column width explicitly.
 - **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
 
+### CELLS-OVERFLOW-EDGE
+
+- **Defect:** the page layout of `SheetRender` (`OnlyArea = false`) cuts text that spills over
+  empty cells when its end falls on a column edge: it stops drawing at that edge instead of
+  continuing into the next empty cell, which can cut away part of the last character. The page
+  layout sizes columns apart from the cell model (a few percent wider with Microsoft YaHei), so
+  the edge falls elsewhere in the print-area layout of `OnlyArea = true`, which also draws text
+  that ends on an edge in full.
+- **CLI behavior:** `cells render` of a whole sheet and review's sheet images can cut such text,
+  while `cells render --range` shows it whole; PDF export lays out its own pages, so check its
+  pages the same way. No public API measures the page layout, so review lists text that spills
+  over empty cells and ends within about 6% of a column edge, the most page layout moves an
+  edge, with the info finding `CELLS_TEXT_OVERFLOWS`, and asks to check its end in the image.
+- **Workaround:** widen the column the text starts in by one or two characters, or wrap the
+  text.
+- **Reproduction:** [CellsKnownIssueTests](tests/Aspose.Cli.Product.Cells.Tests/CellsKnownIssueTests.cs)
+
 ## Aspose.PDF.Drawing 26.8.0
 
 ### PDF-HTML-EGRESS

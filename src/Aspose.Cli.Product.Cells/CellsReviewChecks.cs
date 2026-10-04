@@ -25,6 +25,11 @@ internal static class CellsReviewChecks
         ReviewSeverities.Warning,
         "Values are wider than their columns: text is cut off by the next cell, or a number cannot show in full (#### or rounded).");
 
+    public static ReviewCheck TextOverflows { get; } = new(
+        "CELLS_TEXT_OVERFLOWS",
+        ReviewSeverities.Info,
+        "Text spills over empty cells and ends close to a column edge, where a sheet image can cut its last character.");
+
     public static ReviewCheck PopulatedColumnsHidden { get; } = new(
         "CELLS_POPULATED_COLUMNS_HIDDEN",
         ReviewSeverities.Warning,
@@ -125,6 +130,7 @@ internal static class CellsReviewChecks
         SheetHidden,
         SheetEmpty,
         CellsClipped,
+        TextOverflows,
         UsedRangeSparse,
         PopulatedColumnsHidden,
         PopulatedColumnsNarrow,

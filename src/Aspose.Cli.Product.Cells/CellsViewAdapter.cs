@@ -180,6 +180,17 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
                 Hint,
                 part: sheet.Name));
         }
+        if (sheet.OverflowingCells.Count > 0)
+        {
+            // Page layout can cut such text at a column edge (known issue CELLS-OVERFLOW-EDGE,
+            // KNOWN-ISSUES.md), which no public API measures, so the finding asks for a look.
+            findings.Add(CellsReviewChecks.TextOverflows.Finding(
+                $"{sheet.OverflowingCells.Count} text value(s) spill over empty cells to their right and end close to a column edge; sample: {string.Join(", ", sheet.OverflowingCells.Samples)}. "
+                    + "A sheet image or PDF page can cut the last character of such text there; check the end of each in the image.",
+                sheet.Name,
+                "If a character is cut, widen the column the text starts in by one or two characters, or wrap the text.",
+                part: sheet.Name));
+        }
         AddPrintAreaFindings(findings, sheet);
         AddChartFindings(findings, sheet);
     }

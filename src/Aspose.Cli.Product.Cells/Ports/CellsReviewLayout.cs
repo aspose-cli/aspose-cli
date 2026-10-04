@@ -38,6 +38,9 @@ internal sealed record CellsReviewSheetLayout
     /// <summary>Cells whose value is wider than its column and shows cut off or as ####.</summary>
     public required CellsReviewCellSet ClippedCells { get; init; }
 
+    /// <summary>Text cells wider than their column that spill over the empty cell to their right.</summary>
+    public required CellsReviewCellSet OverflowingCells { get; init; }
+
     public required string? PrintArea { get; init; }
 
     public required bool PrintAreaInvalid { get; init; }
