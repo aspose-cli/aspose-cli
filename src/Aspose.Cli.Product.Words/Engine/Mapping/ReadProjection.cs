@@ -76,20 +76,30 @@ internal static class ReadProjection
         bool truncated = false;
         if (entry.Node is Paragraph paragraph)
         {
-            string text = Take(WordsText.Of(paragraph), ref remaining, ref truncated);
+            string visible = WordsText.Of(paragraph);
+            string text = AfterLeadingBreaks(visible);
+            // The runs leave out the leading page breaks the text leaves out.
+            int skipped = visible.Length - text.Length;
+            text = Take(text, ref remaining, ref truncated);
             var runs = scope == "full" ? new List<RunData>() : null;
             if (runs is not null)
             {
                 foreach (Run run in WordsText.VisibleRuns(paragraph))
                 {
-                    if (runs.Count == 500 || remaining == 0 && run.Text.Length > 0)
+                    string runText = run.Text[Math.Min(skipped, run.Text.Length)..];
+                    skipped -= run.Text.Length - runText.Length;
+                    if (run.Text.Length > 0 && runText.Length == 0)
+                    {
+                        continue;
+                    }
+                    if (runs.Count == 500 || remaining == 0 && runText.Length > 0)
                     {
                         truncated = true;
                         break;
                     }
                     runs.Add(new RunData
                     {
-                        Text = Take(run.Text, ref remaining, ref truncated),
+                        Text = Take(runText, ref remaining, ref truncated),
                         Font = run.Font.Name,
                         Size = run.Font.Size,
                         Bold = run.Font.Bold,
@@ -162,17 +172,32 @@ internal static class ReadProjection
     }
 
     /// <summary>
-    /// The break that ends a paragraph block: a page break inside it or on the next paragraph
-    /// (page break before), or a section break when it is the last block of a section.
+    /// The break that ends a paragraph block: a page break inside it, or one that starts the next
+    /// paragraph (page break before, or a page break before its text), or a section break when
+    /// it is the last block of a section.
     /// </summary>
     private static string? BreakAfter(Paragraph paragraph)
     {
-        if (paragraph.Runs.Cast<Run>().Any(static run => run.Text.Contains(ControlChar.PageBreak, StringComparison.Ordinal))
-            || paragraph.NextSibling is Paragraph { ParagraphFormat.PageBreakBefore: true })
+        if (AfterLeadingBreaks(RunText(paragraph)).Contains(ControlChar.PageBreakChar, StringComparison.Ordinal)
+            || paragraph.NextSibling is Paragraph next && StartsPage(next))
         {
             return "page";
         }
 
         return paragraph.IsEndOfSection && paragraph.ParentSection?.NextSibling is Section ? "section" : null;
     }
+
+    private static bool StartsPage(Paragraph paragraph)
+    {
+        string text = RunText(paragraph);
+        return paragraph.ParagraphFormat.PageBreakBefore || AfterLeadingBreaks(text).Length < text.Length;
+    }
+
+    private static string RunText(Paragraph paragraph) => string.Concat(paragraph.Runs.Cast<Run>().Select(static run => run.Text));
+
+    // Page breaks before a paragraph's text, which documents converted from PDF have, start its
+    // page like page break before does, so they end the block before it. A paragraph of page
+    // breaks alone keeps them.
+    private static string AfterLeadingBreaks(string text) =>
+        text.TrimStart(ControlChar.PageBreakChar) is { Length: > 0 } rest ? rest : text;
 }

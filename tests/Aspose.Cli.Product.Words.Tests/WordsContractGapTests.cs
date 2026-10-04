@@ -103,4 +103,24 @@ public sealed class WordsContractGapTests
         Assert.Equal("section", BreakAfter("Ends section"));
         Assert.Null(BreakAfter("Last"));
     }
+
+    [Fact]
+    public void Read_ReportsAPageBreakThatStartsAParagraphAfterTheBlockBeforeIt()
+    {
+        // A document converted from PDF starts each page's first paragraph with its page break.
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Writeln("Page one");
+        builder.Writeln("\f第五条 违约责任");
+        builder.Write("Body");
+        string input = fixture.Temp.File("leading-break.docx");
+        source.Save(input, SaveFormat.Docx);
+
+        DocumentReadResult read = fixture.Engine.Read(input, new DocumentReadRequest { Scope = "full" });
+
+        Assert.Equal(["Page one", "第五条 违约责任", "Body"], read.Blocks.Select(static block => block.Text));
+        Assert.Equal(["page", null, null], read.Blocks.Select(static block => block.BreakAfter));
+        Assert.Equal("第五条 违约责任", string.Concat(read.Blocks[1].Runs!.Select(static run => run.Text)));
+    }
 }

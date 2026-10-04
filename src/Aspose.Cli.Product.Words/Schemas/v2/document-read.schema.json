@@ -55,7 +55,7 @@
               }
             }
           },
-          "breakAfter": { "enum": ["page", "section"], "description": "The break that follows this block: a page break, or a section break after the last block of a section." },
+          "breakAfter": { "enum": ["page", "section"], "description": "The break that follows this block: a page break, including one that starts the next paragraph, or a section break after the last block of a section." },
           "rowCount": { "type": "integer", "minimum": 0 },
           "columnCount": { "type": "integer", "minimum": 0 },
           "cells": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } },
