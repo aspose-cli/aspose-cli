@@ -34,9 +34,11 @@ aspose-cli schema v2/slides/ops --operation insert_chart
 Inserted shapes, pictures, tables and charts are named by kind and shapeId, such as
 `rectangle 5`. `set_shape_bounds` moves or resizes a shape in place, keeping its id, name,
 style and text; omitted sides keep their values. Use it when a review finding asks to move or
-enlarge a shape. `set_shape_style` on a table styles every cell, so a smaller `size` lets a long
-table fit; on a chart it styles the title, legend, axis and data-label text. A picture has no
-text, so a text style on it fails with `OPS_INVALID`.
+enlarge a shape. `insert_table` reports a table whose rows grow past its `rect` as a
+`TABLE_OVERFLOW` warning; `set_shape_style` on a table styles every cell, so a smaller `size`
+lets a long table fit. The warning measures the table as `insert_table` left it, so it stays
+when a later operation of the same batch shrinks the text; review the slide instead. On a chart, `set_shape_style` styles the title, legend, axis and
+data-label text. A picture has no text, so a text style on it fails with `OPS_INVALID`.
 
 ## Text and notes
 

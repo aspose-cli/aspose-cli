@@ -13,9 +13,6 @@ internal static partial class SlidesMarkdownBuilder
     // PowerPoint's default row height (0.4 in), which fits one line of 18 pt text.
     private const double DefaultRowHeight = 28.8;
 
-    // A table may end this far below its area before it is reported.
-    private const double FitTolerance = 0.5;
-
     /// <summary>
     /// Reads the pipe table that starts at <paramref name="index"/> and moves the index to
     /// its last row, or returns null when the line is not followed by a delimiter row with
@@ -191,19 +188,7 @@ internal static partial class SlidesMarkdownBuilder
             table.Columns[column].Width = widths[column];
         }
 
-        // Rows grow with their text at the table style's font size, so the laid-out height
-        // shows whether the table stays readable inside its area.
-        return table.Height <= box.Height + FitTolerance
-            ? null
-            : new Warning
-            {
-                Code = SlidesDiagnostics.TableOverflow,
-                Message = string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"The table on slide {number} is {table.Height:0} pt high but its area is {box.Height:0} pt, so it runs past the area."),
-                Hint = "Split the table across slides under the same heading or shorten its cells, then review the slide.",
-                Location = string.Create(CultureInfo.InvariantCulture, $"slide {number}"),
-            };
+        return SlidesAuthoring.TableOverflow(table, number, box.Height);
     }
 
     /// <summary>

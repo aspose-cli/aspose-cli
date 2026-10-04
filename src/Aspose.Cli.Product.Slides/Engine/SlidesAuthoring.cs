@@ -1,4 +1,6 @@
 using System.Drawing;
+using System.Globalization;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine;
@@ -88,6 +90,24 @@ internal static class SlidesAuthoring
         table.FirstRow = true;
         return table;
     }
+
+    /// <summary>
+    /// Reports a table that ends below its area. Rows grow with their text at the table style's
+    /// font size, so the laid-out height shows whether the table stays readable inside it.
+    /// </summary>
+    internal static Warning? TableOverflow(ITable table, int slideNumber, double areaHeight) =>
+        // A table may end half a point below its area before it is reported.
+        table.Height <= areaHeight + 0.5
+            ? null
+            : new Warning
+            {
+                Code = SlidesDiagnostics.TableOverflow,
+                Message = string.Create(
+                    CultureInfo.InvariantCulture,
+                    $"The table on slide {slideNumber} is {table.Height:0} pt high but its area is {areaHeight:0} pt, so it runs past the area."),
+                Hint = "Split the table across slides under the same heading, shorten its cells or give it a smaller text size with set_shape_style, then review the slide.",
+                Location = string.Create(CultureInfo.InvariantCulture, $"slide {slideNumber}"),
+            };
 
     /// <summary>The largest rectangle with the image's aspect ratio, centered in the box.</summary>
     internal static RectangleF Fit(IPPImage image, RectangleF box)

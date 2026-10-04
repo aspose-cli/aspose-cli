@@ -321,4 +321,32 @@ public sealed class SlidesCreationTests
         Assert.Equal("slide 2", warning.Location);
         Assert.NotNull(warning.Hint);
     }
+
+    [Theory]
+    [InlineData(30, true)]
+    [InlineData(3, false)]
+    public void InsertTable_TallerThanItsRect_IsReported(int rows, bool reported)
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("insert-table.pptx", slides: 2);
+
+        SlidesEditResult result = fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        {
+            Ops =
+            [
+                new SlidesInsertTableOp
+                {
+                    Slide = 2,
+                    Rect = new SlidesRectInput { X = 40, Y = 150, Width = 640, Height = 240 },
+                    RowCount = rows,
+                    ColumnCount = 2,
+                    Data = [.. Enumerable.Range(1, rows).Select(static row => (IReadOnlyList<string>)[$"Item {row}", "Team"])],
+                },
+            ],
+        }, new PresentationEditRequest { OutputPath = fixture.File("insert-table.out.pptx") });
+
+        Warning[] overflow = (result.Warnings ?? []).Where(static item => item.Code == SlidesDiagnostics.TableOverflow).ToArray();
+        Assert.Equal(reported ? 1 : 0, overflow.Length);
+        Assert.All(overflow, static warning => Assert.Equal("slide 2", warning.Location));
+    }
 }

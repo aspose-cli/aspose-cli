@@ -54,7 +54,8 @@ internal sealed class SlidesMutationService
         Presentation presentation = loaded.Presentation;
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved = SlidesMutationHandlers.ResolveBatch(presentation, batch);
         var touched = new HashSet<uint>();
-        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched, state);
+        var warnings = new List<Warning>();
+        IReadOnlyList<BoundedOperationOutcome> outcomes = ApplyOperations(presentation, resolved, request.Options.BestEffort, touched, warnings, state);
         EditPublication publication = Publish(loaded, request, format, precondition);
 
         return new SlidesEditResult
@@ -67,8 +68,8 @@ internal sealed class SlidesMutationService
             SlidesTouched = touched.Count == 0 ? null : touched.Order().ToArray(),
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
-                ? InputWarnings(state, loaded, textRead: false)
-                : EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded), EnvelopeParts.BackupWarnings(publication.Backup)),
+                ? EnvelopeParts.CombineWarnings(InputWarnings(state, loaded, textRead: false), warnings)
+                : EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded), warnings, EnvelopeParts.BackupWarnings(publication.Backup)),
         };
     }
 
@@ -77,6 +78,7 @@ internal sealed class SlidesMutationService
         IReadOnlyList<SlidesMutationHandlers.ResolvedSlidesOp> resolved,
         bool bestEffort,
         ISet<uint> touched,
+        ICollection<Warning> warnings,
         LicenseState state) =>
         BoundedOperationRunner.Run(
             SlidesOp.Catalog,
@@ -88,7 +90,7 @@ internal sealed class SlidesMutationService
                 SlidesMutationHandlers.ResolvedSlidesOp item = resolved[index];
                 var operationTouched = new SortedSet<uint>();
                 long affected = new SlidesMutationHandlers(
-                    _resourceBudgets.Inputs, _loader, presentation, item, operationTouched, state == LicenseState.Evaluation).Run();
+                    _resourceBudgets.Inputs, _loader, presentation, item, operationTouched, warnings, state == LicenseState.Evaluation).Run();
                 touched.UnionWith(operationTouched);
                 return new AppliedOperation(affected, OperationTargets(item, operationTouched));
             },

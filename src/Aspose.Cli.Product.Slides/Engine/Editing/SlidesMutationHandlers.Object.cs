@@ -81,6 +81,11 @@ internal sealed partial class SlidesMutationHandlers
             }
         }
 
+        if (SlidesAuthoring.TableOverflow(table, _presentation.Slides.IndexOf(Slide) + 1, operation.Rect.Height) is { } overflow)
+        {
+            _warnings.Add(overflow);
+        }
+
         _touched.Add(Slide.SlideId);
         return operation.RowCount * operation.ColumnCount;
     }

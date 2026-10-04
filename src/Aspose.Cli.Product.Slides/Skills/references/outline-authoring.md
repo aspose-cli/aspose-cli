@@ -69,7 +69,8 @@ Deals by stage
 - A table holds at most 100 rows and 50 columns; a larger one is
   `FEATURE_UNSUPPORTED`. Rows grow with their text, and a table that ends below
   its placeholder is reported as a `TABLE_OVERFLOW` warning located at its
-  slide: split it across slides under the same heading or shorten its cells.
+  slide: split it across slides under the same heading, shorten its cells, or
+  give it a smaller text `size` with `set_shape_style`.
 
 After creation, read the slides with `slides query slides --scope shapes` before adding
 charts, images, notes or transitions with `slides edit`.
