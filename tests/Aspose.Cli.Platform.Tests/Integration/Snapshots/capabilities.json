@@ -6853,7 +6853,7 @@
           "command": "edit",
           "inputSchema": "v2/words/ops",
           "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-          "contractFingerprint": "sha256:72e8c1fc5a3b10990e1678ac7442eb74766ef9b83ba15f958b6ffb43eb40a44e",
+          "contractFingerprint": "sha256:aa1c03c9ca483162388e6ffcf9e0ff19e2ba12404e39dceb62b10b7e910fd9bb",
           "maximumOperationCount": 256,
           "ops": [
             "accept_revisions",
@@ -18455,6 +18455,15 @@
       "messageTemplateId": "pdf.attachment-not-found.message.v1",
       "hintTemplateId": "pdf.attachment-not-found.hint.v1",
       "detailsSchemaId": "v2/common/not-found-details"
+    },
+    {
+      "code": "AUTHOR_NO_MATCH",
+      "owner": "words",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "words.author-no-match.message.v1",
+      "hintTemplateId": "words.author-no-match.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
       "code": "BACKUP_PREDATES_EDIT",

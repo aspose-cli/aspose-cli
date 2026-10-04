@@ -573,7 +573,7 @@ public sealed record UnprotectOp : WordsOp
 /// </summary>
 public abstract record RevisionDecisionOp : WordsOp
 {
-    /// <summary>The author whose revisions are decided.</summary>
+    /// <summary>The author whose revisions are decided; a name no revision has changes nothing and reports AUTHOR_NO_MATCH.</summary>
     [MinLength(1)] public string? Author { get; init; }
 
     /// <summary>
@@ -615,6 +615,7 @@ public sealed record AddCommentOp : WordsOp
 [Operation("remove_comments")]
 public sealed record RemoveCommentsOp : WordsOp
 {
+    /// <summary>The author whose comments are removed; a name no comment has changes nothing and reports AUTHOR_NO_MATCH.</summary>
     [MinLength(1)] public string? Author { get; init; }
 }
 

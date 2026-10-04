@@ -166,7 +166,7 @@
           "const": "accept_revisions"
         },
         "author": {
-          "description": "The author whose revisions are decided.",
+          "description": "The author whose revisions are decided; a name no revision has changes nothing and reports AUTHOR_NO_MATCH.",
           "type": "string",
           "minLength": 1
         },
@@ -1046,7 +1046,7 @@
           "const": "reject_revisions"
         },
         "author": {
-          "description": "The author whose revisions are decided.",
+          "description": "The author whose revisions are decided; a name no revision has changes nothing and reports AUTHOR_NO_MATCH.",
           "type": "string",
           "minLength": 1
         },
@@ -1076,6 +1076,7 @@
           "const": "remove_comments"
         },
         "author": {
+          "description": "The author whose comments are removed; a name no comment has changes nothing and reports AUTHOR_NO_MATCH.",
           "type": "string",
           "minLength": 1
         }

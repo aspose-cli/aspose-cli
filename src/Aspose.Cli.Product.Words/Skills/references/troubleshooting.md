@@ -33,6 +33,10 @@ The error envelope, exit codes, not-found details and shared codes such as
 - `TRACKED_CHANGES_PRESENT`: the edited or converted document already had
   revisions and the output, in a Word format, `rtf`, `odt` or `ott`, still
   contains them; disclose them ([revisions](revisions.md)).
+- `AUTHOR_NO_MATCH`: `accept_revisions`, `reject_revisions` or
+  `remove_comments` changed nothing because no revision or comment has that
+  `author`; names match exactly, and the hint lists the document's. Do not
+  report the decision as made; correct the name and run the batch again.
 - `MERGE_VALUE_MISSING`: `mail_merge` data has no value for a template field
   in the listed records ([mail merge](mail-merge.md)).
 - `DOCUMENT_ENCRYPTION_REMOVED`: the output format cannot be encrypted.

@@ -64,9 +64,10 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 to the document as it was before the batch, as block addresses do, so one
 batch can accept some changes and reject others; list both halves of a
 replacement. A number past the list fails with `REVISION_NOT_FOUND`.
-`itemsAffected` counts the listed changes, or for an author or all the
-revisions the document stores. Authors match exactly, as
-`document.revisionAuthors` spells them.
+`itemsAffected` counts the revisions the document stores that were decided,
+one per run, paragraph mark or other changed node. An `author` that no revision has changes
+nothing and reports `AUTHOR_NO_MATCH`, as `remove_comments` does for comments;
+authors match exactly, as `document.revisionAuthors` spells them.
 
 ```json
 { "ops": [

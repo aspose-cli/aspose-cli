@@ -7,6 +7,7 @@ using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
@@ -256,8 +257,15 @@ internal sealed partial class WordsMutationHandlers
 
         if (author is not null)
         {
+            string[] authors = [.. _document.Revisions.Select(static revision => revision.Author).Distinct(StringComparer.Ordinal)];
             var byAuthor = new AuthorCriteria(author);
-            return accept ? _document.Revisions.Accept(byAuthor) : _document.Revisions.Reject(byAuthor);
+            int changed = accept ? _document.Revisions.Accept(byAuthor) : _document.Revisions.Reject(byAuthor);
+            if (changed == 0)
+            {
+                _warnings.Add(AuthorNoMatch(author, "tracked revision", authors));
+            }
+
+            return changed;
         }
 
         int count = _document.Revisions.Count;
@@ -277,6 +285,25 @@ internal sealed partial class WordsMutationHandlers
     {
         public bool IsMatch(Revision revision) =>
             string.Equals(revision?.Author, author, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The <c>AUTHOR_NO_MATCH</c> warning of a review operation whose author has no
+    /// <paramref name="items"/> in the document, naming the closest of the
+    /// <paramref name="authors"/> it has.
+    /// </summary>
+    private Warning AuthorNoMatch(string author, string items, IReadOnlyCollection<string> authors)
+    {
+        IReadOnlyList<string> closest = NameSuggestions.Closest(author, authors);
+        string listed = string.Join(", ", authors.Select(static name => $"'{name}'"));
+        return new Warning
+        {
+            Code = WordsDiagnostics.AuthorNoMatch,
+            Message = $"{WordsOp.Catalog.NameOf(_resolved.Op)} changed nothing: the document has no {items} by '{author}'.",
+            Hint = authors.Count == 0
+                ? $"The document has no {items}s; check 'words inspect --detail revisions comments'."
+                : $"{(closest.Count > 0 ? $"Did you mean '{closest[0]}'? " : string.Empty)}Authors match exactly; the document's are {listed}.",
+        };
     }
 
     public long Apply(AddCommentOp operation)
@@ -321,9 +348,14 @@ internal sealed partial class WordsMutationHandlers
 
     public long Apply(RemoveCommentsOp operation)
     {
-        Comment[] comments = _document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()
+        Comment[] all = [.. _document.GetChildNodes(NodeType.Comment, true).Cast<Comment>()];
+        Comment[] comments = all
             .Where(comment => operation.Author is null || string.Equals(comment.Author, operation.Author, StringComparison.Ordinal))
             .ToArray();
+        if (operation.Author is { } author && comments.Length == 0)
+        {
+            _warnings.Add(AuthorNoMatch(author, "comment", [.. all.Select(static comment => comment.Author).Distinct(StringComparer.Ordinal)]));
+        }
         // Collect every node first: removing from a live node collection while enumerating it skips nodes.
         var ids = comments.Select(static comment => comment.Id).ToHashSet();
         Node[] anchors = _document.GetChildNodes(NodeType.CommentRangeStart, true).Cast<CommentRangeStart>()

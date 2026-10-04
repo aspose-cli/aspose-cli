@@ -329,4 +329,25 @@ public sealed class WordsFieldAndReviewTests
         Assert.Equal("REVISION_NOT_FOUND", error.Code.Name);
         Assert.Contains("6 exist", error.Message, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void ReviewOperations_WarnWhenTheirAuthorMatchesNothing()
+    {
+        using var fixture = new WordsFixture();
+        string input = CreateReviewedContract(fixture);
+        string output = fixture.Temp.File("unchanged.docx");
+
+        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new AcceptRevisionsOp { Author = "Li" }, new RemoveCommentsOp { Author = "Li" }],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Assert.All(result.Applied, static applied => Assert.Equal(0L, applied.ItemsAffected));
+        Warning[] warnings = [.. result.Warnings!.Where(static warning => warning.Code == "AUTHOR_NO_MATCH")];
+        Assert.Equal(2, warnings.Length);
+        Assert.Contains("accept_revisions", warnings[0].Message, StringComparison.Ordinal);
+        Assert.Contains("'Li (B)'", warnings[0].Hint, StringComparison.Ordinal);
+        Assert.Contains("remove_comments", warnings[1].Message, StringComparison.Ordinal);
+        Assert.Equal(6, new Document(output).Revisions.Count);
+    }
 }
