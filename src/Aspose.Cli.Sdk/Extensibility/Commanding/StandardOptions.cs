@@ -482,6 +482,28 @@ public class StandardInvocation
             _parse, Inputs, ReadEnvironment));
     }
 
+    /// <summary>
+    /// Restates a password error about one of the two documents a command reads with that
+    /// document's own password option, which the loader that raised it cannot know; returns
+    /// any other error unchanged.
+    /// </summary>
+    internal CliException ForPairedInput(CliException error)
+    {
+        if (_options.Other is null || !CliErrors.IsPasswordError(error)
+            || error.Details?["path"]?.GetValue<string>() is not { } path)
+        {
+            return error;
+        }
+
+        (Argument<string>? argument, PasswordOptions? password) =
+            string.Equals(path, _input, StringComparison.Ordinal) ? (_options.Input, _options.InputPassword)
+            : string.Equals(path, _other, StringComparison.Ordinal) ? (_options.Other, _options.OtherPassword)
+            : (null, null);
+        return argument is null || password is null
+            ? error
+            : CliErrors.ForInput(error, argument.Name, password.EnvironmentOption);
+    }
+
     /// <summary>The resolved input document.</summary>
     /// <exception cref="CliException">The file does not exist.</exception>
     public string Input => _input ??= ResolveDocument(Declared(_options.Input, "input document"));

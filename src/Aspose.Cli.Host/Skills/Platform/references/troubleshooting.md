@@ -85,7 +85,9 @@ aspose-cli capabilities --output json
   the new `source.fingerprint.sha256`.
 - `PASSWORD_REQUIRED`: no password was given. `PASSWORD_INVALID`: the given one
   failed. Ask the user; never guess. Pass it with `--password-env <VAR>` or
-  `--password-stdin`.
+  `--password-stdin`. A command that reads two documents, such as `compare`,
+  names the one in `details.input` and its own option in the hint, for example
+  `--right-password-env`.
 
 **Usage and validation (exit 2 and 4)**
 

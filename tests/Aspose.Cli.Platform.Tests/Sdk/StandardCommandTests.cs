@@ -80,6 +80,58 @@ public sealed class StandardCommandTests : IDisposable
         Assert.Equal(("a", "b"), passwords);
     }
 
+    /// <summary>
+    /// The loader that finds a document encrypted cannot know which of two inputs it was given;
+    /// the command restates the error with that input's own password option.
+    /// </summary>
+    [Fact]
+    public void APasswordErrorOfOneOfTwoDocuments_NamesThatDocumentsOption()
+    {
+        Command command = Create(
+            new CommandTraits
+            {
+                Input = new InputDocument("Baseline.", "the baseline", "left"),
+                Other = new InputDocument("Candidate.", "the candidate", "right"),
+            },
+            (_, standard) => throw CliErrors.PasswordRequired(standard.Other));
+        Command invalidLeft = Create(
+            new CommandTraits
+            {
+                Input = new InputDocument("Baseline.", "the baseline", "left"),
+                Other = new InputDocument("Candidate.", "the candidate", "right"),
+            },
+            (_, standard) => throw CliErrors.PasswordInvalid(standard.Input));
+
+        CliException right = RunFailing(command, "report.test", "other.test");
+        CliException left = RunFailing(invalidLeft, "report.test", "other.test");
+
+        Assert.Equal(ErrorCodes.PasswordRequired, right.Code);
+        Assert.Equal(("right", _temp.File("other.test")),
+            (right.Details!["input"]!.GetValue<string>(), right.Details["path"]!.GetValue<string>()));
+        Assert.Contains("--right-password-env", right.Hint, StringComparison.Ordinal);
+        Assert.Equal((ErrorCodes.PasswordInvalid, "left"), (left.Code, left.Details!["input"]!.GetValue<string>()));
+        Assert.Contains("--left-password-env", left.Hint, StringComparison.Ordinal);
+    }
+
+    /// <summary>A password error about neither input keeps the hint that names options per input.</summary>
+    [Fact]
+    public void APasswordErrorOfAThirdDocument_PointsToThePerInputOptions()
+    {
+        Command command = Create(
+            new CommandTraits
+            {
+                Input = new InputDocument("Baseline.", "the baseline", "left"),
+                Other = new InputDocument("Candidate.", "the candidate", "right"),
+            },
+            (_, _) => throw CliErrors.PasswordRequired(_temp.File("third.test")));
+
+        CliException error = RunFailing(command, "report.test", "other.test");
+
+        Assert.Equal(ErrorCodes.PasswordRequired, error.Code);
+        Assert.Null(error.Details!["input"]);
+        Assert.Contains("--left-password-env", error.Hint, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Create_PublishesAFileSetOrACreatedFileBesideOverwrite()
     {

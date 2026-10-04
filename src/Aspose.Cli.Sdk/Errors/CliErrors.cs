@@ -75,6 +75,22 @@ public static partial class CliErrors
             : PasswordInvalid(path, operationField);
     }
 
+    /// <summary>
+    /// Restates a password error about one of the documents a command reads, naming that
+    /// input in the details and its own password option in the hint.
+    /// </summary>
+    internal static CliException ForInput(CliException error, string input, string passwordEnvironmentOption)
+    {
+        string path = error.Details!["path"]!.GetValue<string>();
+        string lead = error.Code == ErrorCodes.PasswordRequired
+            ? "Ask the user for the password" : "Ask the user to double-check the password";
+        return new CliException(
+            error.Code,
+            $"{error.Message} (the {input} input)",
+            hint: $"{lead}, store it in an environment variable and retry with {passwordEnvironmentOption} <NAME>.",
+            details: new JsonObject { ["path"] = path, ["input"] = input });
+    }
+
     /// <summary>Whether <paramref name="error"/> is <c>PASSWORD_REQUIRED</c> or <c>PASSWORD_INVALID</c>.</summary>
     public static bool IsPasswordError(CliException error) =>
         error.Code == ErrorCodes.PasswordRequired || error.Code == ErrorCodes.PasswordInvalid;

@@ -1,5 +1,6 @@
 using System.CommandLine;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 
 namespace Aspose.Cli.Sdk.Extensibility.Commanding;
 
@@ -49,7 +50,14 @@ public static class StandardCommand
         {
             using var invocation = new StandardInvocation<TPort>(
                 standard, parse, context, standardInputTaken?.Invoke(parse) != true);
-            return handler(parse, invocation);
+            try
+            {
+                return handler(parse, invocation);
+            }
+            catch (CliException error) when (invocation.ForPairedInput(error) is { } restated && restated != error)
+            {
+                throw restated;
+            }
         }));
         return command;
     }
