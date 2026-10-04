@@ -34,7 +34,9 @@
               "additionalProperties": false,
               "properties": {
                 "text": { "type": "string" },
-                "font": { "type": "string" },
+                "font": { "type": "string", "description": "The East Asian font when the run starts with a Chinese, Japanese or Korean character, otherwise the Latin font." },
+                "latinFont": { "type": "string", "description": "The font of the run's Latin text." },
+                "eastAsianFont": { "type": "string", "description": "The font of the run's Chinese, Japanese and Korean text." },
                 "size": { "type": "number", "description": "The font size in points." },
                 "bold": { "type": "boolean" },
                 "italic": { "type": "boolean" },

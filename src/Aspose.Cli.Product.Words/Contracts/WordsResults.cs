@@ -218,7 +218,18 @@ public sealed record ParagraphFormatData
 public sealed record RunData
 {
     public required string Text { get; init; }
+
+    /// <summary>
+    /// The East Asian font when the run starts with a Chinese, Japanese or Korean character,
+    /// otherwise the Latin font.
+    /// </summary>
     public string? Font { get; init; }
+
+    /// <summary>The font of the run's Latin text.</summary>
+    public string? LatinFont { get; init; }
+
+    /// <summary>The font of the run's Chinese, Japanese and Korean text.</summary>
+    public string? EastAsianFont { get; init; }
     public double? Size { get; init; }
     public bool? Bold { get; init; }
     public bool? Italic { get; init; }

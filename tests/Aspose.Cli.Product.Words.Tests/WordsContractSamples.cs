@@ -79,7 +79,7 @@ internal static class WordsContractSamples
                 Text = "Executive summary",
                 Style = "Heading 1",
                 HeadingLevel = 1,
-                Runs = [new RunData { Text = "Executive summary", Font = "Arial", Size = 16, Bold = true }],
+                Runs = [new RunData { Text = "Executive summary", Font = "Arial", LatinFont = "Arial", EastAsianFont = "SimHei", Size = 16, Bold = true }],
                 ParagraphFormat = new ParagraphFormatData
                 {
                     Alignment = "left",

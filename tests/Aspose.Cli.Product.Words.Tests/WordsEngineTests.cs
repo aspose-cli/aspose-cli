@@ -342,6 +342,28 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void FullRead_ReportsTheLatinAndEastAsianFontOfEachRun()
+    {
+        string input = _fixture.Temp.File("run-fonts.docx");
+        var builder = new DocumentBuilder();
+        builder.Font.NameAscii = "Georgia";
+        builder.Font.NameOther = "Georgia";
+        builder.Font.NameFarEast = "KaiTi";
+        builder.Write("员工手册 (Handbook)");
+        builder.Font.Bold = true;
+        builder.Write(" for 员工");
+        builder.Document.Save(input);
+
+        DocumentReadResult full = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "full" });
+
+        // The SDK's single font name is that of the run's first character.
+        IReadOnlyList<RunData> runs = full.Blocks.Single(static block => block.Text == "员工手册 (Handbook) for 员工").Runs!;
+        Assert.Equal(
+            [("KaiTi", "Georgia", "KaiTi"), ("Georgia", "Georgia", "KaiTi")],
+            runs.Select(static run => (run.Font, run.LatinFont, run.EastAsianFont)));
+    }
+
+    [Fact]
     public void Styles_TakeLatinAndEastAsianFontsSeparately()
     {
         string input = _fixture.Temp.File("bilingual.docx");

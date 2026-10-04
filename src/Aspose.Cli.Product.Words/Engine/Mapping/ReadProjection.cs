@@ -102,6 +102,8 @@ internal static class ReadProjection
                     {
                         Text = Take(runText, ref remaining, ref truncated),
                         Font = run.Font.Name,
+                        LatinFont = run.Font.NameAscii,
+                        EastAsianFont = run.Font.NameFarEast,
                         Size = run.Font.Size,
                         Bold = run.Font.Bold,
                         Italic = run.Font.Italic,
