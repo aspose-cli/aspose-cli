@@ -96,7 +96,19 @@ public sealed class RenderPixelGuardTests
     {
         string output = Path.Combine(Path.GetTempPath(), "report.png");
 
-        Assert.Equal(Path.Combine(Path.GetTempPath(), expected), PartOutputPath.For(output, marker, 3));
+        Assert.Equal(Path.Combine(Path.GetTempPath(), expected), PartOutputPath.For(output, marker, 3, "png"));
+    }
+
+    [Fact]
+    public void PartOutputPath_RefusesAnOutputWithoutAnExtension()
+    {
+        string output = Path.Combine(Path.GetTempPath(), "png");
+
+        CliException error = Assert.Throws<CliException>(() => PartOutputPath.For(output, "s", 1, "jpeg"));
+
+        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
+        Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
+        Assert.Contains(Path.Combine(output, "page.jpeg"), error.Hint);
     }
 
     private static (DpiOption Dpi, ParseResult Parse) ParseDpi(params string[] arguments)

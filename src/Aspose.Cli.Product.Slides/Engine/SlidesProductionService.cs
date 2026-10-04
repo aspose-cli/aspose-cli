@@ -245,7 +245,7 @@ internal sealed class SlidesProductionService
             ISlide slide = presentation.Slides[number - 1];
             string path = slides.Count == 1
                 ? request.OutputPath
-                : PartOutputPath.For(request.OutputPath, SlidePartMarker, number);
+                : PartOutputPath.For(request.OutputPath, SlidePartMarker, number, request.TargetFormatId);
             targets.Add((number, slide.SlideId, path));
             transaction.Stage(path, request.Overwrite, temp =>
             {
