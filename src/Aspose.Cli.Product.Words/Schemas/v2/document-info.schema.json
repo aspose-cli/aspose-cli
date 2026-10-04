@@ -33,7 +33,7 @@
       "type": "array",
       "items": {
         "type": "object",
-        "required": ["section", "orientation", "widthPoints", "heightPoints", "margins"],
+        "required": ["section", "orientation", "widthPoints", "heightPoints", "margins", "headersFooters"],
         "additionalProperties": false,
         "properties": {
           "section": { "type": "integer", "minimum": 1, "description": "The 1-based section number that section operations accept." },
@@ -50,6 +50,20 @@
               "right": { "type": "number" },
               "bottom": { "type": "number" },
               "left": { "type": "number" }
+            }
+          },
+          "headersFooters": {
+            "type": "array",
+            "description": "The headers and footers the section defines itself; a kind it does not define continues from the previous section.",
+            "items": {
+              "type": "object",
+              "required": ["location", "kind", "paragraphs"],
+              "additionalProperties": false,
+              "properties": {
+                "location": { "enum": ["header", "footer"], "description": "As set_page_numbers names it." },
+                "kind": { "enum": ["primary", "first", "even"], "description": "As set_header and set_footer name it." },
+                "paragraphs": { "type": "array", "items": { "type": "string" }, "description": "The visible text of each paragraph, as set_header and set_footer take it." }
+              }
             }
           }
         }

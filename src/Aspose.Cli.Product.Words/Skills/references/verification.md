@@ -34,7 +34,8 @@ aspose-cli words compare baseline.docx output.docx --output json
 
 Read the blocks the batch reported in `applied[].targets`, and blocks that
 follow insertions. `replace_text` names the original body blocks whose text,
-comments or footnotes it changed, and `document` when it changed none of them.
+comments or footnotes it changed, then each header and footer it changed as
+`section/<n>/<location>/<kind>`, and `document` when it changed none of them.
 `pagesTouched` lists the output pages the batch changed: those of the blocks
 and sections it addressed or inserted, of replaced text, and of the content
 that took the place of removed blocks; a header or footer change touches every

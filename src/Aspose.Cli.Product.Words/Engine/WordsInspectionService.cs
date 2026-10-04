@@ -123,12 +123,19 @@ internal sealed class WordsInspectionService
         };
     }
 
-    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text) =>
-        new()
+    private static WordsSearchHit Hit(DocumentBlockIndex index, Node node, string scope, string text)
+    {
+        (string Location, string Kind)? place = scope == WordsTextScopes.HeadersFooters && node.GetAncestor(NodeType.HeaderFooter) is HeaderFooter headerFooter
+            ? WordsStories.PlaceOf(headerFooter)
+            : null;
+        return new()
         {
             Block = index.FindBlock(node),
-            Section = node.Document.GetChildNodes(NodeType.Section, false).IndexOf(node.GetAncestor(NodeType.Section)) + 1,
+            Section = WordsStories.SectionOf(node),
             Scope = scope,
+            Location = place?.Location,
+            Kind = place?.Kind,
             Snippet = Truncate(text, 300),
         };
+    }
 }

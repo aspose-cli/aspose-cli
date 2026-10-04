@@ -49,6 +49,23 @@ public sealed record SectionData
     public required double WidthPoints { get; init; }
     public required double HeightPoints { get; init; }
     public required MarginData Margins { get; init; }
+
+    /// <summary>
+    /// The headers and footers the section defines itself; a kind it does not define continues
+    /// from the previous section.
+    /// </summary>
+    public required IReadOnlyList<HeaderFooterData> HeadersFooters { get; init; }
+}
+
+/// <summary>
+/// One header or footer of a section, named as set_header, set_footer and set_page_numbers
+/// name it: its <c>location</c> and <c>kind</c>, and its visible text as <c>paragraphs</c>.
+/// </summary>
+public sealed record HeaderFooterData
+{
+    public required string Location { get; init; }
+    public required string Kind { get; init; }
+    public required IReadOnlyList<string> Paragraphs { get; init; }
 }
 
 /// <summary>Page margins in points.</summary>
@@ -283,6 +300,13 @@ public sealed record WordsSearchHit
     /// <summary>The section whose body, header or footer holds the hit.</summary>
     public required int Section { get; init; }
     public required string Scope { get; init; }
+
+    /// <summary>In a header or footer, <c>header</c> or <c>footer</c>; absent elsewhere.</summary>
+    public string? Location { get; init; }
+
+    /// <summary>In a header or footer, its <c>primary</c>, <c>first</c> or <c>even</c> kind; absent elsewhere.</summary>
+    public string? Kind { get; init; }
+
     public required string Snippet { get; init; }
 }
 

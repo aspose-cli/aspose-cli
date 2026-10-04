@@ -123,7 +123,10 @@ internal static class WordsAnchorResolver
         return [matches[nth - 1].Node];
     }
 
-    /// <summary>The addresses of the original blocks that hold <paramref name="nodes"/>.</summary>
+    /// <summary>
+    /// The addresses of the original blocks that hold <paramref name="nodes"/>, followed by the
+    /// headers and footers that hold them, as <c>section/{n}/{location}/{kind}</c>.
+    /// </summary>
     internal static IReadOnlyList<string> Targets(
         DocumentBlockIndex index,
         IReadOnlyList<Node> nodes,
@@ -135,17 +138,23 @@ internal static class WordsAnchorResolver
             .Distinct()
             .Order()
             .ToArray();
-        if (blocks.Length == 0)
+        string[] headersFooters = nodes
+            .Select(static node => node.GetAncestor(NodeType.HeaderFooter))
+            .OfType<HeaderFooter>()
+            .Distinct()
+            .Select(static headerFooter =>
+            {
+                (string location, string kind) = WordsStories.PlaceOf(headerFooter);
+                return $"section/{WordsStories.SectionOf(headerFooter)}/{location}/{kind}";
+            })
+            .ToArray();
+        if (blocks.Length > 100)
         {
-            return ["document"];
+            return target?.Blocks is { Length: > 0 } ranges ? [$"blocks/{ranges}", .. headersFooters] : ["document"];
         }
-        if (blocks.Length <= 100)
-        {
-            return blocks.Select(static block => $"block/{block}").ToArray();
-        }
-        return target?.Blocks is { Length: > 0 } ranges
-            ? [$"blocks/{ranges}"]
-            : ["document"];
+
+        string[] targets = [.. blocks.Select(static block => $"block/{block}"), .. headersFooters];
+        return targets.Length == 0 ? ["document"] : targets;
     }
 
     private static WordsTarget? TargetOf(WordsOp op) => op switch

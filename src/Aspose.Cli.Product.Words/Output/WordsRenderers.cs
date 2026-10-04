@@ -91,7 +91,11 @@ internal static class WordsRenderers
         var table = new TextTable("block", "section", "scope", "text");
         foreach (WordsSearchHit hit in result.Hits)
         {
-            table.AddRow(hit.Block is { } block ? TableText.Int(block) : "-", TableText.Int(hit.Section), hit.Scope, hit.Snippet);
+            table.AddRow(
+                hit.Block is { } block ? TableText.Int(block) : "-",
+                TableText.Int(hit.Section),
+                hit.Location is { } location ? $"{hit.Scope} ({location}, {hit.Kind})" : hit.Scope,
+                hit.Snippet);
         }
 
         table.WriteTo(surface.Out, surface.Format);
@@ -146,6 +150,19 @@ internal static class WordsRenderers
             }
 
             table.WriteTo(surface.Out, surface.Format);
+            var headersFooters = new TextTable("section", "location", "kind", "paragraphs");
+            foreach (SectionData section in sections)
+            {
+                foreach (HeaderFooterData item in section.HeadersFooters)
+                {
+                    headersFooters.AddRow(TableText.Int(section.Section), item.Location, item.Kind, string.Join(" | ", item.Paragraphs));
+                }
+            }
+
+            if (sections.Any(static section => section.HeadersFooters.Count > 0))
+            {
+                headersFooters.WriteTo(surface.Out, surface.Format);
+            }
         }
 
         if (result.Outline is { } outline && ResultText.Section(surface, "outline", outline.Count == 0))

@@ -50,7 +50,7 @@ internal static class InfoProjection
                 Signed = loaded.Format.HasDigitalSignature,
                 HasMacros = loaded.Format.HasMacros,
             },
-            Sections = details.Contains("sections") ? Sections(document) : null,
+            Sections = details.Contains("sections") ? Sections(document, loaded.Evaluation) : null,
             Outline = details.Contains("outline") || request.IncludePreview ? Outline(index, warnings) : null,
             Styles = details.Contains("styles") ? document.Styles.Cast<Style>()
                 .Select(static s => s.Name).Order(StringComparer.Ordinal).ToArray() : null,
@@ -76,7 +76,7 @@ internal static class InfoProjection
         Fingerprint = FileFingerprints.Capture(path),
     };
 
-    private static IReadOnlyList<SectionData> Sections(Document document) =>
+    private static IReadOnlyList<SectionData> Sections(Document document, bool evaluation) =>
         document.Sections.Cast<Section>().Select((section, index) => new SectionData
         {
             Section = index + 1,
@@ -90,6 +90,20 @@ internal static class InfoProjection
                 Bottom = section.PageSetup.BottomMargin,
                 Left = section.PageSetup.LeftMargin,
             },
+            HeadersFooters = section.HeadersFooters.Cast<HeaderFooter>().Select(headerFooter =>
+            {
+                (string location, string kind) = WordsStories.PlaceOf(headerFooter);
+                return new HeaderFooterData
+                {
+                    Location = location,
+                    Kind = kind,
+                    // Evaluation mode writes its sentence into the footers of the documents it opens.
+                    Paragraphs = WordsStories.Units(headerFooter).Cast<Paragraph>()
+                        .Where(paragraph => !(evaluation && WordsEvaluation.IsMark(paragraph)))
+                        .Select(static paragraph => WordsText.Of(paragraph))
+                        .ToArray(),
+                };
+            }).ToArray(),
         }).ToArray();
 
     private static IReadOnlyList<OutlineItem> Outline(DocumentBlockIndex index, List<Warning> warnings) =>

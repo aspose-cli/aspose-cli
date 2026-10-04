@@ -24,7 +24,12 @@ numbers, become body text and the layout may add pages, which `convert`,
   paragraph; `inspect` names the `scope` of each image, field and revision,
   and `query search` the `scope` and `section` of each hit; neither gives a
   `block` in headers and footers. A **section** carries page setup, headers and footers, numbered
-  from 1.
+  from 1. `inspect --detail sections` lists the headers and footers each
+  section defines, by the `location` (`header`, `footer`) and `kind`
+  (`primary`, `first`, `even`) that `set_header`, `set_footer` and
+  `set_page_numbers` take, with their `paragraphs`; a kind a section does not
+  define continues from the previous section. A search hit in one names its
+  `location` and `kind` too.
 - Block text, `--scope full` runs, search snippets and `heading`/`find`
   addresses use the text a reader sees: field results rather than field codes, without text a tracked
   change deletes, and without the comments and footnotes a paragraph anchors.

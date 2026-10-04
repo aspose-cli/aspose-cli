@@ -46,6 +46,7 @@ internal static class WordsContractSamples
                 WidthPoints = 612,
                 HeightPoints = 792,
                 Margins = new MarginData { Top = 72, Right = 72, Bottom = 72, Left = 72 },
+                HeadersFooters = [new HeaderFooterData { Location = "footer", Kind = "primary", Paragraphs = ["Contract C-7", "1"] }],
             },
         ],
         Outline = [new OutlineItem { Block = 1, HeadingLevel = 1, Text = "Executive summary" }],
@@ -172,11 +173,15 @@ internal static class WordsContractSamples
     {
         Source = new SourceInfo { Path = "D:/data/report.docx", Format = "docx", SizeBytes = 18000 },
         Pattern = "revenue",
-        Hits = [new WordsSearchHit { Block = 4, Section = 1, Scope = "body", Snippet = "Revenue increased." }],
+        Hits =
+        [
+            new WordsSearchHit { Block = 4, Section = 1, Scope = "body", Snippet = "Revenue increased." },
+            new WordsSearchHit { Section = 1, Scope = "headersFooters", Location = "header", Kind = "primary", Snippet = "Revenue report" },
+        ],
         Window = new ResultWindow
         {
             Unit = "hit",
-            Returned = 1,
+            Returned = 2,
             Truncated = true,
             Next = "aspose-cli words query search D:/data/report.docx --pattern revenue --scope body --max-hits 1 --skip 1 --output json",
         },

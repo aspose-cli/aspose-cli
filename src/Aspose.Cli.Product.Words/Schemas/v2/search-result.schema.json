@@ -19,6 +19,8 @@
           "block": { "type": "integer", "minimum": 1, "description": "The body block that holds the hit; absent in headers and footers." },
           "section": { "type": "integer", "minimum": 1, "description": "The section whose body, header or footer holds the hit." },
           "scope": { "enum": ["body", "headersFooters", "footnotes", "comments"] },
+          "location": { "enum": ["header", "footer"], "description": "In a header or footer, which one holds the hit; absent elsewhere." },
+          "kind": { "enum": ["primary", "first", "even"], "description": "In a header or footer, its kind as set_header and set_footer name it; absent elsewhere." },
           "snippet": { "type": "string" }
         }
       }

@@ -20,6 +20,14 @@ internal static class WordsEvaluation
     }
 
     /// <summary>
+    /// Whether a paragraph is text evaluation mode writes into a document: the banner before the
+    /// first block, or the sentence it adds to the primary footer of every section.
+    /// </summary>
+    internal static bool IsMark(Paragraph paragraph) =>
+        IsBanner(paragraph)
+        || paragraph.GetText().TrimStart().StartsWith("Evaluation Only. Created with Aspose.Words.", StringComparison.Ordinal);
+
+    /// <summary>
     /// The banner paragraphs an evaluation-saved document carries before its first block.
     /// Evaluation mode writes one at the start of every document it saves, unless one is there.
     /// </summary>

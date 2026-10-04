@@ -81,6 +81,24 @@ internal static class WordsStories
     };
 
     /// <summary>
+    /// Where a header or footer shows, in the set_header and set_page_numbers vocabulary: its
+    /// location, <c>header</c> or <c>footer</c>, and its kind, <c>primary</c>, <c>first</c> or
+    /// <c>even</c>.
+    /// </summary>
+    internal static (string Location, string Kind) PlaceOf(HeaderFooter headerFooter) => (
+        headerFooter.IsHeader ? "header" : "footer",
+        headerFooter.HeaderFooterType switch
+        {
+            HeaderFooterType.HeaderFirst or HeaderFooterType.FooterFirst => "first",
+            HeaderFooterType.HeaderEven or HeaderFooterType.FooterEven => "even",
+            _ => "primary",
+        });
+
+    /// <summary>The 1-based number of the section that holds a node.</summary>
+    internal static int SectionOf(Node node) =>
+        node.Document.GetChildNodes(NodeType.Section, false).IndexOf(node.GetAncestor(NodeType.Section)) + 1;
+
+    /// <summary>
     /// A story's search units: a note as a whole, otherwise each paragraph not nested in another
     /// paragraph. A text box's paragraphs are read with the paragraph that anchors the box.
     /// </summary>

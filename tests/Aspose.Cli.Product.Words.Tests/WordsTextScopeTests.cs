@@ -69,6 +69,44 @@ public sealed class WordsTextScopeTests : IClassFixture<WordsFixture>
         Assert.Contains("Contract 2 needle", headers[1].Snippet, StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void HeadersAndFooters_AreNamedAsSetHeaderAndSetFooterNameThem()
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Write("Body needle");
+        document.FirstSection.PageSetup.DifferentFirstPageHeaderFooter = true;
+        builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+        builder.Writeln("Contract needle");
+        builder.Write("Confidential");
+        builder.MoveToHeaderFooter(HeaderFooterType.FooterFirst);
+        builder.Write("Cover needle");
+        string input = _fixture.Temp.File("named-headers.docx");
+        document.Save(input);
+
+        DocumentInfoResult info = _fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["sections"] });
+        WordsSearchResult search = _fixture.Engine.Search(input, WordsFixture.Search("needle", "all"));
+        WordsEditResult edit = _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new ReplaceTextOp { Scope = "all", Find = "needle", Replace = "pin" }] },
+            new WordsEditRequest { OutputPath = _fixture.Temp.File("named-headers-out.docx") });
+
+        Assert.Equivalent(
+            new[]
+            {
+                new HeaderFooterData { Location = "header", Kind = "primary", Paragraphs = ["Contract needle", "Confidential"] },
+                new HeaderFooterData { Location = "footer", Kind = "first", Paragraphs = ["Cover needle"] },
+            },
+            Assert.Single(info.Sections!).HeadersFooters.Where(static item => item.Paragraphs.Any(static text => text.Length > 0)),
+            strict: true);
+        // Evaluation mode adds a primary footer, which moves the stories of the section around.
+        Assert.Equal(
+            [(null, null), ("footer", "first"), ("header", "primary")],
+            search.Hits.Select(static hit => (hit.Location, hit.Kind)).Order());
+        Assert.Equal("block/1", edit.Applied[0].Targets[0]);
+        Assert.Equal(["section/1/footer/first", "section/1/header/primary"], edit.Applied[0].Targets.Skip(1).Order());
+    }
+
     [Theory]
     [InlineData("body", new[] { "Body pin", "Box pin" })]
     [InlineData("headersFooters", new[] { "Header pin", "Footer pin" })]
