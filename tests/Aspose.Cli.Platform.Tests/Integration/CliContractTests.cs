@@ -551,6 +551,25 @@ $", result.StdOut);
         Assert.DoesNotContain("aspose-cli cells", hint, StringComparison.Ordinal);
     }
 
+    [Theory]
+    [InlineData("pdf inspcet a.pdf", "pdf inspect", "'inspcet' is not a command of 'aspose-cli pdf'")]
+    [InlineData("pdf extact a.pdf --pages 1", "pdf extract", "'extact' is not a command of 'aspose-cli pdf'")]
+    [InlineData("wrods convert a.docx", "words", "'wrods' is not a command of 'aspose-cli'")]
+    public void UnknownCommand_SuggestsTheClosestCommands(string commandLine, string suggestion, string message)
+    {
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.StartsWith(message, error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        // The tokens after an unknown command are not reported as unknown on their own.
+        Assert.DoesNotContain(".docx", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain(".pdf", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(suggestion, error["details"]!["suggestions"]![0]!.GetValue<string>());
+        Assert.StartsWith($"Did you mean {suggestion}", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void UnknownOption_SuggestsTheClosestOptionsOfTheCommand()
     {

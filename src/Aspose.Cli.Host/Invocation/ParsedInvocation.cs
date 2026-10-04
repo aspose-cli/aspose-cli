@@ -1,6 +1,7 @@
 using System.CommandLine;
 using Aspose.Cli.Host.Output;
 using System.CommandLine.Parsing;
+using Aspose.Cli.Sdk;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Text;
 
@@ -37,6 +38,11 @@ internal sealed class ParsedInvocation
 
     internal void EnsureValid()
     {
+        if (UnknownCommand() is { } unknown)
+        {
+            throw CliErrors.Usage([unknown.Problem], unknown.Suggestions);
+        }
+
         string[] problems =
         [
             .. ParseResult.Errors.Select(static error => error.Message),
@@ -60,6 +66,27 @@ internal sealed class ParsedInvocation
                 .SelectMany(static argument => argument.Tokens)
                 .Select(static token => token.Value)
                 .Where(static value => value.StartsWith("--", StringComparison.Ordinal));
+
+    /// <summary>
+    /// A command that only groups other commands, given a first token that names none of them:
+    /// the token is a mistyped command, so the tokens after it are not reported on their own and
+    /// the closest commands are suggested by their full path, as unknown options are.
+    /// </summary>
+    private (string Problem, IReadOnlyList<string> Suggestions)? UnknownCommand()
+    {
+        string[] commands = [.. Command.Subcommands.Where(static command => !command.Hidden).Select(static command => command.Name)];
+        if (commands.Length == 0 || Command.Arguments.Count > 0
+            || ParseResult.UnmatchedTokens.FirstOrDefault() is not { } token || token.StartsWith('-'))
+        {
+            return null;
+        }
+
+        string[] path = [.. CommandPath.Select(static command => command.Name)];
+        string parent = string.Join(' ', [DistributionInfo.CommandName, .. path]);
+        return (
+            $"'{token}' is not a command of '{parent}'; its commands: {string.Join(", ", commands)}.",
+            [.. NameSuggestions.Closest(token, commands).Select(name => string.Join(' ', [.. path, name]))]);
+    }
 
     /// <summary>The command's options closest to the first unknown option, compared without their dashes.</summary>
     private IReadOnlyList<string> OptionSuggestions()
