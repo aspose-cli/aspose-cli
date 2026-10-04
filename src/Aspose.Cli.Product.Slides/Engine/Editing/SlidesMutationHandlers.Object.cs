@@ -129,6 +129,7 @@ internal sealed partial class SlidesMutationHandlers
         chart.Legend.Position = LegendPositionType.Bottom;
         chart.Legend.Overlay = false;
         chart.LineFormat.FillFormat.FillType = FillType.NoFill;
+        ContrastText(chart, Slide);
         if (type != ChartType.Pie)
         {
             chart.Axes.VerticalAxis.MinorGridLinesFormat.Line.FillFormat.FillType = FillType.NoFill;
@@ -269,6 +270,48 @@ internal sealed partial class SlidesMutationHandlers
             values.IsAutomaticMinValue = false;
             values.MinValue = 0;
         }
+    }
+
+    /// <summary>
+    /// Gives a new chart's text the theme's background color when it contrasts more than the
+    /// theme's text color with the slide's solid background, as the slide's own text does:
+    /// light on a dark title slide or a dark background the slide was given. Otherwise, and on
+    /// a picture or gradient background, the chart keeps its style's text color.
+    /// </summary>
+    private static void ContrastText(IChart chart, ISlide slide)
+    {
+        IFillFormatEffectiveData background = slide.Background.GetEffective().FillFormat;
+        if (background.FillType != FillType.Solid)
+        {
+            return;
+        }
+
+        IFillFormat fill = chart.TextFormat.PortionFormat.FillFormat;
+        fill.FillType = FillType.Solid;
+        fill.SolidFillColor.SchemeColor = SchemeColor.Text1;
+        Color dark = fill.SolidFillColor.Color;
+        fill.SolidFillColor.SchemeColor = SchemeColor.Background1;
+        if (Contrast(fill.SolidFillColor.Color, background.SolidFillColor) <= Contrast(dark, background.SolidFillColor))
+        {
+            fill.FillType = FillType.NotDefined;
+        }
+    }
+
+    /// <summary>The WCAG contrast ratio of two colors, from 1 for equal luminance to 21.</summary>
+    private static double Contrast(Color first, Color second)
+    {
+        double a = Luminance(first);
+        double b = Luminance(second);
+        return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
+    }
+
+    private static double Luminance(Color color) =>
+        (0.2126 * Linear(color.R)) + (0.7152 * Linear(color.G)) + (0.0722 * Linear(color.B));
+
+    private static double Linear(byte channel)
+    {
+        double value = channel / 255.0;
+        return value <= 0.04045 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
     }
 
     private static IAxis ValueAxis(IChart chart, ChartType type) =>

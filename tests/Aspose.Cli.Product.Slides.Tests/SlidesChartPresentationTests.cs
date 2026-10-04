@@ -284,6 +284,51 @@ public sealed class SlidesChartPresentationTests
     }
 
     [Fact]
+    public void NewChart_TakesTheThemeTextColorThatContrastsWithItsSlide()
+    {
+        using var fixture = new SlidesEngineFixture();
+        // The built-in design's title slide is dark; a content slide is light, and a slide
+        // given its own dark background is dark whatever its layout.
+        string seed = fixture.File("contrast-seed.pptx");
+        fixture.Engine.Create(new NewPresentationRequest { OutputPath = seed });
+        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        {
+            Ops =
+            [
+                new AddSlideOp { Layout = "Title and Content" },
+                new AddSlideOp { Layout = "Title and Content" },
+            ],
+        }, new PresentationEditRequest { OutputPath = seed, Overwrite = true });
+        string output = fixture.File("contrast.pptx");
+
+        fixture.Engine.ApplyOps(seed, new SlidesOpsBatch
+        {
+            Ops =
+            [
+                new SetBackgroundOp { Slides = "3", Color = "#1F2A44" },
+                .. Enumerable.Range(1, 3).Select(static slide => new InsertChartOp
+                {
+                    Slide = slide,
+                    Kind = "bar",
+                    Rect = Frame,
+                    Categories = ["Target", "Actual"],
+                    Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [2.4, 1.82] }],
+                }),
+            ],
+        }, new PresentationEditRequest { OutputPath = output });
+
+        // On the light slide the chart keeps its style's own text color.
+        using var deck = new Presentation(output);
+        Assert.Equal(
+            [(FillType.Solid, SchemeColor.Background1), (FillType.NotDefined, SchemeColor.NotDefined), (FillType.Solid, SchemeColor.Background1)],
+            deck.Slides.Select(static slide =>
+            {
+                IFillFormat fill = slide.Shapes.OfType<IChart>().Single().TextFormat.PortionFormat.FillFormat;
+                return (fill.FillType, fill.FillType == FillType.Solid ? fill.SolidFillColor.SchemeColor : SchemeColor.NotDefined);
+            }));
+    }
+
+    [Fact]
     public void SetShapeStyle_AppliesTheFontToEveryScriptInTheText()
     {
         using var fixture = new SlidesEngineFixture();
