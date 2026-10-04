@@ -121,7 +121,8 @@ public sealed class BoundedOperationPipelineTests
     [InlineData("""{"op":"stamp","image":"seal.png","id":"a"}""", "stamp_image")]
     [InlineData("""{"op":"stamp"}""", "stamp_image")]
     [InlineData("""{"op":"stamp","colour":"red"}""", "stamp_image")]
-    public void Parse_SuggestsTheClosestOperationThatAcceptsTheGivenFields(string operation, string suggestion)
+    [InlineData("""{"op":"Seal","text":"DRAFT"}""", "stamp_image")]
+    public void Parse_SuggestsTheDeclaredOrClosestOperationThatAcceptsTheGivenFields(string operation, string suggestion)
     {
         CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
             $$"""{"ops":[{{operation}}]}""", TestContracts.Json));

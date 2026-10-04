@@ -80,6 +80,9 @@ public sealed class OperationRecord
 
     /// <summary>Rules over several members, such as <see cref="ExactlyOneOfAttribute"/>.</summary>
     public IReadOnlyList<ValueConstraintAttribute> Constraints { get; init; } = [];
+
+    /// <summary>The op names commonly written for this operation (see <see cref="MistakenForAttribute"/>).</summary>
+    public IReadOnlyList<string> MistakenFor { get; init; } = [];
 }
 
 /// <summary>One member of a contract record.</summary>

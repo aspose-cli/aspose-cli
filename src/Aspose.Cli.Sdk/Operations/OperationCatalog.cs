@@ -21,6 +21,7 @@ public sealed class OperationCatalog<TOp>
 {
     private readonly Dictionary<string, OperationDescriptor> _byName = new(StringComparer.Ordinal);
     private readonly Dictionary<Type, OperationDescriptor> _byType = [];
+    private readonly Dictionary<string, string> _byMistakenName = new(StringComparer.OrdinalIgnoreCase);
     private readonly GeneratedOperationSchema _schema;
 
     /// <summary>
@@ -66,6 +67,19 @@ public sealed class OperationCatalog<TOp>
         }
 
         Names = [.. ordered.Select(static operation => operation.Record.Name)];
+        foreach (OperationRecord record in ordered.Select(static operation => operation.Record))
+        {
+            foreach (string mistaken in record.MistakenFor)
+            {
+                if (Names.Contains(mistaken, StringComparer.OrdinalIgnoreCase) || !_byMistakenName.TryAdd(mistaken, record.Name))
+                {
+                    throw new ArgumentException(
+                        $"Operation '{record.Name}' declares the mistaken name '{mistaken}', which names an operation or is declared twice.",
+                        nameof(operations));
+                }
+            }
+        }
+
         OperationRecord[] records = [.. ordered.Select(static operation => operation.Record)];
         _schema = new GeneratedOperationSchema(() => OperationSchemaWriter.Write(SchemaId, MaximumOperationCount, description, records), Names);
     }
@@ -179,14 +193,20 @@ public sealed class OperationCatalog<TOp>
 
     /// <summary>
     /// The operation most likely meant by an entry whose op name the vocabulary does not declare,
-    /// or null: among the names closest to it, the first whose operation accepts every field the
-    /// entry gives, else the closest name. A name alone cannot tell <c>add_watermark</c> with a
-    /// text field from one with an image; the fields the caller wrote can.
+    /// or null: the operation that declares the name a common mistake for it; else, among the
+    /// names closest to it, the first whose operation accepts every field the entry gives, else
+    /// the closest name. A name alone cannot tell <c>add_watermark</c> with a text field from one
+    /// with an image; the fields the caller wrote can.
     /// </summary>
     /// <param name="name">The unknown op name.</param>
     /// <param name="entry">The entry that names it.</param>
     internal string? Closest(string name, JsonElement entry)
     {
+        if (_byMistakenName.TryGetValue(name.Trim(), out string? meant))
+        {
+            return meant;
+        }
+
         IReadOnlyList<string> closest = NameSuggestions.Closest(name, Names);
         string[] given = entry.ValueKind == JsonValueKind.Object
             ? [.. entry.EnumerateObject().Select(static field => field.Name).Where(static field => field is not ("op" or "id"))]

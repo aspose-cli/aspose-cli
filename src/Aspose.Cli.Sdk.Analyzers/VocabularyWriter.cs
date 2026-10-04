@@ -191,6 +191,18 @@ internal sealed class VocabularyWriter(
             code.Append(", Description = ").Append(Literal(description));
         }
 
+        if (Find(type, OperationContractGenerator.Operations + "MistakenForAttribute") is { } mistaken)
+        {
+            if (isOperation)
+            {
+                code.Append(", MistakenFor = ").Append(MistakenNames(mistaken));
+            }
+            else
+            {
+                Report(type, $"[MistakenFor] on '{type.Name}' names mistaken operation names, but '{type.Name}' is not an operation; declare it on a member instead.");
+            }
+        }
+
         // One member per line keeps the generated file reviewable.
         code.Append(", Properties = [").Append(string.Concat(members.Select(static member => "\n                " + member.Code + ",")))
             .Append(members.Count == 0 ? "]" : "\n            ]");
@@ -379,9 +391,7 @@ internal sealed class VocabularyWriter(
 
         if (Find(property, OperationContractGenerator.Operations + "MistakenForAttribute") is { } mistaken)
         {
-            code.Append(", MistakenFor = [")
-                .Append(string.Join(", ", mistaken.ConstructorArguments[0].Values.Select(static name => Literal((string)name.Value!))))
-                .Append(']');
+            code.Append(", MistakenFor = ").Append(MistakenNames(mistaken));
         }
 
         code.Append(", Get = static value => ((").Append(TypeName(owner)).Append(")value).").Append(property.Name).Append(" }");
@@ -393,6 +403,10 @@ internal sealed class VocabularyWriter(
             nullable || property.Type.OriginalDefinition.SpecialType == SpecialType.System_Nullable_T,
             property.Type.SpecialType == SpecialType.System_Boolean);
     }
+
+    /// <summary>The collection expression of the names a <c>[MistakenFor]</c> attribute declares.</summary>
+    private static string MistakenNames(AttributeData mistaken) =>
+        "[" + string.Join(", ", mistaken.ConstructorArguments[0].Values.Select(static name => Literal((string)name.Value!))) + "]";
 
     /// <summary>The JSON literal an omitted member takes, or null when it has none.</summary>
     private string? Default(IPropertySymbol property, PropertyDeclarationSyntax declaration)

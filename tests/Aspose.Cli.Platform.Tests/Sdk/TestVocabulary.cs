@@ -125,6 +125,7 @@ public sealed record SecretOp : TestOp
 }
 
 [Operation("stamp_image")]
+[MistakenFor("seal")]
 public sealed record StampImageOp : TestOp
 {
     [MinLength(1)] public required string Image { get; init; }

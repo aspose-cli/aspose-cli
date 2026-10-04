@@ -90,6 +90,7 @@ public sealed record CopyRangeOp : CellsOp
 /// formatting is preserved. The style must set at least one field.
 /// </summary>
 [Operation("format_range")]
+[MistakenFor("set_style", "format_cells")]
 public sealed record FormatRangeOp : CellsOp
 {
     /// <summary>The range to format, such as B2:D10.</summary>
