@@ -57,7 +57,8 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
   matched characters change: the replacement takes the formatting of the first matched
   character, and other runs keep theirs. Evaluation mode reads text longer than five
   characters cut short, so there `replace_text` fails with `EVALUATION_LIMIT` instead of
-  matching nothing.
+  matching nothing. A `replace_text` that finds nothing in its `scope` changes nothing and
+  reports `REPLACE_NO_MATCH`; check the pattern and scope with `slides query search`.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `query slides --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and

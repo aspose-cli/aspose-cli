@@ -10,6 +10,9 @@ The error envelope, exit codes, not-found details and general diagnosis are shar
   address the shape by its `shapeId`.
 - `CHART_DATA_INVALID`: the chart type or data source is outside what `update_chart_data`
   supports (Charts in [Slides editing](editing.md)); recreate the chart with `insert_chart`.
+- `REPLACE_NO_MATCH`: `replace_text` found nothing in its `scope` and changed nothing. Run
+  `slides query search` with the same pattern and scope; chart text and alternative text are
+  never matched.
 - `REMOTE_RESOURCES_BLOCKED`: a linked picture, linked media file or external chart workbook
   was left out of the output. Network addresses are never fetched; only ordinary files beneath
   the presentation's directory are read. Embed the media, or place the file beside the deck and

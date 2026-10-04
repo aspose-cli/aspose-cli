@@ -57,6 +57,18 @@ internal sealed partial class SlidesMutationHandlers
             }
         }
 
+        // Like a verification issue, the warning never repeats the find text.
+        if (count == 0)
+        {
+            _warnings.Add(new Warning
+            {
+                Code = WarningCodes.ReplaceNoMatch,
+                Message = $"replace_text matched no text in scope '{operation.Scope}', so nothing was replaced.",
+                Hint = "Search with 'slides query search' and the same pattern and scope; --scope all also covers speaker notes. "
+                    + "Chart text and alternative text are never matched.",
+            });
+        }
+
         return count;
     }
 

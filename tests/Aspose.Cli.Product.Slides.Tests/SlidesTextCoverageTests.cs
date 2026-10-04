@@ -34,6 +34,32 @@ public sealed class SlidesTextCoverageTests
     }
 
     [Fact]
+    public void ReplaceText_ThatMatchesNothing_WarnsWithoutRepeatingTheFindText()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = CreateDeck(fixture);
+
+        SlidesEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new SlidesReplaceTextOp { Find = "bc", Replace = "Q", Scope = PresentationSearchScopes.Notes },
+                    new SlidesReplaceTextOp { Find = "q", Replace = "z" },
+                ],
+            },
+            new PresentationEditRequest { OutputPath = fixture.File("unmatched.pptx") });
+
+        // Only the first operation matched nothing: "bc" is on the slide, not in its notes.
+        Assert.Equal([0L, 4L], result.Applied.Select(static outcome => outcome.ItemsAffected));
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.ReplaceNoMatch);
+        Assert.Contains("'notes'", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("bc", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("slides query search", warning.Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void ReplaceText_ReachesTableCellsGroupChildrenSmartArtAndNotes()
     {
         using var fixture = new SlidesEngineFixture();
