@@ -194,6 +194,31 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Contains("Normal", Names(style, "available"));
     }
 
+    [Fact]
+    public void MissingTextAnchors_PointToTheBlockThatHoldsMostOfTheText()
+    {
+        string input = _fixture.Temp.File("clauses.docx");
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.Writeln("第五条 社会保险");
+        builder.Font.Bold = true;
+        builder.Writeln("第六条 合同的解除和终止");
+        builder.Font.Bold = false;
+        builder.Write("乙方提前三十日以书面形式通知甲方。");
+        document.Save(input);
+
+        CliException find = Assert.Throws<CliException>(() => Edit(input, "find",
+            new SetTextOp { At = new WordsTarget { Find = "第六条 合同解除" }, Text = "x" }));
+        CliException heading = Assert.Throws<CliException>(() => Edit(input, "heading-missing",
+            new SetTextOp { At = new WordsTarget { Heading = "第六条 合同解除" }, Text = "x" }));
+
+        Assert.Equal(WordsDiagnostics.AnchorNotFound, find.Code);
+        Assert.Equal("No text '第六条 合同解除' was found.", find.Message);
+        Assert.Equal("Block 2 holds the closest text: '第六条 合同的解除和终止'; address it with {\"block\": 2} or a \"find\" text it contains.", find.Hint);
+        Assert.Equal(WordsDiagnostics.AnchorNotFound, heading.Code);
+        Assert.Equal("Block 2 holds the closest text: '第六条 合同的解除和终止', but it is not a heading; address it with {\"block\": 2} or a \"find\" text it contains.", heading.Hint);
+    }
+
     private WordsEditResult Edit(string input, string name, WordsOp op) => _fixture.Engine.ApplyOps(
         input,
         new WordsOpsBatch { Ops = [op] },

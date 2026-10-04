@@ -15,7 +15,9 @@ aspose-cli schema v2/words/ops --operation insert_table
   `format_text` and `set_style`) is exactly one of `block`, `blocks`,
   `bookmark`, `heading` or `find`. `find` matches blocks whose visible text
   contains the given text, ignoring case, and `heading` does the same among
-  heading paragraphs; `nth` picks the match (the first by default). Prefer
+  heading paragraphs; `nth` picks the match (the first by default). When
+  nothing matches, `ANCHOR_NOT_FOUND` suggests a close heading, or names the
+  block that holds the longest leading part of the text, heading or not. Prefer
   bookmarks and headings in automation; read block numbers again immediately
   before using them.
 - Insertions take `position: before|after` at a block boundary; there is no

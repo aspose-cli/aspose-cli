@@ -1,6 +1,7 @@
 using System.Globalization;
 using Aspose.Cli.Product.Words.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Text;
 using Aspose.Words;
 
 namespace Aspose.Cli.Product.Words.Engine.Editing;
@@ -100,16 +101,9 @@ internal static class WordsAnchorResolver
         BlockEntry[] matches = candidates
             .Where(entry => WordsText.Of(entry.Node).Contains(needle, StringComparison.OrdinalIgnoreCase))
             .ToArray();
-        if (matches.Length == 0 && target.Heading is not null)
+        if (matches.Length == 0)
         {
-            throw CliErrors.NotFound(
-                WordsDiagnostics.AnchorNotFound,
-                "heading",
-                needle,
-                candidates
-                    .Select(static entry => WordsText.Of(entry.Node).Trim())
-                    .Where(static text => text.Length > 0)
-                    .ToArray());
+            throw AnchorMissing(index, target.Heading is null ? "text" : "heading", needle, candidates);
         }
 
         int nth = target.Nth ?? 1;
@@ -121,6 +115,47 @@ internal static class WordsAnchorResolver
         }
 
         return [matches[nth - 1].Node];
+    }
+
+    /// <summary>
+    /// The error for a heading or find text no candidate block contains. A name close to it among
+    /// the candidates is suggested as for any name; otherwise the hint names the block, heading
+    /// or not, that contains the longest leading part of the text, at least half of it, as a
+    /// clause title remembered as "第六条 合同解除" leads to "第六条 合同的解除和终止".
+    /// </summary>
+    private static CliException AnchorMissing(DocumentBlockIndex index, string subject, string needle, BlockEntry[] candidates)
+    {
+        // Each block's text as far as it can name the block; a paragraph can be long.
+        string[] available = [.. candidates
+            .Select(static entry => WordsEngineSupport.Truncate(WordsText.Of(entry.Node).Trim(), 80))
+            .Where(static text => text.Length > 0)];
+        string? hint = null;
+        if (NameSuggestions.Closest(needle, available).Count == 0 && Closest(index, needle) is { } closest)
+        {
+            string text = WordsText.Of(closest.Node).Trim();
+            string heading = subject == "heading" && !candidates.Contains(closest) ? ", but it is not a heading" : string.Empty;
+            hint = $"Block {closest.Index} holds the closest text: '{WordsEngineSupport.Truncate(text, 80)}'{heading}; "
+                + $"address it with {{\"block\": {closest.Index}}} or a \"find\" text it contains.";
+        }
+
+        return CliErrors.NotFound(WordsDiagnostics.AnchorNotFound, subject, needle, available, hint);
+    }
+
+    // The first block that contains the longest leading part of the text, at least half of it.
+    private static BlockEntry? Closest(DocumentBlockIndex index, string needle)
+    {
+        string[] texts = [.. index.Entries.Select(static entry => WordsText.Of(entry.Node))];
+        for (int length = needle.Length - 1; length >= Math.Max(2, (needle.Length + 1) / 2); length--)
+        {
+            string part = needle[..length];
+            int found = Array.FindIndex(texts, text => text.Contains(part, StringComparison.OrdinalIgnoreCase));
+            if (found >= 0)
+            {
+                return index.Entries[found];
+            }
+        }
+
+        return null;
     }
 
     /// <summary>
