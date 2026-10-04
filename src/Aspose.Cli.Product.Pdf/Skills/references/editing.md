@@ -92,6 +92,17 @@ can be encoded or compressed. A `REDACTION_NO_MATCH` warning names each
 with `pdf query search`, and when it shows on the page but is not found, widen
 the pattern into a regular expression or cover the text with `redact_area`.
 
+The engine removes redacted text without keeping its width, so text on the
+same line that was written to follow it, without a position of its own, moves
+left under the cover. Word-made PDFs write their lines that way. A
+`REDACTION_TEXT_MOVED` warning names each `redact_text` or `redact_area`
+operation and the pages on which this happened: compare those pages with the
+input in `review`. The check follows runs that keep their whole text, so a
+run that the redaction cut can move unnoticed: no warning does not prove that
+nothing moved, so review the redacted pages anyway. The moved text is still in
+the file and searchable; to keep the line in place, redact the source document
+and create the PDF again.
+
 The engine reads a visible gap between characters as a space, so extracted
 text can hold spaces the source never had: Word separates Chinese, Japanese or
 Korean text from digits and Latin letters with such a gap, and `2026年10月31日`

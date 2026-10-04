@@ -325,6 +325,36 @@ public sealed class PdfKnownIssueTests
             $"runs 3 points apart extract as '{absorber.Text.Trim()}', and a search for them without spaces found {search.TextFragments.Count}");
     }
 
+    [LicensedFact]
+    public void Redaction_MovesTheRunsThatFollowTheRemovedText()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateRawDocument("runs.pdf", pages: 1, textContent: PdfMutateTests.ConsecutiveRuns);
+
+        using var document = new Document(input);
+        Page page = document.Pages[1];
+        double before = RunStart(page, "signed");
+        var secret = new Aspose.Pdf.Text.TextFragmentAbsorber("Jane Roe");
+        page.Accept(secret);
+        Rectangle removed = secret.TextFragments[1].Rectangle;
+        var redaction = new RedactionAnnotation(page, removed);
+        page.Annotations.Add(redaction);
+        redaction.Redact();
+        double after = RunStart(page, "signed");
+
+        KnownIssue.Reproduces(
+            "PDF-REDACT-TEXT-SHIFT",
+            Math.Abs(before - after - removed.Width) < 1,
+            $"the run after the {removed.Width:F1} points removed moved from x {before:F1} to x {after:F1}");
+
+        static double RunStart(Page page, string text)
+        {
+            var absorber = new Aspose.Pdf.Text.TextFragmentAbsorber(text);
+            page.Accept(absorber);
+            return absorber.TextFragments[1].Rectangle.LLX;
+        }
+    }
+
     /// <summary>One page and two bookmarks: one omits every coordinate, one names 0.</summary>
     private static void WriteDestinationDocument(string path)
     {

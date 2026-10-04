@@ -127,15 +127,19 @@ internal sealed partial class PdfMutationHandlers
             Page page = _document.Pages[number];
             TextFragmentCollection fragments = MatchText(page, operation.Pattern, operation.Regex, caseSensitive: true,
                 static reason => new OperationInvalidException(reason));
+            if (fragments.Count == 0)
+            {
+                continue;
+            }
+
+            ILookup<string, Point> before = TextRuns(page);
             foreach (TextFragment fragment in fragments)
             {
                 Cover(page, fragment.Rectangle, fill).Redact();
                 count++;
             }
-            if (fragments.Count > 0)
-            {
-                _touched.Add(number);
-            }
+            NoteMovedText(number, page, before);
+            _touched.Add(number);
         }
 
         return count;
@@ -144,9 +148,41 @@ internal sealed partial class PdfMutationHandlers
     public long Apply(RedactAreaOp operation)
     {
         Page page = PageAt(_document, operation.Page);
+        ILookup<string, Point> before = TextRuns(page);
         Cover(page, ToPdfRect(page, operation.Rect), ParseColor(operation.FillColor)).Redact();
+        NoteMovedText(operation.Page, page, before);
         _touched.Add(operation.Page);
         return 1;
+    }
+
+    /// <summary>
+    /// PDF-REDACT-TEXT-SHIFT: redaction moves the runs that followed the removed text left by
+    /// its width. The page is noted when a run now lies left of every place a run of its text
+    /// had on its line.
+    /// </summary>
+    private void NoteMovedText(int number, Page page, ILookup<string, Point> before)
+    {
+        if (TextRuns(page).Any(runs => runs.Any(run => MovedLeft(run, before[runs.Key]))))
+        {
+            _textMoved.Add(number);
+        }
+    }
+
+    /// <summary>Whether a run lies left of every place a run of its text had on its line.</summary>
+    private static bool MovedLeft(Point run, IEnumerable<Point> before)
+    {
+        Point[] line = [.. before.Where(earlier => Math.Abs(earlier.Y - run.Y) < 1)];
+        return line.Length > 0 && line.All(earlier => earlier.X > run.X + 0.5);
+    }
+
+    /// <summary>Where each run of visible text on the page starts, by its text.</summary>
+    private static ILookup<string, Point> TextRuns(Page page)
+    {
+        var absorber = new TextFragmentAbsorber();
+        page.Accept(absorber);
+        return absorber.TextFragments
+            .Where(static fragment => !string.IsNullOrWhiteSpace(fragment.Text))
+            .ToLookup(static fragment => fragment.Text, static fragment => new Point(fragment.Rectangle.LLX, fragment.Rectangle.LLY));
     }
 
     private long MarginText(string text, string? pageRange, string position, string? font)

@@ -1245,6 +1245,42 @@ public sealed class PdfMutateTests
         Assert.Contains("pdf query search", warning.Hint, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// One line of three text runs that each start where the previous one ends, without
+    /// positioning of their own, as Word writes the runs of a line.
+    /// </summary>
+    internal const string ConsecutiveRuns = "BT /F1 12 Tf 72 720 Td (Name: ) Tj (Jane Roe) Tj ( signed the order.) Tj ET";
+
+    [Fact]
+    public void Redaction_WarnsWhenTheEngineMovesTheTextAfterWhatItRemoved()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateRawDocument("runs.pdf", pages: 3, textContent: ConsecutiveRuns);
+
+        PdfEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new RedactTextOp { Pattern = "Jane Roe", Pages = "1" },
+                    // "Jane Roe" spans x 110.7-162.0 on the baseline at y 720.
+                    new RedactAreaOp { Page = 2, Rect = new PdfRectInput { X = 110, Y = 58, Width = 52, Height = 20 } },
+                    // Nothing follows "order." on its line.
+                    new RedactTextOp { Pattern = "order.", Pages = "3" },
+                ],
+            },
+            new PdfEditRequest { OutputPath = fixture.File("runs.out.pdf"), Verify = true });
+
+        Assert.True(result.Verification!.Ok);
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "REDACTION_TEXT_MOVED");
+        Assert.Contains("'op-0001' (redact_text) on page 1", warning.Message, StringComparison.Ordinal);
+        Assert.Contains("'op-0002' (redact_area) on page 2", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("op-0003", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("Jane", warning.Message + warning.Hint, StringComparison.Ordinal);
+        Assert.Contains("review", warning.Hint, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void SearchAndRedaction_MatchLiteralTextAcrossGapsBetweenEastAsianAndOtherCharacters()
     {
@@ -1263,6 +1299,8 @@ public sealed class PdfMutateTests
 
         Assert.Equal(1, Assert.Single(edited.Applied).ItemsAffected);
         Assert.True(edited.Verification!.Ok);
+        // Each run has a position of its own, so the redaction moves none.
+        Assert.DoesNotContain(edited.Warnings ?? [], static warning => warning.Code == "REDACTION_TEXT_MOVED");
         string text = fixture.Engine.Read(output, new PdfReadRequest()).Pages[0].Text;
         Assert.Contains("Due", text, StringComparison.Ordinal);
         // The evaluation watermark names a year, so the check reads the East Asian characters.

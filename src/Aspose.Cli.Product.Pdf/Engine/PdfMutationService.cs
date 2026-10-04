@@ -63,16 +63,17 @@ internal sealed class PdfMutationService
             ? (Permissions)loaded.Document.Permissions
             : null;
         var touched = new SortedSet<int>();
+        var textMoved = new List<string>();
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
         PdfEditVerifier? verifier = request.Verify ? new PdfEditVerifier(loaded.Document) : null;
         (IReadOnlyList<BoundedOperationOutcome> outcomes, string? outputPassword) =
-            ApplyOperations(loaded.Document, batch, request, touched, operationInputs, verifier);
+            ApplyOperations(loaded.Document, batch, request, touched, textMoved, operationInputs, verifier);
         PdfNavigationCensus navigation = PdfNavigationCensus.Degraded(
             navigationBefore, PdfNavigationCensus.Unresolved(loaded.Document));
         Publication publication;
         try { publication = Publish(loaded.Document, request, outputPassword, precondition, verifier, state); }
         finally { operationInputs.ThrowIfFailed(); }
-        List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes);
+        List<Warning> warnings = BuildWarnings(state, request.Options.DryRun, signatures, outcomes, textMoved);
         if (UnpermittedChange(userPermissions, outcomes, request.Options.DryRun) is { } protection)
         {
             warnings.Add(protection);
@@ -107,6 +108,7 @@ internal sealed class PdfMutationService
         PdfOpsBatch batch,
         PdfEditRequest request,
         ISet<int> touched,
+        List<string> textMoved,
         InputResourceScope operationInputs,
         PdfEditVerifier? verifier)
     {
@@ -119,9 +121,14 @@ internal sealed class PdfMutationService
             (op, _) =>
             {
                 var operationPages = new SortedSet<int>();
-                long affected = new PdfMutationHandlers(_loader, operationInputs, document, request.OpSecrets, operationPages).Run(op);
+                var movedPages = new SortedSet<int>();
+                long affected = new PdfMutationHandlers(_loader, operationInputs, document, request.OpSecrets, operationPages, movedPages).Run(op);
                 verifier?.Record(op, op.Id!, affected, document);
                 touched.UnionWith(operationPages);
+                if (movedPages.Count > 0)
+                {
+                    textMoved.Add($"'{op.Id}' ({PdfOp.Catalog.NameOf(op)}) on page{(movedPages.Count == 1 ? "" : "s")} {string.Join(", ", movedPages)}");
+                }
                 if (op is EncryptPdfOp encrypt)
                 {
                     outputPassword = OperationSecrets.Resolve(request.OpSecrets, encrypt.UserPasswordEnv);
@@ -225,7 +232,8 @@ internal sealed class PdfMutationService
         LicenseState state,
         bool dryRun,
         bool signatures,
-        IReadOnlyCollection<BoundedOperationOutcome> outcomes)
+        IReadOnlyCollection<BoundedOperationOutcome> outcomes,
+        IReadOnlyList<string> textMoved)
     {
         var warnings = new List<Warning>();
         if (state == LicenseState.Evaluation && !dryRun)
@@ -259,6 +267,19 @@ internal sealed class PdfMutationService
                 Hint = "Search the pages with 'pdf query search' and the same pattern. When the text shows on the page but is not found, "
                     + "its extracted text differs, for example by spaces between characters: match it with a regular expression "
                     + "that allows them (\\s*), or cover it with redact_area.",
+            });
+        }
+
+        // PDF-REDACT-TEXT-SHIFT: the text is still in the file, but part of it may now be hidden.
+        if (textMoved.Count > 0)
+        {
+            warnings.Add(new Warning
+            {
+                Code = PdfDiagnostics.RedactionTextMoved,
+                Message = (textMoved.Count == 1 ? "Operation " : "Operations ") + string.Join(", ", textMoved)
+                    + " moved the text that followed what was removed on its line to the left, so part of it may now lie under the cover.",
+                Hint = "Compare those pages with the input in 'aspose-cli review'. The moved text is still in the file and searchable; "
+                    + "to keep the line in place, redact the source document and create the PDF again.",
             });
         }
 

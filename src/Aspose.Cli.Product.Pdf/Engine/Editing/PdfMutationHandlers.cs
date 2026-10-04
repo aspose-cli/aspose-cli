@@ -15,6 +15,7 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<long>
     private readonly Document _document;
     private readonly IReadOnlyDictionary<string, string>? _secrets;
     private readonly ISet<int> _touched;
+    private readonly ISet<int> _textMoved;
 
     /// <summary>Creates the handlers of one operation.</summary>
     /// <param name="loader">Opens the PDFs that operations insert.</param>
@@ -22,18 +23,21 @@ internal sealed partial class PdfMutationHandlers : IPdfOpHandler<long>
     /// <param name="document">The document being edited.</param>
     /// <param name="secrets">The operations' secrets by environment variable name.</param>
     /// <param name="touched">Receives the pages the operation changes.</param>
+    /// <param name="textMoved">Receives the pages on which a redaction moved the remaining text.</param>
     internal PdfMutationHandlers(
         PdfDocumentLoader loader,
         InputResourceScope inputs,
         Document document,
         IReadOnlyDictionary<string, string>? secrets,
-        ISet<int> touched)
+        ISet<int> touched,
+        ISet<int> textMoved)
     {
         _loader = loader;
         _inputs = inputs;
         _document = document;
         _secrets = secrets;
         _touched = touched;
+        _textMoved = textMoved;
     }
 
     /// <summary>Applies one operation; an Aspose.PDF or I/O failure becomes an engine failure.</summary>

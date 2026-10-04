@@ -31,6 +31,9 @@ internal static class PdfDiagnostics
     /// <summary>A redact_text operation matched no text, so it redacted nothing.</summary>
     internal const string RedactionNoMatch = "REDACTION_NO_MATCH";
 
+    /// <summary>A redaction moved the text that followed what it removed.</summary>
+    internal const string RedactionTextMoved = "REDACTION_TEXT_MOVED";
+
     /// <summary>A form field of the output does not hold the value set_form_field set.</summary>
     internal static readonly DiagnosticDescriptor FieldValueMismatch = Verification("PDF_FIELD_VALUE_MISMATCH");
 
@@ -70,6 +73,7 @@ internal static class PdfDiagnostics
         DiagnosticDescriptor.Warning(NavigationDegraded, "pdf", "warning"),
         DiagnosticDescriptor.Warning(NetworkResourcesRequested, "pdf", "warning"),
         DiagnosticDescriptor.Warning(RedactionNoMatch, "pdf", "warning"),
+        DiagnosticDescriptor.Warning(RedactionTextMoved, "pdf", "warning"),
     ];
 
     private static DiagnosticDescriptor Verification(string code) =>

@@ -29,7 +29,9 @@ checked on within its time budget; search that page with `pdf query search`.
 A `redact_text` pattern that matched nothing passes its check, so every edit,
 verified or not, names such operations in a `REDACTION_NO_MATCH` warning: the
 text it was meant to remove may still be on the page under a different
-extracted form ([redaction](editing.md#redaction)).
+extracted form ([redaction](editing.md#redaction)). Likewise, a
+`REDACTION_TEXT_MOVED` warning names the redactions that moved the rest of a
+line under their cover, which no read-back check catches; review those pages.
 
 The batch is checked as a whole: only the last value set for a field, entry or
 attachment is checked, a flattened field or a deleted page's fields are not, a

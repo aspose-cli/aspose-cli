@@ -216,6 +216,22 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   `FileSpecification` constructor and never sets `Name`, so the working directory is not read.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-REDACT-TEXT-SHIFT
+
+- **Defect:** `RedactionAnnotation.Redact()` removes the glyphs under the annotation without
+  keeping their advance, so a text run that starts where the previous one ended, without a
+  position of its own, moves left by the removed width, under the cover. Word writes the runs
+  of a line that way. `PdfAnnotationEditor.RedactArea` and replacing the text with an empty
+  string move the runs the same way, and setting `TextFragment.Position` to put them back
+  draws other runs of the line over each other.
+- **CLI behavior:** `redact_text` and `redact_area` compare where the runs of each redacted
+  page start before and after, and a `REDACTION_TEXT_MOVED` warning names the operations and
+  pages on which a run moved left. Only runs that keep their whole text are followed, so the
+  rest of a run the redaction cut can move without a warning: no warning does not prove that
+  nothing moved, so review the redacted pages. The moved text is still in the file.
+- **Workaround:** redact the source document and create the PDF again.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0
 
 ### SLIDES-AUTOFIT-RECT

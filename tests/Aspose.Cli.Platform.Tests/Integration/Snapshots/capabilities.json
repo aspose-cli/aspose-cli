@@ -19163,6 +19163,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "REDACTION_TEXT_MOVED",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "pdf.redaction-text-moved.message.v1",
+      "hintTemplateId": "pdf.redaction-text-moved.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "RELEASE_FEED_UNAVAILABLE",
       "owner": "common",
       "severity": "error",

@@ -61,7 +61,7 @@ public sealed class PdfEngineFixture : IDisposable
 
     public string CreateRawDocument(string fileName, int pages,
         IReadOnlySet<int>? textPages = null, IReadOnlySet<int>? imagePages = null, int imageSide = 1,
-        int imagePoints = 160)
+        int imagePoints = 160, string? textContent = null)
     {
         ArgumentOutOfRangeException.ThrowIfLessThan(pages, 1);
         string path = File(fileName);
@@ -89,7 +89,7 @@ public sealed class PdfEngineFixture : IDisposable
             kids.Add(pageObject);
             bool hasText = textPages is null || textPages.Contains(pageNumber);
             string content = hasText
-                ? $"BT /F1 12 Tf 72 720 Td (Portable PDF page {pageNumber}) Tj ET"
+                ? textContent ?? $"BT /F1 12 Tf 72 720 Td (Portable PDF page {pageNumber}) Tj ET"
                 : string.Empty;
             string resources = hasText ? $"/Font << /F1 {fontObject} 0 R >>" : string.Empty;
             if (imagePages?.Contains(pageNumber) == true)
