@@ -2,6 +2,7 @@ using System.Text;
 using Aspose.Words;
 using Aspose.Words.Fields;
 using Aspose.Words.Notes;
+using Aspose.Words.Tables;
 
 namespace Aspose.Cli.Product.Words.Engine.Mapping;
 
@@ -132,13 +133,19 @@ internal static class WordsText
 
     /// <summary>
     /// The visible text of blocks as plain text: one line per paragraph, including each
-    /// paragraph of a table cell or text box, with manual line and page breaks as line ends.
+    /// paragraph of a text box, with manual line and page breaks as line ends, and one line per
+    /// table row, its cells separated by tabs and each cell's lines joined by spaces.
     /// </summary>
     internal static string Lines(IEnumerable<Node> blocks) =>
-        string.Join('\n', blocks.Select(static block => Of(block)
-            .Replace(ControlChar.ParagraphBreakChar, '\n')
-            .Replace(ControlChar.LineBreakChar, '\n')
-            .Replace(ControlChar.PageBreakChar, '\n')));
+        string.Join('\n', blocks.Select(static block => block is Table table
+            ? string.Join('\n', table.Rows.Cast<Row>().Select(static row =>
+                string.Join('\t', row.Cells.Cast<Cell>().Select(static cell => LineBreaks(Of(cell), " ")))))
+            : LineBreaks(Of(block), "\n")));
+
+    private static string LineBreaks(string text, string with) => text
+        .Replace(ControlChar.ParagraphBreak, with, StringComparison.Ordinal)
+        .Replace(ControlChar.LineBreak, with, StringComparison.Ordinal)
+        .Replace(ControlChar.PageBreak, with, StringComparison.Ordinal);
 
     /// <summary>Drops the trailing paragraph, cell and page marks and the cell marks inside raw SDK text.</summary>
     internal static string Clean(string value) =>

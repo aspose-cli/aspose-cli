@@ -68,7 +68,9 @@ the block the budget cut short and doubles `--max-chars` when that block alone
 exceeded it. `--section` with `--blocks` reads only that section's blocks in
 the range; block numbers run through the whole document, so a range with none
 of them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks. `extract --what text` writes the visible text of every block to one
-file, one line per paragraph. Windows, paging and compact output in general:
+file, one line per paragraph and per table row, whose cells are separated by
+tabs; a `txt` conversion instead aligns a row's cells in columns with spaces.
+Windows, paging and compact output in general:
 `aspose-cli docs reading`.
 
 ## Workflow

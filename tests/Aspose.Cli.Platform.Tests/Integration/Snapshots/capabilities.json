@@ -8550,7 +8550,7 @@
               "secret": false,
               "valueSource": "command-line",
               "inputKind": "none",
-              "description": "images, comments or text (the visible block text, one line per paragraph)."
+              "description": "images, comments or text (the visible block text, one line per paragraph or table row)."
             }
           ],
           "arguments": [
@@ -17438,7 +17438,7 @@
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "images, comments or text (the visible block text, one line per paragraph)."
+          "description": "images, comments or text (the visible block text, one line per paragraph or table row)."
         }
       ],
       "arguments": [

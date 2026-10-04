@@ -951,6 +951,44 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Contains("Extracted text", File.ReadAllText(existing), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void PlainText_KeepsTableRowsOnOneLineAndLeavesOutHeadersAndFooters()
+    {
+        string input = _fixture.Temp.File("figures.docx");
+        var builder = new DocumentBuilder();
+        builder.Writeln("Key figures");
+        foreach (string[] row in new[] { new[] { "Metric", "Value" }, new[] { "Revenue", "120" } })
+        {
+            foreach (string cell in row)
+            {
+                builder.InsertCell();
+                builder.Write(cell);
+            }
+
+            builder.EndRow();
+        }
+
+        builder.EndTable();
+        builder.Write("Closing line");
+        builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+        builder.Write("Company header");
+        builder.Document.Save(input);
+        string txt = _fixture.Temp.File("figures.txt");
+        string directory = _fixture.Temp.File("figures-text");
+
+        _fixture.Engine.Convert(input, new WordsConvertRequest { TargetFormatId = "txt", OutputPath = txt });
+        string extracted = Assert.Single(_fixture.Engine.Extract(input, new WordsExtractRequest
+        {
+            What = "text",
+            OutputDirectory = directory,
+        }).Items).Path;
+
+        string[] converted = File.ReadAllLines(txt);
+        Assert.Contains(converted, static line => line.Contains("Revenue", StringComparison.Ordinal) && line.Contains("120", StringComparison.Ordinal));
+        Assert.DoesNotContain(converted, static line => line.Contains("Company header", StringComparison.Ordinal));
+        Assert.Contains("Metric\tValue\nRevenue\t120\nClosing line", File.ReadAllText(extracted), StringComparison.Ordinal);
+    }
+
     private static bool HasHeader(string path, byte[] expected)
     {
         byte[] actual = new byte[expected.Length];

@@ -205,7 +205,7 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --what <comments|images|text> (REQUIRED)    images, comments or text (the visible block text, one line per paragraph).
+  --what <comments|images|text> (REQUIRED)    images, comments or text (the visible block text, one line per paragraph or table row).
   --out-dir <out-dir> (REQUIRED)              Safe extraction directory.
   --overwrite                                 Replace the output file if it already exists.
   --password <password>                       Password for the document. Discouraged: visible in the process list; prefer --password-env.

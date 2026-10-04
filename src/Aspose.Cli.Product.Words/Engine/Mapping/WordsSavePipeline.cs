@@ -44,6 +44,12 @@ internal static class WordsSavePipeline
             case MarkdownSaveOptions markdown:
                 markdown.ExportImagesAsBase64 = true;
                 break;
+            // Plain text is the body text: a table keeps its rows and columns, and the page
+            // headers, footers and page numbers stay out of it.
+            case TxtSaveOptions text:
+                text.PreserveTableLayout = true;
+                text.ExportHeadersFootersMode = TxtExportHeadersFootersMode.None;
+                break;
         }
 
         if (pages is not null)

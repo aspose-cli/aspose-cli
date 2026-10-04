@@ -8,7 +8,7 @@ internal static class ExtractCommand
 {
     public static Command Create(IProductCommandHost<IWordsEngine> host)
     {
-        var what = new Option<string>("--what") { Required = true, Description = "images, comments or text (the visible block text, one line per paragraph)." }.WithInput(InputKind.None);
+        var what = new Option<string>("--what") { Required = true, Description = "images, comments or text (the visible block text, one line per paragraph or table row)." }.WithInput(InputKind.None);
         what.AcceptOnlyFromAmong("images", "comments", "text");
         return StandardCommand.Create(
             host,
