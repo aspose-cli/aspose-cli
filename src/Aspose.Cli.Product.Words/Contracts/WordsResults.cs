@@ -163,6 +163,13 @@ public sealed record BlockData
     public required int Block { get; init; }
     public required string Type { get; init; }
     public required int Section { get; init; }
+
+    /// <summary>
+    /// The number Word draws before a numbered list paragraph, such as 6.2; bullets are not
+    /// reported. The paragraph's text leaves it out; search snippets, find and heading addresses,
+    /// extracted text and table cells read it before the text, followed by a space.
+    /// </summary>
+    public string? ListLabel { get; init; }
     public string? Text { get; init; }
     public string? Style { get; init; }
     public int? HeadingLevel { get; init; }
@@ -178,6 +185,11 @@ public sealed record BlockData
     public string? BreakAfter { get; init; }
     public int? RowCount { get; init; }
     public int? ColumnCount { get; init; }
+
+    /// <summary>
+    /// The text of each cell by row; a numbered list paragraph in a cell starts with its number
+    /// and a space.
+    /// </summary>
     public IReadOnlyList<IReadOnlyList<string>>? Cells { get; init; }
     public bool ContentTruncated { get; init; }
 }

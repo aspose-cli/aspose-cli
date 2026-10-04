@@ -92,6 +92,57 @@ public sealed class WordsVisibleTextTests : IClassFixture<WordsFixture>
         Assert.Equal("See the source", Assert.Single(info.Comments!).Text);
     }
 
+    [Fact]
+    public void ListParagraphs_ReadTheirNumberAsListLabelBesideTheirText()
+    {
+        string input = CreateNumberedClauses();
+
+        DocumentReadResult read = _fixture.Engine.Read(input, new DocumentReadRequest { Scope = "full" });
+
+        Assert.Equal(["1.", "1.1", "1.2"], read.Blocks.Select(static block => block.ListLabel));
+        Assert.Equal("First clause", read.Blocks[1].Text);
+        Assert.Equal("First clause", string.Concat(read.Blocks[1].Runs!.Select(static run => run.Text)));
+    }
+
+    [Fact]
+    public void SearchFindAndExtractedText_ReadTheListNumberBeforeTheText()
+    {
+        string input = CreateNumberedClauses();
+        string output = _fixture.Temp.File($"numbered-{Guid.NewGuid():N}.docx");
+
+        WordsSearchResult search = _fixture.Engine.Search(input, WordsFixture.Search("1.2"));
+        _fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new SetTextOp { At = new WordsTarget { Find = "1.2 Second" }, Text = "Changed clause" }] },
+            new WordsEditRequest { OutputPath = output });
+        WordsExtractResult extracted = _fixture.Engine.Extract(output, new WordsExtractRequest
+        {
+            What = "text",
+            OutputDirectory = _fixture.Temp.File($"numbered-text-{Guid.NewGuid():N}"),
+        });
+
+        Assert.Equal("1.2 Second clause", Assert.Single(search.Hits).Snippet);
+        Assert.Equal("1. Scope\n1.1 First clause\n1.2 Changed clause", File.ReadAllText(Assert.Single(extracted.Items).Path));
+    }
+
+    /// <summary>A heading numbered 1. and two clauses numbered 1.1 and 1.2 below it.</summary>
+    private string CreateNumberedClauses()
+    {
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        Aspose.Words.Lists.List list = document.Lists.Add(Aspose.Words.Lists.ListTemplate.NumberDefault);
+        list.ListLevels[1].NumberStyle = NumberStyle.Arabic;
+        list.ListLevels[1].NumberFormat = "\u0000.\u0001";
+        builder.ListFormat.List = list;
+        builder.Writeln("Scope");
+        builder.ListFormat.ListLevelNumber = 1;
+        builder.Writeln("First clause");
+        builder.Write("Second clause");
+        string path = _fixture.Temp.File($"numbered-{Guid.NewGuid():N}.docx");
+        document.Save(path, SaveFormat.Docx);
+        return path;
+    }
+
     /// <summary>
     /// One paragraph holding a hyperlink field, a footnote, a comment and a tracked deletion
     /// whose visible text is <see cref="Visible"/>.

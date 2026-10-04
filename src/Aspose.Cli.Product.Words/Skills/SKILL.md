@@ -43,6 +43,13 @@ editing, and find phrases with a regex that allows that space, such as
   Read those with `inspect --detail comments` or `query search --scope`, and
   tracked changes themselves with `inspect --detail revisions`
   ([revisions](references/revisions.md)).
+- A numbered list paragraph's number, such as `6.2`, is its block's
+  `listLabel`, and its block `text` leaves it out. Everywhere else the text
+  starts with the number and a space: search snippets and patterns,
+  `find`/`heading` addresses, extracted text and table `cells`. So
+  `"find": "6.2 "` addresses clause 6.2, a search pattern anchored with `^`
+  must allow for the number, and `replace_text` and `set_text` change only
+  the text after it.
 - `query search --scope` and the `replace_text` op share one scope vocabulary:
   `body`, `headersFooters`, `footnotes` (with endnotes), `comments` and `all`.
 - Read fields use the edit vocabulary: a table block's `rowCount`,

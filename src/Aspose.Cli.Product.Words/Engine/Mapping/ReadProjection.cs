@@ -77,7 +77,7 @@ internal static class ReadProjection
         bool truncated = false;
         if (entry.Node is Paragraph paragraph)
         {
-            string visible = WordsText.Of(paragraph);
+            string visible = WordsText.Of(paragraph, listNumbers: false);
             string text = AfterLeadingBreaks(visible);
             // The runs leave out the leading page breaks the text leaves out.
             int skipped = visible.Length - text.Length;
@@ -114,6 +114,7 @@ internal static class ReadProjection
                 Block = entry.Index,
                 Type = "paragraph",
                 Section = entry.Section,
+                ListLabel = WordsText.ListNumber(paragraph),
                 Text = text,
                 Style = paragraph.ParagraphFormat.StyleName,
                 HeadingLevel = InfoProjection.HeadingLevel(paragraph),

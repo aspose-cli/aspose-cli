@@ -21,6 +21,7 @@
           "block": { "type": "integer", "minimum": 1, "description": "The 1-based block number that operation block addresses accept." },
           "type": { "enum": ["paragraph", "table"] },
           "section": { "type": "integer", "minimum": 1 },
+          "listLabel": { "type": "string", "description": "The number Word draws before a numbered list paragraph, such as 6.2; bullets are not reported. The paragraph's text leaves it out; search snippets, find and heading addresses, extracted text and table cells read it before the text, followed by a space." },
           "text": { "type": "string" },
           "style": { "type": "string" },
           "headingLevel": { "type": "integer", "minimum": 1 },
@@ -74,7 +75,7 @@
           "breakAfter": { "enum": ["page", "section"], "description": "The break that follows this block: a page break, including one that starts the next paragraph, or a section break after the last block of a section." },
           "rowCount": { "type": "integer", "minimum": 0 },
           "columnCount": { "type": "integer", "minimum": 0 },
-          "cells": { "type": "array", "items": { "type": "array", "items": { "type": "string" } } },
+          "cells": { "type": "array", "description": "The text of each cell by row; a numbered list paragraph in a cell starts with its number and a space.", "items": { "type": "array", "items": { "type": "string" } } },
           "contentTruncated": { "type": "boolean", "description": "Returned document text shares the max-chars budget, including repeated projections. Re-read this item with a larger budget for omitted content." }
         }
       }

@@ -13,10 +13,12 @@ internal sealed class DocumentBlockIndex
 
     /// <summary>
     /// Indexes the blocks of every section body. Under evaluation the banner paragraphs that
-    /// evaluation mode inserts before the first block are not blocks.
+    /// evaluation mode inserts before the first block are not blocks. The list numbers the
+    /// blocks' text reads are brought up to date.
     /// </summary>
     public DocumentBlockIndex(Document document, bool evaluation)
     {
+        document.UpdateListLabels();
         var entries = new List<BlockEntry>();
         HashSet<Node> banners = evaluation ? [.. WordsEvaluation.LeadingBanners(document)] : [];
         for (int sectionIndex = 0; sectionIndex < document.Sections.Count; sectionIndex++)

@@ -9,29 +9,50 @@ namespace Aspose.Cli.Product.Words.Engine.Mapping;
 /// <summary>
 /// The one text projection of document content: the text a reader sees with tracked changes
 /// applied. A field shows its result, never its code; text a revision deletes is gone; and a
-/// comment or footnote belongs to its own story, not to the paragraph that anchors it. Blocks,
-/// search snippets, text addresses, outlines and review labels all read text through here.
+/// comment or footnote belongs to its own story, not to the paragraph that anchors it; and a
+/// numbered list paragraph starts with its number. Blocks, search snippets, text addresses,
+/// outlines and review labels all read text through here.
 /// </summary>
 internal static class WordsText
 {
-    /// <summary>The visible text of a node; nested paragraphs are separated by a paragraph mark.</summary>
-    internal static string Of(Node node)
+    /// <summary>
+    /// The visible text of a node; nested paragraphs are separated by a paragraph mark. Without
+    /// <paramref name="listNumbers"/>, a paragraph's text is its runs' text alone.
+    /// </summary>
+    internal static string Of(Node node, bool listNumbers = true)
     {
         var text = new StringBuilder();
         Walk(
             node,
             run => text.Append(run.Text),
-            paragraphStart: () =>
+            paragraphStart: paragraph =>
             {
                 // A nested paragraph, such as a text box's, starts on a line of its own.
                 if (text.Length > 0 && text[^1] != ControlChar.ParagraphBreakChar)
                 {
                     text.Append(ControlChar.ParagraphBreakChar);
                 }
+
+                if (listNumbers && ListNumber(paragraph) is { } number)
+                {
+                    text.Append(number).Append(' ');
+                }
             },
             paragraphEnd: () => text.Append(ControlChar.ParagraphBreakChar));
         return Clean(text.ToString());
     }
+
+    /// <summary>
+    /// The number Word draws before a numbered list paragraph, such as 6.2, or null for a bullet,
+    /// which names nothing, or a paragraph outside a list. It is current once
+    /// <see cref="Document.UpdateListLabels"/> has run, as a <see cref="DocumentBlockIndex"/> does.
+    /// </summary>
+    internal static string? ListNumber(Paragraph paragraph) =>
+        paragraph.IsListItem
+        && paragraph.ListFormat.ListLevel.NumberStyle != NumberStyle.Bullet
+        && paragraph.ListLabel.LabelString is { Length: > 0 } label
+            ? label
+            : null;
 
     /// <summary>
     /// The result of a field as a reader sees it: the results of the fields nested in it, such as
@@ -82,7 +103,7 @@ internal static class WordsText
         return runs;
     }
 
-    private static void Walk(Node node, Action<Run> visible, Action? paragraphStart, Action? paragraphEnd, bool fieldResults = true)
+    private static void Walk(Node node, Action<Run> visible, Action<Paragraph>? paragraphStart, Action? paragraphEnd, bool fieldResults = true)
     {
         var fields = new Stack<bool>();
         int codes = 0;
@@ -114,9 +135,9 @@ internal static class WordsText
 
                     return;
                 case CompositeNode composite:
-                    if (current is Paragraph)
+                    if (current is Paragraph paragraph)
                     {
-                        paragraphStart?.Invoke();
+                        paragraphStart?.Invoke(paragraph);
                     }
 
                     for (Node? child = composite.FirstChild; child is not null; child = child.NextSibling)
