@@ -9,7 +9,8 @@ to workbooks.
 
 | code | exit | cause and fix |
 |------|------|---------------|
-| `FILE_CORRUPT` | 3 | The content matches no spreadsheet signature; renaming a `.docx` to `.xlsx` does not make a workbook. Plain-text data needs a text extension (`.csv`, `.tsv`, `.txt`, `.json`) to import as text. |
+| `FILE_CORRUPT` | 3 | The file is not a readable workbook: it is damaged or has no recognizable signature. Ask for an intact copy; plain-text data needs a text extension (`.csv`, `.tsv`, `.txt`, `.json`) to import as text. |
+| `FORMAT_MISMATCH` | 6 | The content is another product's format: renaming a `.docx` to `.xlsx` does not make a workbook. Convert it with that product or ask for the spreadsheet. |
 | `INPUT_ENCODING_INVALID` | 3 | A CSV or TSV input is not UTF-8 and has no byte order mark; read as UTF-8 its text would be replaced. Import it with `cells convert data.csv --to xlsx --encoding <name>` (`gb18030` for Chinese Windows and ERP exports; `big5`, `shift_jis`, `windows-1252` for others), then work on the workbook. |
 | `FORMAT_AMBIGUOUS` | 6 | A CSV or TSV input writes decimal commas (`2,71`, `1.253,96`); invariant formats would read different numbers. Import it with `cells convert data.csv --to xlsx --culture de-DE` (or the culture the file comes from); the culture also reads its dates. `details.sample` and `details.line` name the first such value. |
 | `FILE_LOCKED` | 3 | Excel holds the file exclusively. Ask the user to close it and retry the identical command; nothing was written. |
