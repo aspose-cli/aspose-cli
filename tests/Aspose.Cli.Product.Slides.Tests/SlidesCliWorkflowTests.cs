@@ -96,6 +96,28 @@ public sealed class SlidesCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void Review_OfAPasswordEncryptedPresentation_RendersWithItsPassword()
+    {
+        // An encrypted Open XML presentation is an OLE compound file, not a ZIP package.
+        CreateDeck(_workspace.File("locked.pptx"));
+        using (var presentation = new Presentation(_workspace.File("locked.pptx")))
+        {
+            presentation.ProtectionManager.Encrypt("secret");
+            presentation.Save(_workspace.File("locked.pptx"), SaveFormat.Pptx);
+        }
+
+        CliResult unlocked = _workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["DECK_PASSWORD"] = "secret" },
+            "review", "locked.pptx", "--password-env", "DECK_PASSWORD", "--out", "unlocked", "--output", "json");
+        CliResult locked = _workspace.Run(
+            "review", "locked.pptx", "--out", "locked", "--output", "json");
+
+        Assert.True(unlocked.ExitCode == 0, unlocked.StdOut + unlocked.StdErr);
+        Assert.True(File.Exists(_workspace.File(Path.Combine("unlocked", "artifacts", "slide-0001.png"))));
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void QuerySlides_NextSpellsRemainingSlidesAsRangesAndRereadsACutSlide()
     {
         using (var presentation = new Presentation())

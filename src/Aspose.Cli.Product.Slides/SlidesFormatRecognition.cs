@@ -13,12 +13,15 @@ internal static class SlidesFormatRecognition
             "OLE compound-file signature with extension-qualified format",
             70);
 
+    // A password-encrypted Open XML presentation is stored in an OLE compound file.
     private static readonly FileFormatRecognition OpenXmlPresentation =
-        FileFormatRecognition.Match(
-            FileProbePattern.ZipContainsAny(
-                "ppt/",
-                "application/vnd.openxmlformats-officedocument.presentationml"),
-            "presentation package marker");
+        FileFormatRecognition.FirstOf(
+            FileFormatRecognition.Match(
+                FileProbePattern.ZipContainsAny(
+                    "ppt/",
+                    "application/vnd.openxmlformats-officedocument.presentationml"),
+                "presentation package marker"),
+            CompoundPresentation);
 
     private static readonly FileFormatRecognition OpenDocumentPresentation =
         FileFormatRecognition.Match(
