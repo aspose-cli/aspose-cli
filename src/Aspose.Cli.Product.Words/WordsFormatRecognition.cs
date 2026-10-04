@@ -13,12 +13,15 @@ internal static class WordsFormatRecognition
             "OLE compound-file signature with extension-qualified format",
             70);
 
+    // A password-encrypted OOXML document is an OLE compound file holding the encrypted package.
     private static readonly FileFormatRecognition OpenXmlDocument =
-        FileFormatRecognition.Match(
-            FileProbePattern.ZipContainsAny(
-                "word/",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml"),
-            "word-processing package marker");
+        FileFormatRecognition.FirstOf(
+            FileFormatRecognition.Match(
+                FileProbePattern.ZipContainsAny(
+                    "word/",
+                    "application/vnd.openxmlformats-officedocument.wordprocessingml"),
+                "word-processing package marker"),
+            CompoundDocument);
 
     private static readonly FileFormatRecognition OpenDocumentText =
         FileFormatRecognition.Match(

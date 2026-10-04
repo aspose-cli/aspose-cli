@@ -173,6 +173,24 @@ public sealed class WordsCliTests : IDisposable
         Assert.True(File.Exists(_workspace.File("letters.docx")));
     }
 
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Review_OpensAPasswordEncryptedDocument()
+    {
+        var document = new Document();
+        new DocumentBuilder(document).Writeln("Confidential clause.");
+        document.Save(_workspace.File("secret.docx"), new Aspose.Words.Saving.OoxmlSaveOptions(SaveFormat.Docx) { Password = "review-secret" });
+
+        CliResult reviewed = _workspace.RunWithEnv(
+            new Dictionary<string, string?> { ["REVIEW_PASSWORD"] = "review-secret" },
+            "review", "secret.docx", "--password-env", "REVIEW_PASSWORD", "--output", "json");
+        CliResult locked = _workspace.Run("review", "secret.docx", "--out", "locked.review", "--output", "json");
+
+        Assert.True(reviewed.ExitCode == 0, reviewed.StdErr + reviewed.StdOut);
+        Assert.True(File.Exists(Path.Combine(_workspace.File("secret.docx.review"), "review.json")));
+        Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
+    }
+
     [Fact]
     public void Create_RejectsBlankWithTemplate()
     {
