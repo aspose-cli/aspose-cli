@@ -112,7 +112,11 @@ dropped macros (`MACROS_DROPPED`; `inspect` reports `document.hasMacros`
 before any conversion), removed encryption
 (`DOCUMENT_ENCRYPTION_REMOVED`) and lossy conversion. In evaluation mode,
 `EVAL_INPUT_TRUNCATED` means only part of an input, template or appended
-document was loaded, so the result is incomplete. A Words license is installed
+document was loaded, or that the edited document grew past what evaluation
+mode lays out and saves (about 200 paragraphs, as with a mail merge of many
+records): the output then keeps only its first sections, ends with the
+engine's truncation notice, and `--verify` reports `OUTPUT_TRUNCATED`. The
+result is incomplete whatever `itemsAffected` says. A Words license is installed
 with `aspose-cli license install Aspose.Words.lic --product words`; licensing
 in general: `aspose-cli docs licensing`.
 

@@ -78,7 +78,7 @@ internal sealed class WordsMutationService
         _loader.EnsureWithinBudgets(loaded.Document, loaded.Resources);
         WordsSavePipeline.RemoveMacrosUnlessKept(loaded.Document, format);
 
-        (OutputInfo? output, BackupInfo? backup, WordsVerification? verification) =
+        (OutputInfo? output, BackupInfo? backup, WordsVerification? verification, string? truncation) =
             Persist(
                 loaded.Document,
                 request,
@@ -87,7 +87,8 @@ internal sealed class WordsMutationService
                 loaded.Resources,
                 format,
                 saveOptions,
-                outputPassword);
+                outputPassword,
+                loaded.Evaluation && !loaded.EvaluationInputTruncated && !loaded.ImportedInputTruncated);
         baseline?.Cleanup();
         var outputWarnings = new List<Warning>();
         if (loaded.Format.IsEncrypted && outputPassword is null && !request.Options.DryRun)
@@ -103,6 +104,16 @@ internal sealed class WordsMutationService
         if (MacrosDropped(loaded, format) is { } macros)
         {
             outputWarnings.Add(macros);
+        }
+
+        if (truncation is not null)
+        {
+            outputWarnings.Add(new Warning
+            {
+                Code = WarningCodes.EvalInputTruncated,
+                Message = $"Aspose.Words evaluation mode cut the edited document short: {truncation}",
+                Hint = "Do not deliver this output as complete; apply a license and retry.",
+            });
         }
 
         return new WordsEditResult
@@ -191,10 +202,17 @@ internal sealed class WordsMutationService
             (_, index) => resolved[index].Targets);
     }
 
+    /// <summary>
+    /// Saves, verifies and publishes the edited document. With <paramref name="detectTruncation"/>,
+    /// it also returns what evaluation mode cut from the output, or null: Aspose.Words keeps
+    /// only the start of a long document it lays out or saves in evaluation mode and ends it
+    /// with its truncation notice, in the saved file and in the document itself alike.
+    /// </summary>
     private (
         OutputInfo? Output,
         BackupInfo? Backup,
-        WordsVerification? Verification) Persist(
+        WordsVerification? Verification,
+        string? Truncation) Persist(
         Document document,
         WordsEditRequest request,
         Document? baseline,
@@ -202,11 +220,13 @@ internal sealed class WordsMutationService
         LocalDocumentResourceLoader resources,
         string format,
         SaveOptions saveOptions,
-        string? outputPassword)
+        string? outputPassword,
+        bool detectTruncation)
     {
         OutputInfo? output = null;
         BackupInfo? backup = null;
         WordsVerification? verification = null;
+        string? truncation = null;
         if (!request.Options.DryRun)
         {
             using var transaction = new AtomicOutputSetWriter(_writer, Path.GetDirectoryName(request.OutputPath)!, "words-edit");
@@ -219,6 +239,11 @@ internal sealed class WordsMutationService
                 {
                     try { document.Save(temp, saveOptions); }
                     finally { resources.ThrowIfFailed(); }
+                    if (detectTruncation && WordsEvaluation.IsTruncated(document))
+                    {
+                        truncation = $"the output keeps only its first {document.Sections.Count} section(s), the last of them "
+                            + "incomplete and ending with the engine's truncation notice; everything after that point is missing.";
+                    }
                     if (!request.Verify && WordsFormats.IsLoad(format))
                     {
                         using LoadedDocument reopened = _loader.OpenPublishedCandidate(temp, outputPassword);
@@ -234,11 +259,11 @@ internal sealed class WordsMutationService
                     document.Revisions.Count,
                     WordsProtection.ToMode(document.ProtectionType));
                 verification = write.Read(
-                    candidate => Verify(candidate, format, outputPassword, baseline!, expected));
+                    candidate => Verify(candidate, format, outputPassword, baseline!, expected, truncation));
             }
             transaction.Commit();
         }
-        return (output, backup, verification);
+        return (output, backup, verification, truncation);
     }
 
     /// <summary>
@@ -303,9 +328,18 @@ internal sealed class WordsMutationService
         string format,
         string? outputPassword,
         Document baseline,
-        ExpectedDocumentState expected)
+        ExpectedDocumentState expected,
+        string? truncation)
     {
         var issues = new List<VerificationIssue>();
+        if (truncation is not null)
+        {
+            issues.Add(VerificationIssue.Of(
+                WordsDiagnostics.OutputTruncated,
+                $"Evaluation mode cut the edited document short: {truncation}",
+                hint: "Apply a license and run the edit again; the output does not hold the whole result."));
+        }
+
         using LoadedDocument reopened = _loader.OpenPublishedCandidate(
             candidatePath,
             outputPassword);

@@ -18948,6 +18948,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "OUTPUT_TRUNCATED",
+      "owner": "words",
+      "severity": "warning",
+      "category": "verification",
+      "messageTemplateId": "words.output-truncated.message.v1",
+      "hintTemplateId": "words.output-truncated.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "OUTPUT_UNWRITABLE",
       "owner": "common",
       "severity": "error",

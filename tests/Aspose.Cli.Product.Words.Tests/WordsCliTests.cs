@@ -141,6 +141,38 @@ public sealed class WordsCliTests : IDisposable
             result["filter"]!["omittedFindingCount"]!.GetValue<int>());
     }
 
+    [Category(TestCategory.Slow)]
+    [Fact]
+    public void Edit_DisclosesAnOutputEvaluationModeCutShortWhenSavingIt()
+    {
+        // Evaluation mode keeps about 200 paragraphs of a document it lays out or saves, so of
+        // five copies of a 60-paragraph letter only the first four, the fourth cut short, remain.
+        var template = new Document();
+        var builder = new DocumentBuilder(template);
+        builder.InsertField("MERGEFIELD Name");
+        builder.Writeln();
+        for (int index = 1; index < 60; index++)
+        {
+            builder.Writeln($"Clause {index}.");
+        }
+        template.Save(_workspace.File("letter.docx"));
+        string records = string.Join(",", Enumerable.Range(1, 5).Select(static index => $$"""{ "Name": "Person {{index}}" }"""));
+
+        CliResult result = _workspace.RunWithInput(
+            $$"""{ "ops": [ { "op": "mail_merge", "inline": [{{records}}] } ] }""",
+            "words", "edit", "letter.docx", "--ops", "-", "--out", "letters.docx",
+            "--verify", "--license-mode", "evaluation", "--output", "json");
+
+        JsonNode edited = JsonNode.Parse(result.StdOut)!;
+        JsonNode warning = edited["warnings"]!.AsArray()
+            .Single(static item => item!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!;
+        Assert.Contains("only its first 4 section(s)", warning["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.False(edited["verification"]!["ok"]!.GetValue<bool>());
+        Assert.Equal("OUTPUT_TRUNCATED", edited["verification"]!["issues"]![0]!["code"]!.GetValue<string>());
+        Assert.NotEqual(0, result.ExitCode);
+        Assert.True(File.Exists(_workspace.File("letters.docx")));
+    }
+
     [Fact]
     public void Create_RejectsBlankWithTemplate()
     {

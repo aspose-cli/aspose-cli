@@ -14,6 +14,10 @@ row: a data file holding only a CSV header or `[]` fails the op with
   names is rejected.
 - The expected result size is checked against the document node budget before
   any copy is made.
+- In evaluation mode, Aspose.Words keeps only about the first 200 paragraphs
+  of the result, so a merge of many records loses the later ones and cuts one
+  short; the result then warns `EVAL_INPUT_TRUNCATED` and `--verify` reports
+  `OUTPUT_TRUNCATED`, while `itemsAffected` still counts every record merged.
 
 ```json
 {

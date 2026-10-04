@@ -81,8 +81,9 @@ retry unchanged input.
   like) return an `EVAL_MODE` warning, and the produced file carries evaluation
   watermarks or added evaluation content. The mark is in the file you deliver,
   so tell the user.
-- `EVAL_INPUT_TRUNCATED` means evaluation mode loaded only part of an input,
-  so the result is incomplete. On a read, the text you get back is the
+- `EVAL_INPUT_TRUNCATED` means evaluation mode kept only part of the content,
+  so the result is incomplete: usually an input it loaded, and for some
+  products (its Skill says which) an edited output it saved. On a read, the text you get back is the
   engine's replacement ("...text has been truncated due to evaluation version
   limitation"), not what the file holds: check the file's text in rendered
   images instead, and do not report the file as damaged. Whether a saved
