@@ -1217,6 +1217,34 @@ public sealed class PdfMutateTests
             && Math.Abs(colour.B - blue) < 0.001);
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void RedactText_WarnsWhenItsPatternMatchesNothing(bool dryRun)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("unmatched.pdf", pages: 1);
+
+        PdfEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch
+            {
+                Ops =
+                [
+                    new RedactTextOp { Pattern = "Portable" },
+                    new RedactTextOp { Pattern = "ID 4711", Pages = "1" },
+                ],
+            },
+            new PdfEditRequest { OutputPath = fixture.File("unmatched.out.pdf"), Verify = !dryRun, Options = new EditCommandOptions { DryRun = dryRun } });
+
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "REDACTION_NO_MATCH");
+        Assert.Contains("'op-0002' (redact_text)", warning.Message, StringComparison.Ordinal);
+        Assert.DoesNotContain("op-0001", warning.Message, StringComparison.Ordinal);
+        // Like a verification issue, the warning never repeats the pattern.
+        Assert.DoesNotContain("4711", warning.Message + warning.Hint, StringComparison.Ordinal);
+        Assert.Contains("pdf query search", warning.Hint, StringComparison.Ordinal);
+    }
+
     /// <summary>Every fill colour the page sets, including inside its forms.</summary>
     private static IReadOnlyList<Aspose.Pdf.Operators.SetRGBColor> FillColours(Page page)
     {

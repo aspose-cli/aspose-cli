@@ -19148,6 +19148,15 @@
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
+      "code": "REDACTION_NO_MATCH",
+      "owner": "pdf",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "pdf.redaction-no-match.message.v1",
+      "hintTemplateId": "pdf.redaction-no-match.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
       "code": "RELEASE_FEED_UNAVAILABLE",
       "owner": "common",
       "severity": "error",

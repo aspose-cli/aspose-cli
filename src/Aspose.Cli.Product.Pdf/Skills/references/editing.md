@@ -87,7 +87,10 @@ Redaction is destructive: keep the baseline, apply `redact_text` or
 works on extractable text and performs no OCR. A black rectangle or zero search
 hits alone is not proof that all sensitive content was removed; a raw-byte
 absence check for a known literal is additional evidence only, because PDF text
-can be encoded or compressed.
+can be encoded or compressed. A `REDACTION_NO_MATCH` warning names each
+`redact_text` operation that removed nothing: search for the text it targets
+with `pdf query search`, and when it shows on the page but is not found, widen
+the pattern into a regular expression or cover the text with `redact_area`.
 
 ### Scanned pages
 
