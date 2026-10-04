@@ -307,6 +307,24 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void ALocalizedFunctionNameIsNamedLikeAMisspelledOne()
+    {
+        string source = _fixture.CreateSalesWorkbook("function-localized.xlsx");
+
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""
+                {"ops":[
+                  {"op":"set_formula","sheet":"Data","range":"E2","formula":"=求和(B2:C2)"},
+                  {"op":"set_formula","sheet":"Data","range":"E3","formula":"=SUMME(B3:C3)"}
+                ]}
+                """),
+            new EditRequest { OutputPath = _fixture.Temp.File("function-localized.out.xlsx") });
+
+        Warning warning = Assert.Single(result.Warnings!, static warning => warning.Code == "FORMULA_FUNCTION_UNKNOWN");
+        Assert.StartsWith("Aspose.Cells does not know the function(s) in 'Data'!E2: 求和; 'Data'!E3: SUMME", warning.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void AnUnknownFunctionIsFoundWhereLaterOperationsMovedItsCell()
     {
         string source = _fixture.CreateSalesWorkbook("function-typo-moved.xlsx");

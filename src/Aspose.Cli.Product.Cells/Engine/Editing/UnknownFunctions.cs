@@ -49,7 +49,7 @@ internal static partial class UnknownFunctions
             Message = $"Aspose.Cells does not know the function(s) in {string.Join("; ", findings.Take(ListedCells))}"
                 + (findings.Length > ListedCells ? $"; and {findings.Length - ListedCells} more cell(s)" : string.Empty)
                 + ". Those formulas evaluate to #NAME?.",
-            Hint = "Correct a misspelled name. " + CellOps.EnglishFormulaHint
+            Hint = "Correct a misspelled name, and replace a localized one with its English name. " + CellOps.EnglishFormulaHint
                 + " An add-in or VBA function, or one newer than the engine, keeps its name in the file for Excel to calculate.",
             Docs = "cells/editing",
         };
@@ -97,11 +97,12 @@ internal static partial class UnknownFunctions
         return false;
     }
 
-    [GeneratedRegex(@"(?<![\w.])([A-Za-z_][\w.]*)\s*\(")]
+    // A name of any script, so that a localized name such as 求和 or SUMME is named too.
+    [GeneratedRegex(@"(?<![\w.])([\p{L}_][\w.]*)\s*\(")]
     private static partial Regex FunctionCall();
 
     // A bare name followed by another argument, as LET and LAMBDA declare their parameters.
-    [GeneratedRegex(@"(?:\b(?:LET|LAMBDA)\s*\(|,)\s*([A-Za-z_][\w.]*)\s*(?=,)", RegexOptions.IgnoreCase)]
+    [GeneratedRegex(@"(?:\b(?:LET|LAMBDA)\s*\(|,)\s*([\p{L}_][\w.]*)\s*(?=,)", RegexOptions.IgnoreCase)]
     private static partial Regex Parameter();
 
     [GeneratedRegex(@"""[^""]*""|'[^']*'")]
