@@ -550,6 +550,28 @@ public sealed class PdfEngineTests
             Directory.GetFiles(fixture.Temp.Path).Select(Path.GetFileName).Order(StringComparer.Ordinal));
     }
 
+    [Fact]
+    public void Convert_HtmlTakesThePdfTitleAndSaysHowToCheckIt()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("titled.pdf", 1);
+        using (var document = new Document(input))
+        {
+            document.Info.Title = "2026年10月 <发票> & 归档";
+            document.Save(input);
+        }
+        string output = fixture.File("titled.html");
+
+        PdfConvertResult result = fixture.Engine.Convert(input, new PdfConvertRequest { TargetFormatId = "html", OutputPath = output });
+
+        Warning lossy = Assert.Single(result.Warnings!, static warning => warning.Code == WarningCodes.LossyConversion);
+        Assert.StartsWith("Open the HTML in a browser", lossy.Hint, StringComparison.Ordinal);
+        System.Text.RegularExpressions.Match title = System.Text.RegularExpressions.Regex.Match(
+            File.ReadAllText(output), "<title>(.*?)</title>", System.Text.RegularExpressions.RegexOptions.Singleline);
+        Assert.True(title.Success);
+        Assert.Equal("2026年10月 <发票> & 归档", System.Net.WebUtility.HtmlDecode(title.Groups[1].Value).Trim());
+    }
+
     [Theory]
     [InlineData(null, 3)]
     [InlineData("2-3", 2)]
