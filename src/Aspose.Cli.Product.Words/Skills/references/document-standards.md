@@ -17,6 +17,11 @@ correct a design paragraph by paragraph.
 ## Structure
 
 - Use built-in Heading styles for every heading; never fake one with bold text.
+  The outline and the table of contents list paragraphs with an outline level,
+  which Heading styles have; the built-in design's Title and Subtitle have
+  none, so a cover title or a "Contents" caption in them stays out of the
+  table of contents. A template's own Title may differ: check `inspect
+  --detail outline`.
 - Use real tables for tabular data; never align columns with spaces or tabs.
 - Keep one style per role; apply `set_style`, or create one with
   `define_style`, instead of `format_text` on individual runs.

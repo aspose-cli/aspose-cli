@@ -8,6 +8,39 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsMarkdownImportTests
 {
     [Fact]
+    public void BuiltInDesign_KeepsTitleAndSubtitleOutOfTheTableOfContents()
+    {
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("bid.md");
+        File.WriteAllText(markdown, "# Chapter one\n\nBody text.\n");
+        string created = fixture.Temp.File("bid.docx");
+        fixture.Engine.Create(new NewDocumentRequest { OutputPath = created, MarkdownPath = markdown });
+        string output = fixture.Temp.File("bid-toc.docx");
+
+        fixture.Engine.ApplyOps(created, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new InsertParagraphsOp
+                {
+                    At = new WordsTarget { Block = 1 },
+                    Position = "before",
+                    Paragraphs = [new ParagraphInput { Text = "Contents", Style = "Title" }, new ParagraphInput { Text = "Bid 2026", Style = "Subtitle" }],
+                },
+                new InsertTocOp { At = new WordsTarget { Block = 1 }, Position = "before" },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        DocumentInfoResult info = fixture.Engine.GetInfo(output, new DocumentInfoRequest { Details = ["outline"] });
+        Assert.Equal(["Chapter one"], info.Outline!.Select(static item => item.Text));
+        string toc = new Document(output).Range.Fields.Cast<Aspose.Words.Fields.Field>()
+            .Single(static field => field.Type == Aspose.Words.Fields.FieldType.FieldTOC).Result;
+        Assert.Contains("Chapter one", toc, StringComparison.Ordinal);
+        Assert.DoesNotContain("Contents", toc, StringComparison.Ordinal);
+        Assert.DoesNotContain("Bid 2026", toc, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Create_WithoutTemplate_BreaksChineseLinesByTheEastAsianRules()
     {
         using var fixture = new WordsFixture();
