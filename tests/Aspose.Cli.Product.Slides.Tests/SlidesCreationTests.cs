@@ -178,6 +178,27 @@ public sealed class SlidesCreationTests
     }
 
     [Fact]
+    public void Markdown_PlainParagraphWrapsFlushWithItsFirstLine()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string markdown = fixture.File("plain.md");
+        File.WriteAllText(markdown, "## Results\n- Revenue up\nA plain note\n");
+        string output = fixture.File("plain.pptx");
+
+        fixture.Engine.Create(new NewPresentationRequest { MarkdownPath = markdown, OutputPath = output });
+
+        // The body level's hanging indent makes room for a bullet; without one, wrapped
+        // lines would start a bullet's width right of the first.
+        using var deck = new Presentation(output);
+        IParagraph[] paragraphs = Assert.Single(SlidesPlaceholders.Content(deck.Slides[0])).TextFrame.Paragraphs.ToArray();
+        IParagraphFormatEffectiveData bulleted = paragraphs[0].ParagraphFormat.GetEffective();
+        IParagraphFormatEffectiveData plain = paragraphs[1].ParagraphFormat.GetEffective();
+        Assert.True(bulleted.Indent < 0);
+        Assert.Equal(0f, plain.Indent);
+        Assert.Equal(bulleted.MarginLeft + bulleted.Indent, plain.MarginLeft);
+    }
+
+    [Fact]
     public void Markdown_TableBecomesAStyledSlideTableInTheFreePlaceholder()
     {
         using var fixture = new SlidesEngineFixture();

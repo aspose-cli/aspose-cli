@@ -73,6 +73,25 @@ internal static class SlidesAuthoring
             }
 
             frame.Paragraphs.Add(paragraph);
+            if (item.List == ParagraphList.None)
+            {
+                AlignWrappedLines(paragraph);
+            }
+        }
+    }
+
+    /// <summary>
+    /// Moves the hanging indent that makes room for a level's bullet into the margin of a
+    /// paragraph without one, as PowerPoint does when bullets are turned off, so its wrapped
+    /// lines start where its first line does.
+    /// </summary>
+    private static void AlignWrappedLines(IParagraph paragraph)
+    {
+        IParagraphFormatEffectiveData effective = paragraph.ParagraphFormat.GetEffective();
+        if (effective.Indent < 0)
+        {
+            paragraph.ParagraphFormat.MarginLeft = effective.MarginLeft + effective.Indent;
+            paragraph.ParagraphFormat.Indent = 0;
         }
     }
 
