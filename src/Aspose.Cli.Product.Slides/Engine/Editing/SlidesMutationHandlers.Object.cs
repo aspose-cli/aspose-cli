@@ -296,27 +296,11 @@ internal sealed partial class SlidesMutationHandlers
         fill.SolidFillColor.SchemeColor = SchemeColor.Text1;
         Color dark = fill.SolidFillColor.Color;
         fill.SolidFillColor.SchemeColor = SchemeColor.Background1;
-        if (Contrast(fill.SolidFillColor.Color, background.SolidFillColor) <= Contrast(dark, background.SolidFillColor))
+        if (SlidesContrast.Ratio(fill.SolidFillColor.Color, background.SolidFillColor)
+            <= SlidesContrast.Ratio(dark, background.SolidFillColor))
         {
             fill.FillType = FillType.NotDefined;
         }
-    }
-
-    /// <summary>The WCAG contrast ratio of two colors, from 1 for equal luminance to 21.</summary>
-    private static double Contrast(Color first, Color second)
-    {
-        double a = Luminance(first);
-        double b = Luminance(second);
-        return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
-    }
-
-    private static double Luminance(Color color) =>
-        (0.2126 * Linear(color.R)) + (0.7152 * Linear(color.G)) + (0.0722 * Linear(color.B));
-
-    private static double Linear(byte channel)
-    {
-        double value = channel / 255.0;
-        return value <= 0.04045 ? value / 12.92 : Math.Pow((value + 0.055) / 1.055, 2.4);
     }
 
     private static IAxis ValueAxis(IChart chart, ChartType type) =>
