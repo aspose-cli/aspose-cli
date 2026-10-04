@@ -399,6 +399,27 @@ public sealed class PdfCliWorkflowTests : IDisposable
     }
 
     [Fact]
+    public void Merge_OfAWordDocumentNamedPdf_NamesThatInputAndWhatItIs()
+    {
+        File.WriteAllText(_workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
+        Assert.Equal(0, _workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json").ExitCode);
+        File.Move(_workspace.File("doc.docx"), _workspace.File("renamed.pdf"));
+        using (var document = new Document())
+        {
+            document.Pages.Add().Paragraphs.Add(new TextFragment("Report"));
+            document.Save(_workspace.File("report.pdf"));
+        }
+
+        CliResult merged = _workspace.Run("pdf", "merge", "report.pdf", "renamed.pdf", "--out", "merged.pdf", "--output", "json");
+
+        Assert.Equal(6, merged.ExitCode);
+        JsonNode error = JsonNode.Parse(merged.StdErr)!["error"]!;
+        Assert.Equal("FORMAT_MISMATCH", error["code"]!.GetValue<string>());
+        Assert.Equal(_workspace.File("renamed.pdf"), error["details"]!["path"]!.GetValue<string>());
+        Assert.Equal("words", Assert.Single(error["details"]!["detected"]!.AsArray())!.GetValue<string>());
+    }
+
+    [Fact]
     public void CreateFromHtml_DisclosesTheFieldsTheImporterNamedItself()
     {
         File.WriteAllText(_workspace.File("form.html"), """
