@@ -6785,7 +6785,7 @@
           "command": "edit",
           "inputSchema": "v2/words/ops",
           "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-          "contractFingerprint": "sha256:93243d90582147e7993c1b6fa3cbe2caebbdc918fe309bf705e33349e9212baf",
+          "contractFingerprint": "sha256:cfcfc7ca00cb6fe30669b7f0ac297b46175407b58dfdbc54d48fa62a32fe64d3",
           "maximumOperationCount": 256,
           "ops": [
             "accept_revisions",

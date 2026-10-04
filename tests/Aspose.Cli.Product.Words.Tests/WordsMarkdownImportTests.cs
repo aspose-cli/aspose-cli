@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Licensing;
 using Aspose.Words;
 using Aspose.Words.Saving;
 using Xunit;
@@ -202,6 +203,73 @@ public sealed class WordsMarkdownImportTests
         PageSetup setup = new Document(output).FirstSection.PageSetup;
         Assert.Equal(kind == "first", setup.DifferentFirstPageHeaderFooter);
         Assert.Equal(kind == "even", setup.OddAndEvenPagesHeaderFooter);
+    }
+
+    [Fact]
+    public void PlainHeaderAndFooterParagraphs_KeepTheFormatOfWhatTheyReplace()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Write("Body");
+        builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+        builder.ParagraphFormat.Alignment = ParagraphAlignment.Right;
+        builder.Font.Size = 8;
+        builder.Font.Name = "Arial";
+        builder.Write("Old header");
+        string input = fixture.Temp.File("aligned-header.docx");
+        source.Save(input);
+        string output = fixture.Temp.File("aligned-header-out.docx");
+
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new SetHeaderOp { Paragraphs = ["New header"] }, new SetFooterOp { Paragraphs = ["New footer"] }],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Section section = new Document(output).FirstSection;
+        Paragraph header = WordsFixture.FirstAuthoredParagraph(section.HeadersFooters[HeaderFooterType.HeaderPrimary]);
+        Assert.Equal("New header", header.GetText().Trim());
+        Assert.Equal(ParagraphAlignment.Right, header.ParagraphFormat.Alignment);
+        Assert.Equal(8, header.Runs[0].Font.Size);
+        Assert.Equal("Arial", header.Runs[0].Font.Name);
+        // With nothing to replace, a footer takes Word's Footer style.
+        Paragraph footer = section.HeadersFooters[HeaderFooterType.FooterPrimary].Paragraphs.Cast<Paragraph>()
+            .Single(static paragraph => paragraph.GetText().Trim() == "New footer");
+        Assert.Equal(StyleIdentifier.Footer, footer.ParagraphFormat.StyleIdentifier);
+    }
+
+    [Theory]
+    [InlineData(null)]
+    [InlineData(2)]
+    public void PlainHeaderParagraphs_KeepTheFormatOfTheHeaderASectionContinues(int? target)
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.Write("First");
+        builder.InsertBreak(BreakType.SectionBreakNewPage);
+        builder.Write("Second");
+        builder.MoveToSection(0);
+        builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
+        builder.ParagraphFormat.Alignment = ParagraphAlignment.Right;
+        builder.Write("Old header");
+        string input = fixture.Temp.File("continued-header.docx");
+        source.Save(input);
+        string output = fixture.Temp.File("continued-header-out.docx");
+
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops = [new SetHeaderOp { Paragraphs = ["New header"], Section = target }],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Section second = new Document(output).Sections[1];
+        Paragraph header = WordsFixture.FirstAuthoredParagraph(second.HeadersFooters[HeaderFooterType.HeaderPrimary]);
+        Assert.Equal("New header", header.GetText().Trim());
+        // Evaluation mode saved the input with an empty header of the second section's own.
+        if (fixture.LicenseState == LicenseState.Licensed)
+        {
+            Assert.Equal(ParagraphAlignment.Right, header.ParagraphFormat.Alignment);
+        }
     }
 
     private static IEnumerable<Paragraph> Body(Document document) =>

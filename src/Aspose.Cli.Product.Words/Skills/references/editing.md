@@ -156,8 +156,11 @@ set. `--track-changes` cannot record it.
 `set_header` and `set_footer` replace the selected kind, including its fields,
 in one section or every section. Their content is exactly one of `markdown` or
 `paragraphs`, and these `paragraphs` are plain strings, one per paragraph, such
-as `["Contract C-2026-014", "Confidential"]`; `insert_paragraphs` instead takes
-`{"text": ..., "style": ...}` objects. Apply footer text before `set_page_numbers`.
+as `["Contract C-2026-014", "Confidential"]`, which keep the alignment, style
+and font of the first paragraph they replace, including one a section
+continues from an earlier section, or take Word's Header or Footer style when
+there is none; `insert_paragraphs` instead takes
+`{"text": ..., "style": ...}` objects. Markdown takes the document's styles. Apply footer text before `set_page_numbers`.
 Page numbering targets only the primary header or footer, reuses its first
 PAGE field or appends one in a new paragraph, and keeps the other content. A
 `start` restarts numbering in each selected section; name a `section` when only

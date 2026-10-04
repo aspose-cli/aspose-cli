@@ -1221,7 +1221,7 @@
           "default": "primary"
         },
         "paragraphs": {
-          "description": "Plain paragraphs, one per item.",
+          "description": "Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.",
           "type": "array",
           "items": {
             "type": "string"
@@ -1278,7 +1278,7 @@
           "default": "primary"
         },
         "paragraphs": {
-          "description": "Plain paragraphs, one per item.",
+          "description": "Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.",
           "type": "array",
           "items": {
             "type": "string"

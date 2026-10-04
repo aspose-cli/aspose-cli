@@ -125,7 +125,9 @@ internal sealed partial class WordsMutationHandlers
 
     /// <summary>
     /// Replaces one kind of header or footer in each section with plain paragraphs or imported
-    /// Markdown. A first-page or even-page kind also turns on the section setting that shows it.
+    /// Markdown. Plain paragraphs keep the format of the first paragraph and run the section
+    /// shows, such as a right alignment, or take Word's Header or Footer style when there is none. A
+    /// first-page or even-page kind also turns on the section setting that shows it.
     /// </summary>
     private long SetHeaderFooter(HeaderFooterOp operation, bool isHeader)
     {
@@ -134,16 +136,12 @@ internal sealed partial class WordsMutationHandlers
         HeaderFooterType type = HeaderFooterTypeOf(kind, isHeader);
         foreach (Section section in Sections)
         {
+            Paragraph? replaced = ShownParagraph(section, type);
             section.HeadersFooters[type]?.Remove();
             var replacement = new HeaderFooter(_document, type);
             section.HeadersFooters.Add(replacement);
             IEnumerable<Node> blocks = markdown is null
-                ? operation.Paragraphs!.Select(text =>
-                {
-                    var paragraph = new Paragraph(_document);
-                    paragraph.AppendChild(new Run(_document, text));
-                    return (Node)paragraph;
-                })
+                ? operation.Paragraphs!.Select(text => (Node)PlainParagraph(text, replaced, isHeader))
                 : WordsMarkdownImport.Blocks(_document, markdown);
             foreach (Node block in blocks)
             {
@@ -166,6 +164,47 @@ internal sealed partial class WordsMutationHandlers
         }
 
         return Sections.Count;
+    }
+
+    /// <summary>
+    /// The first paragraph of the header or footer a section shows: its own, or the one it
+    /// continues from the nearest earlier section that has one. Evaluation mode's text is no
+    /// format to keep.
+    /// </summary>
+    private Paragraph? ShownParagraph(Section section, HeaderFooterType type)
+    {
+        for (Section? current = section; current is not null; current = current.PreviousSibling as Section)
+        {
+            if (current.HeadersFooters[type]?.Paragraphs.Cast<Paragraph>()
+                    .FirstOrDefault(paragraph => !(_loaded.Evaluation && WordsEvaluation.IsMark(paragraph))) is { } shown)
+            {
+                return shown;
+            }
+        }
+
+        return null;
+    }
+
+    /// <summary>A header or footer paragraph of text in the format of the one it replaces.</summary>
+    private Paragraph PlainParagraph(string text, Paragraph? replaced, bool isHeader)
+    {
+        Paragraph paragraph;
+        Run run;
+        if (replaced is null)
+        {
+            paragraph = new Paragraph(_document);
+            paragraph.ParagraphFormat.StyleIdentifier = isHeader ? StyleIdentifier.Header : StyleIdentifier.Footer;
+            run = new Run(_document);
+        }
+        else
+        {
+            paragraph = (Paragraph)replaced.Clone(isCloneChildren: false);
+            run = replaced.Runs.Count > 0 ? (Run)replaced.Runs[0].Clone(isCloneChildren: true) : new Run(_document);
+        }
+
+        run.Text = text;
+        paragraph.AppendChild(run);
+        return paragraph;
     }
 
     public long Apply(SetPageNumbersOp operation)

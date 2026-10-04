@@ -366,7 +366,7 @@ public abstract record HeaderFooterOp : WordsOp
     /// <summary>Which pages it shows on; first and even also turn on the section setting that shows it.</summary>
     [AllowedValues("primary", "first", "even")] public string Kind { get; init; } = "primary";
 
-    /// <summary>Plain paragraphs, one per item.</summary>
+    /// <summary>Plain paragraphs, one per item, in the paragraph and character format of the first paragraph they replace, such as its alignment, or in Word's Header or Footer style when there is none.</summary>
     public IReadOnlyList<string>? Paragraphs { get; init; }
 
     public string? Markdown { get; init; }
