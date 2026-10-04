@@ -133,7 +133,10 @@ internal sealed partial class PdfMutationHandlers
             }
 
             ILookup<string, Point> before = TextRuns(page);
-            foreach (TextFragment fragment in fragments)
+            // PDF-REDACT-TEXT-SHIFT moves the text that follows a removed match in the content
+            // stream, wherever it is drawn. The search returns the matches in that order, so
+            // they are removed last first: each one still lies where the search found it.
+            foreach (TextFragment fragment in fragments.Reverse())
             {
                 Cover(page, fragment.Rectangle, fill).Redact();
                 count++;

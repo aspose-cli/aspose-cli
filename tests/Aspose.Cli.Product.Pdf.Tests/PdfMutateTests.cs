@@ -1358,6 +1358,58 @@ public sealed class PdfMutateTests
         Assert.Contains("review", warning.Hint, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// Redacting a match moves the rest of its line left, so one operation that matches twice
+    /// on a line removes the later match first: the earlier one still lies where it was found.
+    /// </summary>
+    [Theory]
+    [InlineData("(ID: ) Tj (330106198507124518) Tj (, phone: ) Tj (5550101) Tj (.) Tj")]
+    [InlineData("[(ID: )] TJ [(3301061985) 1 (07124518)] TJ [(, phone: )] TJ [(555) 1 (0101)] TJ [(.)] TJ")]
+    public void RedactText_RemovesEveryMatchOnALineWhoseTextFollowsOn(string runs)
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateRawDocument("line.pdf", pages: 1, textContent: $"BT /F1 12 Tf 72 720 Td {runs} ET");
+        string output = fixture.File("line.out.pdf");
+
+        PdfEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = @"\d{18}|555\d{4}", Regex = true }] },
+            new PdfEditRequest { OutputPath = output, Verify = true });
+
+        Assert.True(result.Verification!.Ok);
+        Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
+        using var reopened = new Document(output);
+        string text = PageText(reopened.Pages[1]);
+        Assert.DoesNotContain("0101", text, StringComparison.Ordinal);
+        Assert.Contains(", phone: ", text, StringComparison.Ordinal);
+        Assert.Contains(".", text, StringComparison.Ordinal);
+    }
+
+    /// <summary>
+    /// The removal moves the text after a match in the content stream, wherever it is drawn, and
+    /// the search returns the matches in that order: text kerned back to the left of the first
+    /// match is removed first.
+    /// </summary>
+    [Fact]
+    public void RedactText_RemovesMatchesInReverseContentOrder()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateRawDocument("kerned.pdf", pages: 1,
+            textContent: "BT /F1 12 Tf 300 720 Td [(5550101.) 20000] TJ (5550202 tail) Tj ET");
+        string output = fixture.File("kerned.out.pdf");
+
+        PdfEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch { Ops = [new RedactTextOp { Pattern = @"555\d{4}", Regex = true }] },
+            new PdfEditRequest { OutputPath = output });
+
+        Assert.Equal(2, Assert.Single(result.Applied).ItemsAffected);
+        using var reopened = new Document(output);
+        string text = PageText(reopened.Pages[1]);
+        Assert.DoesNotMatch("55|0101|0202", text);
+        Assert.Contains("tail", text, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void SearchAndRedaction_MatchLiteralTextAcrossGapsBetweenEastAsianAndOtherCharacters()
     {
