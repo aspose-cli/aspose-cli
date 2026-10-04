@@ -69,8 +69,9 @@ in the embedded workbook. Other charts (bubble, stock, surface, mixed scatter an
 series, external or literal data, multi-level categories) fail with `CHART_DATA_INVALID` and
 stay unchanged; recreate them with `insert_chart`.
 
-New charts reserve space for their title and legend; adding a second series to a chart without
-a legend creates one outside the plot. For non-negative bar and column data, the automatic value
+New charts reserve space for their title and legend; a new pie colors each slice and names the
+categories in its legend. Adding a second series to a chart without a legend creates one
+outside the plot. For non-negative bar and column data, the automatic value
 axis starts at zero, saved as a fixed minimum of `0`. Later data updates keep every stored axis
 limit, so new negative values or values beyond a fixed range can be clipped: adjust the axes in
 a presentation editor or recreate the chart, then review the rendering. A successful update

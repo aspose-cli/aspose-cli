@@ -206,6 +206,25 @@ public sealed class SlidesChartPresentationTests
         AssertDoNotOverlap(chart.Legend, chart.PlotArea.AsIActualLayout);
     }
 
+    [Fact]
+    public void Pie_VariesSliceColorsAndNamesTheCategoriesInALegend()
+    {
+        using var fixture = new SlidesEngineFixture();
+
+        string output = Insert(fixture, "pie.pptx", "pie", 45, 20, 60, 15);
+
+        // A pie's categories show only through its slice colors and legend.
+        Assert.Equal(
+            "1",
+            ReadChartPart(output).Descendants(ChartXml + "varyColors").Single().Attribute("val")?.Value);
+        Assert.True(HasLegend(output));
+        using var reopened = new Presentation(output);
+        IChart chart = Chart(reopened);
+        Assert.False(chart.Legend.Overlay);
+        chart.ValidateChartLayout();
+        AssertDoNotOverlap(chart.Legend, chart.PlotArea.AsIActualLayout);
+    }
+
     [Theory]
     [InlineData("column")]
     [InlineData("bar")]

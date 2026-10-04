@@ -122,7 +122,10 @@ internal sealed partial class SlidesMutationHandlers
             chart.ChartTitle.AddTextFrameForOverriding(operation.Title);
             chart.ChartTitle.TextFormat.TextBlockFormat.TextVerticalType = TextVerticalType.Horizontal;
         }
-        chart.HasLegend = operation.Series.Count > 1;
+        // A pie names its categories only through slice colors and the legend.
+        bool pie = type == ChartType.Pie;
+        chart.ChartData.Series[0].ParentSeriesGroup.IsColorVaried = pie;
+        chart.HasLegend = pie || operation.Series.Count > 1;
         chart.Legend.Position = LegendPositionType.Bottom;
         chart.Legend.Overlay = false;
         chart.LineFormat.FillFormat.FillType = FillType.NoFill;
