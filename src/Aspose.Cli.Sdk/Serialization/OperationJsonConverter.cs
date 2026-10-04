@@ -169,7 +169,10 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         writer.WriteEndObject();
     }
 
-    /// <summary>Rejects a member the record does not declare; an operation also accepts <c>op</c> and <c>id</c>.</summary>
+    /// <summary>
+    /// Rejects a member the record does not declare; an operation also accepts <c>op</c> and
+    /// <c>id</c>. A member that declares the name a common mistake for it is the one meant.
+    /// </summary>
     private static AllowedFieldsException UnknownField(
         JsonElement value, OperationRecord record, string path, string name, bool isOperation)
     {
@@ -178,7 +181,9 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         string[] missing = [.. record.Properties
             .Where(property => property.Required && !value.TryGetProperty(property.Name, out _))
             .Select(static property => property.Name)];
-        return AllowedFieldsException.UnknownField(path, name, isOperation ? record.Name : path, allowed, missing);
+        string? meant = record.Properties
+            .FirstOrDefault(property => property.MistakenFor.Contains(name, StringComparer.OrdinalIgnoreCase))?.Name;
+        return AllowedFieldsException.UnknownField(path, name, isOperation ? record.Name : path, allowed, missing, meant);
     }
 
     private static void WriteValue(Utf8JsonWriter writer, JsonElement value, OperationValue shape, string path)

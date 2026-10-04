@@ -35,11 +35,11 @@ public sealed record Box
 [MinProperties(1), DependentRequired("size", "font")]
 public sealed record Style
 {
-    public string? Font { get; init; }
+    [MistakenFor("typeface")] public string? Font { get; init; }
 
     public double? Size { get; init; }
 
-    public bool? Bold { get; init; }
+    [MistakenFor("fontWeight", "strong")] public bool? Bold { get; init; }
 }
 
 /// <summary>Places boxes.</summary>

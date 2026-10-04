@@ -39,6 +39,10 @@ public sealed class BoundedOperationPipelineTests
         "unknown field 'colour'; note accepts: op, id, text, pinned", "op,id,text,pinned", null)]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"box":{"widht":2}}]}""", "place",
         "unknown field 'box.widht'; box accepts: width (did you mean 'width'?)", "width", "width")]
+    [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":{"FontWeight":true}}]}""", "place",
+        "unknown field 'style.FontWeight'; style accepts: font, size, bold (did you mean 'bold'?)", "font,size,bold", "bold")]
+    [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":{"typeface":"Arial"}}]}""", "place",
+        "unknown field 'style.typeface'; style accepts: font, size, bold (did you mean 'font'?)", "font,size,bold", "font")]
     public void Parse_NamesTheAcceptedFieldsOfAnUnknownField(
         string document, string op, string reason, string allowed, string? suggestion)
     {

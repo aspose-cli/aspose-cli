@@ -33,6 +33,19 @@ public sealed class OperationAttribute(string name) : Attribute
 }
 
 /// <summary>
+/// Names the field names a caller commonly writes for this member, such as <c>backgroundColor</c>
+/// for a fill color. They are never accepted: an unknown field of one of these names suggests
+/// this member, ahead of the names that merely look alike. Names compare ignoring case.
+/// </summary>
+/// <param name="names">The mistaken field names.</param>
+[AttributeUsage(AttributeTargets.Property)]
+public sealed class MistakenForAttribute(params string[] names) : Attribute
+{
+    /// <summary>The mistaken field names.</summary>
+    public IReadOnlyList<string> Names { get; } = names;
+}
+
+/// <summary>
 /// Marks a top-level string property that names a file the operation reads. The edit command
 /// resolves it against the invocation directory and never publishes over it; it must not be
 /// empty or only white space.

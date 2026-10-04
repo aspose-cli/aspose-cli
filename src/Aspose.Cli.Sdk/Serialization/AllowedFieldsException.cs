@@ -26,18 +26,25 @@ internal sealed class AllowedFieldsException : JsonException
 
     /// <summary>
     /// Rejects the member <paramref name="name"/> of the object at <paramref name="path"/>,
-    /// naming the fields the object accepts and the one most likely meant: the closest name, or
-    /// else the only required field missing.
+    /// naming the fields the object accepts and the one most likely meant: the field declared
+    /// for the mistaken name, else the closest name, else the only required field missing.
     /// </summary>
     /// <param name="path">The object's field path; empty for an operation or the document itself.</param>
     /// <param name="name">The unknown member's name.</param>
     /// <param name="subject">How the reason names the object, such as an operation name or a field path.</param>
     /// <param name="allowedFields">The object's accepted wire names in published order.</param>
     /// <param name="missingRequired">The object's required fields the value omits.</param>
+    /// <param name="meant">The field that declares <paramref name="name"/> a common mistake for it, or null.</param>
     public static AllowedFieldsException UnknownField(
-        string path, string name, string subject, IReadOnlyList<string> allowedFields, IReadOnlyCollection<string> missingRequired)
+        string path,
+        string name,
+        string subject,
+        IReadOnlyList<string> allowedFields,
+        IReadOnlyCollection<string> missingRequired,
+        string? meant = null)
     {
-        string? suggestion = NameSuggestions.Closest(name, allowedFields, fieldNames: true).FirstOrDefault()
+        string? suggestion = meant
+            ?? NameSuggestions.Closest(name, allowedFields, fieldNames: true).FirstOrDefault()
             ?? (missingRequired.Count == 1 ? missingRequired.First() : null);
         string field = path.Length == 0 ? name : $"{path}.{name}";
         string reason = $"unknown field '{field}'; {subject} accepts: {string.Join(", ", allowedFields)}"

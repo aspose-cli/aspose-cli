@@ -377,6 +377,13 @@ internal sealed class VocabularyWriter(
             code.Append(", Constraints = [").Append(string.Join(", ", constraints)).Append(']');
         }
 
+        if (Find(property, OperationContractGenerator.Operations + "MistakenForAttribute") is { } mistaken)
+        {
+            code.Append(", MistakenFor = [")
+                .Append(string.Join(", ", mistaken.ConstructorArguments[0].Values.Select(static name => Literal((string)name.Value!))))
+                .Append(']');
+        }
+
         code.Append(", Get = static value => ((").Append(TypeName(owner)).Append(")value).").Append(property.Name).Append(" }");
         return new Member(
             property,

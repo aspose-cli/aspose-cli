@@ -106,6 +106,9 @@ public sealed class OperationProperty
     /// <summary>The member's declared constraints.</summary>
     public IReadOnlyList<ValueConstraintAttribute> Constraints { get; init; } = [];
 
+    /// <summary>The field names commonly written for this member (see <see cref="MistakenForAttribute"/>).</summary>
+    public IReadOnlyList<string> MistakenFor { get; init; } = [];
+
     /// <summary>Reads the member from an instance of its record.</summary>
     public required Func<object, object?> Get { get; init; }
 }
