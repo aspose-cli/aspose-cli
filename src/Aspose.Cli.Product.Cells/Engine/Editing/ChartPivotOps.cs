@@ -20,10 +20,14 @@ namespace Aspose.Cli.Product.Cells.Engine.Editing;
 internal static class ChartPivotOps
 {
     /// <summary>
-    /// The default series palette of the modern chart look, cycled across
-    /// series in order.
+    /// The theme colors the default series palette starts from; in the default
+    /// Office theme they are the design system's S1-S6.
     /// </summary>
-    private static readonly string[] ModernPalette = ["#1F4E79", "#2E75B6", "#9DC3E6", "#D9D9D9"];
+    private static readonly ThemeColorType[] Accents =
+    [
+        ThemeColorType.Accent1, ThemeColorType.Accent2, ThemeColorType.Accent3,
+        ThemeColorType.Accent4, ThemeColorType.Accent5, ThemeColorType.Accent6,
+    ];
 
     public static long? CreateChart(Worksheet sheet, CreateChartOp op)
     {
@@ -47,7 +51,7 @@ internal static class ChartPivotOps
         }
 
         // Defaults first, explicit cosmetics after — a user field always wins.
-        ApplyModernDefaults(chart, op.Type);
+        ApplyModernDefaults(chart, op.Type, sheet.Workbook);
         ApplyCosmetics(chart, op.Legend, op.AxisTitles, op.SeriesColors, op.DataLabels);
         EnsureHonestValueAxis(chart);
         return null;
@@ -458,7 +462,7 @@ internal static class ChartPivotOps
     /// <c>Chart.Style</c> is deliberately not used: it persists in the file
     /// but the renderer ignores it (verified: byte-identical renders).
     /// </summary>
-    private static void ApplyModernDefaults(Chart chart, string type)
+    private static void ApplyModernDefaults(Chart chart, string type, Workbook workbook)
     {
         chart.ChartArea.Border.IsVisible = false;
         chart.PlotArea.Area.Formatting = FormattingType.None;
@@ -481,17 +485,28 @@ internal static class ChartPivotOps
         }
 
         // Default palette across every series (a pie's slices count as the
-        // series), cycling when there are more series than palette entries.
+        // series): the workbook theme's six accents, then darker and then
+        // lighter variants of them, so up to 18 series keep distinct colors.
         int count = IsPieFamily(chart.Type)
             ? (chart.NSeries.Count > 0 ? chart.NSeries[0].Points.Count : 0)
             : chart.NSeries.Count;
-        var palette = new string[count];
-        for (int i = 0; i < count; i++)
-        {
-            palette[i] = ModernPalette[i % ModernPalette.Length];
-        }
+        ApplySeriesColors(chart, [.. Enumerable.Range(0, count).Select(i => DefaultColor(workbook, i))]);
+    }
 
-        ApplySeriesColors(chart, palette);
+    private static Color DefaultColor(Workbook workbook, int index)
+    {
+        Color accent = workbook.GetThemeColor(Accents[index % Accents.Length]);
+        return (index / Accents.Length % 3) switch
+        {
+            1 => Blend(accent, Color.Black, 0.4),
+            2 => Blend(accent, Color.White, 0.5),
+            _ => accent,
+        };
+
+        static Color Blend(Color from, Color to, double weight) => Color.FromArgb(
+            (int)Math.Round(from.R + ((to.R - from.R) * weight)),
+            (int)Math.Round(from.G + ((to.G - from.G) * weight)),
+            (int)Math.Round(from.B + ((to.B - from.B) * weight)));
     }
 
     /// <summary>
@@ -536,7 +551,7 @@ internal static class ChartPivotOps
 
         if (seriesColors is { } colors)
         {
-            ApplySeriesColors(chart, colors);
+            ApplySeriesColors(chart, [.. colors.Select(StyleWriter.ParseHex)]);
         }
 
         if (dataLabels is { } labels)
@@ -566,7 +581,7 @@ internal static class ChartPivotOps
     /// pre-materialized per category). Colors beyond the series/slice count
     /// are ignored.
     /// </summary>
-    private static void ApplySeriesColors(Chart chart, IReadOnlyList<string> colors)
+    private static void ApplySeriesColors(Chart chart, IReadOnlyList<Color> colors)
     {
         if (IsPieFamily(chart.Type))
         {
@@ -579,7 +594,7 @@ internal static class ChartPivotOps
             for (int i = 0; i < slices.Count && i < colors.Count; i++)
             {
                 slices[i].Area.Formatting = FormattingType.Custom;
-                slices[i].Area.ForegroundColor = StyleWriter.ParseHex(colors[i]);
+                slices[i].Area.ForegroundColor = colors[i];
             }
 
             return;
@@ -590,7 +605,7 @@ internal static class ChartPivotOps
         for (int i = 0; i < chart.NSeries.Count && i < colors.Count; i++)
         {
             Series series = chart.NSeries[i];
-            Color color = StyleWriter.ParseHex(colors[i]);
+            Color color = colors[i];
             if (isLine)
             {
                 // The color alone flips the line to a solid non-auto stroke.

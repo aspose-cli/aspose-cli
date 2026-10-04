@@ -182,7 +182,8 @@ cells:
 
 - `create_chart` applies a modern look by itself: white plot area, no outer
   border, a bottom legend, slim column and bar gaps, light value-axis
-  gridlines and the `#1F4E79`/`#2E75B6`/`#9DC3E6`/`#D9D9D9` series palette. A
+  gridlines and a distinct color per series (per slice of a pie): the
+  workbook theme's six accents, then darker and lighter variants. A
   column, bar or area chart whose values are all positive starts its value
   axis at zero. Set `legend`, `axisTitles`, `seriesColors` or `dataLabels`
   only to deviate.

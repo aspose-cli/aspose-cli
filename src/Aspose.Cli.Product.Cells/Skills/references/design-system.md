@@ -281,8 +281,9 @@ Selection is by data shape, not preference:
 removed, the plot area has no fill, gridlines are
 `#D9D9D9` and value-axis only (horizontal on a column/line chart, vertical
 on a bar), the value-axis line and tick marks are gone, the legend sits at
-the bottom, bars are tighter, and series fall on a navy ramp (`#1F4E79`,
-`#2E75B6`, `#9DC3E6`, `#D9D9D9`) — so do NOT re-specify those. What you DO
+the bottom, bars are tighter, and each series (each pie slice) takes the
+next of the workbook theme's six accents — S1-S6 in the default theme — then
+darker and lighter variants of them — so do NOT re-specify those. What you DO
 set:
 
 - `title`, message-style: subject · measure + unit · period ("Monthly
@@ -293,9 +294,8 @@ set:
   at the engine's bottom default (`position` only for a real layout need).
 - `seriesColors` when hue must carry a meaning: the accent `#4472C4` for a
   token-styled dashboard's main series, actual `#4472C4` vs plan/prior-year
-  `#A5A5A5`, an alarm series `#C00000`. The default navy ramp is fine for a
-  standalone chart; the S1-S6 tokens are for charts whose colors separate
-  meanings.
+  `#A5A5A5`, an alarm series `#C00000`. The default palette is fine for a
+  standalone chart; choose colors when they separate meanings.
 - `dataLabels` only when the chart has <= 6 points, always with a `format`.
 
 ```sh
@@ -491,7 +491,7 @@ Self-grade against this checklist while looking at the PNGs:
     year as 2026, units declared once
 [ ] Charts: message titles, no default "Chart 1", single series has no
     legend, labels only when <= 6 points, series colors deliberate
-    (tokens or the default navy ramp — a hue change means a meaning)
+    (tokens or the default palette — a hue change means a meaning)
 [ ] Ranking bars read largest-first top-down (source rows ascending)
 [ ] Totals: bold, L2/L3 borders (double under grand totals)
 [ ] Freeze at the label/data boundary; print setup on deliverable sheets

@@ -274,6 +274,35 @@ public sealed class CellsOperationsTests : IClassFixture<CellsFixture>
         Assert.Equal("#,##0", chart.NSeries[0].DataLabels.NumberFormat);
     }
 
+    /// <summary>
+    /// The default palette gives every series of a column chart and every slice of a pie its own
+    /// color, past the six theme accents too.
+    /// </summary>
+    [Fact]
+    public void CreateChart_DefaultPaletteKeepsSeriesAndSlicesDistinct()
+    {
+        string source = _fixture.CreateSalesWorkbook("palette.xlsx");
+        string output = Apply(
+            source,
+            """
+            { "ops": [
+              { "op": "set_values", "sheet": "Data", "range": "A1:H4", "values": [
+                ["Month","S1","S2","S3","S4","S5","S6","S7"],
+                ["Jan",1,2,3,4,5,6,7],["Feb",2,3,4,5,6,7,8],["Mar",3,4,5,6,7,8,9]] },
+              { "op": "set_values", "sheet": "Data", "range": "J1:K6", "values": [
+                ["Region","Sales"],["East",5],["North",4],["South",3],["West",2],["Central",1]] },
+              { "op": "create_chart", "sheet": "Data", "type": "column", "dataRange": "A1:H4", "at": "A8:H24" },
+              { "op": "create_chart", "sheet": "Data", "type": "pie", "dataRange": "J1:K6", "at": "J8:P24" }
+            ] }
+            """,
+            "palette.out.xlsx").Output!.Path;
+
+        using var workbook = new Workbook(output);
+        ChartCollection charts = workbook.Worksheets["Data"].Charts;
+        Assert.Equal(7, charts[0].NSeries.Cast<Series>().Select(static series => series.Area.ForegroundColor.ToArgb()).Distinct().Count());
+        Assert.Equal(5, charts[1].NSeries[0].Points.Cast<ChartPoint>().Select(static point => point.Area.ForegroundColor.ToArgb()).Distinct().Count());
+    }
+
     [Fact]
     public void FormulaConditionalFormat_PreservesTheCellsNumberFormat()
     {
