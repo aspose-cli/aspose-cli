@@ -32,6 +32,13 @@ public sealed class NotFoundErrorTests
         Assert.Equal(expected, NameSuggestions.Closest(requested, ["font", "name", "size", "color", "border", "bold"], fieldNames: true));
 
     [Theory]
+    [InlineData("replacement", new[] { "replace", "maxReplacementCount" })]
+    [InlineData("replaceWith", new[] { "replace" })]
+    [InlineData("count", new[] { "maxReplacementCount" })]
+    public void Closest_PrefersTheFieldNameSharingTheRequestsStemOverOneThatHoldsItInside(string requested, string[] expected) =>
+        Assert.Equal(expected, NameSuggestions.Closest(requested, ["find", "maxReplacementCount", "replace"], fieldNames: true));
+
+    [Theory]
     [InlineData("subtitle", new[] { "title", "body" }, new string[0])]
     [InlineData("Sub title", new[] { "title" }, new[] { "title" })]
     [InlineData("Quarter", new[] { "Quarterly report" }, new[] { "Quarterly report" })]

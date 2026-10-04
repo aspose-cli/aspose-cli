@@ -4,8 +4,10 @@ namespace Aspose.Cli.Sdk.Text;
 /// Ranks the existing names closest to a name that was not found, so a caller can correct a
 /// typo or a casing slip in one step. Ranking is deterministic: a match that ignores case and
 /// surrounding white space comes first, then names that contain the request or are a whole
-/// word of it (for field names, those ending the other first), then names within a small edit
-/// distance; ties keep the candidates' order.
+/// word of it, then names within a small edit distance; ties keep the candidates' order. Field
+/// names rank by their words: a contained name that ends the other first, then one that starts
+/// the other or that the request extends, as "replacement" extends "replace", before one that
+/// merely holds the request inside, as "maxReplacementCount" does.
 /// </summary>
 public static class NameSuggestions
 {
@@ -24,7 +26,8 @@ public static class NameSuggestions
     /// <param name="candidates">The existing names, in the order ties keep.</param>
     /// <param name="fieldNames">
     /// Whether the names are compound field names such as <c>fontSize</c>, whose last word says
-    /// what the field is: a contained name that ends the other then ranks before one that does not.
+    /// what the field is: a contained name that ends the other then ranks first, and a name that
+    /// shares the request's start ranks before one that holds the request inside another word.
     /// </param>
     public static IReadOnlyList<string> Closest(string requested, IEnumerable<string> candidates, bool fieldNames = false)
     {
@@ -51,7 +54,8 @@ public static class NameSuggestions
 
             string name = Normalize(candidate);
             int? rank = name == wanted ? 0
-                : Overlaps(trimmed, candidate.Trim()) ? (fieldNames && !EndsWithEither(wanted, name) ? 2 : 1)
+                : fieldNames ? FieldRank(trimmed, candidate.Trim(), wanted, name, allowedDistance)
+                : Overlaps(trimmed, candidate.Trim()) ? 1
                 : Distance(wanted, name, allowedDistance) is int distance ? 2 + distance
                 : null;
             if (rank is int value)
@@ -71,6 +75,21 @@ public static class NameSuggestions
     }
 
     private static string Normalize(string value) => value.Trim().ToUpperInvariant();
+
+    // A compound field name says what it is in its last word: a contained name that ends the
+    // other comes first ("size" for "fontSize"), then one that shares the start, including a
+    // field the request only inflects ("replace" for "replacement"), then one that holds the
+    // request inside another word ("maxReplacementCount"), then small edits.
+    private static int? FieldRank(string requested, string candidate, string wanted, string name, int allowedDistance)
+    {
+        bool stem = Math.Min(wanted.Length, name.Length) >= MinimumOverlap
+            && (wanted.StartsWith(name, StringComparison.Ordinal) || name.StartsWith(wanted, StringComparison.Ordinal));
+        return EndsWithEither(wanted, name) && Overlaps(requested, candidate) ? 1
+            : stem ? 2
+            : Overlaps(requested, candidate) ? 3
+            : Distance(wanted, name, allowedDistance) is int distance ? 3 + distance
+            : null;
+    }
 
     // The name contains the request, so a request such as "Sales" finds "Sales 2026", or it is a
     // whole word of the request: "fontSize" holds the field "size", but "subtitle" is another
