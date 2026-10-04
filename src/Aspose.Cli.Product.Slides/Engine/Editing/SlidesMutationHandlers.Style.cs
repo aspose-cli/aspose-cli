@@ -4,7 +4,7 @@ using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
 
 namespace Aspose.Cli.Product.Slides.Engine.Editing;
 
-// Shape styles, footers, transitions, document properties and slide size.
+// Shape geometry and styles, footers, transitions, document properties and slide size.
 internal sealed partial class SlidesMutationHandlers
 {
     public long Apply(DeleteShapeOp operation)
@@ -17,6 +17,16 @@ internal sealed partial class SlidesMutationHandlers
     public long Apply(SetShapeStyleOp operation)
     {
         ApplyStyle(Shape, operation.Style);
+        _touched.Add(Slide.SlideId);
+        return 1;
+    }
+
+    public long Apply(SetShapeBoundsOp operation)
+    {
+        Shape.X = (float)(operation.X ?? Shape.X);
+        Shape.Y = (float)(operation.Y ?? Shape.Y);
+        Shape.Width = (float)(operation.Width ?? Shape.Width);
+        Shape.Height = (float)(operation.Height ?? Shape.Height);
         _touched.Add(Slide.SlideId);
         return 1;
     }

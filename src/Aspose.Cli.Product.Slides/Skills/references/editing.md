@@ -27,9 +27,12 @@ aspose-cli schema v2/slides/ops --operation insert_chart
 | Slide order and structure | `add_slide`, `duplicate_slide`, `move_slide`, `delete_slides`, `add_section`, `append_presentation` |
 | Layout and canvas | `apply_layout`, `set_slide_size`, `set_background`, `set_footer`, `set_transition`, `set_slide_hidden` |
 | Text | `set_title`, `set_body`, `set_text`, `replace_text`, `set_table_cell`, `set_notes` |
-| Objects | `insert_image`, `insert_shape`, `insert_table`, `insert_chart`, `delete_shape`, `set_shape_style` |
+| Objects | `insert_image`, `insert_shape`, `insert_table`, `insert_chart`, `delete_shape`, `set_shape_bounds`, `set_shape_style` |
 | Data | `update_chart_data` |
 | Document | `set_properties` |
+
+`set_shape_bounds` moves or resizes a shape in place, keeping its id, name, style and text;
+omitted sides keep their values. Use it when a review finding asks to move or enlarge a shape.
 
 ## Text and notes
 

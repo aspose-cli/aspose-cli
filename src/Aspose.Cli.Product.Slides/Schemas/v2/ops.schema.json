@@ -82,6 +82,9 @@
             "$ref": "#/$defs/set_properties"
           },
           {
+            "$ref": "#/$defs/set_shape_bounds"
+          },
+          {
             "$ref": "#/$defs/set_shape_style"
           },
           {
@@ -979,6 +982,127 @@
             {
               "required": [
                 "company"
+              ]
+            }
+          ]
+        }
+      ]
+    },
+    "set_shape_bounds": {
+      "description": "Moves or resizes one shape in presentation points from the slide's top-left corner; omitted sides keep their values. It must set at least one of x, y, width and height.",
+      "type": "object",
+      "required": [
+        "op"
+      ],
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "$ref": "#/$defs/id"
+        },
+        "op": {
+          "const": "set_shape_bounds"
+        },
+        "slide": {
+          "description": "The 1-based slide number.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "slideId": {
+          "description": "The stable slide id reported by inspect and query slides.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shapeId": {
+          "description": "The persistent slide-scoped shapeId returned by query slides; not a shape position.",
+          "type": "integer",
+          "minimum": 1
+        },
+        "shapeName": {
+          "description": "The shape name, matched case-sensitively.",
+          "type": "string",
+          "pattern": "\\S"
+        },
+        "placeholder": {
+          "description": "The placeholder role, as query slides reports it.",
+          "type": "string",
+          "enum": [
+            "title",
+            "body",
+            "subtitle",
+            "footer"
+          ]
+        },
+        "x": {
+          "type": "number",
+          "minimum": 0
+        },
+        "y": {
+          "type": "number",
+          "minimum": 0
+        },
+        "width": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        },
+        "height": {
+          "type": "number",
+          "exclusiveMinimum": 0
+        }
+      },
+      "allOf": [
+        {
+          "oneOf": [
+            {
+              "required": [
+                "slide"
+              ]
+            },
+            {
+              "required": [
+                "slideId"
+              ]
+            }
+          ]
+        },
+        {
+          "oneOf": [
+            {
+              "required": [
+                "shapeId"
+              ]
+            },
+            {
+              "required": [
+                "shapeName"
+              ]
+            },
+            {
+              "required": [
+                "placeholder"
+              ]
+            }
+          ]
+        },
+        {
+          "anyOf": [
+            {
+              "required": [
+                "x"
+              ]
+            },
+            {
+              "required": [
+                "y"
+              ]
+            },
+            {
+              "required": [
+                "width"
+              ]
+            },
+            {
+              "required": [
+                "height"
               ]
             }
           ]

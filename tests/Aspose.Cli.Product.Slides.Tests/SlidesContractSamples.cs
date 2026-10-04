@@ -230,6 +230,7 @@ internal static class SlidesContractSamples
                 Series = [new SlidesChartSeriesInput { Name = "Revenue", Values = [11, 14] }],
             },
             new DeleteShapeOp { Slide = 3, ShapeId = 10 },
+            new SetShapeBoundsOp { Slide = 2, ShapeId = 7, X = 380, Width = 240 },
             new SetShapeStyleOp
             {
                 Slide = 1,

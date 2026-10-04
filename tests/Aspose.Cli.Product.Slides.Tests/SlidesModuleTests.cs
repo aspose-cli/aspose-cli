@@ -90,6 +90,8 @@ public sealed class SlidesModuleTests
 
     [Theory]
     [InlineData("""{"op":"set_shape_style","slide":1,"shapeId":2}""")]
+    [InlineData("""{"op":"set_shape_bounds","slide":1,"shapeId":2}""")]
+    [InlineData("""{"op":"set_shape_bounds","slide":1,"shapeId":2,"width":0}""")]
     [InlineData("""{"op":"update_chart_data","slide":1,"shapeId":2,"series":[]}""")]
     [InlineData("""{"op":"set_text","slide":1,"placeholder":"object","text":"x"}""")]
     public void OperationRules_RejectIncompleteOrUnknownValues(string operation)

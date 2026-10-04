@@ -421,6 +421,23 @@ public sealed record SetShapeStyleOp : ShapeTargetOp
 }
 
 /// <summary>
+/// Moves or resizes one shape in presentation points from the slide's top-left corner; omitted
+/// sides keep their values. It must set at least one of x, y, width and height.
+/// </summary>
+[Operation("set_shape_bounds")]
+[AtLeastOneOf("x", "y", "width", "height")]
+public sealed record SetShapeBoundsOp : ShapeTargetOp
+{
+    [Minimum(0)] public double? X { get; init; }
+
+    [Minimum(0)] public double? Y { get; init; }
+
+    [ExclusiveMinimum(0)] public double? Width { get; init; }
+
+    [ExclusiveMinimum(0)] public double? Height { get; init; }
+}
+
+/// <summary>
 /// Shows footer text, slide numbers or dates through the layout's own placeholders; it must
 /// set at least one of text, showNumber and showDate.
 /// </summary>
@@ -515,6 +532,7 @@ public sealed record SetSlideSizeOp : SlidesOp
 [JsonSerializable(typeof(SetBodyOp))]
 [JsonSerializable(typeof(SetFooterOp))]
 [JsonSerializable(typeof(SetNotesOp))]
+[JsonSerializable(typeof(SetShapeBoundsOp))]
 [JsonSerializable(typeof(SetShapeStyleOp))]
 [JsonSerializable(typeof(SetSlideHiddenOp))]
 [JsonSerializable(typeof(SetSlideSizeOp))]

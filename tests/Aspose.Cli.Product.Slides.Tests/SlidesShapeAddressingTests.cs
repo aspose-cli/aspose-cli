@@ -236,4 +236,43 @@ public sealed class SlidesShapeAddressingTests
         Assert.DoesNotContain(final.Slides[0].Shapes!, static shape => shape.Type == "group");
         Assert.Contains(final.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 2");
     }
+
+    [Fact]
+    public void SetShapeBounds_MovesAndResizesAShapeAndKeepsOmittedSides()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation(slides: 2);
+        using (var presentation = new Presentation(input))
+        {
+            presentation.Slides[1].Shapes.AddTable(40, 120, [100, 100], [30, 30]).Name = "Figures";
+            presentation.Save(input, SaveFormat.Pptx);
+        }
+        string output = fixture.File("bounds.pptx");
+
+        SlidesEditResult result = fixture.Engine.ApplyOps(
+            input,
+            new SlidesOpsBatch
+            {
+                Ops =
+                [
+                    new SetShapeBoundsOp { Slide = 1, ShapeName = "Title 1", X = 100, Width = 300 },
+                    new SetShapeBoundsOp { Slide = 2, ShapeName = "Figures", Y = 200, Width = 400, Height = 100 },
+                ],
+            },
+            new PresentationEditRequest { OutputPath = output });
+
+        Assert.All(result.Applied, static operation => Assert.Equal("ok", operation.Status));
+        PresentationReadResult read = fixture.Engine.Read(output, new PresentationReadRequest
+        {
+            Slides = PageRange.Parse("1-2"), Scope = PresentationReadScopes.Shapes,
+        });
+        SlideRect title = Assert.Single(read.Slides[0].Shapes!, static shape => shape.ShapeName == "Title 1").Rect;
+        Assert.Equal((100d, 30d, 300d, 70d), (title.X, title.Y, title.Width, title.Height));
+        SlideRect table = Assert.Single(read.Slides[1].Shapes!, static shape => shape.ShapeName == "Figures").Rect;
+        Assert.Equal((40d, 200d, 400d, 100d), (table.X, table.Y, table.Width, table.Height));
+        using var reopened = new Presentation(output);
+        ITable saved = reopened.Slides[1].Shapes.OfType<ITable>().Single();
+        Assert.Equal(400d, saved.Columns.Sum(static column => column.Width));
+        Assert.Equal(100d, saved.Rows.Sum(static row => row.Height));
+    }
 }

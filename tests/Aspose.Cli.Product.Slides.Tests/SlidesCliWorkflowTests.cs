@@ -27,7 +27,7 @@ public sealed class SlidesCliWorkflowTests : IDisposable
                 "delete_shape", "delete_slides", "duplicate_slide", "insert_chart",
                 "insert_image", "insert_shape", "insert_table", "move_slide",
                 "replace_text", "set_background", "set_body", "set_footer",
-                "set_notes", "set_properties", "set_shape_style", "set_slide_hidden",
+                "set_notes", "set_properties", "set_shape_bounds", "set_shape_style", "set_slide_hidden",
                 "set_slide_size", "set_table_cell", "set_text", "set_title",
                 "set_transition", "update_chart_data",
             ],

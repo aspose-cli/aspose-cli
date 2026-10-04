@@ -374,6 +374,7 @@
             "set_footer",
             "set_notes",
             "set_properties",
+            "set_shape_bounds",
             "set_shape_style",
             "set_slide_hidden",
             "set_slide_size",
