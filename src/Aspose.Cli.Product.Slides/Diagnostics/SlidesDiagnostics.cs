@@ -17,6 +17,9 @@ internal static class SlidesDiagnostics
     /// <summary>A table authored from Markdown is taller than the area it was placed in.</summary>
     internal const string TableOverflow = "TABLE_OVERFLOW";
 
+    /// <summary>A slide that took another design lost its own background.</summary>
+    internal const string SlideBackgroundReset = "SLIDE_BACKGROUND_RESET";
+
     internal static IReadOnlyList<DiagnosticDescriptor> All { get; } =
     [
         Error(SlideNotFound),
@@ -26,6 +29,7 @@ internal static class SlidesDiagnostics
         Error(LayoutNotFound),
         DiagnosticDescriptor.Warning(ChartTitleOverlaid, "slides", "warning"),
         DiagnosticDescriptor.Warning(TableOverflow, "slides", "warning"),
+        DiagnosticDescriptor.Warning(SlideBackgroundReset, "slides", "warning"),
     ];
 
     private static ErrorCode Validation(string code) =>

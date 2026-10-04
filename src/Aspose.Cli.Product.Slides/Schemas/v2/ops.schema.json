@@ -193,7 +193,7 @@
           "pattern": "\\S"
         },
         "masterPolicy": {
-          "description": "Whether appended slides keep their own masters or take the destination's first master.",
+          "description": "Whether appended slides keep their own masters, or take the destination's first master and show its layouts' backgrounds instead of their own.",
           "type": "string",
           "enum": [
             "keep-source",
@@ -204,7 +204,7 @@
       }
     },
     "apply_layout": {
-      "description": "Applies a layout to slides.",
+      "description": "Applies a layout to slides, which drop their own background to show the layout's.",
       "type": "object",
       "required": [
         "op",

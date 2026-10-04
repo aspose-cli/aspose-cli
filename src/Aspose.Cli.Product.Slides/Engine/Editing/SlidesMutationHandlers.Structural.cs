@@ -85,7 +85,34 @@ internal sealed partial class SlidesMutationHandlers
             _touched.Add(slide.SlideId);
         }
 
+        FollowLayoutBackgrounds(Slides);
         return Slides.Count;
+    }
+
+    /// <summary>
+    /// Drops the slides' own backgrounds, which were chosen for their previous design, so they
+    /// show the backgrounds of the layouts they now follow, and names the slides that had one.
+    /// </summary>
+    private void FollowLayoutBackgrounds(IReadOnlyList<ISlide> slides)
+    {
+        int[] reset = [.. slides.Where(static slide => slide.Background.Type == BackgroundType.OwnBackground)
+            .Select(slide => _presentation.Slides.IndexOf(slide) + 1)];
+        foreach (ISlide slide in slides)
+        {
+            slide.Background.Type = BackgroundType.NotDefined;
+        }
+
+        if (reset.Length > 0)
+        {
+            string numbers = string.Join(", ", reset);
+            _warnings.Add(new Warning
+            {
+                Code = SlidesDiagnostics.SlideBackgroundReset,
+                Message = $"The own background of slide(s) {numbers} was removed, so they show their layout's background.",
+                Hint = "To keep a background, set it again with set_background after this operation, then review the slides.",
+                Location = (reset.Length == 1 ? "slide " : "slides ") + numbers,
+            });
+        }
     }
 
     public long Apply(SetBackgroundOp operation)
@@ -132,17 +159,22 @@ internal sealed partial class SlidesMutationHandlers
     public long Apply(AppendPresentationOp operation)
     {
         using LoadedPresentation source = _loader.Open(operation.Path, password: null);
-        long count = 0;
+        var clones = new List<ISlide>();
         foreach (ISlide slide in source.Presentation.Slides)
         {
             ISlide clone = operation.MasterPolicy == SlidesMasterPolicies.KeepSource
                 ? _presentation.Slides.AddClone(slide)
                 : _presentation.Slides.AddClone(slide, _presentation.Masters[0], allowCloneMissingLayout: true);
             _touched.Add(clone.SlideId);
-            count++;
+            clones.Add(clone);
         }
 
-        return count;
+        if (operation.MasterPolicy != SlidesMasterPolicies.KeepSource)
+        {
+            FollowLayoutBackgrounds(clones);
+        }
+
+        return clones.Count;
     }
 
     public long Apply(SetTitleOp operation)

@@ -182,7 +182,7 @@ public sealed record SetSlideHiddenOp : SlidesOp
     public required bool Hidden { get; init; }
 }
 
-/// <summary>Applies a layout to slides.</summary>
+/// <summary>Applies a layout to slides, which drop their own background to show the layout's.</summary>
 [Operation("apply_layout")]
 public sealed record ApplyLayoutOp : SlidesOp
 {
@@ -223,7 +223,10 @@ public sealed record AppendPresentationOp : SlidesOp
     /// <summary>The source presentation, relative to the working directory.</summary>
     [InputPath] public required string Path { get; init; }
 
-    /// <summary>Whether appended slides keep their own masters or take the destination's first master.</summary>
+    /// <summary>
+    /// Whether appended slides keep their own masters, or take the destination's first master
+    /// and show its layouts' backgrounds instead of their own.
+    /// </summary>
     [AllowedValues(typeof(SlidesMasterPolicies))] public string MasterPolicy { get; init; } = SlidesMasterPolicies.KeepSource;
 }
 

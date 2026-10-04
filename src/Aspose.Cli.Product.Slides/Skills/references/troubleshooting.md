@@ -16,5 +16,8 @@ The error envelope, exit codes, not-found details and general diagnosis are shar
   link it by relative path, then review the incomplete rendering.
 - A template-based deck looks wrong: check which masters and layouts were kept and whether
   `append_presentation` used `keep-source` or `use-dest` as its `masterPolicy`.
+  `use-dest` and `apply_layout` replace a slide's own background with its layout's, and a
+  `SLIDE_BACKGROUND_RESET` warning names the slides that had one; a later `set_background`
+  sets one again.
 - Rendering fails: run `aspose-cli fonts check deck.pptx --output json`, render fewer slides,
   and look for malformed embedded media.

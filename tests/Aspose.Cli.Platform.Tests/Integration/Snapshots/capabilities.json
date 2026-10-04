@@ -4748,7 +4748,7 @@
           "command": "edit",
           "inputSchema": "v2/slides/ops",
           "operationSchema": "aspose-cli schema v2/slides/ops --operation <op>",
-          "contractFingerprint": "sha256:a84109141395a67051022537ff146d19b505acbfb73879232338ce8a69950ad1",
+          "contractFingerprint": "sha256:5f99397aa5f04c17505e6d6685f69db4ac69e9eae5ddf228caa56497bbff5a3e",
           "maximumOperationCount": 256,
           "ops": [
             "add_section",
@@ -19393,6 +19393,15 @@
       "category": "input",
       "messageTemplateId": "pdf.sign-cert-invalid.message.v1",
       "hintTemplateId": "pdf.sign-cert-invalid.hint.v1",
+      "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "SLIDE_BACKGROUND_RESET",
+      "owner": "slides",
+      "severity": "warning",
+      "category": "warning",
+      "messageTemplateId": "slides.slide-background-reset.message.v1",
+      "hintTemplateId": "slides.slide-background-reset.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
     },
     {
