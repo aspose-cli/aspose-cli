@@ -50,8 +50,10 @@ aspose-cli schema v2/words/ops --operation insert_table
 
 ## Text
 
-- `set_text` replaces the inline content of paragraphs and keeps their style;
-  use `set_table_cell` for table cells. With `"at": {"bookmark": "Name"}`, or
+- `set_text` replaces the inline content of paragraphs and keeps their style
+  and paragraph format; as typing over it in Word does, the new text takes the
+  font of the first text it replaces. Use `set_table_cell` for table cells.
+  With `"at": {"bookmark": "Name"}`, or
   `--set bookmark:Name=text`, it replaces only the text the bookmark encloses,
   anywhere including table cells: the bookmark and the rest of its paragraph
   remain, the new text takes the format of the bookmark's first run, and a

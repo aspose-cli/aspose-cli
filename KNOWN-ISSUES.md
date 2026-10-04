@@ -403,7 +403,7 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 
 - **Defect:** while `Document.StartTrackRevisions` is on, setting `Run.Text` on a run that is not
   in the document tree, such as a copy from `Node.Clone`, throws `NullReferenceException`.
-- **CLI behavior:** none visible; `insert_paragraphs` sets the text of the run it copies from the
-  paragraph before the insertion point with tracking paused, and the run's insertion is then
-  tracked as usual.
+- **CLI behavior:** none visible; `insert_paragraphs` and `set_text` set the text of the run they
+  copy, from the paragraph before the insertion point or from the replaced text, with tracking
+  paused, and the run's insertion is then tracked as usual.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)

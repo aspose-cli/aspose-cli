@@ -125,10 +125,14 @@ internal sealed partial class WordsMutationHandlers
             throw Invalid("set_text accepts paragraph blocks only; use set_table_cell for tables");
         }
 
+        // As typing over a paragraph's text in Word does, the new text takes the font of the
+        // first text it replaces; the paragraph keeps its format.
         foreach (Paragraph paragraph in Nodes.Cast<Paragraph>())
         {
+            Run? first = WordsText.VisibleRuns(paragraph, fieldResults: false).FirstOrDefault(static run => !string.IsNullOrWhiteSpace(run.Text));
+            Run run = first is null || IsRevised(first) ? new Run(_document, operation.Text) : TextLike(first, operation.Text);
             paragraph.RemoveAllChildren();
-            paragraph.AppendChild(new Run(_document, operation.Text));
+            paragraph.AppendChild(run);
         }
 
         return Nodes.Count;
@@ -200,25 +204,33 @@ internal sealed partial class WordsMutationHandlers
                 if (WordsText.VisibleRuns(before, fieldResults: false).LastOrDefault(static candidate => !string.IsNullOrWhiteSpace(candidate.Text)) is { } last
                     && !IsRevised(last))
                 {
-                    run = (Run)last.Clone(false);
-                    // The copy is detached, and setting its text while revisions are tracked
-                    // fails (WORDS-TRACKED-DETACHED-TEXT); its insertion is tracked instead.
-                    _tracking?.Stop();
-                    try
-                    {
-                        run.Text = text;
-                        run.Font.StyleIdentifier = StyleIdentifier.DefaultParagraphFont;
-                    }
-                    finally
-                    {
-                        _tracking?.Start();
-                    }
+                    run = TextLike(last, text);
+                    run.Font.StyleIdentifier = StyleIdentifier.DefaultParagraphFont;
                 }
             }
         }
 
         paragraph.AppendChild(run);
         return paragraph;
+    }
+
+    /// <summary>A detached run of <paramref name="text"/> in the format of <paramref name="format"/>.</summary>
+    private Run TextLike(Run format, string text)
+    {
+        var run = (Run)format.Clone(false);
+        // The copy is detached, and setting its text while revisions are tracked fails
+        // (WORDS-TRACKED-DETACHED-TEXT); its insertion is tracked instead.
+        _tracking?.Stop();
+        try
+        {
+            run.Text = text;
+        }
+        finally
+        {
+            _tracking?.Start();
+        }
+
+        return run;
     }
 
     private static bool IsRevised(Paragraph paragraph) =>
