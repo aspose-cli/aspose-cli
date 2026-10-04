@@ -71,10 +71,13 @@ aspose-cli capabilities --output json
 - `FILE_LOCKED`: another application holds the file exclusively. Ask the user
   to close it and retry the same command; nothing was written.
 - `FILE_ACCESS_DENIED`: the process may not read the file.
-- `FILE_CORRUPT`: the content is not a readable document of that type.
-  Renaming a file does not change its format. When the content looks like a
-  format another product reads, `details.detected` names that product and the
-  hint names its command; use it, or give the file its real extension.
+- `FILE_CORRUPT`: the content is not a readable document of that type, nor one
+  another product reads. Renaming a file does not change its format. A legacy
+  binary file (`.doc`, `.xls`, `.ppt`) and an encrypted Office Open XML file
+  share one container signature, so a legacy file renamed to `.docx`, `.xlsx`
+  or `.pptx` reaches that extension's product and fails there, with
+  `FILE_CORRUPT` or with `FORMAT_MISMATCH` naming the products that signature
+  could belong to.
 - `FILE_TOO_LARGE`, `INPUT_BUDGET_EXCEEDED`: the input exceeds a resource
   budget; `--max-input-bytes` raises the size limit up to its hard maximum.
 - `INPUT_CHANGED`: the file no longer matches `--if-match` or `ifMatch`, or
@@ -114,10 +117,13 @@ aspose-cli capabilities --output json
 
 - `FORMAT_UNSUPPORTED`: `capabilities` lists the formats each product loads,
   converts and renders.
-- `FORMAT_MISMATCH`: the extension disagrees with the content; check the real
-  file type. `details.detected` names the product the content looks like:
-  rename the file, or pass `--product <id>` to `review` or `preview`, which
-  then lets that engine read it.
+- `FORMAT_MISMATCH`: the extension disagrees with the content, such as a Word
+  document renamed to `.pdf`; check the real file type. `details.path` names the
+  file and `details.detected` the product the content looks like, whose command
+  a product command's hint names: use it, rename the file, or pass
+  `--product <id>` to `review` or `preview`, which then lets that engine read it.
+  A damaged file of a format the command reads, such as a PDF given to
+  `words convert`, stays `FILE_CORRUPT`.
 - `FORMAT_AMBIGUOUS`: the input can be read more than one way. Several products
   recognize it (pass `--product`), or a text input's numbers depend on its
   culture (the hint names the option that reads it).

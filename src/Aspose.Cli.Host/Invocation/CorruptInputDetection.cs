@@ -11,9 +11,12 @@ namespace Aspose.Cli.Host.Invocation;
 
 /// <summary>
 /// Explains a <c>FILE_CORRUPT</c> from a product command: when the file's content looks like a
-/// format another product reads, such as a Word document renamed to <c>.pdf</c>, the error names
-/// that product in <c>details.detected</c> and its hint points to that product's command. The
-/// product's own message stays; content no product recognizes leaves the error unchanged.
+/// format another product reads, such as a Word document renamed to <c>.pdf</c>, the error becomes
+/// the <c>FORMAT_MISMATCH</c> that generic routing reports for the same file, names that product in
+/// <c>details.detected</c>, and its hint points to that product's command. The product's own
+/// message stays; content no product recognizes, or in a format this product reads, leaves the
+/// error unchanged. A command with several inputs is explained only when the product names the
+/// failing file in <c>details.path</c>.
 /// </summary>
 internal static class CorruptInputDetection
 {
@@ -37,11 +40,14 @@ internal static class CorruptInputDetection
             return exception;
         }
 
+        // A format this product reads, such as a damaged PDF given to 'words convert', is the
+        // product's own corrupt input, not a renamed file.
+        ProductDefinition product = catalog.Get(productId);
         FileDetection[] detected;
         try
         {
             detected = new ProductFileRouter(catalog).DetectAsync(path).AsTask().GetAwaiter().GetResult()
-                .Where(detection => detection.ProductId != productId)
+                .Where(detection => detection.ProductId != productId && !Reads(product, detection.FormatId))
                 .ToArray();
         }
         catch (Exception probe) when (probe is not OutOfMemoryException)
@@ -56,15 +62,21 @@ internal static class CorruptInputDetection
 
         JsonObject details = error.Details?.DeepClone().AsObject() ?? [];
         details["path"] ??= path;
+        details["declared"] = productId;
         details["detected"] = new JsonArray(detected.Select(static item => JsonValue.Create(item.ProductId)).ToArray());
         return new CliException(
-            error.Code,
+            ErrorCodes.FormatMismatch,
             error.Message,
             hint: Hint(detected, productCommand!, parseResult.CommandResult, path),
             details: details,
             docs: error.Docs,
             innerException: error.InnerException);
     }
+
+    private static bool Reads(ProductDefinition product, string? formatId) =>
+        formatId is not null
+        && product.Formats.Any(format => format.Uses.HasFlag(FormatUse.Input)
+            && string.Equals(format.Id, formatId, StringComparison.Ordinal));
 
     private static string Hint(
         IReadOnlyList<FileDetection> detected,
