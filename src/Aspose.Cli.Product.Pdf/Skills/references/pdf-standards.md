@@ -29,9 +29,13 @@ changes, which `pdf validate` on the original lists. With `--pages`, bookmarks
 and links to pages left out lose their target, counted by `NAVIGATION_DEGRADED`.
 Compare the candidate with the original (`pdf inspect --detail outline
 attachments`, and its pages) before delivery.
-When the engine cannot make the document
-conform at all, the command fails with `PDFA_CONVERSION_FAILED`, writes no
-output and lists what it could not fix in `error.details.problems`. PDF/A must
+The command validates the file it converted. When the engine cannot make the
+document conform, or the converted file does not validate, the command fails
+with `PDFA_CONVERSION_FAILED`, writes no output and lists what it could not fix
+in `error.details.problems`. Button fields the conversion leaves with
+appearances the profile rejects, such as the radio groups of a form made with
+`pdf create --from-html`, are named in `error.hint`: flatten them with a
+`flatten_forms` edit, which ends their fillability, then convert again. PDF/A must
 embed every font, so a font missing here fails the conversion; pass the
 delivered fonts with `--font-dir`. `pdf validate` checks only the selected
 profile, not signatures, redaction or permissions. Each `issues` entry reads

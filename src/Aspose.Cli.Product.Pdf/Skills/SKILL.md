@@ -35,8 +35,8 @@ top-left origin against the visible, rotated page box.
    check that has to read a later page fails with `EVALUATION_LIMIT` and
    publishes nothing.
 
-4. Convert to PDF/A, then validate the result separately; conversion success
-   does not imply conformance ([standards](references/pdf-standards.md)).
+4. Convert to PDF/A, then validate the file you deliver; a later edit can break
+   the conformance the conversion checked ([standards](references/pdf-standards.md)).
 5. Sign only the final, verified file with `pdf sign`
    ([forms and security](references/forms-security.md)).
 6. Verify before delivery ([verification](references/verification.md)).

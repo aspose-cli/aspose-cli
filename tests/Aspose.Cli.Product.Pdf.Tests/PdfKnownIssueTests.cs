@@ -278,6 +278,36 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void PdfaConversion_KeepsTheRadioGroupAppearanceOfAnHtmlImport()
+    {
+        using var fixture = new PdfEngineFixture();
+        string html = fixture.File("radio.html");
+        File.WriteAllText(html, """
+            <html><body><form>
+            <input type="radio" name="kind" value="maker"/> Maker <input type="radio" name="kind" value="seller"/> Seller
+            </form></body></html>
+            """);
+        string archive = fixture.File("radio.pdfa.pdf");
+        bool converted;
+        using (var document = new Document(html, new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar)))
+        {
+            using var log = new MemoryStream();
+            converted = document.Convert(log, PdfFormat.PDF_A_2B, ConvertErrorAction.Delete);
+            document.Save(archive);
+        }
+
+        using var reopened = new Document(archive);
+        using var validation = new MemoryStream();
+        bool valid = reopened.Validate(validation, PdfFormat.PDF_A_2B);
+        string problems = Encoding.UTF8.GetString(validation.ToArray());
+
+        KnownIssue.Reproduces(
+            "PDF-PDFA-RADIO-APPEARANCE",
+            converted && !valid && problems.Contains("Clause=\"6.3.3\"", StringComparison.Ordinal),
+            $"the conversion returned {converted} and validation of the saved file returned {valid}");
+    }
+
+    [LicensedFact]
     public void TextSearch_ReadsAGapBetweenRunsAsASpace()
     {
         using var fixture = new PdfEngineFixture();

@@ -74,6 +74,40 @@ public sealed class PdfConformanceTests
         Assert.True(File.Exists(Assert.Single(result.Outputs).Path));
     }
 
+    [Fact]
+    public void APdfaConversionWhoseOutputDoesNotValidate_NamesTheButtonFieldsAndIsNotPublished()
+    {
+        using var fixture = new PdfEngineFixture();
+        string html = fixture.File("form.html");
+        File.WriteAllText(html, """
+            <html><body><form>
+            <input type="text" name="company"/>
+            <input type="radio" name="kind" value="maker"/> Maker <input type="radio" name="kind" value="seller"/> Seller
+            </form></body></html>
+            """);
+        string form = fixture.Engine.Create(new NewPdfRequest { HtmlPath = html, OutputPath = fixture.File("form.pdf") }).Output.Path;
+        string output = fixture.File("form.pdfa.pdf");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.Convert(form, new PdfConvertRequest
+        {
+            TargetFormatId = "pdfa-2b",
+            OutputPath = output,
+        }));
+
+        Assert.Equal("PDFA_CONVERSION_FAILED", error.Code.Name);
+        Assert.Contains("6.3.3", Assert.Single(error.Details!["problems"]!.AsArray())!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("'radio'", error.Hint, StringComparison.Ordinal);
+        Assert.DoesNotContain("'company'", error.Hint, StringComparison.Ordinal);
+        Assert.Contains("flatten_forms", error.Hint, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+
+        // The remedy the hint names makes the conversion conform.
+        string flattened = fixture.File("form.flat.pdf");
+        fixture.Engine.ApplyOps(form, new PdfOpsBatch { Ops = [new FlattenFormsOp()] }, new PdfEditRequest { OutputPath = flattened });
+        fixture.Engine.Convert(flattened, new PdfConvertRequest { TargetFormatId = "pdfa-2b", OutputPath = output });
+        Assert.True(fixture.Engine.Validate(output, new PdfValidateRequest { Profile = "pdfa-2b" }).Valid);
+    }
+
     [Theory]
     [InlineData("pdfa-1b")]
     [InlineData("pdfa-2b")]

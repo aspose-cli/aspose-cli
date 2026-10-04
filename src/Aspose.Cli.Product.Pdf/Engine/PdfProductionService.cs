@@ -754,6 +754,10 @@ internal sealed class PdfProductionService
             }
 
             document.Save(temp);
+            using LoadedPdf saved = _loader.OpenPublishedCandidate(temp, password: null);
+            using var validation = new MemoryStream();
+            PdfComplianceLog.EnsureConformant(
+                saved.Document.Validate(validation, format), validation, profile, page => ButtonFields(saved.Document, page));
         });
 
         foreach (string removed in attachments.Except(AttachmentNames(document), StringComparer.Ordinal))
@@ -798,6 +802,15 @@ internal sealed class PdfProductionService
 
         return BuildOutput(request.OutputPath, profile, size);
     }
+
+    /// <summary>
+    /// The full names of the check boxes and radio groups on a page; the form lists a radio
+    /// group as its buttons.
+    /// </summary>
+    private static IEnumerable<string> ButtonFields(Document document, int page) => document.Form.Fields
+        .Where(field => field is (Aspose.Pdf.Forms.CheckboxField or Aspose.Pdf.Forms.RadioButtonField or Aspose.Pdf.Forms.RadioButtonOptionField)
+            && field.PageIndex == page)
+        .Select(static field => field.FullName);
 
     /// <summary>
     /// The conversion labels every attachment that had no media type <c>application/pdf</c>

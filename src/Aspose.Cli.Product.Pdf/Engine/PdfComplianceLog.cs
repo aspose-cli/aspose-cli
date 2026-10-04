@@ -40,17 +40,50 @@ internal static class PdfComplianceLog
         }
 
         PdfComplianceProblem[] remaining = Parse(log).Where(static problem => !problem.Convertible).ToArray();
-        throw new CliException(
-            PdfDiagnostics.PdfaConversionFailed,
-            $"The document could not be converted to {profile}: {remaining.Length} problem(s) cannot be fixed automatically"
-                + (remaining.Length > 0 ? $"; first: {remaining[0]}" : "."),
-            hint: "Fix the reported problems in the source (for example embed its fonts or remove its encryption), or convert to plain PDF.",
-            details: new JsonObject
-            {
-                ["profile"] = profile,
-                ["problems"] = new JsonArray(remaining.Take(20).Select(static problem => (JsonNode?)problem.ToString()).ToArray()),
-            });
+        throw Failed(
+            profile,
+            remaining,
+            $"{remaining.Length} problem(s) cannot be fixed automatically",
+            "Fix the reported problems in the source (for example embed its fonts or remove its encryption), or convert to plain PDF.");
     }
+
+    /// <summary>
+    /// Rejects a converted document that validation of its saved file finds not conforming,
+    /// although the conversion reported success (known issue PDF-PDFA-RADIO-APPEARANCE in
+    /// KNOWN-ISSUES.md). Annotation appearance problems (clause 6.3.3) name the button fields on
+    /// their pages, which flattening the form removes.
+    /// </summary>
+    internal static void EnsureConformant(bool valid, MemoryStream log, string profile, Func<int, IEnumerable<string>> buttonFieldsOnPage)
+    {
+        if (valid)
+        {
+            return;
+        }
+
+        PdfComplianceProblem[] problems = [.. Parse(log)];
+        string[] fields = [.. problems
+            .Where(static problem => problem.Clause == "6.3.3" && problem.Page is not null)
+            .SelectMany(problem => buttonFieldsOnPage(problem.Page!.Value))
+            .Distinct(StringComparer.Ordinal)
+            .Select(static name => $"'{name}'")];
+        throw Failed(
+            profile,
+            problems,
+            $"the converted file still has {problems.Length} problem(s) the conversion did not fix",
+            fields.Length > 0
+                ? $"The pages with appearance problems hold the button fields {string.Join(", ", fields)}. Flatten them first, with a 'pdf edit' batch of flatten_forms (the fields stop being fillable), then convert again."
+                : "Fix the reported problems in the source, or convert to plain PDF.");
+    }
+
+    private static CliException Failed(string profile, IReadOnlyList<PdfComplianceProblem> problems, string cause, string hint) => new(
+        PdfDiagnostics.PdfaConversionFailed,
+        $"The document could not be converted to {profile}: {cause}" + (problems.Count > 0 ? $"; first: {problems[0]}" : "."),
+        hint: hint,
+        details: new JsonObject
+        {
+            ["profile"] = profile,
+            ["problems"] = new JsonArray(problems.Take(20).Select(static problem => (JsonNode?)problem.ToString()).ToArray()),
+        });
 
     internal static IReadOnlyList<PdfComplianceProblem> Parse(MemoryStream log)
     {
