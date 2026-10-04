@@ -32,7 +32,7 @@ internal static class CellsDiagnostics
     internal const string EvaluationSheetAdded = "EVALUATION_SHEET_ADDED";
     /// <summary>The input's active sheet is an evaluation warning sheet, so defaults use another sheet.</summary>
     internal const string EvaluationSheetSkipped = "EVALUATION_SHEET_SKIPPED";
-    /// <summary>An evaluation save wrote its notice into a data output as content.</summary>
+    /// <summary>An evaluation output carries the evaluation notice as content: a data row, or warning sheets as pages.</summary>
     internal const string EvaluationNoticeAdded = "EVALUATION_NOTICE_ADDED";
 
     /// <summary>A delimited text input has a preamble before its header, empty rows or a total row.</summary>

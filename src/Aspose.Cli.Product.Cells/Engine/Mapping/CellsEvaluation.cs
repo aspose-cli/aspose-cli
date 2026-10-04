@@ -97,6 +97,32 @@ internal static partial class CellsEvaluation
         };
     }
 
+    /// <summary>
+    /// Discloses the visible evaluation warning sheets that earlier evaluation saves added to the
+    /// workbook, which a whole-workbook pdf, xps, html or mhtml export carries as pages of the
+    /// notice; null for any other export, a single-sheet export and a licensed engine.
+    /// </summary>
+    internal static Warning? DescribeExportedWarningSheets(Workbook workbook, string formatId, int? selectedSheet)
+    {
+        if (workbook.IsLicensed || selectedSheet is not null || formatId is not ("pdf" or "xps" or "html" or "mhtml"))
+        {
+            return null;
+        }
+
+        string[] sheets = workbook.Worksheets.Cast<Worksheet>()
+            .Where(static sheet => sheet.IsVisible && IsWarningSheet(sheet))
+            .Select(static sheet => sheet.Name).ToArray();
+        return sheets.Length == 0 ? null : new Warning
+        {
+            Code = CellsDiagnostics.EvaluationNoticeAdded,
+            Message = $"The {formatId} output includes the evaluation warning sheet(s) '{string.Join("', '", sheets)}' that earlier "
+                + $"evaluation saves added to the input: extra pages (or html tabs) that hold only the notice '{Notice}...', not workbook content.",
+            Hint = "Tell the user. Export the content sheets one at a time with --sheet, or produce the input and the export with a license.",
+            Docs = "cells/troubleshooting",
+            Location = sheets.Length == 1 ? sheets[0] : null,
+        };
+    }
+
     private static bool IsWarningSheet(Worksheet sheet)
     {
         if (sheet.Type != SheetType.Worksheet || !WarningSheetName().IsMatch(sheet.Name))

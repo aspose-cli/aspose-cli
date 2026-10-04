@@ -368,6 +368,11 @@ public sealed class CellsCliTests : IDisposable
         _ = Warning(csv, "EVAL_MODE");
         AssertNoSkippedSheet(pdf);
         Assert.True(new FileInfo(_workspace.File("book.pdf")).Length > 0);
+        // The warning sheets earlier saves added print as pages of a whole-workbook PDF.
+        Assert.Contains("'Evaluation Warning', 'Evaluation Warning (1)'",
+            Warning(pdf, "EVALUATION_NOTICE_ADDED")["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain(chosenPdf["warnings"]!.AsArray(),
+            static warning => warning!["code"]!.GetValue<string>() == "EVALUATION_NOTICE_ADDED");
         Assert.Equal("Two", chosen["sheet"]!["name"]!.GetValue<string>());
         Assert.Equal("two", chosen["sheet"]!["cells"]![0]![0]!["v"]!.GetValue<string>());
         AssertNoSkippedSheet(chosen);

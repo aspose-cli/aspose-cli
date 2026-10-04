@@ -111,6 +111,8 @@ internal sealed class CellsProductionService
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, request.OutputPath, licenseState,
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet, request.ByteOrderMark);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
+        // Read before the save, which may add a warning sheet of its own (EVALUATION_SHEET_ADDED).
+        Warning? exportedWarningSheets = CellsEvaluation.DescribeExportedWarningSheets(workbook, request.TargetFormatId, selectedSheet);
         Warning? evaluationSheetAdded = null;
         long sizeBytes = _saver.Write(request.OutputPath, request.Overwrite,
             path => evaluationSheetAdded = _saver.Produce(workbook, savePlan, path));
@@ -134,7 +136,7 @@ internal sealed class CellsProductionService
             // formats write every sheet.
             Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
                 loaded.SkippedSheetWarning(request.SheetName is null && request.TargetFormatId is "csv" or "tsv" or "md"), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, chartsSplit,
-                CellsEvaluation.DescribeAddedNotice(licenseState, request.TargetFormatId), .. textLayout]),
+                CellsEvaluation.DescribeAddedNotice(licenseState, request.TargetFormatId), exportedWarningSheets, .. textLayout]),
         };
     }
 

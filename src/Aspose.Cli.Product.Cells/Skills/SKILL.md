@@ -135,8 +135,8 @@ sheet (`EVALUATION_SHEET_ADDED`); commands that default to the active sheet
 then use the first other sheet (`EVALUATION_SHEET_SKIPPED`). CSV, TSV and
 Markdown export only the first worksheet (`SHEETS_DROPPED` names it;
 `--sheet` naming another one is `EVALUATION_LIMIT`), and CSV, TSV, Markdown
-and JSON output gain the evaluation notice as content
-(`EVALUATION_NOTICE_ADDED`). Effects and fixes: `aspose-cli docs cells/troubleshooting`.
+and JSON output gain the evaluation notice as content, and a whole-workbook
+PDF prints the warning sheets as extra pages (`EVALUATION_NOTICE_ADDED`). Effects and fixes: `aspose-cli docs cells/troubleshooting`.
 
 ## Pitfalls
 

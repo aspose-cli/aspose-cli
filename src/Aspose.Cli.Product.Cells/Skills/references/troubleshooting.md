@@ -36,7 +36,7 @@ to workbooks.
 | `CHART_SPLIT_ACROSS_PAGES` | A PDF conversion printed a chart across two or more pages; the message names each chart and its page count. Fit the sheet with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation` landscape), or move or resize the chart, and convert again. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
 | `EVALUATION_SHEET_ADDED` | An evaluation save added the warning sheet `location` names and made it the active sheet in place of the one the message names; see below. |
-| `EVALUATION_NOTICE_ADDED` | An evaluation save wrote its notice into a CSV, TSV, Markdown or JSON output as content (a last row, a heading, records and warning sheets); it is not data. See below. |
+| `EVALUATION_NOTICE_ADDED` | An evaluation save wrote its notice into a CSV, TSV, Markdown or JSON output as content (a last row, a heading, records and warning sheets), or a PDF, XPS, HTML or MHTML export printed the input's warning sheets as extra pages; it is not data. See below. |
 | `EVALUATION_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
 | `PROTECTION_NOT_ENFORCED` | The edit changed a protected sheet (`location` names it when there is one) or the protected workbook structure; protection guides Excel only, so the edit went through it. Confirm the change is authorized. |
 | `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes, rows that hold at most one value each (`1:2`: the header is the row after them), empty rows lie inside the table, or a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`). The rows are imported as they are; see below. |
@@ -87,6 +87,11 @@ gains an "Evaluation Warning" sheet plus watermark content. Disclose it
   row after the data, Markdown a closing `# Evaluation Only. ...` heading, and
   JSON a `{"watermark": ...}` record after the records of each sheet with data
   rows, plus the warning sheets. Remove it before anything reads the output as data.
+- A whole-workbook PDF, XPS, HTML or MHTML export prints the warning sheets an
+  earlier evaluation save added as extra pages that hold only the notice, and
+  warns `EVALUATION_NOTICE_ADDED` with their names; `review` then reports
+  findings on those pages. Export the content sheets with `--sheet` (PDF), or
+  rebuild the workbook and the export with a license.
 - CSV, TSV and Markdown export only the first worksheet. Without `--sheet` the
   first sheet is written even when another one is active, and
   `SHEETS_DROPPED` names it; `--sheet` naming another sheet fails with
