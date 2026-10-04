@@ -29,7 +29,7 @@ internal static class CellsContractSamples
 
     public static WorkbookInfoResult WorkbookInfo { get; } = new()
     {
-        Source = new SourceInfo { Path = "D:/data/report.xlsx", Format = "xlsx", SizeBytes = 24576, Fingerprint = Fingerprint },
+        Source = new SourceInfo { Path = "D:/data/report.xlsx", Format = "xlsx", SizeBytes = 24576, Fingerprint = Fingerprint, Encrypted = false },
         Workbook = new WorkbookSummary
         {
             Name = "report.xlsx",
@@ -338,7 +338,7 @@ internal static class CellsContractSamples
 
     public static CreateResult Create { get; } = new()
     {
-        Output = new OutputInfo { Path = "D:/data/created.xlsx", Format = "xlsx", SizeBytes = 6120, Fingerprint = Fingerprint },
+        Output = new OutputInfo { Path = "D:/data/created.xlsx", Format = "xlsx", SizeBytes = 6120, Fingerprint = Fingerprint, Encrypted = true },
         Sheets = ["Data", "Summary"],
         License = Evaluation,
         Warnings = [EvalWarning],
@@ -347,7 +347,7 @@ internal static class CellsContractSamples
     public static ConvertResult Convert { get; } = new()
     {
         Input = new SourceInfo { Path = "D:/data/report.xlsx", Format = "xlsx", SizeBytes = 24576, Fingerprint = Fingerprint },
-        Output = new OutputInfo { Path = "D:/data/report.pdf", Format = "pdf", SizeBytes = 68213 },
+        Output = new OutputInfo { Path = "D:/data/report.pdf", Format = "pdf", SizeBytes = 68213, Encrypted = false },
         Sheet = "Sales",
         License = Evaluation,
         Warnings = [EvalWarning],

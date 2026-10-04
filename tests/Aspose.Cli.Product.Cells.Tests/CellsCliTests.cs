@@ -416,6 +416,7 @@ public sealed class CellsCliTests : IDisposable
             "cells", "inspect", "secret.xlsx", "--output", "json");
 
         Assert.Equal(0, created.ExitCode);
+        Assert.True(JsonNode.Parse(created.StdOut)!["output"]!["encrypted"]!.GetValue<bool>());
         Assert.Equal(0, fromEnvironment.ExitCode);
         Assert.Equal(0, fromStdin.ExitCode);
         Assert.Equal(3, withoutPassword.ExitCode);
@@ -471,8 +472,10 @@ public sealed class CellsCliTests : IDisposable
             "cells", "convert", "sales.csv", "--to", "pdf", "--encrypt-env", "ASPOSE_CLI_TEST_UNSET", "--output", "json");
 
         Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.True(JsonNode.Parse(converted.StdOut)!["output"]!["encrypted"]!.GetValue<bool>());
         Assert.Equal("PASSWORD_REQUIRED", JsonNode.Parse(locked.StdErr)!["error"]!["code"]!.GetValue<string>());
         Assert.True(opened.ExitCode == 0, opened.StdErr);
+        Assert.True(JsonNode.Parse(opened.StdOut)!["source"]!["encrypted"]!.GetValue<bool>());
         JsonNode error = JsonNode.Parse(refused.StdErr)!["error"]!;
         Assert.Equal("OPTION_INVALID", error["code"]!.GetValue<string>());
         Assert.Equal("--encrypt-env", error["details"]!["option"]!.GetValue<string>());

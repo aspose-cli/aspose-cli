@@ -44,7 +44,8 @@
       "properties": {
         "path": { "type": "string" },
         "format": { "type": "string" },
-        "sizeBytes": { "type": "integer", "minimum": 0 }
+        "sizeBytes": { "type": "integer", "minimum": 0 },
+        "encrypted": { "type": "boolean", "description": "True when the output file is encrypted and opens only with its password." }
       }
     },
     "licenseInfo": {

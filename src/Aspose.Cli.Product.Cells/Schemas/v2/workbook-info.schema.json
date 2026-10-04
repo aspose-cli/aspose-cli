@@ -79,6 +79,7 @@
         "path": { "type": "string" },
         "format": { "type": "string" },
         "sizeBytes": { "type": "integer", "minimum": 0 },
+        "encrypted": { "type": "boolean", "description": "True when the file is encrypted and opens only with its password." },
         "fingerprint": { "$ref": "https://schemas.aspose.com/aspose-cli/v2/common/file-fingerprint.schema.json" }
       }
     },

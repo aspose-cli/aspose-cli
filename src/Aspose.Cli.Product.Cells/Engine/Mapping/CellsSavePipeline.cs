@@ -48,7 +48,7 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
             } : null);
         return new WorkbookStagedSave(candidate, plan.FormatId, truncated,
             BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped)
-        { EvaluationSheetAdded = evaluationSheetAdded };
+        { EvaluationSheetAdded = evaluationSheetAdded, Encrypted = plan.OutputPassword is not null };
     }
 
     /// <summary>
@@ -189,7 +189,10 @@ internal sealed record WorkbookStagedSave(StagedOutput Candidate, string Format,
     /// <summary>The evaluation warning sheet the save added and activated, if any.</summary>
     internal Warning? EvaluationSheetAdded { get; init; }
 
+    /// <summary>Whether the save encrypted the output with a password.</summary>
+    internal bool Encrypted { get; init; }
+
     internal OutputInfo Output => new()
-    { Path = Candidate.TargetPath, Format = Format, SizeBytes = Candidate.SizeBytes, Fingerprint = Candidate.Fingerprint };
+    { Path = Candidate.TargetPath, Format = Format, SizeBytes = Candidate.SizeBytes, Fingerprint = Candidate.Fingerprint, Encrypted = Encrypted };
     internal BackupInfo? Backup => Candidate.Backup;
 }

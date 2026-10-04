@@ -129,6 +129,7 @@ internal sealed class CellsProductionService
                 Path = request.OutputPath,
                 Format = request.TargetFormatId,
                 SizeBytes = sizeBytes,
+                Encrypted = savePlan.OutputPassword is not null,
             },
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),

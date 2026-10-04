@@ -13,7 +13,7 @@ internal static class CellsRenderers
         WorkbookSummary workbook = info.Workbook;
         surface.Out.WriteLine($"{workbook.Name} ({info.Source.Format}, {TableText.Bytes(info.Source.SizeBytes)})");
         surface.Out.WriteLine(
-            $"sheets: {workbook.SheetCount}   vba: {TableText.YesNo(workbook.HasVba)}   defined names: {workbook.DefinedNameCount}   structure protected: {TableText.YesNo(workbook.StructureProtected)}");
+            $"sheets: {workbook.SheetCount}   vba: {TableText.YesNo(workbook.HasVba)}   defined names: {workbook.DefinedNameCount}   encrypted: {TableText.YesNo(info.Source.Encrypted == true)}   structure protected: {TableText.YesNo(workbook.StructureProtected)}");
         surface.Out.WriteLine();
 
         var table = new TextTable("name", "position", "used range", "rows", "cols", "hidden", "protected", "charts", "pivots");

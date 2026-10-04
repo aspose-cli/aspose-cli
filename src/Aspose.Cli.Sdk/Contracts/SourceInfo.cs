@@ -14,4 +14,10 @@ public sealed record SourceInfo
 
     /// <summary>SHA-256 identity when the owning workflow captured one.</summary>
     public FileFingerprint? Fingerprint { get; init; }
+
+    /// <summary>
+    /// <c>true</c> when the file is encrypted and opens only with its password, <c>false</c>
+    /// when it is not; omitted when the owning workflow does not report it.
+    /// </summary>
+    public bool? Encrypted { get; init; }
 }
