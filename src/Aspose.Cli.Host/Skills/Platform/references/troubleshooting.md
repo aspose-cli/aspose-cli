@@ -125,7 +125,10 @@ aspose-cli capabilities --output json
   a product command's hint names: use it, rename the file, or pass
   `--product <id>` to `review` or `preview`, which then lets that engine read it.
   A damaged file of a format the command reads, such as a PDF given to
-  `words convert`, stays `FILE_CORRUPT`.
+  `words convert`, stays `FILE_CORRUPT`. A product command reads its input by
+  content, so a file of its own product under another extension, such as that
+  Word document given to `words convert`, opens without this error; the result's
+  `input.format` names the real format.
 - `FORMAT_AMBIGUOUS`: the input can be read more than one way. Several products
   recognize it (pass `--product`), or a text input's numbers depend on its
   culture (the hint names the option that reads it).
