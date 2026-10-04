@@ -6853,7 +6853,7 @@
           "command": "edit",
           "inputSchema": "v2/words/ops",
           "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-          "contractFingerprint": "sha256:7c4ea0b2ecc4022d98b4ae8e358338c1925c17cfc6d5703ea9d8f005361a0fce",
+          "contractFingerprint": "sha256:72e8c1fc5a3b10990e1678ac7442eb74766ef9b83ba15f958b6ffb43eb40a44e",
           "maximumOperationCount": 256,
           "ops": [
             "accept_revisions",
@@ -19402,6 +19402,16 @@
       "messageTemplateId": "words.revision-count-changed.message.v1",
       "hintTemplateId": "words.revision-count-changed.hint.v1",
       "detailsSchemaId": "v2/common/diagnostic-details"
+    },
+    {
+      "code": "REVISION_NOT_FOUND",
+      "owner": "words",
+      "severity": "error",
+      "exitCode": 4,
+      "category": "validation",
+      "messageTemplateId": "words.revision-not-found.message.v1",
+      "hintTemplateId": "words.revision-not-found.hint.v1",
+      "detailsSchemaId": "v2/common/not-found-details"
     },
     {
       "code": "ROWS_SHIFTED",

@@ -66,6 +66,7 @@ public sealed class WordsOpContractTests
     [InlineData("""{"op":"insert_hyperlink","at":{"block":1},"position":"after","text":"a","url":"mailto:team@example.com"}""")]
     [InlineData("""{"op":"format_table","at":{"find":"Agenda"},"keepTogether":true}""")]
     [InlineData("""{"op":"format_table","at":{"block":2},"headerRowCount":0,"allowRowBreakAcrossPages":true,"keepWithNext":false}""")]
+    [InlineData("""{"op":"accept_revisions","revisions":[2,1]}""")]
     public void ParserAndSchema_AcceptTheSameValidOperation(string operation)
     {
         string batch = $$"""{"ops":[{{operation}}]}""";
@@ -78,6 +79,8 @@ public sealed class WordsOpContractTests
     [Theory]
     [InlineData("""{"op":"insert_table","at":{"block":1},"position":"after","rowCount":1,"columnCount":2,"cells":[["a"],["b"]]}""", "more rows")]
     [InlineData("""{"op":"format_table","at":{"block":1},"keepTogether":true,"allowRowBreakAcrossPages":true}""", "cannot be combined")]
+    [InlineData("""{"op":"reject_revisions","author":"Ann","revisions":[1]}""", "cannot be combined")]
+    [InlineData("""{"op":"accept_revisions","revisions":[0]}""", "revisions")]
     public void Parser_RejectsRulesTheRecordsStateInTheirSummaries(string operation, string reason)
     {
         CliException error = Assert.Throws<CliException>(() => Parse($$"""{"ops":[{{operation}}]}"""));

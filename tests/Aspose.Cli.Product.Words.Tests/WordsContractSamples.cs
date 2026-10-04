@@ -56,8 +56,8 @@ internal static class WordsContractSamples
         Comments = [new CommentData { Author = "Reviewer", Text = "Check the figure.", Block = 2 }],
         Revisions =
         [
-            new RevisionData { Type = "deletion", Author = "Reviewer", Date = "2026-09-01T10:30:00", Block = 2, Text = "thirty" },
-            new RevisionData { Type = "insertion", Author = "Reviewer", Date = "2026-09-01T10:30:00", Block = 2, Text = "sixty" },
+            new RevisionData { Revision = 1, Type = "deletion", Author = "Reviewer", Date = "2026-09-01T10:30:00", Block = 2, Text = "thirty" },
+            new RevisionData { Revision = 2, Type = "insertion", Author = "Reviewer", Date = "2026-09-01T10:30:00", Block = 2, Text = "sixty" },
         ],
         Images = [new ImageData { Scope = "body", Block = 4, Name = "Picture 1", Width = 144, Height = 96 }],
         Tables = [new TableData { Block = 5, RowCount = 2, ColumnCount = 2, Style = "Table Grid" }],

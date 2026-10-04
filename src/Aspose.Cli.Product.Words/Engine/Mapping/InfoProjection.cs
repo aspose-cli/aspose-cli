@@ -164,27 +164,58 @@ internal static class InfoProjection
     /// </summary>
     private static IReadOnlyList<RevisionData> Revisions(Document document, DocumentBlockIndex index, List<Warning> warnings)
     {
-        Revision[] revisions = document.Revisions.Cast<Revision>().ToArray();
-        Dictionary<Revision, string?> moves = Moves(document, revisions);
-        var groups = new HashSet<RevisionGroup>(ReferenceEqualityComparer.Instance);
-        (Revision Revision, string? Text)[] changes = revisions
-            .Where(revision => revision.RevisionType == RevisionType.Moving
-                ? moves.ContainsKey(revision)
-                : revision.Group is not { } group || groups.Add(group))
-            .Select(revision => (revision, revision.RevisionType switch
-            {
-                RevisionType.Moving => moves[revision],
-                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text ?? NodeText(revision),
-                // Format changes carry a description of the formatting, not document text.
-                _ => null,
-            }))
-            .ToArray();
+        (RevisionChange Change, int Number)[] changes = [.. RevisionChanges(document).Select(static (change, at) => (change, at + 1))];
         return Capped(
             changes,
-            change => Entry(change.Revision, change.Text, index),
+            change => Entry(change.Change.First, change.Number, change.Change.Text, index),
             "revisions",
             "Split the document with 'words split --by section' and inspect each part with '--detail revisions'.",
             warnings);
+    }
+
+    /// <summary>
+    /// The logical changes of <paramref name="document"/> in document order, as inspect lists and
+    /// numbers them (see <see cref="Revisions"/>), each with every revision it consists of.
+    /// </summary>
+    internal static IReadOnlyList<RevisionChange> RevisionChanges(Document document)
+    {
+        Revision[] revisions = document.Revisions.Cast<Revision>().ToArray();
+        Dictionary<Revision, RevisionChange> moves = Moves(document, revisions);
+        var groups = new Dictionary<RevisionGroup, List<Revision>>(ReferenceEqualityComparer.Instance);
+        var changes = new List<RevisionChange>();
+        foreach (Revision revision in revisions)
+        {
+            if (revision.RevisionType == RevisionType.Moving)
+            {
+                if (moves.TryGetValue(revision, out RevisionChange? move))
+                {
+                    changes.Add(move);
+                }
+
+                continue;
+            }
+
+            if (revision.Group is { } group && groups.TryGetValue(group, out List<Revision>? grouped))
+            {
+                grouped.Add(revision);
+                continue;
+            }
+
+            List<Revision> members = [revision];
+            if (revision.Group is { } first)
+            {
+                groups[first] = members;
+            }
+
+            changes.Add(new RevisionChange(revision, revision.RevisionType switch
+            {
+                RevisionType.Insertion or RevisionType.Deletion => revision.Group?.Text ?? NodeText(revision),
+                // Format changes carry a description of the formatting, not document text.
+                _ => null,
+            }, members));
+        }
+
+        return changes;
     }
 
     /// <summary>
@@ -201,12 +232,12 @@ internal static class InfoProjection
     /// moved paragraph mark, in no <see cref="RevisionGroup"/>, and lists a paragraph mark before
     /// its paragraph's runs. Walking the paragraphs, each inline node and then the paragraph's
     /// mark, the nodes that follow one another with one direction, author and date are one move.
-    /// Returns the first revision of each move in <paramref name="revisions"/> order with the
-    /// move's text: its runs' text, with a paragraph break for each moved mark.
+    /// Returns each move by the first of its revisions in <paramref name="revisions"/> order,
+    /// with the move's text: its runs' text, with a paragraph break for each moved mark.
     /// </summary>
-    private static Dictionary<Revision, string?> Moves(Document document, Revision[] revisions)
+    private static Dictionary<Revision, RevisionChange> Moves(Document document, Revision[] revisions)
     {
-        var moves = new Dictionary<Revision, string?>(ReferenceEqualityComparer.Instance);
+        var moves = new Dictionary<Revision, RevisionChange>(ReferenceEqualityComparer.Instance);
         var byNode = new Dictionary<Node, Revision>(ReferenceEqualityComparer.Instance);
         var order = new Dictionary<Revision, int>(ReferenceEqualityComparer.Instance);
         for (int i = 0; i < revisions.Length; i++)
@@ -226,6 +257,7 @@ internal static class InfoProjection
         var walked = new HashSet<Revision>(ReferenceEqualityComparer.Instance);
         Revision? first = null;
         Revision? last = null;
+        var members = new List<Revision>();
         var text = new StringBuilder();
         foreach (Node node in MoveOrder(document))
         {
@@ -235,8 +267,9 @@ internal static class InfoProjection
                 && last.DateTime == revision.DateTime;
             if (!continues && first is not null)
             {
-                moves[first] = text.ToString();
+                moves[first] = new RevisionChange(first, text.ToString(), members);
                 first = last = null;
+                members = [];
                 text.Clear();
             }
 
@@ -246,6 +279,7 @@ internal static class InfoProjection
             }
 
             walked.Add(revision);
+            members.Add(revision);
             if (first is null || order[revision] < order[first])
             {
                 first = revision;
@@ -261,13 +295,13 @@ internal static class InfoProjection
 
         if (first is not null)
         {
-            moves[first] = text.ToString();
+            moves[first] = new RevisionChange(first, text.ToString(), members);
         }
 
         // A move revision on a node the walk does not reach, such as a table row, is listed on its own.
         foreach (Revision revision in byNode.Values.Where(revision => !walked.Contains(revision)))
         {
-            moves[revision] = revision.ParentNode.GetText();
+            moves[revision] = new RevisionChange(revision, revision.ParentNode.GetText(), [revision]);
         }
 
         return moves;
@@ -297,12 +331,13 @@ internal static class InfoProjection
         _ => null,
     };
 
-    private static RevisionData Entry(Revision revision, string? text, DocumentBlockIndex index)
+    private static RevisionData Entry(Revision revision, int number, string? text, DocumentBlockIndex index)
     {
         bool style = revision.RevisionType == RevisionType.StyleDefinitionChange;
         text = text is null ? null : WordsEngineSupport.Truncate(WordsText.Clean(text), RevisionTextLimit);
         return new RevisionData
         {
+            Revision = number,
             Type = RevisionTypeName(revision.RevisionType),
             Author = revision.Author,
             // The SDK reports a revision without a recorded date as DateTime.MinValue. Word records
@@ -388,5 +423,44 @@ internal static class InfoProjection
     {
         int level = (int)paragraph.ParagraphFormat.OutlineLevel;
         return level is >= 0 and <= 8 ? level + 1 : null;
+    }
+}
+
+/// <summary>
+/// One logical change as inspect lists it: the first of its revisions, the text it inserts,
+/// deletes or moves, and every revision it consists of.
+/// </summary>
+internal sealed record RevisionChange(Revision First, string? Text, IReadOnlyList<Revision> Members)
+{
+    /// <summary>Matches the revisions of <paramref name="changes"/>.</summary>
+    internal static IRevisionCriteria Criteria(IEnumerable<RevisionChange> changes) =>
+        new MemberCriteria(changes.SelectMany(static change => change.Members).Select(RevisionKey.Of).ToHashSet(RevisionKey.Comparer));
+
+    private sealed class MemberCriteria(HashSet<RevisionKey> keys) : IRevisionCriteria
+    {
+        public bool IsMatch(Revision revision) => keys.Contains(RevisionKey.Of(revision));
+    }
+}
+
+/// <summary>
+/// How a revision is known across reads. The SDK hands out new revision objects each time, so a
+/// revision is known by the node or style it changes and its type; two revisions that share
+/// both, such as a paragraph's format and its mark's character format, cannot be told apart.
+/// </summary>
+internal readonly record struct RevisionKey(object? Owner, RevisionType Type)
+{
+    internal static RevisionKey Of(Revision revision) =>
+        new((object?)revision.ParentNode ?? revision.ParentStyle, revision.RevisionType);
+
+    /// <summary>Compares owners by reference: nodes and styles have no value equality.</summary>
+    internal static IEqualityComparer<RevisionKey> Comparer { get; } = new ReferenceComparer();
+
+    private sealed class ReferenceComparer : IEqualityComparer<RevisionKey>
+    {
+        public bool Equals(RevisionKey left, RevisionKey right) =>
+            left.Type == right.Type && ReferenceEquals(left.Owner, right.Owner);
+
+        public int GetHashCode(RevisionKey key) =>
+            HashCode.Combine(System.Runtime.CompilerServices.RuntimeHelpers.GetHashCode(key.Owner), key.Type);
     }
 }

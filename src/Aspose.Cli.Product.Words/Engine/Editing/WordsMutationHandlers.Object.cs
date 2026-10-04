@@ -223,8 +223,37 @@ internal sealed partial class WordsMutationHandlers
 
     public long Apply(RejectRevisionsOp operation) => ChangeRevisions(operation.Author, accept: false);
 
+    /// <summary>
+    /// Accepts or rejects the numbered changes the batch resolved, one author's revisions or
+    /// every revision, and counts the revisions the document stores that it decided. Numbered
+    /// changes are checked first: when an earlier decision in the batch took some of their
+    /// revisions, the operation is refused before it changes anything.
+    /// </summary>
     private long ChangeRevisions(string? author, bool accept)
     {
+        if (_resolved.Revisions is { } changes)
+        {
+            IRevisionCriteria listed = RevisionChange.Criteria(changes);
+            int expected = changes.Sum(static change => change.Members.Count);
+            if (_document.Revisions.Count(listed.IsMatch) != expected)
+            {
+                throw new CliException(
+                    ErrorCodes.OpsInvalid,
+                    $"Invalid Words ops batch: {WordsOp.Catalog.NameOf(_resolved.Op)} lists revisions an earlier operation in the batch already decided.",
+                    hint: "Decide each revision once: list it in only one accept_revisions or reject_revisions, after no decision by author or of every revision.");
+            }
+
+            int decided = accept ? _document.Revisions.Accept(listed) : _document.Revisions.Reject(listed);
+            if (decided != expected)
+            {
+                throw new EngineOpException(
+                    $"The engine decided {decided} of the {expected} revisions the listed changes consist of.",
+                    new InvalidOperationException("Revision decision count mismatch."));
+            }
+
+            return decided;
+        }
+
         if (author is not null)
         {
             var byAuthor = new AuthorCriteria(author);

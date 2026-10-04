@@ -17,6 +17,9 @@ The error envelope, exit codes, not-found details and shared codes such as
 - `MERGE_DATA_INVALID`: the `mail_merge` or `repeat_table_row` data is not a
   JSON array of flat objects or a CSV file with a header row, or `mail_merge`
   got no rows ([mail merge](mail-merge.md)).
+- `REVISION_NOT_FOUND`: a `revisions` number of `accept_revisions` or
+  `reject_revisions` goes past the changes `words inspect --detail revisions`
+  lists; `details.availableCount` says how many there are.
 - `DOCUMENT_PROTECTED`: the `unprotect` password was wrong.
 - `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free; list
   the revisions with `words inspect --detail revisions` ([revisions](revisions.md)).

@@ -215,10 +215,11 @@ internal static class WordsRenderers
 
         if (result.Revisions is { } revisions && ResultText.Section(surface, "revisions", revisions.Count == 0))
         {
-            var table = new TextTable("block", "type", "author", "date", "text");
+            var table = new TextTable("revision", "block", "type", "author", "date", "text");
             foreach (RevisionData revision in revisions)
             {
                 table.AddRow(
+                    TableText.Int(revision.Revision),
                     revision.Block is { } block ? TableText.Int(block) : "-",
                     revision.Type,
                     revision.Author,

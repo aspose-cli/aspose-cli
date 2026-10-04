@@ -25,11 +25,12 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 
 ```json
 "revisions": [
-  { "type": "deletion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "thirty" },
-  { "type": "insertion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "sixty" }
+  { "revision": 1, "type": "deletion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "thirty" },
+  { "revision": 2, "type": "insertion", "author": "Alice Legal", "date": "2026-09-01T10:30:00", "scope": "body", "block": 1, "text": "sixty" }
 ]
 ```
 
+- `revision` numbers the changes from 1 in document order.
 - One entry is one change: adjacent runs and paragraph marks that one author
   inserted, deleted or moved are listed together, except inside comment text,
   where each run and paragraph mark is its own entry. `type` is `insertion`, `deletion`,
@@ -56,6 +57,33 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 - Long texts are cut at 300 characters; read the block for the full text. More
   than 1000 changes carry a `LIST_TRUNCATED` warning.
 
+## Accepting and rejecting
+
+`accept_revisions` and `reject_revisions` decide every revision, one
+`author`'s, or the changes whose `revision` numbers they list. Numbers refer
+to the document as it was before the batch, as block addresses do, so one
+batch can accept some changes and reject others; list both halves of a
+replacement. A number past the list fails with `REVISION_NOT_FOUND`.
+`itemsAffected` counts the listed changes, or for an author or all the
+revisions the document stores. Authors match exactly, as
+`document.revisionAuthors` spells them.
+
+```json
+{ "ops": [
+  { "op": "accept_revisions", "revisions": [1, 2, 5, 6] },
+  { "op": "reject_revisions", "revisions": [3, 4] }
+] }
+```
+
+A decision by number fails with `OPS_INVALID` before anything changes when:
+
+- it comes after an operation that is not a revision decision, which could
+  split the runs of a change and leave part of it undecided. Put the
+  decisions first, or in a batch of their own;
+- an earlier decision in the batch already took one of its revisions;
+- it lists only some of the changes that share one node and type, such as a
+  paragraph's format change and its mark's character format change, which the
+  engine can only decide together. The message names the numbers to list.
 ## Comparing
 
 `words compare` refuses inputs that already contain revisions (`DOCUMENT_HAS_REVISIONS`); list them with `--detail revisions` above. To compare anyway, make reviewed copies first, explicitly accept or reject revisions there, then compare:

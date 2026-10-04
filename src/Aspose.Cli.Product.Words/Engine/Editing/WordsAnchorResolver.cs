@@ -16,8 +16,30 @@ internal static class WordsAnchorResolver
     public static IReadOnlyList<ResolvedWordsOp> Resolve(Document document, DocumentBlockIndex index, WordsOpsBatch batch)
     {
         var resolved = new List<ResolvedWordsOp>(batch.Ops.Count);
+        IReadOnlyList<RevisionChange>? changes = null;
+        bool edited = false;
         foreach (WordsOp op in batch.Ops)
         {
+            if (op is RevisionDecisionOp { Revisions: { } numbers })
+            {
+                // An edit can split or rebuild the runs a change consists of, leaving part of
+                // the change undecided, so numbered decisions come first.
+                if (edited)
+                {
+                    throw RevisionsInvalid(
+                        $"{WordsOp.Catalog.NameOf(op)} with revisions must come before every operation other than a revision decision",
+                        "Put the revision decisions first in the batch, or run them in a batch of their own; their numbers always name the changes the input lists.");
+                }
+
+                changes ??= InfoProjection.RevisionChanges(document);
+                RevisionChange[] selected = SelectRevisions(changes, numbers);
+                Node[] changed = [.. selected.SelectMany(static change => change.Members)
+                    .Select(static revision => revision.ParentNode).OfType<Node>().Distinct()];
+                resolved.Add(new ResolvedWordsOp(op, [], [], Targets(index, changed, target: null)) { Revisions = selected });
+                continue;
+            }
+
+            edited |= op is not RevisionDecisionOp;
             WordsTarget? target = TargetOf(op);
             IReadOnlyList<Node> nodes = target is null
                 ? []
@@ -28,6 +50,52 @@ internal static class WordsAnchorResolver
         ValidateDeleteConflicts(resolved);
         return resolved;
     }
+
+    // The changes inspect --detail revisions numbers, each once, in document order.
+    private static RevisionChange[] SelectRevisions(IReadOnlyList<RevisionChange> changes, IReadOnlyList<int> numbers)
+    {
+        if (numbers.FirstOrDefault(number => number > changes.Count) is > 0 and int missing)
+        {
+            throw CliErrors.NotFoundAt(
+                WordsDiagnostics.RevisionNotFound,
+                "revision",
+                missing.ToString(CultureInfo.InvariantCulture),
+                changes.Count,
+                hint: changes.Count == 0
+                    ? "The document has no tracked revisions."
+                    : $"Use a revision from 1 through {changes.Count}, as 'words inspect --detail revisions' numbers them.");
+        }
+
+        int[] wanted = [.. numbers.Distinct().Order()];
+
+        // The engine knows a revision only by the node it changes and its type, so changes that
+        // share both, such as a paragraph's format and its mark's character format, are decided
+        // together.
+        var owners = new Dictionary<RevisionKey, List<int>>(RevisionKey.Comparer);
+        for (int number = 1; number <= changes.Count; number++)
+        {
+            foreach (RevisionKey key in changes[number - 1].Members.Select(RevisionKey.Of))
+            {
+                (owners.TryGetValue(key, out List<int>? listed) ? listed : owners[key] = []).Add(number);
+            }
+        }
+
+        foreach (int number in wanted)
+        {
+            int[] together = [.. changes[number - 1].Members.Select(RevisionKey.Of).SelectMany(key => owners[key]).Distinct().Order()];
+            if (together.Except(wanted).Any())
+            {
+                throw RevisionsInvalid(
+                    $"revisions {string.Join(" and ", together)} change the same node in the same way and can only be decided together",
+                    "List all of them in revisions, or none.");
+            }
+        }
+
+        return [.. wanted.Select(number => changes[number - 1])];
+    }
+
+    private static CliException RevisionsInvalid(string reason, string hint) =>
+        new(ErrorCodes.OpsInvalid, $"Invalid Words ops batch: {reason}.", hint: hint);
 
     private static IReadOnlyList<Section> ResolveSections(Document document, WordsOp op) => op switch
     {
@@ -270,4 +338,8 @@ internal sealed record ResolvedWordsOp(
     WordsOp Op,
     IReadOnlyList<Node> Nodes,
     IReadOnlyList<Section> Sections,
-    IReadOnlyList<string> Targets);
+    IReadOnlyList<string> Targets)
+{
+    /// <summary>The numbered changes a revision decision names, or null when it names none.</summary>
+    public IReadOnlyList<RevisionChange>? Revisions { get; init; }
+}

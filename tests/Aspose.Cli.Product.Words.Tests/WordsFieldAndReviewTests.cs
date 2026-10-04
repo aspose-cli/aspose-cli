@@ -2,6 +2,7 @@ using Aspose.Words;
 using Aspose.Words.Fields;
 using Aspose.Words.Saving;
 using Aspose.Cli.Sdk.Contracts;
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Views;
 using Xunit;
 
@@ -227,5 +228,105 @@ public sealed class WordsFieldAndReviewTests
         var document = new Document(output);
         Assert.Equal(remaining, document.Revisions.Select(static revision => revision.Author).Distinct().Count());
         Assert.All(document.Revisions, static revision => Assert.Equal("Bob", revision.Author));
+    }
+
+    /// <summary>Three replacements one reviewer tracked: each a deletion and an insertion.</summary>
+    private static string CreateReviewedContract(WordsFixture fixture)
+    {
+        var source = new Document();
+        new DocumentBuilder(source).Write("Payment in 30 days. Cap is 10%. IP stays with us.");
+        source.StartTrackRevisions("Li (B)");
+        source.Range.Replace("30 days", "15 days");
+        source.Range.Replace("10%", "20%");
+        source.Range.Replace("with us", "with them");
+        source.StopTrackRevisions();
+        string input = fixture.Temp.File("reviewed.docx");
+        source.Save(input, SaveFormat.Docx);
+        return input;
+    }
+
+    [Fact]
+    public void AcceptAndRejectRevisions_TakeTheNumbersInspectListsBeforeTheBatch()
+    {
+        using var fixture = new WordsFixture();
+        string input = CreateReviewedContract(fixture);
+        IReadOnlyList<RevisionData> listed = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["revisions"] }).Revisions!;
+        Assert.Equal(Enumerable.Range(1, listed.Count), listed.Select(static revision => revision.Revision));
+        int[] Numbers(params string[] texts) => [.. listed.Where(revision => texts.Contains(revision.Text)).Select(static revision => revision.Revision)];
+        string output = fixture.Temp.File("decided.docx");
+
+        // Accepting the first change removes its deletion; later numbers still name the changes
+        // inspect listed.
+        WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new AcceptRevisionsOp { Revisions = Numbers("30 days", "15 days") },
+                new AcceptRevisionsOp { Revisions = Numbers("10%", "20%") },
+                new RejectRevisionsOp { Revisions = Numbers("with us", "with them") },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Assert.All(result.Applied, static applied => Assert.Equal(2L, applied.ItemsAffected));
+        var document = new Document(output);
+        // Under evaluation the body starts with the engine's banner.
+        Assert.Contains("Payment in 15 days. Cap is 20%. IP stays with us.", document.FirstSection.Body.Paragraphs.Cast<Paragraph>().Select(static paragraph => paragraph.GetText().Trim()));
+        Assert.Equal(0, document.Revisions.Count);
+    }
+
+    [Fact]
+    public void RevisionsByNumber_AreRefusedAfterAnOperationThatEditsTheDocument()
+    {
+        // replace_text inside an inserted run splits it, and the split-off part would stay
+        // undecided.
+        using var fixture = new WordsFixture();
+        string input = CreateReviewedContract(fixture);
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch
+            {
+                Ops =
+                [
+                    new ReplaceTextOp { Find = "15", Replace = "14" },
+                    new AcceptRevisionsOp { Revisions = [1, 2] },
+                ],
+            },
+            new WordsEditRequest { OutputPath = fixture.Temp.File("late.docx") }));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("before", error.Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void RevisionsByNumber_AreRefusedWhenAnEarlierDecisionTookThem()
+    {
+        using var fixture = new WordsFixture();
+        string input = CreateReviewedContract(fixture);
+        string output = fixture.Temp.File("twice.docx");
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new AcceptRevisionsOp(), new RejectRevisionsOp { Revisions = [1, 2] }] },
+            new WordsEditRequest { OutputPath = output }));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Contains("earlier operation", error.Message, StringComparison.Ordinal);
+        Assert.False(File.Exists(output));
+    }
+
+    [Fact]
+    public void AcceptRevisions_RefusesANumberInspectDoesNotList()
+    {
+        using var fixture = new WordsFixture();
+        string input = CreateReviewedContract(fixture);
+
+        CliException error = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new AcceptRevisionsOp { Revisions = [1, 7] }] },
+            new WordsEditRequest { OutputPath = fixture.Temp.File("none.docx") }));
+
+        Assert.Equal("REVISION_NOT_FOUND", error.Code.Name);
+        Assert.Contains("6 exist", error.Message, StringComparison.Ordinal);
     }
 }

@@ -104,12 +104,14 @@ public sealed record CommentData
 }
 
 /// <summary>
-/// One tracked change in document order: its type, author, the date the document records and
-/// the text it inserts, deletes or moves. <c>Scope</c> names the story that holds it, in the
-/// scope vocabulary of search; a style definition change has none.
+/// One tracked change in document order: its 1-based number, which accept_revisions and
+/// reject_revisions accept, its type, author, the date the document records and the text it
+/// inserts, deletes or moves. <c>Scope</c> names the story that holds it, in the scope
+/// vocabulary of search; a style definition change has none.
 /// </summary>
 public sealed record RevisionData
 {
+    public required int Revision { get; init; }
     public required string Type { get; init; }
     public required string Author { get; init; }
     public string? Date { get; init; }

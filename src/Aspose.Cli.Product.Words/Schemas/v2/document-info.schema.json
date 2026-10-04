@@ -117,9 +117,10 @@
       "description": "The tracked changes in document order, one entry per change. A replacement is a deletion followed by an insertion. document.revisionCount counts the revisions the document stores, one per run, paragraph mark or other changed node, so it can exceed the entries here.",
       "items": {
         "type": "object",
-        "required": ["type", "author"],
+        "required": ["revision", "type", "author"],
         "additionalProperties": false,
         "properties": {
+          "revision": { "type": "integer", "minimum": 1, "description": "The 1-based number of the change in this list, which the revisions of accept_revisions and reject_revisions accept." },
           "type": { "enum": ["insertion", "deletion", "formatChange", "styleDefinitionChange", "moving"] },
           "author": { "type": "string" },
           "date": { "type": "string", "description": "The date and time the document records, as ISO 8601 yyyy-MM-ddTHH:mm:ss without a time zone; absent when none is recorded." },

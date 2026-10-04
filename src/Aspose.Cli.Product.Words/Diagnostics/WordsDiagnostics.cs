@@ -8,6 +8,7 @@ internal static class WordsDiagnostics
     internal static readonly ErrorCode BlockNotFound = ErrorCode.NotFound("BLOCK_NOT_FOUND");
     internal static readonly ErrorCode SectionNotFound = ErrorCode.NotFound("SECTION_NOT_FOUND");
     internal static readonly ErrorCode AnchorNotFound = ErrorCode.NotFound("ANCHOR_NOT_FOUND");
+    internal static readonly ErrorCode RevisionNotFound = ErrorCode.NotFound("REVISION_NOT_FOUND");
     internal static readonly ErrorCode MergeDataInvalid = Validation("MERGE_DATA_INVALID");
     internal static readonly ErrorCode DocumentProtected =
         new("DOCUMENT_PROTECTED", ExitCode.InputError);
@@ -33,6 +34,7 @@ internal static class WordsDiagnostics
         Error(BlockNotFound, "validation"),
         Error(SectionNotFound, "validation"),
         Error(AnchorNotFound, "validation"),
+        Error(RevisionNotFound, "validation"),
         Error(MergeDataInvalid, "validation"),
         Error(DocumentProtected, "input"),
         Error(DocumentHasRevisions, "input"),

@@ -202,10 +202,10 @@ public sealed class WordsTrackChangesTests
 
         Assert.Equal(
             [
-                new RevisionData { Type = "deletion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "thirty" },
-                new RevisionData { Type = "insertion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "sixty" },
-                new RevisionData { Type = "deletion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "This clause is removed." },
-                new RevisionData { Type = "insertion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "New governing law clause." },
+                new RevisionData { Revision = 1, Type = "deletion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "thirty" },
+                new RevisionData { Revision = 2, Type = "insertion", Author = "Alice Legal", Date = "2026-09-01T10:30:00", Scope = "body", Block = 1, Text = "sixty" },
+                new RevisionData { Revision = 3, Type = "deletion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "This clause is removed." },
+                new RevisionData { Revision = 4, Type = "insertion", Author = "Bob Counsel", Date = "2026-09-02T08:00:00", Scope = "body", Block = 2, Text = "New governing law clause." },
             ],
             info.Revisions);
     }
@@ -239,14 +239,43 @@ public sealed class WordsTrackChangesTests
         const string BobDate = "2026-09-02T08:00:00";
         Assert.Equal(
             [
-                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 2, Text = "Alpha beta gamma." },
-                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 3, Text = "Alpha beta gamma." },
-                new RevisionData { Type = "insertion", Author = "Bob", Date = BobDate, Scope = "body", Block = 4 },
-                new RevisionData { Type = "deletion", Author = "Bob", Date = BobDate, Scope = "body", Block = 5 },
-                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 7, Text = "Whole para\rSecond" },
-                new RevisionData { Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 10, Text = "Whole para\rSecond" },
+                new RevisionData { Revision = 1, Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 2, Text = "Alpha beta gamma." },
+                new RevisionData { Revision = 2, Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 3, Text = "Alpha beta gamma." },
+                new RevisionData { Revision = 3, Type = "insertion", Author = "Bob", Date = BobDate, Scope = "body", Block = 4 },
+                new RevisionData { Revision = 4, Type = "deletion", Author = "Bob", Date = BobDate, Scope = "body", Block = 5 },
+                new RevisionData { Revision = 5, Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 7, Text = "Whole para\rSecond" },
+                new RevisionData { Revision = 6, Type = "moving", Author = "Ann", Date = AnnDate, Scope = "body", Block = 10, Text = "Whole para\rSecond" },
             ],
             info.Revisions);
+    }
+
+    [Fact]
+    public void RevisionsByNumber_DecideAParagraphsTwoFormatChangesOnlyTogether()
+    {
+        // A paragraph whose own format and whose mark's character format both changed holds two
+        // format revisions on the same node, which the engine cannot decide apart.
+        using var fixture = new WordsFixture();
+        const string Ann = """w:author="Ann" w:date="2026-09-01T10:00:00Z" """;
+        string input = WriteDocx(fixture.Temp.File("formats.docx"), $"""
+            <w:p><w:pPr><w:jc w:val="center"/><w:pPrChange w:id="1" {Ann}><w:pPr/></w:pPrChange><w:rPr><w:b/><w:rPrChange w:id="2" {Ann}><w:rPr/></w:rPrChange></w:rPr></w:pPr><w:r><w:t>Title</w:t></w:r></w:p>
+            <w:p><w:r><w:t>Body</w:t></w:r></w:p>
+            """);
+        IReadOnlyList<RevisionData> listed = fixture.Engine.GetInfo(input, new DocumentInfoRequest { Details = ["revisions"] }).Revisions!;
+        Assert.Equal(["formatChange", "formatChange"], listed.Select(static revision => revision.Type));
+
+        CliException refused = Assert.Throws<CliException>(() => fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new AcceptRevisionsOp { Revisions = [1] }] },
+            new WordsEditRequest { OutputPath = fixture.Temp.File("one.docx") }));
+        WordsEditResult both = fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch { Ops = [new AcceptRevisionsOp { Revisions = [1, 2] }] },
+            new WordsEditRequest { OutputPath = fixture.Temp.File("both.docx") });
+
+        Assert.Equal(ErrorCodes.OpsInvalid, refused.Code);
+        Assert.Contains("revisions 1 and 2", refused.Message, StringComparison.Ordinal);
+        Assert.Equal(2L, Assert.Single(both.Applied).ItemsAffected);
+        Assert.Equal(0, new Document(fixture.Temp.File("both.docx")).Revisions.Count);
     }
 
     // Aspose.Words has no public API that records a move, so the moves are written as WordprocessingML.

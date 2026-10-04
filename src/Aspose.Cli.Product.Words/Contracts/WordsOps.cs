@@ -567,19 +567,38 @@ public sealed record UnprotectOp : WordsOp
     [SecretEnv] public string? PasswordEnv { get; init; }
 }
 
-/// <summary>Accepts tracked revisions: all, or one author's.</summary>
-[Operation("accept_revisions")]
-public sealed record AcceptRevisionsOp : WordsOp
+/// <summary>
+/// Decides tracked revisions: all, one author's, or the listed changes; author and revisions
+/// cannot be combined.
+/// </summary>
+public abstract record RevisionDecisionOp : WordsOp
 {
+    /// <summary>The author whose revisions are decided.</summary>
     [MinLength(1)] public string? Author { get; init; }
+
+    /// <summary>
+    /// The 1-based revision numbers of the changes words inspect --detail revisions lists,
+    /// numbered as the document was before the batch. Such a decision comes before every
+    /// operation other than a revision decision, and lists together the changes that share a
+    /// node and type, as its error names them.
+    /// </summary>
+    [MinItems(1), Minimum(1)] public IReadOnlyList<int>? Revisions { get; init; }
+
+    /// <inheritdoc />
+    protected override BoundedOperation Validated()
+    {
+        OperationInvalidException.Require(Author is null || Revisions is null, "author and revisions cannot be combined");
+        return this;
+    }
 }
 
-/// <summary>Rejects tracked revisions: all, or one author's.</summary>
+/// <summary>Accepts tracked revisions: all, one author's, or the listed changes; author and revisions cannot be combined.</summary>
+[Operation("accept_revisions")]
+public sealed record AcceptRevisionsOp : RevisionDecisionOp;
+
+/// <summary>Rejects tracked revisions: all, one author's, or the listed changes; author and revisions cannot be combined.</summary>
 [Operation("reject_revisions")]
-public sealed record RejectRevisionsOp : WordsOp
-{
-    [MinLength(1)] public string? Author { get; init; }
-}
+public sealed record RejectRevisionsOp : RevisionDecisionOp;
 
 /// <summary>Adds a comment on a paragraph block.</summary>
 [Operation("add_comment")]
