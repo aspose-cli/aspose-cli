@@ -44,6 +44,26 @@ internal static class OperationErrors
         return new CliException(ErrorCodes.OpsInvalid, $"{subject} is invalid: {reason}", hint: hint, details: details);
     }
 
+    /// <summary>
+    /// Rejects an entry whose op names no operation of the vocabulary, listing the operations in
+    /// <c>available</c> and, when one is likely meant, naming it in <c>suggestion</c>.
+    /// </summary>
+    internal static CliException UnknownAt(int index, string reason, string hint, IReadOnlyList<string> available, string? suggestion)
+    {
+        var details = new JsonObject
+        {
+            ["index"] = index,
+            ["reason"] = reason,
+            ["available"] = new JsonArray([.. available.Select(static item => (JsonNode)item)]),
+        };
+        if (suggestion is not null)
+        {
+            details["suggestion"] = suggestion;
+        }
+
+        return new CliException(ErrorCodes.OpsInvalid, $"Operation {index} is invalid: {reason}", hint: hint, details: details);
+    }
+
     private static void AddAllowedFields(JsonObject details, AllowedFieldsException? field)
     {
         if (field is null)

@@ -57,6 +57,23 @@ public sealed class BoundedOperationPipelineTests
     }
 
     [Theory]
+    [InlineData("sett", "set")]
+    [InlineData("Note", "note")]
+    [InlineData("rotate", null)]
+    public void Parse_ListsTheOperationsAndTheClosestForAnUnknownOp(string name, string? suggestion)
+    {
+        CliException error = Assert.Throws<CliException>(() => Catalog.Parse<TestBatch>(
+            $$"""{"ops":[{"op":"{{name}}","value":1}]}""", TestContracts.Json));
+
+        Assert.Equal(ErrorCodes.OpsInvalid, error.Code);
+        Assert.Equal(0, error.Details!["index"]!.GetValue<int>());
+        Assert.Null(error.Details["op"]);
+        Assert.StartsWith($"unknown op '{name}'; valid ops: label, link, note,", error.Details["reason"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(Catalog.Names, error.Details["available"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal(suggestion, error.Details["suggestion"]?.GetValue<string>());
+    }
+
+    [Theory]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"style":"bold"}]}""",
         "style must be an object with the fields: font, size, bold", "font,size,bold")]
     [InlineData("""{"ops":[{"op":"place","pages":"1","all":true,"box":[2]}]}""",

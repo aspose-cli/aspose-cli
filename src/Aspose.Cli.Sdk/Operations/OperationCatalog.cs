@@ -6,6 +6,7 @@ using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Serialization;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Sdk.Operations;
 
@@ -184,6 +185,9 @@ public sealed class OperationCatalog<TOp>
         return (TBatch)((BoundedOperationEnvelope<TOp>)batch with { SchemaVersion = 2, Ops = validated });
     }
 
+    /// <summary>The operation most likely meant by a name the vocabulary does not declare, or null.</summary>
+    internal string? Closest(string name) => NameSuggestions.Closest(name, Names).FirstOrDefault();
+
     /// <summary>Finds a named operation's record.</summary>
     internal bool TryGetOperation(string name, [NotNullWhen(true)] out OperationRecord? record)
     {
@@ -223,8 +227,7 @@ public sealed class OperationCatalog<TOp>
     {
         if (OperationIndex(rejection?.Path) is { } index)
         {
-            return OperationErrors.InvalidAt(
-                index, KnownNameAt(root, index), rejection!.Message, DefaultHint, field: rejection as AllowedFieldsException);
+            return InvalidAt(root, index, rejection!);
         }
 
         JsonException reason = JsonContractDiagnostics.Explain(root, batchType, options, rejection?.Path);
@@ -241,13 +244,26 @@ public sealed class OperationCatalog<TOp>
                 : null;
     }
 
+    /// <summary>
+    /// Rejects the entry at <paramref name="index"/> that the serializer could not read. An
+    /// entry whose op names no operation lists the operations and the closest one.
+    /// </summary>
+    private CliException InvalidAt(JsonElement root, int index, JsonException failure) =>
+        NameAt(root, index) is { } name && !_byName.ContainsKey(name)
+            ? OperationErrors.UnknownAt(index, failure.Message, DefaultHint, Names, Closest(name))
+            : OperationErrors.InvalidAt(
+                index, KnownNameAt(root, index), failure.Message, DefaultHint, field: failure as AllowedFieldsException);
+
     private string? KnownNameAt(JsonElement root, int index) =>
+        NameAt(root, index) is { } name && _byName.ContainsKey(name) ? name : null;
+
+    /// <summary>The op name of the entry at <paramref name="index"/>, or null when it states none.</summary>
+    private static string? NameAt(JsonElement root, int index) =>
         root.ValueKind == JsonValueKind.Object
         && root.TryGetProperty("ops", out JsonElement ops) && ops.ValueKind == JsonValueKind.Array
         && index < ops.GetArrayLength()
         && ops[index] is { ValueKind: JsonValueKind.Object } operation
         && operation.TryGetProperty("op", out JsonElement name) && name.ValueKind == JsonValueKind.String
-        && _byName.ContainsKey(name.GetString()!)
             ? name.GetString()
             : null;
 

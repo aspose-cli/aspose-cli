@@ -39,7 +39,8 @@ public sealed class OperationJsonConverter<TOp> : JsonConverter<TOp>
         string name = discriminator.GetString()!;
         if (!TOp.Catalog.TryGetOperation(name, out OperationRecord? record))
         {
-            throw new JsonException($"unknown op '{name}'; valid ops: {ValidOperations}");
+            throw new JsonException($"unknown op '{name}'; valid ops: {ValidOperations}"
+                + (TOp.Catalog.Closest(name) is { } closest ? $" (did you mean '{closest}'?)" : string.Empty));
         }
 
         // The payload below omits the discriminator, so only its duplicates need a check here;
