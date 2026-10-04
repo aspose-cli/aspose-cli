@@ -37,7 +37,7 @@ internal sealed class AllowedFieldsException : JsonException
     public static AllowedFieldsException UnknownField(
         string path, string name, string subject, IReadOnlyList<string> allowedFields, IReadOnlyCollection<string> missingRequired)
     {
-        string? suggestion = NameSuggestions.Closest(name, allowedFields).FirstOrDefault()
+        string? suggestion = NameSuggestions.Closest(name, allowedFields, fieldNames: true).FirstOrDefault()
             ?? (missingRequired.Count == 1 ? missingRequired.First() : null);
         string field = path.Length == 0 ? name : $"{path}.{name}";
         string reason = $"unknown field '{field}'; {subject} accepts: {string.Join(", ", allowedFields)}"

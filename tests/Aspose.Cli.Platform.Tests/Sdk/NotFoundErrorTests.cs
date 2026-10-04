@@ -23,6 +23,18 @@ public sealed class NotFoundErrorTests
     public void Closest_RanksCaseSlipsThenContainmentThenSmallEdits(string requested, string[] expected) =>
         Assert.Equal(expected, NameSuggestions.Closest(requested, ["Summary", "Sales", "Q4", "Sales 2026"]));
 
+    [Theory]
+    [InlineData("fontSize", new[] { "size", "font" })]
+    [InlineData("fontName", new[] { "name", "font" })]
+    [InlineData("borderColor", new[] { "color", "border" })]
+    [InlineData("italicFont", new[] { "font" })]
+    public void Closest_PrefersTheContainedNameThatEndsACompoundFieldName(string requested, string[] expected) =>
+        Assert.Equal(expected, NameSuggestions.Closest(requested, ["font", "name", "size", "color", "border", "bold"], fieldNames: true));
+
+    [Fact]
+    public void Closest_KeepsTheOrderOfContainingNamesOtherThanFieldNames() =>
+        Assert.Equal(["Sales 2026", "Old Sales"], NameSuggestions.Closest("Sales", ["Sales 2026", "Old Sales"]));
+
     [Fact]
     public void NotFound_ListsBoundedAvailableNamesAndSuggestionsThatMatchTheSchema()
     {

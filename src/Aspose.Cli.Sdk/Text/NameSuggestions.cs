@@ -4,7 +4,8 @@ namespace Aspose.Cli.Sdk.Text;
 /// Ranks the existing names closest to a name that was not found, so a caller can correct a
 /// typo or a casing slip in one step. Ranking is deterministic: a match that ignores case and
 /// surrounding white space comes first, then names that contain the request or are contained
-/// in it, then names within a small edit distance; ties keep the candidates' order.
+/// in it (for field names, those ending the other first), then names within a small edit
+/// distance; ties keep the candidates' order.
 /// </summary>
 public static class NameSuggestions
 {
@@ -19,7 +20,13 @@ public static class NameSuggestions
     private const int MinimumOverlap = 3;
 
     /// <summary>Returns up to <see cref="MaximumSuggestions"/> candidates close to <paramref name="requested"/>.</summary>
-    public static IReadOnlyList<string> Closest(string requested, IEnumerable<string> candidates)
+    /// <param name="requested">The name that was not found.</param>
+    /// <param name="candidates">The existing names, in the order ties keep.</param>
+    /// <param name="fieldNames">
+    /// Whether the names are compound field names such as <c>fontSize</c>, whose last word says
+    /// what the field is: a contained name that ends the other then ranks before one that does not.
+    /// </param>
+    public static IReadOnlyList<string> Closest(string requested, IEnumerable<string> candidates, bool fieldNames = false)
     {
         ArgumentNullException.ThrowIfNull(requested);
         ArgumentNullException.ThrowIfNull(candidates);
@@ -43,8 +50,8 @@ public static class NameSuggestions
 
             string name = Normalize(candidate);
             int? rank = name == wanted ? 0
-                : Overlaps(wanted, name) ? 1
-                : Distance(wanted, name, allowedDistance) is int distance ? 1 + distance
+                : Overlaps(wanted, name) ? (fieldNames && !EndsWithEither(wanted, name) ? 2 : 1)
+                : Distance(wanted, name, allowedDistance) is int distance ? 2 + distance
                 : null;
             if (rank is int value)
             {
@@ -68,6 +75,10 @@ public static class NameSuggestions
     private static bool Overlaps(string left, string right) =>
         Math.Min(left.Length, right.Length) >= MinimumOverlap
         && (left.Contains(right, StringComparison.Ordinal) || right.Contains(left, StringComparison.Ordinal));
+
+    // The last word of a compound field name says what it is: "fontSize" is a size, not a font.
+    private static bool EndsWithEither(string left, string right) =>
+        left.EndsWith(right, StringComparison.Ordinal) || right.EndsWith(left, StringComparison.Ordinal);
 
     /// <summary>
     /// Optimal string alignment distance between two strings, or null when it exceeds
