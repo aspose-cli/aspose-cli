@@ -7,6 +7,25 @@ namespace Aspose.Cli.Product.Slides.Tests;
 
 public sealed class SlidesHardeningTests
 {
+    [Fact]
+    public void LoadedInput_CanBeReplacedInPlaceByAnotherWriter()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.CreatePresentation("loaded.pptx", slides: 1);
+        string replacement = fixture.CreatePresentation("replacement.pptx", slides: 2);
+        var loader = new Engine.Mapping.SlidesPresentationLoader(ProductTestBudgets.Create<SlidesModule>());
+
+        // A concurrent in-place edit publishes by replacing the file the engine still reads.
+        using (Engine.Mapping.LoadedPresentation loaded = loader.Open(input, password: null))
+        {
+            File.Replace(replacement, input, destinationBackupFileName: null);
+            Assert.Single(loaded.Presentation.Slides);
+        }
+
+        using var replaced = new Aspose.Slides.Presentation(input);
+        Assert.Equal(2, replaced.Slides.Count);
+    }
+
     [Theory]
     [InlineData("text", 4, true)]
     [InlineData("text", 5, true)]

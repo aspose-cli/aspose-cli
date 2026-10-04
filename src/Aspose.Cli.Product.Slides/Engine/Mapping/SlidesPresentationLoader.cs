@@ -34,9 +34,14 @@ internal sealed class SlidesPresentationLoader(
 
     private LoadedPresentation OpenCore(string path, string? password)
     {
+        FileStream? source = null;
         try
         {
-            IPresentationInfo info = PresentationFactory.Instance.GetPresentationInfo(path);
+            // One read that lets another process replace the file, as an in-place edit publishes;
+            // the presentation may keep reading media from it while it is open.
+            source = InputFiles.OpenRead(path);
+            IPresentationInfo info = PresentationFactory.Instance.GetPresentationInfo(source);
+            source.Position = 0;
             string format = FormatId(info.LoadFormat);
             if (!SlidesFormats.LoadIds.Contains(format, StringComparer.Ordinal))
             {
@@ -62,7 +67,7 @@ internal sealed class SlidesPresentationLoader(
             Presentation presentation;
             try
             {
-                presentation = new Presentation(path, new LoadOptions { Password = password, ResourceLoadingCallback = resources });
+                presentation = new Presentation(source, new LoadOptions { Password = password, ResourceLoadingCallback = resources });
             }
             catch
             {
@@ -90,10 +95,13 @@ internal sealed class SlidesPresentationLoader(
                 throw;
             }
             SlidesCjkFallback.Apply(presentation);
-            return new LoadedPresentation(presentation, format, resources)
+            var loaded = new LoadedPresentation(presentation, format, resources)
             {
                 ImplicitTitleCharts = ImplicitTitleCharts(presentation),
+                Source = source,
             };
+            source = null;
+            return loaded;
         }
         catch (CliException)
         {
@@ -132,6 +140,10 @@ internal sealed class SlidesPresentationLoader(
             || exception is ArgumentException or InvalidOperationException)
         {
             throw Invalid(path, exception.Message, exception);
+        }
+        finally
+        {
+            source?.Dispose();
         }
     }
 
@@ -199,9 +211,16 @@ internal sealed record LoadedPresentation(Presentation Presentation, string Form
     /// <summary>The charts whose implicit automatic title an output draws over the plot.</summary>
     public IReadOnlyList<(int Slide, string Chart)> ImplicitTitleCharts { get; init; } = [];
 
+    /// <summary>The input file the presentation was read from, held until it is disposed.</summary>
+    public Stream? Source { get; init; }
+
     public void Dispose()
     {
         try { Presentation.Dispose(); }
-        finally { Resources.Dispose(); }
+        finally
+        {
+            Resources.Dispose();
+            Source?.Dispose();
+        }
     }
 }
