@@ -36,7 +36,6 @@ public sealed class ExtractionGuard : IDisposable
             Math.Min(maxBytes, resourceBudgets.Remaining(ResourceBudgetKinds.OutputBytes)));
         string fullRoot = Path.GetFullPath(root);
         _plan = new ExtractionPlan(fullRoot);
-        _plan.EnsureRoot();
         _transaction = new AtomicOutputSetWriter(new SafeFileWriter(resourceBudgets), fullRoot, "extraction", faults);
     }
 

@@ -33,6 +33,21 @@ public sealed class ExtractionGuardTests
         Assert.Equal(name, ExtractionPathValidator.NormalizeRelativePath(name, flatten: false));
 
     [Fact]
+    public void Commit_CreatesEveryMissingLevelOfTheExtractionDirectory()
+    {
+        using var temp = new TempDirectory();
+        string root = Path.Combine(temp.Path, "minutes", "2026", "text");
+
+        using (var extraction = new ExtractionGuard(TestBudgets.Create(), root, overwrite: false))
+        {
+            extraction.Write("notes/slide-1.txt", sizeBytes: 5, output => output.Write("notes"u8));
+            extraction.Commit();
+        }
+
+        Assert.Equal("notes", File.ReadAllText(Path.Combine(root, "notes", "slide-1.txt")));
+    }
+
+    [Fact]
     public void Write_TargetIdentityChangesDuringProduction_PreservesExternalFile()
     {
         Requires.Windows();

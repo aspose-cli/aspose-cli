@@ -1,16 +1,15 @@
 namespace Aspose.Cli.Sdk.IO;
 
 /// <summary>
-/// Plans names that are distinct within one extraction and tracks newly created extraction
-/// directories. A file already on disk keeps its name: publication replaces it only with
-/// <c>--overwrite</c> and refuses it otherwise.
+/// Plans names that are distinct within one extraction and the directories below the root that
+/// it needs. The transaction creates the root and its missing parents. A file already on disk
+/// keeps its name: publication replaces it only with <c>--overwrite</c> and refuses it otherwise.
 /// </summary>
 internal sealed class ExtractionPlan(string root)
 {
     private readonly HashSet<string> _reserved = new(StringComparer.OrdinalIgnoreCase);
-    private readonly OwnedOutputDirectories _directories = new(deferred: true);
-    public IEnumerable<string> Directories => _directories.Declared;
-    public void EnsureRoot() => EnsureDirectory(root);
+    private readonly HashSet<string> _directories = new(StringComparer.OrdinalIgnoreCase);
+    public IEnumerable<string> Directories => _directories;
 
     public string ReserveFile(string relativePath, string suggestedPath)
     {
@@ -24,7 +23,7 @@ internal sealed class ExtractionPlan(string root)
         }
         string full = Path.GetFullPath(candidate);
         EnsureBelowRoot(full, suggestedPath);
-        EnsureDirectory(Path.GetDirectoryName(full)!);
+        _directories.Add(Path.GetDirectoryName(full)!);
         _reserved.Add(full);
         return full;
     }
@@ -33,7 +32,7 @@ internal sealed class ExtractionPlan(string root)
     {
         string target = Path.GetFullPath(Path.Combine(root, relativePath));
         EnsureBelowRoot(target, suggestedPath);
-        EnsureDirectory(target);
+        _directories.Add(target);
         _reserved.Add(target);
         return target;
     }
@@ -46,7 +45,4 @@ internal sealed class ExtractionPlan(string root)
         }
         ExtractionPathValidator.EnsureNoLinks(full);
     }
-
-    private void EnsureDirectory(string path) => _directories.Ensure(path);
-
 }
