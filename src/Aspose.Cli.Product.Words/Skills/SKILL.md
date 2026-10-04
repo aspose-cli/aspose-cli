@@ -77,7 +77,12 @@ the range; block numbers run through the whole document, so a range with none
 of them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks. `extract --what text` writes the visible text of every block to one
 file, one line per paragraph and per table row, whose cells are separated by
 tabs; a `txt` conversion instead aligns a row's cells in columns with spaces.
-Windows, paging and compact output in general:
+`extract --what tables` writes each body table to its own CSV file
+(`table-001.csv` and on, UTF-8 with a byte order mark, so Excel reads Chinese
+text) and reports its `block`; a cell's paragraphs and line breaks become lines
+inside its field, and cells a merge covers stay as empty fields. Cell text is
+written as it is, so Excel evaluates a cell that starts with `=`, `+`, `-` or
+`@` as a formula; import such files as text when that matters. Windows, paging and compact output in general:
 `aspose-cli docs reading`.
 
 ## Workflow

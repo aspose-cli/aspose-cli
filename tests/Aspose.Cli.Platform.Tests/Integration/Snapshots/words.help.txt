@@ -205,25 +205,26 @@ Arguments:
   <file>  Document to open.
 
 Options:
-  --what <comments|images|text> (REQUIRED)    images, comments or text (the visible block text, one line per paragraph or table row).
-  --out-dir <out-dir> (REQUIRED)              Safe extraction directory.
-  --overwrite                                 Replace the output file if it already exists.
-  --password <password>                       Password for the document. Discouraged: visible in the process list; prefer --password-env.
-  --password-env <password-env>               Name of an environment variable holding the password for the document.
-  --password-stdin                            Read the password for the document from the first line of stdin.
-  -?, -h, --help                              Show help and usage information
-  -f, --output <compact|json|markdown|table>  Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
-  -q, --quiet                                 Suppress warnings and notices on stderr (errors still print).
-  -v, --verbose                               Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
-  --license <license>                         Path to an Aspose license file; overrides every other license source.
-  --license-mode <auto|evaluation>            auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
-  --workdir <workdir>                         Base directory for relative paths. Default: the current directory.
-  --timeout <timeout>                         Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
-  --max-input-bytes <max-input-bytes>         Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
+  --what <comments|images|tables|text> (REQUIRED)  images, comments, text (the visible block text, one line per paragraph or table row) or tables (one CSV file per body table).
+  --out-dir <out-dir> (REQUIRED)                   Safe extraction directory.
+  --overwrite                                      Replace the output file if it already exists.
+  --password <password>                            Password for the document. Discouraged: visible in the process list; prefer --password-env.
+  --password-env <password-env>                    Name of an environment variable holding the password for the document.
+  --password-stdin                                 Read the password for the document from the first line of stdin.
+  -?, -h, --help                                   Show help and usage information
+  -f, --output <compact|json|markdown|table>       Output format: json (contract envelopes), compact (the same JSON on one line), table (human text) or markdown. Default: table on a terminal, json when redirected.
+  -q, --quiet                                      Suppress warnings and notices on stderr (errors still print).
+  -v, --verbose                                    Emit structured JSONL diagnostics (timing, error codes) to stderr; stdout is untouched.
+  --license <license>                              Path to an Aspose license file; overrides every other license source.
+  --license-mode <auto|evaluation>                 auto (default) resolves the license sources in order; evaluation reads none of them and runs this command in evaluation mode. Cannot be combined with --license.
+  --workdir <workdir>                              Base directory for relative paths. Default: the current directory.
+  --timeout <timeout>                              Set one command deadline in seconds. Before exit 9, supervised work is stopped and staged outputs are recovered.
+  --max-input-bytes <max-input-bytes>              Maximum bytes admitted for one input before product runtime initialization (default 1073741824; hard maximum 4294967296).
 
 Examples:
   aspose-cli words extract report.docx --what images --out-dir images
   aspose-cli words extract report.docx --what text --out-dir text
+  aspose-cli words extract report.docx --what tables --out-dir tables
 
 
 ## aspose-cli words inspect --help

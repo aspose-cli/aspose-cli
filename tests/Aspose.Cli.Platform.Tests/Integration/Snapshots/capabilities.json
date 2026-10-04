@@ -8609,12 +8609,13 @@
               "allowedValues": [
                 "comments",
                 "images",
+                "tables",
                 "text"
               ],
               "secret": false,
               "valueSource": "command-line",
               "inputKind": "none",
-              "description": "images, comments or text (the visible block text, one line per paragraph or table row)."
+              "description": "images, comments, text (the visible block text, one line per paragraph or table row) or tables (one CSV file per body table)."
             }
           ],
           "arguments": [
@@ -17502,12 +17503,13 @@
           "allowedValues": [
             "comments",
             "images",
+            "tables",
             "text"
           ],
           "secret": false,
           "valueSource": "command-line",
           "inputKind": "none",
-          "description": "images, comments or text (the visible block text, one line per paragraph or table row)."
+          "description": "images, comments, text (the visible block text, one line per paragraph or table row) or tables (one CSV file per body table)."
         }
       ],
       "arguments": [

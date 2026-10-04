@@ -6,6 +6,7 @@ using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
 using Aspose.Words;
 using Aspose.Words.Drawing;
+using Aspose.Words.Tables;
 using ContractCommentData = Aspose.Cli.Product.Words.Contracts.CommentData;
 using static Aspose.Cli.Product.Words.Engine.WordsEngineSupport;
 
@@ -141,9 +142,19 @@ internal sealed class WordsExtractionService
             string path = guard.WriteAllBytes("document.txt", bytes);
             items.Add(new ExtractedItem { Path = path, Kind = "text", SizeBytes = bytes.LongLength });
         }
+        else if (request.What == "tables")
+        {
+            int number = 0;
+            foreach (BlockEntry entry in index.Entries.Where(static entry => entry.Node is Table))
+            {
+                byte[] bytes = Csv((Table)entry.Node);
+                string path = guard.WriteAllBytes($"table-{++number:000}.csv", bytes);
+                items.Add(new ExtractedItem { Path = path, Kind = "table", SizeBytes = bytes.LongLength, Block = entry.Index });
+            }
+        }
         else
         {
-            throw CliErrors.OptionInvalid("--what", $"unknown extraction kind '{request.What}'", "Use images, comments or text.");
+            throw CliErrors.OptionInvalid("--what", $"unknown extraction kind '{request.What}'", "Use images, comments, text or tables.");
         }
 
         guard.Commit();
@@ -155,6 +166,28 @@ internal sealed class WordsExtractionService
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), InputWarnings(loaded)), warnings),
         };
+    }
+
+    /// <summary>
+    /// A table as RFC 4180 CSV in UTF-8 with a byte order mark, which spreadsheet programs need
+    /// to read it as UTF-8: one record per row and one field per cell, the cell's visible text
+    /// with a line break between its paragraphs and for each manual line break. Merged cells stay as the document stores them:
+    /// a cell spanning columns can be one field, so rows can have different field counts, and a
+    /// cell a merge covers is an empty field.
+    /// </summary>
+    private static byte[] Csv(Table table)
+    {
+        var csv = new System.Text.StringBuilder();
+        foreach (Row row in table.Rows)
+        {
+            csv.AppendJoin(',', row.Cells.Select(static cell => Field(WordsText.Of(cell).TrimEnd(ControlChar.ParagraphBreakChar).Replace(ControlChar.ParagraphBreakChar, '\n').Replace(ControlChar.LineBreakChar, '\n'))));
+            csv.Append("\r\n");
+        }
+
+        return [.. System.Text.Encoding.UTF8.GetPreamble(), .. System.Text.Encoding.UTF8.GetBytes(csv.ToString())];
+
+        static string Field(string text) =>
+            text.AsSpan().IndexOfAny(",\"\r\n") < 0 ? text : $"\"{text.Replace("\"", "\"\"", StringComparison.Ordinal)}\"";
     }
 
     /// <summary>

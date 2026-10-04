@@ -1211,6 +1211,47 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Contains("Metric\tValue\nRevenue\t120\nClosing line", File.ReadAllText(extracted), StringComparison.Ordinal);
     }
 
+    [Fact]
+    public void ExtractTables_WritesEachBodyTableAsCsv()
+    {
+        string input = _fixture.Temp.File("tables.docx");
+        var builder = new DocumentBuilder();
+        builder.Writeln("Intro");
+        string[][] first = [["岗位", "人数, 备注"], ["Engineer \"senior\"", "3"]];
+        foreach (string[] row in first)
+        {
+            foreach (string cell in row)
+            {
+                builder.InsertCell();
+                builder.Write(cell);
+            }
+
+            builder.EndRow();
+        }
+
+        builder.EndTable();
+        builder.Writeln("Between");
+        builder.InsertCell();
+        builder.Writeln("Line one");
+        builder.Write("Line two" + ControlChar.LineBreak + "Line three");
+        builder.EndRow();
+        builder.EndTable();
+        builder.Document.Save(input);
+
+        WordsExtractResult result = _fixture.Engine.Extract(input, new WordsExtractRequest
+        {
+            What = "tables",
+            OutputDirectory = _fixture.Temp.File("tables-out"),
+        });
+
+        Assert.Equal(["table-001.csv:2", "table-002.csv:4"], result.Items.Select(static item => $"{Path.GetFileName(item.Path)}:{item.Block}"));
+        Assert.All(result.Items, static item => Assert.Equal("table", item.Kind));
+        byte[] bytes = File.ReadAllBytes(result.Items[0].Path);
+        Assert.Equal([0xEF, 0xBB, 0xBF], bytes[..3]);
+        Assert.Equal("岗位,\"人数, 备注\"\r\n\"Engineer \"\"senior\"\"\",3\r\n", File.ReadAllText(result.Items[0].Path));
+        Assert.Equal("\"Line one\nLine two\nLine three\"\r\n", File.ReadAllText(result.Items[1].Path));
+    }
+
     private static bool HasHeader(string path, byte[] expected)
     {
         byte[] actual = new byte[expected.Length];

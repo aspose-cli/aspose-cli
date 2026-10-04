@@ -8,7 +8,7 @@
     "schema": { "const": "https://schemas.aspose.com/aspose-cli/v2/words/extract-result.schema.json" },
     "schemaVersion": { "const": 2 },
     "input": { "type": "object" },
-    "what": { "enum": ["images", "comments", "text"] },
+    "what": { "enum": ["images", "comments", "text", "tables"] },
     "items": {
       "type": "array",
       "items": {
@@ -17,7 +17,7 @@
         "additionalProperties": false,
         "properties": {
           "path": { "type": "string" },
-          "kind": { "enum": ["image", "comments", "text"] },
+          "kind": { "enum": ["image", "comments", "text", "table"] },
           "sizeBytes": { "type": "integer", "minimum": 0 },
           "block": { "type": "integer", "minimum": 1 }
         }
