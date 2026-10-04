@@ -13,12 +13,11 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     internal Warning? CalculatedOnOpen { get; init; }
 
     /// <summary>
-    /// Discloses that the active sheet is the evaluation warning sheet and that another sheet was
-    /// activated in memory in its place; null otherwise. Read it through
-    /// <see cref="SkippedSheetWarning"/>, since it is true only of a command that defaulted to the
-    /// active sheet.
+    /// The evaluation warning sheet that was the active sheet and the sheet activated in memory
+    /// in its place; null otherwise. Read its warning through <see cref="SkippedSheetWarning"/>,
+    /// since it is true only of a command that defaulted to the active sheet.
     /// </summary>
-    internal Warning? EvaluationSheetSkipped { private get; init; }
+    internal CellsEvaluation.SkippedWarningSheet? EvaluationSheetSkipped { private get; init; }
 
     /// <summary>True when the input was imported as delimited text (CSV, TSV), not opened as a workbook.</summary>
     internal bool IsDelimitedText { get; init; }
@@ -29,7 +28,21 @@ internal sealed record LoadedWorkbook(Workbook Workbook, WorkbookResources Resou
     /// null for a command that named its sheet or covers every sheet.
     /// </summary>
     internal Warning? SkippedSheetWarning(bool defaultedToActiveSheet) =>
-        defaultedToActiveSheet ? EvaluationSheetSkipped : null;
+        defaultedToActiveSheet ? EvaluationSheetSkipped?.Warning : null;
+
+    /// <summary>
+    /// Before a save that writes the whole workbook, activates the evaluation warning sheet the
+    /// load skipped again, so the save keeps the input's active sheet; a text output, which
+    /// writes only the active sheet, keeps the sheet used in its place. A command that chose the
+    /// active sheet itself does not call it.
+    /// </summary>
+    internal void RestoreActiveSheet(WorkbookSavePlan plan)
+    {
+        if (!plan.WritesActiveSheetOnly)
+        {
+            EvaluationSheetSkipped?.Restore(Workbook);
+        }
+    }
 
     /// <summary>
     /// The load's warnings and <paramref name="additional"/>; a command that defaulted to the

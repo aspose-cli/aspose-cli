@@ -59,8 +59,8 @@ The field names of these operations are the ones most often guessed wrong:
 
 ## Addressing
 
-- An operation's `sheet` defaults to the active sheet. Name it every time: in
-  evaluation mode an active warning sheet gives way to the first other sheet
+- An operation's `sheet` defaults to the active sheet. Name it every time: an
+  active evaluation warning sheet gives way to the first other sheet
   (`EVALUATION_SHEET_SKIPPED`), not to the sheet you made active.
 - Range fields are unqualified A1 on the operation's sheet. Only the fields
   whose schema description says so (`copy_range.from`/`to`,

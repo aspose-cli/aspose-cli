@@ -47,8 +47,11 @@ internal sealed record WorkbookSavePlan(string FormatId, SaveFormat Format, Save
         return new WorkbookSavePlan(formatId, format, options, password, warning, licenseState == LicenseState.Evaluation);
     }
 
+    /// <summary>True for the text formats (csv, tsv, md), which write only the active sheet.</summary>
+    internal bool WritesActiveSheetOnly => FormatId is "csv" or "tsv" or "md";
+
     internal Warning? DetectSheetLoss(Workbook workbook) =>
-        FormatId is "csv" or "tsv" or "md" && workbook.Worksheets.Count > 1 ? new Warning
+        WritesActiveSheetOnly && workbook.Worksheets.Count > 1 ? new Warning
         {
             Code = CellsDiagnostics.SheetsDropped,
             Message = $"Only worksheet '{TextSheet(workbook).Name}' was exported; the '{FormatId}' output holds one worksheet, so {workbook.Worksheets.Count - 1} other worksheet(s) were not written.",

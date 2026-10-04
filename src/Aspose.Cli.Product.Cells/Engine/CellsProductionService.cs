@@ -110,6 +110,7 @@ internal sealed class CellsProductionService
         int refsBefore = _saver.CountRefFormulas(workbook);
         WorkbookSavePlan savePlan = WorkbookSavePlan.Create(request.TargetFormatId, request.OutputPath, licenseState,
             request.EncryptPassword, loaded.IsEncrypted ? request.Password : null, selectedSheet, request.ByteOrderMark);
+        loaded.RestoreActiveSheet(savePlan);
         Warning? sheetsDropped = savePlan.DetectSheetLoss(workbook);
         // Read before the save, which may add a warning sheet of its own (EVALUATION_SHEET_ADDED).
         Warning? exportedWarningSheets = CellsEvaluation.DescribeExportedWarningSheets(workbook, request.TargetFormatId, selectedSheet);

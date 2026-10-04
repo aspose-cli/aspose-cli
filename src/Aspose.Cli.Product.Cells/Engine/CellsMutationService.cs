@@ -87,6 +87,12 @@ internal sealed class CellsMutationService
         EditVerification? verification = null;
         if (transaction is not null)
         {
+            // A batch that chose the active sheet keeps it; any other keeps the input's.
+            if (!applied.Any(static outcome => outcome is { Op: "set_active_sheet", Status: OpStatuses.Ok }))
+            {
+                loaded.RestoreActiveSheet(savePlan);
+            }
+
             saved = _saver.Stage(transaction, workbook, savePlan, options.OutputPath, options.Overwrite,
                 options.BackupPath, precondition, verifyReopen: true);
         }

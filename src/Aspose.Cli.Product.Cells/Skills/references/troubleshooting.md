@@ -77,9 +77,11 @@ gains an "Evaluation Warning" sheet plus watermark content. Disclose it
   defaults to the active sheet (`query range` or `render` without `--sheet`,
   `convert` to CSV, TSV or Markdown without `--sheet`, an operation without
   `"sheet"`, the workbook preview) uses the first other sheet instead,
-  preferring a visible one, and warns `EVALUATION_SHEET_SKIPPED`; the file is
-  not changed. A command that names its sheet or covers every sheet does not
-  warn.
+  preferring a visible one, and warns `EVALUATION_SHEET_SKIPPED`, licensed or
+  not. Only the default changes: the input file is not changed, and an edit
+  or `convert` to a multi-sheet format keeps the warning sheet active unless
+  a `set_active_sheet` in the batch succeeded. A command that names its sheet
+  or covers every sheet does not warn.
   The sheet you made active is not recorded anywhere, so pass `--sheet` (or
   `"sheet"`) for any other one, and take names from `inspect`, never from
   sheet order.

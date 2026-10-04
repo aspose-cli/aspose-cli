@@ -551,36 +551,89 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     /// <summary>
-    /// A licensed engine never takes a sheet for the evaluation warning sheet, however it is
-    /// named and whatever it holds: the active sheet stays the default and saves add none.
+    /// A licensed engine reading a workbook an evaluation save left with its warning sheet active
+    /// skips that sheet like the evaluation engine does, while a sheet of that name holding
+    /// anything else stays the active default; licensed saves add no warning sheet.
     /// </summary>
     [Fact]
-    public void Licensed_ASheetLikeTheEvaluationWarningSheet_StaysTheActiveDefault()
+    public void Licensed_TheActiveEvaluationWarningSheetIsSkippedByActiveSheetDefaults()
     {
-        string path = _fixture.Temp.File("lookalike.xlsx");
-        using (var workbook = new Aspose.Cells.Workbook())
-        {
-            workbook.Worksheets[0].Name = "Data";
-            workbook.Worksheets[0].Cells["A1"].PutValue("data");
-            Aspose.Cells.Worksheet lookalike = workbook.Worksheets.Add("Evaluation Warning");
-            lookalike.Cells["A5"].PutValue("Evaluation Only. Created with Aspose.Cells for .NET.");
-            workbook.Worksheets.ActiveSheetIndex = lookalike.Index;
-            workbook.Save(path);
-        }
+        string marked = WorkbookWithActiveSheet("marked.xlsx", "Evaluation Only. Created with Aspose.Cells for .NET.");
+        string lookalike = WorkbookWithActiveSheet("lookalike.xlsx", "notes");
 
-        WorkbookReadResult read = _fixture.Engine.Read(path, new ReadRequest());
-        ConvertResult converted = _fixture.Engine.Convert(path, new ConvertRequest
+        WorkbookReadResult read = _fixture.Engine.Read(marked, new ReadRequest());
+        ConvertResult csv = _fixture.Engine.Convert(marked, new ConvertRequest
+        {
+            TargetFormatId = "csv",
+            OutputPath = _fixture.Temp.File("marked.csv"),
+        });
+        ConvertResult copied = _fixture.Engine.Convert(marked, new ConvertRequest
         {
             TargetFormatId = "xlsx",
-            OutputPath = _fixture.Temp.File("lookalike-copy.xlsx"),
+            OutputPath = _fixture.Temp.File("marked-copy.xlsx"),
         });
+        EditResult edited = _fixture.Engine.ApplyOps(marked,
+            ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("marked-edited.xlsx"), Overwrite = true });
+        EditResult activated = _fixture.Engine.ApplyOps(marked,
+            ParseOps("""{"ops":[{"op":"set_active_sheet","sheet":"Data"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("marked-activated.xlsx"), Overwrite = true });
+        EditResult notActivated = _fixture.Engine.ApplyOps(marked,
+            ParseOps("""{"ops":[{"op":"set_active_sheet","sheet":"Missing"},{"op":"set_values","range":"A2","values":[["edited"]]}]}"""),
+            new EditRequest
+            {
+                OutputPath = _fixture.Temp.File("marked-not-activated.xlsx"), Overwrite = true,
+                Options = new EditCommandOptions { BestEffort = true },
+            });
+        EditResult editedCsv = _fixture.Engine.ApplyOps(marked,
+            ParseOps("""{"ops":[{"op":"set_values","range":"A2","values":[["edited"]]}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("marked-edited.csv"), Overwrite = true });
+        WorkbookReadResult kept = _fixture.Engine.Read(lookalike, new ReadRequest());
 
-        Assert.Equal("Evaluation Warning", read.Sheet!.Name);
-        Assert.Null(read.Warnings);
-        Assert.Null(converted.Warnings);
-        using var copy = new Aspose.Cells.Workbook(converted.Output.Path);
+        Assert.Equal("Data", read.Sheet!.Name);
+        Warning skipped = Assert.Single(read.Warnings!);
+        Assert.Equal("EVALUATION_SHEET_SKIPPED", skipped.Code);
+        Assert.Equal("Evaluation Warning", skipped.Location);
+        Assert.Contains(csv.Warnings!, static warning => warning.Code == "EVALUATION_SHEET_SKIPPED");
+        Assert.StartsWith("data", File.ReadAllText(csv.Output.Path), StringComparison.Ordinal);
+        Assert.Null(copied.Warnings);
+        using var copy = new Aspose.Cells.Workbook(copied.Output.Path);
         Assert.Equal(["Data", "Evaluation Warning"], copy.Worksheets.Cast<Aspose.Cells.Worksheet>().Select(static sheet => sheet.Name));
-        Assert.Equal("Evaluation Warning", copy.Worksheets[copy.Worksheets.ActiveSheetIndex].Name);
+        // Skipping changes the default only: whole-workbook saves keep the input's active sheet
+        // unless the batch chose one.
+        Assert.Equal("Evaluation Warning", ActiveSheet(copied.Output.Path));
+        Assert.Contains(edited.Warnings!, static warning => warning.Code == "EVALUATION_SHEET_SKIPPED");
+        Assert.Equal("Evaluation Warning", ActiveSheet(edited.Output!.Path));
+        using (var editedBook = new Aspose.Cells.Workbook(edited.Output.Path))
+        {
+            Assert.Equal("edited", editedBook.Worksheets["Data"].Cells["A2"].StringValue);
+        }
+        Assert.Equal("Data", ActiveSheet(activated.Output!.Path));
+        Assert.Equal(OpStatuses.Failed, notActivated.Applied[0].Status);
+        Assert.Equal("Evaluation Warning", ActiveSheet(notActivated.Output!.Path));
+        // A text output writes the one sheet the batch edited.
+        Assert.StartsWith("data\r\nedited", File.ReadAllText(editedCsv.Output!.Path), StringComparison.Ordinal);
+        Assert.Equal("Evaluation Warning", kept.Sheet!.Name);
+        Assert.Null(kept.Warnings);
+
+        static string ActiveSheet(string path)
+        {
+            using var workbook = new Aspose.Cells.Workbook(path);
+            return workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name;
+        }
+
+        string WorkbookWithActiveSheet(string fileName, string text)
+        {
+            string path = _fixture.Temp.File(fileName);
+            using var workbook = new Aspose.Cells.Workbook();
+            workbook.Worksheets[0].Name = "Data";
+            workbook.Worksheets[0].Cells["A1"].PutValue("data");
+            Aspose.Cells.Worksheet warning = workbook.Worksheets.Add("Evaluation Warning");
+            warning.Cells["A5"].PutValue(text);
+            workbook.Worksheets.ActiveSheetIndex = warning.Index;
+            workbook.Save(path);
+            return path;
+        }
     }
 
     [Fact]

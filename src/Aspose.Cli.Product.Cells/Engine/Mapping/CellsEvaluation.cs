@@ -9,25 +9,25 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// The one place that recognizes the worksheet Aspose.Cells evaluation mode adds to every
 /// workbook it saves: an "Evaluation Warning" sheet (or "Evaluation Warning (1)", ... when the
 /// name is taken) that holds only the evaluation notice and becomes the active sheet. Commands
-/// change their defaults for the sheet only in a workbook the unlicensed engine opened, so a
-/// licensed workbook with a sheet of that name keeps its active sheet; review reports the sheet
-/// in any mode (<see cref="IsWarningSheet"/>), because a licensed re-save keeps it.
+/// skip the sheet as their default and review reports it in any mode
+/// (<see cref="IsWarningSheet"/>), because licensed commands read and re-save workbooks that
+/// evaluation saves produced.
 /// </summary>
 internal static partial class CellsEvaluation
 {
     private const string Notice = "Evaluation Only. Created with Aspose.Cells";
 
     /// <summary>
-    /// When the unlicensed engine opened a workbook whose active sheet is an evaluation warning
-    /// sheet, activates the first other sheet in memory, preferring a visible one, so every
-    /// command that defaults to the active sheet reads the workbook's content, and returns the
-    /// warning such a command reports (<see cref="LoadedWorkbook.SkippedSheetWarning"/>). The file
-    /// is not changed.
+    /// When the active sheet of a workbook is an evaluation warning sheet, activates the first
+    /// other sheet in memory, preferring a visible one, so every command that defaults to the
+    /// active sheet reads the workbook's content, and returns the skip, whose warning such a
+    /// command reports (<see cref="LoadedWorkbook.SkippedSheetWarning"/>) and which a save of the
+    /// whole workbook undoes (<see cref="LoadedWorkbook.RestoreActiveSheet"/>).
     /// </summary>
-    internal static Warning? SkipActiveWarningSheet(Workbook workbook)
+    internal static SkippedWarningSheet? SkipActiveWarningSheet(Workbook workbook)
     {
         WorksheetCollection sheets = workbook.Worksheets;
-        if (workbook.IsLicensed || sheets.Count == 0 || !IsWarningSheet(sheets[sheets.ActiveSheetIndex]))
+        if (sheets.Count == 0 || !IsWarningSheet(sheets[sheets.ActiveSheetIndex]))
         {
             return null;
         }
@@ -38,16 +38,32 @@ internal static partial class CellsEvaluation
             return null;
         }
 
-        string skipped = sheets[sheets.ActiveSheetIndex].Name;
+        Worksheet skipped = sheets[sheets.ActiveSheetIndex];
         sheets.ActiveSheetIndex = replacement.Index;
-        return new Warning
+        return new SkippedWarningSheet(skipped, new Warning
         {
             Code = CellsDiagnostics.EvaluationSheetSkipped,
-            Message = $"The active sheet '{skipped}' is the evaluation warning sheet Aspose.Cells evaluation mode added when it saved this workbook, so this command, which names no sheet, uses '{replacement.Name}' in its place.",
+            Message = $"The active sheet '{skipped.Name}' is the evaluation warning sheet Aspose.Cells evaluation mode added when it saved this workbook, so this command, which names no sheet, uses '{replacement.Name}' in its place.",
             Hint = "Pass --sheet (or an operation's \"sheet\") to choose any sheet; names come from inspect.",
             Docs = "cells/troubleshooting",
-            Location = skipped,
-        };
+            Location = skipped.Name,
+        });
+    }
+
+    /// <summary>
+    /// The evaluation warning sheet <see cref="SkipActiveWarningSheet"/> deactivated in memory
+    /// and the warning a command that defaulted to the active sheet reports.
+    /// </summary>
+    internal sealed record SkippedWarningSheet(Worksheet Sheet, Warning Warning)
+    {
+        /// <summary>Activates the skipped sheet again, unless the workbook no longer has it.</summary>
+        internal void Restore(Workbook workbook)
+        {
+            if (workbook.Worksheets.Cast<Worksheet>().Contains(Sheet))
+            {
+                workbook.Worksheets.ActiveSheetIndex = Sheet.Index;
+            }
+        }
     }
 
     /// <summary>
