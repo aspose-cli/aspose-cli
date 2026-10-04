@@ -11,6 +11,50 @@ namespace Aspose.Cli.Product.Pdf.Tests;
 public sealed class PdfHardeningTests
 {
     [Fact]
+    public void LoadedInput_CanBeReplacedInPlaceByAnotherWriter()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateDocument("shared.pdf", pages: 2);
+        string replacement = fixture.CreateDocument("replacement.pdf", pages: 1);
+        var loader = new PdfDocumentLoader(ProductTestBudgets.Create<PdfModule>());
+
+        using (LoadedPdf loaded = loader.Open(input, password: null))
+        {
+            // Another edit of the same file publishes its output over it with File.Replace.
+            File.Replace(replacement, input, destinationBackupFileName: null);
+
+            Assert.Equal(2, loaded.Document.Pages.Count);
+            Assert.False(string.IsNullOrWhiteSpace(PdfEngineSupport.ExtractText(loaded.Document.Pages[2], PdfReadModes.Plain)));
+        }
+
+        // A new command admits the replaced input afresh.
+        using LoadedPdf reopened = new PdfDocumentLoader(ProductTestBudgets.Create<PdfModule>()).Open(input, password: null);
+        Assert.Single(reopened.Document.Pages);
+    }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void Create_ReadsASourceThatAnInPlaceEditIsReplacing(bool markdown)
+    {
+        using var fixture = new PdfEngineFixture();
+        string source = fixture.File(markdown ? "source.md" : "source.txt");
+        File.WriteAllText(source, markdown ? "# Shared source" : "Shared source");
+        string output = fixture.File("created.pdf");
+
+        // Another command's in-place edit holds the source open with delete access while it
+        // replaces the file.
+        using (new FileStream(source, FileMode.Open, FileAccess.Read,
+                   FileShare.ReadWrite | FileShare.Delete, 1, FileOptions.DeleteOnClose))
+        {
+            fixture.Engine.Create(new NewPdfRequest { TextPath = source, Markdown = markdown, OutputPath = output });
+        }
+
+        using var created = new Document(output);
+        Assert.Single(created.Pages);
+    }
+
+    [Fact]
     public void RegexTimeout_StopsTheRedactionWithoutPublishing()
     {
         using var fixture = new PdfEngineFixture();

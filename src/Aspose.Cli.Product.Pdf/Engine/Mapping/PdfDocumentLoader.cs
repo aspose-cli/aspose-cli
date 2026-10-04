@@ -21,11 +21,15 @@ internal sealed class PdfDocumentLoader(
     {
         EnsurePdfHeader(path);
 
+        FileStream? stream = null;
         try
         {
+            // The engine reads the document from the stream as it needs it, so the stream
+            // stays open for the document's lifetime.
+            stream = InputFiles.OpenRead(path);
             var document = string.IsNullOrEmpty(password)
-                ? new Document(path)
-                : new Document(path, password);
+                ? new Document(stream)
+                : new Document(stream, password);
             try
             {
                 resourceBudgets.EnsureWithin(
@@ -49,7 +53,9 @@ internal sealed class PdfDocumentLoader(
                 throw;
             }
             var fileInfo = new PdfFileInfo(document);
-            return new LoadedPdf(document, fileInfo.PasswordType);
+            var loaded = new LoadedPdf(document, fileInfo.PasswordType, stream);
+            stream = null;
+            return loaded;
         }
         catch (InvalidPasswordException)
         {
@@ -67,13 +73,17 @@ internal sealed class PdfDocumentLoader(
         {
             throw InvalidPdf(path, exception.Message, exception);
         }
+        finally
+        {
+            stream?.Dispose();
+        }
     }
 
     private static void EnsurePdfHeader(string path)
     {
         try
         {
-            using FileStream stream = File.OpenRead(path);
+            using FileStream stream = InputFiles.OpenRead(path);
             int length = (int)Math.Min(1024, stream.Length);
             Span<byte> bytes = stackalloc byte[length];
             _ = stream.Read(bytes);
@@ -104,7 +114,12 @@ internal sealed class PdfDocumentLoader(
         innerException: inner);
 }
 
-internal sealed record LoadedPdf(Document Document, PasswordType PasswordType) : IDisposable
+/// <summary>A loaded document and the input stream it reads from, disposed together.</summary>
+internal sealed record LoadedPdf(Document Document, PasswordType PasswordType, Stream Source) : IDisposable
 {
-    public void Dispose() => Document.Dispose();
+    public void Dispose()
+    {
+        Document.Dispose();
+        Source.Dispose();
+    }
 }

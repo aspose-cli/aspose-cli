@@ -353,7 +353,12 @@ internal sealed class PdfProductionService
         Document? document = null;
         try
         {
-            document = new Document(fullPath, options);
+            // The importer reads the whole HTML while it constructs the document.
+            using (FileStream stream = InputFiles.OpenRead(fullPath))
+            {
+                document = new Document(stream, options);
+            }
+
             resources.ThrowIfFailed();
             // The importer gives a check box neither a border nor a border colour, so its
             // appearance draws no box and an unchecked box shows nothing (PDF-HTML-CHECKBOX-BOX).
@@ -434,8 +439,15 @@ internal sealed class PdfProductionService
         ValidateMargins(request.Margins, width, height);
         var pageInfo = new PageInfo { Width = width, Height = height, Margin = Margin(request.Margins) };
         return markdown
-            ? new Document(fullPath, new MdLoadOptions { PageInfo = pageInfo })
+            ? CreateFromMarkdown(fullPath, pageInfo)
             : CreateFromPlainText(fullPath, pageInfo);
+    }
+
+    /// <summary>The importer reads the whole Markdown while it constructs the document.</summary>
+    private static Document CreateFromMarkdown(string path, PageInfo pageInfo)
+    {
+        using FileStream stream = InputFiles.OpenRead(path);
+        return new Document(stream, new MdLoadOptions { PageInfo = pageInfo });
     }
 
     /// <summary>
@@ -451,7 +463,8 @@ internal sealed class PdfProductionService
             Page page = document.Pages.Add();
             page.SetPageSize(pageInfo.Width, pageInfo.Height);
             page.PageInfo.Margin = pageInfo.Margin;
-            foreach (string line in File.ReadLines(path))
+            using var reader = new StreamReader(InputFiles.OpenRead(path));
+            while (reader.ReadLine() is { } line)
             {
                 page.Paragraphs.Add(new TextFragment(ExpandTabs(line)));
             }
