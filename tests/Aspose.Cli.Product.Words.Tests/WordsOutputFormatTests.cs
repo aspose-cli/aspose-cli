@@ -15,6 +15,22 @@ public sealed class WordsOutputFormatTests
     public void ForOutput_KeepsTheSourceFormatThatOwnsTheExtension(string path, string? source, string expected) =>
         Assert.Equal(expected, WordsFormats.ForOutput(path, source));
 
+    [Theory]
+    [InlineData("html")]
+    [InlineData("html-fixed")]
+    public void ConvertToEveryHtmlFormat_AcceptsTheHtmExtension(string format)
+    {
+        using var workspace = new TempWorkspace();
+        var document = new Document();
+        new DocumentBuilder(document).Write("Clause one.");
+        document.Save(workspace.File("source.docx"));
+
+        CliResult converted = workspace.Run("words", "convert", "source.docx", "--to", format, "--out", "page.htm");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Contains("Clause", File.ReadAllText(workspace.File("page.htm")), StringComparison.Ordinal);
+    }
+
     [Fact]
     public void InPlaceEditOfWordML_StaysWordML()
     {

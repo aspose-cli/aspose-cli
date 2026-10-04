@@ -7220,6 +7220,7 @@
         {
           "id": "html-fixed",
           "extensions": [
+            ".htm",
             ".html"
           ],
           "aliases": [],

@@ -33,7 +33,7 @@ public static class WordsFormats
         FormatDescriptor.Declare("openxps", FormatUse.Convert, null, 11, null, false, ".oxps"),
         FormatDescriptor.Declare("ps", FormatUse.Convert, null, 12, null, false, ".ps"),
         FormatDescriptor.Declare("pcl", FormatUse.Convert, null, 13, null, false, ".pcl"),
-        FormatDescriptor.Declare("html-fixed", FormatUse.Convert, null, 16, null, false, ".html"),
+        FormatDescriptor.Declare("html-fixed", FormatUse.Convert, null, 16, null, false, ".html", ".htm"),
         FormatDescriptor.Declare("png", FormatUse.Render, null, null, 0, false, ".png"),
         FormatDescriptor.Declare("jpeg", FormatUse.Render, null, null, 1, false, ".jpg", ".jpeg")
             with { Aliases = ["jpg"] },
