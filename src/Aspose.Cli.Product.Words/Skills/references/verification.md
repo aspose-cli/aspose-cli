@@ -28,7 +28,7 @@ failures publish nothing.
 
 ```powershell
 aspose-cli words inspect output.docx --detail outline fields comments --output json
-aspose-cli words query blocks output.docx --blocks 1-30 --scope full --output json
+aspose-cli words query blocks output.docx --blocks 1- --max-blocks 30 --scope full --output json
 aspose-cli words compare baseline.docx output.docx --output json
 ```
 

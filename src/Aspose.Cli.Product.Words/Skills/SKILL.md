@@ -54,11 +54,13 @@ editing, and find phrases with a regex that allows that space, such as
 
 ```powershell
 aspose-cli words inspect input.docx --detail outline sections fields bookmarks comments --output json
-aspose-cli words query blocks input.docx --blocks 1-30 --scope full --output json
+aspose-cli words query blocks input.docx --blocks 1- --max-blocks 30 --scope full --output json
 aspose-cli words query search input.docx --pattern "notice period" --scope all --output json
 ```
 
-`--scope outline|text|full` chooses how much of each block is projected.
+`--blocks 1- --max-blocks 30` reads the first 30 blocks, or all of a shorter
+document; a closed range such as `1-30` must lie inside the document, or it is
+`BLOCK_NOT_FOUND`. `--scope outline|text|full` chooses how much of each block is projected.
 `--max-chars` bounds the sum of paragraph, table-cell and run text; addressing
 and formatting metadata do not count against it. Check `window.truncated` and
 each block's `contentTruncated`, and run `window.next` as given: it resumes at
