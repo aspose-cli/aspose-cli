@@ -413,7 +413,11 @@ public sealed record UpdateChartDataOp : ShapeTargetOp
 [Operation("delete_shape")]
 public sealed record DeleteShapeOp : ShapeTargetOp;
 
-/// <summary>Styles one shape and every run of its text.</summary>
+/// <summary>
+/// Styles one shape and every run of its text. A table's fill, line and text are those of all
+/// its cells; a chart's fill and line are its chart area's, and its text includes the title,
+/// legend, axes and data labels. A shape without text, such as a picture, refuses text styles.
+/// </summary>
 [Operation("set_shape_style")]
 public sealed record SetShapeStyleOp : ShapeTargetOp
 {

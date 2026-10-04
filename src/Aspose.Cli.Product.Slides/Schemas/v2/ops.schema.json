@@ -1110,7 +1110,7 @@
       ]
     },
     "set_shape_style": {
-      "description": "Styles one shape and every run of its text.",
+      "description": "Styles one shape and every run of its text. A table's fill, line and text are those of all its cells; a chart's fill and line are its chart area's, and its text includes the title, legend, axes and data labels. A shape without text, such as a picture, refuses text styles.",
       "type": "object",
       "required": [
         "op",

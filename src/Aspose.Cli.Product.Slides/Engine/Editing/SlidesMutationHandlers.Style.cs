@@ -1,4 +1,5 @@
 using Aspose.Slides;
+using Aspose.Slides.Charts;
 using Aspose.Slides.SlideShow;
 using static Aspose.Cli.Product.Slides.Engine.Editing.SlidesMutationSupport;
 
@@ -31,52 +32,142 @@ internal sealed partial class SlidesMutationHandlers
         return 1;
     }
 
+    /// <summary>
+    /// Styles a shape and all of its text. A table's fill and line are its cells' fills and
+    /// borders; a chart's are its chart area's. A shape that shows no text, such as a picture,
+    /// refuses a text style rather than reporting a change it cannot make.
+    /// </summary>
     private static void ApplyStyle(IShape shape, SlidesShapeStyleInput style)
     {
+        IBasePortionFormat[]? text = TextFormats(shape);
+        bool styleText = style.Font is not null || style.Size is not null || style.Bold is not null || style.Color is not null;
+        if (styleText && text is null)
+        {
+            throw new OperationInvalidException(
+                $"Shape {shape.OfficeInteropShapeId} has no text to style.",
+                "Give a picture or other object only 'fill' and 'line'; text styles apply to shapes with text, tables and charts.");
+        }
+
         if (style.Fill is not null)
         {
-            shape.FillFormat.FillType = FillType.Solid;
-            shape.FillFormat.SolidFillColor.Color = ParseColor(style.Fill);
+            SetSolid(Fills(shape), style.Fill);
         }
 
         if (style.Line is not null)
         {
-            shape.LineFormat.FillFormat.FillType = FillType.Solid;
-            shape.LineFormat.FillFormat.SolidFillColor.Color = ParseColor(style.Line);
+            SetSolid(Lines(shape), style.Line);
         }
 
-        if (shape is IAutoShape { TextFrame: not null } auto)
+        foreach (IBasePortionFormat format in text ?? [])
         {
-            foreach (IPortion portion in auto.TextFrame.Paragraphs.SelectMany(paragraph => paragraph.Portions))
+            if (style.Font is not null)
             {
-                if (style.Font is not null)
-                {
-                    // PowerPoint picks a portion's font per character script. Setting
-                    // the Latin font alone leaves East Asian and complex-script text
-                    // on the theme font, so the requested change never appears.
-                    var font = new FontData(style.Font);
-                    portion.PortionFormat.LatinFont = font;
-                    portion.PortionFormat.EastAsianFont = font;
-                    portion.PortionFormat.ComplexScriptFont = font;
-                }
-
-                if (style.Size is not null)
-                {
-                    portion.PortionFormat.FontHeight = (float)style.Size.Value;
-                }
-
-                if (style.Bold is not null)
-                {
-                    portion.PortionFormat.FontBold = style.Bold.Value
-                        ? NullableBool.True
-                        : NullableBool.False;
-                }
-                if (style.Color is not null)
-                {
-                    portion.PortionFormat.FillFormat.FillType = FillType.Solid;
-                    portion.PortionFormat.FillFormat.SolidFillColor.Color = ParseColor(style.Color);
-                }
+                // PowerPoint picks a portion's font per character script. Setting
+                // the Latin font alone leaves East Asian and complex-script text
+                // on the theme font, so the requested change never appears.
+                var font = new FontData(style.Font);
+                format.LatinFont = font;
+                format.EastAsianFont = font;
+                format.ComplexScriptFont = font;
             }
+
+            if (style.Size is not null)
+            {
+                format.FontHeight = (float)style.Size.Value;
+            }
+
+            if (style.Bold is not null)
+            {
+                format.FontBold = style.Bold.Value ? NullableBool.True : NullableBool.False;
+            }
+
+            if (style.Color is not null)
+            {
+                SetSolid([format.FillFormat], style.Color);
+            }
+        }
+    }
+
+    /// <summary>
+    /// The formats of every run of text a shape shows: a text frame's runs, every table cell's
+    /// runs, or a chart's text with that of its title, legend, axes and shown data labels, which
+    /// can each override the chart's own. Null for a shape that shows no text.
+    /// </summary>
+    private static IBasePortionFormat[]? TextFormats(IShape shape) => shape switch
+    {
+        IAutoShape { TextFrame: { } frame } => Runs(frame).ToArray(),
+        ITable table => Cells(table).SelectMany(static cell => Runs(cell.TextFrame)).ToArray(),
+        IChart chart => ChartTextFormats(chart).ToArray(),
+        _ => null,
+    };
+
+    private static IEnumerable<IBasePortionFormat> ChartTextFormats(IChart chart)
+    {
+        yield return chart.TextFormat.PortionFormat;
+        if (chart.HasTitle)
+        {
+            yield return chart.ChartTitle.TextFormat.PortionFormat;
+            foreach (IBasePortionFormat run in chart.ChartTitle.TextFrameForOverriding is { } title ? Runs(title) : [])
+            {
+                yield return run;
+            }
+        }
+
+        if (chart.HasLegend)
+        {
+            yield return chart.Legend.TextFormat.PortionFormat;
+        }
+
+        // A pie has no axes.
+        IAxis?[] axes =
+        [
+            chart.Axes?.HorizontalAxis, chart.Axes?.VerticalAxis,
+            chart.Axes?.SecondaryHorizontalAxis, chart.Axes?.SecondaryVerticalAxis,
+        ];
+        foreach (IAxis axis in axes.OfType<IAxis>().Where(static axis => axis.IsVisible))
+        {
+            yield return axis.TextFormat.PortionFormat;
+        }
+
+        foreach (IDataLabelFormat labels in chart.ChartData.Series
+            .Select(static series => series.Labels.DefaultDataLabelFormat)
+            .Where(static labels => labels.ShowValue || labels.ShowCategoryName || labels.ShowSeriesName || labels.ShowPercentage))
+        {
+            yield return labels.TextFormat.PortionFormat;
+        }
+    }
+
+    private static IEnumerable<IBasePortionFormat> Runs(ITextFrame frame) =>
+        frame.Paragraphs.SelectMany(static paragraph => paragraph.Portions).Select(static portion => portion.PortionFormat);
+
+    private static IEnumerable<ICell> Cells(ITable table) => table.Rows.SelectMany(static row => row);
+
+    private static IEnumerable<IFillFormat> Fills(IShape shape) => shape is ITable table
+        ? Cells(table).Select(static cell => cell.CellFormat.FillFormat)
+        : [shape.FillFormat];
+
+    private static IEnumerable<ILineFillFormat> Lines(IShape shape) => shape is ITable table
+        ? Cells(table).SelectMany(static cell => new[]
+        {
+            cell.CellFormat.BorderTop, cell.CellFormat.BorderBottom, cell.CellFormat.BorderLeft, cell.CellFormat.BorderRight,
+        }).Select(static border => border.FillFormat)
+        : [shape.LineFormat.FillFormat];
+
+    private static void SetSolid(IEnumerable<IFillFormat> fills, string color)
+    {
+        foreach (IFillFormat fill in fills)
+        {
+            fill.FillType = FillType.Solid;
+            fill.SolidFillColor.Color = ParseColor(color);
+        }
+    }
+
+    private static void SetSolid(IEnumerable<ILineFillFormat> fills, string color)
+    {
+        foreach (ILineFillFormat fill in fills)
+        {
+            fill.FillType = FillType.Solid;
+            fill.SolidFillColor.Color = ParseColor(color);
         }
     }
 
