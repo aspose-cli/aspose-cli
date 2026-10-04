@@ -2,6 +2,7 @@ using System.CommandLine;
 using Aspose.Cli.Host.Output;
 using System.CommandLine.Parsing;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Text;
 
 namespace Aspose.Cli.Host.Invocation;
 
@@ -38,8 +39,26 @@ internal sealed class ParsedInvocation
     {
         if (ParseResult.Errors.Count > 0)
         {
-            throw CliErrors.Usage(ParseResult.Errors.Select(static error => error.Message).ToArray());
+            throw CliErrors.Usage(ParseResult.Errors.Select(static error => error.Message).ToArray(), OptionSuggestions());
         }
+    }
+
+    /// <summary>The command's options closest to the first unknown option, compared without their dashes.</summary>
+    private IReadOnlyList<string> OptionSuggestions()
+    {
+        if (ParseResult.UnmatchedTokens.FirstOrDefault(static token => token.StartsWith('-')) is not { } unknown)
+        {
+            return [];
+        }
+
+        Dictionary<string, string> options = CommandPath
+            .SelectMany(command => command == Command ? command.Options : command.Options.Where(static option => option.Recursive))
+            .Concat(ParseResult.RootCommandResult.Command.Options.Where(static option => option.Recursive))
+            .Where(static option => !option.Hidden)
+            .Select(static option => option.Name)
+            .DistinctBy(static name => name.TrimStart('-'), StringComparer.Ordinal)
+            .ToDictionary(static name => name.TrimStart('-'), StringComparer.Ordinal);
+        return [.. NameSuggestions.Closest(unknown.TrimStart('-'), options.Keys).Select(name => options[name])];
     }
 }
 

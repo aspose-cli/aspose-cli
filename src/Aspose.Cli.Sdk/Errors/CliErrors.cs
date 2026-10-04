@@ -17,15 +17,21 @@ public static partial class CliErrors
     /// <summary>The most names a not-found error lists in <c>details.available</c>.</summary>
     public const int MaximumAvailableNames = 50;
 
-    public static CliException Usage(IReadOnlyList<string> problems)
+    /// <summary>
+    /// The error for a command line that does not parse. <paramref name="suggestions"/> are the
+    /// options of the command closest to an unknown one; the hint names them first.
+    /// </summary>
+    public static CliException Usage(IReadOnlyList<string> problems, IReadOnlyList<string>? suggestions = null)
     {
-        JsonArray errors = Strings(problems);
+        var details = new JsonObject { ["errors"] = Strings(problems) };
+        string hint = $"Run the command again with --help for usage; '{DistributionInfo.CommandName} --help' lists the commands and '{DistributionInfo.CommandName} docs' the documentation topics.";
+        if (suggestions is [_, ..])
+        {
+            details["suggestions"] = Strings(suggestions);
+            hint = $"Did you mean {string.Join(" or ", suggestions)}? {hint}";
+        }
 
-        return new CliException(
-            ErrorCodes.UsageError,
-            string.Join("; ", problems),
-            hint: $"Run the command again with --help for usage; '{DistributionInfo.CommandName} --help' lists the commands and '{DistributionInfo.CommandName} docs' the documentation topics.",
-            details: new JsonObject { ["errors"] = errors });
+        return new CliException(ErrorCodes.UsageError, string.Join("; ", problems), hint, details);
     }
 
     public static CliException FileNotFound(string path) => new(

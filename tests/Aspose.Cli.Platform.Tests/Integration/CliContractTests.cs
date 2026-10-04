@@ -552,6 +552,20 @@ $", result.StdOut);
     }
 
     [Fact]
+    public void UnknownOption_SuggestsTheClosestOptionsOfTheCommand()
+    {
+        CliResult result = _workspace.Run("cells", "compare", "a.xlsx", "b.xlsx", "--password-env", "PASSWORD");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Equal(
+            ["--left-password-env", "--right-password-env"],
+            error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.StartsWith("Did you mean --left-password-env or --right-password-env?", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Doctor_ReportsTheCurrentDevelopmentEnvironment()
     {
         CliResult result = _workspace.Run("doctor", "--output", "json");
