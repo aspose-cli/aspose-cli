@@ -230,7 +230,8 @@ public sealed class PdfReviewAndInfoTests
 
     /// <summary>
     /// Each Aspose product prints its own evaluation notice into a PDF it saves without a
-    /// license; review recognizes them all, as a later licensed run reads the file.
+    /// license; review recognizes them all, as a later licensed run reads the file, also where
+    /// the notice overlaps other text.
     /// </summary>
     [Theory]
     [Category(TestCategory.Slow)]
@@ -245,7 +246,9 @@ public sealed class PdfReviewAndInfoTests
         {
             "cells" => [["cells", "convert", Write("data.csv", "Region,Total\nEast,1\n"), "--to", "pdf", "--out", pdf]],
             "words" => [["words", "convert", Write("note.md", "# Note\n\nA short note.\n"), "--to", "pdf", "--out", pdf]],
-            _ => [["slides", "create", workspace.File("deck.pptx")], ["slides", "convert", workspace.File("deck.pptx"), "--to", "pdf", "--out", pdf]],
+            // The notice overlaps the title, so the text review reads interleaves the two.
+            _ => [["slides", "create", workspace.File("deck.pptx"), "--markdown", Write("deck.md", "# 2026 Q3 Operations Review\n")],
+                ["slides", "convert", workspace.File("deck.pptx"), "--to", "pdf", "--out", pdf]],
         };
         foreach (string[] command in commands)
         {

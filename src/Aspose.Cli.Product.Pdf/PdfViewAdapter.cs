@@ -62,7 +62,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         var findings = new List<ReviewFinding>();
         AnalyzeTextBounds(layout, findings);
         AnalyzeCoveredText(layout, findings);
-        AnalyzeWatermarks(read, findings);
+        AnalyzeWatermarks(layout, findings);
         int unusualPages = AnalyzePageSizes(layout, findings);
         TextAnalysis text = AnalyzeText(
             read,
@@ -141,16 +141,15 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
 
     /// <summary>The pages whose text holds the evaluation notice of any Aspose product.</summary>
     private static void AnalyzeWatermarks(
-        PdfReadResult read,
+        PdfReviewLayout layout,
         ICollection<ReviewFinding> findings)
     {
-        foreach (PdfPageText page in read.Pages)
+        foreach (PdfReviewPageLayout page in layout.Pages)
         {
-            if (PdfEvaluation.Notice.Match(page.Text) is not { Success: true } notice)
+            if (page.EvaluationProduct is not { } product)
             {
                 continue;
             }
-            string product = notice.Groups["product"].Value;
             findings.Add(PdfReviewChecks.EvaluationWatermark.Finding(
                 $"The page carries the evaluation watermark of {product}, saved into the file by a run without a license.",
                 $"page {page.Page}",

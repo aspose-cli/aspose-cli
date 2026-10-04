@@ -42,9 +42,8 @@ internal sealed class PdfReviewLayoutService
     {
         var absorber = new TextFragmentAbsorber();
         page.Accept(absorber);
-        Rectangle[] text = [.. absorber.TextFragments
-            .Where(static fragment => !string.IsNullOrWhiteSpace(fragment.Text))
-            .Select(static fragment => fragment.Rectangle)];
+        TextFragment[] fragments = [.. absorber.TextFragments.Where(static fragment => !string.IsNullOrWhiteSpace(fragment.Text))];
+        Rectangle[] text = [.. fragments.Select(static fragment => fragment.Rectangle)];
         Rectangle displayed = page.GetPageRect(considerRotation: true);
         return new PdfReviewPageLayout(
             pageNumber,
@@ -53,8 +52,20 @@ internal sealed class PdfReviewLayoutService
             text.Length,
             text.Count(fragment => IsOutsidePage(fragment, page.Rect)),
             ImageCoverage(page),
-            text.Length == 0 ? 0 : CoveredFragments(page));
+            text.Length == 0 ? 0 : CoveredFragments(page),
+            EvaluationProduct(fragments));
     }
+
+    /// <summary>
+    /// The product whose evaluation notice the page's text fragments hold, read in the order they
+    /// are drawn: a notice drawn over other text, as Aspose.Slides draws it over a slide title,
+    /// interleaves with that text when the page is read by position.
+    /// </summary>
+    private static string? EvaluationProduct(IEnumerable<TextFragment> fragments) =>
+        PdfEvaluation.Notice.Match(string.Join('\n', fragments.Select(static fragment => fragment.Text)))
+            is { Success: true } notice
+            ? notice.Groups["product"].Value
+            : null;
 
     /// <summary>
     /// The text fragments whose centre lies under an opaque box drawn after them: a form XObject

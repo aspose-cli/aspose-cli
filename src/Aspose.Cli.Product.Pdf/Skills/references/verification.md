@@ -100,10 +100,9 @@ and contrast. PDF review findings worth acting on:
   the page, and a license does not remove it; regenerate the file from its
   original inputs with the license before delivery. The check matches the
   notice from "Created with Aspose.<product>" to its "Copyright … Aspose Pty Ltd"
-  in the page text review reads, so a PDF that `cells`, `words` or `slides`
-  saved is flagged too, and the finding names the product whose license is
-  needed. Pages past review's text budget are not checked;
-  `PDF_TEXT_ANALYSIS_TRUNCATED` marks the page where the budget ran out.
+  in the page text, read in the order it is drawn, so a notice drawn over a
+  title is found too. A PDF that `cells`, `words` or `slides` saved is flagged as
+  well, and the finding names the product whose license is needed.
 - `PDF_TEXT_COVERED`: text lies under an opaque box painted over it, such as
   the cover a redaction leaves, so the file holds text the page does not show.
   After a redaction it is the text the engine moved under the cover

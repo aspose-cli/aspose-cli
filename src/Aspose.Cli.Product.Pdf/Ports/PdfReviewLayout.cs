@@ -8,7 +8,8 @@ internal sealed record PdfReviewLayout(
 /// Displayed size (rotation applied, in points), text boundary facts and the share of the page
 /// its images cover, from 0 to 1, for one PDF page. <see cref="CoveredTextFragments"/> counts
 /// the text fragments that lie under an opaque box, such as a redaction cover, painted after
-/// them.
+/// them.<see cref="EvaluationProduct"/> names the Aspose product, such as
+/// <c>Aspose.Slides</c>, whose evaluation notice the page's text holds.
 /// </summary>
 internal sealed record PdfReviewPageLayout(
     int Page,
@@ -17,4 +18,5 @@ internal sealed record PdfReviewPageLayout(
     int TextFragments,
     int OutsideTextFragments,
     double ImageCoverage,
-    int CoveredTextFragments);
+    int CoveredTextFragments,
+    string? EvaluationProduct);
