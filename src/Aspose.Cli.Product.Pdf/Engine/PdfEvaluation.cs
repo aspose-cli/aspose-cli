@@ -27,12 +27,13 @@ internal static class PdfEvaluation
     /// The notice every Aspose product prints into a document it saves in evaluation mode,
     /// "Evaluation Only. Created with Aspose.PDF. Copyright 2002-2026 Aspose Pty Ltd.", and so
     /// on for Aspose.Cells, Aspose.Words and Aspose.Slides, matched from the product it names
-    /// to its copyright. Between them a product may add its platform and version, the notices of
-    /// two evaluation saves can overlap in the extracted text, and a page too narrow for the
-    /// notice in its font wraps it between any two words.
+    /// to its copyright, with the "Evaluation Only." before them when the text has it there.
+    /// Between them a product may add its platform and version, the notices of two evaluation
+    /// saves can overlap in the extracted text, and a page too narrow for the notice in its font
+    /// wraps it between any two words.
     /// </summary>
     internal static readonly Regex Notice = new(
-        @"Created\s{1,4}with\s{1,4}(?<product>Aspose\.[A-Za-z]+)[\s\S]{0,200}?Copyright\s{1,4}\d{4}\s{0,4}-\s{0,4}\d{4}\s{0,4}Aspose\s{1,4}Pty\s{1,4}Ltd",
+        @"(?:Evaluation\s{1,4}Only\.\s{1,4})?Created\s{1,4}with\s{1,4}(?<product>Aspose\.[A-Za-z]+)[\s\S]{0,200}?Copyright\s{1,4}\d{4}\s{0,4}-\s{0,4}\d{4}\s{0,4}Aspose\s{1,4}Pty\s{1,4}Ltd",
         RegexOptions.CultureInvariant);
 
     // The SDK reports the limit only with this message on an IndexOutOfRangeException.

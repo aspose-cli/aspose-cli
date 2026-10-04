@@ -45,27 +45,55 @@ internal sealed class PdfReviewLayoutService
         TextFragment[] fragments = [.. absorber.TextFragments.Where(static fragment => !string.IsNullOrWhiteSpace(fragment.Text))];
         Rectangle[] text = [.. fragments.Select(static fragment => fragment.Rectangle)];
         Rectangle displayed = page.GetPageRect(considerRotation: true);
+        (string? product, bool[] notice) = EvaluationNotices(fragments);
         return new PdfReviewPageLayout(
             pageNumber,
             displayed.Width,
             displayed.Height,
             text.Length,
-            text.Count(fragment => IsOutsidePage(fragment, page.Rect)),
+            // The evaluation finding covers a notice an engine prints beyond the page edge, as
+            // Aspose.Cells prints it across the evaluation warning sheet it adds.
+            text.Where((_, index) => !notice[index]).Count(fragment => IsOutsidePage(fragment, page.Rect)),
             ImageCoverage(page),
             text.Length == 0 ? 0 : CoveredFragments(page),
-            EvaluationProduct(fragments));
+            product);
     }
 
     /// <summary>
-    /// The product whose evaluation notice the page's text fragments hold, read in the order they
-    /// are drawn: a notice drawn over other text, as Aspose.Slides draws it over a slide title,
-    /// interleaves with that text when the page is read by position.
+    /// The product whose evaluation notice the page's text fragments hold, and which fragments
+    /// belong to a notice, read in the order they are drawn: a notice drawn over other text, as
+    /// Aspose.Slides draws it over a slide title, interleaves with that text when the page is
+    /// read by position.
     /// </summary>
-    private static string? EvaluationProduct(IEnumerable<TextFragment> fragments) =>
-        PdfEvaluation.Notice.Match(string.Join('\n', fragments.Select(static fragment => fragment.Text)))
-            is { Success: true } notice
-            ? notice.Groups["product"].Value
-            : null;
+    private static (string? Product, bool[] Notice) EvaluationNotices(IReadOnlyList<TextFragment> fragments)
+    {
+        int[] starts = new int[fragments.Count];
+        var joined = new System.Text.StringBuilder();
+        for (int index = 0; index < fragments.Count; index++)
+        {
+            if (index > 0)
+            {
+                joined.Append('\n');
+            }
+
+            starts[index] = joined.Length;
+            joined.Append(fragments[index].Text);
+        }
+
+        bool[] notice = new bool[fragments.Count];
+        string? product = null;
+        foreach (System.Text.RegularExpressions.Match match in PdfEvaluation.Notice.Matches(joined.ToString()))
+        {
+            product ??= match.Groups["product"].Value;
+            for (int index = 0; index < fragments.Count; index++)
+            {
+                notice[index] |= starts[index] < match.Index + match.Length
+                    && starts[index] + fragments[index].Text.Length > match.Index;
+            }
+        }
+
+        return (product, notice);
+    }
 
     /// <summary>
     /// The text fragments whose centre lies under an opaque box drawn after them: a form XObject

@@ -107,7 +107,9 @@ PDF review findings worth acting on:
   notice from "Created with Aspose.<product>" to its "Copyright … Aspose Pty Ltd"
   in the page text, read in the order it is drawn, so a notice drawn over a
   title is found too. A PDF that `cells`, `words` or `slides` saved is flagged as
-  well, and the finding names the product whose license is needed.
+  well, and the finding names the product whose license is needed. The notice
+  is not also reported as `PDF_TEXT_OUTSIDE_PAGE`, such as where Aspose.Cells
+  prints it beyond the page edge on the evaluation warning sheet it adds.
 - `PDF_TEXT_COVERED`: text lies under an opaque box painted over it, such as
   the cover a redaction leaves, so the file holds text the page does not show.
   After a redaction it is the text the engine moved under the cover

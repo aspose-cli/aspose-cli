@@ -193,6 +193,48 @@ public sealed class PdfReviewAndInfoTests
     }
 
     /// <summary>
+    /// An evaluation notice an engine prints beyond the page edge, as Aspose.Cells prints it on
+    /// the evaluation warning sheet it adds, is reported only as the evaluation watermark; other
+    /// text beyond the edge still is.
+    /// </summary>
+    [Fact]
+    public void Review_ReportsOnlyTheWatermarkForAnEvaluationNoticeBeyondThePageEdge()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string input = fixture.File("notice.pdf");
+        using (var document = new Document())
+        {
+            // The notice starts left of the page, as on the second page of a sheet it spans, in
+            // runs as Aspose.Cells draws it.
+            Page notice = document.Pages.Add();
+            Write(notice, -150, "Evaluation Only.");
+            Write(notice, 60, "Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.");
+            Write(document.Pages.Add(), 72, "Quarterly commission statement for the eastern sales region, all branches");
+            document.Save(input);
+        }
+
+        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        JsonNode[] findings = [.. JsonNode.Parse(review.StdOut)!["findings"]!.AsArray().Select(static item => item!)];
+        Assert.Equal(
+            ["page 2"],
+            findings.Where(static item => item["code"]!.GetValue<string>() == "PDF_TEXT_OUTSIDE_PAGE")
+                .Select(static item => item["location"]!.GetValue<string>()));
+        Assert.Contains(findings, static item => item["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK"
+            && item["location"]!.GetValue<string>() == "page 1"
+            && item["message"]!.GetValue<string>().Contains("Aspose.Cells", StringComparison.Ordinal));
+
+        static void Write(Page page, double x, string text)
+        {
+            var fragment = new Aspose.Pdf.Text.TextFragment(text) { Position = new Aspose.Pdf.Text.Position(x, 600) };
+            fragment.TextState.FontSize = 24;
+            new Aspose.Pdf.Text.TextBuilder(page).AppendText(fragment);
+        }
+    }
+
+    /// <summary>
     /// PDF-RENDER-THIN-GLYPH: the engine drops the thin underscores of SimSun at some positions
     /// below about 300 DPI. Review evidence keeps its size and still shows them.
     /// </summary>
