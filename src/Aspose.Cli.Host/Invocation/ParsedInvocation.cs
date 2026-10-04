@@ -37,16 +37,35 @@ internal sealed class ParsedInvocation
 
     internal void EnsureValid()
     {
-        if (ParseResult.Errors.Count > 0)
+        string[] problems =
+        [
+            .. ParseResult.Errors.Select(static error => error.Message),
+            .. OptionLikeArguments().Select(static token => $"Unrecognized command or argument '{token}'."),
+        ];
+        if (problems.Length > 0)
         {
-            throw CliErrors.Usage(ParseResult.Errors.Select(static error => error.Message).ToArray(), OptionSuggestions());
+            throw CliErrors.Usage(problems, OptionSuggestions());
         }
     }
+
+    /// <summary>
+    /// The tokens starting with <c>--</c> that the command's arguments took, such as a mistyped
+    /// option after a list of files: they are unknown options, never file names, unless the
+    /// caller ended the options with a <c>--</c> token.
+    /// </summary>
+    private IEnumerable<string> OptionLikeArguments() =>
+        ParseResult.Tokens.Any(static token => token.Type == TokenType.DoubleDash)
+            ? []
+            : ParseResult.CommandResult.Children.OfType<ArgumentResult>()
+                .SelectMany(static argument => argument.Tokens)
+                .Select(static token => token.Value)
+                .Where(static value => value.StartsWith("--", StringComparison.Ordinal));
 
     /// <summary>The command's options closest to the first unknown option, compared without their dashes.</summary>
     private IReadOnlyList<string> OptionSuggestions()
     {
-        if (ParseResult.UnmatchedTokens.FirstOrDefault(static token => token.StartsWith('-')) is not { } unknown)
+        if (ParseResult.UnmatchedTokens.Concat(OptionLikeArguments())
+            .FirstOrDefault(static token => token.StartsWith('-')) is not { } unknown)
         {
             return [];
         }

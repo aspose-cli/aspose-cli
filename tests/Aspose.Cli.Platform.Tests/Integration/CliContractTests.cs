@@ -566,6 +566,20 @@ $", result.StdOut);
     }
 
     [Fact]
+    public void UnknownOption_IsNeverTakenAsAFileArgument()
+    {
+        CliResult result = _workspace.Run("pdf", "merge", "a.pdf", "b.pdf", "--out", "c.pdf", "--bookmark", "drop");
+        CliResult escaped = _workspace.Run("pdf", "merge", "a.pdf", "--out", "c.pdf", "--", "--bookmark");
+
+        Assert.Equal(2, result.ExitCode);
+        JsonNode error = Parse(result.StdErr)["error"]!;
+        Assert.Equal("USAGE_ERROR", error["code"]!.GetValue<string>());
+        Assert.Contains("--bookmark", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(["--bookmarks"], error["details"]!["suggestions"]!.AsArray().Select(static item => item!.GetValue<string>()));
+        Assert.Equal("FILE_NOT_FOUND", Parse(escaped.StdErr)["error"]!["code"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Doctor_ReportsTheCurrentDevelopmentEnvironment()
     {
         CliResult result = _workspace.Run("doctor", "--output", "json");
