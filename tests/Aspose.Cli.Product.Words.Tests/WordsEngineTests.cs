@@ -219,6 +219,29 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal("Block 2 holds the closest text: '第六条 合同的解除和终止', but it is not a heading; address it with {\"block\": 2} or a \"find\" text it contains.", heading.Hint);
     }
 
+    [Fact]
+    public void MissingTextAnchors_IgnoreSpacesAndPreferBodyTextOverContentsEntries()
+    {
+        string input = _fixture.Temp.File("contents.docx");
+        var document = new Document();
+        var builder = new DocumentBuilder(document);
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Toc2;
+        builder.Writeln("2.2 请假流程\t2");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Heading2;
+        builder.Writeln("2.2 请假流程");
+        builder.ParagraphFormat.StyleIdentifier = StyleIdentifier.Normal;
+        builder.Write("第三条　劳动报酬：乙方月基本工资为人民币28,000元。");
+        document.Save(input);
+
+        CliException contents = Assert.Throws<CliException>(() => Edit(input, "contents",
+            new SetTextOp { At = new WordsTarget { Find = "请假流成" }, Text = "x" }));
+        CliException spaces = Assert.Throws<CliException>(() => Edit(input, "spaces",
+            new SetTextOp { At = new WordsTarget { Find = "第三条 劳动报酬" }, Text = "x" }));
+
+        Assert.StartsWith("Block 2 holds the closest text: '2.2 请假流程';", contents.Hint, StringComparison.Ordinal);
+        Assert.StartsWith("Block 3 holds the closest text: '第三条　劳动报酬", spaces.Hint, StringComparison.Ordinal);
+    }
+
     private WordsEditResult Edit(string input, string name, WordsOp op) => _fixture.Engine.ApplyOps(
         input,
         new WordsOpsBatch { Ops = [op] },

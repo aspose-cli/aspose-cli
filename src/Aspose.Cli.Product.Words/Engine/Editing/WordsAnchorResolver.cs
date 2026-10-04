@@ -142,21 +142,33 @@ internal static class WordsAnchorResolver
     }
 
     // The first block that contains the longest leading part of the text, at least half of it.
+    // Spaces do not count, as a half-width space typed for a full-width one is a common slip,
+    // and body blocks come before table of contents entries, which repeat the headings' text.
     private static BlockEntry? Closest(DocumentBlockIndex index, string needle)
     {
-        string[] texts = [.. index.Entries.Select(static entry => WordsText.Of(entry.Node))];
-        for (int length = needle.Length - 1; length >= Math.Max(2, (needle.Length + 1) / 2); length--)
-        {
-            string part = needle[..length];
-            int found = Array.FindIndex(texts, text => text.Contains(part, StringComparison.OrdinalIgnoreCase));
-            if (found >= 0)
+        string wanted = WithoutSpaces(needle);
+        (BlockEntry Entry, string Text)[] blocks = [.. index.Entries
+            .OrderBy(static entry => entry.Node is Paragraph
             {
-                return index.Entries[found];
+                ParagraphFormat.StyleIdentifier: >= StyleIdentifier.Toc1 and <= StyleIdentifier.Toc9,
+            })
+            .Select(static entry => (entry, WithoutSpaces(WordsText.Of(entry.Node))))];
+        for (int length = wanted.Length; length >= Math.Max(2, (wanted.Length + 1) / 2); length--)
+        {
+            string part = wanted[..length];
+            foreach ((BlockEntry entry, string text) in blocks)
+            {
+                if (text.Contains(part, StringComparison.OrdinalIgnoreCase))
+                {
+                    return entry;
+                }
             }
         }
 
         return null;
     }
+
+    private static string WithoutSpaces(string text) => string.Concat(text.Where(static c => !char.IsWhiteSpace(c)));
 
     /// <summary>
     /// The addresses of the original blocks that hold <paramref name="nodes"/>, followed by the

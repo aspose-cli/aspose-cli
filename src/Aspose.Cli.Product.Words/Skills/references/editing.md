@@ -17,7 +17,8 @@ aspose-cli schema v2/words/ops --operation insert_table
   contains the given text, ignoring case, and `heading` does the same among
   heading paragraphs; `nth` picks the match (the first by default). When
   nothing matches, `ANCHOR_NOT_FOUND` suggests a close heading, or names the
-  block that holds the longest leading part of the text, heading or not. Prefer
+  block that holds the longest leading part of the text, heading or not,
+  ignoring spaces and preferring body text to table of contents entries. Prefer
   bookmarks and headings in automation; read block numbers again immediately
   before using them.
 - Insertions take `position: before|after` at a block boundary; there is no
