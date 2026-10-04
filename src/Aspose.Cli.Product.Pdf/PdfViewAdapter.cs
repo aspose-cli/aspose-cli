@@ -68,6 +68,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
             layout,
             info.Forms?.FieldCount ?? 0,
             findings);
+        IReadOnlyList<int> scannedPages = AnalyzeScannedPages(read, findings);
         FormAnalysis forms = AnalyzeForms(
             port,
             filePath,
@@ -89,6 +90,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 Metric("pages", info.Pdf.PageCount, "pages"),
                 Metric("inspectedPages", inspected, "pages"),
                 Metric("emptyTextPages", text.EmptyPages, "pages"),
+                Metric("scannedPages", scannedPages.Count, "pages"),
                 Metric("lowUtilizationPages", text.LowUtilizationPages, "pages"),
                 Metric("outsideTextFragments", layout.Pages.Sum(static page => page.OutsideTextFragments), "fragments"),
                 Metric("unusualPageSizes", unusualPages, "pages"),
@@ -195,6 +197,23 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
                 PdfViews.PagePart(page.Page)));
         }
         return new TextAnalysis(emptyPages, lowUtilizationPages);
+    }
+
+    /// <summary>The pages <c>pdf query pages</c> reports as SCANNED_PAGES_SUSPECTED, one finding each.</summary>
+    private static IReadOnlyList<int> AnalyzeScannedPages(
+        PdfReadResult read,
+        ICollection<ReviewFinding> findings)
+    {
+        IReadOnlyList<int> pages = read.ScannedPagesSuspected ?? [];
+        foreach (int page in pages)
+        {
+            findings.Add(PdfReviewChecks.PageWithoutTextLayer.Finding(
+                "The page has no extractable text and an image covers most of it, as on a scan; search and redact_text do not reach its content.",
+                $"page {page}",
+                "Read the page from its review image, and hide content on it with redact_area, whose coordinates 'aspose-cli pdf render --grid 50' labels.",
+                PdfViews.PagePart(page)));
+        }
+        return pages;
     }
 
     private static bool HasTextOrImageContent(

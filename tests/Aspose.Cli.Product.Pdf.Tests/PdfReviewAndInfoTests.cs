@@ -75,6 +75,31 @@ public sealed class PdfReviewAndInfoTests
     }
 
     [Fact]
+    public void Review_NamesAScannedPageThatSearchAndRedactionCannotReach()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        // Page 3 is one image over the whole page with no text, as a scan is.
+        string input = fixture.CreateRawDocument("scanned.pdf", pages: 3,
+            textPages: new HashSet<int> { 1, 2 }, imagePages: new HashSet<int> { 3 }, imagePoints: 700,
+            textContent: "BT /F1 12 Tf 72 720 Td (A line of readable text on a text page) Tj ET");
+
+        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        JsonNode result = JsonNode.Parse(review.StdOut)!;
+        JsonNode finding = Assert.Single(
+            result["findings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>().StartsWith("PDF_PAGE_", StringComparison.Ordinal))!;
+        Assert.Equal("PDF_PAGE_WITHOUT_TEXT_LAYER", finding["code"]!.GetValue<string>());
+        Assert.Equal("info", finding["severity"]!.GetValue<string>());
+        Assert.Equal("page 3", finding["location"]!.GetValue<string>());
+        Assert.Contains("redact_area", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Equal(1, result["coverage"]!["metrics"]!.AsArray()
+            .Single(static metric => metric!["name"]!.GetValue<string>() == "scannedPages")!["value"]!.GetValue<int>());
+    }
+
+    [Fact]
     public void Review_FlagsTheEvaluationWatermarkSavedIntoTheFile()
     {
         using var fixture = new PdfEngineFixture();

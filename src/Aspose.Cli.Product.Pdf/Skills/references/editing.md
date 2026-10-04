@@ -115,7 +115,8 @@ expression is matched as written: allow the gaps with ` *`, for example
 ### Scanned pages
 
 A page without a text layer (`pdf query pages` reports
-`SCANNED_PAGES_SUSPECTED`) can only be redacted with `redact_area`. Take its
+`SCANNED_PAGES_SUSPECTED`, and `review` `PDF_PAGE_WITHOUT_TEXT_LAYER`) can only
+be redacted with `redact_area`. Take its
 rectangle from a gridded render, never by eye:
 
 1. Render the page with a coordinate grid. `--grid 50` draws a line every 50

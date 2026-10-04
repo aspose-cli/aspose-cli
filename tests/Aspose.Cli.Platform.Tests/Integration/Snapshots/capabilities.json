@@ -2293,6 +2293,11 @@
             "summary": "A page has no readable text, no images covering a quarter of it and does not look scanned, so it may be unintentionally blank."
           },
           {
+            "code": "PDF_PAGE_WITHOUT_TEXT_LAYER",
+            "severity": "info",
+            "summary": "A page has no extractable text and an image covers most of it, as on a scan, so search and redact_text do not reach its content."
+          },
+          {
             "code": "PDF_TEXT_ANALYSIS_TRUNCATED",
             "severity": "warning",
             "summary": "Text extraction reached its budget, so the structural text checks of a page are incomplete."
@@ -14571,6 +14576,7 @@
             "PDF_PAGE_SIZE_UNUSUAL",
             "PDF_PAGE_UTILIZATION_LOW",
             "PDF_PAGE_WITHOUT_READABLE_CONTENT",
+            "PDF_PAGE_WITHOUT_TEXT_LAYER",
             "PDF_TEXT_ANALYSIS_TRUNCATED",
             "PDF_TEXT_OUTSIDE_PAGE",
             "SLIDES_CHART_COVERED",

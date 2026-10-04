@@ -102,6 +102,11 @@ and contrast. PDF review findings worth acting on:
   not look scanned; look at it, it may be unintentionally blank or sparse. A blank or
   image-only page also has no font resources, so `fonts check` returns an empty
   `fonts` array for it.
+- `PDF_PAGE_WITHOUT_TEXT_LAYER` (info): a page with no extractable text and an
+  image over most of it, which `pdf query pages` reports as
+  `SCANNED_PAGES_SUSPECTED`. Search and `redact_text` do not reach its content;
+  read it from the review image and redact it with `redact_area`
+  ([scanned pages](editing.md#scanned-pages)).
 
 ```powershell
 aspose-cli fonts check report.pdf --font-dir fonts --output json

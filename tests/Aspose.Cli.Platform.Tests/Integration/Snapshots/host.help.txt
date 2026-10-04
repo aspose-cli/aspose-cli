@@ -515,7 +515,7 @@ Options:
   --max-items <max-items>                     Maximum visual units rendered and listed in review.json. [default: 256]
   --product <cells|pdf|slides|words>          Product that reads the file; by default, the one whose format the file's content matches.
   --view <auto|pages|sheets|slides>           Review view; auto uses the product default. [default: auto]
-  --code <code>                               Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review. Accepts 55 values, listed in aspose-cli capabilities.
+  --code <code>                               Report only findings of this check (a code from capabilities review.checks); repeat for several. Errors of other checks then do not fail the review. Accepts 56 values, listed in aspose-cli capabilities.
   --password <password>                       Password for the review source. Discouraged: visible in the process list; prefer --password-env.
   --password-env <password-env>               Name of an environment variable holding the password for the review source.
   --password-stdin                            Read the password for the review source from the first line of stdin.
