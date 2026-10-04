@@ -90,6 +90,22 @@ public sealed class WordsCliTests : IDisposable
     }
 
     [Fact]
+    public void WordsCommands_ReadADocumentByItsContentWhateverItsExtension()
+    {
+        var document = new Document();
+        new DocumentBuilder(document).Write("Supplier contract.");
+        document.Save(_workspace.File("contract.pdf"), SaveFormat.Docx);
+
+        CliResult converted = _workspace.Run(
+            "words", "convert", "contract.pdf", "--to", "docx", "--out", "contract.docx", "--output", "json");
+        CliResult reviewed = _workspace.Run("review", "contract.pdf", "--out", "evidence", "--output", "json");
+
+        Assert.True(converted.ExitCode == 0, converted.StdErr);
+        Assert.Equal("docx", JsonNode.Parse(converted.StdOut)!["input"]!["format"]!.GetValue<string>());
+        Assert.Equal("FORMAT_MISMATCH", JsonNode.Parse(reviewed.StdErr)!["error"]!["code"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void Review_ReportsDeclaredChecksAndFiltersThemByCode()
     {
         var document = new Document();
