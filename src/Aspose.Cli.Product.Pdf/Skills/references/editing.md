@@ -103,6 +103,22 @@ nothing moved, so review the redacted pages anyway. The moved text is still in
 the file and searchable; to keep the line in place, redact the source document
 and create the PDF again.
 
+When only the PDF exists, nothing keeps the rest of such a line in place, but
+the values can still be removed without losing the text beside them:
+
+- Prefer `redact_text`. Each operation searches the page as the earlier ones
+  left it and removes its matches on a page from the last to the first, so
+  every match is still where it was found.
+- To cover text with `redact_area`, take each rectangle from the `rect` of a
+  `pdf query search` hit as it is, without a margin: a margin also removes the
+  characters it touches, such as the full-width `，` or `：` beside a value.
+  Order the areas of one line from right to left, because each removal moves
+  the rest of the line and an area taken from the original would then miss
+  part of the value it was meant to cover.
+
+Then `review` the pages named by `REDACTION_TEXT_MOVED`, and run
+`pdf query search` for each value to confirm that none is left.
+
 The engine reads a visible gap between characters as a space, so extracted
 text can hold spaces the source never had: Word separates Chinese, Japanese or
 Korean text from digits and Latin letters with such a gap, and `2026年10月31日`
@@ -125,7 +141,7 @@ rectangle from a gridded render, never by eye:
 2. Read the rectangle from the labels: `x` and `y` are the distances in points
    from the top-left corner of the visible page (after rotation and crop), and
    `width` and `height` extend right and down, exactly as `redact_area.rect`
-   takes them. Add a margin of a few points on every side.
+   takes them. On a scan, add a margin of a few points on every side.
 3. Apply `redact_area` to a copy, never to the only original.
 4. Render the result again with `--grid` at a higher `--dpi`, and check that
    nothing sensitive shows and that nothing that must stay is covered. Repeat

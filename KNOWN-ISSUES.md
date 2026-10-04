@@ -248,7 +248,9 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   followed, so the rest of a run the redaction cut can move without a warning: no warning does
   not prove that nothing moved, so review the redacted pages. The moved text is still in the
   file.
-- **Workaround:** redact the source document and create the PDF again.
+- **Workaround:** redact the source document and create the PDF again. With only the PDF, the
+  values can still be removed without the text beside them: with `redact_text`, or with
+  `redact_area` on search rectangles without a margin, the areas of a line from right to left.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
 ## Aspose.Slides.NET6.CrossPlatform 26.9.0

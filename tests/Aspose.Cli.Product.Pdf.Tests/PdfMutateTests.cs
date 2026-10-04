@@ -1410,6 +1410,39 @@ public sealed class PdfMutateTests
         Assert.Contains("tail", text, StringComparison.Ordinal);
     }
 
+    /// <summary>
+    /// The PDF-only recipe the Skill gives for areas: each search hit's rectangle as it is,
+    /// the areas of a line from right to left, removes the values and keeps the text between.
+    /// </summary>
+    [Fact]
+    public void RedactArea_OnSearchRectanglesFromRightToLeftKeepsTheTextBesideThem()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.CreateRawDocument("line.pdf", pages: 1,
+            textContent: "BT /F1 12 Tf 72 720 Td (ID: ) Tj (330106198507124518) Tj (, phone: ) Tj (5550101) Tj (.) Tj ET");
+        string output = fixture.File("line.out.pdf");
+        IReadOnlyList<PdfSearchHit> hits = fixture.Engine.Search(input, Find(@"\d{18}|555\d{4}", regex: true)).Hits;
+
+        fixture.Engine.ApplyOps(
+            input,
+            new PdfOpsBatch
+            {
+                Ops = [.. hits.OrderByDescending(static hit => hit.Rect.X).Select(static hit => new RedactAreaOp
+                {
+                    Page = hit.Page,
+                    Rect = new PdfRectInput { X = hit.Rect.X, Y = hit.Rect.Y, Width = hit.Rect.Width, Height = hit.Rect.Height },
+                })],
+            },
+            new PdfEditRequest { OutputPath = output });
+
+        Assert.Equal(2, hits.Count);
+        using var reopened = new Document(output);
+        string text = PageText(reopened.Pages[1]);
+        Assert.DoesNotContain("0101", text, StringComparison.Ordinal);
+        Assert.DoesNotContain("4518", text, StringComparison.Ordinal);
+        Assert.Contains("ID: , phone: .", text, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void SearchAndRedaction_MatchLiteralTextAcrossGapsBetweenEastAsianAndOtherCharacters()
     {
