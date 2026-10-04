@@ -94,6 +94,7 @@ public sealed record ReplaceTextOp : WordsOp
     [MinLength(1)] public required string Find { get; init; }
 
     /// <summary>With regex, .NET substitutions such as $1 and ${name} apply; write $$ for a literal $.</summary>
+    [MistakenFor("replacement", "replaceWith")]
     public required string Replace { get; init; }
 
     /// <summary>Whether find is a .NET regular expression rather than literal text.</summary>

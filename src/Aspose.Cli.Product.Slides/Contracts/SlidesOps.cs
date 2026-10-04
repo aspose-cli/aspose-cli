@@ -265,6 +265,7 @@ public sealed record SlidesReplaceTextOp : SlidesOp
     [MinLength(1)] public required string Find { get; init; }
 
     /// <summary>The replacement; with regex it honors .NET substitutions such as $1, and $$ is a literal $.</summary>
+    [MistakenFor("replacement", "replaceWith")]
     public required string Replace { get; init; }
 
     /// <summary>Whether find is a .NET regular expression rather than literal text.</summary>
@@ -318,8 +319,10 @@ public sealed record SlidesInsertImageOp : SlideTargetOp
 [Operation("insert_shape")]
 public sealed record InsertShapeOp : SlideTargetOp
 {
+    [MistakenFor("type", "shapeType")]
     [AllowedValues(typeof(SlidesShapeKinds))] public required string Kind { get; init; }
 
+    [MistakenFor("box", "bounds")]
     public required SlidesRectInput Rect { get; init; }
 
     public string? Text { get; init; }
@@ -375,8 +378,10 @@ public sealed record SlidesSetTableCellOp : ShapeTargetOp
 [Operation("insert_chart")]
 public sealed record InsertChartOp : SlideTargetOp
 {
+    [MistakenFor("type", "chartType")]
     [AllowedValues(typeof(SlidesChartKinds))] public required string Kind { get; init; }
 
+    [MistakenFor("box", "bounds")]
     public required SlidesRectInput Rect { get; init; }
 
     [MinItems(1), MaxItems(1000)] public required IReadOnlyList<string> Categories { get; init; }
