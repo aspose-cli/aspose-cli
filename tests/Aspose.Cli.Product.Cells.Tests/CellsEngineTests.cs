@@ -225,6 +225,18 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
     }
 
     [Fact]
+    public void VerificationExplainsANameErrorFromAnUnknownFunction()
+    {
+        string source = _fixture.CreateSalesWorkbook("verify-unknown-function.xlsx");
+        EditResult result = _fixture.Engine.ApplyOps(source,
+            ParseOps("""{"ops":[{"op":"set_formula","sheet":"Data","range":"D2","formula":"=求和(B2:C2)"}]}"""),
+            new EditRequest { OutputPath = _fixture.Temp.File("verify-unknown-function.out.xlsx"), Verify = true });
+
+        Assert.Equal("#NAME?", Assert.Single(result.Verification!.FormulaErrors).Error);
+        Assert.Contains("English function names", Assert.Single(result.Verification.Issues).Hint, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void CleanVerificationReportsAnEmptyIssueList()
     {
         string source = _fixture.CreateSalesWorkbook("verify-clean.xlsx");

@@ -315,7 +315,9 @@ output before publishing and reports `verification` with `directChanges`,
 errors, sheet loss, grid truncation, imported formulas whose results changed
 (`EXTERNAL_LINK_CACHE_MISSING`) or an incomplete scan keep the edited file
 and exit 8 with `verification.ok: false`. Issue codes: `FORMULA_ERRORS` (the
-edited workbook has formula errors; `location` is the cell when there is one),
+edited workbook has formula errors; `location` is the cell when there is one;
+`#NAME?` usually means a localized or misspelled function name, and the hint
+asks for English function names),
 `LIST_TRUNCATED` (`formulaErrors` holds only the first 1000), or the code of a
 completeness warning such as `SHEETS_DROPPED`; `capabilities` lists every
 code. A formula error whose input cell had the same formula and the same

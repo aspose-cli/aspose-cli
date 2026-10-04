@@ -55,9 +55,12 @@ internal sealed class CellsEditVerifier(CellsWorkbookLoader loader, ResourceBudg
                     : $"The edited workbook contains {errorTotal} formula error(s).")
                 + (preexisting > 0 ? $" {preexisting} of the listed error(s) were already in the input." : ""),
                 location: errorTotal == 1 ? Sheets.QuotedName(errors[0].Sheet) + "!" + errors[0].Cell : null,
-                hint: errorsCapped
+                hint: (errorsCapped
                     ? "Fix the cells listed in formulaErrors, then edit again with --verify to list the rest."
-                    : "Fix the cells listed in formulaErrors, then edit again with --verify."));
+                    : "Fix the cells listed in formulaErrors, then edit again with --verify.")
+                    + (errors.Any(static error => error.Error == "#NAME?")
+                        ? " #NAME? means a formula names a function or name the workbook does not know. " + CellOps.EnglishFormulaHint
+                        : "")));
         }
         return new EditVerification
         {
