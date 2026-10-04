@@ -61,7 +61,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         });
         var findings = new List<ReviewFinding>();
         AnalyzeTextBounds(layout, findings);
-        AnalyzeWatermarks(layout, findings);
+        AnalyzeWatermarks(read, findings);
         int unusualPages = AnalyzePageSizes(layout, findings);
         TextAnalysis text = AnalyzeText(
             read,
@@ -119,16 +119,22 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         }
     }
 
+    /// <summary>The pages whose text holds the evaluation notice of any Aspose product.</summary>
     private static void AnalyzeWatermarks(
-        PdfReviewLayout layout,
+        PdfReadResult read,
         ICollection<ReviewFinding> findings)
     {
-        foreach (PdfReviewPageLayout page in layout.Pages.Where(static page => page.EvaluationWatermark))
+        foreach (PdfPageText page in read.Pages)
         {
+            if (PdfEvaluation.Notice.Match(page.Text) is not { Success: true } notice)
+            {
+                continue;
+            }
+            string product = notice.Groups["product"].Value;
             findings.Add(PdfReviewChecks.EvaluationWatermark.Finding(
-                "The page carries the Aspose evaluation watermark, saved into the file by a run without a license.",
+                $"The page carries the evaluation watermark of {product}, saved into the file by a run without a license.",
                 $"page {page.Page}",
-                "Regenerate the PDF from its original inputs with an Aspose.PDF license; editing this file keeps the watermark.",
+                $"Regenerate the file from its original inputs with a license for {product}; editing this file keeps the watermark.",
                 PdfViews.PagePart(page.Page)));
         }
     }

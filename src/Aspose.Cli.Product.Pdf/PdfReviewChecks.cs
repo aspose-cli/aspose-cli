@@ -59,11 +59,11 @@ internal static class PdfReviewChecks
         ReviewSeverities.Warning,
         "Font resources other than the standard 14 PDF fonts are not embedded, so rendering can vary between machines.");
 
-    /// <summary>A page carries the watermark a save without a license stamped into the file.</summary>
+    /// <summary>A page carries the watermark an Aspose product's save without a license stamped into the file.</summary>
     public static ReviewCheck EvaluationWatermark { get; } = new(
         "PDF_EVALUATION_WATERMARK",
         ReviewSeverities.Warning,
-        "A page carries the Aspose evaluation watermark that a save without a license stamped into the file; a license does not remove it.");
+        "A page carries the evaluation watermark that an Aspose product (PDF, Cells, Words or Slides) saving without a license stamped into the file; a license does not remove it.");
 
     /// <summary>Every PDF review check.</summary>
     public static IReadOnlyList<ReviewCheck> All { get; } =

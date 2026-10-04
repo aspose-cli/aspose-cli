@@ -2260,7 +2260,7 @@
           {
             "code": "PDF_EVALUATION_WATERMARK",
             "severity": "warning",
-            "summary": "A page carries the Aspose evaluation watermark that a save without a license stamped into the file; a license does not remove it."
+            "summary": "A page carries the evaluation watermark that an Aspose product (PDF, Cells, Words or Slides) saving without a license stamped into the file; a license does not remove it."
           },
           {
             "code": "PDF_FONTS_NOT_EMBEDDED",

@@ -127,6 +127,46 @@ public sealed class PdfReviewAndInfoTests
         Assert.All(findings, static item => Assert.Contains("license", item["hint"]!.GetValue<string>(), StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// Each Aspose product prints its own evaluation notice into a PDF it saves without a
+    /// license; review recognizes them all, as a later licensed run reads the file.
+    /// </summary>
+    [Theory]
+    [Category(TestCategory.Slow)]
+    [InlineData("cells")]
+    [InlineData("words")]
+    [InlineData("slides")]
+    public void Review_FlagsTheEvaluationNoticeOfAPdfAnotherProductSaved(string product)
+    {
+        using var workspace = new TempWorkspace();
+        string pdf = workspace.File($"{product}.pdf");
+        string[][] commands = product switch
+        {
+            "cells" => [["cells", "convert", Write("data.csv", "Region,Total\nEast,1\n"), "--to", "pdf", "--out", pdf]],
+            "words" => [["words", "convert", Write("note.md", "# Note\n\nA short note.\n"), "--to", "pdf", "--out", pdf]],
+            _ => [["slides", "create", workspace.File("deck.pptx")], ["slides", "convert", workspace.File("deck.pptx"), "--to", "pdf", "--out", pdf]],
+        };
+        foreach (string[] command in commands)
+        {
+            CliResult created = workspace.Run([.. command, "--license-mode", "evaluation", "--output", "json"]);
+            Assert.True(created.ExitCode == 0, created.StdErr);
+        }
+
+        CliResult review = workspace.Run(["review", pdf, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        Assert.Contains(
+            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
+            static item => item!["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK"
+                && item["location"]!.GetValue<string>() == "page 1");
+
+        string Write(string name, string contents)
+        {
+            File.WriteAllText(workspace.File(name), contents);
+            return workspace.File(name);
+        }
+    }
+
     [Fact]
     public void Review_DeclaresEveryCheckItsAssessmentReports()
     {

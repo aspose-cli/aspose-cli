@@ -55,11 +55,8 @@ internal sealed class PdfReviewLayoutService
             }
         }
         Rectangle displayed = page.GetPageRect(considerRotation: true);
-        var watermark = new TextFragmentAbsorber(PdfEvaluation.Watermark, new TextSearchOptions(true));
-        page.Accept(watermark);
         return new PdfReviewPageLayout(
-            pageNumber, displayed.Width, displayed.Height, fragments, outsideFragments, ImageCoverage(page),
-            watermark.TextFragments.Count > 0);
+            pageNumber, displayed.Width, displayed.Height, fragments, outsideFragments, ImageCoverage(page));
     }
 
     /// <summary>The share of the page its image placements cover, overlaps counted twice, at most 1.</summary>

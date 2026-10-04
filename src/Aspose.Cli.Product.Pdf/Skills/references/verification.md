@@ -96,7 +96,12 @@ and contrast. PDF review findings worth acting on:
   stale, clipped or missing values.
 - `PDF_EVALUATION_WATERMARK`: a run without a license saved its watermark into
   the page, and a license does not remove it; regenerate the file from its
-  original inputs with the license before delivery.
+  original inputs with the license before delivery. The check matches the
+  notice from "Created with Aspose.<product>" to its "Copyright … Aspose Pty Ltd"
+  in the page text review reads, so a PDF that `cells`, `words` or `slides`
+  saved is flagged too, and the finding names the product whose license is
+  needed. Pages past review's text budget are not checked;
+  `PDF_TEXT_ANALYSIS_TRUNCATED` marks the page where the budget ran out.
 - `PDF_PAGE_WITHOUT_READABLE_CONTENT` and `PDF_PAGE_UTILIZATION_LOW`: a page
   with no or very little text, no images covering a quarter of it and that does
   not look scanned; look at it, it may be unintentionally blank or sparse. A blank or

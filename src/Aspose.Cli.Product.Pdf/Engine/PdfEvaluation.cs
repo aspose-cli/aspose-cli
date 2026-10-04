@@ -18,9 +18,20 @@ internal static class PdfEvaluation
 {
     internal const int VisiblePages = 4;
 
-    /// <summary>The sentence evaluation mode stamps on every page each time it saves.</summary>
+    /// <summary>The sentence Aspose.PDF in evaluation mode stamps on every page each time it saves.</summary>
     internal static readonly Regex Watermark = new(
         @"Evaluation Only\. Created with Aspose\.PDF\. Copyright \d{4}-\d{4} Aspose Pty Ltd\.",
+        RegexOptions.CultureInvariant);
+
+    /// <summary>
+    /// The notice every Aspose product prints into a document it saves in evaluation mode,
+    /// "Evaluation Only. Created with Aspose.PDF. Copyright 2002-2026 Aspose Pty Ltd.", and so
+    /// on for Aspose.Cells, Aspose.Words and Aspose.Slides, matched from the product it names
+    /// to its copyright. Between them a product may add its platform and version and break the
+    /// line, and the notices of two evaluation saves can overlap in the extracted text.
+    /// </summary>
+    internal static readonly Regex Notice = new(
+        @"Created with (?<product>Aspose\.[A-Za-z]+)[\s\S]{0,200}?Copyright \d{4} ?- ?\d{4} ?Aspose Pty Ltd",
         RegexOptions.CultureInvariant);
 
     // The SDK reports the limit only with this message on an IndexOutOfRangeException.
