@@ -236,11 +236,37 @@ internal sealed class WordsDocumentLoader
             : !string.Equals(extension, ".md", StringComparison.OrdinalIgnoreCase);
     }
 
-    private static CliException InvalidDocument(string path, string reason, Exception? inner = null) => new(
-        ErrorCodes.FileCorrupt,
-        $"Input is not a valid supported word-processing document: {path} ({reason}).",
-        hint: "Verify the file opens in Word and that its content matches a format listed by 'aspose-cli capabilities'.",
-        innerException: inner);
+    // A damaged PDF is named as a PDF, so the hint sends the reader to a PDF reader, not Word.
+    private static CliException InvalidDocument(string path, string reason, Exception? inner = null)
+    {
+        bool pdf = StartsAsPdf(path);
+        return new(
+            ErrorCodes.FileCorrupt,
+            pdf
+                ? $"Input is not a valid PDF document: {path} ({reason})."
+                : $"Input is not a valid supported word-processing document: {path} ({reason}).",
+            hint: pdf
+                ? "Verify the file opens in a PDF reader; a damaged or truncated PDF cannot be read."
+                : "Verify the file opens in Word and that its content matches a format listed by 'aspose-cli capabilities'.",
+            details: File.Exists(path) ? new System.Text.Json.Nodes.JsonObject { ["path"] = Path.GetFullPath(path) } : null,
+            innerException: inner);
+    }
+
+    /// <summary>Whether a file begins with the PDF header; false when it cannot be read.</summary>
+    private static bool StartsAsPdf(string path)
+    {
+        try
+        {
+            using FileStream input = InputFiles.OpenRead(path);
+            Span<byte> header = stackalloc byte[5];
+            return input.ReadAtLeast(header, header.Length, throwOnEndOfStream: false) == header.Length
+                && header.SequenceEqual("%PDF-"u8);
+        }
+        catch (Exception exception) when (exception is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
+        {
+            return false;
+        }
+    }
 
     private sealed class DenyAllResources : IResourceLoadingCallback
     {

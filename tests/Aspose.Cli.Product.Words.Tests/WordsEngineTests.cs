@@ -420,6 +420,24 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
     }
 
     [Fact]
+    public void DamagedPdf_IsNamedAsAPdf()
+    {
+        string intact = _fixture.Temp.File("intact.pdf");
+        new Document(_fixture.CreateReport("pdf-source.docx")).Save(intact, SaveFormat.Pdf);
+        string input = _fixture.Temp.File("truncated.pdf");
+        byte[] bytes = File.ReadAllBytes(intact);
+        File.WriteAllBytes(input, bytes[..(bytes.Length / 2)]);
+
+        CliException error = Assert.Throws<CliException>(() =>
+            _fixture.Engine.Convert(input, new WordsConvertRequest { TargetFormatId = "docx", OutputPath = _fixture.Temp.File("truncated.docx") }));
+
+        Assert.Equal(ErrorCodes.FileCorrupt, error.Code);
+        Assert.StartsWith("Input is not a valid PDF document: ", error.Message, StringComparison.Ordinal);
+        Assert.Contains("PDF reader", error.Hint, StringComparison.Ordinal);
+        Assert.Equal(Path.GetFullPath(input), error.Details!["path"]!.GetValue<string>());
+    }
+
+    [Fact]
     public void ExclusiveInputLock_IsDistinctFromCorruptionAndReopensAfterRelease()
     {
         string input = _fixture.CreateReport("locked-input.docx");
