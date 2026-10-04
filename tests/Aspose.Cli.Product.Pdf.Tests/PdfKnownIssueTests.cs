@@ -261,6 +261,23 @@ public sealed class PdfKnownIssueTests
     }
 
     [LicensedFact]
+    public void HtmlImport_DrawsNoBoxForACheckBox()
+    {
+        using var fixture = new PdfEngineFixture();
+        string html = fixture.File("checkbox.html");
+        File.WriteAllText(html, """<html><body><form><input type="checkbox" name="iso9001"/> ISO 9001</form></body></html>""");
+
+        using var document = new Document(html, new HtmlLoadOptions(fixture.Temp.Path + Path.DirectorySeparatorChar));
+        var box = document.Form.Fields.OfType<Aspose.Pdf.Forms.CheckboxField>().Single();
+        string[] drawn = [.. box.Appearance["N.Off"].Contents.Select(static drawing => drawing.GetType().Name)];
+
+        KnownIssue.Reproduces(
+            "PDF-HTML-CHECKBOX-BOX",
+            box.Border is null && box.Characteristics.Border.IsEmpty && !drawn.Contains("ClosePathStroke") && !drawn.Contains("Stroke"),
+            $"the check box has border {box.Border?.Width.ToString() ?? "none"}, border colour {box.Characteristics.Border} and its unchecked appearance draws [{string.Join(" ", drawn)}]");
+    }
+
+    [LicensedFact]
     public void TextSearch_ReadsAGapBetweenRunsAsASpace()
     {
         using var fixture = new PdfEngineFixture();

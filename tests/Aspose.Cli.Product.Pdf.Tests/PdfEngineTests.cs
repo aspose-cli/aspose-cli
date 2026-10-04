@@ -76,6 +76,26 @@ public sealed class PdfEngineTests
     }
 
     [Fact]
+    public void Create_FromHtml_DrawsTheBoxOfEveryCheckBox()
+    {
+        using var fixture = new PdfEngineFixture();
+        string input = fixture.File("form.html");
+        File.WriteAllText(input, """
+            <html><body><form>
+            <input type="checkbox" name="it"/> IT <input type="checkbox" name="office" checked/> Office
+            </form></body></html>
+            """);
+
+        PdfWriteResult result = fixture.Engine.Create(new NewPdfRequest { HtmlPath = input, OutputPath = fixture.File("form.pdf") });
+
+        using var document = new Document(result.Output.Path);
+        CheckboxField[] boxes = [.. document.Form.Fields.OfType<CheckboxField>()];
+        Assert.Equal(2, boxes.Length);
+        Assert.All(boxes, static box => Assert.All(box.AllowedStates, state =>
+            Assert.Contains(box.Appearance[$"N.{state}"].Contents, static drawn => drawn is Aspose.Pdf.Operators.ClosePathStroke or Aspose.Pdf.Operators.Stroke)));
+    }
+
+    [Fact]
     public void Create_FromMarkdown_InventsNoMetadata()
     {
         using var fixture = new PdfEngineFixture();

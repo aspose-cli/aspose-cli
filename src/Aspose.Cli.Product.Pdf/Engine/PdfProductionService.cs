@@ -355,6 +355,18 @@ internal sealed class PdfProductionService
         {
             document = new Document(fullPath, options);
             resources.ThrowIfFailed();
+            // The importer gives a check box neither a border nor a border colour, so its
+            // appearance draws no box and an unchecked box shows nothing (PDF-HTML-CHECKBOX-BOX).
+            // A black one-point border, as the importer gives radio buttons, makes the engine draw it.
+            foreach (Aspose.Pdf.Forms.CheckboxField box in document.Form.Fields.OfType<Aspose.Pdf.Forms.CheckboxField>())
+            {
+                if (box.Characteristics.Border.IsEmpty)
+                {
+                    box.Characteristics.Border = System.Drawing.Color.Black;
+                    box.Border ??= new Aspose.Pdf.Annotations.Border(box) { Width = 1 };
+                }
+            }
+
             return document;
         }
         catch

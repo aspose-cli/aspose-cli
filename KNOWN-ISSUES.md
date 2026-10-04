@@ -171,6 +171,15 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** give those inputs `type="text"`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
 
+### PDF-HTML-CHECKBOX-BOX
+
+- **Defect:** the HTML importer gives a check box neither a border nor a border colour, so its
+  appearances draw no box: an unchecked box shows nothing and a checked one only its check
+  mark. Radio buttons get a black border.
+- **CLI behavior:** `pdf create --from-html` gives such a check box a black one-point border, so
+  the engine draws its box.
+- **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)
+
 ### PDF-TEXT-GAP-SPACE
 
 - **Defect:** text extraction and `TextFragmentAbsorber` read a horizontal gap of about a
