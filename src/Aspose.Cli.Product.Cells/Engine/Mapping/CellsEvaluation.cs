@@ -124,6 +124,24 @@ internal static partial class CellsEvaluation
         };
     }
 
+    /// <summary>Whether <paramref name="text"/> is the evaluation notice.</summary>
+    internal static bool IsNotice(string? text) => text?.StartsWith(Notice, StringComparison.Ordinal) == true;
+
+    /// <summary>
+    /// The zero-based last row of <paramref name="sheet"/> when it holds only the evaluation
+    /// notice, as the last row of an evaluation CSV or TSV export does; otherwise null.
+    /// </summary>
+    internal static int? NoticeRow(Worksheet sheet)
+    {
+        if (sheet.Cells.MaxDataRow < 0 || sheet.Cells.CheckRow(sheet.Cells.MaxDataRow) is not { } row)
+        {
+            return null;
+        }
+
+        Cell[] values = [.. row.Cast<Cell>().Where(static cell => cell.Type != CellValueType.IsNull)];
+        return values is [{ IsFormula: false } cell] && IsNotice(cell.StringValue) ? row.Index : null;
+    }
+
     /// <summary>Whether <paramref name="sheet"/> is named like a warning sheet and holds only the notice.</summary>
     internal static bool IsWarningSheet(Worksheet sheet)
     {
@@ -139,7 +157,7 @@ internal static partial class CellsEvaluation
             {
                 continue;
             }
-            if (notice || cell.IsFormula || !cell.StringValue.StartsWith(Notice, StringComparison.Ordinal))
+            if (notice || cell.IsFormula || !IsNotice(cell.StringValue))
             {
                 return false;
             }

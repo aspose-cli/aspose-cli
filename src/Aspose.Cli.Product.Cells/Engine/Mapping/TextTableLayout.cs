@@ -23,6 +23,9 @@ internal enum TextTableFindingKind
 
     /// <summary>One of the last rows of the table is labeled as a total.</summary>
     TotalRows,
+
+    /// <summary>The last row is the notice an evaluation CSV or TSV export wrote after the data.</summary>
+    EvaluationNotice,
 }
 
 /// <summary>One layout finding; rows and columns are zero-based.</summary>
@@ -38,7 +41,8 @@ internal sealed record TextTableFinding(
 /// <summary>
 /// Warns when a delimited text input is not a plain table that starts at row 1: a title or
 /// query-condition rows before the header, empty rows inside the table, or a total row at its
-/// end, as ERP and report exports write them. The import itself stays unchanged; the warnings
+/// end, as ERP and report exports write them, and the evaluation notice row an unlicensed export
+/// writes last. The import itself stays unchanged; the warnings
 /// only tell the caller which rows are data. The detector is a pure function over row shapes,
 /// kept apart from the workbook access that reads them.
 /// </summary>
@@ -90,9 +94,16 @@ internal static class TextTableLayout
     internal static IReadOnlyList<TextTableFinding> Detect(IReadOnlyList<TextRowShape> head, IReadOnlyList<TextRowShape> tail)
     {
         TextRowShape[] filled = [.. head.Concat(tail).Where(static shape => shape.Filled > 0)];
+        TextTableFinding? notice = null;
+        if (filled is [.., { Filled: 1 } last] && CellsEvaluation.IsNotice(last.FirstText))
+        {
+            notice = new TextTableFinding(TextTableFindingKind.EvaluationNotice, 0, last.Row, [last.Row], []);
+            filled = filled[..^1];
+        }
+
         if (filled.Length == 0)
         {
-            return [];
+            return notice is null ? [] : [notice];
         }
 
         int width = filled.Max(static shape => shape.Filled);
@@ -131,6 +142,11 @@ internal static class TextTableLayout
                 totals[0].NumberColumn));
         }
 
+        if (notice is not null)
+        {
+            findings.Add(notice);
+        }
+
         return findings;
     }
 
@@ -157,7 +173,8 @@ internal static class TextTableLayout
         {
             TextTableFindingKind.Preamble => Preamble(finding, sheetName, last),
             TextTableFindingKind.BlankRows => BlankRows(finding, last, capped),
-            _ => TotalRows(finding),
+            TextTableFindingKind.TotalRows => TotalRows(finding),
+            _ => EvaluationNotice(finding),
         })];
     }
 
@@ -201,6 +218,15 @@ internal static class TextTableLayout
                 ? $"End data ranges at row {first - 1}{example}, and leave row {first} out of sorts, pivots and charts."
                 : $"Leave row {first} out of formulas, sorts, pivots and charts.",
             string.Join(",", finding.Rows.Select(static row => RowReference(row + 1, row + 1))));
+    }
+
+    private static Warning EvaluationNotice(TextTableFinding finding)
+    {
+        int row = finding.LastRow + 1;
+        return Build(
+            $"Row {row} is not data: it is the evaluation notice an Aspose.Cells export without a license wrote after the data.",
+            $"Tell the user, and leave row {row} out of every range, or delete it with the delete_rows operation of 'cells edit' after converting to xlsx.",
+            RowReference(row, row));
     }
 
     private static Warning Build(string message, string hint, string location) => new()

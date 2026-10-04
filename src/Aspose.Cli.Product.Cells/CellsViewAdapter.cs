@@ -147,6 +147,17 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
                 "Tell the user. A licensed re-save keeps the marks: rebuild the deliverable from the original unmarked inputs with a license.",
                 part: sheet.Name));
         }
+        foreach (CellsReviewSheetLayout sheet in layout.Sheets)
+        {
+            if (sheet.EvaluationNoticeRow is int row)
+            {
+                findings.Add(CellsReviewChecks.EvaluationNotice.Finding(
+                    $"Row {row + 1} of '{sheet.Name}' is the evaluation notice an Aspose.Cells CSV or TSV export without a license wrote after the data; it is not data.",
+                    $"{sheet.Name}!A{row + 1}",
+                    "Tell the user. Delete the row before anything reads the file as data, or export it again with a license.",
+                    part: sheet.Name));
+            }
+        }
         if (info.Workbook.HasVba)
         {
             findings.Add(CellsReviewChecks.VbaPresent.Finding(

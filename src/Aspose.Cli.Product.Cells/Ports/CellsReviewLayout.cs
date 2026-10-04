@@ -23,6 +23,9 @@ internal sealed record CellsReviewSheetLayout
     /// <summary>Whether the sheet is the warning sheet an evaluation save added.</summary>
     public required bool IsEvaluationWarning { get; init; }
 
+    /// <summary>The zero-based last row when it holds only the evaluation notice, as an evaluation CSV or TSV export ends.</summary>
+    public required int? EvaluationNoticeRow { get; init; }
+
     public required CellsReviewDimensionSet HiddenPopulatedColumns { get; init; }
 
     public required CellsReviewDimensionSet NarrowPopulatedColumns { get; init; }

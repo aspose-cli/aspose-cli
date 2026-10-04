@@ -176,6 +176,25 @@ public sealed class CellsReviewTests
         Assert.DoesNotContain(Review(fixture, unmarked), static finding => finding.Code == "CELLS_EVALUATION_SHEET");
     }
 
+    /// <summary>
+    /// A CSV an evaluation export wrote ends with the evaluation notice row; review reports it, with
+    /// or without a license, and nothing on a CSV without it.
+    /// </summary>
+    [Fact]
+    public void Review_ReportsTheEvaluationNoticeRowOfAnExportedCsv()
+    {
+        Requires.Windows();
+        using var fixture = new CellsFixture();
+        using var workspace = new TempWorkspace();
+        string source = fixture.CreateSalesWorkbook("sales.xlsx");
+        Assert.Equal(0, workspace.Run("cells", "convert", source, "--to", "csv", "--out", "marked.csv", "--license-mode", "evaluation").ExitCode);
+        File.WriteAllText(workspace.File("plain.csv"), "Region,Q1\nEast,1200\nNote: Evaluation Only. Created with Aspose.Cells\n");
+
+        ReviewFinding notice = Assert.Single(Review(fixture, workspace.File("marked.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
+        Assert.Equal("marked!A4", notice.Location);
+        Assert.DoesNotContain(Review(fixture, workspace.File("plain.csv")), static finding => finding.Code == "CELLS_EVALUATION_NOTICE");
+    }
+
     [Fact]
     public void ChartPages_DoNotCountTheCellAChartEndsExactlyAt()
     {

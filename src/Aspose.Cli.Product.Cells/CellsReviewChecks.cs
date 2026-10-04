@@ -120,6 +120,11 @@ internal static class CellsReviewChecks
         ReviewSeverities.Warning,
         "A worksheet is the evaluation warning sheet that a save without a license added; a licensed re-save keeps it and the other evaluation marks.");
 
+    public static ReviewCheck EvaluationNotice { get; } = new(
+        "CELLS_EVALUATION_NOTICE",
+        ReviewSeverities.Warning,
+        "A worksheet's last row is the evaluation notice that a CSV or TSV export without a license wrote after the data.");
+
     public static ReviewCheck ReviewTruncated { get; } = new(
         "CELLS_REVIEW_TRUNCATED",
         ReviewSeverities.Warning,
@@ -150,6 +155,7 @@ internal static class CellsReviewChecks
         FormulaError,
         VbaPresent,
         EvaluationSheet,
+        EvaluationNotice,
         ReviewTruncated,
     ];
 }

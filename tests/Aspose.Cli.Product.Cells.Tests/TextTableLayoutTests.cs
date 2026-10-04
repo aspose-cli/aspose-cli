@@ -66,6 +66,20 @@ public sealed class TextTableLayoutTests : IDisposable
     }
 
     [Fact]
+    public void Detect_TakesTheEvaluationNoticeRowForNoticeNotData()
+    {
+        IReadOnlyList<TextTableFinding> findings = TextTableLayout.Detect(
+            Shapes((3, "Region"), (3, "North"), (2, "Total"),
+                (1, "Evaluation Only. Created with Aspose.Cells for .NET. Copyright 2003 - 2026 Aspose Pty Ltd.")), []);
+
+        Assert.Equal([TextTableFindingKind.TotalRows, TextTableFindingKind.EvaluationNotice], findings.Select(static finding => finding.Kind));
+        Assert.Equal([2], findings[0].Rows);
+        Assert.Equal(2, findings[0].LastRow);
+        Assert.Equal([3], findings[1].Rows);
+        Assert.StartsWith("Row 4 is not data: it is the evaluation notice", TextTableLayout.Describe(findings, "Data", 2, capped: false)[1].Message, StringComparison.Ordinal);
+    }
+
+    [Fact]
     public void Describe_GivesNoSumExampleForATotalRowWithoutNumbers()
     {
         Warning warning = Assert.Single(TextTableLayout.Describe(

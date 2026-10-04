@@ -41,7 +41,7 @@ to workbooks.
 | `EVALUATION_SHEET_SKIPPED` | The input's active sheet is the evaluation warning sheet `location` names, and this command named no sheet, so it used the sheet the message names instead; see below. |
 | `ROWS_SHIFTED` | `cells compare` found rows one side inserted or deleted (the message names them, `location` the sheet); the cells below each shift are compared with different rows, so their differences are not edits. Apply the same `insert_rows` or `delete_rows` to a copy of the left workbook and compare the copy. |
 | `PROTECTION_NOT_ENFORCED` | The edit changed a protected sheet (`location` names it when there is one) or the protected workbook structure; protection guides Excel only, so the edit went through it. Confirm the change is authorized. |
-| `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes, rows that hold at most one value each (`1:2`: the header is the row after them), empty rows lie inside the table, or a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`). The rows are imported as they are; see below. |
+| `TEXT_TABLE_LAYOUT` | A CSV or TSV input is not a plain table from row 1; one warning per finding, with the rows in `location`. The header comes after a title or notes, rows that hold at most one value each (`1:2`: the header is the row after them), empty rows lie inside the table, a trailing row is labeled as a total (`合计`, `总计`, `小计`, `Total`, `Grand Total`, `Subtotal`, `Sum`), or the last row is the notice of an evaluation export. The rows are imported as they are; see below. |
 
 ## Text tables that do not start at row 1
 
@@ -88,7 +88,9 @@ gains an "Evaluation Warning" sheet plus watermark content. Disclose it
   `EVALUATION_NOTICE_ADDED`: CSV and TSV gain an `Evaluation Only. ...` last
   row after the data, Markdown a closing `# Evaluation Only. ...` heading, and
   JSON a `{"watermark": ...}` record after the records of each sheet with data
-  rows, plus the warning sheets. Remove it before anything reads the output as data.
+  rows, plus the warning sheets. Remove it before anything reads the output as data;
+  until then `cells inspect` warns `TEXT_TABLE_LAYOUT` and `review` reports
+  `CELLS_EVALUATION_NOTICE` on the CSV or TSV notice row.
 - A whole-workbook PDF, XPS, HTML or MHTML export prints the warning sheets an
   earlier evaluation save added as extra pages that hold only the notice, and
   warns `EVALUATION_NOTICE_ADDED` with their names; `review` then reports

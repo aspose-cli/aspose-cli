@@ -34,6 +34,7 @@ internal static class ReviewLayoutProjection
         PrintAreaScan print = InspectPrintArea(sheet, content.ContentRange);
         IReadOnlyList<CellsReviewChartLayout> charts = InspectCharts(sheet, print.Ranges);
         (CellsReviewCellSet clipped, CellsReviewCellSet overflowing) = InspectWideValues(sheet);
+        bool warningSheet = CellsEvaluation.IsWarningSheet(sheet);
 
         return new CellsReviewSheetLayout
         {
@@ -42,7 +43,8 @@ internal static class ReviewLayoutProjection
             PopulatedCells = content.PopulatedCells,
             ContentRange = content.ContentRange is { } range ? A1.FormatRange(range) : null,
             HasVisualObjects = sheet.Shapes.Count > 0,
-            IsEvaluationWarning = CellsEvaluation.IsWarningSheet(sheet),
+            IsEvaluationWarning = warningSheet,
+            EvaluationNoticeRow = warningSheet ? null : CellsEvaluation.NoticeRow(sheet),
             HiddenPopulatedColumns = columns.Hidden.ToSet(),
             NarrowPopulatedColumns = columns.Small.ToSet(),
             WidePopulatedColumns = columns.Large.ToSet(),
