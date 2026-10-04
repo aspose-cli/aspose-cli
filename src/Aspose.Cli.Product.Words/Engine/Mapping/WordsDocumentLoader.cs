@@ -42,6 +42,9 @@ internal sealed class WordsDocumentLoader
         return new Document(stream, new LoadOptions { ResourceLoadingCallback = DenyAllResources.Instance });
     }
 
+    // The built-in design draws East Asian text in Microsoft YaHei and declares Chinese as its East
+    // Asian language, without which the engine ignores the East Asian line-breaking rules
+    // (WORDS-CJK-LINE-BREAK).
     private const string DefaultTemplateResource = "Templates/default-a4.docx";
 
     /// <summary>

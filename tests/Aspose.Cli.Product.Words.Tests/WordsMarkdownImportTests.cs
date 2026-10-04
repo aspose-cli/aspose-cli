@@ -8,6 +8,22 @@ namespace Aspose.Cli.Product.Words.Tests;
 public sealed class WordsMarkdownImportTests
 {
     [Fact]
+    public void Create_WithoutTemplate_BreaksChineseLinesByTheEastAsianRules()
+    {
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("clauses.md");
+        // Half of the characters are commas or full stops, which no line may start with.
+        File.WriteAllText(markdown, string.Concat(Enumerable.Repeat("甲，乙。", 120)) + "\n");
+        string output = fixture.Temp.File("clauses.docx");
+
+        fixture.Engine.Create(new NewDocumentRequest { OutputPath = output, MarkdownPath = markdown });
+
+        IReadOnlyList<string> lines = WordsFixture.LayoutLines(new Document(output));
+        Assert.True(lines.Count > 4, string.Join(" | ", lines));
+        Assert.False(lines.Any(static line => line.StartsWith('，') || line.StartsWith('。')), string.Join(" | ", lines));
+    }
+
+    [Fact]
     public void Create_WithoutTemplate_TakesStylesPageSetupAndFooterFromTheBuiltInDesign()
     {
         using var fixture = new WordsFixture();

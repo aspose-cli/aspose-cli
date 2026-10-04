@@ -30,3 +30,13 @@ Heading hierarchy, paragraph flow, widows and orphans, table widths and header
 rows, list numbering, image placement and captions, headers, footers and page
 numbers, section breaks, clipping, tracked-change and comment visibility, and
 missing CJK glyphs.
+
+Chinese, Japanese or Korean lines that start with "，", "。" or "：", or that
+end early before East Asian text following a space, come from the engine's
+layout (known SDK issue `WORDS-CJK-LINE-BREAK`): it applies the East Asian
+line-breaking rules only to text whose East Asian language is Chinese,
+Japanese or Korean, and, in a document older than Word 2013's compatibility
+mode, breaks East Asian text drawn in one font for all scripts, as a PDF
+input loads, only at spaces. The built-in design declares Chinese; a
+document created from another template or converted from another format
+keeps its own settings, so disclose such lines rather than adding breaks.

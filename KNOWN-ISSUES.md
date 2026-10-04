@@ -367,3 +367,18 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
 - **Workaround:** read the blocks before editing; find a phrase with a regex that allows a space
   where a line may have ended, such as `甲 ?乙双方`, and remove a space only where it was read.
 - **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)
+
+### WORDS-CJK-LINE-BREAK
+
+- **Defect:** page layout breaks East Asian lines against the line-breaking rules the paragraph
+  turns on (`ParagraphFormat.FarEastLineBreakControl`). Text whose East Asian language is not
+  Chinese, Japanese or Korean, such as the English that a new `Document` and many converted
+  documents declare, may start a line with "，" or "。". And in a document without Word 2013
+  compatibility mode, East Asian text drawn in one font for all scripts, as PDF loading writes
+  it, breaks only at spaces after Latin text, so "人民币 1,920,000.00 元（大写：…）" ends its
+  line after the number although the rest would fit in part.
+- **CLI behavior:** the built-in design declares Chinese as its East Asian language, so
+  documents created without `--template` follow the rules. Other documents keep their own
+  language and compatibility settings, which no operation changes; the Words Skill tells
+  reviewers to disclose such lines.
+- **Reproduction:** [WordsKnownIssueTests](tests/Aspose.Cli.Product.Words.Tests/WordsKnownIssueTests.cs)

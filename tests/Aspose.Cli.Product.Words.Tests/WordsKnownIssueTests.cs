@@ -120,6 +120,55 @@ public sealed class WordsKnownIssueTests
             $"paragraph of the clauses: '{text}'");
     }
 
+    [Fact]
+    public void Layout_BreaksEastAsianLinesAgainstTheRules()
+    {
+        using var fixture = new WordsFixture();
+        const string clause = "乙方向甲方供应数控加工中心 2 台，合同总价人民币 1,920,000.00 元（大写：壹佰玖拾贰万元整）。";
+        string clauses = string.Concat(Enumerable.Repeat(clause, 4));
+
+        // Calibri with Microsoft YaHei for East Asian text: whose East Asian language is English,
+        // a line may start with a comma or full stop.
+        IReadOnlyList<string> english = WordsFixture.LayoutLines(EastAsianText(clauses, "Calibri", 1033, modern: true));
+        IReadOnlyList<string> chinese = WordsFixture.LayoutLines(EastAsianText(clauses, "Calibri", 2052, modern: true));
+        static bool Punctuated(IReadOnlyList<string> lines) =>
+            lines.Any(static line => line.StartsWith('，') || line.StartsWith('。'));
+        // Microsoft YaHei for all text, as PDF loading writes it: outside Word 2013 compatibility
+        // mode, the amount in words after a space breaks only at that space, so the line ends early.
+        IReadOnlyList<string> legacy = WordsFixture.LayoutLines(EastAsianText(clause, "Microsoft YaHei", 2052, modern: false));
+        IReadOnlyList<string> modern = WordsFixture.LayoutLines(EastAsianText(clause, "Microsoft YaHei", 2052, modern: true));
+        static bool Early(IReadOnlyList<string> lines) =>
+            lines.Any(static line => line.StartsWith("元（大写", StringComparison.Ordinal));
+
+        KnownIssue.Reproduces(
+            "WORDS-CJK-LINE-BREAK",
+            Punctuated(english) && !Punctuated(chinese) && Early(legacy) && !Early(modern),
+            $"English: {string.Join(" | ", english)}; Chinese: {string.Join(" | ", chinese)}; "
+                + $"legacy mode: {string.Join(" | ", legacy)}; Word 2013 mode: {string.Join(" | ", modern)}");
+    }
+
+    /// <summary>
+    /// A paragraph of Chinese text formatted directly in the given Latin font with Microsoft YaHei
+    /// for East Asian text, whose East Asian language is the given one, in a new document without a
+    /// compatibility mode or in Word 2019 mode. The paragraph turns the East Asian
+    /// line-breaking rules on.
+    /// </summary>
+    private static Document EastAsianText(string text, string latinFont, int localeIdFarEast, bool modern)
+    {
+        var document = new Document();
+        if (modern)
+        {
+            document.CompatibilityOptions.OptimizeFor(Aspose.Words.Settings.MsWordVersion.Word2019);
+        }
+        var builder = new DocumentBuilder(document);
+        builder.Font.Name = latinFont;
+        builder.Font.NameFarEast = "Microsoft YaHei";
+        builder.Font.LocaleIdFarEast = localeIdFarEast;
+        Assert.True(builder.ParagraphFormat.FarEastLineBreakControl);
+        builder.Write(text);
+        return document;
+    }
+
     /// <summary>
     /// Saves a document of numbered clauses whose header or footer reads "Version 1  Page {PAGE}"
     /// as PDF and loads the PDF back; returns the source's page count and the loaded document.

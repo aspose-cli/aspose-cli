@@ -106,5 +106,43 @@ public sealed class WordsFixture : IDisposable
         return path;
     }
 
+    /// <summary>The text of each line the page layout of a document lays out, in order.</summary>
+    internal static IReadOnlyList<string> LayoutLines(Document document)
+    {
+        document.UpdatePageLayout();
+        var lines = new List<string>();
+        var enumerator = new Aspose.Words.Layout.LayoutEnumerator(document);
+        Walk();
+        return lines;
+
+        void Walk()
+        {
+            do
+            {
+                if (enumerator.Type == Aspose.Words.Layout.LayoutEntityType.Line)
+                {
+                    var line = new System.Text.StringBuilder();
+                    if (enumerator.MoveFirstChild())
+                    {
+                        do
+                        {
+                            line.Append(enumerator.Type == Aspose.Words.Layout.LayoutEntityType.Span ? enumerator.Text : string.Empty);
+                        }
+                        while (enumerator.MoveNext());
+                        enumerator.MoveParent();
+                    }
+
+                    lines.Add(line.ToString());
+                }
+                else if (enumerator.MoveFirstChild())
+                {
+                    Walk();
+                    enumerator.MoveParent();
+                }
+            }
+            while (enumerator.MoveNext());
+        }
+    }
+
     public void Dispose() => Temp.Dispose();
 }
