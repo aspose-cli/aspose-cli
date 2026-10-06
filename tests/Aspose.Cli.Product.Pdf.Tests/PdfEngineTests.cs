@@ -272,6 +272,59 @@ public sealed class PdfEngineTests
         Assert.Equal(0.5, placed.Width / placed.Height, 2);
     }
 
+    /// <summary>
+    /// A PDF made from scans with the default margins is still recognized as scanned: each image
+    /// keeps its proportions inside the margins, so it covers well under 80% of the page.
+    /// </summary>
+    [Fact]
+    public void Create_FromImages_WithDefaultMarginsReadsAsScannedPages()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string[] images = [fixture.File("a4.bmp"), fixture.File("wide.bmp"), fixture.File("square.bmp"), fixture.File("tall.bmp")];
+        File.WriteAllBytes(images[0], Bitmap(210, 297));
+        File.WriteAllBytes(images[1], Bitmap(300, 100));
+        File.WriteAllBytes(images[2], Bitmap(100, 100));
+        File.WriteAllBytes(images[3], Bitmap(100, 300));
+        PdfWriteResult created = fixture.Engine.Create(new NewPdfRequest { ImagePaths = images, OutputPath = fixture.File("scans.pdf") });
+
+        PdfReadResult read = fixture.Engine.Read(created.Output.Path, new PdfReadRequest());
+        CliResult review = workspace.Run(["review", created.Output.Path, "--out", workspace.File("review"), "--output", "json"]);
+
+        Assert.Equal([1, 2, 3, 4], read.ScannedPagesSuspected);
+        Assert.Contains(read.Warnings!, static warning => warning.Code == "SCANNED_PAGES_SUSPECTED");
+        Assert.True(review.ExitCode == 0, review.StdErr);
+        Assert.Equal(
+            ["page 1", "page 2", "page 3", "page 4"],
+            System.Text.Json.Nodes.JsonNode.Parse(review.StdOut)!["findings"]!.AsArray()
+                .Where(static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_WITHOUT_TEXT_LAYER")
+                .Select(static item => item!["location"]!.GetValue<string>()));
+    }
+
+    /// <summary>
+    /// A scan saved in evaluation mode carries the evaluation notice as its only text and is
+    /// still read as a scan; a page with text of its own under the same image is not.
+    /// </summary>
+    [Fact]
+    public void Read_CountsAPageWhoseOnlyTextIsTheEvaluationNoticeAsScanned()
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string scan = fixture.CreateRawDocument("scan.pdf", pages: 1,
+            textPages: new HashSet<int>(), imagePages: new HashSet<int> { 1 }, imagePoints: 700);
+        string text = fixture.CreateRawDocument("text.pdf", pages: 1,
+            imagePages: new HashSet<int> { 1 }, imagePoints: 700);
+        string merged = fixture.File("evaluation.pdf");
+
+        CliResult created = workspace.Run(
+            ["pdf", "merge", scan, text, "--out", merged, "--license-mode", "evaluation", "--output", "json"]);
+        PdfReadResult read = fixture.Engine.Read(merged, new PdfReadRequest());
+
+        Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
+        Assert.Contains("Evaluation Only", read.Pages[0].Text, StringComparison.Ordinal);
+        Assert.Equal([1], read.ScannedPagesSuspected);
+    }
+
     /// <summary>A JPEG of landscape pixels with an EXIF orientation tag.</summary>
     private static byte[] OrientedJpeg(int width, int height, byte orientation)
     {

@@ -130,13 +130,24 @@ internal static class PdfEngineSupport
             "\f" + Environment.NewLine,
             pages.Select(pageNumber => ExtractText(document.Pages[pageNumber], PdfReadModes.Plain)));
 
+    /// <summary>
+    /// Whether one image is scaled to the page, as a scan is: it spans at least three quarters of
+    /// the page's width or height and covers at least a quarter of its area. A scan placed inside
+    /// margins with its proportions kept, such as a square scan on an A4 page, covers far less
+    /// than the whole page but still spans it in one dimension.
+    /// </summary>
     internal static bool IsImageDominated(Page page)
     {
         var absorber = new ImagePlacementAbsorber { IsReadOnlyMode = true };
         page.Accept(absorber);
-        double pageArea = Math.Max(1d, page.Rect.Width * page.Rect.Height);
+        double pageWidth = Math.Max(1d, page.Rect.Width);
+        double pageHeight = Math.Max(1d, page.Rect.Height);
         return absorber.ImagePlacements.Any(placement =>
-            placement.Rectangle.Width * placement.Rectangle.Height >= pageArea * 0.8d);
+        {
+            Rectangle placed = placement.Rectangle;
+            return (placed.Width >= pageWidth * 0.75d || placed.Height >= pageHeight * 0.75d)
+                && placed.Width * placed.Height >= pageWidth * pageHeight * 0.25d;
+        });
     }
 
     /// <summary>Pages as the range text --pages accepts, such as <c>1-3,7</c>.</summary>

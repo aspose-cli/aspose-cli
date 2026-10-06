@@ -138,7 +138,11 @@ expression is matched as written: allow the gaps with ` *`, for example
 
 A page without a text layer (`pdf query pages` reports
 `SCANNED_PAGES_SUSPECTED`, and `review` `PDF_PAGE_WITHOUT_TEXT_LAYER`) can only
-be redacted with `redact_area`. Take its
+be redacted with `redact_area`. Both name a page that has no extractable text
+and one image spanning at least three quarters of its width or height and
+covering at least a quarter of it, as a scan of usual page-like proportions
+is when `pdf create --from-images` places it with margins of up to an inch
+(72 points); a long, narrow image such as a receipt may cover less. Take its
 rectangle from a gridded render, never by eye:
 
 1. Render the page with a coordinate grid. `--grid 50` draws a line every 50

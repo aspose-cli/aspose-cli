@@ -71,7 +71,7 @@ internal sealed class PdfReadService
             });
             remaining -= projected.Length;
 
-            if (string.IsNullOrWhiteSpace(text) && IsImageDominated(page))
+            if (HasNoOwnText(text) && IsImageDominated(page))
             {
                 scanned.Add(pageNumber);
             }
@@ -108,4 +108,10 @@ internal sealed class PdfReadService
         };
     }
 
+    /// <summary>
+    /// Whether the page's text is at most the notice an evaluation-mode save stamps on it, so a
+    /// scan saved without a license still reads as a scan.
+    /// </summary>
+    private static bool HasNoOwnText(string text) =>
+        PdfEvaluation.Notice.Replace(text, string.Empty).All(static character => char.IsWhiteSpace(character) || character == '.');
 }

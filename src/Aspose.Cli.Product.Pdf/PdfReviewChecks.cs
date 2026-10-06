@@ -29,11 +29,11 @@ internal static class PdfReviewChecks
         ReviewSeverities.Warning,
         "A page has no readable text, no images covering a quarter of it and does not look scanned, so it may be unintentionally blank.");
 
-    /// <summary>A page has no extractable text and an image over most of it, as a scan does.</summary>
+    /// <summary>A page has no extractable text and an image that fills the page's width or height, as a scan does.</summary>
     public static ReviewCheck PageWithoutTextLayer { get; } = new(
         "PDF_PAGE_WITHOUT_TEXT_LAYER",
         ReviewSeverities.Info,
-        "A page has no extractable text and an image covers most of it, as on a scan, so search and redact_text do not reach its content.");
+        "A page has no extractable text and an image fills its width or height, as on a scan, so search and redact_text do not reach its content.");
 
     /// <summary>A page without form fields or images over a quarter of it carries very little readable text.</summary>
     public static ReviewCheck PageUtilizationLow { get; } = new(

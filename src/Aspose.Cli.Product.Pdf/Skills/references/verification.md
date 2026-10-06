@@ -111,7 +111,7 @@ PDF review findings worth acting on:
   image-only page also has no font resources, so `fonts check` returns an empty
   `fonts` array for it.
 - `PDF_PAGE_WITHOUT_TEXT_LAYER` (info): a page with no extractable text and an
-  image over most of it ([scanned pages](editing.md#scanned-pages)).
+  image that fills its width or height ([scanned pages](editing.md#scanned-pages)).
 
 ```powershell
 aspose-cli fonts check report.pdf --font-dir fonts --output json

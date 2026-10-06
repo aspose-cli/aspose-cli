@@ -95,9 +95,10 @@ public sealed class PdfReviewAndInfoTests
     {
         using var fixture = new PdfEngineFixture();
         using var workspace = new TempWorkspace();
-        // Page 3 is one image over the whole page with no text, as a scan is.
+        // Page 3 is one image over the whole page with no text, as a scan is; page 1 has the
+        // same image under a line of text, so it is not a scan.
         string input = fixture.CreateRawDocument("scanned.pdf", pages: 3,
-            textPages: new HashSet<int> { 1, 2 }, imagePages: new HashSet<int> { 3 }, imagePoints: 700,
+            textPages: new HashSet<int> { 1, 2 }, imagePages: new HashSet<int> { 1, 3 }, imagePoints: 700,
             textContent: "BT /F1 12 Tf 72 720 Td (A line of readable text on a text page) Tj ET");
 
         CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);

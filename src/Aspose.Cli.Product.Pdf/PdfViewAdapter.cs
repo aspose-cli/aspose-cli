@@ -233,7 +233,7 @@ internal sealed class PdfViewAdapter : IProductViewAdapter<IPdfEngine>
         foreach (int page in pages)
         {
             findings.Add(PdfReviewChecks.PageWithoutTextLayer.Finding(
-                "The page has no extractable text and an image covers most of it, as on a scan; search and redact_text do not reach its content.",
+                "The page has no extractable text and an image fills its width or height, as on a scan; search and redact_text do not reach its content.",
                 $"page {page}",
                 "Read the page from its review image, and hide content on it with redact_area, whose coordinates 'aspose-cli pdf render --grid 50' labels.",
                 PdfViews.PagePart(page)));
