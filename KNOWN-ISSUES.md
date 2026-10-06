@@ -231,7 +231,8 @@ How they are reproduced and retired: [CONTRIBUTING.md](CONTRIBUTING.md#known-sdk
   mode) and a search for it finds nothing.
 - **CLI behavior:** literal patterns of `pdf query search` and `redact_text`, and the
   `redact_text` verification, also match with up to two spaces, never a line break, wherever an
-  East Asian character meets another character. A `redact_text` operation that matches nothing
+  East Asian character meets a character that is not East Asian, such as a digit or Latin letter.
+  A `redact_text` operation that matches nothing
   is named in a `REDACTION_NO_MATCH` warning.
 - **Workaround:** in a regular expression, allow the gaps with ` *`.
 - **Reproduction:** [PdfKnownIssueTests](tests/Aspose.Cli.Product.Pdf.Tests/PdfKnownIssueTests.cs)

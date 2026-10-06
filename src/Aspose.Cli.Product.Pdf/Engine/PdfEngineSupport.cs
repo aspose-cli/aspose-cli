@@ -178,7 +178,7 @@ internal static class PdfEngineSupport
     /// <summary>
     /// The expression that search, redact_text and its verification match. Literal text also
     /// matches with up to two spaces, never a line break, wherever an East Asian character meets
-    /// another character: the engine reads the gap that automatic spacing leaves there, such as
+    /// a character that is not East Asian, such as a digit or Latin letter: the engine reads the gap that automatic spacing leaves there, such as
     /// Word's between Chinese and digits, as a space (known issue PDF-TEXT-GAP-SPACE in
     /// KNOWN-ISSUES.md).
     /// </summary>

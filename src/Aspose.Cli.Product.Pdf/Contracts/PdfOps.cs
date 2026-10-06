@@ -294,8 +294,8 @@ public sealed record RedactTextOp : PdfOp
 {
     /// <summary>
     /// The text to find, matched case-sensitively. Literal text also matches with up to two
-    /// spaces, never a line break, where an East Asian character meets another character, as
-    /// extracted text can hold there.
+    /// spaces, never a line break, where an East Asian character meets a character that is not
+    /// East Asian, such as a digit or Latin letter, as extracted text can hold there.
     /// </summary>
     [MinLength(1)] public required string Pattern { get; init; }
 
