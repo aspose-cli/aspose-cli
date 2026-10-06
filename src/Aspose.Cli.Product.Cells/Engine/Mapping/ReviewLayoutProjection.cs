@@ -4,6 +4,7 @@ using Aspose.Cells.Drawing;
 using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Product.Cells.Ports;
 using Aspose.Cli.Sdk.Errors;
+using Aspose.Cli.Sdk.Extensibility.Output;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 
@@ -136,7 +137,9 @@ internal static class ReviewLayoutProjection
             // Asian text in a font without its glyphs unlike AutoFit and rendering (known issue
             // CELLS-WIDTH-EAST-ASIAN, KNOWN-ISSUES.md); the finding says so when its samples hold
             // such text.
-            double units = DisplayUnits(cell.StringValue);
+            // Column widths are measured in characters of the default font; East Asian Wide and
+            // Fullwidth characters take two.
+            double units = TextWidth.Of(cell.StringValue);
             double columnWidth = cells.GetColumnWidth(cell.Column);
             if (units * largestFontScale <= columnWidth)
             {
@@ -210,10 +213,8 @@ internal static class ReviewLayoutProjection
         internal CellsReviewCellSet Build() => new(_count, _samples, _eastAsian);
     }
 
-    // Column widths are measured in characters of the default font; East Asian characters take two.
-    private static int DisplayUnits(string text) =>
-        text.Sum(static character => IsEastAsian(character) ? 2 : 1);
-
+    // Any character from the CJK radicals on, halfwidth forms included, which a Latin default
+    // font has no glyph for (CELLS-WIDTH-EAST-ASIAN).
     private static bool IsEastAsian(char character) => character >= '⺀';
 
     private static DimensionScan InspectColumns(
