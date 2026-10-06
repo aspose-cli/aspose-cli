@@ -97,7 +97,7 @@ internal sealed class SlidesProductionService
             SourceEncrypted = presentation.ProtectionManager.IsEncrypted,
             TotalPartCount = total,
             Parts = parts,
-            Warnings = InputWarnings(state, loaded),
+            Warnings = InputWarnings(state, loaded, textRead: true),
         };
     }
 
@@ -215,7 +215,7 @@ internal sealed class SlidesProductionService
                 : request.Dpi ?? DefaultRasterDpi,
             Width = request.TargetFormatId == "svg" ? null : request.Width,
             License = EnvelopeParts.License(state),
-            Warnings = OutputWarnings(state, loaded),
+            Warnings = OutputWarnings(state, loaded, textRead: false),
         };
     }
 
@@ -333,8 +333,8 @@ internal sealed class SlidesProductionService
                 },
             License = EnvelopeParts.License(state),
             Warnings = authoring.Count == 0
-                ? OutputWarnings(state, template)
-                : [.. OutputWarnings(state, template) ?? [], .. authoring],
+                ? OutputWarnings(state, template, textRead: false)
+                : [.. OutputWarnings(state, template, textRead: false) ?? [], .. authoring],
         };
     }
 }

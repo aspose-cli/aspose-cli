@@ -64,7 +64,7 @@ internal sealed class SlidesMutationService
             License = EnvelopeParts.License(state),
             Warnings = request.Options.DryRun
                 ? EnvelopeParts.CombineWarnings(InputWarnings(state, loaded, textRead: false), warnings)
-                : EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded), warnings, EnvelopeParts.BackupWarnings(publication.Backup)),
+                : EnvelopeParts.CombineWarnings(OutputWarnings(state, loaded, textRead: false), warnings, EnvelopeParts.BackupWarnings(publication.Backup)),
         };
     }
 

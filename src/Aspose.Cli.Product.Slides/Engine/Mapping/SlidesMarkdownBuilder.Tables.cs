@@ -155,7 +155,8 @@ internal static partial class SlidesMarkdownBuilder
         int rows = source.Rows.Count;
         int columns = source.Alignments.Count;
 
-        // Every column starts as wide as the area, so each cell's text lies on one line.
+        // Every column starts as wide as the area, so each cell's text lies on one line. Each row
+        // gets at least a point, since the body's text can leave the table no height at all.
         ITable table = SlidesAuthoring.AddTable(
             slide,
             box.X,

@@ -34,8 +34,7 @@ internal sealed partial class SlidesMutationHandlers
     public long Apply(SlidesReplaceTextOp operation)
     {
         Regex? regex = operation.Regex ? SafeRegex.Create(operation.Find, operation.MatchCase) : null;
-        if (_evaluation && _presentation.Slides.SelectMany(slide => Frames(slide, operation.Scope)).Any(static frame =>
-                frame.Text?.Contains(EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase) == true))
+        if (_evaluation && _presentation.Slides.SelectMany(slide => Frames(slide, operation.Scope)).Any(static frame => CutByEvaluation(frame.Text)))
         {
             throw new CliException(
                 ErrorCodes.EvaluationLimit,

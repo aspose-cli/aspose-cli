@@ -14,7 +14,7 @@ internal static class SlidesDiagnostics
     /// <summary>An output draws a chart's implicit automatic title over its plot.</summary>
     internal const string ChartTitleOverlaid = "CHART_TITLE_OVERLAID";
 
-    /// <summary>A table authored from Markdown is taller than the area it was placed in.</summary>
+    /// <summary>An authored table is taller than the area it was placed in.</summary>
     internal const string TableOverflow = "TABLE_OVERFLOW";
 
     /// <summary>A slide that took another design lost its own background.</summary>

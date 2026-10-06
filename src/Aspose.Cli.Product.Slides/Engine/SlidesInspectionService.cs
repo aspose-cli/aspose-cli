@@ -88,7 +88,7 @@ internal sealed class SlidesInspectionService
             Hits = hits.Hits,
             Window = hits.Window(),
             License = EnvelopeParts.License(state),
-            Warnings = InputWarnings(state, loaded),
+            Warnings = InputWarnings(state, loaded, textRead: true),
         };
     }
 

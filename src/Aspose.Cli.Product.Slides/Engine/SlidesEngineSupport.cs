@@ -229,7 +229,7 @@ internal static class SlidesEngineSupport
     }
 
     /// <summary>Warnings about what a result read from the loaded presentation may be missing.</summary>
-    internal static IReadOnlyList<Warning>? InputWarnings(LicenseState state, LoadedPresentation loaded, bool textRead = true) =>
+    internal static IReadOnlyList<Warning>? InputWarnings(LicenseState state, LoadedPresentation loaded, bool textRead) =>
         Warnings(state, loaded, output: false, textRead);
 
     /// <summary>
@@ -243,14 +243,13 @@ internal static class SlidesEngineSupport
         && frame.Text?.StartsWith("Evalu", StringComparison.Ordinal) == true;
 
     internal static bool EvaluationInputTruncated(Presentation presentation) =>
-        presentation.Slides.Any(slide =>
-            slide.Shapes.Any(shape =>
-                ShapeText(shape)?.Contains(
-                    EvaluationTruncationMarker,
-                    StringComparison.OrdinalIgnoreCase) == true)
-            || Notes(slide)?.Contains(
-                EvaluationTruncationMarker,
-                StringComparison.OrdinalIgnoreCase) == true);
+        presentation.Slides.Any(static slide =>
+            slide.Shapes.Any(static shape => CutByEvaluation(ShapeText(shape)))
+            || CutByEvaluation(Notes(slide)));
+
+    /// <summary>Whether evaluation mode replaced the read text with its truncation notice.</summary>
+    internal static bool CutByEvaluation(string? text) =>
+        text?.Contains(EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase) == true;
 
     internal static IReadOnlyList<SlideTextRunData>? Runs(
         IShape shape,
@@ -284,7 +283,7 @@ internal static class SlidesEngineSupport
                     Bold = effective.FontBold,
                     Italic = effective.FontItalic,
                     Color = effective.FillFormat.FillType == FillType.Solid
-                        ? SlidesReviewProjection.Hex(effective.FillFormat.SolidFillColor)
+                        ? SlidesContrast.Hex(effective.FillFormat.SolidFillColor)
                         : null,
                 });
             }
@@ -462,7 +461,7 @@ internal static class SlidesEngineSupport
     /// when the output holds text the CLI read, as extracted text and Markdown do; saved
     /// presentations, PDFs and images keep the full text.
     /// </summary>
-    internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedPresentation loaded, bool textRead = false) =>
+    internal static IReadOnlyList<Warning>? OutputWarnings(LicenseState state, LoadedPresentation loaded, bool textRead) =>
         Warnings(state, loaded, output: true, textRead);
 
     private static IReadOnlyList<Warning>? Warnings(LicenseState state, LoadedPresentation loaded, bool output, bool textRead)

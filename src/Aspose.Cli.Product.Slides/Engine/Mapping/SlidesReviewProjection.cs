@@ -1,4 +1,3 @@
-using System.Globalization;
 using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Slides;
 using Aspose.Slides.Charts;
@@ -8,6 +7,9 @@ namespace Aspose.Cli.Product.Slides.Engine.Mapping;
 /// <summary>Projects effective engine formatting into non-wire review facts.</summary>
 internal static class SlidesReviewProjection
 {
+    // A nearly opaque solid fill still hides what is behind it; a more transparent one lets it show.
+    private const byte OpaqueAlpha = 230;
+
     internal static bool HasOpaqueFill(IShape shape)
     {
         if (shape is IChart or ITable)
@@ -18,7 +20,7 @@ internal static class SlidesReviewProjection
         IFillFormatEffectiveData fill = shape.FillFormat.GetEffective();
         return fill.FillType switch
         {
-            FillType.Solid => fill.SolidFillColor.A >= 230,
+            FillType.Solid => fill.SolidFillColor.A >= OpaqueAlpha,
             FillType.Pattern => true,
             _ => false,
         };
@@ -137,15 +139,11 @@ internal static class SlidesReviewProjection
     }
 
     private static System.Drawing.Color? Opaque(IFillFormatEffectiveData fill) =>
-        fill.FillType == FillType.Solid && fill.SolidFillColor.A >= 230 ? fill.SolidFillColor : null;
+        fill.FillType == FillType.Solid && fill.SolidFillColor.A >= OpaqueAlpha ? fill.SolidFillColor : null;
 
     /// <summary>The color a chart states for all its text; null for another shape or when the chart style decides it.</summary>
     internal static System.Drawing.Color? ChartTextColor(IShape shape) =>
         shape is IChart { TextFormat.PortionFormat.FillFormat: { FillType: FillType.Solid } fill }
             ? fill.SolidFillColor.Color
             : null;
-
-    /// <summary>A color as <c>#RRGGBB</c>, without its transparency.</summary>
-    internal static string Hex(System.Drawing.Color color) =>
-        string.Create(CultureInfo.InvariantCulture, $"#{color.R:X2}{color.G:X2}{color.B:X2}");
 }

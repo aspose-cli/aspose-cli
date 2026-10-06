@@ -2,7 +2,6 @@ using System.Drawing;
 using System.Globalization;
 using System.Text;
 using Aspose.Cli.Product.Slides.Contracts;
-using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Product.Slides;
@@ -39,9 +38,10 @@ internal static class SlidesReviewAnalyzer
             .Select(static slide => slide with { Shapes = slide.Shapes.Where(static shape => !shape.EvaluationWatermark).ToArray() })
             .ToArray();
         AnalyzeDuplicates(slides, result);
+        double slideArea = Math.Max(1, slideWidth * slideHeight);
         foreach (SlideData slide in slides)
         {
-            AnalyzeSlide(slide, slideWidth, slideHeight, result);
+            AnalyzeSlide(slide, slideWidth, slideHeight, slideArea, result);
         }
         return result;
     }
@@ -78,25 +78,25 @@ internal static class SlidesReviewAnalyzer
         SlideData slide,
         double slideWidth,
         double slideHeight,
+        double slideArea,
         SlidesReviewAnalysis result)
     {
         if (IsBlank(slide))
         {
             result.BlankSlides++;
-            result.Findings.Add(SlidesReviewChecks.SlideBlank.Finding(
-                "The slide has no visible authored content; confirm that it is intentional.",
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.SlideBlank,
+                slide,
+                "The slide has no visible authored content; confirm that it is intentional."));
         }
 
         foreach (SlideShapeData shape in slide.Shapes)
         {
             AddShapeFindings(slide, shape, slideWidth, slideHeight, result);
         }
-        AnalyzeDensity(slide, slideWidth, slideHeight, result);
-        AnalyzeOverlaps(slide, slideWidth, slideHeight, result);
-        AnalyzeTextOverObjects(slide, slideWidth, slideHeight, result);
+        AnalyzeDensity(slide, slideArea, result);
+        AnalyzeOverlaps(slide, slideArea, result);
+        AnalyzeTextOverObjects(slide, slideArea, result);
         AnalyzeContrast(slide, result);
         AnalyzeEmptyPlaceholders(slide, result);
     }
@@ -129,11 +129,10 @@ internal static class SlidesReviewAnalyzer
             }
 
             result.LowContrastTexts++;
-            result.Findings.Add(SlidesReviewChecks.TextLowContrast.Finding(
-                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} is {SlidesReviewProjection.Hex(low[0].Text)} on {SlidesReviewProjection.Hex(backdrop)}, a contrast of {low[0].Ratio:0.0}:1; give the text a contrasting color with set_shape_style, or change what is behind it."),
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.TextLowContrast,
+                slide,
+                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} is {SlidesContrast.Hex(low[0].Text)} on {SlidesContrast.Hex(backdrop)}, a contrast of {low[0].Ratio:0.0}:1; give the text a contrasting color with set_shape_style, or change what is behind it.")));
         }
     }
 
@@ -145,11 +144,9 @@ internal static class SlidesReviewAnalyzer
     /// </summary>
     private static void AnalyzeTextOverObjects(
         SlideData slide,
-        double slideWidth,
-        double slideHeight,
+        double slideArea,
         SlidesReviewAnalysis result)
     {
-        double slideArea = Math.Max(1, slideWidth * slideHeight);
         foreach (SlideShapeData text in slide.Shapes.Where(static shape => shape.TextRect is not null && !IsDecorative(shape)))
         {
             SlideRect lines = text.TextRect!;
@@ -163,11 +160,10 @@ internal static class SlidesReviewAnalyzer
                 }
 
                 result.TextOverlaps++;
-                result.Findings.Add(SlidesReviewChecks.TextOverlapsObject.Finding(
-                    $"The text of {Label(text)} runs into {other.Type} {Label(other)} ({overlap / Math.Max(1, Area(lines)):P0} of the text area); move or shorten one of them.",
-                    Location(slide.Slide),
-                    Hint,
-                    Part(slide)));
+                result.Findings.Add(Finding(
+                    SlidesReviewChecks.TextOverlapsObject,
+                    slide,
+                    $"The text of {Label(text)} runs into {other.Type} {Label(other)} ({overlap / Math.Max(1, Area(lines)):P0} of the text area); move or shorten one of them."));
                 break;
             }
         }
@@ -181,11 +177,10 @@ internal static class SlidesReviewAnalyzer
                      && string.IsNullOrWhiteSpace(shape.Text)))
         {
             result.EmptyPlaceholders++;
-            result.Findings.Add(SlidesReviewChecks.PlaceholderEmpty.Finding(
-                $"Placeholder {Label(shape)} is empty; PowerPoint shows its prompt text while the deck is edited. Delete it or fill it.",
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.PlaceholderEmpty,
+                slide,
+                $"Placeholder {Label(shape)} is empty; PowerPoint shows its prompt text while the deck is edited. Delete it or fill it."));
         }
     }
 
@@ -203,11 +198,10 @@ internal static class SlidesReviewAnalyzer
             || rect.Y + rect.Height > slideHeight + GeometryTolerance)
         {
             result.OutsideShapes++;
-            result.Findings.Add(SlidesReviewChecks.ShapeOutsideSlide.Finding(
-                $"Shape {Label(shape)} extends outside the slide.",
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.ShapeOutsideSlide,
+                slide,
+                $"Shape {Label(shape)} extends outside the slide."));
         }
         else
         {
@@ -222,11 +216,10 @@ internal static class SlidesReviewAnalyzer
         if (minimum is > 0 and < 12)
         {
             result.SmallTextShapes++;
-            result.Findings.Add(SlidesReviewChecks.TextTooSmall.Finding(
-                $"Shape {Label(shape)} contains text below 12 pt.",
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.TextTooSmall,
+                slide,
+                $"Shape {Label(shape)} contains text below 12 pt."));
         }
     }
 
@@ -253,22 +246,20 @@ internal static class SlidesReviewAnalyzer
         if (Overshoot(text, page, TextSlideTolerance) is { } cut)
         {
             result.TextOutsideSlide++;
-            result.Findings.Add(SlidesReviewChecks.TextOutsideSlide.Finding(
-                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} runs {cut.Points:0} pt past the {cut.Edges} edge of the slide, which cuts it off; shorten the text, reduce its size, or enlarge the shape away from that edge."),
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.TextOutsideSlide,
+                slide,
+                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} runs {cut.Points:0} pt past the {cut.Edges} edge of the slide, which cuts it off; shorten the text, reduce its size, or enlarge the shape away from that edge.")));
             return;
         }
 
         if (!shape.TextAutofits && Overshoot(text, shape.Rect, TextShapeTolerance) is { } spill)
         {
             result.TextOverflows++;
-            result.Findings.Add(SlidesReviewChecks.TextOverflowsShape.Finding(
-                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} spills {spill.Points:0} pt out of the {spill.Edges} of its shape; shorten the text, reduce its size, or enlarge the shape."),
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.TextOverflowsShape,
+                slide,
+                string.Create(CultureInfo.InvariantCulture, $"The text of {Label(shape)} spills {spill.Points:0} pt out of the {spill.Edges} of its shape; shorten the text, reduce its size, or enlarge the shape.")));
         }
     }
 
@@ -295,8 +286,7 @@ internal static class SlidesReviewAnalyzer
     /// </summary>
     private static void AnalyzeDensity(
         SlideData slide,
-        double slideWidth,
-        double slideHeight,
+        double slideArea,
         SlidesReviewAnalysis result)
     {
         SlideShapeData[] content = slide.Shapes.Where(IsContent).ToArray();
@@ -307,18 +297,17 @@ internal static class SlidesReviewAnalyzer
         if (high)
         {
             result.HighDensitySlides++;
-            result.Findings.Add(SlidesReviewChecks.ContentDensityHigh.Finding(
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.ContentDensityHigh,
+                slide,
                 textMeasured
                     ? $"The slide contains {content.Length} content objects and {characters} text characters; inspect readability and consider splitting it."
-                    : $"The slide contains {content.Length} content objects; inspect readability and consider splitting it.",
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+                    : $"The slide contains {content.Length} content objects; inspect readability and consider splitting it."));
             return;
         }
 
         bool hasRichMedia = content.Any(static shape => shape.Type is "chart" or "table" or "image" or "video");
-        double occupied = BoundingArea(content) / Math.Max(1, slideWidth * slideHeight);
+        double occupied = BoundingArea(content) / slideArea;
         if (textMeasured
             && content.Length >= 3
             && !hasRichMedia
@@ -326,21 +315,18 @@ internal static class SlidesReviewAnalyzer
             && occupied < 0.12)
         {
             result.LowDensitySlides++;
-            result.Findings.Add(SlidesReviewChecks.ContentDensityLow.Finding(
-                $"Three or more content objects occupy only {occupied:P0} of the slide with very little text; inspect for content stranded in a corner.",
-                Location(slide.Slide),
-                Hint,
-                Part(slide)));
+            result.Findings.Add(Finding(
+                SlidesReviewChecks.ContentDensityLow,
+                slide,
+                $"Three or more content objects occupy only {occupied:P0} of the slide with very little text; inspect for content stranded in a corner."));
         }
     }
 
     private static void AnalyzeOverlaps(
         SlideData slide,
-        double slideWidth,
-        double slideHeight,
+        double slideArea,
         SlidesReviewAnalysis result)
     {
-        double slideArea = Math.Max(1, slideWidth * slideHeight);
         SlideShapeData[] ordered = slide.Shapes.OrderBy(static shape => shape.ZOrder).ToArray();
         for (int lowerIndex = 0; lowerIndex < ordered.Length; lowerIndex++)
         {
@@ -359,7 +345,7 @@ internal static class SlidesReviewAnalyzer
 
                 double intersection = IntersectionArea(lower.Rect, upper.Rect);
                 double lowerArea = Area(lower.Rect);
-                if (intersection / Math.Max(1, slideArea) < 0.02 || lowerArea <= 0)
+                if (intersection / slideArea < 0.02 || lowerArea <= 0)
                 {
                     continue;
                 }
@@ -367,21 +353,19 @@ internal static class SlidesReviewAnalyzer
                 if (lower.Type == "chart" && covered >= ChartCoverage)
                 {
                     result.CoveredCharts++;
-                    result.Findings.Add(SlidesReviewChecks.ChartCovered.Finding(
-                        $"Opaque foreground shape {Label(upper)} covers {covered:P0} of chart {Label(lower)}; verify the rendered slide before changing it.",
-                        Location(slide.Slide),
-                        Hint,
-                        Part(slide)));
+                    result.Findings.Add(Finding(
+                        SlidesReviewChecks.ChartCovered,
+                        slide,
+                        $"Opaque foreground shape {Label(upper)} covers {covered:P0} of chart {Label(lower)}; verify the rendered slide before changing it."));
                     break;
                 }
                 if (covered >= SevereCoverage)
                 {
                     result.SevereOverlaps++;
-                    result.Findings.Add(SlidesReviewChecks.ShapesOverlap.Finding(
-                        $"Opaque foreground shape {Label(upper)} covers {covered:P0} of content shape {Label(lower)}; verify that this is intentional.",
-                        Location(slide.Slide),
-                        Hint,
-                        Part(slide)));
+                    result.Findings.Add(Finding(
+                        SlidesReviewChecks.ShapesOverlap,
+                        slide,
+                        $"Opaque foreground shape {Label(upper)} covers {covered:P0} of content shape {Label(lower)}; verify that this is intentional."));
                     break;
                 }
             }
@@ -447,9 +431,7 @@ internal static class SlidesReviewAnalyzer
     }
 
     private static bool TextReplacedByEvaluation(SlideData slide) =>
-        slide.Shapes.Any(static shape => shape.Text?.Contains(
-            SlidesEngineSupport.EvaluationTruncationMarker,
-            StringComparison.OrdinalIgnoreCase) == true);
+        slide.Shapes.Any(static shape => SlidesEngineSupport.CutByEvaluation(shape.Text));
 
     private static string Normalize(string? text) => string.IsNullOrWhiteSpace(text)
         ? string.Empty
@@ -489,8 +471,11 @@ internal static class SlidesReviewAnalyzer
 
     private static string Location(int slide) => string.Create(CultureInfo.InvariantCulture, $"slide {slide}");
 
-    /// <summary>The view part of the slide a finding concerns, so its evidence is that slide's image.</summary>
-    private static string Part(SlideData slide) => SlidesViews.PartId(slide.SlideId);
+    /// <summary>
+    /// A finding on one slide, with that slide's view part, so its evidence is that slide's image.
+    /// </summary>
+    private static ReviewFinding Finding(ReviewCheck check, SlideData slide, string message) =>
+        check.Finding(message, Location(slide.Slide), Hint, SlidesViews.PartId(slide.SlideId));
 }
 
 internal sealed class SlidesReviewAnalysis

@@ -1,4 +1,5 @@
 using System.Drawing;
+using System.Globalization;
 
 namespace Aspose.Cli.Product.Slides;
 
@@ -12,6 +13,10 @@ internal static class SlidesContrast
         double b = Luminance(second);
         return (Math.Max(a, b) + 0.05) / (Math.Min(a, b) + 0.05);
     }
+
+    /// <summary>A color as <c>#RRGGBB</c>, without its transparency.</summary>
+    public static string Hex(Color color) =>
+        string.Create(CultureInfo.InvariantCulture, $"#{color.R:X2}{color.G:X2}{color.B:X2}");
 
     private static double Luminance(Color color) =>
         (0.2126 * Linear(color.R)) + (0.7152 * Linear(color.G)) + (0.0722 * Linear(color.B));

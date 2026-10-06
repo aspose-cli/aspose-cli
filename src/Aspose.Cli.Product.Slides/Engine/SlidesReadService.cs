@@ -105,7 +105,7 @@ internal sealed class SlidesReadService
             Properties = Details("properties") ? Properties(presentation.DocumentProperties) : null,
             License = EnvelopeParts.License(state),
             Warnings = EnvelopeParts.CombineWarnings(
-                InputWarnings(state, loaded),
+                InputWarnings(state, loaded, textRead: true),
                 media is { Count: > MediaListLimit }
                     ?
                     [
@@ -167,7 +167,7 @@ internal sealed class SlidesReadService
                 Truncated = truncated,
             },
             License = EnvelopeParts.License(state),
-            Warnings = InputWarnings(state, loaded),
+            Warnings = InputWarnings(state, loaded, textRead: true),
         };
     }
 }
