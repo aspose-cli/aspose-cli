@@ -40,8 +40,7 @@ appearances the profile rejects, such as the radio groups of a form made with
 embed every font, so a font missing here fails the conversion; pass the
 delivered fonts with `--font-dir`. `pdf validate` checks only the selected
 profile, not signatures, redaction or permissions. Each `issues` entry reads
-`clause (severity, page N): message`, and a `LIST_TRUNCATED` warning gives the
-total when the list is capped. `pdf inspect` reports only the profile a file
+`clause (severity, page N): message`. `pdf inspect` reports only the profile a file
 declares, as `pdf.pdfaProfile`; a declaration is not a check.
 
 ## Other formats
@@ -49,9 +48,8 @@ declares, as `pdf.pdfaProfile`; a declaration is not a check.
 `aspose-cli capabilities` lists the PDF `convertFormats` and `renderFormats`.
 `--pages` selects physical pages. PNG, JPEG and SVG exports write one file per
 selected page and TIFF one multipage file; read the result's `outputs` for the
-actual paths. `pdf render` takes the format from `--to`, or from the `--out`
-extension when `--to` is omitted, and refuses a `--to` that disagrees with the
-extension; use `pdf convert --to tiff` for TIFF.
+actual paths. `pdf render` writes PNG, JPEG or SVG; use `pdf convert --to tiff`
+for TIFF.
 
 Conversions to document, text and HTML formats are structurally lossy, because
 PDF has fixed pages; review the results. Raster outputs keep no selectable text

@@ -1,16 +1,10 @@
 # PDF troubleshooting
 
 The error envelope, exit codes and shared codes are in
-`aspose-cli docs troubleshooting`. PDF-specific codes:
+`aspose-cli docs troubleshooting`. What PDF adds to them:
 
 - `FORM_XFA_UNSUPPORTED`: XFA can be inspected but not filled, flattened or
   exported as AcroForm data.
-- `PAGE_RANGE_INVALID`: use 1-based ranges such as `1-3,7,9-`.
-- `BOOKMARK_NOT_FOUND`: `details.requested` is the bookmark index and
-  `details.availableCount` counts the bookmarks at the level where it ran out;
-  the hint names that level and its valid range.
-- `ATTACHMENT_NOT_FOUND`, `FIELD_NOT_FOUND`: `details.available` lists
-  attachment names or full field names.
 - `PDFA_CONVERSION_FAILED`: `error.details.problems` lists what the conversion
   could not fix; a font the document uses that is missing here also fails it.
 - `FEATURE_UNSUPPORTED` naming a network address or script: HTML, Markdown and SVG
@@ -36,9 +30,6 @@ The error envelope, exit codes and shared codes are in
   outside the HTML directory and was left out; review the incomplete output.
   Relative paths resolve against the HTML file's directory; keep resources
   beneath it rather than widening access.
-- `OUTPUT_EXISTS` from `split` or `extract --out-dir`: one existing file refuses
-  the whole run and nothing is published; `--overwrite` replaces only the files
-  the command writes.
 - `PROTECTION_NOT_ENFORCED`: the input was opened without its owner password
   (with its user password, or with none when it has no open password) and its
   permissions (`pdf inspect --detail permissions`) forbid a change, but the

@@ -117,7 +117,8 @@ aspose-cli capabilities --output json
 **Output (exit 5)**
 
 - `OUTPUT_EXISTS`: pass `--overwrite` deliberately or choose another path.
-  Commands that write several files refuse the whole run when one exists.
+  Commands that write several files refuse the whole run when one exists;
+  `--overwrite` replaces only the files the command writes.
   Review evidence directories are never overwritten.
 - `OUTPUT_UNWRITABLE`: the operating system refused the write. A file open in
   another application usually reads fine but fails the final in-place replace;

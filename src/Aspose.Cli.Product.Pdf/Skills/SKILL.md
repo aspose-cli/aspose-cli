@@ -31,10 +31,6 @@ top-left origin against the visible, rotated page box.
    aspose-cli pdf edit input.pdf --ops ops.json --out output.pdf --verify --output json
    ```
 
-   Without a license the engine reads only the first four pages, so an edit or
-   check that has to read a later page fails with `EVALUATION_LIMIT` and
-   publishes nothing.
-
 4. Convert to PDF/A, then validate the file you deliver; a later edit can break
    the conformance the conversion checked ([standards](references/pdf-standards.md)).
 5. Sign only the final, verified file with `pdf sign`
@@ -71,17 +67,16 @@ both a width and a height takes the proportions of its viewBox.
 `aspose-cli preview report.pdf --open` shows the `pages` view: pages, thumbnails,
 the size of the page in view, zoom and a mark on what a change touched
 (`aspose-cli docs preview`). Without a PDF license, output is watermarked and
-results carry `EVAL_MODE`; a license installed later does not remove watermarks
-already saved into a PDF, so regenerate that file from its original inputs
-(`aspose-cli docs licensing`); `review` reports such pages as
-`PDF_EVALUATION_WATERMARK`. Evaluation mode also reads only the first 4 pages
-of a document. `inspect` of a longer PDF warns `EVAL_INPUT_TRUNCATED` and still
-lists every bookmark and attachment and counts every form field; `query forms`
-lists every field but leaves out the `page` of one on a later page and names it
-in `EVAL_INPUT_TRUNCATED`. Any other command that needs a later page fails with
-`EVALUATION_LIMIT` (exit 7) before writing anything.
-Limit it with `--pages 1-4`, keep the inputs of a `merge` to 4 pages in total,
-or tell the user a PDF license is needed.
+results carry `EVAL_MODE`; `review` reports such pages as
+`PDF_EVALUATION_WATERMARK` ([verification](references/verification.md)).
+Evaluation mode also reads only the first 4 pages of a document. `inspect` of a
+longer PDF warns `EVAL_INPUT_TRUNCATED` and still lists every bookmark and
+attachment and counts every form field; `query forms` lists every field but
+leaves out the `page` of one on a later page and names it in
+`EVAL_INPUT_TRUNCATED`. Any other command that needs a later page fails with
+`EVALUATION_LIMIT` (exit 7) before writing anything. Limit it with
+`--pages 1-4`, keep the inputs of a `merge` to 4 pages in total, or tell the
+user a PDF license is needed.
 
 ## References
 

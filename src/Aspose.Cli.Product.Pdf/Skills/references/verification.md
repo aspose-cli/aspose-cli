@@ -7,10 +7,9 @@ PDF evidence to collect.
 ## Edit verification
 
 `pdf edit --verify` reads the staged output back against the effect of each
-applied operation. Any issue makes `verification.ok` false and the command exit
-8; the output is still published so you can inspect it. Each issue message
-starts with the ids and names of the operations it concerns, and never repeats
-redacted text. `verification.checkedOps` lists, in batch order, the operations
+applied operation. When it finds an issue, the output is still published so you
+can inspect it. Each issue message starts with the ids and names of the
+operations it concerns, and never repeats redacted text. `verification.checkedOps` lists, in batch order, the operations
 whose every recorded effect was read back; an operation it omits was not fully
 checked, even when part of its effect was.
 
@@ -27,13 +26,9 @@ checked, even when part of its effect was.
 
 `PDF_VERIFICATION_INCOMPLETE` reports a page a `redact_text` pattern could not be
 checked on within its time budget; search that page with `pdf query search`.
-A `redact_text` pattern that matched nothing passes its check, so every edit,
-verified or not, names such operations in a `REDACTION_NO_MATCH` warning: the
-text it was meant to remove may still be on the page under a different
-extracted form ([redaction](editing.md#redaction)). Likewise, a
-`REDACTION_TEXT_MOVED` warning names the redactions that moved the rest of a
-line under their cover, which no read-back check catches; `review` names the
-pages where text lies under a cover with `PDF_TEXT_COVERED`.
+A `redact_text` pattern that matched nothing passes its check, and no check
+catches text a redaction moved under its cover; act on `REDACTION_NO_MATCH`,
+`REDACTION_TEXT_MOVED` and `PDF_TEXT_COVERED` ([redaction](editing.md#redaction)).
 
 The batch is checked as a whole: only the last value set for a field, entry or
 attachment is checked, the value of a flattened field or a deleted page's fields is not, a
@@ -45,8 +40,7 @@ watermarks, links, `redact_area`, page geometry, page labels,
 `remove_metadata`, encryption, `optimize`) have no reliable read-back and are
 not checked: render or search the output for them. In evaluation mode the
 matches inside the watermark sentence the engine stamps on each page do not
-count as remaining redacted text, and a check that has to read a page after the
-fourth fails the command with `EVALUATION_LIMIT` and publishes nothing.
+count as remaining redacted text.
 
 ## Content
 
@@ -66,9 +60,8 @@ needed. Search provides no redaction certification.
 
 After `move_pages`, `delete_pages`, `pdf merge` or `pdf split`, check each affected bookmark,
 local link and named destination against the original target, including
-destination type, coordinates and zoom. A `NAVIGATION_DEGRADED` warning counts
-the entries left without their exact target; its absence covers only the page
-each entry reaches, not its location or zoom.
+destination type, coordinates and zoom. The absence of a `NAVIGATION_DEGRADED`
+warning covers only the page each entry reaches, not its location or zoom.
 
 For attachments, compare each extracted file with the original bytes.
 
@@ -94,13 +87,11 @@ that, so such a line shows as a light grey line; `pdf render` draws exactly the 
 PDF review findings worth acting on:
 
 - `PDF_FONTS_NOT_EMBEDDED`: a font the PDF uses without embedding it is drawn
-  from the fonts installed here. Pass the delivered fonts with the same
-  `--font-dir` to `fonts check`, `review` and `pdf create`, `render`, `convert`,
-  `edit` and `sign`; HTML and text sources resolve CSS `font-family` from it too.
+  from the fonts installed here; pass the delivered fonts with `--font-dir`.
+  HTML and text sources of `pdf create` resolve CSS `font-family` from it too.
   Text operations that name a `font`, and a visible signature, need that font here.
 - `PDF_FORM_APPEARANCE_REVIEW_REQUIRED`: open the pages with fields and look for
-  stale, clipped or missing values. It counts fields by name, as `fieldCount`
-  does, so a radio group is one field.
+  stale, clipped or missing values.
 - `PDF_EVALUATION_WATERMARK`: a run without a license saved its watermark into
   the page, and a license does not remove it; regenerate the file from its
   original inputs with the license before delivery. The check matches the
@@ -120,10 +111,7 @@ PDF review findings worth acting on:
   image-only page also has no font resources, so `fonts check` returns an empty
   `fonts` array for it.
 - `PDF_PAGE_WITHOUT_TEXT_LAYER` (info): a page with no extractable text and an
-  image over most of it, which `pdf query pages` reports as
-  `SCANNED_PAGES_SUSPECTED`. Search and `redact_text` do not reach its content;
-  read it from the review image and redact it with `redact_area`
-  ([scanned pages](editing.md#scanned-pages)).
+  image over most of it ([scanned pages](editing.md#scanned-pages)).
 
 ```powershell
 aspose-cli fonts check report.pdf --font-dir fonts --output json
