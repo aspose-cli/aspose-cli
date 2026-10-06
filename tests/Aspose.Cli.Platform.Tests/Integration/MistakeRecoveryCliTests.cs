@@ -58,6 +58,24 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.False(File.Exists(_workspace.File(arguments[1] == "create" ? arguments[2] : "x.pdf")));
     }
 
+    [Fact]
+    public void EditOutputFormatTheEditCannotWrite_ListsOnlyWhatTheEditWrites()
+    {
+        File.WriteAllText(_workspace.File("a.xlsx"), "not a document");
+
+        CliResult result = _workspace.Run("cells", "edit", "a.xlsx", "--set", "Sheet1!A1=5", "--out", "x.png", "--output", "json");
+
+        Assert.Equal(6, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("FORMAT_UNSUPPORTED", error["code"]!.GetValue<string>());
+        Assert.Equal(
+            ["xlsx", "xltx", "xlsm", "xltm", "xlsb", "xls", "ods", "csv", "tsv", "html", "mhtml"],
+            error["details"]!["supported"]!.AsArray().Select(static id => id!.GetValue<string>()));
+        Assert.EndsWith("it writes xlsx, xltx, xlsm, xltm, xlsb, xls, ods, csv, tsv, html, mhtml.", error["message"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.DoesNotContain(".pdf", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+        Assert.Contains("then run 'aspose-cli cells render <that file> --to png'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData("slides edit a.pptx --ops ops.json --out noext", "noext")]
     [InlineData("slides edit a.pptx --ops ops.json --out dotonly.", "dotonly")]

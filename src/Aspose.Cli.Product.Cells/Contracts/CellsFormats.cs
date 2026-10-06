@@ -46,17 +46,21 @@ public static class CellsFormats
 
     /// <summary>The convert format whose id, alias or declared extension a path carries; xlsx without one.</summary>
     /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> when the extension names no format.</exception>
-    public static string ForOutputPath(string path)
+    public static string ForOutputPath(string path) => ForOutputPath(path, Definitions.IdsFor(FormatUse.Convert));
+
+    /// <summary>
+    /// The format whose id, alias or declared extension a path carries, one of the formats a
+    /// command writes; xlsx without one.
+    /// </summary>
+    /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c>, listing <paramref name="writes"/>, when the extension names no format among them.</exception>
+    public static string ForOutputPath(string path, IReadOnlyList<string> writes)
     {
         string extension = Path.GetExtension(path);
-        if (extension.Length <= 1)
-        {
-            return "xlsx";
-        }
-
-        return (Definitions.Named(FormatUse.Convert, extension[1..])
+        string format = extension.Length <= 1 ? "xlsx"
+            : (Definitions.Named(FormatUse.Convert, extension[1..])
                 ?? Definitions.WithExtension(FormatUse.Convert, extension).FirstOrDefault())?.Id
-            ?? throw CliErrors.FormatUnsupported(extension[1..], Definitions.IdsFor(FormatUse.Convert));
+            ?? extension[1..];
+        return writes.Contains(format, StringComparer.Ordinal) ? format : throw CliErrors.FormatUnsupported(format, writes);
     }
 
     /// <summary>

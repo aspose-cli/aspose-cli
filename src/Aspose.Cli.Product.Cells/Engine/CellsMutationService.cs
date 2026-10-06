@@ -1,4 +1,3 @@
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cells;
 using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Product.Cells.Engine.Editing;
@@ -45,9 +44,7 @@ internal sealed class CellsMutationService
         ArgumentException.ThrowIfNullOrEmpty(filePath);
         ArgumentNullException.ThrowIfNull(batch);
         ArgumentNullException.ThrowIfNull(options);
-        string format = CellsFormats.ForOutputPath(options.OutputPath);
-        if (!CellsFormats.EditIds.Contains(format, StringComparer.Ordinal))
-        { throw CliErrors.FormatUnsupported(format, CellsFormats.EditIds); }
+        string format = CellsFormats.ForOutputPath(options.OutputPath, CellsFormats.EditIds);
         batch = CellsOp.Catalog.Prepare(batch);
         using AtomicOutputSetWriter? transaction = options.Options.DryRun ? null
             : _saver.CreateOutputSet([Path.GetDirectoryName(options.OutputPath)!], "cells-edit", options.BackupPath);

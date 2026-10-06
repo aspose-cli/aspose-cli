@@ -42,7 +42,7 @@ internal static class EditCommand
             [noRecalc],
             (parse, edit, standard) =>
             {
-                string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(edit.Target.OutputPath));
+                string? encryptPassword = standard.EncryptPassword(CellsFormats.ForOutputPath(edit.Target.OutputPath, CellsFormats.EditIds));
                 return standard.OpenEngine().ApplyOps(standard.Input, edit.Batch, new EditRequest
                 {
                     OutputPath = edit.Target.OutputPath,
