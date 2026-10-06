@@ -28,7 +28,7 @@ aspose-cli cells create model.xlsx --sheets "Assumptions,PnL,Summary"
 Prefer plain names — `&` or spaces force quoting everywhere (`='P&L'!B3*2`,
 `--set "'P&L'!B3=42"`; both verified, both noise). `protect_sheet` on Calc
 and Output sheets keeps humans out in Excel while Assumptions stays open:
-zone granularity is sheet granularity, so no-per-cell-lock never bites.
+zone granularity is sheet granularity.
 
 The rule that makes the zones real: **Calc sheets contain zero hardcoded
 numbers** — every figure is a formula or comes from Assumptions. The audit

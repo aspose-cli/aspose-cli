@@ -188,8 +188,9 @@ fields you set on matching cells and leaves the rest — a money or percent
 column keeps its number format and font under the highlight. Use
 `colorScale` or `dataBar` when the message is magnitude rather than a
 threshold; an `iconSet` rule (`arrows3`, `trafficLights3`, …) reads well on
-a short status or delta column, but its thresholds are automatic terciles —
-use it only when "top/middle/bottom third" is actually the message, and
+a short status or delta column, but its thresholds are automatic equal
+bands (thirds for a 3-icon set, quarters for `rating4`, fifths for
+`rating5`) — use it only when that split is actually the message, and
 never beside a color scale saying the same thing.
 
 ```sh

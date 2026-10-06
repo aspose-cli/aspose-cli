@@ -34,7 +34,7 @@ to workbooks.
 | `WORKBOOK_ENCRYPTION_REMOVED` | The output format cannot be encrypted, so the source encryption was dropped. |
 | `EXTERNAL_LINK_CACHE_MISSING` | `import_sheet` or `import_range` (`all`) copied formulas that read another workbook through a link that caches no values. They show `#REF!` in the source but read the linked cells as empty, usually 0, here; the message lists them and `location` names the first; `--verify` reports it as an issue. Replace them with `set_formula` or `set_values`. |
 | `EXTERNAL_LINK_RELATIVE` | The edit added a link the output stores as a file name without a folder, relative to the output's folder; a full path to a file in the input's folder is stored this way too. The message names the stored targets. A formula naming a sheet the workbook does not have, such as `=Salse!B2`, is stored this way too; the hint then names the closest sheet, so correct the formula. Otherwise keep those files beside the output, or use `import_range` instead of a link. |
-| `FORMULA_FUNCTION_UNKNOWN` | A formula the edit wrote calls a function Aspose.Cells does not know, so it evaluates to `#NAME?`; the message names each cell and function with the closest known function, such as `SUMM (did you mean SUM?)`. Correct the name, in English; an add-in or VBA function, or one newer than the engine, stays in the file for Excel. |
+| `FORMULA_FUNCTION_UNKNOWN` | A formula the edit wrote calls a function Aspose.Cells does not know, so it evaluates to `#NAME?`; the message names each cell and function and, when one is a single edit away, the closest known function, such as `SUMM (did you mean SUM?)`. Correct the name, in English; an add-in or VBA function, or one newer than the engine, stays in the file for Excel. |
 | `CHART_SPLIT_ACROSS_PAGES` | A PDF conversion printed a chart across two or more pages; the message names each chart and its page count. Fit the sheet with `set_page_setup` (`fitToWidth` 1 and `fitToHeight` 0, or `orientation` landscape), or move or resize the chart, and convert again. |
 | `MHTML_RESOURCE_COVERAGE_UNVERIFIED` | The engine resolves MHTML resources without reporting missing ones; check images and styles yourself. |
 | `EVALUATION_SHEET_ADDED` | An evaluation save added the warning sheet `location` names and made it the active sheet in place of the one the message names; see below. |
@@ -66,9 +66,9 @@ message says when empty rows were looked for only in the first 10,000.
 
 ## Evaluation mode in workbooks
 
-Without a Cells license, results carry `EVAL_MODE` and every saved workbook
-gains an "Evaluation Warning" sheet plus watermark content. Disclose it
-(`aspose-cli docs licensing`), and handle these effects:
+Without a Cells license, every saved workbook gains an "Evaluation Warning"
+sheet plus watermark content. Disclose it (`aspose-cli docs licensing`), and
+handle these effects:
 
 - The engine appends the warning sheet and makes it the active sheet; no
   option keeps your active sheet (`set_active_sheet` included). The result

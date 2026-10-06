@@ -7,9 +7,9 @@ license: Apache-2.0
 # Aspose Cells CLI
 
 Read, edit, verify and deliver spreadsheets with the `aspose-cli cells`
-commands. Session start, the shared golden rules, windows, operation batches,
-review, licensing and the error envelope are in `aspose-cli docs overview`;
-this Skill adds what is specific to workbooks.
+commands. Session start, the shared golden rules and the routes to the
+shared topics are in `aspose-cli docs overview`; this Skill adds what is
+specific to workbooks.
 
 ## Workbook rules
 

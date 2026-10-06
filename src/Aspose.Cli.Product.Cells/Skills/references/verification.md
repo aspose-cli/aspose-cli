@@ -51,41 +51,24 @@ reviewed. A sheet too large for one image contributes its first rows, and the
 still reviewed. Cells checks report codes such as `CELLS_FORMULA_ERROR`,
 `CELLS_POPULATED_COLUMNS_NARROW` and `CELLS_VALUES_CLIPPED` (text cut off by
 the next cell, or a number too wide to show in full, measured with Excel's
-column widths). The check compares the width the engine measures for each
-value with its column. The engine measures East Asian text in a font without
-East Asian glyphs (Calibri, Arial) narrower than auto-fit and the sheet image
-draw it (known issue CELLS-WIDTH-EAST-ASIAN), so such text can be cut off
-unlisted, or listed while the image shows it whole; judge it in the image, and
-give a column that still cuts it off after auto-fit an explicit width, or use
-a font with East Asian glyphs such as Microsoft YaHei. For a file a person opens, the look also grades the design
-checklist in `aspose-cli docs cells/design-system`, section 12. Render large
-sheets as windows with `--sheet` and `--range`.
+column widths). `CELLS_VALUES_CLIPPED` can miss East Asian text in a font
+without East Asian glyphs (Calibri, Arial): judge those columns in the image,
+or use a font such as Microsoft YaHei. For a file a person opens, the look
+also grades the design checklist in `aspose-cli docs cells/design-system`,
+section 12. Render large sheets as windows with `--sheet` and `--range`.
 
 ### Judge widths from a `--range` render
 
-A range render and a full-sheet render do not share a geometry. Measured on
-four width-12 columns with row 1 at 22pt, at 192 DPI:
-
-| render | content box |
-|--------|-------------|
-| `--range A1:D1` | 712 x 59 px |
-| full sheet | 749 x 57 px |
-
-The range box matches Excel's width formula (`12 chars x 7 + 5` px per column
-at 96 DPI). The full-sheet render is 5.2% wider and 3.4% shorter, which hides
-truncation: a `Headcount plan` header in a width-12 column renders
-`Headcount pla` under `--range` and whole in the full sheet. `convert --to
-pdf` hides it the same way. Judge width, truncation and `###` from a
+A range render matches Excel's column widths; a full-sheet render is about
+5% wider, which hides truncation: a `Headcount plan` header in a width-12
+column renders `Headcount pla` under `--range` and whole in the full sheet.
+`convert --to pdf` hides it the same way. Judge width, truncation and `###` from a
 `--range` render; use full-sheet images for layout, chart placement and page
 flow.
 
-The reverse also happens: text that spills over empty cells can lose part of
-its last character in a full-sheet image when it ends exactly on a column
-edge there (known issue CELLS-OVERFLOW-EDGE), while `--range` shows it whole.
-Review lists such text that ends close to a column edge as
-`CELLS_TEXT_OVERFLOWS`; check the end of each sample
-in the sheet image, and if one is cut, widen the column it starts in by one
-or two characters.
+The reverse also happens: text that spills over empty cells can lose its last
+character at a column edge in a full-sheet image while `--range` shows it
+whole (`CELLS_TEXT_OVERFLOWS`).
 
 ### Non-Latin text: never look below 150 DPI
 
@@ -156,9 +139,10 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output json
 - Read the whole list. Any difference you did not intend, such as a shifted
   formula or a cleared cell, is a finding to fix before delivery.
 - A renamed sheet pairs with the sheet it was (they keep one internal sheet
-  id): `status: "renamed"` with its old name in `from` and its cell changes,
-  in compare and in `--verify` alike. The pairing is meaningful only for two
-  versions of the same workbook; two unrelated workbooks can pair unrelated
+  id): compare reports `status: "renamed"` with its old name in `from` and
+  its cell changes; `--verify` lists it in `otherChanges` as `renamed`,
+  without `from`, and its cell changes under the new name. The pairing is
+  meaningful only for two versions of the same workbook; two unrelated workbooks can pair unrelated
   sheets that happen to share an id.
 - Cells pair by address. When rows were inserted or deleted, `ROWS_SHIFTED`
   names where (`1 row inserted at right row 9`): the cells below compare with

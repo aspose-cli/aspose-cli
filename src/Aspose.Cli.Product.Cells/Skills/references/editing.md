@@ -180,7 +180,7 @@ cells:
     { "op": "create_chart", "sheet": "Data", "type": "column",
       "dataRange": "A1:C5", "at": "E2:L18", "title": "Quarterly Sales" }
 
-- `create_chart` applies a modern look by itself: white plot area, no outer
+- `create_chart` applies a modern look by itself: no plot-area fill, no outer
   border, a bottom legend, slim column and bar gaps, light value-axis
   gridlines and a distinct color per series (per slice of a pie): the
   workbook theme's six accents, then darker and lighter variants. A
@@ -327,7 +327,8 @@ and exit 8 with `verification.ok: false`. Issue codes: `FORMULA_ERRORS` (the
 edited workbook has formula errors; `location` is the cell when there is one;
 `#NAME?` usually means a localized or misspelled function name, and the hint
 asks for English function names; with or without `--verify`, the warning
-`FORMULA_FUNCTION_UNKNOWN` names each unknown function and the closest one),
+`FORMULA_FUNCTION_UNKNOWN` names each unknown function and, when one is a
+single edit away, the closest known function),
 `LIST_TRUNCATED` (`formulaErrors` holds only the first 1000), or the code of a
 completeness warning such as `SHEETS_DROPPED`; `capabilities` lists every
 code. A formula error whose input cell had the same formula and the same
