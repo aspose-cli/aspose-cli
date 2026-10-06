@@ -1,7 +1,8 @@
 # Words error codes
 
-The error envelope, exit codes, not-found details and shared codes such as
-`PASSWORD_REQUIRED` or `OUTPUT_EXISTS` are in `aspose-cli docs troubleshooting`.
+The error envelope, exit codes and shared codes such as `PASSWORD_REQUIRED`
+or `OUTPUT_EXISTS` are in `aspose-cli docs troubleshooting`; not-found details
+are in `aspose-cli docs editing`.
 
 ## Errors
 
@@ -50,7 +51,7 @@ The error envelope, exit codes, not-found details and shared codes such as
   banner, footer text or truncation notice a save without a license wrote into
   it, and the output keeps them; regenerate the document from its original
   inputs with a license.
-- `LAYOUT_MAY_DIFFER`: `words split` can reflow complex layouts slightly;
-  review the split pages.
+- `LAYOUT_MAY_DIFFER`: `words split --by pages` can reflow complex layouts
+  slightly; review the split pages.
 - `LINKED_IMAGES_SKIPPED`: linked images store no bytes in the document, so
   `extract --what images` cannot write them.
