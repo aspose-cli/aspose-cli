@@ -104,6 +104,212 @@ public sealed class WordsContractGapTests
     }
 
     [Fact]
+    public void InsertParagraphs_WithListLevel_JoinsTheNestedListAtThatLevel()
+    {
+        // Markdown nesting makes each level its own list; a new item at another level than the
+        // anchor's joins the list its level uses around the anchor, numbered like its siblings.
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("nested.md");
+        File.WriteAllText(markdown, "# T\n\n1. First\n    1. Sub A\n    2. Sub B\n2. Second\n    1. Sub C\n");
+        string input = fixture.Temp.File("nested.docx");
+        fixture.Engine.Create(new NewDocumentRequest { OutputPath = input, MarkdownPath = markdown });
+        string output = fixture.Temp.File("nested-out.docx");
+
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new InsertParagraphsOp
+                {
+                    At = new WordsTarget { Find = "First" },
+                    Position = "after",
+                    Paragraphs = [new ParagraphInput { Text = "New sub", ListLevel = 1 }],
+                },
+                new InsertParagraphsOp
+                {
+                    At = new WordsTarget { Find = "Sub C" },
+                    Position = "after",
+                    Paragraphs =
+                    [
+                        new ParagraphInput { Text = "Later sub", ListLevel = 1 },
+                        new ParagraphInput { Text = "Third", ListLevel = 0 },
+                    ],
+                },
+                new InsertParagraphsOp
+                {
+                    At = new WordsTarget { Find = "Second" },
+                    Position = "before",
+                    Paragraphs = [new ParagraphInput { Text = "Between", ListLevel = 0 }],
+                },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        var document = new Document(output);
+        document.UpdateListLabels();
+        Paragraph[] paragraphs = [.. document.FirstSection.Body.Paragraphs.Cast<Paragraph>()];
+        Paragraph Item(string text) => paragraphs.Single(p => p.GetText().Trim() == text);
+        void SameAs(string sibling, string added)
+        {
+            Paragraph expected = Item(sibling);
+            Paragraph item = Item(added);
+            Assert.True(item.IsListItem, added);
+            Assert.Equal(expected.ListFormat.List.ListId, item.ListFormat.List.ListId);
+            Assert.Equal(expected.ListFormat.ListLevelNumber, item.ListFormat.ListLevelNumber);
+            Assert.Equal(expected.ParagraphFormat.LeftIndent, item.ParagraphFormat.LeftIndent, 2);
+            Assert.Equal(expected.ParagraphFormat.FirstLineIndent, item.ParagraphFormat.FirstLineIndent, 2);
+        }
+
+        SameAs("Sub A", "New sub");
+        SameAs("Sub C", "Later sub");
+        SameAs("First", "Between");
+        SameAs("First", "Third");
+        Assert.Equal(
+            ["1.", "1.", "2.", "3.", "2.", "3.", "1.", "2.", "4."],
+            new[] { "First", "New sub", "Sub A", "Sub B", "Between", "Second", "Sub C", "Later sub", "Third" }
+                .Select(text => Item(text).ListLabel.LabelString));
+    }
+
+    [Fact]
+    public void InsertParagraphs_WithListLevel_StartsABulletListWhenNoListNumbersThatLevel()
+    {
+        // A Markdown list defines only its own level; a deeper item without siblings at its
+        // level still becomes a visible, indented list item rather than a plain paragraph.
+        using var fixture = new WordsFixture();
+        string markdown = fixture.Temp.File("flat.md");
+        File.WriteAllText(markdown, "1. First\n2. Second\n");
+        string input = fixture.Temp.File("flat.docx");
+        fixture.Engine.Create(new NewDocumentRequest { OutputPath = input, MarkdownPath = markdown });
+        string output = fixture.Temp.File("flat-out.docx");
+
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new InsertParagraphsOp
+                {
+                    At = new WordsTarget { Find = "First" },
+                    Position = "after",
+                    Paragraphs = [new ParagraphInput { Text = "Detail", ListLevel = 1 }],
+                },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        var document = new Document(output);
+        document.UpdateListLabels();
+        Paragraph[] paragraphs = [.. document.FirstSection.Body.Paragraphs.Cast<Paragraph>()];
+        Paragraph first = paragraphs.Single(static p => p.GetText().Trim() == "First");
+        Paragraph detail = paragraphs.Single(static p => p.GetText().Trim() == "Detail");
+        Assert.True(detail.IsListItem);
+        Assert.Equal(1, detail.ListFormat.ListLevelNumber);
+        Assert.NotEqual(first.ListFormat.List.ListId, detail.ListFormat.List.ListId);
+        Assert.NotEmpty(detail.ListLabel.LabelString);
+        Assert.True(detail.ParagraphFormat.LeftIndent > first.ParagraphFormat.LeftIndent);
+        Assert.Equal("2.", paragraphs.Single(static p => p.GetText().Trim() == "Second").ListLabel.LabelString);
+    }
+
+    [Fact]
+    public void InsertParagraphs_WithListLevel_TakesTheRunFormatOfItsLevel()
+    {
+        using var fixture = new WordsFixture();
+        var source = new Document();
+        var builder = new DocumentBuilder(source);
+        builder.ListFormat.List = source.Lists.Add(Aspose.Words.Lists.ListTemplate.NumberDefault);
+        builder.Font.Bold = true;
+        builder.Writeln("Chapter");
+        builder.Font.Bold = false;
+        builder.ListFormat.ListLevelNumber = 1;
+        builder.Writeln("Detail");
+        builder.ListFormat.RemoveNumbers();
+        builder.Write("Closing");
+        string input = fixture.Temp.File("bold-list.docx");
+        source.Save(input, SaveFormat.Docx);
+        string output = fixture.Temp.File("bold-list-out.docx");
+
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new InsertParagraphsOp
+                {
+                    At = new WordsTarget { Find = "Chapter" },
+                    Position = "after",
+                    Paragraphs = [new ParagraphInput { Text = "First detail", ListLevel = 1 }],
+                },
+            ],
+        }, new WordsEditRequest { OutputPath = output });
+
+        Paragraph added = new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()
+            .Single(static p => p.GetText().Trim() == "First detail");
+        Assert.Equal(1, added.ListFormat.ListLevelNumber);
+        Assert.False(added.Runs[0].Font.Bold);
+    }
+
+    [Theory]
+    [InlineData(false, false)]
+    [InlineData(false, true)]
+    [InlineData(true, false)]
+    [InlineData(true, true)]
+    public void InsertParagraphs_WithListLevel_KeepsTheFormatOfLaterItemsOfTheOperation(bool markdown, bool trackChanges)
+    {
+        // The second item finds the first as its level's nearest item; that item is a tracked
+        // insertion when changes are tracked, so it must not be the format the second continues.
+        using var fixture = new WordsFixture();
+        string input = fixture.Temp.File("items.docx");
+        if (markdown)
+        {
+            string source = fixture.Temp.File("items.md");
+            File.WriteAllText(source, "1. **First**\n2. Second\n");
+            fixture.Engine.Create(new NewDocumentRequest { OutputPath = input, MarkdownPath = source });
+        }
+        else
+        {
+            var source = new Document();
+            var builder = new DocumentBuilder(source);
+            builder.ListFormat.List = source.Lists.Add(Aspose.Words.Lists.ListTemplate.NumberDefault);
+            builder.Font.Name = "Courier New";
+            builder.Font.Size = 14;
+            builder.Writeln("First");
+            builder.Write("Second");
+            source.Save(input, SaveFormat.Docx);
+        }
+
+        string output = fixture.Temp.File("items-out.docx");
+        fixture.Engine.ApplyOps(input, new WordsOpsBatch
+        {
+            Ops =
+            [
+                new InsertParagraphsOp
+                {
+                    At = new WordsTarget { Find = markdown ? "First" : "Second" },
+                    Position = markdown ? "after" : "before",
+                    Paragraphs =
+                    [
+                        new ParagraphInput { Text = "Detail one", ListLevel = 1 },
+                        new ParagraphInput { Text = "Detail two", ListLevel = 1 },
+                    ],
+                },
+            ],
+        }, new WordsEditRequest { OutputPath = output, TrackChanges = trackChanges, Author = "Reviewer" });
+
+        Paragraph[] paragraphs = [.. new Document(output).FirstSection.Body.Paragraphs.Cast<Paragraph>()];
+        Paragraph first = paragraphs.Single(static p => p.GetText().Trim() == "Detail one");
+        Paragraph second = paragraphs.Single(static p => p.GetText().Trim() == "Detail two");
+        Assert.True(second.IsListItem);
+        Assert.Equal(first.ListFormat.List.ListId, second.ListFormat.List.ListId);
+        Assert.Equal(1, second.ListFormat.ListLevelNumber);
+        Assert.Equal(first.ParagraphFormat.StyleName, second.ParagraphFormat.StyleName);
+        Assert.Equal(first.ParagraphFormat.LeftIndent, second.ParagraphFormat.LeftIndent, 2);
+        Assert.Equal(markdown, first.Runs[0].Font.Bold);
+        Assert.Equal(first.Runs[0].Font.Bold, second.Runs[0].Font.Bold);
+        Assert.Equal(first.Runs[0].Font.Name, second.Runs[0].Font.Name);
+        Assert.Equal(first.Runs[0].Font.Size, second.Runs[0].Font.Size);
+        if (!markdown)
+        {
+            Assert.Equal(14, second.Runs[0].Font.Size);
+        }
+    }
+
+    [Fact]
     public void InsertParagraphs_WithListLevel_KeepsFollowingTheLevelWhenItsItemsDo()
     {
         using var fixture = new WordsFixture();

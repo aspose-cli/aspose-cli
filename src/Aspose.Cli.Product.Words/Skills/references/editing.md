@@ -118,17 +118,30 @@ document's tables.
 
 An `insert_paragraphs` paragraph without `style` continues the paragraph
 before the insertion point, as Word's Enter does: it takes that paragraph's
-indents, spacing and alignment and the font, size and color of its last text
-outside a field such as a hyperlink, without a character style, so a clause
-inserted between clauses matches them. After a paragraph whose
+indents, spacing and alignment and the direct run format of its last text
+outside a field such as a hyperlink, such as font, size, color and bold,
+without a character style, so a clause inserted between clauses matches them.
+After a paragraph whose
 style names another next style, such as a heading, it takes that style alone;
 it continues no list, page break before or tracked change, and at the start of
-the body or after a table it takes Normal. A paragraph with `listLevel` after a
-list item, such as a new clause 2.3 after 2.2, joins that list and takes the
-left and first-line indents of the anchor or of its nearest item at that
-level when that item sets its own, as RTF conversions often do; otherwise it
-follows the list level's indents like its neighbours. Compare its `paragraphFormat` and `runs` in
-`words query blocks --scope full` with its neighbours'.
+the body or after a table it takes Normal.
+
+A paragraph with `listLevel` before or after a list item joins the list that
+numbers that level there: the anchor's list when it defines the level, such as
+a new clause 2.3 after 2.2, else, as in lists created from Markdown, where each
+nesting level is a list of its own, the list of the nearest item at that level
+under the same parent around the insertion point. Without `style` it continues
+that list's nearest existing item at the level instead of the paragraph before,
+so an item after a bold parent item is not bold when the level already has an
+item there. When it has none, the first new item continues the paragraph
+before, bold included, and the operation's later items at that level continue
+the same paragraph. An item that continues an existing item takes that item's
+left and first-line indents when it sets its own, as RTF conversions often do;
+otherwise it follows the list level's indents like its neighbours. When no list
+numbers the level there, or the anchor is no list item, it joins one new bullet
+list shared by the operation's list paragraphs. Check `listLabel`,
+`paragraphFormat` and `runs` in `words query blocks --scope full` against its
+neighbours'.
 
 A paragraph with `style`, inserted Markdown and a table's text take their font
 from styles. A template that sets its font only on runs, such as Microsoft

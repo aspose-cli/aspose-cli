@@ -153,21 +153,37 @@ internal sealed partial class WordsMutationHandlers
     /// <summary>
     /// Inserts paragraphs at a block boundary. A paragraph without <c>style</c> continues the
     /// paragraph before the insertion point (see <see cref="Continue"/>). A paragraph with
-    /// <c>listLevel</c> joins the anchor's list when the anchor is a list paragraph, with the
-    /// indents of that list's items at its level (see <see cref="ListPeer"/>), otherwise one
-    /// bullet list shared by the operation's list paragraphs.
+    /// <c>listLevel</c> after or before a list item joins the list that numbers its level there
+    /// (see <see cref="ListAt"/>) and, without <c>style</c>, continues that list's item at its
+    /// level, taking its indents when the item sets its own; otherwise it joins one bullet list
+    /// shared by the operation's list paragraphs. A later item that finds one the operation
+    /// inserted joins its list but continues the item that one continued, since an inserted
+    /// item is a tracked insertion when changes are tracked and gives no format to continue.
     /// </summary>
     public long Apply(InsertParagraphsOp operation)
     {
         Node cursor = Anchor;
         Paragraph? before = (operation.Position == "after" ? Anchor : Anchor.PreviousSibling) as Paragraph;
-        Aspose.Words.Lists.List? list = Anchor is Paragraph { IsListItem: true } item ? item.ListFormat.List : null;
+        Aspose.Words.Lists.List? created = null;
+        var continued = new Dictionary<Paragraph, Paragraph?>();
         foreach (ParagraphInput input in operation.Paragraphs)
         {
+            Aspose.Words.Lists.List? list = null;
+            Paragraph? peer = null;
+            if (input.ListLevel is int listLevel)
+            {
+                Node? previous = operation.Position == "after" ? cursor : Anchor.PreviousSibling;
+                (list, peer) = ListAt(listLevel, previous, operation.Position == "after" ? cursor.NextSibling : Anchor);
+                if (peer is not null && continued.TryGetValue(peer, out Paragraph? source))
+                {
+                    peer = source;
+                }
+            }
+
             Paragraph paragraph;
             if (input.Style is null)
             {
-                paragraph = Continue(before, input.Text);
+                paragraph = Continue(peer ?? before, input.Text);
             }
             else
             {
@@ -178,15 +194,15 @@ internal sealed partial class WordsMutationHandlers
 
             if (input.ListLevel is int level)
             {
-                Paragraph? peer = list is null ? null : ListPeer(list, level);
-                list ??= _document.Lists.Add(ListTemplate.BulletDefault);
-                paragraph.ListFormat.List = list;
+                paragraph.ListFormat.List = list ?? (created ??= _document.Lists.Add(ListTemplate.BulletDefault));
                 paragraph.ListFormat.ListLevelNumber = level;
                 if (peer is not null && HasOwnIndent(peer))
                 {
                     paragraph.ParagraphFormat.LeftIndent = peer.ParagraphFormat.LeftIndent;
                     paragraph.ParagraphFormat.FirstLineIndent = peer.ParagraphFormat.FirstLineIndent;
                 }
+
+                continued[paragraph] = peer;
             }
 
             InsertRelative(Anchor, ref cursor, paragraph, operation.Position);
@@ -196,11 +212,53 @@ internal sealed partial class WordsMutationHandlers
     }
 
     /// <summary>
-    /// The item of <paramref name="list"/> at <paramref name="level"/> whose indents a new item
-    /// takes: the anchor, else the nearest such paragraph before it, else after it, among the
-    /// anchor's siblings. Documents converted from RTF often hold an item's indent on the
-    /// paragraph rather than on its list level, so the level alone would misalign the new item.
+    /// The list a new item at <paramref name="level"/> joins when the anchor is a list item, and
+    /// that list's item at the level whose format the new item takes. The anchor's list is
+    /// joined when it numbers or indents the level (see <see cref="ListPeer"/>). Otherwise, as
+    /// in Markdown, where each nesting level is a list of its own, the new item joins the list of
+    /// the nearest item at the level around the insertion point, between <paramref name="previous"/>
+    /// and <paramref name="next"/>, within the items of the same parent. Without either, or when
+    /// the anchor is no list item, the result is no list, and the caller starts a bullet list.
     /// </summary>
+    private (Aspose.Words.Lists.List? List, Paragraph? Peer) ListAt(int level, Node? previous, Node? next)
+    {
+        if (Anchor is not Paragraph { IsListItem: true } anchor)
+        {
+            return (null, null);
+        }
+
+        Aspose.Words.Lists.List list = anchor.ListFormat.List;
+        Aspose.Words.Lists.ListLevel defined = list.ListLevels[level];
+        if (defined.NumberFormat.Length > 0 || defined.TextPosition != 0 || defined.NumberPosition != 0)
+        {
+            return (list, ListPeer(list, level));
+        }
+
+        // Items at a deeper level are skipped; a non-list block or an item at a shallower level
+        // ends the parent whose items the new one joins.
+        Paragraph? Sibling(Node? start, Func<Node, Node?> step)
+        {
+            for (Node? node = start; node is Paragraph { IsListItem: true } item; node = step(node))
+            {
+                int itemLevel = item.ListFormat.ListLevelNumber;
+                if (itemLevel == level)
+                {
+                    return item;
+                }
+
+                if (itemLevel < level)
+                {
+                    return null;
+                }
+            }
+
+            return null;
+        }
+
+        Paragraph? sibling = Sibling(previous, static node => node.PreviousSibling) ?? Sibling(next, static node => node.NextSibling);
+        return sibling is null ? (null, null) : (sibling.ListFormat.List, sibling);
+    }
+
     /// <summary>
     /// Whether a list item's indents differ from its list level's, as when they are set on the
     /// paragraph. An item that follows its level gives a new item nothing to copy, so the new
@@ -213,6 +271,12 @@ internal sealed partial class WordsMutationHandlers
             || Math.Abs(item.ParagraphFormat.FirstLineIndent - (level.NumberPosition - level.TextPosition)) >= 0.05;
     }
 
+    /// <summary>
+    /// The item of <paramref name="list"/> at <paramref name="level"/> whose format a new item
+    /// takes: the anchor, else the nearest such paragraph before it, else after it, among the
+    /// anchor's siblings. Documents converted from RTF often hold an item's indent on the
+    /// paragraph rather than on its list level, so the level alone would misalign the new item.
+    /// </summary>
     private Paragraph? ListPeer(Aspose.Words.Lists.List list, int level)
     {
         bool IsPeer(Node? node) =>

@@ -54,12 +54,13 @@ public sealed record ParagraphInput
 
     /// <summary>
     /// An existing paragraph style. Without it, the paragraph continues the paragraph before the
-    /// insertion point, as Word's Enter does: its indents, spacing, alignment and the font of
-    /// its last text, or after a heading the heading style's next style.
+    /// insertion point, or with listLevel the existing item at that level it joins, as Word's Enter does:
+    /// its indents, spacing, alignment and the run format of its last text, or after a heading
+    /// the heading style's next style.
     /// </summary>
     [MinLength(1)] public string? Style { get; init; }
 
-    /// <summary>Makes the paragraph a list item at this level: in the anchor's list, with the indents its nearest item at this level sets on itself, when the anchor is a list item, otherwise in one new bullet list.</summary>
+    /// <summary>Makes the paragraph a list item at this level. When the anchor is a list item, it joins the anchor's list if that list defines the level, else the list of the nearest item at this level under the same parent, and without style continues that list's nearest existing item at this level, if any, with the indents it sets on itself. When the anchor is no list item, or no such list exists, it joins one new bullet list.</summary>
     [Minimum(0), Maximum(8)] public int? ListLevel { get; init; }
 }
 
