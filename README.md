@@ -15,15 +15,17 @@ aspose-cli capabilities --summary --output json
 aspose-cli doctor --output json
 aspose-cli skill list
 aspose-cli docs cells/editing
+aspose-cli skill install aspose-cli-platform --host codex --scope project
 aspose-cli skill install aspose-cli-cells --host codex --scope project
 ```
 
 The executable is the reference for what it supports: `capabilities` lists every command,
 each product's operations and batch limits, the resource budgets and every diagnostic code with
 its exit code; `--help` describes each command, `schema` prints the JSON Schemas and `docs` the
-bundled guides. The Skills `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-slides` and
-`aspose-cli-words` teach agents the workflows; `skill install` supports the `codex`,
-`claude-code` and `opencode` hosts at project or user scope.
+bundled guides. The Skill `aspose-cli-platform` teaches agents the rules every product shares,
+and `aspose-cli-cells`, `aspose-cli-pdf`, `aspose-cli-slides` and `aspose-cli-words` teach each
+product's workflows; `skill install` supports the `codex`, `claude-code` and `opencode` hosts at
+project or user scope.
 
 ## What you can rely on
 
