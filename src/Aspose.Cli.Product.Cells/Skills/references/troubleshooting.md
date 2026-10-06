@@ -92,8 +92,8 @@ handle these effects:
   `CELLS_EVALUATION_NOTICE` on the CSV or TSV notice row.
 - A whole-workbook PDF, XPS, HTML or MHTML export prints the warning sheets an
   earlier evaluation save added as extra pages that hold only the notice, and
-  warns `EVALUATION_NOTICE_ADDED` with their names; `review` then reports
-  findings on those pages. Export the content sheets with `--sheet` (PDF), or
+  warns `EVALUATION_NOTICE_ADDED` with their names, licensed or not; `review`
+  then reports findings on those pages. Export the content sheets with `--sheet` (PDF), or
   rebuild the workbook and the export with a license.
 - CSV, TSV and Markdown export only the first worksheet. Without `--sheet` the
   first sheet is written even when another one is active, and

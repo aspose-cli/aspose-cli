@@ -695,6 +695,34 @@ public sealed class CellsEngineTests : IClassFixture<CellsFixture>
         }
     }
 
+    /// <summary>
+    /// A licensed whole-workbook pdf export prints the warning sheets an earlier evaluation save
+    /// added and says so, as review does; an unmarked workbook exports without the warning.
+    /// </summary>
+    [Fact]
+    public void Licensed_APdfExportDisclosesTheWarningSheetsAnEvaluationSaveAdded()
+    {
+        Requires.Windows();
+        using var workspace = new TempWorkspace();
+        Assert.Equal(0, workspace.Run("cells", "create", "marked.xlsx", "--sheets", "Data", "--license-mode", "evaluation").ExitCode);
+        string unmarked = _fixture.CreateSalesWorkbook("unmarked-export.xlsx");
+
+        ConvertResult marked = _fixture.Engine.Convert(workspace.File("marked.xlsx"), new ConvertRequest
+        {
+            TargetFormatId = "pdf",
+            OutputPath = _fixture.Temp.File("marked-export.pdf"),
+        });
+        ConvertResult clean = _fixture.Engine.Convert(unmarked, new ConvertRequest
+        {
+            TargetFormatId = "pdf",
+            OutputPath = _fixture.Temp.File("unmarked-export.pdf"),
+        });
+
+        Warning notice = Assert.Single(marked.Warnings!, static warning => warning.Code == "EVALUATION_NOTICE_ADDED");
+        Assert.Equal("Evaluation Warning", notice.Location);
+        Assert.DoesNotContain(clean.Warnings ?? [], static warning => warning.Code == "EVALUATION_NOTICE_ADDED");
+    }
+
     [Fact]
     public void Convert_UnknownSheet_ThrowsSheetNotFoundWithAlternatives()
     {

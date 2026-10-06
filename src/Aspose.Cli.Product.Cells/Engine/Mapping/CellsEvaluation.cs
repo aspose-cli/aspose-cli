@@ -117,11 +117,11 @@ internal static partial class CellsEvaluation
     /// <summary>
     /// Discloses the visible evaluation warning sheets that earlier evaluation saves added to the
     /// workbook, which a whole-workbook pdf, xps, html or mhtml export carries as pages of the
-    /// notice; null for any other export, a single-sheet export and a licensed engine.
+    /// notice in any mode; null for any other export and a single-sheet export.
     /// </summary>
     internal static Warning? DescribeExportedWarningSheets(Workbook workbook, string formatId, int? selectedSheet)
     {
-        if (workbook.IsLicensed || selectedSheet is not null || formatId is not ("pdf" or "xps" or "html" or "mhtml"))
+        if (selectedSheet is not null || formatId is not ("pdf" or "xps" or "html" or "mhtml"))
         {
             return null;
         }
