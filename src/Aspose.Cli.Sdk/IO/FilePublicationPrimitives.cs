@@ -75,9 +75,6 @@ internal sealed class NoPublicationFaultInjector : IPublicationFaultInjector
 /// </summary>
 internal sealed record FilePublicationMetadata(FileAttributes Attributes)
 {
-    public static FilePublicationMetadata Capture(string path) =>
-        new(File.GetAttributes(path));
-
     public static FilePublicationMetadata Capture(SafeFileHandle handle) =>
         new(File.GetAttributes(handle));
 
@@ -88,7 +85,7 @@ internal sealed record FilePublicationMetadata(FileAttributes Attributes)
     {
         try
         {
-            return Attributes == Capture(path).Attributes;
+            return Attributes == File.GetAttributes(path);
         }
         catch (Exception exception) when (
             exception is IOException or UnauthorizedAccessException)

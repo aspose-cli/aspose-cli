@@ -548,16 +548,17 @@ public class StandardInvocation
                     .Select(target => (command.Name, target))),
         ];
         FormatDescriptor[] formats = [.. siblings.SelectMany(static sibling => sibling.Target.Formats).Distinct()];
-        FormatDescriptor[] named = [.. formats.Where(format => format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase))];
-        bool namesRequested = string.Equals(extension[1..], requested, StringComparison.OrdinalIgnoreCase)
+        IReadOnlyList<FormatDescriptor> named = formats.DeclaringExtension(extension);
+        string extensionId = extension[1..];
+        bool namesRequested = string.Equals(extensionId, requested, StringComparison.OrdinalIgnoreCase)
             || named.Any(format => string.Equals(format.Id, requested, StringComparison.OrdinalIgnoreCase));
         string[] supported = [.. supportedIds.Select(static id => id!.GetValue<string>())];
         // A command that writes the requested format, or the one the extension names, raised the
         // error about another file, such as one an operation reads.
         bool writesIt = supported.Any(id => string.Equals(id, requested, StringComparison.OrdinalIgnoreCase)
-            || string.Equals(id, extension[1..], StringComparison.OrdinalIgnoreCase)
+            || string.Equals(id, extensionId, StringComparison.OrdinalIgnoreCase)
             || named.Any(format => string.Equals(format.Id, id, StringComparison.OrdinalIgnoreCase)));
-        if (named.Length == 0 || !namesRequested || writesIt)
+        if (named.Count == 0 || !namesRequested || writesIt)
         {
             return error;
         }
@@ -570,12 +571,13 @@ public class StandardInvocation
             .FirstOrDefault(static line => line is not null);
         return CliErrors.OutputFormatUnsupported(
             parameter, output, string.Join(' ', path), requested, supported,
-            [.. supported.Select(ExtensionOf).Distinct(StringComparer.OrdinalIgnoreCase)], producer);
-
-        string ExtensionOf(string id) =>
-            formats.FirstOrDefault(format => string.Equals(format.Id, id, StringComparison.OrdinalIgnoreCase)) is { } format
-                ? format.OutputExtension ?? format.Extensions.FirstOrDefault() ?? "." + id
-                : "." + id;
+            [
+                .. supported
+                    .Select(id => formats.FirstOrDefault(format => string.Equals(format.Id, id, StringComparison.OrdinalIgnoreCase))
+                        ?.PreferredExtension ?? "." + id)
+                    .Distinct(StringComparer.OrdinalIgnoreCase),
+            ],
+            producer);
     }
 
     /// <summary>The parameter naming the output file and the value the caller gave it, or null when none was named.</summary>
@@ -705,8 +707,7 @@ public class StandardInvocation
         string requested = _parse.GetRequiredValue(to);
         FormatDescriptor format = target.Formats.Named(target.Use, requested)!;
         string? extension = _options.OutputFile?.RequestedExtension(_parse);
-        FormatDescriptor[] named = extension is null ? []
-            : [.. target.Formats.Where(candidate => candidate.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase))];
+        IReadOnlyList<FormatDescriptor> named = extension is null ? [] : target.Formats.DeclaringExtension(extension);
         if (target.Use == FormatUse.Render && extension is not null
             && !named.Any(static candidate => candidate.Uses.HasFlag(FormatUse.Render)))
         {
@@ -727,7 +728,7 @@ public class StandardInvocation
             return named.FirstOrDefault(static candidate => candidate.Uses.HasFlag(FormatUse.Render))?.Id ?? format.Id;
         }
 
-        if (named.Length > 0 && !named.Contains(format))
+        if (named.Count > 0 && !named.Contains(format))
         {
             throw CliErrors.Usage(
             [

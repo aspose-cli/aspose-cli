@@ -54,14 +54,14 @@ public static partial class CliErrors
     public static CliException PasswordRequired(string path, string? operationField = null) => new(
         ErrorCodes.PasswordRequired,
         $"File is encrypted and requires a password: {path}",
-        hint: PasswordHint("Ask the user for the password", operationField),
+        hint: PasswordHint(ErrorCodes.PasswordRequired, operationField),
         details: new JsonObject { ["path"] = path });
 
     /// <summary>A password that does not open the file; <paramref name="operationField"/> as for <see cref="PasswordRequired"/>.</summary>
     public static CliException PasswordInvalid(string path, string? operationField = null) => new(
         ErrorCodes.PasswordInvalid,
         $"The provided password does not open the file: {path}",
-        hint: PasswordHint("Ask the user to double-check the password", operationField),
+        hint: PasswordHint(ErrorCodes.PasswordInvalid, operationField),
         details: new JsonObject { ["path"] = path });
 
     /// <summary>
@@ -88,12 +88,10 @@ public static partial class CliErrors
     internal static CliException ForInput(CliException error, string input, string passwordEnvironmentOption)
     {
         string path = error.Details!["path"]!.GetValue<string>();
-        string lead = error.Code == ErrorCodes.PasswordRequired
-            ? "Ask the user for the password" : "Ask the user to double-check the password";
         return new CliException(
             error.Code,
             $"{error.Message} (the {input} input)",
-            hint: $"{lead}, store it in an environment variable and retry with {passwordEnvironmentOption} <NAME>.",
+            hint: PasswordHint(error.Code, operationField: null, passwordEnvironmentOption),
             details: new JsonObject { ["path"] = path, ["input"] = input });
     }
 
@@ -101,11 +99,24 @@ public static partial class CliErrors
     public static bool IsPasswordError(CliException error) =>
         error.Code == ErrorCodes.PasswordRequired || error.Code == ErrorCodes.PasswordInvalid;
 
-    // The environment form keeps the password out of the process list, unlike the literal option.
-    private static string PasswordHint(string lead, string? operationField) => operationField is null
-        ? $"{lead}, store it in an environment variable and retry with --password-env <NAME>; a command with "
-            + "several inputs names the option per input, such as --left-password-env."
-        : $"{lead}, store it in an environment variable and name that variable in the operation's \"{operationField}\" field.";
+    /// <summary>
+    /// The hint of a <c>PASSWORD_REQUIRED</c> or <c>PASSWORD_INVALID</c> <paramref name="code"/>:
+    /// store the password in an environment variable and name it in the operation field that
+    /// supplies it, or else in <paramref name="passwordEnvironmentOption"/>, by default
+    /// <c>--password-env</c>. The environment form keeps the password out of the process list.
+    /// </summary>
+    public static string PasswordHint(ErrorCode code, string? operationField, string? passwordEnvironmentOption = null)
+    {
+        string lead = (code == ErrorCodes.PasswordRequired
+            ? "Ask the user for the password" : "Ask the user to double-check the password")
+            + ", store it in an environment variable and ";
+        return operationField is not null
+            ? $"{lead}name that variable in the operation's \"{operationField}\" field."
+            : passwordEnvironmentOption is not null
+                ? $"{lead}retry with {passwordEnvironmentOption} <NAME>."
+                : $"{lead}retry with --password-env <NAME>; a command with several inputs names the option "
+                    + "per input, such as --left-password-env.";
+    }
 
     public static CliException FileAccessDenied(string path) => new(
         ErrorCodes.FileAccessDenied,

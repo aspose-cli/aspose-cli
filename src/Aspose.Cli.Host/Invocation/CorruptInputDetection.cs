@@ -26,9 +26,7 @@ internal static class CorruptInputDetection
         GlobalValues globals,
         ProductCatalog catalog)
     {
-        if (exception is not CliException error
-            || error.Code != ErrorCodes.FileCorrupt
-            || error.Details?["detected"] is not null)
+        if (exception is not CliException error || error.Code != ErrorCodes.FileCorrupt)
         {
             return exception;
         }
@@ -43,18 +41,10 @@ internal static class CorruptInputDetection
         // A format this product reads, such as a damaged PDF given to 'words convert', is the
         // product's own corrupt input, not a renamed file.
         ProductDefinition product = catalog.Get(productId);
-        FileDetection[] detected;
-        try
-        {
-            detected = new ProductFileRouter(catalog).DetectAsync(path).AsTask().GetAwaiter().GetResult()
-                .Where(detection => detection.ProductId != productId && !Reads(product, detection.FormatId))
-                .ToArray();
-        }
-        catch (Exception probe) when (probe is not OutOfMemoryException)
-        {
-            // The explanation is optional; the product's own error is the answer.
-            return exception;
-        }
+        FileDetection[] detected = new ProductFileRouter(catalog).DetectAsync(path).AsTask().GetAwaiter().GetResult()
+            .Where(detection => detection.ProductId != productId
+                && (detection.FormatId is null || product.Formats.Named(FormatUse.Input, detection.FormatId) is null))
+            .ToArray();
         if (detected.Length == 0)
         {
             return exception;
@@ -72,11 +62,6 @@ internal static class CorruptInputDetection
             docs: error.Docs,
             innerException: error.InnerException);
     }
-
-    private static bool Reads(ProductDefinition product, string? formatId) =>
-        formatId is not null
-        && product.Formats.Any(format => format.Uses.HasFlag(FormatUse.Input)
-            && string.Equals(format.Id, formatId, StringComparison.Ordinal));
 
     private static string Hint(
         IReadOnlyList<FileDetection> detected,
@@ -152,7 +137,7 @@ internal static class CorruptInputDetection
             .Where(static parameter => parameter.Metadata.InputKind == InputKind.File)
             .SelectMany(static parameter => parameter.TextValues())
             .Where(static value => !string.IsNullOrWhiteSpace(value) && value != "-")
-            .Select(value => Path.GetFullPath(paths.ResolveOutput(value)))
+            .Select(paths.ResolveOutput)
             .Distinct(StringComparer.OrdinalIgnoreCase)
             .ToArray();
         return inputs.Length == 1 && File.Exists(inputs[0]) ? inputs[0] : null;

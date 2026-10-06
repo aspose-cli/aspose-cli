@@ -161,6 +161,9 @@ public sealed record FormatDescriptor
     /// </summary>
     public string? OutputExtension { get; init; }
 
+    /// <summary>The extension for newly produced files, or null when the format declares none.</summary>
+    internal string? PreferredExtension => OutputExtension ?? Extensions.FirstOrDefault();
+
     /// <summary>Generic-routing ownership for input extensions.</summary>
     public RouteOwnership Ownership { get; init; } = RouteOwnership.Explicit;
 
@@ -240,6 +243,21 @@ public static class FormatDescriptorExtensions
         return Array.AsReadOnly(Ordered(descriptors, use, extension).ToArray());
     }
 
+    /// <summary>
+    /// Returns the formats of any use that declare a file extension such as <c>.htm</c>, in
+    /// declaration order. Extensions compare case-insensitively.
+    /// </summary>
+    public static IReadOnlyList<FormatDescriptor> DeclaringExtension(
+        this IEnumerable<FormatDescriptor> descriptors,
+        string extension)
+    {
+        ArgumentNullException.ThrowIfNull(descriptors);
+        ArgumentNullException.ThrowIfNull(extension);
+        return Array.AsReadOnly(descriptors
+            .Where(format => format.Extensions.Contains(extension, StringComparer.OrdinalIgnoreCase))
+            .ToArray());
+    }
+
     private static IEnumerable<FormatDescriptor> Ordered(
         IEnumerable<FormatDescriptor> descriptors,
         FormatUse use,
@@ -275,9 +293,7 @@ public static class FormatDescriptorExtensions
                     StringComparison.OrdinalIgnoreCase))
             ?? throw new KeyNotFoundException(
                 $"Format '{formatId}' is not declared.");
-        string? extension = descriptor.OutputExtension
-            ?? descriptor.Extensions.FirstOrDefault();
-        return extension
+        return descriptor.PreferredExtension
             ?? throw new InvalidOperationException(
                 $"Format '{descriptor.Id}' has no associated extension.");
     }

@@ -78,10 +78,10 @@ internal static class ProtectOps
         {
             throw password is null
                 ? new CliException(ErrorCodes.PasswordRequired, $"The protection of {target} has a password.",
-                    hint: "Ask the user for the password, store it in an environment variable and name that variable in the operation's \"passwordEnv\" field.",
+                    hint: CliErrors.PasswordHint(ErrorCodes.PasswordRequired, "passwordEnv"),
                     innerException: exception)
                 : new CliException(ErrorCodes.PasswordInvalid, $"The provided password does not unprotect {target}.",
-                    hint: "Ask the user to double-check the password, store it in an environment variable and name that variable in the operation's \"passwordEnv\" field.",
+                    hint: CliErrors.PasswordHint(ErrorCodes.PasswordInvalid, "passwordEnv"),
                     innerException: exception);
         }
     }
