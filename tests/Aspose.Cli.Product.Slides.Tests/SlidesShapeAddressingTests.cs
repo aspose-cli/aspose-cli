@@ -243,8 +243,7 @@ public sealed class SlidesShapeAddressingTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation(slides: 1);
         string image = fixture.File("pixel.png");
-        File.WriteAllBytes(image, Convert.FromBase64String(
-            "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg=="));
+        File.WriteAllBytes(image, SlidesEngineFixture.Png(8));
         var rect = new SlidesRectInput { X = 40, Y = 120, Width = 200, Height = 100 };
         string output = fixture.File("named.pptx");
 

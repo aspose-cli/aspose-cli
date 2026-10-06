@@ -26,6 +26,18 @@ public sealed class SlidesEngineFixture : IDisposable
     internal static bool IsEvaluationWatermark(string? text) =>
         text?.StartsWith("Evalu...", StringComparison.Ordinal) == true
         && text.Contains(SlidesEngineSupport.EvaluationTruncationMarker, StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>A blank PNG <paramref name="size"/> pixels square; different sizes give different images.</summary>
+    internal static byte[] Png(int size)
+    {
+        using var source = new Presentation();
+        source.SlideSize.SetSize(size, size, SlideSizeScaleType.DoNotScale);
+        using IImage image = source.Slides[0].GetImage(1f, 1f);
+        using var stream = new MemoryStream();
+        image.Save(stream, ImageFormat.Png);
+        return stream.ToArray();
+    }
+
     public TempDirectory Temp { get; } = new();
     public string File(string name) => Temp.File(name);
 

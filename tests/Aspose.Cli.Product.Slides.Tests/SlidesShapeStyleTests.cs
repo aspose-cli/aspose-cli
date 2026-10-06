@@ -80,30 +80,6 @@ public sealed class SlidesShapeStyleTests
     }
 
     [Fact]
-    public void FullRead_ReportsTheColorEachRunIsDrawnIn()
-    {
-        // A stated color reads back as written; an inherited one as the theme resolves it.
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.File("colors.pptx");
-        using (var source = new Presentation())
-        {
-            IAutoShape stated = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 300, 60);
-            stated.TextFrame.Text = "Stated";
-            stated.TextFrame.Paragraphs[0].Portions[0].PortionFormat.FillFormat.FillType = FillType.Solid;
-            stated.TextFrame.Paragraphs[0].Portions[0].PortionFormat.FillFormat.SolidFillColor.Color = Color.FromArgb(0x1B, 0x2A, 0x41);
-            IAutoShape inherited = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 140, 300, 60, createFromTemplate: false);
-            inherited.AddTextFrame("Inherited");
-            source.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
-        }
-
-        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
-
-        Assert.Equal(
-            ["#1B2A41", "#000000"],
-            read.Slides[0].Shapes.Where(static shape => !shape.EvaluationWatermark).Select(static shape => Assert.Single(shape.Runs!).Color));
-    }
-
-    [Fact]
     public void LatinAndEastAsianFonts_ReplaceTheFontOfTheirScriptOnly()
     {
         using var fixture = new SlidesEngineFixture();
@@ -172,37 +148,11 @@ public sealed class SlidesShapeStyleTests
     }
 
     [Fact]
-    public void FullRead_ReportsTheFontOfLatinAndEastAsianText()
-    {
-        using var fixture = new SlidesEngineFixture();
-        string input = fixture.File("fonts.pptx");
-        using (var source = new Presentation())
-        {
-            IAutoShape box = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 300, 60);
-            box.TextFrame.Text = "Fonts";
-            IPortionFormat format = box.TextFrame.Paragraphs[0].Portions[0].PortionFormat;
-            format.LatinFont = new FontData("Calibri");
-            format.EastAsianFont = new FontData("SimSun");
-            source.Save(input, Aspose.Slides.Export.SaveFormat.Pptx);
-        }
-
-        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
-
-        SlideTextRunData run = Assert.Single(read.Slides[0].Shapes.Single(static shape => !shape.EvaluationWatermark).Runs!);
-        Assert.Equal("Calibri", run.Font);
-        Assert.Equal("SimSun", run.EastAsianFont);
-    }
-
-    [Fact]
     public void ShapeWithoutText_RefusesATextStyle()
     {
         using var fixture = new SlidesEngineFixture();
         string picture = fixture.File("logo.png");
-        using (var source = new Presentation())
-        using (IImage image = source.Slides[0].GetImage(0.1f, 0.1f))
-        {
-            image.Save(picture, ImageFormat.Png);
-        }
+        File.WriteAllBytes(picture, SlidesEngineFixture.Png(40));
 
         string seed = Seed(fixture, "picture-seed.pptx", new SlidesInsertImageOp { Slide = 1, Path = picture });
         string output = fixture.File("picture.pptx");

@@ -35,8 +35,8 @@ public sealed class SlidesContractDriftTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("media.pptx", slides: 2);
-        byte[] first = Png(100);
-        byte[] second = Png(200);
+        byte[] first = SlidesEngineFixture.Png(100);
+        byte[] second = SlidesEngineFixture.Png(200);
         using (var deck = new Presentation(input))
         {
             IPPImage picture = deck.Images.AddImage(first);
@@ -71,7 +71,7 @@ public sealed class SlidesContractDriftTests
     {
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("many-media.pptx", slides: 1);
-        byte[] png = Png(8);
+        byte[] png = SlidesEngineFixture.Png(8);
         int count = SlidesReadService.MediaListLimit + 1;
         using (var deck = new Presentation(input))
         {
@@ -101,7 +101,7 @@ public sealed class SlidesContractDriftTests
         using var fixture = new SlidesEngineFixture();
         string input = fixture.CreatePresentation("alt.pptx", slides: 1);
         string picture = fixture.File("logo.png");
-        File.WriteAllBytes(picture, Png(40));
+        File.WriteAllBytes(picture, SlidesEngineFixture.Png(40));
         string output = fixture.File("alt.out.pptx");
 
         fixture.Engine.ApplyOps(
@@ -112,15 +112,5 @@ public sealed class SlidesContractDriftTests
 
         SlideShapeData image = Assert.Single(Assert.Single(read.Slides).Shapes, static shape => shape.Type == "image");
         Assert.Equal("Logo", image.AltText);
-    }
-
-    private static byte[] Png(int size)
-    {
-        using var source = new Presentation();
-        source.SlideSize.SetSize(size, size, SlideSizeScaleType.DoNotScale);
-        using IImage image = source.Slides[0].GetImage(1f, 1f);
-        using var stream = new MemoryStream();
-        image.Save(stream, ImageFormat.Png);
-        return stream.ToArray();
     }
 }

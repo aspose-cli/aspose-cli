@@ -1,3 +1,4 @@
+using System.Drawing;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 using Aspose.Slides.Export;
@@ -143,6 +144,52 @@ public sealed class SlidesTextCoverageTests
         Assert.DoesNotContain('\r', text);
         Assert.Contains("ab\ncd\nef", text, StringComparison.Ordinal);
         Assert.Equal("ab\ncd", Assert.Single(search.Hits).Text);
+    }
+
+    [Fact]
+    public void FullRead_ReportsTheColorEachRunIsDrawnIn()
+    {
+        // A stated color reads back as written; an inherited one as the theme resolves it.
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("colors.pptx");
+        using (var source = new Presentation())
+        {
+            IAutoShape stated = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 300, 60);
+            stated.TextFrame.Text = "Set";
+            stated.TextFrame.Paragraphs[0].Portions[0].PortionFormat.FillFormat.FillType = FillType.Solid;
+            stated.TextFrame.Paragraphs[0].Portions[0].PortionFormat.FillFormat.SolidFillColor.Color = Color.FromArgb(0x1B, 0x2A, 0x41);
+            IAutoShape inherited = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 140, 300, 60, createFromTemplate: false);
+            inherited.AddTextFrame("Base");
+            source.Save(input, SaveFormat.Pptx);
+        }
+
+        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+
+        Assert.Equal(
+            ["#1B2A41", "#000000"],
+            read.Slides[0].Shapes.Where(static shape => !shape.EvaluationWatermark).Select(static shape => Assert.Single(shape.Runs!).Color));
+    }
+
+    [Fact]
+    public void FullRead_ReportsTheFontOfLatinAndEastAsianText()
+    {
+        using var fixture = new SlidesEngineFixture();
+        string input = fixture.File("fonts.pptx");
+        using (var source = new Presentation())
+        {
+            IAutoShape box = source.Slides[0].Shapes.AddAutoShape(ShapeType.Rectangle, 40, 40, 300, 60);
+            box.TextFrame.Text = "Fonts";
+            IPortionFormat format = box.TextFrame.Paragraphs[0].Portions[0].PortionFormat;
+            format.LatinFont = new FontData("Calibri");
+            format.EastAsianFont = new FontData("SimSun");
+            source.Save(input, SaveFormat.Pptx);
+        }
+
+        PresentationReadResult read = fixture.Engine.Read(input, new PresentationReadRequest { Scope = PresentationReadScopes.Full });
+
+        SlideTextRunData run = Assert.Single(read.Slides[0].Shapes.Single(static shape => !shape.EvaluationWatermark).Runs!);
+        Assert.Equal("Calibri", run.Font);
+        Assert.Equal("SimSun", run.EastAsianFont);
     }
 
     [Fact]

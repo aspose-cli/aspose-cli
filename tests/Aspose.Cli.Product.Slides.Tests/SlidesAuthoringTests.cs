@@ -216,26 +216,10 @@ public sealed class SlidesAuthoringTests
     public void SetBody_InheritsTheLayoutBulletsInsteadOfForcingThem()
     {
         using var fixture = new SlidesEngineFixture();
-        string input = fixture.File("layout.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { OutputPath = input });
-        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
-        {
-            Ops = [new AddSlideOp { Layout = "Title and Content" }],
-        }, new PresentationEditRequest { OutputPath = input, Overwrite = true });
-        string edited = fixture.File("layout.body.pptx");
-        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
-        {
-            Ops =
-            [
-                new SetBodyOp
-                {
-                    Slide = 2,
-                    Paragraphs = [new SlidesParagraphInput { Text = "Top" }, new SlidesParagraphInput { Text = "Sub", Level = 1 }],
-                },
-            ],
-        }, new PresentationEditRequest { OutputPath = edited });
-
-        using var deck = new Presentation(edited);
+        using var deck = new Presentation(SetBodyOfAContentSlide(
+            fixture,
+            new SlidesParagraphInput { Text = "Top" },
+            new SlidesParagraphInput { Text = "Sub", Level = 1 }));
         IAutoShape body = Assert.Single(SlidesPlaceholders.Content(deck.Slides[1]));
         Assert.Equal([0, 1], body.TextFrame.Paragraphs.Select(static paragraph => (int)paragraph.ParagraphFormat.Depth));
         Assert.All(
@@ -247,26 +231,10 @@ public sealed class SlidesAuthoringTests
     public void SetBody_ParagraphWithoutBullet_IsAPlainParagraph()
     {
         using var fixture = new SlidesEngineFixture();
-        string input = fixture.File("layout.pptx");
-        fixture.Engine.Create(new NewPresentationRequest { OutputPath = input });
-        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
-        {
-            Ops = [new AddSlideOp { Layout = "Title and Content" }],
-        }, new PresentationEditRequest { OutputPath = input, Overwrite = true });
-        string edited = fixture.File("layout.plain.pptx");
-        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
-        {
-            Ops =
-            [
-                new SetBodyOp
-                {
-                    Slide = 2,
-                    Paragraphs = [new SlidesParagraphInput { Text = "Note", Bullet = false }, new SlidesParagraphInput { Text = "Point" }],
-                },
-            ],
-        }, new PresentationEditRequest { OutputPath = edited });
-
-        using var deck = new Presentation(edited);
+        using var deck = new Presentation(SetBodyOfAContentSlide(
+            fixture,
+            new SlidesParagraphInput { Text = "Note", Bullet = false },
+            new SlidesParagraphInput { Text = "Point" }));
         IAutoShape body = Assert.Single(SlidesPlaceholders.Content(deck.Slides[1]));
         IParagraph[] paragraphs = [.. body.TextFrame.Paragraphs];
         Assert.Equal(BulletType.None, paragraphs[0].ParagraphFormat.GetEffective().Bullet.Type);
@@ -306,5 +274,22 @@ public sealed class SlidesAuthoringTests
             Slides = PageRange.Parse("1"), Scope = PresentationReadScopes.Shapes,
         });
         Assert.Contains(read.Slides[0].Shapes!, static shape => shape.Placeholder == "body" && shape.Text == "Final");
+    }
+
+    /// <summary>Adds a Title and Content slide after the first and sets its body; returns the edited file.</summary>
+    private static string SetBodyOfAContentSlide(SlidesEngineFixture fixture, params SlidesParagraphInput[] paragraphs)
+    {
+        string input = fixture.File("layout.pptx");
+        fixture.Engine.Create(new NewPresentationRequest { OutputPath = input });
+        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        {
+            Ops = [new AddSlideOp { Layout = "Title and Content" }],
+        }, new PresentationEditRequest { OutputPath = input, Overwrite = true });
+        string edited = fixture.File("layout.body.pptx");
+        fixture.Engine.ApplyOps(input, new SlidesOpsBatch
+        {
+            Ops = [new SetBodyOp { Slide = 2, Paragraphs = paragraphs }],
+        }, new PresentationEditRequest { OutputPath = edited });
+        return edited;
     }
 }
