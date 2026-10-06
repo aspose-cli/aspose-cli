@@ -17,7 +17,8 @@ aspose-cli pdf edit report.pdf --ops report-ops.json --out report.review.pdf --v
 
 - Pages: `insert_blank_page`, `insert_pages_from` (pages of another PDF),
   `delete_pages`, `move_pages`, `rotate_pages` (absolute angle; 0 sets a page upright),
-  `set_page_size`, `crop_pages` (changes the visible box only).
+  `set_page_size`, `crop_pages` (the visible crop box; `box: "media"` sets the physical
+  media box).
 - Stamps: `add_header_text`, `add_footer_text`, `add_page_numbers`,
   `add_watermark_text`, `add_watermark_image`, `add_stamp_image`.
 - Navigation: `add_bookmark`, `delete_bookmarks`, `add_link`,
@@ -128,7 +129,8 @@ text can hold spaces the source never had: Word separates Chinese, Japanese or
 Korean text from digits and Latin letters with such a gap, and `2026年10月31日`
 extracts as `2026年 10月 31日`. Literal patterns of `redact_text` and
 `pdf query search` therefore also match with up to two spaces, never a line
-break, wherever an East Asian character meets another character. A regular
+break, wherever an East Asian character meets a character that is not East
+Asian, such as a digit or Latin letter. A regular
 expression is matched as written: allow the gaps with ` *`, for example
 `合同 *PO-\d+`.
 

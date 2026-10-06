@@ -24,8 +24,8 @@ The error envelope, exit codes and shared codes are in
 - `NETWORK_RESOURCES_REQUESTED`: `--allow-network-resources` let the HTML importer
   request the listed addresses, and the output contains what they returned; review
   it. Combine the option with `--timeout`: each unanswered request can hold the
-  import for up to 100 seconds. Markdown input refuses the option with
-  `OPTION_INVALID`.
+  import for up to 100 seconds. Every source other than `--from-html` refuses
+  the option with `OPTION_INVALID`.
 - `FEATURE_UNSUPPORTED` naming a Markdown reference: every image, stylesheet and
   SVG file the Markdown could load, and those they reference, must be an existing
   ordinary file beneath the Markdown file's directory. Absolute paths, `file:`
