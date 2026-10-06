@@ -13,7 +13,6 @@ aspose-cli review metrics.review.pptx --out metrics.review --output json
 ```
 
 The chart shows North, South, East and West revenue of 120, 90, 75 and 60
-synthetic units. Native chart series and categories are not included in the
-read/search projection; `metrics.review.md` lists the chart's values by category
-and series, so compare them with `data-ops.json`, then check the rendered labels
+synthetic units. `metrics.review.md` lists the chart's values by category and
+series, so compare them with `data-ops.json`, then check the rendered labels
 and bars. Open every review image and disclose evaluation output.

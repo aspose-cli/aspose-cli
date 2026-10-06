@@ -32,10 +32,9 @@ text on overflow; still check review for overflow and split a crowded slide
 rather than rely on shrinking. Wrap an image path that contains spaces in angle
 brackets; remote images are refused.
 
-Without `--template`, the built-in 16:9 design is used. `--size 16x9` or
-`--size 4x3` resizes the canvas and scales the masters, layouts and slides with
-it. Without `--from-markdown`, the template's own slides are kept; a template
-that has none yields one empty Title Slide.
+`--size 16x9` or `--size 4x3` resizes the canvas and scales the masters,
+layouts and slides with it. Without `--from-markdown`, the template's own slides
+are kept; a template that has none yields one empty Title Slide.
 
 ## Tables
 

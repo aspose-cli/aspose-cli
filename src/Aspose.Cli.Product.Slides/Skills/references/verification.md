@@ -12,8 +12,7 @@ aspose-cli slides query search deck.revised.pptx --pattern TODO --scope all --ou
 ```
 
 `--max-chars` bounds all returned title, text, run, note and comment text; addressing and
-formatting metadata do not count. Check each slide's `contentTruncated`; `window.next` resumes
-at a slide the budget cut short and doubles `--max-chars` when that slide alone exceeded it.
+formatting metadata do not count.
 
 ### Charts and tables
 
@@ -26,9 +25,9 @@ per category and one column per series:
 aspose-cli slides convert deck.revised.pptx --to md --slides 4-6 --out deck.revised.md --output json
 ```
 
-Compare these values with the ones the batch wrote before you report them. Evaluation mode
-cuts short text longer than five characters here too, such as titles and table cells, while
-chart values stay whole. The review images remain the check for how a chart draws its values:
+Compare these values with the ones the batch wrote before you report them. In evaluation mode
+titles and table cells come back truncated; chart values stay whole. The review images remain
+the check for how a chart draws its values:
 axis ranges, labels and clipping.
 
 ## Appearance
@@ -61,18 +60,13 @@ aspose-cli review deck.revised.pptx --out deck.review-2 --code SLIDES_SHAPE_OUTS
 ```
 
 Checks do not see everything. In every image, look at title hierarchy, text in rotated shapes,
-text in tables, image crops and distortion, chart categories and labels, table legibility, footer
-and slide-number placement, contrast, missing CJK glyphs, hidden slides and ordering.
+text in tables, chart categories and labels, table legibility, image crops and distortion,
+footer and slide-number placement, and hidden slides.
 
 ## Fonts
 
 Saving shrinks text that auto-fits its shape using the fonts' metrics, so pass the same
-`--font-dir` to `slides create`, `edit`, `convert` and `render` as to `fonts check` and `review`:
-
-```powershell
-aspose-cli fonts check deck.revised.pptx --font-dir fonts --output json
-aspose-cli slides convert deck.revised.pptx --to pdf --font-dir fonts --output json
-```
+`--font-dir` to `slides create`, `edit`, `convert` and `render` as to `fonts check` and `review`.
 
 ## Existing chart fidelity
 

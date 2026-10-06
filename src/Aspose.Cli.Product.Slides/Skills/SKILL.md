@@ -28,8 +28,9 @@ Skill: start with `aspose-cli docs overview`.
    aspose-cli slides create deck.pptx --from-markdown outline.md --template brand.pptx --output json
    ```
 
-3. **Existing deck:** inspect the structure, then read only the slides you need. A truncated
-   read reports `window.next`; run it verbatim.
+3. **Existing deck:** inspect the structure, then read only the slides you need. A slide cut
+   short by `--max-chars` has `contentTruncated: true`; `window.next` reads it again, with a
+   doubled budget when it alone exceeded the budget.
 
    ```powershell
    aspose-cli slides inspect deck.pptx --preview --detail layouts fonts notes --output json
@@ -50,7 +51,6 @@ Skill: start with `aspose-cli docs overview`.
 
 Fonts, colors, backgrounds and placeholder geometry come from the template's theme, masters and
 layouts. Fix a look by choosing or correcting the template, never by restyling text run by run.
-One claim per slide, at most six bullets and two levels; split a slide rather than shrink it.
 Details: [design system](references/design-system.md).
 
 ## Slides-specific rules
@@ -65,11 +65,8 @@ Details: [design system](references/design-system.md).
   (for example `SLIDES_TEXT_OVERLAPS_OBJECT` over a table), so rebuild the deck with a license.
 - Only PPTX and PPTM outputs can carry a password; `--encrypt-env` with any other `create`,
   `edit` or `convert` output is `OPTION_INVALID`.
-- Chart titles, labels and data are not shape text: `query`, `search` and `replace_text` never
-  see them, and `query` gives a table's cells as one text. After `update_chart_data` or
-  `set_table_cell`, read chart values and table cells back from a Markdown conversion
-  ([Slides verification](references/verification.md#charts-and-tables)), then confirm the
-  rendering in the review images.
+- `query` does not see chart content or separate table cells; read them back from a Markdown
+  conversion ([charts and tables](references/verification.md#charts-and-tables)).
 
 ## References
 

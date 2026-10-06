@@ -45,9 +45,8 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
 - `set_title`, `set_body` and `set_text` fill placeholders the layout already styles; prefer
   them to `set_shape_style`, which overrides every run of one shape.
 - `set_shape_style` `font` names one font for Latin, East Asian and complex-script text;
-  `latinFont` and `eastAsianFont` set the font of their script in its place. They also accept
-  the theme fonts `+mj-lt`, `+mn-lt` and `+mj-ea`, `+mn-ea` (heading and body), which return
-  text to the template's fonts ([design system](design-system.md)).
+  `latinFont` and `eastAsianFont` set the font of their script in its place. To return text to
+  the template's fonts, see [design system](design-system.md).
 - `set_body` paragraphs take their level's bullet; give a paragraph `"bullet": false` to write it
   plain, as a Markdown paragraph is. `set_text` keeps the placeholder's bullets on every line.
 - A shape's text in `query slides`, `query search` and `extract --what text` includes its table
@@ -55,10 +54,8 @@ data-label text. A picture has no text, so a text style on it fails with `OPS_IN
   own line; lines are separated by line feeds.
 - `replace_text` matches within one paragraph at a time, in shapes and speaker notes. Only the
   matched characters change: the replacement takes the formatting of the first matched
-  character, and other runs keep theirs. Evaluation mode reads text longer than five
-  characters cut short, so there `replace_text` fails with `EVALUATION_LIMIT` instead of
-  matching nothing. A `replace_text` that finds nothing in its `scope` changes nothing and
-  reports `REPLACE_NO_MATCH`; check the pattern and scope with `slides query search`.
+  character, and other runs keep theirs. In evaluation mode, truncated text in its `scope`
+  makes `replace_text` fail with `EVALUATION_LIMIT`.
 - `set_notes` replaces speaker-note text. `inspect --detail notes` reports only presence and
   character counts; read note text with `query slides --notes` or `extract --what notes`.
 - `set_footer` uses the layout's own footer, number and date placeholders; their position and

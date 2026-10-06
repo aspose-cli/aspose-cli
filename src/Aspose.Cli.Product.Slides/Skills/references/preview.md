@@ -7,6 +7,4 @@ aspose-cli preview deck.pptx --open --output json
 ```
 
 A presentation reads like a slide editor: a numbered slide rail, one slide on the stage with
-its speaker notes, a full-screen slideshow, and a mark on the shapes the last edit changed. It
-is a review aid for a human; agents prove results with `slides query` reads and `review`
-evidence.
+its speaker notes, a full-screen slideshow, and a mark on the shapes the last edit changed.

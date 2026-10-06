@@ -4,8 +4,6 @@ The error envelope, exit codes, not-found details and general diagnosis are shar
 `aspose-cli docs troubleshooting`.
 
 - `LAYOUT_NOT_FOUND`: `slides inspect --detail layouts` lists layout names.
-- `OPS_INVALID` for a shape name or placeholder role that several shapes on the slide share:
-  address the shape by its `shapeId`.
 - `CHART_DATA_INVALID`: the message names the cause; only a chart that cannot be updated in
   place needs `insert_chart` (Charts in [Slides editing](editing.md)).
 - `REPLACE_NO_MATCH`: `replace_text` found nothing in its `scope` and changed nothing. Run
@@ -20,5 +18,3 @@ The error envelope, exit codes, not-found details and general diagnosis are shar
   `use-dest` and `apply_layout` replace a slide's own background with its layout's, and a
   `SLIDE_BACKGROUND_RESET` warning names the slides that had one; `set_background` sets one
   again, for appended slides in a later batch.
-- Rendering fails: run `aspose-cli fonts check deck.pptx --output json`, render fewer slides,
-  and look for malformed embedded media.
