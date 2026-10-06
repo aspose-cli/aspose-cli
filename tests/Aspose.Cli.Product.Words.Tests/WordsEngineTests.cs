@@ -857,13 +857,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new WordsEditRequest { OutputPath = output });
 
         // The SDK writes the watermark into each header of the section.
-        string[] fonts = new Document(output).GetChildNodes(NodeType.Shape, true)
-            .Cast<Aspose.Words.Drawing.Shape>()
-            .Where(shape => shape.TextPath.Text == text)
-            .Select(static shape => shape.TextPath.FontFamily)
-            .Distinct()
-            .ToArray();
-        Assert.Equal([expected ?? new TextWatermarkOptions().FontFamily], fonts);
+        Assert.Equal([expected ?? new TextWatermarkOptions().FontFamily], WatermarkFonts(output, text));
     }
 
     [Fact]
@@ -878,14 +872,16 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
             new WordsOpsBatch { Ops = [new AddWatermarkOp { Text = "内部资料" }] },
             new WordsEditRequest { OutputPath = output });
 
-        string font = new Document(output).GetChildNodes(NodeType.Shape, true)
-            .Cast<Aspose.Words.Drawing.Shape>()
-            .Where(static shape => shape.TextPath.Text == "内部资料")
-            .Select(static shape => shape.TextPath.FontFamily)
-            .Distinct()
-            .Single();
-        Assert.Equal("Microsoft YaHei", font);
+        Assert.Equal(["Microsoft YaHei"], WatermarkFonts(output, "内部资料"));
     }
+
+    /// <summary>The distinct fonts of the watermarks of a document that draw <paramref name="text"/>.</summary>
+    private static string[] WatermarkFonts(string path, string text) =>
+        [.. new Document(path).GetChildNodes(NodeType.Shape, true)
+            .Cast<Aspose.Words.Drawing.Shape>()
+            .Where(shape => shape.TextPath.Text == text)
+            .Select(static shape => shape.TextPath.FontFamily)
+            .Distinct()];
 
     [Theory]
     [InlineData(false)]
@@ -1179,18 +1175,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string input = _fixture.Temp.File("figures.docx");
         var builder = new DocumentBuilder();
         builder.Writeln("Key figures");
-        foreach (string[] row in new[] { new[] { "Metric", "Value" }, new[] { "Revenue", "120" } })
-        {
-            foreach (string cell in row)
-            {
-                builder.InsertCell();
-                builder.Write(cell);
-            }
-
-            builder.EndRow();
-        }
-
-        builder.EndTable();
+        Table(builder, [["Metric", "Value"], ["Revenue", "120"]]);
         builder.Write("Closing line");
         builder.MoveToHeaderFooter(HeaderFooterType.HeaderPrimary);
         builder.Write("Company header");
@@ -1217,19 +1202,7 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         string input = _fixture.Temp.File("tables.docx");
         var builder = new DocumentBuilder();
         builder.Writeln("Intro");
-        string[][] first = [["岗位", "人数, 备注"], ["Engineer \"senior\"", "3"]];
-        foreach (string[] row in first)
-        {
-            foreach (string cell in row)
-            {
-                builder.InsertCell();
-                builder.Write(cell);
-            }
-
-            builder.EndRow();
-        }
-
-        builder.EndTable();
+        Table(builder, [["岗位", "人数, 备注"], ["Engineer \"senior\"", "3"]]);
         builder.Writeln("Between");
         builder.InsertCell();
         builder.Writeln("Line one");
@@ -1250,6 +1223,23 @@ public sealed class WordsEngineTests : IClassFixture<WordsFixture>
         Assert.Equal([0xEF, 0xBB, 0xBF], bytes[..3]);
         Assert.Equal("岗位,\"人数, 备注\"\r\n\"Engineer \"\"senior\"\"\",3\r\n", File.ReadAllText(result.Items[0].Path));
         Assert.Equal("\"Line one\nLine two\nLine three\"\r\n", File.ReadAllText(result.Items[1].Path));
+    }
+
+    /// <summary>Writes a table of one row per item of <paramref name="rows"/>, each cell its text.</summary>
+    private static void Table(DocumentBuilder builder, string[][] rows)
+    {
+        foreach (string[] row in rows)
+        {
+            foreach (string cell in row)
+            {
+                builder.InsertCell();
+                builder.Write(cell);
+            }
+
+            builder.EndRow();
+        }
+
+        builder.EndTable();
     }
 
     private static bool HasHeader(string path, byte[] expected)

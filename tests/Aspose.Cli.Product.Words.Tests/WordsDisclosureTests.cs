@@ -11,9 +11,6 @@ namespace Aspose.Cli.Product.Words.Tests;
 
 public sealed class WordsDisclosureTests
 {
-    private const string BannerText =
-        "Created with an evaluation copy of Aspose.Words. To remove all limitations, you can use Free Temporary License https://products.aspose.com/words/temporary-license/";
-
     [Theory]
     [InlineData(LicenseState.Evaluation, 2)]
     [InlineData(LicenseState.Licensed, 3)]
@@ -26,7 +23,7 @@ public sealed class WordsDisclosureTests
         using var fixture = new WordsFixture();
         var source = new Document();
         var builder = new DocumentBuilder(source);
-        builder.Writeln(BannerText);
+        builder.Writeln(WordsFixture.BannerText);
         builder.Writeln("This document was truncated here because of the evaluation notice we quote.");
         builder.Write("Body");
         string input = fixture.Temp.File("quotes.docx");
@@ -69,10 +66,10 @@ public sealed class WordsDisclosureTests
         // The banner and footer sentence an unlicensed save writes, as a later licensed run reads them.
         var source = new Document();
         var builder = new DocumentBuilder(source);
-        builder.Writeln(BannerText);
+        builder.Writeln(WordsFixture.BannerText);
         builder.Write("Clause one.");
         builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
-        builder.Write("Evaluation Only. Created with Aspose.Words. Copyright 2003-2026 Aspose Pty Ltd.");
+        builder.Write(WordsFixture.FooterMarkText);
         string input = fixture.Temp.File("marked.docx");
         source.Save(input, SaveFormat.Docx);
 
@@ -187,21 +184,11 @@ public sealed class WordsDisclosureTests
     [Theory]
     [InlineData(true, "docx", false)]
     [InlineData(false, "docx", true)]
-    [InlineData(false, "rtf", true)]
-    [InlineData(false, "odt", true)]
     [InlineData(false, "txt", false)]
     public void EditingARevisedDocument_DisclosesTheRevisionsTheOutputKeeps(bool accept, string extension, bool disclosed)
     {
         using var fixture = new WordsFixture();
-        var source = new Document();
-        var builder = new DocumentBuilder(source);
-        builder.Writeln("The notice period is thirty days.");
-        builder.Write("Other text.");
-        source.StartTrackRevisions("Ann", DateTime.Now);
-        source.Range.Replace("thirty", "sixty");
-        source.StopTrackRevisions();
-        string input = fixture.Temp.File("revised.docx");
-        source.Save(input, SaveFormat.Docx);
+        string input = RevisedDocument(fixture);
         string output = fixture.Temp.File("edited." + extension);
 
         WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
@@ -225,25 +212,20 @@ public sealed class WordsDisclosureTests
     public void SavingARevisedDocument_DisclosesWhetherTheOutputKeepsTheRevisions(string format, bool kept, bool dropped)
     {
         using var fixture = new WordsFixture();
-        var source = new Document();
-        var builder = new DocumentBuilder(source);
-        builder.Writeln("The notice period is thirty days.");
-        builder.Write("Other text.");
-        source.StartTrackRevisions("Ann", DateTime.Now);
-        source.Range.Replace("thirty", "sixty");
-        source.StopTrackRevisions();
-        string input = fixture.Temp.File("revised.docx");
-        source.Save(input, SaveFormat.Docx);
+        string input = RevisedDocument(fixture);
+
+        string convertedPath = fixture.Temp.File("converted." + format);
+        string editedPath = fixture.Temp.File("edited." + format);
 
         WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
             TargetFormatId = format,
-            OutputPath = fixture.Temp.File("converted." + format),
+            OutputPath = convertedPath,
         });
         WordsEditResult edited = fixture.Engine.ApplyOps(input, new WordsOpsBatch
         {
             Ops = [new ReplaceTextOp { Find = "Other", Replace = "More" }],
-        }, new WordsEditRequest { OutputPath = fixture.Temp.File("edited." + format) });
+        }, new WordsEditRequest { OutputPath = editedPath });
 
         foreach (IReadOnlyList<Warning>? warnings in new[] { converted.Warnings, edited.Warnings })
         {
@@ -251,20 +233,20 @@ public sealed class WordsDisclosureTests
             Assert.Equal(dropped, (warnings ?? []).Any(static warning => warning.Code == WarningCodes.LossyConversion
                 && warning.Message.Contains("cannot keep tracked changes", StringComparison.Ordinal)));
         }
+
+        // A format that keeps revisions still holds them. HTML and EPUB are not checked the
+        // other way: the SDK reads their ins and del marks back as revisions.
+        foreach (string path in kept ? new[] { convertedPath, editedPath } : [])
+        {
+            Assert.True(new Document(path).HasRevisions, path);
+        }
     }
 
     [Fact]
     public void RenderingARevisedDocument_DoesNotReportLostRevisions()
     {
         using var fixture = new WordsFixture();
-        var source = new Document();
-        var builder = new DocumentBuilder(source);
-        builder.Write("The notice period is thirty days.");
-        source.StartTrackRevisions("Ann", DateTime.Now);
-        source.Range.Replace("thirty", "sixty");
-        source.StopTrackRevisions();
-        string input = fixture.Temp.File("revised.docx");
-        source.Save(input, SaveFormat.Docx);
+        string input = RevisedDocument(fixture);
 
         // A render shows the document as it looks; the source keeps its revisions.
         WordsRenderResult rendered = fixture.Engine.Render(input, new WordsRenderRequest
@@ -285,7 +267,7 @@ public sealed class WordsDisclosureTests
     public void SavingToText_DisclosesTheCommentsAndDeletionsMixedIntoTheBody(string format, bool mixed)
     {
         using var fixture = new WordsFixture();
-        string input = CommentedRevision(fixture);
+        string input = RevisedDocument(fixture, withComment: true);
 
         WordsConvertResult converted = fixture.Engine.Convert(input, new WordsConvertRequest
         {
@@ -310,7 +292,7 @@ public sealed class WordsDisclosureTests
     public void SavingToText_AfterRemovingCommentsAndAcceptingRevisions_MixesNothing()
     {
         using var fixture = new WordsFixture();
-        string input = CommentedRevision(fixture);
+        string input = RevisedDocument(fixture, withComment: true);
         string output = fixture.Temp.File("clean.txt");
 
         WordsEditResult result = fixture.Engine.ApplyOps(input, new WordsOpsBatch
@@ -326,20 +308,28 @@ public sealed class WordsDisclosureTests
         Assert.DoesNotContain("thirty", text, StringComparison.Ordinal);
     }
 
-    private static string CommentedRevision(WordsFixture fixture)
+    /// <summary>
+    /// A document whose tracked change replaces "thirty" with "sixty", above a line "Other
+    /// text."; <paramref name="withComment"/> adds a comment on the first paragraph.
+    /// </summary>
+    private static string RevisedDocument(WordsFixture fixture, bool withComment = false)
     {
         var source = new Document();
         var builder = new DocumentBuilder(source);
         builder.Writeln("The notice period is thirty days.");
         builder.Write("Other text.");
-        var comment = new Comment(source, "Ann", "A", DateTime.Now);
-        comment.AppendChild(new Paragraph(source));
-        comment.FirstParagraph!.AppendChild(new Run(source, "Reviewer note"));
-        source.FirstSection.Body.FirstParagraph!.AppendChild(comment);
+        if (withComment)
+        {
+            var comment = new Comment(source, "Ann", "A", DateTime.Now);
+            comment.AppendChild(new Paragraph(source));
+            comment.FirstParagraph!.AppendChild(new Run(source, "Reviewer note"));
+            source.FirstSection.Body.FirstParagraph!.AppendChild(comment);
+        }
+
         source.StartTrackRevisions("Ann", DateTime.Now);
         source.Range.Replace("thirty", "sixty");
         source.StopTrackRevisions();
-        string input = fixture.Temp.File("commented-revision.docx");
+        string input = fixture.Temp.File(withComment ? "commented-revision.docx" : "revised.docx");
         source.Save(input, SaveFormat.Docx);
         return input;
     }

@@ -27,6 +27,13 @@ public sealed class WordsFixture : IDisposable
         ProductTestBudgets.StartEngine<WordsModule, WordsFontEnvironment>(
             (budgets, _) => new WordsFontEnvironment(Gate, budgets));
 
+    /// <summary>The banner paragraph an unlicensed save writes at the start of a document.</summary>
+    internal const string BannerText =
+        "Created with an evaluation copy of Aspose.Words. To remove all limitations, you can use Free Temporary License https://products.aspose.com/words/temporary-license/";
+
+    /// <summary>The sentence an unlicensed save writes into a document's footer.</summary>
+    internal const string FooterMarkText = "Evaluation Only. Created with Aspose.Words. Copyright 2003-2026 Aspose Pty Ltd.";
+
     public TempDirectory Temp { get; } = new();
 
     public LicenseState LicenseState => Gate.EnsureApplied();

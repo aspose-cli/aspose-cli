@@ -17,20 +17,15 @@ public sealed class WordsFieldAndReviewTests
         // The banner and footer sentence an unlicensed save writes, as a later licensed run reads them.
         var document = new Document();
         var builder = new DocumentBuilder(document);
-        builder.Writeln("Created with an evaluation copy of Aspose.Words. To remove all limitations, you can use Free Temporary License https://products.aspose.com/words/temporary-license/");
+        builder.Writeln(WordsFixture.BannerText);
         builder.Write("Clause one.");
         builder.MoveToHeaderFooter(HeaderFooterType.FooterPrimary);
-        builder.Write("Evaluation Only. Created with Aspose.Words. Copyright 2003-2026 Aspose Pty Ltd.");
+        builder.Write(WordsFixture.FooterMarkText);
         string input = fixture.Temp.File("marked.docx");
         document.Save(input);
-        var adapter = new WordsViewAdapter();
-        var request = new ViewRenderRequest { View = WordsViews.Pages, MaxPartCount = 4, Purpose = ViewPurpose.Evidence };
 
-        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
-        ReviewFinding[] findings = [.. adapter.Assess(fixture.Engine, input, request, rendered).Findings!
-            .Where(static finding => finding.Code == "WORDS_EVALUATION_MARKS")];
+        ReviewFinding[] findings = EvaluationFindings(fixture, input);
 
-        Assert.False(rendered.SourceEncrypted);
         // Without a license, opening the document adds the marks itself, so it is not checked.
         if (fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed)
         {
@@ -54,19 +49,15 @@ public sealed class WordsFieldAndReviewTests
         var builder = new DocumentBuilder(document);
         if (banner)
         {
-            builder.Writeln("Created with an evaluation copy of Aspose.Words. To remove all limitations, you can use Free Temporary License https://products.aspose.com/words/temporary-license/");
+            builder.Writeln(WordsFixture.BannerText);
         }
 
         builder.Writeln("Clause one.");
         builder.Write("This document was truncated here because it was created in the Evaluation Mode.");
         string input = fixture.Temp.File("truncated.docx");
         document.Save(input);
-        var adapter = new WordsViewAdapter();
-        var request = new ViewRenderRequest { View = WordsViews.Pages, MaxPartCount = 4, Purpose = ViewPurpose.Evidence };
 
-        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
-        ReviewFinding[] findings = [.. adapter.Assess(fixture.Engine, input, request, rendered).Findings!
-            .Where(static finding => finding.Code == "WORDS_EVALUATION_MARKS")];
+        ReviewFinding[] findings = EvaluationFindings(fixture, input);
 
         // Without a license, opening the document adds the marks itself, so it is not checked.
         if (fixture.LicenseState == Aspose.Cli.Sdk.Licensing.LicenseState.Licensed)
@@ -77,6 +68,17 @@ public sealed class WordsFieldAndReviewTests
         {
             Assert.Empty(findings);
         }
+    }
+
+    /// <summary>The WORDS_EVALUATION_MARKS findings of a page review of an unencrypted document.</summary>
+    private static ReviewFinding[] EvaluationFindings(WordsFixture fixture, string input)
+    {
+        var adapter = new WordsViewAdapter();
+        var request = new ViewRenderRequest { View = WordsViews.Pages, MaxPartCount = 4, Purpose = ViewPurpose.Evidence };
+        ViewManifest rendered = adapter.Render(fixture.Engine, input, request, new MemoryArtifactSink());
+        Assert.False(rendered.SourceEncrypted);
+        return [.. adapter.Assess(fixture.Engine, input, request, rendered).Findings!
+            .Where(static finding => finding.Code == "WORDS_EVALUATION_MARKS")];
     }
 
     [Fact]
