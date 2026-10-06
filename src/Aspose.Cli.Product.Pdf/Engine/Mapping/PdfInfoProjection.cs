@@ -68,7 +68,7 @@ internal static class PdfInfoProjection
             Forms = details.Contains("forms") ? form : null,
             Attachments = details.Contains("attachments") ? Attachments(document) : null,
             Fonts = details.Contains("fonts") ? Fonts(document) : null,
-            Permissions = details.Contains("permissions") ? Permissions(document, loaded.PasswordType) : null,
+            Permissions = details.Contains("permissions") ? Permissions(loaded) : null,
             Signatures = details.Contains("signatures") ? signatures : null,
             Layers = details.Contains("layers") ? Layers(document) : null,
             Metadata = details.Contains("metadata") ? Metadata(document) : null,
@@ -254,11 +254,11 @@ internal static class PdfInfoProjection
     }
 
     /// <summary>
-    /// The password the file was opened with. Aspose.PDF reports a file that has only an owner
-    /// password as opened with its empty user password; no password was given, so it is none.
+    /// The password the file was opened with; a file with only an owner password opened without
+    /// one reports none.
     /// </summary>
     private static string OpenedWith(LoadedPdf loaded) =>
-        loaded.PasswordType == PasswordType.User && !new PdfFileInfo(loaded.Document).HasOpenPassword
+        loaded.PasswordType == PasswordType.User && !loaded.HasOpenPassword
             ? "none"
             : loaded.PasswordType.ToString().ToLowerInvariant();
 
@@ -266,19 +266,19 @@ internal static class PdfInfoProjection
     /// The passwords of the file and the permissions it grants readers without the owner
     /// password, also when this run opened it with the owner password, which lifts them.
     /// </summary>
-    private static PdfPermissionInfo Permissions(Document document, PasswordType passwordType)
+    private static PdfPermissionInfo Permissions(LoadedPdf loaded)
     {
+        Document document = loaded.Document;
         var permissions = (Aspose.Pdf.Permissions)document.Permissions;
-        var fileInfo = new PdfFileInfo(document);
 
         bool Allowed(Aspose.Pdf.Permissions value) =>
             !document.IsEncrypted || permissions.HasFlag(value);
 
         return new PdfPermissionInfo
         {
-            HasOpenPassword = fileInfo.HasOpenPassword,
-            HasOwnerPassword = fileInfo.HasEditPassword,
-            OwnerAccess = passwordType is PasswordType.Owner or PasswordType.None,
+            HasOpenPassword = loaded.HasOpenPassword,
+            HasOwnerPassword = new PdfFileInfo(document).HasEditPassword,
+            OwnerAccess = loaded.PasswordType is PasswordType.Owner or PasswordType.None,
             Print = Allowed(Aspose.Pdf.Permissions.PrintDocument),
             Copy = Allowed(Aspose.Pdf.Permissions.ExtractContent),
             Modify = Allowed(Aspose.Pdf.Permissions.ModifyContent),

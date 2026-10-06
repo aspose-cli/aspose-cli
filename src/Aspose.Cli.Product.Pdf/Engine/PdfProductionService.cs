@@ -215,8 +215,7 @@ internal sealed class PdfProductionService
     {
         Page page = document.Pages[pageNumber];
         int sampled = dpi * 2;
-        long width = (long)Math.Ceiling(page.Rect.Width / 72d * sampled);
-        long height = (long)Math.Ceiling(page.Rect.Height / 72d * sampled);
+        (long width, long height) = PagePixels(page, sampled);
         long maxPixels = _resourceBudgets.Limit(ResourceBudgetKinds.RasterPixels);
         if (width <= 0 || height <= 0 || width > maxPixels / height)
         {
@@ -266,13 +265,15 @@ internal sealed class PdfProductionService
         return PdfGridOverlay.Describe(spacing);
     }
 
-    private void EnsurePageFits(Page page, int dpi) =>
-        RenderPixelGuard.EnsureFits(
-            _resourceBudgets,
-            (long)Math.Ceiling(page.Rect.Width / 72d * dpi),
-            (long)Math.Ceiling(page.Rect.Height / 72d * dpi),
-            dpi,
-            "Render fewer or smaller pages, or lower --dpi.");
+    private void EnsurePageFits(Page page, int dpi)
+    {
+        (long width, long height) = PagePixels(page, dpi);
+        RenderPixelGuard.EnsureFits(_resourceBudgets, width, height, dpi, "Render fewer or smaller pages, or lower --dpi.");
+    }
+
+    /// <summary>The pixel size of <paramref name="page"/> rendered at <paramref name="dpi"/>.</summary>
+    private static (long Width, long Height) PagePixels(Page page, int dpi) =>
+        ((long)Math.Ceiling(page.Rect.Width / 72d * dpi), (long)Math.Ceiling(page.Rect.Height / 72d * dpi));
 
     internal PdfWriteResult Create(NewPdfRequest request)
     {

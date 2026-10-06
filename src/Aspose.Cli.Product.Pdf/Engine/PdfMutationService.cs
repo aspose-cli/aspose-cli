@@ -62,8 +62,7 @@ internal sealed class PdfMutationService
         Permissions? userPermissions = loaded.PasswordType == PasswordType.User && loaded.Document.IsEncrypted
             ? (Permissions)loaded.Document.Permissions
             : null;
-        // A file with only an owner password opens with its empty user password, without one given.
-        bool openPassword = userPermissions is not null && new Aspose.Pdf.Facades.PdfFileInfo(loaded.Document).HasOpenPassword;
+        bool openPassword = userPermissions is not null && loaded.HasOpenPassword;
         var touched = new SortedSet<int>();
         var textMoved = new List<string>();
         PdfNavigationCensus navigationBefore = PdfNavigationCensus.Unresolved(loaded.Document);
@@ -377,14 +376,11 @@ internal sealed class PdfMutationService
         }
 
         string? encryption = applied.LastOrDefault(static op => op is "encrypt" or "decrypt");
-        string output = (encryption, dryRun) switch
+        string output = encryption switch
         {
-            ("decrypt", false) => "The output is not encrypted, so it no longer restricts anyone.",
-            ("decrypt", true) => "The output would not be encrypted, so it would no longer restrict anyone.",
-            ("encrypt", false) => "The output is encrypted with the passwords and permissions the encrypt operation set.",
-            ("encrypt", true) => "The output would be encrypted with the passwords and permissions the encrypt operation set.",
-            (_, false) => "The output keeps the input's encryption and permissions; edit with the owner password to change them.",
-            (_, true) => "The output would keep the input's encryption and permissions; edit with the owner password to change them.",
+            "decrypt" => $"The output {(dryRun ? "would not be encrypted, so it would no longer restrict" : "is not encrypted, so it no longer restricts")} anyone.",
+            "encrypt" => $"The output {(dryRun ? "would be" : "is")} encrypted with the passwords and permissions the encrypt operation set.",
+            _ => $"The output {(dryRun ? "would keep" : "keeps")} the input's encryption and permissions; edit with the owner password to change them.",
         };
         string opened = openPassword
             ? "The input was opened with its user password, whose permissions"

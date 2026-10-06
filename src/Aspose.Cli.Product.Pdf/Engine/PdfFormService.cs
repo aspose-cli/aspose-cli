@@ -64,8 +64,8 @@ internal sealed class PdfFormService
     /// one state besides Off, that state as the value that checks it. The engine lists a radio
     /// group as one field per button under the group's name; each reports the group's selected
     /// value as its value, the group's values as its options and its own value as the one that
-    /// selects it, and each has its own
-    /// rectangle. A field whose page evaluation mode hides is added to <paramref name="unpaged"/>.
+    /// selects it, and each has its own rectangle. A field whose page evaluation mode hides is
+    /// added to <paramref name="unpaged"/>.
     /// </summary>
     private static PdfFormField Project(Document document, Field field, List<string> unpaged)
     {

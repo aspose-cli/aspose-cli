@@ -64,25 +64,24 @@ internal static class PdfEvaluation
     /// <summary>The disclosure for a read of a document with more pages than evaluation mode shows.</summary>
     internal static Warning? InputTruncated(LicenseState state, int pages) =>
         state == LicenseState.Evaluation && pages > VisiblePages
-            ? new Warning
-            {
-                Code = WarningCodes.EvalInputTruncated,
-                Message = string.Create(
-                    CultureInfo.InvariantCulture,
-                    $"Evaluation mode shows only the first {VisiblePages} of {pages} pages, so page sizes and page content describe only those pages; bookmarks, attachments and the form field count are complete."),
-                Hint = "Apply an Aspose.PDF license to read the whole document.",
-                AffectsCompleteness = true,
-            }
+            ? Truncated(
+                pages,
+                "page sizes and page content describe only those pages; bookmarks, attachments and the form field count are complete",
+                affectsCompleteness: true)
             : null;
 
     /// <summary>The disclosure for form fields listed without the page evaluation mode hides.</summary>
-    internal static Warning FieldsWithoutPage(int pages, IEnumerable<string> names) => new()
+    internal static Warning FieldsWithoutPage(int pages, IEnumerable<string> names) =>
+        Truncated(pages, $"these fields have no page: {string.Join(", ", names)}", affectsCompleteness: false);
+
+    private static Warning Truncated(int pages, string consequence, bool affectsCompleteness) => new()
     {
         Code = WarningCodes.EvalInputTruncated,
         Message = string.Create(
             CultureInfo.InvariantCulture,
-            $"Evaluation mode shows only the first {VisiblePages} of {pages} pages, so these fields have no page: {string.Join(", ", names)}."),
+            $"Evaluation mode shows only the first {VisiblePages} of {pages} pages, so {consequence}."),
         Hint = "Apply an Aspose.PDF license to read the whole document.",
+        AffectsCompleteness = affectsCompleteness,
     };
 
     internal static bool IsCollectionLimit(Exception exception)

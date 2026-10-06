@@ -53,7 +53,7 @@ internal sealed class PdfDocumentLoader(
                 throw;
             }
             var fileInfo = new PdfFileInfo(document);
-            var loaded = new LoadedPdf(document, fileInfo.PasswordType, stream);
+            var loaded = new LoadedPdf(document, fileInfo.PasswordType, fileInfo.HasOpenPassword, stream);
             stream = null;
             return loaded;
         }
@@ -115,7 +115,16 @@ internal sealed class PdfDocumentLoader(
 }
 
 /// <summary>A loaded document and the input stream it reads from, disposed together.</summary>
-internal sealed record LoadedPdf(Document Document, PasswordType PasswordType, Stream Source) : IDisposable
+/// <param name="Document">The loaded document.</param>
+/// <param name="PasswordType">
+/// The password the file was opened with. Aspose.PDF reports a file that has only an owner
+/// password as opened with its empty user password, without one given; <paramref name="HasOpenPassword"/>
+/// tells that case apart.
+/// </param>
+/// <param name="HasOpenPassword">Whether opening the file requires a user password.</param>
+/// <param name="Source">The input stream the document reads from.</param>
+internal sealed record LoadedPdf(Document Document, PasswordType PasswordType, bool HasOpenPassword, Stream Source)
+    : IDisposable
 {
     public void Dispose()
     {
