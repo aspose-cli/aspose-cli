@@ -4,7 +4,6 @@ using Aspose.Cli.Product.Slides.Engine.Editing;
 using Aspose.Cli.Product.Slides.Engine.Mapping;
 using Aspose.Cli.Sdk.Addressing;
 using Aspose.Cli.Sdk.Contracts;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Results;
@@ -40,10 +39,6 @@ internal sealed class SlidesMutationService
     {
         batch = SlidesOp.Catalog.Prepare(batch);
         string format = SlidesFormats.ForOutput(request.OutputPath);
-        if (!SlidesFormats.WriteIds.Contains(format, StringComparer.Ordinal))
-        {
-            throw CliErrors.FormatUnsupported(format, SlidesFormats.WriteIds);
-        }
 
         LicenseState state = _licenseGate.EnsureApplied();
         FileWritePrecondition precondition = FileWritePrecondition.Capture(filePath);

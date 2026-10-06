@@ -57,4 +57,28 @@ public sealed class MistakeRecoveryCliTests : IDisposable
         Assert.Contains($"then run '{producer}'", error["hint"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.False(File.Exists(_workspace.File(arguments[1] == "create" ? arguments[2] : "x.pdf")));
     }
+
+    [Theory]
+    [InlineData("slides edit a.pptx --ops ops.json --out noext", "noext")]
+    [InlineData("slides edit a.pptx --ops ops.json --out dotonly.", "dotonly")]
+    [InlineData("slides create noext --from-markdown deck.md", "noext")]
+    [InlineData("slides create dotonly. --from-markdown deck.md", "dotonly")]
+    [InlineData("words edit a.docx --ops words.json --out noext", "noext")]
+    [InlineData("words create noext --markdown deck.md", "noext")]
+    public void OutputWithoutExtension_IsAnUnsupportedFormat(string commandLine, string output)
+    {
+        File.WriteAllText(_workspace.File("a.pptx"), "not a document");
+        File.WriteAllText(_workspace.File("a.docx"), "not a document");
+        File.WriteAllText(_workspace.File("ops.json"), """{"ops":[{"op":"set_notes","slide":1,"text":"x"}]}""");
+        File.WriteAllText(_workspace.File("words.json"), """{"ops":[{"op":"set_properties","title":"x"}]}""");
+        File.WriteAllText(_workspace.File("deck.md"), "# Title");
+
+        CliResult result = _workspace.Run([.. commandLine.Split(' '), "--output", "json"]);
+
+        Assert.Equal(6, result.ExitCode);
+        JsonNode error = JsonNode.Parse(result.StdErr)!["error"]!;
+        Assert.Equal("FORMAT_UNSUPPORTED", error["code"]!.GetValue<string>());
+        Assert.Equal(string.Empty, error["details"]!["requested"]!.GetValue<string>());
+        Assert.False(File.Exists(_workspace.File(output)));
+    }
 }

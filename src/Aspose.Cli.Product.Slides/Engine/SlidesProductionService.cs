@@ -282,10 +282,6 @@ internal sealed class SlidesProductionService
     {
         LicenseState state = _licenseGate.EnsureApplied();
         string format = SlidesFormats.ForOutput(request.OutputPath);
-        if (!SlidesFormats.WriteIds.Contains(format, StringComparer.Ordinal))
-        {
-            throw Sdk.Errors.CliErrors.FormatUnsupported(format, SlidesFormats.WriteIds);
-        }
 
         using LoadedPresentation template = request.TemplatePath is null
             ? SlidesPresentationLoader.OpenDefaultTemplate()

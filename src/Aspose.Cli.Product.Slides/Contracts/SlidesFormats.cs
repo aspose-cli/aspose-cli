@@ -1,3 +1,4 @@
+using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Slides.Contracts;
@@ -46,6 +47,10 @@ public static class SlidesFormats
     public static IReadOnlyList<string> EncryptIds { get; } = ["pptx", "pptm"];
 
     /// <summary>The format id of a written presentation: its lowercase extension.</summary>
-    internal static string ForOutput(string path) =>
-        Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
+    /// <exception cref="CliException"><c>FORMAT_UNSUPPORTED</c> for an extension that names no format in <see cref="WriteIds"/>, or none at all.</exception>
+    internal static string ForOutput(string path)
+    {
+        string format = Path.GetExtension(path).TrimStart('.').ToLowerInvariant();
+        return WriteIds.Contains(format, StringComparer.Ordinal) ? format : throw CliErrors.FormatUnsupported(format, WriteIds);
+    }
 }
