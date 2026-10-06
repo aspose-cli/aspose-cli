@@ -56,17 +56,25 @@ internal static class WordsEngineSupport
             extra.Add(TrackedChangesPresent);
         }
 
+        extra.AddRange(SaveWarnings(loaded, format, rendered));
+        return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
+    }
+
+    /// <summary>
+    /// The warnings for what a saved copy of a loaded document carries over or loses: the
+    /// macros the format drops, unless the output is a page render, and the evaluation marks it keeps.
+    /// </summary>
+    internal static IEnumerable<Warning> SaveWarnings(LoadedDocument loaded, string format, bool rendered = false)
+    {
         if (!rendered && MacrosDropped(loaded, format) is { } macros)
         {
-            extra.Add(macros);
+            yield return macros;
         }
 
         if (EvaluationMarks(loaded) is { } marks)
         {
-            extra.Add(marks);
+            yield return marks;
         }
-
-        return EnvelopeParts.CombineWarnings(EnvelopeParts.OutputWarnings(state), extra);
     }
 
     /// <summary>
@@ -98,7 +106,7 @@ internal static class WordsEngineSupport
     /// which an output keeps, or null. Without a license, opening a document adds the marks
     /// itself, and EVAL_MODE says so.
     /// </summary>
-    internal static Warning? EvaluationMarks(LoadedDocument loaded) =>
+    private static Warning? EvaluationMarks(LoadedDocument loaded) =>
         !loaded.Evaluation && WordsEvaluation.IsMarked(loaded.Document)
             ? new Warning
             {
@@ -110,12 +118,9 @@ internal static class WordsEngineSupport
 
     /// <summary>The warning for a source with macros saved to a format that drops them, or null.</summary>
     internal static Warning? MacrosDropped(LoadedDocument source, string format) =>
-        source.Format.HasMacros && !KeepsMacros(format)
+        source.Format.HasMacros && !WordsFormats.KeepsMacros(format)
             ? new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source contains macros which the target format does not preserve.", Hint = "Save to docm or dotm to preserve macros." }
             : null;
-
-    /// <summary>Whether a format keeps the macros of the document saved in it.</summary>
-    internal static bool KeepsMacros(string format) => WordsFormats.MacroIds.Contains(format, StringComparer.Ordinal);
 
     /// <summary>Discloses the revisions an output that stores them still contains.</summary>
     internal static Warning TrackedChangesPresent { get; } = new()
@@ -127,7 +132,7 @@ internal static class WordsEngineSupport
 
     /// <summary>Whether a document saved in a format keeps its revisions as revisions.</summary>
     internal static bool KeepsRevisions(Document document, string format) =>
-        document.Revisions.Count > 0 && WordsFormats.RevisionIds.Contains(format, StringComparer.Ordinal);
+        document.Revisions.Count > 0 && WordsFormats.KeepsRevisions(format);
 
     /// <summary>
     /// The warnings for saving a document to a format that cannot hold every Word feature: one
@@ -146,7 +151,7 @@ internal static class WordsEngineSupport
         bool revised = document.Revisions.Count > 0;
         bool mixed = text && document.Revisions.Cast<Revision>()
             .Any(static revision => revision.RevisionType is RevisionType.Deletion or RevisionType.Moving);
-        if (revised && !mixed && !WordsFormats.RevisionIds.Contains(format, StringComparer.Ordinal))
+        if (revised && !mixed && !WordsFormats.KeepsRevisions(format))
         {
             yield return new Warning
             {
@@ -156,7 +161,7 @@ internal static class WordsEngineSupport
             };
         }
 
-        if (document.ProtectionType != ProtectionType.NoProtection && !WordsFormats.WordIds.Contains(format, StringComparer.Ordinal))
+        if (document.ProtectionType != ProtectionType.NoProtection && !WordsFormats.IsWord(format))
         {
             yield return new Warning
             {

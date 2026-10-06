@@ -92,7 +92,7 @@ internal static class WordsRenderers
         foreach (WordsSearchHit hit in result.Hits)
         {
             table.AddRow(
-                hit.Block is { } block ? TableText.Int(block) : "-",
+                Block(hit.Block),
                 TableText.Int(hit.Section),
                 hit.Location is { } location ? $"{hit.Scope} ({location}, {hit.Kind})" : hit.Scope,
                 hit.Snippet);
@@ -190,7 +190,7 @@ internal static class WordsRenderers
             foreach (FieldData field in fields)
             {
                 table.AddRow(
-                    field.Block is { } block ? TableText.Int(block) : "-",
+                    Block(field.Block),
                     field.Type,
                     field.Code ?? "-",
                     field.Result ?? "-");
@@ -205,7 +205,7 @@ internal static class WordsRenderers
             foreach (CommentData comment in comments)
             {
                 table.AddRow(
-                    comment.Block is { } block ? TableText.Int(block) : "-",
+                    Block(comment.Block),
                     comment.Author,
                     comment.Text);
             }
@@ -220,7 +220,7 @@ internal static class WordsRenderers
             {
                 table.AddRow(
                     TableText.Int(revision.Revision),
-                    revision.Block is { } block ? TableText.Int(block) : "-",
+                    Block(revision.Block),
                     revision.Type,
                     revision.Author,
                     revision.Date ?? "-",
@@ -241,7 +241,7 @@ internal static class WordsRenderers
             foreach (ImageData image in images)
             {
                 table.AddRow(
-                    image.Block is { } block ? TableText.Int(block) : "-",
+                    Block(image.Block),
                     image.Name ?? "-",
                     $"{Points(image.Width)} x {Points(image.Height)} pt");
             }
@@ -293,6 +293,9 @@ internal static class WordsRenderers
             surface.Out.WriteLine(string.Join(", ", values));
         }
     }
+
+    // An item without a body block, such as one in a header, shows a dash.
+    private static string Block(int? block) => block is { } value ? TableText.Int(value) : "-";
 
     private static string Points(double value) =>
         value.ToString("0.##", CultureInfo.InvariantCulture);

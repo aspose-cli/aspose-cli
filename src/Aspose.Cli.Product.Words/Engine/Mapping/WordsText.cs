@@ -61,26 +61,19 @@ internal static class WordsText
     internal static string ResultOf(Field field)
     {
         var text = new StringBuilder();
-        var fields = new Stack<bool>();
-        int codes = 0;
+        var fields = new FieldNesting();
         foreach (char c in field.Result ?? string.Empty)
         {
             switch (c)
             {
                 case ControlChar.FieldStartChar:
-                    fields.Push(true);
-                    codes++;
+                    fields.Start();
                     break;
-                case ControlChar.FieldSeparatorChar when fields.TryPeek(out bool code) && code:
-                    fields.Pop();
-                    fields.Push(false);
-                    codes--;
-                    break;
-                case ControlChar.FieldEndChar when fields.TryPop(out bool code):
-                    codes -= code ? 1 : 0;
+                case ControlChar.FieldSeparatorChar when fields.Separate():
+                case ControlChar.FieldEndChar when fields.End():
                     break;
                 default:
-                    if (codes == 0)
+                    if (!fields.InCode)
                     {
                         text.Append(c);
                     }
@@ -105,8 +98,7 @@ internal static class WordsText
 
     private static void Walk(Node node, Action<Run> visible, Action<Paragraph>? paragraphStart, Action? paragraphEnd, bool fieldResults = true)
     {
-        var fields = new Stack<bool>();
-        int codes = 0;
+        var fields = new FieldNesting();
         Append(node, isRoot: true);
 
         void Append(Node current, bool isRoot)
@@ -116,19 +108,13 @@ internal static class WordsText
                 case Comment or Footnote when !isRoot:
                     return;
                 case FieldStart:
-                    fields.Push(true);
-                    codes++;
+                    fields.Start();
                     return;
-                case FieldSeparator when fields.TryPeek(out bool code) && code:
-                    fields.Pop();
-                    fields.Push(false);
-                    codes--;
-                    return;
-                case FieldEnd when fields.TryPop(out bool code):
-                    codes -= code ? 1 : 0;
+                case FieldSeparator when fields.Separate():
+                case FieldEnd when fields.End():
                     return;
                 case Run run:
-                    if (codes == 0 && (fieldResults || fields.Count == 0) && !run.IsDeleteRevision)
+                    if (!fields.InCode && (fieldResults || !fields.InField) && !run.IsDeleteRevision)
                     {
                         visible(run);
                     }
@@ -166,7 +152,7 @@ internal static class WordsText
                 string.Join('\t', row.Cells.Cast<Cell>().Select(static cell => LineBreaks(Of(cell), " ")))))
             : LineBreaks(Of(block), "\n")));
 
-    private static string LineBreaks(string text, string with) => text
+    internal static string LineBreaks(string text, string with) => text
         .Replace(ControlChar.ParagraphBreak, with, StringComparison.Ordinal)
         .Replace(ControlChar.LineBreak, with, StringComparison.Ordinal)
         .Replace(ControlChar.PageBreak, with, StringComparison.Ordinal);
@@ -174,4 +160,49 @@ internal static class WordsText
     /// <summary>Drops the trailing paragraph, cell and page marks and the cell marks inside raw SDK text.</summary>
     internal static string Clean(string value) =>
         value.TrimEnd('\r', '\a', '\f').Replace("\a", string.Empty, StringComparison.Ordinal);
+
+    /// <summary>
+    /// The fields open at a point of a walk through text, each in its code or in its result.
+    /// A separator or end that matches no open field is not a field mark.
+    /// </summary>
+    private sealed class FieldNesting
+    {
+        // True while the field is in its code, false once its separator starts the result.
+        private readonly Stack<bool> _fields = new();
+        private int _codes;
+
+        internal bool InCode => _codes > 0;
+
+        internal bool InField => _fields.Count > 0;
+
+        internal void Start()
+        {
+            _fields.Push(true);
+            _codes++;
+        }
+
+        internal bool Separate()
+        {
+            if (!_fields.TryPeek(out bool code) || !code)
+            {
+                return false;
+            }
+
+            _fields.Pop();
+            _fields.Push(false);
+            _codes--;
+            return true;
+        }
+
+        internal bool End()
+        {
+            if (!_fields.TryPop(out bool code))
+            {
+                return false;
+            }
+
+            _codes -= code ? 1 : 0;
+            return true;
+        }
+    }
 }

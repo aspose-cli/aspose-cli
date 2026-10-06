@@ -66,6 +66,15 @@ public static class WordsFormats
     /// <summary>Formats that keep a document's macros (its VBA project).</summary>
     public static IReadOnlyList<string> MacroIds { get; } = ["doc", "dot", "docm", "dotm", "wordml"];
 
+    /// <summary>Whether a format is a Microsoft Word format (see <see cref="WordIds"/>).</summary>
+    internal static bool IsWord(string id) => WordIds.Contains(id, StringComparer.Ordinal);
+
+    /// <summary>Whether a format keeps tracked changes as revisions (see <see cref="RevisionIds"/>).</summary>
+    internal static bool KeepsRevisions(string id) => RevisionIds.Contains(id, StringComparer.Ordinal);
+
+    /// <summary>Whether a format keeps a document's macros (see <see cref="MacroIds"/>).</summary>
+    internal static bool KeepsMacros(string id) => MacroIds.Contains(id, StringComparer.Ordinal);
+
     public static bool IsLoad(string id) => LoadIds.Contains(id, StringComparer.Ordinal);
 
     /// <summary>

@@ -13,7 +13,7 @@ internal static class CompareCommand
         var granularity = new Option<string>("--granularity")
         {
             Description = "Unit a change is marked in: word, or char for Chinese or Japanese text.",
-            DefaultValueFactory = _ => "word",
+            DefaultValueFactory = _ => WordsCompareRequest.DefaultGranularity,
         }.WithInput(InputKind.None);
         granularity.AcceptOnlyFromAmong("word", "char");
         var author = new Option<string?>("--author") { Description = "Author of the redline's revisions; default: Aspose CLI." }.WithInput(InputKind.None);

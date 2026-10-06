@@ -238,8 +238,13 @@ internal sealed partial class WordsMutationHandlers
         // ends the parent whose items the new one joins.
         Paragraph? Sibling(Node? start, Func<Node, Node?> step)
         {
-            for (Node? node = start; node is Paragraph { IsListItem: true } item; node = step(node))
+            foreach (Node node in Siblings(start, step))
             {
+                if (node is not Paragraph { IsListItem: true } item)
+                {
+                    return null;
+                }
+
                 int itemLevel = item.ListFormat.ListLevelNumber;
                 if (itemLevel == level)
                 {
@@ -284,28 +289,18 @@ internal sealed partial class WordsMutationHandlers
             && paragraph.ListFormat.List?.ListId == list.ListId
             && paragraph.ListFormat.ListLevelNumber == level;
 
-        if (IsPeer(Anchor))
-        {
-            return (Paragraph)Anchor;
-        }
+        return (Paragraph?)Siblings(Anchor, static node => node.PreviousSibling)
+            .Concat(Siblings(Anchor.NextSibling, static node => node.NextSibling))
+            .FirstOrDefault(IsPeer);
+    }
 
-        for (Node? node = Anchor.PreviousSibling; node is not null; node = node.PreviousSibling)
+    /// <summary><paramref name="start"/> and the nodes <paramref name="step"/> leads to from it, in order.</summary>
+    private static IEnumerable<Node> Siblings(Node? start, Func<Node, Node?> step)
+    {
+        for (Node? node = start; node is not null; node = step(node))
         {
-            if (IsPeer(node))
-            {
-                return (Paragraph)node;
-            }
+            yield return node;
         }
-
-        for (Node? node = Anchor.NextSibling; node is not null; node = node.NextSibling)
-        {
-            if (IsPeer(node))
-            {
-                return (Paragraph)node;
-            }
-        }
-
-        return null;
     }
 
     /// <summary>

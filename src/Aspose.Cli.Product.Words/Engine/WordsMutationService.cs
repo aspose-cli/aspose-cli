@@ -104,16 +104,7 @@ internal sealed class WordsMutationService
             });
         }
 
-        if (MacrosDropped(loaded, format) is { } macros)
-        {
-            outputWarnings.Add(macros);
-        }
-
-        if (EvaluationMarks(loaded) is { } marks)
-        {
-            outputWarnings.Add(marks);
-        }
-
+        outputWarnings.AddRange(SaveWarnings(loaded, format));
         if (truncation is not null)
         {
             outputWarnings.Add(new Warning
@@ -459,7 +450,7 @@ internal sealed class WordsMutationService
                 Code = WarningCodes.ProtectionNotEnforced,
                 Message = $"The input has {WordsProtection.ToMode(inputProtection)} editing restrictions; the edit was applied through them.",
                 // LOSSY_CONVERSION discloses restrictions a non-Word output cannot keep.
-                Hint = WordsFormats.WordIds.Contains(format, StringComparer.Ordinal)
+                Hint = WordsFormats.IsWord(format)
                     ? "Confirm the change is authorized. The output keeps the restrictions unless the batch changed them with protect or unprotect."
                     : "Confirm the change is authorized.",
             });

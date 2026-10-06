@@ -262,7 +262,7 @@ internal sealed class WordsProductionService
             extra.Add(EvaluationTruncated);
         }
 
-        if (created.HasMacros && !KeepsMacros(format))
+        if (created.HasMacros && !WordsFormats.KeepsMacros(format))
         {
             extra.Add(new Warning { Code = WordsDiagnostics.MacrosDropped, Message = "The source template contains macros which the target format does not preserve.", Hint = "Create a docm or dotm output to preserve macros." });
         }

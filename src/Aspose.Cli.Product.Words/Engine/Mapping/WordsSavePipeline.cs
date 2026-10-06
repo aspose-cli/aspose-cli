@@ -14,7 +14,7 @@ internal static class WordsSavePipeline
     /// </summary>
     public static void RemoveMacrosUnlessKept(Document document, string formatId)
     {
-        if (document.HasMacros && !WordsFormats.MacroIds.Contains(formatId, StringComparer.Ordinal))
+        if (document.HasMacros && !WordsFormats.KeepsMacros(formatId))
         {
             document.RemoveMacros();
         }

@@ -78,9 +78,12 @@ public sealed record WordsEditRequest
 /// <summary>Options for semantic document comparison.</summary>
 public sealed record WordsCompareRequest
 {
+    /// <summary>The unit a change is marked in, by default.</summary>
+    internal const string DefaultGranularity = "word";
+
     public bool IgnoreFormatting { get; init; }
     /// <summary>The unit a change is marked in: <c>word</c> or <c>char</c>.</summary>
-    public string Granularity { get; init; } = "word";
+    public string Granularity { get; init; } = DefaultGranularity;
     /// <summary>The author of the redline's revisions; null records <c>Aspose CLI</c>.</summary>
     public string? Author { get; init; }
     public string? OutputPath { get; init; }

@@ -180,7 +180,7 @@ internal sealed class WordsExtractionService
         var csv = new System.Text.StringBuilder();
         foreach (Row row in table.Rows)
         {
-            csv.AppendJoin(',', row.Cells.Select(static cell => Field(WordsText.Of(cell).TrimEnd(ControlChar.ParagraphBreakChar).Replace(ControlChar.ParagraphBreakChar, '\n').Replace(ControlChar.LineBreakChar, '\n'))));
+            csv.AppendJoin(',', row.Cells.Select(static cell => Field(WordsText.LineBreaks(WordsText.Of(cell), "\n"))));
             csv.Append("\r\n");
         }
 
