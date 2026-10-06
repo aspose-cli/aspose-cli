@@ -2253,7 +2253,7 @@
           "command": "edit",
           "inputSchema": "v2/pdf/ops",
           "operationSchema": "aspose-cli schema v2/pdf/ops --operation <op>",
-          "contractFingerprint": "sha256:28bb73ff6c1885a91c3cb181c12470bddd5db81f8b2e77b340f23294ab480e16",
+          "contractFingerprint": "sha256:255453ad97d54814c9dd59772c2e512e0bf458056be57cc6ed45bc59f45e2af5",
           "maximumOperationCount": 256,
           "ops": [
             "add_attachment",
@@ -2363,7 +2363,7 @@
           {
             "code": "PDF_PAGE_WITHOUT_TEXT_LAYER",
             "severity": "info",
-            "summary": "A page has no extractable text and an image covers most of it, as on a scan, so search and redact_text do not reach its content."
+            "summary": "A page has no extractable text and an image fills its width or height, as on a scan, so search and redact_text do not reach its content."
           },
           {
             "code": "PDF_TEXT_ANALYSIS_TRUNCATED",
@@ -6853,7 +6853,7 @@
           "command": "edit",
           "inputSchema": "v2/words/ops",
           "operationSchema": "aspose-cli schema v2/words/ops --operation <op>",
-          "contractFingerprint": "sha256:aa1c03c9ca483162388e6ffcf9e0ff19e2ba12404e39dceb62b10b7e910fd9bb",
+          "contractFingerprint": "sha256:be41b637f538fc80350fbf1b281955039477283198f76add11b43174bb4e2f40",
           "maximumOperationCount": 256,
           "ops": [
             "accept_revisions",

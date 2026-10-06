@@ -837,7 +837,7 @@
           "const": "redact_text"
         },
         "pattern": {
-          "description": "The text to find, matched case-sensitively. Literal text also matches with up to two spaces, never a line break, where an East Asian character meets another character, as extracted text can hold there.",
+          "description": "The text to find, matched case-sensitively. Literal text also matches with up to two spaces, never a line break, where an East Asian character meets a character that is not East Asian, such as a digit or Latin letter, as extracted text can hold there.",
           "type": "string",
           "minLength": 1
         },
