@@ -5,14 +5,8 @@ Before editing, inspect `document.revisionsPresent`, `document.revisionAuthors`,
 `document.protection` and `document.signed` in the `words inspect` result.
 Editing or converting a document that already has revisions reports
 `TRACKED_CHANGES_PRESENT` while the output still contains them; disclose them.
-Only a Word format, `rtf`, `odt` or `ott` output stores revisions. A batch that
-accepts or rejects every revision does not report it. Any other output reports
-`LOSSY_CONVERSION` instead: it cannot keep the changes as revisions, and a
-`txt` or `md` output writes deleted text beside the inserted text.
-
-Use `--track-changes --author "Name"` when the requested edit must remain reviewable.
-`set_table_cell` supports tracked replacement while retaining the cell's structure;
-accept or reject revisions only when that review decision is explicitly requested.
+A batch that accepts or rejects every revision does not report it. Which
+outputs keep revisions is in [editing](editing.md#save-and-verify).
 
 ## Listing revisions
 
@@ -63,11 +57,10 @@ aspose-cli words inspect contract.docx --detail revisions --output json
 `author`'s, or the changes whose `revision` numbers they list. Numbers refer
 to the document as it was before the batch, as block addresses do, so one
 batch can accept some changes and reject others; list both halves of a
-replacement. A number past the list fails with `REVISION_NOT_FOUND`.
+replacement.
 `itemsAffected` counts the revisions the document stores that were decided,
-one per run, paragraph mark or other changed node. An `author` that no revision has changes
-nothing and reports `AUTHOR_NO_MATCH`, as `remove_comments` does for comments;
-authors match exactly, as `document.revisionAuthors` spells them.
+one per run, paragraph mark or other changed node. Authors match exactly, as
+`document.revisionAuthors` spells them.
 
 ```json
 { "ops": [
@@ -104,5 +97,3 @@ characters.
 The result counts the revisions by type and lists up to 50 `samples`, one per
 revision run or paragraph mark, with the `type` names `--detail revisions`
 uses; a paragraph mark's sample has no `text`.
-
-Editing a signed document invalidates its signature and emits `SIGNATURE_INVALIDATED`; the resulting file must be reviewed and re-signed.

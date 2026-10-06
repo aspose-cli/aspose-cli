@@ -7,21 +7,20 @@ are in `aspose-cli docs editing`.
 ## Errors
 
 - `BLOCK_NOT_FOUND`, `SECTION_NOT_FOUND`: block and section numbers are
-  1-based; `details.availableCount` says how many exist. Read the numbers again
-  with `words query blocks --scope outline` or `inspect --detail sections`.
-- `ANCHOR_NOT_FOUND`: no heading contains the `heading` text (the document's
-  headings are in `details.available`), a `find` text or an `nth` goes past the
-  matches (`details.availableCount` is the match count), or
-  `words split --by heading1` found no Heading 1 paragraph.
-- `BOOKMARK_NOT_FOUND`, `STYLE_NOT_FOUND`: the document's bookmarks or styles
-  are in `details.available`; `define_style` creates a missing style.
-- `MERGE_DATA_INVALID`: the `mail_merge` or `repeat_table_row` data is not a
-  JSON array of flat objects or a CSV file with a header row, or `mail_merge`
-  got no rows ([mail merge](mail-merge.md)).
+  1-based. Read the numbers again with `words query blocks --scope outline`
+  or `inspect --detail sections`.
+- `ANCHOR_NOT_FOUND`: no heading contains the `heading` text, a `find` text
+  or an `nth` goes past the matches, or `words split --by heading1` found no
+  Heading 1 paragraph.
+- `BOOKMARK_NOT_FOUND`, `STYLE_NOT_FOUND`: `define_style` creates a missing
+  style.
+- `MERGE_DATA_INVALID`: the `mail_merge` or `repeat_table_row` data is not
+  usable ([mail merge](mail-merge.md), [editing](editing.md#text)).
 - `REVISION_NOT_FOUND`: a `revisions` number of `accept_revisions` or
   `reject_revisions` goes past the changes `words inspect --detail revisions`
-  lists; `details.availableCount` says how many there are.
-- `DOCUMENT_PROTECTED`: the `unprotect` password was wrong.
+  lists.
+- `DOCUMENT_PROTECTED`: the `unprotect` password was wrong
+  ([editing](editing.md#protection-and-encryption)).
 - `DOCUMENT_HAS_REVISIONS`: `words compare` inputs must be revision-free; list
   the revisions with `words inspect --detail revisions` ([revisions](revisions.md)).
 - `OPTION_INVALID` from a tracked batch: the batch contains an operation that
@@ -29,11 +28,10 @@ are in `aspose-cli docs editing`.
 
 ## Warnings
 
-- `PROTECTION_NOT_ENFORCED`: the document has editing restrictions; the edit
-  succeeded and the restrictions remain in a Word format output.
-- `TRACKED_CHANGES_PRESENT`: the edited or converted document already had
-  revisions and the output, in a Word format, `rtf`, `odt` or `ott`, still
-  contains them; disclose them ([revisions](revisions.md)).
+- `PROTECTION_NOT_ENFORCED`: the edit succeeded on a document with editing
+  restrictions ([editing](editing.md#protection-and-encryption)).
+- `TRACKED_CHANGES_PRESENT`: the output still contains the revisions the
+  input had; disclose them ([revisions](revisions.md)).
 - `AUTHOR_NO_MATCH`: `accept_revisions`, `reject_revisions` or
   `remove_comments` changed nothing because no revision or comment has that
   `author`; names match exactly, and the hint lists the document's. Do not
@@ -41,9 +39,9 @@ are in `aspose-cli docs editing`.
 - `REPLACE_NO_MATCH`: `replace_text` found nothing in its `scope` and changed
   nothing. Search with `words query search` and the same pattern; text in
   headers, footers, footnotes or comments needs its `scope`.
-- `MERGE_VALUE_MISSING`: `mail_merge` data has no value for a template field
-  in the listed records ([mail merge](mail-merge.md)).
-- `DOCUMENT_ENCRYPTION_REMOVED`: the output format cannot be encrypted.
+- `MERGE_VALUE_MISSING`: see [mail merge](mail-merge.md).
+- `DOCUMENT_ENCRYPTION_REMOVED`: see
+  [editing](editing.md#protection-and-encryption).
 - `MACROS_DROPPED`: the source has macros and the output of `convert`, `edit`,
   `create`, `split` or `compare` was written without them. Only `doc`, `dot`,
   `docm`, `dotm` and `wordml` keep macros; save to `docm` or `dotm` to keep them.

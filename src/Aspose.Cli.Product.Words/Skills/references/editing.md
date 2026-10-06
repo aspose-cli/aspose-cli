@@ -63,8 +63,7 @@ aspose-cli schema v2/words/ops --operation insert_table
   format of the text where the match starts; when that text has no Chinese,
   Japanese or Korean characters, such as an amount in digits, East Asian
   characters of the new text take the East Asian font of the nearest East
-  Asian text in the paragraph. A `replace_text` that matches nothing changes
-  nothing and reports `REPLACE_NO_MATCH`.
+  Asian text in the paragraph.
 - `repeat_table_row` expands a template row of the table `at` addresses (such
   as `{"find":"{{code}}"}`): one copy per item, in order, in place of the
   template row. Without `row`, the template is the table's one row with a
@@ -101,10 +100,9 @@ Insertions at the same anchor stack against it: each `after` insertion lands
 directly after the anchor, ahead of earlier ones, and each `before` insertion
 lands directly before it, behind earlier ones. To keep the batch order as the
 reading order, anchor every piece `before` the block that should follow them.
-A table read with `query blocks` can be written back with its `rowCount`,
-`columnCount` and `cells` unchanged. `insert_table`'s `style` names an existing
-table style; `inspect --detail tables` shows the `style` each table uses, so a
-new table can match the document's tables.
+`insert_table`'s `style` names an existing table style; `inspect --detail
+tables` shows the `style` each table uses, so a new table can match the
+document's tables.
 
 ```json
 {
@@ -181,7 +179,7 @@ omitted settings keep their values:
   paragraph style's keep-with-next setting, which heading styles usually have.
 
 `itemsAffected` counts the table's rows, or 1 when only `keepWithNext` is
-set. `--track-changes` cannot record it.
+set.
 
 ```json
 { "ops": [ { "op": "format_table", "at": { "find": "Action items" }, "keepTogether": true, "headerRowCount": 1 } ] }

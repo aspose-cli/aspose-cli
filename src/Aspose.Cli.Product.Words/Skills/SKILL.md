@@ -81,7 +81,7 @@ exceeded it. `--section` with `--blocks` reads only that section's blocks in
 the range; block numbers run through the whole document, so a range with none
 of them is `BLOCK_NOT_FOUND`, whose hint names the section's blocks. `extract --what text` writes the visible text of every block to one
 file, one line per paragraph and per table row, whose cells are separated by
-tabs; a `txt` conversion instead aligns a row's cells in columns with spaces.
+tabs.
 `extract --what tables` writes each body table to its own CSV file
 (`table-001.csv` and on, UTF-8 with a byte order mark, so Excel reads Chinese
 text) and reports its `block`; a cell's paragraphs and line breaks become lines
@@ -161,13 +161,11 @@ document was loaded, or that the edited document grew past what evaluation
 mode lays out and saves (about 200 paragraphs, as with a mail merge of many
 records): the output then keeps only its first sections, ends with the
 engine's truncation notice, and `--verify` reports `OUTPUT_TRUNCATED`. The
-result is incomplete whatever `itemsAffected` says. A license installed later
-does not remove the evaluation banner, footer and watermark already saved into
-a file; a licensed `review` reports them as `WORDS_EVALUATION_MARKS`, a
-licensed `convert` or `edit` of such a file warns `EVALUATION_MARKS_PRESENT`,
-and the file is regenerated from its original inputs. A Words license is installed
-with `aspose-cli license install Aspose.Words.lic --product words`; licensing
-in general: `aspose-cli docs licensing`.
+result is incomplete whatever `itemsAffected` says. Evaluation marks saved
+into a file are reported by a licensed `review` as `WORDS_EVALUATION_MARKS`
+([verification](references/verification.md)) and by a licensed `convert` or
+`edit` as `EVALUATION_MARKS_PRESENT`
+([troubleshooting](references/troubleshooting.md)).
 
 ## References
 

@@ -16,13 +16,9 @@ The delivery checklist, the review protocol and font checks are in
   `REVISION_COUNT_CHANGED` or `PROTECTION_CHANGED`, usually because the
   output format (such as `txt` or `html`) does not keep that state; save to a
   Word format and verify again.
-- `OUTPUT_TRUNCATED` when evaluation mode cut the edited document short: the
-  output keeps only its first sections and ends with the engine's truncation
-  notice. Apply a license and run the edit again.
+- `OUTPUT_TRUNCATED` when evaluation mode cut the edited document short.
 
-`--verify` cannot be combined with `--dry-run`. Failed checks are a partial
-success (exit 8) that still publishes the output for repair; execution
-failures publish nothing.
+`--verify` cannot be combined with `--dry-run`.
 
 ## Read-back
 
@@ -41,14 +37,12 @@ comments or footnotes it changed, then each header and footer it changed as
 and sections it addressed or inserted, of replaced text, and of the content
 that took the place of removed blocks; a header or footer change touches every
 page of its section. An operation whose only target is `document`, such as
-`add_watermark` or `mail_merge`, can change any page. `words compare` needs
-revision-free inputs ([revisions](revisions.md)).
+`add_watermark` or `mail_merge`, can change any page.
 
 ## Visual review
 
 `aspose-cli review output.docx --out <new-dir>` renders every page. The Words
-checks are listed with `aspose-cli capabilities words --output json` under
-`review.checks`; the ones that most often need action:
+checks that most often need action:
 
 - `WORDS_HEADING_ORPHANED`, `WORDS_PAGE_UTILIZATION_LOW`, `WORDS_PAGE_BLANK`
   and `WORDS_PAGE_BREAKS_EXCESSIVE`: pagination problems, usually from manual
@@ -73,10 +67,5 @@ checks are listed with `aspose-cli capabilities words --output json` under
   (`document.commentCount` in `words inspect`); disclose them, and remove them
   with `remove_comments` only when the user asks.
 
-```powershell
-aspose-cli review output.docx --out output.review-2 --code WORDS_HEADING_ORPHANED --code WORDS_PAGE_BLANK --output json
-```
-
 `words render` exports page images for delivery. It takes the format from
-`--to`, or from the `--out` extension when `--to` is omitted, and refuses a
-`--to` that disagrees with the `--out` extension.
+`--to`, or from the `--out` extension when `--to` is omitted.
