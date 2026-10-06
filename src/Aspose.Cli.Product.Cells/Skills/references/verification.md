@@ -26,7 +26,6 @@ aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope value
 aspose-cli cells query range book.xlsx --sheet Sales --range E2:E6 --scope formulas --output json
 ```
 
-- Report numbers from these reads, never from your own arithmetic.
 - A formula has two faces: `--scope formulas` adds its text (`f`), `--scope
   values` shows its result as Excel shows it on opening: stored, or calculated
   when the workbook asks for that (`FORMULAS_CALCULATED_ON_OPEN`).
@@ -42,7 +41,7 @@ chart plotting the wrong block. Only a render can:
 
 ```
 aspose-cli review book.xlsx --out book.review-1 --output json
-aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out zoom.png --dpi 192
+aspose-cli cells render book.xlsx --sheet Sales --range A1:G20 --out zoom.png
 ```
 
 `review` renders one 192 DPI image per visible sheet; hidden sheets are not
@@ -87,9 +86,8 @@ A digit inside a CJK string renders through the substituted CJK font and
 loses its strokes too, while a Latin-only `2026-07-17` beside it stays crisp.
 At 150 and 192 DPI the strokes are solid. When text looks corrupt, query the
 cell first; if the value is right, check the DPI, font availability and layout
-before diagnosing corruption. `fonts check` answers whether declared font
-names are installed, not whether every glyph renders: a CJK sheet declaring
-only Arial reports `allAvailable: true` and renders through substitution.
+before diagnosing corruption. A CJK sheet declaring only Arial passes
+`fonts check` with `allAvailable: true` and renders through substitution.
 
 While looking, check for:
 
@@ -100,9 +98,6 @@ While looking, check for:
 - chart series, legend and axes that do not match the source data;
 - surviving placeholders (TBD, TODO, `{{...}}`, xxx);
 - tofu boxes or `□□□` in non-Latin text.
-
-Gridlines in the view never appear in renders; renders follow print layout,
-and on-screen Excel can differ in zoom and gridline shading.
 
 ## Tier 3: semantic
 

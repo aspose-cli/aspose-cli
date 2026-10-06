@@ -10,14 +10,9 @@ aspose-cli preview book.xlsx --open --output json
 - The default `workbook` view is the product's own grid: cell text stays
   selectable, and each `cells edit --in-place` is patched into the grid cell by
   cell. The edited cells light up where they are; the sheet, scroll position
-  and untouched cells stay put. `--fx demo` adds a pointer that travels to each
-  change, for a live demonstration.
+  and untouched cells stay put.
 - `--view sheets` shows one rendered image per sheet instead.
-- The preview opens on the workbook's saved active sheet (`set_active_sheet`);
-  when an evaluation save made its warning sheet the active one, it opens on
-  the first other sheet instead.
-- Gridlines, zoom and headings from `set_sheet_view` show here and in Excel,
-  never in `render` output.
+- The preview opens on the workbook's saved active sheet (`set_active_sheet`).
 
 To build in front of the user, start the preview first, hand over its `url`,
 then edit in three to five batches (data, structure, formats, charts, polish)

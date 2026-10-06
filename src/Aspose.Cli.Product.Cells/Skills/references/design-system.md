@@ -8,10 +8,6 @@ any file a human will open; skip it for machine-to-machine data files. Every
 recipe is one executable ops batch — fold them into your larger batches —
 and the pass is only done after the eyes loop (section 12).
 
-Recipes pass their ops inline (`--ops '{...}'`) for brevity, as a POSIX shell
-takes them. In PowerShell, save each batch to a file and pass its path
-instead (`aspose-cli docs troubleshooting`, Windows PowerShell).
-
 ## 1. When this applies — and when the file overrides you
 
 Two regimes:
@@ -77,12 +73,9 @@ semantic red/green). **Semantic state**: good `#548235`, bad `#C00000`, warn
 | KPI number | 18-24pt bold, primary or semantic |
 | footnote / unit note / source | 8-9pt regular, `#808080` |
 
-`set_default_font` is the FIRST op of every new workbook — column width units
-are measured in the Normal font, so the font comes before content and widths.
-Calibri 11 for Latin content (the one probe-measured metric-neutral swap from
-the engine's Arial 10 default); DengXian or Microsoft YaHei for CJK-primary
-workbooks — either rescales rendered widths, which is exactly why it must
-come first, and CJK renders are judged at >= 150 dpi only:
+`set_default_font` is the FIRST op of every new workbook (`aspose-cli docs
+cells/editing`, Batch order): Calibri 11 for Latin content, DengXian or
+Microsoft YaHei for CJK-primary workbooks:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
@@ -174,9 +167,8 @@ double): verify the L1/L2 distinction at 192.
 
 ## 6. Tables, banding and in-table emphasis
 
-Row-oriented registers a human will filter become a native table — the style
-brings its own header treatment and banding, so do not paint a second header
-over it:
+Row-oriented registers a human will filter become a native table, which
+brings its own header treatment and banding:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
@@ -212,10 +204,9 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 - The money/magnitude column of a register gets a `dataBar` in the accent —
   the one-glance answer to "where is the weight".
 - A `formula` rule with a `$`-pinned column (`=$H2>5000`) highlights the
-  WHOLE row from one cell's condition — the classic status-row pattern
-  (`=$F2="OVERDUE"`). The formula anchors on the range's top-left cell and
-  shifts per row; `value1` must be `=`-led. Where a row matches two fill
-  rules, the later-added rule's fill wins over the zebra stripe.
+  WHOLE row from one cell's condition, and as the later rule its fill wins
+  over the zebra stripe (`aspose-cli docs cells/editing`, Conditional
+  formatting).
 - `topBottom` (`rank`, plus `percent`/`bottom`) flags the top or bottom N
   without hardcoding a threshold.
 - `iconSet` (`arrows3`, `trafficLights3`, `symbols3`, `rating4`, `rating5`)
@@ -255,7 +246,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ```
 
 Pivot tables are not exempt — a pivot of formatted money that prints `17997`
-fails the discipline. Give every value field its format at creation:
+fails the discipline (`aspose-cli docs cells/editing`, Pivot tables):
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
@@ -277,14 +268,9 @@ Selection is by data shape, not preference:
 | correlation | scatter | dual-axis overlay |
 | single KPI now | KPI card + sparkline (section 9) | gauge |
 
-`create_chart` already applies a modern default — the outer chart border is
-removed, the plot area has no fill, gridlines are
-`#D9D9D9` and value-axis only (horizontal on a column/line chart, vertical
-on a bar), the value-axis line and tick marks are gone, the legend sits at
-the bottom, bars are tighter, and each series (each pie slice) takes the
-next of the workbook theme's six accents — S1-S6 in the default theme — then
-darker and lighter variants of them — so do NOT re-specify those. What you DO
-set:
+`create_chart` already applies a modern default (`aspose-cli docs
+cells/editing`, Charts); its series colors are S1-S6 in the default theme.
+Do NOT re-specify it. What you DO set:
 
 - `title`, message-style: subject · measure + unit · period ("Monthly
   revenue · US$ 000s · FY2026 H1"), never "Chart 1".
@@ -307,11 +293,8 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 (The source row is hardcoded here only to keep the recipe self-contained — in
 real work it is a SUMIFS block, per the worked example: `aspose-cli docs
-cells/sales-dashboard`.) A ranking bar with direct labels instead of an axis — and
-note the source order: **a bar chart plots the FIRST source row at the
-BOTTOM** (measured: largest-first source order ships the largest bar at the
-bottom), so list a ranking bar's rows ASCENDING and the ranking reads
-largest-first top-down:
+cells/sales-dashboard`.) A ranking bar with direct labels instead of an axis,
+its rows listed ascending (`aspose-cli docs cells/editing`, Charts):
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
@@ -320,9 +303,7 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ]}'
 ```
 
-Order the source rows when they are values; never `sort_range` over live
-formulas (relative references scramble) — re-derive the block in order
-instead. Charts meant to be compared must plot the same measure over the
+Charts meant to be compared must plot the same measure over the
 same window so their auto scales agree (axis min/max is not an op field —
 scale honesty lives in the data, or in one shared chart). A stale or
 superseded chart is removed, not abandoned:
@@ -393,11 +374,6 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ]}'
 ```
 
-Honest caveat (probe-measured): `gridlines` is a VIEW setting — Excel and
-the live preview honor it; a PNG `render` never draws view gridlines
-either way. Set it for the human opening the file in Excel; judge the
-rendered look by the borders and fills you actually drew.
-
 ## 10. Synthetic data quality
 
 When the user asks for a demo/example sheet and supplies no data, the data
@@ -442,20 +418,9 @@ month keys compute from it immediately.
 
 ## 11. Live demo protocol
 
-When the user wants to SEE the work happen (or asks for a preview URL),
-start the preview FIRST and hand over the URL before building anything:
-
-```sh
-aspose-cli preview deliverable.xlsx --open --output json
-```
-
-The command returns immediately; the startup envelope carries the `url` —
-hand it over immediately. Then build in 3-5 `edit` batches, not one: data →
-structure → formats → charts → polish. Each save updates the preview in
-place: the changed cells flash where they are, and `--fx demo` adds a
-pointer that travels to them — the batch sequence narrates the build.
-End with the delivery summary. Section 12 still applies: the preview is the
-user's view, the render+LOOK is yours. Details: `aspose-cli docs cells/preview`.
+When the user wants to SEE the work happen, start the preview first, hand
+over its `url`, then build in 3-5 batches. Section 12 still applies.
+Details: `aspose-cli docs cells/preview`.
 
 ## 12. The finishing pass (the eyes loop)
 
@@ -470,12 +435,10 @@ one depends on it:
 6. print setup (`set_page_setup` + `set_print_area`, every deliverable sheet)
 7. **review the workbook and LOOK at every sheet image** — then fix and
    review again until every box below ticks, for at most three rounds.
-   Judge widths and truncation from a `--range` render of the block you
-   changed.
 
 ```sh
 aspose-cli review book.xlsx --out scratch/book.review-1 --output json
-aspose-cli cells render book.xlsx --sheet Data --range A1:I12 --out scratch/data.png --dpi 192 --overwrite
+aspose-cli cells render book.xlsx --sheet Data --range A1:I12 --out scratch/data.png --overwrite
 aspose-cli cells inspect book.xlsx --detail errors --output json
 ```
 
@@ -483,7 +446,7 @@ Self-grade against this checklist while looking at the PNGs:
 
 ```
 [ ] Title band: title + unit declaration + period on every deliverable sheet
-[ ] No ####, no truncated text, no tofu boxes (CJK judged at >= 150 dpi)
+[ ] No ####, no truncated text, no tofu boxes
 [ ] One font family; hierarchy only by size/weight/gray
 [ ] <= 8 colors, each with a meaning; no decoration-only color
 [ ] Header contrast: dark fill always paired with white bold text
@@ -501,8 +464,5 @@ Self-grade against this checklist while looking at the PNGs:
     detail they claim to summarize
 ```
 
-The render mechanics — DPI floors, the strict `--range` view that exposes
-truncation a full-sheet render hides, review coverage — are Tier 2 of
-`aspose-cli docs cells/verification`; this checklist is the design bar layered on top
-of those tiers, not a replacement. `cells inspect --detail errors` must report zero
-formula errors before anything ships.
+This checklist is the design bar on top of the tiers of `aspose-cli docs
+cells/verification`, not a replacement for them.

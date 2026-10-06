@@ -9,10 +9,6 @@ small 3-statement model — `model.xlsx`, sheets `Assumptions` / `PnL` /
 `Summary`; every recipe ran against the real engine, and every quoted
 number is an engine read-back, not arithmetic.
 
-Recipes pass their ops inline (`--ops '{...}'`) for brevity, as a POSIX shell
-takes them. In PowerShell, save each batch to a file and pass its path
-instead (`aspose-cli docs troubleshooting`, Windows PowerShell).
-
 ## The three zones
 
 Every model separates Inputs (assumption sheets), Calc (statement sheets)
@@ -57,13 +53,8 @@ aspose-cli cells query search model.xlsx --pattern "0.25" --scope formulas --out
 ## Build order
 
 Assumptions first, then statements along the dependency chain, Summary
-last. Edits recalculate at the end by default. Queries read stored formula
-results, so do not treat an imported cache or an edit made with `--no-recalc`
-as freshly calculated.
-
-In fact the whole model fits in ONE atomic batch: ops apply in order and
-recalculation runs once at the end, so a `define_name` mid-batch resolves
-in formulas set later in the same batch, across sheets. Verified:
+last. The whole model fits in ONE atomic batch, names defined mid-batch
+included (`aspose-cli docs cells/editing`, Recalculation). Verified:
 
 ```sh
 aspose-cli cells edit model.xlsx --in-place --ops '{"ops":[
@@ -157,10 +148,10 @@ aspose-cli cells query range model.xlsx --sheet Summary --range B3 --output json
 ```
 
 The summary NPV moved 301.27 → 320.98, and back when B10 returned to
-`Base` — full precision against independent calculation. Caveat: validation constrains
-humans in Excel, not programmatic writes; a typo'd scenario value lands
-silently and turns MATCH into `#N/A` across every dependent cell — the
-`cells inspect --detail errors` gate catches it.
+`Base` — full precision against independent calculation. The validation does
+not stop a typo'd scenario value from a CLI write (`aspose-cli docs
+cells/editing`); it turns MATCH into `#N/A` across every dependent cell, and
+the `cells inspect --detail errors` gate catches it.
 
 ### Restore the base scenario after a sweep
 
@@ -232,41 +223,32 @@ cell by cell.
 
 ## Delivery gates
 
-The workbook-standards verification loop applies, plus the model-specific
-gates — each executable, each with a hard pass condition:
+The tiers of `aspose-cli docs cells/verification` apply, plus the
+model-specific gates — each executable, each with a hard pass condition:
 
 ```sh
 aspose-cli cells inspect model.xlsx --detail errors --output json
 aspose-cli cells query search model.xlsx --pattern "IMBALANCED|MISMATCH" --regex --output json
 aspose-cli cells query range model.xlsx --sheet Summary --range B3:B6 --output json
 aspose-cli cells query range model.xlsx --sheet Assumptions --range B10 --output json
-aspose-cli cells render model.xlsx --sheet Summary --range A1:G20 --out summary-check.png --dpi 192
+aspose-cli cells render model.xlsx --sheet Summary --range A1:G20 --out summary-check.png
 ```
 
 1. `workbook.formulaErrors` is empty — no `#N/A`, `#DIV/0!`, `#REF!`.
 2. The check-token search returns zero hits.
-3. Every summary and valuation cell read back — report these engine
-   results after recalculation, not an assumed or stale cached value.
+3. Every summary and valuation cell read back.
 4. Swept the scenarios? The selector reads back on the base case, and the
    summary reads back at its base number (Scenario switching).
 5. LOOK at the render with your image tool (truncation, layout, checks
-   visibly OK). Keep `--dpi 192` and window with `--range`: a full-sheet
-   render runs ~5% wide and hides truncation, and non-Latin labels below
-   150 DPI change identity (`aspose-cli docs cells/verification`).
+   visibly OK), windowed with `--range` (`aspose-cli docs cells/verification`,
+   Tier 2).
 6. Editing a user's model? The backup diff shows only intended changes — a
    formula replaced by a hardcode is visible as left-`f` / right-value-only.
-   It compares values and formula text only, so a styling or chart pass on
-   the model is expected to diff as `identical: true`.
-
-The full protocol, tier by tier: `aspose-cli docs cells/verification`.
 
 ## Limits
 
 - No what-if data tables, no iterative calculation — the patterns in
   Sensitivity grids and No circular references are the replacements.
-- `set_validation` and `protect_sheet` constrain humans in Excel, not
-  engine writes (verified) — the model's real guards are the check rows
-  and the delivery gates.
 - Every function this document names evaluates correctly in the real
   engine; nothing in this layer had to be faked or approximated.
 - Cosmetic limits are inherited — see `aspose-cli docs cells/workbook-standards`.

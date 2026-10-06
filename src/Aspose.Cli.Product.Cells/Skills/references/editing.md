@@ -48,20 +48,9 @@ The field names of these operations are the ones most often guessed wrong:
 ] }
 ```
 
-- `rename_sheet` takes the new name in `to`; `add_sheet` names the new sheet in
-  `name`. `position` is the 0-based place in the tab order.
-- `sort_range.by` lists keys primary first; `order` is `asc` (default) or
-  `desc`.
-- Row spans are 1-based numbers and column spans letters, in `from` and an
-  optional `to`; `insert_rows` and its kin take `at` and `count`. An omitted
-  `height` or `width` auto-fits.
-- `set_sheet_view` takes at least one of `gridlines`, `zoom` and `headings`.
-
 ## Addressing
 
-- An operation's `sheet` defaults to the active sheet. Name it every time: an
-  active evaluation warning sheet gives way to the first other sheet
-  (`EVALUATION_SHEET_SKIPPED`), not to the sheet you made active.
+- An operation's `sheet` defaults to the active sheet; name it every time.
 - Range fields are unqualified A1 on the operation's sheet. Only the fields
   whose schema description says so (`copy_range.from`/`to`,
   `import_range.from`/`to`, `create_pivot.sourceRange`, the chart and
@@ -108,9 +97,8 @@ Run `--dry-run` first for a large or destructive batch (`delete_sheet`,
 
 ## Values and formulas
 
-- Numbers stay numbers: send `1200`, never `"1200"`. A string such as
-  `"2026-04-03"` stays text and ignores a date format; write dates as
-  `=DATE(2026,4,3)` (`aspose-cli docs cells/workbook-standards`).
+- Numbers stay numbers: send `1200`, never `"1200"`. Dates:
+  `aspose-cli docs cells/workbook-standards`, Number formats.
 - `set_formula` writes the formula of the range's top-left cell and fills it:
   relative references shift per cell, `$` references stay. Every cell
   evaluates like Excel 365: array arithmetic inside a function covers the
@@ -254,7 +242,8 @@ value that exceeds its own row's target in `B`. When two fill rules match one
 cell, the later rule's fill wins.
 
 Conditional formats cannot express text-contains, date-period or
-above-average rules, rule priority, stop-if-true, or custom icon thresholds.
+above-average rules, rule priority, stop-if-true, or custom icon thresholds
+or order.
 
 ## Sparklines
 
@@ -297,8 +286,7 @@ show in renders and reads; give the location column a header.
 ## Sheets and view
 
 - `set_active_sheet` saves the sheet a workbook opens on; the browser preview
-  honors it. An evaluation save activates its own "Evaluation Warning" sheet
-  instead (`EVALUATION_SHEET_ADDED`).
+  honors it.
 - `set_sheet_view` gridlines, zoom and headings affect Excel and the live
   preview, never `render` or PDF output. Draw `set_borders` when a grid must
   appear in a render.

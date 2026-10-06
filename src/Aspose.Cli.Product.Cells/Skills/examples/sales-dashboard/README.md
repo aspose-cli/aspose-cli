@@ -46,7 +46,7 @@ the ranking read largest-first top-down (`aspose-cli docs cells/design-system`, 
 aspose-cli cells query range dashboard.xlsx --sheet Dashboard --range B4:K6 --scope values --output json
 
 # 6. The eyes loop: render at 192 dpi and actually LOOK.
-aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-1.png --dpi 192 --overwrite --output json
+aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-1.png --overwrite --output json
 ```
 
 The read returns the KPI row computed by the engine: revenue `156460`,
@@ -61,7 +61,7 @@ fit width 12). Fix both, re-render, look again:
 ```powershell
 # 7. Fix what the render showed, then re-check.
 aspose-cli cells edit dashboard.xlsx --ops ops-fix.json --in-place --output json
-aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-2.png --dpi 192 --overwrite --output json
+aspose-cli cells render dashboard.xlsx --sheet Dashboard --out scratch/dash-2.png --overwrite --output json
 ```
 
 `dash-2.png` ticks every box: `156,460` fully drawn, the title whole, the

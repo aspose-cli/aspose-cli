@@ -88,15 +88,12 @@ ISO-8601 input is verified here; ambiguous forms like `03/04/2026` are not —
 
 ## Fonts and headers
 
-Pick one font family and make it the workbook default as **step 0** —
-`set_default_font` rewrites the Normal style every unstyled cell derives
-from, and column width units are measured in that font, so it comes before
-content and widths (Arial 10 → Calibri 11 is the probe-measured
-metric-neutral swap; other fonts rescale rendered widths). Then still set
-the family explicitly on the ranges you author — belt and braces for files
-that predate the default change, where cells styled under the old default
-keep their concrete font. Mixed families across the ranges you wrote read
-as carelessness. Header rows are bold, filled dark, white text, slightly
+Pick one font family and make it the workbook default with
+`set_default_font`, the first op of a new workbook (`aspose-cli docs
+cells/editing`, Batch order). Then still set the family explicitly on the
+ranges you author — belt and braces for files that predate the default
+change, where cells styled under the old default keep their concrete font.
+Mixed families across the ranges you wrote read as carelessness. Header rows are bold, filled dark, white text, slightly
 taller, and frozen so they survive scrolling:
 
 ```sh
@@ -168,10 +165,7 @@ values, or numeric bounds. It protects the person who opens the file in
 Excel: they get a dropdown of the legal values and a rejection on a typo
 instead of a downstream `#N/A` hunt.
 
-It does not protect you. Validation is a rule stored in the file, not a
-write-time check — the CLI's own writes ignore it. `--set "Sales!B2=Bogus"`
-on a list-validated cell exits 0 and stores `Bogus`, rule still intact. Your
-own writes stay yours to verify (`aspose-cli docs cells/verification`).
+It does not check the CLI's own writes (`aspose-cli docs cells/editing`).
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
@@ -202,35 +196,16 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 ```
 
 `value1`/`value2` take a literal **or** an `=`-led formula — the second form
-is how a threshold stops being a constant. Text matches written as it is
-(`"value1":"OVERDUE"`) or quoted as in Excel's dialog
-(`"value1":"\"OVERDUE\""`). The formula anchors on the range's
-top-left cell and shifts per cell exactly like `set_formula` fill semantics,
-so mixed anchors (`$B2`) express a per-row, cross-column rule: flag every
-actual above *its own row's* target, in one op.
-
-```sh
-aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
-  {"op":"add_conditional_format","sheet":"Sales","range":"A2:A4",
-   "rule":{"kind":"cellValue","operator":"greaterThan","value1":"=$B2"},
-   "style":{"color":"#9C0006","bg":"#FFC7CE"}}
-]}'
-```
-
-`A2` compares against `B2`, `A3` against `B3`, `A4` against `B4`. When the
-highlight should cover the whole ROW rather than the compared cell, use the
-`formula` rule kind over the full-width range with the tested column
-`$`-anchored (`{"kind":"formula","value1":"=$F2=\"OVERDUE\""}` over
-`A2:F100`) — the recipe is in `aspose-cli docs cells/editing`. Render and look before
-trusting the anchors: a stray `$` on the row number silently pins every
-comparison to one cell, and the rule still applies cleanly — it just
-answers a different question than you asked.
+is how a threshold stops being a constant; per-row and whole-row anchoring
+is in `aspose-cli docs cells/editing`, Conditional formatting. Text matches
+written as it is (`"value1":"OVERDUE"`) or quoted as in Excel's dialog
+(`"value1":"\"OVERDUE\""`).
 
 ## Real tables for datasets
 
 Row-oriented data becomes a native table: filter dropdowns, banded styling
 and structured references in one op. For a plain range that only needs the
-dropdowns, use `set_autofilter` — never both on the same range.
+dropdowns, use `set_autofilter`.
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
@@ -282,26 +257,11 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
 
 ## Limits
 
-What the v2 ops cannot express — say so rather than faking it:
-
-- Page `header`/`footer` set the center section only; left/right sections
-  are not expressible.
-- `set_sheet_view` gridlines are a VIEW setting: Excel and the live preview
-  honor them, PNG renders never do (draw `set_borders` when a grid must
-  appear in a render).
 - No calculation settings (iterative calculation, manual mode).
-- Conditional formats: no text-contains, date-period or above-average
-  rules, no rule priority or stop-if-true, and no custom icon thresholds or
-  reversed icon order (iconSet thresholds are automatic).
-- Charts: no fonts inside charts (title/axis/label typefaces and sizes), no
-  axis scale or bounds, and no label content beyond the value (no
-  category/percentage labels). Unknown operation or style fields are
-  rejected with `OPS_INVALID`; use the schema's field names.
-- `create_chart` plots ONE contiguous `dataRange`. A multi-area reference
-  fails `OPS_INVALID` ("a range has at most one ':' separator"), so
-  "header + two non-adjacent rows" (`A1:F1,A3:F4`) is not directly
-  chartable — mirror the rows into a contiguous helper block with formulas
-  and chart that, keeping the block live:
+- `create_chart` plots one contiguous `dataRange`, so "header + two
+  non-adjacent rows" (`A1:F1,A3:F4`) is not directly chartable — mirror the
+  rows into a contiguous helper block with formulas and chart that, keeping
+  the block live:
 
 ```sh
 aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
@@ -316,12 +276,8 @@ aspose-cli cells edit book.xlsx --in-place --ops '{"ops":[
   The helper block is visible on the sheet — park it below the data or on a
   side sheet, and never hand-copy the values, or the chart silently stops
   tracking the model.
-- `set_validation` constrains a human typing in Excel, not the CLI: an ops
-  batch or `--set` writes any value into a validated cell and exits 0.
 
 ## Verify, then deliver
 
-A standards pass is only done when verified: `render` each changed sheet
-and look at the image, `query range` back computed cells, and run
-`cells inspect --detail errors` for formula errors — the full loop is
+A standards pass is only done when verified:
 `aspose-cli docs cells/verification`.
