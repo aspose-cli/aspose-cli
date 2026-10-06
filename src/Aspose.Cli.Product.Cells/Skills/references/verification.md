@@ -129,8 +129,11 @@ aspose-cli cells compare book.backup.xlsx book.xlsx --output json
   `sizeBytes` change and a Tier 2 render, and never report "nothing changed"
   from the diff. `cells inspect --detail layout` reads back frozen panes,
   row and column groups, the AutoFilter, the print area and titles, and the
-  page setup (`workbook.layouts`, one entry per sheet, in the fields the
-  operations take).
+  page orientation, `fitToWidth` and `fitToHeight` (or `scale` when the page
+  does not fit to pages) and the center header and footer
+  (`workbook.layouts`, one entry per sheet, in the fields the operations
+  take). It does not read back `set_page_setup`'s `paperSize` or `margins`;
+  confirm those in a PDF convert.
 - Read the whole list. Any difference you did not intend, such as a shifted
   formula or a cleared cell, is a finding to fix before delivery.
 - A renamed sheet pairs with the sheet it was (they keep one internal sheet

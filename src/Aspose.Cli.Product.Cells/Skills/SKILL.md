@@ -36,7 +36,8 @@ aspose-cli cells query search book.xlsx --pattern "Total" --output json
 - `--detail` adds `names` (`workbook.definedNames`), `errors`
   (`workbook.formulaErrors`), `validation` (`workbook.validations`),
   `layout` (`workbook.layouts`: frozen panes, outline groups, AutoFilter,
-  print area and titles, page setup), `fonts`, `tables`, `charts` and `pivots`.
+  print area and titles, page setup other than paper size and margins),
+  `fonts`, `tables`, `charts` and `pivots`.
 - `--preview` shows display values for layout only. `query range` and its `t`
   field (`string`, `number`, `boolean`, `datetime`, `error`, `empty`) are the
   type authority.
