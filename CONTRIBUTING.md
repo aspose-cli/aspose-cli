@@ -74,7 +74,7 @@ one of four scopes:
 | Scope | Runs | Use |
 | --- | --- | --- |
 | `Fast` (default) | Every test without a category | While you work; a few minutes |
-| `Changed` | Only the test projects a change reaches, plus the architecture tests | Pull-request CI |
+| `Changed` | The tests without a category of only the test projects a change reaches, plus the architecture tests | Pull-request CI |
 | `Affected` | `Fast`, plus every test of the projects your change reaches since the merge base with `-Base` (default `master`) | Before a push |
 | `Full` | Every test, with a required license | Before a push, a release and after an SDK update |
 
