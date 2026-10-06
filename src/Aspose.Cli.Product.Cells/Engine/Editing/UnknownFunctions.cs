@@ -16,6 +16,10 @@ internal static partial class UnknownFunctions
     private const int ListedCells = 5;
     private const string NameCharacters = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789.";
 
+    // The most arguments the probe passes, enough for the argument count nearly every known
+    // function accepts; a known function that requires more is reported as unknown.
+    private const int MaxProbedArity = 5;
+
     /// <summary>
     /// Checks the anchor cells set_formula wrote, where later row, column and sheet operations
     /// moved them; what a later operation wrote over an anchor is checked instead.
@@ -81,7 +85,7 @@ internal static partial class UnknownFunctions
 
     private static bool IsFunction(Cell probe, string name)
     {
-        for (int arity = 0; arity <= 5; arity++)
+        for (int arity = 0; arity <= MaxProbedArity; arity++)
         {
             try
             {

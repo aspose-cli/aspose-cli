@@ -48,7 +48,7 @@ internal static class InfoProjection
             HasVba = workbook.HasMacro,
             DefinedNameCount = DefinedNames.Of(workbook).Count(),
             StructureProtected = Sheets.StructureProtected(workbook),
-            StructurePasswordProtected = Sheets.StructureProtected(workbook) && workbook.IsWorkbookProtectedWithPassword,
+            StructurePasswordProtected = Sheets.StructurePasswordProtected(workbook),
             Author = Normalize(workbook.BuiltInDocumentProperties.Author),
             Title = Normalize(workbook.BuiltInDocumentProperties.Title),
             DefinedNames = WantsDetail(request, InfoDetails.Names) ? BuildDefinedNames(workbook) : null,

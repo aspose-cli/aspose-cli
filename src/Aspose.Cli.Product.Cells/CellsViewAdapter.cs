@@ -109,21 +109,15 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             layout.Sheets.ToDictionary(static sheet => sheet.Name, StringComparer.Ordinal);
         foreach (SheetInfo sheet in info.Workbook.Sheets.Where(static sheet => sheet.Hidden))
         {
-            findings.Add(CellsReviewChecks.SheetHidden.Finding(
-                $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence.",
-                sheet.Name,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.SheetHidden, sheet.Name,
+                $"Hidden worksheet '{sheet.Name}' is excluded from visual evidence."));
         }
         foreach (SheetInfo sheet in visible.Where(sheet =>
                      sheet.UsedRange is null
                      && !layoutBySheet[sheet.Name].HasVisualObjects))
         {
-            findings.Add(CellsReviewChecks.SheetEmpty.Finding(
-                $"Visible worksheet '{sheet.Name}' is empty; its PNG is a blank placeholder.",
-                sheet.Name,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.SheetEmpty, sheet.Name,
+                $"Visible worksheet '{sheet.Name}' is empty; its PNG is a blank placeholder."));
         }
         foreach (CellsReviewSheetLayout sheet in layout.Sheets.Where(sheet =>
                      visible.Any(visibleSheet =>
@@ -133,29 +127,24 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
         }
         foreach (CellError error in info.Workbook.FormulaErrors ?? [])
         {
-            findings.Add(CellsReviewChecks.FormulaError.Finding(
+            findings.Add(SheetFinding(CellsReviewChecks.FormulaError, error.Sheet,
                 $"Formula evaluates to {error.Error}.",
-                $"{error.Sheet}!{error.Cell}",
-                Hint,
-                part: error.Sheet));
+                location: $"{error.Sheet}!{error.Cell}"));
         }
         foreach (CellsReviewSheetLayout sheet in layout.Sheets.Where(static sheet => sheet.IsEvaluationWarning))
         {
-            findings.Add(CellsReviewChecks.EvaluationSheet.Finding(
+            findings.Add(SheetFinding(CellsReviewChecks.EvaluationSheet, sheet.Name,
                 $"Worksheet '{sheet.Name}' is the evaluation warning sheet an Aspose.Cells save without a license added; the file carries evaluation marks.",
-                sheet.Name,
-                "Tell the user. A licensed re-save keeps the marks: rebuild the deliverable from the original unmarked inputs with a license.",
-                part: sheet.Name));
+                hint: "Tell the user. A licensed re-save keeps the marks: rebuild the deliverable from the original unmarked inputs with a license."));
         }
         foreach (CellsReviewSheetLayout sheet in layout.Sheets)
         {
             if (sheet.EvaluationNoticeRow is int row)
             {
-                findings.Add(CellsReviewChecks.EvaluationNotice.Finding(
+                findings.Add(SheetFinding(CellsReviewChecks.EvaluationNotice, sheet.Name,
                     $"Row {row + 1} of '{sheet.Name}' is the evaluation notice an Aspose.Cells CSV or TSV export without a license wrote after the data; it is not data.",
-                    $"{sheet.Name}!A{row + 1}",
-                    "Tell the user. Delete the row before anything reads the file as data, or export it again with a license.",
-                    part: sheet.Name));
+                    location: $"{sheet.Name}!A{row + 1}",
+                    hint: "Tell the user. Delete the row before anything reads the file as data, or export it again with a license."));
             }
         }
         if (info.Workbook.HasVba)
@@ -181,26 +170,21 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
         AddDimensionFindings(findings, sheet);
         if (sheet.ClippedCells.Count > 0)
         {
-            findings.Add(CellsReviewChecks.CellsClipped.Finding(
+            findings.Add(SheetFinding(CellsReviewChecks.CellsClipped, sheet.Name,
                 $"{sheet.ClippedCells.Count} cell value(s) are wider than their columns; sample: {string.Join(", ", sheet.ClippedCells.Samples)}. "
                     + "Widen the columns (resize_columns without a width auto-fits) or wrap the text."
                     + (sheet.ClippedCells.SamplesHaveEastAsianText
                         ? " East Asian text in a font without East Asian glyphs is measured unreliably, so check those values in the sheet image; if one is cut off after auto-fit, give its column an explicit width."
-                        : string.Empty),
-                sheet.Name,
-                Hint,
-                part: sheet.Name));
+                        : string.Empty)));
         }
         if (sheet.OverflowingCells.Count > 0)
         {
             // Page layout can cut such text at a column edge (known issue CELLS-OVERFLOW-EDGE,
             // KNOWN-ISSUES.md), which no public API measures, so the finding asks for a look.
-            findings.Add(CellsReviewChecks.TextOverflows.Finding(
+            findings.Add(SheetFinding(CellsReviewChecks.TextOverflows, sheet.Name,
                 $"{sheet.OverflowingCells.Count} text value(s) spill over empty cells to their right and end close to a column edge; sample: {string.Join(", ", sheet.OverflowingCells.Samples)}. "
                     + "A sheet image or PDF page can cut the last character of such text there; check the end of each in the image.",
-                sheet.Name,
-                "If a character is cut, widen the column the text starts in by one or two characters, or wrap the text.",
-                part: sheet.Name));
+                hint: "If a character is cut, widen the column the text starts in by one or two characters, or wrap the text."));
         }
         AddPrintAreaFindings(findings, sheet);
         AddChartFindings(findings, sheet);
@@ -214,11 +198,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
             && checked(sheet.PopulatedCells * 100) < sheet.UsedAreaCells)
         {
             double density = sheet.PopulatedCells * 100d / sheet.UsedAreaCells;
-            findings.Add(CellsReviewChecks.UsedRangeSparse.Finding(
-                $"Only {density:0.##}% of the {sheet.UsedAreaCells} cells in the used area contain data; inspect for stray far-away content or excessive whitespace.",
-                sheet.Name,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.UsedRangeSparse, sheet.Name,
+                $"Only {density:0.##}% of the {sheet.UsedAreaCells} cells in the used area contain data; inspect for stray far-away content or excessive whitespace."));
         }
     }
 
@@ -245,11 +226,8 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
         {
             if (set.Count > 0)
             {
-                findings.Add(check.Finding(
-                    $"{set.Count} {description}; sample: {string.Join(", ", set.Samples.Select(name))}.",
-                    sheet.Name,
-                    Hint,
-                    part: sheet.Name));
+                findings.Add(SheetFinding(check, sheet.Name,
+                    $"{set.Count} {description}; sample: {string.Join(", ", set.Samples.Select(name))}."));
             }
         }
     }
@@ -263,27 +241,18 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
     {
         if (sheet.PrintAreaInvalid)
         {
-            findings.Add(CellsReviewChecks.PrintAreaInvalid.Finding(
-                $"The saved print area '{sheet.PrintArea}' could not be interpreted as bounded A1 ranges.",
-                sheet.Name,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.PrintAreaInvalid, sheet.Name,
+                $"The saved print area '{sheet.PrintArea}' could not be interpreted as bounded A1 ranges."));
         }
         else if (sheet.PrintAreaExcludesContent)
         {
-            findings.Add(CellsReviewChecks.PrintAreaExcludesContent.Finding(
-                $"The print area '{sheet.PrintArea}' does not contain all populated cells ({sheet.ContentRange}).",
-                sheet.Name,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.PrintAreaExcludesContent, sheet.Name,
+                $"The print area '{sheet.PrintArea}' does not contain all populated cells ({sheet.ContentRange})."));
         }
         if (sheet.PrintAreaExcessive)
         {
-            findings.Add(CellsReviewChecks.PrintAreaExcessive.Finding(
-                $"The print area '{sheet.PrintArea}' is more than 20 times the populated content bounds ({sheet.ContentRange}).",
-                sheet.Name,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.PrintAreaExcessive, sheet.Name,
+                $"The print area '{sheet.PrintArea}' is more than 20 times the populated content bounds ({sheet.ContentRange})."));
         }
     }
 
@@ -305,53 +274,40 @@ internal sealed class CellsViewAdapter : IProductViewAdapter<ICellsEngine>
         string location = $"{sheet.Name} chart '{chart.Name}'";
         if (chart.Hidden)
         {
-            findings.Add(CellsReviewChecks.ChartHidden.Finding(
-                "The chart object is hidden and will not provide visible evidence.",
-                location,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.ChartHidden, sheet.Name,
+                "The chart object is hidden and will not provide visible evidence.", location));
         }
         if (chart.WidthPixels < 120 || chart.HeightPixels < 80)
         {
-            findings.Add(CellsReviewChecks.ChartTooSmall.Finding(
-                $"The chart is only {chart.WidthPixels} x {chart.HeightPixels} pixels and may be unreadable.",
-                location,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.ChartTooSmall, sheet.Name,
+                $"The chart is only {chart.WidthPixels} x {chart.HeightPixels} pixels and may be unreadable.", location));
         }
         if (chart.SeriesCount == 0)
         {
-            findings.Add(CellsReviewChecks.ChartWithoutSeries.Finding(
-                "The chart has no data series.",
-                location,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.ChartWithoutSeries, sheet.Name,
+                "The chart has no data series.", location));
         }
         if (chart.AnchoredInHiddenCells)
         {
-            findings.Add(CellsReviewChecks.ChartAnchoredInHiddenCells.Finding(
-                "A chart anchor touches hidden rows or columns; inspect whether the object remains visible after reopening.",
-                location,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.ChartAnchoredInHiddenCells, sheet.Name,
+                "A chart anchor touches hidden rows or columns; inspect whether the object remains visible after reopening.", location));
         }
         if (chart.ExcludedByPrintArea)
         {
-            findings.Add(CellsReviewChecks.PrintAreaExcludesChart.Finding(
-                $"The print area '{sheet.PrintArea}' does not intersect this chart.",
-                location,
-                Hint,
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.PrintAreaExcludesChart, sheet.Name,
+                $"The print area '{sheet.PrintArea}' does not intersect this chart.", location));
         }
         if (chart.PrintedPages > 1 && !chart.Hidden)
         {
-            findings.Add(CellsReviewChecks.ChartSplitAcrossPages.Finding(
-                $"The chart reaches {chart.PrintedPages} printed pages, so printing and PDF export split it.",
-                location,
-                "Fit the sheet on fewer pages with set_page_setup (fitToWidth 1 and fitToHeight 0, or orientation landscape), or move or resize the chart, then review again.",
-                part: sheet.Name));
+            findings.Add(SheetFinding(CellsReviewChecks.ChartSplitAcrossPages, sheet.Name,
+                $"The chart reaches {chart.PrintedPages} printed pages, so printing and PDF export split it.", location,
+                $"Fit the sheet on fewer pages with set_page_setup {CellsDiagnostics.ChartSplitRemedy}, then review again."));
         }
     }
+
+    /// <summary>A finding on one worksheet, shown with that sheet's image; it is located at the sheet unless <paramref name="location"/> says otherwise.</summary>
+    private static ReviewFinding SheetFinding(ReviewCheck check, string sheet, string message, string? location = null, string hint = Hint) =>
+        check.Finding(message, location ?? sheet, hint, part: sheet);
 
     private static ReviewCoverageMetric Metric(string name, long value, string unit) => new()
     {

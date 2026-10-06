@@ -41,6 +41,12 @@ internal static class CellsDiagnostics
     /// <summary>A PDF export splits a chart across pages.</summary>
     internal const string ChartSplitAcrossPages = "CHART_SPLIT_ACROSS_PAGES";
 
+    /// <summary>
+    /// How to keep a chart on one page, shared by the conversion warning and the review finding,
+    /// after "Fit the sheet on fewer pages with" and the operation.
+    /// </summary>
+    internal const string ChartSplitRemedy = "(fitToWidth 1 and fitToHeight 0, or orientation landscape), or move or resize the chart";
+
     /// <summary>An import copied formulas that read a link without cached values, and their results changed.</summary>
     internal const string ExternalLinkCacheMissing = "EXTERNAL_LINK_CACHE_MISSING";
 

@@ -14,6 +14,9 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// </summary>
 internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
 {
+    // Excel's limit on the length of a sheet name.
+    private const int MaxSheetNameLength = 31;
+
     private static readonly HashSet<FileFormatType> OpenableFormats =
     [
         FileFormatType.Xlsx,
@@ -93,7 +96,7 @@ internal sealed class CellsWorkbookLoader(ResourceBudgetLedger resourceBudgets)
             workbook.FileName = path;
             if (plan.Separator is not null && Path.GetFileNameWithoutExtension(path) is { Length: > 0 } stem)
             {
-                workbook.Worksheets[0].Name = stem.Replace('[', '(').Replace(']', ')')[..Math.Min(stem.Length, 31)];
+                workbook.Worksheets[0].Name = stem.Replace('[', '(').Replace(']', ')')[..Math.Min(stem.Length, MaxSheetNameLength)];
             }
             resources.MaterializeLinkedPictures(workbook);
             resources.ThrowIfFailed();

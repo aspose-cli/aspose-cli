@@ -48,7 +48,7 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
             } : null);
         return new WorkbookStagedSave(candidate, plan.FormatId, truncated,
             BuildBrokenFormulaWarning(refsBefore, CountRefFormulas(workbook), plan.FormatId), sheetsDropped)
-        { EvaluationSheetAdded = evaluationSheetAdded, Encrypted = plan.OutputPassword is not null };
+        { EvaluationSheetAdded = evaluationSheetAdded, Encrypted = plan.Encrypts };
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ internal sealed class CellsSavePipeline(SafeFileWriter writer, CellsWorkbookLoad
     /// </summary>
     internal Warning? Produce(Workbook workbook, WorkbookSavePlan plan, string path)
     {
-        if (plan.FormatId is "csv" or "tsv" or "md")
+        if (plan.WritesActiveSheetOnly)
         { NormalizeDatesForTextExport(plan.TextSheet(workbook)); }
         int sheetsBefore = workbook.Worksheets.Count;
         string activeBefore = workbook.Worksheets[workbook.Worksheets.ActiveSheetIndex].Name;

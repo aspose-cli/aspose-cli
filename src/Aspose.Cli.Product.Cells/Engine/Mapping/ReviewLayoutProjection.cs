@@ -179,7 +179,7 @@ internal static class ReviewLayoutProjection
     {
         int end = cell.GetWidthOfValue();
         int edge = 0;
-        for (int column = cell.Column; column < 16384; column++)
+        for (int column = cell.Column; column < A1.MaxColumns; column++)
         {
             edge += cells.GetColumnWidthPixel(column);
             if (Math.Abs(end - edge) <= Math.Max(3, edge * 0.06))

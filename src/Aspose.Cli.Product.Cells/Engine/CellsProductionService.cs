@@ -77,7 +77,7 @@ internal sealed class CellsProductionService
             Worksheet sheet = Sheets.Resolve(workbook, request.SheetName);
             resolvedSheetName = sheet.Name;
 
-            if (request.TargetFormatId is "csv" or "tsv" or "md")
+            if (WorkbookSavePlan.WritesActiveSheetOnlyFor(request.TargetFormatId))
             {
                 // Text formats export the active sheet.
                 workbook.Worksheets.ActiveSheetIndex = sheet.Index;
@@ -96,7 +96,7 @@ internal sealed class CellsProductionService
             }
         }
 
-        if (request.TargetFormatId is "csv" or "tsv" or "md"
+        if (WorkbookSavePlan.WritesActiveSheetOnlyFor(request.TargetFormatId)
             && licenseState == LicenseState.Evaluation && request.SheetName is not null)
         {
             // The evaluation SDK writes the first sheet regardless of ActiveSheetIndex.
@@ -130,14 +130,14 @@ internal sealed class CellsProductionService
                 Path = request.OutputPath,
                 Format = request.TargetFormatId,
                 SizeBytes = sizeBytes,
-                Encrypted = savePlan.OutputPassword is not null,
+                Encrypted = savePlan.Encrypts,
             },
             Sheet = resolvedSheetName,
             License = EnvelopeParts.License(licenseState),
             // Only a text export without --sheet writes one sheet chosen by default; the other
             // formats write every sheet.
             Warnings = CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, loaded.CalculatedOnOpen,
-                loaded.SkippedSheetWarning(request.SheetName is null && request.TargetFormatId is "csv" or "tsv" or "md"), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, chartsSplit,
+                loaded.SkippedSheetWarning(request.SheetName is null && savePlan.WritesActiveSheetOnly), sheetsDropped, dataTruncated, formulasBroken, savePlan.EncryptionWarning, evaluationSheetAdded, chartsSplit,
                 CellsEvaluation.DescribeAddedNotice(licenseState, request.TargetFormatId), exportedWarningSheets, .. textLayout]),
         };
     }

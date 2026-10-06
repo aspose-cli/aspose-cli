@@ -94,13 +94,14 @@ internal sealed class CellsMutationService
                 options.BackupPath, precondition, verifyReopen: true);
         }
 
-        IReadOnlyList<Warning>? warnings = options.Options.DryRun
-            ? EnvelopeParts.CombineWarnings(loaded.Warnings(skippedSheet, unenforced, relativeLinks, unknownFunctions), importSources.Warnings())
+        Warning?[] editWarnings = [skippedSheet, unenforced, relativeLinks, unknownFunctions];
+        IReadOnlyList<Warning>? warnings = saved is null
+            ? EnvelopeParts.CombineWarnings(loaded.Warnings(editWarnings), importSources.Warnings())
             : EnvelopeParts.CombineWarnings(
-                CombineWarnings(licenseState, loaded.Resources.CoverageWarning, skippedSheet, unenforced, relativeLinks, unknownFunctions, saved?.Truncated, saved?.FormulasBroken, saved?.SheetsDropped, savePlan.EncryptionWarning, saved?.EvaluationSheetAdded,
-                    CellsEvaluation.DescribeAddedNotice(licenseState, format)),
+                CombineWarnings(licenseState, [loaded.Resources.CoverageWarning, .. editWarnings, saved.Truncated, saved.FormulasBroken, saved.SheetsDropped, savePlan.EncryptionWarning, saved.EvaluationSheetAdded,
+                    CellsEvaluation.DescribeAddedNotice(licenseState, format)]),
                 importSources.Warnings(),
-                EnvelopeParts.BackupWarnings(saved?.Backup));
+                EnvelopeParts.BackupWarnings(saved.Backup));
         if (transaction is not null)
         {
             if (options.Verify)

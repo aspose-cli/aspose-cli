@@ -53,7 +53,7 @@ internal static class ProtectOps
     public static long? ProtectWorkbook(Workbook workbook, ProtectWorkbookOp op, IReadOnlyDictionary<string, string>? secrets)
     {
         OperationInvalidException.Require(
-            !(Sheets.StructureProtected(workbook) && workbook.IsWorkbookProtectedWithPassword),
+            !Sheets.StructurePasswordProtected(workbook),
             "the workbook structure is already protected with a password",
             "Run unprotect_workbook with that password's passwordEnv first, then protect_workbook.");
         workbook.Protect(ProtectionType.Structure, OperationSecrets.Resolve(secrets, op.PasswordEnv));

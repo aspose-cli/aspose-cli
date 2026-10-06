@@ -71,7 +71,7 @@ internal static class PrintedPages
         {
             Code = CellsDiagnostics.ChartSplitAcrossPages,
             Message = $"The PDF splits {(split.Count == 1 ? "chart" : "charts")} {string.Join(", ", split)} across pages.",
-            Hint = "Fit the sheet on fewer pages with the set_page_setup operation of 'cells edit' (fitToWidth 1 and fitToHeight 0, or orientation landscape), or move or resize the chart, then convert again.",
+            Hint = $"Fit the sheet on fewer pages with the set_page_setup operation of 'cells edit' {CellsDiagnostics.ChartSplitRemedy}, then convert again.",
             Location = sheets.Count == 1 ? Sheets.QuotedName(sheets.Single()) : null,
         };
     }

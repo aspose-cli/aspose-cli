@@ -78,6 +78,10 @@ internal static class Sheets
     public static bool StructureProtected(Workbook workbook) =>
         workbook.Settings.ProtectionType is ProtectionType.Structure or ProtectionType.All;
 
+    /// <summary>Whether the workbook structure is protected with a password.</summary>
+    public static bool StructurePasswordProtected(Workbook workbook) =>
+        StructureProtected(workbook) && workbook.IsWorkbookProtectedWithPassword;
+
     /// <summary>The sheet's name quoted for a reference, embedded apostrophes doubled.</summary>
     public static string QuotedName(Worksheet sheet) => QuotedName(sheet.Name);
 
