@@ -21,9 +21,7 @@ public sealed class CorruptInputDetectionTests
     public void ProductCommand_OnAWordDocumentNamedPdf_NamesWordsAndItsCommand(bool supervised)
     {
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-        workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json").Succeeded();
-        File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
+        WriteWordDocumentNamedPdf(workspace);
         string[] args = ["pdf", "inspect", "renamed.pdf", "--output", "json"];
         if (supervised) { args = ["--timeout", "60", .. args]; }
 
@@ -49,14 +47,11 @@ public sealed class CorruptInputDetectionTests
     public void MultiInputCommand_UsesTheFileTheProductNames()
     {
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-        workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json").Succeeded();
-        File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
+        WriteWordDocumentNamedPdf(workspace);
         File.WriteAllText(workspace.File("other.pdf"), "%PDF-1.7\n");
         ParsedInvocation invocation = ActualCommandTree.Parser.Parse(
             ["pdf", "merge", "other.pdf", "renamed.pdf", "--out", "merged.pdf"]);
-        var globals = new GlobalValues(OutputMode.Json, Quiet: true, Verbose: false, LicensePath: null,
-            workspace.Path, TimeoutSeconds: null, MaxInputBytes: 1024 * 1024);
+        GlobalValues globals = Globals(workspace);
         var unnamed = new CliException(ErrorCodes.FileCorrupt, "The file is corrupt.");
         var named = new CliException(
             ErrorCodes.FileCorrupt, "The file is corrupt.",
@@ -77,13 +72,10 @@ public sealed class CorruptInputDetectionTests
     public void RelativeReportedPath_IsResolvedAgainstTheWorkDirNotTheProcessDirectory()
     {
         using var workspace = new TempWorkspace();
-        File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
-        workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json").Succeeded();
-        File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
+        WriteWordDocumentNamedPdf(workspace);
         Assert.False(File.Exists(Path.Combine(Directory.GetCurrentDirectory(), "renamed.pdf")));
         ParsedInvocation invocation = ActualCommandTree.Parser.Parse(["pdf", "inspect", "renamed.pdf"]);
-        var globals = new GlobalValues(OutputMode.Json, Quiet: true, Verbose: false, LicensePath: null,
-            workspace.Path, TimeoutSeconds: null, MaxInputBytes: 1024 * 1024);
+        GlobalValues globals = Globals(workspace);
         var corrupt = new CliException(
             ErrorCodes.FileCorrupt, "The file is corrupt.", details: new JsonObject { ["path"] = "renamed.pdf" });
 
@@ -123,4 +115,16 @@ public sealed class CorruptInputDetectionTests
         Assert.Equal("FILE_CORRUPT", error["code"]!.GetValue<string>());
         Assert.Null(error["details"]?["detected"]);
     }
+
+    // A Word document named renamed.pdf in the workspace.
+    private static void WriteWordDocumentNamedPdf(TempWorkspace workspace)
+    {
+        File.WriteAllText(workspace.File("doc.md"), "# Title\n\nFirst paragraph.\n");
+        workspace.Run("words", "create", "doc.docx", "--markdown", "doc.md", "--output", "json").Succeeded();
+        File.Move(workspace.File("doc.docx"), workspace.File("renamed.pdf"));
+    }
+
+    private static GlobalValues Globals(TempWorkspace workspace) =>
+        new(OutputMode.Json, Quiet: true, Verbose: false, LicensePath: null,
+            workspace.Path, TimeoutSeconds: null, MaxInputBytes: 1024 * 1024);
 }

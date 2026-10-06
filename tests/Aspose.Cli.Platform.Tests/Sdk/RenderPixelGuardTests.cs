@@ -99,16 +99,19 @@ public sealed class RenderPixelGuardTests
         Assert.Equal(Path.Combine(Path.GetTempPath(), expected), PartOutputPath.For(output, marker, 3, parts: 3, "png"));
     }
 
-    [Fact]
-    public void PartOutputPath_RefusesAnOutputWithoutAnExtension()
+    // The hint suggests a folder of numbered files for several parts, one named file for one.
+    [Theory]
+    [InlineData("png", 2, "jpeg", @"png\page.jpeg")]
+    [InlineData("pages", 1, "png", "pages.png")]
+    public void PartOutputPath_RefusesAnOutputWithoutAnExtension(string name, int parts, string format, string suggested)
     {
-        string output = Path.Combine(Path.GetTempPath(), "png");
+        string output = Path.Combine(Path.GetTempPath(), name);
 
-        CliException error = Assert.Throws<CliException>(() => PartOutputPath.For(output, "s", 1, parts: 2, "jpeg"));
+        CliException error = Assert.Throws<CliException>(() => PartOutputPath.For(output, "p", 1, parts, format));
 
         Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
         Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
-        Assert.Contains(Path.Combine(output, "page.jpeg"), error.Hint);
+        Assert.Contains(Path.Combine(Path.GetTempPath(), suggested), error.Hint);
     }
 
     [Fact]
@@ -118,18 +121,6 @@ public sealed class RenderPixelGuardTests
 
         Assert.Equal(output, PartOutputPath.For(output, "p", 3, parts: 1, "png"));
         Assert.Equal(Path.Combine(Path.GetTempPath(), "report.p3.png"), PartOutputPath.For(output, "p", 3, parts: 2, "png"));
-    }
-
-    [Fact]
-    public void PartOutputPath_RefusesASinglePartOutputWithoutAnExtension()
-    {
-        string output = Path.Combine(Path.GetTempPath(), "pages");
-
-        CliException error = Assert.Throws<CliException>(() => PartOutputPath.For(output, "p", 1, parts: 1, "png"));
-
-        Assert.Equal(ErrorCodes.OptionInvalid, error.Code);
-        Assert.Equal("--out", error.Details!["option"]!.GetValue<string>());
-        Assert.Contains(output + ".png", error.Hint);
     }
 
     private static (DpiOption Dpi, ParseResult Parse) ParseDpi(params string[] arguments)

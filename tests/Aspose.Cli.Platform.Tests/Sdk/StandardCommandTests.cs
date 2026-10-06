@@ -17,6 +17,12 @@ public sealed class StandardCommandTests : IDisposable
     private static readonly InputDocument Report = new("Report to open.", "the report");
     private static readonly EncryptedOutput Encrypted = new("the output report", ["secure"]);
 
+    private static CommandTraits Paired => new()
+    {
+        Input = new InputDocument("Baseline.", "the baseline", "left"),
+        Other = new InputDocument("Candidate.", "the candidate", "right"),
+    };
+
     private readonly TempDirectory _temp = new();
     private readonly TestHost _host;
 
@@ -59,11 +65,7 @@ public sealed class StandardCommandTests : IDisposable
     {
         (string? Left, string? Right) passwords = default;
         Command command = Create(
-            new CommandTraits
-            {
-                Input = new InputDocument("Baseline.", "the baseline", "left"),
-                Other = new InputDocument("Candidate.", "the candidate", "right"),
-            },
+            Paired,
             (_, standard) =>
             {
                 passwords = (standard.InputPassword, standard.OtherPassword);
@@ -88,18 +90,10 @@ public sealed class StandardCommandTests : IDisposable
     public void APasswordErrorOfOneOfTwoDocuments_NamesThatDocumentsOption()
     {
         Command command = Create(
-            new CommandTraits
-            {
-                Input = new InputDocument("Baseline.", "the baseline", "left"),
-                Other = new InputDocument("Candidate.", "the candidate", "right"),
-            },
+            Paired,
             (_, standard) => throw CliErrors.PasswordRequired(standard.Other));
         Command invalidLeft = Create(
-            new CommandTraits
-            {
-                Input = new InputDocument("Baseline.", "the baseline", "left"),
-                Other = new InputDocument("Candidate.", "the candidate", "right"),
-            },
+            Paired,
             (_, standard) => throw CliErrors.PasswordInvalid(standard.Input));
 
         CliException right = RunFailing(command, "report.test", "other.test");
@@ -118,11 +112,7 @@ public sealed class StandardCommandTests : IDisposable
     public void APasswordErrorOfAThirdDocument_PointsToThePerInputOptions()
     {
         Command command = Create(
-            new CommandTraits
-            {
-                Input = new InputDocument("Baseline.", "the baseline", "left"),
-                Other = new InputDocument("Candidate.", "the candidate", "right"),
-            },
+            Paired,
             (_, _) => throw CliErrors.PasswordRequired(_temp.File("third.test")));
 
         CliException error = RunFailing(command, "report.test", "other.test");
