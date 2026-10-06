@@ -178,6 +178,58 @@ public sealed class PdfEngineTests
         Assert.False(File.Exists(fixture.File("mixed.pdf")));
     }
 
+    /// <summary>
+    /// An image that fills its margin box in one dimension, such as a scan with the exact
+    /// proportions of its page, stays on its one page, centred in the margin box; the CLI's
+    /// --timeout stops the command if the layout keeps moving the image to a new page. Without
+    /// margins the room for the image equals the image.
+    /// </summary>
+    [Theory]
+    [InlineData(210, 297, "A4", "36")]
+    [InlineData(297, 210, "A4", "36")]
+    [InlineData(216, 279, "Letter", "36")]
+    [InlineData(100, 300, "A4", "36")]
+    [InlineData(210, 297, "A4", "0")]
+    [InlineData(297, 210, "A4", "0")]
+    [InlineData(216, 279, "Letter", "0")]
+    [InlineData(279, 216, "Letter", "0")]
+    [InlineData(210, 297, "A4", "10,50,90,20")]
+    [InlineData(300, 100, "A4", "10,50,90,20")]
+    [InlineData(100, 300, "Letter", "10,50,90,20")]
+    public void Create_FromImages_KeepsAnImageThatFillsItsMarginBoxOnOnePage(int width, int height, string pageSize, string margins)
+    {
+        using var fixture = new PdfEngineFixture();
+        using var workspace = new TempWorkspace();
+        string image = fixture.File("scan.bmp");
+        File.WriteAllBytes(image, Bitmap(width, height));
+        string output = fixture.File("scan.pdf");
+
+        CliResult created = workspace.Run(
+            ["pdf", "create", output, "--from-images", image, "--page-size", pageSize, "--margins", margins,
+                "--timeout", "30", "--output", "json"]);
+
+        Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
+        double[] sides = margins.Split(',').Select(static side => double.Parse(side, System.Globalization.CultureInfo.InvariantCulture)).ToArray();
+        (double top, double right, double bottom, double left) = sides.Length == 1
+            ? (sides[0], sides[0], sides[0], sides[0])
+            : (sides[0], sides[1], sides[2], sides[3]);
+        using var document = new Document(output);
+        Page page = Assert.Single(document.Pages);
+        var absorber = new ImagePlacementAbsorber();
+        page.Accept(absorber);
+        Rectangle placed = Assert.Single(absorber.ImagePlacements).Rectangle;
+        double boxWidth = page.Rect.Width - left - right;
+        double boxHeight = page.Rect.Height - top - bottom;
+        Assert.Equal((double)width / height, placed.Width / placed.Height, 2);
+        Assert.True(
+            Math.Abs(placed.Width - boxWidth) < 0.5 || Math.Abs(placed.Height - boxHeight) < 0.5,
+            $"{placed.Width}x{placed.Height} does not fill the {boxWidth}x{boxHeight} margin box in either dimension.");
+        Assert.True(placed.Width < boxWidth + 0.5 && placed.Height < boxHeight + 0.5,
+            $"{placed.Width}x{placed.Height} exceeds the {boxWidth}x{boxHeight} margin box.");
+        Assert.Equal(left + boxWidth / 2, (placed.LLX + placed.URX) / 2, 0);
+        Assert.Equal(bottom + boxHeight / 2, (placed.LLY + placed.URY) / 2, 0);
+    }
+
     [Theory]
     [InlineData("""<svg xmlns="http://www.w3.org/2000/svg" width="300" height="100"><rect width="300" height="100" fill="#246"/></svg>""", 3d)]
     [InlineData("""<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 300"><rect width="100" height="300" fill="#246"/></svg>""", 1d / 3)]

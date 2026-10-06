@@ -369,19 +369,23 @@ internal sealed class PdfProductionService
                 double boxWidth = width - margins.Left - margins.Right;
                 double boxHeight = height - margins.Top - margins.Bottom;
                 double scale = Math.Min(boxWidth / imageWidth, boxHeight / imageHeight);
-                double horizontal = (boxWidth - imageWidth * scale) / 2;
-                double vertical = (boxHeight - imageHeight * scale) / 2;
-                var placed = new PdfMargins(
-                    margins.Top + vertical, margins.Right + horizontal, margins.Bottom + vertical, margins.Left + horizontal);
+                double left = margins.Left + Math.Max(0, boxWidth - imageWidth * scale) / 2;
+                double top = margins.Top + Math.Max(0, boxHeight - imageHeight * scale) / 2;
 
+                // The layout places the image at the top-left margins and moves an image taller
+                // than the room below them to the next page, again on every page: an image that
+                // fills the margin box but comes out a rounding error taller than the room the
+                // engine computes would never stop adding pages. So the right and bottom margins
+                // are left to the image's own size, and the image is never larger than the room
+                // from its corner to the page edges.
                 Page page = document.Pages.Add();
                 page.SetPageSize(width, height);
-                page.PageInfo.Margin = Margin(placed);
+                page.PageInfo.Margin = new MarginInfo { Top = top, Left = left, Right = 0, Bottom = 0 };
                 page.Paragraphs.Add(new Aspose.Pdf.Image
                 {
                     File = fullPath,
-                    FixWidth = Math.Max(1, width - placed.Left - placed.Right),
-                    FixHeight = Math.Max(1, height - placed.Top - placed.Bottom),
+                    FixWidth = Math.Min(Math.Max(1, imageWidth * scale), width - left),
+                    FixHeight = Math.Min(Math.Max(1, imageHeight * scale), height - top),
                 });
             }
 
