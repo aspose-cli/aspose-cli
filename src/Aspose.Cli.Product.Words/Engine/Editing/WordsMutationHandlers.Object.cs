@@ -718,8 +718,17 @@ internal sealed partial class WordsMutationHandlers
         IReadOnlyList<IReadOnlyDictionary<string, object?>> rows) =>
         [.. rows.Select(static row => (IReadOnlyDictionary<string, string?>)row.ToDictionary(
             static pair => pair.Key,
-            static pair => pair.Value is JsonElement element ? MergeValue(element) : (string?)pair.Value,
+            static pair => MergeValue(pair.Value),
             StringComparer.Ordinal))];
+
+    // A CLR scalar from a C# caller merges as its JSON text would.
+    private static string? MergeValue(object? value) => value switch
+    {
+        JsonElement element => MergeValue(element),
+        bool flag => flag ? "true" : "false",
+        IFormattable number => number.ToString(null, CultureInfo.InvariantCulture),
+        _ => (string?)value,
+    };
 
     // A string merges as itself and a number or Boolean as its JSON text; null is no value.
     private static string? MergeValue(JsonElement value) => value.ValueKind switch

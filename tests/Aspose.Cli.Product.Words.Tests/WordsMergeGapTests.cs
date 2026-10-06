@@ -67,6 +67,24 @@ public sealed class WordsMergeGapTests
         Assert.Equal(inline, Merge($"\"path\":{JsonSerializer.Serialize(path)}", "file.docx"));
     }
 
+    [Fact]
+    public void MailMerge_TakesClrNumbersAndBooleansInlineAsTheirJsonText()
+    {
+        using var fixture = new WordsFixture();
+        string input = Template(fixture, "Name", "Salary", "Active");
+        string output = fixture.Temp.File("clr.docx");
+
+        fixture.Engine.ApplyOps(
+            input,
+            new WordsOpsBatch
+            {
+                Ops = [new MailMergeOp { Inline = [new Dictionary<string, object?> { ["Name"] = "Ava", ["Salary"] = 28000.5, ["Active"] = true }] }],
+            },
+            new WordsEditRequest { OutputPath = output });
+
+        Assert.Contains("Ava 28000.5 true", new Document(output).Sections[0].Body.GetText(), StringComparison.Ordinal);
+    }
+
     [Theory]
     [InlineData(null, "Photo: record 1.")]
     [InlineData("Ref:No", "Ref:No: record 1.")]
