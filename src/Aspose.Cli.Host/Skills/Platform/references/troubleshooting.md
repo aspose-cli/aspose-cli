@@ -131,8 +131,8 @@ aspose-cli capabilities --output json
 - `FORMAT_UNSUPPORTED`: `capabilities` lists the formats each product loads,
   converts and renders. When an `edit` or `create` output names a format that
   command does not write, such as `--out report.pdf`, `details.option` names
-  the option and the hint the product command that writes the format: write
-  the command's own format first, then run that `convert` or `render`.
+  the option, and the hint names the product command that writes the format:
+  write the command's own format first, then run that `convert` or `render`.
 - `FORMAT_MISMATCH`: the extension disagrees with the content, such as a Word
   document renamed to `.pdf`; check the real file type. `details.path` names the
   file and `details.detected` the product the content looks like, whose command
