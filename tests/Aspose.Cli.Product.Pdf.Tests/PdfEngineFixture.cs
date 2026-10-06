@@ -105,25 +105,49 @@ public sealed class PdfEngineFixture : IDisposable
         }
 
         objects[1] = $"<< /Type /Pages /Count {pages} /Kids [{string.Join(" ", kids.Select(static value => $"{value} 0 R"))}] >>";
-        using var output = new MemoryStream();
-        Write(output, "%PDF-1.7\n");
-        var offsets = new List<long> { 0 };
+        WriteRawPdf(path, objects);
+        return path;
+    }
+
+    /// <summary>Writes numbered objects, the first being the catalog, as a PDF with a cross-reference table.</summary>
+    public static void WriteRawPdf(string path, IReadOnlyList<string> objects)
+    {
+        var pdf = new StringBuilder("%PDF-1.7\n");
+        var offsets = new List<int>();
         for (int index = 0; index < objects.Count; index++)
         {
-            offsets.Add(output.Position);
-            Write(output, $"{index + 1} 0 obj\n{objects[index]}\nendobj\n");
+            offsets.Add(pdf.Length);
+            pdf.Append($"{index + 1} 0 obj\n{objects[index]}\nendobj\n");
         }
 
-        long xref = output.Position;
-        Write(output, $"xref\n0 {objects.Count + 1}\n0000000000 65535 f \n");
-        foreach (long offset in offsets.Skip(1))
+        int xref = pdf.Length;
+        pdf.Append($"xref\n0 {objects.Count + 1}\n0000000000 65535 f \n");
+        foreach (int offset in offsets)
         {
-            Write(output, $"{offset:0000000000} 00000 n \n");
+            pdf.Append($"{offset:0000000000} 00000 n \n");
         }
 
-        Write(output, $"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
-        System.IO.File.WriteAllBytes(path, output.ToArray());
-        return path;
+        pdf.Append($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
+        System.IO.File.WriteAllBytes(path, Encoding.ASCII.GetBytes(pdf.ToString()));
+    }
+
+    /// <summary>
+    /// The darkest red level in <paramref name="bitmap"/>, a render of <paramref name="page"/> at
+    /// <paramref name="scale"/> pixels per point, of the band where the underscores of the text
+    /// in <paramref name="box"/> are drawn.
+    /// </summary>
+    public static int DarkestUnderscorePixel(SkiaSharp.SKBitmap bitmap, Page page, Rectangle box, double scale)
+    {
+        int darkest = 255;
+        for (int x = (int)((box.LLX + 1) * scale); x < (int)((box.URX - 1) * scale); x++)
+        {
+            for (int y = (int)((page.Rect.Height - box.URY) * scale); y < Math.Min(bitmap.Height, (int)((page.Rect.Height - box.LLY + 3) * scale)); y++)
+            {
+                darkest = Math.Min(darkest, bitmap.GetPixel(x, y).Red);
+            }
+        }
+
+        return darkest;
     }
 
     public string CreateCertificate(string password, string fileName = "signing.pfx")
@@ -144,12 +168,6 @@ public sealed class PdfEngineFixture : IDisposable
             path,
             certificate.Export(X509ContentType.Pfx, password));
         return path;
-    }
-
-    private static void Write(Stream stream, string text)
-    {
-        byte[] bytes = Encoding.ASCII.GetBytes(text);
-        stream.Write(bytes);
     }
 
     public void Dispose() => Temp.Dispose();

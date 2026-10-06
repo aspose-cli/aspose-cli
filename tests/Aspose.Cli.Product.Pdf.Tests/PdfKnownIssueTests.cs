@@ -414,16 +414,7 @@ public sealed class PdfKnownIssueTests
                 new Aspose.Pdf.Devices.PngDevice(new Aspose.Pdf.Devices.Resolution(dpi)).Process(page, png);
                 png.Position = 0;
                 using SkiaSharp.SKBitmap bitmap = SkiaSharp.SKBitmap.Decode(png);
-                double scale = dpi / 72d;
-                bool drawn = false;
-                for (int x = (int)((box.LLX + 1) * scale); x < (int)((box.URX - 1) * scale) && !drawn; x++)
-                {
-                    for (int y = (int)((page.Rect.Height - box.URY) * scale); y < (int)((page.Rect.Height - box.LLY + 3) * scale); y++)
-                    {
-                        drawn |= bitmap.GetPixel(x, y).Red < 250;
-                    }
-                }
-                missing += drawn ? 0 : 1;
+                missing += PdfEngineFixture.DarkestUnderscorePixel(bitmap, page, box, dpi / 72d) < 250 ? 0 : 1;
             }
 
             return missing;
@@ -443,20 +434,6 @@ public sealed class PdfKnownIssueTests
             "<< /Title (Omitted) /Parent 5 0 R /Next 7 0 R /Dest [3 0 R /XYZ null null null] >>",
             "<< /Title (Zero) /Parent 5 0 R /Prev 6 0 R /Dest [3 0 R /XYZ 0 0 0] >>",
         ];
-        var pdf = new StringBuilder("%PDF-1.7\n");
-        var offsets = new List<int>();
-        for (int index = 0; index < objects.Length; index++)
-        {
-            offsets.Add(pdf.Length);
-            pdf.Append($"{index + 1} 0 obj\n{objects[index]}\nendobj\n");
-        }
-        int xref = pdf.Length;
-        pdf.Append($"xref\n0 {objects.Length + 1}\n0000000000 65535 f \n");
-        foreach (int offset in offsets)
-        {
-            pdf.Append($"{offset:0000000000} 00000 n \n");
-        }
-        pdf.Append($"trailer\n<< /Size {objects.Length + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
-        File.WriteAllBytes(path, Encoding.ASCII.GetBytes(pdf.ToString()));
+        PdfEngineFixture.WriteRawPdf(path, objects);
     }
 }

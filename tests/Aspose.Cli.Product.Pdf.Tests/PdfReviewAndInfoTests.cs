@@ -40,12 +40,11 @@ public sealed class PdfReviewAndInfoTests
             document.Save(input);
         }
 
-        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode review = Review(workspace, input);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        Assert.False(JsonNode.Parse(review.StdOut)!["sourceEncrypted"]!.GetValue<bool>());
+        Assert.False(review["sourceEncrypted"]!.GetValue<bool>());
         JsonNode finding = Assert.Single(
-            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
+            review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_SIZE_UNUSUAL")!;
         Assert.Equal("page 2", finding["location"]!.GetValue<string>());
         Assert.Contains("60 x 40 pt", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -67,8 +66,7 @@ public sealed class PdfReviewAndInfoTests
             new Dictionary<string, string?> { ["ASPOSE_CLI_TEST_PASSWORD"] = "reader" },
             "review", input, "--out", workspace.File("review"), "--password-env", "ASPOSE_CLI_TEST_PASSWORD", "--output", "json");
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        Assert.True(JsonNode.Parse(review.StdOut)!["sourceEncrypted"]!.GetValue<bool>());
+        Assert.True(review.Json()["sourceEncrypted"]!.GetValue<bool>());
     }
 
     [Fact]
@@ -80,12 +78,11 @@ public sealed class PdfReviewAndInfoTests
         string input = fixture.CreateRawDocument("pictures.pdf", pages: 3,
             textPages: new HashSet<int> { 1, 2 }, imagePages: new HashSet<int> { 1, 3 }, imagePoints: 400);
 
-        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode review = Review(workspace, input);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
         Assert.Equal(
             [("PDF_PAGE_UTILIZATION_LOW", "page 2")],
-            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray()
+            review["findings"]!.AsArray()
                 .Select(static item => (item!["code"]!.GetValue<string>(), item["location"]!.GetValue<string>()))
                 .Where(static item => item.Item1.StartsWith("PDF_PAGE_", StringComparison.Ordinal)));
     }
@@ -101,10 +98,8 @@ public sealed class PdfReviewAndInfoTests
             textPages: new HashSet<int> { 1, 2 }, imagePages: new HashSet<int> { 1, 3 }, imagePoints: 700,
             textContent: "BT /F1 12 Tf 72 720 Td (A line of readable text on a text page) Tj ET");
 
-        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode result = Review(workspace, input);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        JsonNode result = JsonNode.Parse(review.StdOut)!;
         JsonNode finding = Assert.Single(
             result["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>().StartsWith("PDF_PAGE_", StringComparison.Ordinal))!;
@@ -140,11 +135,10 @@ public sealed class PdfReviewAndInfoTests
             },
             new PdfEditRequest { OutputPath = output });
 
-        CliResult review = workspace.Run(["review", output, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode review = Review(workspace, output);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
         JsonNode finding = Assert.Single(
-            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
+            review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_COVERED")!;
         Assert.Equal("page 1", finding["location"]!.GetValue<string>());
         Assert.Contains("source document", finding["hint"]!.GetValue<string>(), StringComparison.Ordinal);
@@ -184,11 +178,10 @@ public sealed class PdfReviewAndInfoTests
             document.Save(banded);
         }
 
-        CliResult review = workspace.Run(["review", banded, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode review = Review(workspace, banded);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
         JsonNode finding = Assert.Single(
-            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
+            review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_TEXT_COVERED")!;
         Assert.StartsWith("1 text fragment(s)", finding["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
@@ -215,10 +208,9 @@ public sealed class PdfReviewAndInfoTests
             document.Save(input);
         }
 
-        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode review = Review(workspace, input);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        JsonNode[] findings = [.. JsonNode.Parse(review.StdOut)!["findings"]!.AsArray().Select(static item => item!)];
+        JsonNode[] findings = [.. review["findings"]!.AsArray().Select(static item => item!)];
         Assert.Equal(
             ["page 2"],
             findings.Where(static item => item["code"]!.GetValue<string>() == "PDF_TEXT_OUTSIDE_PAGE")
@@ -256,9 +248,8 @@ public sealed class PdfReviewAndInfoTests
             document.Save(input);
         }
 
-        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+        Review(workspace, input);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
         using var reopened = new Document(input);
         for (int pageNumber = 1; pageNumber <= 4; pageNumber++)
         {
@@ -272,15 +263,7 @@ public sealed class PdfReviewAndInfoTests
             Assert.Equal(2, absorber.TextFragments.Count);
             foreach (Aspose.Pdf.Text.TextFragment fragment in absorber.TextFragments)
             {
-                Rectangle box = fragment.Rectangle;
-                int darkest = 255;
-                for (int x = (int)((box.LLX + 1) * scale); x < (int)((box.URX - 1) * scale); x++)
-                {
-                    for (int y = (int)((page.Rect.Height - box.URY) * scale); y < Math.Min(evidence.Height, (int)((page.Rect.Height - box.LLY + 3) * scale)); y++)
-                    {
-                        darkest = Math.Min(darkest, evidence.GetPixel(x, y).Red);
-                    }
-                }
+                int darkest = PdfEngineFixture.DarkestUnderscorePixel(evidence, page, fragment.Rectangle, scale);
                 Assert.True(darkest < 230, $"The underscores on page {pageNumber} are missing from the evidence (darkest {darkest}).");
             }
         }
@@ -309,10 +292,9 @@ public sealed class PdfReviewAndInfoTests
             document.Save(stamped);
         }
 
-        CliResult review = workspace.Run(["review", stamped, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode review = Review(workspace, stamped);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        JsonNode[] findings = [.. JsonNode.Parse(review.StdOut)!["findings"]!.AsArray()
+        JsonNode[] findings = [.. review["findings"]!.AsArray()
             .Where(static item => item!["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK")
             .Select(static item => item!)];
         // Without a license the test's own save stamps every page.
@@ -350,11 +332,10 @@ public sealed class PdfReviewAndInfoTests
             Assert.True(created.ExitCode == 0, created.StdErr);
         }
 
-        CliResult review = workspace.Run(["review", pdf, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode review = Review(workspace, pdf);
 
-        Assert.True(review.ExitCode == 0, review.StdErr);
         Assert.Contains(
-            JsonNode.Parse(review.StdOut)!["findings"]!.AsArray(),
+            review["findings"]!.AsArray(),
             static item => item!["code"]!.GetValue<string>() == "PDF_EVALUATION_WATERMARK"
                 && item["location"]!.GetValue<string>() == "page 1");
 
@@ -386,17 +367,18 @@ public sealed class PdfReviewAndInfoTests
         }
 
         PdfInfoResult info = fixture.Engine.GetInfo(input, new PdfInfoRequest { Details = ["forms"] });
-        CliResult review = workspace.Run(["review", input, "--out", workspace.File("review"), "--output", "json"]);
+        JsonNode result = Review(workspace, input);
 
         Assert.Equal(2, info.Forms!.FieldCount);
         Assert.Equal(2, fixture.Engine.ReadForm(input, new PdfFormReadRequest()).Fields.Select(static field => field.Name).Distinct().Count());
-        Assert.True(review.ExitCode == 0, review.StdErr);
-        JsonNode result = JsonNode.Parse(review.StdOut)!;
         Assert.Contains(result["findings"]!.AsArray(), static item => item!["code"]!.GetValue<string>() == "PDF_FORM_APPEARANCE_REVIEW_REQUIRED"
             && item["message"]!.GetValue<string>().Contains("2 form field(s)", StringComparison.Ordinal));
         Assert.Equal(2, result["coverage"]!["metrics"]!.AsArray()
             .Single(static metric => metric!["name"]!.GetValue<string>() == "formFields")!["value"]!.GetValue<int>());
     }
+
+    private static JsonNode Review(TempWorkspace workspace, string path) =>
+        workspace.Run(["review", path, "--out", workspace.File("review"), "--output", "json"]).Json();
 
     [Fact]
     public void Review_DeclaresEveryCheckItsAssessmentReports()

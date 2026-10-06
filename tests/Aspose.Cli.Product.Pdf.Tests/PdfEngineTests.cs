@@ -136,9 +136,7 @@ public sealed class PdfEngineTests
         {
             Assert.Equal(width, page.Rect.Width, 0);
             Assert.Equal(height, page.Rect.Height, 0);
-            var absorber = new ImagePlacementAbsorber();
-            page.Accept(absorber);
-            Rectangle placed = Assert.Single(absorber.ImagePlacements).Rectangle;
+            Rectangle placed = PlacedImage(page);
             Assert.Equal(ratio, placed.Width / placed.Height, 2);
             Assert.True(
                 Math.Abs(placed.Width - (width - 72)) < 1 || Math.Abs(placed.Height - (height - 72)) < 1,
@@ -215,9 +213,7 @@ public sealed class PdfEngineTests
             : (sides[0], sides[1], sides[2], sides[3]);
         using var document = new Document(output);
         Page page = Assert.Single(document.Pages);
-        var absorber = new ImagePlacementAbsorber();
-        page.Accept(absorber);
-        Rectangle placed = Assert.Single(absorber.ImagePlacements).Rectangle;
+        Rectangle placed = PlacedImage(page);
         double boxWidth = page.Rect.Width - left - right;
         double boxHeight = page.Rect.Height - top - bottom;
         Assert.Equal((double)width / height, placed.Width / placed.Height, 2);
@@ -244,9 +240,7 @@ public sealed class PdfEngineTests
         using var document = new Document(result.Output.Path);
         Page page = document.Pages[1];
         Assert.Equal(ratio > 1, page.Rect.Width > page.Rect.Height);
-        var absorber = new ImagePlacementAbsorber();
-        page.Accept(absorber);
-        Rectangle placed = Assert.Single(absorber.ImagePlacements).Rectangle;
+        Rectangle placed = PlacedImage(page);
         Assert.Equal(ratio, placed.Width / placed.Height, 2);
     }
 
@@ -266,9 +260,7 @@ public sealed class PdfEngineTests
         using var document = new Document(result.Output.Path);
         Page page = document.Pages[1];
         Assert.True(page.Rect.Height > page.Rect.Width, $"The page is {page.Rect.Width}x{page.Rect.Height}.");
-        var absorber = new ImagePlacementAbsorber();
-        page.Accept(absorber);
-        Rectangle placed = Assert.Single(absorber.ImagePlacements).Rectangle;
+        Rectangle placed = PlacedImage(page);
         Assert.Equal(0.5, placed.Width / placed.Height, 2);
     }
 
@@ -293,10 +285,9 @@ public sealed class PdfEngineTests
 
         Assert.Equal([1, 2, 3, 4], read.ScannedPagesSuspected);
         Assert.Contains(read.Warnings!, static warning => warning.Code == "SCANNED_PAGES_SUSPECTED");
-        Assert.True(review.ExitCode == 0, review.StdErr);
         Assert.Equal(
             ["page 1", "page 2", "page 3", "page 4"],
-            System.Text.Json.Nodes.JsonNode.Parse(review.StdOut)!["findings"]!.AsArray()
+            review.Json()["findings"]!.AsArray()
                 .Where(static item => item!["code"]!.GetValue<string>() == "PDF_PAGE_WITHOUT_TEXT_LAYER")
                 .Select(static item => item!["location"]!.GetValue<string>()));
     }
@@ -323,6 +314,14 @@ public sealed class PdfEngineTests
         Assert.True(created.ExitCode == 0, created.StdOut + created.StdErr);
         Assert.Contains("Evaluation Only", read.Pages[0].Text, StringComparison.Ordinal);
         Assert.Equal([1], read.ScannedPagesSuspected);
+    }
+
+    /// <summary>The rectangle of the one image placed on <paramref name="page"/>.</summary>
+    private static Rectangle PlacedImage(Page page)
+    {
+        var absorber = new ImagePlacementAbsorber();
+        page.Accept(absorber);
+        return Assert.Single(absorber.ImagePlacements).Rectangle;
     }
 
     /// <summary>A JPEG of landscape pixels with an EXIF orientation tag.</summary>

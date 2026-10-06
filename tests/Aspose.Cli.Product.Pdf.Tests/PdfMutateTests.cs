@@ -567,18 +567,12 @@ public sealed class PdfMutateTests
     public void Edit_SaysAFileWithOnlyAnOwnerPasswordWasOpenedWithoutAPassword()
     {
         using var fixture = new PdfEngineFixture();
-        string input = fixture.File("print-only.pdf");
-        using (var document = new Document())
-        {
-            document.Pages.Add();
-            document.Encrypt(string.Empty, "owner", Permissions.PrintDocument, CryptoAlgorithm.AESx256);
-            document.Save(input);
-        }
+        string input = fixture.CreateEncryptedDocument(string.Empty, "owner", "owner-only.pdf");
 
         PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {
             Ops = [new SetMetadataOp { Title = "Changed" }],
-        }, new PdfEditRequest { OutputPath = fixture.File("print-only.out.pdf") });
+        }, new PdfEditRequest { OutputPath = fixture.File("owner-only.out.pdf") });
 
         Warning warning = Assert.Single(result.Warnings!, static item => item.Code == WarningCodes.ProtectionNotEnforced);
         Assert.StartsWith(
@@ -592,14 +586,7 @@ public sealed class PdfMutateTests
     public void Edit_DryRunDisclosesTheUnpermittedChangeItWouldMake()
     {
         using var fixture = new PdfEngineFixture();
-        string input = fixture.File("restricted.pdf");
-        using (var document = new Document())
-        {
-            document.Pages.Add();
-            document.Encrypt("reader", "owner", Permissions.PrintDocument, CryptoAlgorithm.AESx256);
-            document.Save(input);
-        }
-
+        string input = fixture.CreateEncryptedDocument("reader", "owner", "restricted.pdf");
         string output = fixture.File("restricted.out.pdf");
         PdfEditResult result = fixture.Engine.ApplyOps(input, new PdfOpsBatch
         {

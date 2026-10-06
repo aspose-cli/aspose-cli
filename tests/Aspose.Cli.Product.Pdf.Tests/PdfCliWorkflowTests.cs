@@ -29,8 +29,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
 
         CliResult capabilities = _workspace.Run(
             "capabilities", "pdf", "--output", "json");
-        Assert.True(capabilities.ExitCode == 0, capabilities.StdErr);
-        JsonNode product = JsonNode.Parse(capabilities.StdOut)!["products"]![0]!;
+        JsonNode product = capabilities.Json()["products"]![0]!;
         Assert.Equal(
             ["pdf", "pdf convert", "pdf create", "pdf edit", "pdf extract", "pdf inspect", "pdf merge", "pdf query", "pdf query forms", "pdf query pages", "pdf query search", "pdf render", "pdf sign", "pdf split", "pdf validate"],
             product["commands"]!.AsArray()
@@ -58,8 +57,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
             "pdf", "convert", "source.pdf", "--to", "txt",
             "--out", "source.txt", "--output", "json");
 
-        Assert.True(info.ExitCode == 0, info.StdErr);
-        Assert.Equal(1, JsonNode.Parse(info.StdOut)!["pdf"]!["pageCount"]!.GetValue<int>());
+        Assert.Equal(1, info.Json()["pdf"]!["pageCount"]!.GetValue<int>());
         Assert.True(read.ExitCode == 0, read.StdErr);
         Assert.Contains("Portable PDF workflow", read.StdOut, StringComparison.Ordinal);
         Assert.True(forms.ExitCode == 0, forms.StdErr);
@@ -150,11 +148,10 @@ public sealed class PdfCliWorkflowTests : IDisposable
         CliResult convert = _workspace.Run(
             "pdf", "convert", "six.pdf", "--to", format, "--pages", "1-2", "--out", output, "--output", "json");
 
-        Assert.True(convert.ExitCode == 0, convert.StdErr);
-        Assert.True(new FileInfo(_workspace.File(output)).Length > 0);
         JsonNode copied = Assert.Single(
-            JsonNode.Parse(convert.StdOut)!["warnings"]!.AsArray(),
+            convert.Json()["warnings"]!.AsArray(),
             static warning => warning!["message"]!.GetValue<string>().Contains("were copied into a new one", StringComparison.Ordinal))!;
+        Assert.True(new FileInfo(_workspace.File(output)).Length > 0);
         Assert.Equal("LOSSY_CONVERSION", copied["code"]!.GetValue<string>());
         Assert.Contains("bookmarks, attachments and document properties", copied["message"]!.GetValue<string>(), StringComparison.Ordinal);
     }
@@ -171,9 +168,8 @@ public sealed class PdfCliWorkflowTests : IDisposable
         CliResult firstPages = _workspace.Run("pdf", "query", "pages", "six.pdf", "--pages", "1-4", "--output", "json");
         CliResult allPages = _workspace.Run("pdf", "query", "pages", "six.pdf", "--output", "json");
 
-        Assert.True(inspect.ExitCode == 0, inspect.StdErr);
         JsonNode truncated = Assert.Single(
-            JsonNode.Parse(inspect.StdOut)!["warnings"]!.AsArray(),
+            inspect.Json()["warnings"]!.AsArray(),
             static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED")!;
         Assert.StartsWith("Evaluation mode shows only the first 4 of 6 pages", truncated["message"]!.GetValue<string>(), StringComparison.Ordinal);
         Assert.True(firstPages.ExitCode == 0, firstPages.StdErr);
@@ -228,12 +224,11 @@ public sealed class PdfCliWorkflowTests : IDisposable
         }
 
         objects.Add("<< /Length 0 >>\nstream\n\nendstream");
-        WriteRawPdf("chapters.pdf", objects);
+        PdfEngineFixture.WriteRawPdf(_workspace.File("chapters.pdf"), objects);
 
         CliResult inspect = _workspace.Run("pdf", "inspect", "chapters.pdf", "--detail", "outline", "--output", "json");
 
-        Assert.True(inspect.ExitCode == 0, inspect.StdErr);
-        JsonNode result = JsonNode.Parse(inspect.StdOut)!;
+        JsonNode result = inspect.Json();
         Assert.Equal(
             Enumerable.Range(1, count).Select(static number => $"Chapter {number}"),
             result["outline"]!.AsArray().Select(static item => item!["title"]!.GetValue<string>()));
@@ -288,21 +283,19 @@ public sealed class PdfCliWorkflowTests : IDisposable
             objects.Add($"<< /Type /EmbeddedFile /Length 6 >>\nstream\nfile {index + 1}\nendstream");
         }
 
-        WriteRawPdf("fields.pdf", objects);
+        PdfEngineFixture.WriteRawPdf(_workspace.File("fields.pdf"), objects);
 
         CliResult inspect = _workspace.Run(
             "pdf", "inspect", "fields.pdf", "--detail", "forms", "--detail", "attachments", "--output", "json");
         CliResult forms = _workspace.Run("pdf", "query", "forms", "fields.pdf", "--output", "json");
 
-        Assert.True(inspect.ExitCode == 0, inspect.StdErr);
-        JsonNode result = JsonNode.Parse(inspect.StdOut)!;
+        JsonNode result = inspect.Json();
         Assert.Equal(count, result["forms"]!["fieldCount"]!.GetValue<int>());
         Assert.Equal(
             Enumerable.Range(1, count).Select(static number => $"file{number}.txt"),
             result["attachments"]!.AsArray().Select(static item => item!["name"]!.GetValue<string>()));
         Assert.Contains(result["warnings"]!.AsArray(), static warning => warning!["code"]!.GetValue<string>() == "EVAL_INPUT_TRUNCATED");
-        Assert.True(forms.ExitCode == 0, forms.StdErr);
-        JsonNode read = JsonNode.Parse(forms.StdOut)!;
+        JsonNode read = forms.Json();
         JsonArray fields = read["fields"]!.AsArray();
         Assert.Equal(
             all.Select(static index => $"Value {index + 1}"),
@@ -323,28 +316,6 @@ public sealed class PdfCliWorkflowTests : IDisposable
         }
     }
 
-    /// <summary>Writes numbered objects, the first being the catalog, as a PDF with a cross-reference table.</summary>
-    private void WriteRawPdf(string fileName, IReadOnlyList<string> objects)
-    {
-        var pdf = new System.Text.StringBuilder("%PDF-1.7\n");
-        var offsets = new List<int>();
-        for (int index = 0; index < objects.Count; index++)
-        {
-            offsets.Add(pdf.Length);
-            pdf.Append($"{index + 1} 0 obj\n{objects[index]}\nendobj\n");
-        }
-
-        int xref = pdf.Length;
-        pdf.Append($"xref\n0 {objects.Count + 1}\n0000000000 65535 f \n");
-        foreach (int offset in offsets)
-        {
-            pdf.Append($"{offset:0000000000} 00000 n \n");
-        }
-
-        pdf.Append($"trailer\n<< /Size {objects.Count + 1} /Root 1 0 R >>\nstartxref\n{xref}\n%%EOF\n");
-        File.WriteAllBytes(_workspace.File(fileName), System.Text.Encoding.ASCII.GetBytes(pdf.ToString()));
-    }
-
     [Fact]
     public void QueryPages_NextRereadsACutPageAndRaisesTheBudgetForAPageThatAloneExceedsIt()
     {
@@ -361,8 +332,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         CliResult window = _workspace.Run("pdf", "query", "pages", "pages.pdf", "--max-chars", "24", "--output", "json");
         CliResult single = _workspace.Run("pdf", "query", "pages", "pages.pdf", "--pages", "2", "--max-chars", "5", "--output", "json");
 
-        Assert.True(window.ExitCode == 0, window.StdErr);
-        JsonNode result = JsonNode.Parse(window.StdOut)!;
+        JsonNode result = window.Json();
         JsonArray pages = result["pages"]!.AsArray();
         Assert.True(pages[^1]!["truncated"]!.GetValue<bool>());
         int cut = pages[^1]!["page"]!.GetValue<int>();
@@ -371,10 +341,9 @@ public sealed class PdfCliWorkflowTests : IDisposable
         string next = result["window"]!["next"]!.GetValue<string>();
         Assert.StartsWith("aspose-cli pdf query pages ", next, StringComparison.Ordinal);
         Assert.EndsWith($" --pages {resume} --mode plain --max-chars {budget} --output json", next, StringComparison.Ordinal);
-        Assert.True(single.ExitCode == 0, single.StdErr);
         Assert.EndsWith(
             " --pages 2 --mode plain --max-chars 10 --output json",
-            JsonNode.Parse(single.StdOut)!["window"]!["next"]!.GetValue<string>(),
+            single.Json()["window"]!["next"]!.GetValue<string>(),
             StringComparison.Ordinal);
     }
 
@@ -394,8 +363,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         CliResult first = _workspace.Run(
             "pdf", "query", "search", "markers.pdf", "--pages", "1-3", "--pattern", "marker", "--max-hits", "4", "--output", "json");
 
-        Assert.True(first.ExitCode == 0, first.StdErr);
-        JsonNode window = JsonNode.Parse(first.StdOut)!["window"]!;
+        JsonNode window = first.Json()["window"]!;
         Assert.Equal("hit", window["unit"]!.GetValue<string>());
         Assert.Equal(4, window["returned"]!.GetValue<int>());
         Assert.True(window["truncated"]!.GetValue<bool>());
@@ -406,8 +374,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
 
         CliResult second = _workspace.RunCommandLine(next);
 
-        Assert.True(second.ExitCode == 0, second.StdErr);
-        JsonNode rest = JsonNode.Parse(second.StdOut)!;
+        JsonNode rest = second.Json();
         JsonArray hits = rest["hits"]!.AsArray();
         Assert.Equal([3, 3], hits.Select(static hit => hit!["page"]!.GetValue<int>()));
         Assert.Equal([1, 2], hits.Select(static hit => hit!["occurrence"]!.GetValue<int>()));
@@ -462,11 +429,10 @@ public sealed class PdfCliWorkflowTests : IDisposable
         CliResult contact = _workspace.Run("pdf", "create", "contact.pdf", "--from-html", "contact.html", "--output", "json");
         CliResult fields = _workspace.Run("pdf", "query", "forms", "form.pdf", "--output", "json");
 
-        Assert.True(form.ExitCode == 0, form.StdErr);
         JsonNode lossy = Assert.Single(
-            JsonNode.Parse(form.StdOut)!["warnings"]!.AsArray(),
+            form.Json()["warnings"]!.AsArray(),
             static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!;
-        JsonArray read = JsonNode.Parse(fields.StdOut)!["fields"]!.AsArray();
+        JsonArray read = fields.Json()["fields"]!.AsArray();
         string[] generated = [.. read.Select(static field => field!["name"]!.GetValue<string>()).Where(static name => name != "company").Distinct()];
         Assert.NotEmpty(generated);
         Assert.All(generated, name => Assert.Contains($"'{name}'", lossy["message"]!.GetValue<string>(), StringComparison.Ordinal));
@@ -474,9 +440,8 @@ public sealed class PdfCliWorkflowTests : IDisposable
         Assert.True(text.ExitCode == 0, text.StdErr);
         Assert.DoesNotContain("LOSSY_CONVERSION", text.StdOut, StringComparison.Ordinal);
         // The importer drops some input types without a field; the HTML shows which.
-        Assert.True(contact.ExitCode == 0, contact.StdErr);
         string dropped = Assert.Single(
-            JsonNode.Parse(contact.StdOut)!["warnings"]!.AsArray(),
+            contact.Json()["warnings"]!.AsArray(),
             static warning => warning!["code"]!.GetValue<string>() == "LOSSY_CONVERSION")!["message"]!.GetValue<string>();
         Assert.Contains("dropped 3 input(s) of type email, tel", dropped, StringComparison.Ordinal);
         Assert.DoesNotContain("generated names", dropped, StringComparison.Ordinal);
@@ -496,8 +461,7 @@ public sealed class PdfCliWorkflowTests : IDisposable
         CliResult search = _workspace.Run(
             "pdf", "query", "search", "contract.pdf", "--pattern", "penalty", "--output", "json");
 
-        Assert.True(search.ExitCode == 0, search.StdErr);
-        JsonArray hits = JsonNode.Parse(search.StdOut)!["hits"]!.AsArray();
+        JsonArray hits = search.Json()["hits"]!.AsArray();
         Assert.Equal(["penalty", "penalty"], hits.Select(static hit => hit!["snippet"]!.GetValue<string>()));
         string[] contexts = [.. hits.Select(static hit => hit!["context"]!.GetValue<string>())];
         Assert.Contains("shall pay a penalty of 0.5%", contexts[0], StringComparison.Ordinal);
