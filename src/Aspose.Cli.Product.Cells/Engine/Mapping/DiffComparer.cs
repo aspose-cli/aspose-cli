@@ -1,7 +1,4 @@
 using Aspose.Cells;
-using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Product.Cells.Contracts.Addressing;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
@@ -9,6 +6,11 @@ namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 /// <summary>Compares stored values over a bounded, sorted union of existing cell addresses.</summary>
 internal static class DiffComparer
 {
+    /// <summary>The differences between two workbooks.</summary>
+    /// <param name="Sheets">The differences of each sheet.</param>
+    /// <param name="Summary">The counts over every sheet.</param>
+    /// <param name="Identical">Whether the workbooks have the same sheets and no differing cells.</param>
+    /// <param name="Truncated">Whether more cells differ than are listed.</param>
     /// <param name="Warnings">The row shifts of each modified sheet (ROWS_SHIFTED).</param>
     public sealed record Result(
         IReadOnlyList<SheetDiff> Sheets, DiffSummary Summary, bool Identical, bool Truncated, IReadOnlyList<Warning> Warnings);

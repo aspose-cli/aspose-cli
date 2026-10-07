@@ -1,5 +1,3 @@
-using Aspose.Cli.Product.Pdf.Contracts;
-using Aspose.Cli.Product.Pdf.Ports;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Views;

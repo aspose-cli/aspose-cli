@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Runtime.CompilerServices;
-using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Sdk.Extensibility;
 

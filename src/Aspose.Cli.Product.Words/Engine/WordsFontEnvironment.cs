@@ -1,6 +1,5 @@
 using System.Text.RegularExpressions;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;
 using Aspose.Cli.Sdk.Ports;

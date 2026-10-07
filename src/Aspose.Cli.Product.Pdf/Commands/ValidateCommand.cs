@@ -1,5 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Pdf.Commands;

@@ -1,4 +1,3 @@
-using Aspose.Cli.Product.Cells.Contracts;
 using Aspose.Cli.Sdk.Ports;
 
 namespace Aspose.Cli.Product.Cells.Ports;
@@ -7,7 +6,7 @@ namespace Aspose.Cli.Product.Cells.Ports;
 /// The spreadsheet engine port. Everything that crosses this boundary is
 /// either a primitive, a core value type or a public contract type — engine
 /// SDK types never appear here. Implementations translate engine failures
-/// into <see cref="Errors.CliException"/>s.
+/// into <see cref="Aspose.Cli.Sdk.Errors.CliException"/>s.
 /// </summary>
 /// <remarks>
 /// The port is synchronous by design: the underlying engines are synchronous

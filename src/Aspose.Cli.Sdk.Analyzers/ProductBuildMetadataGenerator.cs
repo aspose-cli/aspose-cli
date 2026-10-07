@@ -1,6 +1,4 @@
 using System.Text;
-using Microsoft.CodeAnalysis;
-using Microsoft.CodeAnalysis.Diagnostics;
 using Microsoft.CodeAnalysis.Text;
 using CSharpDisplay = Microsoft.CodeAnalysis.CSharp.SymbolDisplay;
 

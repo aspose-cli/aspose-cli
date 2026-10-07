@@ -1,8 +1,6 @@
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Drawing;
-using Aspose.Cli.Product.Cells.Contracts.Addressing;
-using Aspose.Cli.Product.Cells.Ports;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility.Output;
 

@@ -63,3 +63,5 @@ dotnet_diagnostic.IDE0051.severity = error
 dotnet_diagnostic.IDE0052.severity = error
 dotnet_diagnostic.IDE0059.severity = error
 dotnet_diagnostic.IDE0060.severity = error
+# Unnecessary usings; needs the documentation file that Directory.Build.props enables.
+dotnet_diagnostic.IDE0005.severity = error

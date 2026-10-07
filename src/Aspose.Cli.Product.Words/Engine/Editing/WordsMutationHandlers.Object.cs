@@ -2,9 +2,7 @@ using System.Data;
 using System.Globalization;
 using System.Text;
 using System.Text.Json;
-using Aspose.Cli.Product.Words.Contracts;
 using Aspose.Cli.Product.Words.Engine.Mapping;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Text;
@@ -12,7 +10,6 @@ using Aspose.Words;
 using Aspose.Words.Drawing;
 using Aspose.Words.Fields;
 using Aspose.Words.MailMerging;
-using Aspose.Words.Replacing;
 using Aspose.Words.Tables;
 using SkiaSharp;
 

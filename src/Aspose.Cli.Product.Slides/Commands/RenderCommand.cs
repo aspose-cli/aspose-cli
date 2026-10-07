@@ -1,5 +1,4 @@
 using System.CommandLine;
-using Aspose.Cli.Product.Slides.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 using Aspose.Cli.Sdk.Extensibility.Commanding;

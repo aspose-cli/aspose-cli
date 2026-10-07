@@ -2,7 +2,6 @@ using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Drawing;
 using Aspose.Cells.Rendering;
-using Aspose.Cli.Sdk.Contracts;
 
 namespace Aspose.Cli.Product.Cells.Engine.Mapping;
 

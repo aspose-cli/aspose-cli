@@ -1,6 +1,5 @@
 using System.Drawing;
 using System.Globalization;
-using Aspose.Cli.Sdk.Errors;
 using Aspose.Slides;
 
 namespace Aspose.Cli.Product.Slides.Engine;

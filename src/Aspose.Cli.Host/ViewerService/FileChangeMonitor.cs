@@ -5,7 +5,7 @@ namespace Aspose.Cli.Host.ViewerService;
 /// Watches one file and raises a single debounced <see cref="Changed"/> per
 /// burst of file-system events. Editors and this CLI alike replace files
 /// atomically (write a temp sibling, then move it over the target — the
-/// <see cref="IO.SafeFileWriter"/> pattern; desktop editors perform a similar
+/// <see cref="Aspose.Cli.Sdk.IO.SafeFileWriter"/> pattern; desktop editors perform a similar
 /// replace dance), which surfaces as several raw events in quick succession, often a
 /// Renamed whose <em>old</em> name is the temp file. The monitor therefore
 /// watches the whole parent directory, filters by the exact file name itself

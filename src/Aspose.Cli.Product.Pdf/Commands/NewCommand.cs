@@ -1,6 +1,5 @@
 using System.CommandLine;
 using System.Globalization;
-using Aspose.Cli.Product.Pdf.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.Extensibility;
 

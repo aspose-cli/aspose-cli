@@ -1,6 +1,5 @@
 using Aspose.Cli.Product.Slides.Commands;
 using Aspose.Cli.Product.Slides.Output;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Extensibility;
 
 namespace Aspose.Cli.Product.Slides;

@@ -1,8 +1,5 @@
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
-using Aspose.Cli.Product.Pdf.Contracts;
-using Aspose.Cli.Product.Pdf.Engine.Mapping;
-using Aspose.Cli.Sdk.Contracts;
 using Aspose.Cli.Sdk.Errors;
 using Aspose.Cli.Sdk.IO;
 using Aspose.Cli.Sdk.Licensing;

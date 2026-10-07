@@ -5,8 +5,6 @@ using System.Text;
 using Aspose.Cells;
 using Aspose.Cells.Charts;
 using Aspose.Cells.Pivot;
-using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Product.Cells.Contracts.Addressing;
 using Aspose.Cli.Product.Cells.Engine.Mapping;
 using Aspose.Cli.Sdk.Errors;
 

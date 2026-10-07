@@ -20,6 +20,7 @@ internal static class FileUnlockProbe
     /// <param name="path">The file to probe.</param>
     /// <param name="attempts">Maximum number of open attempts; at least 1.</param>
     /// <param name="initialDelay">Delay after the first failed attempt; doubles each retry.</param>
+    /// <param name="cancellationToken">Stops the probe early.</param>
     public static bool WaitReadable(string path, int attempts, TimeSpan initialDelay, CancellationToken cancellationToken = default)
     {
         ArgumentException.ThrowIfNullOrEmpty(path);

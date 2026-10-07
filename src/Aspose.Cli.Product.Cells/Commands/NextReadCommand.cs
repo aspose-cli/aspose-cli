@@ -1,7 +1,3 @@
-using Aspose.Cli.Product.Cells.Contracts;
-using Aspose.Cli.Product.Cells.Contracts.Addressing;
-using Aspose.Cli.Product.Cells.Contracts.Reading;
-
 namespace Aspose.Cli.Product.Cells.Commands;
 
 /// <summary>
@@ -21,9 +17,11 @@ internal static class NextReadCommand
     /// again from the read's own inputs and the used range it reported, so the geometry
     /// stays in <see cref="ReadWindowPlanner"/> and agrees with the engine's window.
     /// </summary>
+    /// <param name="result">The read whose follow-up is planned.</param>
     /// <param name="range">The read's explicit range or current page.</param>
     /// <param name="scan">The region the read's command carried; null otherwise.</param>
     /// <param name="resume">The invocation's continuation (<see cref="StandardInvocation.Continuation"/>).</param>
+    /// <param name="maxCells">The cell budget of one page.</param>
     public static string? Build(
         ContinuationCommand resume, WorkbookReadResult result, RangeRef? range, RangeRef? scan, int maxCells)
     {
