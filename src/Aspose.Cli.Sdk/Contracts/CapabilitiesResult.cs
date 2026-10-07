@@ -295,6 +295,9 @@ public sealed record CommandOptionCapabilities
     public required int MaximumArity { get; init; }
     public required bool Required { get; init; }
     public required bool Recursive { get; init; }
+
+    /// <summary>Whether help leaves the option out; a hidden option is never suggested for a mistyped one.</summary>
+    public required bool Hidden { get; init; }
     public required bool HasDefault { get; init; }
     public string? Default { get; init; }
     public required IReadOnlyList<string> AllowedValues { get; init; }

@@ -326,6 +326,7 @@
         "maximumArity",
         "required",
         "recursive",
+        "hidden",
         "hasDefault",
         "allowedValues",
         "secret",
@@ -340,6 +341,10 @@
         "maximumArity": { "type": "integer", "minimum": 0 },
         "required": { "type": "boolean" },
         "recursive": { "type": "boolean" },
+        "hidden": {
+          "type": "boolean",
+          "description": "Whether help leaves the option out; a hidden option is never suggested for a mistyped one."
+        },
         "hasDefault": { "type": "boolean" },
         "default": { "type": "string" },
         "allowedValues": { "type": "array", "items": { "type": "string" } },
