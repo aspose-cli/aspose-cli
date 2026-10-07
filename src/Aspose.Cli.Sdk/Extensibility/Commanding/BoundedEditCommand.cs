@@ -258,7 +258,7 @@ public sealed class BoundedEditCommand<TOp, TBatch>
             ResolveSecrets(batch, standard.ReadEnvironment));
     }
 
-    private IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)
+    private static IReadOnlyDictionary<string, string> ResolveSecrets(TBatch batch, Func<string, string?> readEnvironment)
     {
         var secrets = new Dictionary<string, string>(StringComparer.Ordinal);
         // Each [SecretEnv] variable is read once. A missing or empty variable is left out: it
