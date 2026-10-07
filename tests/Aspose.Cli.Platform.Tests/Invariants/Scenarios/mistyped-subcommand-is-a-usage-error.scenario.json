@@ -1,0 +1,23 @@
+{
+  "name": "a mistyped subcommand of app or preview is a usage error that suggests the subcommand and writes nothing",
+  "steps": [
+    {
+      "args": ["app", "sattus"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [{ "path": "error.details.suggestions", "contains": "app status" }],
+        "files": { "nothingWritten": true }
+      }
+    },
+    {
+      "args": ["preview", "sattus"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [{ "path": "error.details.suggestions", "contains": "preview status" }],
+        "files": { "nothingWritten": true }
+      }
+    }
+  ]
+}

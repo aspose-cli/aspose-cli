@@ -1,0 +1,20 @@
+{
+  "name": "cells convert refuses an --out extension that does not belong to --to, names the option and lists its extensions",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "csv", "--out", "out.doc"],
+      "expect": {
+        "exitCode": 2,
+        "error": "USAGE_ERROR",
+        "json": [
+          { "path": "error.message", "contains": "--out" },
+          { "path": "error.message", "contains": ".csv" }
+        ],
+        "files": { "absent": ["out.doc", "out.csv"], "unchanged": ["book.xlsx"], "nothingWritten": true }
+      }
+    }
+  ]
+}

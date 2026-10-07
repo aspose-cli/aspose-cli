@@ -1,0 +1,32 @@
+{
+  "name": "an output may use any extension its format declares",
+  "files": {
+    "book.xlsx": { "fixture": "cells.xlsx" }
+  },
+  "steps": [
+    {
+      "args": ["cells", "convert", "book.xlsx", "--to", "html", "--out", "page.htm"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["page.htm"], "unchanged": ["book.xlsx"] },
+        "reopens": ["@result"]
+      }
+    },
+    {
+      "args": ["cells", "render", "book.xlsx", "--to", "jpeg", "--out", "sheet.jpg"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["sheet.jpg"], "unchanged": ["book.xlsx"] },
+        "reopens": ["@result"]
+      }
+    },
+    {
+      "args": ["cells", "render", "book.xlsx", "--to", "jpeg", "--out", "sheet.jpeg"],
+      "expect": {
+        "exitCode": 0,
+        "files": { "present": ["sheet.jpeg"], "unchanged": ["book.xlsx"] },
+        "reopens": ["@result"]
+      }
+    }
+  ]
+}

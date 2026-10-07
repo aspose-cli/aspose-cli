@@ -1,0 +1,17 @@
+{
+  "name": "slides convert to html5 publishes every file of its output",
+  "files": {
+    "deck.pptx": { "fixture": "slides.pptx" }
+  },
+  "steps": [
+    {
+      "args": ["slides", "convert", "deck.pptx", "--to", "html5", "--out", "deck.html"],
+      "expect": {
+        "exitCode": 0,
+        "json": [{ "path": "outputs[0].format", "equals": "html5" }],
+        "files": { "present": ["deck.html"], "unchanged": ["deck.pptx"] },
+        "reopens": ["@result"]
+      }
+    }
+  ]
+}
